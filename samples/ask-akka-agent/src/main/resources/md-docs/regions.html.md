@@ -72,7 +72,7 @@ To learn more about self-hosted Akka regions please To get a BYOC region setup y
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Manage users](manage-users.html) [Billing](billing.html)
+[Manage users](manage-users.html) [Projects](../projects/index.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

@@ -1,0 +1,202 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.impl.agent.autonomous
+
+import scala.jdk.CollectionConverters._
+
+import akka.annotation.InternalApi
+import akka.javasdk.agent.Agent
+import akka.javasdk.agent.autonomous.AutonomousAgent
+import akka.javasdk.agent.autonomous.capability.AgentCapability
+import akka.javasdk.agent.task.TaskDefinition
+import akka.javasdk.agent.task.TaskTemplate
+import akka.javasdk.impl.JsonSchema
+import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl
+import akka.javasdk.impl.agent.autonomous.capability.ModerationImpl
+import akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl
+import akka.javasdk.impl.agent.autonomous.capability.TeamLeadershipImpl
+import akka.javasdk.impl.agent.autonomous.capability.TeamMemberImpl
+import akka.javasdk.impl.reflection.Reflect
+import akka.runtime.sdk.spi.AgentDescriptor
+import akka.runtime.sdk.spi.AutonomousAgentDescriptor
+import akka.runtime.sdk.spi.SpiAutonomousAgent
+import akka.runtime.sdk.spi.SpiTask
+
+/**
+ * INTERNAL API
+ *
+ * Converts SDK capability types to SPI capability types. Holds the agent registry needed to resolve delegation and
+ * handoff target references.
+ */
+@InternalApi
+private[javasdk] class CapabilityConverter(
+    agentDefinitionMap: Map[String, (AgentDefinitionImpl, Seq[SpiTask.SpiTaskDefinition])],
+    agentDescriptors: Seq[AutonomousAgentDescriptor],
+    requestBasedAgentDescriptors: Seq[AgentDescriptor],
+    defaultMaxIterationsPerTask: Int,
+    defaultMaxParallelWorkers: Int) {
+
+  def toSpiCapabilities(sdkCapabilities: java.util.List[AgentCapability]): Seq[SpiAutonomousAgent.Capability] = {
+    val allCapabilities = sdkCapabilities.asScala.toSeq
+
+    val spiTaskAcceptances: Seq[SpiAutonomousAgent.Capability] = allCapabilities.collect {
+      case ta: TaskAcceptanceImpl =>
+        new SpiAutonomousAgent.TaskAcceptance(
+          taskDefinitions = ta.taskDefinitions.asScala.toSeq.map(CapabilityConverter.toSpiTaskDefinition),
+          maxIterationsPerTask = ta.maxIterations.getOrElse(defaultMaxIterationsPerTask),
+          handoffs = resolveHandoffTargets(ta.handoffTargets.asScala.toSeq))
+    }
+
+    val delegations = allCapabilities.collect { case d: DelegationImpl => d }
+    val spiDelegationOrchestrators: Seq[SpiAutonomousAgent.Capability] =
+      if (delegations.nonEmpty) {
+        val delegationGroups = delegations.map { d =>
+          new SpiAutonomousAgent.DelegationGroup(
+            delegationTargets = resolveDelegationTargets(d.delegationTargets.asScala.toSeq),
+            requestBasedTargets = resolveRequestBasedDelegationTargets(d.requestBasedTargets.asScala.toSeq),
+            maxParallelWorkers = d.maxParallel.getOrElse(defaultMaxParallelWorkers))
+        }
+        Seq(new SpiAutonomousAgent.DelegationOrchestrator(delegationGroups))
+      } else Seq.empty
+
+    val teamLeaderships = allCapabilities.collect { case t: TeamLeadershipImpl => t }
+    val spiTeamLeads: Seq[SpiAutonomousAgent.Capability] =
+      teamLeaderships.map { t =>
+        new SpiAutonomousAgent.TeamLead(t.members.map(resolveTeamMember), t.maxConcurrentTeamsValue)
+      }
+
+    val moderations = allCapabilities.collect { case m: ModerationImpl => m }
+    val spiModerations: Seq[SpiAutonomousAgent.Capability] =
+      moderations.map { m =>
+        new SpiAutonomousAgent.Moderation(
+          m.participants.map(resolveModerationParticipant),
+          m.maxRoundsValue,
+          m.maxIterationsPerTurnValue,
+          m.maxConcurrentConversationsValue)
+      }
+
+    spiTaskAcceptances ++ spiDelegationOrchestrators ++ spiTeamLeads ++ spiModerations
+  }
+
+  private def resolveHandoffTargets(
+      sdkHandoffTargets: Seq[Class[_ <: AutonomousAgent]]): Seq[SpiAutonomousAgent.HandoffTarget] =
+    sdkHandoffTargets.map { targetAgentClass =>
+      val targetComponentId = Reflect.readComponentId(targetAgentClass)
+      val (_, targetTaskDefinitions) = agentDefinitionMap.getOrElse(
+        targetComponentId,
+        throw new IllegalStateException(
+          s"Handoff target [$targetComponentId] (${targetAgentClass.getName}) not found. " +
+          "Ensure the target agent is a registered AutonomousAgent component."))
+      val targetDescriptor = agentDescriptors.find(_.componentId == targetComponentId)
+      new SpiAutonomousAgent.HandoffTarget(
+        agentComponentId = targetComponentId,
+        description = targetDescriptor.flatMap(_.description),
+        acceptedTasks = targetTaskDefinitions)
+    }
+
+  private def resolveModerationParticipant(
+      participantClass: Class[_ <: AutonomousAgent]): SpiAutonomousAgent.ModerationParticipant = {
+    val targetComponentId = Reflect.readComponentId(participantClass)
+    agentDefinitionMap.getOrElse(
+      targetComponentId,
+      throw new IllegalStateException(
+        s"Moderation participant [$targetComponentId] (${participantClass.getName}) not found. " +
+        "Ensure the target agent is a registered AutonomousAgent component."))
+    val targetDescriptor = agentDescriptors.find(_.componentId == targetComponentId)
+    new SpiAutonomousAgent.ModerationParticipant(
+      agentComponentId = targetComponentId,
+      description = targetDescriptor.flatMap(_.description))
+  }
+
+  private def resolveTeamMember(teamMember: TeamMemberImpl): SpiAutonomousAgent.TeamMemberType = {
+    val targetComponentId = Reflect.readComponentId(teamMember.agentClass)
+    val (_, targetTaskDefinitions) = agentDefinitionMap.getOrElse(
+      targetComponentId,
+      throw new IllegalStateException(
+        s"Team member type [$targetComponentId] (${teamMember.agentClass.getName}) not found. " +
+        "Ensure the target agent is a registered AutonomousAgent component."))
+    val targetDescriptor = agentDescriptors.find(_.componentId == targetComponentId)
+    new SpiAutonomousAgent.TeamMemberType(
+      agentComponentId = targetComponentId,
+      description = targetDescriptor.flatMap(_.description),
+      maxInstances = teamMember.maxMemberInstances,
+      acceptedTasks = targetTaskDefinitions)
+  }
+
+  private def resolveDelegationTargets(
+      sdkDelegationTargets: Seq[Class[_ <: AutonomousAgent]]): Seq[SpiAutonomousAgent.DelegationTarget] =
+    sdkDelegationTargets.map { targetAgentClass =>
+      val targetComponentId = Reflect.readComponentId(targetAgentClass)
+      val (_, targetTaskDefinitions) = agentDefinitionMap.getOrElse(
+        targetComponentId,
+        throw new IllegalStateException(
+          s"Delegation target [$targetComponentId] (${targetAgentClass.getName}) not found. " +
+          "Ensure the target agent is a registered AutonomousAgent component."))
+      val targetDescriptor = agentDescriptors.find(_.componentId == targetComponentId)
+      new SpiAutonomousAgent.DelegationTarget(
+        agentComponentId = targetComponentId,
+        description = targetDescriptor.flatMap(_.description),
+        acceptedTasks = targetTaskDefinitions)
+    }
+
+  private def resolveRequestBasedDelegationTargets(
+      sdkTargets: Seq[Class[_ <: Agent]]): Seq[SpiAutonomousAgent.RequestBasedDelegationTarget] =
+    sdkTargets.map { agentClass =>
+      val componentId = Reflect.readComponentId(agentClass)
+      val effectMethod =
+        agentClass.getDeclaredMethods
+          .find { method =>
+            Reflect.isCommandHandlerCandidate[Agent.Effect[_]](method) ||
+            Reflect.isCommandHandlerCandidate[Agent.StreamEffect](method)
+          }
+          .getOrElse {
+            throw new IllegalStateException(
+              s"Request-based delegation target [$componentId] (${agentClass.getName}) doesn't have " +
+              "a public method returning Agent.Effect or Agent.StreamEffect.")
+          }
+      val methodName = effectMethod.getName.capitalize
+      val requestSchema = JsonSchema.jsonSchemaFor(effectMethod)
+      val descriptor = requestBasedAgentDescriptors.find(_.componentId == componentId)
+      new SpiAutonomousAgent.RequestBasedDelegationTarget(
+        agentComponentId = componentId,
+        description = descriptor.flatMap(_.description),
+        methodName = methodName,
+        requestSchema = requestSchema)
+    }
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] object CapabilityConverter {
+
+  def toSpiTaskDefinition(taskDefinition: TaskDefinition[_]): SpiTask.SpiTaskDefinition = {
+    val resultType = taskDefinition.resultType()
+    val resultSchema =
+      if (resultType == classOf[String]) None
+      else {
+        try Some(JsonSchema.jsonSchemaFor(resultType))
+        catch { case scala.util.control.NonFatal(_) => None }
+      }
+    val (instructionTemplate, templateParameters) = taskDefinition match {
+      case template: TaskTemplate[_] =>
+        val parameters = template.templateParameterNames().asScala.toSeq.map { name =>
+          new SpiTask.SpiTemplateParameter(name, name)
+        }
+        (Option(template.instructionTemplate()).filter(_.nonEmpty), parameters)
+      case _ => (None, Seq.empty)
+    }
+    val ruleClassNames = taskDefinition.ruleClasses().asScala.toSeq.map(_.getName)
+    new SpiTask.SpiTaskDefinition(
+      name = taskDefinition.name(),
+      description = taskDefinition.description(),
+      resultTypeName = resultType.getName,
+      resultSchema = resultSchema,
+      instructionTemplate = instructionTemplate,
+      templateParameters = templateParameters,
+      ruleClassNames = ruleClassNames)
+  }
+}

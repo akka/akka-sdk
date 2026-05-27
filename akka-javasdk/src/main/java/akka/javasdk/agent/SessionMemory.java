@@ -31,11 +31,14 @@ import java.util.List;
 public interface SessionMemory {
 
   /**
-   * Adds an interaction between a user and an AI model to the session history for the specified
-   * session.
+   * Adds an interaction to the session history for the specified session.
+   *
+   * <p>When {@code userMessage} is non-null, the user message is persisted followed by the response
+   * messages. When {@code userMessage} is null, only the response messages are persisted (a partial
+   * interaction, such as tool call responses completing a previous AI message).
    *
    * @param sessionId The unique identifier for the contextual session
-   * @param userMessage The content of the user message
+   * @param userMessage The content of the user message, or null for partial interactions
    * @param messages All other messages generated during this interaction, typically AiMessage but
    *     also Tool Call responses.
    */

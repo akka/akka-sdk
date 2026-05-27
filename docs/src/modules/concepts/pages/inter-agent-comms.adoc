@@ -4,6 +4,8 @@ include::ROOT:partial$include.adoc[]
 
 Agents can collaborate in many ways, from orchestration, to direct communication, to other patterns like swarms and teams. Many of these communication patterns make for great demos, but don’t scale well or run safely and securely in production environments.
 
+The patterns flagged below as "avoid" are about ad-hoc protocol-level wiring between agents, where there is no platform-level durability, retry, or audit. Coordination that goes through Akka's component model, whether a xref:sdk:workflows.adoc[Workflow] supervisor or an xref:sdk:autonomous-agents.adoc[Autonomous Agent] coordination capability, is not in that category and is the recommended way to compose multi-agent systems.
+
 Further, the emergence of https://modelcontextprotocol.io/introduction[MCP, window="new"], https://a2aprotocol.ai/[A2A, window="new"], and https://agentcommunicationprotocol.dev/introduction/welcome[ACP, window="new"] have made it (perhaps too) easy to enable direct communication between agentic services. This has led to many techniques for agent-to-agent communications: some extremely valuable and some deceptively dangerous. While Akka makes it simple to implement any of these techniques, it is worth exploring each of these patterns and anti-patterns in detail.
 
 The following table provides a quick reference as to which communication paths are preferred patterns versus ones you should avoid. Additional details are provided thereafter.
@@ -15,7 +17,12 @@ The following table provides a quick reference as to which communication paths a
 | Workflow -> Agent(s) +
 Workflow -> A2A/ACP -> Agents +
 Workflow -> Endpoint (API) | Workflows are engines of orchestration that can ensure the successful outcome of many invocations across agents that are local or remote. Workflows have built-in logic for handling retries and failure for long-running processes. +
- + 
+ +
+✅ **Adopt**
+
+| AutonomousAgent -> Agent / AutonomousAgent +
+(via delegation, handoff, teams, or moderation) | Coordination is declared on the Autonomous Agent and driven by the runtime. The runtime persists task state, retries failed steps, enforces iteration limits, and emits notifications, so the durability, reliability, and audit guarantees are equivalent to a Workflow supervisor. Use this when the model should decide which agent runs next inside a single service. +
+ +
 ✅ **Adopt**
 
 | Agent -> Broker +
@@ -30,11 +37,11 @@ Event-driven architectures are promoted for their scale and autonomy, but create
 ✅ **Adopt**
 
 | Agent -> Agent +
-Endpoint (API) -> Agent | Avoid leveraging protocols such as HTTP, JSON-RPC, gRPC, A2A, and ACP that enable direct communication and invocation of one agent to another. +
+Endpoint (API) -> Agent | Avoid leveraging protocols such as HTTP, JSON-RPC, gRPC, A2A, and ACP from inside an agent's own code path to reach another agent. This bypasses platform mediation and gives up durability, retries, and audit. If the model genuinely should decide which agent runs next, use an AutonomousAgent coordination capability (delegation, handoff, teams, moderation) instead, see the ✅ Adopt row above. +
  +
 ⚠️  **Avoid**
 
-| Agent -> MCP Server -> Agent | It is best to avoid using an agent’s ability to call tools or services as a way to reach other agents. This creates indirect connections that reduce clarity and make the system harder to reason about. +
+| Agent -> MCP Server -> Agent | It is best to avoid using an agent’s ability to call tools or services as a way to reach other agents over a protocol such as MCP. This creates indirect connections that reduce clarity and make the system harder to reason about. (Note: this is distinct from the coordination tools the AutonomousAgent runtime exposes to the model for delegation, handoff, teams, or moderation, which are platform-mediated and durable.) +
  +
 ⚠️  **Avoid**
 
@@ -58,15 +65,17 @@ Large language models (LLMs) are unpredictable and unreliable, as are network co
 
 Agentic flows need to deal with things like timeouts and network partition events, especially when talking to relatively slow, token-streaming LLMs.
 
-The real solution to agent-to-agent communication may seem extreme: _never allow direct agent-to-agent communications_. 
+The real solution to agent-to-agent communication may seem extreme: _never allow ad-hoc, protocol-level agent-to-agent communications_.
 
-Agents need to do their one thing, and the work of composition, orchestration, and resilience should be left to a supervising workflow.
+Agents need to do their one thing, and the work of composition, orchestration, and resilience should be left to a supervisor that runs on the Akka runtime: a Workflow when the orchestration steps are fixed in code (the application writes the steps, the Workflow component provides the durability and retry machinery), or an AutonomousAgent coordination capability when the model genuinely should decide which agent runs next (the framework itself drives the loop). Both approaches inherit the same composability, durability, and recovery guarantees from the runtime. The Workflow is the application's mediator; the capability framework is the framework's mediator. Either one is a sound answer to the question above, the choice rests on whether the sequence is fixed in code or decided by the model.
 
 How do we actually communicate with other agents and do it the right way?
 
 == Workflow orchestration
 
 The structure, sequence, scale, and resilience of multi-agent collaborations should be done through the Akka https://doc.akka.io/sdk/workflows.html[Workflow] component. See the https://doc.akka.io/sdk/workflows.html[official documentation] for guides on general Workflow use as well as how to build agentic workflows with sequential, parallel, state-transition, and event-driven logic. Implement Workflows across long-running processes with an unknown stop time by incorporating retries and failure logic within the orchestration.
+
+When you want the model to decide the next agent rather than encoding the sequence in workflow steps, an xref:sdk:autonomous-agents.adoc[Autonomous Agent] with delegation, handoff, teams, or moderation is the framework-driven equivalent. See xref:sdk:autonomous-agents/capabilities.adoc[].
 
 == Component client
 

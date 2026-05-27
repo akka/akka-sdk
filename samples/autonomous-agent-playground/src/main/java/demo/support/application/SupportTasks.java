@@ -1,0 +1,16 @@
+package demo.support.application;
+
+import akka.javasdk.agent.task.Task;
+
+// tag::class[]
+public class SupportTasks {
+
+  public record SupportResolution(String category, String resolution, boolean resolved) {}
+
+  // prettier-ignore
+  public static final Task<SupportResolution> RESOLVE = Task
+    .name("Resolve")
+    .description("Resolve a customer support request")
+    .resultConformsTo(SupportResolution.class);
+}
+// end::class[]

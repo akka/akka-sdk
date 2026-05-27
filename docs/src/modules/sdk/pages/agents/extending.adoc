@@ -87,6 +87,7 @@ When you pass a `Class` instead of an instance, the class is only instantiated w
 
 For this approach to work, you must register the class with a xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[DependencyProvider] in your service setup. The DependencyProvider is responsible for creating and managing instances of these classes when they're needed. This gives you complete control over how tool dependencies are instantiated and managed throughout your application.
 
+[#component_tools]
 == Using Akka components as function tools
 
 Akka components within the same application can be used as function tools for agents. This allows agents to interact with your domain model directly by invoking command handlers on Event Sourced Entities, Key Value Entities, Workflows, and Views.
@@ -117,6 +118,7 @@ When using Akka components as tools, the agent can directly modify your applicat
 
 This approach is particularly useful when you want an agent to orchestrate operations across multiple components in your application, or when an agent needs to access and manipulate your domain model based on user requests.
 
+[#mcp_tools]
 == Using tools from remote MCP servers ==
 
 xref:mcp-endpoints.adoc[Akka MCP endpoints] declared in other services, or third party MCP services can be added to

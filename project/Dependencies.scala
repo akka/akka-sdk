@@ -8,12 +8,12 @@ object Dependencies {
     val ProtocolVersionMinor = 1
   }
 
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.5.52")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.3")
 
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
-  val AkkaVersion = "2.10.17"
+  val AkkaVersion = "2.10.18"
   val AkkaHttpVersion = "10.7.4" // Note: should at least the Akka HTTP version required by Akka gRPC
   val AkkaGrpcVersion = akka.grpc.gen.BuildInfo.version
   val GoogleProtobufVersion = akka.grpc.gen.BuildInfo.googleProtobufVersion
@@ -24,10 +24,10 @@ object Dependencies {
 
   val ScalaTestVersion = "3.2.14"
   // https://github.com/akka/akka/blob/main/project/Dependencies.scala#L31
-  val JacksonVersion = "2.20.1"
+  val JacksonVersion = "2.21.2"
   val JacksonDatabindVersion = JacksonVersion
-  val JacksonAnnotationsVersion = "2.20"
-  val Langchain4jVersion = "1.11.0"
+  val JacksonAnnotationsVersion = "2.21"
+  val Langchain4jVersion = "1.15.0"
   val LogbackVersion = "1.5.23"
   val LogbackContribVersion = "0.1.5"
   val JUnitVersion = "4.13.2"

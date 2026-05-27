@@ -9,7 +9,6 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.{ List => JList }
 
-import scala.annotation.nowarn
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
@@ -132,16 +131,8 @@ object EventingTestKitImpl {
 
     def emit(data: ByteString, metadata: SdkMetadata): Unit = {
 
-      // FIXME maybe we could improve validation for metadata?
       def convertMetadataEntry(sdkMetadataEntry: SdkMetadataEntry): MetadataEntry = {
-        val mde = MetadataEntry(sdkMetadataEntry.getKey)
-        if (sdkMetadataEntry.isText) {
-          mde.withStringValue(sdkMetadataEntry.getValue)
-        } else {
-          @nowarn("msg=deprecated")
-          val binary = sdkMetadataEntry.getBinaryValue;
-          mde.withBytesValue(ByteString.copyFrom(binary))
-        }
+        MetadataEntry(sdkMetadataEntry.getKey).withStringValue(sdkMetadataEntry.getValue)
       }
 
       val testKitMetadata =
@@ -355,10 +346,7 @@ private[testkit] class IncomingMessagesImpl(val sourcesHolder: ActorRef, val ser
     Await.result(addSource, 10.seconds)
   }
 
-  override def publish(message: ByteString): Unit =
-    publish(message, SdkMetadata.EMPTY)
-
-  override def publish(message: ByteString, metadata: SdkMetadata): Unit = {
+  protected def publish(message: ByteString, metadata: SdkMetadata): Unit = {
     val addSource = sourcesHolder.ask(SourcesHolder.Publish(message, metadata))(5.seconds)
     Await.result(addSource, 5.seconds)
   }
@@ -366,10 +354,8 @@ private[testkit] class IncomingMessagesImpl(val sourcesHolder: ActorRef, val ser
   override def publish(message: Array[Byte]): Unit =
     publish(message, SdkMetadata.EMPTY)
 
-  override def publish(message: Array[Byte], metadata: SdkMetadata): Unit = {
-    val addSource = sourcesHolder.ask(SourcesHolder.Publish(ByteString.copyFrom(message), metadata))(5.seconds)
-    Await.result(addSource, 5.seconds)
-  }
+  override def publish(message: Array[Byte], metadata: SdkMetadata): Unit =
+    publish(ByteString.copyFrom(message), metadata)
 
   override def publish(message: TestKitMessage[_]): Unit = message.getPayload match {
     case javaPb: GeneratedMessageV3 => publish(javaPb.toByteString, message.getMetadata)

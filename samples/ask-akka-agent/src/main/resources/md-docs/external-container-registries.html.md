@@ -145,7 +145,7 @@ To connect your Akka project to Azure Container Registry (ACR), the parameters y
 - Password: The password is based on the " *service principal*." To create a service principal (like `akka-docker-reader`) run the command below.
 
 ```command
-ACR_REGISTRY_ID=$(az acr show —name akka-registry —query id —output tsv)
+ACR_REGISTRY_ID=$(az acr show --name akka-registry --query id --output tsv)
 ```
 
 ```command
@@ -154,7 +154,7 @@ SP_PASSWD=$(az ad sp create-for-rbac --name http://akka-docker-reader --scopes $
 - Username: The username is the application ID of the "service principal." To retrieve the ID, run the command below.
 
 ```command
-SP_APP_ID=$(az ad sp show —id http://akka-docker-reader —query appId —output tsv)
+SP_APP_ID=$(az ad sp show --id http://akka-docker-reader --query appId --output tsv)
 ```
 When you use the Akka Console, you only need to fill in the registry name for the Server URL.
 

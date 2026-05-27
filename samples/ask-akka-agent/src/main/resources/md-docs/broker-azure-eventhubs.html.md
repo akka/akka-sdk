@@ -43,16 +43,22 @@ Under "Shared access tokens" for the created container, generate and note the Bl
 
 Store the event hub connection string and the checkpoint store SAS token as Akka secrets:
 
+```command
 akka secret create generic azure-eventhub-secret \
 --literal connection-string="<hub connection string>" \
---literal store-sas-token="<store SAS token>" Configure the broker:
+--literal store-sas-token="<store SAS token>"
+```
+Configure the broker:
 
+```command
 akka projects config set broker \
 --broker-service eventhubs \
 --event-hubs-connection-string-secret azure-eventhub-secret/connection-string \
 --event-hubs-checkpoint-store-sas-token-secret azure-eventhub-secret/store-sas-token \
 --event-hubs-checkpoint-store-endpoint "https://<your-storage-account-name>.blob.core.windows.net" \
 --event-hubs-checkpoint-store-container-name <your-container-name>
+```
+
 ## <a href="about:blank#_special_caveats_when_using_event_hubs_as_broker"></a> Special caveats when using event hubs as broker
 
 ### <a href="about:blank#_topic"></a> Topic
@@ -86,7 +92,7 @@ If no subject metadata is available the events are spread over the partitions in
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Aiven for Kafka](broker-aiven.html) [Manage secrets](secrets.html)
+[Self-hosted Kafka](broker-kafka.html) [Manage secrets](secrets.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

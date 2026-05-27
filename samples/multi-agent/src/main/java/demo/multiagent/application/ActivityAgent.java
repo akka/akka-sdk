@@ -1,27 +1,27 @@
 package demo.multiagent.application;
 
+// tag::all[]
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.AgentRole;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import demo.multiagent.domain.AgentRequest;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // tag::description[]
 @Component(
   id = "activity-agent",
   name = "Activity Agent",
   description = """
-    An agent that suggests activities in the real world. Like for example,
-    a team building activity, sports, an indoor or outdoor game,
-    board games, a city trip, etc.
+  An agent that suggests activities in the real world. Like for example, \
+  a team building activity, sports, an indoor or outdoor game, \
+  board games, a city trip, etc.\
   """
 )
-@AgentRole("worker")
 public class ActivityAgent extends Agent {
 
   // end::description[]
-
   // tag::system_message[]
   private static final String SYSTEM_MESSAGE =
     """
@@ -36,6 +36,8 @@ public class ActivityAgent extends Agent {
     """.stripIndent();
   // end::system_message[]
 
+  private static final Logger logger = LoggerFactory.getLogger(ActivityAgent.class);
+
   private final ComponentClient componentClient;
 
   public ActivityAgent(ComponentClient componentClient) {
@@ -43,6 +45,7 @@ public class ActivityAgent extends Agent {
   }
 
   public Effect<String> query(AgentRequest request) {
+    logger.info("Invoked for user [{}] with: {}", request.userId(), request.message());
     var allPreferences = componentClient
       .forEventSourcedEntity(request.userId())
       .method(PreferencesEntity::getPreferences)
@@ -60,3 +63,4 @@ public class ActivityAgent extends Agent {
     return effects().systemMessage(SYSTEM_MESSAGE).userMessage(userMessage).thenReply();
   }
 }
+// end::all[]

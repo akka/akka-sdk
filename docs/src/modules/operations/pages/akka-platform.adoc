@@ -55,7 +55,6 @@ xref:operations:organizations/index.adoc[] are the root of the Akka management t
 
 * xref:operations:organizations/manage-users.adoc[]
 * xref:operations:organizations/regions.adoc[]
-* xref:operations:organizations/billing.adoc[]
 
 == Projects
 xref:operations:projects/index.adoc[] in Akka are the place where services are deployed to. They can span xref:operations:organizations/regions.adoc[] and are the central management point for operating groups of xref:operations:services/index.adoc[] in Akka.

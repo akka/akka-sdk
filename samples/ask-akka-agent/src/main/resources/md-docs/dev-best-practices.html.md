@@ -13,19 +13,19 @@ Akka is ideally suited for the creation of *Microservices*. Microservices genera
 
 ## <a href="about:blank#_domain_driven_design"></a> Domain Driven Design
 
-Domain-driven design (DDD) is the concept that the structure and language of software code (class names, class methods, class variables) should match the business domain. For example, if a software processes loan applications, it might have classes such as LoanApplication and Customer, and methods such as AcceptOffer and Withdraw. — [Wikipedia](https://en.wikipedia.org/wiki/Domain-driven_design) Akka makes it easy and fast to build services using the concepts of Domain Driven Design (DDD). While it’s not necessary to understand all the ins and outs of Domain Driven Design, you’ll find a few of the concepts that make building services even more straightforward below. See [Project structure](../concepts/architecture-model.html) for more information on the role of your domain model in Akka. Akkademy provides a free course on [Domain Driven Design](https://akkademy.akka.io/learn/courses/6/reactive-architecture2-domain-driven-design).
+Domain-driven design (DDD) is the concept that the structure and language of software code (class names, class methods, class variables) should match the business domain. For example, if a software processes loan applications, it might have classes such as LoanApplication and Customer, and methods such as AcceptOffer and Withdraw. — [Wikipedia](https://en.wikipedia.org/wiki/Domain-driven_design) Akka makes it easy and fast to build services using the concepts of Domain Driven Design (DDD). While it’s not necessary to understand all the ins and outs of Domain Driven Design, you’ll find a few of the concepts that make building services even more straightforward below. See [Architecture](../concepts/architecture-model.html) for more information on the role of your domain model in Akka. Akkademy provides a free course on [Domain Driven Design](https://akkademy.akka.io/learn/courses/6/reactive-architecture2-domain-driven-design).
 
 ### <a href="about:blank#bounded-context"></a> Bounded context
 
 [Bounded context](https://martinfowler.com/bliki/BoundedContext.html) is a concept that divides large domain models into smaller groups that are explicit about their interrelationships. Normally a microservice is a bounded context. You *may* choose to have multiple bounded contexts in a microservice.
 
-Each of these contexts will have autonomy to evolve the models it owns. Keeping each model within strict boundaries allows different modelling for entities that look similar but have slightly different meaning in each of the contexts. Each bounded context should have its own domain, application, and API layers as described in [Project structure](../concepts/architecture-model.html).
+Each of these contexts will have autonomy to evolve the models it owns. Keeping each model within strict boundaries allows different modelling for entities that look similar but have slightly different meaning in each of the contexts. Each bounded context should have its own domain, application, and API layers as described in [Architecture](../concepts/architecture-model.html).
 
 ![Bounded Context](_images/bounded-context.svg)
 
 ### <a href="about:blank#_events_first"></a> Events first
 
-Defining your data structures first, and splitting them into bounded contexts, will also help you think about all the different interactions your data needs to have. These interactions, like `ItemAddedToShoppingCart` or `LightbulbTurnedOn` are the events that are persisted and processed in Akka. Defining your data structures first, makes it easier to think about which events are needed and where they fit into your design. These data structures and events will live in your domain model layer as described in [Project structure](../concepts/architecture-model.html).
+Defining your data structures first, and splitting them into bounded contexts, will also help you think about all the different interactions your data needs to have. These interactions, like `ItemAddedToShoppingCart` or `LightbulbTurnedOn` are the events that are persisted and processed in Akka. Defining your data structures first, makes it easier to think about which events are needed and where they fit into your design. These data structures and events will live in your domain model layer as described in [Architecture](../concepts/architecture-model.html).
 
 ### <a href="about:blank#_message_migration"></a> Message migration
 
@@ -47,6 +47,29 @@ Deciding how many components and concepts to fit into a single service can be co
 - **You gain flexibility for upgrades**. You can upgrade services in a "rolling" fashion, where new instances are started before older instances are removed, allowing new versions to be deployed with no downtime or interruption.
 - **You gain security**. Services serve as a security boundary both in your system overall and between teams.
 - **You get granular visibility into costs**. Services are all billed separately, so it’s easier to see and understand costs and billing on a per-service basis if you break your services up in some way that matches your organizational needs overall.
+
+### <a href="about:blank#_payload_and_state_size"></a> Payload and state size
+
+When designing your entity state and the messages (commands and events) that flow between services, you must account for the platform’s specific resource limits. Exceeding these limits can result in failed replication, timed-out requests, or system instability.
+
+| Resource Type | Hard Limit | Notes |
+| --- | --- | --- |
+| KVE & Workflow State/Snapshot | 10 MB | The absolute maximum size for stored state. |
+| Model Responses | 2 MB | Hard limit for responses generated by AI models. |
+| Entity/Workflow Requests & Responses | < 1 MB | **Critical:** The limit for any message sent between cluster nodes. |
+| Service-to-Service Eventing | 1 MB | Events larger than 1 MB cannot be replicated or consumed by other services. |
+| Timed Action Parameters | 1 KB | Strict limit for input parameters. Use an Entity ID reference for larger payloads. |
+
+#### <a href="about:blank#_the_1_mb_replication_ceiling"></a> The 1 MB Replication Ceiling
+
+While an entity can technically store a state or snapshot up to **10 MB**, any state change or event exceeding **1 MB** will fail to replicate across regions.
+
+|  | If an entity stores state or events larger than 1 MB, it becomes "isolated." It cannot be synchronized to other regions, nor can it be consumed by other services via eventing. |
+
+#### <a href="about:blank#_performance_recommendations"></a> Performance Recommendations
+
+- **Entity Latency & Throughput**: For optimal performance, aim to keep individual requests and responses **targeting** entities below **500 KB**.
+- **Large Assets**: If you need to associate large assets (like images or large documents) with an entity, store the asset in an external blob store and keep only the reference (URL/ID) in the entity state.
 
 ## <a href="about:blank#message-deduplication"></a> Message deduplication
 
@@ -151,7 +174,7 @@ public class CounterByValueView extends View {
     public Effect<CounterByValue> onEvent(CounterEvent counterEvent) {
       var name = updateContext().eventSubject().get();
       var currentRow = rowState();
-      var currentValue = Optional.ofNullable(currentRow).map(CounterByValue::value).orElse// (0);
+      var currentValue = Optional.ofNullable(currentRow).map(CounterByValue::value).orElse(0);
       return switch (counterEvent) {
         case ValueIncreased increased -> effects()
           .updateRow(new CounterByValue(name, currentValue + increased.value())); // (1)
@@ -280,7 +303,7 @@ public class CounterStoreUpdater extends Consumer {
     Long seqNum
   ) {
     var counterId = messageContext().eventSubject().get();
-    var currentValue = currentEntry.map(CounterEntry::value).orElse// (0);
+    var currentValue = currentEntry.map(CounterEntry::value).orElse(0);
     return switch (counterEvent) {
       case ValueIncreased increased -> {
         var updatedEntry = new CounterEntry(
@@ -459,7 +482,7 @@ Keep in mind that using collection types not supported by the Jackson serializat
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Data sanitization](sanitization.html) [Using an AI coding assistant](ai-coding-assistant.html)
+[Metrics](metric.html) [Using an AI coding assistant](ai-coding-assistant.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

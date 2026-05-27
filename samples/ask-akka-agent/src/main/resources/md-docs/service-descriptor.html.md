@@ -1,6 +1,7 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
 - [Reference](../index.html)
+- [Descriptors reference](index.html)
 - [Service descriptor](service-descriptor.html)
 
 <!-- </nav> -->
@@ -25,13 +26,17 @@ The **ServiceSpec** defines the detailed configuration of an Akka service, inclu
 | Field | Type | Description |
 | --- | --- | --- |
 | **image** | string *required* | The name of the docker image for the service container |
+| **serviceConfig** | string | The name of a service config to apply to this service. The service config must exist in the same project. See [Service configuration overrides](../../operations/services/service-config.html). |
 | **env** | [] [EnvVar (Environment Variables)](about:blank#EnvVar) | Environment variables to be set in the service’s container |
+| **labels** | map[string]string | Labels to attach to the service. Labels are key-value pairs used to organize and categorize services. Disabled by default. |
+| **annotations** | map[string]string | Annotations to attach to the service. Annotations are key-value pairs used to attach arbitrary non-identifying metadata to services. Disabled by default. |
 | **jwt** | [ServiceJwt](about:blank#_servicejwt) | JWT configuration for the service |
 | **resources** | [ServiceResources](about:blank#_serviceresources) | Resource configuration for the service, including instance size and autoscaling |
 | **volumeMounts** | [] [VolumeMount](about:blank#_volumemount) | Volume mounts to mount in the service’s container |
 | **telemetry** | [] [ServiceTelemetry](about:blank#_servicetelemetry) | Telemetry configuration for the service |
 | **replication** | [ServiceReplication](about:blank#_servicereplication) | Replication configuration for stateful components in the service |
 | **tls** | [TLSConfig](about:blank#TLSConfig) | TLS configuration for outbound connections from the service |
+| **workloadIdentity** | [WorkloadIdentity](about:blank#_workloadidentity) | Workload identity configuration for the service |
 
 ### <a href="about:blank#EnvVar"></a> EnvVar (Environment Variables)
 
@@ -61,11 +66,12 @@ A reference to a particular key in a particular secret, used by environment vari
 
 ### <a href="about:blank#_servicejwt"></a> ServiceJwt
 
-The JWT configuration allows a service to manage token signing and validation. Keys are prioritized for matching tokens.
+The JWT configuration allows a service to manage token signing and validation.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| **keys** | [] [JwtKey](about:blank#_jwtkey) | List of JWT keys for signing and validation. Order matters. |
+| **keys** | [] [JwtKey](about:blank#_jwtkey) | Deprecated: use **keySets** instead. List of JWT keys for signing and validation. Order matters. |
+| **keySets** | [] [JwtKeySet](about:blank#_jwtkeyset) | List of JWKS keysets for JWT validation. |
 The order of **keys** is important. When signing or validating, the first matching key will be used, according to the following rules.
 
 For validating:
@@ -114,13 +120,35 @@ Valid values are:
   - `ES256` - Elliptic Curve DSA with SHA256
   - `ES384` - Elliptic Curve DSA with SHA384
   - `ES512` - Elliptic Curve DSA with SHA512
-  - `Ed25519` - Edward’s Curve DSA |
+  - `EdDSA` - Edward’s Curve DSA |
 | **secret** | [ObjectRef](about:blank#_objectref) *required* | The configured secret to use for signing or validating.
 
 This must be a reference to a secret. The secret must have the following keys defined, depending on the algorithm used:
 
   - HMAC algorithms - a key named `secret.key`, containing the bytes of the secret.
   - Asymmetric algorithms - One or both of `private.key` and `public.key`. If only a `private.key` is supplied, the key will only be used for signing, if only a public key is supplied, the key will only be used for validating. The public key must be formatted as an X.509 PEM public key (with a header, `BEGIN PUBLIC KEY`). The private key must be a PEM PKCS-8 key encoded (with a header, `BEGIN PRIVATE KEY`) according to the algorithm the secret is used for. Alternatively, for RSA algorithms, RSA private keys may be PEM PKCS-1 encoded (with a header, `BEGIN RSA PRIVATE KEY`). The keys must not be encrypted. For ECDSA keys, EC key encoding (`BEGIN EC PRIVATE KEY`) is not supported, and PKCS-8 must be used instead. |
+
+### <a href="about:blank#_jwtkeyset"></a> JwtKeySet
+
+A JWKS keyset used for JWT validation. Exactly one of **useOidcDiscovery**, **jwksUrl**, **secret**, or **externalSecret** must be specified.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **issuer** | string | The issuer of tokens that use this keyset.
+
+If a token being validated contains an issuer (iss) claim, this will be matched against it. This allows multiple keysets for different issuers to be provisioned without conflicting.
+
+Setting this parameter is also important if you have keysets from multiple issuers, but you don’t trust that one of them won’t try and spoof the other. Since it pins a particular set of keys to only be used to validate that issuer’s token, if the other tries to spoof it, validation will fail.
+
+Required when **useOidcDiscovery** is true. |
+| **refreshInterval** | duration | How often the keyset is refreshed. This acts as an upper bound; if the source returns a cache TTL (e.g., via `Cache-Control: max-age`), the shorter of the two is used. Defaults to 1 hour. |
+| **allowedAlgorithms** | []string | The set of algorithms allowed for this keyset. If the keyset source doesn’t specify an algorithm, this restricts which algorithms may be used with it.
+
+Valid values are the same as for [JwtKey](about:blank#_jwtkey) **algorithm**. |
+| **useOidcDiscovery** | boolean | If true, the keyset is loaded using OpenID Connect Discovery based on the **issuer**. Requires **issuer** to be set. Incompatible with **jwksUrl**, **secret**, and **externalSecret**. |
+| **jwksUrl** | string | An HTTPS URL from which to load the keyset. Incompatible with **useOidcDiscovery**, **secret**, and **externalSecret**. |
+| **secret** | [SecretKeyRef (details of a referenced secret)](about:blank#SecretKeyRef) | A reference to a secret containing the JWKS keyset. The referenced key within the secret should contain a JSON JWKS document. Incompatible with **useOidcDiscovery**, **jwksUrl**, and **externalSecret**. |
+| **externalSecret** | [SecretKeyRef (details of a referenced secret)](about:blank#SecretKeyRef) | A reference to an external secret containing the JWKS keyset. The referenced key within the external secret should contain a JSON JWKS document. Incompatible with **useOidcDiscovery**, **jwksUrl**, and **secret**. |
 
 ### <a href="about:blank#_objectref"></a> ObjectRef
 
@@ -168,9 +196,10 @@ A volume that should be mounted into the service container. Only one source may 
 
 | Field | Type | Description |
 | --- | --- | --- |
-| **mountPath** *required* | string | Path within the container at which the volume should be mounted. Must not contain ':'. |
+| **mountPath** | string *required* | Path within the container at which the volume should be mounted. Must not contain ':'. |
 | **secret** | [SecretVolumeSource](about:blank#_secretvolumesource) | A secret that should be used to populate this volume. |
 | **externalSecret** | [ExternalSecretVolumeSource](about:blank#_externalsecretvolumesource) | An external secret that should be used to populate this volume. |
+| **workloadIdentityToken** | [WorkloadIdentityTokenVolumeSource](about:blank#_workloadidentitytokenvolumesource) | A workload identity token that should be used to populate this volume. |
 
 ### <a href="about:blank#_secretvolumesource"></a> SecretVolumeSource
 
@@ -178,7 +207,7 @@ Adapts a secret into a volume that can be mounted into the service’s container
 
 | Field | Type | Description |
 | --- | --- | --- |
-| **secretName** *required* | string | The name of a secret in the service’s project to mount. |
+| **secretName** | string *required* | The name of a secret in the service’s project to mount. |
 | **defaultMode** | int | Mode bits to set the permissions on created files from the secret by default. Must be an octal value between 0000 and 0777, or a decimal value between 0 and 511. Defaults to 0644. |
 | **optional** | boolean | Specifies whether the container should fail to start if the secret doesn’t exist. |
 Example of using a volume mount to mount a secret named `google-application-credentials` at path `/google-application-credentials-path`, which is later referenced by an environment variable named `GOOGLE_APPLICATION_CREDENTIALS` pointing to a file named `credentials.json` in that path:
@@ -205,7 +234,17 @@ Adapts an external secret into a volume that can be mounted into the service’s
 
 | Field | Type | Description |
 | --- | --- | --- |
-| **provider** *required* | string | The name of the external secret to mount. |
+| **provider** | string *required* | The name of the external secret to mount. |
+
+### <a href="about:blank#_workloadidentitytokenvolumesource"></a> WorkloadIdentityTokenVolumeSource
+
+Projects a workload identity token that can be mounted into the service’s container.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **path** | string *required* | The name of the file that the token will be projected into |
+| **audience** | string *required* | The audience of the token. This will appear in the `aud` claim of the token. |
+| **expirationSeconds** | int | The amount of time that the token will be valid for. The token will be rotated when it is older than 80% of this, or older than 24 hours. Must be at least 10 minutes. Defaults to 1 hour. |
 
 ### <a href="about:blank#_servicetelemetry"></a> ServiceTelemetry
 
@@ -283,6 +322,41 @@ service:
       type: JKS
       passwordKey: truststore-password
 ```
+
+### <a href="about:blank#_workloadidentity"></a> WorkloadIdentity
+
+Workload identity configuration for a service.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **aws** | [AwsWorkloadIdentity](about:blank#_awsworkloadidentity) | AWS workload identity configuration. Only relevant for AWS regions, ignored in other regions. |
+| **azure** | [AzureWorkloadIdentity](about:blank#_azureworkloadidentity) | Azure workload identity configuration. Only relevant for Azure regions, ignored in other regions. |
+| **gcp** | [GcpWorkloadIdentity](about:blank#_gcpworkloadidentity) | GCP workload identity configuration. Only relevant for GCP regions, ignored in other regions. |
+
+### <a href="about:blank#_awsworkloadidentity"></a> AwsWorkloadIdentity
+
+Workload identity configuration for AWS regions to authenticate with the AWS API. Setting this configuration will inject your Akka services with the necessary environment variables and tokens for the AWS SDK to automatically authenticate with AWS APIs using workload identity.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **roleArn** | string *required* | The ARN of the role that you wish the Akka service to assume |
+
+### <a href="about:blank#_azureworkloadidentity"></a> AzureWorkloadIdentity
+
+Workload identity configuration for Azure regions to authenticate with the Azure API. Setting this configuration will inject your Akka services with the necessary environment variables and tokens for the Azure SDK to automatically authenticate with Azure APIs using workload identity.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **clientId** | string *required* | The client id of the configured federated identity to authenticate as |
+| **tenantId** | string | The tenant id of the Azure account. Defaults to the same tenant ID as the regions Kubernetes cluster runs in. |
+
+### <a href="about:blank#_gcpworkloadidentity"></a> GcpWorkloadIdentity
+
+Workload identity configuration for GCP regions to authenticate with the GCP API. Note that GCP workload identity is enabled regardless of whether this is configured or not. The GCP SDK will automatically use your Akka service’s workload identity.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **gcpServiceAccount** | string | If you wish your service to impersonate a GCP service account, rather than using their own principal directly, the service account that you wish them to assume. |
 
 <!-- <footer> -->
 <!-- <nav> -->

@@ -121,7 +121,5 @@ private[akka] final class EventSourcedResultImpl[R, S, E](
           "expected event type [" + expectedClass.getName + "] but found [" + next.getClass.getName + "]")
     }
 
-  override def didEmitEvents(): Boolean = didPersistEvents()
-
   override def getExpireAfter(): Optional[Duration] = effect.ttl.toJava
 }

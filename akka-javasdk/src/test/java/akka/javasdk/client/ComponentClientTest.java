@@ -22,6 +22,7 @@ import akka.javasdk.testmodels.view.ViewTestModels;
 import akka.javasdk.testmodels.view.ViewTestModels.UserByEmailWithGet;
 import akka.runtime.sdk.spi.*;
 import akka.runtime.sdk.spi.AgentClient;
+import akka.runtime.sdk.spi.AutonomousAgentClient;
 import akka.runtime.sdk.spi.TimedActionClient;
 import akka.runtime.sdk.spi.ViewClient;
 import akka.runtime.sdk.spi.WorkflowClient;
@@ -41,7 +42,6 @@ class ComponentClientTest {
     // FIXME what are we actually testing here?
     var dummyComponentClients =
         new ComponentClients() {
-
           @Override
           public EntityClient eventSourcedEntityClient() {
             return null;
@@ -83,6 +83,11 @@ class ComponentClientTest {
           }
 
           @Override
+          public AutonomousAgentClient autonomousAgentClient() {
+            return null;
+          }
+
+          @Override
           public SpiObjectStorage objectStorage() {
             return null;
           }
@@ -92,6 +97,7 @@ class ComponentClientTest {
             dummyComponentClients,
             serializer,
             null,
+            Option.empty(),
             Option.empty(),
             ExecutionContext.global(),
             null);
@@ -170,6 +176,5 @@ class ComponentClientTest {
         componentClient.forView().method(UserByEmailWithGet::getUser);
 
     // not much to assert here
-
   }
 }

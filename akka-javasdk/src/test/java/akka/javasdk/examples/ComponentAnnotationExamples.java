@@ -7,9 +7,7 @@ package akka.javasdk.examples;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 
-/**
- * Example demonstrating the new Component annotation and backward compatibility with ComponentId.
- */
+/** Example demonstrating the Component annotation. */
 public class ComponentAnnotationExamples {
 
   /**
@@ -30,25 +28,11 @@ public class ComponentAnnotationExamples {
     // Component implementation here
   }
 
-  /**
-   * Example using the legacy ComponentId annotation. This continues to work for backward
-   * compatibility.
-   */
-  @Component(id = "legacy-component")
-  public static class LegacyEntity extends KeyValueEntity<String> {
-    // Component implementation here
-  }
-
   /** Demonstration of how the framework reads component metadata. */
   public static void demonstrateUsage() {
-    // Reading metadata from new Component annotation
-    System.out.println("New Component annotation:");
-    // - ID is available from both new and old annotations
-    // - Name and description are only available from the new Component annotation
-    // - Framework checks Component first, then falls back to ComponentId for backward compatibility
-
-    System.out.println("Legacy ComponentId annotation:");
-    // - Only ID is available
-    // - Name and description return empty/null
+    // Reading metadata from Component annotation
+    System.out.println("Component annotation:");
+    // - ID is available from the annotation
+    // - Name and description are optional fields
   }
 }

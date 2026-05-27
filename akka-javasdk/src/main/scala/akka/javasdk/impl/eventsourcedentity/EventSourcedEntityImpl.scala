@@ -61,8 +61,6 @@ private[impl] object EventSourcedEntityImpl {
       extends AbstractContext
       with CommandContext {
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
-
-    override def commandId(): Long = 0
   }
 
   private class EventSourcedEntityContextImpl(override final val entityId: String, override val selfRegion: String)
@@ -175,6 +173,9 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
           "To use replication filters the EventSourcedEntity class must be annotated with @EnableReplicationFilter.")
       }
 
+      // command.sequenceNumber here is the last known sequence number
+      // For a fresh entity, this is 0.
+      // Note that this is not the event, but the incoming command
       var currentSequence = command.sequenceNumber
 
       def emitEvents(events: Iterable[Any], eventsMetadata: Iterable[Metadata], deleteEntity: Boolean) = {
@@ -189,10 +190,10 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
             events.zip(eventsMetadata)
 
         eventsAndMetadata.foreach { case (event, eventMetadata) =>
+          currentSequence += 1 // whatever the current is, the next event will be +1
           updatedState = entityHandleEvent(updatedState, event.asInstanceOf[AnyRef], eventMetadata, currentSequence)
           if (updatedState == null)
             throw new IllegalArgumentException("Event handler must not return null as the updated state.")
-          currentSequence += 1
         }
 
         errorOrReply(updatedState) match {
@@ -265,7 +266,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     entityHandleEvent(state, event, eventMetadata, eventEnv.sequenceNumber)
   }
 
-  def entityHandleEvent(
+  private def entityHandleEvent(
       state: SpiEventSourcedEntity.State,
       event: AnyRef,
       eventMetadata: Metadata,

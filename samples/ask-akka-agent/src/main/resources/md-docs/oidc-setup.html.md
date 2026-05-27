@@ -1,7 +1,7 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
 - [Reference](../index.html)
-- [OpenID Connect Setup](oidc-setup.html)
+- [OpenID connect](oidc-setup.html)
 
 <!-- </nav> -->
 
@@ -172,7 +172,7 @@ akka roles add-binding --group akka-dev-admin --role viewer --project project2
 
 <!-- <footer> -->
 <!-- <nav> -->
-[JSON Web Tokens (JWTs)](../jwts.html) [CLI command reference](../cli/akka-cli/index.html)
+[JSON Web Tokens (JWTs)](../jwts.html) [Specify reference](../specify/index.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

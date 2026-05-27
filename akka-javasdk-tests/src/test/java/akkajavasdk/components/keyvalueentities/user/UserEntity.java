@@ -83,8 +83,7 @@ public class UserEntity extends KeyValueEntity<User> {
 
   public Effect<Ok> deleteUser(Delete cmd) {
     logger.info(
-        "Deleting user with commandId={} commandName={} current={}",
-        commandContext().commandId(),
+        "Deleting user with commandName={} current={}",
         commandContext().commandName(),
         currentState());
     return effects().deleteEntity().thenReply(Ok.instance);
@@ -96,8 +95,7 @@ public class UserEntity extends KeyValueEntity<User> {
 
   public Effect<Integer> restart(Restart cmd) { // force entity restart, useful for testing
     logger.info(
-        "Restarting counter with commandId={} commandName={} current={}",
-        commandContext().commandId(),
+        "Restarting counter with commandName={} current={}",
         commandContext().commandName(),
         currentState());
 

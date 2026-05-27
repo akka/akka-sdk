@@ -1,0 +1,186 @@
+= Tasks
+
+include::ROOT:partial$include.adoc[]
+
+An autonomous agent is a process. It runs, has a definition, and handles work, but has no result type of its own. A task is a separate persistent entity: a typed unit of work with its own identity, result schema, and lifecycle, independent of any agent.
+
+Because tasks exist independently, they can be handed off between agents, queried by external clients, and managed with their own lifecycle. An agent can be stopped and restarted without affecting task state. Multiple tasks can be assigned to a single agent, or a single task can move through several agents via handoff. The task defines what the result should look like; the agent provides the capability to produce it.
+
+Tasks also drive coordination. They flow between agents, and the coordination patterns of delegation, handoff, and teams all operate through task creation, assignment, and completion.
+
+== Defining tasks
+
+Task definitions are immutable constants, typically declared as `static final` fields. A definition specifies the task name, a description of what kind of work it represents, and the expected result type.
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/research/application/ResearchTasks.java[ResearchTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/research/application/ResearchTasks.java[tag=class]
+----
+
+The result type is a Java record. The model's structured output is validated against this schema, and the typed result is available when querying the completed task.
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/research/application/ResearchBrief.java[ResearchBrief.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/research/application/ResearchBrief.java[tag=class]
+----
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/research/application/ResearchFindings.java[ResearchFindings.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/research/application/ResearchFindings.java[tag=class]
+----
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/research/application/AnalysisReport.java[AnalysisReport.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/research/application/AnalysisReport.java[tag=class]
+----
+
+If `resultConformsTo` is not declared on a task definition, the result type defaults to `String`. The task completes with the model's free-form text response and no schema validation is applied.
+
+[#task-rules]
+== Task rules
+
+A task can declare one or more rules that validate the structured result before completion is accepted. Rules implement `TaskRule<R>` where `R` is the task's result type. When the task is about to complete, each rule's `onComplete` method is called with the deserialized result. If any rule returns `Result.Rejected`, the task transitions to `RESULT_REJECTED`. On the next iteration the runtime injects a reminder into the model's context explaining that the previous result was rejected and why, so the agent can correct and resubmit. If the agent never satisfies the rules within its iteration limit, the task transitions to `FAILED`.
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/research/application/ResearchFindingsRule.java[ResearchFindingsRule.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/research/application/ResearchFindingsRule.java[tag=class]
+----
+
+Attach rules to a task definition with `.rules(...)`:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/research/application/ResearchTasks.java[ResearchTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/research/application/ResearchTasks.java[tag=with-rule]
+----
+
+Rules are evaluated in declaration order. The first rejection short-circuits and reports its reason. Rule implementations must have a public no-arg constructor.
+
+== Creating task instances
+
+Task definitions are templates. To create an actual task instance, add per-request details (instructions and optional attachments) to a definition. The definition itself is unchanged because all methods return new instances.
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/docreview/api/DocReviewEndpoint.java[DocReviewEndpoint.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/docreview/api/DocReviewEndpoint.java[tag=create-with-attachment]
+----
+
+Attachments carry large content, such as a document, a transcript, or a JSON payload, without inflating the instruction text. The runtime delivers attachments to the model's context alongside the instructions. Attachments travel with the task across agent boundaries: a handoff target sees the original task's attachments, and a delegated worker sees the subtask's attachments.
+
+Attachments can also be images or PDFs, referenced by URI rather than inlined. The runtime resolves `http(s)://` and `object://` references automatically, and a custom `ContentLoader` handles other sources. See xref:sdk:autonomous-agents/defining.adoc#attachment-content[Loading attachment content] for details.
+
+== Task templates
+
+A `TaskTemplate` is a task definition with a parameterized instruction string. Placeholders use `\{paramName}` syntax and are filled in when the template is turned into a submittable `Task`. Templates fit cases where the structure of the instructions is fixed and only a few values change per invocation. They are particularly useful when the model itself supplies the values at delegation or task-claim time.
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/devteam/application/DeveloperTasks.java[DeveloperTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/devteam/application/DeveloperTasks.java[]
+----
+
+Resolve a template into a `Task` in one of two ways:
+
+* `params(Map<String, String>)` substitutes the named placeholders. Missing parameters throw `IllegalArgumentException`.
+* `instructions(String)` discards the template and uses free-form instructions instead, the same as for a regular `Task`.
+
+[source,java,indent=0]
+----
+var task = DeveloperTasks.IMPLEMENT.params(Map.of(
+  "feature", "rate limiter",
+  "requirements", "10 requests per second per user, with 1-minute window"));
+----
+
+A `TaskTemplate` is a `TaskDefinition` and can be passed wherever a `Task` definition is accepted (`TaskAcceptance.of(...)`, delegation tools, the team task list). When a coordinator's or team-lead's model creates a task from a template, the runtime presents the template parameters as structured tool arguments, so the model fills them in directly.
+
+== Task lifecycle
+
+A task reaches a terminal state in one of three ways during execution. The model decides the work is done and produces a result that conforms to the task's declared result schema, and the task transitions to `COMPLETED`. The model decides it cannot make progress and reports a reason, and the task transitions to `FAILED`. Or the iteration limit is reached without either decision, in which case the runtime terminates the task as `FAILED`. A separate `CANCELLED` state covers tasks terminated before execution begins, such as a dependency failure. The status field on the task entity records which path was taken.
+
+A task progresses through these statuses:
+
+[options="header", cols="1,3"]
+|===
+| Status | Description
+
+| `PENDING` | Created but not yet assigned to an agent
+| `ASSIGNED` | Assigned to an agent but not yet started
+| `IN_PROGRESS` | An agent is actively working on it
+| `RESULT_REJECTED` | A xref:#task-rules[task rule] rejected the result. The agent retries on the next iteration.
+| `COMPLETED` | Finished successfully with a typed result
+| `FAILED` | Failed during execution (model decision or iteration limit)
+| `CANCELLED` | Terminated before execution began (for example, by a dependency failure)
+|===
+
+=== Task failure
+
+A task transitions to `FAILED` when the agent decides it cannot complete the work, or when the framework terminates it after the iteration limit. In both cases:
+
+* Sibling tasks queued on the same agent are unaffected and continue in order.
+* The agent itself keeps running; it does not stop because of a task failure. Agents started with `runSingleTask` still auto-stop once their queue drains, as that is their normal completion behavior.
+* The task is terminal, there is no automatic retry. If the work needs to be reattempted, application code creates a new task.
+* Tasks depending on the failed task transition to `CANCELLED` automatically.
+
+Both failure paths (model decision and iteration-limit termination) emit `Notification.TaskFailed`; the recorded failure reason distinguishes them. `Notification.TaskCancelled` is emitted only for the separate `CANCELLED` state, when a task is terminated before it begins, for example by a dependency failure. The task snapshot reports the resulting status. See xref:sdk:autonomous-agents/notifications.adoc[Notifications] for the full event catalog.
+
+== Task snapshots
+
+Query a task's current state with the `ComponentClient`. The snapshot includes the status, description, instructions, typed result (if completed), and failure reason (if failed).
+
+[source,java,indent=0]
+----
+var snapshot = componentClient.forTask(taskId).get(ReviewTasks.REVIEW);
+var status = snapshot.status();        // PENDING, ASSIGNED, IN_PROGRESS, RESULT_REJECTED,
+                                       // COMPLETED, FAILED, or CANCELLED
+var result = snapshot.result();        // Optional<ReviewResult>, present if completed
+var reason = snapshot.failureReason(); // Optional<String>, present if failed
+----
+
+== Task dependencies
+
+Tasks can declare dependencies on other tasks. A task with dependencies will not be started by the agent until all dependencies have completed. This enables pipeline patterns where work flows through ordered phases.
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/pipeline/api/PipelineEndpoint.java[PipelineEndpoint.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/pipeline/api/PipelineEndpoint.java[tag=create-with-deps]
+----
+
+Dependencies are specified by task id. The depended-on task must already exist when the dependent is created or assigned. You can create it explicitly via `componentClient.forTask(taskId).create(...)`, or implicitly through `runSingleTask(...)` or `assignTasks(...)`, which create the task before assigning it.
+
+Once the tasks are created, they can be assigned to a single agent instance. The agent processes them in dependency order:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/pipeline/api/PipelineEndpoint.java[PipelineEndpoint.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/pipeline/api/PipelineEndpoint.java[tag=assign-tasks]
+----
+
+If a dependency fails or is cancelled, dependents are cancelled automatically.
+
+== Task notifications
+
+The task entity publishes a `TaskNotification` on every terminal transition so the runtime can observe completion without polling. See xref:sdk:autonomous-agents/notifications.adoc#task-entity-notifications[Task entity notifications] for the full catalog.
+
+Subscribe to the notification stream of a task from application code via `componentClient.forTask(taskId).notificationStream()`. The returned `Source` emits `TaskNotification` events as the task reaches its terminal state. A common pattern is to bridge the stream to the browser as Server-Sent Events from an HTTP endpoint, so a UI can react to task completion without polling:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/TaskNotificationEndpoint.java[TaskNotificationEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/TaskNotificationEndpoint.java[tag=task-notification]
+----
+<1> Subscribe to the task's notification stream.
+<2> Map each `TaskNotification` to a public representation so the wire shape is decoupled from the SDK record.
+<3> A small wire shape with a `kind` discriminator lets clients handle the four terminal cases without depending on SDK types.
+
+== See Also
+
+* xref:sdk:autonomous-agents/client.adoc[Client API]
+* xref:sdk:autonomous-agents/notifications.adoc[Notifications]
+* xref:sdk:autonomous-agents/defining.adoc[Defining an autonomous agent]

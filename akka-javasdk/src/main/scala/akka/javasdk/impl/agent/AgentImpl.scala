@@ -60,6 +60,7 @@ import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAgent.ContentLoadingFailure
@@ -78,6 +79,8 @@ import akka.runtime.sdk.spi.SpiAgent.ToolCallLimitReachedFailure
 import akka.runtime.sdk.spi.SpiAgent.UnsupportedFeatureFailure
 import akka.runtime.sdk.spi.SpiAgent.{ AgentException => SpiAgentException }
 import akka.runtime.sdk.spi.SpiMetadata
+import akka.stream.Materializer
+import akka.stream.SystemMaterializer
 import akka.util.ByteString
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
@@ -92,7 +95,7 @@ import org.slf4j.MDC
  */
 @InternalApi
 private[impl] object AgentImpl {
-  private val log = LoggerFactory.getLogger(classOf[AgentImpl[_]])
+  private val log = LoggerFactory.getLogger(classOf[AgentImpl])
 
   private[impl] class AgentContextImpl(
       override val sessionId: String,
@@ -176,460 +179,13 @@ private[impl] object AgentImpl {
       .get
   }
 
-}
-
-/**
- * INTERNAL API
- */
-@InternalApi
-private[impl] final class AgentImpl[A <: Agent](
-    componentId: String,
-    sessionId: String,
-    val factory: AgentContext => A,
-    sdkExecutionContext: ExecutionContext,
-    tracerFactory: () => Tracer,
-    serializer: Serializer,
-    componentDescriptor: ComponentDescriptor,
-    regionInfo: RegionInfo,
-    promptTemplateClient: Option[OtelContext] => PromptTemplateClient,
-    componentClient: Option[OtelContext] => ComponentClient,
-    overrideModelProvider: OverrideModelProvider,
-    dependencyProvider: Option[DependencyProvider],
-    guardrails: AgentGuardrails,
-    config: Config,
-    _system: ActorSystem[_])
-    extends SpiAgent {
-  import AgentImpl._
-
-  implicit val system: ActorSystem[_] = _system
-
-  private val router: ReflectiveAgentRouter[A] = {
-    new ReflectiveAgentRouter[A](factory, componentDescriptor.methodInvokers, serializer)
-  }
-
-  override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] =
-    Future {
-
-      val telemetryContext = Option(command.telemetryContext)
-      val traceId = telemetryContext.flatMap { context =>
-        Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
-      }
-      traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
-
-      // smuggling 0 arity methods called from the component client through here
-      val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
-      val metadata: Metadata = MetadataImpl.of(command.metadata)
-      val agentContext =
-        new AgentContextImpl(sessionId, regionInfo.selfRegion, metadata, telemetryContext, tracerFactory)
-
-      try {
-        // we need the agent at this scope.
-        // therefore, we initialize it exceptionally outside the router
-        val agent = factory(agentContext)
-        val commandEffect = router.handleCommand(agent, command.name, cmdPayload, agentContext)
-
-        def primaryEffect =
-          commandEffect match {
-            case e: AgentEffectImpl       => e.primaryEffect
-            case e: AgentStreamEffectImpl => e.primaryEffect
-          }
-
-        def secondaryEffect =
-          commandEffect match {
-            case e: AgentEffectImpl       => e.secondaryEffect
-            case e: AgentStreamEffectImpl => e.secondaryEffect
-          }
-
-        def errorOrReply: Either[SpiAgent.Error, (BytesPayload, SpiMetadata)] = {
-          secondaryEffect match {
-            case ErrorReplyImpl(commandException) =>
-              Left(new SpiAgent.Error(commandException.getMessage, Some(serializer.toBytes(commandException))))
-            case MessageReplyImpl(message, m) =>
-              val replyPayload = serializer.toBytesAsJson(message)
-              val metadata = MetadataImpl.toSpi(m)
-              Right(replyPayload -> metadata)
-            case NoSecondaryEffectImpl =>
-              throw new IllegalStateException("Expected reply or error")
-          }
-        }
-
-        primaryEffect match {
-          case req: RequestModel =>
-            val systemMessage = req.systemMessage match {
-              case ConstantSystemMessage(message) => message
-              case template: TemplateSystemMessage =>
-                promptTemplateClient(telemetryContext).getPromptTemplate(template.templateId).formatted(template.args)
-            }
-            val modelProvider = overrideModelProvider.getModelProviderForAgent(componentId).getOrElse(req.modelProvider)
-            val spiModelProvider = toSpiModelProvider(modelProvider)
-            val metadata = MetadataImpl.toSpi(req.replyMetadata)
-            val sessionMemoryClient = deriveMemoryClient(req.memoryProvider, telemetryContext)
-            val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
-            val mcpToolEndpoints = toSpiMcpEndpoints(req.mcpTools)
-
-            val allToolClasses =
-              agent.getClass +: req.toolInstancesOrClasses.map {
-                case cls: Class[_] => cls
-                case any           => any.getClass
-              }
-
-            // first, we need to validate them all against tool name clashes
-            // unlikely, but better to crash it them have them shadowing each other
-            FunctionTools.validateNames(allToolClasses)
-
-            val toolDescriptors =
-              allToolClasses.flatMap(FunctionTools.descriptorsFor)
-
-            val functionTools =
-              FunctionTools.toolInvokersFor(agent) ++
-              req.toolInstancesOrClasses.flatMap {
-                case cls: Class[_] if Reflect.isToolCandidate(cls) =>
-                  FunctionTools.toolComponentInvokersFor(cls, componentClient(telemetryContext))
-                case cls: Class[_] => FunctionTools.toolInvokersFor(cls, dependencyProvider)
-                case any           => FunctionTools.toolInvokersFor(any)
-              }.toMap
-
-            val toolExecutor = new ToolExecutor(functionTools, serializer)
-
-            val responseSchema =
-              if (req.includeJsonSchema)
-                Some(JsonSchema.jsonSchemaFor(req.responseType))
-              else
-                None
-
-            val userMessageAt = Instant.now()
-
-            val agentRole = Reflect.readAgentRole(agent.getClass)
-            val spiContentLoader = req.contentLoader.map(toSpiContentLoader)
-            new SpiAgent.RequestModelEffect(
-              modelProvider = spiModelProvider,
-              systemMessage = systemMessage,
-              userMessage = toSpiUserMessage(req.userMessage),
-              additionalContext = additionalContext,
-              toolDescriptors = toolDescriptors,
-              callToolFunction = request => Future(toolExecutor.execute(request))(sdkExecutionContext),
-              mcpClientDescriptors = mcpToolEndpoints,
-              responseType = req.responseType,
-              responseSchema = responseSchema,
-              responseMapping = req.responseMapping,
-              failureMapping = req.failureMapping.map(mapSpiAgentException),
-              replyMetadata = metadata,
-              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
-              requestGuardrails = guardrails.modelRequestGuardrails,
-              responseGuardrails = guardrails.modelResponseGuardrails,
-              contentLoader = spiContentLoader)
-
-          case NoPrimaryEffect =>
-            errorOrReply match {
-              case Left(err) =>
-                new SpiAgent.ErrorEffect(err)
-              case Right((reply, metadata)) =>
-                new SpiAgent.ReplyEffect(reply, metadata)
-            }
-        }
-
-      } catch {
-        case e: CommandException =>
-          val serializedException = serializer.toBytes(e)
-          new SpiAgent.ErrorEffect(error = new SpiAgent.Error(e.getMessage, Some(serializedException)))
-        case e: HandlerNotFoundException =>
-          throw AgentException(command.name, e.getMessage, Some(e))
-        case BadRequestException(msg) =>
-          new SpiAgent.ErrorEffect(error = new SpiAgent.Error(msg, None))
-        case e: AgentException => throw e
-        case NonFatal(error) =>
-          throw AgentException(command.name, s"Unexpected failure: $error", Some(error))
-      } finally {
-        if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
-      }
-
-    }(sdkExecutionContext)
-
-  private def toSpiUserMessage(userMessage: agent.UserMessage): SpiAgent.UserMessage = {
-    val contents = userMessage.contents().asScala.map(asd => toSpiMessageContent(asd))
-    new SpiAgent.UserMessage(contents.toSeq)
-  }
-
-  private def toSpiMessageContent(messageContent: MessageContent): SpiAgent.MessageContent = {
-    messageContent match {
-      case content: MessageContent.TextMessageContent =>
-        new SpiAgent.TextMessageContent(content.text())
-      case content: MessageContent.ImageUrlMessageContent =>
-        new SpiAgent.ImageUriMessageContent(
-          content.uri(),
-          toSpiDetailLevel(content.detailLevel()),
-          content.mimeType().toScala)
-      case content: MessageContent.PdfUrlMessageContent =>
-        new SpiAgent.PdfUriMessageContent(content.uri())
-    }
-  }
-
-  private def toSpiDetailLevel(level: ImageMessageContent.DetailLevel): SpiAgent.ImageMessageContent.DetailLevel = {
-    level match {
-      case ImageMessageContent.DetailLevel.LOW        => SpiAgent.ImageMessageContent.Low
-      case ImageMessageContent.DetailLevel.MEDIUM     => SpiAgent.ImageMessageContent.Medium
-      case ImageMessageContent.DetailLevel.HIGH       => SpiAgent.ImageMessageContent.High
-      case ImageMessageContent.DetailLevel.ULTRA_HIGH => SpiAgent.ImageMessageContent.UltraHigh
-      case ImageMessageContent.DetailLevel.AUTO       => SpiAgent.ImageMessageContent.Auto
-    }
-  }
-
-  private def fromSpiDetailLevel(level: SpiAgent.ImageMessageContent.DetailLevel): ImageMessageContent.DetailLevel =
-    level match {
-      case SpiAgent.ImageMessageContent.Low       => ImageMessageContent.DetailLevel.LOW
-      case SpiAgent.ImageMessageContent.Medium    => ImageMessageContent.DetailLevel.MEDIUM
-      case SpiAgent.ImageMessageContent.High      => ImageMessageContent.DetailLevel.HIGH
-      case SpiAgent.ImageMessageContent.UltraHigh => ImageMessageContent.DetailLevel.ULTRA_HIGH
-      case SpiAgent.ImageMessageContent.Auto      => ImageMessageContent.DetailLevel.AUTO
-    }
-
-  private def toSpiContentLoader(javaImageLoader: ContentLoader): SpiAgent.SpiContentLoader =
-    new SpiAgent.SpiContentLoader {
-      override def implementationClassName: String = javaImageLoader.getClass.getName
-
-      override def load(messageContent: LoadableMessageContent): Future[SpiAgent.SpiLoadedContent] =
-        Future {
-          val loaded = javaImageLoader.load(fromSpiLoadable(messageContent))
-          new SpiAgent.SpiLoadedContent(loaded.data(), loaded.mimeType().toScala)
-        }(sdkExecutionContext)
-
-      private def fromSpiLoadable(messageContent: LoadableMessageContent): MessageContent.LoadableMessageContent =
-        messageContent match {
-          case content: SpiAgent.ImageUriMessageContent =>
-            val detailLevel = fromSpiDetailLevel(content.detailLevel)
-            val mimeType =
-              content.mimeType.map(java.util.Optional.of[String]).getOrElse(java.util.Optional.empty[String]())
-            new MessageContent.ImageUrlMessageContent(content.uri, detailLevel, mimeType)
-          case content: SpiAgent.PdfUriMessageContent =>
-            new PdfUrlMessageContent(content.uri)
-        }
-    }
-
-  private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
-    remoteMcpTools.map {
-      case remoteMcp: RemoteMcpToolsImpl =>
-        new SpiAgent.McpToolEndpointDescriptor(
-          mcpEndpoint = remoteMcp.serverUri,
-          additionalClientHeaders = remoteMcp.additionalClientHeaders.map(
-            _.asInstanceOf[HttpHeader] // javadsl headers are always scala headers?
-          ),
-          toolNameFilter = remoteMcp.toolNameFilter match {
-            case Some(predicate) => predicate.test
-            case None            => (_: String) => true
-          },
-          toolInterceptor = remoteMcp.interceptor.map {
-            javaInterceptor =>
-              (toolCallRequest: SpiAgent.ToolCallRequest, toolCall: SpiAgent.ToolCallRequest => Future[String]) =>
-                {
-                  val interceptorContext = new RemoteMcpTools.ToolInterceptorContext {
-                    override def toolName(): String = toolCallRequest.name
-                  }
-                  val newRequestPayload =
-                    javaInterceptor.interceptRequest(interceptorContext, toolCallRequest.arguments)
-                  val newRequest =
-                    if (newRequestPayload eq toolCallRequest.arguments) toolCallRequest
-                    else new SpiAgent.ToolCallRequest(toolCallRequest.id, toolCallRequest.name, newRequestPayload)
-                  toolCall(newRequest).map(result =>
-                    javaInterceptor.interceptResponse(interceptorContext, newRequestPayload, result))(
-                    sdkExecutionContext)
-                }
-
-          },
-          toolTimeout =
-            if (remoteMcp.timeout == Duration.Zero) None
-            else Some(remoteMcp.timeout),
-          requestGuardrails = guardrails.mcpToolRequestGuardrails,
-          responseGuardrails = guardrails.mcpToolResponseGuardrails)
-      case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
-    }
-
-  private def deriveMemoryClient(
-      memoryProvider: MemoryProvider,
-      telemetryContext: Option[OtelContext]): SessionMemory = {
-    memoryProvider match {
-      case _: MemoryProvider.Disabled =>
-        new SessionMemoryClient(componentClient(telemetryContext), MemorySettings.disabled())
-
-      case p: MemoryProvider.LimitedWindowMemoryProvider =>
-        new SessionMemoryClient(
-          componentClient(telemetryContext),
-          new MemorySettings(p.read(), p.write(), p.readLastN(), p.filters()))
-
-      case p: MemoryProvider.CustomMemoryProvider =>
-        p.sessionMemory()
-
-      case p: MemoryProvider.FromConfig =>
-        val actualPath =
-          if (p.configPath() == "")
-            "akka.javasdk.agent.memory"
-          else
-            p.configPath()
-        new SessionMemoryClient(componentClient(telemetryContext), config.getConfig(actualPath))
-
-      case p: MemoryProvider.InterceptedMemoryProvider =>
-        val inner = deriveMemoryClient(p.delegate, telemetryContext)
-        new InterceptingSessionMemory(inner, p.interceptor)
-    }
-  }
-
-  private def onSuccess(
-      sessionMemoryClient: SessionMemory,
-      userMessage: agent.UserMessage,
-      userMessageAt: Instant,
-      agentRole: Option[String],
-      responses: Seq[SpiAgent.Response]): Unit = {
-
-    // AiMessages and ToolCallResponses
-    val responseMessages: Seq[SessionMessage] =
-      responses.map {
-        case res: SpiAgent.ModelResponse =>
-          val requests = res.toolRequests.map { req =>
-            new ToolCallRequest(req.id, req.name, req.arguments)
-          }.asJava
-
-          new AiMessage(
-            res.timestamp,
-            res.content,
-            componentId,
-            requests,
-            res.thinking.toJava,
-            new TokenUsage(res.inputTokenCount, res.outputTokenCount),
-            res.attributes.asJava)
-
-        case res: SpiAgent.ToolCallResponse =>
-          new ToolCallResponse(res.timestamp, componentId, res.id, res.name, res.content)
-      }
-
-    if (userMessage.isTextOnly) {
-      sessionMemoryClient.addInteraction(
-        sessionId,
-        new UserMessage(userMessageAt, userMessage.text(), componentId),
-        responseMessages.asJava)
-    } else {
-      val contents = userMessage
-        .contents()
-        .asScala
-        .map(s => toSessionMemoryContent(s))
-        .asJava
-      sessionMemoryClient.addInteraction(
-        sessionId,
-        new MultimodalUserMessage(userMessageAt, contents, componentId),
-        responseMessages.asJava)
-    }
-  }
-
-  private def toSessionMemoryContent(messageContent: MessageContent): SessionMessage.MessageContent = {
-    messageContent match {
-      case content: MessageContent.TextMessageContent =>
-        new SessionMessage.MessageContent.TextMessageContent(content.text)
-      case content: ImageUrlMessageContent =>
-        new SessionMessage.MessageContent.ImageUriMessageContent(
-          content.uri().toString,
-          content.detailLevel(),
-          content.mimeType())
-      case content: PdfUrlMessageContent =>
-        new SessionMessage.MessageContent.PdfUriMessageContent(content.uri().toString)
-    }
-  }
-
-  private def toSpiContextMessages(sessionHistory: SessionHistory): Vector[SpiAgent.ContextMessage] = {
-    import scala.jdk.CollectionConverters._
-
-    sessionHistory
-      .messages()
-      .asScala
-      .map {
-        case m: AiMessage =>
-          val toolRequests = m
-            .toolCallRequests()
-            .asScala
-            .map { req =>
-              new SpiAgent.ToolCallRequest(req.id(), req.name(), req.arguments())
-            }
-            .toSeq
-          new SpiAgent.ContextMessage.AiMessage(
-            m.text(),
-            toolRequests,
-            m.thinking().toScala,
-            m.attributes().asScala.toMap)
-        case m: UserMessage =>
-          new SpiAgent.ContextMessage.UserMessage(m.text())
-
-        case m: MultimodalUserMessage =>
-          val contents = m
-            .contents()
-            .asScala
-            .map {
-              case content: SessionMessage.MessageContent.TextMessageContent =>
-                new SpiAgent.TextMessageContent(content.text())
-              case content: SessionMessage.MessageContent.ImageUriMessageContent =>
-                new SpiAgent.ImageUriMessageContent(
-                  URI.create(content.uri()),
-                  toSpiDetailLevel(content.detailLevel()),
-                  content.mimeType().toScala)
-              case content: SessionMessage.MessageContent.PdfUriMessageContent =>
-                new SpiAgent.PdfUriMessageContent(URI.create(content.uri()))
-            }
-            .toSeq
-          new SpiAgent.ContextMessage.UserMessage(contents)
-        case m: ToolCallResponse =>
-          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), m.text())
-        case m =>
-          throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
-      }
-      .toVector
-  }
-
-  @nowarn("msg=deprecated")
-  private def mapSpiAgentException(func: Throwable => Any): Throwable => Any = {
-
-    @nowarn("msg=deprecated")
-    def convert(thw: Throwable): Throwable = thw match {
-      case exc: SpiAgentException =>
-        try {
-          exc.reason match {
-            case ModelFailure              => new ModelException(exc.getMessage)
-            case RateLimitFailure          => new RateLimitException(exc.getMessage)
-            case TimeoutFailure            => new ModelTimeoutException(exc.getMessage)
-            case UnsupportedFeatureFailure => new UnsupportedFeatureException(exc.getMessage)
-            case InternalFailure           => new InternalServerException(exc.getMessage)
-
-            case ToolCallLimitReachedFailure => new ToolCallLimitReachedException(exc.getMessage)
-            case reason: ToolCallExecutionFailure =>
-              new ToolCallExecutionException(exc.getMessage, reason.toolName, exc.cause)
-            case reason: McpToolCallExecutionFailure =>
-              new McpToolCallExecutionException(exc.getMessage, reason.toolName, reason.endpoint, exc.cause)
-
-            case reason: GuardrailFailure =>
-              new Guardrail.GuardrailException(reason.explanation)
-
-            case _: ImageLoadingFailure =>
-              new RuntimeException(exc.getMessage, exc.cause)
-
-            case _: ContentLoadingFailure =>
-              new RuntimeException(exc.getMessage, exc.cause)
-
-            // this is expected to be a JsonParsingException, we give it as is to users
-            case OutputParsingFailure => exc.cause
-
-          }
-        } catch {
-          case _: MatchError =>
-            // to cover SPI evolution, new reasons may not exist in the SDK
-            new RuntimeException(exc.getMessage, exc.cause)
-        }
-      case other => other // unknown and thus unmapped
-    }
-
-    (throwable: Throwable) => func(convert(throwable))
-  }
-
   @tailrec
-  @nowarn("msg=deprecated") //TODO remove me after merging https://github.com/akka/akka-sdk/pull/1326
-  private def toSpiModelProvider(modelProvider: ModelProvider): SpiAgent.ModelProvider = {
+  @nowarn("msg=deprecated")
+  private[impl] def toSpiModelProvider(modelProvider: ModelProvider, config: Config, componentId: String)(implicit
+      system: ActorSystem[_]): SpiAgent.ModelProvider = {
     modelProvider match {
       case p: ModelProvider.FromConfig =>
-        toSpiModelProvider(modelProviderFromConfig(config, p.configPath(), componentId))
+        toSpiModelProvider(modelProviderFromConfig(config, p.configPath(), componentId), config, componentId)
       case p: ModelProvider.Anthropic =>
         new SpiAgent.ModelProvider.Anthropic(
           apiKey = p.apiKey,
@@ -795,6 +351,520 @@ private[impl] final class AgentImpl[A <: Agent](
             p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq))
     }
   }
+
+  private[impl] def toSpiMcpEndpoints(
+      remoteMcpTools: Seq[RemoteMcpTools],
+      guardrails: AgentGuardrails,
+      sdkExecutionContext: ExecutionContext): Seq[SpiAgent.McpToolEndpointDescriptor] =
+    remoteMcpTools.map {
+      case remoteMcp: RemoteMcpToolsImpl =>
+        new SpiAgent.McpToolEndpointDescriptor(
+          mcpEndpoint = remoteMcp.serverUri,
+          additionalClientHeaders = remoteMcp.additionalClientHeaders.map(_.asInstanceOf[HttpHeader]),
+          toolNameFilter = remoteMcp.toolNameFilter match {
+            case Some(predicate) => predicate.test
+            case None            => (_: String) => true
+          },
+          toolInterceptor = remoteMcp.interceptor.map {
+            javaInterceptor =>
+              (toolCallRequest: SpiAgent.ToolCallRequest, toolCall: SpiAgent.ToolCallRequest => Future[String]) =>
+                {
+                  val interceptorContext = new RemoteMcpTools.ToolInterceptorContext {
+                    override def toolName(): String = toolCallRequest.name
+                  }
+                  val newRequestPayload =
+                    javaInterceptor.interceptRequest(interceptorContext, toolCallRequest.arguments)
+                  val newRequest =
+                    if (newRequestPayload eq toolCallRequest.arguments) toolCallRequest
+                    else new SpiAgent.ToolCallRequest(toolCallRequest.id, toolCallRequest.name, newRequestPayload)
+                  toolCall(newRequest).map(result =>
+                    javaInterceptor.interceptResponse(interceptorContext, newRequestPayload, result))(
+                    sdkExecutionContext)
+                }
+          },
+          toolTimeout =
+            if (remoteMcp.timeout == Duration.Zero) None
+            else Some(remoteMcp.timeout),
+          requestGuardrails = guardrails.mcpToolRequestGuardrails,
+          responseGuardrails = guardrails.mcpToolResponseGuardrails)
+      case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
+    }
+
+  private[agent] def toSpiDetailLevel(
+      level: ImageMessageContent.DetailLevel): SpiAgent.ImageMessageContent.DetailLevel =
+    level match {
+      case ImageMessageContent.DetailLevel.LOW        => SpiAgent.ImageMessageContent.Low
+      case ImageMessageContent.DetailLevel.MEDIUM     => SpiAgent.ImageMessageContent.Medium
+      case ImageMessageContent.DetailLevel.HIGH       => SpiAgent.ImageMessageContent.High
+      case ImageMessageContent.DetailLevel.ULTRA_HIGH => SpiAgent.ImageMessageContent.UltraHigh
+      case ImageMessageContent.DetailLevel.AUTO       => SpiAgent.ImageMessageContent.Auto
+    }
+
+  private[agent] def fromSpiDetailLevel(
+      level: SpiAgent.ImageMessageContent.DetailLevel): ImageMessageContent.DetailLevel =
+    level match {
+      case SpiAgent.ImageMessageContent.Low       => ImageMessageContent.DetailLevel.LOW
+      case SpiAgent.ImageMessageContent.Medium    => ImageMessageContent.DetailLevel.MEDIUM
+      case SpiAgent.ImageMessageContent.High      => ImageMessageContent.DetailLevel.HIGH
+      case SpiAgent.ImageMessageContent.UltraHigh => ImageMessageContent.DetailLevel.ULTRA_HIGH
+      case SpiAgent.ImageMessageContent.Auto      => ImageMessageContent.DetailLevel.AUTO
+    }
+
+  private[agent] def toSpiMessageContent(messageContent: MessageContent): SpiAgent.MessageContent =
+    messageContent match {
+      case content: MessageContent.TextMessageContent =>
+        new SpiAgent.TextMessageContent(content.text())
+      case content: MessageContent.ImageUrlMessageContent =>
+        new SpiAgent.ImageUriMessageContent(
+          content.uri,
+          toSpiDetailLevel(content.detailLevel()),
+          content.mimeType().toScala)
+      case content: MessageContent.PdfUrlMessageContent =>
+        new SpiAgent.PdfUriMessageContent(content.uri)
+      case _: MessageContent.ImageDataMessageContent =>
+        throw new UnsupportedOperationException(
+          "Inline image data message content cannot be sent as input. Upload to object storage and " +
+          "reference it via an object:// URI, or use a URI-referenced content type.")
+      case _: MessageContent.PdfDataMessageContent =>
+        throw new UnsupportedOperationException(
+          "Inline PDF data message content cannot be sent as input. Upload to object storage and " +
+          "reference it via an object:// URI, or use a URI-referenced content type.")
+    }
+
+  private[agent] def fromSpiMessageContent(mc: SpiAgent.MessageContent): MessageContent = mc match {
+    case t: SpiAgent.TextMessageContent =>
+      MessageContent.TextMessageContent.from(t.text)
+    case img: SpiAgent.ImageUriMessageContent =>
+      val detail = fromSpiDetailLevel(img.detailLevel)
+      img.mimeType match {
+        case Some(mime) =>
+          new ImageUrlMessageContent(img.uri, detail, java.util.Optional.of(mime))
+        case None =>
+          new ImageUrlMessageContent(img.uri, detail)
+      }
+    case pdf: SpiAgent.PdfUriMessageContent =>
+      new PdfUrlMessageContent(pdf.uri)
+  }
+
+  private[agent] def toSpiContentLoader(
+      javaContentLoader: ContentLoader,
+      ec: ExecutionContext): SpiAgent.SpiContentLoader =
+    new SpiAgent.SpiContentLoader {
+      override def implementationClassName: String = javaContentLoader.getClass.getName
+
+      override def load(messageContent: LoadableMessageContent): Future[SpiAgent.SpiLoadedContent] =
+        Future {
+          val loaded = javaContentLoader.load(fromSpiLoadable(messageContent))
+          new SpiAgent.SpiLoadedContent(loaded.data(), loaded.mimeType().toScala)
+        }(ec)
+
+      private def fromSpiLoadable(messageContent: LoadableMessageContent): MessageContent.LoadableMessageContent =
+        messageContent match {
+          case content: SpiAgent.ImageUriMessageContent =>
+            val detailLevel = fromSpiDetailLevel(content.detailLevel)
+            val mimeType =
+              content.mimeType.map(java.util.Optional.of[String]).getOrElse(java.util.Optional.empty[String]())
+            new MessageContent.ImageUrlMessageContent(content.uri, detailLevel, mimeType)
+          case content: SpiAgent.PdfUriMessageContent =>
+            new PdfUrlMessageContent(content.uri)
+        }
+    }
+
+  private[agent] def toSpiContextMessages(sessionHistory: SessionHistory): Vector[SpiAgent.ContextMessage] =
+    sessionHistory
+      .messages()
+      .asScala
+      .map {
+        case m: AiMessage =>
+          val toolRequests = m
+            .toolCallRequests()
+            .asScala
+            .map { req =>
+              new SpiAgent.ToolCallRequest(req.id(), req.name(), req.arguments())
+            }
+            .toSeq
+          new SpiAgent.ContextMessage.AiMessage(
+            m.text(),
+            toolRequests,
+            m.thinking().toScala,
+            m.attributes().asScala.toMap)
+        case m: UserMessage =>
+          new SpiAgent.ContextMessage.UserMessage(m.text())
+        case m: MultimodalUserMessage =>
+          val contents = m
+            .contents()
+            .asScala
+            .map {
+              case content: SessionMessage.MessageContent.TextMessageContent =>
+                new SpiAgent.TextMessageContent(content.text())
+              case content: SessionMessage.MessageContent.ImageUriMessageContent =>
+                new SpiAgent.ImageUriMessageContent(
+                  URI.create(content.uri()),
+                  toSpiDetailLevel(content.detailLevel()),
+                  content.mimeType().toScala)
+              case content: SessionMessage.MessageContent.PdfUriMessageContent =>
+                new SpiAgent.PdfUriMessageContent(URI.create(content.uri()))
+            }
+            .toSeq
+          new SpiAgent.ContextMessage.UserMessage(contents)
+        case m: ToolCallResponse =>
+          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), m.text())
+        case m =>
+          throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
+      }
+      .toVector
+
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class AgentImpl(
+    componentId: String,
+    sessionId: String,
+    val factory: AgentContext => AnyRef,
+    sdkExecutionContext: ExecutionContext,
+    tracerFactory: () => Tracer,
+    serializer: Serializer,
+    componentDescriptor: ComponentDescriptor,
+    regionInfo: RegionInfo,
+    promptTemplateClient: Option[OtelContext] => PromptTemplateClient,
+    componentClient: Option[OtelContext] => ComponentClient,
+    overrideModelProvider: OverrideModelProvider,
+    dependencyProvider: Option[DependencyProvider],
+    guardrails: AgentGuardrails,
+    config: Config,
+    eventLogClient: EventLogClient,
+    agentRegistry: AgentRegistry,
+    _system: ActorSystem[_])
+    extends SpiAgent {
+  import AgentImpl._
+
+  implicit val system: ActorSystem[_] = _system
+  private val materializer: Materializer = SystemMaterializer(system).materializer
+
+  // Router only for request-based agents (not autonomous)
+  private lazy val router: ReflectiveAgentRouter[Agent] = {
+    new ReflectiveAgentRouter[Agent](
+      factory.asInstanceOf[AgentContext => Agent],
+      componentDescriptor.methodInvokers,
+      serializer)
+  }
+
+  override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] =
+    Future {
+
+      val telemetryContext = Option(command.telemetryContext)
+      val traceId = telemetryContext.flatMap { context =>
+        Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
+      }
+      traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
+
+      // smuggling 0 arity methods called from the component client through here
+      val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
+      val metadata: Metadata = MetadataImpl.of(command.metadata)
+      val agentContext =
+        new AgentContextImpl(sessionId, regionInfo.selfRegion, metadata, telemetryContext, tracerFactory)
+
+      try {
+        // we need the agent at this scope.
+        // therefore, we initialize it exceptionally outside the router
+        val agent = factory(agentContext).asInstanceOf[Agent]
+        val commandEffect = router.handleCommand(agent, command.name, cmdPayload, agentContext)
+
+        def primaryEffect =
+          commandEffect match {
+            case e: AgentEffectImpl       => e.primaryEffect
+            case e: AgentStreamEffectImpl => e.primaryEffect
+          }
+
+        def secondaryEffect =
+          commandEffect match {
+            case e: AgentEffectImpl       => e.secondaryEffect
+            case e: AgentStreamEffectImpl => e.secondaryEffect
+          }
+
+        def errorOrReply: Either[SpiAgent.Error, (BytesPayload, SpiMetadata)] = {
+          secondaryEffect match {
+            case ErrorReplyImpl(commandException) =>
+              Left(new SpiAgent.Error(commandException.getMessage, Some(serializer.toBytes(commandException))))
+            case MessageReplyImpl(message, m) =>
+              val replyPayload = serializer.toBytesAsJson(message)
+              val metadata = MetadataImpl.toSpi(m)
+              Right(replyPayload -> metadata)
+            case NoSecondaryEffectImpl =>
+              throw new IllegalStateException("Expected reply or error")
+          }
+        }
+
+        primaryEffect match {
+          case req: RequestModel =>
+            val systemMessage = req.systemMessage match {
+              case ConstantSystemMessage(message) => message
+              case template: TemplateSystemMessage =>
+                promptTemplateClient(telemetryContext).getPromptTemplate(template.templateId).formatted(template.args)
+            }
+            val modelProvider = overrideModelProvider.getModelProviderForAgent(componentId).getOrElse(req.modelProvider)
+            val spiModelProvider = toSpiModelProvider(modelProvider)
+            val metadata = MetadataImpl.toSpi(req.replyMetadata)
+            val sessionMemoryClient = deriveSessionMemoryClient(req.memoryProvider, telemetryContext)
+            val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
+            val mcpToolEndpoints = toSpiMcpEndpoints(req.mcpTools)
+
+            val allToolClasses =
+              agent.getClass +: req.toolInstancesOrClasses.map {
+                case cls: Class[_] => cls
+                case any           => any.getClass
+              }
+
+            // first, we need to validate them all against tool name clashes
+            // unlikely, but better to crash it them have them shadowing each other
+            FunctionTools.validateNames(allToolClasses)
+
+            val toolDescriptors =
+              allToolClasses.flatMap(FunctionTools.descriptorsFor)
+
+            val functionTools =
+              FunctionTools.toolInvokersFor(agent) ++
+              req.toolInstancesOrClasses.flatMap {
+                case cls: Class[_] if Reflect.isToolCandidate(cls) =>
+                  FunctionTools.toolComponentInvokersFor(cls, componentClient(telemetryContext))
+                case cls: Class[_] => FunctionTools.toolInvokersFor(cls, dependencyProvider)
+                case any           => FunctionTools.toolInvokersFor(any)
+              }.toMap
+
+            val toolExecutor = new ToolExecutor(functionTools, serializer)
+
+            val responseSchema =
+              if (req.includeJsonSchema)
+                Some(JsonSchema.jsonSchemaFor(req.responseType))
+              else
+                None
+
+            val userMessageAt = Instant.now()
+
+            val agentRole = Reflect.readAgentRole(agent.getClass)
+            val spiContentLoader = req.contentLoader.map(toSpiContentLoader)
+            new SpiAgent.RequestModelEffect(
+              modelProvider = spiModelProvider,
+              systemMessage = systemMessage,
+              userMessage = toSpiUserMessage(req.userMessage),
+              additionalContext = additionalContext,
+              toolDescriptors = toolDescriptors,
+              callToolFunction = request => Future(toolExecutor.execute(request))(sdkExecutionContext),
+              mcpClientDescriptors = mcpToolEndpoints,
+              responseType = req.responseType,
+              responseSchema = responseSchema,
+              responseMapping = req.responseMapping,
+              failureMapping = req.failureMapping.map(mapSpiAgentException),
+              replyMetadata = metadata,
+              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
+              requestGuardrails = guardrails.modelRequestGuardrails,
+              responseGuardrails = guardrails.modelResponseGuardrails,
+              contentLoader = spiContentLoader)
+
+          case NoPrimaryEffect =>
+            errorOrReply match {
+              case Left(err) =>
+                new SpiAgent.ErrorEffect(err)
+              case Right((reply, metadata)) =>
+                new SpiAgent.ReplyEffect(reply, metadata)
+            }
+        }
+
+      } catch {
+        case e: CommandException =>
+          val serializedException = serializer.toBytes(e)
+          new SpiAgent.ErrorEffect(error = new SpiAgent.Error(e.getMessage, Some(serializedException)))
+        case e: HandlerNotFoundException =>
+          throw AgentException(command.name, e.getMessage, Some(e))
+        case BadRequestException(msg) =>
+          new SpiAgent.ErrorEffect(error = new SpiAgent.Error(msg, None))
+        case e: AgentException => throw e
+        case NonFatal(error) =>
+          throw AgentException(command.name, s"Unexpected failure: $error", Some(error))
+      } finally {
+        if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
+      }
+
+    }(sdkExecutionContext)
+
+  private def toSpiUserMessage(userMessage: agent.UserMessage): SpiAgent.UserMessage = {
+    val contents = userMessage.contents().asScala.map(asd => toSpiMessageContent(asd))
+    new SpiAgent.UserMessage(contents.toSeq)
+  }
+
+  private def toSpiMessageContent(messageContent: MessageContent): SpiAgent.MessageContent =
+    AgentImpl.toSpiMessageContent(messageContent)
+
+  private def toSpiContentLoader(javaImageLoader: ContentLoader): SpiAgent.SpiContentLoader =
+    AgentImpl.toSpiContentLoader(javaImageLoader, sdkExecutionContext)
+
+  private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
+    AgentImpl.toSpiMcpEndpoints(remoteMcpTools, guardrails, sdkExecutionContext)
+
+  private def deriveSessionMemoryClient(
+      memoryProvider: MemoryProvider,
+      telemetryContext: Option[OtelContext]): SessionMemory = {
+    memoryProvider match {
+      case _: MemoryProvider.Disabled =>
+        new SessionMemoryClient(
+          componentClient(telemetryContext),
+          eventLogClient,
+          serializer,
+          agentRegistry,
+          materializer,
+          MemorySettings.disabled())
+
+      case p: MemoryProvider.LimitedWindowMemoryProvider =>
+        new SessionMemoryClient(
+          componentClient(telemetryContext),
+          eventLogClient,
+          serializer,
+          agentRegistry,
+          materializer,
+          new MemorySettings(p.read(), p.write(), p.readLastN(), p.filters()))
+
+      case p: MemoryProvider.CustomMemoryProvider =>
+        // Custom providers own their own filtering/limit/storage semantics; the journal-fallback
+        // path that lives in SessionMemoryClient does not apply here.
+        p.sessionMemory()
+
+      case p: MemoryProvider.FromConfig =>
+        val actualPath =
+          if (p.configPath() == "")
+            "akka.javasdk.agent.memory"
+          else
+            p.configPath()
+        new SessionMemoryClient(
+          componentClient(telemetryContext),
+          eventLogClient,
+          serializer,
+          agentRegistry,
+          materializer,
+          config.getConfig(actualPath))
+
+      case p: MemoryProvider.InterceptedMemoryProvider =>
+        val inner = deriveSessionMemoryClient(p.delegate, telemetryContext)
+        new InterceptingSessionMemory(inner, p.interceptor)
+    }
+  }
+
+  private def onSuccess(
+      sessionMemoryClient: SessionMemory,
+      userMessage: agent.UserMessage,
+      userMessageAt: Instant,
+      agentRole: Option[String],
+      responses: Seq[SpiAgent.Response]): Unit = {
+
+    // AiMessages and ToolCallResponses
+    val responseMessages: Seq[SessionMessage] =
+      responses.map {
+        case res: SpiAgent.ModelResponse =>
+          val requests = res.toolRequests.map { req =>
+            new ToolCallRequest(req.id, req.name, req.arguments)
+          }.asJava
+
+          new AiMessage(
+            res.timestamp,
+            res.content,
+            componentId,
+            requests,
+            res.thinking.toJava,
+            new TokenUsage(res.inputTokenCount, res.outputTokenCount),
+            res.attributes.asJava)
+
+        case res: SpiAgent.ToolCallResponse =>
+          new ToolCallResponse(res.timestamp, componentId, res.id, res.name, res.content)
+      }
+
+    if (userMessage.isTextOnly) {
+      sessionMemoryClient.addInteraction(
+        sessionId,
+        new UserMessage(userMessageAt, userMessage.text(), componentId),
+        responseMessages.asJava)
+    } else {
+      val contents = userMessage
+        .contents()
+        .asScala
+        .map(s => toSessionMemoryContent(s))
+        .asJava
+      sessionMemoryClient.addInteraction(
+        sessionId,
+        new MultimodalUserMessage(userMessageAt, contents, componentId),
+        responseMessages.asJava)
+    }
+  }
+
+  private def toSessionMemoryContent(messageContent: MessageContent): SessionMessage.MessageContent = {
+    messageContent match {
+      case content: MessageContent.TextMessageContent =>
+        new SessionMessage.MessageContent.TextMessageContent(content.text)
+      case content: ImageUrlMessageContent =>
+        new SessionMessage.MessageContent.ImageUriMessageContent(
+          content.uri().toString,
+          content.detailLevel(),
+          content.mimeType())
+      case content: PdfUrlMessageContent =>
+        new SessionMessage.MessageContent.PdfUriMessageContent(content.uri().toString)
+      case _: MessageContent.ImageDataMessageContent =>
+        throw new UnsupportedOperationException(
+          "Inline image data message content cannot be persisted to session memory. Upload to " +
+          "object storage and reference it via an object:// URI, or use a URI-referenced content type.")
+      case _: MessageContent.PdfDataMessageContent =>
+        throw new UnsupportedOperationException(
+          "Inline PDF data message content cannot be persisted to session memory. Upload to " +
+          "object storage and reference it via an object:// URI, or use a URI-referenced content type.")
+    }
+  }
+
+  @nowarn("msg=deprecated")
+  private def mapSpiAgentException(func: Throwable => Any): Throwable => Any = {
+
+    @nowarn("msg=deprecated")
+    def convert(thw: Throwable): Throwable = thw match {
+      case exc: SpiAgentException =>
+        try {
+          exc.reason match {
+            case ModelFailure              => new ModelException(exc.getMessage)
+            case RateLimitFailure          => new RateLimitException(exc.getMessage)
+            case TimeoutFailure            => new ModelTimeoutException(exc.getMessage)
+            case UnsupportedFeatureFailure => new UnsupportedFeatureException(exc.getMessage)
+            case InternalFailure           => new InternalServerException(exc.getMessage)
+
+            case ToolCallLimitReachedFailure => new ToolCallLimitReachedException(exc.getMessage)
+            case reason: ToolCallExecutionFailure =>
+              new ToolCallExecutionException(exc.getMessage, reason.toolName, exc.cause)
+            case reason: McpToolCallExecutionFailure =>
+              new McpToolCallExecutionException(exc.getMessage, reason.toolName, reason.endpoint, exc.cause)
+
+            case reason: GuardrailFailure =>
+              new Guardrail.GuardrailException(reason.explanation)
+
+            case _: ImageLoadingFailure =>
+              new RuntimeException(exc.getMessage, exc.cause)
+
+            case _: ContentLoadingFailure =>
+              new RuntimeException(exc.getMessage, exc.cause)
+
+            // this is expected to be a JsonParsingException, we give it as is to users
+            case OutputParsingFailure => exc.cause
+
+          }
+        } catch {
+          case _: MatchError =>
+            // to cover SPI evolution, new reasons may not exist in the SDK
+            new RuntimeException(exc.getMessage, exc.cause)
+        }
+      case other => other // unknown and thus unmapped
+    }
+
+    (throwable: Throwable) => func(convert(throwable))
+  }
+
+  private def toSpiModelProvider(modelProvider: ModelProvider): SpiAgent.ModelProvider =
+    AgentImpl.toSpiModelProvider(modelProvider, config, componentId)
 
   override def serialize(message: Any): BytesPayload = {
     serializer.toBytesAsJson(message)

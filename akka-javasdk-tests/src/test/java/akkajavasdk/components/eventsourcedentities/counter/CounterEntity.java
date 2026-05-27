@@ -168,8 +168,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
   public Effect<Integer> times(int value) {
     logger.info(
-        "Multiplying counter with commandId={} commandName={} seqNr={} current={} by value={}",
-        commandContext().commandId(),
+        "Multiplying counter with commandName={} seqNr={} current={} by value={}",
         commandContext().commandName(),
         commandContext().sequenceNumber(),
         currentState(),
@@ -180,8 +179,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
   public Effect<Integer> restart() { // force entity restart, useful for testing
     logger.info(
-        "Restarting counter with commandId={} commandName={} seqNr={} current={}",
-        commandContext().commandId(),
+        "Restarting counter with commandName={} seqNr={} current={}",
         commandContext().commandName(),
         commandContext().sequenceNumber(),
         currentState());

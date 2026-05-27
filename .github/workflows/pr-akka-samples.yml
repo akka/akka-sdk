@@ -41,6 +41,7 @@ jobs:
           - { sample: "transfer-workflow-orchestration", sampleRepo: "akka-samples/transfer-workflow-orchestration" }
           - { sample: "ask-akka-agent", sampleRepo: "akka-samples/ask-akka-agent" }
           - { sample: "multi-agent", sampleRepo: "akka-samples/multi-agent" }
+          - { sample: "autonomous-agent-playground", sampleRepo: "akka-samples/autonomous-agent-playground" }
 
     steps:
       - name: Checkout Global Scripts
@@ -142,7 +143,6 @@ jobs:
           - { sample: "real-estate-cs-agent", sampleRepo: "akka-samples/real-estate-cs-agent" }
           - { sample: "healthcare-agent", sampleRepo: "akka-samples/healthcare-agent" }
           - { sample: "temperature-monitoring-agent", sampleRepo: "akka-samples/temperature-monitoring-agent" }
-          - { sample: "adaptive-multi-agent", sampleRepo: "akka-samples/adaptive-multi-agent" }
 
     steps:
       - name: Checkout Global Scripts

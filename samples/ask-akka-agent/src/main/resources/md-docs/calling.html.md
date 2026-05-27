@@ -74,8 +74,10 @@ public class ActivityAgentManager extends Workflow<ActivityAgentManager.State> {
   @Override
   public WorkflowSettings settings() { // (6)
     return WorkflowSettings.builder()
-      .stepTimeout(ActivityAgentManager::suggestActivities, ofSeconds// (60))
-      .defaultStepRecovery(maxRetries// (2).failoverTo(ActivityAgentManager::error))
+      .stepTimeout(ActivityAgentManager::suggestActivities, ofSeconds(60))
+      .defaultStepRecovery(
+        RecoverStrategy.maxRetries(2).failoverTo(ActivityAgentManager::error)
+      )
       .build();
   }
 
@@ -120,12 +122,12 @@ The workflow itself will be instantiated by making a call to the `start` method 
 Keep in mind that AI requests are typically slow (many seconds), and you need to define the workflow timeouts accordingly. This is specified in the workflow step definition with:
 
 ```java
-.stepConfig(ActivityAgentManager::suggestActivities, ofSeconds// (60))
+.stepConfig(ActivityAgentManager::suggestActivities, ofSeconds(60))
 ```
 Additionally, you should define a workflow recovery strategy so that it doesn’t retry failing requests infinitely. This is specified in the workflow definition with:
 
 ```java
-.defaultStepRecovery(maxRetries// (2).failoverTo(ActivityAgentManager::error))
+.defaultStepRecovery(RecoverStrategy.maxRetries(2).failoverTo(ActivityAgentManager::error))
 ```
 More details in [Workflow timeouts and recovery strategy](../workflows.html#_error_handling).
 
@@ -134,6 +136,31 @@ More details in [Workflow timeouts and recovery strategy](../workflows.html#_err
 You often need a human-in-the-loop to integrate human oversight into the AI’s decision-making process. A workflow can be paused, waiting for user input. When the approval command is received, the workflow can continue from where it left off and transition to the next step in the agentic process.
 
 See [how to pause a workflow](../workflows.html#_pausing_workflow).
+
+## <a href="about:blank#_calling_agents_by_id"></a> Calling agents by id
+
+In most cases you call an agent by passing its class to the `ComponentClient`, which gives you compile-time type safety on the method, parameters, and return type. When the agent to call is only known at runtime, for example when a planner agent has selected which specialist to invoke, use `dynamicCall(agentId)` instead:
+
+```java
+String response = componentClient
+  .forAgent()
+  .inSession(sessionId)
+  .<String, String>dynamicCall(agentId)
+  .invoke(request);
+```
+The call targets the agent whose component id matches `agentId`. There is no compile-time check that the agent’s command handler accepts `request` or returns the expected type; a mismatch surfaces as a runtime exception.
+
+To discover which agents are available, inject the `AgentRegistry`. The registry exposes each agent’s id, name, description, and role (sourced from `@Component` and `@AgentRole`), and supports lookups by id or by role. This is useful when a planner agent decides which specialists to invoke based on the request and then dispatches to them by id:
+
+```java
+private final Set<AgentRegistry.AgentInfo> workers;
+
+public MyPlanner(AgentRegistry registry) {
+  this.workers = registry.agentsWithRole("worker");
+  // include worker descriptions in the planner's prompt
+}
+```
+Dynamic dispatch and the registry are building blocks for planner-driven multi-agent systems. For most multi-agent problems an [Autonomous Agent](../autonomous-agents.html) coordinator with a `Delegation` capability is simpler and recommended; see [Model-driven orchestration](orchestrating.html#_model_driven_orchestration). Reach for `AgentRegistry` and `dynamicCall` when you need a custom planner that selects targets at runtime from an open-ended set of agents.
 
 <!-- <footer> -->
 <!-- <nav> -->

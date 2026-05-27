@@ -35,6 +35,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 
 - [Components overview](https://doc.akka.io/sdk/components/index.html.md): Introduction to Akka's core building blocks and their usage
 - [Agents](https://doc.akka.io/sdk/agents.html.md): AI model-backed components with session memory and multi-agent collaboration
+- [Autonomous Agents](https://doc.akka.io/sdk/autonomous-agents.html.md): Durable model-driven processes with typed tasks and multi-agent coordination
 - [Workflows](https://doc.akka.io/sdk/workflows.html.md): Long-running, multi-step business processes with compensation
 - [Event Sourced Entities](https://doc.akka.io/sdk/event-sourced-entities.html.md): State persistence via immutable event log
 - [Key Value Entities](https://doc.akka.io/sdk/key-value-entities.html.md): State persistence via full-state snapshots
@@ -116,6 +117,13 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Orchestrating multiple agents](https://doc.akka.io/sdk/agents/orchestrating.html.md): Orchestrating and supervising multiple agents
 - [Evaluating model responses](https://doc.akka.io/sdk/agents/llm_eval.html.md): Evaluating and judging the responses from LLMs via agents
 - [Testing agents](https://doc.akka.io/sdk/agents/testing.html.md): Testing agents and agentic behavior
+- [Defining an autonomous agent](https://doc.akka.io/sdk/autonomous-agents/defining.html.md): Building an AgentDefinition with accepted task types, tools, guardrails, iteration limit, model, and optional instructions
+- [Autonomous agent tasks](https://doc.akka.io/sdk/autonomous-agents/tasks.html.md): Task definitions, instances, lifecycle, snapshots, dependencies, and notifications
+- [Autonomous agent coordination patterns](https://doc.akka.io/sdk/autonomous-agents/coordination.html.md): Sequential, delegative, collaborative, and emergent patterns for multi-agent systems
+- [Autonomous agent coordination capabilities](https://doc.akka.io/sdk/autonomous-agents/capabilities.html.md): Delegation, handoff, teams, moderation, external input, and capability composition
+- [Autonomous agent client API](https://doc.akka.io/sdk/autonomous-agents/client.html.md): runSingleTask, assignTasks, pause/resume, agent state, notification stream
+- [Autonomous agent notifications](https://doc.akka.io/sdk/autonomous-agents/notifications.html.md): Lifecycle, task, handoff, delegation, team, conversation, messaging, and struggle notifications
+- [Testing autonomous agents](https://doc.akka.io/sdk/autonomous-agents/testing.html.md): Mocking with TestModelProvider and AutonomousAgentTools helpers
 - [Views reference](https://doc.akka.io/reference/views/index.html.md): Detailed reference for views
 - [View Query Syntax](https://doc.akka.io/reference/views/syntax/query.html.md): View query language syntax
 - [View Query Result Mapping](https://doc.akka.io/reference/views/concepts/result-mapping.html.md): How view query results are mapped into Java classes
@@ -156,7 +164,6 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Organizations](https://doc.akka.io/operations/organizations/index.html.md): Working with organizations in the Akka Platform
 - [Managing organization users](https://doc.akka.io/operations/organizations/manage-users.html.md): Adding, removing, and managing user access within your organization
 - [Regions](https://doc.akka.io/operations/organizations/regions.html.md): Understanding geographical regions for Akka Platform deployments
-- [Billing](https://doc.akka.io/operations/organizations/billing.html.md): Managing billing and subscription information for Akka Platform
 - [Operating - Akka Automated Operations (AAO)](https://doc.akka.io/operations/akka-platform.html.md): Automatically manages, monitors, and gathers insights from your deployed services and managed infrastructure.
 - [Operating - Self-managed nodes](https://doc.akka.io/operations/index.html.md): Guide to running Akka on self-managed infrastructure
 - [Why Akka](https://doc.akka.io/why-akka.html.md): Three barriers, three dimensions
@@ -172,8 +179,8 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 ### Examples
 
 - [helloworld-agent](https://raw.githubusercontent.com/akka-samples/helloworld-agent/refs/heads/main/README.md): Agent with LLM greetings and session memory
-- [multi-agent](https://raw.githubusercontent.com/akka-samples/multi-agent/refs/heads/main/README.md): Multi-agent system with workflow orchestration
-- [adaptive-multi-agent](https://raw.githubusercontent.com/akka-samples/adaptive-multi-agent/refs/heads/main/README.md): Adaptive multi-agent orchestration (MagenticOne pattern)
+- [multi-agent](https://raw.githubusercontent.com/akka-samples/multi-agent/refs/heads/main/README.md): Multi-agent system with an Autonomous Agent coordinator delegating to worker agents
+- [autonomous-agent-playground](https://raw.githubusercontent.com/akka-samples/autonomous-agent-playground/refs/heads/main/README.md): Autonomous agents with LLM driven multi-agent orchestration
 - [ask-akka-agent](https://raw.githubusercontent.com/akka-samples/ask-akka-agent/refs/heads/main/README.md): RAG agent with vector search and streaming
 - [travel-agent](https://raw.githubusercontent.com/akka-samples/travel-agent/refs/heads/main/README.md): AI travel planner with durable state
 - [temperature-monitoring-agent](https://raw.githubusercontent.com/akka-samples/temperature-monitoring-agent/refs/heads/main/README.md): IoT sensor monitoring with AI analysis

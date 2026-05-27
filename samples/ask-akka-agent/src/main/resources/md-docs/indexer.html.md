@@ -1,6 +1,6 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [Tutorials](../index.html)
+- [Getting started & Tutorials](../index.html)
 - [RAG chat agent](index.html)
 - [Knowledge indexing with a workflow](indexer.html)
 
@@ -10,7 +10,7 @@
 
 |  | **New to Akka? Start here:**
 
-Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent with Spec-Driven Development](../spec-your-first-agent.html) guide to use your AI assistant for implementing a simple agentic service, running it locally and interacting with it. |
 
 ## <a href="about:blank#_overview"></a> Overview
 
@@ -48,7 +48,7 @@ We’re going to use `langchain4j` for this sample, so add those dependencies to
     <parent>
         <groupId>io.akka</groupId>
         <artifactId>akka-javasdk-parent</artifactId>
-        <version>3.5.15</version>
+        <version>3.5.19</version>
     </parent>
 
     <groupId>akka.ask</groupId>
@@ -58,7 +58,7 @@ We’re going to use `langchain4j` for this sample, so add those dependencies to
 
     <name>ask-akka</name>
     <properties>
-        <langchain4j.version>1.11.0</langchain4j.version>
+        <langchain4j.version>1.15.0</langchain4j.version>
     </properties>
     <dependencies>
         <dependency>
@@ -69,7 +69,7 @@ We’re going to use `langchain4j` for this sample, so add those dependencies to
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-mongodb-atlas</artifactId>
-            <version>1.11.0-beta19</version>
+            <version>1.15.0-beta25</version>
         </dependency>
     </dependencies>
 </project>
@@ -145,7 +145,7 @@ The workflow definition for the document indexer is surprisingly simple:
 @Override
 public WorkflowSettings settings() {
   return WorkflowSettings.builder()
-    .defaultStepTimeout(ofMinutes// (1))
+    .defaultStepTimeout(ofMinutes(1))
     .build();
 }
 

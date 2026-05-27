@@ -9,6 +9,7 @@ import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.NoSuchFileException;
@@ -34,7 +35,6 @@ import javax.tools.StandardLocation;
   "akka.javasdk.annotations.mcp.McpEndpoint",
   // all components will have this
   "akka.javasdk.annotations.Component",
-  "akka.javasdk.annotations.ComponentId",
   // central config/lifecycle class
   "akka.javasdk.annotations.Setup"
 })
@@ -67,6 +67,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
   private static final String VIEW_KEY = "view";
   private static final String WORKFLOW_KEY = "workflow";
   private static final String AGENT_KEY = "agent";
+  private static final String AUTONOMOUS_AGENT_KEY = "autonomous-agent";
   private static final String SERVICE_SETUP_KEY = "service-setup";
 
   private static final List<String> ALL_COMPONENT_TYPES =
@@ -81,6 +82,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
           VIEW_KEY,
           WORKFLOW_KEY,
           AGENT_KEY,
+          AUTONOMOUS_AGENT_KEY,
           SERVICE_SETUP_KEY);
 
   private boolean alreadyRan = false;
@@ -206,7 +208,6 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
       case "akka.javasdk.annotations.Setup" -> SERVICE_SETUP_KEY;
       case "akka.javasdk.annotations.mcp.McpEndpoint" -> MCP_ENDPOINT_KEY;
       case "akka.javasdk.annotations.Component" -> componentType(annotatedClass);
-      case "akka.javasdk.annotations.ComponentId" -> componentType(annotatedClass);
       default ->
           throw new IllegalArgumentException(
               "Unknown annotation type: " + annotation.getQualifiedName());
@@ -225,7 +226,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
       throw new IllegalArgumentException(
           "Unknown supertype for class ["
               + annotatedClass
-              + "] annotated with @Component or @ComponentId. Reached top of hierarchy without"
+              + "] annotated with @Component. Reached top of hierarchy without"
               + " finding a known component supertype.");
     }
 
@@ -242,7 +243,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
       throw new IllegalArgumentException(
           "Unknown supertype for class ["
               + annotatedClass
-              + "] annotated with @Component or @ComponentId. Superclass ["
+              + "] annotated with @Component. Superclass ["
               + superClassTypeMirror
               + "] is not a declared type (kind: "
               + superClassTypeMirror.getKind()
@@ -267,11 +268,12 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
       case "akka.javasdk.consumer.Consumer" -> CONSUMER_KEY;
       case "akka.javasdk.view.View" -> VIEW_KEY;
       case "akka.javasdk.agent.Agent" -> AGENT_KEY;
+      case "akka.javasdk.agent.autonomous.AutonomousAgent" -> AUTONOMOUS_AGENT_KEY;
       case "java.lang.Object" ->
           throw new IllegalArgumentException(
               "Unknown supertype for class ["
                   + annotatedClass
-                  + "] annotated with @Component or @ComponentId: ["
+                  + "] annotated with @Component: ["
                   + superClassName
                   + "]");
       default ->
@@ -299,8 +301,11 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
         }
       }
       existingDescriptorResource.delete();
-    } catch (NoSuchFileException ex) {
-      // no existing file
+    } catch (NoSuchFileException | FileNotFoundException ex) {
+      // No existing descriptor — expected on a clean build or first compile in IntelliJ.
+      // Standard javac (Maven/Gradle) throws NoSuchFileException via PathFileObject.openReader(),
+      // while IntelliJ's JPS build system uses JpsFileObject/OutputFileObject backed by
+      // FileInputStream, which throws FileNotFoundException instead.
       debug("No existing Akka component descriptor found");
       existingConfig = ConfigFactory.empty();
     }

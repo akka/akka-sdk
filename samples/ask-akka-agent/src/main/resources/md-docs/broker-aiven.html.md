@@ -37,7 +37,7 @@ akka config get-project
 ```command
 akka secret create tls-ca kafka-ca-cert --cert ./ca.pem
 ```
-5. Copy the CA password from the "Connection Information" and store it in an Akka secret (e.g. called `kafka-secret`)
+5. Copy the SASL password from the "Connection Information" and store it in an Akka secret (e.g. called `kafka-secret`)
 
 ```command
 akka secret create generic kafka-secret --literal pwd=<the password>
@@ -70,7 +70,7 @@ To create a topic, you can either use the Aiven console, or the Aiven CLI.
 Browser Instructions from Aiven’s [Creating an Apache Kafka topic](https://docs.aiven.io/docs/products/kafka/howto/create-topic)
 
 1. Open the [Aiven Console](https://console.aiven.io/).
-2. In the Services page, click on the Aiven for Apache Kafka® service where you want to crate the topic.
+2. In the Services page, click on the Aiven for Apache Kafka® service where you want to create the topic.
 3. Select the Topics tab:
 
   1. In the Add new topic section, enter a name for your topic.
@@ -96,7 +96,11 @@ When your application consumes messages from Kafka, it will try to deliver messa
 Kafka partitions are consumed independently. When passing messages to a certain entity or using them to update a view row by specifying the id as the Cloud Event `ce-subject` attribute on the message, the same id must be used to partition the topic to guarantee that the messages are processed in order in the entity or view. Ordering is not guaranteed for messages arriving on different Kafka partitions.
 
 |  | Correct partitioning is especially important for topics that stream directly into views and transform the updates: when messages for the same subject id are spread over different transactions, they may read stale data and lose updates. |
-To achieve at-least-once delivery, messages that are not acknowledged will be redelivered. This means redeliveries of 'older' messages may arrive behind fresh deliveries of 'newer' messages. The *first* delivery of each message is always in-order, though.
+At-least-once delivery means a message may be delivered more than once. Within a single partition, redeliveries preserve the original order — there is no scenario where a newer message lands at the consumer before an older message’s redelivery completes. Two cases lead to redelivery:
+
+- A message whose handler failed is replayed from the last committed offset, followed by the messages after it.
+- A message that was processed successfully but whose offset commit did not make it before a restart or partition rebalance is replayed on the next read. Offset commits are batched, so this gap is normal rather than exceptional.
+Consumer handlers must therefore be idempotent or deduplicate explicitly. See [Message deduplication](../../sdk/dev-best-practices.html#message-deduplication) for guidance.
 
 When publishing messages to Kafka from Akka, the `ce-subject` attribute, if present, is used as the Kafka partition key for the message.
 
@@ -110,7 +114,7 @@ See [Testing Akka eventing](message-brokers.html#_testing)
 
 <!-- <footer> -->
 <!-- <nav> -->
-[AWS MSK Kafka](broker-aws-msk.html) [Azure Event Hubs](broker-azure-eventhubs.html)
+[AWS MSK Kafka](broker-aws-msk.html) [Self-hosted Kafka](broker-kafka.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

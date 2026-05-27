@@ -1,0 +1,198 @@
+<!-- <nav> -->
+- [Akka](../../index.html)
+- [Developing](../index.html)
+- [Components](../components/index.html)
+- [Autonomous Agents](../autonomous-agents.html)
+- [Coordination patterns](coordination.html)
+
+<!-- </nav> -->
+
+# Coordination patterns
+
+Models perform best with focused context. As tasks grow more complex, a single agent’s context becomes diluted with too much information, too many concerns, and competing objectives. Multi-agent patterns address this by scoping context so that each agent can operate with clarity.
+
+The coordination pattern shapes system behavior in several ways: efficiency, coherence, predictability, error propagation, and the kinds of solutions a system can discover. Parallelism provides a second motivation. When work can be decomposed into independent subtasks, multiple agents can run simultaneously for direct speedup or greater thoroughness. Multi-agent patterns also enable model specialization. A smaller, faster model can be used for triage, a stronger model for complex reasoning, or a model fine-tuned for a specific domain. Each agent uses the model best suited for its responsibilities.
+
+Four patterns cover the design space. Each has a distinct view of how context is scoped and flows between agents, a corresponding single-agent approach, and an analogy to established concurrency models. In practice these patterns are conceptual tools for understanding the design space. Real systems often blend them.
+
+Before you can apply a pattern, you need to decide what each piece of work is. The next section walks through the three primitives, task, tool, and agent, and how to choose between them.
+
+## <a href="about:blank#_choosing_the_unit_of_decomposition"></a> Choosing the unit of decomposition
+
+Designing an autonomous agent system means deciding which unit of decomposition fits each piece of work. The same operation, "check the weather", can reasonably be modeled as a tool, a task, or its own agent, and the choice has real consequences for context, persistence, and reuse. This section explains what each abstraction is for, then offers a rule of thumb for choosing between them.
+
+Tool A tool is a function the model can request to fetch information, perform a computation, or trigger an action. The agent runs the tool on the model’s behalf and feeds the return value back into the model’s context, then the iteration continues. Tools are the right fit for quick lookups, deterministic computations, or for letting the model interact with entities and views. They have no lifecycle of their own and are not visible from outside the iteration.
+
+Task A task is a typed unit of work with its own identity, result schema, and lifecycle. Tasks persist independently of the agent that handles them. They can be queried by external clients, depend on other tasks, hand off between agents, and produce results that survive the agent. Use a task when the work has a meaningful structured result, when it might succeed or fail independently, when other tasks should depend on it, or when an external actor such as a human or another service needs to observe or complete it.
+
+Agent An autonomous agent is a process with a `@Component` description, accepted task types, and tools. The description captures the agent’s purpose and expected outcome: it tells coordinators when to delegate to it and is injected into its own system message. Use a separate agent when the work benefits from a focused context, a distinct purpose, or a different model. The most common reasons are coordination, when you want to delegate, hand off, or moderate, and isolation, when you don’t want the parent agent’s context contaminated by the details of the sub-work. Optional `instructions(…​)` on the definition can add tone, persona, domain rules, or procedural guidance for the model; multi-agent orchestration mechanics belong in capabilities, not in instructions.
+
+### <a href="about:blank#_choosing_between_them"></a> Choosing between them
+
+Pick the smallest abstraction that still captures what you need. The escalation order, from cheapest to heaviest, is roughly: tool, then task on the same agent, then a separate agent.
+
+- If the work is a fetch or a calculation that informs the model’s decision in the same iteration, make it a **tool**. Example: `getWeather(location, date)` returns a forecast string the model can read and react to.
+- If the work has a typed result that should be tracked, depended on, or completed by an actor other than the agent, make it a **task**. The same agent can accept several task types, and tasks can declare dependencies between each other. Example: a `WeatherForecast` task whose result feeds into a downstream `TripPlan` task.
+- If the work needs its own purpose, its own context, or specialized handling, make it a **separate agent**. Reach for it through a `Delegation` capability when you want a result back, a handoff when you want to transfer ownership, or `TeamLeadership` / `Moderation` when you want richer coordination.
+
+The delegation target can be either an autonomous agent or a request-based [Agent](../agents.html):
+
+  - Pick a **request-based agent** for one-shot work that just needs to be kept out of the parent’s context. Example: a `WeatherAgent` that calls a weather API and translates the JSON response into a sentence using its own prompt.
+  - Pick an **autonomous agent** when the worker itself benefits from multiple iterations, tool use, or a typed task lifecycle. Example: a `WeatherAnalyst` that pulls multiple forecasts, compares them, and produces a written analysis.
+The same operation can sit at different levels in different systems. "Check the weather" can be:
+
+- A **tool** when the parent just needs the forecast inline.
+- A **request-based agent** when the API call and its interpretation should live in their own prompt and context.
+- A **task** when the forecast is a tracked artifact other tasks depend on.
+- An **autonomous agent** when weather analysis is itself a multi-step problem worth its own focused context.
+Start with the cheapest option and escalate when the lighter abstraction stops fitting. Reasons to escalate include the result needing to be tracked outside the iteration, the work needing more iterations than its sibling work, or the parent’s context getting noisy.
+
+## <a href="about:blank#_sequential_handoff"></a> Sequential (handoff)
+
+Control transfers between agents. One agent is active at a time. Context accumulates or transforms as it moves through the chain.
+
+| Aspect | Description |
+| --- | --- |
+| Group | Relay (passing along a chain). |
+| Single-agent counterpart | An agent with a plan, executing steps in order. |
+| Concurrency model analogy | Continuations. Each agent picks up where the previous one left off. |
+| Parallelism | None. Only one agent active at a time. |
+| Context flow | Forward. Each agent receives context from the previous stage (accumulated, summarized, or transformed), adds its contribution, and passes it on. |
+**Behavior:** This is the simplest multi-agent pattern, and the most coherent. A single thread of reasoning runs throughout. The trade-off is path dependency. Early decisions constrain later ones, and errors compound rather than correct. The sequence order matters. Research-then-plan produces different results than plan-then-research. Real workflows are often graphs rather than linear chains, which is where sequential composes with delegative.
+
+**When to use:** Workflow processes with clear stages and specialization at each stage. Better for refinement, where each stage improves on the last, than exploration. The linear sequence is easy to trace and interpret.
+
+**Example:** A triage agent receives a customer request, determines the category, and hands off control to the appropriate specialist agent. The specialist now owns the interaction.
+
+## <a href="about:blank#_delegative_fan_out_fan_in"></a> Delegative (fan-out / fan-in)
+
+A coordinator assigns subtasks to workers. Workers operate in isolated contexts. Results flow back for synthesis.
+
+| Aspect | Description |
+| --- | --- |
+| Group | Hierarchy (coordinator and workers). |
+| Single-agent counterpart | An agent with skills, loading focused capabilities as needed. |
+| Concurrency model analogy | Fork/join, futures. The coordinator fans out work and collects results. |
+| Parallelism | High. Subtasks can run simultaneously. |
+| Context flow | Partitioned. Each worker sees only its slice. Workers are deliberately isolated from each other. The coordinator sees the original task and the results that come back, but not the internal reasoning of each worker. |
+**Behavior:** Context isolation is the defining feature. Each worker gets a focused context and can go deep on its subproblem without distraction or influence from the others. But isolation also means no cross-pollination. The responsibility for coherence falls entirely on the coordinator. It needs to perform well at both decomposition and synthesis. A variant is competitive delegation, where the coordinator assigns the same task to multiple workers and the best result is selected. At large scale, with many agents and statistical selection, this blurs into the emergent pattern.
+
+**When to use:** Tasks that decompose into distinct subtasks benefiting from isolated, focused contexts, or when independent perspectives are needed. Good for parallel execution to reduce latency, or broad exploration with many workers generating independent attempts.
+
+**Example:** A research coordinator delegates fact-gathering to a researcher and trend analysis to an analyst. Both work in parallel with isolated contexts. The coordinator synthesizes their findings into a brief.
+
+## <a href="about:blank#_collaborative_team"></a> Collaborative (team)
+
+Peer agents share context and communicate directly. They work together on a common problem.
+
+| Aspect | Description |
+| --- | --- |
+| Group | Team (cooperation between peers). |
+| Single-agent counterpart | An agent with internal debate or chain-of-thought verification. |
+| Concurrency model analogy | Actor model. Independent agents exchanging messages. |
+| Parallelism | Medium. Agents work simultaneously but can be limited by coordination. |
+| Context flow | Exchanged. Agents communicate as they work, sending messages that shape each other’s reasoning. Each agent has its own context, influenced by the messages it receives, more like a conversation than a shared view. |
+**Behavior:** The strength of this pattern is mutual awareness. Agents can build on, question, and correct each other. Debate can surface better answers than any single agent would find. But shared context also enables groupthink: agents can converge on ideas too early, reinforce each other’s biases, or defer to whichever agent communicates first or most confidently. The more interdependent the collaboration, the more it resembles a single agent rather than multiple agents working in parallel.
+
+**When to use:** Interdependent subtasks where agents need to see each other’s work, or when quality benefits from debate or review between peers. Good for error-catching through challenge, or when different expertise needs to be actively integrated, not just combined afterward.
+
+**Example:** A team lead decomposes a project into tasks. Developer agents claim tasks from a shared list, work on them independently, and message peers when coordination is needed. The lead monitors progress and disbands the team when done.
+
+**Moderation as a controlled variant.** Moderated turn-taking is a more structured form of the collaborative pattern. Members still share context, but a moderator controls who speaks when, sees the full transcript, and decides when the conversation ends. This trades some of the autonomy of a self-coordinating team for a predictable cadence and a single point that drives the discussion. Use it when the value comes from a shaped exchange (peer reviews, negotiations, panel discussions) rather than from members claiming and completing work in parallel.
+
+## <a href="about:blank#_emergent_swarm"></a> Emergent (swarm)
+
+Many agents operate in parallel with minimal individual context, following simple rules. Each agent modifies a shared environment, and that environment influences what other agents do. Complex behavior emerges from these indirect interactions.
+
+| Aspect | Description |
+| --- | --- |
+| Group | Swarm (independent action, collective effect). |
+| Single-agent counterpart | An agent with sampling diversity (multiple completions, best-of-n). |
+| Concurrency model analogy | Tuple spaces, blackboard systems. Agents interact through a shared data space rather than direct communication. |
+| Parallelism | High. Agents operate completely independently. |
+| Context flow | Indirect. Agents see the environment, not each other. They influence each other only through what they leave behind in the shared state. |
+**Behavior:** This pattern is for scale and exploration, and is the most difficult to implement effectively. The system’s behavior is statistical, the aggregate of many simple actions. That makes it resilient, with no single point of failure, but also unpredictable, since behavior emerges from interactions that were not explicitly designed. Selection turns a high volume of independent contributions into a useful result. Emergent selection lets better contributions get reinforced as other agents build on them. External selection introduces something outside the swarm to evaluate and curate the output. In practice, you may want both.
+
+**When to use:** Large-scale problems with many similar agents and tolerance for probabilistic outcomes. Good for broad exploration, resilience to individual failure, and avoiding early convergence on a solution.
+
+**Example:** A brainstorm team generates ideas on a shared board. Each agent contributes independently. A lead curates the results, with the final output emerging from accumulation and refinement rather than explicit coordination.
+
+## <a href="about:blank#_context_management"></a> Context management
+
+Context management is the primary motivation for multi-agent systems. An agent’s context shapes its behavior. What it sees determines what it attends to, how it reasons, and what solutions it considers.
+
+As tasks grow more complex, a single agent’s context becomes diluted. Multi-agent patterns address this by scoping context so that each agent operates with clarity. The coordination pattern you choose is a context management strategy.
+
+### <a href="about:blank#_what_crosses_an_agent_boundary"></a> What crosses an agent boundary
+
+Each agent maintains its own private session: the full iteration history, tool calls, and intermediate reasoning. None of this is automatically shared. What crosses an agent boundary is narrower and pattern-specific.
+
+Handoff The source agent writes a free-form summary into the handoff tool’s `context` argument. That summary, along with any summary from earlier handoffs, is appended into the next agent’s context.
+
+Delegation The worker starts fresh with the subtask’s instructions and attachments only. The coordinator receives the typed task result back, nothing else. Worker iterations and tool results stay in the worker.
+
+Team or collaborative Members share a task list (the backlog) and a point-to-point message channel. Each member sees only messages addressed to it, plus backlog state changes. There is no shared transcript.
+
+Moderation The moderator sees the full conversation transcript. Each participant accumulates a private view of the entries delivered to it on each turn, plus the moderator’s per-turn prompt.
+
+### <a href="about:blank#_aspects_of_context_scoping"></a> Aspects of context scoping
+
+Think about context scoping in terms of these aspects:
+
+Focus Narrow the task. An agent with a narrow context concentrates on its subproblem, attending to details that matter, reasoning more deeply, selecting better solutions. This applies to tools too. Agents with narrowly scoped tools select more accurately than agents with broad toolsets.
+
+Relevance Keep context current. As work progresses, context accumulates with the residue of earlier steps. When each agent gets a fresh context for its portion of the work, with history summarized at communication points, attention stays on what is current.
+
+Isolation Separate concerns. When an agent works across multiple concerns, context from one can interfere with another. Giving each concern its own agent avoids this cross-contamination.
+
+Independence Think without influence. When agents see each other’s work, they converge, anchoring on early ideas or falling into groupthink. When agents work without access to each other’s reasoning, they produce diverse approaches rather than early consensus.
+
+## <a href="about:blank#_when_to_use_multiple_agents"></a> When to use multiple agents
+
+A well-designed single agent with appropriate tools can accomplish a lot. Multi-agent patterns introduce real overhead in tokens, in coordination, and in complexity.
+
+Consider multiple agents when:
+
+- Accumulated context is degrading performance.
+- Subtask context is contaminating other work.
+- A single perspective is limiting solution quality.
+- The agent’s toolset or prompt is too broad to be effective.
+- Subtasks are genuinely independent and could benefit from parallel execution.
+- Explainability and auditability are requirements. Distinct agents with clear roles make reasoning auditable.
+Multi-agent systems can also enable more dynamic behavior. Each execution is shaped by the interplay between agents rather than a single initial prompt. A delegative coordinator can tailor its decomposition per execution. Collaborative agents adapt to each other’s contributions as they work. Emergent agents respond to evolving shared state. The tradeoff is predictability. The more dynamic the coordination, the harder it is to anticipate and test the system’s behavior for any given input.
+
+Start with the simplest approach that works, and add multi-agent complexity when there is evidence that a single agent is hitting its limits. It can also be worth experimenting with multi-agent approaches early to understand the tradeoffs, particularly when explainability or auditability are requirements.
+
+### <a href="about:blank#_decomposing_into_multiple_agents"></a> Decomposing into multiple agents
+
+The intuitive approach is to split by work type: one agent plans, another implements, a third reviews. But this often means each agent needs most of the same context, making the separation artificial while adding real coordination costs.
+
+Boundaries are more effective when they follow context rather than problem structure. This is what Anthropic describes as the distinction between [context-centric and problem-centric decomposition](https://www.anthropic.com/engineering/building-effective-agents). Effective boundaries are where focus narrows to a different task, where isolation prevents contamination of concerns, or where independence produces better diversity than shared attention.
+
+## <a href="about:blank#_composing_patterns"></a> Composing patterns
+
+The coordination patterns compose at different levels. Some examples:
+
+**Sequential pipeline with delegative stages.** A document flows through stages: research, analysis, writing, review. Each stage can internally delegate to multiple workers. The analysis stage fans out to workers examining different aspects in parallel, then synthesizes before passing forward.
+
+**Delegative coordinator with collaborative teams.** A coordinator delegates to specialist teams. Within each team, agents collaborate, debating approaches, catching errors, building on each other’s work. The coordinator only sees the final output from each team.
+
+**Collaborative debate with delegative research.** Agents debate an approach, but when they need evidence they delegate fact-gathering to workers. Workers return findings and the debate resumes with new information. Useful when a decision process needs to be informed by research that can happen in parallel.
+
+**Delegative coordinator with sequential workers.** A coordinator fans out to workers, but each worker internally runs a multi-step pipeline (research, draft, self-review) before returning results.
+
+## <a href="about:blank#_see_also"></a> See Also
+
+- [Coordination capabilities](capabilities.html) for the SDK constructs that implement these patterns
+- [Autonomous Agents](../autonomous-agents.html)
+
+<!-- <footer> -->
+<!-- <nav> -->
+[Tasks](tasks.html) [Coordination capabilities](capabilities.html)
+<!-- </nav> -->
+
+<!-- </footer> -->
+
+<!-- <aside> -->
+
+<!-- </aside> -->

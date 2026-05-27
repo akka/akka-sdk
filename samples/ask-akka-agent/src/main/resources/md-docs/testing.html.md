@@ -2,249 +2,358 @@
 - [Akka](../../index.html)
 - [Developing](../index.html)
 - [Components](../components/index.html)
-- [Agents](../agents.html)
+- [Autonomous Agents](../autonomous-agents.html)
 - [Testing](testing.html)
 
 <!-- </nav> -->
 
-# Testing the agent
+# Testing
 
-Testing agents built with Generative AI involves two complementary approaches: evaluating the quality of the non-deterministic model behavior and writing deterministic unit tests for the agent’s and surrounding components' logic. Evaluations is described in [LLM evaluation](llm_eval.html), and here we will cover the deterministic testing.
+Autonomous agents are tested using `TestModelProvider` to mock model responses, following the same pattern as request-based agents (see [Testing the agent](../agents/testing.html)). The integration test:
 
-## <a href="about:blank#_mocking_responses_from_the_model"></a> Mocking responses from the model
+- extends `TestKitSupport`,
+- registers a `TestModelProvider` per agent class,
+- uses `Awaitility` to poll for asynchronous task completion.
 
-For predictable and repeatable tests of your agent’s business logic and component integrations, it’s essential to use deterministic responses. This allows you to verify that your agent behaves correctly when it receives a known model output.
+## <a href="about:blank#_single_agent_test"></a> Single-agent test
 
-Use the `TestKitSupport` and the `ComponentClient` to call the components from the test. The `ModelProvider` of the agents can be replaced with [TestModelProvider](../_attachments/testkit/akka/javasdk/testkit/TestModelProvider.html), which provides ways to mock the responses without using the real AI model.
+The simplest case is one agent, one task, one mocked response. The mocked response invokes the built-in `complete_task` tool with a result that matches the task’s result type. Use `AutonomousAgentTools.completeTask(…​)` to construct the call without referencing the internal tool name.
 
-[AgentTeamWorkflowTest.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/test/java/demo/multiagent/application/AgentTeamWorkflowTest.java)
+[QuestionAnswererIntegrationTest.java](https://github.com/akka/akka-sdk/blob/main/samples/autonomous-agent-playground/src/test/java/demo/helloworld/QuestionAnswererIntegrationTest.java)
 ```java
-public class AgentTeamWorkflowTest extends TestKitSupport { // (1)
+public class QuestionAnswererIntegrationTest extends TestKitSupport {
 
-  private final TestModelProvider selectorModel = new TestModelProvider(); // (2)
-  private final TestModelProvider plannerModel = new TestModelProvider();
-  private final TestModelProvider activitiesModel = new TestModelProvider();
-  private final TestModelProvider weatherModel = new TestModelProvider();
-  private final TestModelProvider summaryModel = new TestModelProvider();
-  private final TestModelProvider toxicityEvalModel = new TestModelProvider();
-  private final TestModelProvider summarizationEvalModel = new TestModelProvider();
+  private final TestModelProvider model = new TestModelProvider(); // (1)
+
+  @Override
+  protected TestKit.Settings testKitSettings() {
+    return TestKit.Settings.DEFAULT.withAdditionalConfig(
+      "akka.javasdk.agent.openai.api-key = n/a"
+    ).withModelProvider(QuestionAnswerer.class, model); // (2)
+  }
+
+  @Test
+  public void shouldAnswerQuestionWithTypedResult() {
+    model.fixedResponse( // (3)
+      new TestModelProvider.AiResponse(completeTask(new Answer("2 plus 2 equals 4.", 100)))
+    );
+
+    var response = httpClient // (4)
+      .POST("/questions")
+      .withRequestBody(new QuestionEndpoint.AskQuestion("What is 2 + 2?"))
+      .responseBodyAs(QuestionEndpoint.QuestionResponse.class)
+      .invoke()
+      .body();
+
+    var taskId = response.id();
+    assertThat(taskId).isNotBlank();
+    assertThat(response.runId()).isNotBlank();
+    assertThat(response.agentComponentId()).isEqualTo("question-answerer");
+
+    Awaitility.await() // (5)
+      .ignoreExceptions()
+      .atMost(10, TimeUnit.SECONDS)
+      .untilAsserted(() -> {
+        var snapshot = componentClient.forTask(taskId).get(QuestionTasks.ANSWER);
+        var result = snapshot.result().orElseThrow();
+        assertThat(result.answer()).isEqualTo("2 plus 2 equals 4.");
+        assertThat(result.confidence()).isEqualTo(100);
+      });
+  }
+```
+
+| **1** | Create a `TestModelProvider` instance as a field of the test class. |
+| **2** | Register it in `testKitSettings()` with `.withModelProvider(AgentClass.class, model)`. |
+| **3** | Use `.fixedResponse()` to control what the model returns. `completeTask(…​)` builds a tool invocation for the built-in `complete_task` tool, serializing the result object to match the task’s result type. |
+| **4** | Trigger the agent through your endpoint. |
+| **5** | Poll for the typed result with `Awaitility.await()` because execution is asynchronous. |
+
+## <a href="about:blank#_autonomousagenttools_helpers"></a> AutonomousAgentTools helpers
+
+The `TestModelProvider.AutonomousAgentTools` class provides factory methods for the built-in coordination tools that the runtime exposes to the model. Always prefer these over raw `ToolInvocationRequest` instances with string tool names: the helpers serialize result objects to JSON, derive the right tool name from the agent’s component id and the task definition, and stay correct if the runtime renames a tool.
+
+**Task lifecycle tools:**
+
+```java
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.*;
+
+// Complete a task: pass a result object matching the task's result type
+completeTask(new Answer("2 plus 2 equals 4.", 100));
+
+// Complete a task with raw JSON (must be a valid JSON object)
+completeTaskJson("{\"answer\":\"2 plus 2 equals 4.\",\"confidence\":100}");
+
+// Fail a task with a reason
+failTask("Not enough information to proceed.");
+```
+**Handoff and delegation tools:**
+
+```java
+// Hand off the current task to another agent
+handoffTo(BillingSpecialist.class, "Customer has billing dispute");
+
+// Delegate a subtask to a worker agent
+delegateTo(ResearchTasks.FINDINGS, Researcher.class, "Research quantum computing");
+
+// Delegate to a request-based agent
+delegateTo(FactCheckAgent.class, "{\"claim\":\"Carbon emissions reduced by 40%\"}");
+```
+`AutonomousAgentTools` also exposes helpers for the team, backlog, messaging, and moderation capabilities (`createTeam`, `claimTask`, `sendMessage`, `startScriptedConversation`, `submitTurn`, …). For full coverage, see the [autonomous agents samples](../../getting-started/samples.html#autonomous_agents_playground) that exercise those patterns: `devteam` for teams and shared backlogs, and `debate`, `negotiation`, `peerreview` for moderation.
+
+## <a href="about:blank#_multi_agent_delegation_test"></a> Multi-agent delegation test
+
+When multiple agents collaborate, register a `TestModelProvider` for each. The example below mocks a coordinator that delegates to two workers and then synthesizes their results.
+
+The setup registers one provider per participating agent class:
+
+[ResearchDelegationIntegrationTest.java](https://github.com/akka/akka-sdk/blob/main/samples/autonomous-agent-playground/src/test/java/demo/research/ResearchDelegationIntegrationTest.java)
+```java
+public class ResearchDelegationIntegrationTest extends TestKitSupport {
+
+  private final TestModelProvider coordinatorModel = new TestModelProvider();
+  private final TestModelProvider researcherModel = new TestModelProvider();
+  private final TestModelProvider analystModel = new TestModelProvider();
 
   @Override
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT.withAdditionalConfig(
       "akka.javasdk.agent.openai.api-key = n/a"
     )
-      .withModelProvider(SelectorAgent.class, selectorModel) // (3)
-      .withModelProvider(PlannerAgent.class, plannerModel)
-      .withModelProvider(ActivityAgent.class, activitiesModel)
-      .withModelProvider(WeatherAgent.class, weatherModel)
-      .withModelProvider(SummarizerAgent.class, summaryModel)
-      .withModelProvider(ToxicityEvaluator.class, toxicityEvalModel)
-      .withModelProvider(SummarizationEvaluator.class, summarizationEvalModel);
+      .withModelProvider(ResearchCoordinator.class, coordinatorModel)
+      .withModelProvider(Researcher.class, researcherModel)
+      .withModelProvider(Analyst.class, analystModel);
   }
+```
+The test mocks the coordinator’s delegation, the two workers' completions, and the coordinator’s final synthesis:
 
-  @Test
-  public void test() {
-    var selection = new AgentSelection(List.of("activity-agent", "weather-agent"));
-    selectorModel.fixedResponse(JsonSupport.encodeToString(selection)); // (4)
-
-    var weatherQuery = "What is the current weather in Stockholm?";
-    var activityQuery =
-      "Suggest activities to do in Stockholm considering the current weather.";
-    var plan = new Plan(
+[ResearchDelegationIntegrationTest.java](https://github.com/akka/akka-sdk/blob/main/samples/autonomous-agent-playground/src/test/java/demo/research/ResearchDelegationIntegrationTest.java)
+```java
+@Test
+public void shouldDelegateToWorkersAndSynthesizeResult() {
+  // Coordinator delegates to both workers
+  coordinatorModel
+    .whenMessage(msg -> msg.contains("quantum computing"))
+    .reply(
       List.of(
-        new PlanStep("weather-agent", weatherQuery),
-        new PlanStep("activity-agent", activityQuery)
+        delegateTo(
+          ResearchTasks.FINDINGS,
+          Researcher.class,
+          "Research quantum computing fundamentals"
+        ),
+        delegateTo(
+          ResearchTasks.ANALYSIS,
+          Analyst.class,
+          "Analyse quantum computing market trends"
+        )
       )
     );
-    plannerModel.fixedResponse(JsonSupport.encodeToString(plan));
 
-    weatherModel
-      .whenMessage(req -> req.equals(weatherQuery)) // (5)
-      .reply("The weather in Stockholm is sunny.");
-
-    activitiesModel
-      .whenMessage(req -> req.equals(activityQuery))
-      .reply(
-        "You can take a bike tour around Djurgården Park, " +
-        "visit the Vasa Museum, explore Gamla Stan (Old Town)..."
-      );
-
-    summaryModel.fixedResponse(
-      "The weather in Stockholm is sunny, so you can enjoy " +
-      "outdoor activities like a bike tour around Djurgården Park, " +
-      "visiting the Vasa Museum, exploring Gamla Stan (Old Town)"
-    );
-
-    toxicityEvalModel.fixedResponse(
-      """
-      {
-        "label" : "non-toxic"
-      }
-      """.stripIndent()
-    );
-
-    summarizationEvalModel.fixedResponse(
-      """
-      {
-        "label" : "good"
-      }
-      """.stripIndent()
-    );
-
-    var query = "I am in Stockholm. What should I do? Beware of the weather";
-
-    var sessionId = UUID.randomUUID().toString();
-    var request = new AgentTeamWorkflow.Request("alice", query);
-
-    componentClient
-      .forWorkflow(sessionId)
-      .method(AgentTeamWorkflow::start) // (6)
-      .invoke(request);
-
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(10, SECONDS)
-      .untilAsserted(() -> {
-        var answer = componentClient
-          .forWorkflow(sessionId)
-          .method(AgentTeamWorkflow::getAnswer)
-          .invoke();
-        assertThat(answer).isNotBlank();
-        assertThat(answer).contains("Stockholm");
-        assertThat(answer).contains("sunny");
-        assertThat(answer).contains("bike tour");
-      });
-  }
-}
-```
-
-| **1** | Extend `TestKitSupport` to gain access to testing utilities for Akka components. |
-| **2** | Create one or more `TestModelProvider`. Using one per agent allows for distinct mock behaviors, while sharing one is useful for testing general responses. |
-| **3** | Use the settings of the `TestKit` to replace the agent’s real `ModelProvider` with your test instance. |
-| **4** | For simple tests, define a single, fixed response that the mock model will always return. |
-| **5** | For more complex scenarios, define a response that is only returned if the user message matches a specific condition. This is useful for testing different logic paths within your agent. |
-| **6** | Call the components with the `componentClient`. |
-
-## <a href="about:blank#_mocked_model_in_a_deployed_service"></a> Mocked model in a deployed service
-
-In some scenarios it can be useful to run the service deployed but without interacting with an actual agent. For example,
-a load test that exercises the service with heavy load to verify scalability could quickly consume a large number of tokens
-when the exact answer from the model is not very important, one or a few different predefined responses and responding with
-a slight delay to simulate model processing time could be good enough.
-
-It is possible to implement a custom model provider using `akka.javasdk.agent.ModelProvider.Custom`, such a mock provider
-however, side steps quite a bit of the infrastructure involved in agent interactions, a more realistic mock model can be implemented
-by building a separate Akka service with a single [HTTP endpoint](../http-endpoints.html) mimicking the model endpoint and
-configuring the deployed agentic service to use that.
-
-Here is an example endpoint returning a static response over the OpenAI protocol:
-
-[MockOpenAI.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/MockOpenAI.java)
-```java
-@HttpEndpoint
-@Acl(allow = { @Acl.Matcher(service = "*") })
-public class MockOpenAI extends AbstractHttpEndpoint {
-
-  private static final long MIN_DELAY_MILLIS = 2000;
-  private static final long MAX_DELAY_MILLIS = 3000;
-  private static final long DELAY_SPAN = MAX_DELAY_MILLIS - MIN_DELAY_MILLIS;
-
-  private static final HttpResponse staticResponse = HttpResponse.create()
-    .withStatus(StatusCodes.OK)
-    .withEntity(
-      HttpEntities.create(
-        ContentTypes.APPLICATION_JSON,
-        """
-        { "id": "chatcmpl-Byz9msOuInWGiYmFJR8eH7ei2S3d0",
-          "object": "chat.completion",
-          "created": 1753874466,
-          "model": "gpt-4o-mini-2024-07-18",
-           "choices": [
-           {
-             "index": 0,
-             "message": {
-               "role": "assistant",
-               "content": "Some hardcoded result",
-               "refusal": null,
-               "annotations": []
-             },
-             "logprobs": null,
-             "finish_reason": "stop"
-           }],
-           "usage": {
-             "prompt_tokens": 29,
-             "completion_tokens": 264,
-             "total_tokens": 293,
-             "prompt_tokens_details": {
-               "cached_tokens": 0,
-               "audio_tokens": 0
-             },
-             "completion_tokens_details": {
-               "reasoning_tokens": 0,
-               "audio_tokens": 0,
-               "accepted_prediction_tokens": 0,
-               "rejected_prediction_tokens": 0
-             }
-           },
-           "service_tier": "default",
-           "system_fingerprint": "fp_197a02a720"
-        }"""
+  // Researcher completes with ResearchFindings
+  researcherModel.fixedResponse(
+    new TestModelProvider.AiResponse(
+      completeTask(
+        new ResearchFindings(
+          "Quantum Computing",
+          List.of("Qubits enable parallel computation", "Error correction is advancing"),
+          List.of("Nature Physics 2024", "IBM Research")
+        )
       )
     )
-    .withHeaders(
-      Arrays.asList(
-        RawHeader.create("x-request-id", "537dc248-255e-49eb-8799-fcc11a8b6cf0"),
-        RawHeader.create("x-ratelimit-limit-tokens", "2000000"),
-        RawHeader.create("openai-organization", "abc-123123"),
-        RawHeader.create("openai-version", "20200-01"),
-        RawHeader.create("openai-processing-ms", "5916"),
-        RawHeader.create("openai-project", "proj_1234567abcdef")
+  );
+
+  // Analyst completes with AnalysisReport
+  analystModel.fixedResponse(
+    new TestModelProvider.AiResponse(
+      completeTask(
+        new AnalysisReport(
+          "Quantum Computing",
+          "Market growing rapidly with key players investing heavily.",
+          List.of("$50B market by 2030", "Cloud quantum access expanding")
+        )
+      )
+    )
+  );
+
+  // Coordinator synthesizes after both workers complete
+  coordinatorModel
+    .whenMessage(msg -> msg.contains("Continue working"))
+    .reply(
+      completeTask(
+        new ResearchBrief(
+          "Quantum Computing Brief",
+          "Quantum computing leverages qubits for parallel computation with a rapidly growing market projected at $50B by 2030.",
+          List.of(
+            "Qubits enable parallel computation",
+            "Error correction is advancing",
+            "$50B market by 2030",
+            "Cloud quantum access expanding"
+          )
+        )
       )
     );
 
-  @Post("/chat/completions")
-  public HttpResponse completion(HttpEntity.Strict ignoredRequestBody) throws Exception {
-    var delay = MIN_DELAY_MILLIS + ThreadLocalRandom.current().nextLong(DELAY_SPAN);
-    Thread.sleep(delay);
-    return staticResponse;
-  }
+  var response = httpClient
+    .POST("/research")
+    .withRequestBody(new ResearchEndpoint.ResearchRequest("quantum computing"))
+    .responseBodyAs(ResearchEndpoint.ResearchResponse.class)
+    .invoke()
+    .body();
+
+  var taskId = response.id();
+  assertThat(taskId).isNotBlank();
+
+  Awaitility.await()
+    .ignoreExceptions()
+    .atMost(30, TimeUnit.SECONDS)
+    .untilAsserted(() -> {
+      var snapshot = componentClient.forTask(taskId).get(ResearchTasks.BRIEF);
+      var result = snapshot.result().orElseThrow();
+      assertThat(result.title()).isEqualTo("Quantum Computing Brief");
+      assertThat(result.keyFindings()).hasSize(4);
+    });
 }
 ```
-For more elaborate scenarios, the mock model endpoint may have to parse the request to decide which hard coded answer out of a few
-or to create a reply in a more dynamic fashion.
+Notice how `whenMessage(…​).reply(…​)` lets you condition on the prompt content. The coordinator gets a different reply for the initial topic prompt and the post-delegation `Continue working` prompt.
 
-Deploying this service as `mock-openai` allows other services containing agents in the same [Akka project](../../operations/projects/index.html).
-Using the deployed mock service from an agent in another service can be done with a config like this:
+## <a href="about:blank#_testing_a_handoff_flow"></a> Testing a handoff flow
 
-application.conf
-```hocon
-akka.javasdk {
-  agent {
-    model-provider = openai
+For a handoff, the triage agent’s mocked response calls `handoffTo`, and the specialist’s mocked response calls `completeTask`:
 
-    openai {
-      model-name = "gpt-4o-mini"
-      base-url = "http://mock-openai" // (1)
-    }
-  }
+[HandoffIntegrationTest.java](https://github.com/akka/akka-sdk/blob/main/samples/autonomous-agent-playground/src/test/java/demo/support/HandoffIntegrationTest.java)
+```java
+@Test
+public void shouldHandoffToBillingSpecialist() {
+  // Triage agent classifies as billing and hands off
+  triageModel.fixedResponse(
+    new TestModelProvider.AiResponse(
+      handoffTo(
+        BillingSpecialist.class,
+        "Customer has a billing dispute about double charge on invoice #1234."
+      )
+    )
+  );
+
+  // Billing specialist resolves the issue
+  billingModel.fixedResponse(
+    new TestModelProvider.AiResponse(
+      completeTask(
+        new SupportResolution(
+          "billing",
+          "Refund issued for duplicate charge on invoice #1234.",
+          true
+        )
+      )
+    )
+  );
+
+  var response = httpClient
+    .POST("/support")
+    .withRequestBody(
+      new SupportEndpoint.SupportRequest(
+        "I was charged twice on invoice #1234, please fix this."
+      )
+    )
+    .responseBodyAs(SupportEndpoint.SupportResponse.class)
+    .invoke()
+    .body();
+
+  var taskId = response.id();
+  assertThat(taskId).isNotBlank();
+
+  Awaitility.await()
+    .ignoreExceptions()
+    .atMost(30, TimeUnit.SECONDS)
+    .untilAsserted(() -> {
+      var snapshot = componentClient.forTask(taskId).get(SupportTasks.RESOLVE);
+      var result = snapshot.result().orElseThrow();
+      assertThat(result.category()).isEqualTo("billing");
+      assertThat(result.resolved()).isTrue();
+    });
 }
 ```
 
-1. The service name the mock was deployed as.
-Note that you should use `http`, and not `https`, the connection will be encrypted with TLS, but that is handled by the platform.
+## <a href="about:blank#_scripting_tool_use"></a> Scripting tool use
 
-## <a href="about:blank#_log_model_request_and_response"></a> Log model request and response
+When the model should call a domain tool, use `whenMessage` to script the first call and `whenToolResult` to react after the tool returns. The follow-up reaction can be another tool call, a delegation, a handoff, or a `completeTask`:
 
-To see exactly what is sent to and received from the AI model, you can enable the following logger in `include-dev-loggers.xml`:
+[ConsultingIntegrationTest.java](https://github.com/akka/akka-sdk/blob/main/samples/autonomous-agent-playground/src/test/java/demo/consulting/ConsultingIntegrationTest.java)
+```java
+// Coordinator: assess → check complexity → delegate research → synthesise
+coordinatorModel
+  .whenMessage(msg -> msg.contains("supply chain"))
+  .reply(
+    List.of(
+      new TestModelProvider.ToolInvocationRequest(
+        "ConsultingTools_assessProblem",
+        "{\"problemDescription\":\"supply chain efficiency\"}"
+      )
+    )
+  );
 
-```none
-<logger name="kalix.runtime.agent.AkkaLangChain4jHttpClient" level="TRACE"/>
+coordinatorModel
+  .whenToolResult(tr -> tr.name().equals("ConsultingTools_assessProblem"))
+  .reply(
+    new TestModelProvider.ToolInvocationRequest(
+      "ConsultingTools_checkComplexity",
+      "{\"assessment\":\"moderate complexity, integration challenges\"}"
+    )
+  );
+
+coordinatorModel
+  .whenToolResult(tr -> tr.name().equals("ConsultingTools_checkComplexity"))
+  .reply(
+    delegateTo(
+      ConsultingTasks.RESEARCH,
+      ConsultingResearcher.class,
+      "Research supply chain optimization best practices"
+    )
+  );
 ```
+The domain tool name passed to `ToolInvocationRequest` (for example `ConsultingTools_assessProblem`) is the tool name exposed to the model by the agent’s `@FunctionTool` methods, not a built-in runtime tool. Built-in tools are constructed with the `AutonomousAgentTools` helpers instead.
+
+Call `model.reset()` in `@AfterEach` to clear all configured responses between tests when you have multiple test methods sharing the same providers.
+
+## <a href="about:blank#_testing_failure_paths"></a> Testing failure paths
+
+The runtime treats `fail_task` as a terminal failure for the task. Use `failTask` to mock it and test the failure handling in your endpoints:
+
+[QuestionAnswererIntegrationTest.java](https://github.com/akka/akka-sdk/blob/main/samples/autonomous-agent-playground/src/test/java/demo/helloworld/QuestionAnswererIntegrationTest.java)
+```java
+@Test
+public void shouldFailTaskWhenModelCallsFailTask() {
+  model.fixedResponse(
+    new TestModelProvider.AiResponse(failTask("I cannot answer this question."))
+  );
+
+  var response = httpClient
+    .POST("/questions")
+    .withRequestBody(new QuestionEndpoint.AskQuestion("What is the meaning of life?"))
+    .responseBodyAs(QuestionEndpoint.QuestionResponse.class)
+    .invoke()
+    .body();
+
+  var taskId = response.id();
+
+  Awaitility.await()
+    .ignoreExceptions()
+    .atMost(10, TimeUnit.SECONDS)
+    .untilAsserted(() -> {
+      var snapshot = componentClient.forTask(taskId).get(QuestionTasks.ANSWER);
+      assertThat(snapshot.status().name()).isEqualTo("FAILED");
+      assertThat(snapshot.failureReason()).contains("I cannot answer this question.");
+    });
+}
+```
+
+## <a href="about:blank#_see_also"></a> See Also
+
+- [Testing request-based agents](../agents/testing.html)
+- [Client API](client.html)
+- [Notifications](notifications.html) (subscribe to the notification stream in tests to assert on intermediate transitions)
 
 <!-- <footer> -->
 <!-- <nav> -->
-[LLM evaluation](llm_eval.html) [Event Sourced Entities](../event-sourced-entities.html)
+[Notifications](notifications.html) [Event Sourced Entities](../event-sourced-entities.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

@@ -9,7 +9,6 @@ To switch between organizations, you must specify the target organization's cont
 
 * xref:organizations/manage-users.adoc[*User Membership*]: A user can belong to multiple organizations, but membership does not automatically grant access to the organization’s projects.
 * xref:organizations/regions.adoc[*Regions*]: Each organization has access to specific regions. Projects created within the organization are located in one or more of these regions.
-* xref:organizations/billing.adoc[*Billing*]: Billing is handled at the organization level, with all costs collected and paid per organization.
 * xref:projects/manage-project-access.adoc[*Role-Based Access*]: Membership and project access within an organization are managed through role bindings.
 
 == Details
@@ -40,4 +39,3 @@ NOTE: You can refer to the organization in `akka` commands using either the "fri
 
 - xref:organizations/manage-users.adoc[]
 - xref:organizations/regions.adoc[]
-- xref:organizations/billing.adoc[]

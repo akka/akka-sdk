@@ -9,10 +9,12 @@ import akka.NotUsed;
 import akka.annotation.ApiMayChange;
 import akka.japi.Pair;
 import akka.japi.function.Function;
+import akka.javasdk.impl.ErrorHandling;
 import akka.stream.Materializer;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import java.time.Duration;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -100,18 +102,22 @@ public interface NotificationPublisher<T> {
       Duration groupingDuration,
       Function<String, T> partialMapping,
       Materializer materializer) {
-    return tokenSource
-        .groupedWithin(groupingMaxNumber, groupingDuration)
-        .map(grouped -> String.join("", grouped))
-        .map(partial -> new Pair<>(partial, partialMapping.apply(partial)))
-        .map(
-            pair -> {
-              publish(pair.second()); // publish grouped tokens
-              return pair.first();
-            })
-        .runReduce((s1, s2) -> s1 + s2, materializer) // join token to get final result
-        .toCompletableFuture()
-        .join();
+    try {
+      return tokenSource
+          .groupedWithin(groupingMaxNumber, groupingDuration)
+          .map(grouped -> String.join("", grouped))
+          .map(partial -> new Pair<>(partial, partialMapping.apply(partial)))
+          .map(
+              pair -> {
+                publish(pair.second()); // publish grouped tokens
+                return pair.first();
+              })
+          .runReduce((s1, s2) -> s1 + s2, materializer) // join token to get final result
+          .toCompletableFuture()
+          .join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
   }
 
   /**

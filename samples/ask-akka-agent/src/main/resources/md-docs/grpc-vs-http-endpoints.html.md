@@ -55,7 +55,7 @@ Use gRPC endpoints when:
 
 For more information on designing and implementing HTTP and gRPC Endpoints in Akka, refer to the following guides:
 
-- [Designing HTTP endpoints](../sdk/http-endpoints.html)
+- [Designing HTTP Endpoints](../sdk/http-endpoints.html)
 - [Designing gRPC Endpoints](../sdk/grpc-endpoints.html)
 Additionally, note that both endpoint types can be secured using ACLs and JWTs, see:
 
@@ -64,7 +64,7 @@ Additionally, note that both endpoint types can be secured using ACLs and JWTs, 
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Saga patterns](saga-patterns.html) [Building AI agents](ai-agents.html)
+[Saga patterns](saga-patterns.html) [AI Agents](ai-agents.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

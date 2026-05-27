@@ -331,6 +331,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - { sample: autonomous-agent-playground, it: true, test: true }
+
           - { sample: shopping-cart-quickstart, it: true }
           - { sample: shopping-cart-with-view, it: true }
 

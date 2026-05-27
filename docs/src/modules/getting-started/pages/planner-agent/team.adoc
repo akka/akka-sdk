@@ -89,6 +89,6 @@ Does it take the current weather forecast into account? You should see the `Weat
 
 == Next steps
 
-* It would be nice to see all previous suggestions for a user. Continue with xref:planner-agent/list.adoc[]
+* In a larger system with more agents, we could let the AI model coordinate which agents to consult for each request, rather than encoding the orchestration as workflow steps. Continue with xref:planner-agent/dynamic-team.adoc[] to introduce an Autonomous Agent coordinator with built-in delegation.
 * Learn more about the xref:sdk:workflows.adoc[`Workflow` component].
 

@@ -7,11 +7,27 @@
 
 # Akka Automated Operations
 
-Akka Agentic Platform provides capabilities to manage, monitor and gather insights from your application and its services once they are deployed. These resources will guide you through operating Akka applications and services on Akka Automated Operations. You should already be familiar with the [Deployment model](../concepts/deployment-model.html).
+## <a href="about:blank#_overview"></a> Overview
 
-## <a href="about:blank#_full_automation_through_akka_automated_operations"></a> Full automation through Akka Automated Operations
+Akka Automated Operations (AAO) is the operational backbone of the Akka platform. It manages, monitors, and gathers insights from your deployed Akka services so you can focus on building rather than babysitting infrastructure.
 
-Akka Automated Operations are based on a Kubernetes-based control plane and application plane for executing Akka services with fully-automated operations to enable elasticity, agility and resilience.
+AAO is built on a Kubernetes-based control plane and application plane purpose-designed for executing Akka services with fully automated operations. It handles elasticity, agility, and resilience out of the box — you deploy your service and AAO takes care of the rest.
+
+**When to use AAO:**
+
+- You are moving an Akka service to production and need zero-touch deployments, scaling, and recovery.
+- You require multi-region replication with automatic failover for business-critical workloads.
+- You need deep observability — logs, metrics, and traces — integrated from day one.
+- You operate under regulatory or data-sovereignty constraints that demand dedicated infrastructure.
+
+## <a href="about:blank#_reliability"></a> Reliability
+
+Reliability is a first-class dimension across every AAO tier. The platform is designed around the principle that failures are inevitable and recovery must be automatic:
+
+- **99.9999% availability target** — six nines, measured across regions.
+- **Sub-one-minute RTO** — your service resumes serving traffic in under 60 seconds after a region-level failure.
+- **Zero-byte RPO** — event-sourced state is replicated across regions.
+These guarantees are not aspirational — they are architectural. AAO continuously monitors region health, redistributes traffic on anomaly detection, and brings replacement capacity online without human intervention.
 
 ## <a href="about:blank#_deploying_and_managing_services"></a> Deploying and Managing Services
 
@@ -21,6 +37,7 @@ Operating [Services](services/index.html) provides an overview of what services 
 - [Invoking Akka services](services/invoke-service.html)
 - [Viewing data](services/view-data.html)
 - [Data migration](services/data-management.html)
+- [Workload Identity](services/workload-identity.html)
 - [Integrating with CI/CD tools](integrating-cicd/index.html)
 
 ## <a href="about:blank#_observability_and_monitoring"></a> Observability and Monitoring
@@ -38,7 +55,6 @@ Operating [Services](services/index.html) provides an overview of what services 
 
 - [Managing organization users](organizations/manage-users.html)
 - [Regions](organizations/regions.html)
-- [Billing](organizations/billing.html)
 
 ## <a href="about:blank#_projects"></a> Projects
 
@@ -67,6 +83,12 @@ Using the Akka CLI, you control all aspects of your Akka account from your comma
 - [Install the Akka CLI](cli/installation.html)
 - [Using the Akka CLI](cli/using-cli.html)
 - [Enable CLI command completion](cli/command-completion.html)
+
+## <a href="about:blank#_see_also"></a> See Also
+
+- [Akka Automated Operations product page](https://akka.io/automated-operations)
+- [Demo: Surviving the split — how Akka handles disaster scenarios](https://akka.io/blog/demo-surviving-the-split-how-akka-handles-disaster-scenarios)
+- [Demo: Recovering a completely destroyed region](https://akka.io/blog/demo-recovering-a-completely-destroyed-region)
 
 <!-- <footer> -->
 <!-- <nav> -->

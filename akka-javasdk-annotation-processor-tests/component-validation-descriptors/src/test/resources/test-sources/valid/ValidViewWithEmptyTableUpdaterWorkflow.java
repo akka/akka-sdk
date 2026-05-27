@@ -30,10 +30,5 @@ public class ValidViewWithEmptyTableUpdaterWorkflow extends View {
   @Consume.FromWorkflow(MyWorkflow.class)
   public static class Workflows extends TableUpdater<WorkflowState> {}
 
-  public static class MyWorkflow extends Workflow<WorkflowState> {
-    @Override
-    public WorkflowDef<WorkflowState> definition() {
-      return null;
-    }
-  }
+  public static class MyWorkflow extends Workflow<WorkflowState> {}
 }

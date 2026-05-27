@@ -1,6 +1,6 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [Tutorials](../index.html)
+- [Getting started & Tutorials](../index.html)
 - [Multi-agent planner](index.html)
 - [Activity agent](activity.html)
 
@@ -10,7 +10,7 @@
 
 |  | **New to Akka? Start here:**
 
-Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent with Spec-Driven Development](../spec-your-first-agent.html) guide to use your AI assistant for implementing a simple agentic service, running it locally and interacting with it. |
 
 ## <a href="about:blank#_overview"></a> Overview
 
@@ -57,9 +57,13 @@ ActivityAgent.java
 ```java
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component(id = "activity-agent") // (1)
 public class ActivityAgent extends Agent { // (2)
+
+  private static final Logger logger = LoggerFactory.getLogger(ActivityAgent.class);
 
   private static final String SYSTEM_MESSAGE =
     """
@@ -69,6 +73,7 @@ public class ActivityAgent extends Agent { // (2)
     """.stripIndent();
 
   public Effect<String> query(String message) { // (3)
+    logger.info("Invoked with: {}", message);
     return effects()
       .systemMessage(SYSTEM_MESSAGE) // (4)
       .userMessage(message) // (5)

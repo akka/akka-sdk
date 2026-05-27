@@ -68,6 +68,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ImageDescrip
 
 The same pattern works for PDFs using `PdfUrlMessageContent.create(bucket, key)`. See xref:sdk:integrations/object-storage.adoc[Object storage] for how to configure buckets and how the backend behaves in dev mode and tests.
 
+[#custom-content-loading]
 === Custom content loading
 
 Some AI models are able to fetch images or PDF from publicly accessible URLs. When you need to load content from authenticated endpoints, private storage systems, or custom sources, you can implement a custom `ContentLoader`.

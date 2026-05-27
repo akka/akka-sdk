@@ -6,17 +6,20 @@
 
 <!-- </nav> -->
 
-# Sanitization
+# Data sanitization
 
 ## <a href="about:blank#_overview"></a> Overview
 
-When services process user-generated content, protecting personally identifiable information (PII) is both a legal requirement and a trust imperative. Regulations like GDPR, CCPA, and HIPAA mandate careful handling of personal data, while users expect their private information won’t be exposed to support staff, analysts, or third parties unnecessarily.
+Data sanitization is a runtime-level governance capability built into Akka. Rather than relying on application code to remember to scrub PII at every integration point, you declare your sanitization policy once and the runtime enforces it automatically — across logs, agent model inputs, and tool outputs.
 
-Text anonymization—detecting and masking sensitive details like names, emails, and phone numbers—enables legitimate use cases such as logging, analytics, and model training while minimizing privacy risks. It reduces the attack surface in case of breaches and demonstrates a privacy-respecting approach to data handling.
+This matters because protecting personally identifiable information is simultaneously a legal obligation and a trust imperative. Regulations such as GDPR, CCPA, and HIPAA mandate careful handling of personal data. The EU AI Act goes further: when AI systems process personal data, organizations must be able to explain what data was used and how it was protected. Runtime-level PII scrubbing gives you a verifiable, auditable answer — sensitive information is masked before it ever reaches a model, satisfying both the right to erasure and the right to explanation.
 
-Akka supports this through service-wide sanitization.
+By shifting sanitization from application logic into the runtime, you gain:
 
-The sanitization is disabled by default and can be selectively enabled through configuration.
+- **Consistency** — every code path that emits logs or feeds data to an agent is covered by the same policy.
+- **Auditability** — governance and infosec teams can inspect a single configuration to verify what categories of PII are masked.
+- **Reduced attack surface** — in the event of a breach, masked data limits exposure.
+Sanitization is disabled by default. You enable it selectively through configuration, choosing exactly which categories of sensitive data to mask.
 
 When enabled, sanitization is automatically applied to text that is:
 
@@ -33,10 +36,7 @@ I'm having problems using my credit card ******************* Before being writte
 
 ### <a href="about:blank#_ad_hoc_sanitization"></a> Ad hoc sanitization
 
-Sanitization can also be programmatically applied to text in any component where it makes sense for a specific
-business case, for example before sending some text to a third party API or before writing a text in the state
-of an entity. This is done by [injecting](setup-and-dependency-injection.html) a `akka.javasdk.Sanitizer` in the component constructor and
-then using `akka.javasdk.Sanitizer#sanitize` on the text.
+You can also apply sanitization programmatically in any component where it makes sense for a specific business case — for example, before sending text to a third-party API or before writing text into the state of an entity. To do this, [inject](setup-and-dependency-injection.html) an `akka.javasdk.Sanitizer` in the component constructor and then call `akka.javasdk.Sanitizer#sanitize` on the text.
 
 [SanitizingEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/SanitizingEndpoint.java)
 ```java
@@ -61,11 +61,11 @@ public class SanitizingEndpoint {
 
 ## <a href="about:blank#_sanitizer_types"></a> Sanitizer types
 
-There are two types of sanitizers available, it is possible combine predefined and custom sanitizers in the same service:
+Two types of sanitizers are available, and you can combine predefined and custom sanitizers in the same service.
 
 ### <a href="about:blank#_predefined"></a> Predefined
 
-A small set of common sanitizers is built into the Akka runtime and are enabled by name in config:
+A small set of common sanitizers is built into the Akka runtime. You enable them by name in your configuration:
 
 | Name | Description |
 | --- | --- |
@@ -74,7 +74,7 @@ A small set of common sanitizers is built into the Akka runtime and are enabled 
 | `CREDIT_CARD` | VISA, Mastercard, American Express, Diners, Discover, JCB, and generic credit card numbers |
 | `IBAN` | international bank account numbers |
 | `IP_ADDRESS` | ipv4 and ipv6 network addresses |
-One or more of these are enabled in the service `application.conf` file like this:
+Enable one or more of these in your service `application.conf` file like this:
 
 ```hocon
 akka.javasdk.sanitization {
@@ -84,38 +84,40 @@ akka.javasdk.sanitization {
 
 ### <a href="about:blank#_custom"></a> Custom
 
-In many cases more application and business domain specific sanitizers are useful. Custom sanitizers allows defining
-regular expressions that define character sequences that should be masked.
+In many cases you need sanitizers specific to your application and business domain. Custom sanitizers let you define regular expressions that identify character sequences to mask.
 
-Custom, application specific sanitizers can be defined by adding a config block `akka.javasdk.sanitization.regex-sanitizers` with a name for each custom sanitizer followed by a config block with a single `pattern` key that has a value that is
-a valid Java regular expression that matches the type of text that should be masked.
+You define custom sanitizers by adding a config block `akka.javasdk.sanitization.regex-sanitizers` with a name for each sanitizer, followed by a config block containing a single `pattern` key whose value is a valid Java regular expression matching the text to mask.
 
-This example masks an hypothetical customer id in the form S0123456789:
+This example masks a hypothetical customer ID in the form S0123456789:
 
 ```hocon
 akka.javasdk.sanitization.regex-sanitizers = {
   "CUSTOMER_IDS" = { pattern = "S\\d{10}" }
 }
 ```
-This would lead to texts like:
+This would cause text like:
 
-Customer S0847362951 reported an issue with their order Being masked to:
+Customer S0847362951 reported an issue with their order To be masked to:
 
 Customer *********** reported an issue with their order Before being written in logs or passed to agent models.
 
 ## <a href="about:blank#_performance_considerations"></a> Performance considerations
 
-Sanitization is applied to every log entry. In high-throughput applications, numerous sanitization rules or complex regular
-expressions may impact performance. Consider monitoring application performance and optimizing regex patterns if necessary.
+Sanitization is applied to every log entry. In high-throughput applications, numerous sanitization rules or complex regular expressions may impact performance. You should monitor application performance and optimize regex patterns if necessary.
 
 ## <a href="about:blank#_testing_sanitization"></a> Testing sanitization
 
-In tests the sanitizer can be directly accessed from `getSanitizer` method in `TestKit` or `TestKitSupport` to assert that expected
-texts are masked given the service sanitizer configuration.
+In tests you can access the sanitizer directly from the `getSanitizer` method in `TestKit` or `TestKitSupport` to assert that expected texts are masked given your service sanitizer configuration.
+
+## <a href="about:blank#_see_also"></a> See also
+
+- [Governance & the runtime](../concepts/governance-and-the-runtime.html) — How the Akka runtime enforces governance policies including sanitization, guardrails, and audit logging.
+- [Guardrails](agents/guardrails.html) — Input and output guardrails that complement data sanitization for responsible AI.
+- [Building Trustworthy AI](https://akka.io/blog/trustworthy-ai-with-akka) — Background on the design principles behind Akka’s governance capabilities.
 
 <!-- <footer> -->
 <!-- <nav> -->
-[AI model provider configuration](model-provider-details.html) [Developer best practices](dev-best-practices.html)
+[AI model provider configuration](model-provider-details.html) [Metrics](metric.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

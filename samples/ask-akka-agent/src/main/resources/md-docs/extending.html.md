@@ -35,11 +35,12 @@ public class WeatherAgent extends Agent {
     this.weatherService = weatherService; // (1)
   }
 
-  public Effect<String> query(AgentRequest request) {
+  public Effect<String> query(String request) {
+    logger.info("Invoked with: {}", request);
     return effects()
       .systemMessage(SYSTEM_MESSAGE)
       .tools(weatherService) // (2)
-      .userMessage(request.message())
+      .userMessage(request)
       .thenReply();
   }
 
@@ -112,7 +113,7 @@ When you pass a `Class` instead of an instance, the class is only instantiated w
 
 For this approach to work, you must register the class with a [DependencyProvider](../setup-and-dependency-injection.html#_custom_dependency_injection) in your service setup. The DependencyProvider is responsible for creating and managing instances of these classes when they’re needed. This gives you complete control over how tool dependencies are instantiated and managed throughout your application.
 
-## <a href="about:blank#_using_akka_components_as_function_tools"></a> Using Akka components as function tools
+## <a href="about:blank#component_tools"></a> Using Akka components as function tools
 
 Akka components within the same application can be used as function tools for agents. This allows agents to interact with your domain model directly by invoking command handlers on Event Sourced Entities, Key Value Entities, Workflows, and Views.
 
@@ -134,7 +135,7 @@ Agent chaining (where one agent calls another agent) is not a recommended patter
 |  | When using Akka components as tools, the agent can directly modify your application state or trigger workflows. Ensure that your `@FunctionTool` descriptions clearly communicate the impact of these operations to help the LLM make appropriate decisions. |
 This approach is particularly useful when you want an agent to orchestrate operations across multiple components in your application, or when an agent needs to access and manipulate your domain model based on user requests.
 
-## <a href="about:blank#_using_tools_from_remote_mcp_servers"></a> Using tools from remote MCP servers
+## <a href="about:blank#mcp_tools"></a> Using tools from remote MCP servers
 
 [Akka MCP endpoints](../mcp-endpoints.html) declared in other services, or third party MCP services can be added to
 the agent. By default, all tools provided by each added remote MCP server are included, but it is possible to filter

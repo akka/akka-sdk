@@ -1,0 +1,244 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.impl.agent.autonomous.capability
+
+import scala.jdk.CollectionConverters._
+
+import akka.javasdk.agent.Agent
+import akka.javasdk.agent.autonomous.AutonomousAgent
+import akka.javasdk.agent.autonomous.capability.Delegation
+import akka.javasdk.agent.autonomous.capability.Moderation
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance
+import akka.javasdk.agent.task.Task
+import akka.javasdk.impl.agent.autonomous.AutonomousAgentImplSupport
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+
+class CapabilityBuildersSpec extends AnyWordSpec with Matchers with AutonomousAgentImplSupport {
+
+  private val task1 = Task
+    .name("Task1")
+    .description("First task")
+    .resultConformsTo(classOf[String])
+
+  private val task2 = Task
+    .name("Task2")
+    .description("Second task")
+    .resultConformsTo(classOf[String])
+
+  "TaskAcceptance" should {
+
+    "create with task definitions" in {
+      val acceptance = TaskAcceptance.of(task1, task2).impl
+
+      acceptance.taskDefinitions.asScala should have size 2
+      acceptance.taskDefinitions.asScala.head.name() shouldBe "Task1"
+      acceptance.taskDefinitions.asScala(1).name() shouldBe "Task2"
+    }
+
+    "use config default for max iterations" in {
+      TaskAcceptance.of(task1).impl.maxIterations shouldBe None
+    }
+
+    "set explicit max iterations" in {
+      TaskAcceptance.of(task1).maxIterationsPerTask(5).impl.maxIterations shouldBe Some(5)
+    }
+
+    "start with empty handoff targets" in {
+      TaskAcceptance.of(task1).impl.handoffTargets.asScala shouldBe empty
+    }
+
+    "be immutable — maxIterationsPerTask returns new instance" in {
+      val original = TaskAcceptance.of(task1)
+      val modified = original.maxIterationsPerTask(5)
+
+      original.impl.maxIterations shouldBe None
+      modified.impl.maxIterations shouldBe Some(5)
+    }
+  }
+
+  "Delegation" should {
+
+    "set max parallel workers" in {
+      Delegation.to(classOf[DummyAutonomousAgent]).maxParallelWorkers(3).impl.maxParallel shouldBe Some(3)
+    }
+
+    "be immutable — maxParallelWorkers returns new instance" in {
+      val original = Delegation.to(classOf[DummyAutonomousAgent])
+      val modified = original.maxParallelWorkers(5)
+
+      original.impl.maxParallel shouldBe None
+      modified.impl.maxParallel shouldBe Some(5)
+    }
+
+    "partition request-based agents into requestBasedTargets" in {
+      val delegation = Delegation.to(classOf[DummyAgent]).impl
+
+      delegation.requestBasedTargets.asScala should have size 1
+      delegation.requestBasedTargets.asScala.head shouldBe classOf[DummyAgent]
+      delegation.delegationTargets.asScala shouldBe empty
+    }
+
+    "partition autonomous agents into delegationTargets" in {
+      val delegation = Delegation.to(classOf[DummyAutonomousAgent]).impl
+
+      delegation.delegationTargets.asScala should have size 1
+      delegation.delegationTargets.asScala.head shouldBe classOf[DummyAutonomousAgent]
+      delegation.requestBasedTargets.asScala shouldBe empty
+    }
+
+    "partition mixed autonomous and request-based agents" in {
+      val delegation = Delegation.to(classOf[DummyAutonomousAgent], classOf[DummyAgent]).impl
+
+      delegation.delegationTargets.asScala should contain only classOf[DummyAutonomousAgent]
+      delegation.requestBasedTargets.asScala should contain only classOf[DummyAgent]
+    }
+  }
+
+  abstract class DummyAgent extends Agent
+  abstract class DummyAutonomousAgent extends AutonomousAgent
+
+  "Moderation" should {
+
+    abstract class DummyAdvocate extends AutonomousAgent
+    abstract class DummyCritic extends AutonomousAgent
+
+    "create with participant types" in {
+      val moderation = ModerationImpl.create(classOf[DummyAdvocate], Array(classOf[DummyCritic]))
+
+      moderation.participants should have size 2
+      moderation.participants.head shouldBe classOf[DummyAdvocate]
+      moderation.participants(1) shouldBe classOf[DummyCritic]
+    }
+
+    "default maxRounds to 5" in {
+      val moderation = ModerationImpl.create(classOf[DummyAdvocate], Array())
+
+      moderation.maxRoundsValue shouldBe 5
+    }
+
+    "set explicit maxRounds" in {
+      val moderation = Moderation
+        .of(classOf[DummyAdvocate])
+        .maxRounds(10)
+        .impl
+
+      moderation.maxRoundsValue shouldBe 10
+    }
+
+    "default maxIterationsPerTurn to 10" in {
+      val moderation = ModerationImpl.create(classOf[DummyAdvocate], Array())
+
+      moderation.maxIterationsPerTurnValue shouldBe 10
+    }
+
+    "set explicit maxIterationsPerTurn" in {
+      val moderation = Moderation
+        .of(classOf[DummyAdvocate])
+        .maxIterationsPerTurn(3)
+        .impl
+
+      moderation.maxIterationsPerTurnValue shouldBe 3
+    }
+
+    "default maxConcurrentConversations to 1" in {
+      val moderation = ModerationImpl.create(classOf[DummyAdvocate], Array())
+
+      moderation.maxConcurrentConversationsValue shouldBe 1
+    }
+
+    "set explicit maxConcurrentConversations" in {
+      val moderation = Moderation
+        .of(classOf[DummyAdvocate])
+        .maxConcurrentConversations(4)
+        .impl
+
+      moderation.maxConcurrentConversationsValue shouldBe 4
+    }
+
+    "be immutable — maxRounds returns new instance" in {
+      val original = Moderation.of(classOf[DummyAdvocate])
+      val modified = original.maxRounds(8)
+
+      original.impl.maxRoundsValue shouldBe 5
+      modified.impl.maxRoundsValue shouldBe 8
+    }
+
+    "be immutable — maxIterationsPerTurn returns new instance" in {
+      val original = Moderation.of(classOf[DummyAdvocate])
+      val modified = original.maxIterationsPerTurn(20)
+
+      original.impl.maxIterationsPerTurnValue shouldBe 10
+      modified.impl.maxIterationsPerTurnValue shouldBe 20
+    }
+
+    "be immutable — maxConcurrentConversations returns new instance" in {
+      val original = Moderation.of(classOf[DummyAdvocate])
+      val modified = original.maxConcurrentConversations(3)
+
+      original.impl.maxConcurrentConversationsValue shouldBe 1
+      modified.impl.maxConcurrentConversationsValue shouldBe 3
+    }
+  }
+
+  "TeamLeadership" should {
+
+    // Dummy agent classes for testing
+    abstract class DummyDeveloper extends AutonomousAgent
+    abstract class DummyReviewer extends AutonomousAgent
+
+    "create with member types" in {
+      val developer = new TeamMemberImpl(classOf[DummyDeveloper], 3)
+      val reviewer = new TeamMemberImpl(classOf[DummyReviewer], 1)
+      val leadership = TeamLeadershipImpl.create(developer, Array(reviewer))
+
+      leadership.members should have size 2
+      leadership.members.head.agentClass shouldBe classOf[DummyDeveloper]
+      leadership.members.head.maxMemberInstances shouldBe 3
+      leadership.members(1).agentClass shouldBe classOf[DummyReviewer]
+      leadership.members(1).maxMemberInstances shouldBe 1
+    }
+
+    "default maxInstances to 1" in {
+      val member = new TeamMemberImpl(classOf[DummyDeveloper], 1)
+
+      member.maxMemberInstances shouldBe 1
+    }
+
+    "set maxInstances on member type" in {
+      val original = new TeamMemberImpl(classOf[DummyDeveloper], 1)
+      val modified = original.maxInstances(5).asInstanceOf[TeamMemberImpl]
+
+      modified.maxMemberInstances shouldBe 5
+      original.maxMemberInstances shouldBe 1 // original unchanged
+    }
+
+    "default maxConcurrentTeams to 1" in {
+      val developer = new TeamMemberImpl(classOf[DummyDeveloper], 1)
+      val leadership = TeamLeadershipImpl.create(developer, Array())
+
+      leadership.maxConcurrentTeamsValue shouldBe 1
+    }
+
+    "set maxConcurrentTeams" in {
+      import akka.javasdk.agent.autonomous.capability.TeamLeadership
+      val leadership = TeamLeadership
+        .of(TeamLeadership.TeamMember.of(classOf[DummyDeveloper]))
+        .maxConcurrentTeams(3)
+        .impl
+
+      leadership.maxConcurrentTeamsValue shouldBe 3
+    }
+
+    "be immutable — maxConcurrentTeams returns new instance" in {
+      import akka.javasdk.agent.autonomous.capability.TeamLeadership
+      val original = TeamLeadership.of(TeamLeadership.TeamMember.of(classOf[DummyDeveloper]))
+      val modified = original.maxConcurrentTeams(4)
+
+      original.impl.maxConcurrentTeamsValue shouldBe 1
+      modified.impl.maxConcurrentTeamsValue shouldBe 4
+    }
+  }
+}

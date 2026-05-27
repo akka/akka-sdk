@@ -33,22 +33,20 @@ import java.lang.annotation.*;
  * <p>Example usage on an Event Sourced Entity:
  *
  * <pre>{@code
- * @ComponentId("my-entity")
+ * @Component(id = "my-entity")
  * @ProtoEventTypes({CustomerCreated.class, CustomerNameChanged.class})
  * public class MyEntity extends EventSourcedEntity<MyState, GeneratedMessageV3> {
  *   // ...
- * }
  * }</pre>
  *
  * <p>Example usage on a Consumer (explicit types):
  *
  * <pre>{@code
- * @ComponentId("my-consumer")
+ * @Component(id = "my-consumer")
  * @Consume.FromEventSourcedEntity(MyEntity.class)
  * @ProtoEventTypes({CustomerCreated.class, CustomerNameChanged.class})
  * public class MyConsumer extends Consumer {
  *   public Effect onEvent(GeneratedMessageV3 event) { ... }
- * }
  * }</pre>
  *
  * <p>When consuming from an entity that already has {@code @ProtoEventTypes}, the annotation on the

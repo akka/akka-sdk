@@ -12,6 +12,30 @@ Current versions
 
 == May 2026
 
+[sidebar]
+****
+
+**Autonomous agents**
+
+The new xref:sdk:autonomous-agents.adoc[Autonomous Agent] is an AI model-driven component that runs as a durable process. It works on typed tasks, each with its own identity, instructions, and result schema, and the runtime drives the model through a decision loop until each task is complete. Agent and task state are persisted along the way, so work survives crashes and restarts. A task's status and result can be queried while it runs or after it finishes.
+
+Multi-agent coordination capabilities are built in. An agent can delegate subtasks to specialist workers, hand off work to a peer, lead a team that shares a task list, or moderate a turn-taking conversation. Those capabilities are exposed to the model as tools so multi-agent systems can be assembled without orchestration code. This complements deterministic, xref:sdk:agents/orchestrating.adoc[workflow-based multi-agent orchestration]: pick a workflow when the sequence of steps is fixed in code, and an Autonomous Agent when the model decides which agent runs next. Both run on the same durable-execution, retry, and audit foundation.
+
+****
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.6.0[Akka SDK 3.6.0]
+- Autonomous agents
+- Rewrite multi-agent orchestration documentation
+- Support large session memory
+- Remove deprecated API since SDK 3.4.x and older
+- Runtime 1.6.3
+
+* Akka Runtime 1.6.3
+- Autonomous agents
+- Java 25 base image
+- Langchain4J 1.15.0
+- Jackson 2.21.3
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.19[Akka SDK 3.5.19]
 - Object store support (S3, GCS, Azure)
 - Azure OpenAI and MistralAI model providers
@@ -22,6 +46,7 @@ Current versions
 - Custom OpenTelemetry metrics
 - Service instance shutdown hook
 - TestKit mocking of HTTP and gRPC services
+- Runtime 1.5.52
 
 * Akka CLI 3.0.62
 - Project descriptor can now include docker registry config

@@ -1,6 +1,7 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
 - [Reference](../index.html)
+- [Descriptors reference](index.html)
 - [Route descriptor](route-descriptor.html)
 
 <!-- </nav> -->

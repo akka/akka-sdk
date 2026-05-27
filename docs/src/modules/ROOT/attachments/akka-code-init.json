@@ -21,6 +21,12 @@
       "url": "https://github.com/akka-samples/multi-agent"
     },
     {
+      "title": "Autonomous agents",
+      "description": "A sample application demonstrating how to build a multi-agent system using autonomous agents and LLM driven orchestration.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/autonomous-agent-playground"
+    },
+    {
       "title": "Chat agent with RAG",
       "description": "This sample illustrates how to build an AI agent that performs a RAG workflow.",
       "language": "java",
@@ -67,12 +73,6 @@
       "url": "https://github.com/akka-samples/changelog-agent",
       "concepts": "Agent, Entity, Timed Action, Anthropic Claude, Tools, Summarization",
       "level": "Intermediate"
-    },
-    {
-      "title": "Adaptive multi-agent orchestration",
-      "description": "A sample application demonstrating how to build a multi-agent system using Akka and an LLM model. It illustrates adaptive agent orchestration by implementing the MagenticOne pattern,",
-      "language": "java",
-      "url": "https://github.com/akka-samples/adaptive-multi-agent"
     },
     {
       "title": "Customer service chat workflow",

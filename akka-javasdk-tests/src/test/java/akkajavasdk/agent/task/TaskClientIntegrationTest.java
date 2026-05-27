@@ -1,0 +1,256 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akkajavasdk.agent.task;
+
+import static akkajavasdk.components.agent.autonomous.TestTasks.STRING_TASK;
+import static akkajavasdk.components.agent.autonomous.TestTasks.TEST_TASK;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import akka.javasdk.agent.task.TaskException;
+import akka.javasdk.agent.task.TaskNotification;
+import akka.javasdk.agent.task.TaskStatus;
+import akka.javasdk.testkit.TestKitSupport;
+import akkajavasdk.components.agent.autonomous.TestTasks.TestResult;
+import java.util.ArrayList;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
+
+public class TaskClientIntegrationTest extends TestKitSupport {
+
+  private String newTaskId() {
+    return UUID.randomUUID().toString();
+  }
+
+  // --- create ---
+
+  @Test
+  public void shouldCreateTask() {
+    var taskId = newTaskId();
+    var created = componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    assertThat(created).isEqualTo(taskId);
+  }
+
+  // --- get ---
+
+  @Test
+  public void shouldGetTaskSnapshot() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+
+    var snapshot = componentClient.forTask(taskId).get(TEST_TASK);
+    assertThat(snapshot.name()).isEqualTo("Test task");
+    assertThat(snapshot.status()).isEqualTo(TaskStatus.PENDING);
+    assertThat(snapshot.result()).isEmpty();
+  }
+
+  // --- assign ---
+
+  @Test
+  public void shouldAssignTask() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    componentClient.forTask(taskId).assign("reviewer@example.com");
+
+    var snapshot = componentClient.forTask(taskId).get(TEST_TASK);
+    assertThat(snapshot.status()).isEqualTo(TaskStatus.ASSIGNED);
+  }
+
+  // --- complete ---
+
+  @Test
+  public void shouldCompleteWithTypedResult() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    componentClient.forTask(taskId).assign("reviewer@example.com");
+    componentClient.forTask(taskId).complete(TEST_TASK, new TestResult("done", 100));
+
+    var snapshot = componentClient.forTask(taskId).get(TEST_TASK);
+    assertThat(snapshot.status()).isEqualTo(TaskStatus.COMPLETED);
+    var result = snapshot.result().orElseThrow();
+    assertThat(result.value()).isEqualTo("done");
+    assertThat(result.score()).isEqualTo(100);
+  }
+
+  @Test
+  public void shouldCompleteWithStringResult() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(STRING_TASK.instructions("summarize"));
+    componentClient.forTask(taskId).assign("worker");
+    componentClient.forTask(taskId).complete(STRING_TASK, "the summary");
+
+    var snapshot = componentClient.forTask(taskId).get(STRING_TASK);
+    assertThat(snapshot.status()).isEqualTo(TaskStatus.COMPLETED);
+    assertThat(snapshot.result()).contains("the summary");
+  }
+
+  @Test
+  public void shouldRejectCompleteWhenPending() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+
+    assertThatThrownBy(
+            () -> componentClient.forTask(taskId).complete(TEST_TASK, new TestResult("done", 100)))
+        .hasMessageContaining(
+            "Task can only be completed when ASSIGNED, IN_PROGRESS, or RESULT_REJECTED");
+  }
+
+  // --- fail ---
+
+  @Test
+  public void shouldFailAssignedTask() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    componentClient.forTask(taskId).assign("reviewer@example.com");
+    componentClient.forTask(taskId).fail("rejected");
+
+    var snapshot = componentClient.forTask(taskId).get(TEST_TASK);
+    assertThat(snapshot.status()).isEqualTo(TaskStatus.FAILED);
+    assertThat(snapshot.failureReason()).contains("rejected");
+  }
+
+  @Test
+  public void shouldRejectFailWhenPending() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+
+    assertThatThrownBy(() -> componentClient.forTask(taskId).fail("rejected"))
+        .hasMessageContaining(
+            "Task can only be failed when ASSIGNED, IN_PROGRESS, or RESULT_REJECTED");
+  }
+
+  // --- result ---
+
+  @Test
+  public void shouldReturnResultForAlreadyCompletedTask() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    componentClient.forTask(taskId).assign("reviewer@example.com");
+    componentClient.forTask(taskId).complete(TEST_TASK, new TestResult("already done", 99));
+
+    var result = componentClient.forTask(taskId).result(TEST_TASK);
+    assertThat(result.value()).isEqualTo("already done");
+    assertThat(result.score()).isEqualTo(99);
+  }
+
+  @Test
+  public void shouldThrowFailedExceptionForAlreadyFailedTask() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    componentClient.forTask(taskId).assign("reviewer@example.com");
+    componentClient.forTask(taskId).fail("not good enough");
+
+    assertThatThrownBy(() -> componentClient.forTask(taskId).result(TEST_TASK))
+        .isInstanceOf(TaskException.Failed.class)
+        .satisfies(
+            ex -> {
+              var failed = (TaskException.Failed) ex;
+              assertThat(failed.taskId()).isEqualTo(taskId);
+              assertThat(failed.reason()).isEqualTo("not good enough");
+            });
+  }
+
+  @Test
+  public void shouldFailWithUnwrappedFailedExceptionFromAsyncResult() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    componentClient.forTask(taskId).assign("reviewer@example.com");
+    componentClient.forTask(taskId).fail("not good enough");
+
+    // resultAsync returns a CompletionStage that completes exceptionally with the original
+    // TaskException — not wrapped in CompletionException at the stage level.
+    var caught =
+        componentClient
+            .forTask(taskId)
+            .resultAsync(TEST_TASK)
+            .handle((r, ex) -> ex)
+            .toCompletableFuture()
+            .join();
+    assertThat(caught).isInstanceOf(TaskException.Failed.class);
+    assertThat(((TaskException.Failed) caught).reason()).isEqualTo("not good enough");
+  }
+
+  @Test
+  public void shouldThrowTypeMismatchWhenResultRequestedWithWrongDefinition() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    componentClient.forTask(taskId).assign("reviewer@example.com");
+    componentClient.forTask(taskId).complete(TEST_TASK, new TestResult("done", 100));
+
+    assertThatThrownBy(() -> componentClient.forTask(taskId).result(STRING_TASK))
+        .isInstanceOf(TaskException.TypeMismatch.class)
+        .satisfies(ex -> assertThat(((TaskException.TypeMismatch) ex).taskId()).isEqualTo(taskId));
+  }
+
+  @Test
+  public void shouldThrowTypeMismatchWhenSnapshotRequestedWithWrongDefinition() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+
+    assertThatThrownBy(() -> componentClient.forTask(taskId).get(STRING_TASK))
+        .isInstanceOf(TaskException.TypeMismatch.class)
+        .satisfies(ex -> assertThat(((TaskException.TypeMismatch) ex).taskId()).isEqualTo(taskId));
+  }
+
+  // --- notificationStream ---
+
+  @Test
+  public void shouldStreamCompletedNotification() {
+    var taskId = newTaskId();
+    var notifications = new ArrayList<TaskNotification>();
+    componentClient
+        .forTask(taskId)
+        .notificationStream()
+        .runForeach(notifications::add, testKit.getMaterializer());
+
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    componentClient.forTask(taskId).assign("reviewer@example.com");
+    componentClient.forTask(taskId).complete(TEST_TASK, new TestResult("done", 100));
+
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var completed =
+                  notifications.stream()
+                      .filter(n -> n instanceof TaskNotification.Completed)
+                      .map(n -> (TaskNotification.Completed) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(completed.taskId()).isEqualTo(taskId);
+              assertThat(completed.result()).contains("done");
+            });
+  }
+
+  @Test
+  public void shouldStreamFailedNotification() {
+    var taskId = newTaskId();
+    var notifications = new ArrayList<TaskNotification>();
+    componentClient
+        .forTask(taskId)
+        .notificationStream()
+        .runForeach(notifications::add, testKit.getMaterializer());
+
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    componentClient.forTask(taskId).assign("reviewer@example.com");
+    componentClient.forTask(taskId).fail("not good enough");
+
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var failed =
+                  notifications.stream()
+                      .filter(n -> n instanceof TaskNotification.Failed)
+                      .map(n -> (TaskNotification.Failed) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(failed.taskId()).isEqualTo(taskId);
+              assertThat(failed.reason()).isEqualTo("not good enough");
+            });
+  }
+}

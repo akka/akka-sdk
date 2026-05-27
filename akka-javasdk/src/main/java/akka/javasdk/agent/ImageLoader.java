@@ -38,7 +38,7 @@ import java.util.Optional;
  *     .imageLoader(new MyImageLoader())
  *     .userMessage(UserMessage.from(
  *         MessageContent.TextMessageContent.from("Describe this image"),
- *         MessageContent.ImageMessageContent.fromUrl(imageUrl)))
+ *         MessageContent.ImageMessageContent.fromUri(imageUri)))
  *     .thenReply();
  * }</pre>
  *
@@ -53,7 +53,7 @@ import java.util.Optional;
  * @see Agent.Effect.Builder#imageLoader(ImageLoader)
  * @deprecated use {@link ContentLoader}
  */
-@Deprecated(forRemoval = true)
+@Deprecated(since = "3.5.15", forRemoval = true)
 public interface ImageLoader extends ContentLoader {
 
   /**

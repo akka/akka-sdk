@@ -12,8 +12,8 @@ import java.util.Locale;
   id = "human-vs-ai-evaluator",
   name = "Human vs AI Evaluator Agent",
   description = """
-  An agent that acts as an LLM judge to evaluate that the human ground
-  truth matches the AI generated answer.
+  An agent that acts as an LLM judge to evaluate that the human ground \
+  truth matches the AI generated answer.\
   """
 )
 @AgentRole("evaluator")

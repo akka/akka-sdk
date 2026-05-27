@@ -5,12 +5,10 @@
 package akka.javasdk.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import akka.javasdk.annotations.Component;
-import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import org.junit.jupiter.api.Test;
 
@@ -21,9 +19,6 @@ public class ComponentAnnotationTest {
       name = "Test Component",
       description = "A test component using the new annotation")
   static class NewComponentEntity extends KeyValueEntity<String> {}
-
-  @ComponentId("old-component")
-  static class OldComponentEntity extends KeyValueEntity<String> {}
 
   @Component(
       id = "multiline-component",
@@ -49,18 +44,6 @@ public class ComponentAnnotationTest {
     var description = ComponentDescriptorFactory.readComponentDescription(NewComponentEntity.class);
     assertTrue(description.isDefined());
     assertEquals("A test component using the new annotation", description.get());
-  }
-
-  @Test
-  public void testOldComponentIdAnnotation() {
-    String componentId = ComponentDescriptorFactory.readComponentIdValue(OldComponentEntity.class);
-    assertEquals("old-component", componentId);
-
-    var name = ComponentDescriptorFactory.readComponentName(OldComponentEntity.class);
-    assertFalse(name.isDefined());
-
-    var description = ComponentDescriptorFactory.readComponentDescription(OldComponentEntity.class);
-    assertFalse(description.isDefined());
   }
 
   @Test

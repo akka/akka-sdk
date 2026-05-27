@@ -1,23 +1,23 @@
 package demo.multiagent.application;
 
+// tag::all[]
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.AgentRole;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
-import demo.multiagent.domain.AgentRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // tag::description[]
 @Component(
   id = "weather-agent",
   name = "Weather Agent",
   description = """
-    An agent that provides weather information. It can provide current weather,
-    forecasts, and other related information.
+  An agent that provides weather information. It can provide current weather, \
+  forecasts, and other related information.\
   """
 )
-@AgentRole("worker")
 // tag::function-tool[]
 public class WeatherAgent extends Agent {
 
@@ -40,6 +40,8 @@ public class WeatherAgent extends Agent {
       Start the error response with ERROR.
     """.stripIndent();
 
+  private static final Logger logger = LoggerFactory.getLogger(WeatherAgent.class);
+
   // tag::function-tool[]
   private final WeatherService weatherService;
 
@@ -47,11 +49,12 @@ public class WeatherAgent extends Agent {
     this.weatherService = weatherService; // <1>
   }
 
-  public Effect<String> query(AgentRequest request) {
+  public Effect<String> query(String request) {
+    logger.info("Invoked with: {}", request);
     return effects()
       .systemMessage(SYSTEM_MESSAGE)
       .tools(weatherService) // <2>
-      .userMessage(request.message())
+      .userMessage(request)
       .thenReply();
   }
 
@@ -61,3 +64,4 @@ public class WeatherAgent extends Agent {
   }
 }
 // end::function-tool[]
+// end::all[]

@@ -79,7 +79,6 @@ Configure and audit guardrails, policy enforcement, and access controls.
 Track token consumption, optimize costs, and report on spend across teams and projects.
 
 * xref:operations:observability-and-monitoring/metrics.adoc[Metrics & Monitoring]
-* xref:operations:organizations/billing.adoc[Billing]
 
 == Customer Stories
 

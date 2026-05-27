@@ -30,13 +30,7 @@ JWTs can be signed using *symmetric* or *asymmetric* keys:
 - **Symmetric Keys**: Simple setup where both issuer and verifier share a secret key. Useful in trusted environments.
 - **Asymmetric Keys**: Use a private key to sign and a public key to verify. Useful when verifying parties are untrusted, as only the private key can sign tokens.
 
-## <a href="about:blank#_configuring_jwt_keys"></a> Configuring JWT keys
-
-Before the JWT feature can be used, JWT keys need to be set up for a service.
-
 ### <a href="about:blank#_supported_algorithms"></a> Supported algorithms
-
-Akka supports a range of algorithms, including HMAC (HS256, HS384, HS512) for symmetric keys and RSA/ECDSA/Ed25519 for asymmetric keys.
 
 Akka supports the following algorithms:
 
@@ -53,11 +47,249 @@ Akka supports the following algorithms:
 | ES256 | ECDSA with SHA256 | Asymmetric |
 | ES384 | ECDSA with SHA384 | Asymmetric |
 | ES512 | ECDSA with SHA512 | Asymmetric |
-| Ed25519 | Ed25519 | Asymmetric |
+| EdDSA | Ed25519 | Asymmetric |
 
 |  | Recommendation: Use HS256 for symmetric keys and ES256 for asymmetric keys. |
 
-### <a href="about:blank#_setting_up_jwt_keys"></a> Setting up JWT keys
+## <a href="about:blank#jwks"></a> Configuring JWT with JWKS keysets
+
+JWKS (JSON Web Key Sets) is the recommended way to configure JWT validation in Akka. A keyset points to a source of public keys — such as an OpenID Connect provider, an HTTPS endpoint, or a secret — and Akka fetches and caches these keys automatically to validate incoming JWTs.
+
+JWKS keysets are ideal for:
+
+- Validating tokens issued by a third-party identity provider (Google, Auth0, Okta, etc.) using OIDC discovery or a JWKS URL.
+- Validating tokens using keys that are rotated regularly, without redeploying the service.
+- Generating and managing your own key pairs when your service needs to issue signed tokens.
+
+### <a href="about:blank#_listing_keysets"></a> Listing keysets
+
+To view the JWKS keysets currently configured on a service:
+
+```shell
+akka service jwks list my-service
+```
+Example output:
+
+```none
+ISSUER                        SOURCE
+https://accounts.google.com   oidc-discovery
+https://example.com           https://example.com/.well-known/jwks.json
+my-issuer                     secret: my-jwks-secret
+```
+
+### <a href="about:blank#_adding_a_keyset"></a> Adding a keyset
+
+Use `akka service jwks add` to add a keyset to a service. Exactly one source must be provided.
+
+#### <a href="about:blank#_via_openid_connect_discovery"></a> Via OpenID Connect discovery
+
+The simplest way to trust tokens from a standards-compliant identity provider is OIDC discovery. Akka automatically fetches the JWKS URL from the issuer’s `/.well-known/openid-configuration` endpoint.
+
+```shell
+akka service jwks add my-service \
+  --oidc-discovery \
+  --issuer https://accounts.google.com
+```
+
+```shell
+akka service jwks add my-service \
+  --oidc-discovery \
+  --issuer https://my-org.auth0.com/
+```
+The `--issuer` flag is required when using `--oidc-discovery`. Akka validates that the OIDC discovery document is reachable and its issuer matches before adding the keyset.
+
+#### <a href="about:blank#_via_a_jwks_url"></a> Via a JWKS URL
+
+If your identity provider exposes a JWKS endpoint directly, you can configure it with `--jwks-url`:
+
+```shell
+akka service jwks add my-service \
+  --jwks-url https://example.com/.well-known/jwks.json \
+  --issuer https://example.com
+```
+The URL must use HTTPS. Akka validates that the endpoint is reachable and returns a valid JWKS document before adding the keyset.
+
+#### <a href="about:blank#_from_a_secret"></a> From a secret
+
+To validate tokens using keys stored in an Akka secret containing a JWKS JSON document:
+
+```shell
+akka service jwks add my-service \
+  --secret my-jwks-secret \
+  --issuer my-issuer
+```
+By default, the key named `jwks.json` in the secret is used. Use `--secret-key` to specify a different key name.
+
+#### <a href="about:blank#_from_an_external_secret"></a> From an external secret
+
+To use a JWKS document stored in an external secret provider (e.g., Azure Key Vault):
+
+```shell
+akka service jwks add my-service \
+  --external-secret my-ext-secret \
+  --secret-key keys.json \
+  --issuer my-issuer
+```
+
+#### <a href="about:blank#_additional_options_for_add"></a> Additional options for add
+
+| Flag | Description |
+| --- | --- |
+| `--allowed-algorithms` | List of algorithms permitted for this keyset (e.g. `RS256,ES256`). Restricts which signing algorithms are accepted even if the keyset itself doesn’t specify one. |
+| `--refresh-interval` | How often Akka refreshes the keyset (e.g. `30m`, `2h`). Acts as an upper bound — if the source returns a shorter cache TTL, that is used instead. Defaults to `1h`. |
+| `--skip-validation` | Skip the initial validation of the JWKS endpoint or OIDC discovery document. Useful when the endpoint is not yet publicly reachable at deploy time. |
+
+### <a href="about:blank#_generating_a_keyset"></a> Generating a keyset
+
+If your service needs to issue signed tokens itself, use `akka service jwks generate` to create an asymmetric key pair, store it as a JWKS secret, and add the keyset to the service in one step:
+
+```shell
+akka service jwks generate my-service \
+  --algorithm RS256 \
+  --key-id my-key-id \
+  --issuer https://example.com
+```
+
+```shell
+akka service jwks generate my-service \
+  --algorithm ES256 \
+  --key-id signing-key \
+  --secret my-jwks-secret
+```
+The generated JWKS document (including the private key) is stored in a new secret. The service is configured to validate JWTs using the public key from that secret. If you need to issue tokens signed by the generated private key, reference the same secret from your signing service.
+
+If `--key-id` is omitted, a random UUID is used. If `--secret` is omitted, the secret is named after the key ID.
+
+### <a href="about:blank#_updating_a_keyset"></a> Updating a keyset
+
+Use `akka service jwks update` to modify the configuration of an existing keyset. Identify the keyset to update using either `--issuer` (matches by issuer field) or `--index` (1-based position as shown by the list command).
+
+```shell
+akka service jwks update my-service \
+  --issuer https://accounts.google.com \
+  --refresh-interval 30m
+```
+
+```shell
+akka service jwks update my-service \
+  --index 2 \
+  --allowed-algorithms RS256 --allowed-algorithms ES256
+```
+
+```shell
+akka service jwks update my-service \
+  --index 1 \
+  --jwks-url https://example.com/new-jwks.json
+```
+
+| Flag | Description |
+| --- | --- |
+| `--issuer` | Identify the keyset to update by its issuer field. |
+| `--index` | Identify the keyset to update by its 1-based position in the list. |
+| `--new-issuer` | Set a new issuer value for the keyset. |
+| `--allowed-algorithms` | Replace the list of allowed algorithms. |
+| `--clear-allowed-algorithms` | Remove all algorithm restrictions from the keyset. |
+| `--refresh-interval` | Set a new refresh interval (e.g. `1h`, `30m`). |
+| `--clear-refresh-interval` | Reset the refresh interval to the default (1h). |
+| `--jwks-url` | Update the JWKS URL (only valid for URL-backed keysets). |
+| `--skip-validation` | Skip validation of the new JWKS URL. |
+To change the source type (e.g. from a URL to a secret), remove the keyset and add a new one.
+
+### <a href="about:blank#_removing_a_keyset"></a> Removing a keyset
+
+```shell
+akka service jwks remove my-service --issuer https://accounts.google.com
+```
+
+```shell
+akka service jwks remove my-service --index 2
+```
+
+### <a href="about:blank#_migrating_from_jwt_keys"></a> Migrating from JWT keys
+
+If a service was previously configured with the deprecated `akka services jwts` key approach, use `akka service jwks migrate` to convert existing keys to JWKS keysets automatically. Keys are grouped by issuer; each issuer’s keys are combined into a single JWKS secret. The old keys are removed once migration completes.
+
+```shell
+akka service jwks migrate my-service
+```
+Use `--secret-prefix` to customise the prefix used for the generated secret names (defaults to the service name):
+
+```shell
+akka service jwks migrate my-service --secret-prefix my-prefix
+```
+
+### <a href="about:blank#_configuring_keysets_with_a_service_descriptor"></a> Configuring keysets with a service descriptor
+
+JWKS keysets can also be configured declaratively in a [service descriptor](descriptors/service-descriptor.html). See [deploying a service with a descriptor](../operations/services/deploy-service.html#apply) for how to apply descriptors.
+
+#### <a href="about:blank#_oidc_discovery"></a> OIDC discovery
+
+```yaml
+name: my-service
+service:
+  image: my-image:latest
+  jwt:
+    keySets:
+    - issuer: https://accounts.google.com
+      useOidcDiscovery: true
+    - issuer: https://my-org.auth0.com/
+      useOidcDiscovery: true
+```
+
+#### <a href="about:blank#_jwks_url"></a> JWKS URL
+
+```yaml
+name: my-service
+service:
+  image: my-image:latest
+  jwt:
+    keySets:
+    - issuer: https://example.com
+      jwksUrl: https://example.com/.well-known/jwks.json
+      refreshInterval: 30m
+```
+
+#### <a href="about:blank#_secret"></a> Secret
+
+```yaml
+name: my-service
+service:
+  image: my-image:latest
+  jwt:
+    keySets:
+    - issuer: my-issuer
+      secret:
+        name: my-jwks-secret
+        key: jwks.json
+```
+
+#### <a href="about:blank#_multiple_keysets"></a> Multiple keysets
+
+Multiple keysets can be configured for a single service. Each keyset can have a different issuer and source:
+
+```yaml
+name: my-service
+service:
+  image: my-image:latest
+  jwt:
+    keySets:
+    - issuer: https://accounts.google.com
+      useOidcDiscovery: true
+    - issuer: https://example.com
+      jwksUrl: https://example.com/.well-known/jwks.json
+    - issuer: internal-issuer
+      secret:
+        name: internal-jwks
+        key: jwks.json
+      allowedAlgorithms:
+      - RS256
+```
+See [Service Descriptor reference](descriptors/service-descriptor.html) for the full `JwtKeySet` field reference.
+
+## <a href="about:blank#jwt-keys-deprecated"></a> Configuring JWT keys (deprecated)
+
+|  | The `akka services jwts` commands and the `keys` field in service descriptors are deprecated. Use [JWKS keysets](about:blank#jwks) instead. To migrate existing keys to keysets, use `akka service jwks migrate`. |
+The legacy `akka services jwts` commands configure raw JWT keys directly on a service.
 
 Each service can have multiple keys to handle JWTs from different sources or for various destinations. Akka decides on a key to use first by *issuer*, then by *key id*. If a JWT has no issuer defined, then all keys are considered capable of signing or validating it. If a JWT has no key id defined, then the first key in the list that matches the issuer and algorithm being used is chosen.
 
@@ -99,7 +331,7 @@ akka services jwts add <my-service> \
   --secret <my-secret-name>
 ```
 
-## <a href="about:blank#_managing_secrets"></a> Managing secrets
+### <a href="about:blank#_managing_secrets_for_jwt_keys"></a> Managing secrets for JWT keys
 
 JWT secrets are essential for signing and validating tokens, and Akka supports both symmetric and asymmetric secret types.
 
@@ -142,12 +374,13 @@ Once configured, JWTs can be used for endpoint-specific authentication and autho
 ## <a href="about:blank#_see_also"></a> See also
 
 - [Authentication with JWTs in the Akka SDK](../sdk/auth-with-jwts.html)
-- <a href="cli/akka-cli/akka_services_jwts.html#_see_also">`akka service jwt` commands</a>
+- [Akka Service Descriptor](descriptors/service-descriptor.html)
+- <a href="cli/akka-cli/akka_services_jwts.html#_see_also">`akka service jwts` commands</a>
 - <a href="cli/akka-cli/akka_secrets.html#_see_also">`akka secrets` commands</a>
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Advanced views](views/concepts/advanced-views.html) [OpenID Connect Setup](security/oidc-setup.html)
+[Advanced views](views/concepts/advanced-views.html) [OpenID connect](security/oidc-setup.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

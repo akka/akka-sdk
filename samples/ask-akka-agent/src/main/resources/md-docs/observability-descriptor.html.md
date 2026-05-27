@@ -1,6 +1,7 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
 - [Reference](../index.html)
+- [Descriptors reference](index.html)
 - [Observability descriptor](observability-descriptor.html)
 
 <!-- </nav> -->
@@ -13,10 +14,13 @@ An Akka observability descriptor describes how metrics, logs, and traces are exp
 
 | Field | Type | Description |
 | --- | --- | --- |
-| **exporter** | [ObservabilityDefault](about:blank#_observabilitydefault) | The default exporter used for metrics, logs, and traces. Will be used for each unless a respective exporter in `logs` or `metrics` is defined. |
-| **metrics** | [ObservabilityMetrics](about:blank#_observabilitymetrics) | The exporter to use for metrics. Overrides the exporter defined in `exporter`, but just for metrics. |
-| **logs** | [ObservabilityLogs](about:blank#_observabilitylogs) | The exporter to use for logs. Overrides the exporter defined in `exporter`, but just for logs. |
-| **traces** | [ObservabilityTraces](about:blank#_observabilitytraces) | The exporter to use for traces. Overrides the exporter defined in `exporter`, but just for traces. |
+| **exporters** | [] [ObservabilityDefault](about:blank#_observabilitydefault) | The default exporters used for metrics, logs, and traces. Will be used for each unless a respective exporter in `logs` or `metrics` is defined. |
+| **metrics** | [] [ObservabilityMetrics](about:blank#_observabilitymetrics) | The exporters to use for metrics. Overrides the exporters defined in `exporters`, but just for metrics. |
+| **logs** | [] [ObservabilityLogs](about:blank#_observabilitylogs) | The exporters to use for logs. Overrides the exporters defined in `exporters`, but just for logs. |
+| **traces** | [] [ObservabilityTraces](about:blank#_observabilitytraces) | The exporters to use for traces. Overrides the exporters defined in `exporters`, but just for traces. |
+| **heapDump** | [HeapDump](about:blank#_heapdump) | Heap dump export configuration. |
+| **traceSampling** | [TraceSampling](about:blank#_tracesampling) | Trace sampling configuration. Applies to all trace exporters. |
+| **logLevel** | string | Log level for the OpenTelemetry collector. Valid values are `debug`, `info`, `warn`, and `error`. |
 
 ### <a href="about:blank#_observabilitydefault"></a> ObservabilityDefault
 
@@ -97,7 +101,7 @@ Configuration for a Splunk HEC exporter to export to Splunk Platform instance us
 | Field | Type | Description |
 | --- | --- | --- |
 | **endpoint** | string *required* | The URL to export Prometheus remote write metrics to, for example, `https://<my-trial-instance>.splunkcloud.com:8088/services/collector`. |
-| **tokenSecret** | [[SecretKeyRef]](about:blank#SecretKeyRef) *required* | A reference to the secret and key containing the Splunk HTTP Event Collector. |
+| **tokenSecret** | [SecretKeyRef](about:blank#_secretkeyref) *required* | A reference to the secret and key containing the Splunk HTTP Event Collector. |
 | **source** | string | The [Splunk source](https://docs.splunk.com/Splexicon%253ASource). Identifies the source of an event, that is, where the event originated. In the case of data monitored from files and directories, the source consists of the full pathname of the file or directory. In the case of a network-based source, the source field consists of the protocol and port, such as UDP:514. |
 | **sourceType** | string | The [Splunk source type](https://docs.splunk.com/Splexicon%253ASourcetype). Identifies the data structure of an event. A source type determines how the Splunk platform formats the data during the indexing process. Example source types include `access_combined` and `cisco_syslog`. |
 | **index** | string | The splunk index, optional name of the Splunk index targeted. |
@@ -109,7 +113,7 @@ Configuration for a Google Cloud exporter.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| **serviceAccountKeySecret** | [[ObjectRef]](about:blank#ObjectRef) *required* | A secret containing a Google service account JSON key, in a property called `key.json`.
+| **serviceAccountKeySecret** | [ObjectRef](about:blank#_objectref) *required* | A secret containing a Google service account JSON key, in a property called `key.json`.
 
 The service account used must have the `roles/logging.logWriter` role if exporting logs. The `roles/monitoring.metricWriter` role if exporting metrics. The `roles/cloudtrace.agent` role if exporting traces. |
 
@@ -140,8 +144,8 @@ Configuration for TLS connections to various exporters.
 | --- | --- | --- |
 | **insecure** | boolean | If true, will not use TLS. Defaults to false. |
 | **insecureSkipVerify** | boolean | If true, will not verify the certificate presented by the server it connects to. Has no effect if `insecure` is set to true. |
-| **clientCertSecret** | [[ObjectRef]](about:blank#ObjectRef) | If configured, will use the TLS secret as a client certificate to authenticate outgoing connections to the server with. |
-| **caSecret** | [[ObjectRef]](about:blank#ObjectRef) | If configured, will use the certificate chain defined in the TLS CA secret to verify the server certificate provided by the server. |
+| **clientCertSecret** | [ObjectRef](about:blank#_objectref) | If configured, will use the TLS secret as a client certificate to authenticate outgoing connections to the server with. |
+| **caSecret** | [ObjectRef](about:blank#_objectref) | If configured, will use the certificate chain defined in the TLS CA secret to verify the server certificate provided by the server. |
 
 ### <a href="about:blank#_observabilityheader"></a> ObservabilityHeader
 
@@ -159,11 +163,92 @@ The source for a header value.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| **secretKeyRef** | [[SecretKeyRef]](about:blank#SecretKeyRef) *required* | A reference to a secret. |
+| **secretKeyRef** | [SecretKeyRef](about:blank#_secretkeyref) *required* | A reference to a secret. |
+
+### <a href="about:blank#_heapdump"></a> HeapDump
+
+Configuration for exporting heap dumps. Exactly one of `aws` or `platformManaged` must be configured.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **aws** | [HeapDumpAws](about:blank#_heapdumpaws) | If defined, heap dumps will be exported to an AWS S3 bucket. |
+| **platformManaged** | [HeapDumpPlatformManaged](about:blank#_heapdumpplatformmanaged) | If defined, heap dumps will be stored using platform-managed storage. Not available in all regions. |
+
+### <a href="about:blank#_heapdumpaws"></a> HeapDumpAws
+
+Configuration for exporting heap dumps to an AWS S3 bucket.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **bucket** | string *required* | The S3 bucket to store heap dumps in. |
+| **region** | string *required* | The AWS region of the bucket. |
+| **pathPrefix** | string | An optional prefix to prepend to the name of the stored object. |
+| **concurrentUploads** | integer | The maximum number of concurrent uploads. Defaults to `10`. |
+| **credentialsSecretRef** | [HeapDumpCredentialSecretReference](about:blank#_heapdumpcredentialsecretreference) | If set, will use the configured credentials to access AWS. Either this or `workloadIdentity` may be set, but not both. |
+| **workloadIdentity** | [HeapDumpAwsWorkloadIdentity](about:blank#_heapdumpawsworkloadidentity) | If set, will use workload identity to access AWS. Either this or `credentialsSecretRef` may be set, but not both. |
+
+### <a href="about:blank#_heapdumpplatformmanaged"></a> HeapDumpPlatformManaged
+
+Configuration for platform-managed heap dump storage. Not available in all regions.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **pathPrefix** | string | An optional prefix to prepend to the name of the stored object. |
+
+### <a href="about:blank#_heapdumpawsworkloadidentity"></a> HeapDumpAwsWorkloadIdentity
+
+Configuration for using AWS workload identity for heap dump uploads.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **roleArnOverride** | string | If set, overrides the Role ARN configured on the service. |
+
+### <a href="about:blank#_heapdumpcredentialsecretreference"></a> HeapDumpCredentialSecretReference
+
+References to secrets containing AWS credentials for heap dump uploads.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **awsAccessKeyId** | [SecretKeyRef](about:blank#_secretkeyref) | A reference to the secret and key containing the AWS access key ID. |
+| **awsSecretAccessKey** | [SecretKeyRef](about:blank#_secretkeyref) | A reference to the secret and key containing the AWS secret access key. |
+
+### <a href="about:blank#_tracesampling"></a> TraceSampling
+
+Trace sampling configuration. Applies to all trace exporters.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **probabilistic** | [ProbabilisticSampling](about:blank#_probabilisticsampling) | If defined, enables probabilistic (percentage-based) sampling of traces. |
+
+### <a href="about:blank#_probabilisticsampling"></a> ProbabilisticSampling
+
+Configuration for probabilistic trace sampling.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **percentage** | string | The percentage of traces to sample. For example, `10` means 10% of traces are sampled (90% are dropped). |
+
+### <a href="about:blank#_secretkeyref"></a> SecretKeyRef
+
+A reference to a key within a Kubernetes secret.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **name** | string *required* | The name of the secret. |
+| **key** | string *required* | The key within the secret to select. |
+| **optional** | boolean | If true, the secret or its key is allowed to not exist. |
+
+### <a href="about:blank#_objectref"></a> ObjectRef
+
+A reference to a Kubernetes secret or other object by name.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **name** | string *required* | The name of the object. |
 
 <!-- <footer> -->
 <!-- <nav> -->
-[External secret descriptor](external-secret-descriptor.html) [Glossary of terms](../glossary.html)
+[External secret descriptor](external-secret-descriptor.html) [Service reference configuration (HOCON)](../config/reference.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

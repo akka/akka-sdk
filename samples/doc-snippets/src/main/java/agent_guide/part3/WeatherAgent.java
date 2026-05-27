@@ -10,9 +10,13 @@ import akka.javasdk.http.HttpClientProvider;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component(id = "weather-agent")
 public class WeatherAgent extends Agent {
+
+  private static final Logger logger = LoggerFactory.getLogger(WeatherAgent.class);
 
   private static final String SYSTEM_MESSAGE = // <1>
     """
@@ -32,6 +36,7 @@ public class WeatherAgent extends Agent {
   }
 
   public Effect<String> query(String message) {
+    logger.info("Invoked with: {}", message);
     return effects().systemMessage(SYSTEM_MESSAGE).userMessage(message).thenReply();
   }
 

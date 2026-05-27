@@ -5,7 +5,7 @@ include::ROOT:partial$include.adoc[]
 :page-component-type: agent
 :page-summary: Build AI agents that interact with large language models, maintain session memory, and invoke tools to perform tasks.
 :page-when-to-use: Use when you need LLM-backed autonomous or semi-autonomous behavior with tool calling, session context, and multi-agent collaboration.
-:page-related: xref:concepts:ai-agents.adoc[], xref:sdk:agents/guardrails.adoc[], xref:sdk:agents/memory.adoc[], xref:sdk:workflows.adoc[], xref:sdk:key-value-entities.adoc[]
+:page-related: xref:concepts:ai-agents.adoc[], xref:sdk:autonomous-agents.adoc[], xref:sdk:agents/guardrails.adoc[], xref:sdk:agents/memory.adoc[], xref:sdk:workflows.adoc[], xref:sdk:key-value-entities.adoc[]
 :page-prerequisites: Familiarity with Akka components, a configured model provider (OpenAI, Anthropic, etc.)
 :page-persona: developer
 
@@ -17,20 +17,24 @@ image:ROOT:agent.png[Agent,width=100,float=left]An Agent interacts with an AI mo
 
 Use an Agent when you need to:
 
-* Interact with a large language model to interpret user intent, generate content, or make decisions.
+* Interact with a model to interpret user intent, generate content, or make decisions.
 * Maintain conversational context across multiple turns via session memory.
 * Call tools dynamically based on model responses (function calling).
-* Collaborate across multiple agents sharing the same session.
+* Collaborate across multiple agents sharing the same session, orchestrated externally by a xref:sdk:workflows.adoc[Workflow].
+
+If the work runs as a durable multi-step model-driven loop, or if multiple agents need to coordinate without writing the orchestration as workflow steps, use an xref:sdk:autonomous-agents.adoc[Autonomous Agent] instead.
 
 === When NOT to use Agents
 
-* **Stateful business logic without AI** -- use xref:sdk:key-value-entities.adoc[Entities] to manage state with deterministic rules.
-* **Multi-step deterministic orchestration** -- use xref:sdk:workflows.adoc[Workflows] to coordinate steps that do not require LLM reasoning.
+* **Stateful business logic without AI**, use xref:sdk:key-value-entities.adoc[Entities] to manage state with deterministic rules.
+* **Multi-step deterministic orchestration**, use xref:sdk:workflows.adoc[Workflows] to coordinate steps that do not require model reasoning.
+* **Durable multi-step model-driven processes or model-led multi-agent coordination**, use xref:sdk:autonomous-agents.adoc[Autonomous Agents] for built-in task lifecycle, iteration loop, and coordination capabilities (delegation, handoff, teams, moderation).
 * If the task can be handled by a simple request/response with no model interaction, an xref:sdk:http-endpoints.adoc[Endpoint] is sufficient.
 
 === How Agents relate to other components
 
-* **Workflows** orchestrate multi-step processes and can invoke Agents as one of those steps.
+* **Workflows** orchestrate multi-step processes and can invoke Agents as one of those steps. Use a Workflow when the orchestration sequence is fixed in code.
+* **Autonomous Agents** drive their own model loop and coordinate other agents through declared capabilities (delegation, handoff, teams, moderation). Use an Autonomous Agent when the orchestration sequence is itself a model judgment. See xref:sdk:autonomous-agents.adoc[].
 * **Entities** hold durable state that Agents can read or write via the `ComponentClient`.
 * **Endpoints** expose Agents over HTTP so external clients can reach them.
 
@@ -170,6 +174,7 @@ The ability to reach into the rest of a distributed Akka application to _augment
 == See Also
 
 * xref:concepts:ai-agents.adoc[AI Agents concepts]
+* xref:sdk:autonomous-agents.adoc[Autonomous Agents]
 * xref:sdk:agents/guardrails.adoc[Guardrails]
 * xref:sdk:agents/memory.adoc[Agent Memory]
 * link:{url-blog-agents}[Akka Agents deep-dive, window="new"]

@@ -8,13 +8,10 @@ import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 
-import scala.annotation.nowarn
-
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.Acl
 import akka.javasdk.annotations.Component
-import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume.FromEventSourcedEntity
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Consume.FromServiceStream
@@ -27,6 +24,7 @@ import akka.javasdk.annotations.SnapshotHandler
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.agent.AgentDescriptorFactory
+import akka.javasdk.impl.agent.AutonomousAgentDescriptorFactory
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax._
 import akka.javasdk.impl.serialization.Serializer
@@ -140,19 +138,12 @@ private[impl] object ComponentDescriptorFactory {
   def hasStreamPublication(clazz: Class[_]): Boolean =
     clazz.hasAnnotation[ServiceStream]
 
-  @nowarn("cat=deprecation")
   def readComponentIdValue(annotated: AnnotatedElement): String = {
-    // First check for the new Component annotation
     val componentAnnotation = annotated.getAnnotation(classOf[Component])
     if (componentAnnotation ne null) {
       componentAnnotation.id()
     } else {
-      // Fallback to the old ComponentId annotation for backward compatibility
-      val componentIdAnnotation = annotated.getAnnotation(classOf[ComponentId])
-      if (componentIdAnnotation eq null)
-        throw new IllegalArgumentException(
-          s"Component [$annotated] is missing ${classOf[Component].getName} or ${classOf[ComponentId].getName} annotation")
-      else componentIdAnnotation.value()
+      throw new IllegalArgumentException(s"Component [$annotated] is missing ${classOf[Component].getName} annotation")
     }
   }
 
@@ -294,6 +285,9 @@ private[impl] object ComponentDescriptorFactory {
       EntityDescriptorFactory
     else if (Reflect.isConsumer(component))
       ConsumerDescriptorFactory
+    else if (Reflect.isAutonomousAgent(component))
+      // Autonomous agents have no command handlers — empty descriptor
+      AutonomousAgentDescriptorFactory
     else if (Reflect.isAgent(component))
       AgentDescriptorFactory
     else

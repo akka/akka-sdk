@@ -115,7 +115,7 @@ Required flags:
 * `--docker-username` (your Docker username)
 * `--docker-password` (your Docker password)
 
-TODO:  For more details, see `akka docker -h` or visit [docker](../../reference/cli/akka-cli/akka_docker.html) page.
+For more details, see `akka docker -h` or visit the [docker](../../reference/cli/akka-cli/akka_docker.html) page.
 
 |  | For more information about using the Akka Container Registry (ACR) or external container registries, see [Configure a container registry](../projects/container-registries.html). |
 
@@ -186,7 +186,7 @@ com.example.api.ShoppingCartEntity       KeyValueEntity shopping-cart
 ```
 This table shows the component names, their types, and any associated type IDs.
 
-|  | If you want to view the events from an event sourced entity you can use the `akka service components list-events` command.
+|  | If you want to view the events from an event sourced entity you can use the `akka services components list-events` command.
 
 More information about this command in [components](../../reference/cli/akka-cli/akka_services_components_list-events.html) page. |
 
