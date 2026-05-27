@@ -44,14 +44,18 @@ public class CounterWithRealPubSubIntegrationTest extends TestKitSupport { // <1
 
     var pubSubClient = testKit.getHttpClientProvider().httpClientFor("http://localhost:8085");
 
-    // Make sure we wait for the topic to be created by the runtime
+    // In Google Pub/Sub, messages published before the subscription exists are
+    // dropped, so wait for the runtime to create the subscription (which implies
+    // the topic exists too) before publishing.
     Awaitility.await()
       .ignoreExceptions()
       .atMost(Duration.ofSeconds(15))
       .untilAsserted(() -> {
-        var result = pubSubClient.GET("/v1/projects/test/topics/counter-commands").invoke();
+        var result = pubSubClient
+          .GET("/v1/projects/test/subscriptions/counter-commands_counter-command-from-topic")
+          .invoke();
         assertThat(result.httpResponse().status())
-          .as("Topic counter-command exists in google pubsub broker")
+          .as("Subscription for counter-commands consumer exists in google pubsub broker")
           .isEqualTo(StatusCodes.OK);
       });
 
