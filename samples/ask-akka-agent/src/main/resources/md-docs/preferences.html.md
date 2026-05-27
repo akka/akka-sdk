@@ -1,6 +1,6 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [Tutorials](../index.html)
+- [Getting started & Tutorials](../index.html)
 - [Multi-agent planner](index.html)
 - [User preferences](preferences.html)
 
@@ -10,7 +10,7 @@
 
 |  | **New to Akka? Start here:**
 
-Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent with Spec-Driven Development](../spec-your-first-agent.html) guide to use your AI assistant for implementing a simple agentic service, running it locally and interacting with it. |
 
 ## <a href="about:blank#_overview"></a> Overview
 
@@ -116,11 +116,15 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component(id = "activity-agent")
 public class ActivityAgent extends Agent {
 
   public record Request(String userId, String message) {}
+
+  private static final Logger logger = LoggerFactory.getLogger(ActivityAgent.class);
 
   private static final String SYSTEM_MESSAGE =
     """
@@ -136,6 +140,7 @@ public class ActivityAgent extends Agent {
   }
 
   public Effect<String> query(Request request) { // (2)
+    logger.info("Invoked for user [{}] with: {}", request.userId(), request.message());
     var allPreferences = componentClient
       .forEventSourcedEntity(request.userId())
       .method(PreferencesEntity::getPreferences)
@@ -251,7 +256,7 @@ Does it take your preferences into account for the suggestions?
 ## <a href="about:blank#_next_steps"></a> Next steps
 
 - Activities may depend on the weather forecast. Continue with [Weather agent](weather.html) that will make use of agent function tools.
-- Learn more about the <a href="../../sdk/event-sourced-entities.html">`EventSourceEntity` component</a>.
+- Learn more about the <a href="../../sdk/event-sourced-entities.html">`EventSourcedEntity` component</a>.
 
 <!-- <footer> -->
 <!-- <nav> -->

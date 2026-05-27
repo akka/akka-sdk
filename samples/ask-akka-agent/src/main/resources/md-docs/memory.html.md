@@ -39,7 +39,7 @@ Example with `limitedWindow` memory provider:
 ```java
 public Effect<String> ask(String question) {
   return effects()
-    .memory(MemoryProvider.limitedWindow().readLast// (5))
+    .memory(MemoryProvider.limitedWindow().readLast(5))
     .systemMessage("You are a helpful...")
     .userMessage(question)
     .thenReply();
@@ -198,6 +198,50 @@ var filter = MemoryFilter.excludeFromAgentId("debug-agent")
 ```
 This creates a single Exclude filter that will exclude messages from "debug-agent" OR messages with the "internal" role. Only messages that don’t match either criterion will be included.
 
+## <a href="about:blank#_intercepting_interaction_writes"></a> Intercepting interaction writes
+
+For cases where you want to transform the memory messages before they are persisted — for example, to redact secrets,
+normalize whitespace, or truncate overly long input — without replacing the entire `SessionMemory` implementation, you can attach a <a href="../_attachments/api/akka/javasdk/agent/SessionMemoryInterceptor.html">`SessionMemoryInterceptor`</a> to any memory provider with `withInterceptor(…​)`.
+
+`SessionMemoryInterceptor` is an interface with default identity implementations for `beforeWrite` overloads covering each top-level `SessionMessage` variant: user messages (text and multimodal), AI replies, and tool call responses. Each method receives the message about to be persisted and returns the (possibly transformed) message that will actually be written. You only need to override the overload(s) you care about; the others continue to pass the message through unchanged.
+
+```java
+private static final Pattern CARD_NUMBER = Pattern.compile(
+  "\\b\\d{4}[ -]?\\d{4}[ -]?\\d{4}[ -]?\\d{4}\\b"
+); // (1)
+
+private static final SessionMemoryInterceptor REDACTOR = new SessionMemoryInterceptor() { // (2)
+  @Override
+  public SessionMessage.UserMessage beforeWrite( // (3)
+    String sessionId,
+    SessionMessage.UserMessage userMessage
+  ) {
+    return new SessionMessage.UserMessage( // (4)
+      userMessage.timestamp(),
+      CARD_NUMBER.matcher(userMessage.text()).replaceAll("[REDACTED-CARD]"),
+      userMessage.componentId()
+    );
+  }
+};
+
+public Effect<String> ask(String question) {
+  return effects()
+    .memory(MemoryProvider.fromConfig().withInterceptor(REDACTOR)) // (5)
+    .systemMessage("You are a helpful...")
+    .userMessage(question)
+    .thenReply();
+}
+```
+
+| **1** | Precompile any heavy state (here, the regex pattern) into a constant so it is reused across calls. |
+| **2** | Hold the interceptor in a `private static final` field. The same instance is invoked by every session that goes through this agent, so it must not hold mutable state of its own — `Pattern` matchers are thread-safe. |
+| **3** | Override only the overload(s) you want to transform; the multimodal overload is left as the default identity. |
+| **4** | Return the message to persist. Returning the input unchanged is equivalent to the default no-op. |
+| **5** | `withInterceptor` wraps the configured memory provider with your interceptor. |
+The configured read/write/filter behavior of the underlying provider is preserved. Read-side concerns (history limit, filters, read-only/write-only) are configured through `MemoryProvider` itself. Tool call requests are not exposed as a dedicated hook — they are nested inside `AiMessage.toolCallRequests`, so override the AI message hook to rewrite them.
+
+|  | A `SessionMemoryInterceptor` is shared across every session and concurrent request that uses it; the SDK does not synchronize, copy, or pool it. Keep interceptors stateless, or rely only on immutable / thread-safe state (a precompiled `Pattern`, a final config object). Mutable fields on the interceptor will be hit concurrently — avoid them unless you guard the access yourself. |
+
 ## <a href="about:blank#_accessing_session_memory"></a> Accessing session memory
 
 The default implementation of Session Memory is backed by a regular [Event Sourced Entity](../event-sourced-entities.html) called `SessionMemoryEntity`, which allows you to interact directly with it as you would do with any other entities in your application. This includes the possibility to directly modify or access it through the `ComponentClient` but also the ability to subscribe to changes in the session memory, as shown below:
@@ -312,7 +356,7 @@ public class CompactionAgent extends Agent {
         ModelProvider.openAi()
           .withModelName("gpt-4o-mini")
           .withApiKey(System.getenv("OPENAI_API_KEY"))
-          .withMaxTokens// (1000)
+          .withMaxTokens(1000)
       )
       .systemMessage(SYSTEM_MESSAGE)
       .userMessage(concatenatedMessages)

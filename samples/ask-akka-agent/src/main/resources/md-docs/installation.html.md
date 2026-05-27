@@ -41,8 +41,8 @@ curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix /tmp && \
 You can pass options to the installer script with `-s --` e.g.:
 
 ```bash
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.47 --verbose
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.47 -V
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.62 --verbose
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.62 -V
 ```
 macOS **Recommended approach**
 
@@ -62,8 +62,8 @@ brew upgrade akka
 curl -sL https://doc.akka.io/install-cli.sh | bash You can pass options to the installer script with `-s --` e.g.:
 
 ```bash
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.47 --verbose
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.47 -V
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.62 --verbose
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.62 -V
 ```
 Windows **Recommended approach**
 

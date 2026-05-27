@@ -7,16 +7,38 @@
 
 # Development process
 
-The main steps in developing a service with Akka are:
+## <a href="about:blank#_overview"></a> Overview
 
-1. [Create a project](about:blank#_create_a_project)
-2. [Specify service interface and domain model](about:blank#_specify_service_interface_and_domain_model)
-3. [Implementing components](about:blank#_implement_components)
-4. [Exposing components through Endpoints and Consumers](about:blank#_endpoints)
-5. [Testing your application](about:blank#_create_unit_tests)
-6. [Running locally](about:blank#_run_locally)
-7. [Package service](about:blank#_package_service)
-8. [Deploy](about:blank#_deploy)
+Building an Akka service follows a repeatable lifecycle — from defining your domain model through to deployment. Akka supports two paths through this lifecycle:
+
+- **Spec-Driven Development (SDD)** — the recommended, primary approach. You describe your service in a declarative specification, and Akka generates the project scaffolding, components, endpoints, and tests for you. SDD provides a golden path: anyone on your team can go from idea to running service quickly and consistently.
+- **Manual development** — a fallback for situations where you need full control from the start or are working outside the boundaries of what SDD currently generates.
+Both paths converge on the same runtime, the same component model, and the same deployment pipeline. The difference is how you get there.
+
+## <a href="about:blank#_spec_driven_development_workflow"></a> Spec-Driven Development workflow
+
+Spec-Driven Development is the fastest way to build an Akka service. You write a concise specification describing your service’s entities, endpoints, and domain events, and Akka generates a complete, working project from it.
+
+The SDD workflow follows these steps:
+
+1. **Write your specification** — Describe your service’s components, domain model, and endpoints in a declarative spec file. The specification captures what your service does, not how it does it.
+2. **Generate the project** — Run the Akka tooling to generate a complete project from your spec. This produces entity classes, endpoint handlers, data model objects, and test scaffolding — all wired together and ready to build.
+3. **Customize and extend** — The generated code is yours. Add business logic to the generated component stubs, refine validation rules, and implement any behavior the spec cannot express.
+4. **Test** — Run the generated unit and integration tests, then add your own to cover custom logic.
+5. **Run locally** — Start the service on your machine to verify behavior end-to-end before deploying.
+6. **Package and deploy** — Build a Docker image and deploy to Akka.
+SDD embodies the Repeatability dimension of Akka’s design: golden paths mean anyone on your team can build and ship a service without memorizing boilerplate or copy-pasting from previous projects. The spec becomes a living document that captures your service’s intent and can be versioned, reviewed, and evolved alongside your code.
+
+|  | Manual Development Approach If you need to build a service without SDD — for example, when prototyping outside the spec model or integrating with an unusual external system — you can follow the manual development workflow:
+
+  1. [Create a project](about:blank#_create_a_project)
+  2. [Specify service interface and domain model](about:blank#_specify_service_interface_and_domain_model)
+  3. [Implementing components](about:blank#_implement_components)
+  4. [Exposing components through Endpoints and Consumers](about:blank#_endpoints)
+  5. [Testing your application](about:blank#_create_unit_tests)
+  6. [Running locally](about:blank#_run_locally)
+  7. [Package and deploy](about:blank#_package_and_deploy)
+The sections below describe each of these steps in detail. |
 
 ## <a href="about:blank#_create_a_project"></a> Create a project
 
@@ -24,7 +46,7 @@ All services and applications start as a Java project. Akka has a getting starte
 
 ## <a href="about:blank#_specify_service_interface_and_domain_model"></a> Specify service interface and domain model
 
-Creating services in Akka follows the model described in [Project structure](architecture-model.html). You start with your domain model, which models your business domain in plain old Java objects. Then you will create Akka components to coordinate them.
+Creating services in Akka follows the model described in [Architecture](architecture-model.html). You start with your domain model, which models your business domain in plain old Java objects. Then you create Akka components to coordinate them.
 
 The main components of an Akka service are:
 
@@ -34,7 +56,7 @@ The main components of an Akka service are:
 - [Views](../reference/glossary.html#view)
 - [Timed Actions](../reference/glossary.html#timed_action)
 - [Consumers](../reference/glossary.html#consumer)
-We recommend that you separate the service API and Entity domain data model. Separating the service interface and data model in different classes allows you to evolve them independently.
+You should separate the service API and Entity domain data model. Separating the service interface and data model in different classes allows you to evolve them independently.
 
 |  | Kickstart a project using the [getting started guide](../getting-started/author-your-first-service.html). |
 
@@ -59,7 +81,7 @@ Akka Workflows are high-level descriptions to easily align business requirements
 
 ### <a href="about:blank#_agents"></a> Agents
 
-Akka Agents interact with AI models to perform specific tasks. An agent is typically backed by a large language model (LLM), maintains contextual history in a session memory, and can invoke tools as directed by the model. Multiple agents can share the same session to collaborate on a common goal. For more information see [Implementing agents](../sdk/agents.html).
+Akka Agents interact with AI models to perform specific tasks. An agent is typically backed by a large language model (LLM), maintains contextual history in a session memory, and can invoke tools as directed by the model. Multiple agents can share the same session to collaborate on a common goal. For more information see [Agents](../sdk/agents.html).
 
 ### <a href="about:blank#_views"></a> Views
 
@@ -103,7 +125,7 @@ When you compile the library, Akka generates a descriptor file that lists all co
 
 ### <a href="about:blank#_using_a_component_library"></a> Using a component library
 
-To use components from a library, add it as a dependency in your project. No additional configuration is required—components are discovered automatically at startup.
+To use components from a library, add it as a dependency in your project. No additional configuration is required — components are discovered automatically at startup.
 
 ```xml
 <dependency>
@@ -120,12 +142,12 @@ Not all components are equally suited for sharing. Consider the following guidel
 **Good candidates for sharing:**
 
 - **Agents** - Agents are stateless and perform tasks based on inputs, making them safe to share across services.
-- **Consumers and Views subscribing to external data** - When a Consumer or View subscribes to data from outside the service—either from a broker (e.g., Kafka) or via [service-to-service streaming](../sdk/consuming-producing.html#s2s-eventing) —sharing allows multiple services to process the same external data stream or maintain the same projection.
+- **Consumers and Views subscribing to external data** - When a Consumer or View subscribes to data from outside the service — either from a broker (e.g., Kafka) or via [service-to-service streaming](../sdk/consuming-producing.html#s2s-eventing) — sharing allows multiple services to process the same external data stream or maintain the same projection.
 **Use with caution:**
 
 - **Entities and Workflows** - Sharing entity or workflow classes can be misleading. The same class in different services creates separate, isolated data stores. Akka treats them as completely distinct components with separate persistence. If you share an entity class, each service will have its own independent set of entity instances with no shared state.
 - **Consumers and Views subscribing to local components** - Sharing these only makes sense if the source components are also shared. Otherwise, the shared Consumer or View would reference components that don’t exist in the consuming service.
-- **Endpoints** - Sharing an endpoint means sharing all the components it depends on. If any dependency is a stateful component (Entity, Workflow), each service creates its own isolated data store—giving a misleading sense of shared data. Consider whether services truly need identical routes, or if one service should own the endpoint and others call it via [service-to-service calls](../sdk/consuming-producing.html#s2s-eventing).
+- **Endpoints** - Sharing an endpoint means sharing all the components it depends on. If any dependency is a stateful component (Entity, Workflow), each service creates its own isolated data store — giving a misleading sense of shared data. Consider whether services truly need identical routes, or if one service should own the endpoint and others call it via [service-to-service calls](../sdk/consuming-producing.html#s2s-eventing).
 TIP: Start with a "share nothing" approach. Only share Akka components when there is a clear benefit and you understand the implications for stateful dependencies.
 
 ## <a href="about:blank#_endpoints"></a> Exposing components through Endpoints and Consumers
@@ -139,7 +161,7 @@ flow between different services. This makes them essential for coordinating acti
 
 For more information, refer to:
 
-- [Designing HTTP endpoints](../sdk/http-endpoints.html)
+- [Designing HTTP Endpoints](../sdk/http-endpoints.html)
 - [Designing gRPC Endpoints](../sdk/grpc-endpoints.html)
 - [Consuming and producing](../sdk/consuming-producing.html)
 
@@ -163,28 +185,33 @@ End-to-end tests validate the entire application by simulating real-world user s
 
 You can test and debug your services by [running them locally](../sdk/running-locally.html) before deploying your *Service*. This gives you a local debug experience that is convenient and easy.
 
-## <a href="about:blank#_package_service"></a> Package service
+## <a href="about:blank#_package_and_deploy"></a> Package and deploy
 
-You use Docker to package your service and any of its dependencies for deployment. Distributing services as docker images makes Akka more cloud friendly and works well with containerization tools.
+You use Docker to package your service and any of its dependencies for deployment. From there, you have two paths to production:
 
-See [container registries](../operations/projects/container-registries.html) for more information.
+- **Direct deployment to Akka** — Use the Akka CLI or Console to deploy your packaged service directly to Akka Automated Operations. This is the fastest path for teams that manage deployments through Akka.
+- **GitOps via CI/CD** — Commit your changes to trigger your enterprise CI/CD pipelines (e.g., GitHub Actions) that build, test, and ready your services for deployment using a GitOps methodology. This is the path for enterprises with established deployment governance.
+Both paths package your service as a Docker image and deploy it to the same Akka runtime.
 
-## <a href="about:blank#_deploy"></a> Deploy
+The following pages provide more information:
 
-After testing locally, deploy your service to Akka Automated Operations (akka.io) using the CLI or the Console.
-
-The following pages provide information about deployment:
-
-- [Akka projects](../operations/projects/index.html)
+- [Container registries](../operations/projects/container-registries.html)
 - [Deploying a packaged service](../operations/services/deploy-service.html#_deploying_a_service)
+- [Akka projects](../operations/projects/index.html)
+- [CI/CD integration](../operations/integrating-cicd/index.html)
 
 ## <a href="about:blank#_next_steps"></a> Next steps
 
-Now that you have a project and have deployed it you should familiarize yourself with operating an Akka project. See [Operating](../operations/index.html) for more information about operating Akka services.
+Now that you have a project and have deployed it, you should familiarize yourself with operating an Akka project. See [Operating](../operations/index.html) for more information about operating Akka services.
 
-The following topics may also be of interest.
+The following topics may also be of interest:
 
 - [Developer best practices](../sdk/dev-best-practices.html)
+
+## <a href="about:blank#_see_also"></a> See also
+
+- [Spec-driven development](../sdk/spec-driven-development.html) — Full reference for writing and generating from Akka specifications.
+- [Introducing Specify](https://akka.io/blog/introducing-akka-specify) — Blog post on the vision behind Spec-Driven Development.
 
 <!-- <footer> -->
 <!-- <nav> -->

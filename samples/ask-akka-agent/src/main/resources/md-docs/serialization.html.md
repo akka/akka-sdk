@@ -33,7 +33,7 @@ public class Bootstrap implements ServiceSetup {
 
 ## <a href="about:blank#_type_name"></a> Type name
 
-It’s **highly recommended** to add a `@TypeName` annotation to all persistent classes: entity states, events, Workflow step inputs/results. Information about the type, persisted together with the JSON payload, is used to deserialize the payload and to route it to an appropriate `Subscription` or `View` handler. By default, a FQCN is used, which requires extra attention in case of renaming or repacking. Therefore, we recommend using a logical type name to simplify refactoring tasks. Migration from the old name is also possible, see [renaming class](about:blank#_renaming_class).
+It’s **highly recommended** to add a `@TypeName` annotation to sealed interfaces, such as events. Information about the type, persisted together with the JSON payload, is used to deserialize the payload and to route it to an appropriate `Consumer` or `TableUpdater` (from the `View`) handler. By default, a FQCN is used, which requires extra attention in case of renaming or repacking. Therefore, we recommend using a logical type name to simplify refactoring tasks. Migration from the old name is also possible, see [renaming class](about:blank#_renaming_class).
 
 ## <a href="about:blank#_schema_evolution"></a> Schema evolution
 
@@ -195,7 +195,7 @@ public class CustomerCreatedMigration extends JsonMigration {
 
 ### <a href="about:blank#_renaming_class"></a> Renaming class
 
-Renaming the class doesn’t require any additional work when @TypeName annotation is used. For other cases, the `JsonMigration` implementation can specify all old class names.
+Renaming the class doesn’t require any additional work for the entity or the workflow state classes and when @TypeName annotation is used. For other cases, the `JsonMigration` implementation can specify all old class names.
 
 [AddressChangedMigration.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/AddressChangedMigration.java)
 ```java

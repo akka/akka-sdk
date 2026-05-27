@@ -1,6 +1,6 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [Tutorials](../index.html)
+- [Getting started & Tutorials](../index.html)
 - [Shopping cart](index.html)
 - [A simple shopping cart service](build-and-deploy-shopping-cart.html)
 
@@ -10,7 +10,7 @@
 
 |  | **New to Akka? Start here:**
 
-Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent with Spec-Driven Development](../spec-your-first-agent.html) guide to use your AI assistant for implementing a simple agentic service, running it locally and interacting with it. |
 This guide walks you through the design and implementation of a shopping cart service, illustrating the use of some of Akka’s components.
 
 ## <a href="about:blank#_overview"></a> Overview
@@ -194,6 +194,8 @@ public Effect<Done> addItem(LineItem item) {
 public ShoppingCart applyEvent(ShoppingCartEvent event) {
   return switch (event) {
     case ShoppingCartEvent.ItemAdded evt -> currentState().addItem(evt.item()); // (5)
+    case ShoppingCartEvent.ItemRemoved evt -> currentState().removeItem(evt.productId());
+    case ShoppingCartEvent.CheckedOut evt -> currentState().onCheckedOut();
   };
 }
 ```

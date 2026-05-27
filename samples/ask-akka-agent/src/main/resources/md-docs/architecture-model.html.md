@@ -1,17 +1,26 @@
 <!-- <nav> -->
 - [Akka](../index.html)
 - [Understanding](index.html)
-- [Project structure](architecture-model.html)
+- [Architecture](architecture-model.html)
 
 <!-- </nav> -->
 
-# Project structure
+# Architecture
+
+## <a href="about:blank#_overview"></a> Overview
+
+Akka is a full-stack platform that brings together three dimensions into a single, coherent system:
+
+- **Reliability** (Runtime) — Akka’s runtime manages persistence, consistency, replication, and self-healing so your services stay available under real-world conditions.
+- **Risk Control** (Governance) — Built-in access control, request validation, region-aware deployment, explainability, interaction logging, intent logging, and an OPA-driven policy enforcement engine let you enforce governance without bolting on external tools.
+- **Repeatability** (Developer Experience) — A clear project structure, layered separation of concerns, and Akka-provided building blocks mean you can develop, test, and iterate predictably across teams and services.
+These three dimensions are reflected directly in how you structure your code, how you deploy your services, and how you operate them in production. The sections below show you how each maps to the architecture of an Akka project.
+
+## <a href="about:blank#_akka_project_structure"></a> Akka project structure
 
 Akka encourages a project structure that separates your system’s Application Programming Interfaces (APIs), Akka component logic, and business logic into different directories.
 
-This structure supports a clear separation of concerns. It helps enable iterative development, testing in isolation, predictable packaging, and the ability to externalize configuration and static assets.
-
-## <a href="about:blank#_akka_project_structure"></a> Akka project structure
+This structure supports a clear separation of concerns. It helps you enable iterative development, test in isolation, package predictably, and externalize configuration and static assets.
 
 A typical Akka project might have a layout like the following:
 
@@ -31,7 +40,7 @@ src/
 - The `domain` directory holds plain Java classes that describe business rules and domain models. These are not tied to Akka or the runtime. Many use `record` to reduce boilerplate. You can test this logic without starting Akka or the runtime. This keeps the code focused and easier to maintain.
 - The `resources` directory includes configuration files and other static content.
 - The `test` directory contains unit and integration tests. Its structure mirrors `main` to make it easier to relate tests to the code they verify.
-Keeping these areas distinct can help improve clarity and long-term maintainability. It also encourages testing and runtime separation.
+Keeping these areas distinct improves clarity and long-term maintainability. It also encourages testing and runtime separation — a direct expression of the **Repeatability** dimension.
 
 ## <a href="about:blank#_conceptual_layers"></a> Conceptual layers
 
@@ -48,13 +57,13 @@ For more on coding structure and practical considerations, see the [coding guide
 
 This layer contains business rules and domain concepts. It does not depend on Akka or other runtime concerns. These are plain Java classes, often using `record` to reduce boilerplate. Examples include logic to enforce limits, compute totals, or apply rules.
 
-You can write unit tests for this layer without needing to start Akka or the runtime. The domain package remains isolated, focused, and easy to change.
+You can write unit tests for this layer without needing to start Akka or the runtime. The domain package remains isolated, focused, and easy to change. This isolation is the foundation of the **Repeatability** dimension — you can develop and validate business logic independently of infrastructure.
 
 ### <a href="about:blank#_application"></a> Application
 
 This layer connects the domain model to the Akka runtime. It contains the components that handle persistence, coordination, and external interaction. These components follow event-driven patterns and manage state in a way that supports consistency and responsiveness.
 
-Most classes in this layer are based on Akka-provided building blocks. The domain logic remains in the inner layer. This layer makes it operational.
+Most classes in this layer are based on Akka-provided building blocks. The domain logic remains in the inner layer. This layer makes it operational. By managing persistence, replication, and recovery automatically, the application layer delivers the **Reliability** dimension of the platform.
 
 ### <a href="about:blank#_api"></a> API
 
@@ -64,7 +73,7 @@ Endpoints use <a href="../sdk/component-and-service-calls.html#_component_client
 
 The API layer may also expose public event models over Kafka or other channels. External systems should interact with your service only through this layer.
 
-Access control and request validation also belong here. For HTTP-specific guidance, see [Designing HTTP Endpoints](../sdk/http-endpoints.html).
+Access control and request validation also belong here — this is where the **Risk Control** dimension is enforced at the service boundary. For HTTP-specific guidance, see [Designing HTTP Endpoints](../sdk/http-endpoints.html).
 
 ## <a href="about:blank#_akka_services"></a> Akka Services
 
@@ -73,13 +82,19 @@ A *Project* may contain multiple *Services*. Projects can be deployed to one or 
 
 ## <a href="about:blank#_next_steps"></a> Next steps
 
-Once familiar with the project structure, continue with:
+Once you are familiar with the project structure, continue with:
 
 - [Akka Deployment Model](deployment-model.html)
 - [Development process](development-process.html)
 - [Memory models](state-model.html)
 - [Development best practices](../sdk/dev-best-practices.html)
 You may also begin development right away using the [Akka SDK](../sdk/index.html).
+
+## <a href="about:blank#_see_also"></a> See Also
+
+- [How Akka Works](https://akka.io/how-akka-works)
+- [Cell-Based Architecture](https://akka.io/blog/cell-based-architectures-and-akka)
+- [Clustering in Akka](https://akka.io/blog/how-does-akka-clustering-work)
 
 <!-- <footer> -->
 <!-- <nav> -->

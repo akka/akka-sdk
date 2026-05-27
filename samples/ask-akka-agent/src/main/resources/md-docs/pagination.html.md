@@ -69,6 +69,7 @@ LIMIT 10
 - Cannot jump to arbitrary pages; must traverse pages sequentially
 - More complex implementation
 - Tokens are opaque and should be treated as black boxes
+- Cannot be combined with `ORDER BY`
 
 ## <a href="about:blank#_implementing_pagination"></a> Implementing Pagination
 

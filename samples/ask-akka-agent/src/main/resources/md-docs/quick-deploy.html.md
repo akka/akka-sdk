@@ -8,7 +8,7 @@
 
 |  | **New to Akka? Start here:**
 
-Use the [Build your first agent](author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent with Spec-Driven Development](spec-your-first-agent.html) guide to use your AI assistant for implementing a simple agentic service, running it locally and interacting with it. |
 You’ve built and tried the service locally, it’s time to run it on the Akka Agentic Platform without having to change any code.
 
 1. If you have not already done so, [install the Akka CLI](../operations/cli/installation.html).
@@ -75,7 +75,7 @@ You can use [cURL](https://curl.se/) to invoke your service, replacing URL with 
 Make an HTTP request to the service:
 
 ```command
-curl -i -XPOST --location "https://spring-tooth-3406.gcp-us-east1.akka.services[http://localhost:9000]/hello" \
+curl -i -XPOST --location "https://spring-tooth-3406.gcp-us-east1.akka.services/hello" \
     --header "Content-Type: application/json" \
     --data '{"user": "alice", "text": "Hello, I am Alice"}'
 ```

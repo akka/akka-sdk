@@ -6,7 +6,7 @@
 
 <!-- </nav> -->
 
-# Designing HTTP endpoints
+# Designing HTTP Endpoints
 
 ![Endpoint](../_images/endpoint.png)
 An Endpoint is a component that creates an externally accessible API. Endpoints are how you expose your services to the outside world. Two different types of endpoints are available: HTTP endpoints and gRPC endpoints. In this page, we will focus on HTTP endpoints.
@@ -135,7 +135,7 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // (1)
 
 ### <a href="about:blank#_query_parameters"></a> Query parameters
 
-Accessing query parameter is done through the `requestContext()`, inherited from [AbstractHttpEndpoint](_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html).
+Accessing query parameter is done through the `requestContext().queryParams`, inherited from [AbstractHttpEndpoint](_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html).
 
 [ExampleEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java)
 ```java
@@ -265,7 +265,7 @@ public class ShoppingCartEndpoint {
 | **7** | Result of request mapped to a more suitable response, in this case, `200 Ok` with an empty body. |
 For more details see [Component and service calls](component-and-service-calls.html)
 
-## <a href="about:blank#_interacting_with_other_http_services"></a> Interacting with other HTTP services
+## <a href="about:blank#http_client_provider"></a> Interacting with other HTTP services
 
 It is also possible to interact with other services over HTTP. This is done through the `akka.javasdk.http.HttpClientProvider`.
 
@@ -356,25 +356,6 @@ public HttpResponse lowLevelResponseHello(String name, int age) { // (1)
 | **1** | Declare the return type as `akka.http.javadsl.model.HttpResponse` |
 | **2** | Return a bad request response |
 | **3** | Return an ok response, you can still use arbitrary objects and get them serialized to JSON |
-`akka.javasdk.http.HttpResponses` provides convenient factories for common response message types without
-having to reach for the Akka HTTP model APIs directly:
-
-[ExampleEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java)
-```java
-record HelloResponse(String greeting) {}
-
-@Get("/hello-low-level-response/{name}/{age}")
-public HttpResponse lowLevelResponseHello(String name, int age) { // (1)
-  if (age > 130)
-    return HttpResponses
-      .badRequest("It is unlikely that you are " + age + " years old"); // (2)
-  else return HttpResponses.ok(new HelloResponse("Hello " + name + "!")); // (3)
-}
-```
-
-| **1** | Declare the return type as `akka.http.javadsl.model.HttpResponse` |
-| **2** | Return a bad request response |
-| **3** | Return an ok response |
 Dropping all the way down to the Akka HTTP API:
 
 [ExampleEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java)
@@ -496,19 +477,28 @@ public HttpResponse favicon() {
 | **2** | Load a specific file placed in `src/main/resources/static-resources/index.html` |
 | **3** | Another specific path `/favicon.ico` |
 | **4** | The specific resource to serve |
-It is also possible to map an entire path subtree using `**` as a wildcard at the end of the path:
+
+|  | File paths passed to `HttpResponses.staticResource` are relative to the `static-resources` directory. For example, `src/main/resources/static-resources/index.html` is referenced as `HttpResponses.staticResource("index.html")`. |
+Sometimes you would rather want to serve all files in a directory on the classpath without needing to add an entry for each file. For example, an HTML page, a stylesheet file, and some JavaScript files can all be placed in `src/main/resources/static-resources` and then made available under a path that suits the application.
+
+For example, to make the files in `static-resources` available under the HTTP request path `https://myservice.example.com/pages/…​;`, you would first map the endpoint method to `/pages/\**` to match any request path starting with `/pages/`.
+
+The method implementation then contains no other logic than a call to `HttpResponses.staticResource(request, "/pages/")` which drops the `/pages/` prefix from the incoming path and then looks for a file matching the rest of the request path from `src/main/resources/static-resources/`.
+
+A request for `/pages/index.html` would return `index.html` from the static resource directory and since `**` also matches further path segments, `/pages/css/style.css` would lead to returning `css/style.css` from the static resource directory.
 
 [StaticResourcesEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java)
 ```java
-@Get("/static/**") // (1)
+@Get("/pages/**") // (1)
 public HttpResponse webPageResources(HttpRequest request) { // (2)
-  return HttpResponses.staticResource(request, "/static/"); // (3)
+  return HttpResponses.staticResource(request, "/pages/"); // (3)
 }
 ```
 
-| **1** | Endpoint method for any path under `/static/` |
+| **1** | Endpoint method for any path under `/pages/` |
 | **2** | Accept `akka.http.javadsl.model.HttpRequest` for further inspection of the actual path. |
-| **3** | Load any available file under `static-resources` after first removing `/static` from the request path. The request path `/static/images/example.png` is resolved to the file `src/main/resources/static-resources/images/example.png` from the project. |
+| **3** | Strip the `/pages` prefix from the request path and serve the matching file from `static-resources`. For example, a request to `/pages/images/example.png` serves `src/main/resources/static-resources/images/example.png`. |
+When the request path ends with `/` or is exactly the prefix with no trailing slash (e.g. `GET /pages` or `GET /pages/`), `index.html` from that directory is served automatically. This makes it straightforward to serve single-page applications where the root of the static subtree should return the application HTML page.
 
 |  | This is convenient for service documentation or small self-contained services with web user interface but is not intended
  for production, where coupling of the service lifecycle with the user interface would mean that a new service version would need to be deployed for any changes in the user interface. |
@@ -587,7 +577,7 @@ Browsers implementing SSE have reconnecting built in, but it is important that S
 public HttpResponse streamCurrentTime() {
   Source<Long, Cancellable> timeSource = Source.tick( // (1)
     Duration.ZERO,
-    Duration.ofSeconds// (5),
+    Duration.ofSeconds(5),
     "tick"
   ).map(__ -> System.currentTimeMillis()); // (2)
 
@@ -658,79 +648,34 @@ If the connection is lost, the client will reconnect and start from the last see
 The offset tracking is timestamp-based, multiple entries can potentially have the exact same last change timestamp.
 Because of this, to make sure no updates are missed, a restarted stream will always include the entries which were seen last by the previous connection. A SSE client will likely have to deduplicate those.
 
-Another realistic example is to periodically poll an entity for its state,
-but only emit an element over SSE when the state changes:
+Another realistic example is streaming updates from an entity using notifications. The entity publishes notifications when its state changes, and the endpoint maps domain types to API records before streaming to clients:
 
 [CustomerEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java)
 ```java
-private record CustomerStreamState(Optional<Customer> customer, boolean isSame) {}
-
 @Get("/stream-customer-changes/{customerId}")
 public HttpResponse streamCustomerChanges(String customerId) {
-  Source<Customer, Cancellable> stateEvery5Seconds =
-    // stream of ticks, one immediately, then one every five seconds
-    Source.tick(Duration.ZERO, Duration.ofSeconds// (5), "tick") // (1)
-      // for each tick, request the entity state
-      .mapAsync(
-        1,
-        __ ->
-          // Note: not safe to turn this into `.invoke()` in a stream `.map()`
-          componentClient
-            .forKeyValueEntity(customerId)
-            .method(CustomerEntity::getCustomer)
-            .invokeAsync()
-            .handle((Customer customer, Throwable error) -> {
-              if (error == null) {
-                return Optional.of(customer);
-              } else if (error instanceof IllegalArgumentException) {
-                // calling getCustomer throws IllegalArgument if the customer does not exist
-                // we want the stream to continue polling in that case,
-                // so turn it into an empty optional
-                return Optional.<Customer>empty();
-              } else {
-                throw new RuntimeException(
-                  "Unexpected error polling customer state",
-                  error
-                );
-              }
-            })
-      )
-      // then filter out the empty optionals and return the actual
-      // customer states for nonempty so that the stream contains only Customer elements
-      .filter(Optional::isPresent)
-      .map(Optional::get);
+  var currentState = componentClient
+    .forKeyValueEntity(customerId)
+    .method(CustomerEntity::getCustomer)
+    .invoke(); // (1)
 
-  // deduplicate, so that we don't emit if the state did not change from last time
-  Source<Customer, Cancellable> streamOfChanges = stateEvery5Seconds // (2)
-    .scan(
-      new CustomerStreamState(Optional.empty(), true),
-      (state, newCustomer) ->
-        new CustomerStreamState(
-          Optional.of(newCustomer),
-          state.customer.isPresent() && state.customer.get().equals(newCustomer)
-        )
-    )
-    .filterNot(state -> state.isSame || state.customer.isEmpty())
-    .map(state -> state.customer.get());
+  var notifications = componentClient
+    .forKeyValueEntity(customerId)
+    .notificationStream(CustomerEntity::updates)
+    .source();
 
-  // now turn each changed internal state representation into public API representation,
-  // just like get endpoint above
-  Source<ApiCustomer, Cancellable> streamOfChangesAsApiType = // (3)
-    streamOfChanges.map(customer -> toApiCustomer(customerId, customer));
-
-  // turn into server sent event response
-  return HttpResponses.serverSentEvents(streamOfChangesAsApiType); // (4)
+  var source = Source.single(currentState) // (2)
+    .concat(notifications)
+    .map(customer -> toApiCustomer(customerId, customer)); // (3)
+  return HttpResponses.serverSentEvents(source); // (4)
 }
 ```
 
-| **1** | Right away, and then every 5 seconds, use the `ComponentClient` to call `CustomerEntity#getCustomer` to get the current state. |
-| **2** | Use `scan` to filter out updates where the state did not change |
-| **3** | Transform the internal customer domain type to a public API representation |
-| **4** | Turn the stream to a SSE response |
-This uses more advanced Akka stream operators, you can find more details of those in the [Akka libraries documentation](https://doc.akka.io/libraries/akka-core/current/stream/operators/index.html).
-
-Note that on client reconnects, this example will start the reconnected stream with the full state, and then stream partial changes. Depending
-on the use case it might be possible to continue just emitting changes by extracting event ids and handle a `RequestContext.lastSeenSseEventId` being present in the request.
+| **1** | Fetch the current entity state so clients immediately receive the latest data. |
+| **2** | Start with the current state, then concatenate the live notification stream for subsequent updates. |
+| **3** | Map the internal domain type to a public API representation. |
+| **4** | Turn the stream into a SSE response. |
+See [Key Value Entity Notifications](key-value-entities.html#_notification), [Event Sourced Entity Notifications](event-sourced-entities.html#_notification), and [Workflow Notifications](workflows.html#_notification) for details on how to set up the `NotificationPublisher` in the component.
 
 #### <a href="about:blank#_testing_streaming_responses"></a> Testing streaming responses
 
@@ -854,7 +799,7 @@ var probes = webSocketRouteTester.wsTextConnection("/ping-pong-websocket"); // (
 var publisher = probes.publisher();
 var subscriber = probes.subscriber();
 
-subscriber.request// (1); // (3)
+subscriber.request(1); // (3)
 
 publisher.sendNext("ping"); // (4)
 

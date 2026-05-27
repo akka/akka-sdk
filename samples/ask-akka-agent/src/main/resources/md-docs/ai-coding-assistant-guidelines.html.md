@@ -17,7 +17,7 @@ These guidelines apply only to the Akka SDK and do not cover usage of the lower-
 ## <a href="about:blank#_general"></a> General
 
 - Use the Akka SDK version 3.4 or later.
-- Use the [Project structure](../concepts/architecture-model.html) and follow `[org.application-name].[module-name].[api|application|domain]` package structure. There should be no dependencies from `domain` to `application`, and no dependencies from `application` to `api`. For example, the following are some package structures that follow these guidelines:
+- Use the [Architecture](../concepts/architecture-model.html) and follow `[org.application-name].[module-name].[api|application|domain]` package structure. There should be no dependencies from `domain` to `application`, and no dependencies from `application` to `api`. For example, the following are some package structures that follow these guidelines:
 
   - `com.northwind.trading.api`
   - `com.northwind.trading.application.StockEntity`

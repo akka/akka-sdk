@@ -106,7 +106,7 @@ The configured service account will need to have permissions to consume from the
 
 By default, a deployed service expects the topic to exist, but that it can create the subscription if it does not exist yet.
 
-It is possible to configure this in three ways, through the `application.conf` setting `akka.javasdk.broker.google-pubsub.mode`:
+It is possible to configure this in three ways, through the `application.conf` setting `akka.javasdk.eventing.google-pubsub.mode`:
 
 ```hocon
 akka.javasdk.eventing.google-pubsub.mode = "automatic-subscription"

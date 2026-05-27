@@ -63,7 +63,7 @@ With ACLs, you can secure your Akka environment and ensure only authorized entit
 
 <!-- <footer> -->
 <!-- <nav> -->
-[AI orchestration patterns](ms-agent-patterns.html) [Developing](../sdk/index.html)
+[AI orchestration patterns](ms-agent-patterns.html) [Governance & the runtime](governance-and-the-runtime.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

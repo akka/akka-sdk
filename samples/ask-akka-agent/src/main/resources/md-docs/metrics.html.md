@@ -12,2188 +12,1069 @@ Akka collects metrics for monitoring the runtime behavior of your services.
 
 These metrics are available for [export](../../operations/observability-and-monitoring/observability-exports.html) to external monitoring systems.
 
+In addition to the Akka-specific metrics listed below, standard JVM runtime metrics (memory, garbage collection, threads, class loading, CPU, etc.) are also collected and exported. These follow the OpenTelemetry semantic conventions for JVM metrics — see [OpenTelemetry JVM metrics](https://opentelemetry.io/docs/specs/semconv/runtime/jvm-metrics/) for the full list and attribute definitions.
+
 ## <a href="about:blank#_http_endpoints"></a> HTTP Endpoints
 
-### <a href="about:blank#_kalix_proxy_http_request_duration_seconds"></a> `kalix_proxy_http_request_duration_seconds`
+### <a href="about:blank#_http_server_active_requests"></a> HTTP server active requests
 
-Total duration of HTTP requests to a service endpoint, in seconds.
+Number of active HTTP server requests.
+Metric:: `http.server.active_requests` Type:: up-down counter
+Unit:: `{request}`
 
-Metric `kalix_proxy_http_request_duration_seconds`
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+Endpoint attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.endpoint.method` | string | Yes | Name of the endpoint method being invoked. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `http.request.method` | string | Yes | HTTP request method. |
+| `http.route` | string | Conditionally required: If and only if it’s available | The matched route template, e.g. `/pets/{id}`. |
+| `server.address` | string | Recommended | The client-facing server hostname. |
 
-Type histogram
+### <a href="about:blank#_http_server_request_body_size"></a> HTTP server request body size
 
-Labels
-- `endpoint_class`
-- `endpoint_method`
-- `http_method`
-- `http_target`
-- `http_status_code`
-- `grpc_service`
-- `grpc_method`
-- `grpc_streaming`
-Exported metrics
-- `kalix_proxy_http_request_duration_seconds_bucket` (with `le` label)
-- `kalix_proxy_http_request_duration_seconds_count`
-- `kalix_proxy_http_request_duration_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+Size of HTTP server request bodies.
+Metric:: `http.server.request.body.size` Type:: histogram
+Unit:: `By`
 
-### <a href="about:blank#_kalix_proxy_http_requests_total"></a> `kalix_proxy_http_requests_total`
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+Endpoint attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.endpoint.method` | string | Yes | Name of the endpoint method being invoked. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `http.request.method` | string | Yes | HTTP request method. |
+| `http.route` | string | Conditionally required: If and only if it’s available | The matched route template, e.g. `/pets/{id}`. |
+| `server.address` | string | Recommended | The client-facing server hostname. |
 
-Total HTTP requests to a service endpoint.
+### <a href="about:blank#_http_server_request_duration"></a> HTTP server request duration
 
-Metric `kalix_proxy_http_requests_total`
+Duration of HTTP server requests.
+Metric:: `http.server.request.duration` Type:: histogram
+Unit:: `s`
 
-Type counter
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+Endpoint attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.endpoint.method` | string | Yes | Name of the endpoint method being invoked. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if and only if an error has occurred. | Describes the error condition, such as the HTTP status code. |
+| `http.request.method` | string | Yes | HTTP request method. |
+| `http.response.status_code` | int | Conditionally required: If and only if one was received/sent. | [HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6). |
+| `http.route` | string | Conditionally required: If and only if it’s available | The matched route template, e.g. `/pets/{id}`. |
+| `server.address` | string | Recommended | The client-facing server hostname. |
 
-Labels
-- `endpoint_class`
-- `endpoint_method`
-- `http_method`
-- `http_target`
-- `http_status_code`
-- `grpc_service`
-- `grpc_method`
-- `grpc_streaming`
+### <a href="about:blank#_http_server_response_body_size"></a> HTTP server response body size
+
+Size of HTTP server response bodies.
+Metric:: `http.server.response.body.size` Type:: histogram
+Unit:: `By`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+Endpoint attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.endpoint.method` | string | Yes | Name of the endpoint method being invoked. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if and only if an error has occurred. | Describes the error condition, such as the HTTP status code. |
+| `http.request.method` | string | Yes | HTTP request method. |
+| `http.response.status_code` | int | Conditionally required: If and only if one was received/sent. | [HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6). |
+| `http.route` | string | Conditionally required: If and only if it’s available | The matched route template, e.g. `/pets/{id}`. |
+| `server.address` | string | Recommended | The client-facing server hostname. |
 
 ## <a href="about:blank#_grpc_endpoints"></a> gRPC Endpoints
 
-### <a href="about:blank#_kalix_proxy_grpc_request_duration_seconds"></a> `kalix_proxy_grpc_request_duration_seconds`
+### <a href="about:blank#_rpc_server_call_duration"></a> RPC server call duration
 
-Total duration of gRPC requests to a service endpoint, in seconds.
+Duration of incoming gRPC server calls.
+Metric:: `rpc.server.call.duration` Type:: histogram
+Unit:: `s`
 
-Metric `kalix_proxy_grpc_request_duration_seconds`
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+Endpoint attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.endpoint.method` | string | Yes | Name of the endpoint method being invoked. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if and only if an error has occurred. | Describes the error condition, such as the gRPC status code. |
+| `rpc.method` | string | Yes | The gRPC service and method name, e.g. `com.example.MyService/MyMethod`. |
+| `rpc.response.status_code` | string | Conditionally required: if available. | The gRPC status code. |
+| `rpc.system.name` | enum | Yes | The Remote Procedure Call (RPC) system. |
+| `server.address` | string | Recommended | The client-facing server hostname. |
 
-Type histogram
+### <a href="about:blank#_rpc_server_response_size"></a> RPC server response size
 
-Labels
-- `endpoint_class`
-- `grpc_service`
-- `grpc_method`
-- `grpc_streaming`
-- `grpc_status_code`
-Exported metrics
-- `kalix_proxy_grpc_request_duration_seconds_bucket` (with `le` label)
-- `kalix_proxy_grpc_request_duration_seconds_count`
-- `kalix_proxy_grpc_request_duration_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+Size of RPC server response messages.
+Metric:: `rpc.server.response.size` Type:: histogram
+Unit:: `By`
 
-### <a href="about:blank#_kalix_proxy_grpc_requests_total"></a> `kalix_proxy_grpc_requests_total`
-
-Total gRPC requests to a service endpoint.
-
-Metric `kalix_proxy_grpc_requests_total`
-
-Type counter
-
-Labels
-- `endpoint_class`
-- `grpc_service`
-- `grpc_method`
-- `grpc_streaming`
-- `grpc_status_code`
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+Endpoint attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.endpoint.method` | string | Yes | Name of the endpoint method being invoked. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if and only if an error has occurred. | Describes the error condition, such as the gRPC status code. |
+| `rpc.method` | string | Yes | The gRPC service and method name, e.g. `com.example.MyService/MyMethod`. |
+| `rpc.response.status_code` | string | Conditionally required: if available. | The gRPC status code. |
+| `rpc.system.name` | enum | Yes | The Remote Procedure Call (RPC) system. |
+| `server.address` | string | Recommended | The client-facing server hostname. |
 
 ## <a href="about:blank#_mcp_endpoints"></a> MCP Endpoints
 
-### <a href="about:blank#_kalix_proxy_mcp_request_duration_seconds"></a> `kalix_proxy_mcp_request_duration_seconds`
+### <a href="about:blank#_mcp_server_operation_duration"></a> MCP server operation duration
 
-Request duration to an MCP endpoint, in seconds.
+Duration of incoming MCP server operations.
+Metric:: `mcp.server.operation.duration` Type:: histogram
+Unit:: `s`
 
-Metric `kalix_proxy_mcp_request_duration_seconds`
-
-Type histogram
-
-Labels
-- `endpoint_path`
-- `rpc_method`
-- `rpc_error_code`
-Exported metrics
-- `kalix_proxy_mcp_request_duration_seconds_bucket` (with `le` label)
-- `kalix_proxy_mcp_request_duration_seconds_count`
-- `kalix_proxy_mcp_request_duration_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_proxy_mcp_requests_total"></a> `kalix_proxy_mcp_requests_total`
-
-Total requests to an MCP endpoint.
-
-Metric `kalix_proxy_mcp_requests_total`
-
-Type counter
-
-Labels
-- `endpoint_path`
-- `rpc_method`
-- `rpc_error_code`
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if and only if an error has occurred. | Describes the error condition. |
+| `gen_ai.operation.name` | enum | Conditionally required: when applicable for the MCP method | The name of the operation being performed. |
+| `gen_ai.prompt.name` | string | Conditionally required: When operation is related to a specific prompt. | The MCP prompt name. |
+| `gen_ai.tool.name` | string | Conditionally required: When operation is related to a specific tool. | The MCP tool name. |
+| `mcp.method.name` | enum | Yes | The name of the request or notification method. |
+| `rpc.response.status_code` | string | Conditionally required: if available. | The gRPC status code for the MCP transport. |
 
 ## <a href="about:blank#_agents"></a> Agents
 
-### <a href="about:blank#_kalix_agent_command_processing_time_seconds"></a> `kalix_agent_command_processing_time_seconds`
-
-Total duration of a completed command to the Akka Agent, in seconds
-
-Metric `kalix_agent_command_processing_time_seconds`
-
-Type histogram
-
-Labels
-- `agent_id`
-Exported metrics
-- `kalix_agent_command_processing_time_seconds_bucket` (with `le` label)
-- `kalix_agent_command_processing_time_seconds_count`
-- `kalix_agent_command_processing_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `15.0`, `Infinity`
-
-### <a href="about:blank#_kalix_agent_completed_commands_total"></a> `kalix_agent_completed_commands_total`
-
-Total completed commands by the Akka Agent.
-
-Metric `kalix_agent_completed_commands_total`
-
-Type counter
-
-Labels
-- `agent_id`
-
-### <a href="about:blank#_kalix_agent_evaluations_completed_total"></a> `kalix_agent_evaluations_completed_total`
-
-Total completed agent evaluations.
-
-Metric `kalix_agent_evaluations_completed_total`
-
-Type counter
-
-Labels
-- `agent_id`
-
-### <a href="about:blank#_kalix_agent_evaluations_failed_total"></a> `kalix_agent_evaluations_failed_total`
-
-Total failed agent evaluations.
-
-Metric `kalix_agent_evaluations_failed_total`
-
-Type counter
-
-Labels
-- `agent_id`
-
-### <a href="about:blank#_kalix_agent_failed_commands_total"></a> `kalix_agent_failed_commands_total`
-
-Total failed commands by the Akka Agent.
-
-Metric `kalix_agent_failed_commands_total`
-
-Type counter
-
-Labels
-- `agent_id`
-
-### <a href="about:blank#_kalix_agent_guardrail_completed_evaluations_total"></a> `kalix_agent_guardrail_completed_evaluations_total`
-
-Total completed guardrail evaluations for an agent.
-
-Metric `kalix_agent_guardrail_completed_evaluations_total`
-
-Type counter
-
-Labels
-- `agent_id`
-- `guardrail_category`
-- `guardrail_name`
-
-### <a href="about:blank#_kalix_agent_guardrail_evaluation_processing_time_seconds"></a> `kalix_agent_guardrail_evaluation_processing_time_seconds`
-
-Total duration of a completed and failed guardrail evaluation, in seconds
-
-Metric `kalix_agent_guardrail_evaluation_processing_time_seconds`
-
-Type histogram
-
-Labels
-- `agent_id`
-- `guardrail_category`
-- `guardrail_name`
-Exported metrics
-- `kalix_agent_guardrail_evaluation_processing_time_seconds_bucket` (with `le` label)
-- `kalix_agent_guardrail_evaluation_processing_time_seconds_count`
-- `kalix_agent_guardrail_evaluation_processing_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `15.0`, `Infinity`
-
-### <a href="about:blank#_kalix_agent_guardrail_evaluations_total"></a> `kalix_agent_guardrail_evaluations_total`
-
-Total guardrail evaluations for an agent.
-
-Metric `kalix_agent_guardrail_evaluations_total`
-
-Type counter
-
-Labels
-- `agent_id`
-- `guardrail_category`
-- `guardrail_name`
-
-### <a href="about:blank#_kalix_agent_guardrail_failed_evaluations_total"></a> `kalix_agent_guardrail_failed_evaluations_total`
-
-Total failed guardrail evaluations for an agent.
-
-Metric `kalix_agent_guardrail_failed_evaluations_total`
-
-Type counter
-
-Labels
-- `agent_id`
-- `guardrail_category`
-- `guardrail_name`
-
-### <a href="about:blank#_kalix_agent_model_completed_requests_total"></a> `kalix_agent_model_completed_requests_total`
-
-Total completed requests by the Model.
-
-Metric `kalix_agent_model_completed_requests_total`
-
-Type counter
-
-Labels
-- `agent_id`
-- `model_name`
-
-### <a href="about:blank#_kalix_agent_model_failed_requests_total"></a> `kalix_agent_model_failed_requests_total`
-
-Total failed requests by the Model.
-
-Metric `kalix_agent_model_failed_requests_total`
-
-Type counter
-
-Labels
-- `agent_id`
-- `model_name`
-
-### <a href="about:blank#_kalix_agent_model_received_requests_total"></a> `kalix_agent_model_received_requests_total`
-
-Total received requests by the Model.
-
-Metric `kalix_agent_model_received_requests_total`
-
-Type counter
-
-Labels
-- `agent_id`
-- `model_name`
-
-### <a href="about:blank#_kalix_agent_model_request_processing_time_seconds"></a> `kalix_agent_model_request_processing_time_seconds`
-
-Total duration of a completed command to the Model, in seconds
-
-Metric `kalix_agent_model_request_processing_time_seconds`
-
-Type histogram
-
-Labels
-- `agent_id`
-- `model_name`
-Exported metrics
-- `kalix_agent_model_request_processing_time_seconds_bucket` (with `le` label)
-- `kalix_agent_model_request_processing_time_seconds_count`
-- `kalix_agent_model_request_processing_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `15.0`, `Infinity`
-
-### <a href="about:blank#_kalix_agent_model_token_input_total"></a> `kalix_agent_model_token_input_total`
-
-Tokens used in the input by the model in the response.
-
-Metric `kalix_agent_model_token_input_total`
-
-Type counter
-
-Labels
-- `agent_id`
-- `model_name`
-
-### <a href="about:blank#_kalix_agent_model_token_output_total"></a> `kalix_agent_model_token_output_total`
-
-Tokens used in the output by the model in the response.
-
-Metric `kalix_agent_model_token_output_total`
-
-Type counter
-
-Labels
-- `agent_id`
-- `model_name`
-
-### <a href="about:blank#_kalix_agent_received_commands_total"></a> `kalix_agent_received_commands_total`
-
-Total received commands by the Akka Agent.
-
-Metric `kalix_agent_received_commands_total`
-
-Type counter
-
-Labels
-- `agent_id`
-
-### <a href="about:blank#_kalix_agent_tool_completed_requests_total"></a> `kalix_agent_tool_completed_requests_total`
-
-Total completed requests by a Tool.
-
-Metric `kalix_agent_tool_completed_requests_total`
-
-Type counter
-
-Labels
-- `agent_id`
-- `model_name`
-- `tool_name`
-
-### <a href="about:blank#_kalix_agent_tool_failed_requests_total"></a> `kalix_agent_tool_failed_requests_total`
-
-Total failed requests by a Tool.
-
-Metric `kalix_agent_tool_failed_requests_total`
-
-Type counter
-
-Labels
-- `agent_id`
-- `model_name`
-- `tool_name`
-
-### <a href="about:blank#_kalix_agent_tool_received_requests_total"></a> `kalix_agent_tool_received_requests_total`
-
-Total received commands by a Tool.
-
-Metric `kalix_agent_tool_received_requests_total`
-
-Type counter
-
-Labels
-- `agent_id`
-- `model_name`
-- `tool_name`
-
-### <a href="about:blank#_kalix_agent_tool_request_processing_time_seconds"></a> `kalix_agent_tool_request_processing_time_seconds`
-
-Total duration of a completed command to a Tool, in seconds
-
-Metric `kalix_agent_tool_request_processing_time_seconds`
-
-Type histogram
-
-Labels
-- `agent_id`
-- `model_name`
-- `tool_name`
-Exported metrics
-- `kalix_agent_tool_request_processing_time_seconds_bucket` (with `le` label)
-- `kalix_agent_tool_request_processing_time_seconds_count`
-- `kalix_agent_tool_request_processing_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-## <a href="about:blank#_event_sourced_entities"></a> Event Sourced Entities
-
-### <a href="about:blank#_kalix_eventsourced_activated_entities_total"></a> `kalix_eventsourced_activated_entities_total`
-
-Total entity instances that have activated.
-
-Metric `kalix_eventsourced_activated_entities_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_command_processing_time_seconds"></a> `kalix_eventsourced_command_processing_time_seconds`
-
-Duration for command processing (until user service reply), in seconds.
-
-Metric `kalix_eventsourced_command_processing_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_eventsourced_command_processing_time_seconds_bucket` (with `le` label)
-- `kalix_eventsourced_command_processing_time_seconds_count`
-- `kalix_eventsourced_command_processing_time_seconds_sum`
-Buckets `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_eventsourced_command_total_time_seconds"></a> `kalix_eventsourced_command_total_time_seconds`
-
-Total duration for command handling (including stash and persist), in seconds.
-
-Metric `kalix_eventsourced_command_total_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_eventsourced_command_total_time_seconds_bucket` (with `le` label)
-- `kalix_eventsourced_command_total_time_seconds_count`
-- `kalix_eventsourced_command_total_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_eventsourced_completed_commands_total"></a> `kalix_eventsourced_completed_commands_total`
-
-Total commands completed for an entity.
-
-Metric `kalix_eventsourced_completed_commands_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_conflicts_detected_total"></a> `kalix_eventsourced_conflicts_detected_total`
-
-Total conflicts detected for an entity.
-
-Metric `kalix_eventsourced_conflicts_detected_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_conflicts_resolved_total"></a> `kalix_eventsourced_conflicts_resolved_total`
-
-Total conflicts resolved for an entity.
-
-Metric `kalix_eventsourced_conflicts_resolved_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_deleted_entities_total"></a> `kalix_eventsourced_deleted_entities_total`
-
-Total entity instances that have been deleted.
-
-Metric `kalix_eventsourced_deleted_entities_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_deleted_events_failed_total"></a> `kalix_eventsourced_deleted_events_failed_total`
-
-Total deleted events operations that have failed.
-
-Metric `kalix_eventsourced_deleted_events_failed_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_deleted_events_time_seconds"></a> `kalix_eventsourced_deleted_events_time_seconds`
-
-Duration for deleting events, in seconds.
-
-Metric `kalix_eventsourced_deleted_events_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_eventsourced_deleted_events_time_seconds_bucket` (with `le` label)
-- `kalix_eventsourced_deleted_events_time_seconds_count`
-- `kalix_eventsourced_deleted_events_time_seconds_sum`
-Buckets `0.01`, `0.05`, `0.1`, `0.25`, `0.5`, `1.0`, `2.0`, `3.0`, `4.0`, `5.0`, `10.0`, `20.0`, `30.0`, `Infinity`
-
-### <a href="about:blank#_kalix_eventsourced_deleted_events_total"></a> `kalix_eventsourced_deleted_events_total`
-
-Total deleted events
-
-Metric `kalix_eventsourced_deleted_events_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_entity_active_time_seconds"></a> `kalix_eventsourced_entity_active_time_seconds`
-
-Duration that entities are active, in seconds.
-
-Metric `kalix_eventsourced_entity_active_time_seconds`
-
-Type summary
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_eventsourced_entity_active_time_seconds` (with `quantile` label)
-- `kalix_eventsourced_entity_active_time_seconds_count`
-- `kalix_eventsourced_entity_active_time_seconds_sum`
-Quantiles `0.5`, `0.95`, `0.99`, `1.0`
-
-### <a href="about:blank#_kalix_eventsourced_failed_commands_total"></a> `kalix_eventsourced_failed_commands_total`
-
-Total commands that have failed.
-
-Metric `kalix_eventsourced_failed_commands_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_failed_deleted_entities_total"></a> `kalix_eventsourced_failed_deleted_entities_total`
-
-Total failures when attempting to delete entities.
-
-Metric `kalix_eventsourced_failed_deleted_entities_total`
-
-Type counter
-
-### <a href="about:blank#_kalix_eventsourced_failed_entities_total"></a> `kalix_eventsourced_failed_entities_total`
-
-Total entity instances that have failed.
-
-Metric `kalix_eventsourced_failed_entities_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_loaded_event_bytes_total"></a> `kalix_eventsourced_loaded_event_bytes_total`
-
-Total event sizes loaded for an entity.
-
-Metric `kalix_eventsourced_loaded_event_bytes_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_loaded_events_total"></a> `kalix_eventsourced_loaded_events_total`
-
-Total events loaded for an entity.
-
-Metric `kalix_eventsourced_loaded_events_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_loaded_snapshot_bytes_total"></a> `kalix_eventsourced_loaded_snapshot_bytes_total`
-
-Total snapshot sizes loaded for an entity.
-
-Metric `kalix_eventsourced_loaded_snapshot_bytes_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_loaded_snapshots_total"></a> `kalix_eventsourced_loaded_snapshots_total`
-
-Total snapshots loaded for an entity.
-
-Metric `kalix_eventsourced_loaded_snapshots_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_passivated_entities_total"></a> `kalix_eventsourced_passivated_entities_total`
-
-Total entity instances that have passivated.
-
-Metric `kalix_eventsourced_passivated_entities_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_persist_failed_total"></a> `kalix_eventsourced_persist_failed_total`
-
-Total persist operations that have failed.
-
-Metric `kalix_eventsourced_persist_failed_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_persist_time_seconds"></a> `kalix_eventsourced_persist_time_seconds`
-
-Duration for persisting events from a command, in seconds.
-
-Metric `kalix_eventsourced_persist_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_eventsourced_persist_time_seconds_bucket` (with `le` label)
-- `kalix_eventsourced_persist_time_seconds_count`
-- `kalix_eventsourced_persist_time_seconds_sum`
-Buckets `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_eventsourced_persisted_event_bytes_total"></a> `kalix_eventsourced_persisted_event_bytes_total`
-
-Total event sizes persisted for an entity.
-
-Metric `kalix_eventsourced_persisted_event_bytes_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_persisted_events_total"></a> `kalix_eventsourced_persisted_events_total`
-
-Total events persisted for an entity.
-
-Metric `kalix_eventsourced_persisted_events_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_persisted_replicated_event_bytes_total"></a> `kalix_eventsourced_persisted_replicated_event_bytes_total`
-
-Total replicated event sizes persisted for an entity.
-
-Metric `kalix_eventsourced_persisted_replicated_event_bytes_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_persisted_replicated_events_total"></a> `kalix_eventsourced_persisted_replicated_events_total`
-
-Total replicated events persisted for an entity.
-
-Metric `kalix_eventsourced_persisted_replicated_events_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_persisted_snapshot_bytes_total"></a> `kalix_eventsourced_persisted_snapshot_bytes_total`
-
-Total snapshot sizes persisted for an entity.
-
-Metric `kalix_eventsourced_persisted_snapshot_bytes_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_persisted_snapshots_total"></a> `kalix_eventsourced_persisted_snapshots_total`
-
-Total snapshots persisted for an entity.
-
-Metric `kalix_eventsourced_persisted_snapshots_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_received_commands_total"></a> `kalix_eventsourced_received_commands_total`
-
-Total commands received for an entity.
-
-Metric `kalix_eventsourced_received_commands_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_recovery_failed_total"></a> `kalix_eventsourced_recovery_failed_total`
-
-Total entity recoveries that have failed.
-
-Metric `kalix_eventsourced_recovery_failed_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_recovery_from_events_total"></a> `kalix_eventsourced_recovery_from_events_total`
-
-If events were loaded to recover an entity.
-
-Metric `kalix_eventsourced_recovery_from_events_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_recovery_time_seconds"></a> `kalix_eventsourced_recovery_time_seconds`
-
-Duration for entity recovery, in seconds.
-
-Metric `kalix_eventsourced_recovery_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_eventsourced_recovery_time_seconds_bucket` (with `le` label)
-- `kalix_eventsourced_recovery_time_seconds_count`
-- `kalix_eventsourced_recovery_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_eventsourced_registered_for_deletion_total"></a> `kalix_eventsourced_registered_for_deletion_total`
-
-Total entity instances registered to be deleted
-
-Metric `kalix_eventsourced_registered_for_deletion_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_switch_primary_failed_total"></a> `kalix_eventsourced_switch_primary_failed_total`
-
-Total primary switches that have failed.
-
-Metric `kalix_eventsourced_switch_primary_failed_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_eventsourced_switch_primary_time_seconds"></a> `kalix_eventsourced_switch_primary_time_seconds`
-
-Duration for switching primary, in seconds.
-
-Metric `kalix_eventsourced_switch_primary_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_eventsourced_switch_primary_time_seconds_bucket` (with `le` label)
-- `kalix_eventsourced_switch_primary_time_seconds_count`
-- `kalix_eventsourced_switch_primary_time_seconds_sum`
-Buckets `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.05`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `5.0`, `10.0`, `20.0`, `Infinity`
-
-### <a href="about:blank#_kalix_eventsourced_switch_primary_total"></a> `kalix_eventsourced_switch_primary_total`
-
-Total primary switches completed for an entity.
-
-Metric `kalix_eventsourced_switch_primary_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-## <a href="about:blank#_key_value_entities"></a> Key Value Entities
-
-### <a href="about:blank#_kalix_valueentity_activated_entities_total"></a> `kalix_valueentity_activated_entities_total`
-
-Total entity instances that have activated.
-
-Metric `kalix_valueentity_activated_entities_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_command_processing_time_seconds"></a> `kalix_valueentity_command_processing_time_seconds`
-
-Duration for command processing (until user service reply), in seconds.
-
-Metric `kalix_valueentity_command_processing_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_valueentity_command_processing_time_seconds_bucket` (with `le` label)
-- `kalix_valueentity_command_processing_time_seconds_count`
-- `kalix_valueentity_command_processing_time_seconds_sum`
-Buckets `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_valueentity_command_stash_time_seconds"></a> `kalix_valueentity_command_stash_time_seconds`
-
-Duration that commands are stashed, in seconds.
-
-Metric `kalix_valueentity_command_stash_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_valueentity_command_stash_time_seconds_bucket` (with `le` label)
-- `kalix_valueentity_command_stash_time_seconds_count`
-- `kalix_valueentity_command_stash_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_valueentity_command_total_time_seconds"></a> `kalix_valueentity_command_total_time_seconds`
-
-Total duration for command handling (including stash and persist), in seconds.
-
-Metric `kalix_valueentity_command_total_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_valueentity_command_total_time_seconds_bucket` (with `le` label)
-- `kalix_valueentity_command_total_time_seconds_count`
-- `kalix_valueentity_command_total_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_valueentity_completed_commands_total"></a> `kalix_valueentity_completed_commands_total`
-
-Total commands completed for an entity.
-
-Metric `kalix_valueentity_completed_commands_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_conflicts_detected_total"></a> `kalix_valueentity_conflicts_detected_total`
-
-Total conflicts detected for an entity.
-
-Metric `kalix_valueentity_conflicts_detected_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_conflicts_resolved_total"></a> `kalix_valueentity_conflicts_resolved_total`
-
-Total conflicts resolved for an entity.
-
-Metric `kalix_valueentity_conflicts_resolved_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_deleted_events_failed_total"></a> `kalix_valueentity_deleted_events_failed_total`
-
-Total deleted events operations that have failed.
-
-Metric `kalix_valueentity_deleted_events_failed_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_deleted_events_time_seconds"></a> `kalix_valueentity_deleted_events_time_seconds`
-
-Duration for deleting events, in seconds.
-
-Metric `kalix_valueentity_deleted_events_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_valueentity_deleted_events_time_seconds_bucket` (with `le` label)
-- `kalix_valueentity_deleted_events_time_seconds_count`
-- `kalix_valueentity_deleted_events_time_seconds_sum`
-Buckets `0.01`, `0.05`, `0.1`, `0.25`, `0.5`, `1.0`, `2.0`, `3.0`, `4.0`, `5.0`, `10.0`, `20.0`, `30.0`, `Infinity`
-
-### <a href="about:blank#_kalix_valueentity_deleted_events_total"></a> `kalix_valueentity_deleted_events_total`
-
-Total deleted events
-
-Metric `kalix_valueentity_deleted_events_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_entity_active_time_seconds"></a> `kalix_valueentity_entity_active_time_seconds`
-
-Duration that entities are active, in seconds.
-
-Metric `kalix_valueentity_entity_active_time_seconds`
-
-Type summary
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_valueentity_entity_active_time_seconds` (with `quantile` label)
-- `kalix_valueentity_entity_active_time_seconds_count`
-- `kalix_valueentity_entity_active_time_seconds_sum`
-Quantiles `0.5`, `0.95`, `0.99`, `1.0`
-
-### <a href="about:blank#_kalix_valueentity_failed_commands_total"></a> `kalix_valueentity_failed_commands_total`
-
-Total commands that have failed.
-
-Metric `kalix_valueentity_failed_commands_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_failed_entities_total"></a> `kalix_valueentity_failed_entities_total`
-
-Total entity instances that have failed.
-
-Metric `kalix_valueentity_failed_entities_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_loaded_state_bytes_total"></a> `kalix_valueentity_loaded_state_bytes_total`
-
-Total state sizes loaded for an entity.
-
-Metric `kalix_valueentity_loaded_state_bytes_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_loaded_state_total"></a> `kalix_valueentity_loaded_state_total`
-
-Total states loaded for an entity.
-
-Metric `kalix_valueentity_loaded_state_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_passivated_entities_total"></a> `kalix_valueentity_passivated_entities_total`
-
-Total entity instances that have passivated.
-
-Metric `kalix_valueentity_passivated_entities_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_persist_failed_total"></a> `kalix_valueentity_persist_failed_total`
-
-Total persist operations that have failed.
-
-Metric `kalix_valueentity_persist_failed_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_persist_time_seconds"></a> `kalix_valueentity_persist_time_seconds`
-
-Duration for persisting events from a command, in seconds.
-
-Metric `kalix_valueentity_persist_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_valueentity_persist_time_seconds_bucket` (with `le` label)
-- `kalix_valueentity_persist_time_seconds_count`
-- `kalix_valueentity_persist_time_seconds_sum`
-Buckets `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_valueentity_persisted_replicated_state_bytes_total"></a> `kalix_valueentity_persisted_replicated_state_bytes_total`
-
-Total replicated state sizes persisted for an entity.
-
-Metric `kalix_valueentity_persisted_replicated_state_bytes_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_persisted_replicated_states_total"></a> `kalix_valueentity_persisted_replicated_states_total`
-
-Total replicated states persisted for an entity.
-
-Metric `kalix_valueentity_persisted_replicated_states_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_persisted_state_bytes_total"></a> `kalix_valueentity_persisted_state_bytes_total`
-
-Total state sizes persisted for an entity.
-
-Metric `kalix_valueentity_persisted_state_bytes_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_persisted_states_total"></a> `kalix_valueentity_persisted_states_total`
-
-Total states persisted for an entity.
-
-Metric `kalix_valueentity_persisted_states_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_received_commands_total"></a> `kalix_valueentity_received_commands_total`
-
-Total commands received for an entity.
-
-Metric `kalix_valueentity_received_commands_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_recovery_failed_total"></a> `kalix_valueentity_recovery_failed_total`
-
-Total entity recoveries that have failed.
-
-Metric `kalix_valueentity_recovery_failed_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_recovery_time_seconds"></a> `kalix_valueentity_recovery_time_seconds`
-
-Duration for entity recovery, in seconds.
-
-Metric `kalix_valueentity_recovery_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_valueentity_recovery_time_seconds_bucket` (with `le` label)
-- `kalix_valueentity_recovery_time_seconds_count`
-- `kalix_valueentity_recovery_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_valueentity_registered_for_deletion_total"></a> `kalix_valueentity_registered_for_deletion_total`
-
-Total entity instances registered to be deleted
-
-Metric `kalix_valueentity_registered_for_deletion_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_stashed_commands_total"></a> `kalix_valueentity_stashed_commands_total`
-
-Total commands stashed for an entity.
-
-Metric `kalix_valueentity_stashed_commands_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_switch_primary_failed_total"></a> `kalix_valueentity_switch_primary_failed_total`
-
-Total primary switches that have failed.
-
-Metric `kalix_valueentity_switch_primary_failed_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_switch_primary_time_seconds"></a> `kalix_valueentity_switch_primary_time_seconds`
-
-Duration for switching primary, in seconds.
-
-Metric `kalix_valueentity_switch_primary_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_valueentity_switch_primary_time_seconds_bucket` (with `le` label)
-- `kalix_valueentity_switch_primary_time_seconds_count`
-- `kalix_valueentity_switch_primary_time_seconds_sum`
-Buckets `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.05`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `5.0`, `10.0`, `20.0`, `Infinity`
-
-### <a href="about:blank#_kalix_valueentity_switch_primary_total"></a> `kalix_valueentity_switch_primary_total`
-
-Total primary switches completed for an entity.
-
-Metric `kalix_valueentity_switch_primary_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_valueentity_unstashed_commands_total"></a> `kalix_valueentity_unstashed_commands_total`
-
-Total commands unstashed for an entity.
-
-Metric `kalix_valueentity_unstashed_commands_total`
-
-Type counter
-
-Labels
-- `entity_name`
+### <a href="about:blank#_agent_command_duration"></a> Agent command duration
+
+Duration of agent command handling.
+Metric:: `akka.agent.command.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_agent_content_load_duration"></a> Agent content load duration
+
+Duration of agent content loading operations.
+Metric:: `akka.agent.content.load.duration` Type:: histogram
+Unit:: `s`
+
+Agent Content attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.agent.content.kind` | string | Yes | The kind of content being loaded. |
+| `akka.agent.content.loader.class` | string | Recommended: if available | The class name of the content loader used. |
+| `akka.agent.content.size` | int | Recommended: if available | The size of the loaded content in bytes. |
+| `akka.agent.content.uri` | string | Yes | The URI of the content being loaded. |
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_agent_content_load_size"></a> Agent content load size
+
+Size of content loaded by the agent.
+Metric:: `akka.agent.content.load.size` Type:: histogram
+Unit:: `By`
+
+Agent Content attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.agent.content.kind` | string | Yes | The kind of content being loaded. |
+| `akka.agent.content.loader.class` | string | Recommended: if available | The class name of the content loader used. |
+| `akka.agent.content.size` | int | Recommended: if available | The size of the loaded content in bytes. |
+| `akka.agent.content.uri` | string | Yes | The URI of the content being loaded. |
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+
+### <a href="about:blank#_agent_evaluation_result"></a> Agent evaluation result
+
+Number of agent evaluation results.
+Metric:: `akka.agent.evaluation.result` Type:: counter
+Unit:: `{result}`
+
+Agent Evaluation attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.agent.evaluation.result` | enum | Yes | The result of an agent evaluation. |
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+
+### <a href="about:blank#_agent_guardrail_evaluation_duration"></a> Agent guardrail evaluation duration
+
+Duration of agent guardrail evaluations.
+Metric:: `akka.agent.guardrail.duration` Type:: histogram
+Unit:: `s`
+
+Agent Guardrail attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.agent.guardrail.category` | string | Yes | The category of the guardrail being evaluated. |
+| `akka.agent.guardrail.name` | string | Yes | The name of the guardrail being evaluated. |
+| `akka.agent.guardrail.result` | enum | Yes | The result of a guardrail evaluation. |
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+
+### <a href="about:blank#_genai_client_operation_duration"></a> GenAI client operation duration
+
+Duration of GenAI client operations.
+Metric:: `gen_ai.client.operation.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+| `gen_ai.operation.name` | enum | Yes | The name of the operation being performed. |
+| `gen_ai.provider.name` | enum | Yes | The Generative AI provider as identified by the client or server instrumentation. |
+| `gen_ai.request.model` | string | Conditionally required: If available. | The name of the GenAI model a request is being made to. |
+| `gen_ai.tool.name` | string | Conditionally required: when gen_ai.operation.name is execute_tool | Name of the tool utilized by the agent. |
+
+### <a href="about:blank#_genai_client_token_usage"></a> GenAI client token usage
+
+Number of input and output tokens used in GenAI operations.
+Metric:: `gen_ai.client.token.usage` Type:: histogram
+Unit:: `{token}`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `gen_ai.operation.name` | enum | Yes | The name of the operation being performed. |
+| `gen_ai.provider.name` | enum | Yes | The Generative AI provider as identified by the client or server instrumentation. |
+| `gen_ai.request.model` | string | Conditionally required: If available. | The name of the GenAI model a request is being made to. |
+| `gen_ai.token.type` | enum | Yes | The type of token being counted. |
 
 ## <a href="about:blank#_workflows"></a> Workflows
 
-### <a href="about:blank#_kalix_workflowentity_activated_entities_total"></a> `kalix_workflowentity_activated_entities_total`
-
-Total workflow instances that have been activated.
-
-Metric `kalix_workflowentity_activated_entities_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_command_processing_time_seconds"></a> `kalix_workflowentity_command_processing_time_seconds`
-
-Duration for command processing (until user service reply), in seconds.
-
-Metric `kalix_workflowentity_command_processing_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_workflowentity_command_processing_time_seconds_bucket` (with `le` label)
-- `kalix_workflowentity_command_processing_time_seconds_count`
-- `kalix_workflowentity_command_processing_time_seconds_sum`
-Buckets `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_workflowentity_command_total_time_seconds"></a> `kalix_workflowentity_command_total_time_seconds`
-
-Total duration for command handling (including stash and persist), in seconds.
-
-Metric `kalix_workflowentity_command_total_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_workflowentity_command_total_time_seconds_bucket` (with `le` label)
-- `kalix_workflowentity_command_total_time_seconds_count`
-- `kalix_workflowentity_command_total_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_workflowentity_completed_commands_total"></a> `kalix_workflowentity_completed_commands_total`
-
-Total commands completed for an entity.
-
-Metric `kalix_workflowentity_completed_commands_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_completed_steps_total"></a> `kalix_workflowentity_completed_steps_total`
-
-Total steps completed.
-
-Metric `kalix_workflowentity_completed_steps_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_conflicts_detected_total"></a> `kalix_workflowentity_conflicts_detected_total`
-
-Total conflicts detected for an entity.
-
-Metric `kalix_workflowentity_conflicts_detected_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_conflicts_resolved_total"></a> `kalix_workflowentity_conflicts_resolved_total`
-
-Total conflicts resolved for an entity.
-
-Metric `kalix_workflowentity_conflicts_resolved_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_entity_active_time_seconds"></a> `kalix_workflowentity_entity_active_time_seconds`
-
-Duration that entities are active, in seconds.
-
-Metric `kalix_workflowentity_entity_active_time_seconds`
-
-Type summary
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_workflowentity_entity_active_time_seconds` (with `quantile` label)
-- `kalix_workflowentity_entity_active_time_seconds_count`
-- `kalix_workflowentity_entity_active_time_seconds_sum`
-Quantiles `0.5`, `0.95`, `0.99`, `1.0`
-
-### <a href="about:blank#_kalix_workflowentity_failed_commands_total"></a> `kalix_workflowentity_failed_commands_total`
-
-Total commands that have failed.
-
-Metric `kalix_workflowentity_failed_commands_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_failed_entities_total"></a> `kalix_workflowentity_failed_entities_total`
-
-Total workflow instances that have failed.
-
-Metric `kalix_workflowentity_failed_entities_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_failed_steps_total"></a> `kalix_workflowentity_failed_steps_total`
-
-Total steps that have failed.
-
-Metric `kalix_workflowentity_failed_steps_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_loaded_event_bytes_total"></a> `kalix_workflowentity_loaded_event_bytes_total`
-
-Total event sizes loaded for an entity.
-
-Metric `kalix_workflowentity_loaded_event_bytes_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_loaded_events_total"></a> `kalix_workflowentity_loaded_events_total`
-
-Total events loaded for an entity.
-
-Metric `kalix_workflowentity_loaded_events_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_loaded_snapshot_bytes_total"></a> `kalix_workflowentity_loaded_snapshot_bytes_total`
-
-Total snapshot sizes loaded for an entity.
-
-Metric `kalix_workflowentity_loaded_snapshot_bytes_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_loaded_snapshots_total"></a> `kalix_workflowentity_loaded_snapshots_total`
-
-Total snapshots loaded for an entity.
-
-Metric `kalix_workflowentity_loaded_snapshots_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_passivated_entities_total"></a> `kalix_workflowentity_passivated_entities_total`
-
-Total workflow instances that have been passivated.
-
-Metric `kalix_workflowentity_passivated_entities_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_persist_time_seconds"></a> `kalix_workflowentity_persist_time_seconds`
-
-Duration for persisting events, in seconds.
-
-Metric `kalix_workflowentity_persist_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_workflowentity_persist_time_seconds_bucket` (with `le` label)
-- `kalix_workflowentity_persist_time_seconds_count`
-- `kalix_workflowentity_persist_time_seconds_sum`
-Buckets `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_workflowentity_persisted_event_bytes_total"></a> `kalix_workflowentity_persisted_event_bytes_total`
-
-Total event sizes persisted for an entity.
-
-Metric `kalix_workflowentity_persisted_event_bytes_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_persisted_events_total"></a> `kalix_workflowentity_persisted_events_total`
-
-Total events persisted for an entity.
-
-Metric `kalix_workflowentity_persisted_events_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_persisted_replicated_event_bytes_total"></a> `kalix_workflowentity_persisted_replicated_event_bytes_total`
-
-Total replicated event sizes persisted for an entity.
-
-Metric `kalix_workflowentity_persisted_replicated_event_bytes_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_persisted_replicated_events_total"></a> `kalix_workflowentity_persisted_replicated_events_total`
-
-Total replicated events persisted for an entity.
-
-Metric `kalix_workflowentity_persisted_replicated_events_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_persisted_snapshot_bytes_total"></a> `kalix_workflowentity_persisted_snapshot_bytes_total`
-
-Total snapshot sizes persisted for an entity.
-
-Metric `kalix_workflowentity_persisted_snapshot_bytes_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_persisted_snapshots_total"></a> `kalix_workflowentity_persisted_snapshots_total`
-
-Total snapshots persisted for an entity.
-
-Metric `kalix_workflowentity_persisted_snapshots_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_received_commands_total"></a> `kalix_workflowentity_received_commands_total`
-
-Total commands received for an entity.
-
-Metric `kalix_workflowentity_received_commands_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_recovery_failed_total"></a> `kalix_workflowentity_recovery_failed_total`
-
-Total recovery process that have failed.
-
-Metric `kalix_workflowentity_recovery_failed_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_recovery_from_events_total"></a> `kalix_workflowentity_recovery_from_events_total`
-
-If events were loaded to recover an entity.
-
-Metric `kalix_workflowentity_recovery_from_events_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_recovery_time_seconds"></a> `kalix_workflowentity_recovery_time_seconds`
-
-Duration for workflow recovery, in seconds.
-
-Metric `kalix_workflowentity_recovery_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_workflowentity_recovery_time_seconds_bucket` (with `le` label)
-- `kalix_workflowentity_recovery_time_seconds_count`
-- `kalix_workflowentity_recovery_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_workflowentity_registered_for_deletion_total"></a> `kalix_workflowentity_registered_for_deletion_total`
-
-Total workflow instances registered to be deleted
-
-Metric `kalix_workflowentity_registered_for_deletion_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_started_commands_total"></a> `kalix_workflowentity_started_commands_total`
-
-Commands sent from workflow to other components or user service.
-
-Metric `kalix_workflowentity_started_commands_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_started_steps_total"></a> `kalix_workflowentity_started_steps_total`
-
-Total steps started.
-
-Metric `kalix_workflowentity_started_steps_total`
-
-Type counter
-
-Labels
-- `entity_name`
-
-### <a href="about:blank#_kalix_workflowentity_step_processing_time_seconds"></a> `kalix_workflowentity_step_processing_time_seconds`
-
-Duration for step processing (until user service reply), in seconds.
-
-Metric `kalix_workflowentity_step_processing_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_workflowentity_step_processing_time_seconds_bucket` (with `le` label)
-- `kalix_workflowentity_step_processing_time_seconds_count`
-- `kalix_workflowentity_step_processing_time_seconds_sum`
-Buckets `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_workflowentity_step_total_time_seconds"></a> `kalix_workflowentity_step_total_time_seconds`
-
-Total duration for step handling (including persist), in seconds.
-
-Metric `kalix_workflowentity_step_total_time_seconds`
-
-Type histogram
-
-Labels
-- `entity_name`
-Exported metrics
-- `kalix_workflowentity_step_total_time_seconds_bucket` (with `le` label)
-- `kalix_workflowentity_step_total_time_seconds_count`
-- `kalix_workflowentity_step_total_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+### <a href="about:blank#_active_workflows"></a> Active workflows
+
+Number of currently active workflow instances.
+Metric:: `akka.workflow.active` Type:: up-down counter
+Unit:: `{workflow}`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+
+### <a href="about:blank#_workflow_active_duration"></a> Workflow active duration
+
+Duration that a workflow instance was active (from activation to passivation or failure).
+Metric:: `akka.workflow.active.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_workflow_command_duration"></a> Workflow command duration
+
+Total duration of workflow command handling (from received to completed).
+Metric:: `akka.workflow.command.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+Workflow Command attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.workflow.command.name` | string | Yes | The name of the workflow command. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_workflow_command_processing_duration"></a> Workflow command processing duration
+
+Duration of workflow command processing in the user function (excludes persist).
+Metric:: `akka.workflow.command.processing.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+Workflow Command attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.workflow.command.name` | string | Yes | The name of the workflow command. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_workflow_conflicts_detected"></a> Workflow conflicts detected
+
+Number of workflow replication conflicts detected.
+Metric:: `akka.workflow.conflicts_detected` Type:: counter
+Unit:: `{conflict}`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+
+### <a href="about:blank#_workflow_conflicts_resolved"></a> Workflow conflicts resolved
+
+Number of workflow replication conflicts resolved.
+Metric:: `akka.workflow.conflicts_resolved` Type:: counter
+Unit:: `{conflict}`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+
+### <a href="about:blank#_workflow_loaded_size"></a> Workflow loaded size
+
+Size in bytes of loaded workflow data (events, snapshots) during recovery. Each record represents one loaded item.
+Metric:: `akka.workflow.loaded.size` Type:: histogram
+Unit:: `By`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+Workflow Persistence attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.workflow.persistence.type` | enum | Yes | The type of workflow persistence operation. |
+
+### <a href="about:blank#_workflow_persist_duration"></a> Workflow persist duration
+
+Duration of workflow persistence operations.
+Metric:: `akka.workflow.persist.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+
+### <a href="about:blank#_workflow_persisted_size"></a> Workflow persisted size
+
+Size in bytes of persisted workflow data (events, snapshots, replicated events). Each record represents one persisted item.
+Metric:: `akka.workflow.persisted.size` Type:: histogram
+Unit:: `By`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+Workflow Persistence attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.workflow.persistence.type` | enum | Yes | The type of workflow persistence operation. |
+
+### <a href="about:blank#_workflow_recovery_duration"></a> Workflow recovery duration
+
+Duration of workflow recovery.
+Metric:: `akka.workflow.recovery.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_workflow_recovery_events_loaded"></a> Workflow recovery events loaded
+
+Number of workflow recoveries that loaded from events (not snapshot-only).
+Metric:: `akka.workflow.recovery.events_loaded` Type:: counter
+Unit:: `{recovery}`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+
+### <a href="about:blank#_workflows_registered_for_deletion"></a> Workflows registered for deletion
+
+Number of workflows registered for deletion.
+Metric:: `akka.workflow.registered_for_deletion` Type:: counter
+Unit:: `{workflow}`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+
+### <a href="about:blank#_workflow_step_duration"></a> Workflow step duration
+
+Duration of workflow step execution.
+Metric:: `akka.workflow.step.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+Workflow Step attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.workflow.step.id` | int | Yes | The ID of the workflow step. |
+| `akka.workflow.step.name` | string | Yes | The name of the workflow step. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_workflow_step_processing_duration"></a> Workflow step processing duration
+
+Duration of workflow step processing in the user function.
+Metric:: `akka.workflow.step.processing.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+Workflow Step attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.workflow.step.id` | int | Yes | The ID of the workflow step. |
+| `akka.workflow.step.name` | string | Yes | The name of the workflow step. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_workflow_transition_duration"></a> Workflow transition duration
+
+Total duration of workflow transition handling (from started to completed).
+Metric:: `akka.workflow.transition.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_workflow_transition_processing_duration"></a> Workflow transition processing duration
+
+Duration of workflow transition processing in the user function.
+Metric:: `akka.workflow.transition.processing.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
 
 ## <a href="about:blank#_views"></a> Views
 
-### <a href="about:blank#_kalix_view_conflict_resolution_total_time_seconds"></a> `kalix_view_conflict_resolution_total_time_seconds`
-
-Total duration for conflict resolution, in seconds.
-
-Metric `kalix_view_conflict_resolution_total_time_seconds`
-
-Type histogram
-
-Labels
-- `view_name`
-- `command_name`
-Exported metrics
-- `kalix_view_conflict_resolution_total_time_seconds_bucket` (with `le` label)
-- `kalix_view_conflict_resolution_total_time_seconds_count`
-- `kalix_view_conflict_resolution_total_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_view_conflict_resolutions_total"></a> `kalix_view_conflict_resolutions_total`
-
-Total conflict resolutions started for an update method.
-
-Metric `kalix_view_conflict_resolutions_total`
-
-Type counter
-
-Labels
-- `view_name`
-- `command_name`
-
-### <a href="about:blank#_kalix_view_delete_rows_total"></a> `kalix_view_delete_rows_total`
-
-Total deleted rows.
-
-Metric `kalix_view_delete_rows_total`
-
-Type counter
-
-Labels
-- `view_name`
-
-### <a href="about:blank#_kalix_view_load_bytes_total"></a> `kalix_view_load_bytes_total`
-
-Total bytes loaded from store.
-
-Metric `kalix_view_load_bytes_total`
-
-Type counter
-
-Labels
-- `view_name`
-
-### <a href="about:blank#_kalix_view_load_failed_total"></a> `kalix_view_load_failed_total`
-
-Total failures loading from store.
-
-Metric `kalix_view_load_failed_total`
-
-Type counter
-
-Labels
-- `view_name`
-
-### <a href="about:blank#_kalix_view_load_rows_total"></a> `kalix_view_load_rows_total`
-
-Total rows loaded from store.
-
-Metric `kalix_view_load_rows_total`
-
-Type counter
-
-Labels
-- `view_name`
-
-### <a href="about:blank#_kalix_view_query_process_failed_total"></a> `kalix_view_query_process_failed_total`
-
-Total failures processing a query.
-
-Metric `kalix_view_query_process_failed_total`
-
-Type counter
-
-Labels
-- `view_name`
-
-### <a href="about:blank#_kalix_view_query_received_requests_total"></a> `kalix_view_query_received_requests_total`
-
-Total query requests received for a view.
-
-Metric `kalix_view_query_received_requests_total`
-
-Type counter
-
-Labels
-- `view_name`
-
-### <a href="about:blank#_kalix_view_query_result_bytes_total"></a> `kalix_view_query_result_bytes_total`
-
-Total query result bytes.
-
-Metric `kalix_view_query_result_bytes_total`
-
-Type counter
-
-Labels
-- `view_name`
-
-### <a href="about:blank#_kalix_view_query_result_rows_total"></a> `kalix_view_query_result_rows_total`
-
-Total query result rows.
-
-Metric `kalix_view_query_result_rows_total`
-
-Type counter
-
-Labels
-- `view_name`
-
-### <a href="about:blank#_kalix_view_query_total_time_seconds"></a> `kalix_view_query_total_time_seconds`
-
-Total duration for queries, in seconds.
-
-Metric `kalix_view_query_total_time_seconds`
-
-Type histogram
-
-Labels
-- `view_name`
-Exported metrics
-- `kalix_view_query_total_time_seconds_bucket` (with `le` label)
-- `kalix_view_query_total_time_seconds_count`
-- `kalix_view_query_total_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_view_query_view_store_limit_load_bytes_exceeded_total"></a> `kalix_view_query_view_store_limit_load_bytes_exceeded_total`
-
-Total failures from exceeding limit bytes loaded from view store.
-
-Metric `kalix_view_query_view_store_limit_load_bytes_exceeded_total`
-
-Type counter
-
-Labels
-- `view_name`
-
-### <a href="about:blank#_kalix_view_query_view_store_limit_load_rows_exceeded_total"></a> `kalix_view_query_view_store_limit_load_rows_exceeded_total`
-
-Total failures from exceeding limit for rows loaded from view store.
-
-Metric `kalix_view_query_view_store_limit_load_rows_exceeded_total`
-
-Type counter
-
-Labels
-- `view_name`
-
-### <a href="about:blank#_kalix_view_update_load_time_seconds"></a> `kalix_view_update_load_time_seconds`
-
-Duration for loading existing entries (if transforming updates), in seconds.
-
-Metric `kalix_view_update_load_time_seconds`
-
-Type histogram
-
-Labels
-- `view_name`
-- `command_name`
-Exported metrics
-- `kalix_view_update_load_time_seconds_bucket` (with `le` label)
-- `kalix_view_update_load_time_seconds_count`
-- `kalix_view_update_load_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_view_update_store_time_seconds"></a> `kalix_view_update_store_time_seconds`
-
-Duration for storing updates, in seconds.
-
-Metric `kalix_view_update_store_time_seconds`
-
-Type histogram
-
-Labels
-- `view_name`
-- `command_name`
-Exported metrics
-- `kalix_view_update_store_time_seconds_bucket` (with `le` label)
-- `kalix_view_update_store_time_seconds_count`
-- `kalix_view_update_store_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_view_update_total_time_seconds"></a> `kalix_view_update_total_time_seconds`
-
-Total duration for updates, in seconds.
-
-Metric `kalix_view_update_total_time_seconds`
-
-Type histogram
-
-Labels
-- `view_name`
-- `command_name`
-Exported metrics
-- `kalix_view_update_total_time_seconds_bucket` (with `le` label)
-- `kalix_view_update_total_time_seconds_count`
-- `kalix_view_update_total_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_view_update_transform_time_seconds"></a> `kalix_view_update_transform_time_seconds`
-
-Duration for transforming updates in the user service, in seconds.
-
-Metric `kalix_view_update_transform_time_seconds`
-
-Type histogram
-
-Labels
-- `view_name`
-- `command_name`
-Exported metrics
-- `kalix_view_update_transform_time_seconds_bucket` (with `le` label)
-- `kalix_view_update_transform_time_seconds_count`
-- `kalix_view_update_transform_time_seconds_sum`
-Buckets `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_view_updates_deduplicated_total"></a> `kalix_view_updates_deduplicated_total`
-
-Total updates that have been automatically deduplicated.
-
-Metric `kalix_view_updates_deduplicated_total`
-
-Type counter
-
-Labels
-- `view_name`
-- `table_name`
-
-### <a href="about:blank#_kalix_view_updates_filtered_total"></a> `kalix_view_updates_filtered_total`
-
-Total updates that have been automatically filtered (for internal messages).
-
-Metric `kalix_view_updates_filtered_total`
-
-Type counter
-
-Labels
-- `view_name`
-- `table_name`
-
-### <a href="about:blank#_kalix_view_updates_ignored_total"></a> `kalix_view_updates_ignored_total`
-
-Total updates that have been ignored.
-
-Metric `kalix_view_updates_ignored_total`
-
-Type counter
-
-Labels
-- `view_name`
-- `table_name`
-
-### <a href="about:blank#_kalix_view_updates_processed_total"></a> `kalix_view_updates_processed_total`
-
-Total updates that have been actually processed.
-
-Metric `kalix_view_updates_processed_total`
-
-Type counter
-
-Labels
-- `view_name`
-- `table_name`
-
-### <a href="about:blank#_kalix_view_updates_skipped_total"></a> `kalix_view_updates_skipped_total`
-
-Total updates that have been skipped (based on sequence gap detection).
-
-Metric `kalix_view_updates_skipped_total`
-
-Type counter
-
-Labels
-- `view_name`
-- `table_name`
-
-### <a href="about:blank#_kalix_view_updates_total"></a> `kalix_view_updates_total`
-
-Total updates received for an update method.
-
-Metric `kalix_view_updates_total`
-
-Type counter
-
-Labels
-- `view_name`
-- `command_name`
-
-### <a href="about:blank#_kalix_view_upsert_byte_limit_exceeded_total"></a> `kalix_view_upsert_byte_limit_exceeded_total`
-
-Total failures from exceeding byte size limit for single view store upsert.
-
-Metric `kalix_view_upsert_byte_limit_exceeded_total`
-
-Type counter
-
-Labels
-- `view_name`
-
-### <a href="about:blank#_kalix_view_upsert_bytes_total"></a> `kalix_view_upsert_bytes_total`
-
-Total upsert bytes.
-
-Metric `kalix_view_upsert_bytes_total`
-
-Type counter
-
-Labels
-- `view_name`
-
-### <a href="about:blank#_kalix_view_upsert_failed_total"></a> `kalix_view_upsert_failed_total`
-
-Total failed upserts.
-
-Metric `kalix_view_upsert_failed_total`
-
-Type counter
-
-Labels
-- `view_name`
-
-### <a href="about:blank#_kalix_view_upsert_rows_total"></a> `kalix_view_upsert_rows_total`
-
-Total upsert rows.
-
-Metric `kalix_view_upsert_rows_total`
-
-Type counter
-
-Labels
-- `view_name`
-
-## <a href="about:blank#_eventing"></a> Eventing
-
-### <a href="about:blank#_kalix_eventing_broker_used_total"></a> `kalix_eventing_broker_used_total`
-
-Kalix eventing message broker type
-
-Metric `kalix_eventing_broker_used_total`
-
-Type counter
-
-Labels
-- `broker_type`
-
-### <a href="about:blank#_kalix_eventing_event_failed_total"></a> `kalix_eventing_event_failed_total`
-
-Total events leading to event stream failure
-
-Metric `kalix_eventing_event_failed_total`
-
-Type counter
-
-Labels
-- `consumer_service`
-- `event_source_type`
-- `event_source`
-
-### <a href="about:blank#_kalix_eventing_event_handled_total"></a> `kalix_eventing_event_handled_total`
-
-Total events processed by a consumer
-
-Metric `kalix_eventing_event_handled_total`
-
-Type counter
-
-Labels
-- `consumer_service`
-- `event_source_type`
-- `event_source`
-
-### <a href="about:blank#_kalix_eventing_service_to_service_consumer_total"></a> `kalix_eventing_service_to_service_consumer_total`
-
-Service to Service stream consumers, each stream_id counted
-
-Metric `kalix_eventing_service_to_service_consumer_total`
-
-Type counter
-
-### <a href="about:blank#_kalix_eventing_service_to_service_producer_total"></a> `kalix_eventing_service_to_service_producer_total`
-
-Service to Service stream producer, each stream_id counted
-
-Metric `kalix_eventing_service_to_service_producer_total`
-
-Type counter
-
-### <a href="about:blank#_kalix_eventing_source_stream_started_total"></a> `kalix_eventing_source_stream_started_total`
-
-Total event source streams that have started
-
-Metric `kalix_eventing_source_stream_started_total`
-
-Type counter
-
-Labels
-- `consumer_service`
-- `event_source_type`
-- `event_source`
-
-## <a href="about:blank#_projections"></a> Projections
-
-### <a href="about:blank#_kalix_projection_backlog_lag_seconds"></a> `kalix_projection_backlog_lag_seconds`
-
-Time in seconds the projection is lagging behind the latest event
-
-Metric `kalix_projection_backlog_lag_seconds`
-
-Type gauge
-
-Labels
-- `projection_name`
-- `projection_key`
-- `projection_type`
-
-### <a href="about:blank#_kalix_projection_completed_total"></a> `kalix_projection_completed_total`
-
-Total envelopes completed for a projection.
-
-Metric `kalix_projection_completed_total`
-
-Type counter
-
-Labels
-- `projection_name`
-- `projection_key`
-- `projection_type`
-- `envelope_source`
-
-### <a href="about:blank#_kalix_projection_consumer_lag_seconds"></a> `kalix_projection_consumer_lag_seconds`
-
-Consumer lag, duration for envelope processing from when the envelope was created, in seconds.
-
-Metric `kalix_projection_consumer_lag_seconds`
-
-Type histogram
-
-Labels
-- `projection_name`
-- `projection_key`
-- `projection_type`
-- `envelope_source`
-Exported metrics
-- `kalix_projection_consumer_lag_seconds_bucket` (with `le` label)
-- `kalix_projection_consumer_lag_seconds_count`
-- `kalix_projection_consumer_lag_seconds_sum`
-Buckets `0.01`, `0.05`, `0.1`, `0.25`, `0.5`, `1.0`, `2.0`, `3.0`, `4.0`, `5.0`, `10.0`, `20.0`, `30.0`, `Infinity`
-
-### <a href="about:blank#_kalix_projection_failed_total"></a> `kalix_projection_failed_total`
-
-Total projection instances that have failed.
-
-Metric `kalix_projection_failed_total`
-
-Type counter
-
-Labels
-- `projection_name`
-- `projection_key`
-- `projection_type`
-
-### <a href="about:blank#_kalix_projection_processing_time_seconds"></a> `kalix_projection_processing_time_seconds`
-
-Duration for envelope processing (including user service and persist), in seconds.
-
-Metric `kalix_projection_processing_time_seconds`
-
-Type histogram
-
-Labels
-- `projection_name`
-- `projection_key`
-- `projection_type`
-- `envelope_source`
-Exported metrics
-- `kalix_projection_processing_time_seconds_bucket` (with `le` label)
-- `kalix_projection_processing_time_seconds_count`
-- `kalix_projection_processing_time_seconds_sum`
-Buckets `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_projection_received_total"></a> `kalix_projection_received_total`
-
-Total envelopes received for a projection (before de-duplication).
-
-Metric `kalix_projection_received_total`
-
-Type counter
-
-Labels
-- `projection_name`
-- `projection_key`
-- `projection_type`
-- `envelope_source`
-
-### <a href="about:blank#_kalix_projection_started_total"></a> `kalix_projection_started_total`
-
-Total projection instances that have started.
-
-Metric `kalix_projection_started_total`
-
-Type counter
-
-Labels
-- `projection_name`
-- `projection_key`
-- `projection_type`
-
-### <a href="about:blank#_kalix_projection_stopped_total"></a> `kalix_projection_stopped_total`
-
-Total projection instances that have stopped.
-
-Metric `kalix_projection_stopped_total`
-
-Type counter
-
-Labels
-- `projection_name`
-- `projection_key`
-- `projection_type`
-
-## <a href="about:blank#_actions"></a> Actions
-
-### <a href="about:blank#_kalix_action_completed_messages_total"></a> `kalix_action_completed_messages_total`
-
-Total messages completed for an action.
-
-Metric `kalix_action_completed_messages_total`
-
-Type counter
-
-Labels
-- `action_name`
-
-### <a href="about:blank#_kalix_action_message_processing_time_seconds"></a> `kalix_action_message_processing_time_seconds`
-
-Duration for message processing (until first user service reply), in seconds.
-
-Metric `kalix_action_message_processing_time_seconds`
-
-Type histogram
-
-Labels
-- `action_name`
-Exported metrics
-- `kalix_action_message_processing_time_seconds_bucket` (with `le` label)
-- `kalix_action_message_processing_time_seconds_count`
-- `kalix_action_message_processing_time_seconds_sum`
-Buckets `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
-
-### <a href="about:blank#_kalix_action_received_messages_total"></a> `kalix_action_received_messages_total`
-
-Total messages received for an action.
-
-Metric `kalix_action_received_messages_total`
-
-Type counter
-
-Labels
-- `action_name`
-
-## <a href="about:blank#_runtime"></a> Runtime
-
-### <a href="about:blank#_kalix_component_types_total"></a> `kalix_component_types_total`
-
-Kalix component type counts
-
-Metric `kalix_component_types_total`
-
-Type counter
-
-Labels
-- `component_type`
-
-### <a href="about:blank#_kalix_instance_size"></a> `kalix_instance_size`
-
-Kalix instance size.
-
-Metric `kalix_instance_size`
-
-Type gauge
-
-### <a href="about:blank#_kalix_proxy_info"></a> `kalix_proxy_info`
-
-Kalix proxy and SDK details
-
-Metric `kalix_proxy_info`
-
-Type info
-
-Labels
-- `proxy_version`
-- `sdk_name`
-- `sdk_version`
-
-### <a href="about:blank#_kalix_service_revision"></a> `kalix_service_revision`
-
-Kalix user service version. I.e. Kubernetes/revision
-
-Metric `kalix_service_revision`
-
-Type gauge
+### <a href="about:blank#_view_conflict_resolution_duration"></a> View conflict resolution duration
+
+Total duration of view conflict resolution.
+Metric:: `akka.view.conflict_resolution.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+View Update attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.view.table` | string | Yes | The view table name. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_view_conflict_resolutions"></a> View conflict resolutions
+
+Number of view conflict resolutions completed.
+Metric:: `akka.view.conflict_resolutions` Type:: counter
+Unit:: `{resolution}`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+View Update attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.view.table` | string | Yes | The view table name. |
+
+### <a href="about:blank#_view_load_rows"></a> View load rows
+
+Number of rows loaded from the view store.
+Metric:: `akka.view.load.rows` Type:: counter
+Unit:: `{row}`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+View Update attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.view.table` | string | Yes | The view table name. |
+
+### <a href="about:blank#_view_load_size"></a> View load size
+
+Size in bytes per loaded view entry.
+Metric:: `akka.view.load.size` Type:: histogram
+Unit:: `By`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+View Update attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.view.table` | string | Yes | The view table name. |
+
+### <a href="about:blank#_view_query_byte_limit_exceeded"></a> View query byte limit exceeded
+
+Number of view queries that exceeded the byte limit for loading from the view store.
+Metric:: `akka.view.query.byte_limit_exceeded` Type:: counter
+Unit:: `{error}`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+
+### <a href="about:blank#_view_query_duration"></a> View query duration
+
+Total duration of view query execution.
+Metric:: `akka.view.query.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_view_query_result_rows"></a> View query result rows
+
+Number of rows returned per view query.
+Metric:: `akka.view.query.result.rows` Type:: histogram
+Unit:: `{row}`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+
+### <a href="about:blank#_view_query_result_size"></a> View query result size
+
+Size in bytes of view query results.
+Metric:: `akka.view.query.result.size` Type:: histogram
+Unit:: `By`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+
+### <a href="about:blank#_view_query_row_limit_exceeded"></a> View query row limit exceeded
+
+Number of view queries that exceeded the row limit for loading from the view store.
+Metric:: `akka.view.query.row_limit_exceeded` Type:: counter
+Unit:: `{error}`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+
+### <a href="about:blank#_view_update_duration"></a> View update duration
+
+Total duration of view update handling.
+Metric:: `akka.view.update.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+View Update attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.view.table` | string | Yes | The view table name. |
+View Update Outcome attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.view.update.outcome` | enum | Yes | The outcome of the view update. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_view_update_load_duration"></a> View update load duration
+
+Duration for loading existing entries from the view store.
+Metric:: `akka.view.update.load.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+View Update attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.view.table` | string | Yes | The view table name. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_view_update_sequence_gaps"></a> View update sequence gaps
+
+Number of sequence gaps detected in view updates.
+Metric:: `akka.view.update.sequence_gaps` Type:: counter
+Unit:: `{gap}`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+View Update attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.view.table` | string | Yes | The view table name. |
+
+### <a href="about:blank#_view_update_store_duration"></a> View update store duration
+
+Duration for storing updates in the view store.
+Metric:: `akka.view.update.store.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+View Update attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.view.table` | string | Yes | The view table name. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_view_update_transform_duration"></a> View update transform duration
+
+Duration for transforming updates in the user service.
+Metric:: `akka.view.update.transform.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+View Update attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.view.table` | string | Yes | The view table name. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_view_upsert_byte_limit_exceeded"></a> View upsert byte limit exceeded
+
+Number of view upsert operations that exceeded the byte size limit.
+Metric:: `akka.view.upsert.byte_limit_exceeded` Type:: counter
+Unit:: `{error}`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+
+### <a href="about:blank#_view_upsert_rows"></a> View upsert rows
+
+Number of rows upserted to the view store.
+Metric:: `akka.view.upsert.rows` Type:: counter
+Unit:: `{row}`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+View Update attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.view.table` | string | Yes | The view table name. |
+
+### <a href="about:blank#_view_upsert_size"></a> View upsert size
+
+Size in bytes per upserted view entry.
+Metric:: `akka.view.upsert.size` Type:: histogram
+Unit:: `By`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+View Update attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.view.table` | string | Yes | The view table name. |
+
+## <a href="about:blank#_consumers"></a> Consumers
+
+### <a href="about:blank#_consumer_message_duration"></a> Consumer message duration
+
+Duration of consumer message processing.
+Metric:: `akka.consumer.message.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
+Consumer attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.consumer.source` | enum | Yes | The type of source the consumer is consuming from. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+## <a href="about:blank#_timers"></a> Timers
+
+### <a href="about:blank#_timer_call_duration"></a> Timer call duration
+
+Duration of timer call executions.
+Metric:: `akka.timer.call.duration` Type:: histogram
+Unit:: `s`
+
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_timer_operation_duration"></a> Timer operation duration
+
+Duration of internal timer operations (register, unregister, confirm, max_retries).
+Metric:: `akka.timer.operation.duration` Type:: histogram
+Unit:: `s`
+
+Timer Operation attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.timer.operation` | enum | Yes | The type of timer operation. |
+OpenTelemetry semantic convention attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `error.type` | string | Conditionally required: if the operation ended in an error | Describes the error condition. |
+
+### <a href="about:blank#_timer_persisted_size"></a> Timer persisted size
+
+Size in bytes of persisted timer data. Each record represents one persisted item.
+Metric:: `akka.timer.persisted.size` Type:: histogram
+Unit:: `By`
+
+### <a href="about:blank#_registered_timers"></a> Registered timers
+
+Number of currently registered timer calls per worker.
+Metric:: `akka.timer.registered` Type:: gauge
+Unit:: `{timer}`
+
+Timer Worker attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.timer.worker_id` | string | Yes | Identifier of the timer worker actor (shard). |
+
+## <a href="about:blank#_timed_actions"></a> Timed Actions
+
+### <a href="about:blank#_timed_action_message_duration"></a> Timed action message duration
+
+Duration of timed action message processing.
+Metric:: `akka.timed_action.message.duration` Type:: histogram
+Unit:: `s`
+
+Component attributes
+| Attribute | Type | Required | Description |
+| --- | --- | --- | --- |
+| `akka.component.description` | string | Recommended: if available | User-defined description of the component. |
+| `akka.component.id` | string | Yes | Unique identifier for the component instance. |
+| `akka.component.implementation.name` | string | Recommended: if available | Fully qualified class name of the component implementation. |
+| `akka.component.name` | string | Recommended: if available | User-defined name of the component. |
+| `akka.component.type` | enum | Yes | The type of Akka component. |
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Telemetry reference](index.html) [Akka Libraries](../../libraries/index.html)
+[Telemetry reference](index.html) [(Deprecated) Prometheus metrics reference](deprecated-metrics.html)
 <!-- </nav> -->
 
 <!-- </footer> -->
