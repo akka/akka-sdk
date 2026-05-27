@@ -14,7 +14,7 @@ package akka.javasdk.agent;
  * <p>Guardrails are enabled for agents with configuration, see agent documentation.
  *
  * @deprecated Implement {@link ToolGuardrail} or {@link ModelGuardrail} instead. The new interfaces
- *     return a {@link Decision} ({@code Pass} / {@code Block} / {@code Error}) and receive a
+ *     return a {@link Decision} ({@code Allow} / {@code Deny} / {@code Error}) and receive a
  *     per-call context.
  */
 @Deprecated(since = "3.6.0", forRemoval = true)

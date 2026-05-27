@@ -64,17 +64,17 @@ object GuardrailProviderSpec {
 
   class MyToolGuard(context: GuardrailContext) extends ToolGuardrail {
     override def evaluate(ctx: ToolGuardrailContext): Decision =
-      Decision.block(s"${context.name} says no")
+      Decision.deny(s"${context.name} says no")
   }
 
   class MyModelGuard(context: GuardrailContext) extends ModelGuardrail {
     override def evaluate(ctx: ModelGuardrailContext): Decision =
-      Decision.block(s"${context.name} says no")
+      Decision.deny(s"${context.name} says no")
   }
 
   class BothGuard extends ToolGuardrail with ModelGuardrail {
-    override def evaluate(ctx: ToolGuardrailContext): Decision = Decision.pass()
-    override def evaluate(ctx: ModelGuardrailContext): Decision = Decision.pass()
+    override def evaluate(ctx: ToolGuardrailContext): Decision = Decision.allow()
+    override def evaluate(ctx: ModelGuardrailContext): Decision = Decision.allow()
   }
 
   class WrongGuard

@@ -18,6 +18,6 @@ public class BlockingModelGuard implements ModelGuardrail {
 
   @Override
   public Decision evaluate(ModelGuardrailContext ctx) {
-    return Decision.block(blockReason);
+    return Decision.deny(blockReason);
   }
 }

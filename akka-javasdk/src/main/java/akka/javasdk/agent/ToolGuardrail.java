@@ -12,7 +12,7 @@ package akka.javasdk.agent;
  * data is delivered to {@link #evaluate} via {@link ToolGuardrailContext}. Guardrails are enabled
  * and bound to boundaries via configuration; see the agent documentation.
  *
- * <p>Returning {@link Decision#pass()} lets the call proceed. Returning a {@link Decision.Block}
+ * <p>Returning {@link Decision#allow()} lets the call proceed. Returning a {@link Decision.Deny}
  * stops it with the supplied reason. Returning a {@link Decision.Error} signals the guardrail could
  * not reach a verdict because evaluation itself failed.
  */
