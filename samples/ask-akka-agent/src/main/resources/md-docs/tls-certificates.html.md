@@ -93,7 +93,7 @@ Your service should now be secured. You can test that it’s secured using curl.
 
 ```none
 $ curl https://spring-tooth-3406.us-east1.akka.services -I
-curl: // (56) OpenSSL SSL_read: error:1409445C:SSL routines:ssl3_read_bytes:tlsv13 alert certificate required, errno 0
+curl: (56) OpenSSL SSL_read: error:1409445C:SSL routines:ssl3_read_bytes:tlsv13 alert certificate required, errno 0
 ```
 This should return an error indicating that a client certificate is required.
 - **With client certificate**:
@@ -205,7 +205,7 @@ routes:
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Regions](regions/index.html) [Observability and monitoring](observability-and-monitoring/index.html)
+[Multi-region infrastructure](regions/infrastructure.html) [Observability and monitoring](observability-and-monitoring/index.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

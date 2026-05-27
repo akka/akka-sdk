@@ -316,7 +316,7 @@ As a first test you can create a port forward with:
 ```shell
 kubectl port-forward svc/shopping-cart-service-svc 9000:9000
 ```
-Then you can access the endpoints at `http:localhost:9000/`.
+Then you can access the endpoints at `http://localhost:9000/`.
 
 ## <a href="about:blank#_deploy_to_any_other_container_image_platform"></a> Deploy to any other container image platform
 
@@ -338,7 +338,7 @@ Make sure that there is only one instance running at the same time, for example 
 The port that the HTTP server binds to can be configured with environment variable `HTTP_PORT` or:
 
 ```none
-kalix.proxy.http-port = 9000
+akka.javasdk.dev-mode.http-port = 9000
 ```
 
 ### <a href="about:blank#_service_to_service_eventing_configuration"></a> Service to Service Eventing configuration

@@ -275,12 +275,12 @@ public class CustomersByNameView extends View {
 ```
 
 | **1** | Defines a component id for the view. |
-| **2** | Declares a `TableUpdater` of type `CustomerRow`. |
+| **2** | Declares a `TableUpdater` of type `CustomerEntry`. |
 | **3** | Handles the super type `CustomerEvent` and defines the proper update row method for each subtype. |
 
 ### <a href="about:blank#_ignoring_events"></a> Ignoring events
 
-You can ignore events by returning `Effect.ignore` for those you are not interested in. Using a `sealed interface` for the events is a good practice to ensure that all events types are handled.
+You can ignore events by returning `effects().ignore()` for those you are not interested in. Using a `sealed interface` for the events is a good practice to ensure that all events types are handled.
 
 ### <a href="about:blank#es_delete"></a> Handling Event Sourced Entity deletes
 

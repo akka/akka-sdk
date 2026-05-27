@@ -101,6 +101,7 @@ An Event Sourced Entity Effect can either:
 - persist events and send a reply to the caller
 - directly reply to the caller if the command is not requesting any state change
 - instruct Akka to delete the entity and send a reply to the caller
+- attach a time-to-live (TTL) to a persist effect for automatic deletion
 - return an error message
 For additional details, refer to [Declarative Effects](../concepts/declarative-effects.html).
 
@@ -156,6 +157,8 @@ public Effect<Done> addItem(LineItem item) {
 public ShoppingCart applyEvent(ShoppingCartEvent event) {
   return switch (event) {
     case ShoppingCartEvent.ItemAdded evt -> currentState().addItem(evt.item()); // (5)
+    case ShoppingCartEvent.ItemRemoved evt -> currentState().removeItem(evt.productId());
+    case ShoppingCartEvent.CheckedOut evt -> currentState().onCheckedOut();
   };
 }
 ```
@@ -197,8 +200,8 @@ public Optional<LineItem> findItemByProductId(String productId) {
 ```
 
 | **1** | For an existing item, we will make sure to sum the existing quantity with the incoming one. |
-| **2** | Returns an update list of items without the existing item. |
-| **3** | Adds the update item to the shopping cart. |
+| **2** | Returns an updated list of items without the existing item. |
+| **3** | Adds the updated item to the shopping cart. |
 | **4** | Returns a new instance of the shopping cart with the updated line items. |
 
 ### <a href="about:blank#_retrieving_state"></a> Retrieving state
@@ -226,7 +229,7 @@ public ReadOnlyEffect<ShoppingCart> getCart() {
 ```
 
 | **1** | Stores the `entityId` on an internal attribute so we can use it later. |
-| **2** | Provides initial state - overriding `emptyState()` is optional but if not doing it, be careful to deal with a `currentState()` with a `null` value when receiving the first command or event. |
+| **2** | Provides initial state - we recommend always overriding `emptyState()` to return a sensible default. If not overridden, `currentState()` will return `null` until the first event is persisted, which requires null checks in all command and event handlers. |
 | **3** | Returns the current state as reply for the request. |
 
 |  | We are returning the internal state directly back to the requester. In the endpoint, it’s usually best to convert this internal domain model into a public model so the internal representation is free to evolve without breaking clients code. |
@@ -257,6 +260,34 @@ It is not allowed to persist more events after the entity has been "marked" as d
 It is best to not reuse the same entity id after deletion, but if that happens after the entity has been completely removed it will be instantiated as a completely new entity without any knowledge of previous state.
 
 Note that [deleting View state](views.html#ve_delete) must be handled explicitly.
+
+#### <a href="about:blank#_automatic_expiry"></a> Automatic expiry
+
+As an alternative to explicit deletion, you can set a time-to-live (TTL) on a persist effect using `expireAfter`. The entity will be automatically deleted once the given duration has elapsed without any further events being persisted.
+
+[ShoppingCartEntity.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/ttl/ShoppingCartEntity.java)
+```java
+import akka.Done;
+import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.TypeName;
+import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import java.time.Duration;
+
+@Component(id = "shopping-cart")
+public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> {
+
+  public Effect<Done> addItem(String productId) {
+    return effects()
+      .persist(new ShoppingCartEvent.ItemAdded(productId))
+      .expireAfter(Duration.ofDays(30)) // (1)
+      .thenReply(__ -> Done.getInstance());
+  }
+
+}
+```
+
+| **1** | The entity will be deleted 30 days after this persist if no further events are persisted. |
+A subsequent persist without `expireAfter` will cancel the TTL. To keep the entity expiring after further updates, each persist must include `expireAfter`.
 
 ## <a href="about:blank#_snapshots"></a> Snapshots
 
@@ -352,9 +383,114 @@ If you start with an entity with such self region filter in `gcp-us-east1`, and 
 
 |  | If you first have a region included in the filter and then exclude it in the filter, the entity instance will still exist in the excluded region, but without receiving any new events. In other words, the state will remain as the old state if you access it with read-only commands in the excluded region. |
 
+## <a href="about:blank#_notification"></a> Notification
+
+When an Event Sourced Entity processes commands, clients often need to track changes in real-time. Rather than repeatedly polling the entity state, you can use the `NotificationPublisher` to push updates to subscribers. This is more efficient and provides a better user experience, especially for entities with frequent state changes.
+
+The notification mechanism works as follows:
+
+1. The entity injects a `NotificationPublisher<T>` where `T` is the notification message type
+2. During command handling, the entity calls `publish(message)` to send notifications
+3. The entity exposes a method returning `NotificationStream<T>` for clients to subscribe
+4. Clients use the `ComponentClient` to subscribe and receive notifications as a stream
+
+### <a href="about:blank#_publishing_notifications"></a> Publishing notifications
+
+To add notifications to an Event Sourced Entity, inject the `NotificationPublisher` in the constructor and call `publish()` at appropriate points during command handling.
+
+[ShoppingCartEntityWithNotifications.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/application/ShoppingCartEntityWithNotifications.java)
+```java
+@Component(id = "shopping-cart-with-notifications")
+public class ShoppingCartEntityWithNotifications
+  extends EventSourcedEntity<
+    ShoppingCartEntityWithNotifications.Cart,
+    ShoppingCartEntityWithNotifications.CartEvent
+  > {
+
+  public record Cart(String cartId, List<String> items) {}
+
+  public sealed interface CartEvent {
+    @TypeName("item-added")
+    record ItemAdded(String productId) implements CartEvent {}
+  }
+
+  private final String entityId;
+  private final NotificationPublisher<CartEvent> notificationPublisher;
+
+  public ShoppingCartEntityWithNotifications(
+    EventSourcedEntityContext context,
+    NotificationPublisher<CartEvent> notificationPublisher // (1)
+  ) {
+    this.entityId = context.entityId();
+    this.notificationPublisher = notificationPublisher;
+  }
+
+  @Override
+  public Cart emptyState() {
+    return new Cart(entityId, List.of());
+  }
+
+  public Effect<Done> addItem(String productId) {
+    var event = new CartEvent.ItemAdded(productId);
+    return effects()
+      .persist(event)
+      .thenReply(__ -> {
+        notificationPublisher.publish(event); // (2)
+        return Done.done();
+      });
+  }
+
+  public NotificationStream<CartEvent> updates() { // (3)
+    return notificationPublisher.stream();
+  }
+
+}
+```
+
+| **1** | Inject `NotificationPublisher` typed with your notification message type. A common pattern for Event Sourced Entities is to publish the events themselves, as shown here. You can also publish other message types such as a simple `String`, a dedicated notification record, or a sealed interface for multiple message types. |
+| **2** | Publish the event inside `thenReply`, after the event has been successfully persisted. This prevents sending notifications if the persist fails. |
+| **3** | Expose the notification stream via a public method. Clients will reference this method when subscribing. |
+
+### <a href="about:blank#_subscribing_to_notifications"></a> Subscribing to notifications
+
+Clients subscribe to entity notifications using the `ComponentClient`. The notifications are delivered as a reactive stream, which can be exposed to external clients as Server-Sent Events (SSE). Map domain events to API records before exposing them to avoid leaking internal domain types.
+
+[ShoppingCartEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ShoppingCartEndpoint.java)
+```java
+@HttpEndpoint("/cart")
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
+public class ShoppingCartEndpoint {
+
+  public record CartUpdate(String type, String productId) {} // (1)
+
+  @Get("/updates/{cartId}")
+  public HttpResponse updates(String cartId) {
+    var source = componentClient
+      .forEventSourcedEntity(cartId)
+      .notificationStream(ShoppingCartEntityWithNotifications::updates)
+      .source()
+      .map(event -> toApi(event)); // (2)
+    return HttpResponses.serverSentEvents(source);
+  }
+
+  private CartUpdate toApi(CartEvent event) {
+    return switch (event) {
+      case CartEvent.ItemAdded added -> new CartUpdate("item-added", added.productId());
+    };
+  }
+}
+```
+
+| **1** | Define API-specific records to avoid exposing internal domain events outside the service. |
+| **2** | Map domain events to API records using the `map` operator on the notification source. |
+
+|  | The notification stream is a live stream that emits messages only after the client creates the stream—it does not replay historical messages. While the stream is running, it delivers all messages in order without message loss. If the stream detects missing messages, it will fail, allowing clients to reconnect and recover. |
+
+|  | Notifications should not be used for building business logic. Akka does not guarantee delivery of every notification. Messages may be lost due to network issues, client disconnections, or other transient failures. If your application requires reliable state synchronization, implement a reconciliation mechanism that fetches the authoritative entity state when needed. |
+
 ## <a href="about:blank#_side_effects"></a> Side effects
 
-An entity doesn’t perform any external side effects aside from persisting events and replying to the request. Side effects can be handled from the Workflow, Consumer, or Endpoint components that are calling the entity.
+An entity doesn’t perform any external side effects aside from persisting events, replying to the request, and publishing notifications. Other side effects, such as calling external services or other components, should be handled from the Workflow, Consumer, or Endpoint components that are calling the entity.
 
 ## <a href="about:blank#_testing_the_entity"></a> Testing the entity
 
@@ -402,7 +538,7 @@ public class ShoppingCartTest {
     {
       var result = testKit
         .method(ShoppingCartEntity::addItem)
-        .invoke(akkaTshirt.withQuantity// (5)); // (5)
+        .invoke(akkaTshirt.withQuantity(5)); // (5)
       assertEquals(Done.getInstance(), result.getReply());
 
       var itemAdded = result.getNextEventOfType(ItemAdded.class);
@@ -413,7 +549,7 @@ public class ShoppingCartTest {
       assertEquals(testKit.getAllEvents().size(), 2); // (6)
       var result = testKit.method(ShoppingCartEntity::getCart).invoke(); // (7)
       assertEquals(
-        new ShoppingCart("testkit-entity-id", List.of(akkaTshirt.withQuantity// (15)), false),
+        new ShoppingCart("testkit-entity-id", List.of(akkaTshirt.withQuantity(15)), false),
         result.getReply()
       );
     }
@@ -423,13 +559,13 @@ public class ShoppingCartTest {
 
 | **1** | Creates the TestKit passing the constructor of the Entity. |
 | **2** | Calls the method `addItem` from the Entity in the `EventSourcedTestKit` with quantity `10`. |
-| **3** | Asserts the return value is `"OK"`. |
-| **4** | Returns the next event of type `IdemAdded` and asserts on the quantity. |
+| **3** | Asserts the return value is `Done`. |
+| **4** | Returns the next event of type `ItemAdded` and asserts on the quantity. |
 | **5** | Add a new item with quantity `5`. |
 | **6** | Asserts that the total number of events should be 2. |
 | **7** | Calls the `getCart` method and asserts that quantity should be `15`. |
 
-|  | The `EventSourcedTestKit` is stateful, and it holds the state of a single entity instance in memory. If you want to test more than one entity in a test, you need to create multiple instance of `EventSourcedTestKit`. |
+|  | The `EventSourcedTestKit` is stateful, and it holds the state of a single entity instance in memory. If you want to test more than one entity in a test, you need to create multiple instances of `EventSourcedTestKit`. |
 **EventSourcedResult**
 
 Calling a command handler through the TestKit gives us back an <a href="_attachments/testkit/akka/javasdk/testkit/EventSourcedResult.html">`EventSourcedResult`</a>. This class has methods that we can use to assert the handling of the command, such as:
@@ -455,7 +591,7 @@ public class ShoppingCartIntegrationTest extends TestKitSupport { // (1)
 
   @Test
   public void createAndManageCart() {
-    String cartId = "card-abc";
+    String cartId = "cart-abc";
     var item1 = new LineItem("tv", "Super TV 55'", 1);
     var response1 = componentClient // (2)
       .forEventSourcedEntity(cartId) // (3)
@@ -468,23 +604,23 @@ public class ShoppingCartIntegrationTest extends TestKitSupport { // (1)
       .method(ShoppingCartEntity::getCart) // (5)
       .invoke();
     Assertions.assertEquals(1, cartUpdated.items().size()); // (6)
-    Assertions.assertEquals(item2, cartUpdated.items().get// (0));
+    Assertions.assertEquals(item2, cartUpdated.items().get(0));
   }
 }
 ```
 
 | **1** | Note the test class must extend `TestKitSupport`. |
 | **2** | A built-in component client is provided to interact with the components. |
-| **3** | Request to create a new shopping cart with id `cart-abc`. |
-| **4** | Request to add an item to the cart. |
-| **5** | Request to retrieve current status of the shopping cart. |
-| **6** | Assert there should only be one item. |
+| **3** | Identify the entity instance by its id `cart-abc`. |
+| **4** | Call the `addItem` command handler on the entity. |
+| **5** | Retrieve the current shopping cart state. |
+| **6** | Assert there should only be one item remaining after removal. |
 
 |  | The integration tests in samples can be run using `mvn verify`. |
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Testing](agents/testing.html) [Key Value Entities](key-value-entities.html)
+[Testing](autonomous-agents/testing.html) [Key Value Entities](key-value-entities.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

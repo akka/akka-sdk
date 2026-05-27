@@ -72,7 +72,7 @@ Whether deploying thousands of autonomous AI agents or orchestrating business-cr
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Concepts](concepts.html) [Project structure](architecture-model.html)
+[Concepts](concepts.html) [Architecture](architecture-model.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

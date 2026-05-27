@@ -1,6 +1,6 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [Tutorials](../index.html)
+- [Getting started & Tutorials](../index.html)
 - [Multi-agent planner](index.html)
 - [Orchestrate the agents](team.html)
 
@@ -10,7 +10,7 @@
 
 |  | **New to Akka? Start here:**
 
-Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent with Spec-Driven Development](../spec-your-first-agent.html) guide to use your AI assistant for implementing a simple agentic service, running it locally and interacting with it. |
 
 ## <a href="about:blank#_overview"></a> Overview
 
@@ -41,6 +41,7 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
+import akka.javasdk.workflow.Workflow.RecoverStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,9 +84,9 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
   @Override
   public WorkflowSettings settings() {
     return WorkflowSettings.builder()
-      .stepTimeout(AgentTeamWorkflow::askWeather, ofSeconds// (60))
-      .stepTimeout(AgentTeamWorkflow::suggestActivities, ofSeconds// (60))
-      .defaultStepRecovery(maxRetries// (2).failoverTo(AgentTeamWorkflow::error))
+      .stepTimeout(AgentTeamWorkflow::askWeather, ofSeconds(60))
+      .stepTimeout(AgentTeamWorkflow::suggestActivities, ofSeconds(60))
+      .defaultStepRecovery(RecoverStrategy.maxRetries(2).failoverTo(AgentTeamWorkflow::error))
       .build();
   }
 
@@ -201,12 +202,12 @@ Does it take the current weather forecast into account? You should see the `Weat
 
 ## <a href="about:blank#_next_steps"></a> Next steps
 
-- It would be nice to see all previous suggestions for a user. Continue with [List by user](list.html)
+- In a larger system with more agents, we could let the AI model coordinate which agents to consult for each request, rather than encoding the orchestration as workflow steps. Continue with [Dynamic orchestration](dynamic-team.html) to introduce an Autonomous Agent coordinator with built-in delegation.
 - Learn more about the <a href="../../sdk/workflows.html">`Workflow` component</a>.
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Weather agent](weather.html) [List by user](list.html)
+[Weather agent](weather.html) [Dynamic orchestration](dynamic-team.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

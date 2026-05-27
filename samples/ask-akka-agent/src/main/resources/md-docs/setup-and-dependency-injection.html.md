@@ -10,7 +10,7 @@
 
 ## <a href="about:blank#_service_lifecycle"></a> Service lifecycle
 
-It is possible to define logic that runs on service instance start up.
+It is possible to define logic that runs on service instance start up and shut down.
 
 This is done by creating a class implementing `akka.javasdk.ServiceSetup` and annotating it with `akka.javasdk.annotations.Setup`.
 Only one such class may exist in the same service.
@@ -33,13 +33,49 @@ public class Bootstrap implements ServiceSetup {
     var result = componentClient.forEventSourcedEntity("123").method(Counter::get).invoke();
     logger.info("Initial value for entity 123 is [{}]", result);
   }
+
+  @Override
+  public void onShutdown() { // (4)
+    logger.info("Service shutting down");
+  }
 ```
 
 | **1** | One annotated implementation of `ServiceSetup` |
 | **2** | A few different objects can be dependency injected, see below |
 | **3** | `onStartup` is invoked at service start, but before the service is completely started up |
+| **4** | `onShutdown` is invoked when the service instance is shutting down, after it has stopped handling requests |
 It is important to remember that an Akka service consists of one to many distributed instances that can be restarted
-individually and independently, for example during a rolling upgrade. Each such instance starting up will invoke `onStartup` when starting up, even if other instances run it before.
+individually and independently, for example during a rolling upgrade. Each such instance starting up will invoke `onStartup` when starting up, even if other instances run it before. The same applies to `onShutdown`: it runs on each
+instance as it shuts down, not once for the service as a whole.
+
+`onShutdown` runs after the instance has stopped accepting requests and any in-flight requests have completed,
+which makes it a good place to release resources allocated in the `ServiceSetup` constructor or in `onStartup` —
+for example, closing a connection pool. Exceptions thrown from `onShutdown` are logged but do not block subsequent
+shutdown steps.
+
+## <a href="about:blank#_handling_uncaught_exceptions"></a> Handling uncaught exceptions
+
+When user code in a component or endpoint throws an exception that is not turned into a `CommandException`, a deliberate HTTP error response, or for gRPC endpoints, a `akka.grpc.GrpcServiceException`, the runtime catches it, logs it with a correlation id, and returns a generic 500 (or `INTERNAL` gRPC status) response carrying that correlation id to the client.
+
+A service can be notified about each such exception by making the `ServiceSetup` class also implement `akka.javasdk.UnhandledExceptionHandler`. The typical use is forwarding the exception to an external error tracker such as Sentry.
+
+```java
+@Setup
+public class Bootstrap implements ServiceSetup, UnhandledExceptionHandler {
+  @Override
+  public void onUnhandledException(UnhandledExceptionContext context) {
+    Sentry.captureException(context.throwable());
+  }
+}
+```
+The `UnhandledExceptionContext` passed to the callback exposes:
+
+- `throwable()` — the original exception with full stack trace and causes.
+- `correlationId()` — the id surfaced to the client and present in the runtime log MDC at the time the exception was caught, useful for joining the error tracker event with runtime logs.
+- `subjectId()` — the entity, workflow or agent id when the exception originated in a stateful component; empty for endpoints and other stateless components.
+- `componentId()` — the value of `@ComponentId` for components that declare one, or the simple class name for endpoints.
+- `componentClassName()` — the fully-qualified class name of the user component the exception originated in.
+The callback is invoked once per caught exception on the service instance that handled the failing request, so in a service running multiple distributed instances each instance reports its own failures.
 
 ## <a href="about:blank#_disabling_components"></a> Disabling components
 
@@ -80,14 +116,16 @@ The following types can be injected in all component types:
 
 | Injectable class | Description |
 | --- | --- |
-| `akka.javasdk.agent.AgentRegistry` | Contains information about all agents, see [Implementing agents](agents.html) |
+| `akka.javasdk.agent.AgentRegistry` | Contains information about all agents, see [Agents](agents.html) |
 | `com.typesafe.config.Config` | Access the user defined configuration picked up from `application.conf` |
-| `akka.javasdk.Sanitizer` | Allows for applying sanitization, see [Sanitization](sanitization.html) |
+| `akka.javasdk.Sanitizer` | Allows for applying sanitization, see [Data sanitization](sanitization.html) |
+| `io.opentelemetry.api.metrics.Meter` | Allows creating custom Open Telemetry metrics, see [Metrics](metric.html) |
 The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpoints, Agents, Consumers, Timed Actions, and Workflows:
 
 | Injectable class | Description |
 | --- | --- |
 | `akka.javasdk.client.ComponentClient` | For interaction between components, see [Component and service calls](component-and-service-calls.html) |
+| `akka.javasdk.objectstorage.ObjectStorageProvider` | For storing and retrieving binary objects in named buckets, see [Object storage](integrations/object-storage.html) |
 | `akka.javasdk.http.HttpClientProvider` | For creating clients to make calls between Akka services and also to other HTTP servers, see [Component and service calls](component-and-service-calls.html) |
 | `akka.javasdk.grpc.GrpcClientProvider` | For creating clients to make calls between Akka services and also to other gRPC servers, see [Component and service calls](component-and-service-calls.html) |
 | `akka.javasdk.timer.TimerScheduler` | For scheduling timed actions, see [Timers](timed-actions.html) |
@@ -98,11 +136,14 @@ Furthermore, the following component specific types can also be injected:
 
 | Component Type | Injectable classes |
 | --- | --- |
-| Agent | `akka.javasdk.agent.AgentContext` for access to the session id that the agent participate in |
-| Endpoint | `akka.javasdk.http.RequestContext` with access to request related things |
-| Workflow | `akka.javasdk.workflow.WorkflowContext` for access to the workflow id |
-| Event Sourced Entity | `akka.javasdk.eventsourcedentity.EventSourcedEntityContext` for access to the entity id |
-| Key Value Entity | `akka.javasdk.keyvalueentity.KeyValueEntityContext` for access to the entity id |
+| Agent | - `akka.javasdk.agent.AgentContext` for access to the session id that the agent participate in |
+| Endpoint | - `akka.javasdk.http.RequestContext` with access to request related things |
+| Workflow | - `akka.javasdk.workflow.WorkflowContext` for access to the workflow id
+  - `akka.javasdk.NotificationPublisher` for [publishing notifications](workflows.html#_notification) to subscribers |
+| Event Sourced Entity | - `akka.javasdk.eventsourcedentity.EventSourcedEntityContext` for access to the entity id
+  - `akka.javasdk.NotificationPublisher` for [publishing notifications](event-sourced-entities.html#_notification) to subscribers |
+| Key Value Entity | - `akka.javasdk.keyvalueentity.KeyValueEntityContext` for access to the entity id
+  - `akka.javasdk.NotificationPublisher` for [publishing notifications](key-value-entities.html#_notification) to subscribers |
 
 ## <a href="about:blank#_custom_dependency_injection"></a> Custom dependency injection
 
@@ -262,7 +303,7 @@ To access the configuration in application code you can use a constructor parame
 
 ### <a href="about:blank#_test_configuration"></a> Test configuration
 
-Test that are using the `TestKitSupport` are loading configuration from `src/test/resourced/application-test.conf` if that exists, otherwise from `application.conf`.
+Test that are using the `TestKitSupport` are loading configuration from `src/test/resources/application-test.conf` if that exists, otherwise from `application.conf`.
 
 src/test/resources/application-test.conf
 ```json
@@ -291,239 +332,8 @@ public class ConfigIntegrationTest extends TestKitSupport {
 
 ### <a href="about:blank#_reference_configuration"></a> Reference configuration
 
-The default configuration of the Akka SDK:
+The complete default configuration for the Akka SDK is presented on [Service reference configuration (HOCON)](../reference/config/reference.html).
 
-```hocon
-# This is the reference config file that contains the default settings.
-# Make your edits/overrides in your application.conf.
-
-akka.javasdk {
-  dev-mode {
-
-    # the port it will use when running locally
-    http-port = 9000
-
-    # defaults to empty, but maven will set akka.javasdk.dev-mode.project-artifact-id to ${project.artifactId}
-    # this is only filled in dev-mode, in prod the name will be the one chosen when the service is created
-    # users can override this in their application.conf
-    service-name = ""
-    service-name =${?akka.javasdk.dev-mode.project-artifact-id}
-
-
-    eventing {
-      # Valid options are: "none", "/dev/null", "logging", "google-pubsub", "kafka",  "google-pubsub-emulator" and "eventhubs"
-      support = "none"
-
-      # The configuration for kafka brokers
-      kafka {
-        # One or more bootstrap servers, comma separated.
-        bootstrap-servers = "localhost:9092"
-
-        # Supported are
-        # NONE (for easy local/dev mode with no auth at all)
-        # PLAIN (for easy local/dev mode - plaintext, for non dev-mode TLS)
-        # SCRAM-SHA-256 and SCRAM-SHA-512 (TLS)
-        auth-mechanism = "NONE"
-        auth-username = ""
-        auth-password = ""
-        broker-ca-pem-file = ""
-      }
-    }
-
-    acl {
-      # Whether ACL checking is enabled
-      enabled = true
-    }
-
-    persistence {
-      # Whether persistence is enabled
-      enabled = false
-    }
-  }
-
-  testkit {
-    # The port used by the testkit when running integration tests
-    http-port = 39390
-  }
-
-  agent {
-    # The default model provider that is used if an Agent doesn't specify a specific model.
-    # References a config section for the model provider, such as anthropic or openai.
-    model-provider = ""
-
-    # Configuration for the session history (memory) between an Agent and the LLM model
-    memory {
-      # By default, the session history is turned on for all agents. It can be turned off with this setting.
-      enabled = true
-
-      # The maximum size of the memory window for the session history.
-      # This is calculated as the sum of all messages content length in bytes.
-      # Once the limit is reached, older messages will be automatically removed in a FIFO approach.
-      # The default value is 510 KiB and this is actually the maximum value allowed. This is due to the fact that these
-      # messages might be routed around the Akka cluster and as such some resource contraints apply.
-      limited-window.max-size = 510 KiB
-    }
-
-    # Additional HTTP headers to include in each request to the model API.
-    # Format: list of "name:value" strings, e.g. ["Authorization:Bearer token", "X-Custom-Header:value"]
-    # This global setting is inherited by each provider config and can be overridden per provider.
-    # Can also be set via environment variables, using a special naming where each entry is specified with a list index:
-    # ADDITIONAL_MODEL_REQUEST_HEADERS_0="Authorization:Bearer token ..."
-    # ADDITIONAL_MODEL_REQUEST_HEADERS_1="X-Custom-Header:value"
-    additional-model-request-headers = []
-    additional-model-request-headers = ${?ADDITIONAL_MODEL_REQUEST_HEADERS[]}
-
-    # Inside a single request/response cycle, an LLM can successively request the agent to call functions tools.
-    # After analysing the result of a tool call, the LLM might decide to request another call to gather more context.
-    # This setting limits how many such steps may occur between a user request and the final Ai response.
-    # Once this limit is reached, the process will stop even if the LLM has not yet produced its final response.
-    max-tool-call-steps = 100
-
-    # Guardrails are enabled by this configuration. Each guardrail is a named config section and it must have
-    # the following mandatory properties:
-    # - class: implementation class of the guardrail, must implement akka.javasdk.agent.TextGuardrail, be public and
-    #          have a public constructor, optionally with a akka.javasdk.agent.GuardrailContext constructor parameter,
-    #          which includes the config section for the specific guardrail
-    # - category: the type of validation, such as JAILBREAK, PROMPT_INJECTION, PII, TOXIC, HALLUCINATED, NSFW, FORMAT
-    # - report-only: if it didn't pass the evaluation criteria, the execution can either be aborted by
-    #                throwing Guardrail.GuardrailException or continue anyway. In both cases, the result is tracked in
-    #                logs, metrics and traces
-    # - use-for: where to use the guardrail, list of possible values are model-request, model-response,
-    #            mcp-tool-request, mcp-tool-response, "*"
-    #
-    # Additionally, to enable the guardrail specify one or both lists of:
-    # - agents: enabled for agents with these component ids
-    # - agent-roles: enabled for agents with these roles
-    #
-    # If both agents and agent-roles are defined it's enough that one of them matches to enable the guardrail for
-    # an agent.
-    #
-    # If agents contain "*" the guardrail is enabled for all agents.
-    # If agent-roles contain "*" the guardrail is enabled for all agents that has a role, but not for agents without
-    # a role.
-    #
-    # An agent implementation can have additional configuration properties.
-    guardrails {
-
-      "default jailbreak" {
-        class = "akka.javasdk.agent.SimilarityGuard"
-        # not enabled until agents or agent-roles are defined
-        agents = []
-        agent-roles = []
-        category = JAILBREAK
-        report-only = false
-        use-for = ["model-request"]
-        threshold = 0.75
-        bad-examples-resource-dir = "guardrail/jailbreak"
-      }
-
-    }
-
-    evaluators {
-      toxicity-evaluator {
-        model-provider = ${akka.javasdk.agent.model-provider}
-      }
-
-      summarization-evaluator {
-        model-provider = ${akka.javasdk.agent.model-provider}
-      }
-
-      hallucination-evaluator {
-        model-provider = ${akka.javasdk.agent.model-provider}
-      }
-
-    }
-
-    # All agent interactions with the model, including tool calls, are stored in an interaction log.
-    # The purpose is for visibility in the console, troubleshooting, and auditing.
-    # This has a performance overhead, but compared to the LLM response times it is typically
-    # neglectible. It can be disabled with this configuration. It will always be enabled in local
-    # dev mode since it's useful insights in the local console.
-    interaction-log {
-      enabled = true
-    }
-  }
-
-  entity {
-    # When a EventSourcedEntity, KeyValueEntity or Workflow is deleted the existence of the entity is completely cleaned up after
-    # this duration. The events and snapshots will be deleted later to give downstream consumers time to process all
-    # prior events, including final deleted event. Default is 7 days.
-    cleanup-deleted-after =  ${akka.javasdk.event-sourced-entity.cleanup-deleted-after}
-  }
-
-  delete-entity.cleanup-interval = 1 hour
-
-  event-sourced-entity {
-    # It is strongly recommended to not disable snapshotting unless it is known that
-    # event sourced entities will never have more than 100 events (in which case
-    # the default will anyway not trigger any snapshots)
-    snapshot-every = 100
-
-    # Deprecated, use akka.javasdk.entity.cleanup-deleted-after
-    cleanup-deleted-after = 7 days
-  }
-
-  eventing {
-    google-pubsub {
-      # Possible values:
-      #  * automatic - runtime creates topic and subscription if they do not exist
-      #  * automatic-subscription - runtime creates subscription if it do not exist, topic must be manually created
-      #  * manual - both topic and subscription must be manually created
-      mode = "automatic-subscription"
-    }
-  }
-
-  discovery {
-    # By default all environment variables of the process are passed along to the runtime, they are used only for
-    # substitution in the descriptor options such as topic names. To selectively pick only a few variables,
-    # this setting needs to be set to false and `pass-along-env-allow` should be configured with
-    # a list of variables we want to pass along.
-    pass-along-env-all = true
-
-    # By default all environment variables of the process are passed along to the runtime, they are used only for
-    # substitution in the descriptor options such as topic names. This setting can
-    # limit which variables are passed configuring this as a list of allowed names:
-    # pass-along-env-allow = ["ENV_NAME1", "ENV_NAME2"]
-    # This setting only take effect if pass-along-env-all is set to false, otherwise all env variables will be pass along.
-    # To disable any environment variable pass along, this setting needs to be an empty list pass-along-env-allow = []
-    # and pass-along-env-all = false
-    pass-along-env-allow = []
-  }
-
-  grpc.client {
-    # Specify entries for the full service DNS names to apply
-    # customizations for interacting with external gRPC services.
-    # The example block shows the customizations keys that are accepted:
-    #
-    # "com.example" {
-    #   host = "192.168.1.7"
-    #   port = 5000
-    #   use-tls = false
-    # }
-  }
-
-  # Sanitization is applied to logs, text before passed to agent models, text received from agent tools, found matching
-  # substrings are masked (replaced with a * for each character in the matching substring).
-  #
-  # By default, no sanitization is applied.
-  sanitization {
-    regex-sanitizers {
-      # Named Java Regular Expressions
-      # Example (case insensitive warm colors)
-      # "warm-colors" = { pattern = "(?i)(red|orange|yellow)" }
-    }
-    # Available predefined: CREDIT_CARD, IBAN, PHONE, EMAIL, IP_ADDRESS
-    predefined-sanitizers = []
-  }
-
-  telemetry {
-    tracing {
-      collector-endpoint = ""
-      collector-endpoint = ${?COLLECTOR_ENDPOINT}
-    }
-  }
-}
-```
 In addition, there is also [AI model provider configuration](model-provider-details.html).
 
 <!-- <footer> -->

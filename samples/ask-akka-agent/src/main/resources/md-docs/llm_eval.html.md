@@ -34,8 +34,8 @@ import java.util.Locale;
   id = "human-vs-ai-evaluator",
   name = "Human vs AI Evaluator Agent",
   description = """
-  An agent that acts as an LLM judge to evaluate that the human ground
-  truth matches the AI generated answer.
+  An agent that acts as an LLM judge to evaluate that the human ground \
+  truth matches the AI generated answer.\
   """
 )
 @AgentRole("evaluator")
@@ -128,80 +128,87 @@ public class HumanVsAiEvaluator extends Agent { // (1)
 | **7** | Transform the model result |
 In this example, we use one result representation from the model, and a slightly different as the response type. These could be the same, but the model might be more accurate when using text labels instead of boolean values. It’s also good to include validation in that transformation.
 
-Since the evaluator is an ordinary `Agent` you can call it with the component client in the same way as any other agent. For example, from a consumer of workflow state changes:
+Since the evaluator is an ordinary `Agent` you can call it with the component client in the same way as any other agent. For example, from a Consumer that listens for task completions from an [Autonomous Agent](../autonomous-agents.html):
 
-[AgentTeamEvaluatorConsumer.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/AgentTeamEvaluatorConsumer.java)
+[EvaluationConsumer.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/EvaluationConsumer.java)
 ```java
-@Component(id = "agent-team-eval-consumer")
-@Consume.FromWorkflow(AgentTeamWorkflow.class)
-public class AgentTeamEvaluatorConsumer extends Consumer { // (1)
+import akka.javasdk.agent.evaluator.ToxicityEvaluator;
+import akka.javasdk.agent.task.TaskEntity;
+import akka.javasdk.agent.task.TaskEvent;
+import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.Consume;
+import akka.javasdk.client.ComponentClient;
+import akka.javasdk.consumer.Consumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-  private static final Logger logger = LoggerFactory.getLogger(
-    AgentTeamEvaluatorConsumer.class
-  );
+@Component(id = "evaluation-consumer")
+@Consume.FromEventSourcedEntity(TaskEntity.class) // (1)
+public class EvaluationConsumer extends Consumer {
+
+  private static final Logger logger = LoggerFactory.getLogger(EvaluationConsumer.class);
 
   private final ComponentClient componentClient;
 
-  public AgentTeamEvaluatorConsumer(ComponentClient componentClient) {
+  public EvaluationConsumer(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 
-  public Effect onStateChanged(AgentTeamWorkflow.State state) { // (2)
-    if (state.status() == AgentTeamWorkflow.Status.COMPLETED) {
-      evalToxicity(state);
-      evalSummarization(state);
+  public Effect onEvent(TaskEvent event) {
+    if (
+      event instanceof TaskEvent.TaskCompleted completed &&
+      ActivityTasks.SUGGEST_ACTIVITIES.name().equals(completed.name())
+    ) { // (2)
+      var taskId = completed.taskId();
+      var snapshot = componentClient.forTask(taskId).get(ActivityTasks.SUGGEST_ACTIVITIES); // (3)
+
+      // Custom LLM-as-judge: compare answer against the original (preference-aware) request
+      var judgement = componentClient
+        .forAgent()
+        .inSession(taskId)
+        .method(EvaluatorAgent::evaluate)
+        .invoke(
+          new EvaluatorAgent.EvaluationRequest(
+            snapshot.instructions(),
+            snapshot.result().orElse("")
+          )
+        ); // (4)
+      if (judgement.passed()) {
+        logger.debug("LLM judge passed for task [{}]", taskId);
+      } else {
+        logger.warn(
+          "LLM judge failed for task [{}], explanation: {}",
+          taskId,
+          judgement.explanation()
+        );
+      }
+
+      // Built-in toxicity evaluator on the final answer
+      var toxicity = componentClient
+        .forAgent()
+        .inSession(taskId)
+        .method(ToxicityEvaluator::evaluate)
+        .invoke(snapshot.result().orElse("")); // (5)
+      if (toxicity.passed()) {
+        logger.debug("Toxicity check passed for task [{}]", taskId);
+      } else {
+        logger.warn(
+          "Toxicity check failed for task [{}], explanation: {}",
+          taskId,
+          toxicity.explanation()
+        );
+      }
     }
     return effects().done();
-  }
-
-  private void evalToxicity(AgentTeamWorkflow.State state) {
-    var result = componentClient
-      .forAgent()
-      .inSession(sessionId())
-      .method(ToxicityEvaluator::evaluate) // (3)
-      .invoke(state.finalAnswer());
-    if (result.passed()) {
-      logger.debug("Eval toxicity passed, session [{}]", sessionId()); // (4)
-    } else {
-      logger.warn(
-        "Eval toxicity failed, session [{}], explanation: {}",
-        sessionId(),
-        result.explanation()
-      );
-    }
-  }
-
-  private void evalSummarization(AgentTeamWorkflow.State state) {
-    var agentsAnswers = String.join("\n\n", state.agentResponses().values());
-
-    var result = componentClient
-      .forAgent()
-      .inSession(sessionId())
-      .method(SummarizationEvaluator::evaluate)
-      .invoke(
-        new SummarizationEvaluator.EvaluationRequest(agentsAnswers, state.finalAnswer())
-      );
-    if (result.passed()) {
-      logger.debug("Eval summarization passed, session [{}]", sessionId());
-    } else {
-      logger.warn(
-        "Eval summarization failed, session [{}], explanation: {}",
-        sessionId(),
-        result.explanation()
-      );
-    }
-  }
-
-  private String sessionId() {
-    return messageContext().eventSubject().get();
   }
 }
 ```
 
-| **1** | Consumer of workflow state changes |
-| **2** | When there is a state change that is worth evaluating |
-| **3** | Call the evaluator agent with relevant parameters |
-| **4** | Additional logging, but metrics and traces are updated automatically from the evaluation result |
+| **1** | Consume events from the runtime’s built-in task entity (`akka.javasdk.agent.task.TaskEntity`). |
+| **2** | React only when a task completes (the runtime also emits events for create, assign, fail, and cancel). |
+| **3** | Fetch a typed snapshot of the task, which exposes the instructions sent to the agent and the typed result. |
+| **4** | Call the custom evaluator agent. Additional logging is included here, but metrics and traces are updated automatically from the evaluation result. |
+| **5** | Call the built-in `ToxicityEvaluator` on the final answer. |
 This illustrates that evaluation happens asynchronously, in the background, to capture the results for analytics and later development improvements of prompts. However, the evaluators can also be part of the core agent workflow and thereby have a more immediate impact on the workflow. For example, if the outcome of some step in the workflow doesn’t pass the evaluation it can refine the plan and iterate. In this case it’s still good to capture the results in metrics and traces by using the `EvaluationResult`. The concrete, application specific, result may include more things than `EvaluationResult`, which can be used for adjusting the execution plan in the workflow.
 
 |  | Evaluator agents have an associated cost and overhead since they typically use an LLM. You might want to enable them only in test environments and not for large scale production environments. You can [disable consumers](../setup-and-dependency-injection.html#_disabling_components) that are calling evaluator agents. |
@@ -211,7 +218,7 @@ External evaluation products can be integrated with Akka by operating on the tra
 
 ## <a href="about:blank#_built_in_evaluators"></a> Built-in evaluators
 
-As shown above, it’s easy to implement your own evaluator agents, but for convenience Akka provides a few built-in evaluators that you can use by calling them with the `ComponentClient`. The `AgentTeamEvaluatorConsumer` example above shows how to call the evaluator agents.
+As shown above, it’s easy to implement your own evaluator agents, but for convenience Akka provides a few built-in evaluators that you can use by calling them with the `ComponentClient`. The `EvaluationConsumer` example above also shows how to call the built-in `ToxicityEvaluator`.
 
 The model provider for these agents can be defined in a specific configuration for each agent, which by default is the same as the default model provider.
 

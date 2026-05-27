@@ -11,12 +11,107 @@ Akka constantly gets updates and improvements enabling new features and expandin
 
 Current versions
 
-- [Akka SDK 3.5.15](../sdk/index.html)
-- Akka CLI 3.0.47
+- [Akka SDK 3.5.19](../sdk/index.html)
+- Akka CLI 3.0.62
 - A glance of all Akka libraries and their current versions is presented at [Akka library versions](https://doc.akka.io/libraries/akka-dependencies/current).
+
+## <a href="about:blank#_may_2026"></a> May 2026
+
+- [Akka SDK 3.5.19](https://github.com/akka/akka-sdk/releases/tag/v3.5.19)
+
+  - Object store support (S3, GCS, Azure)
+  - Azure OpenAI and MistralAI model providers
+  - Prompt caching for Anthropic and Bedrock
+  - Workflow termination
+  - Session memory interceptor
+  - Start eventing from a timestamp (when migrating)
+  - Custom OpenTelemetry metrics
+  - Service instance shutdown hook
+  - TestKit mocking of HTTP and gRPC services
+- Akka CLI 3.0.62
+
+  - Project descriptor can now include docker registry config
+- Akka Runtime 1.5.48 - 1.5.52
+
+  - TTL-based deletion for entities
+  - Object storage support (S3, GCS, Azure)
+  - Azure and MistralAI model providers
+  - Prompt caching for Anthropic and Bedrock
+  - Workflow termination, suspend and resume
+  - JWT keys configuration from JWKS
+  - OpenTelemetry performance improvements
+  - SDK expected runtime version validation
+- Akka CLI 3.0.61
+
+  - Maintenance release
+
+## <a href="about:blank#_april_2026"></a> April 2026
+
+- Akka CLI 3.0.60
+
+  - Fixed an issue with multi-regional project descriptors
+  - JWKS configuraiton support
+- [Akka SDK 3.5.18](https://github.com/akka/akka-sdk/releases/tag/v3.5.18)
+
+  - Automatic expiry for entities
+  - Key Value Entity notifications
+  - Consumer testkit improvements
+  - Agent read timeout bug fix
+- Akka CLI 3.0.59
+
+  - `akka local console` bugs fixed
+  - Service descriptor correctly uses annotations now
+  - Secrets parsing now accepts string with embedded commas
+  - Updated broker config commands
+- Akka CLI 3.0.58
+
+  - New MCP commands for local cluster management.
+- [Akka SDK 3.5.17](https://github.com/akka/akka-sdk/releases/tag/v3.5.17)
+
+  - Compile time validation of dependency conflicts with runtime
+  - Multiple view improvements
+  - Metrics migrated to OpenTelemetry
+- Akka CLI 3.0.57
+
+  - Two new set of commands for the MCP server, browser and backoffice commands.
 
 ## <a href="about:blank#_march_2026"></a> March 2026
 
+- Akka CLI 3.0.56
+
+  - The Akka AI Marketplace plugin has changed name to `akka`, the CLI will now download this plugin when initializing a project with AI context.
+- Akka CLI 3.0.55
+
+  - Support for spec driven development using VS Code and Copilot
+  - Improved shutdown of local Akka services started by an AI agent
+- Akka CLI 3.0.54
+
+  - Updates to `akka specifiy`
+- Akka CLI 3.0.53
+
+  - Added an optional custom constitution to `akka specify`
+  - Check if `akka specify` resources have remote updates
+  - Better text formatting when printing service configs
+- Akka CLI 3.0.52
+
+  - `akka services views query` a view query method with a Json payload, also available for local development.
+- Akka CLI 3.0.51
+
+  - More improvement for spec driven development.
+- [Akka SDK 3.5.16](https://github.com/akka/akka-sdk/releases/tag/v3.5.16)
+
+  - Google Vertex AI model support
+  - Access to deployed services from dev mode
+  - Notifications for event sourced entities
+  - Default primary selection changed to request-region
+  - Improved authentication for Google Pub/Sub
+- Akka CLI 3.0.50
+
+  - More improvement for spec driven development.
+  - Adding more commands to MCP plugin.
+- Akka CLI 3.0.49
+
+  - Support for spec driven development using `akka specify`
 - [Akka SDK 3.5.15](https://github.com/akka/akka-sdk/releases/tag/v3.5.15)
 
   - PDF documents support in Agent user message
@@ -53,7 +148,7 @@ Agents gain [multimodal capabilities with image input support](../sdk/agents/pro
 
 **Workflow notifications and a new fluent API**
 
-Workflows get [a redesigned, more type-safe and fluent API](../sdk/workflows.html) that makes defining multi-step processes more intuitive. Workflows can now emit streams of real-time notifications to subscribers, keeping clients and downstream systems informed as individual workflows progress through their steps.
+Workflows get [a redesigned, more type-safe and fluent API](../sdk/workflows.html) that makes defining multi-step processes more intuitive. Workflows can now [emit streams of real-time notifications](../sdk/workflows.html#_notification) to subscribers, keeping clients and downstream systems informed as individual workflows progress through their steps.
 
 **Console with deep observability**
 

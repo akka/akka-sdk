@@ -79,7 +79,7 @@ public class OrderEndpoint {
 
     timerScheduler.createSingleTimer( // (3)
       timerName(orderId), // (4)
-      Duration.ofSeconds// (10), // (5)
+      Duration.ofSeconds(10), // (5)
       componentClient
         .forTimedAction()
         .method(OrderTimedAction::expireOrder) // (6)

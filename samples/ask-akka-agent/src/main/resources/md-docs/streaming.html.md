@@ -82,7 +82,7 @@ public HttpResponse askGrouped(Request request) {
     .source(request.question);
 
   var groupedTokenStream = tokenStream
-    .groupedWithin(20, Duration.ofMillis// (100)) // (1)
+    .groupedWithin(20, Duration.ofMillis(100)) // (1)
     .map(group -> String.join("", group)); // (2)
 
   return HttpResponses.streamText(groupedTokenStream); // (3)
@@ -156,7 +156,7 @@ public class ActivityWorkflow extends Workflow<ActivityWorkflow.State> {
     var finalAnswer = notificationPublisher.publishTokenStream(
       tokenSource, // (5)
       10,
-      ofMillis// (200),
+      ofMillis(200),
       ActivityWorkflowNotification.LlmResponseDelta::new,
       materializer
     );

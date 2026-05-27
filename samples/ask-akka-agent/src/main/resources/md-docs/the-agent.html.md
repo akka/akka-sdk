@@ -1,6 +1,6 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [Tutorials](../index.html)
+- [Getting started & Tutorials](../index.html)
 - [RAG chat agent](index.html)
 - [Creating the agent](the-agent.html)
 
@@ -10,7 +10,7 @@
 
 |  | **New to Akka? Start here:**
 
-Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent with Spec-Driven Development](../spec-your-first-agent.html) guide to use your AI assistant for implementing a simple agentic service, running it locally and interacting with it. |
 
 ## <a href="about:blank#_overview"></a> Overview
 
@@ -94,7 +94,7 @@ The system message provides system-level instructions to the AI model that defin
 
 The user message represents the specific query, instruction, or input that will be processed by the model to generate a response.
 
-For this agent we want immediate visual feedback, and use the `StreamEffecct` to be able to stream the response to the client using server-sent events (SSE).
+For this agent we want immediate visual feedback, and use the `StreamEffect` to be able to stream the response to the client using server-sent events (SSE).
 
 ## <a href="about:blank#_add_an_endpoint"></a> Add an Endpoint
 
@@ -132,8 +132,8 @@ public class AskHttpEndpoint {
 ```
 
 | **1** | Inject the `ComponentClient`, which is used to call the agent. |
-| **2** | Call the `AskAkkaAgent created in the previous step |
-| **3** | Use the `serverSentEvents` function to easily send a stream via SSE |
+| **2** | Call the `AskAkkaAgent` created in the previous step |
+| **3** | Use `HttpResponses.streamText(responseStream)` to easily send a stream via SSE |
 The `userId` and `sessionId` parameters are required in `QueryRequest` along with the `question` field.
 
 ## <a href="about:blank#_running_the_service"></a> Running the service

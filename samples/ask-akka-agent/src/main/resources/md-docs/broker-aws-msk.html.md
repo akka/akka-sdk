@@ -18,7 +18,7 @@ Prerequisites not covered in detail by this guide:
 2. The MSK cluster must be set up with [TLS for client broker connections and SASL/SCRAM for authentication](https://docs.aws.amazon.com/msk/latest/developerguide/msk-password.html) with a user and password to use for authenticating your Akka service
 
   1. The user and password is stored in a secret
-  2. The secret must be encrypted with a specific key, MSK cannot use the default MKS encryption key
+  2. The secret must be encrypted with a specific key, MSK cannot use the default MSK encryption key
 3. The provisioned cluster must be set up for [public access](https://docs.aws.amazon.com/msk/latest/developerguide/public-access.html)
 
   1. Creating relevant ACLs for the user to access the topics in your MSK cluster
@@ -49,9 +49,9 @@ akka projects config set broker  \
   --broker-auth scram-sha-512 \
   --broker-user <sasl username> \
   --broker-password-secret aws-msk-secret/pwd \
-  --broker-bootstrap-servers <bootstrap brokers> \
+  --broker-bootstrap-servers <bootstrap brokers>
 ```
-The `broker-password-secret` refer to the name of the Akka secret created earlier rather than the actual password string.
+The `broker-password-secret` refers to the name of the Akka secret created earlier rather than the actual password string.
 
 An optional description can be added with the parameter `--description` to provide additional notes about the broker.
 
@@ -76,8 +76,8 @@ akka projects config set broker  \
   --broker-auth scram-sha-512 \
   --broker-user <sasl username> \
   --broker-password-secret aws-msk-secret/pwd \
-  --broker-ca-cert-secret kafka-ca-cert
-  --broker-bootstrap-servers <bootstrap brokers> \
+  --broker-ca-cert-secret kafka-ca-cert \
+  --broker-bootstrap-servers <bootstrap brokers>
 ```
 
 ## <a href="about:blank#_delivery_characteristics"></a> Delivery characteristics
@@ -87,7 +87,11 @@ When your application consumes messages from Kafka, it will try to deliver messa
 Kafka partitions are consumed independently. When passing messages to a certain entity or using them to update a view row by specifying the id as the Cloud Event `ce-subject` attribute on the message, the same id must be used to partition the topic to guarantee that the messages are processed in order in the entity or view. Ordering is not guaranteed for messages arriving on different Kafka partitions.
 
 |  | Correct partitioning is especially important for topics that stream directly into views and transform the updates: when messages for the same subject id are spread over different transactions, they may read stale data and lose updates. |
-To achieve at-least-once delivery, messages that are not acknowledged will be redelivered. This means redeliveries of 'older' messages may arrive behind fresh deliveries of 'newer' messages. The *first* delivery of each message is always in-order, though.
+At-least-once delivery means a message may be delivered more than once. Within a single partition, redeliveries preserve the original order — there is no scenario where a newer message lands at the consumer before an older message’s redelivery completes. Two cases lead to redelivery:
+
+- A message whose handler failed is replayed from the last committed offset, followed by the messages after it.
+- A message that was processed successfully but whose offset commit did not make it before a restart or partition rebalance is replayed on the next read. Offset commits are batched, so this gap is normal rather than exceptional.
+Consumer handlers must therefore be idempotent or deduplicate explicitly. See [Message deduplication](../../sdk/dev-best-practices.html#message-deduplication) for guidance.
 
 When publishing messages to Kafka from Akka, the `ce-subject` attribute, if present, is used as the Kafka partition key for the message.
 

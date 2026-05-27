@@ -1,6 +1,6 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [Tutorials](../index.html)
+- [Getting started & Tutorials](../index.html)
 - [Multi-agent planner](index.html)
 - [Dynamic orchestration](dynamic-team.html)
 
@@ -10,16 +10,19 @@
 
 |  | **New to Akka? Start here:**
 
-Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent with Spec-Driven Development](../spec-your-first-agent.html) guide to use your AI assistant for implementing a simple agentic service, running it locally and interacting with it. |
 
 ## <a href="about:blank#_overview"></a> Overview
 
-We have used a workflow with predefined steps to call the `WeatherAgent` followed by the `ActivityAgent`. In a larger system there can be many agents, and it would be cumbersome to define a single workflow that would handle all types of requests. A more flexible approach is to let the AI model come up with a plan of which agents to use and in which order to achieve the goal of the request.
+We have used a workflow with predefined steps to call the `WeatherAgent` followed by the `ActivityAgent`. In a larger system there can be many agents, and it would be cumbersome to define a single workflow for every kind of request. A more flexible approach is to let the AI model decide which agents to consult and in what order, based on the request.
+
+Akka offers an [Autonomous Agent](../../sdk/autonomous-agents.html) for exactly this case. Instead of writing the orchestration sequence as workflow steps, you declare a coordinator agent and list the worker agents it may delegate to. The runtime exposes the workers to the coordinator’s model as tools, drives the iteration loop, persists task state, and retries failed steps. The model picks which worker runs next based on what previous steps returned.
 
 In this part of the guide you will:
 
-- Add agents to create a dynamic plan
-- Use a workflow that executes the plan
+- Add a coordinator `AutonomousAgent` with a `Delegation` capability that lists `WeatherAgent` and `ActivityAgent` as workers.
+- Define a `SUGGEST_ACTIVITIES` task type with a typed result.
+- Replace the workflow in the endpoint with a direct call to the coordinator’s task.
 
 ## <a href="about:blank#_prerequisites"></a> Prerequisites
 
@@ -28,615 +31,156 @@ In this part of the guide you will:
 - <a href="https://curl.se/download.html">`curl` command-line tool</a>
 - [OpenAI API key](https://platform.openai.com/api-keys)
 
-## <a href="about:blank#_planner_agents"></a> Planner agents
+## <a href="about:blank#_define_the_task"></a> Define the task
 
-We split the planning into two steps and use two separate agents for these tasks. It’s not always necessary to use several steps for the planning. You have to experiment with what works best for your problem domain.
+The coordinator works on typed tasks. The task definition is a stable static constant. Add a new file `ActivityTasks.java` to `src/main/java/com/example/application/`
 
-1. Select agents that are useful for a certain problem.
-2. Decide in which order to use the agents and give each agent precise instructions for its task.
-The `SelectorAgent` decides which agents to use. Add a new file `SelectorAgent.java` to `src/main/java/com/example/application/`
-
-[SelectorAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java)
+[ActivityTasks.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/ActivityTasks.java)
 ```java
-import akka.javasdk.JsonSupport;
-import akka.javasdk.agent.Agent;
-import akka.javasdk.agent.AgentRegistry;
+import akka.javasdk.agent.task.Task;
+
+public class ActivityTasks {
+
+  public static final Task<String> SUGGEST_ACTIVITIES = Task.name(
+    "SuggestActivities"
+  ).description(
+    """
+    Suggest real-world activities for a user, taking weather and any stated preferences \
+    into account. The task instructions begin with a "User: <userId>" line followed by \
+    the user's question.\
+    """
+  );
+}
+```
+The default result type for a task is `String`, which is what we use here. Replace `String` with a record and define `resultConformsTo(MyRecord.class)` if you need a structured result.
+
+## <a href="about:blank#_the_coordinator_agent"></a> The coordinator agent
+
+The coordinator extends `AutonomousAgent`. It declares which task types it accepts and which worker agents it may delegate to. There is no command handler, the runtime drives the agent through its decision loop until the task completes.
+
+Add a new file `ActivityCoordinator.java` to `src/main/java/com/example/application/`
+
+[ActivityCoordinator.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/ActivityCoordinator.java)
+```java
+import akka.javasdk.agent.autonomous.AgentDefinition;
+import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.autonomous.capability.Delegation;
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
-import demo.multiagent.domain.AgentSelection;
 
 @Component(
-  id = "selector-agent",
-  name = "Selector Agent",
+  id = "activity-coordinator",
   description = """
-    An agent that analyses the user request and selects useful agents for
-    answering the request.
+  Coordinates worker agents to suggest real-world activities for a user. \
+  Decides whether to consult the weather agent, the activity agent, or both, \
+  and synthesizes their results into a single suggestion.\
   """
 )
-public class SelectorAgent extends Agent {
-
-  private final String systemMessage;
-
-  public SelectorAgent(AgentRegistry agentsRegistry) { // (1)
-    var agents = agentsRegistry.agentsWithRole("worker"); // (2)
-
-    this.systemMessage = """
-      Your job is to analyse the user request and select the agents that should be
-      used to answer the user. In order to do that, you will receive a list of
-      available agents. Each agent has an id, a name and a description of its capabilities.
-
-      For example, a user may be asking to book a trip. If you see that there is a
-      weather agent, a city trip agent and a hotel booking agent, you should select
-      those agents to complete the task. Note that this is just an example. The list
-      of available agents may vary, so you need to use reasoning to dissect the original
-      user request and using the list of available agents,
-      decide which agents must be selected.
-
-      You don't need to come up with an execution order. Your task is to
-      analyze user's request and select the agents.
-
-      Your response should follow a strict json schema as defined bellow.
-      It should contain a single field 'agents'. The field agents must be array of strings
-      containing the agent's IDs. If none of the existing agents are suitable for executing
-      the task, you return an empty array.
-
-       {
-         "agents": []
-       }
-
-      Do not include any explanations or text outside of the JSON structure.
-
-      You can find the list of existing agents below (in JSON format):
-      Also important, use the agent id to identify the agents.
-      %s
-    """.stripIndent()
-      .formatted(JsonSupport.encodeToString(agents)); // (3)
-  }
-
-  public Effect<AgentSelection> selectAgents(String message) {
-    return effects()
-      .systemMessage(systemMessage)
-      .userMessage(message)
-      .responseConformsTo(AgentSelection.class)
-      .thenReply();
-  }
-}
-```
-
-| **1** | The `AgentRegistry` contains information about all agents. |
-| **2** | Select the agents with the role `"worker"`. |
-| **3** | Detailed instructions and include descriptions (as json) of the agents. |
-The result from the `SelectorAgent` is a list of agent ids. Add a new file `AgentSelection.java` to `src/main/java/com/example/domain/`
-
-[AgentSelection.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java)
-```java
-public record AgentSelection(List<String> agents) {}
-```
-The information about the agents in the `AgentRegistry` comes from the `@Component` and `@AgentRole` annotations. When
-using it for planning like this, it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
-
-Add the `@Component` and `@AgentRole` to the `WeatherAgent`:
-
-[WeatherAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java)
-```java
-@Component(
-  id = "weather-agent",
-  name = "Weather Agent",
-  description = """
-    An agent that provides weather information. It can provide current weather,
-    forecasts, and other related information.
-  """
-)
-@AgentRole("worker")
-public class WeatherAgent extends Agent {
-```
-Add the `@Component` and `@AgentRole` to the `ActivityAgent`:
-
-[ActivityAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/ActivityAgent.java)
-```java
-@Component(
-  id = "activity-agent",
-  name = "Activity Agent",
-  description = """
-    An agent that suggests activities in the real world. Like for example,
-    a team building activity, sports, an indoor or outdoor game,
-    board games, a city trip, etc.
-  """
-)
-@AgentRole("worker")
-public class ActivityAgent extends Agent {
-```
-Note that in
-![steps 2](../../concepts/_images/steps-2.svg)
-of the `SelectorAgent` we retrieve a subset of the agents with a certain role. This role is also defined in the `@AgentRole` annotation.
-
-After selecting agents, we use a `PlannerAgent` to decide in which order to use the agents and the precise request each agent should receive to perform its single task. Add a new file `PlannerAgent.java` to `src/main/java/com/example/application/`
-
-[PlannerAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java)
-```java
-import akka.javasdk.JsonSupport;
-import akka.javasdk.agent.Agent;
-import akka.javasdk.agent.AgentRegistry;
-import akka.javasdk.annotations.Component;
-import demo.multiagent.domain.AgentSelection;
-import demo.multiagent.domain.Plan;
-import demo.multiagent.domain.PlanStep;
-import java.util.List;
-
-@Component(
-  id = "planner-agent",
-  name = "Planner",
-  description = """
-  An agent that analyzes the user request and available agents to plan the tasks
-  to produce a suitable answer.
-  """
-)
-public class PlannerAgent extends Agent {
-
-  public record Request(String message, AgentSelection agentSelection) {}
-
-  private final AgentRegistry agentsRegistry;
-
-  public PlannerAgent(AgentRegistry agentsRegistry) {
-    this.agentsRegistry = agentsRegistry;
-  }
-
-  private String buildSystemMessage(AgentSelection agentSelection) {
-    var agents = agentSelection.agents().stream().map(agentsRegistry::agentInfo).toList(); // (1)
-    return """
-      Your job is to analyse the user request and the list of agents and devise the
-      best order in which the agents should be called in order to produce a
-      suitable answer to the user.
-
-      You can find the list of exiting agents below (in JSON format):
-      %s
-
-      Note that each agent has a description of its capabilities.
-      Given the user request, you must define the right ordering.
-
-      Moreover, you must generate a concise request to be sent to each agent.
-      This agent request is of course based on the user original request,
-      but is tailored to the specific agent. Each individual agent should not
-      receive requests or any text that is not related with its domain of expertise.
-
-      Your response should follow a strict json schema as defined bellow.
-       {
-         "steps": [
-            {
-              "agentId": "<the id of the agent>",
-              "query: "<agent tailored query>",
-            }
-         ]
-       }
-
-      The '<the id of the agent>' should be filled with the agent id.
-      The '<agent tailored query>' should contain the agent tailored message.
-      The order of the items inside the "steps" array should be the order of execution.
-
-      Do not include any explanations or text outside of the JSON structure.
-
-    """.stripIndent()
-      // note: here we are not using the full list of agents, but a pre-selection
-      .formatted(JsonSupport.encodeToString(agents)); // (2)
-  }
-
-  public Effect<Plan> createPlan(Request request) {
-    if (request.agentSelection.agents().size() == 1) {
-      // no need to call an LLM to make a plan where selection has a single agent
-      var step = new PlanStep(request.agentSelection.agents().getFirst(), request.message());
-      return effects().reply(new Plan(List.of(step)));
-    } else {
-      return effects()
-        .systemMessage(buildSystemMessage(request.agentSelection))
-        .userMessage(request.message())
-        .responseConformsTo(Plan.class)
-        .thenReply();
-    }
-  }
-}
-```
-
-| **1** | Lookup the agent information for the selected agents from the `AgentRegistry. |
-| **2** | Detailed instructions and include descriptions (as json) of the agents. |
-The result from the `PlannerAgent` is a `Plan` with a list of `PlanStep`.
-
-Add a new file `Plan.java` to `src/main/java/com/example/domain/`
-
-[Plan.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/domain/Plan.java)
-```java
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Represents a plan consisting of multiple steps to be executed by different agents.
- */
-public record Plan(List<PlanStep> steps) {
-  /**
-   * Creates an empty plan with no steps.
-   */
-  public Plan() {
-    this(new ArrayList<>());
-  }
-}
-```
-and a new file `PlanStep.java` to `src/main/java/com/example/domain/`
-
-[PlanStep.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/domain/PlanStep.java)
-```java
-/**
- * Represents a single step within a Plan.
- * Each step is assigned to a specific agent and contains a command description.
- */
-public record PlanStep(String agentId, String query) {}
-```
-
-## <a href="about:blank#_common_signature_of_worker_agents"></a> Common signature of worker agents
-
-We will call the selected agents according to the plan, and we want to do that without explicitly knowing which agent it is. For this, the worker agents (`WeatherAgent` and `ActivityAgent`) must have the same shape. Adjust the `ActivityAgent` to have this method signature:
-
-ActivityAgent.java
-```java
-public Effect<String> query(AgentRequest request) {
-```
-Where `AgentRequest` is a new record. Add a new file `AgentRequest.java` to `src/main/java/com/example/domain/`
-
-[AgentRequest.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/domain/AgentRequest.java)
-```java
-public record AgentRequest(String userId, String message) {}
-```
-Remove the previous `ActivityAgent.Request`, and update all references to use the new `AgentRequest` instead.
-
-Make the same changes to the `WeatherAgent`. Use the same method signature and use the `AgentRequest` record.
-
-## <a href="about:blank#_execute_the_plan"></a> Execute the plan
-
-`SelectorAgent` and `PlannerAgent` are the two agents that perform the planning, but we also need to connect them and execute the plan. This orchestration is the job of the workflow.
-
-Update the `AgentTeamWorkflow` to this:
-
-[AgentTeamWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java)
-```java
-@Component(id = "agent-team")
-public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1)
-
-  public record Request(String userId, String message) {}
-
-  enum Status {
-    STARTED,
-    COMPLETED,
-    FAILED,
-  }
-
-  public record State(
-    String userId,
-    String userQuery,
-    Plan plan,
-    String finalAnswer,
-    Map<String, String> agentResponses,
-    Status status
-  ) {
-    public static State init(String userId, String query) {
-      return new State(userId, query, new Plan(), "", new HashMap<>(), STARTED);
-    }
-
-    public State withFinalAnswer(String answer) {
-      return new State(userId, userQuery, plan, answer, agentResponses, status);
-    }
-
-    public State addAgentResponse(String response) {
-      // when we add a response, we always do it for the agent at the head of the plan queue
-      // therefore we remove it from the queue and proceed
-      var agentId = plan.steps().removeFirst().agentId();
-      agentResponses.put(agentId, response);
-      return this;
-    }
-
-    public PlanStep nextStepPlan() {
-      return plan.steps().getFirst();
-    }
-
-    public boolean hasMoreSteps() {
-      return !plan.steps().isEmpty();
-    }
-
-    public State withPlan(Plan plan) {
-      return new State(userId, userQuery, plan, finalAnswer, agentResponses, STARTED);
-    }
-
-    public State complete() {
-      return new State(userId, userQuery, plan, finalAnswer, agentResponses, COMPLETED);
-    }
-
-    public State failed() {
-      return new State(userId, userQuery, plan, finalAnswer, agentResponses, FAILED);
-    }
-  }
-
-  private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
-
-  private final ComponentClient componentClient;
-  private final NotificationPublisher<AgentTeamNotification> notificationPublisher;
-  private final Materializer materializer;
-
-  public AgentTeamWorkflow(
-    ComponentClient componentClient,
-    NotificationPublisher<AgentTeamNotification> notificationPublisher,
-    Materializer materializer
-  ) {
-    this.componentClient = componentClient;
-    this.notificationPublisher = notificationPublisher;
-    this.materializer = materializer;
-  }
-
-  public sealed interface AgentTeamNotification {
-    record StatusUpdate(String msg) implements AgentTeamNotification {}
-
-    record LlmResponseStart() implements AgentTeamNotification {}
-
-    record LlmResponseDelta(String response) implements AgentTeamNotification {}
-
-    record LlmResponseEnd() implements AgentTeamNotification {}
-  }
+public class ActivityCoordinator extends AutonomousAgent { // (1)
 
   @Override
-  public WorkflowSettings settings() {
-    return WorkflowSettings.builder()
-      .defaultStepTimeout(ofSeconds// (30))
-      .defaultStepRecovery(maxRetries// (1).failoverTo(AgentTeamWorkflow::interruptStep))
-      .stepRecovery(
-        AgentTeamWorkflow::selectAgentsStep,
-        maxRetries// (1).failoverTo(AgentTeamWorkflow::summarizeStep)
-      )
-      .build();
+  public AgentDefinition definition() {
+    return define()
+      .instructions(
+        """
+        When delegating to the activity agent, include the userId from the task header \
+        (the "User: <userId>" line) in the request so the agent can fetch the user's \
+        preferences.\
+        """
+      ) // (2)
+      .capability(TaskAcceptance.of(ActivityTasks.SUGGEST_ACTIVITIES).maxIterationsPerTask(5)) // (3)
+      .capability(Delegation.to(WeatherAgent.class, ActivityAgent.class)); // (4)
+  }
+}
+```
+
+| **1** | Extend `AutonomousAgent`. The `@Component` description tells the model what kind of work this agent does. |
+| **2** | Optional definition-level instructions. Use these for guidance that is specific to the coordinator’s runtime behavior, here, lifting the userId from the task header into the `ActivityAgent` delegation request. |
+| **3** | Declare which task types this agent accepts. `maxIterationsPerTask` bounds the model loop as a safety net. |
+| **4** | List the worker agents the coordinator may delegate to. `Delegation.to` accepts both request-based agents and other autonomous agents. |
+The task definition itself spells out the expected shape of the instructions string (the `User: <userId>` header followed by the user’s question), so the structural fact lives next to the task and the behavioral instruction lives next to the coordinator. The model in the coordinator sees the descriptions on `WeatherAgent` and `ActivityAgent` (from their `@Component` annotations) as part of its tool catalog, and decides per request which workers to call based on the task instructions and worker descriptions.
+
+## <a href="about:blank#_worker_agents_stay_request_based"></a> Worker agents stay request-based
+
+`WeatherAgent` and `ActivityAgent` remain the plain `Agent` subclasses from earlier parts of this guide, no signature changes are needed. The runtime introspects each worker’s command handler, generates a JSON schema from its parameter type, and exposes a delegate tool to the coordinator’s model. When the model invokes the tool, the runtime deserializes the arguments and calls the worker’s command handler.
+
+In this guide the two workers have different parameter shapes, and the runtime handles both. `WeatherAgent.query` takes a `String`, so the model passes a plain string. `ActivityAgent.query` takes an `AgentRequest` record so the agent can fetch the user’s preferences itself, so the model passes a `{userId, message}` object.
+
+## <a href="about:blank#_replace_the_workflow_in_the_endpoint"></a> Replace the workflow in the endpoint
+
+With the coordinator in place we no longer need the `AgentTeamWorkflow`. The endpoint can drive the coordinator directly: call `runSingleTask` on a fresh coordinator instance with the user message prefixed by a `User: <userId>` header as the task instructions, and let the runtime run the model loop until the task completes. The `ActivityAgent` will fetch the user’s preferences itself using the userId. The `GET` route reads the typed result through the task client.
+
+Update `ActivityEndpoint`:
+
+[ActivityEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/api/ActivityEndpoint.java)
+```java
+import akka.http.javadsl.model.HttpResponse;
+import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.http.Get;
+import akka.javasdk.annotations.http.HttpEndpoint;
+import akka.javasdk.annotations.http.Post;
+import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.HttpResponses;
+import demo.multiagent.application.ActivityCoordinator;
+import demo.multiagent.application.ActivityTasks;
+import demo.multiagent.application.PreferencesEntity;
+import java.util.UUID;
+
+// Opened up for access from the public internet to make the service easy to try out.
+// For actual services meant for production this must be carefully considered,
+// and often set more limited
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+@HttpEndpoint
+public class ActivityEndpoint {
+
+  public record Request(String message) {}
+
+  public record AddPreference(String preference) {}
+
+  private final ComponentClient componentClient;
+
+  public ActivityEndpoint(ComponentClient componentClient) {
+    this.componentClient = componentClient;
   }
 
-  public Effect<Done> start(Request request) {
-    if (currentState() == null) {
-      return effects()
-        .updateState(State.init(request.userId(), request.message()))
-        .transitionTo(AgentTeamWorkflow::selectAgentsStep) // (3)
-        .thenReply(Done.getInstance());
-    } else {
-      return effects()
-        .error("Workflow '" + commandContext().workflowId() + "' already started");
-    }
+  @Post("/activities/{userId}")
+  public HttpResponse suggestActivities(String userId, Request request) {
+    var instructions = "User: " + userId + "\n\n" + request.message(); // (1)
+
+    var taskId = componentClient
+      .forAutonomousAgent(ActivityCoordinator.class, UUID.randomUUID().toString())
+      .runSingleTask(ActivityTasks.SUGGEST_ACTIVITIES.instructions(instructions)); // (2)
+
+    return HttpResponses.created(taskId, "/activities/" + userId + "/" + taskId);
   }
 
+  @Get("/activities/{userId}/{taskId}")
+  public HttpResponse getAnswer(String userId, String taskId) {
+    var snapshot = componentClient.forTask(taskId).get(ActivityTasks.SUGGEST_ACTIVITIES); // (3)
 
-  public Effect<Done> runAgain() {
-    if (currentState() != null) {
-      return effects()
-        .updateState(State.init(currentState().userId(), currentState().userQuery()))
-        .transitionTo(AgentTeamWorkflow::selectAgentsStep) // (3)
-        .thenReply(Done.getInstance());
-    } else {
-      return effects()
-        .error("Workflow '" + commandContext().workflowId() + "' has not been started");
-    }
-  }
-
-
-  public ReadOnlyEffect<String> getAnswer() {
-    if (currentState() == null) {
-      return effects().error("Workflow '" + commandContext().workflowId() + "' not started");
-    } else {
-      return effects().reply(currentState().finalAnswer());
-    }
-  }
-
-  @StepName("select-agents")
-  private StepEffect selectAgentsStep() { // (2)
-    var selection = componentClient
-      .forAgent()
-      .inSession(sessionId())
-      .method(SelectorAgent::selectAgents)
-      .invoke(currentState().userQuery); // (4)
-
-    logger.info("Selected agents: {}", selection.agents());
-    notificationPublisher.publish(
-      new AgentTeamNotification.StatusUpdate("Agents selected: " + selection.agents())
-    );
-    if (selection.agents().isEmpty()) {
-      var newState = currentState()
-        .withFinalAnswer("Couldn't find any agent(s) able to respond to the original query.")
-        .failed();
-      return stepEffects().updateState(newState).thenEnd(); // terminate workflow
-    } else {
-      return stepEffects()
-        .thenTransitionTo(AgentTeamWorkflow::createPlanStep)
-        .withInput(selection); // (5)
-    }
-  }
-
-  @StepName("create-plan")
-  private StepEffect createPlanStep(AgentSelection agentSelection) { // (2)
-    logger.info(
-      "Calling planner with: '{}' / {}",
-      currentState().userQuery,
-      agentSelection.agents()
-    );
-
-    var plan = componentClient
-      .forAgent()
-      .inSession(sessionId())
-      .method(PlannerAgent::createPlan)
-      .invoke(new PlannerAgent.Request(currentState().userQuery, agentSelection)); // (6)
-
-    logger.info("Execution plan: {}", plan);
-    notificationPublisher.publish(
-      new AgentTeamNotification.StatusUpdate(
-        "Execution plan formed. Number of steps: " + plan.steps().size()
-      )
-    );
-    return stepEffects()
-      .updateState(currentState().withPlan(plan))
-      .thenTransitionTo(AgentTeamWorkflow::executePlanStep); // (7)
-  }
-
-  @StepName("execute-plan")
-  private StepEffect executePlanStep() { // (2)
-    var stepPlan = currentState().nextStepPlan(); // (8)
-    logger.info(
-      "Executing plan step (agent:{}), asking {}",
-      stepPlan.agentId(),
-      stepPlan.query()
-    );
-    notificationPublisher.publish(
-      new AgentTeamNotification.StatusUpdate("Calling: " + stepPlan.agentId())
-    );
-    var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // (9)
-    if (agentResponse.startsWith("ERROR")) {
-      throw new RuntimeException(
-        "Agent '" + stepPlan.agentId() + "' responded with error: " + agentResponse
+    return snapshot
+      .result()
+      .<HttpResponse>map(HttpResponses::ok)
+      .orElseGet(
+        () -> HttpResponses.notFound("Answer for '" + taskId + "' not available (yet)")
       );
-    } else {
-      logger.info("Response from [agent:{}]: '{}'", stepPlan.agentId(), agentResponse);
-      var newState = currentState().addAgentResponse(agentResponse);
-
-      if (newState.hasMoreSteps()) {
-        logger.info("Still {} steps to execute.", newState.plan().steps().size());
-        return stepEffects()
-          .updateState(newState)
-          .thenTransitionTo(AgentTeamWorkflow::executePlanStep); // (10)
-      } else {
-        logger.info("No further steps to execute.");
-        return stepEffects()
-          .updateState(newState)
-          .thenTransitionTo(AgentTeamWorkflow::summarizeStep);
-      }
-    }
   }
 
-  private String callAgent(String agentId, String query) {
-    // We know the id of the agent to call, but not the agent class.
-    // Could be WeatherAgent or ActivityAgent.
-    // We can still invoke the agent based on its id, given that we know that it
-    // takes an AgentRequest parameter and returns String.
-    var request = new AgentRequest(currentState().userId(), query);
-    DynamicMethodRef<AgentRequest, String> call = componentClient
-      .forAgent()
-      .inSession(sessionId())
-      .dynamicCall(agentId); // (9)
-    return call.invoke(request);
-  }
+  @Post("/preferences/{userId}")
+  public HttpResponse addPreference(String userId, AddPreference request) {
+    componentClient
+      .forEventSourcedEntity(userId)
+      .method(PreferencesEntity::addPreference)
+      .invoke(new PreferencesEntity.AddPreference(request.preference()));
 
-
-  @StepName("summarize")
-  private StepEffect summarizeStep() { // (2)
-    var agentsAnswers = currentState().agentResponses.values();
-
-    var tokenSource = componentClient
-      .forAgent()
-      .inSession(sessionId())
-      .tokenStream(SummarizerAgent::summarize)
-      .source(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
-
-    notificationPublisher.publish(new AgentTeamNotification.LlmResponseStart());
-    var finalAnswer = notificationPublisher.publishTokenStream(
-      tokenSource,
-      10,
-      ofMillis// (200),
-      AgentTeamNotification.LlmResponseDelta::new,
-      materializer
-    );
-
-    notificationPublisher.publish(new AgentTeamNotification.LlmResponseEnd());
-    notificationPublisher.publish(
-      new AgentTeamNotification.StatusUpdate("All steps completed!")
-    );
-
-    return stepEffects()
-      .updateState(currentState().withFinalAnswer(finalAnswer).complete())
-      .thenPause();
-  }
-
-
-  @StepName("interrupt")
-  private StepEffect interruptStep() {
-    logger.info("Interrupting workflow");
-
-    return stepEffects().updateState(currentState().failed()).thenEnd();
-  }
-
-  public NotificationPublisher.NotificationStream<AgentTeamNotification> updates() {
-    return notificationPublisher.stream();
-  }
-
-  private String sessionId() {
-    return commandContext().workflowId();
+    return HttpResponses.created();
   }
 }
 ```
 
-| **1** | It’s a workflow, with reliable and durable execution and the [notification system](../../sdk/agents/streaming.html#_streaming_from_the_workflow). |
-| **2** | The steps are select - plan - execute - summarize. |
-| **3** | The workflow starts by selecting agents |
-| **4** | which is performed by the `SelectorAgent`. |
-| **5** | Continue with making the actual plan |
-| **6** | which is performed by the `PlannerAgent`, using the selection from the previous step. |
-| **7** | Continue with executing the plan. |
-| **8** | Take the next task in the plan. |
-| **9** | Call the agent for the task. |
-| **10** | Continue executing the plan until no tasks are remaining. |
-You can add the imports:
-
-```java
-import static com.example.application.AgentTeamWorkflow.Status.*;
-import com.example.domain.*;
-```
-When executing the plan and calling the agents we know the id of the agent to call, but not the agent class. It can be the `WeatherAgent` or `ActivityAgent`. Therefore, we can’t use the ordinary `method` of the `ComponentClient. Instead, we use the `dynamicCall` with the id of the agent. This is the reason why we had to align the method signatures of the worker agents.
-
-This also ends the workflow by creating a summary of the results from the involved agent. Add a new file `SummarizerAgent.java` to `src/main/java/com/example/application/`
-
-[SummarizerAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/SummarizerAgent.java)
-```java
-import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.Component;
-import java.util.Collection;
-import java.util.stream.Collectors;
-
-@Component(
-  id = "summarizer-agent",
-  name = "Summarizer",
-  description = "An agent that creates a summary from responses provided by other agents"
-)
-public class SummarizerAgent extends Agent {
-
-  public record Request(String originalQuery, Collection<String> agentsResponses) {}
-
-  private String buildSystemMessage(String userQuery) {
-    return """
-      You will receive the original query and a message generate by different other agents.
-
-      Your task is to build a new message using the message provided by the other agents.
-      You are not allowed to add any new information, you should only re-phrase it to make
-      them part of coherent message.
-
-      The message to summarize will be provided between single quotes.
-
-      ORIGINAL USER QUERY:
-      %s
-    """.formatted(userQuery);
-  }
-
-  public StreamEffect summarize(Request request) {
-    var allResponses = request.agentsResponses
-      .stream()
-      .filter(response -> !response.startsWith("ERROR"))
-      .collect(Collectors.joining("\n\n"));
-
-    return streamEffects()
-      .systemMessage(buildSystemMessage(request.originalQuery))
-      .userMessage("Summarize the following: \n" + allResponses)
-      .thenReply();
-  }
-}
-```
-Fix any compilation errors, such as missing imports.
-
-```command
-mvn compile
-```
-We still only have the two worker agents `WeatherAgent` and `ActivityAgent`, but you can add more agents to this structure of dynamic planning and execution, and it will be able to solve other types of problems without changing the orchestration engine.
+| **1** | Prepend a `User: <userId>` header to the user’s message. This becomes the task instructions the coordinator’s model sees, so it can lift the userId into the `ActivityAgent` delegation. |
+| **2** | `runSingleTask` creates the task, assigns it to a fresh coordinator instance, and returns the task id. The runtime starts the agent and drives its decision loop until the task completes. |
+| **3** | Read the typed result through the task client. Returns the answer if the task has completed, or `404` while it is still running. |
 
 ## <a href="about:blank#_running_the_service"></a> Running the service
 
@@ -652,26 +196,28 @@ curl -i -XPOST --location "http://localhost:9000/activities/alice" \
   --header "Content-Type: application/json" \
   --data '{"message": "I am in Madrid. What should I do? Beware of the weather."}'
 ```
-Retrieve the suggested activities with the `sessionId` from the previous response:
+The response body and `Location` header carry the task id. Retrieve the suggestion:
 
 ```command
-curl -i -XGET --location "http://localhost:9000/activities/alice/{sessionId}"
+curl -i -XGET --location "http://localhost:9000/activities/alice/{taskId}"
 ```
-Inspect the logs and notice the difference if you include "Beware of the weather" in the request or not.
+Each worker logs when it is invoked, so the service logs reveal which agents the coordinator chose to consult. For this request the coordinator should call both the `WeatherAgent` and the `ActivityAgent`. Try a request where weather isn’t relevant, for example:
 
-If you’d rather use the visual request builder in the console, you can create this request and see all of the components involved in handling the request:
-
-![Flow view for the Multi agent](../_images/multi-agent-flowview.png)
-
+```command
+curl -i -XPOST --location "http://localhost:9000/activities/alice" \
+  --header "Content-Type: application/json" \
+  --data '{"message": "What is the best Italian restaurant in London?"}'
+```
+Inspect the logs again. The coordinator should now skip the `WeatherAgent` and go straight to the `ActivityAgent`, because the request gives the model no reason to consult the weather.
 
 ## <a href="about:blank#_next_steps"></a> Next steps
 
-- Finally, let’s use another agent to evaluate the previous suggestions when the user preferences are changed or if new suggestions should be created. Continue with [Evaluation on changes](eval.html) that will illustrate the Consumer component and "LLM as judge" pattern.
-- A more advanced sample illustrates [adaptive multi-agent orchestration](https://github.com/akka-samples/adaptive-multi-agent). It re-evaluates progress after each agent response and dynamically adjusts its strategy.
+- The coordinator currently uses the `Delegation` capability. [Coordination capabilities](../../sdk/autonomous-agents/capabilities.html) also covers handoff, teams, and moderation. The [coordination patterns](../../sdk/autonomous-agents/coordination.html) page explains when each pattern is the right fit.
+- Continue with [Evaluating task results](eval.html) to add an evaluation Consumer that judges each task’s result on completion, illustrating the Consumer component and "LLM as judge" pattern.
 
 <!-- <footer> -->
 <!-- <nav> -->
-[List by user](list.html) [Evaluation on changes](eval.html)
+[Orchestrate the agents](team.html) [Evaluating task results](eval.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

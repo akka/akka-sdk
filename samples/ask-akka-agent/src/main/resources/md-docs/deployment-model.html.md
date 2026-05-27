@@ -90,11 +90,11 @@ The following topics may also be of interest.
 
 - [Memory models](state-model.html)
 - [Developer best practices](../sdk/dev-best-practices.html)
-- [Project structure](architecture-model.html)
+- [Architecture](architecture-model.html)
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Project structure](architecture-model.html) [Development process](development-process.html)
+[Architecture](architecture-model.html) [Development process](development-process.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

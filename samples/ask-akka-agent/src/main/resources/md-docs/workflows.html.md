@@ -44,7 +44,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // (2)
   @Override
   public WorkflowSettings settings() { // (3)
     return WorkflowSettings.builder()
-      .defaultStepTimeout(ofSeconds// (2))
+      .defaultStepTimeout(ofSeconds(2))
       .build();
   }
 
@@ -338,6 +338,67 @@ You can still handle read requests to the workflow until it has been completely 
 
 It is best to not reuse the same workflow id after deletion, but if that happens after the workflow has been completely removed it will be instantiated as a completely new workflow without any knowledge of previous state.
 
+## <a href="about:blank#_terminating_workflow"></a> Terminating workflow
+
+A running workflow can be terminated from the outside by calling `terminate` directly on the component client. Once
+terminated, the workflow cannot be resumed, and calling `terminate` again is safe — it’s a no-op on an already-finished workflow.
+
+If a step is in flight, the workflow does not wait for it to complete, and any result is ignored.
+
+After termination, the workflow is passivated and does not consume any runtime resources.
+
+[TransferEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow/src/main/java/com/example/transfer/api/TransferEndpoint.java)
+```java
+@Post("/transfer/{id}/terminate")
+public HttpResponse terminate(String id) {
+  log.info("Terminating transfer [{}].", id);
+  componentClient.forWorkflow(id).terminate(TransferWorkflow.class, "terminated by user"); // (1)
+  return HttpResponses.accepted();
+}
+```
+
+| **1** | Terminate the workflow with a short, human-readable reason. The reason is persisted in the workflow’s event journal and written to the runtime logs at termination time, so it must not contain secrets or PII. |
+The reason is optional — there is also an overload that takes only the workflow class. An async variant `terminateAsync` is available, returning a `CompletionStage<Done>`.
+
+|  | Termination preserves the workflow state — it only prevents further execution. If you also want to remove the state, use `delete` from within a command handler (see [Deleting state](about:blank#_deleting_state)). |
+
+## <a href="about:blank#_suspending_and_resuming_workflow"></a> Suspending and resuming workflow
+
+In addition to terminating a workflow, you can pause execution from the outside with `suspend` and bring it back with `resume`. This is useful when you need to halt a workflow temporarily — for example, during maintenance or while investigating an in-flight execution — without giving up the option to continue later.
+
+Suspension behaves like termination: if a step is in flight, the workflow does not wait for it to complete, and any result it produces after the suspend takes effect is ignored. On `resume`, execution restarts at the step in flight, giving it a fresh chance to run. Both calls are idempotent — suspending an already-suspended workflow, or resuming a workflow that is not suspended, is a successful no-op.
+
+Timeouts remain active while a workflow is suspended:
+
+- If a workflow timeout fires while suspended, the workflow fails with a timeout.
+- If a workflow timeout with a failover step fires while suspended, the failover step is executed on resume.
+- If a pause timer fires while suspended, the configured timeout handler is called on resume.
+While suspended, the workflow is passivated and does not consume any runtime resources.
+
+[TransferEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow/src/main/java/com/example/transfer/api/TransferEndpoint.java)
+```java
+@Post("/transfer/{id}/suspend")
+public HttpResponse suspend(String id) {
+  log.info("Suspending transfer [{}].", id);
+  componentClient.forWorkflow(id).suspend(TransferWorkflow.class, "suspended by user"); // (1)
+  return HttpResponses.accepted();
+}
+```
+
+| **1** | Suspend the workflow with a short, human-readable reason. As with `terminate`, the reason is persisted and logged, so it must not contain secrets or PII. |
+[TransferEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow/src/main/java/com/example/transfer/api/TransferEndpoint.java)
+```java
+@Post("/transfer/{id}/resume")
+public HttpResponse resume(String id) {
+  log.info("Resuming transfer [{}].", id);
+  componentClient.forWorkflow(id).resume(TransferWorkflow.class); // (1)
+  return HttpResponses.accepted();
+}
+```
+
+| **1** | Resume a previously suspended workflow. |
+The reason on `suspend` is optional — there is also an overload that takes only the workflow class. Async variants `suspendAsync` and `resumeAsync` are available, returning `CompletionStage<Done>`.
+
 ## <a href="about:blank#_calling_external_services"></a> Calling external services
 
 The Workflow can be used not only to orchestrate Akka components, but also to call external services. The step implementation can invoke [HTTP endpoint](component-and-service-calls.html#_external_http_services), a [gRPC service](component-and-service-calls.html#_external_grpc_services), or any other service that can be called from the Java code.
@@ -386,7 +447,7 @@ A long-running workflow can be paused while waiting for some additional informat
 private StepEffect waitForAcceptanceStep() {
   return stepEffects()
     .thenPause( // (1)
-      pauseSetting(ofHours// (8)).timeoutHandler(TransferWorkflow::acceptanceTimeout) // (2)
+      pauseSetting(ofHours(8)).timeoutHandler(TransferWorkflow::acceptanceTimeout) // (2)
     );
 }
 ```
@@ -484,20 +545,22 @@ Clients subscribe to workflow notifications using the `ComponentClient`. The not
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class WorkflowEndpoint {
 
+  public record TransferUpdate(String message) {} // (1)
+
   @Get("/updates/{transferId}")
   public HttpResponse updates(String transferId) {
-    return HttpResponses.serverSentEvents(
-      componentClient
-        .forWorkflow(transferId)
-        .notificationStream(TransferWorkflowWithNotifications::updates) // (1)
-        .source()
-    );
+    var source = componentClient
+      .forWorkflow(transferId)
+      .notificationStream(TransferWorkflowWithNotifications::updates)
+      .source()
+      .map(msg -> new TransferUpdate(msg)); // (2)
+    return HttpResponses.serverSentEvents(source);
   }
 }
 ```
 
-| **1** | Use `notificationStream()` with a method reference to the workflow’s stream method. The returned source can be consumed directly or wrapped with `HttpResponses.serverSentEvents()` for SSE delivery to HTTP clients. |
-You can find the full source code of workflow notification sample in the [akka-samples/multi-agent GitHub Repository](https://github.com/akka-samples/multi-agent).
+| **1** | Define API-specific records to avoid exposing internal domain types outside the service. |
+| **2** | Map notifications to API records using the `map` operator on the notification source. The result can be wrapped with `HttpResponses.serverSentEvents()` for SSE delivery to HTTP clients. |
 
 |  | The notification stream is a live stream that emits messages only after the client creates the stream—it does not replay historical messages. While the stream is running, it delivers all messages in order without message loss. If the stream detects missing messages, it will fail, allowing clients to reconnect and recover. |
 
@@ -518,9 +581,9 @@ NOTE Workflow timeout should be greater than the step timeout. Otherwise, the wo
 @Override
 public WorkflowSettings settings() {
   return WorkflowSettings.builder()
-    .timeout(ofSeconds// (10)) // (1)
-    .defaultStepTimeout(ofSeconds// (2)) // (2)
-    .stepTimeout(TransferWorkflow::failoverHandlerStep, ofSeconds// (1)) // (3)
+    .timeout(ofSeconds(10)) // (1)
+    .defaultStepTimeout(ofSeconds(2)) // (2)
+    .stepTimeout(TransferWorkflow::failoverHandlerStep, ofSeconds(1)) // (3)
     .build();
 }
 ```
@@ -540,10 +603,12 @@ It’s time to define what should happen in case of step timeout or any other un
 @Override
 public WorkflowSettings settings() {
   return WorkflowSettings.builder()
-    .defaultStepRecovery(maxRetries// (1).failoverTo(TransferWorkflow::failoverHandlerStep)) // (1)
+    .defaultStepRecovery(
+      RecoverStrategy.maxRetries(1).failoverTo(TransferWorkflow::failoverHandlerStep)
+    ) // (1)
     .stepRecovery(
       TransferWorkflow::depositStep,
-      maxRetries// (2).failoverTo(TransferWorkflow::compensateWithdrawStep)
+      RecoverStrategy.maxRetries(2).failoverTo(TransferWorkflow::compensateWithdrawStep)
     ) // (2)
     .build();
 }

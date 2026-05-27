@@ -25,7 +25,9 @@ The way Akka approaches this problem is through workflows and best practices in 
 
 The key difference between direct agent communication and Akka’s approach is that in Akka the workflow makes the decision as to which agents are called, when they’re called, and if they’re called concurrently. Agents then become small, easily managed pieces of code to manage discrete interactions with a model. The results of those interactions can be reused in many different ways by the guiding workflows.
 
-This orchestration approach is often called the **supervisor pattern**: a central workflow acts as the supervisor, coordinating multiple worker agents. Agents don’t communicate directly with each other—instead, the supervisor decides which agents to call, in what order, and how to handle their outputs. This separation keeps agents simple and reusable while centralizing reliability concerns like durable execution steps, retries, and failure handling in the workflow.
+This orchestration approach is often called the **supervisor pattern**: a central workflow acts as the supervisor, coordinating multiple worker agents. Agents don’t communicate directly with each other, instead, the supervisor decides which agents to call, in what order, and how to handle their outputs. This separation keeps agents simple and reusable while centralizing reliability concerns like durable execution steps, retries, and failure handling in the workflow.
+
+Akka offers two implementations of the supervisor pattern. A [Workflow](../sdk/workflows.html) supervises agents from outside, with explicit steps written by the developer; this is the focus of the examples below. An [Autonomous Agent](../sdk/autonomous-agents.html) supervises through its declared coordination capabilities (delegation, handoff, teams, moderation), with the framework driving the loop and the model deciding which agent runs next. Both give the same durable-execution, retry, and audit guarantees; the difference is whether the orchestration sequence is fixed in code or decided by the model. The remainder of this document maps each Microsoft pattern to one or both of those options.
 
 The rest of this document goes through all of [Microsoft’s agent design patterns](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns) and illustrates how that pattern can be accomplished using Akka’s components.
 
@@ -72,6 +74,8 @@ More advanced concurrent orchestration could be implemented by a parent workflow
 The parent workflow pauses when waiting for the results from children. The results would be stored in the state, and when the parent workflow is satisfied with all of the collected results it transitions to another step.
 
 In this kind of advanced scenario, Akka takes care of all the hard parts like managing distributed state, distributed long-running timers, workflow resiliency, and much more.
+
+When the coordinator is itself an [Autonomous Agent](../sdk/autonomous-agents.html), the equivalent is the delegation capability configured for parallel workers: the model picks which workers to launch, and the runtime runs them concurrently and gathers the results back into the coordinator’s context.
 
 ### <a href="about:blank#_examples_2"></a> Examples
 
@@ -132,6 +136,7 @@ Group chat (session) orchestration should be avoided when:
 - A sequential pipeline is enough to accomplish the goal
 - Conversations that grow rapidly without upper limits can tax applications and infrastructure and when there are extreme numbers of chat sessions within short periods of time
 - There is no objective way to examine data and determine when a conversation is complete
+When the coordinator is itself an [Autonomous Agent](../sdk/autonomous-agents.html), the equivalents are the teams capability (peer team with a shared task list and direct messaging between members) and the moderation capability (turn-taking conversations driven by a moderator). See [Coordination capabilities](../sdk/autonomous-agents/capabilities.html) for the details.
 
 ### <a href="about:blank#_examples_3"></a> Examples
 
@@ -140,7 +145,6 @@ The main piece of functionality that makes group chat style patterns work is the
 Here are just a few sample applications that make use of explicit sessions via the `inSession` function on the agent client builder:
 
 - [ask-akka-agent](https://github.com/akka-samples/ask-akka-agent) - An agentic conversation sample
-- [multi-agent](https://github.com/akka-samples/multi-agent) - Our classic multi-agent sample
 - [trip-agent](https://github.com/akka-samples/trip-agent) - A trip planning agent
 
 ## <a href="about:blank#_handoff_orchestration"></a> Handoff orchestration
@@ -150,9 +154,9 @@ Here are just a few sample applications that make use of explicit sessions via t
 ![Diagram illustrating handoff design patterns for AI agents](_images/ai_orch_handoff.jpg)
 
 
-Akka views the use of “handoffs” as a specialization of the standard orchestration workflow available within Akka supporting dynamic, runtime planning and execution involving dynamic agents and tools.
+Akka has two natural fits for handoff. The [Autonomous Agent](../sdk/autonomous-agents.html) component implements handoff directly as a capability: an agent declares which peers it can hand off to and the runtime exposes a handoff tool to the model. When the model decides to hand off, ownership of the task transfers to the next agent and the first agent steps back. Because the capability is declared on the agent and driven by the runtime, the durability, retry, and audit guarantees come from the runtime, not from agent code.
 
-If the individual agents are responsible for deciding if they’re going to handle a given input or instruction, then those agents can’t be recomposed for any other purpose. With Akka, you can use a combination of workflows, optional sub-workflows, and specialized planning agents.
+For request-based agents, the same outcome can be achieved with a workflow that uses a planning agent to choose the next worker. If the individual request-based agents are themselves responsible for deciding whether to handle a given input, those agents can no longer be recomposed for any other purpose; with Akka you instead use a combination of workflows, optional sub-workflows, and specialized planning agents.
 
 With agents getting structured responses from LLMs, it is possible to instruct the LLM to judge what agent might be best suited for handling a request. The planning response is then handled by the workflow, which calls the selected agent.
 
@@ -162,7 +166,7 @@ This plan-and-execute loop can be extended by combining it with any of the other
 
 ### <a href="about:blank#_examples_4"></a> Examples
 
-The PlannerAgent in [this example](../getting-started/planner-agent/dynamic-team.html) illustrates this pattern.
+The handoff capability is documented in [Coordination capabilities](../sdk/autonomous-agents/capabilities.html). The `support` sample in the [autonomous-agent-playground](https://github.com/akka-samples/autonomous-agent-playground) shows a triage agent that classifies a customer request and hands off to a billing or technical specialist.
 
 ## <a href="about:blank#_magentic_orchestration"></a> Magentic orchestration
 
@@ -173,15 +177,13 @@ Magentic orchestration is a pattern for open-ended, complex problems that don’
 
 While the origin of the term `magentic` is open for debate, our best guess for the origin of this word is that it’s a portmanteau of *“multi-agent agentic”* or *“multi-agentic”*.
 
-In this dynamic variant of the supervisor pattern, an AI model creates the plan, decides the next step, evaluates results, and determines when the goal has been achieved. The workflow still provides durable execution with built-in retry mechanisms—the AI influences **what** happens, but the workflow ensures it happens **reliably**.
+In this dynamic variant of the supervisor pattern, an AI model creates the plan, decides the next step, evaluates results, and determines when the goal has been achieved. Either supervisor implementation works for this pattern. With a workflow supervisor, the workflow still provides durable execution with built-in retry mechanisms; the AI influences **what** happens, but the workflow ensures it happens **reliably**. With an [Autonomous Agent](../sdk/autonomous-agents.html) coordinator using delegation, the same guarantees come from the runtime: the model picks the next worker and the runtime persists the task, retries failures, and bounds iteration.
 
-When we use workflows as ubiquitous coordinators and allow agents to be small, purpose-built model interaction components, then the need for individual, concrete patterns becomes less explicit. We don’t need to rewrite agents if we want to use them in different ways, we can either change how planning agents work or modify small bits of logic in the workflow.
+When we use one of these supervisors as a ubiquitous coordinator and allow agents to be small, purpose-built model interaction components, then the need for individual, concrete patterns becomes less explicit. We don’t need to rewrite agents if we want to use them in different ways, we can either change how planning agents work, modify small bits of logic in the workflow, or change the coordinator’s declaration.
 
 ### <a href="about:blank#_examples_5"></a> Examples
 
-In our [Akka dynamic orchestration](../getting-started/planner-agent/dynamic-team.html) example, we illustrate a planning and evaluation loop, as well as re-planning.
-
-Additionally, the [Akka adaptive multi-agent sample](https://github.com/akka-samples/adaptive-multi-agent) implements the [MagenticOne pattern](https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/magentic-one.html).
+The [planner-agent tutorial](../getting-started/planner-agent/dynamic-team.html) illustrates this pattern with an Autonomous Agent coordinator that delegates to worker agents.
 
 <!-- <footer> -->
 <!-- <nav> -->

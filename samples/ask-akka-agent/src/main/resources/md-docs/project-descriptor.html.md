@@ -1,6 +1,7 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
 - [Reference](../index.html)
+- [Descriptors reference](index.html)
 - [Project descriptor](project-descriptor.html)
 
 <!-- </nav> -->
@@ -81,10 +82,17 @@ spec:
   resources:
     runtime:
       mode: embedded
+  labels:
+    team: commerce
+    tier: backend
+  annotations:
+    contact: team-commerce@example.com
   env:
     - name: ENABLE_SOME_FEATURE
       value: true
 ```
+
+|  | Custom labels and annotations are disabled by default. Contact Akka Support to enable. |
 
 ### <a href="about:blank#route"></a> Route
 
@@ -118,6 +126,8 @@ spec:
 
 Defines external secrets. A descriptor can define multiple ExternalSecret documents, each with a unique name. See [External Secret Descriptor reference](external-secret-descriptor.html) for the complete reference.
 
+Azure KeyVault example:
+
 ```yaml
 resource: ExternalSecret
 resourceVersion: v1
@@ -131,6 +141,20 @@ spec:
     objects:
     - name: my-secret
       type: secret
+```
+GCP Secret Manager example:
+
+```yaml
+resource: ExternalSecret
+resourceVersion: v1
+metadata:
+  name: my-gcp-secret
+spec:
+  gcp:
+    projectId: my-gcp-project
+    objects:
+    - name: my-secret
+      path: my-secret
 ```
 
 ### <a href="about:blank#secret"></a> Secret
@@ -427,6 +451,8 @@ spec:
   labels:
     team: commerce
     tier: backend
+  annotations:
+    contact: team-commerce@example.com
 ---
 resource: Route
 resourceVersion: v1
@@ -495,7 +521,7 @@ spec:
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Reference](../index.html) [Service descriptor](service-descriptor.html)
+[Descriptors reference](index.html) [Service descriptor](service-descriptor.html)
 <!-- </nav> -->
 
 <!-- </footer> -->
