@@ -11,6 +11,8 @@ import scala.util.Failure
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Decision
+import akka.javasdk.agent.Decision.Block
+import akka.javasdk.agent.Decision.Pass
 import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.GuardrailContext
 import akka.javasdk.agent.ModelGuardrail
@@ -91,8 +93,8 @@ import com.typesafe.config.Config
   // AgentException reaching the user's onFailure mapper.
   private def decisionToSpiResult(decision: Decision): Future[SpiAgent.Guardrail.Result] =
     decision match {
-      case _: Decision.Pass  => Future.successful(new SpiAgent.Guardrail.Result(true, ""))
-      case b: Decision.Block => Future.successful(new SpiAgent.Guardrail.Result(false, b.reason))
+      case _: Pass           => Future.successful(new SpiAgent.Guardrail.Result(true, ""))
+      case b: Block          => Future.successful(new SpiAgent.Guardrail.Result(false, b.reason))
       case e: Decision.Error => Future.failed(new RuntimeException(e.reason, e.cause))
     }
 
@@ -168,16 +170,16 @@ import com.typesafe.config.Config
   // toSpiGuardrail is otherwise ambiguous.
   @nowarn("cat=deprecation")
   private def validateSingleInterface(guardrailName: String, instance: Guardrail): Unit = {
-    val implementsText = instance.isInstanceOf[TextGuardrail]
-    val implementsTool = instance.isInstanceOf[ToolGuardrail]
-    val implementsModel = instance.isInstanceOf[ModelGuardrail]
-    val count = Seq(implementsText, implementsTool, implementsModel).count(identity)
+    val implemented = Seq(
+      Option.when(instance.isInstanceOf[TextGuardrail])(classOf[TextGuardrail].getName),
+      Option.when(instance.isInstanceOf[ToolGuardrail])(classOf[ToolGuardrail].getName),
+      Option.when(instance.isInstanceOf[ModelGuardrail])(classOf[ModelGuardrail].getName)).flatten
 
-    if (count > 1)
+    if (implemented.size > 1)
       throw new IllegalArgumentException(
         s"Guardrail [$guardrailName] must implement only one of " +
         s"[${classOf[ToolGuardrail].getName}] or [${classOf[ModelGuardrail].getName}], " +
-        s"but [${instance.getClass.getName}] implements multiple")
+        s"but [${instance.getClass.getName}] implements [${implemented.mkString(", ")}]")
   }
 
   // ToolGuardrail must bind to tool-side use-for; ModelGuardrail to model-side.

@@ -258,9 +258,11 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
           """)
           .withFallback(config)
       val provider = new GuardrailProvider(system, faultyConfig)
-      intercept[IllegalArgumentException] {
+      val message = intercept[IllegalArgumentException] {
         provider.validate()
-      }.getMessage should include("implements multiple")
+      }.getMessage
+      message should include(classOf[ToolGuardrail].getName)
+      message should include(classOf[ModelGuardrail].getName)
     }
 
     "throw from validate when a ToolGuardrail is bound to a model-side use-for" in {
