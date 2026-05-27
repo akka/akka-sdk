@@ -83,6 +83,16 @@ object GuardrailProviderSpec {
       Decision.error("evaluation failed", cause)
   }
 
+  class ThrowingModelGuard extends ModelGuardrail {
+    override def evaluate(ctx: ModelGuardrailContext): Decision =
+      throw new IllegalStateException("kaboom")
+  }
+
+  class ThrowingToolGuard extends ToolGuardrail {
+    override def evaluate(ctx: ToolGuardrailContext): Decision =
+      throw new IllegalStateException("kaboom")
+  }
+
   class WrongGuard
 }
 
@@ -273,6 +283,58 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       failure.getMessage shouldBe "evaluation failed"
       failure.getCause shouldBe a[IllegalStateException]
       failure.getCause.getMessage shouldBe "upstream classifier unreachable"
+    }
+
+    "translate a thrown exception from a ModelGuardrail into a failed Future preserving the throwable as cause" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "throwing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$ThrowingModelGuard"
+              agents = ["throwing-agent"]
+              category = MODEL_POLICY
+              use-for = ["model-response"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg)
+      val g = provider.agentGuardrails("throwing-agent", role = None)
+      val spiGuardrail = g.modelResponseGuardrails.head
+
+      val failure = intercept[RuntimeException] {
+        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything")), 3.seconds)
+      }
+      failure.getMessage shouldBe "kaboom"
+      failure.getCause shouldBe a[IllegalStateException]
+      failure.getCause.getMessage shouldBe "kaboom"
+    }
+
+    "translate a thrown exception from a ToolGuardrail into a failed Future preserving the throwable as cause" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "throwing tool guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$ThrowingToolGuard"
+              agents = ["throwing-tool-agent"]
+              category = TOOL_POLICY
+              use-for = ["mcp-tool-request"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg)
+      val g = provider.agentGuardrails("throwing-tool-agent", role = None)
+      val spiGuardrail = g.mcpToolRequestGuardrails.head
+
+      val failure = intercept[RuntimeException] {
+        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything")), 3.seconds)
+      }
+      failure.getMessage shouldBe "kaboom"
+      failure.getCause shouldBe a[IllegalStateException]
+      failure.getCause.getMessage shouldBe "kaboom"
     }
 
     "throw from validate when a class implements both ToolGuardrail and ModelGuardrail" in {

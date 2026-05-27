@@ -7,6 +7,7 @@ package akka.javasdk.impl.agent
 import scala.annotation.nowarn
 import scala.concurrent.Future
 import scala.util.Failure
+import scala.util.control.NonFatal
 
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -69,7 +70,10 @@ import com.typesafe.config.Config
     override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
       // The per-call context is a placeholder at this stage; boundary-specific fields
       // are populated by the tool-guardrail-binding follow-up.
-      decisionToSpiResult(guardrail.evaluate(ToolGuardrailContextImpl))
+      // TODO: thrown exceptions and explicit Decision.error(...) currently collapse onto the same
+      // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
+      // fail-closed/fail-open (explicit error) — keep them separable when that lands.
+      evaluateSafely(guardrail.evaluate(ToolGuardrailContextImpl))
 
     override val name: String = entry.configuredGuardrail.name
     override val category: String = entry.configuredGuardrail.category
@@ -81,12 +85,24 @@ import com.typesafe.config.Config
     override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
       // The per-call context is a placeholder at this stage; boundary-specific fields
       // are populated by the model-guardrail-binding follow-up.
-      decisionToSpiResult(guardrail.evaluate(ModelGuardrailContextImpl))
+      // TODO: thrown exceptions and explicit Decision.error(...) currently collapse onto the same
+      // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
+      // fail-closed/fail-open (explicit error) — keep them separable when that lands.
+      evaluateSafely(guardrail.evaluate(ModelGuardrailContextImpl))
 
     override val name: String = entry.configuredGuardrail.name
     override val category: String = entry.configuredGuardrail.category
     override val reportOnly: Boolean = entry.configuredGuardrail.reportOnly
   }
+
+  // A thrown exception from a guardrail's evaluate(...) is treated as if the guardrail had
+  // returned Decision.error(message, throwable) — propagated to the runtime as a failed Future.
+  private def evaluateSafely(decision: => Decision): Future[SpiAgent.Guardrail.Result] =
+    try decisionToSpiResult(decision)
+    catch {
+      case NonFatal(t) =>
+        decisionToSpiResult(Decision.error(Option(t.getMessage).getOrElse(t.getClass.getName), t))
+    }
 
   // Decision.Error becomes a failed Future so the cause Throwable flows through the runtime's
   // existing handling in AgentGuardrailInteractions, where it ends up as the cause of the
