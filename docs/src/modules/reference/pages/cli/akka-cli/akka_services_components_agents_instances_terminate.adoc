@@ -1,22 +1,22 @@
-= akka services components get-workflow
+= akka services components agents instances terminate
 
-Get workflow execution details for the specified service, workflow component id and workflow id
+Terminate an autonomous agent instance.
 
 == Synopsis
 
-The `akka service components get-workflow-execution` command gets workflow execution details for the specified service, workflow component and id
+The `akka service components agents instances terminate` command terminates an autonomous agent instance.
 
 ----
-akka services components get-workflow SERVICE_NAME COMPONENT_ID WORKFLOW_ID [flags]
+akka services components agents instances terminate [SERVICE_NAME COMPONENT_ID] INSTANCE_ID [flags]
 ----
 
 == Options
 
 ----
-  -h, --help             help for get-workflow
+  -h, --help             help for terminate
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
       --project string   project to use if not using the default configured project
-      --raw              Use to specify that payloads should not be decoded, but should be a raw format.
+      --reason string    Optional reason recorded with the action.
       --region string    region to use if project has more than one region
 ----
 
@@ -38,7 +38,7 @@ akka services components get-workflow SERVICE_NAME COMPONENT_ID WORKFLOW_ID [fla
 
 == SEE ALSO
 
-* link:akka_services_components.html[akka services components]	 - Inspect components of a service.
+* link:akka_services_components_agents_instances.html[akka services components agents instances]	 - Manage autonomous agent instances.
 
 [discrete]
 
