@@ -12,6 +12,9 @@ Current versions
 
 == May 2026
 
+* Akka CLI 3.0.64
+- Support for autonomous agents
+
 [sidebar]
 ****
 
