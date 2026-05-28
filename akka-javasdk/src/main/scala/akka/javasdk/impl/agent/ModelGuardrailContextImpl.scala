@@ -10,4 +10,4 @@ import akka.javasdk.agent.ModelGuardrailContext
 /**
  * INTERNAL API
  */
-@InternalApi private[javasdk] object ModelGuardrailContextImpl extends ModelGuardrailContext
+@InternalApi private[javasdk] final class ModelGuardrailContextImpl(val text: String) extends ModelGuardrailContext

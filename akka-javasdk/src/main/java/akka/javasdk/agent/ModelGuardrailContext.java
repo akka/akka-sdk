@@ -12,4 +12,11 @@ package akka.javasdk.agent;
  * <p>For construction-time data that doesn't change per call (the guardrail's configured name and
  * its config section) accept a {@link GuardrailContext} parameter in the constructor.
  */
-public interface ModelGuardrailContext {}
+public interface ModelGuardrailContext {
+
+  /**
+   * The text being evaluated: the user input when evaluating a model request, the model output when
+   * evaluating a model response.
+   */
+  String text();
+}

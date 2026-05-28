@@ -83,12 +83,16 @@ import com.typesafe.config.Config
   final class ModelGuardrailAdapter(entry: GuardrailEntry, guardrail: ModelGuardrail) extends SpiAgent.Guardrail {
 
     override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
-      // The per-call context is a placeholder at this stage; boundary-specific fields
-      // are populated by the model-guardrail-binding follow-up.
-      // TODO: thrown exceptions and explicit Decision.error(...) currently collapse onto the same
-      // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
-      // fail-closed/fail-open (explicit error) — keep them separable when that lands.
-      evaluateSafely(guardrail.evaluate(ModelGuardrailContextImpl))
+      content match {
+        case textContent: SpiAgent.Guardrail.TextContent =>
+          // TODO: thrown exceptions and explicit Decision.error(...) currently collapse onto the same
+          // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
+          // fail-closed/fail-open (explicit error) — keep them separable when that lands.
+          evaluateSafely(guardrail.evaluate(new ModelGuardrailContextImpl(textContent.text)))
+        case other =>
+          Future.failed(
+            new IllegalArgumentException(s"Only text content is supported, but was [${other.getClass.getName}]"))
+      }
 
     override val name: String = entry.configuredGuardrail.name
     override val category: String = entry.configuredGuardrail.category
