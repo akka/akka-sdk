@@ -1,0 +1,51 @@
+= akka local services components agents instances list
+
+List active autonomous agent instances for a component within a time range.
+
+== Synopsis
+
+The `akka local service components agents instances list` command lists autonomous agent instances active in the given time range, hydrated with their current state.
+
+The `--from` and `--to` flags accept either an absolute RFC3339 timestamp (e.g.
+2026-05-14T14:00:00Z), a duration interpreted as "ago" (e.g.
+1h, 24h), or the literal "now".
+Defaults to the last hour.
+
+----
+akka local services components agents instances list [SERVICE_NAME COMPONENT_ID] [flags]
+----
+
+== Options
+
+----
+      --from string      Start of the time range (RFC3339 timestamp, duration ago, or 'now'). Defaults to 1h ago.
+  -h, --help             help for list
+      --limit int32      Maximum number of instances to return. The runtime caps this at 50; larger values are silently clamped. (default 20)
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
+      --region string    region to use if project has more than one region
+      --to string        End of the time range (RFC3339 timestamp, duration ago, or 'now'). Defaults to now.
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_local_services_components_agents_instances.html[akka local services components agents instances]	 - Manage autonomous agent instances.
+
+[discrete]
+

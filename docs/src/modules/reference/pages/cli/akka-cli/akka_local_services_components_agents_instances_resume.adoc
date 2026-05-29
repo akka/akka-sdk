@@ -1,22 +1,21 @@
-= akka local services components get-workflow
+= akka local services components agents instances resume
 
-Get workflow execution details for the specified service, workflow component id and workflow id
+Resume a suspended autonomous agent instance.
 
 == Synopsis
 
-The `akka local service components get-workflow-execution` command gets workflow execution details for the specified service, workflow component and id
+The `akka local service components agents instances resume` command resumes a previously suspended autonomous agent instance.
 
 ----
-akka local services components get-workflow SERVICE_NAME COMPONENT_ID WORKFLOW_ID [flags]
+akka local services components agents instances resume [SERVICE_NAME COMPONENT_ID] INSTANCE_ID [flags]
 ----
 
 == Options
 
 ----
-  -h, --help             help for get-workflow
+  -h, --help             help for resume
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
       --project string   project to use if not using the default configured project
-      --raw              Use to specify that payloads should not be decoded, but should be a raw format.
       --region string    region to use if project has more than one region
 ----
 
@@ -38,7 +37,7 @@ akka local services components get-workflow SERVICE_NAME COMPONENT_ID WORKFLOW_I
 
 == SEE ALSO
 
-* link:akka_local_services_components.html[akka local services components]	 - Inspect components of a service.
+* link:akka_local_services_components_agents_instances.html[akka local services components agents instances]	 - Manage autonomous agent instances.
 
 [discrete]
 
