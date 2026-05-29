@@ -31,6 +31,7 @@ akka services deploy my-service my-repo/my-service-image
       --force-regional                                 force an existing global resource to be configured as a regional resource
       --gcp-workload-identity-service-account string   The GCP service account to impersonate for GCP workload identity
   -h, --help                                           help for deploy
+      --instance-type string                           the service instance type (e.g. "g1.general.small", "g1.memory.large"). Must be permitted by your organization. If unset, the organization default applies.
       --max-instances int32                            the maximum number of instances of a service that should be available. Must be greater than or equal to 1, less than or equal to 10, and greater than or equal to min-instances. Defaults to 10. Not available for trial projects. (default -1)
       --min-instances int32                            the minimum number of instances of a service that should be available. Must be greater than or equal to 1, less than or equal to 10, and less than or equal to max-instances. Defaults to 3. Not available for trial projects. (default -1)
       --object-storage string                          name of an object-storage configuration in the project (defaults to 'default' when omitted)
