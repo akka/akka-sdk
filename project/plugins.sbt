@@ -6,7 +6,7 @@ addSbtPlugin("com.github.sbt" % "sbt-java-formatter" % "0.10.0")
 libraryDependencies += "com.google.googlejavaformat" % "google-java-format" % "1.32.0"
 
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.6")
-addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.10.0")
+addSbtPlugin("com.github.sbt" % "sbt-header" % "5.11.0")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.13.1")
 addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.11.2")
 addSbtPlugin("net.aichler" % "sbt-jupiter-interface" % "0.11.0")
