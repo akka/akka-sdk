@@ -2,7 +2,7 @@ import akka.grpc.sbt.AkkaGrpcPlugin
 import com.github.sbt.JavaFormatterPlugin
 
 import java.io.File
-import de.heikoseeberger.sbtheader.HeaderPlugin
+import sbtheader.HeaderPlugin
 import sbt.*
 import sbt.CompositeProject
 import sbt.Keys.*
