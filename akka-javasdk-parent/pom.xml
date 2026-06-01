@@ -740,6 +740,15 @@
                 <artifactId>akka-javasdk-testkit</artifactId>
                 <version>${akka-javasdk.version}</version>
             </dependency>
+            <!-- Align the SPI with the runtime version rather than the one the SDK was built against.
+                 In production the runtime provides the SPI (it is excluded from the service image above),
+                 so pinning it here makes -Dakka-runtime.version reproduce that binding locally and surface
+                 SPI incompatibilities during development. -->
+            <dependency>
+                <groupId>io.akka</groupId>
+                <artifactId>akka-sdk-spi_2.13</artifactId>
+                <version>${akka-runtime.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.akka</groupId>
                 <artifactId>akka-runtime-dev_2.13</artifactId>
