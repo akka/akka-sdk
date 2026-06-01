@@ -10,6 +10,7 @@ import java.util.Optional
 import scala.jdk.CollectionConverters._
 
 import akka.javasdk.JsonSupport
+import akka.javasdk.agent.MessageContent
 import akka.javasdk.impl.agent.FunctionTools.FunctionToolInvoker
 import akka.javasdk.impl.agent.ToolExecutorSpec.Bar
 import akka.javasdk.impl.agent.ToolExecutorSpec.Foo
@@ -263,6 +264,88 @@ class ToolExecutorSpec extends AnyWordSpecLike with TestSuite with Matchers {
 
       intercept[IllegalArgumentException] {
         executor.execute(req)
+      }
+    }
+
+    "executeMultimodal returns a single image content when a tool returns a MessageContent" in {
+      class TestClass {
+        def method(value: String): MessageContent =
+          MessageContent.ImageMessageContent.fromUri("object://photos/" + value + ".png")
+      }
+      val executor = new ToolExecutor(Map("method" -> functionToolFor(new TestClass)), serializer)
+
+      val result = executor.executeMultimodal(toolRequest("method", """{ "value": "sunset" }"""))
+
+      result match {
+        case Seq(img: SpiAgent.ImageUriMessageContent) =>
+          img.uri.toString shouldBe "object://photos/sunset.png"
+        case other => fail(s"unexpected result: $other")
+      }
+    }
+
+    "executeMultimodal returns inline image bytes when a tool returns image bytes" in {
+      val png = "fake png bytes".getBytes
+
+      class TestClass {
+        def method(value: String): MessageContent =
+          MessageContent.ImageMessageContent.fromBytes(png, "image/png")
+      }
+      val executor = new ToolExecutor(Map("method" -> functionToolFor(new TestClass)), serializer)
+
+      val result = executor.executeMultimodal(toolRequest("method", """{ "value": "sunset" }"""))
+
+      result match {
+        case Seq(img: SpiAgent.ImageBytesMessageContent) =>
+          img.bytes.toArrayUnsafe() shouldBe png
+          img.mimeType shouldBe "image/png"
+        case other => fail(s"unexpected result: $other")
+      }
+    }
+
+    "executeMultimodal returns inline pdf bytes when a tool returns pdf bytes" in {
+      val pdf = "fake pdf bytes".getBytes
+
+      class TestClass {
+        def method(value: String): MessageContent =
+          MessageContent.PdfMessageContent.fromBytes(pdf)
+      }
+      val executor = new ToolExecutor(Map("method" -> functionToolFor(new TestClass)), serializer)
+
+      val result = executor.executeMultimodal(toolRequest("method", """{ "value": "report" }"""))
+
+      result match {
+        case Seq(doc: SpiAgent.PdfBytesMessageContent) =>
+          doc.bytes.toArrayUnsafe() shouldBe pdf
+        case other => fail(s"unexpected result: $other")
+      }
+    }
+
+    "executeMultimodal wraps a plain String result as a single text content" in {
+      class TestClass {
+        def method(value: String): String = value
+      }
+      val executor = new ToolExecutor(Map("method" -> functionToolFor(new TestClass)), serializer)
+
+      val result = executor.executeMultimodal(toolRequest("method", """{ "value": "bar" }"""))
+
+      result match {
+        case Seq(txt: SpiAgent.TextMessageContent) => txt.text shouldBe "bar"
+        case other                                 => fail(s"unexpected result: $other")
+      }
+    }
+
+    "executeMultimodal wraps a complex (JSON) result as a single text content" in {
+      class TestClass {
+        def method(value: String): Foo = Foo(value)
+      }
+      val executor = new ToolExecutor(Map("method" -> functionToolFor(new TestClass)), serializer)
+
+      val result = executor.executeMultimodal(toolRequest("method", """{ "value": "bar" }"""))
+
+      result match {
+        case Seq(txt: SpiAgent.TextMessageContent) =>
+          serializer.objectMapper.readTree(txt.text) shouldBe serializer.objectMapper.readTree("""{"name":"bar"}""")
+        case other => fail(s"unexpected result: $other")
       }
     }
   }

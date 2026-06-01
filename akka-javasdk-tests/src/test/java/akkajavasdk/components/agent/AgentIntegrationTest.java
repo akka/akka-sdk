@@ -57,6 +57,7 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(SomeAgent.class, testModelProvider)
         .withModelProvider(SomeAgentAcceptingInt.class, testModelProvider)
         .withModelProvider(SomeAgentWithTool.class, testModelProvider)
+        .withModelProvider(SomeAgentWithImageTool.class, testModelProvider)
         .withModelProvider(SomeAgentWithFailingTool.class, testModelProvider)
         .withModelProvider(SomeStructureResponseAgent.class, testModelProvider)
         .withModelProvider(SomeStructureResponseSchemaAgent.class, testModelProvider)
@@ -222,6 +223,91 @@ public class AgentIntegrationTest extends TestKitSupport {
 
     // then
     assertThat(response.response()).isEqualTo("The weather is sunny in Leuven. (date=2025-01-01)");
+  }
+
+  @Test
+  public void shouldSendToolImageBytesResultToTheModel() {
+    var userQuestion = "Show me a photo of a sunset";
+
+    // the model asks to call the photo tool...
+    testModelProvider
+        .whenMessage(s -> s.equals(userQuestion))
+        .reply(new ToolInvocationRequest("PhotoService_getPhoto", "{ \"subject\" : \"sunset\" }"));
+
+    // ...and then receives the tool's image bytes back as multimodal content.
+    var captured = new java.util.concurrent.atomic.AtomicReference<TestModelProvider.ToolResult>();
+    testModelProvider
+        .whenToolResult(result -> result.name().equals("PhotoService_getPhoto"))
+        .thenReply(
+            result -> {
+              captured.set(result);
+              return new AiResponse("nice sunset");
+            });
+
+    // when
+    var response =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(SomeAgentWithImageTool::query)
+            .invoke(userQuestion);
+
+    // then the agent completes...
+    assertThat(response.response()).isEqualTo("nice sunset");
+
+    // ...and the model actually received the tool's inline image bytes (not a text placeholder).
+    var image =
+        captured.get().contents().stream()
+            .filter(c -> c instanceof MessageContent.ImageDataMessageContent)
+            .map(c -> (MessageContent.ImageDataMessageContent) c)
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new AssertionError(
+                        "expected image content in tool result, got: "
+                            + captured.get().contents()));
+    assertThat(image.data()).isEqualTo(SomeAgentWithImageTool.IMAGE_BYTES);
+    assertThat(image.mimeType()).contains(SomeAgentWithImageTool.IMAGE_MIME_TYPE);
+  }
+
+  @Test
+  public void shouldSendToolPdfBytesResultToTheModel() {
+    var userQuestion = "Show me the report for Q1";
+
+    testModelProvider
+        .whenMessage(s -> s.equals(userQuestion))
+        .reply(
+            new ToolInvocationRequest(
+                "DocumentService_getDocument", "{ \"subject\" : \"Q1 report\" }"));
+
+    var captured = new java.util.concurrent.atomic.AtomicReference<TestModelProvider.ToolResult>();
+    testModelProvider
+        .whenToolResult(result -> result.name().equals("DocumentService_getDocument"))
+        .thenReply(
+            result -> {
+              captured.set(result);
+              return new AiResponse("here is the report");
+            });
+
+    var response =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(SomeAgentWithImageTool::query)
+            .invoke(userQuestion);
+
+    assertThat(response.response()).isEqualTo("here is the report");
+
+    var pdf =
+        captured.get().contents().stream()
+            .filter(c -> c instanceof MessageContent.PdfDataMessageContent)
+            .map(c -> (MessageContent.PdfDataMessageContent) c)
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new AssertionError(
+                        "expected pdf content in tool result, got: " + captured.get().contents()));
+    assertThat(pdf.data()).isEqualTo(SomeAgentWithImageTool.PDF_BYTES);
   }
 
   @Test
