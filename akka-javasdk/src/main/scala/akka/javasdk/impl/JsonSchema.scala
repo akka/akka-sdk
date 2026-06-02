@@ -142,6 +142,12 @@ private[impl] object JsonSchema {
         try {
           val clazz = classFor(genericFieldType)
           genericFieldType match {
+            case g: GenericArrayType =>
+              (
+                new JsonSchemaArray(
+                  jsonSchemaTypeFor(g.getGenericComponentType, description, seenTypes)._1,
+                  description),
+                true)
             case _ if clazz == classOf[HttpRequest] => // for body parameter
               (emptyObject(description), false) // unknown if body is required
             case _ if clazz == classOf[HttpEntity.Strict] => // for body parameter

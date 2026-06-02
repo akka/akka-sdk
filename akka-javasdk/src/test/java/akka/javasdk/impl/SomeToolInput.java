@@ -67,4 +67,6 @@ interface SomeToolInput {
 
   record SomeToolInputWithEnum(
       @Description("required choice") SomeEnum required, Optional<SomeEnum> optional) {}
+
+  record SomeToolInputWithClassArray(Class<?>[] classes) {}
 }

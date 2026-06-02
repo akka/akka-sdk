@@ -10,6 +10,7 @@ import akka.javasdk.impl.SomeToolInput.SomeEnum
 import akka.javasdk.impl.SomeToolInput.SomeToolInput1
 import akka.javasdk.impl.SomeToolInput.SomeToolInput2
 import akka.javasdk.impl.SomeToolInput.SomeToolInput3
+import akka.javasdk.impl.SomeToolInput.SomeToolInputWithClassArray
 import akka.javasdk.impl.SomeToolInput.SomeToolInputWithEnum
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaBoolean
@@ -185,6 +186,12 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
         "required" -> Schema.enumOf(Seq("ONE", "TWO", "THREE"), description = "required choice"),
         "optional" -> Schema.enumOf(Seq("ONE", "TWO", "THREE")))
       result.required shouldEqual Seq("required")
+    }
+
+    "extract schema for GenericArrayType fields such as Class[]" in {
+      val result = JsonSchema.jsonSchemaFor(classOf[SomeToolInputWithClassArray]).asInstanceOf[JsonSchemaObject]
+      result.properties("classes") shouldBe a[JsonSchemaArray]
+      result.required shouldEqual Seq("classes")
     }
 
     "use object for types causing exceptions" in {
