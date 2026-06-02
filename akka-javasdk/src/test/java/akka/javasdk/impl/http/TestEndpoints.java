@@ -273,6 +273,52 @@ public class TestEndpoints {
     public void b() {}
   }
 
+  // Base class declaring @Get/@Post methods that a concrete @HttpEndpoint subclass inherits.
+  public abstract static class BaseEndpoint {
+
+    @Get("/inherited")
+    public String inherited() {
+      return "inherited";
+    }
+
+    @Post("/inherited-post")
+    public String inheritedPost(AThing theBody) {
+      return "inherited-post";
+    }
+
+    @Get("/overridden")
+    public String overridden() {
+      return "base";
+    }
+
+    @Get("/dropped")
+    public String dropped() {
+      return "base";
+    }
+  }
+
+  @HttpEndpoint("inheriting")
+  public static class InheritingEndpoint extends BaseEndpoint {
+
+    @Get("/own")
+    public String own() {
+      return "own";
+    }
+
+    // Re-declares @Get — should keep the inherited route binding with the override implementation.
+    @Override
+    @Get("/overridden")
+    public String overridden() {
+      return "override";
+    }
+
+    // No annotation on the override — the route from the base class is opted out.
+    @Override
+    public String dropped() {
+      return "override";
+    }
+  }
+
   // Valid WebSocket endpoints for positive testing
   @HttpEndpoint("websocket")
   public static class ValidWebSocketEndpoints {
