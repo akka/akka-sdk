@@ -138,7 +138,7 @@ public sealed interface ModelProvider {
     /**
      * @deprecated Use constructor with prompt caching settings
      */
-    @Deprecated
+    @Deprecated(since = "3.5.19", forRemoval = true)
     public Anthropic(
         String apiKey,
         String modelName,
@@ -2705,7 +2705,7 @@ public sealed interface ModelProvider {
     /**
      * @deprecated Use constructor with prompt caching settings
      */
-    @Deprecated
+    @Deprecated(since = "3.5.19", forRemoval = true)
     public Bedrock(
         String region,
         String modelId,

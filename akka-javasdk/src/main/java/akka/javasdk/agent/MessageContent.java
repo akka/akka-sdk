@@ -101,7 +101,7 @@ public sealed interface MessageContent {
      * @deprecated Use {@link #ImageUrlMessageContent(URI, ImageMessageContent.DetailLevel,
      *     Optional)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "3.5.19")
     public ImageUrlMessageContent(
         URL url, ImageMessageContent.DetailLevel detailLevel, Optional<String> mimeType) {
       this(URI.create(url.toString()), detailLevel, mimeType);
@@ -111,7 +111,7 @@ public sealed interface MessageContent {
      * @deprecated Use {@link #ImageUrlMessageContent(URI, ImageMessageContent.DetailLevel)}
      *     instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "3.5.19")
     public ImageUrlMessageContent(URL url, ImageMessageContent.DetailLevel detailLevel) {
       this(URI.create(url.toString()), detailLevel, Optional.empty());
     }
@@ -123,7 +123,7 @@ public sealed interface MessageContent {
      * @throws RuntimeException if the URI cannot be converted to a URL (e.g. for {@code object://}
      *     URIs)
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "3.5.19")
     public URL url() {
       try {
         return uri.toURL();
@@ -185,7 +185,7 @@ public sealed interface MessageContent {
     /**
      * @deprecated Use {@link #fromUri(String)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "3.6.0")
     public static ImageUrlMessageContent fromUrl(String url) {
       return fromUri(url);
     }
@@ -193,7 +193,7 @@ public sealed interface MessageContent {
     /**
      * @deprecated Use {@link #fromUri(URI)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "3.6.0")
     public static ImageUrlMessageContent fromUrl(URL url) {
       return fromUri(URI.create(url.toString()));
     }
@@ -201,7 +201,7 @@ public sealed interface MessageContent {
     /**
      * @deprecated Use {@link #fromUri(URI, DetailLevel)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "3.6.0")
     public static ImageUrlMessageContent fromUrl(URL url, DetailLevel detailLevel) {
       return fromUri(URI.create(url.toString()), detailLevel);
     }
@@ -209,7 +209,7 @@ public sealed interface MessageContent {
     /**
      * @deprecated Use {@link #fromUri(URI, DetailLevel, String)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "3.6.0")
     public static ImageUrlMessageContent fromUrl(
         URL url, DetailLevel detailLevel, String mimeType) {
       return fromUri(URI.create(url.toString()), detailLevel, mimeType);
@@ -259,7 +259,7 @@ public sealed interface MessageContent {
     /**
      * @deprecated Use {@link #PdfUrlMessageContent(URI)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "3.5.19")
     public PdfUrlMessageContent(URL url) {
       this(URI.create(url.toString()));
     }
@@ -271,7 +271,7 @@ public sealed interface MessageContent {
      * @throws RuntimeException if the URI cannot be converted to a URL (e.g. for {@code object://}
      *     URIs)
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "3.5.19")
     public URL url() {
       try {
         return uri.toURL();
@@ -309,7 +309,7 @@ public sealed interface MessageContent {
     /**
      * @deprecated Use {@link #fromUri(String)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "3.6.0")
     public static PdfUrlMessageContent fromUrl(String url) {
       return fromUri(url);
     }
@@ -317,7 +317,7 @@ public sealed interface MessageContent {
     /**
      * @deprecated Use {@link #fromUri(URI)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "3.6.0")
     public static PdfUrlMessageContent fromUrl(URL url) {
       return fromUri(URI.create(url.toString()));
     }
