@@ -66,9 +66,6 @@ private[javasdk] object HttpEndpointDescriptorFactory {
     }
 
     // Note: validation is now done at compile-time by HttpEndpointValidations
-    // getMethods rather than getDeclaredMethods so that @Get/@Post/etc. annotated methods
-    // inherited from a base class are also picked up. Java does not propagate annotations
-    // to subclass overrides, so an unannotated override transparently opts the route out.
     val methods: Vector[HttpEndpointMethodDescriptor] =
       endpointClass.getMethods.toVector.flatMap { method =>
 

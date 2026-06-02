@@ -175,8 +175,6 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       val byMethodName = descriptor.methods.map(md => md.userMethod.getName -> md).toMap
 
       descriptor.mainPath should ===(Some("/inheriting/"))
-      // inherited @Get and @Post, the subclass's own @Get, and the override that re-declares @Get.
-      // The override without annotation drops the base class route.
       byMethodName.keySet should ===(Set("inherited", "inheritedPost", "own", "overridden"))
 
       val inherited = byMethodName("inherited")
