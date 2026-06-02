@@ -67,7 +67,7 @@ private[javasdk] object HttpEndpointDescriptorFactory {
 
     // Note: validation is now done at compile-time by HttpEndpointValidations
     val methods: Vector[HttpEndpointMethodDescriptor] =
-      endpointClass.getDeclaredMethods.toVector.flatMap { method =>
+      endpointClass.getMethods.toVector.flatMap { method =>
 
         val maybePathMethod = if (method.getAnnotation(classOf[Get]) != null) {
           val path = method.getAnnotation(classOf[Get]).value()
