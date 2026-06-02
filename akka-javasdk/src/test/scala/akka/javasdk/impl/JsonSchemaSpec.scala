@@ -11,6 +11,7 @@ import akka.javasdk.impl.SomeToolInput.SomeToolInput1
 import akka.javasdk.impl.SomeToolInput.SomeToolInput2
 import akka.javasdk.impl.SomeToolInput.SomeToolInput3
 import akka.javasdk.impl.SomeToolInput.SomeToolInputWithEnum
+import akka.javasdk.impl.SomeToolInput.SomeToolInputWithGenericArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaBoolean
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaDataType
@@ -107,6 +108,19 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
         "setOfStrings" -> Schema.array(items = Schema.string()),
         // semi-supported - no map type in json, but can be represented as object
         "mapOfStrings" -> Schema.jsonObject())
+    }
+
+    "extract schema with generic array" in {
+      val result =
+        JsonSchema.jsonSchemaFor(classOf[SomeToolInputWithGenericArray]).asInstanceOf[JsonSchemaObject]
+
+      result.properties shouldEqual Map(
+        "genericArray" -> Schema.array(items = Schema.array(items = Schema.string()), description = "array of lists"),
+        "objectArray" -> Schema.array(items = Schema.jsonObject(
+          properties = Map("someString" -> Schema.string(description = "a value in the nested object")),
+          required = Seq("someString"))))
+
+      result.required.toSet shouldEqual Set("genericArray", "objectArray")
     }
 
     "extract schema with nested object" in {
