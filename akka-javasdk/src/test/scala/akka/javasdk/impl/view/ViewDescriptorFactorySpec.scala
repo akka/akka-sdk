@@ -40,6 +40,12 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
       }
     }
 
+    "pick up a @Query method inherited from a base class" in {
+      assertDescriptor[ViewWithInheritedQuery] { desc =>
+        desc.queries.map(_.name).toSet shouldBe Set("inheritedQuery", "ownQuery")
+      }
+    }
+
     "allow View query with quoted table name" in {
       assertDescriptor[ViewWithQuotedTableName] { desc =>
         desc.tables.map(_.tableName) shouldBe Seq("üsérs tåble")

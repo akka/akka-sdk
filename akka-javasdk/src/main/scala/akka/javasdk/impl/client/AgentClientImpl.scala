@@ -196,7 +196,7 @@ private[javasdk] final case class AgentClientImpl(
         "The agent id is defined with the @Component annotation."))
 
     val effectMethod =
-      agentClass.getDeclaredMethods
+      agentClass.getMethods
         .find { method =>
           isCommandHandlerCandidate[Agent.Effect[_]](method) || isCommandHandlerCandidate[Agent.StreamEffect](method)
         }

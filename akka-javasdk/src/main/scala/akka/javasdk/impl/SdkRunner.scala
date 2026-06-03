@@ -720,7 +720,7 @@ private final class Sdk(
         val componentId = Reflect.readComponentId(clz)
 
         val readOnlyCommandNames =
-          clz.getDeclaredMethods.collect {
+          clz.getMethods.collect {
             case method
                 if isCommandHandlerCandidate[EventSourcedEntity.Effect[_]](method) && method.getReturnType == classOf[
                   EventSourcedEntity.ReadOnlyEffect[_]] =>
@@ -786,7 +786,7 @@ private final class Sdk(
         val componentId = Reflect.readComponentId(clz)
 
         val readOnlyCommandNames =
-          clz.getDeclaredMethods.collect {
+          clz.getMethods.collect {
             case method
                 if isCommandHandlerCandidate[KeyValueEntity.Effect[_]](method) && method.getReturnType == classOf[
                   KeyValueEntity.ReadOnlyEffect[_]] =>
@@ -847,7 +847,7 @@ private final class Sdk(
           clz.asInstanceOf[Class[Workflow[_]]])
 
         val readOnlyCommandNames =
-          clz.getDeclaredMethods.collect {
+          clz.getMethods.collect {
             case method
                 if isCommandHandlerCandidate[Workflow.Effect[_]](method) && method.getReturnType == classOf[
                   Workflow.ReadOnlyEffect[_]] =>

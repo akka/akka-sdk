@@ -152,7 +152,8 @@ private[impl] object ViewDescriptorFactory {
       View.QueryEffect[_]] || method.getReturnType == classOf[View.QueryStreamEffect[_]])
 
   private def extractQueryMethods(component: Class[_]): Seq[QueryMethod] = {
-    val annotatedQueryMethods = component.getDeclaredMethods.toIndexedSeq.filter(validQueryMethod)
+    // getMethods (not getDeclaredMethods) so @Query methods inherited from a base class are included
+    val annotatedQueryMethods = component.getMethods.toIndexedSeq.filter(validQueryMethod)
     annotatedQueryMethods.map(method =>
       try {
         extractQueryMethod(method)
