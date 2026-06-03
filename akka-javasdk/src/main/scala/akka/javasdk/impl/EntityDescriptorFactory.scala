@@ -19,18 +19,19 @@ private[impl] object EntityDescriptorFactory extends ComponentDescriptorFactory 
 
   override def buildDescriptorFor(component: Class[_], serializer: Serializer): ComponentDescriptor = {
     //TODO remove capitalization of method name, can't be done per component, because component client reuse the same logic for all
+    // getMethods (not getDeclaredMethods) so command handlers inherited from a base class are included
     val commandHandlerMethods = if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(component)) {
-      component.getDeclaredMethods.collect {
+      component.getMethods.collect {
         case method if isCommandHandlerCandidate[EventSourcedEntity.Effect[_]](method) =>
           method.getName.capitalize -> MethodInvoker(method)
       }
     } else if (classOf[KeyValueEntity[_]].isAssignableFrom(component)) {
-      component.getDeclaredMethods.collect {
+      component.getMethods.collect {
         case method if isCommandHandlerCandidate[KeyValueEntity.Effect[_]](method) =>
           method.getName.capitalize -> MethodInvoker(method)
       }
     } else if (classOf[Workflow[_]].isAssignableFrom(component)) {
-      component.getDeclaredMethods.collect {
+      component.getMethods.collect {
         case method if isCommandHandlerCandidate[Workflow.Effect[_]](method) =>
           method.getName.capitalize -> MethodInvoker(method)
       }
