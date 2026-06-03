@@ -1,4 +1,5 @@
 = akka services components workflows get
+:page-aliases: akka_services_components_get-workflow.adoc
 
 Get workflow execution details for the specified service, workflow component id and workflow id
 
