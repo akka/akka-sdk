@@ -136,6 +136,99 @@ public class ViewTestModels {
     }
   }
 
+  // The base View declares a table updater with a delete handler; the concrete view declares its
+  // own updater for the same (guessed) table, which must override the inherited one.
+  public abstract static class BaseViewToOverride extends View {
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {
+      public Effect<User> onChange(User user) {
+        return effects().updateRow(user);
+      }
+
+      @DeleteHandler
+      public Effect<User> onDelete() {
+        return effects().deleteRow();
+      }
+    }
+  }
+
+  @Component(id = "users_view")
+  public static class ViewOverridingTableUpdater extends BaseViewToOverride {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {
+      public Effect<User> onChange(User user) {
+        return effects().updateRow(user);
+      }
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  // Base View declares a table updater for a table that the concrete view never queries.
+  public abstract static class BaseViewWithUnqueriedUpdater extends View {
+    @Table("users")
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {
+      public Effect<User> onChange(User user) {
+        return effects().updateRow(user);
+      }
+    }
+  }
+
+  @Component(id = "orders_view")
+  public static class ViewWithUnqueriedInheritedTable extends BaseViewWithUnqueriedUpdater {
+
+    @Table("orders")
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class OrderUpdater extends TableUpdater<User> {
+      public Effect<User> onChange(User user) {
+        return effects().updateRow(user);
+      }
+    }
+
+    @Query("SELECT * FROM orders WHERE email = :email")
+    public QueryEffect<User> getOrder(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  // Base View declares a query for a table that has no updater in the concrete view.
+  public abstract static class BaseViewWithExtraQuery extends View {
+    @Query("SELECT * FROM ghosts WHERE email = :email")
+    public QueryEffect<User> getGhost(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @Component(id = "users_view")
+  public static class ViewInheritingQueryWithoutUpdater extends BaseViewWithExtraQuery {
+
+    @Table("users")
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {
+      public Effect<User> onChange(User user) {
+        return effects().updateRow(user);
+      }
+    }
+
+    @Table("orders")
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class OrderUpdater extends TableUpdater<User> {
+      public Effect<User> onChange(User user) {
+        return effects().updateRow(user);
+      }
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
   @Component(id = "users_view")
   public static class ViewWithLowerCaseQuery extends View {
 

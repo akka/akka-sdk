@@ -158,23 +158,12 @@ public record CompileTimeTypeDef(TypeElement typeElement) implements TypeDef {
 
   @Override
   public List<TypeDef> getNestedTypes() {
-    List<TypeDef> nested = new java.util.ArrayList<>();
-    typeElement.getEnclosedElements().stream()
+    return typeElement.getEnclosedElements().stream()
         .filter(e -> e instanceof TypeElement)
         .map(e -> (TypeElement) e)
         .map(CompileTimeTypeDef::new)
-        .forEach(nested::add);
-
-    // Nested types inherited from the superclass hierarchy, matching RuntimeTypeDef, so e.g. a
-    // TableUpdater declared on a base View class is discovered the same way in both modes.
-    TypeMirror superclass = typeElement.getSuperclass();
-    if (superclass instanceof DeclaredType declaredType) {
-      Element superElement = declaredType.asElement();
-      if (superElement instanceof TypeElement superType) {
-        nested.addAll(new CompileTimeTypeDef(superType).getNestedTypes());
-      }
-    }
-    return nested;
+        .map(t -> (TypeDef) t)
+        .toList();
   }
 
   @Override

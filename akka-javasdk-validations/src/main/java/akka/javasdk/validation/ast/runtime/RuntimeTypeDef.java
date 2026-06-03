@@ -166,16 +166,10 @@ public record RuntimeTypeDef(Class<?> clazz) implements TypeDef {
 
   @Override
   public List<TypeDef> getNestedTypes() {
-    List<TypeDef> nested = new java.util.ArrayList<>();
-    Arrays.stream(clazz.getDeclaredClasses()).map(RuntimeTypeDef::new).forEach(nested::add);
-
-    // Nested types inherited from the superclass hierarchy, matching CompileTimeTypeDef, so e.g. a
-    // TableUpdater declared on a base View class is discovered the same way in both modes.
-    Class<?> superclass = clazz.getSuperclass();
-    if (superclass != null && !superclass.equals(Object.class)) {
-      nested.addAll(new RuntimeTypeDef(superclass).getNestedTypes());
-    }
-    return nested;
+    return Arrays.stream(clazz.getDeclaredClasses())
+        .map(RuntimeTypeDef::new)
+        .map(t -> (TypeDef) t)
+        .toList();
   }
 
   @Override

@@ -40,6 +40,10 @@ abstract class AbstractViewValidationSpec(val validationMode: ValidationMode)
       assertValid("valid/ValidViewWithInheritedTableUpdater.java")
     }
 
+    "accept View that overrides an inherited TableUpdater for the same table" in {
+      assertValid("valid/ValidViewOverridingTableUpdater.java")
+    }
+
     "accept View with empty TableUpdater for Workflow passthrough scenario" in {
       assertValid("valid/ValidViewWithEmptyTableUpdaterWorkflow.java")
     }

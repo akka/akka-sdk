@@ -66,10 +66,7 @@ private[impl] object ViewDescriptorFactory {
       userEc: ExecutionContext): ViewDescriptor = {
     val componentId = ComponentDescriptorFactory.readComponentIdValue(viewClass)
 
-    // getClasses (not getDeclaredClasses) so a TableUpdater declared on a base View class is included;
-    // table updaters are required to be public static, which is exactly what getClasses returns
-    val tableUpdaters =
-      viewClass.getClasses.toSeq.filter(Reflect.isViewTableUpdater)
+    val tableUpdaters = tableUpdatersFor(viewClass)
 
     val allQueryMethods = extractQueryMethods(viewClass)
     val allQueryStrings = allQueryMethods.map(_.queryString)
@@ -148,6 +145,27 @@ private[impl] object ViewDescriptorFactory {
       queryString: String,
       input: Option[Class[_]],
       output: Class[_])
+
+  // Table updaters declared on the view and inherited from base view classes. A table updater
+  // declared closer to the concrete view overrides an inherited one for the same table name (the
+  // @Table value, or the single guessed table when there is no @Table). Same-class duplicates are
+  // kept so that genuinely ambiguous views are still rejected.
+  private def tableUpdatersFor(viewClass: Class[_]): Seq[Class[_]] = {
+    def collect(c: Class[_], depth: Int): Seq[(Class[_], Int)] =
+      if (c == null || c == classOf[Object]) Seq.empty
+      else
+        c.getDeclaredClasses.toSeq.filter(Reflect.isViewTableUpdater).map(_ -> depth) ++
+        collect(c.getSuperclass, depth + 1)
+
+    def tableNameKey(updater: Class[_]): String =
+      Option(updater.getAnnotation(classOf[Table])).map(_.value()).getOrElse("")
+
+    collect(viewClass, 0).groupBy { case (updater, _) => tableNameKey(updater) }.toSeq.flatMap {
+      case (_, updatersWithDepth) =>
+        val minDepth = updatersWithDepth.map { case (_, depth) => depth }.min
+        updatersWithDepth.collect { case (updater, depth) if depth == minDepth => updater }
+    }
+  }
 
   private def validQueryMethod(method: Method): Boolean =
     method.getAnnotation(classOf[Query]) != null && (method.getReturnType == classOf[
