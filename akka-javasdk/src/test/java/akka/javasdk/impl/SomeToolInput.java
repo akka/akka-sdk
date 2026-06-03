@@ -36,6 +36,10 @@ interface SomeToolInput {
       Set<String> setOfStrings,
       Map<String, String> mapOfStrings) {}
 
+  // List<String>[] reflects as a GenericArrayType (component type is parameterized)
+  record SomeToolInputWithGenericArray(
+      @Description("array of lists") List<String>[] genericArray, NestedObject[] objectArray) {}
+
   record SomeToolInput3(@Description("a nested object") NestedObject nestedObject) {}
 
   record NestedObject(@Description("a value in the nested object") String someString) {}
