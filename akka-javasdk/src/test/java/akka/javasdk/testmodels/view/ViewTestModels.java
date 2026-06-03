@@ -98,6 +98,44 @@ public class ViewTestModels {
     }
   }
 
+  // Scenario B: the table updater's update handler method is declared on a base TableUpdater class.
+  public abstract static class BaseUserUpdater extends TableUpdater<User> {
+    public Effect<User> onChange(User user) {
+      return effects().updateRow(user);
+    }
+  }
+
+  @Component(id = "users_view")
+  public static class ViewWithInheritedUpdaterMethod extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends BaseUserUpdater {}
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  // The TableUpdater nested class is declared on a base View class and inherited by the component.
+  public abstract static class BaseViewWithUpdater extends View {
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {
+      public Effect<User> onChange(User user) {
+        return effects().updateRow(user);
+      }
+    }
+  }
+
+  @Component(id = "users_view")
+  public static class ViewInheritingTableUpdater extends BaseViewWithUpdater {
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
   @Component(id = "users_view")
   public static class ViewWithLowerCaseQuery extends View {
 

@@ -66,8 +66,10 @@ private[impl] object ViewDescriptorFactory {
       userEc: ExecutionContext): ViewDescriptor = {
     val componentId = ComponentDescriptorFactory.readComponentIdValue(viewClass)
 
+    // getClasses (not getDeclaredClasses) so a TableUpdater declared on a base View class is included;
+    // table updaters are required to be public static, which is exactly what getClasses returns
     val tableUpdaters =
-      viewClass.getDeclaredClasses.toSeq.filter(Reflect.isViewTableUpdater)
+      viewClass.getClasses.toSeq.filter(Reflect.isViewTableUpdater)
 
     val allQueryMethods = extractQueryMethods(viewClass)
     val allQueryStrings = allQueryMethods.map(_.queryString)

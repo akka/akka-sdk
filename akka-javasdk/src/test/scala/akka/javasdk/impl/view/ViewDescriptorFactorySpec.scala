@@ -46,6 +46,21 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
       }
     }
 
+    "pick up a table updater update handler inherited from a base TableUpdater" in {
+      assertDescriptor[ViewWithInheritedUpdaterMethod] { desc =>
+        val table = desc.tables.find(_.tableName == "users").get
+        table.updateHandler shouldBe defined
+      }
+    }
+
+    "pick up a TableUpdater declared on a base View class" in {
+      assertDescriptor[ViewInheritingTableUpdater] { desc =>
+        val table = desc.tables.find(_.tableName == "users").get
+        table.updateHandler shouldBe defined
+        table.consumerSource shouldBe a[ConsumerSource.KeyValueEntitySource]
+      }
+    }
+
     "allow View query with quoted table name" in {
       assertDescriptor[ViewWithQuotedTableName] { desc =>
         desc.tables.map(_.tableName) shouldBe Seq("üsérs tåble")

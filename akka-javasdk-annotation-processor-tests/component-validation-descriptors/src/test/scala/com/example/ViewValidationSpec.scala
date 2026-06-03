@@ -36,6 +36,10 @@ abstract class AbstractViewValidationSpec(val validationMode: ValidationMode)
       assertValid("valid/ValidViewWithEmptyTableUpdater.java")
     }
 
+    "accept View whose TableUpdater is declared on a base View class" in {
+      assertValid("valid/ValidViewWithInheritedTableUpdater.java")
+    }
+
     "accept View with empty TableUpdater for Workflow passthrough scenario" in {
       assertValid("valid/ValidViewWithEmptyTableUpdaterWorkflow.java")
     }
