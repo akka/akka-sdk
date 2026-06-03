@@ -70,8 +70,14 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
   private static final String WORK_ITEM_TASK_TOOL =
       createTaskForBacklogToolName(TestTasks.WORK_ITEM);
 
+  // Matches an available task in a get_backlog_status listing, e.g.
+  //   - Task 6f8c4ef3-... (Work Item): [available] '...'
   private static final Pattern TASK_ID_PATTERN =
-      Pattern.compile("\"task_id\"\\s*:\\s*\"([^\"]+)\"");
+      Pattern.compile("Task\\s+([0-9a-f-]{36})\\s*\\([^)]*\\):\\s*\\[available]");
+
+  // Matches the task id echoed back by a claim_task result, e.g. "Claimed and assigned task <id>".
+  private static final Pattern CLAIMED_TASK_ID_PATTERN =
+      Pattern.compile("([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})");
 
   @Override
   protected TestKit.Settings testKitSettings() {
@@ -320,8 +326,10 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldReleaseBacklogTask() {
-    // Worker: getBacklogStatus -> claimTask -> releaseTask -> getBacklogStatus ->
-    //         claimTask -> completeTask
+    // Worker: getBacklogStatus -> claimTask -> releaseTask -> completeTask
+    // Claiming dispatches the task to task processing immediately, so releasing only clears the
+    // backlog claim while the worker keeps processing the task. The worker exercises release_task
+    // and then completes the task it is still working on.
     leadModel.fixedResponse(
         msg -> {
           if (msg instanceof TestModelProvider.UserMessage) {
@@ -350,7 +358,6 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
           return new AiResponse("Continuing work.");
         });
 
-    var released = new java.util.concurrent.atomic.AtomicBoolean(false);
     workerModel.fixedResponse(
         msg -> {
           if (msg instanceof TestModelProvider.ToolResult toolResult) {
@@ -363,19 +370,20 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
                 yield new AiResponse(getBacklogStatus());
               }
               case CLAIM_TASK -> {
-                if (!released.getAndSet(true)) {
-                  // First claim: release it
-                  var matcher = TASK_ID_PATTERN.matcher(toolResult.content());
-                  if (matcher.find()) {
-                    yield new AiResponse(releaseTask(matcher.group(1)));
-                  }
+                // Exercise release_task on the freshly claimed task.
+                var matcher = CLAIMED_TASK_ID_PATTERN.matcher(toolResult.content());
+                if (matcher.find()) {
+                  yield new AiResponse(releaseTask(matcher.group(1)));
                 }
-                // Second claim: complete it
                 yield new AiResponse(
                     completeTask(
                         new TestTasks.WorkItemResult("Releasable task", "Done after release.")));
               }
-              case RELEASE_TASK -> new AiResponse(getBacklogStatus());
+              // Releasing the claim does not stop processing, so complete the task afterwards.
+              case RELEASE_TASK ->
+                  new AiResponse(
+                      completeTask(
+                          new TestTasks.WorkItemResult("Releasable task", "Done after release.")));
               case COMPLETE_TASK -> new AiResponse(getBacklogStatus());
               default -> new AiResponse(getBacklogStatus());
             };
@@ -442,7 +450,7 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
               }
               case CLAIM_TASK -> {
                 // Transfer to another agent instance
-                var matcher = TASK_ID_PATTERN.matcher(toolResult.content());
+                var matcher = CLAIMED_TASK_ID_PATTERN.matcher(toolResult.content());
                 if (matcher.find()) {
                   yield new AiResponse(
                       transferTask(matcher.group(1), "team-worker-agent/other-instance"));
