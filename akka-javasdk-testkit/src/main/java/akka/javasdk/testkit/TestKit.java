@@ -61,6 +61,7 @@ import akka.runtime.sdk.spi.SpiEventingSupportSettings;
 import akka.runtime.sdk.spi.SpiMockedEventingSettings;
 import akka.runtime.sdk.spi.SpiSettings;
 import akka.runtime.sdk.spi.SpiTestSettings;
+import akka.runtime.sdk.spi.tracing.InMemorySpanExporter;
 import akka.stream.Materializer;
 import akka.stream.SystemMaterializer;
 import com.typesafe.config.Config;
@@ -85,9 +86,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import kalix.runtime.AkkaRuntimeMain;
-import kalix.runtime.telemetry.Telemetry;
-import kalix.runtime.telemetry.tracing.ActiveTracingInstrumentation;
-import kalix.runtime.telemetry.tracing.TracingSetup.AkkaInMemorySpanExporter;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -856,7 +854,7 @@ public class TestKit {
   private int eventingTestKitPort = -1;
   private Config applicationConfig;
   private String serviceName;
-  private Optional<AkkaInMemorySpanExporter> inMemorySpanExporter = Optional.empty();
+  private Optional<InMemorySpanExporter> inMemorySpanExporter = Optional.empty();
 
   /** Create a new testkit for a service descriptor with the default settings. */
   public TestKit() {
@@ -1069,15 +1067,11 @@ public class TestKit {
 
       // once runtime is started
 
-      Telemetry telemetry = (Telemetry) Telemetry.get(runtimeActorSystem);
-
-      if (telemetry.tracing()
-          instanceof ActiveTracingInstrumentation activeTracingInstrumentation) {
-        if (activeTracingInstrumentation.exporter()
-            instanceof AkkaInMemorySpanExporter inMemorySpanExporter) {
-          this.inMemorySpanExporter = Optional.of(inMemorySpanExporter);
-        }
-      }
+      // The runtime surfaces the in-memory tracing exporter (when the test tracing setup is active)
+      // through the SPI StartupContext, so the testkit reads captured spans without referencing
+      // runtime-internal telemetry types.
+      this.inMemorySpanExporter =
+          Optional.ofNullable(startupContext.inMemorySpanExporter().getOrElse(() -> null));
 
       componentClient =
           new ComponentClientImpl(
@@ -1256,7 +1250,7 @@ public class TestKit {
     return new WebSocketRouteTesterImpl(runtimeHost, runtimePort, runtimeActorSystem);
   }
 
-  public AkkaInMemorySpanExporter getInMemorySpanExporter() {
+  public InMemorySpanExporter getInMemorySpanExporter() {
     return inMemorySpanExporter.orElseThrow(
         () ->
             new IllegalStateException(
