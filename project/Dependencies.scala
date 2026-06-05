@@ -71,7 +71,6 @@ object Dependencies {
 
   val opentelemetryApi = "io.opentelemetry" % "opentelemetry-api" % OpenTelemetryVersion
   val opentelemetrySdk = "io.opentelemetry" % "opentelemetry-sdk" % OpenTelemetryVersion
-  val opentelemetryExporterOtlp = "io.opentelemetry" % "opentelemetry-exporter-otlp" % OpenTelemetryVersion
   val opentelemetryContext = "io.opentelemetry" % "opentelemetry-context" % OpenTelemetryVersion
   val opentelemetrySemConv = "io.opentelemetry.semconv" % "opentelemetry-semconv" % OpenTelemetrySemConv
 
@@ -83,7 +82,6 @@ object Dependencies {
   private val sdkDeps = Seq(
     opentelemetryApi,
     opentelemetrySdk,
-    opentelemetryExporterOtlp,
     opentelemetryContext,
     opentelemetrySemConv,
     // akka-http is pulling akka-pki and akka-discovery, we need to force it to be same version
