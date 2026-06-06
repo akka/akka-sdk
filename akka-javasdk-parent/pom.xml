@@ -551,7 +551,7 @@
                                                          erroronmissingdir="false"/>
                                             </resourcecount>
                                         </condition>
-                                        <delete dir="target" if:set="descriptor.missing"/>
+                                        <delete dir="target/classes" if:set="descriptor.missing"/>
                                     </target>
                                 </configuration>
                             </execution>
