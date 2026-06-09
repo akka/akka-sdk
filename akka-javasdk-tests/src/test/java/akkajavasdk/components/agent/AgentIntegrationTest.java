@@ -25,6 +25,8 @@ import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -235,7 +237,7 @@ public class AgentIntegrationTest extends TestKitSupport {
         .reply(new ToolInvocationRequest("PhotoService_getPhoto", "{ \"subject\" : \"sunset\" }"));
 
     // ...and then receives the tool's image bytes back as multimodal content.
-    var captured = new java.util.concurrent.atomic.AtomicReference<TestModelProvider.ToolResult>();
+    var captured = new AtomicReference<TestModelProvider.ToolResult>();
     testModelProvider
         .whenToolResult(result -> result.name().equals("PhotoService_getPhoto"))
         .thenReply(
@@ -280,7 +282,7 @@ public class AgentIntegrationTest extends TestKitSupport {
             new ToolInvocationRequest(
                 "DocumentService_getDocument", "{ \"subject\" : \"Q1 report\" }"));
 
-    var captured = new java.util.concurrent.atomic.AtomicReference<TestModelProvider.ToolResult>();
+    var captured = new AtomicReference<TestModelProvider.ToolResult>();
     testModelProvider
         .whenToolResult(result -> result.name().equals("DocumentService_getDocument"))
         .thenReply(
