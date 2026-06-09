@@ -50,8 +50,7 @@ public sealed interface MessageContent {
    * Image content carried as inline bytes, for returning binary media from a {@code @FunctionTool}.
    *
    * <p>Inline bytes are only valid as a tool return value; they cannot be sent to the model as
-   * input. In a {@link UserMessage} reference images by URI instead (e.g. {@code
-   * object://bucket/key} or {@code https://...}).
+   * input. In a {@link UserMessage} reference images by URI using {@link ImageUrlMessageContent}.
    *
    * <p>The {@code data} array must be effectively immutable — do not modify it after passing it in.
    *
@@ -65,7 +64,7 @@ public sealed interface MessageContent {
    * PDF content carried as inline bytes, for returning binary media from a {@code @FunctionTool}.
    *
    * <p>Inline bytes are only valid as a tool return value; they cannot be sent to the model as
-   * input. In a {@link UserMessage} reference PDFs by URI instead.
+   * input. In a {@link UserMessage} reference PDFs by URI using {@link PdfUrlMessageContent}.
    *
    * <p>The {@code data} array must be effectively immutable — do not modify it after passing it in.
    *
@@ -97,9 +96,9 @@ public sealed interface MessageContent {
         throw new IllegalArgumentException(
             "Inline byte content ("
                 + content.getClass().getSimpleName()
-                + ") cannot be sent to the model as input. Reference images/PDFs by URI (e.g."
-                + " object://bucket/key) instead. Inline bytes are only supported as a"
-                + " @FunctionTool return value.");
+                + ") cannot be sent to the model as input. " +
+              "Reference images/PDFs by URI using ImageUrlMessageContent or PdfUrlMessageContent." +
+              "Inline bytes are only supported as a @FunctionTool return value.");
       }
     }
   }
