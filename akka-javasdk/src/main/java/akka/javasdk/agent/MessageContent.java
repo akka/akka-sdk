@@ -96,9 +96,10 @@ public sealed interface MessageContent {
         throw new IllegalArgumentException(
             "Inline byte content ("
                 + content.getClass().getSimpleName()
-                + ") cannot be sent to the model as input. " +
-              "Reference images/PDFs by URI using ImageUrlMessageContent or PdfUrlMessageContent." +
-              "Inline bytes are only supported as a @FunctionTool return value.");
+                + ")"
+                + " cannot be sent to the model as input. Reference images/PDFs by URI using"
+                + " ImageUrlMessageContent or PdfUrlMessageContent.Inline bytes are only supported"
+                + " as a @FunctionTool return value.");
       }
     }
   }
