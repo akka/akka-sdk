@@ -165,7 +165,8 @@ A tool that declares a `MessageContent` return type must always return a non-nul
 ====
 Inline bytes returned from a tool are *not persisted*. They are forwarded to the model for the current request only — they are never written to xref:agents/memory.adoc[session memory] (the session records a `[image]` or `[pdf]` placeholder in their place) and they are never uploaded to xref:integrations/object-storage.adoc[object storage].
 
-If you need the media to survive across requests — so the model can refer back to it later, or so it is available outside the conversation — persist it yourself in the tool: inject an `ObjectStorageProvider`, store the bytes in a bucket, and return an `ImageUrlMessageContent` or `PdfUrlMessageContent` referencing the stored object (for example via `ImageUrlMessageContent.create(bucket, key)`). The `object://` reference *is* persisted in session memory, and the SDK resolves it back to the bytes on each request.
+If you need the media to survive across requests — so the model can refer back to it later, or so it is available
+outside the conversation — persist it yourself in the tool: inject an `ObjectStorageProvider`, store the bytes in a bucket, and return an `ImageUrlMessageContent` or `PdfUrlMessageContent` referencing the stored object (for example via `ImageUrlMessageContent.create(bucket, key)`). The `object://` reference *is* persisted in session memory, and the SDK resolves it back to the bytes on each request  (see xref:integrations/object-storage.adoc[object storage] for more details).
 ====
 
 [NOTE]
