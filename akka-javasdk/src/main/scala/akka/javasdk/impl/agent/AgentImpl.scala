@@ -486,6 +486,57 @@ private[impl] object AgentImpl {
       new MessageContent.PdfBytesMessageContent(pdf.bytes.toArrayUnsafe())
   }
 
+  /** SPI message content → session-memory content; inline bytes degrade to a placeholder. */
+  private[agent] def toSessionMemoryContent(mc: SpiAgent.MessageContent): SessionMessage.MessageContent =
+    mc match {
+      case t: SpiAgent.TextMessageContent =>
+        new SessionMessage.MessageContent.TextMessageContent(t.text)
+      case img: SpiAgent.ImageUriMessageContent =>
+        new SessionMessage.MessageContent.ImageUriMessageContent(
+          img.uri.toString,
+          fromSpiDetailLevel(img.detailLevel),
+          img.mimeType.toJava)
+      case pdf: SpiAgent.PdfUriMessageContent =>
+        new SessionMessage.MessageContent.PdfUriMessageContent(pdf.uri.toString)
+      case _: SpiAgent.ImageBytesMessageContent =>
+        new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.IMAGE_PLACEHOLDER)
+      case _: SpiAgent.PdfBytesMessageContent =>
+        new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.PDF_PLACEHOLDER)
+    }
+
+  /** Session-memory content → SPI message content. */
+  private[agent] def toSpiSessionContent(content: SessionMessage.MessageContent): SpiAgent.MessageContent =
+    content match {
+      case c: SessionMessage.MessageContent.TextMessageContent =>
+        new SpiAgent.TextMessageContent(c.text())
+      case c: SessionMessage.MessageContent.ImageUriMessageContent =>
+        new SpiAgent.ImageUriMessageContent(
+          URI.create(c.uri()),
+          toSpiDetailLevel(c.detailLevel()),
+          c.mimeType().toScala)
+      case c: SessionMessage.MessageContent.PdfUriMessageContent =>
+        new SpiAgent.PdfUriMessageContent(URI.create(c.uri()))
+    }
+
+  /**
+   * A single text content yields a [[SessionMessage.ToolCallResponse]]; otherwise a
+   * [[SessionMessage.MultimodalToolCallResponse]].
+   */
+  private[agent] def toSessionToolCallResponse(
+      timestamp: Instant,
+      componentId: String,
+      id: String,
+      name: String,
+      spiContents: Seq[SpiAgent.MessageContent]): SessionMessage = {
+    val contents = spiContents.map(toSessionMemoryContent)
+    contents match {
+      case Seq(t: SessionMessage.MessageContent.TextMessageContent) =>
+        new SessionMessage.ToolCallResponse(timestamp, componentId, id, name, t.text())
+      case _ =>
+        new SessionMessage.MultimodalToolCallResponse(timestamp, componentId, id, name, contents.asJava)
+    }
+  }
+
   private[agent] def toSpiContentLoader(
       javaContentLoader: ContentLoader,
       ec: ExecutionContext): SpiAgent.SpiContentLoader =
@@ -531,24 +582,13 @@ private[impl] object AgentImpl {
         case m: UserMessage =>
           new SpiAgent.ContextMessage.UserMessage(m.text())
         case m: MultimodalUserMessage =>
-          val contents = m
-            .contents()
-            .asScala
-            .map {
-              case content: SessionMessage.MessageContent.TextMessageContent =>
-                new SpiAgent.TextMessageContent(content.text())
-              case content: SessionMessage.MessageContent.ImageUriMessageContent =>
-                new SpiAgent.ImageUriMessageContent(
-                  URI.create(content.uri()),
-                  toSpiDetailLevel(content.detailLevel()),
-                  content.mimeType().toScala)
-              case content: SessionMessage.MessageContent.PdfUriMessageContent =>
-                new SpiAgent.PdfUriMessageContent(URI.create(content.uri()))
-            }
-            .toSeq
+          val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
           new SpiAgent.ContextMessage.UserMessage(contents)
         case m: ToolCallResponse =>
           new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), m.text())
+        case m: SessionMessage.MultimodalToolCallResponse =>
+          val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
+          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents)
         case m =>
           throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
       }
@@ -816,7 +856,7 @@ private[impl] final class AgentImpl(
             res.attributes.asJava)
 
         case res: SpiAgent.ToolCallResponse =>
-          new ToolCallResponse(res.timestamp, componentId, res.id, res.name, res.content)
+          AgentImpl.toSessionToolCallResponse(res.timestamp, componentId, res.id, res.name, res.contents)
       }
 
     if (userMessage.isTextOnly) {

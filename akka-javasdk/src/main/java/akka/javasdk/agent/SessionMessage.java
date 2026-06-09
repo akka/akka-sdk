@@ -5,6 +5,7 @@
 package akka.javasdk.agent;
 
 import akka.javasdk.agent.SessionMessage.AiMessage;
+import akka.javasdk.agent.SessionMessage.MultimodalToolCallResponse;
 import akka.javasdk.agent.SessionMessage.MultimodalUserMessage;
 import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.SessionMessage.UserMessage;
@@ -23,11 +24,27 @@ import java.util.Optional;
   @JsonSubTypes.Type(value = UserMessage.class, name = "UM"),
   @JsonSubTypes.Type(value = AiMessage.class, name = "AIM"),
   @JsonSubTypes.Type(value = ToolCallResponse.class, name = "TCR"),
-  @JsonSubTypes.Type(value = MultimodalUserMessage.class, name = "MUM")
+  @JsonSubTypes.Type(value = MultimodalUserMessage.class, name = "MUM"),
+  @JsonSubTypes.Type(value = MultimodalToolCallResponse.class, name = "MTCR")
 })
 public sealed interface SessionMessage {
   static int sizeInBytes(String text) {
     return text.length(); // simple implementation, but not correct for all encodings
+  }
+
+  static int sizeInBytes(List<MessageContent> contents) {
+    return contents.stream()
+        .mapToInt(
+            content ->
+                switch (content) {
+                  case MessageContent.TextMessageContent text -> sizeInBytes(text.text());
+                  case MessageContent.ImageUriMessageContent image ->
+                      sizeInBytes(image.uri())
+                          + sizeInBytes(image.detailLevel().toString())
+                          + image.mimeType().map(SessionMessage::sizeInBytes).orElse(0);
+                  case MessageContent.PdfUriMessageContent pdf -> sizeInBytes(pdf.uri());
+                })
+        .sum();
   }
 
   int size();
@@ -56,7 +73,6 @@ public sealed interface SessionMessage {
     record PdfUriMessageContent(String uri) implements MessageContent {}
   }
 
-  // need to introduce new message to keep backward compatibility
   record MultimodalUserMessage(Instant timestamp, List<MessageContent> contents, String componentId)
       implements SessionMessage {
 
@@ -176,6 +192,16 @@ public sealed interface SessionMessage {
     @Override
     public int size() {
       return SessionMessage.sizeInBytes(text);
+    }
+  }
+
+  record MultimodalToolCallResponse(
+      Instant timestamp, String componentId, String id, String name, List<MessageContent> contents)
+      implements SessionMessage {
+
+    @Override
+    public int size() {
+      return SessionMessage.sizeInBytes(contents);
     }
   }
 }
