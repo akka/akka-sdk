@@ -28,6 +28,10 @@ import java.util.List;
  */
 public record UserMessage(List<MessageContent> contents) {
 
+  public UserMessage {
+    MessageContent.requireSendableAsInput(contents);
+  }
+
   public boolean isTextOnly() {
     return contents.size() == 1 && contents.get(0) instanceof TextMessageContent;
   }

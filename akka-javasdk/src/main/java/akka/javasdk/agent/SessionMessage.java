@@ -42,6 +42,9 @@ public sealed interface SessionMessage {
   })
   sealed interface MessageContent {
 
+    public static String IMAGE_PLACEHOLDER = "[image]";
+    public static String PDF_PLACEHOLDER = "[pdf]";
+
     record TextMessageContent(String text) implements MessageContent {}
 
     record ImageUriMessageContent(

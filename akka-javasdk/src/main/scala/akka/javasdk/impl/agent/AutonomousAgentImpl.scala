@@ -47,6 +47,7 @@ import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgent
+import akka.runtime.sdk.spi.SpiAutonomousAgentMultimodalTools
 import akka.runtime.sdk.spi.SpiBacklog
 import akka.runtime.sdk.spi.SpiBacklogOperations
 import akka.runtime.sdk.spi.SpiTask
@@ -86,7 +87,8 @@ private[impl] final class AutonomousAgentImpl(
     override val requestGuardrails: Seq[SpiAgent.Guardrail],
     override val responseGuardrails: Seq[SpiAgent.Guardrail],
     override val capabilities: Seq[SpiAutonomousAgent.Capability])
-    extends SpiAutonomousAgent {
+    extends SpiAutonomousAgent
+    with SpiAutonomousAgentMultimodalTools {
   import AgentImpl._
 
   implicit val system: ActorSystem[_] = _system
@@ -353,22 +355,33 @@ private[impl] final class AutonomousAgentImpl(
               sessionId,
               new UserMessage(now, text, componentId),
               toSessionMessages(now, messages.tail, tokenUsage).asJava)
+
           case u: SpiAgent.ContextMessage.UserMessage =>
-            val contents = u.contents.map {
+            val contents: Seq[SessionMessage.MessageContent] = u.contents.map {
               case t: SpiAgent.TextMessageContent =>
-                new SessionMessage.MessageContent.TextMessageContent(t.text): SessionMessage.MessageContent
+                new SessionMessage.MessageContent.TextMessageContent(t.text)
+
               case img: SpiAgent.ImageUriMessageContent =>
                 new SessionMessage.MessageContent.ImageUriMessageContent(
                   img.uri.toString,
                   fromSpiDetailLevel(img.detailLevel),
-                  img.mimeType.toJava): SessionMessage.MessageContent
+                  img.mimeType.toJava)
+
               case pdf: SpiAgent.PdfUriMessageContent =>
-                new SessionMessage.MessageContent.PdfUriMessageContent(pdf.uri.toString): SessionMessage.MessageContent
-            }.asJava
+                new SessionMessage.MessageContent.PdfUriMessageContent(pdf.uri.toString)
+
+              case _: SpiAgent.ImageBytesMessageContent =>
+                new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.IMAGE_PLACEHOLDER)
+
+              case _: SpiAgent.PdfBytesMessageContent =>
+                new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.PDF_PLACEHOLDER)
+            }
+
             sessionMemoryClient.addInteraction(
               sessionId,
-              new MultimodalUserMessage(now, contents, componentId),
+              new MultimodalUserMessage(now, contents.asJava, componentId),
               toSessionMessages(now, messages.tail, tokenUsage).asJava)
+
           case _ =>
             // No user message — partial interaction (e.g. tool call responses
             // completing the previous AI message's tool calls)
@@ -383,6 +396,9 @@ private[impl] final class AutonomousAgentImpl(
 
   override def callToolFunction(request: SpiAgent.ToolCallCommand): Future[String] =
     Future(toolExecutor.execute(request))(sdkExecutionContext)
+
+  override def multimodalCallToolFunction(request: SpiAgent.ToolCallCommand): Future[Seq[SpiAgent.MessageContent]] =
+    Future(toolExecutor.executeMultimodal(request))(sdkExecutionContext)
 
   override val contentLoader: Option[SpiAgent.SpiContentLoader] =
     agentDefinition.contentLoader.map(AgentImpl.toSpiContentLoader(_, sdkExecutionContext))
@@ -496,8 +512,13 @@ private[impl] final class AutonomousAgentImpl(
           new ToolCallRequest(req.id, req.name, req.arguments)
         }.asJava
         new AiMessage(now, m.content, componentId, toolCallRequests, m.thinking.toJava, tokenUsage, m.attributes.asJava)
+
       case m: SpiAgent.ContextMessage.ToolCallResponseMessage =>
-        new ToolCallResponse(now, componentId, m.id, m.name, m.content)
+        val content =
+          m.contents.collect { case t: SpiAgent.TextMessageContent =>
+            t.text
+          }.mkString
+        new ToolCallResponse(now, componentId, m.id, m.name, content)
     }
 
 }

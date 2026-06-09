@@ -47,6 +47,64 @@ public sealed interface MessageContent {
   non-sealed interface PdfDataMessageContent extends DataMessageContent {}
 
   /**
+   * Image content carried as inline bytes, for returning binary media from a {@code @FunctionTool}.
+   *
+   * <p>Inline bytes are only valid as a tool return value; they cannot be sent to the model as
+   * input. In a {@link UserMessage} reference images by URI using {@link ImageUrlMessageContent}.
+   *
+   * <p>The {@code data} array must be effectively immutable — do not modify it after passing it in.
+   *
+   * <p>Build via {@link ImageMessageContent#fromBytes(byte[], String)}.
+   */
+  record ImageBytesMessageContent(
+      byte[] data, Optional<String> mimeType, ImageMessageContent.DetailLevel detailLevel)
+      implements ImageDataMessageContent {}
+
+  /**
+   * PDF content carried as inline bytes, for returning binary media from a {@code @FunctionTool}.
+   *
+   * <p>Inline bytes are only valid as a tool return value; they cannot be sent to the model as
+   * input. In a {@link UserMessage} reference PDFs by URI using {@link PdfUrlMessageContent}.
+   *
+   * <p>The {@code data} array must be effectively immutable — do not modify it after passing it in.
+   *
+   * <p>Build via {@link PdfMessageContent#fromBytes(byte[])}.
+   */
+  record PdfBytesMessageContent(byte[] data) implements PdfDataMessageContent {
+
+    private static final Optional<String> mimeType = Optional.of("application/pdf");
+
+    @Override
+    public Optional<String> mimeType() {
+      return mimeType;
+    }
+  }
+
+  /**
+   * Validates that every content item may be sent to the model as input.
+   *
+   * <p>Inline byte payloads ({@link DataMessageContent}) are only supported as a
+   * {@code @FunctionTool} return value; as model input, images and PDFs must be referenced by URI.
+   * This is a deliberate, permanent constraint: a user message can travel across the cluster, so it
+   * must stay reference-based (a URI) rather than carry potentially large inline bytes.
+   *
+   * @throws IllegalArgumentException if any item carries inline bytes
+   */
+  static void requireSendableAsInput(Iterable<? extends MessageContent> contents) {
+    for (MessageContent content : contents) {
+      if (content instanceof DataMessageContent) {
+        throw new IllegalArgumentException(
+            "Inline byte content ("
+                + content.getClass().getSimpleName()
+                + ")"
+                + " cannot be sent to the model as input. Reference images/PDFs by URI using"
+                + " ImageUrlMessageContent or PdfUrlMessageContent.Inline bytes are only supported"
+                + " as a @FunctionTool return value.");
+      }
+    }
+  }
+
+  /**
    * Text content within a user message.
    *
    * @param text The text content
@@ -183,6 +241,33 @@ public sealed interface MessageContent {
     }
 
     /**
+     * Creates inline image content from raw bytes, for returning an image from a
+     * {@code @FunctionTool}. Not valid as model input — reference images by URI in a {@link
+     * UserMessage}.
+     *
+     * @param data the raw image bytes; must be effectively immutable — do not modify after passing
+     *     it in
+     * @param mimeType the image media type, e.g. {@code image/png}
+     */
+    public static ImageBytesMessageContent fromBytes(byte[] data, String mimeType) {
+      return new ImageBytesMessageContent(data, Optional.of(mimeType), DetailLevel.AUTO);
+    }
+
+    /**
+     * Creates inline image content from raw bytes with an explicit detail level, for returning an
+     * image from a {@code @FunctionTool}. Not valid as model input.
+     *
+     * @param data the raw image bytes; must be effectively immutable — do not modify after passing
+     *     it in
+     * @param mimeType the image media type, e.g. {@code image/png}
+     * @param detailLevel the level of detail for image processing
+     */
+    public static ImageBytesMessageContent fromBytes(
+        byte[] data, String mimeType, DetailLevel detailLevel) {
+      return new ImageBytesMessageContent(data, Optional.of(mimeType), detailLevel);
+    }
+
+    /**
      * @deprecated Use {@link #fromUri(String)} instead.
      */
     @Deprecated(forRemoval = true, since = "3.6.0")
@@ -304,6 +389,17 @@ public sealed interface MessageContent {
      */
     public static PdfUrlMessageContent fromUri(URI uri) {
       return new PdfUrlMessageContent(uri);
+    }
+
+    /**
+     * Creates inline PDF content from raw bytes, for returning a PDF from a {@code @FunctionTool}.
+     * Not valid as model input — reference PDFs by URI in a {@link UserMessage}.
+     *
+     * @param data the raw PDF bytes; must be effectively immutable — do not modify after passing it
+     *     in
+     */
+    public static PdfBytesMessageContent fromBytes(byte[] data) {
+      return new PdfBytesMessageContent(data);
     }
 
     /**

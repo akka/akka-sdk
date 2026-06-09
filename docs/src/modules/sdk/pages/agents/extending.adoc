@@ -141,6 +141,41 @@ include::example$doc-snippets/src/main/java/com/example/application/RemoteMcpWea
 
 When using MCP endpoints in other Akka services, the service ACLs apply just like for xref:http-endpoints.adoc[HTTP endpoints] and xref:grpc-endpoints.adoc[gRPC endpoints].
 
+[#returning_images_or_pdfs]
+== Returning images or PDFs from a function tool
+
+A function tool usually returns text (or a value that is serialized to JSON), but it can also return an image or a PDF that the agent forwards to the model as part of the conversation. This is useful when the tool dynamically produces media — for example fetching a Street View image for a location the user just mentioned.
+
+To do this, declare the tool's return type as `MessageContent` and return inline bytes built with `ImageMessageContent.fromBytes(...)` or `PdfMessageContent.fromBytes(...)`:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/StreetViewAgent.java[StreetViewAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/StreetViewAgent.java[tag=class]
+----
+<1> Declare the return type as `MessageContent` — this signals that the result is multimodal.
+<2> Produce the binary content (here, the raw image bytes).
+<3> Wrap the bytes with their media type; the framework hands them to the model as image content.
+
+The model receives the image directly, with no need to upload it to object storage first.
+
+A tool that declares a `MessageContent` return type must always return a non-null value; returning `null` results in an `IllegalArgumentException`. If the tool has no media to return, return a `TextMessageContent` instead.
+
+[IMPORTANT]
+====
+Inline bytes returned from a tool are *not persisted*. They are forwarded to the model for the current request only — they are never written to xref:agents/memory.adoc[session memory] (the session records a `[image]` or `[pdf]` placeholder in their place) and they are never uploaded to xref:integrations/object-storage.adoc[object storage].
+
+If you need the media to survive across requests — so the model can refer back to it later, or so it is available
+outside the conversation — persist it yourself in the tool: inject an `ObjectStorageProvider`, store the bytes in a bucket, and return an `ImageUrlMessageContent` or `PdfUrlMessageContent` referencing the stored object (for example via `ImageUrlMessageContent.create(bucket, key)`). The `object://` reference *is* persisted in session memory, and the SDK resolves it back to the bytes on each request  (see xref:integrations/object-storage.adoc[object storage] for more details).
+====
+
+[NOTE]
+====
+Inline bytes are only supported as a function tool *return* value. To send an image or PDF as part of a user message, reference it by URI instead (see xref:agents/prompt.adoc[multimodal user messages]) — for example an `object://bucket/key` reference backed by xref:integrations/object-storage.adoc[object storage].
+
+Only some model providers accept multimodal tool results (currently Anthropic, Bedrock, and Google AI Gemini).
+====
+
 [#configuring_tool_call_limits]
 == Configuring tool call limits
 

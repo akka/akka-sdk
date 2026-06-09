@@ -431,9 +431,39 @@ private[impl] object AgentImpl {
           "reference it via an object:// URI, or use a URI-referenced content type.")
     }
 
+  /**
+   * Converts a [[MessageContent]] returned by a tool into its SPI form. Unlike [[toSpiMessageContent]] (used for user
+   * input, which rejects inline bytes), a tool result may carry inline image/PDF bytes; those become the corresponding
+   * SPI bytes variants so the runtime can feed them to the model without an object-storage round-trip. Text and
+   * URI-referenced content reuse the input mapping.
+   */
+  private[agent] def toSpiToolResultContent(messageContent: MessageContent): SpiAgent.MessageContent =
+    messageContent match {
+
+      case img: MessageContent.ImageDataMessageContent =>
+        val mimeType = img
+          .mimeType()
+          .toScala
+          .getOrElse(throw new IllegalArgumentException("Inline image tool result requires a mimeType"))
+
+        new SpiAgent.ImageBytesMessageContent(
+          ByteString.fromArrayUnsafe(img.data()),
+          mimeType,
+          toSpiDetailLevel(img.detailLevel()))
+
+      case pdf: MessageContent.PdfDataMessageContent =>
+        new SpiAgent.PdfBytesMessageContent(ByteString.fromArrayUnsafe(pdf.data()))
+
+      case other =>
+        // Text and URI-referenced content: same mapping as user input.
+        toSpiMessageContent(other)
+    }
+
   private[agent] def fromSpiMessageContent(mc: SpiAgent.MessageContent): MessageContent = mc match {
+
     case t: SpiAgent.TextMessageContent =>
       MessageContent.TextMessageContent.from(t.text)
+
     case img: SpiAgent.ImageUriMessageContent =>
       val detail = fromSpiDetailLevel(img.detailLevel)
       img.mimeType match {
@@ -442,8 +472,18 @@ private[impl] object AgentImpl {
         case None =>
           new ImageUrlMessageContent(img.uri, detail)
       }
+
     case pdf: SpiAgent.PdfUriMessageContent =>
       new PdfUrlMessageContent(pdf.uri)
+
+    case img: SpiAgent.ImageBytesMessageContent =>
+      new MessageContent.ImageBytesMessageContent(
+        img.bytes.toArrayUnsafe(),
+        java.util.Optional.of(img.mimeType),
+        fromSpiDetailLevel(img.detailLevel))
+
+    case pdf: SpiAgent.PdfBytesMessageContent =>
+      new MessageContent.PdfBytesMessageContent(pdf.bytes.toArrayUnsafe())
   }
 
   private[agent] def toSpiContentLoader(
@@ -652,7 +692,6 @@ private[impl] final class AgentImpl(
               userMessage = toSpiUserMessage(req.userMessage),
               additionalContext = additionalContext,
               toolDescriptors = toolDescriptors,
-              callToolFunction = request => Future(toolExecutor.execute(request))(sdkExecutionContext),
               mcpClientDescriptors = mcpToolEndpoints,
               responseType = req.responseType,
               responseSchema = responseSchema,
@@ -662,7 +701,8 @@ private[impl] final class AgentImpl(
               onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
               requestGuardrails = guardrails.modelRequestGuardrails,
               responseGuardrails = guardrails.modelResponseGuardrails,
-              contentLoader = spiContentLoader)
+              contentLoader = spiContentLoader,
+              callToolFunction = request => Future(toolExecutor.executeMultimodal(request))(sdkExecutionContext))
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -808,14 +848,12 @@ private[impl] final class AgentImpl(
           content.mimeType())
       case content: PdfUrlMessageContent =>
         new SessionMessage.MessageContent.PdfUriMessageContent(content.uri().toString)
+      // Inline bytes are not persisted to session memory; record a placeholder instead.
+      // (Consistent with the autonomous agent path in AutonomousAgentImpl.)
       case _: MessageContent.ImageDataMessageContent =>
-        throw new UnsupportedOperationException(
-          "Inline image data message content cannot be persisted to session memory. Upload to " +
-          "object storage and reference it via an object:// URI, or use a URI-referenced content type.")
+        new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.IMAGE_PLACEHOLDER)
       case _: MessageContent.PdfDataMessageContent =>
-        throw new UnsupportedOperationException(
-          "Inline PDF data message content cannot be persisted to session memory. Upload to " +
-          "object storage and reference it via an object:// URI, or use a URI-referenced content type.")
+        new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.PDF_PLACEHOLDER)
     }
   }
 
