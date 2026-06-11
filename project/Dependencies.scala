@@ -45,6 +45,10 @@ object Dependencies {
   // Note: this should never be on the compile classpath, only test and or runtime
   val AkkaDevRuntime = "io.akka" %% "akka-runtime-dev" % AkkaRuntimeVersion
 
+  // The classloader-isolated boot launcher. Pure URLClassLoader plumbing with no runtime-impl
+  // dependencies, so it is safe on the testkit compile classpath (used for embedded-mode launch).
+  val akkaRuntimeBoot = "io.akka" %% "akka-runtime-boot" % AkkaRuntimeVersion
+
   val commonsIo = "commons-io" % "commons-io" % CommonsIoVersion
   val logback = "ch.qos.logback" % "logback-classic" % LogbackVersion
   val logbackJson = "ch.qos.logback.contrib" % "logback-json-classic" % LogbackContribVersion
@@ -130,9 +134,19 @@ object Dependencies {
         akkaDependency("akka-stream-testkit"),
         akkaDependency("akka-testkit"),
         kalixTestkitProtocol % "protobuf-src",
-        // FIXME use by the testkit itself but should not be on user test classpath
-        //      should possibly be provided or runtime here and added for the test runner in project parent pom
-        AkkaDevRuntime,
+        // The eventing testkit's gRPC protocol runs in-process on the host (not isolated), so its
+        // classes must be on the testkit's own classpath. Previously these arrived transitively via
+        // AkkaDevRuntime, but that is now Provided (non-transitive).
+        kalixTestkitProtocol,
+        // The embedded boot launcher used by TestKit for classloader-isolated mode.
+        akkaRuntimeBoot,
+        // Provided (not transitive): the testkit invokes the runtime reflectively for flat-mode
+        // launch, so it needs the impl on its own classpath, but it must NOT leak onto a user's
+        // test classpath — otherwise runtime internals would shadow the classloader-isolated copy.
+        // Downstream consumers obtain the runtime via the akka-runtime dev Maven plugin (embedded
+        // mode) or by declaring it themselves (flat mode); the SDK's own test modules add it as
+        // `AkkaDevRuntime % Test`.
+        AkkaDevRuntime % Provided,
         // user will interface with these
         junit5,
         // convenience-transitive dependencies for user assertions and async interactions
