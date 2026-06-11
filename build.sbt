@@ -84,8 +84,11 @@ lazy val akkaJavaSdkTestKit =
         "runtimeVersion" -> AkkaRuntimeVersion,
         "scalaVersion" -> scalaVersion.value),
       buildInfoPackage := "akka.javasdk.testkit",
-      // eventing testkit client
-      akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client))
+      // Eventing testkit: client + server. The server-side handler
+      // (EventingTestKitServiceHandler) runs in-process on the host as the test broker; it must be
+      // generated into the testkit's own jar rather than relied upon transitively from the runtime
+      // (which is now a non-transitive `Provided` dependency).
+      akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client, AkkaGrpc.Server))
     .settings(DocSettings.forModule("Akka SDK Testkit"))
     .settings(Dependencies.javaSdkTestKit)
 
