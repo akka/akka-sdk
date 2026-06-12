@@ -283,7 +283,6 @@
                     <version>3.4.1</version>
                     <configuration>
                         <skip>${non-akka-service}</skip>
-                        <mainClass>akka.runtime.boot.EmbeddedAkkaRuntimeMain</mainClass>
                         <cleanupDaemonThreads>false</cleanupDaemonThreads>
                         <systemProperties>
                             <systemProperty>
@@ -334,9 +333,10 @@
                              the host classloader must stay Akka-free so the boundary loader owns
                              every cross-seam type (the embedded launcher would need the SDK's
                              provided-scope deps on the host, which exec:java cannot supply).
-                             Run with: mvn compile exec:java@in-process -->
+                             Run with: mvn compile exec:java  (default-cli is the id Maven uses for
+                             direct CLI invocations, so no @id suffix is needed) -->
                         <execution>
-                            <id>in-process</id>
+                            <id>default-cli</id>
                             <goals>
                                 <goal>java</goal>
                             </goals>
