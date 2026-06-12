@@ -23,21 +23,27 @@ object ApplicationConfig extends ExtensionId[ApplicationConfig] {
   override def get(system: ClassicActorSystemProvider): ApplicationConfig = super.get(system)
 
   def loadApplicationConf: Config = {
+    // Use the TCCL explicitly. In classloader-isolated mode the TCCL is a DualClassLoader that
+    // searches the user classpath first (own-URL search, skipping the boundary parent), so it
+    // finds the user's application.conf / application-test.conf correctly. Using getClass.getClassLoader
+    // would give the boundary loader in isolated mode (akka-javasdk is on the shared classpath
+    // there), which cannot see files in the user's compiled-output directory.
+    val cl = Thread.currentThread().getContextClassLoader
     val testConf = "application-test.conf"
-    if (getClass.getResource(s"/$testConf") eq null) {
+    if (cl.getResource(testConf) eq null) {
       val confResource = Option(
         System.getProperty("application-config.resource", System.getenv("APPLICATION_CONFIG_RESOURCE")))
       val confFile = Option(System.getProperty("application-config.file", System.getenv("APPLICATION_CONFIG_FILE")))
       (confResource, confFile) match {
-        case (None, None)    => ConfigFactory.load(ConfigFactory.parseResources("application.conf"))
-        case (Some(r), None) => ConfigFactory.load(ConfigFactory.parseResources(r))
-        case (None, Some(f)) => ConfigFactory.load(ConfigFactory.parseFile(new File(f)))
+        case (None, None)    => ConfigFactory.load(cl, ConfigFactory.parseResources(cl, "application.conf"))
+        case (Some(r), None) => ConfigFactory.load(cl, ConfigFactory.parseResources(cl, r))
+        case (None, Some(f)) => ConfigFactory.load(cl, ConfigFactory.parseFile(new File(f)))
         case (Some(r), Some(f)) =>
           throw new ConfigException.Generic(
             s"You set more than one of application-config.file='$f', application-config.resource='$r'; don't know which one to use!")
       }
     } else
-      ConfigFactory.load(ConfigFactory.parseResources(testConf))
+      ConfigFactory.load(cl, ConfigFactory.parseResources(cl, testConf))
   }
 }
 

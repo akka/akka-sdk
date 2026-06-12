@@ -59,6 +59,8 @@
         <!-- note that this image does never actually run the service in a JVM, it's just a means for distribution -->
         <docker.base.image>us-docker.pkg.dev/kalix-images/infrastructure/alpine:3.23.3</docker.base.image>
         <docker.platform>linux/amd64</docker.platform>
+        <!-- Staging dir inside the user image; init container copies it to /opt/local-lib/ at pod start. -->
+        <docker.install.dir>/opt/akka</docker.install.dir>
 
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
 
@@ -135,110 +137,29 @@
                             <image>
                                 <name>${docker.image}:%l</name>
                                 <build>
-                                    <!-- Base Docker image which contains jre-->
                                     <from>${docker.base.image}</from>
                                     <buildOptions>
                                         <platform>${docker.platform}</platform>
                                     </buildOptions>
                                     <tags>
-                                        <!-- tag for generated image -->
                                         <tag>${docker.tag}</tag>
                                     </tags>
                                     <assembly>
+                                        <targetDir>${docker.install.dir}</targetDir>
                                         <inline>
-                                            <dependencySets>
-                                                <dependencySet>
+                                            <fileSets>
+                                                <fileSet>
+                                                    <directory>${project.build.directory}/runtime-image</directory>
                                                     <outputDirectory>.</outputDirectory>
-                                                    <useProjectArtifact>true</useProjectArtifact>
-                                                    <scope>compile</scope>
-                                                    <excludes>
-                                                        <!-- Dependencies of SDK and or available as API for users
-                                                             but already provided by runtime. Since runtime versions
-                                                             will always be preferred, there is no need to package up
-                                                             these.
-
-                                                             Avoid using wildcards here, since those may easily block
-                                                             inclusion of jars not provided by the runtime.
-
-                                                             List can be verified by building a runtime image and cross-
-                                                             referencing the list of packaged jars.
-
-                                                             Watch out for this log from mvn clean install:
-                                                               [WARNING] The following patterns were never triggered in this artifact exclusion filter
-
-                                                             Debug logging can be enabled with:
-                                                             mvn clean install -DskipTests -Dorg.slf4j.simpleLogger.showLogName=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.plugins.assembly.archive.phase.DependencySetAssemblyPhase=debug
-                                                             -->
-                                                        <exclude>com.typesafe:config</exclude>
-                                                        <exclude>com.typesafe.akka:akka-actor_2.13</exclude>
-                                                        <exclude>com.typesafe.akka:akka-discovery_2.13</exclude>
-                                                        <exclude>com.typesafe.akka:akka-parsing_2.13</exclude>
-                                                        <exclude>com.typesafe.akka:akka-pki_2.13</exclude>
-                                                        <exclude>com.typesafe.akka:akka-protobuf-v3_2.13</exclude>
-                                                        <exclude>com.typesafe.akka:akka-stream_2.13</exclude>
-                                                        <exclude>com.typesafe.akka:akka-http-core_2.13</exclude>
-                                                        <exclude>com.typesafe.akka:akka-http_2.13</exclude>
-                                                        <exclude>com.hierynomus:asn-one</exclude>
-                                                        <exclude>org.reactivestreams:reactive-streams</exclude>
-                                                        <!-- Scala stdlib -->
-                                                        <exclude>org.scala-lang.modules:scala-collection-compat_2.13</exclude>
-                                                        <exclude>org.scala-lang:scala-library</exclude>
-                                                        <!-- Protobuf/gRPC
-                                                            Note: scalapb validation is still provided from with service (for now) -->
-                                                        <exclude>com.thesamet.scalapb:lenses_2.13</exclude>
-                                                        <exclude>com.thesamet.scalapb:scalapb-runtime_2.13</exclude>
-                                                        <exclude>io.grpc:grpc-stub</exclude>
-                                                        <exclude>io.grpc:grpc-api</exclude>
-                                                        <exclude>io.grpc:grpc-core</exclude>
-                                                        <exclude>io.grpc:grpc-netty-shaded</exclude>
-                                                        <exclude>io.grpc:grpc-protobuf</exclude>
-                                                        <exclude>com.google.protobuf:protobuf-java</exclude>
-                                                        <exclude>com.google.api.grpc:proto-google-common-protos</exclude>
-                                                        <exclude>com.lightbend.akka.grpc:akka-grpc-runtime_2.13</exclude>
-                                                        <exclude>org.codehaus.mojo:animal-sniffer-annotations</exclude>
-                                                        <!-- guava and related -->
-                                                        <exclude>com.google.guava:guava</exclude>
-                                                        <exclude>com.google.guava:failureaccess</exclude>
-                                                        <exclude>com.google.guava:listenablefuture</exclude>
-                                                        <exclude>com.google.errorprone:error_prone_annotations</exclude>
-                                                        <exclude>com.google.code.findbugs:jsr305</exclude>
-                                                        <exclude>org.checkerframework:checker-qual</exclude>
-                                                        <exclude>com.google.j2objc:j2objc-annotations</exclude>
-                                                        <!-- open telemetry -->
-                                                        <exclude>io.opentelemetry:opentelemetry-api</exclude>
-                                                        <exclude>io.opentelemetry:opentelemetry-context</exclude>
-                                                        <exclude>io.opentelemetry:opentelemetry-sdk</exclude>
-                                                        <exclude>io.opentelemetry:opentelemetry-sdk-common</exclude>
-                                                        <exclude>io.opentelemetry:opentelemetry-sdk-logs</exclude>
-                                                        <exclude>io.opentelemetry:opentelemetry-sdk-metrics</exclude>
-                                                        <exclude>io.opentelemetry:opentelemetry-sdk-trace</exclude>
-                                                        <exclude>io.opentelemetry:opentelemetry-exporter-otlp</exclude>
-                                                        <exclude>io.opentelemetry.semconv:opentelemetry-semconv</exclude>
-                                                        <!-- logging -->
-                                                        <exclude>org.slf4j:slf4j-api</exclude>
-                                                        <exclude>ch.qos.logback:logback-classic</exclude>
-                                                        <exclude>ch.qos.logback:logback-core</exclude>
-                                                        <exclude>ch.qos.logback.contrib:logback-json-classic</exclude>
-                                                        <exclude>ch.qos.logback.contrib:logback-json-core</exclude>
-                                                        <exclude>ch.qos.logback.contrib:logback-jackson</exclude>
-                                                        <!-- serialization/jackson -->
-                                                        <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
-                                                        <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
-                                                        <exclude>com.fasterxml.jackson.core:jackson-databind</exclude>
-                                                        <exclude>com.fasterxml.jackson.datatype:jackson-datatype-jdk8</exclude>
-                                                        <exclude>com.fasterxml.jackson.datatype:jackson-datatype-jsr310</exclude>
-                                                        <exclude>com.fasterxml.jackson.module:jackson-module-parameter-names</exclude>
-                                                        <!-- SDK spi -->
-                                                        <exclude>io.akka:akka-sdk-spi_2.13</exclude>
-                                                        <!-- langchain -->
-                                                        <exclude>dev.langchain4j:langchain4j</exclude>
-                                                    </excludes>
-                                                </dependencySet>
-                                            </dependencySets>
+                                                    <fileMode>0755</fileMode>
+                                                </fileSet>
+                                            </fileSets>
                                         </inline>
                                     </assembly>
+                                    <!-- Init-container entryPoint: copies the staged layout to the shared volume
+                                         so the runtime container finds it at /opt/local-lib/. -->
                                     <entryPoint>
-                                        <shell>echo "Listing dependencies copied:"; cp --verbose /maven/*.jar /opt/local-lib/</shell>
+                                        <shell>cp -r ${docker.install.dir}/. /opt/local-lib/</shell>
                                     </entryPoint>
                                 </build>
                             </image>
@@ -247,7 +168,7 @@
                     <executions>
                         <execution>
                             <id>build-docker-image</id>
-                            <phase>install</phase>
+                            <phase>package</phase>
                             <goals>
                                 <goal>build</goal>
                             </goals>
@@ -315,6 +236,7 @@
                         <systemPropertyVariables>
                             <logback.configurationFile>${logback.configurationFile}</logback.configurationFile>
                             <akka.javasdk.dev-mode.project-artifact-id>${project.artifactId}</akka.javasdk.dev-mode.project-artifact-id>
+                            <akka.runtime.classpathsFile>${project.build.directory}/akka-runtime/test-classpaths.properties</akka.runtime.classpathsFile>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>
@@ -335,7 +257,7 @@
                                     <include>**/IT*.java</include>
                                     <include>**/*ITCase.java</include>
                                 </includes>
-                                <argLine>-Dlogback.configurationFile=${logback.configurationFile} -Dakka.javasdk.dev-mode.project-artifact-id=${project.artifactId}</argLine>
+                                <argLine>-Dlogback.configurationFile=${logback.configurationFile} -Dakka.javasdk.dev-mode.project-artifact-id=${project.artifactId} -Dakka.runtime.classpathsFile=${project.build.directory}/akka-runtime/test-classpaths.properties</argLine>
                             </configuration>
                         </execution>
                     </executions>
@@ -350,12 +272,17 @@
                 </plugin>
 
                 <plugin>
+                    <groupId>io.akka</groupId>
+                    <artifactId>akka-runtime-dev-maven-plugin</artifactId>
+                    <version>${akka-runtime.version}</version>
+                </plugin>
+
+                <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>3.4.1</version>
                     <configuration>
                         <skip>${non-akka-service}</skip>
-                        <mainClass>kalix.runtime.AkkaRuntimeMain</mainClass>
                         <cleanupDaemonThreads>false</cleanupDaemonThreads>
                         <systemProperties>
                             <systemProperty>
@@ -371,12 +298,99 @@
                                 <value>${project.artifactId}</value>
                             </systemProperty>
                         </systemProperties>
+                        <arguments>
+                            <argument>${project.build.directory}/akka-runtime/runtime-classpaths.properties</argument>
+                        </arguments>
+                        <additionalClasspathElements>
+                            <additionalClasspathElement>${project.build.directory}/akka-runtime/akka-runtime-boot.jar</additionalClasspathElement>
+                        </additionalClasspathElements>
                     </configuration>
+                    <executions>
+                        <!-- Forked JVM: boot launcher runs in a fresh, Akka-free host JVM and builds the
+                             isolated classloader topology itself. Run with: mvn compile exec:exec@fork -->
+                        <execution>
+                            <id>fork</id>
+                            <goals>
+                                <goal>exec</goal>
+                            </goals>
+                            <configuration>
+                                <executable>java</executable>
+                                <arguments>
+                                    <argument>-Dakka.javasdk.dev-mode.enabled=true</argument>
+                                    <argument>-Dakka.javasdk.dev-mode.project-artifact-id=${project.artifactId}</argument>
+                                    <argument>-Dlogback.configurationFile=${logback.configurationFile}</argument>
+                                    <argument>-cp</argument>
+                                    <argument>${project.build.directory}/akka-runtime/akka-runtime-boot.jar</argument>
+                                    <argument>akka.runtime.boot.IsolatedAkkaRuntimeMain</argument>
+                                    <argument>${project.build.directory}/akka-runtime/runtime-classpaths.properties</argument>
+                                </arguments>
+                            </configuration>
+                        </execution>
+                        <!-- In-process: boot launcher runs inside the Maven JVM, building the same
+                             isolated classloader topology as the fork. The project dependencies are
+                             deliberately NOT put on the exec classloader: the runtime-classpaths
+                             properties already carry all three segments (shared/system/user), and
+                             the host classloader must stay Akka-free so the boundary loader owns
+                             every cross-seam type (the embedded launcher would need the SDK's
+                             provided-scope deps on the host, which exec:java cannot supply).
+                             Run with: mvn compile exec:java  (default-cli is the id Maven uses for
+                             direct CLI invocations, so no @id suffix is needed) -->
+                        <execution>
+                            <id>default-cli</id>
+                            <goals>
+                                <goal>java</goal>
+                            </goals>
+                            <configuration>
+                                <mainClass>akka.runtime.boot.IsolatedAkkaRuntimeMain</mainClass>
+                                <includeProjectDependencies>false</includeProjectDependencies>
+                                <arguments>
+                                    <argument>${project.build.directory}/akka-runtime/runtime-classpaths.properties</argument>
+                                </arguments>
+                                <additionalClasspathElements>
+                                    <additionalClasspathElement>${project.build.directory}/akka-runtime/akka-runtime-boot.jar</additionalClasspathElement>
+                                </additionalClasspathElements>
+                                <systemProperties>
+                                    <systemProperty>
+                                        <key>akka.javasdk.dev-mode.enabled</key>
+                                        <value>true</value>
+                                    </systemProperty>
+                                    <systemProperty>
+                                        <key>akka.javasdk.dev-mode.project-artifact-id</key>
+                                        <value>${project.artifactId}</value>
+                                    </systemProperty>
+                                    <systemProperty>
+                                        <key>logback.configurationFile</key>
+                                        <value>${logback.configurationFile}</value>
+                                    </systemProperty>
+                                </systemProperties>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
 
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-help-plugin</artifactId>
+                <version>3.5.0</version>
+            </plugin>
+
+            <plugin>
+                <groupId>io.akka</groupId>
+                <artifactId>akka-runtime-dev-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <!-- exportRuntimeClasspath binds to `initialize`, prepareRuntimeLayout to `package` -->
+                            <goal>exportRuntimeClasspath</goal>
+                            <goal>prepareRuntimeLayout</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -749,10 +763,13 @@
                 <artifactId>akka-sdk-spi_2.13</artifactId>
                 <version>${akka-runtime.version}</version>
             </dependency>
+            <!-- Align the versions of dependencies that the runtime exposes in the shared classloader -->
             <dependency>
                 <groupId>io.akka</groupId>
-                <artifactId>akka-runtime-dev_2.13</artifactId>
+                <artifactId>akka-runtime-shared-dependencies_2.13</artifactId>
                 <version>${akka-runtime.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -767,11 +784,6 @@
             <groupId>io.akka</groupId>
             <artifactId>akka-javasdk-testkit</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.akka</groupId>
-            <artifactId>akka-runtime-dev_2.13</artifactId>
-            <scope>runtime</scope>
         </dependency>
     </dependencies>
 </project>
