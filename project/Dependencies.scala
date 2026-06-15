@@ -36,6 +36,8 @@ object Dependencies {
   val OpenTelemetryVersion = "1.57.0"
   val OpenTelemetrySemConv = "1.34.0"
 
+  val AsmVersion = "9.7"
+
   val CommonsIoVersion = "2.11.0"
   val MunitVersion = "0.7.29"
 
@@ -76,6 +78,8 @@ object Dependencies {
 
   val typesafeConfig = "com.typesafe" % "config" % "1.4.6"
   val protobufJavaUtil = "com.google.protobuf" % "protobuf-java-util" % GoogleProtobufVersion
+  val asm = "org.ow2.asm" % "asm" % AsmVersion
+  val asmTree = "org.ow2.asm" % "asm-tree" % AsmVersion
 
   private val deps = libraryDependencies
 
@@ -118,6 +122,8 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-http-core" % AkkaHttpVersion,
     akkaDependency("akka-stream"),
     akkaDependency("akka-actor-typed") % Provided,
+    asm,
+    asmTree,
     "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
     junit5 % Test,
     "org.assertj" % "assertj-core" % "3.24.2" % Test)
