@@ -414,17 +414,21 @@ private[impl] object AgentImpl {
     messageContent match {
       case content: MessageContent.TextMessageContent =>
         new SpiAgent.TextMessageContent(content.text())
+
       case content: MessageContent.ImageUrlMessageContent =>
         new SpiAgent.ImageUriMessageContent(
           content.uri,
           toSpiDetailLevel(content.detailLevel()),
           content.mimeType().toScala)
+
       case content: MessageContent.PdfUrlMessageContent =>
         new SpiAgent.PdfUriMessageContent(content.uri)
+
       case _: MessageContent.ImageDataMessageContent =>
         throw new UnsupportedOperationException(
           "Inline image data message content cannot be sent as input. Upload to object storage and " +
           "reference it via an object:// URI, or use a URI-referenced content type.")
+
       case _: MessageContent.PdfDataMessageContent =>
         throw new UnsupportedOperationException(
           "Inline PDF data message content cannot be sent as input. Upload to object storage and " +
