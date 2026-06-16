@@ -284,7 +284,6 @@ private[impl] object Reflect {
 
   def isViewTableUpdater(component: Class[_]): Boolean =
     classOf[TableUpdater[_]].isAssignableFrom(component) &&
-    Modifier.isStatic(component.getModifiers) &&
     Modifier.isPublic(component.getModifiers)
 
   def workflowStateType(component: Class[_]): Class[_] = {

@@ -103,7 +103,7 @@ public class ViewValidations {
    * @return true if it extends View.TableUpdater
    */
   private static boolean isViewTableUpdater(TypeDef typeDef) {
-    if (!typeDef.isPublic() || !typeDef.isStatic()) {
+    if (!typeDef.isPublic()) {
       return false;
     }
     return typeDef.extendsType("akka.javasdk.view.TableUpdater");

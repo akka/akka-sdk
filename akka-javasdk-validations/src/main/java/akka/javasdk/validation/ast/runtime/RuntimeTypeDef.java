@@ -166,10 +166,15 @@ public record RuntimeTypeDef(Class<?> clazz) implements TypeDef {
 
   @Override
   public List<TypeDef> getNestedTypes() {
-    return Arrays.stream(clazz.getDeclaredClasses())
-        .map(RuntimeTypeDef::new)
-        .map(t -> (TypeDef) t)
-        .toList();
+    List<TypeDef> nested = new java.util.ArrayList<>();
+    Arrays.stream(clazz.getDeclaredClasses()).map(RuntimeTypeDef::new).forEach(nested::add);
+    // Also include types declared in the Scala companion object (e.g. FooView$).
+    try {
+      Class<?> companion = Class.forName(clazz.getName() + "$", false, clazz.getClassLoader());
+      Arrays.stream(companion.getDeclaredClasses()).map(RuntimeTypeDef::new).forEach(nested::add);
+    } catch (ClassNotFoundException ignored) {
+    }
+    return java.util.Collections.unmodifiableList(nested);
   }
 
   @Override

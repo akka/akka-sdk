@@ -59,6 +59,13 @@ private[impl] object ViewDescriptorFactory {
 
   val TableNamePattern: Regex = """(?i)FROM(?-i)\s+(?:`([^`]+)`|([A-Za-z][A-Za-z0-9_]*))""".r
 
+  private def companionDeclaredClasses(cls: Class[_]): Seq[Class[_]] =
+    try {
+      Class.forName(cls.getName + "$", false, cls.getClassLoader).getDeclaredClasses.toSeq
+    } catch {
+      case _: ClassNotFoundException => Seq.empty
+    }
+
   def apply(
       viewClass: Class[_],
       serializer: Serializer,
@@ -67,7 +74,8 @@ private[impl] object ViewDescriptorFactory {
     val componentId = ComponentDescriptorFactory.readComponentIdValue(viewClass)
 
     val tableUpdaters =
-      viewClass.getDeclaredClasses.toSeq.filter(Reflect.isViewTableUpdater)
+      (viewClass.getDeclaredClasses.toSeq ++ companionDeclaredClasses(viewClass))
+        .filter(Reflect.isViewTableUpdater)
 
     val allQueryMethods = extractQueryMethods(viewClass)
     val allQueryStrings = allQueryMethods.map(_.queryString)

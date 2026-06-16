@@ -17,6 +17,9 @@ import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ProtoConsumerWithAnnotation
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ValidProtoEventSourcedEntity
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.CircularProtoConsumer
+import akka.javasdk.testmodels.view.ScalaViewWithCompanionUpdater
+import akka.javasdk.testmodels.view.ScalaViewWithInnerUpdater
+import akka.javasdk.testmodels.view.ViewTestModels
 import akka.javasdk.testmodels.workflow.WorkflowState
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflow
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedAbstractClass
@@ -195,6 +198,37 @@ class ReflectSpec extends AnyWordSpec with Matchers {
       val desc = ComponentDescriptor.descriptorFor(classOf[CircularProtoConsumer], serializer)
       val result = Reflect.protoCommandHandlerInputOutput(desc)
       result.map(_.getName) should contain allOf ("CircularParent", "CircularChild")
+    }
+
+    "Reflect.isViewTableUpdater" must {
+
+      "accept a public static nested TableUpdater (Java shape)" in {
+        val updater = classOf[ViewTestModels.UserByEmailWithGet].getDeclaredClasses
+          .find(classOf[akka.javasdk.view.TableUpdater[_]].isAssignableFrom(_))
+          .get
+        Reflect.isViewTableUpdater(updater) shouldBe true
+      }
+
+      "accept a public non-static inner TableUpdater (Scala inner-class shape)" in {
+        val updater = classOf[ScalaViewWithInnerUpdater].getDeclaredClasses
+          .find(classOf[akka.javasdk.view.TableUpdater[_]].isAssignableFrom(_))
+          .get
+        Reflect.isViewTableUpdater(updater) shouldBe true
+      }
+
+      "accept a TableUpdater declared in the Scala companion object" in {
+        // In compiled Scala 2, classes defined inside `object Foo` appear in
+        // classOf[Foo].getDeclaredClasses() as ACC_STATIC nested classes — the JVM
+        // InnerClasses attribute attributes them to the primary class, not to Foo$.
+        val updater = classOf[ScalaViewWithCompanionUpdater].getDeclaredClasses
+          .find(classOf[akka.javasdk.view.TableUpdater[_]].isAssignableFrom(_))
+          .get
+        Reflect.isViewTableUpdater(updater) shouldBe true
+      }
+
+      "reject a class that does not extend TableUpdater" in {
+        Reflect.isViewTableUpdater(classOf[String]) shouldBe false
+      }
     }
   }
 }

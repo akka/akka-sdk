@@ -8,6 +8,8 @@ import scala.reflect.ClassTag
 
 import akka.dispatch.ExecutionContexts
 import akka.javasdk.impl.serialization.Serializer
+import akka.javasdk.testmodels.view.ScalaViewWithCompanionUpdater
+import akka.javasdk.testmodels.view.ScalaViewWithInnerUpdater
 import akka.javasdk.testmodels.view.ViewTestModels
 import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.Principal
@@ -126,6 +128,27 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
           case Some(tableName) => tableName shouldBe expectedTableName
           case None            => fail(s"pattern does not match [$query]")
         }
+      }
+    }
+
+    "create a descriptor for a Scala View whose TableUpdater is in the companion object" in {
+      assertDescriptor[ScalaViewWithCompanionUpdater] { desc =>
+        desc.tables should have size 1
+        desc.tables.head.tableName shouldBe "scala_companion_rows"
+      }
+    }
+
+    "create a descriptor for a Scala View whose TableUpdater is a non-static inner class" in {
+      assertDescriptor[ScalaViewWithInnerUpdater] { desc =>
+        desc.tables should have size 1
+        desc.tables.head.tableName shouldBe "scala_inner_rows"
+      }
+    }
+
+    "not duplicate table updaters when companion class has no nested classes" in {
+      // Java static-nested shape: only getDeclaredClasses() finds it; no Scala companion exists.
+      assertDescriptor[ViewWithLowerCaseQuery] { desc =>
+        desc.tables should have size 1
       }
     }
 

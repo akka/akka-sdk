@@ -4,6 +4,8 @@
 
 package com.example
 
+import akka.javasdk.tooling.validation.Validation
+import akka.javasdk.validation.ast.runtime.RuntimeTypeDef
 import com.example.CompilationTestSupport.CompileTimeValidation
 import com.example.CompilationTestSupport.RuntimeValidation
 import com.example.CompilationTestSupport.ValidationMode
@@ -272,6 +274,36 @@ abstract class AbstractViewValidationSpec(val validationMode: ValidationMode)
       assertInvalid(
         "invalid/ViewWithMultipleSnapshotHandlers.java",
         "Only one method can be annotated with @SnapshotHandler")
+    }
+
+    "accept View with public non-static (inner class) TableUpdater" in {
+      assertValid("valid/ViewWithNonStaticUpdater.java")
+    }
+
+    "reject View with private TableUpdater even without static guard" in {
+      assertInvalid(
+        "invalid/ViewWithPrivateUpdater.java",
+        "A view must contain at least one public static TableUpdater subclass")
+    }
+
+    "accept Scala-style View whose TableUpdater is in the companion object" in {
+      // Only meaningful for runtime validation: the Scala fixture is already compiled
+      // on the test classpath; compile-time validation does not process Scala sources.
+      if (validationMode == RuntimeValidation) {
+        val typeDef = new RuntimeTypeDef(classOf[ScalaLikeView])
+        val result = akka.javasdk.tooling.validation.Validations.validate(typeDef)
+        result shouldBe a[Validation.Valid]
+      }
+    }
+
+    "find nested types in the companion object via RuntimeTypeDef.getNestedTypes" in {
+      if (validationMode == RuntimeValidation) {
+        val typeDef = new RuntimeTypeDef(classOf[ScalaLikeView])
+        val nestedNames = typeDef.getNestedTypes
+        nestedNames.stream
+          .map[String](_.getSimpleName)
+          .anyMatch(_ == "Updater") shouldBe true
+      }
     }
   }
 }
