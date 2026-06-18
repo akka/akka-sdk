@@ -1,0 +1,14 @@
+<!--
+  User logback override fragment. The runtime's dev-mode logback config ends with
+    <include resource="include-dev-loggers.xml" optional="true"/>
+  so this file is the documented seam for an application to adjust log levels.
+
+  It only takes effect under classloader-isolated boot if the runtime's logback interpreter
+  (kalix.runtime.logging.BootLogbackXml) resolves this <include resource=...> across the
+  classloader boundary — logback's own Joran engine cannot, because logback lives on a parent
+  loader that does not see the user classpath. IsolatedBootIT asserts the level below took effect,
+  which is a direct end-to-end check of that interpreter.
+-->
+<included>
+  <logger name="com.example.user-marker" level="DEBUG"/>
+</included>

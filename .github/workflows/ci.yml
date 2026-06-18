@@ -466,3 +466,67 @@ jobs:
           echo "==== Verifying that generated unmanaged sources compile ===="
           rm -rf src/main/java src/test/java
           mvn test-compile --no-transfer-progress
+
+  isolated-boot-it:
+    name: Isolated boot IT
+    needs: [checks, publish-local]
+    runs-on: Akka-Default
+    # Gated: this IT resolves the akka-runtime isolated-boot artifacts (akka-runtime-boot,
+    # akka-runtime-dev-maven-plugin, akka-runtime-shared-dependencies) at the SDK's pinned
+    # akka-runtime.version. Until a runtime release carrying that feature is pinned, keep this
+    # non-blocking. TODO: drop continue-on-error once AkkaRuntimeVersion points at such a release.
+    continue-on-error: true
+
+    steps:
+      - name: Checkout Global Scripts
+        uses: actions/checkout@v6
+        with:
+          repository: akka/github-actions-scripts
+          path: scripts
+          fetch-depth: 0
+
+      - name: Setup global resolver
+        run: |
+          chmod +x ./scripts/setup_global_resolver.sh
+          ./scripts/setup_global_resolver.sh NO_MIRROR
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Set up JDK 21
+        uses: coursier/setup-action@v3.0.0
+        with:
+          jvm: temurin:1.21
+
+      - name: Cache Maven repository
+        uses: actions/cache@v5
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('akka-javasdk-parent/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Download io.akka dependencies
+        uses: actions/download-artifact@v8
+        with:
+          name: m2-cache
+          path: ~/
+
+      - name: Unpack io.akka dependencies
+        run: |-
+          cd
+          tar -xf dependencies.tar.gz
+
+      - name: Run isolated-boot integration test
+        run: |-
+          export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
+          ./updateSdkVersions.sh java maven-integration-tests/isolated-boot-it
+          cd maven-integration-tests/isolated-boot-it
+          echo "Running isolated-boot-it with SDK version: '${SDK_VERSION}'"
+          mvn verify --no-transfer-progress
