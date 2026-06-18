@@ -68,6 +68,7 @@ import akka.stream.SystemMaterializer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.time.Duration;
@@ -1128,7 +1129,12 @@ public class TestKit {
       Class<?> mainClass = Class.forName("kalix.runtime.AkkaRuntimeMain");
       Method start =
           mainClass.getMethod("start", scala.Option.class, akka.runtime.sdk.spi.Runner.class);
-      return (ActorSystem<?>) start.invoke(null, Some.apply(ConfigFactory.empty()), runner);
+      try {
+        return (ActorSystem<?>) start.invoke(null, Some.apply(ConfigFactory.empty()), runner);
+      } catch (InvocationTargetException e) {
+        // mirror the boot launchers: surface the real startup failure, not the reflection wrapper
+        throw ErrorHandling.unwrapInvocationTargetException(e);
+      }
     }
   }
 
