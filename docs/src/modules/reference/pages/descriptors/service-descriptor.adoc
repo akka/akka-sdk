@@ -247,8 +247,15 @@ The configuration for how the Akka service is scaled in response to load.
 |===
 |Field               |Type |Description
 
-|*minInstances*      |int  |The minimum instances of a service that should be available. Must be at least 1, and no greater than *maxInstances*. May not be greater than 10.
-|*maxInstances*      |int  |The maximum instances of a service that should be available. Must be at least 1, and no less than *minInstances*. May not be greater than 10.
+|*minInstances*      |int
+a|The minimum instances of a service that should be available. Must be at least 1, and no greater than *maxInstances*. May not be greater than 10.
+
+*Default:* `3`
+
+|*maxInstances*      |int
+a|The maximum instances of a service that should be available. Must be at least 1, and no less than *minInstances*. May not be greater than 10.
+
+*Default:* `10`
 |*cpuUsageThreshold* |int  |The target CPU usage for autoscaling to achieve. Once CPU usage across all instances exceeds this, the service will be scaled up. Must be at least 1 and no greater than 100.
 |===
 
