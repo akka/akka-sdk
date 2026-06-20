@@ -256,7 +256,10 @@ a|The minimum instances of a service that should be available. Must be at least 
 a|The maximum instances of a service that should be available. Must be at least 1, and no less than *minInstances*. May not be greater than 10.
 
 *Default:* `10`
-|*cpuUsageThreshold* |int  |The target CPU usage for autoscaling to achieve. Once CPU usage across all instances exceeds this, the service will be scaled up. Must be at least 1 and no greater than 100.
+|*cpuUsageThreshold* |int
+a|The target CPU usage percentage for autoscaling to achieve. Once CPU usage across all instances exceeds this, the service will be scaled up. Must be at least 1 and no greater than 100.
+
+*Default:* `80`
 |===
 
 === VolumeMount
