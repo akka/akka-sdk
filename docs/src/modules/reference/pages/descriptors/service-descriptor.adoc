@@ -227,10 +227,13 @@ The runtime configuration for the service.
 [cols="1,1,1"]
 |===
 |Field          |Type                        |Description
-|*mode*          |string |The runtime mode. Supported values are: `sidecar` or `embedded`. If the field is not defined the default mode of the service is the `sidecar` mode.
+
+|*mode*          |string
+a|The runtime mode. Defaults to `sidecar`.
+
+* `sidecar` - runs the service with the `Kalix` runtime.
+* `embedded` - runs the service with the `Akka` runtime.
 |===
-- `sidecar` -  runs the service with the `Kalix` runtime.
-- `embedded` - runs the service with the `Akka` runtime
 
 === ServiceAutoscaling
 
@@ -363,7 +366,7 @@ Replicated read means that writes are handled by one primary replica and reads c
 |===
 |Field                    |Type        |Description
 
-|*PrimarySelectionMode*   |string     a|Selection of primary can be `pinned-region`, `request-region` and `none`.
+|*PrimarySelectionMode*   |string     a|Selection of primary can be `pinned-region`, `request-region` and `none`. Defaults to `request-region`.
 
 * `pinned-region` - one region is defined as the primary for the project, and all stateful component instances will use that region as primary
 * `request-region` - the primary is selected by each individual component instance based on where the write request occurs
