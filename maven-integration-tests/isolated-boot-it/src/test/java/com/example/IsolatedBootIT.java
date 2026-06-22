@@ -57,9 +57,9 @@ public class IsolatedBootIT extends TestKitSupport {
 
   @Test
   public void userLogbackIncludeIsAppliedAcrossTheClassloaderBoundary() {
-    // include-dev-loggers.xml raises this logger to DEBUG. It only takes effect if the runtime's
-    // BootLogbackXml resolved the user's <include resource=...> across the classloader boundary;
-    // otherwise the logger inherits root (INFO) and DEBUG is not enabled.
+    // include-dev-loggers.xml raises this logger to DEBUG. It only takes effect if the runtime
+    // drove logback's Joran engine across the classloader boundary to resolve the user's
+    // <include resource=...>; otherwise the logger inherits root (INFO) and DEBUG is not enabled.
     assertTrue(
         LoggerFactory.getLogger("com.example.user-marker").isDebugEnabled(),
         "user logback include did not take effect — DEBUG not enabled for com.example.user-marker");

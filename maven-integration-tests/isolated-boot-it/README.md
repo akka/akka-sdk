@@ -24,7 +24,10 @@ the **boot launchers** from `akka-runtime`.
 4. **A user logback include is applied across the classloader boundary.** The runtime's dev-mode
    logback config ends with `<include resource="include-dev-loggers.xml" optional="true"/>`; this
    app provides that fragment to raise `com.example.user-marker` to DEBUG. It only takes effect if
-   the runtime's `BootLogbackXml` resolves the include across loaders (logback's own engine cannot).
+   the runtime drives logback's Joran engine across the classloader boundary (its stock setup cannot:
+   it resolves `class=` via the `LoggerContext`'s own loader and `<include resource=>` via logback's
+   own loader, neither of which sees the user fragment). Any custom `class=` named inside the fragment
+   resolves the same way.
 
 `ConsumerClasspathIsolationIT` (the consumer side of the testkit's non-transitive `Provided`
 runtime dependency):

@@ -3,11 +3,11 @@
     <include resource="include-dev-loggers.xml" optional="true"/>
   so this file is the documented seam for an application to adjust log levels.
 
-  It only takes effect under classloader-isolated boot if the runtime's logback interpreter
-  (kalix.runtime.logging.BootLogbackXml) resolves this <include resource=...> across the
-  classloader boundary — logback's own Joran engine cannot, because logback lives on a parent
-  loader that does not see the user classpath. IsolatedBootIT asserts the level below took effect,
-  which is a direct end-to-end check of that interpreter.
+  It only takes effect under classloader-isolated boot because the runtime drives logback's Joran
+  engine across the classloader boundary (kalix.runtime.logging.IsolatedJoranConfigurator). Stock
+  logback cannot: it resolves <include resource=...> via its own loader and class= via the
+  LoggerContext's loader, neither of which sees the user classpath. IsolatedBootIT asserts the
+  level below took effect, a direct end-to-end check of that mechanism.
 -->
 <included>
   <logger name="com.example.user-marker" level="DEBUG"/>
