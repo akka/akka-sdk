@@ -38,6 +38,21 @@ runtime dependency):
 - the testkit, the thin boot launcher (`akka.runtime.boot.EmbeddedAkkaRuntimeMain`) and the shared
   SPI surface **are** reachable — exactly what a testkit consumer should get.
 
+`TestKitLifecycleStressIT` (the start/stop lifecycle, which `TestKitSupport` only exercises once per
+class):
+
+- runs many full `TestKit` start/stop cycles back to back and samples OS resources around a measured
+  window. **File descriptors** are held to a tight bound — in practice **zero growth** — so a leaked
+  server socket or a runtime that doesn't release its listeners on `stop()` is caught.
+- **Threads** are likewise held to a tight, fixed bound. Embedded-isolated boot loads each runtime
+  behind its own classloader, so libraries that cache process-global pools in static fields get a
+  fresh copy per cycle — notably Reactor, whose `parallel`/`single` schedulers (core-count-sized
+  daemon pools) are pulled in by the persistence plugin's r2dbc pool and live in Reactor's static
+  cache, not the actor system. `EmbeddedAkkaRuntimeMain` disposes this runtime's Reactor schedulers
+  when its `ActorSystem` terminates (alongside closing the runtime classloader), so a full cycle
+  leaves no thread behind; the bound is a small fixed slack below one-thread-per-cycle, so any pool
+  that creeps back trips it. A live-thread histogram is logged for diagnosis either way.
+
 `LayoutVerificationIT` (the deploy layout `prepareRuntimeLayout` stages — what embedded mode does
 not cover):
 
