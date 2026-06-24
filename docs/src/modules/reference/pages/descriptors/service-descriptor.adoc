@@ -235,9 +235,9 @@ a|The runtime mode. Supported values are `sidecar` or `embedded`.
 
 * `sidecar` - runs the service with the `Kalix` runtime.
 * `embedded` - runs the service with the `Akka` runtime.
-
-*Default:* `sidecar`
 |===
+
+NOTE: New services should use `embedded`. The `sidecar` mode exists for backward compatibility with legacy Kalix services.
 
 === ServiceAutoscaling
 
