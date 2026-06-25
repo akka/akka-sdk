@@ -15,5 +15,8 @@ package akka.javasdk.agent;
 public non-sealed interface ModelGuardrail extends Guardrail {
 
   /** Evaluates the call described by {@code ctx} and returns a {@link Decision}. */
+  // FIXME: should become asynchronous and return CompletionStage<Decision>. User code inside the
+  //  guardrail may run async work (e.g. calling external or internal components) and we don't
+  //  control its threading. The SPI Guardrail.evaluate is already a Future; align this with it.
   Decision evaluate(ModelGuardrailContext ctx);
 }
