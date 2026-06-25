@@ -27,6 +27,7 @@ import akka.javasdk.impl.Settings
 import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl.AuthHeaders
 import akka.runtime.sdk.spi.SpiBackofficeServiceSettings
+import akka.runtime.sdk.spi.SpiSpiffeContext
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.grpc.CallCredentials
@@ -93,7 +94,8 @@ private[akka] final class GrpcClientProviderImpl(
     userServiceConfig: Config,
     remoteIdentificationHeader: Option[AuthHeaders],
     // Only populated by the testkit; production and dev-mode runners use the default no-op lookup.
-    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient] = _ => None)
+    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient] = _ => None,
+    callerSpiffeHeader: Option[String] = None)
     extends GrpcClientProvider {
   import GrpcClientProviderImpl._
   import system.executionContext
@@ -247,6 +249,15 @@ private[akka] final class GrpcClientProviderImpl(
     }
   }
 
+  def withCallerSpiffeHeader(headerValue: String): GrpcClientProviderImpl =
+    new GrpcClientProviderImpl(
+      system,
+      settings,
+      userServiceConfig,
+      remoteIdentificationHeader,
+      grpcMockLookup,
+      Some(headerValue))
+
   // FIXME(tracing): have context propagators provided by the runtime
   def withTelemetryContext(telemetryContext: OtelContext): GrpcClientProvider = {
     val otelTraceHeaders: Vector[(String, String)] = {
@@ -262,7 +273,7 @@ private[akka] final class GrpcClientProviderImpl(
           })
       builder.result()
     }
-    if (otelTraceHeaders.isEmpty) this
+    if (otelTraceHeaders.isEmpty && callerSpiffeHeader.isEmpty) this
     else
       new GrpcClientProvider {
         override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T = {
@@ -270,10 +281,14 @@ private[akka] final class GrpcClientProviderImpl(
           // Skip header propagation for mocked clients — user-provided mock subclasses don't
           // typically implement addRequestHeader and would throw or return a non-mock instance.
           if (grpcMockLookup(ClientKey(serviceClass, serviceName)).isDefined) client
-          else
-            otelTraceHeaders.foldLeft(client) { case (acc, (key, value)) =>
+          else {
+            val withSpiffe =
+              callerSpiffeHeader.fold(client)(h =>
+                client.addRequestHeader(SpiSpiffeContext.CallerSpiffeHeaderName, h).asInstanceOf[T])
+            otelTraceHeaders.foldLeft(withSpiffe) { case (acc, (key, value)) =>
               acc.addRequestHeader(key, value).asInstanceOf[T]
             }
+          }
         }
       }
   }
