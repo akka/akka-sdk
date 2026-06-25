@@ -2,7 +2,7 @@
 
 Setting up alerts on key metrics helps detect issues before they impact users. The following are suggested baselines for common Akka components.
 
-WARNING: These thresholds are starting points — tune them based on your workload characteristics and operational experience.
+NOTE: These thresholds are starting points — tune them based on your workload characteristics and operational experience.
 
 TIP: For a full list of available metrics and their attributes, see the xref:reference:telemetry/metrics.adoc[Telemetry metrics reference]. To set up metric exports to your monitoring system, see xref:operations:observability-and-monitoring/observability-exports.adoc[].
 
