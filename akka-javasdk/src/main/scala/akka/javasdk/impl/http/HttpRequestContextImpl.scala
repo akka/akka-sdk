@@ -15,10 +15,12 @@ import akka.http.javadsl.model.HttpHeader
 import akka.http.javadsl.model.HttpRequest
 import akka.javasdk.JwtClaims
 import akka.javasdk.Principals
+import akka.javasdk.SpiffeContext
 import akka.javasdk.Tracing
 import akka.javasdk.http.QueryParams
 import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.PrincipalsImpl
+import akka.javasdk.impl.SpiffeContextImpl
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.RegionInfo
@@ -67,4 +69,7 @@ private[akka] final class HttpRequestContextImpl(
     context.requestHeaders.header("Last-Event-ID").map(_.value()).toJava
 
   override def selfRegion(): String = regionInfo.selfRegion
+
+  override def getSpiffeContext(): Optional[SpiffeContext] =
+    SpiffeContextImpl.fromSpiOpt(context.spiffeContext)
 }
