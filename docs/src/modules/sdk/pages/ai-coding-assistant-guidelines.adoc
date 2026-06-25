@@ -61,7 +61,6 @@ These guidelines apply only to the Akka SDK and do not cover usage of the lower-
 * State of a workflow can be defined as a record inside the workflow, but if it contains much business logic it should be in the `domain` package, also know as domain object.
 * Use methods returning `StepEffect` for each step of the workflow. Don't use the old deprecated `definition` method. Prefer defining a `StepName` annotation to the step methods to give them a stable identifier.
 * Workflows should be explicit about timeouts and retries whenever appropriate. When calling agents the step timeout must be rather long (60 seconds) since LLM response times can be long. A workflow that orchestrates agents should define `defaultStepRecover` in the `WorkflowSettings` with limited number of retries, to avoid too many (costly) retries to the LLM.
-* Long-running workflows should have a safety-net mechanism (e.g., an overall timeout or a monitor step) to detect and handle stuck executions rather than running indefinitely.
 
 == Agents
 
@@ -71,9 +70,6 @@ These guidelines apply only to the Akka SDK and do not cover usage of the lower-
 * Agent classes should be stateless and not have mutable state in itself.
 * The agent session id is typically a UUID to guarantee uniqueness for new agent interactions, but it can be shared between different agents that participate in the same session.
 * Prefer to use a default model defined in config.
-* For structured responses, prefer `responseConformsTo(Class)` which uses the model's structured output support.
-* Agents that parse JSON responses or call tools should include `.onFailure(ex -> fallback)` error handling to gracefully handle model failures.
-* Configure `MemoryProvider` intentionally per agent — use `.none()` for stateless interactions, `.limitedWindow()` for conversational agents, or `.limitedWindow().readLast(N)` to control context size.
 
 == Views
 
@@ -115,5 +111,5 @@ These guidelines apply only to the Akka SDK and do not cover usage of the lower-
 * Use Junit 5+ annotations (`@Test` etc).
 * Use `assertThat` from `assertj`.
 * Use `componentClient` from the `TestKitSupport` for testing components (there is no “mock” component client).
-* Use `TestModelProvider` to mock responses from AI model when testing agents. Use `JsonSupport.encodeToString(mockObject)` to serialize mock responses rather than writing raw JSON strings, to ensure the mock matches the actual serialization format.
+* Use `TestModelProvider` to mock responses from AI model when testing agents.
 

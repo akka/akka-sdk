@@ -56,7 +56,7 @@ NOTE: For gRPC streaming calls, the duration metric measures the full stream lif
 
 | Content load duration p99
 | `akka.agent.content_load.duration` (p99)
-| > 2 s
+| > 2 s (depends on content source)
 |===
 
 == Event Sourced Entities
@@ -109,9 +109,9 @@ TIP: Key Value Entity metrics use `akka.component.type="key-value-entity"` to di
 | `akka.workflow.step.duration` (filter where `error.type` attribute is present)
 | > 1 req/s
 
-| Active workflow count spike
+| Active workflow count
 | `akka.workflow.active`
-| Alert on unexpected spikes (may indicate stuck workflows)
+| Set a reasonable max for your workload (sustained counts above the expected maximum may indicate stuck workflows)
 
 | Recovery duration p99
 | `akka.workflow.recovery.duration` (p99)
