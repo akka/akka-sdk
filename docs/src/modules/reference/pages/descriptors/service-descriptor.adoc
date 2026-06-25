@@ -172,7 +172,9 @@ Setting this parameter is also important if you have keysets from multiple issue
 Required when *useOidcDiscovery* is true.
 
 |*refreshInterval*    |duration
-a|How often the keyset is refreshed. This acts as an upper bound; if the source returns a cache TTL (e.g., via `Cache-Control: max-age`), the shorter of the two is used. Defaults to 1 hour.
+a|How often the keyset is refreshed. This acts as an upper bound; if the source returns a cache TTL (e.g., via `Cache-Control: max-age`), the shorter of the two is used.
+
+*Default:* `1h`
 
 |*allowedAlgorithms*  |[]string
 a|The set of algorithms allowed for this keyset. If the keyset source doesn't specify an algorithm, this restricts which algorithms may be used with it.
@@ -227,10 +229,15 @@ The runtime configuration for the service.
 [cols="1,1,1"]
 |===
 |Field          |Type                        |Description
-|*mode*          |string |The runtime mode. Supported values are: `sidecar` or `embedded`. If the field is not defined the default mode of the service is the `sidecar` mode.
+
+|*mode*          |string
+a|The runtime mode. Supported values are `sidecar` or `embedded`.
+
+* `sidecar` - runs the service with the `Kalix` runtime.
+* `embedded` - runs the service with the `Akka` runtime.
 |===
-- `sidecar` -  runs the service with the `Kalix` runtime.
-- `embedded` - runs the service with the `Akka` runtime
+
+NOTE: New services should use `embedded`. The `sidecar` mode exists for backward compatibility with legacy Kalix services.
 
 === ServiceAutoscaling
 
@@ -240,9 +247,19 @@ The configuration for how the Akka service is scaled in response to load.
 |===
 |Field               |Type |Description
 
-|*minInstances*      |int  |The minimum instances of a service that should be available. Must be at least 1, and no greater than *maxInstances*. May not be greater than 10.
-|*maxInstances*      |int  |The maximum instances of a service that should be available. Must be at least 1, and no less than *minInstances*. May not be greater than 10.
-|*cpuUsageThreshold* |int  |The target CPU usage for autoscaling to achieve. Once CPU usage across all instances exceeds this, the service will be scaled up. Must be at least 1 and no greater than 100.
+|*minInstances*      |int
+a|The minimum instances of a service that should be available. Must be at least 1, and no greater than *maxInstances*. May not be greater than 10.
+
+*Default:* `3`
+
+|*maxInstances*      |int
+a|The maximum instances of a service that should be available. Must be at least 1, and no less than *minInstances*. May not be greater than 10.
+
+*Default:* `10`
+|*cpuUsageThreshold* |int
+a|The target CPU usage percentage for autoscaling to achieve. Once CPU usage across all instances exceeds this, the service will be scaled up. Must be at least 1 and no greater than 100.
+
+*Default:* `80`
 |===
 
 === VolumeMount
@@ -268,7 +285,10 @@ Adapts a secret into a volume that can be mounted into the service's container.
 |Field         |Type              |Description
 
 |*secretName*  |string _required_ |The name of a secret in the service's project to mount.
-|*defaultMode* |int               |Mode bits to set the permissions on created files from the secret by default. Must be an octal value between 0000 and 0777, or a decimal value between 0 and 511. Defaults to 0644.
+|*defaultMode* |int
+a|Mode bits to set the permissions on created files from the secret. Must be an octal value between 0000 and 0777, or a decimal value between 0 and 511.
+
+*Default:* `0644`
 |*optional*    |boolean           |Specifies whether the container should fail to start if the secret doesn't exist.
 |===
 
@@ -314,7 +334,10 @@ Projects a workload identity token that can be mounted into the service's contai
 
 |*path*              |string _required_ |The name of the file that the token will be projected into
 |*audience*          |string _required_ |The audience of the token. This will appear in the `aud` claim of the token.
-|*expirationSeconds* |int               |The amount of time that the token will be valid for. The token will be rotated when it is older than 80% of this, or older than 24 hours. Must be at least 10 minutes. Defaults to 1 hour.
+|*expirationSeconds* |int
+a|The amount of time that the token will be valid for. The token will be rotated when it is older than 80% of this, or older than 24 hours. Must be at least 10 minutes.
+
+*Default:* `3600` (1 hour)
 |===
 
 === ServiceTelemetry
@@ -350,7 +373,10 @@ Replication configuration for stateful components, such as Entities and Workflow
 |===
 |Field       |Type       |Description
 
-|*mode*      |string     |Replication mode. The only supported mode is `replicated-read`. Defaults to `replicated-read`.
+|*mode*      |string
+a|Replication mode. The only supported mode is `replicated-read`.
+
+*Default:* `replicated-read`
 |*replicatedRead* | <<ReplicatedRead>>  |Configuration of `replicated-read` mode.
 
 |===
@@ -363,11 +389,14 @@ Replicated read means that writes are handled by one primary replica and reads c
 |===
 |Field                    |Type        |Description
 
-|*PrimarySelectionMode*   |string     a|Selection of primary can be `pinned-region`, `request-region` and `none`.
+|*PrimarySelectionMode*   |string
+a|Selection of primary. Supported values are `pinned-region`, `request-region`, and `none`.
 
 * `pinned-region` - one region is defined as the primary for the project, and all stateful component instances will use that region as primary
 * `request-region` - the primary is selected by each individual component instance based on where the write request occurs
 * `none` - read-only mode for all regions, which causes all write requests to be rejected
+
+*Default:* `request-region`
 
 |===
 
@@ -396,8 +425,15 @@ Either *secret* or *externalSecret* must be specified, but not both.
 
 |*secret*          |<<ObjectRef>>     |A reference to a secret containing the truststore file. The secret must exist in the same project as the service.
 |*externalSecret*  |<<ObjectRef>>     |A reference to an ExternalSecret resource that provides the truststore file from an external secret provider (e.g., Azure Key Vault). The ExternalSecret must exist in the same project as the service.
-|*key*             |string            |The key/filename containing the truststore file. For Secret: the key in the secret's data field. For ExternalSecret: the filename as configured in the ExternalSecret's objects. Defaults to `truststore`.
-|*type*            |string            |The truststore format. Valid values are `JKS` (Java KeyStore) and `PKCS12`. Defaults to `JKS`.
+|*key*             |string
+a|The key/filename containing the truststore file. For Secret: the key in the secret's data field. For ExternalSecret: the filename as configured in the ExternalSecret's objects.
+
+*Default:* `truststore`
+
+|*type*            |string
+a|The truststore format. Valid values are `JKS` (Java KeyStore) and `PKCS12`.
+
+*Default:* `JKS`
 |*passwordKey*     |string            |The key in the secret containing the truststore password. For ExternalSecret, this refers to the filename containing the password. If not specified, no password will be used when reading the truststore.
 |===
 
@@ -455,7 +491,10 @@ Workload identity configuration for Azure regions to authenticate with the Azure
 |Field      |Type              |Description
 
 |*clientId* |string _required_ |The client id of the configured federated identity to authenticate as
-|*tenantId* |string            |The tenant id of the Azure account. Defaults to the same tenant ID as the regions Kubernetes cluster runs in.
+|*tenantId* |string
+a|The tenant id of the Azure account.
+
+*Default:* The tenant ID of the region's Kubernetes cluster.
 |===
 
 === GcpWorkloadIdentity
