@@ -183,7 +183,12 @@ private[akka] final class GrpcClientProviderImpl(
       val create =
         clientClass.getMethod("create", classOf[GrpcClientSettings], classOf[ClassicActorSystemProvider])
       val client = create.invoke(null, clientSettings, system).asInstanceOf[AkkaGrpcClient]
-      client.asInstanceOf[T]
+      // include the caller's SPIFFE identity on cross-service (Akka) calls, never on external ones
+      val clientWithCallerSpiffe =
+        if (isAkkaService(serviceName))
+          callerSpiffeHeader.fold(client)(h => client.addRequestHeader(SpiSpiffeContext.CallerSpiffeHeaderName, h))
+        else client
+      clientWithCallerSpiffe.asInstanceOf[T]
     } catch unwrapInvocationTargetExceptionCatcher
   }
 
@@ -273,7 +278,7 @@ private[akka] final class GrpcClientProviderImpl(
           })
       builder.result()
     }
-    if (otelTraceHeaders.isEmpty && callerSpiffeHeader.isEmpty) this
+    if (otelTraceHeaders.isEmpty) this
     else
       new GrpcClientProvider {
         override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T = {
@@ -281,14 +286,10 @@ private[akka] final class GrpcClientProviderImpl(
           // Skip header propagation for mocked clients — user-provided mock subclasses don't
           // typically implement addRequestHeader and would throw or return a non-mock instance.
           if (grpcMockLookup(ClientKey(serviceClass, serviceName)).isDefined) client
-          else {
-            val withSpiffe =
-              callerSpiffeHeader.fold(client)(h =>
-                client.addRequestHeader(SpiSpiffeContext.CallerSpiffeHeaderName, h).asInstanceOf[T])
-            otelTraceHeaders.foldLeft(withSpiffe) { case (acc, (key, value)) =>
+          else
+            otelTraceHeaders.foldLeft(client) { case (acc, (key, value)) =>
               acc.addRequestHeader(key, value).asInstanceOf[T]
             }
-          }
         }
       }
   }
