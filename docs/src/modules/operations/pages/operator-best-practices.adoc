@@ -22,4 +22,8 @@ Workflows handle writes, reads and forwarding of requests in a similar way as Ev
 Changing primary regions is a serious operation and should be thought out carefully. Ideally you plan this ahead of time and synchronize the regions by allowing the replication lag to drop to zero. You can put the project into a read only mode that will stop any writes from happening if you want to be sure that there will be zero data collisions when you change the primary.
 
 === Container registries
-Container registries are regional in Akka. If you decide to use xref:operations:projects/external-container-registries.adoc[] be aware that you should have container registries in or near each of the regions in your project. If you only have your container images in one place and that place becomes unavailable your services will not be able to start new instances. 
+Container registries are regional in Akka. If you decide to use xref:operations:projects/external-container-registries.adoc[] be aware that you should have container registries in or near each of the regions in your project. If you only have your container images in one place and that place becomes unavailable your services will not be able to start new instances.
+
+== Alerting
+
+Setting up alerts on key metrics is an important part of operating Akka services. For suggested alerting thresholds across endpoints, entities, workflows, consumers, and replication, see xref:operations:observability-and-monitoring/alerting-baselines.adoc[].
