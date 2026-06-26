@@ -62,6 +62,33 @@ public class GrpcEndpointTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldPropagateCallerSpiffeOnCrossServiceGrpcCall() {
+    var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
+
+    // the endpoint makes an outbound Akka-service gRPC call ("other-service"); the downstream
+    // reports the caller SPIFFE id it observed, which must be the calling component's full id
+    var request = TestGrpcServiceOuterClass.In.newBuilder().setData("other-service").build();
+    var response = testClient.delegateEchoCallerSpiffe(request);
+
+    // the service segment carries a dynamic "-IT-<timestamp>" suffix added by the testkit
+    assertThat(response.getData())
+        .matches(
+            "spiffe://akka\\.local/projects/local-dev-mode/svc/sdk-tests[^/]*/grpc-endpoint/akkajavasdk\\.TestGrpcService");
+  }
+
+  @Test
+  public void shouldNotLeakCallerSpiffeOnExternalGrpcCall() {
+    var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
+
+    // the endpoint makes an outbound call to an external service ("some.example.com"); the internal
+    // caller SPIFFE header must not be sent to external services
+    var request = TestGrpcServiceOuterClass.In.newBuilder().setData("some.example.com").build();
+    var response = testClient.delegateEchoCallerSpiffe(request);
+
+    assertThat(response.getData()).isEmpty();
+  }
+
+  @Test
   public void shouldPropagateCustomStatusToClient() {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
     var request = TestGrpcServiceOuterClass.In.newBuilder().setData("error").build();
