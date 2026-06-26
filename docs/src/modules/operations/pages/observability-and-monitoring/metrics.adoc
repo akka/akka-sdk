@@ -89,3 +89,5 @@ image:operations:dashboard-control-tower-metrics-screenshot.png[]
 **Replication lag - average:** Average lag for multi-region event replication.
 
 **Replication failures:** Failure rate for multi-region replication.
+
+TIP: For suggested alerting thresholds on these metrics, see xref:operations:observability-and-monitoring/alerting-baselines.adoc[].
