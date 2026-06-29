@@ -20,6 +20,7 @@ import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.agent.SessionMessage.AiMessage;
 import akka.javasdk.agent.SessionMessage.MessageContent.ImageUriMessageContent;
 import akka.javasdk.agent.SessionMessage.MessageContent.TextMessageContent;
+import akka.javasdk.agent.SessionMessage.MultimodalToolCallResponse;
 import akka.javasdk.agent.SessionMessage.MultimodalUserMessage;
 import akka.javasdk.agent.SessionMessage.TokenUsage;
 import akka.javasdk.agent.SessionMessage.UserMessage;
@@ -178,6 +179,53 @@ public class SessionMemoryEntityTest {
 
     // then
     assertThat(historyResult.getReply().messages()).containsExactly(userMessage, aiMessage);
+  }
+
+  @Test
+  public void shouldAddMultimodalToolResponseToHistory() {
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+    UserMessage userMessage = new UserMessage(timestamp, "show me the chart", COMPONENT_ID);
+    SessionMessage.MessageContent text = new TextMessageContent("here is the chart");
+    SessionMessage.MessageContent image =
+        new ImageUriMessageContent(
+            "object://charts/q1.png",
+            MessageContent.ImageMessageContent.DetailLevel.AUTO,
+            Optional.of("image/png"));
+    var contents = List.of(text, image);
+    var toolResponse =
+        new MultimodalToolCallResponse(timestamp, COMPONENT_ID, "call-1", "renderChart", contents);
+
+    // when
+    EventSourcedResult<Done> result =
+        testKit
+            .method(SessionMemoryEntity::addInteraction)
+            .invoke(new AddInteractionCmd(userMessage, List.of(toolResponse)));
+
+    // then
+    assertThat(result.getReply()).isEqualTo(done());
+
+    var events = result.getAllEvents();
+    assertThat(events).hasSize(2);
+    assertThat(events.getFirst()).isInstanceOf(SessionMemoryEntity.Event.UserMessageAdded.class);
+    assertThat(events.get(1))
+        .isInstanceOf(SessionMemoryEntity.Event.MultimodalToolResponseMessageAdded.class);
+    var toolEvent = (SessionMemoryEntity.Event.MultimodalToolResponseMessageAdded) events.get(1);
+    assertThat(toolEvent.componentId()).isEqualTo(COMPONENT_ID);
+    assertThat(toolEvent.id()).isEqualTo("call-1");
+    assertThat(toolEvent.name()).isEqualTo("renderChart");
+    assertThat(toolEvent.contents()).isEqualTo(contents);
+    assertThat(toolEvent.sizeInBytes()).isEqualTo(toolResponse.size());
+
+    // when retrieving history
+    EventSourcedResult<SessionHistory> historyResult =
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+
+    // then the multimodal tool response round-trips faithfully (URI preserved)
+    assertThat(historyResult.getReply().messages()).containsExactly(userMessage, toolResponse);
   }
 
   @Test

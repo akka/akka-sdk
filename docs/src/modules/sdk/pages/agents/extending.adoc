@@ -159,7 +159,23 @@ include::example$doc-snippets/src/main/java/com/example/application/StreetViewAg
 
 The model receives the image directly, with no need to upload it to object storage first.
 
-A tool that declares a `MessageContent` return type must always return a non-null value; returning `null` results in an `IllegalArgumentException`. If the tool has no media to return, return a `TextMessageContent` instead.
+A tool that declares a single `MessageContent` return type must always return a non-null value; returning `null` results in an `IllegalArgumentException`. If the tool has no media to return, return a `TextMessageContent` instead.
+
+[#returning_a_list_of_contents]
+=== Returning multiple contents
+
+A tool can also declare its return type as `List<MessageContent>` to send several pieces of content in one tool result — for example a caption plus an image, or text plus a PDF. Every element is delivered to the model in list order. A subtype element (`List<ImageMessageContent>`) or a bounded wildcard (`List<? extends MessageContent>`) is accepted as well; any other element type makes the result a plain JSON tool response.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ChartAgent.java[ChartAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ChartAgent.java[tag=class]
+----
+<1> Declare the return type as `List<MessageContent>`.
+<2> The first element — a text caption.
+<3> The second element — the rendered image, delivered right after the caption.
+
+Individual `null` elements are filtered out, but the tool must return at least one non-null `MessageContent`: returning `null`, an empty list, or a list containing only `null` elements results in an `IllegalArgumentException`, just like the single-`MessageContent` form. Each element follows the same persistence rules described below: text and URI-referenced contents are kept in session memory, while inline bytes become a `[image]`/`[pdf]` placeholder.
 
 [IMPORTANT]
 ====

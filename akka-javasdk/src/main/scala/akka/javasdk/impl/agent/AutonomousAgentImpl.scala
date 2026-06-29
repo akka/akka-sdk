@@ -24,7 +24,6 @@ import akka.javasdk.agent.SessionMessage.AiMessage
 import akka.javasdk.agent.SessionMessage.MultimodalUserMessage
 import akka.javasdk.agent.SessionMessage.TokenUsage
 import akka.javasdk.agent.SessionMessage.ToolCallRequest
-import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
 import akka.javasdk.agent._
 import akka.javasdk.agent.task.TaskAttachment
@@ -514,11 +513,7 @@ private[impl] final class AutonomousAgentImpl(
         new AiMessage(now, m.content, componentId, toolCallRequests, m.thinking.toJava, tokenUsage, m.attributes.asJava)
 
       case m: SpiAgent.ContextMessage.ToolCallResponseMessage =>
-        val content =
-          m.contents.collect { case t: SpiAgent.TextMessageContent =>
-            t.text
-          }.mkString
-        new ToolCallResponse(now, componentId, m.id, m.name, content)
+        AgentImpl.toSessionToolCallResponse(now, componentId, m.id, m.name, m.contents)
     }
 
 }
