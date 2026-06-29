@@ -5,7 +5,11 @@
 package akka.javasdk.impl.agent
 
 import akka.annotation.InternalApi
+import akka.javasdk.Tracing
 import akka.javasdk.agent.ToolGuardrailContext
+import akka.javasdk.impl.telemetry.SpanTracingImpl
+import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.{ Context => OtelContext }
 
 /**
  * INTERNAL API
@@ -16,5 +20,9 @@ import akka.javasdk.agent.ToolGuardrailContext
     val toolCallId: String,
     val arguments: String,
     val sessionId: String,
-    val traceId: String)
-    extends ToolGuardrailContext
+    telemetryContext: Option[OtelContext],
+    tracerFactory: () => Tracer)
+    extends ToolGuardrailContext {
+
+  override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
+}

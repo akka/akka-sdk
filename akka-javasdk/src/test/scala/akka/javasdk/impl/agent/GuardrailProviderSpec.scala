@@ -23,10 +23,15 @@ import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiJsonSchema
 import com.typesafe.config.ConfigException
 import com.typesafe.config.ConfigFactory
+import io.opentelemetry.api.OpenTelemetry
+import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.Context
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
 object GuardrailProviderSpec {
+  private val testTracerFactory: () => Tracer = () => OpenTelemetry.noop().getTracer("test")
+
   private val config = ConfigFactory.parseString(s"""
     akka.javasdk.agent.guardrails {
       "request prompt injection" {
@@ -76,8 +81,7 @@ object GuardrailProviderSpec {
   // Echoes every context field into the deny reason so a test can assert the full mapping.
   class EchoingToolGuard extends ToolGuardrail {
     override def evaluate(ctx: ToolGuardrailContext): Decision =
-      Decision.deny(
-        s"${ctx.agentId}|${ctx.toolName}|${ctx.toolCallId}|${ctx.arguments}|${ctx.sessionId}|${ctx.traceId}")
+      Decision.deny(s"${ctx.agentId}|${ctx.toolName}|${ctx.toolCallId}|${ctx.arguments}|${ctx.sessionId}")
   }
 
   private def emptySchema: SpiJsonSchema.JsonSchemaObject =
@@ -93,7 +97,7 @@ object GuardrailProviderSpec {
       arguments = "{}",
       agentId = "tool-agent",
       sessionId = "session-1",
-      traceId = "trace-1")
+      telemetryContext = Context.root())
 
   class MyModelGuard(context: GuardrailContext) extends ModelGuardrail {
     override def evaluate(ctx: ModelGuardrailContext): Decision =
@@ -129,7 +133,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
 
   "The GuardrailProvider" should {
     "validate" in {
-      val provider = new GuardrailProvider(system, config)
+      val provider = new GuardrailProvider(system, config, testTracerFactory)
       provider.validate()
     }
 
@@ -144,7 +148,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
           }
           """)
           .withFallback(config)
-      val provider = new GuardrailProvider(system, faultyConfig)
+      val provider = new GuardrailProvider(system, faultyConfig, testTracerFactory)
       intercept[IllegalArgumentException] {
         provider.validate()
       }.getMessage should include("must implement [akka.javasdk.agent.Guardrail]")
@@ -161,14 +165,14 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
           }
           """)
           .withFallback(config)
-      val provider = new GuardrailProvider(system, faultyConfig)
+      val provider = new GuardrailProvider(system, faultyConfig, testTracerFactory)
       intercept[ConfigException] {
         provider.validate()
       }.getMessage should include("threshold has type STRING rather than NUMBER")
     }
 
     "select guardrails for an agent" in {
-      val provider = new GuardrailProvider(system, config)
+      val provider = new GuardrailProvider(system, config, testTracerFactory)
 
       val g1 = provider.agentGuardrails("planner-agent", role = None)
       g1.entries.size shouldBe 1
@@ -213,7 +217,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         }
         """)
         .withFallback(config)
-      val provider = new GuardrailProvider(system, wildcardConfig)
+      val provider = new GuardrailProvider(system, wildcardConfig, testTracerFactory)
 
       val g1 = provider.agentGuardrails("planner-agent", role = None)
       g1.entries.map(_.configuredGuardrail.name) should contain theSameElementsAs Set(
@@ -243,7 +247,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         """)
         .withFallback(config)
 
-      val provider = new GuardrailProvider(system, cfg)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       val g = provider.agentGuardrails("tool-agent", role = None)
       // before-tool-call guardrails are not exposed as model/mcp boundaries
       g.modelRequestGuardrails shouldBe empty
@@ -276,14 +280,14 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         """)
         .withFallback(config)
 
-      val provider = new GuardrailProvider(system, cfg)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       val g = provider.agentGuardrails("tool-agent", role = None)
       val descriptors = g.withToolGuardrails(Seq(toolDescriptor("some-tool")))
       val spiGuardrail = descriptors.head.requestGuardrails.head
 
       val result = Await.result(spiGuardrail.evaluate(toolCallContent("some-tool")), 3.seconds)
-      // matches the fields built by toolCallContent(...): agentId|toolName|toolCallId|arguments|sessionId|traceId
-      result.explanation shouldBe "tool-agent|some-tool|call-1|{}|session-1|trace-1"
+      // matches the fields built by toolCallContent(...): agentId|toolName|toolCallId|arguments|sessionId
+      result.explanation shouldBe "tool-agent|some-tool|call-1|{}|session-1"
     }
 
     "let a tool call proceed when the before-tool-call ToolGuardrail allows it" in {
@@ -300,7 +304,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         """)
         .withFallback(config)
 
-      val provider = new GuardrailProvider(system, cfg)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       val g = provider.agentGuardrails("tool-agent", role = None)
       val descriptors = g.withToolGuardrails(Seq(toolDescriptor("some-tool")))
 
@@ -323,7 +327,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         """)
         .withFallback(config)
 
-      val provider = new GuardrailProvider(system, cfg)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       val g = provider.agentGuardrails("tool-agent", role = None)
       val descriptors = g.withToolGuardrails(Seq(toolDescriptor("tool-a"), toolDescriptor("tool-b")))
 
@@ -345,7 +349,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         """)
         .withFallback(config)
 
-      val provider = new GuardrailProvider(system, cfg)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       val g = provider.agentGuardrails("tool-agent", role = None)
       val descriptors = g.withToolGuardrails(Seq(toolDescriptor("allowed-tool"), toolDescriptor("other-tool")))
 
@@ -369,7 +373,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         """)
         .withFallback(config)
 
-      val provider = new GuardrailProvider(system, cfg)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       val g = provider.agentGuardrails("model-agent", role = None)
       g.modelResponseGuardrails.size shouldBe 1
       g.mcpToolRequestGuardrails shouldBe empty
@@ -379,7 +383,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       spiGuardrail.category shouldBe "MODEL_POLICY"
 
       val result =
-        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything")), 3.seconds)
+        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root())), 3.seconds)
       result.passed shouldBe false
       result.explanation shouldBe "my model guard says no"
     }
@@ -398,12 +402,12 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         """)
         .withFallback(config)
 
-      val provider = new GuardrailProvider(system, cfg)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       val g = provider.agentGuardrails("failing-agent", role = None)
       val spiGuardrail = g.modelResponseGuardrails.head
 
       val failure = intercept[RuntimeException] {
-        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything")), 3.seconds)
+        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root())), 3.seconds)
       }
       failure.getMessage shouldBe "evaluation failed"
       failure.getCause shouldBe a[IllegalStateException]
@@ -424,12 +428,12 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         """)
         .withFallback(config)
 
-      val provider = new GuardrailProvider(system, cfg)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       val g = provider.agentGuardrails("throwing-agent", role = None)
       val spiGuardrail = g.modelResponseGuardrails.head
 
       val failure = intercept[RuntimeException] {
-        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything")), 3.seconds)
+        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root())), 3.seconds)
       }
       failure.getMessage shouldBe "kaboom"
       failure.getCause shouldBe a[IllegalStateException]
@@ -450,7 +454,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         """)
         .withFallback(config)
 
-      val provider = new GuardrailProvider(system, cfg)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       val g = provider.agentGuardrails("throwing-tool-agent", role = None)
       val descriptors = g.withToolGuardrails(Seq(toolDescriptor("some-tool")))
       val spiGuardrail = descriptors.head.requestGuardrails.head
@@ -477,7 +481,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
           }
           """)
           .withFallback(config)
-      val provider = new GuardrailProvider(system, faultyConfig)
+      val provider = new GuardrailProvider(system, faultyConfig, testTracerFactory)
       val message = intercept[IllegalArgumentException] {
         provider.validate()
       }.getMessage
@@ -499,7 +503,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
           }
           """)
           .withFallback(config)
-      val provider = new GuardrailProvider(system, faultyConfig)
+      val provider = new GuardrailProvider(system, faultyConfig, testTracerFactory)
       intercept[IllegalArgumentException] {
         provider.validate()
       }.getMessage should include("can only be bound to the before-tool-call use-for")
@@ -519,7 +523,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
           }
           """)
           .withFallback(config)
-      val provider = new GuardrailProvider(system, faultyConfig)
+      val provider = new GuardrailProvider(system, faultyConfig, testTracerFactory)
       intercept[IllegalArgumentException] {
         provider.validate()
       }.getMessage should include("can only be bound to model-side use-for")

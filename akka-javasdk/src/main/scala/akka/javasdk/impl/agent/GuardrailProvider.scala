@@ -24,6 +24,7 @@ import akka.javasdk.agent.ToolGuardrail
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
 import akka.runtime.sdk.spi.SpiAgent
 import com.typesafe.config.Config
+import io.opentelemetry.api.trace.Tracer
 
 /**
  * INTERNAL API
@@ -31,10 +32,10 @@ import com.typesafe.config.Config
 @InternalApi private[javasdk] object GuardrailProvider {
 
   final case class GuardrailEntry(configuredGuardrail: ConfiguredGuardrail, guardrail: Guardrail)
-  final case class AgentGuardrails(entries: Seq[GuardrailEntry]) {
+  final class AgentGuardrails(val entries: Seq[GuardrailEntry], tracerFactory: () => Tracer) {
     private def collectGuardrails(useFor: UseFor): Seq[SpiAgent.Guardrail] =
       entries.collect {
-        case entry if entry.configuredGuardrail.useFor.contains(useFor) => toSpiGuardrail(entry)
+        case entry if entry.configuredGuardrail.useFor.contains(useFor) => toSpiGuardrail(entry, tracerFactory)
       }
 
     val modelRequestGuardrails: Seq[SpiAgent.Guardrail] =
@@ -53,7 +54,7 @@ import com.typesafe.config.Config
         case entry
             if entry.configuredGuardrail.useFor.contains(UseFor.BeforeToolCall) &&
               (entry.configuredGuardrail.tools.isEmpty || entry.configuredGuardrail.tools.contains(toolName)) =>
-          toSpiGuardrail(entry)
+          toSpiGuardrail(entry, tracerFactory)
       }
 
     // Returns the given tool descriptors with their applicable before-tool-call guardrails attached.
@@ -85,7 +86,8 @@ import com.typesafe.config.Config
     override val reportOnly: Boolean = entry.configuredGuardrail.reportOnly
   }
 
-  final class ToolGuardrailAdapter(entry: GuardrailEntry, guardrail: ToolGuardrail) extends SpiAgent.Guardrail {
+  final class ToolGuardrailAdapter(entry: GuardrailEntry, guardrail: ToolGuardrail, tracerFactory: () => Tracer)
+      extends SpiAgent.Guardrail {
 
     override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
       content match {
@@ -101,7 +103,8 @@ import com.typesafe.config.Config
                 toolCall.toolCallId,
                 toolCall.arguments,
                 toolCall.sessionId,
-                toolCall.traceId)))
+                Option(toolCall.telemetryContext),
+                tracerFactory)))
         case other =>
           Future.failed(
             new IllegalArgumentException(s"Only tool call content is supported, but was [${other.getClass.getName}]"))
@@ -112,7 +115,8 @@ import com.typesafe.config.Config
     override val reportOnly: Boolean = entry.configuredGuardrail.reportOnly
   }
 
-  final class ModelGuardrailAdapter(entry: GuardrailEntry, guardrail: ModelGuardrail) extends SpiAgent.Guardrail {
+  final class ModelGuardrailAdapter(entry: GuardrailEntry, guardrail: ModelGuardrail, tracerFactory: () => Tracer)
+      extends SpiAgent.Guardrail {
 
     override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
       content match {
@@ -120,7 +124,9 @@ import com.typesafe.config.Config
           // TODO: thrown exceptions and explicit Decision.fail(...) currently collapse onto the same
           // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
           // fail-closed/fail-open (explicit error) — keep them separable when that lands.
-          evaluateSafely(guardrail.evaluate(new ModelGuardrailContextImpl(textContent.text)))
+          evaluateSafely(
+            guardrail.evaluate(
+              new ModelGuardrailContextImpl(textContent.text, Option(textContent.telemetryContext), tracerFactory)))
         case other =>
           Future.failed(
             new IllegalArgumentException(s"Only text content is supported, but was [${other.getClass.getName}]"))
@@ -151,12 +157,12 @@ import com.typesafe.config.Config
     }
 
   @nowarn("cat=deprecation")
-  private def toSpiGuardrail(entry: GuardrailEntry): SpiAgent.Guardrail =
+  private def toSpiGuardrail(entry: GuardrailEntry, tracerFactory: () => Tracer): SpiAgent.Guardrail =
     entry.guardrail match {
       case g: SimilarityGuard => toSpiSimilarityGuard(g, entry.configuredGuardrail)
       case g: TextGuardrail   => new TextGuardrailAdapter(entry, g)
-      case g: ToolGuardrail   => new ToolGuardrailAdapter(entry, g)
-      case g: ModelGuardrail  => new ModelGuardrailAdapter(entry, g)
+      case g: ToolGuardrail   => new ToolGuardrailAdapter(entry, g, tracerFactory)
+      case g: ModelGuardrail  => new ModelGuardrailAdapter(entry, g, tracerFactory)
     }
 
   private def toSpiSimilarityGuard(g: SimilarityGuard, c: ConfiguredGuardrail): SpiAgent.SimilarityGuard =
@@ -173,7 +179,10 @@ import com.typesafe.config.Config
 /**
  * INTERNAL API
  */
-@InternalApi private[javasdk] final class GuardrailProvider(system: ActorSystem[_], applicationConfig: Config) {
+@InternalApi private[javasdk] final class GuardrailProvider(
+    system: ActorSystem[_],
+    applicationConfig: Config,
+    tracerFactory: () => Tracer) {
   import GuardrailProvider._
 
   lazy val configuredGuardrails: Seq[ConfiguredGuardrail] = {
@@ -289,7 +298,7 @@ import com.typesafe.config.Config
         else
           acc.updated(name, entry)
       }
-    AgentGuardrails(deduplicated.values.toVector)
+    new AgentGuardrails(deduplicated.values.toVector, tracerFactory)
   }
 
 }

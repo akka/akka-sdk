@@ -570,7 +570,7 @@ private final class Sdk(
       invalid.throwFailureSummary()
   }
 
-  private val guardrailProvider = new GuardrailProvider(system, applicationConfig)
+  private val guardrailProvider = new GuardrailProvider(system, applicationConfig, sdkTracerFactory)
   try {
     guardrailProvider.validate()
   } catch {
