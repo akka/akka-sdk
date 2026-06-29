@@ -67,6 +67,7 @@ DTDs
 [Ee]mptyState
 evolvability
 effectful
+Entra
 enum
 env
 etcd
