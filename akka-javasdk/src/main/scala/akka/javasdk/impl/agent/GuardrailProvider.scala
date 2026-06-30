@@ -6,6 +6,7 @@ package akka.javasdk.impl.agent
 
 import scala.annotation.nowarn
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 import scala.util.Failure
 import scala.util.control.NonFatal
 
@@ -18,6 +19,7 @@ import akka.javasdk.agent.Decision.Deny
 import akka.javasdk.agent.Decision.Fail
 import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.GuardrailContext
+import akka.javasdk.agent.MessageContent
 import akka.javasdk.agent.ModelGuardrail
 import akka.javasdk.agent.SimilarityGuard
 import akka.javasdk.agent.TextGuardrail
@@ -54,10 +56,16 @@ import io.opentelemetry.context.{ Context => OtelContext }
    * INTERNAL API
    */
   @InternalApi private[javasdk] final class ModelGuardrailCallContextImpl(
-      val text: String,
+      contentList: java.util.List[MessageContent],
       telemetryContext: Option[OtelContext],
       tracerFactory: () => Tracer)
       extends ModelGuardrail.CallContext {
+
+    // The text being evaluated is the concatenation of the text parts; non-text parts are exposed via contents().
+    override val text: String =
+      contentList.asScala.collect { case t: MessageContent.TextMessageContent => t.text }.mkString("\n")
+
+    override def contents(): java.util.List[MessageContent] = contentList
 
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
   }
@@ -151,17 +159,24 @@ import io.opentelemetry.context.{ Context => OtelContext }
       extends SpiAgent.Guardrail {
 
     override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
+      // TODO: thrown exceptions and explicit new Decision.Fail(...) currently collapse onto the same
+      // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
+      // fail-closed/fail-open (explicit error) — keep them separable when that lands.
       content match {
         case textContent: SpiAgent.Guardrail.TextContent =>
-          // TODO: thrown exceptions and explicit new Decision.Fail(...) currently collapse onto the same
-          // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
-          // fail-closed/fail-open (explicit error) — keep them separable when that lands.
+          val contents = java.util.List.of[MessageContent](MessageContent.TextMessageContent.from(textContent.text))
           evaluateSafely(
             guardrail.decide(
-              new ModelGuardrailCallContextImpl(textContent.text, Option(textContent.telemetryContext), tracerFactory)))
+              new ModelGuardrailCallContextImpl(contents, Option(textContent.telemetryContext), tracerFactory)))
+        case multimodalContent: SpiAgent.Guardrail.MultimodalContent =>
+          val contents = multimodalContent.contents.map(AgentImpl.fromSpiMessageContent).asJava
+          evaluateSafely(
+            guardrail.decide(
+              new ModelGuardrailCallContextImpl(contents, Option(multimodalContent.telemetryContext), tracerFactory)))
         case other =>
           Future.failed(
-            new IllegalArgumentException(s"Only text content is supported, but was [${other.getClass.getName}]"))
+            new IllegalArgumentException(
+              s"Only text and multimodal content is supported, but was [${other.getClass.getName}]"))
       }
 
     override val name: String = entry.configuredGuardrail.name

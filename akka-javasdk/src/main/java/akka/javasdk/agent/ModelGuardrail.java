@@ -28,9 +28,19 @@ public non-sealed interface ModelGuardrail extends Guardrail {
 
     /**
      * The text being evaluated: the user input when evaluating a model request, the model output
-     * when evaluating a model response.
+     * when evaluating a model response. For multimodal content this is the concatenation of the
+     * text parts; use {@link #contents()} to inspect the image/PDF parts.
      */
     String text();
+
+    /**
+     * The full multimodal content being evaluated: text parts plus any image/PDF parts. Image and
+     * PDF parts arrive as loaded bytes ({@link MessageContent.DataMessageContent}) when the runtime
+     * resolved them, or as URI references ({@link MessageContent.LoadableMessageContent}) when it
+     * did not (e.g. a public URL with no content loader). For a text-only call this is a single
+     * {@link MessageContent.TextMessageContent} and matches {@link #text()}.
+     */
+    java.util.List<MessageContent> contents();
 
     /**
      * Provides access to tracing for custom application-specific tracing.
