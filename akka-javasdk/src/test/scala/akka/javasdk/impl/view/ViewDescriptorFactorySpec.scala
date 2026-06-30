@@ -13,6 +13,7 @@ import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.Principal
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.ServiceNamePattern
+import akka.runtime.sdk.spi.SpiffePattern
 import akka.runtime.sdk.spi.SpiSchema.SpiClass
 import akka.runtime.sdk.spi.SpiSchema.SpiInteger
 import akka.runtime.sdk.spi.SpiSchema.SpiList
@@ -57,7 +58,8 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
         val options = desc.componentOptions
         val acl = options.aclOpt.get
         acl.allow.head match {
-          case _: Principal => fail()
+          case _: Principal     => fail()
+          case _: SpiffePattern => fail()
           case pattern: ServiceNamePattern =>
             pattern.pattern shouldBe "test"
         }
@@ -69,7 +71,8 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
         val query = desc.queries.find(_.name == "getEmployeeByEmail").get
         val acl = query.methodOptions.acl.get
         acl.allow.head match {
-          case _: Principal => fail()
+          case _: Principal     => fail()
+          case _: SpiffePattern => fail()
           case pattern: ServiceNamePattern =>
             pattern.pattern shouldBe "test"
         }
