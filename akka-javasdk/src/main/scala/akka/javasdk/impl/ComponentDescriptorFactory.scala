@@ -288,6 +288,8 @@ private[impl] object ComponentDescriptorFactory {
     else if (Reflect.isAutonomousAgent(component))
       // Autonomous agents have no command handlers — empty descriptor
       AutonomousAgentDescriptorFactory
+    else if (Reflect.isEvaluator(component))
+      EvaluatorDescriptorFactory
     else if (Reflect.isAgent(component))
       AgentDescriptorFactory
     else
