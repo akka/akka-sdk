@@ -92,6 +92,41 @@ include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[ta
 ----
 
 
+== Component-level access with SPIFFE
+
+The `service` matcher controls access at the granularity of a whole service. To express finer-grained rules — for
+example "only the `checkout` workflow may call this endpoint", or "any agent may call this endpoint" — use the `spiffe`
+matcher. It matches on the calling component's https://spiffe.io[SPIFFE] identity, which encodes the calling service,
+the component type, and the component id.
+
+The pattern is matched against the component-path suffix of the caller's SPIFFE id, of the form
+`svc/<service>/<component-type>/<component-id>`. It supports glob matching where `*` matches any sequence of characters,
+so an exact value matches a single component and wildcards match groups of components:
+
+[source,java,indent=0]
+----
+// a single specific component
+@Acl(allow = @Acl.Matcher(spiffe = "svc/checkout/workflow/order"))
+
+// all components of the checkout service
+@Acl(allow = @Acl.Matcher(spiffe = "svc/checkout/*"))
+
+// all agents of any service
+@Acl(allow = @Acl.Matcher(spiffe = "*/agent/*"))
+----
+
+Component types that can appear as a caller are the ones that make outbound calls, such as workflows and agents. A
+`Matcher` may set exactly one of `service`, `spiffe` or `principal`.
+
+[NOTE]
+====
+Only requests from in-mesh peers carry a SPIFFE identity; internet and ingress requests never match a `spiffe` rule.
+The `svc/<service>` part of the identity is authenticated and cannot be spoofed, while the
+`<component-type>/<component-id>` part is asserted by the calling service. Matching by service is therefore fully
+authenticated; matching a specific component additionally trusts the calling service to report its own component path
+honestly.
+====
+
 == Default ACL
 
 If no ACLs are defined at all, Akka will deny requests from both other services and the internet to all components of
