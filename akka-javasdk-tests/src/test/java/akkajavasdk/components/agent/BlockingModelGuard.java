@@ -17,6 +17,6 @@ public class BlockingModelGuard implements ModelGuardrail {
 
   @Override
   public Decision decide(CallContext ctx) {
-    return Decision.deny(blockReason);
+    return new Decision.Deny(blockReason);
   }
 }

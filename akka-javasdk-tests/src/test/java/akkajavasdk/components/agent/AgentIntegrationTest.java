@@ -605,7 +605,7 @@ public class AgentIntegrationTest extends TestKitSupport {
   public void shouldUseConfiguredModelGuardrail() {
     // given
     // model-guardrail-test-agent is configured to use the BlockingModelGuard, a ModelGuardrail
-    // returning Decision.deny(...)
+    // returning new Decision.Deny(...)
     testModelProvider.whenMessage(s -> s.equals("hello")).reply("anything");
 
     // when

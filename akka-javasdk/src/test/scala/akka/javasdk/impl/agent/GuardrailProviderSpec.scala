@@ -68,18 +68,18 @@ object GuardrailProviderSpec {
 
   class MyToolGuard(context: GuardrailContext) extends ToolGuardrail {
     override def decide(ctx: ToolGuardrail.CallContext): Decision =
-      Decision.deny(s"${context.name} says no")
+      new Decision.Deny(s"${context.name} says no")
   }
 
   class AllowingToolGuard extends ToolGuardrail {
     override def decide(ctx: ToolGuardrail.CallContext): Decision =
-      Decision.allow()
+      new Decision.Allow()
   }
 
   // Echoes every context field into the deny reason so a test can assert the full mapping.
   class EchoingToolGuard extends ToolGuardrail {
     override def decide(ctx: ToolGuardrail.CallContext): Decision =
-      Decision.deny(s"${ctx.agentId}|${ctx.toolName}|${ctx.toolCallId}|${ctx.arguments}|${ctx.sessionId}")
+      new Decision.Deny(s"${ctx.agentId}|${ctx.toolName}|${ctx.toolCallId}|${ctx.arguments}|${ctx.sessionId}")
   }
 
   private def emptySchema: SpiJsonSchema.JsonSchemaObject =
@@ -99,18 +99,18 @@ object GuardrailProviderSpec {
 
   class MyModelGuard(context: GuardrailContext) extends ModelGuardrail {
     override def decide(ctx: ModelGuardrail.CallContext): Decision =
-      Decision.deny(s"${context.name} says no")
+      new Decision.Deny(s"${context.name} says no")
   }
 
   class BothGuard extends ToolGuardrail with ModelGuardrail {
-    override def decide(ctx: ModelGuardrail.CallContext): Decision = Decision.allow()
-    override def decide(ctx: ToolGuardrail.CallContext): Decision = Decision.allow()
+    override def decide(ctx: ModelGuardrail.CallContext): Decision = new Decision.Allow()
+    override def decide(ctx: ToolGuardrail.CallContext): Decision = new Decision.Allow()
   }
 
   class FailingModelGuard extends ModelGuardrail {
     val cause = new IllegalStateException("upstream classifier unreachable")
     override def decide(ctx: ModelGuardrail.CallContext): Decision =
-      Decision.fail("evaluation failed", cause)
+      new Decision.Fail("evaluation failed", cause)
   }
 
   class ThrowingModelGuard extends ModelGuardrail {

@@ -10,38 +10,17 @@ package akka.javasdk.agent;
  */
 public sealed interface Decision {
 
-  /** Returns an {@link Allow} decision with no reason. */
-  static Allow allow() {
-    return Allow.INSTANCE;
-  }
-
-  /** Creates an {@link Allow} decision with an informational reason. */
-  static Allow allow(String reason) {
-    return new Allow(reason);
-  }
-
-  /** Creates a {@link Deny} decision with the given reason. */
-  static Deny deny(String reason) {
-    return new Deny(reason);
-  }
-
-  /** Creates an {@link Fail} decision with the given reason and no cause. */
-  static Fail fail(String reason) {
-    return new Fail(reason, null);
-  }
-
-  /** Creates an {@link Fail} decision with the given reason and cause. */
-  static Fail fail(String reason, Throwable cause) {
-    return new Fail(reason, cause);
-  }
-
   /**
    * The guardrail saw nothing wrong with the call.
    *
    * @param reason informational explanation; empty string when none was provided
    */
   record Allow(String reason) implements Decision {
-    static final Allow INSTANCE = new Allow("");
+
+    /** Creates an {@link Allow} decision with no reason. */
+    public Allow() {
+      this("");
+    }
   }
 
   /**
@@ -57,5 +36,11 @@ public sealed interface Decision {
    * @param reason human-readable explanation surfaced to the user
    * @param cause the underlying throwable, or {@code null} if none
    */
-  record Fail(String reason, Throwable cause) implements Decision {}
+  record Fail(String reason, Throwable cause) implements Decision {
+
+    /** Creates a {@link Fail} decision with the given reason and no cause. */
+    public Fail(String reason) {
+      this(reason, null);
+    }
+  }
 }
