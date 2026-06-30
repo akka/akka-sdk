@@ -22,7 +22,7 @@ public class McpEndpointTest extends TestKitSupport {
   // MCP endpoint defined in akkajavasdk.components.mcp.TestMcpEndpoint
 
   @Test
-  public void listTools() {
+  public void listTools() throws Exception {
     var listingResult =
         httpClient
             .POST("/mcp")
@@ -35,10 +35,73 @@ public class McpEndpointTest extends TestKitSupport {
             .invoke();
 
     assertThat(listingResult.status()).isEqualTo(StatusCodes.OK);
-    assertThat(listingResult.body().utf8String())
+    var tools =
+        JsonSerializer.internalObjectMapper()
+            .readValue(listingResult.body().utf8String(), JsonNode.class)
+            .get("result")
+            .get("tools");
+    assertThat(tools).hasSize(3);
+    var byName = new java.util.HashMap<String, JsonNode>();
+    tools.forEach(t -> byName.put(t.get("name").asText(), t));
+    // String return: no outputSchema
+    assertThat(byName.get("echo").has("outputSchema")).isFalse();
+    // int return: toString fallback, no outputSchema
+    assertThat(byName.get("answer").has("outputSchema")).isFalse();
+    // Record return: outputSchema advertised with properties from the record fields
+    var weatherOutput = byName.get("weather").get("outputSchema");
+    assertThat(weatherOutput.get("type").asText()).isEqualTo("object");
+    assertThat(weatherOutput.get("properties").get("city").get("type").asText())
+        .isEqualTo("string");
+    assertThat(weatherOutput.get("properties").get("tempC").get("type").asText())
+        .isEqualTo("integer");
+  }
+
+  @Test
+  public void callStructuredTool() throws Exception {
+    var result =
+        httpClient
+            .POST("/mcp")
+            .withRequestBody(
+                ContentTypes.APPLICATION_JSON,
+"""
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"weather","arguments":{"city":"Leuven"}}}
+"""
+                    .getBytes(StandardCharsets.UTF_8))
+            .invoke();
+
+    assertThat(result.status()).isEqualTo(StatusCodes.OK);
+    var resultNode =
+        JsonSerializer.internalObjectMapper()
+            .readValue(result.body().utf8String(), JsonNode.class)
+            .get("result");
+    var structured = resultNode.get("structuredContent");
+    assertThat(structured.get("city").asText()).isEqualTo("Leuven");
+    assertThat(structured.get("tempC").asInt()).isEqualTo(20);
+    // Spec back-compat: fallback text content with the JSON serialization is included
+    var content = resultNode.get("content");
+    assertThat(content).hasSize(1);
+    assertThat(content.get(0).get("type").asText()).isEqualTo("text");
+    assertThat(content.get(0).get("text").asText()).contains("\"city\":\"Leuven\"");
+  }
+
+  @Test
+  public void callPrimitiveReturningTool() {
+    var result =
+        httpClient
+            .POST("/mcp")
+            .withRequestBody(
+                ContentTypes.APPLICATION_JSON,
+"""
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"answer","arguments":{}}}
+"""
+                    .getBytes(StandardCharsets.UTF_8))
+            .invoke();
+
+    assertThat(result.status()).isEqualTo(StatusCodes.OK);
+    assertThat(result.body().utf8String())
         .isEqualTo(
 """
-{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"echo","description":"A method that returns what is fed to it","inputSchema":{"type":"object","properties":{"echo":{"type":"string","description":"the string to echo"}},"required":["echo"]}}]}}
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"42"}],"isError":false}}
 """
                 .trim());
   }
