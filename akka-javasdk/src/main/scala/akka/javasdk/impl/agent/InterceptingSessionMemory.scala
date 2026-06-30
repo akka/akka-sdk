@@ -48,6 +48,8 @@ final class InterceptingSessionMemory(delegate: SessionMemory, interceptor: Sess
       requireNonNullResult(interceptor.beforeWrite(sessionId, ai), "AiMessage")
     case tcr: SessionMessage.ToolCallResponse =>
       requireNonNullResult(interceptor.beforeWrite(sessionId, tcr), "ToolCallResponse")
+    case mtcr: SessionMessage.MultimodalToolCallResponse =>
+      requireNonNullResult(interceptor.beforeWrite(sessionId, mtcr), "MultimodalToolCallResponse")
     // UserMessage and MultimodalUserMessage are never present in the messages list — the user
     // message is passed as a separate argument to addInteraction. These cases exist only to
     // satisfy exhaustiveness on the sealed SessionMessage interface; pass through unchanged.
