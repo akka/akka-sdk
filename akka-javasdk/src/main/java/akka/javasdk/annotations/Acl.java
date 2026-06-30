@@ -50,7 +50,7 @@ public @interface Acl {
    * When a matcher is applied to the request, the request is considered to match if at least one of
    * the principals attached to the request matches.
    *
-   * <p>Each Matcher can be configured either with a 'service' or a 'principal', but not both.
+   * <p>Each Matcher can be configured with exactly one of 'service', 'spiffe' or 'principal'.
    */
   @Target({ElementType.TYPE, ElementType.METHOD})
   @Retention(RetentionPolicy.RUNTIME)
@@ -65,6 +65,22 @@ public @interface Acl {
      * <p>Supports glob matching, that is, * means all services in this project.
      */
     String service() default "";
+
+    /**
+     * Match a calling component by its SPIFFE identity, allowing component-level rules such as all
+     * components of a service, all components of a given type, or one specific component.
+     *
+     * <p>Supports glob matching, where {@code *} matches any sequence of characters. The pattern is
+     * matched against the component-path suffix of the caller's SPIFFE id, i.e. {@code
+     * svc/<service>/<component-type>/<component-id>}. For example {@code
+     * svc/shopping-cart/event-sourced-entity/cart} for a single component, or a leading-{@code *}
+     * glob to match all event-sourced-entities of any service.
+     *
+     * <p>Only requests from in-mesh peers carry a SPIFFE identity (internet/ingress callers never
+     * match). The {@code svc/<service>} part is authenticated; the {@code
+     * <component-type>/<component-id>} part is self-asserted by the calling service.
+     */
+    String spiffe() default "";
 
     /** A principal matcher that can be specified with no additional configuration. */
     Principal principal() default Principal.UNSPECIFIED;
