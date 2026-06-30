@@ -8,9 +8,12 @@ import scala.annotation.nowarn
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
+import java.net.URI
+
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.javasdk.agent.Decision
+import akka.javasdk.agent.MessageContent
 import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.GuardrailContext
 import akka.javasdk.agent.ModelGuardrail
@@ -19,6 +22,7 @@ import akka.javasdk.agent.TextGuardrail
 import akka.javasdk.agent.ToolGuardrail
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiJsonSchema
+import akka.util.ByteString
 import com.typesafe.config.ConfigException
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.OpenTelemetry
@@ -100,6 +104,17 @@ object GuardrailProviderSpec {
   class MyModelGuard(context: GuardrailContext) extends ModelGuardrail {
     override def decide(ctx: ModelGuardrail.CallContext): Decision =
       new Decision.Deny(s"${context.name} says no")
+  }
+
+  // Records the per-call context so a test can assert what the model guard received. The provider
+  // instantiates the guard via reflection, so the captured context is published through this holder.
+  @volatile var capturedModelContext: ModelGuardrail.CallContext = _
+
+  class CapturingModelGuard extends ModelGuardrail {
+    override def decide(ctx: ModelGuardrail.CallContext): Decision = {
+      capturedModelContext = ctx
+      new Decision.Allow()
+    }
   }
 
   class BothGuard extends ToolGuardrail with ModelGuardrail {
@@ -384,6 +399,51 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root())), 3.seconds)
       result.passed shouldBe false
       result.explanation shouldBe "my model guard says no"
+    }
+
+    "expose multimodal content to a ModelGuardrail via CallContext.contents()" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "capturing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+              use-for = ["model-request"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).modelRequestGuardrails.head
+
+      val contents = Seq[SpiAgent.MessageContent](
+        new SpiAgent.TextMessageContent("describe this"),
+        new SpiAgent.ImageBytesMessageContent(ByteString("imgbytes"), "image/png", SpiAgent.ImageMessageContent.Auto),
+        new SpiAgent.ImageUriMessageContent(
+          URI.create("https://example.com/x.png"),
+          SpiAgent.ImageMessageContent.High,
+          None))
+      val multimodal = new SpiAgent.Guardrail.MultimodalContent(contents, Context.root())
+
+      val result = Await.result(spiGuardrail.evaluate(multimodal), 3.seconds)
+      result.passed shouldBe true
+
+      val ctx = capturedModelContext
+      // text() is the concatenation of the text parts only
+      ctx.text() shouldBe "describe this"
+
+      val received = ctx.contents()
+      received.size shouldBe 3
+      received.get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "describe this"
+
+      val image = received.get(1).asInstanceOf[MessageContent.ImageDataMessageContent]
+      image.data() shouldBe "imgbytes".getBytes
+      image.mimeType() shouldBe java.util.Optional.of("image/png")
+
+      received.get(2).asInstanceOf[MessageContent.ImageUrlMessageContent].uri() shouldBe URI.create(
+        "https://example.com/x.png")
     }
 
     "translate a Decision.Fail into a failed Future preserving reason and cause" in {
