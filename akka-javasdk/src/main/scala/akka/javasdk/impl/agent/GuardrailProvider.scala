@@ -124,7 +124,7 @@ import io.opentelemetry.context.{ Context => OtelContext }
     override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
       content match {
         case toolCall: SpiAgent.Guardrail.ToolCallContent =>
-          // TODO: thrown exceptions and explicit Decision.fail(...) currently collapse onto the same
+          // TODO: thrown exceptions and explicit new Decision.Fail(...) currently collapse onto the same
           // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
           // fail-closed/fail-open (explicit error) — keep them separable when that lands.
           evaluateSafely(
@@ -153,7 +153,7 @@ import io.opentelemetry.context.{ Context => OtelContext }
     override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
       content match {
         case textContent: SpiAgent.Guardrail.TextContent =>
-          // TODO: thrown exceptions and explicit Decision.fail(...) currently collapse onto the same
+          // TODO: thrown exceptions and explicit new Decision.Fail(...) currently collapse onto the same
           // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
           // fail-closed/fail-open (explicit error) — keep them separable when that lands.
           evaluateSafely(
@@ -170,12 +170,12 @@ import io.opentelemetry.context.{ Context => OtelContext }
   }
 
   // A thrown exception from a guardrail's evaluate(...) is treated as if the guardrail had
-  // returned Decision.fail(message, throwable) — propagated to the runtime as a failed Future.
+  // returned new Decision.Fail(message, throwable) — propagated to the runtime as a failed Future.
   private def evaluateSafely(decision: => Decision): Future[SpiAgent.Guardrail.Result] =
     try decisionToSpiResult(decision)
     catch {
       case NonFatal(t) =>
-        decisionToSpiResult(Decision.fail(Option(t.getMessage).getOrElse(t.getClass.getName), t))
+        decisionToSpiResult(new Decision.Fail(Option(t.getMessage).getOrElse(t.getClass.getName), t))
     }
 
   // Decision.Fail becomes a failed Future so the cause Throwable flows through the runtime's
