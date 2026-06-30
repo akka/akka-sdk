@@ -570,7 +570,7 @@ private final class Sdk(
       invalid.throwFailureSummary()
   }
 
-  private val guardrailProvider = new GuardrailProvider(system, applicationConfig)
+  private val guardrailProvider = new GuardrailProvider(system, applicationConfig, sdkTracerFactory)
   try {
     guardrailProvider.validate()
   } catch {
@@ -982,7 +982,8 @@ private final class Sdk(
             case any           => any.getClass
           }.toSeq
           val spiToolDescriptors =
-            FunctionTools.descriptorsFor(autonomousAgentClass) ++ toolClasses.flatMap(FunctionTools.descriptorsFor)
+            agentGuardrails.withToolGuardrails(
+              FunctionTools.descriptorsFor(autonomousAgentClass) ++ toolClasses.flatMap(FunctionTools.descriptorsFor))
           val spiMcpDescriptors =
             AgentImpl.toSpiMcpEndpoints(agentDefinition.mcpTools.asScala.toSeq, agentGuardrails, sdkExecutionContext)
 

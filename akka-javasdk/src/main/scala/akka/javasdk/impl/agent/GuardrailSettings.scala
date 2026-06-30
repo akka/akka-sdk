@@ -58,7 +58,10 @@ import com.typesafe.config.ConfigObject
     final case object ModelResponse extends UseFor
     final case object McpToolRequest extends UseFor
     final case object McpToolResponse extends UseFor
+    final case object BeforeToolCall extends UseFor
 
+    // Note: the "*" wildcard expands to the legacy text/model boundaries only. BeforeToolCall is
+    // intentionally excluded — it is reachable only by a ToolGuardrail that explicitly declares it.
     val all: Seq[UseFor] = ModelRequest :: ModelResponse :: McpToolRequest :: McpToolResponse :: Nil
   }
 
@@ -73,6 +76,7 @@ import com.typesafe.config.ConfigObject
         case "model-response"    => UseFor.ModelResponse :: Nil
         case "mcp-tool-request"  => UseFor.McpToolRequest :: Nil
         case "mcp-tool-response" => UseFor.McpToolResponse :: Nil
+        case "before-tool-call"  => UseFor.BeforeToolCall :: Nil
         case "*"                 => UseFor.all
         case other =>
           throw new IllegalArgumentException(s"Unknown use-for [$other] in guardrail configuration [$name]")
@@ -87,6 +91,8 @@ import com.typesafe.config.ConfigObject
       category = config.getString("category"),
       reportOnly = config.getOptionalBoolean("report-only"),
       useFor = useFor,
+      // Optional tool-name filter for the before-tool-call boundary; empty means "all tools on the agent".
+      tools = config.getOptionalStringSet("tools"),
       config = config)
   }
 }
@@ -102,6 +108,7 @@ import com.typesafe.config.ConfigObject
     category: String,
     reportOnly: Boolean,
     useFor: Set[UseFor],
+    tools: Set[String],
     config: Config) {
   require(!name.isBlank, s"name must be defined for guardrail")
   require(!implementationClass.isBlank, s"implementation-class must be defined for guardrail [$name]")

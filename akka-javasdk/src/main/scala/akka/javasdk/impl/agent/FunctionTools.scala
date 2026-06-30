@@ -235,7 +235,9 @@ object FunctionTools {
         else
           JsonSchema.jsonSchemaFor(method)
 
-      new SpiAgent.ToolDescriptor(name, toolAnno.description(), schema = objSchema)
+      // Per-tool before-tool-call guardrails are attached later (per agent/role binding), so
+      // descriptors are built without guardrails here.
+      new SpiAgent.ToolDescriptor(name, toolAnno.description(), schema = objSchema, requestGuardrails = Nil)
 
     }.toSeq
   }
