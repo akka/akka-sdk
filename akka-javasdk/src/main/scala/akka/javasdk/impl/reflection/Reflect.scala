@@ -34,6 +34,7 @@ import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
+import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.client.ComponentClientImpl
@@ -166,6 +167,9 @@ private[impl] object Reflect {
 
   def isAutonomousAgent(cls: Class[_]): Boolean =
     classOf[AutonomousAgent].isAssignableFrom(cls)
+
+  def isEvaluator(cls: Class[_]): Boolean =
+    classOf[Evaluator].isAssignableFrom(cls)
 
   def isToolCandidate(cls: Class[_]): Boolean =
     isEventSourcedEntity(cls) ||

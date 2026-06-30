@@ -56,6 +56,7 @@ import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
+import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.grpc.AbstractGrpcEndpoint
@@ -83,6 +84,7 @@ import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.consumer.MessageContextImpl
+import akka.javasdk.impl.evaluation.EvaluatorImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
@@ -119,6 +121,7 @@ import akka.runtime.sdk.spi.AgentDescriptor
 import akka.runtime.sdk.spi.AutonomousAgentDescriptor
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.ConsumerDescriptor
+import akka.runtime.sdk.spi.EvaluatorDescriptor
 import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
 import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
@@ -141,6 +144,7 @@ import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials
+import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup
@@ -428,6 +432,7 @@ private object ComponentType {
   val View = "view"
   val Agent = "agent"
   val AutonomousAgent = "autonomous-agent"
+  val Evaluator = "evaluator"
 }
 
 /**
@@ -671,6 +676,7 @@ private final class Sdk(
   private var viewDescriptors = Vector.empty[ViewDescriptor]
   private var agentDescriptors = Vector.empty[AgentDescriptor]
   private var autonomousAgentDescriptors = Vector.empty[AutonomousAgentDescriptor]
+  private var evaluatorDescriptors = Vector.empty[EvaluatorDescriptor]
   // Populated during scanning: componentId → (agentDefinition, spiTaskDefinitions)
   // Used by delegation wiring inside instanceFactory (called lazily after all agents registered)
   private var autonomousAgentDefinitionMap =
@@ -1079,6 +1085,30 @@ private final class Sdk(
 
         agentRegistryInfo :+= AgentRegistryImpl.agentDetailsFor(agentClass)
 
+      case clz if Reflect.isEvaluator(clz) =>
+        val componentId = Reflect.readComponentId(clz)
+        val evaluatorClass = clz.asInstanceOf[Class[Evaluator]]
+        val bindings = EvaluatorDescriptorFactory.agentBindings(clz)
+
+        val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { _ =>
+          new EvaluatorImpl[Evaluator](
+            // the runtime sets OTel baggage akka.evaluation.id around evaluate, so the wired
+            // ComponentClient inherits it from the ambient context for judge-call correlation
+            () => wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(None)),
+            evaluatorClass,
+            sdkExecutionContext)
+        }
+
+        evaluatorDescriptors :+=
+          new EvaluatorDescriptor(
+            componentId,
+            clz.getName,
+            name = Reflect.readComponentName(clz),
+            description = Reflect.readComponentDescription(clz),
+            bindings = bindings,
+            instanceFactory = instanceFactory,
+            provided = isProvided(clz))
+
       case clz if Reflect.isView(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
 
@@ -1158,6 +1188,7 @@ private final class Sdk(
         workflowDescriptors ++
         agentDescriptors ++
         autonomousAgentDescriptors ++
+        evaluatorDescriptors ++
         mcpEndpoints)
         .filterNot(isDisabled(combinedDisabledComponents))
 
