@@ -62,6 +62,7 @@ public class Validations {
         .combine(EventSourcedEntityValidations.validate(typeDef))
         .combine(AgentValidations.validate(typeDef))
         .combine(AutonomousAgentValidations.validate(typeDef))
+        .combine(EvaluatorValidations.validate(typeDef))
         .combine(ViewValidations.validate(typeDef));
   }
 

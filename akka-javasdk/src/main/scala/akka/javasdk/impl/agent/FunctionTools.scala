@@ -7,6 +7,8 @@ package akka.javasdk.impl.agent
 import java.lang.reflect.Method
 import java.lang.reflect.Type
 
+import scala.annotation.nowarn
+
 import akka.annotation.InternalApi
 import akka.javasdk.DependencyProvider
 import akka.javasdk.agent.Agent
@@ -224,6 +226,9 @@ object FunctionTools {
         required = requiredFields)
     }
   }
+  // TODO(governance): temporary — the dev snapshot SPI deprecates this ToolDescriptor constructor in
+  // favour of the requestGuardrails one; suppress until the agent code is migrated on the governance branch
+  @nowarn("msg=deprecated")
   private def toToolDescriptors(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] = {
 
     resolvedMethodNames(cls).map { case (name, method) =>
