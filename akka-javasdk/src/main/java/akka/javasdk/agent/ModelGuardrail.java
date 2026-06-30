@@ -5,6 +5,7 @@
 package akka.javasdk.agent;
 
 import akka.javasdk.Tracing;
+import java.util.List;
 
 /**
  * A guardrail that evaluates model-side calls (for example, model requests or agent responses).
@@ -28,9 +29,27 @@ public non-sealed interface ModelGuardrail extends Guardrail {
 
     /**
      * The text being evaluated: the user input when evaluating a model request, the model output
-     * when evaluating a model response.
+     * when evaluating a model response. Non-empty only when {@link #textOnly()} is true; empty for
+     * multimodal content, whose parts must be inspected via {@link #contents()}.
      */
     String text();
+
+    /**
+     * True when the content being evaluated is a single text part, i.e. {@link #contents()} holds
+     * exactly one {@link MessageContent.TextMessageContent} and {@link #text()} returns it. False
+     * for multimodal content, where {@link #contents()} must be inspected and {@link #text()} is
+     * empty.
+     */
+    boolean textOnly();
+
+    /**
+     * The full content being evaluated, in order: text parts plus any image/PDF parts. Image and
+     * PDF parts are either loaded bytes ({@link MessageContent.DataMessageContent}) or URI
+     * references ({@link MessageContent.LoadableMessageContent}), so handle both. When {@link
+     * #textOnly()} is true this is a single {@link MessageContent.TextMessageContent} that matches
+     * {@link #text()}.
+     */
+    List<MessageContent> contents();
 
     /**
      * Provides access to tracing for custom application-specific tracing.
