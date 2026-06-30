@@ -147,6 +147,21 @@ public class TestEndpoints {
     public String thisAndThat() {
       return "this-and-that";
     }
+
+    @Get("/spiffe")
+    @Acl(allow = @Acl.Matcher(spiffe = "svc/checkout/*"))
+    public String spiffe() {
+      return "spiffe";
+    }
+  }
+
+  @HttpEndpoint("invalid-acl-spiffe")
+  public static class TestEndpointInvalidAclSpiffe {
+    @Get("/invalid")
+    @Acl(allow = @Acl.Matcher(service = "*", spiffe = "svc/checkout/*"))
+    public String invalid() {
+      return "invalid matcher";
+    }
   }
 
   @HttpEndpoint("invalid-acl")
