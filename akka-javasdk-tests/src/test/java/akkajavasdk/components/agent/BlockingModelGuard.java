@@ -7,7 +7,6 @@ package akkajavasdk.components.agent;
 import akka.javasdk.agent.Decision;
 import akka.javasdk.agent.GuardrailContext;
 import akka.javasdk.agent.ModelGuardrail;
-import akka.javasdk.agent.ModelGuardrailContext;
 
 public class BlockingModelGuard implements ModelGuardrail {
   private final String blockReason;
@@ -17,7 +16,7 @@ public class BlockingModelGuard implements ModelGuardrail {
   }
 
   @Override
-  public Decision decide(ModelGuardrailContext ctx) {
+  public Decision decide(CallContext ctx) {
     return Decision.deny(blockReason);
   }
 }

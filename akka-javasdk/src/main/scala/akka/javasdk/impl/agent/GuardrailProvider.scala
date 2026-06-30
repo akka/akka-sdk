@@ -11,6 +11,7 @@ import scala.util.control.NonFatal
 
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
+import akka.javasdk.Tracing
 import akka.javasdk.agent.Decision
 import akka.javasdk.agent.Decision.Allow
 import akka.javasdk.agent.Decision.Deny
@@ -22,16 +23,47 @@ import akka.javasdk.agent.SimilarityGuard
 import akka.javasdk.agent.TextGuardrail
 import akka.javasdk.agent.ToolGuardrail
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
+import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.runtime.sdk.spi.SpiAgent
 import com.typesafe.config.Config
 import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.{ Context => OtelContext }
 
 /**
  * INTERNAL API
  */
 @InternalApi private[javasdk] object GuardrailProvider {
 
+  /**
+   * INTERNAL API
+   */
+  @InternalApi private[javasdk] final class ToolGuardrailCallContextImpl(
+      val agentId: String,
+      val toolName: String,
+      val toolCallId: String,
+      val arguments: String,
+      val sessionId: String,
+      telemetryContext: Option[OtelContext],
+      tracerFactory: () => Tracer)
+      extends ToolGuardrail.CallContext {
+
+    override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
+  }
+
+  /**
+   * INTERNAL API
+   */
+  @InternalApi private[javasdk] final class ModelGuardrailCallContextImpl(
+      val text: String,
+      telemetryContext: Option[OtelContext],
+      tracerFactory: () => Tracer)
+      extends ModelGuardrail.CallContext {
+
+    override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
+  }
+
   final case class GuardrailEntry(configuredGuardrail: ConfiguredGuardrail, guardrail: Guardrail)
+
   final class AgentGuardrails(val entries: Seq[GuardrailEntry], tracerFactory: () => Tracer) {
     private def collectGuardrails(useFor: UseFor): Seq[SpiAgent.Guardrail] =
       entries.collect {
@@ -97,7 +129,7 @@ import io.opentelemetry.api.trace.Tracer
           // fail-closed/fail-open (explicit error) — keep them separable when that lands.
           evaluateSafely(
             guardrail.decide(
-              new ToolGuardrailContextImpl(
+              new ToolGuardrailCallContextImpl(
                 toolCall.agentId,
                 toolCall.toolName,
                 toolCall.toolCallId,
@@ -126,7 +158,7 @@ import io.opentelemetry.api.trace.Tracer
           // fail-closed/fail-open (explicit error) — keep them separable when that lands.
           evaluateSafely(
             guardrail.decide(
-              new ModelGuardrailContextImpl(textContent.text, Option(textContent.telemetryContext), tracerFactory)))
+              new ModelGuardrailCallContextImpl(textContent.text, Option(textContent.telemetryContext), tracerFactory)))
         case other =>
           Future.failed(
             new IllegalArgumentException(s"Only text content is supported, but was [${other.getClass.getName}]"))

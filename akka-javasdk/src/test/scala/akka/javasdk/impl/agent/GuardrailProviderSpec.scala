@@ -14,11 +14,9 @@ import akka.javasdk.agent.Decision
 import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.GuardrailContext
 import akka.javasdk.agent.ModelGuardrail
-import akka.javasdk.agent.ModelGuardrailContext
 import akka.javasdk.agent.SimilarityGuard
 import akka.javasdk.agent.TextGuardrail
 import akka.javasdk.agent.ToolGuardrail
-import akka.javasdk.agent.ToolGuardrailContext
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiJsonSchema
 import com.typesafe.config.ConfigException
@@ -69,18 +67,18 @@ object GuardrailProviderSpec {
   }
 
   class MyToolGuard(context: GuardrailContext) extends ToolGuardrail {
-    override def decide(ctx: ToolGuardrailContext): Decision =
+    override def decide(ctx: ToolGuardrail.CallContext): Decision =
       Decision.deny(s"${context.name} says no")
   }
 
   class AllowingToolGuard extends ToolGuardrail {
-    override def decide(ctx: ToolGuardrailContext): Decision =
+    override def decide(ctx: ToolGuardrail.CallContext): Decision =
       Decision.allow()
   }
 
   // Echoes every context field into the deny reason so a test can assert the full mapping.
   class EchoingToolGuard extends ToolGuardrail {
-    override def decide(ctx: ToolGuardrailContext): Decision =
+    override def decide(ctx: ToolGuardrail.CallContext): Decision =
       Decision.deny(s"${ctx.agentId}|${ctx.toolName}|${ctx.toolCallId}|${ctx.arguments}|${ctx.sessionId}")
   }
 
@@ -100,28 +98,28 @@ object GuardrailProviderSpec {
       telemetryContext = Context.root())
 
   class MyModelGuard(context: GuardrailContext) extends ModelGuardrail {
-    override def decide(ctx: ModelGuardrailContext): Decision =
+    override def decide(ctx: ModelGuardrail.CallContext): Decision =
       Decision.deny(s"${context.name} says no")
   }
 
   class BothGuard extends ToolGuardrail with ModelGuardrail {
-    override def decide(ctx: ToolGuardrailContext): Decision = Decision.allow()
-    override def decide(ctx: ModelGuardrailContext): Decision = Decision.allow()
+    override def decide(ctx: ModelGuardrail.CallContext): Decision = Decision.allow()
+    override def decide(ctx: ToolGuardrail.CallContext): Decision = Decision.allow()
   }
 
   class FailingModelGuard extends ModelGuardrail {
     val cause = new IllegalStateException("upstream classifier unreachable")
-    override def decide(ctx: ModelGuardrailContext): Decision =
+    override def decide(ctx: ModelGuardrail.CallContext): Decision =
       Decision.fail("evaluation failed", cause)
   }
 
   class ThrowingModelGuard extends ModelGuardrail {
-    override def decide(ctx: ModelGuardrailContext): Decision =
+    override def decide(ctx: ModelGuardrail.CallContext): Decision =
       throw new IllegalStateException("kaboom")
   }
 
   class ThrowingToolGuard extends ToolGuardrail {
-    override def decide(ctx: ToolGuardrailContext): Decision =
+    override def decide(ctx: ToolGuardrail.CallContext): Decision =
       throw new IllegalStateException("kaboom")
   }
 
