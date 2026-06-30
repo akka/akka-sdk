@@ -84,8 +84,8 @@ lazy val akkaJavaSdkTestKit =
         "runtimeVersion" -> AkkaRuntimeVersion,
         "scalaVersion" -> scalaVersion.value),
       buildInfoPackage := "akka.javasdk.testkit",
-      // eventing testkit client
-      akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client))
+      // eventing testkit: client for outbound calls, server handler for the local grpc-backend
+      akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client, AkkaGrpc.Server))
     .settings(DocSettings.forModule("Akka SDK Testkit"))
     .settings(Dependencies.javaSdkTestKit)
 
