@@ -13,6 +13,7 @@ import akka.runtime.sdk.spi.All
 import akka.runtime.sdk.spi.Internet
 import akka.runtime.sdk.spi.PrincipalMatcher
 import akka.runtime.sdk.spi.ServiceNamePattern
+import akka.runtime.sdk.spi.SpiffePattern
 import com.google.rpc.Code
 
 /**
@@ -22,11 +23,14 @@ import com.google.rpc.Code
 private[impl] object AclDescriptorFactory {
 
   val invalidAnnotationUsage: String =
-    "Invalid annotation usage. Matcher has both 'principal' and 'service' defined. " +
-    "Only one is allowed."
+    "Invalid annotation usage. Matcher must have exactly one of 'principal', 'service' or 'spiffe' defined."
 
   def validateMatcher(matcher: Acl.Matcher): Unit = {
-    if (matcher.principal() != Acl.Principal.UNSPECIFIED && matcher.service().nonEmpty)
+    val definedCount =
+      (if (matcher.principal() != Acl.Principal.UNSPECIFIED) 1 else 0) +
+      (if (matcher.service().nonEmpty) 1 else 0) +
+      (if (matcher.spiffe().nonEmpty) 1 else 0)
+    if (definedCount > 1)
       throw new IllegalArgumentException(invalidAnnotationUsage)
   }
 
@@ -47,9 +51,11 @@ private[impl] object AclDescriptorFactory {
   private def toPrincipalMatcher(matchers: Array[Acl.Matcher]): List[PrincipalMatcher] =
     matchers.map { m =>
       m.principal match {
-        case Acl.Principal.ALL         => All
-        case Acl.Principal.INTERNET    => Internet
-        case Acl.Principal.UNSPECIFIED => new ServiceNamePattern(m.service())
+        case Acl.Principal.ALL      => All
+        case Acl.Principal.INTERNET => Internet
+        case Acl.Principal.UNSPECIFIED =>
+          if (m.spiffe().nonEmpty) new SpiffePattern(m.spiffe())
+          else new ServiceNamePattern(m.service())
       }
     }.toList
 
