@@ -96,7 +96,7 @@ import io.opentelemetry.api.trace.Tracer
           // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
           // fail-closed/fail-open (explicit error) — keep them separable when that lands.
           evaluateSafely(
-            guardrail.evaluate(
+            guardrail.decide(
               new ToolGuardrailContextImpl(
                 toolCall.agentId,
                 toolCall.toolName,
@@ -125,7 +125,7 @@ import io.opentelemetry.api.trace.Tracer
           // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
           // fail-closed/fail-open (explicit error) — keep them separable when that lands.
           evaluateSafely(
-            guardrail.evaluate(
+            guardrail.decide(
               new ModelGuardrailContextImpl(textContent.text, Option(textContent.telemetryContext), tracerFactory)))
         case other =>
           Future.failed(

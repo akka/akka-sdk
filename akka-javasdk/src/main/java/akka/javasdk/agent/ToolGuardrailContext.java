@@ -7,7 +7,7 @@ package akka.javasdk.agent;
 import akka.javasdk.Tracing;
 
 /**
- * Per-call context passed to a {@link ToolGuardrail} during {@link ToolGuardrail#evaluate}.
+ * Per-call context passed to a {@link ToolGuardrail} during {@link ToolGuardrail#decide}.
  *
  * <p>Carries data about the specific tool call being evaluated.
  *

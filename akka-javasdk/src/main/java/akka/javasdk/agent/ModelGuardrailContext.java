@@ -7,7 +7,7 @@ package akka.javasdk.agent;
 import akka.javasdk.Tracing;
 
 /**
- * Per-call context passed to a {@link ModelGuardrail} during {@link ModelGuardrail#evaluate}.
+ * Per-call context passed to a {@link ModelGuardrail} during {@link ModelGuardrail#decide}.
  *
  * <p>Carries data about the specific model call being evaluated.
  *

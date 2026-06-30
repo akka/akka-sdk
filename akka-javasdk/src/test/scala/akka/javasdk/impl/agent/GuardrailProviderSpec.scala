@@ -69,18 +69,18 @@ object GuardrailProviderSpec {
   }
 
   class MyToolGuard(context: GuardrailContext) extends ToolGuardrail {
-    override def evaluate(ctx: ToolGuardrailContext): Decision =
+    override def decide(ctx: ToolGuardrailContext): Decision =
       Decision.deny(s"${context.name} says no")
   }
 
   class AllowingToolGuard extends ToolGuardrail {
-    override def evaluate(ctx: ToolGuardrailContext): Decision =
+    override def decide(ctx: ToolGuardrailContext): Decision =
       Decision.allow()
   }
 
   // Echoes every context field into the deny reason so a test can assert the full mapping.
   class EchoingToolGuard extends ToolGuardrail {
-    override def evaluate(ctx: ToolGuardrailContext): Decision =
+    override def decide(ctx: ToolGuardrailContext): Decision =
       Decision.deny(s"${ctx.agentId}|${ctx.toolName}|${ctx.toolCallId}|${ctx.arguments}|${ctx.sessionId}")
   }
 
@@ -100,28 +100,28 @@ object GuardrailProviderSpec {
       telemetryContext = Context.root())
 
   class MyModelGuard(context: GuardrailContext) extends ModelGuardrail {
-    override def evaluate(ctx: ModelGuardrailContext): Decision =
+    override def decide(ctx: ModelGuardrailContext): Decision =
       Decision.deny(s"${context.name} says no")
   }
 
   class BothGuard extends ToolGuardrail with ModelGuardrail {
-    override def evaluate(ctx: ToolGuardrailContext): Decision = Decision.allow()
-    override def evaluate(ctx: ModelGuardrailContext): Decision = Decision.allow()
+    override def decide(ctx: ToolGuardrailContext): Decision = Decision.allow()
+    override def decide(ctx: ModelGuardrailContext): Decision = Decision.allow()
   }
 
   class FailingModelGuard extends ModelGuardrail {
     val cause = new IllegalStateException("upstream classifier unreachable")
-    override def evaluate(ctx: ModelGuardrailContext): Decision =
+    override def decide(ctx: ModelGuardrailContext): Decision =
       Decision.fail("evaluation failed", cause)
   }
 
   class ThrowingModelGuard extends ModelGuardrail {
-    override def evaluate(ctx: ModelGuardrailContext): Decision =
+    override def decide(ctx: ModelGuardrailContext): Decision =
       throw new IllegalStateException("kaboom")
   }
 
   class ThrowingToolGuard extends ToolGuardrail {
-    override def evaluate(ctx: ToolGuardrailContext): Decision =
+    override def decide(ctx: ToolGuardrailContext): Decision =
       throw new IllegalStateException("kaboom")
   }
 

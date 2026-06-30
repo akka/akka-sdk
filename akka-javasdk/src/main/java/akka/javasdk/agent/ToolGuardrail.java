@@ -9,8 +9,8 @@ package akka.javasdk.agent;
  *
  * <p>An implementation has a public constructor, optionally taking a {@link GuardrailContext}
  * parameter, which gives access to the guardrail's configured name and config section. The per-call
- * data is delivered to {@link #evaluate} via {@link ToolGuardrailContext}. Guardrails are enabled
- * and bound to boundaries via configuration; see the agent documentation.
+ * data is delivered to {@link #decide} via {@link ToolGuardrailContext}. Guardrails are enabled and
+ * bound to boundaries via configuration; see the agent documentation.
  */
 public non-sealed interface ToolGuardrail extends Guardrail {
 
@@ -18,5 +18,5 @@ public non-sealed interface ToolGuardrail extends Guardrail {
   // FIXME: should become asynchronous and return CompletionStage<Decision>. User code inside the
   //  guardrail may run async work (e.g. calling external or internal components) and we don't
   //  control its threading. The SPI Guardrail.evaluate is already a Future; align this with it.
-  Decision evaluate(ToolGuardrailContext ctx);
+  Decision decide(ToolGuardrailContext ctx);
 }
