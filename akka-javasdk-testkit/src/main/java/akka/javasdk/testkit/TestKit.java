@@ -42,6 +42,7 @@ import akka.javasdk.testkit.impl.WebSocketRouteTesterImpl;
 import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow;
 import akka.pattern.Patterns;
+import akka.runtime.boot.EmbeddedAkkaRuntimeMain;
 import akka.runtime.sdk.spi.ComponentClients;
 import akka.runtime.sdk.spi.EventLogClient;
 import akka.runtime.sdk.spi.SpiBackofficeSettings$;
@@ -67,6 +68,8 @@ import akka.stream.SystemMaterializer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -85,7 +88,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import kalix.runtime.AkkaRuntimeMain;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -993,8 +995,7 @@ public class TestKit {
 
       applicationConfig = runner.applicationConfig();
 
-      Config runtimeConfig = ConfigFactory.empty();
-      runtimeActorSystem = AkkaRuntimeMain.start(Some.apply(runtimeConfig), runner);
+      runtimeActorSystem = launchRuntime(runner);
       // wait for SDK to get on start callback (or fail starting), we need it to set up the
       // component client
       final Sdk.StartupContext startupContext =
@@ -1096,6 +1097,44 @@ public class TestKit {
 
     } catch (Exception ex) {
       throw new RuntimeException("Error while starting testkit", ex);
+    }
+  }
+
+  /**
+   * Launch the runtime, choosing between two modes:
+   *
+   * <ul>
+   *   <li><b>Classloader-isolated (embedded)</b> — when a classpath properties file ({@code
+   *       -Dakka.runtime.classpathsFile}) or the {@code akka.runtime.classpath.shared} system
+   *       property is present (as produced by the akka-runtime dev Maven plugin). The runtime
+   *       implementation is loaded behind a shared-surface filter so user code cannot see runtime
+   *       internals.
+   *   <li><b>Flat</b> — the default fallback (e.g. the SDK's own sbt test suites), where the
+   *       runtime implementation is already on the test classpath. {@code AkkaRuntimeMain} is
+   *       invoked reflectively so the testkit carries no compile-time dependency on runtime
+   *       internals.
+   * </ul>
+   */
+  private ActorSystem<?> launchRuntime(SdkRunner runner) throws Exception {
+    String classpathsFile = System.getProperty("akka.runtime.classpathsFile");
+    boolean isolated =
+        classpathsFile != null || System.getProperty("akka.runtime.classpath.shared") != null;
+
+    if (isolated) {
+      log.info("Starting runtime in classloader-isolated (embedded) mode");
+      String[] bootArgs = (classpathsFile != null) ? new String[] {classpathsFile} : new String[0];
+      return (ActorSystem<?>) EmbeddedAkkaRuntimeMain.start(bootArgs, runner);
+    } else {
+      log.debug("Starting runtime in flat (non-isolated) mode");
+      Class<?> mainClass = Class.forName("kalix.runtime.AkkaRuntimeMain");
+      Method start =
+          mainClass.getMethod("start", scala.Option.class, akka.runtime.sdk.spi.Runner.class);
+      try {
+        return (ActorSystem<?>) start.invoke(null, Some.apply(ConfigFactory.empty()), runner);
+      } catch (InvocationTargetException e) {
+        // mirror the boot launchers: surface the real startup failure, not the reflection wrapper
+        throw ErrorHandling.unwrapInvocationTargetException(e);
+      }
     }
   }
 

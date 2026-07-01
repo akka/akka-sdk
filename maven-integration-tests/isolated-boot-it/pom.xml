@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.akka</groupId>
+    <artifactId>akka-javasdk-parent</artifactId>
+    <!-- Must be a parent that carries the classloader-isolated boot wiring (exportRuntimeClasspath /
+         prepareRuntimeLayout goals, the surefire/failsafe `akka.runtime.classpathsFile` property,
+         and the staged-layout docker assembly). CI rewrites this via updateSdkVersions.sh; for a
+         local build point it at a published isolation snapshot — see README.md. -->
+    <version>3.6.0-22-5123e522-dev-SNAPSHOT</version>
+  </parent>
+
+  <groupId>com.example</groupId>
+  <artifactId>isolated-boot-it</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>isolated-boot-it</name>
+  <description>
+    Integration test exercising the real user experience on the classloader-isolated boot layout:
+    a component, a user logback include, and a third-party library (commons-io) pinned to a version
+    that clashes with the copy the runtime ships internally. Lives in akka-sdk because it covers the
+    parent POM plus the isolated/embedded boot launchers from akka-runtime.
+  </description>
+
+  <dependencies>
+    <!-- The deliberate clash. The akka-runtime image ships commons-io 2.16.1 on its (isolated)
+         implementation classpath; this app pins 2.11.0. Under a flat classpath the two collide;
+         under classloader isolation the runtime keeps 2.16.1 on its system loader while user code
+         below resolves 2.11.0. IsolatedBootIT asserts the user-visible version is 2.11.0, and the
+         layout check asserts the staged user/ layer carries 2.11.0 while the runtime image's own
+         classpath carries 2.16.1. Keep this version DIFFERENT from whatever the current runtime
+         ships (re-derive from target/akka-runtime/runtime-classpaths.properties if it changes). -->
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.11.0</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- This IT exercises the embedded boot launcher plus the staged user/ layout that
+           prepareRuntimeLayout produces; it deliberately does NOT build a docker image, so it needs
+           no Docker daemon. The parent binds the image build to `package`, so disable just that
+           goal here. (prepareRuntimeLayout, also bound to `package`, still runs and stages the
+           layout the LayoutVerificationIT asserts on.) A docker-build variant of this test would
+           drop this skip and run on a Docker-capable runner. -->
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
