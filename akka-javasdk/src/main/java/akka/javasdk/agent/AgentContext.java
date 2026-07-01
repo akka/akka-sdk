@@ -14,7 +14,7 @@ import akka.javasdk.Tracing;
  * only available during command processing and will throw an exception if accessed from the agent
  * constructor.
  *
- * <p><strong>Session Management:</strong> The session id identifies the contextual context for the
+ * <p><strong>Session Management:</strong> The session id identifies the contextual memory for the
  * agent. Multiple agents can share the same session id to collaborate on a common goal, sharing
  * session memory and contextual history.
  *

@@ -69,6 +69,7 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(ProtobufAgentDirectReply.class, testModelProvider)
         .withModelProvider(ProtobufAgentWithConformsTo.class, testModelProvider)
         .withModelProvider(ProtobufAgentWithResponseAs.class, testModelProvider)
+        .withModelProvider(ModelGuardrailTestAgent.class, testModelProvider)
         .withDependencyProvider(depsProvider);
   }
 
@@ -598,6 +599,26 @@ public class AgentIntegrationTest extends TestKitSupport {
     // then
     // the guardrail exception is mapped to a response in SomeAgent
     assertThat(result.response()).isEqualTo("Don't say: bad stuff");
+  }
+
+  @Test
+  public void shouldUseConfiguredModelGuardrail() {
+    // given
+    // model-guardrail-test-agent is configured to use the BlockingModelGuard, a ModelGuardrail
+    // returning new Decision.Deny(...)
+    testModelProvider.whenMessage(s -> s.equals("hello")).reply("anything");
+
+    // when
+    ModelGuardrailTestAgent.SomeResponse result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(ModelGuardrailTestAgent::mapLlmResponse)
+            .invoke("hello");
+
+    // then
+    // the GuardrailException still reaches onFailure even for the new ModelGuardrail
+    assertThat(result.response()).contains("blocked by test model guard");
   }
 
   @Test

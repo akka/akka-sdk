@@ -707,7 +707,7 @@ private[impl] final class AgentImpl(
             FunctionTools.validateNames(allToolClasses)
 
             val toolDescriptors =
-              allToolClasses.flatMap(FunctionTools.descriptorsFor)
+              guardrails.withToolGuardrails(allToolClasses.flatMap(FunctionTools.descriptorsFor))
 
             val functionTools =
               FunctionTools.toolInvokersFor(agent) ++
