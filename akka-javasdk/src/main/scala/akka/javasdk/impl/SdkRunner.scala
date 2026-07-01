@@ -1395,6 +1395,7 @@ private final class Sdk(
     (context: McpEndpointConstructionContext) =>
 
       val telemetryContext = Option(context.telemetryContext)
+      val callerSpiffe = callerSpiffeHeaderValue(context.spiffeContext)
 
       lazy val mcpRequestContext = new McpRequestContext {
         override def getPrincipals: Principals =
@@ -1418,11 +1419,14 @@ private final class Sdk(
           // Note: force cast to Java header model
           context.requestHeaders.allHeaders.asInstanceOf[Seq[HttpHeader]].asJava
 
+        override def getSpiffeContext(): Optional[SpiffeContext] =
+          SpiffeContextImpl.fromSpiOpt(context.spiffeContext)
+
       }
 
       val instance = wiredInstance("MCP Endpoint", mcpEndpointClass) {
-        sideEffectingComponentInjects(telemetryContext).orElse {
-          case p if p == classOf[GrpcRequestContext] => mcpRequestContext
+        sideEffectingComponentInjects(telemetryContext, callerSpiffe).orElse {
+          case p if p == classOf[McpRequestContext] => mcpRequestContext
         }
       }
       instance match {
