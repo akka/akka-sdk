@@ -27,6 +27,7 @@ import akka.javasdk.impl.Settings
 import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl.AuthHeaders
 import akka.runtime.sdk.spi.SpiBackofficeServiceSettings
+import akka.runtime.sdk.spi.SpiSpiffeContext
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.grpc.CallCredentials
@@ -93,7 +94,8 @@ private[akka] final class GrpcClientProviderImpl(
     userServiceConfig: Config,
     remoteIdentificationHeader: Option[AuthHeaders],
     // Only populated by the testkit; production and dev-mode runners use the default no-op lookup.
-    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient] = _ => None)
+    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient] = _ => None,
+    callerSpiffeHeader: Option[String] = None)
     extends GrpcClientProvider {
   import GrpcClientProviderImpl._
   import system.executionContext
@@ -181,7 +183,12 @@ private[akka] final class GrpcClientProviderImpl(
       val create =
         clientClass.getMethod("create", classOf[GrpcClientSettings], classOf[ClassicActorSystemProvider])
       val client = create.invoke(null, clientSettings, system).asInstanceOf[AkkaGrpcClient]
-      client.asInstanceOf[T]
+      // include the caller's SPIFFE identity on cross-service (Akka) calls, never on external ones
+      val clientWithCallerSpiffe =
+        if (isAkkaService(serviceName))
+          callerSpiffeHeader.fold(client)(h => client.addRequestHeader(SpiSpiffeContext.CallerSpiffeHeaderName, h))
+        else client
+      clientWithCallerSpiffe.asInstanceOf[T]
     } catch unwrapInvocationTargetExceptionCatcher
   }
 
@@ -246,6 +253,15 @@ private[akka] final class GrpcClientProviderImpl(
           ex)
     }
   }
+
+  def withCallerSpiffeHeader(headerValue: String): GrpcClientProviderImpl =
+    new GrpcClientProviderImpl(
+      system,
+      settings,
+      userServiceConfig,
+      remoteIdentificationHeader,
+      grpcMockLookup,
+      Some(headerValue))
 
   // FIXME(tracing): have context propagators provided by the runtime
   def withTelemetryContext(telemetryContext: OtelContext): GrpcClientProvider = {

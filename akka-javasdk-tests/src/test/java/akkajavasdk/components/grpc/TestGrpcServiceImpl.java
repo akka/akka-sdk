@@ -4,6 +4,8 @@
 
 package akkajavasdk.components.grpc;
 
+import akka.javasdk.CallerSpiffeContext;
+import akka.javasdk.SpiffeContext;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.GrpcEndpoint;
 import akka.javasdk.grpc.GrpcClientProvider;
@@ -69,6 +71,27 @@ public class TestGrpcServiceImpl implements TestGrpcService {
     var grpcServiceClient =
         grpcClientProvider.grpcClientFor(TestGrpcServiceClient.class, "other-service");
     return grpcServiceClient.simple(in);
+  }
+
+  @Override
+  public TestGrpcServiceOuterClass.Out echoCallerSpiffe(TestGrpcServiceOuterClass.In in) {
+    var caller =
+        requestContext
+            .getSpiffeContext()
+            .flatMap(SpiffeContext::getCallerContext)
+            .map(CallerSpiffeContext::getSpiffeId)
+            .orElse("");
+    return TestGrpcServiceOuterClass.Out.newBuilder().setData(caller).build();
+  }
+
+  @Override
+  public TestGrpcServiceOuterClass.Out delegateEchoCallerSpiffe(TestGrpcServiceOuterClass.In in) {
+    // in.data carries the target service name; both "other-service" (Akka) and "some.example.com"
+    // (external) are aliased back to self in application.conf
+    var serviceName = in.getData();
+    var grpcServiceClient =
+        grpcClientProvider.grpcClientFor(TestGrpcServiceClient.class, serviceName);
+    return grpcServiceClient.echoCallerSpiffe(in);
   }
 
   @Override

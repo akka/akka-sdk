@@ -17,6 +17,7 @@ import akka.stream.javadsl.Sink;
 import akka.util.ByteString;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akkajavasdk.components.http.ResourcesEndpoint;
+import akkajavasdk.components.http.SpiffeEndpoint;
 import akkajavasdk.components.http.TestEndpoint;
 import java.io.InputStream;
 import java.time.Duration;
@@ -83,6 +84,33 @@ public class HttpEndpointTest extends TestKitSupport {
     var response =
         testKit.getHttpClientProvider().httpClientFor("sdk-tests").GET("/index.html").invoke();
     assertThat(response.status()).isEqualTo(StatusCodes.OK);
+  }
+
+  @Test
+  public void shouldPropagateCallerSpiffeOnCrossServiceHttpCall() {
+    // the endpoint makes an outbound Akka-service HTTP call; the downstream reports the caller
+    // SPIFFE id it observed, which must be the calling component's full id
+    var response =
+        httpClient
+            .GET("/spiffe/delegate/service")
+            .responseBodyAs(SpiffeEndpoint.CallerInfo.class)
+            .invoke();
+    // the service segment carries a dynamic "-IT-<timestamp>" suffix added by the testkit
+    assertThat(response.body().caller())
+        .matches(
+            "spiffe://akka\\.local/projects/local-dev-mode/svc/sdk-tests[^/]*/http-endpoint/akkajavasdk\\.components\\.http\\.SpiffeEndpoint");
+  }
+
+  @Test
+  public void shouldNotLeakCallerSpiffeOnExternalHttpCall() {
+    // the endpoint makes an outbound call to an external http:// URL; the internal caller SPIFFE
+    // header must not be sent to external servers
+    var response =
+        httpClient
+            .GET("/spiffe/delegate/external")
+            .responseBodyAs(SpiffeEndpoint.CallerInfo.class)
+            .invoke();
+    assertThat(response.body().caller()).isEmpty();
   }
 
   @Test
