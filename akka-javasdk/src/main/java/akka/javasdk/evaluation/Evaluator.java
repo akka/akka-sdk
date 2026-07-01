@@ -5,6 +5,7 @@
 package akka.javasdk.evaluation;
 
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl;
+import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -85,7 +86,7 @@ public abstract class Evaluator {
        * @param evaluations the evaluation outcomes (must not be empty)
        * @return the record effect
        */
-      Effect record(java.util.List<Evaluation> evaluations);
+      Effect record(List<Evaluation> evaluations);
 
       /**
        * Report that the evaluation could not be performed.

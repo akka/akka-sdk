@@ -12,6 +12,7 @@ import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.Subject;
 import akka.javasdk.testkit.EvaluatorResult;
 import akka.javasdk.testkit.EvaluatorTestKit;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 public class SimpleEvaluatorTest {
@@ -66,7 +67,7 @@ public class SimpleEvaluatorTest {
   public void worksWithFlowInteractionSubject() {
     Subject flow =
         new Subject.FlowInteraction(
-            "flow-1", "support-agent", java.util.Optional.of("instance-1"), "session-1", 3);
+            "flow-1", "support-agent", Optional.of("instance-1"), "session-1", 3);
 
     EvaluatorResult result = testKit.evaluate(flow);
 
