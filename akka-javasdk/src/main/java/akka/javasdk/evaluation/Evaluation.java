@@ -4,6 +4,7 @@
 
 package akka.javasdk.evaluation;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -76,14 +77,14 @@ public final class Evaluation {
 
   /** Return a copy of this evaluation with the given attribute added. */
   public Evaluation withAttribute(String key, String value) {
-    var updated = new java.util.HashMap<>(attributes);
+    var updated = new HashMap<>(attributes);
     updated.put(key, value);
     return new Evaluation(passed, explanation, score, label, updated);
   }
 
   /** Return a copy of this evaluation with all the given attributes added. */
   public Evaluation withAttributes(Map<String, String> attributes) {
-    var updated = new java.util.HashMap<>(this.attributes);
+    var updated = new HashMap<>(this.attributes);
     updated.putAll(attributes);
     return new Evaluation(passed, explanation, score, label, updated);
   }
