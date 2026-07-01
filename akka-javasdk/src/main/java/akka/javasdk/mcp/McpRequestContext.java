@@ -8,6 +8,7 @@ import akka.annotation.DoNotInherit;
 import akka.http.javadsl.model.HttpHeader;
 import akka.javasdk.JwtClaims;
 import akka.javasdk.Principals;
+import akka.javasdk.SpiffeContext;
 import akka.javasdk.Tracing;
 import java.util.List;
 import java.util.Optional;
@@ -62,4 +63,10 @@ public interface McpRequestContext {
    * @return A list with all the headers of the current request
    */
   List<HttpHeader> allRequestHeaders();
+
+  /**
+   * The SPIFFE context for this endpoint, including the caller's identity if the request came from
+   * another Akka service in the same project. Empty when SPIFFE is disabled.
+   */
+  Optional<SpiffeContext> getSpiffeContext();
 }
