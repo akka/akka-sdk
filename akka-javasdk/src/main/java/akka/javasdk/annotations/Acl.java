@@ -70,12 +70,13 @@ public @interface Acl {
      * Match a calling component by its SPIFFE identity, allowing component-level rules such as all
      * components of a service, all components of a given type, or one specific component.
      *
-     * <p>Supports glob matching, where {@code *} matches any sequence of characters. The pattern is
-     * matched against the component-path suffix of the caller's SPIFFE id, i.e. {@code
-     * svc/<service>/<component-type>/<component-id>}. For example {@code
-     * svc/shopping-cart/workflow/checkout} for a single component, or a leading-{@code *} glob to
-     * match all agents of any service. Only components that make outbound calls (such as workflows
-     * and agents) appear as callers.
+     * <p>Supports segment-aware glob matching over the {@code /}-separated path: {@code *} matches
+     * within a single path segment, and {@code **} (only allowed as the final token) matches across
+     * segments. The pattern is matched against the component-path suffix of the caller's SPIFFE id,
+     * i.e. {@code svc/<service>/<component-type>/<component-id>}. For example {@code
+     * svc/shopping-cart/workflow/checkout} for a single component, {@code svc/shopping-cart/**} for
+     * all components of a service, or {@code svc/*}{@code /agent/*} for all agents of any service.
+     * Only components that make outbound calls (such as workflows and agents) appear as callers.
      *
      * <p>Only requests from in-mesh peers carry a SPIFFE identity (internet/ingress callers never
      * match). The {@code svc/<service>} part is authenticated; the {@code

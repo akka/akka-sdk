@@ -4,6 +4,7 @@
 
 package akka.javasdk.validation.ast;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -48,4 +49,15 @@ public interface AnnotationDef {
    * @return the type reference, or empty if not found or not a class value
    */
   Optional<TypeRefDef> getClassValue(String attributeName);
+
+  /**
+   * Gets an array of nested annotations from an annotation attribute.
+   *
+   * <p>For example, for {@code @Acl(allow = {@Acl.Matcher(...), @Acl.Matcher(...)})}, calling {@code
+   * getAnnotationArrayValue("allow")} returns one AnnotationDef per matcher.
+   *
+   * @param attributeName the name of the attribute
+   * @return the nested annotations, or an empty list if not found or not an annotation array
+   */
+  List<AnnotationDef> getAnnotationArrayValue(String attributeName);
 }

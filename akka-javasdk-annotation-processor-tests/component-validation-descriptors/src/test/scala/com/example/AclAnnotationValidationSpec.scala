@@ -38,6 +38,22 @@ abstract class AbstractAclAnnotationValidationSpec(val validationMode: Validatio
       assertValid("valid/ValidConsumerWithServiceStreamAndMethodAcl.java")
     }
 
+    "accept a SPIFFE @Acl pattern with a trailing ** and single-segment wildcards" in {
+      assertValid("valid/ValidHttpEndpointWithSpiffeAcl.java")
+    }
+
+    "reject a SPIFFE @Acl pattern with a non-final ** on an HttpEndpoint" in {
+      assertInvalid(
+        "invalid/HttpEndpointAclSpiffeWildcardNotLast.java",
+        "`**` is only allowed as the final token")
+    }
+
+    "reject a SPIFFE @Acl pattern with a non-final ** on a GrpcEndpoint" in {
+      assertInvalid(
+        "invalid/GrpcEndpointAclSpiffeWildcardNotLast.java",
+        "`**` is only allowed as the final token")
+    }
+
     "reject @Acl on a Consumer without @Produce.ServiceStream" in {
       assertInvalid(
         "invalid/AclOnConsumer.java",

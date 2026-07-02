@@ -164,6 +164,15 @@ public class TestEndpoints {
     }
   }
 
+  @HttpEndpoint("invalid-acl-spiffe-pattern")
+  public static class TestEndpointInvalidAclSpiffePattern {
+    @Get("/invalid")
+    @Acl(allow = @Acl.Matcher(spiffe = "svc/**/agent"))
+    public String invalid() {
+      return "invalid spiffe pattern";
+    }
+  }
+
   @HttpEndpoint("invalid-acl")
   public static class TestEndpointInvalidAcl {
     @Get("/invalid")

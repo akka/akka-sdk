@@ -32,6 +32,24 @@ private[impl] object AclDescriptorFactory {
       (if (matcher.spiffe().nonEmpty) 1 else 0)
     if (definedCount > 1)
       throw new IllegalArgumentException(invalidAnnotationUsage)
+    if (matcher.spiffe().nonEmpty)
+      validateSpiffePattern(matcher.spiffe())
+  }
+
+  // Mirrors the runtime glob compiler (akka-runtime PrincipalMatcher.compileSegmentGlob): in a SPIFFE ACL glob
+  // `*` matches within a single path segment and `**` matches across segments, but `**` is only valid as the final
+  // token of the pattern. Reject a non-final `**` (or `***`) here so the mistake surfaces when the service is built
+  // rather than only when the runtime compiles the pattern.
+  def validateSpiffePattern(pattern: String): Unit = {
+    var i = 0
+    while (i < pattern.length) {
+      if (pattern.charAt(i) == '*' && i + 1 < pattern.length && pattern.charAt(i + 1) == '*') {
+        if (i + 2 != pattern.length)
+          throw new IllegalArgumentException(
+            s"Invalid SPIFFE ACL pattern [$pattern]: `**` is only allowed as the final token (matches everything below)")
+        i += 2
+      } else i += 1
+    }
   }
 
   // receives the method, checks if it is annotated with @Acl and if so,

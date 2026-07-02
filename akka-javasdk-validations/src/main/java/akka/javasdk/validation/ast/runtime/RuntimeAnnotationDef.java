@@ -9,6 +9,8 @@ import akka.javasdk.validation.ast.TypeRefDef;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -57,6 +59,19 @@ public record RuntimeAnnotationDef(Annotation annotation) implements AnnotationD
         .filter(v -> v instanceof Class)
         .map(v -> (Class<?>) v)
         .map(RuntimeTypeRefDef::new);
+  }
+
+  @Override
+  public List<AnnotationDef> getAnnotationArrayValue(String attributeName) {
+    return getAttributeValue(attributeName)
+        .filter(v -> v instanceof Annotation[])
+        .map(v -> (Annotation[]) v)
+        .map(
+            arr ->
+                Arrays.stream(arr)
+                    .map(a -> (AnnotationDef) new RuntimeAnnotationDef(a))
+                    .toList())
+        .orElse(List.of());
   }
 
   /**

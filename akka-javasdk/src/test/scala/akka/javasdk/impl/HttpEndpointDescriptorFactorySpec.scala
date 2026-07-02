@@ -248,6 +248,11 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
         HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointInvalidAclDenyCode], _ => null)
       }
       caught.getMessage should include("Invalid HTTP status code: 123123")
+
+      val spiffeCaught = intercept[IllegalArgumentException] {
+        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointInvalidAclSpiffePattern], _ => null)
+      }
+      spiffeCaught.getMessage should include("`**` is only allowed as the final token")
     }
 
     //Utility to compare StaticClaim to avoid creating `equals` in the original.
