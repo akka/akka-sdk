@@ -55,7 +55,7 @@ public class EvaluatorTestKit<E extends Evaluator> {
    * id.
    *
    * @param subject the interaction to evaluate
-   * @param evaluationId the id of the evaluation (also used to derive judge session ids)
+   * @param evaluationId the id of the evaluation
    * @return the result of the evaluation
    */
   public EvaluatorResult evaluate(Subject subject, String evaluationId) {

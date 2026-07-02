@@ -38,11 +38,6 @@ private[impl] object EvaluatorImpl {
     override def subject(): Subject = toSdkSubject(spiContext.subject)
 
     override def evaluationId(): String = spiContext.evaluationId
-
-    override def evaluationSession(): String = evaluationSession("default")
-
-    override def evaluationSession(judgeKey: String): String =
-      s"${spiContext.evaluationId}-judge-$judgeKey"
   }
 
   private def toSdkSubject(spiSubject: SpiEvaluator.Subject): Subject =

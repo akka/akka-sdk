@@ -42,7 +42,7 @@ public abstract class Evaluator {
   /**
    * Evaluate the interaction identified by the given context.
    *
-   * @param context identifies the interaction to evaluate and provides judge session ids
+   * @param context identifies the interaction to evaluate
    * @return an {@link Effect} describing the outcome of the evaluation
    */
   public abstract Effect evaluate(EvaluationContext context);

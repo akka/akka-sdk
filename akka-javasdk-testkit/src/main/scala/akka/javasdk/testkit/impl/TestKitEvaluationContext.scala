@@ -11,8 +11,7 @@ import akka.javasdk.evaluation.Subject
 /**
  * INTERNAL API
  *
- * An [[EvaluationContext]] for use in the [[akka.javasdk.testkit.EvaluatorTestKit]]. Mirrors the judge-session
- * derivation of the production context.
+ * An [[EvaluationContext]] for use in the [[akka.javasdk.testkit.EvaluatorTestKit]].
  */
 @InternalApi
 private[testkit] final class TestKitEvaluationContext(subject: Subject, evaluationId: String)
@@ -21,8 +20,4 @@ private[testkit] final class TestKitEvaluationContext(subject: Subject, evaluati
   override def subject(): Subject = subject
 
   override def evaluationId(): String = evaluationId
-
-  override def evaluationSession(): String = evaluationSession("default")
-
-  override def evaluationSession(judgeKey: String): String = s"$evaluationId-judge-$judgeKey"
 }

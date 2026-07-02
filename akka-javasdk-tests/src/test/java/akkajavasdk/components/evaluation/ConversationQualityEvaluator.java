@@ -28,10 +28,12 @@ public class ConversationQualityEvaluator extends Evaluator {
     String transcript =
         "interaction " + subject.sequenceNr() + " of agent " + subject.agentComponentId();
 
+    // run the judge in its own session, derived from the evaluation id and isolated from the
+    // subject's session
     QualityJudge.Verdict verdict =
         componentClient
             .forAgent()
-            .inSession(context.evaluationSession())
+            .inSession(context.evaluationId() + "-quality-judge")
             .method(QualityJudge::evaluate)
             .invoke(transcript);
 

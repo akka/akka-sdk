@@ -38,8 +38,7 @@ public class SimpleEvaluatorTest {
     assertEquals(0.9, evaluation.score().orElseThrow());
     assertEquals("good", evaluation.label().orElseThrow());
     assertEquals("support-agent", evaluation.attributes().get("agent"));
-    // the judge session id is derived from the evaluation id, never the bare id
-    assertTrue(evaluation.explanation().contains("eval-42-judge-default"));
+    assertTrue(evaluation.explanation().contains("eval-42"));
   }
 
   @Test

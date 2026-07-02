@@ -32,7 +32,7 @@ public class SimpleEvaluator extends Evaluator {
     } else {
       return effects()
           .complete(
-              Evaluation.passed("evaluated in session " + context.evaluationSession())
+              Evaluation.passed("evaluated for " + context.evaluationId())
                   .withScore(0.9)
                   .withLabel("good")
                   .withAttribute("agent", subject.agentComponentId()));
