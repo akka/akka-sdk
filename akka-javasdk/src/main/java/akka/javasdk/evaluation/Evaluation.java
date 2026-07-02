@@ -125,22 +125,6 @@ public final class Evaluation {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Evaluation that)) return false;
-    return passed == that.passed
-        && explanation.equals(that.explanation)
-        && score.equals(that.score)
-        && label.equals(that.label)
-        && attributes.equals(that.attributes);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(passed, explanation, score, label, attributes);
-  }
-
-  @Override
   public String toString() {
     return "Evaluation["
         + "passed="
