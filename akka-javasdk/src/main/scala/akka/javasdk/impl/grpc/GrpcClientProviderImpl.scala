@@ -94,8 +94,7 @@ private[akka] final class GrpcClientProviderImpl(
     userServiceConfig: Config,
     remoteIdentificationHeader: Option[AuthHeaders],
     // Only populated by the testkit; production and dev-mode runners use the default no-op lookup.
-    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient] = _ => None,
-    callerSpiffeHeader: Option[String] = None)
+    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient] = _ => None)
     extends GrpcClientProvider {
   import GrpcClientProviderImpl._
   import system.executionContext
@@ -183,12 +182,7 @@ private[akka] final class GrpcClientProviderImpl(
       val create =
         clientClass.getMethod("create", classOf[GrpcClientSettings], classOf[ClassicActorSystemProvider])
       val client = create.invoke(null, clientSettings, system).asInstanceOf[AkkaGrpcClient]
-      // include the caller's SPIFFE identity on cross-service (Akka) calls, never on external ones
-      val clientWithCallerSpiffe =
-        if (isAkkaService(serviceName))
-          callerSpiffeHeader.fold(client)(h => client.addRequestHeader(SpiSpiffeContext.CallerSpiffeHeaderName, h))
-        else client
-      clientWithCallerSpiffe.asInstanceOf[T]
+      client.asInstanceOf[T]
     } catch unwrapInvocationTargetExceptionCatcher
   }
 
@@ -254,42 +248,43 @@ private[akka] final class GrpcClientProviderImpl(
     }
   }
 
-  def withCallerSpiffeHeader(headerValue: String): GrpcClientProviderImpl =
-    new GrpcClientProviderImpl(
-      system,
-      settings,
-      userServiceConfig,
-      remoteIdentificationHeader,
-      grpcMockLookup,
-      Some(headerValue))
-
   // FIXME(tracing): have context propagators provided by the runtime
-  def withTelemetryContext(telemetryContext: OtelContext): GrpcClientProvider = {
+  def withCallContext(telemetryContext: Option[OtelContext], callerSpiffeHeader: Option[String]): GrpcClientProvider = {
     val otelTraceHeaders: Vector[(String, String)] = {
       val builder = Vector.newBuilder[(String, String)]
-      W3CTraceContextPropagator
-        .getInstance()
-        .inject(
-          telemetryContext,
-          null,
-          // Note: side-effecting instead of mutable collection
-          (_: scala.Any, key: String, value: String) => {
-            builder += ((key, value))
-          })
+      telemetryContext.foreach(context =>
+        W3CTraceContextPropagator
+          .getInstance()
+          .inject(
+            context,
+            null,
+            // Note: side-effecting instead of mutable collection
+            (_: scala.Any, key: String, value: String) => {
+              builder += ((key, value))
+            }))
       builder.result()
     }
-    if (otelTraceHeaders.isEmpty) this
+    if (otelTraceHeaders.isEmpty && callerSpiffeHeader.isEmpty) this
     else
+      // A wrapper around this provider rather than a new provider instance, so that the underlying client
+      // cache (and its channels) is shared: header decoration per lookup is cheap, while a separate provider
+      // would create and cache a new client per component instance or request.
       new GrpcClientProvider {
         override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T = {
           val client = GrpcClientProviderImpl.this.grpcClientFor(serviceClass, serviceName)
           // Skip header propagation for mocked clients — user-provided mock subclasses don't
           // typically implement addRequestHeader and would throw or return a non-mock instance.
           if (grpcMockLookup(ClientKey(serviceClass, serviceName)).isDefined) client
-          else
-            otelTraceHeaders.foldLeft(client) { case (acc, (key, value)) =>
+          else {
+            // the caller's SPIFFE identity goes on cross-service (Akka) calls, never on external ones
+            val headers =
+              if (isAkkaService(serviceName))
+                otelTraceHeaders ++ callerSpiffeHeader.map(SpiSpiffeContext.CallerSpiffeHeaderName -> _)
+              else otelTraceHeaders
+            headers.foldLeft(client) { case (acc, (key, value)) =>
               acc.addRequestHeader(key, value).asInstanceOf[T]
             }
+          }
         }
       }
   }

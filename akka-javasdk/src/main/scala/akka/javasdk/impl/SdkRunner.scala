@@ -722,7 +722,7 @@ private final class Sdk(
       case p if p == classOf[ComponentClient] => scanTimeComponentClient
       case r if r == classOf[AgentRegistry]   => scanTimeAgentRegistry
     }
-    overrides.orElse(sideEffectingComponentInjects(None))
+    overrides.orElse(sideEffectingComponentInjects(None, callerSpiffe = None))
   }
 
   private def isProvided(clz: Class[_]): Boolean = {
@@ -1153,9 +1153,11 @@ private final class Sdk(
         ctx.componentPath
     }
 
+  // callerSpiffe deliberately has no default: every component factory must decide whether outbound
+  // calls carry the component's SPIFFE identity (None only where there is no component identity)
   private def sideEffectingComponentInjects(
       telemetryContext: Option[OtelContext],
-      callerSpiffe: Option[String] = None): PartialFunction[Class[_], Any] = {
+      callerSpiffe: Option[String]): PartialFunction[Class[_], Any] = {
     // remember to update component type API doc and docs if changing the set of injectables
     case p if p == classOf[ComponentClient]    => componentClient(telemetryContext)
     case h if h == classOf[HttpClientProvider] => httpClientProvider(telemetryContext, callerSpiffe)
@@ -1181,12 +1183,12 @@ private final class Sdk(
         //        pass auth headers with the runner startup context from the runtime
         Some(
           wiredInstance[ServiceSetup]("Service Setup", serviceClassClass.asInstanceOf[Class[ServiceSetup]])(
-            sideEffectingComponentInjects(None)))
+            sideEffectingComponentInjects(None, callerSpiffe = None)))
 
       case Some(serviceClassClass) =>
         //just wiring the class
         wiredInstance[Any]("Service Setup", serviceClassClass.asInstanceOf[Class[Any]])(
-          sideEffectingComponentInjects(None))
+          sideEffectingComponentInjects(None, callerSpiffe = None))
         None
       case _ => None
     }
@@ -1567,8 +1569,6 @@ private final class Sdk(
 
   private def grpcClientProvider(
       telemetryContext: Option[OtelContext],
-      callerSpiffe: Option[String]): GrpcClientProvider = {
-    val withSpiffe = callerSpiffe.fold(grpcClientProvider)(grpcClientProvider.withCallerSpiffeHeader)
-    telemetryContext.fold(withSpiffe: GrpcClientProvider)(withSpiffe.withTelemetryContext)
-  }
+      callerSpiffe: Option[String]): GrpcClientProvider =
+    grpcClientProvider.withCallContext(telemetryContext, callerSpiffe)
 }
