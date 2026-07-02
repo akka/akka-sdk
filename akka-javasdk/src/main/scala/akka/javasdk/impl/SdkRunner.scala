@@ -1096,7 +1096,7 @@ private final class Sdk(
       case clz if Reflect.isEvaluator(clz) =>
         val componentId = Reflect.readComponentId(clz)
         val evaluatorClass = clz.asInstanceOf[Class[Evaluator]]
-        val bindings = EvaluatorDescriptorFactory.agentBindings(clz)
+        val bindings = EvaluatorDescriptorFactory.agentBindings(clz).toSeq // FIXME: Set in SPI
 
         val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { _ =>
           new EvaluatorImpl[Evaluator](

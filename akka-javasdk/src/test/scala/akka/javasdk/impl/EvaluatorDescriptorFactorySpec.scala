@@ -18,7 +18,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
-  private def agentBindingIds(bindings: Seq[SpiEvaluator.Binding]): Seq[String] =
+  private def agentBindingIds(bindings: Set[SpiEvaluator.Binding]): Set[String] =
     bindings.collect { case ab: SpiEvaluator.AgentBinding => ab.agentComponentId }
 
   "Evaluator descriptor factory" should {

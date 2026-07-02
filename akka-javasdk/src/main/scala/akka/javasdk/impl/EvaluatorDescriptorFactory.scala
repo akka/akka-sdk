@@ -6,7 +6,6 @@ package akka.javasdk.impl
 
 import akka.annotation.InternalApi
 import akka.javasdk.annotations.EvaluatesAgent
-import akka.javasdk.annotations.EvaluatesAgents
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.SpiEvaluator
 
@@ -24,13 +23,8 @@ private[impl] object EvaluatorDescriptorFactory extends ComponentDescriptorFacto
   }
 
   /** Read the `@EvaluatesAgent` annotations on the evaluator class into SPI agent bindings. */
-  def agentBindings(component: Class[_]): Seq[SpiEvaluator.Binding] = {
-    val repeated = component.getAnnotationsByType(classOf[EvaluatesAgent])
-    val fromContainer =
-      Option(component.getAnnotation(classOf[EvaluatesAgents])).map(_.value()).getOrElse(Array.empty[EvaluatesAgent])
-    // getAnnotationsByType already unwraps the container, but be defensive against duplicates
-    (repeated ++ fromContainer).distinctBy(_.componentId()).toSeq.map { ann =>
-      new SpiEvaluator.AgentBinding(ann.componentId(), SpiEvaluator.AgentBindingEvent.Interaction)
+  def agentBindings(component: Class[_]): Set[SpiEvaluator.Binding] =
+    component.getAnnotationsByType(classOf[EvaluatesAgent]).toSet[EvaluatesAgent].map { annotation =>
+      new SpiEvaluator.AgentBinding(annotation.componentId(), SpiEvaluator.AgentBindingEvent.Interaction)
     }
-  }
 }
