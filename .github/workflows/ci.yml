@@ -55,11 +55,11 @@ jobs:
             ~/.cache/coursier
             ~/.sbt
             ~/.ivy2/cache
-          key: coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+          key: coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
           restore-keys: |
-            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
-            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
-            coursier-
+            coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+            coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-v2-
 
       - name: Set up JDK 21
         # https://github.com/coursier/setup-action/releases
@@ -138,11 +138,11 @@ jobs:
             ~/.cache/coursier
             ~/.sbt
             ~/.ivy2/cache
-          key: coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+          key: coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
           restore-keys: |
-            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
-            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
-            coursier-
+            coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+            coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-v2-
 
       - name: Set up JDK 21
         # https://github.com/coursier/setup-action/releases
@@ -218,11 +218,11 @@ jobs:
             ~/.cache/coursier
             ~/.sbt
             ~/.ivy2/cache
-          key: coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+          key: coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
           restore-keys: |
-            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
-            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
-            coursier-
+            coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+            coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-v2-
 
       - name: Set up JDK 21
         # https://github.com/coursier/setup-action/releases
