@@ -49,7 +49,8 @@ public class WorkflowEvaluator extends Evaluator {
             .thenCompose(started -> reportStage)
             .thenApply(
                 report ->
-                    effects().record(Evaluation.passed(report.reason()).withScore(report.score())));
+                    effects()
+                        .complete(Evaluation.passed(report.reason()).withScore(report.score())));
 
     return effects().asyncEffect(futureEffect);
   }

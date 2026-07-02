@@ -32,8 +32,7 @@ public interface EvaluationContext {
    * A session id scoped to this evaluation, for use when invoking a judge agent (LLM-as-judge).
    *
    * <p>Judge interactions are run in their own session, isolated from the subject's session, so
-   * that they do not pollute the conversation being evaluated. The returned id is derived from the
-   * evaluation id but is never the bare evaluation id itself.
+   * that they do not pollute the conversation being evaluated.
    *
    * <p>Use {@link #evaluationSession(String)} when an evaluator invokes more than one judge, so
    * each judge gets its own isolated session.

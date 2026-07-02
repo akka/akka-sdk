@@ -22,7 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 public class WorkflowEvaluatorTest extends TestKitSupport {
 
   @Test
-  public void recordsWorkflowResult() {
+  public void completesWithWorkflowResult() {
     EvaluatorTestKit<WorkflowEvaluator> evaluatorTestKit =
         EvaluatorTestKit.of(
             () -> new WorkflowEvaluator(componentClient, testKit.getMaterializer()));
@@ -33,7 +33,7 @@ public class WorkflowEvaluatorTest extends TestKitSupport {
     EvaluatorResult result = evaluatorTestKit.evaluate(subject, "eval-workflow-1");
 
     assertThat(result.isAsync()).isTrue();
-    assertThat(result.isRecord()).isTrue();
+    assertThat(result.isComplete()).isTrue();
     assertThat(result.getEvaluations()).hasSize(1);
     var evaluation = result.getEvaluations().get(0);
     assertThat(evaluation.passed()).isTrue(); // workflow completed

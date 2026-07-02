@@ -36,6 +36,6 @@ public class ConversationQualityEvaluator extends Evaluator {
             .invoke(transcript);
 
     return effects()
-        .record(Evaluation.of(verdict.passed(), verdict.reason()).withScore(verdict.score()));
+        .complete(Evaluation.of(verdict.passed(), verdict.reason()).withScore(verdict.score()));
   }
 }

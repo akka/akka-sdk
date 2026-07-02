@@ -25,11 +25,11 @@ public class SimpleEvaluatorTest {
   }
 
   @Test
-  public void recordsEvaluation() {
+  public void completesEvaluation() {
     EvaluatorResult result = testKit.evaluate(agentInteraction(5), "eval-42");
 
-    assertTrue(result.isRecord());
-    assertFalse(result.isError());
+    assertTrue(result.isComplete());
+    assertFalse(result.isInconclusive());
     assertFalse(result.isAsync());
 
     assertEquals(1, result.getEvaluations().size());
@@ -43,12 +43,12 @@ public class SimpleEvaluatorTest {
   }
 
   @Test
-  public void reportsError() {
+  public void reportsInconclusive() {
     EvaluatorResult result = testKit.evaluate(agentInteraction(-1));
 
-    assertTrue(result.isError());
-    assertFalse(result.isRecord());
-    assertEquals("cannot evaluate interaction -1", result.getError());
+    assertTrue(result.isInconclusive());
+    assertFalse(result.isComplete());
+    assertEquals("cannot evaluate interaction -1", result.getInconclusiveReason());
   }
 
   @Test
@@ -56,8 +56,8 @@ public class SimpleEvaluatorTest {
     EvaluatorResult result = testKit.evaluate(agentInteraction(0));
 
     assertTrue(result.isAsync());
-    // async effect resolves to the terminal record
-    assertTrue(result.isRecord());
+    // async effect resolves to the terminal completion
+    assertTrue(result.isComplete());
     assertEquals(1, result.getEvaluations().size());
     assertEquals("async verdict", result.getEvaluations().get(0).explanation());
     assertEquals(0.5, result.getEvaluations().get(0).score().orElseThrow());
@@ -71,7 +71,7 @@ public class SimpleEvaluatorTest {
 
     EvaluatorResult result = testKit.evaluate(flow);
 
-    assertTrue(result.isRecord());
+    assertTrue(result.isComplete());
     assertEquals("support-agent", result.getEvaluations().get(0).attributes().get("agent"));
   }
 }

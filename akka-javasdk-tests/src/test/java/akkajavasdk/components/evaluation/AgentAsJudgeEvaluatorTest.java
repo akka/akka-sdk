@@ -41,7 +41,7 @@ public class AgentAsJudgeEvaluatorTest extends TestKitSupport {
   }
 
   @Test
-  public void recordsPassingJudgeVerdict() {
+  public void completesWithPassingJudgeVerdict() {
     judgeModel.fixedResponse(
         """
         { "passed": true, "score": 0.87, "reason": "clear and helpful" }
@@ -53,7 +53,7 @@ public class AgentAsJudgeEvaluatorTest extends TestKitSupport {
 
     EvaluatorResult result = testKit.evaluate(agentInteraction(), "eval-1");
 
-    assertThat(result.isRecord()).isTrue();
+    assertThat(result.isComplete()).isTrue();
     assertThat(result.getEvaluations()).hasSize(1);
     var evaluation = result.getEvaluations().get(0);
     assertThat(evaluation.passed()).isTrue();
@@ -62,7 +62,7 @@ public class AgentAsJudgeEvaluatorTest extends TestKitSupport {
   }
 
   @Test
-  public void recordsFailingJudgeVerdict() {
+  public void completesWithFailingJudgeVerdict() {
     judgeModel.fixedResponse(
         """
         { "passed": false, "score": 0.12, "reason": "unhelpful and off-topic" }
@@ -74,7 +74,7 @@ public class AgentAsJudgeEvaluatorTest extends TestKitSupport {
 
     EvaluatorResult result = testKit.evaluate(agentInteraction(), "eval-2");
 
-    assertThat(result.isRecord()).isTrue();
+    assertThat(result.isComplete()).isTrue();
     var evaluation = result.getEvaluations().get(0);
     assertThat(evaluation.passed()).isFalse();
     assertThat(evaluation.explanation()).isEqualTo("unhelpful and off-topic");

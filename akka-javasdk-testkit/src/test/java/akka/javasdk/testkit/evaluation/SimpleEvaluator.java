@@ -22,16 +22,16 @@ public class SimpleEvaluator extends Evaluator {
     long sequenceNr = subject.sequenceNr();
 
     if (sequenceNr < 0) {
-      return effects().error("cannot evaluate interaction " + sequenceNr);
+      return effects().inconclusive("cannot evaluate interaction " + sequenceNr);
     } else if (sequenceNr == 0) {
-      // delegate asynchronously, resolving to a recorded evaluation
+      // delegate asynchronously, resolving to a completed evaluation
       return effects()
           .asyncEffect(
               CompletableFuture.completedFuture(
-                  effects().record(Evaluation.passed("async verdict").withScore(0.5))));
+                  effects().complete(Evaluation.passed("async verdict").withScore(0.5))));
     } else {
       return effects()
-          .record(
+          .complete(
               Evaluation.passed("evaluated in session " + context.evaluationSession())
                   .withScore(0.9)
                   .withLabel("good")

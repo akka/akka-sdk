@@ -893,15 +893,19 @@ private final class Sdk(
             serializer,
             regionInfo,
             ComponentDescriptor.descriptorFor(timedActionClass, serializer))
+        // TODO(governance): temporary — the dev-snapshot SPI deprecates this eager constructor in
+        // favour of the instanceFactory one; migrate the timed-action wiring on the governance branch
         timedActionDescriptors :+=
-          new TimedActionDescriptor(
+          (new TimedActionDescriptor(
             componentId,
             clz.getName,
             timedActionSpi,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = Reflect.protoCommandHandlerInputTimedAction(clz.asInstanceOf[Class[TimedAction]]))
+            protobufDescriptors =
+              Reflect.protoCommandHandlerInputTimedAction(clz.asInstanceOf[Class[TimedAction]])): @nowarn(
+            "msg=deprecated"))
 
       case clz if Reflect.isConsumer(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -926,8 +930,10 @@ private final class Sdk(
             ComponentDescriptorFactory.findIgnore(consumerClass),
             componentDescriptor,
             regionInfo)
+        // TODO(governance): temporary — the dev-snapshot SPI deprecates this eager constructor in
+        // favour of the instanceFactory one; migrate the consumer wiring on the governance branch
         consumerDescriptors :+=
-          new ConsumerDescriptor(
+          (new ConsumerDescriptor(
             componentId,
             clz.getName,
             consumerSrc,
@@ -936,7 +942,8 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor))
+            protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor)): @nowarn(
+            "msg=deprecated"))
 
       case clz if Reflect.isAutonomousAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)

@@ -16,8 +16,8 @@ import akka.javasdk.evaluation.EvaluationContext
 import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.evaluation.Subject
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.AsyncEffect
-import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.ErrorEffect
-import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.RecordEffect
+import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.CompleteEffect
+import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.InconclusiveEffect
 import akka.runtime.sdk.spi.SpiEvaluator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -91,7 +91,8 @@ private[impl] final class EvaluatorImpl[E <: Evaluator](
       val effect = evaluator.evaluate(context)
       toSpiEffect(effect)
     } catch {
-      // a thrown error is a failure (distinct from a deliberate error() effect); the runtime records it as such
+      // a thrown exception is a failure (distinct from the deliberate inconclusive() outcome); the
+      // runtime catches the failed future, logs the throwable, and records a failed evaluation
       case NonFatal(ex) =>
         log.error(s"Failure during evaluation in Evaluator component [${evaluatorClass.getSimpleName}].", ex)
         Future.failed(ex)
@@ -100,10 +101,10 @@ private[impl] final class EvaluatorImpl[E <: Evaluator](
 
   private def toSpiEffect(effect: Evaluator.Effect): Future[SpiEvaluator.Effect] =
     effect match {
-      case RecordEffect(evaluations) =>
-        Future.successful(new SpiEvaluator.RecordEffect(evaluations.map(toSpiEvaluation)))
-      case ErrorEffect(reason) =>
-        Future.successful(new SpiEvaluator.ErrorEffect(new SpiEvaluator.Error(reason, None)))
+      case CompleteEffect(evaluations) =>
+        Future.successful(new SpiEvaluator.CompleteEffect(evaluations.map(toSpiEvaluation)))
+      case InconclusiveEffect(reason) =>
+        Future.successful(new SpiEvaluator.InconclusiveEffect(reason))
       case AsyncEffect(futureEffect) =>
         // pending future is a suspended evaluation; a failed future is recorded as a failure by the runtime
         futureEffect.flatMap(toSpiEffect)

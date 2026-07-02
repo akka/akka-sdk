@@ -33,7 +33,7 @@ private[testkit] final class EvaluatorResultImpl(effect: EvaluatorEffectImpl.Pri
 
   private val async: Boolean = effect.isInstanceOf[EvaluatorEffectImpl.AsyncEffect]
 
-  // resolve any async effects to a terminal record/error
+  // resolve any async effects to a terminal complete/inconclusive
   private val terminal: EvaluatorEffectImpl.PrimaryEffect = resolve(effect)
 
   private def resolve(effect: EvaluatorEffectImpl.PrimaryEffect): EvaluatorEffectImpl.PrimaryEffect =
@@ -45,15 +45,15 @@ private[testkit] final class EvaluatorResultImpl(effect: EvaluatorEffectImpl.Pri
 
   override def isAsync(): Boolean = async
 
-  override def isRecord(): Boolean = terminal.isInstanceOf[EvaluatorEffectImpl.RecordEffect]
+  override def isComplete(): Boolean = terminal.isInstanceOf[EvaluatorEffectImpl.CompleteEffect]
 
-  override def isError(): Boolean = terminal.isInstanceOf[EvaluatorEffectImpl.ErrorEffect]
+  override def isInconclusive(): Boolean = terminal.isInstanceOf[EvaluatorEffectImpl.InconclusiveEffect]
 
   override def getEvaluations(): java.util.List[Evaluation] =
-    getEffectOfType(classOf[EvaluatorEffectImpl.RecordEffect]).evaluations.asJava
+    getEffectOfType(classOf[EvaluatorEffectImpl.CompleteEffect]).evaluations.asJava
 
-  override def getError(): String =
-    getEffectOfType(classOf[EvaluatorEffectImpl.ErrorEffect]).reason
+  override def getInconclusiveReason(): String =
+    getEffectOfType(classOf[EvaluatorEffectImpl.InconclusiveEffect]).reason
 
   private def getEffectOfType[E](expectedClass: Class[E]): E = {
     if (expectedClass.isInstance(terminal)) terminal.asInstanceOf[E]

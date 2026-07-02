@@ -10,23 +10,23 @@ import java.util.List;
 /**
  * Represents the result of an Evaluator handling an evaluation when run through the testkit.
  *
- * <p>An asynchronous effect is resolved before the result is returned, so {@link #isRecord()} and
- * {@link #isError()} reflect the terminal outcome; {@link #isAsync()} additionally reports whether
- * the effect was produced asynchronously.
+ * <p>An asynchronous effect is resolved before the result is returned, so {@link #isComplete()} and
+ * {@link #isInconclusive()} reflect the terminal outcome; {@link #isAsync()} additionally reports
+ * whether the effect was produced asynchronously.
  *
  * <p>Not for user extension, returned by the testkit.
  */
 public interface EvaluatorResult {
 
   /**
-   * @return true if the evaluation recorded one or more results
+   * @return true if the evaluation completed with one or more verdicts
    */
-  boolean isRecord();
+  boolean isComplete();
 
   /**
-   * @return true if the evaluation reported a deliberate error
+   * @return true if the evaluation was inconclusive
    */
-  boolean isError();
+  boolean isInconclusive();
 
   /**
    * @return true if the effect was produced asynchronously
@@ -34,12 +34,12 @@ public interface EvaluatorResult {
   boolean isAsync();
 
   /**
-   * @return the recorded evaluations, or throws if the effect was not a record
+   * @return the evaluations the evaluation completed with, or throws if it was not complete
    */
   List<Evaluation> getEvaluations();
 
   /**
-   * @return the error reason, or throws if the effect was not an error
+   * @return the reason the evaluation was inconclusive, or throws if it was not inconclusive
    */
-  String getError();
+  String getInconclusiveReason();
 }

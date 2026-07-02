@@ -16,7 +16,7 @@ public class EvaluatorTestModels {
   public static class SingleBindingEvaluator extends Evaluator {
     @Override
     public Effect evaluate(EvaluationContext context) {
-      return effects().error("not implemented");
+      return effects().inconclusive("not implemented");
     }
   }
 
@@ -26,7 +26,7 @@ public class EvaluatorTestModels {
   public static class MultiBindingEvaluator extends Evaluator {
     @Override
     public Effect evaluate(EvaluationContext context) {
-      return effects().error("not implemented");
+      return effects().inconclusive("not implemented");
     }
   }
 
@@ -34,7 +34,7 @@ public class EvaluatorTestModels {
   public static class NoBindingEvaluator extends Evaluator {
     @Override
     public Effect evaluate(EvaluationContext context) {
-      return effects().error("not implemented");
+      return effects().inconclusive("not implemented");
     }
   }
 }

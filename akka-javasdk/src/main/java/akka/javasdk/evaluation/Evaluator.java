@@ -58,8 +58,8 @@ public abstract class Evaluator {
    * <p>An Evaluator Effect can either:
    *
    * <ul>
-   *   <li>record one or more {@link Evaluation}s
-   *   <li>report a deliberate error — the evaluation could not be performed
+   *   <li>complete with one or more {@link Evaluation}s (the verdict)
+   *   <li>report that the evaluation was inconclusive — it ran but reached no verdict
    *   <li>continue asynchronously from a {@link CompletionStage} of another effect
    * </ul>
    */
@@ -72,38 +72,35 @@ public abstract class Evaluator {
     interface Builder {
 
       /**
-       * Record the result of the evaluation.
+       * Complete the evaluation with its verdict.
        *
        * @param evaluation the evaluation outcome
        * @param more additional evaluation outcomes
-       * @return the record effect
+       * @return the complete effect
        */
-      Effect record(Evaluation evaluation, Evaluation... more);
+      Effect complete(Evaluation evaluation, Evaluation... more);
 
       /**
-       * Record the results of the evaluation.
+       * Complete the evaluation with its verdicts.
        *
        * @param evaluations the evaluation outcomes (must not be empty)
-       * @return the record effect
+       * @return the complete effect
        */
-      Effect record(List<Evaluation> evaluations);
+      Effect complete(List<Evaluation> evaluations);
 
       /**
-       * Report that the evaluation could not be performed.
+       * Report that the evaluation was inconclusive.
        *
-       * <p>This is a deliberate "could not evaluate" outcome, distinct from a failure caused by a
-       * thrown exception or a failed future.
+       * <p>Use this when the evaluator ran but could not reach a verdict, for example there was no
+       * transcript or the interaction was not applicable.
        *
-       * @param reason the reason the evaluation could not be performed
-       * @return the error effect
+       * @param reason why the evaluation was inconclusive
+       * @return the inconclusive effect
        */
-      Effect error(String reason);
+      Effect inconclusive(String reason);
 
       /**
        * Continue the evaluation asynchronously from the result of the given stage.
-       *
-       * <p>The pending stage represents a suspended evaluation; the runtime completes the
-       * evaluation when the stage completes.
        *
        * @param futureEffect the future effect to continue with
        * @return the async effect
