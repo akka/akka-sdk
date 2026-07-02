@@ -43,14 +43,9 @@ private[impl] object EvaluatorImpl {
   private def toSdkSubject(spiSubject: SpiEvaluator.Subject): Subject =
     spiSubject match {
       case flow: SpiEvaluator.FlowInteraction =>
-        new Subject.FlowInteraction(
-          flow.flowId,
-          flow.agentComponentId,
-          flow.agentInstanceId.toJava,
-          flow.sessionId,
-          flow.sequenceNr)
+        new Subject.FlowInteraction(flow.flowId, flow.agentComponentId, flow.interactionId)
       case agent: SpiEvaluator.AgentInteraction =>
-        new Subject.AgentInteraction(agent.agentComponentId, agent.sessionId, agent.writerId, agent.sequenceNr)
+        new Subject.AgentInteraction(agent.agentComponentId, agent.interactionId)
     }
 
   private def toSpiEvaluation(evaluation: Evaluation): SpiEvaluator.Evaluation =

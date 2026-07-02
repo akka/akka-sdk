@@ -12,7 +12,6 @@ import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.Subject;
 import akka.javasdk.testkit.EvaluatorResult;
 import akka.javasdk.testkit.EvaluatorTestKit;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 public class SimpleEvaluatorTest {
@@ -20,13 +19,13 @@ public class SimpleEvaluatorTest {
   private final EvaluatorTestKit<SimpleEvaluator> testKit =
       EvaluatorTestKit.of(SimpleEvaluator::new);
 
-  private Subject agentInteraction(long sequenceNr) {
-    return new Subject.AgentInteraction("support-agent", "session-1", "writer-1", sequenceNr);
+  private Subject agentInteraction(String interactionId) {
+    return new Subject.AgentInteraction("support-agent", interactionId);
   }
 
   @Test
   public void completesEvaluation() {
-    EvaluatorResult result = testKit.evaluate(agentInteraction(5), "eval-42");
+    EvaluatorResult result = testKit.evaluate(agentInteraction("interaction-1"), "eval-42");
 
     assertTrue(result.isComplete());
     assertFalse(result.isInconclusive());
@@ -43,16 +42,16 @@ public class SimpleEvaluatorTest {
 
   @Test
   public void reportsInconclusive() {
-    EvaluatorResult result = testKit.evaluate(agentInteraction(-1));
+    EvaluatorResult result = testKit.evaluate(agentInteraction("inconclusive"));
 
     assertTrue(result.isInconclusive());
     assertFalse(result.isComplete());
-    assertEquals("cannot evaluate interaction -1", result.getInconclusiveReason());
+    assertEquals("cannot evaluate interaction inconclusive", result.getInconclusiveReason());
   }
 
   @Test
   public void resolvesAsyncEffect() {
-    EvaluatorResult result = testKit.evaluate(agentInteraction(0));
+    EvaluatorResult result = testKit.evaluate(agentInteraction("async"));
 
     assertTrue(result.isAsync());
     // async effect resolves to the terminal completion
@@ -64,9 +63,7 @@ public class SimpleEvaluatorTest {
 
   @Test
   public void worksWithFlowInteractionSubject() {
-    Subject flow =
-        new Subject.FlowInteraction(
-            "flow-1", "support-agent", Optional.of("instance-1"), "session-1", 3);
+    Subject flow = new Subject.FlowInteraction("flow-1", "support-agent", "interaction-1");
 
     EvaluatorResult result = testKit.evaluate(flow);
 

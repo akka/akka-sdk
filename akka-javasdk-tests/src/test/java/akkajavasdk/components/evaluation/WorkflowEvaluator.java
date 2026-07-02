@@ -29,7 +29,7 @@ public class WorkflowEvaluator extends Evaluator {
 
   @Override
   public Effect evaluate(EvaluationContext context) {
-    String transcript = "interaction-" + context.subject().sequenceNr();
+    String transcript = context.subject().interactionId();
     String workflowId = context.evaluationId();
 
     // Subscribe to the workflow's notifications before starting it, so the completion report can't

@@ -37,7 +37,7 @@ public class AgentAsJudgeEvaluatorTest extends TestKitSupport {
   }
 
   private Subject agentInteraction() {
-    return new Subject.AgentInteraction("support-agent", "session-1", "writer-1", 3);
+    return new Subject.AgentInteraction("support-agent", "interaction-1");
   }
 
   @Test

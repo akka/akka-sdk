@@ -27,8 +27,9 @@ public class WorkflowEvaluatorTest extends TestKitSupport {
         EvaluatorTestKit.of(
             () -> new WorkflowEvaluator(componentClient, testKit.getMaterializer()));
 
-    // the evaluator builds the transcript "interaction-7" (13 chars), which the workflow scores
-    Subject subject = new Subject.AgentInteraction("support-agent", "session-1", "writer-1", 7);
+    // the interaction id "interaction-7" (13 chars) becomes the transcript, which the workflow
+    // scores
+    Subject subject = new Subject.AgentInteraction("support-agent", "interaction-7");
 
     EvaluatorResult result = evaluatorTestKit.evaluate(subject, "eval-workflow-1");
 

@@ -26,7 +26,7 @@ public class ConversationQualityEvaluator extends Evaluator {
     var subject = context.subject();
     // a real evaluator would fetch the transcript via the interaction log / ledger client
     String transcript =
-        "interaction " + subject.sequenceNr() + " of agent " + subject.agentComponentId();
+        "interaction " + subject.interactionId() + " of agent " + subject.agentComponentId();
 
     // run the judge in its own session, derived from the evaluation id and isolated from the
     // subject's session

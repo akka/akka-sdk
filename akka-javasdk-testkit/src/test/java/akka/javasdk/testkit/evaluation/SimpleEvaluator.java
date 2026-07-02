@@ -11,31 +11,31 @@ import akka.javasdk.evaluation.Subject;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * A simple evaluator used in unit tests. Branches on the subject's sequence number to exercise the
- * record, error, and async effects.
+ * A simple evaluator used in unit tests. Branches on the subject's interaction id to exercise the
+ * complete, inconclusive, and async effects.
  */
 public class SimpleEvaluator extends Evaluator {
 
   @Override
   public Effect evaluate(EvaluationContext context) {
     Subject subject = context.subject();
-    long sequenceNr = subject.sequenceNr();
 
-    if (sequenceNr < 0) {
-      return effects().inconclusive("cannot evaluate interaction " + sequenceNr);
-    } else if (sequenceNr == 0) {
-      // delegate asynchronously, resolving to a completed evaluation
-      return effects()
-          .asyncEffect(
-              CompletableFuture.completedFuture(
-                  effects().complete(Evaluation.passed("async verdict").withScore(0.5))));
-    } else {
-      return effects()
-          .complete(
-              Evaluation.passed("evaluated for " + context.evaluationId())
-                  .withScore(0.9)
-                  .withLabel("good")
-                  .withAttribute("agent", subject.agentComponentId()));
-    }
+    return switch (subject.interactionId()) {
+      case "inconclusive" ->
+          effects().inconclusive("cannot evaluate interaction " + subject.interactionId());
+      case "async" ->
+          // delegate asynchronously, resolving to a completed evaluation
+          effects()
+              .asyncEffect(
+                  CompletableFuture.completedFuture(
+                      effects().complete(Evaluation.passed("async verdict").withScore(0.5))));
+      default ->
+          effects()
+              .complete(
+                  Evaluation.passed("evaluated for " + context.evaluationId())
+                      .withScore(0.9)
+                      .withLabel("good")
+                      .withAttribute("agent", subject.agentComponentId()));
+    };
   }
 }
