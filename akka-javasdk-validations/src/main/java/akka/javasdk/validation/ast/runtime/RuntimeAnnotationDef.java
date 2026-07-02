@@ -68,9 +68,7 @@ public record RuntimeAnnotationDef(Annotation annotation) implements AnnotationD
         .map(v -> (Annotation[]) v)
         .map(
             arr ->
-                Arrays.stream(arr)
-                    .map(a -> (AnnotationDef) new RuntimeAnnotationDef(a))
-                    .toList())
+                Arrays.stream(arr).map(a -> (AnnotationDef) new RuntimeAnnotationDef(a)).toList())
         .orElse(List.of());
   }
 

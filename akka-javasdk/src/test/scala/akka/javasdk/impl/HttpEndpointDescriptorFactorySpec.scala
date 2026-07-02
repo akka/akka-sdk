@@ -16,8 +16,8 @@ import akka.runtime.sdk.spi.ClaimValues
 import akka.runtime.sdk.spi.HttpEndpointMethodSpec
 import akka.runtime.sdk.spi.Internet
 import akka.runtime.sdk.spi.ServiceNamePattern
-import akka.runtime.sdk.spi.SpiffePattern
 import akka.runtime.sdk.spi.SpiJsonSchema
+import akka.runtime.sdk.spi.SpiffePattern
 import akka.runtime.sdk.spi.StaticClaim
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec

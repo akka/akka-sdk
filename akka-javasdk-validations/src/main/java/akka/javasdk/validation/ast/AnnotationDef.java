@@ -53,8 +53,8 @@ public interface AnnotationDef {
   /**
    * Gets an array of nested annotations from an annotation attribute.
    *
-   * <p>For example, for {@code @Acl(allow = {@Acl.Matcher(...), @Acl.Matcher(...)})}, calling {@code
-   * getAnnotationArrayValue("allow")} returns one AnnotationDef per matcher.
+   * <p>For example, for {@code @Acl(allow = {@Acl.Matcher(...), @Acl.Matcher(...)})}, calling
+   * {@code getAnnotationArrayValue("allow")} returns one AnnotationDef per matcher.
    *
    * @param attributeName the name of the attribute
    * @return the nested annotations, or an empty list if not found or not an annotation array

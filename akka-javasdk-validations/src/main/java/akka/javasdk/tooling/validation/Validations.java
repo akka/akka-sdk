@@ -69,7 +69,8 @@ public class Validations {
         .ifPresent(
             acl ->
                 invalidSpiffePatterns(acl)
-                    .forEach(bad -> errors.add(errorMessage(typeDef, badSpiffePatternMessage(bad)))));
+                    .forEach(
+                        bad -> errors.add(errorMessage(typeDef, badSpiffePatternMessage(bad)))));
 
     for (MethodDef method : typeDef.getMethods()) {
       method
@@ -99,7 +100,7 @@ public class Validations {
   }
 
   /** A {@code **} (cross-segment wildcard) is only valid as the final token of the pattern. */
-  static boolean isValidSpiffePattern(String pattern) {
+  public static boolean isValidSpiffePattern(String pattern) {
     int i = 0;
     while (i < pattern.length()) {
       if (pattern.charAt(i) == '*' && i + 1 < pattern.length() && pattern.charAt(i + 1) == '*') {

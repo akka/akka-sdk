@@ -8,6 +8,7 @@ import akka.annotation.InternalApi
 import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes.Forbidden
 import akka.javasdk.annotations.Acl
+import akka.javasdk.tooling.validation.Validations
 import akka.runtime.sdk.spi.ACL
 import akka.runtime.sdk.spi.All
 import akka.runtime.sdk.spi.Internet
@@ -32,24 +33,12 @@ private[impl] object AclDescriptorFactory {
       (if (matcher.spiffe().nonEmpty) 1 else 0)
     if (definedCount > 1)
       throw new IllegalArgumentException(invalidAnnotationUsage)
-    if (matcher.spiffe().nonEmpty)
-      validateSpiffePattern(matcher.spiffe())
-  }
-
-  // Mirrors the runtime glob compiler (akka-runtime PrincipalMatcher.compileSegmentGlob): in a SPIFFE ACL glob
-  // `*` matches within a single path segment and `**` matches across segments, but `**` is only valid as the final
-  // token of the pattern. Reject a non-final `**` (or `***`) here so the mistake surfaces when the service is built
-  // rather than only when the runtime compiles the pattern.
-  def validateSpiffePattern(pattern: String): Unit = {
-    var i = 0
-    while (i < pattern.length) {
-      if (pattern.charAt(i) == '*' && i + 1 < pattern.length && pattern.charAt(i + 1) == '*') {
-        if (i + 2 != pattern.length)
-          throw new IllegalArgumentException(
-            s"Invalid SPIFFE ACL pattern [$pattern]: `**` is only allowed as the final token (matches everything below)")
-        i += 2
-      } else i += 1
-    }
+    // Same rule the compile-time/runtime validation framework applies (Validations.isValidSpiffePattern) and that
+    // the runtime glob compiler enforces: `**` is only valid as the final token. Checked here too so a pattern that
+    // somehow slipped past validation still fails when the service descriptor is built.
+    if (matcher.spiffe().nonEmpty && !Validations.isValidSpiffePattern(matcher.spiffe()))
+      throw new IllegalArgumentException(
+        s"Invalid SPIFFE ACL pattern [${matcher.spiffe()}]: `**` is only allowed as the final token (matches everything below)")
   }
 
   // receives the method, checks if it is annotated with @Acl and if so,

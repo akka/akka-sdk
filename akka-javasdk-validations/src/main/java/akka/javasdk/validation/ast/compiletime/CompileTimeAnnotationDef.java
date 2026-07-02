@@ -63,7 +63,8 @@ public record CompileTimeAnnotationDef(AnnotationMirror annotationMirror) implem
                     .filter(e -> e instanceof AnnotationValue)
                     .map(e -> ((AnnotationValue) e).getValue())
                     .filter(val -> val instanceof AnnotationMirror)
-                    .map(val -> (AnnotationDef) new CompileTimeAnnotationDef((AnnotationMirror) val))
+                    .map(
+                        val -> (AnnotationDef) new CompileTimeAnnotationDef((AnnotationMirror) val))
                     .toList())
         .orElse(List.of());
   }
