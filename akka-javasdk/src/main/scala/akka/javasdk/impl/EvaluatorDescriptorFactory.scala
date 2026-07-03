@@ -5,15 +5,13 @@
 package akka.javasdk.impl
 
 import akka.annotation.InternalApi
-import akka.javasdk.annotations.EvaluatesAgent
 import akka.javasdk.impl.serialization.Serializer
-import akka.runtime.sdk.spi.SpiEvaluator
 
 /**
  * INTERNAL API
  *
  * Evaluators have a single abstract `evaluate` handler invoked directly by the runtime, so the component descriptor is
- * empty. The agent bindings are read from the [[EvaluatesAgent]] annotations.
+ * empty. The agent bindings are read from configuration (see [[akka.javasdk.impl.evaluation.EvaluatorSettings]]).
  */
 @InternalApi
 private[impl] object EvaluatorDescriptorFactory extends ComponentDescriptorFactory {
@@ -21,10 +19,4 @@ private[impl] object EvaluatorDescriptorFactory extends ComponentDescriptorFacto
   override def buildDescriptorFor(component: Class[_], serializer: Serializer): ComponentDescriptor = {
     ComponentDescriptor(Map.empty)
   }
-
-  /** Read the `@EvaluatesAgent` annotations on the evaluator class into SPI agent bindings. */
-  def agentBindings(component: Class[_]): Set[SpiEvaluator.Binding] =
-    component.getAnnotationsByType(classOf[EvaluatesAgent]).toSet[EvaluatesAgent].map { annotation =>
-      new SpiEvaluator.AgentBinding(annotation.componentId(), SpiEvaluator.AgentBindingEvent.Interaction)
-    }
 }

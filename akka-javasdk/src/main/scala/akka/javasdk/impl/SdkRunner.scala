@@ -85,6 +85,7 @@ import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.consumer.MessageContextImpl
 import akka.javasdk.impl.evaluation.EvaluatorImpl
+import akka.javasdk.impl.evaluation.EvaluatorSettings
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
@@ -1096,7 +1097,7 @@ private final class Sdk(
       case clz if Reflect.isEvaluator(clz) =>
         val componentId = Reflect.readComponentId(clz)
         val evaluatorClass = clz.asInstanceOf[Class[Evaluator]]
-        val bindings = EvaluatorDescriptorFactory.agentBindings(clz).toSeq // FIXME: Set in SPI
+        val bindings = EvaluatorSettings.agentBindings(applicationConfig, componentId)
 
         val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { _ =>
           new EvaluatorImpl[Evaluator](

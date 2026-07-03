@@ -11,12 +11,12 @@ import java.util.concurrent.CompletionStage;
 /**
  * An Evaluator is a stateless component that evaluates agent interactions.
  *
- * <p>An Evaluator is bound to one or more agents with {@link
- * akka.javasdk.annotations.EvaluatesAgent}. The runtime invokes {@link
- * #evaluate(EvaluationContext)} for each interaction of a bound agent, passing an {@link
+ * <p>An Evaluator is bound to one or more agents through configuration under {@code
+ * akka.javasdk.evaluation.evaluators}, keyed by the evaluator's component id. The runtime invokes
+ * {@link #evaluate(EvaluationContext)} for each interaction of a bound agent, passing an {@link
  * EvaluationContext} that identifies the interaction to evaluate. The handler returns an {@link
- * Effect} describing the outcome — the recorded evaluations, a deliberate error, or an asynchronous
- * continuation.
+ * Effect} describing the outcome — the recorded evaluations, an inconclusive result, or an
+ * asynchronous continuation.
  *
  * <p>Blocking calls made from {@link #evaluate(EvaluationContext)} run on virtual threads. For
  * durable multi-step evaluation, delegate to a workflow and return {@link
@@ -34,8 +34,7 @@ import java.util.concurrent.CompletionStage;
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup
  * </ul>
  *
- * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.Component} and at least
- * one {@link akka.javasdk.annotations.EvaluatesAgent}.
+ * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.Component}.
  */
 public abstract class Evaluator {
 
