@@ -1,0 +1,104 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.impl.evaluation
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
+import scala.jdk.OptionConverters._
+import scala.util.control.NonFatal
+
+import akka.annotation.InternalApi
+import akka.javasdk.evaluation.Evaluation
+import akka.javasdk.evaluation.EvaluationContext
+import akka.javasdk.evaluation.Evaluator
+import akka.javasdk.evaluation.Subject
+import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.AsyncEffect
+import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.CompleteEffect
+import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.InconclusiveEffect
+import akka.runtime.sdk.spi.SpiEvaluator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object EvaluatorImpl {
+
+  /**
+   * INTERNAL API
+   *
+   * The SDK [[EvaluationContext]] backed by the SPI [[SpiEvaluator.EvaluationContext]].
+   */
+  final class EvaluationContextImpl(spiContext: SpiEvaluator.EvaluationContext) extends EvaluationContext {
+
+    override def subject(): Subject = toSdkSubject(spiContext.subject)
+
+    override def evaluationId(): String = spiContext.evaluationId
+  }
+
+  private def toSdkSubject(spiSubject: SpiEvaluator.Subject): Subject =
+    spiSubject match {
+      case flow: SpiEvaluator.FlowInteraction =>
+        new Subject.FlowInteraction(flow.flowId, flow.agentComponentId, flow.interactionId)
+      case agent: SpiEvaluator.AgentInteraction =>
+        new Subject.AgentInteraction(agent.agentComponentId, agent.interactionId)
+    }
+
+  private def toSpiEvaluation(evaluation: Evaluation): SpiEvaluator.Evaluation =
+    new SpiEvaluator.Evaluation(
+      passed = evaluation.passed(),
+      explanation = evaluation.explanation(),
+      score = evaluation.score().toScala.map(_.doubleValue()),
+      label = evaluation.label().toScala,
+      attributes = evaluation.attributes().asScala.toMap)
+}
+
+/**
+ * INTERNAL API
+ *
+ * Adapts a user [[Evaluator]] to the [[SpiEvaluator]] expected by the runtime. A new instance is created per evaluation
+ * by the descriptor's instance factory.
+ */
+@InternalApi
+private[impl] final class EvaluatorImpl[E <: Evaluator](
+    factory: () => E,
+    evaluatorClass: Class[E],
+    sdkExecutionContext: ExecutionContext)
+    extends SpiEvaluator {
+  import EvaluatorImpl._
+
+  private val log: Logger = LoggerFactory.getLogger(evaluatorClass)
+  private implicit val executionContext: ExecutionContext = sdkExecutionContext
+
+  override def evaluate(spiContext: SpiEvaluator.EvaluationContext): Future[SpiEvaluator.Effect] = {
+    val context = new EvaluationContextImpl(spiContext)
+    try {
+      val evaluator = factory()
+      val effect = evaluator.evaluate(context)
+      toSpiEffect(effect)
+    } catch {
+      // a thrown exception is a failure (distinct from the deliberate inconclusive() outcome); the
+      // runtime catches the failed future, logs the throwable, and records a failed evaluation
+      case NonFatal(ex) =>
+        log.error(s"Failure during evaluation in Evaluator component [${evaluatorClass.getSimpleName}].", ex)
+        Future.failed(ex)
+    }
+  }
+
+  private def toSpiEffect(effect: Evaluator.Effect): Future[SpiEvaluator.Effect] =
+    effect match {
+      case CompleteEffect(evaluations) =>
+        Future.successful(new SpiEvaluator.CompleteEffect(evaluations.map(toSpiEvaluation)))
+      case InconclusiveEffect(reason) =>
+        Future.successful(new SpiEvaluator.InconclusiveEffect(reason))
+      case AsyncEffect(futureEffect) =>
+        // pending future is a suspended evaluation; a failed future is recorded as a failure by the runtime
+        futureEffect.flatMap(toSpiEffect)
+      case unknown =>
+        throw new IllegalArgumentException(s"Unknown Evaluator.Effect type ${unknown.getClass}")
+    }
+}

@@ -56,6 +56,7 @@ import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
+import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.grpc.AbstractGrpcEndpoint
@@ -83,6 +84,8 @@ import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.consumer.MessageContextImpl
+import akka.javasdk.impl.evaluation.EvaluatorImpl
+import akka.javasdk.impl.evaluation.EvaluatorSettings
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
@@ -119,6 +122,7 @@ import akka.runtime.sdk.spi.AgentDescriptor
 import akka.runtime.sdk.spi.AutonomousAgentDescriptor
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.ConsumerDescriptor
+import akka.runtime.sdk.spi.EvaluatorDescriptor
 import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
 import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
@@ -141,6 +145,7 @@ import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials
+import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup
@@ -428,6 +433,7 @@ private object ComponentType {
   val View = "view"
   val Agent = "agent"
   val AutonomousAgent = "autonomous-agent"
+  val Evaluator = "evaluator"
 }
 
 /**
@@ -671,6 +677,7 @@ private final class Sdk(
   private var viewDescriptors = Vector.empty[ViewDescriptor]
   private var agentDescriptors = Vector.empty[AgentDescriptor]
   private var autonomousAgentDescriptors = Vector.empty[AutonomousAgentDescriptor]
+  private var evaluatorDescriptors = Vector.empty[EvaluatorDescriptor]
   // Populated during scanning: componentId → (agentDefinition, spiTaskDefinitions)
   // Used by delegation wiring inside instanceFactory (called lazily after all agents registered)
   private var autonomousAgentDefinitionMap =
@@ -887,15 +894,19 @@ private final class Sdk(
             serializer,
             regionInfo,
             ComponentDescriptor.descriptorFor(timedActionClass, serializer))
+        // TODO(governance): temporary — the dev-snapshot SPI deprecates this eager constructor in
+        // favour of the instanceFactory one; migrate the timed-action wiring on the governance branch
         timedActionDescriptors :+=
-          new TimedActionDescriptor(
+          (new TimedActionDescriptor(
             componentId,
             clz.getName,
             timedActionSpi,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = Reflect.protoCommandHandlerInputTimedAction(clz.asInstanceOf[Class[TimedAction]]))
+            protobufDescriptors =
+              Reflect.protoCommandHandlerInputTimedAction(clz.asInstanceOf[Class[TimedAction]])): @nowarn(
+            "msg=deprecated"))
 
       case clz if Reflect.isConsumer(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -920,8 +931,10 @@ private final class Sdk(
             ComponentDescriptorFactory.findIgnore(consumerClass),
             componentDescriptor,
             regionInfo)
+        // TODO(governance): temporary — the dev-snapshot SPI deprecates this eager constructor in
+        // favour of the instanceFactory one; migrate the consumer wiring on the governance branch
         consumerDescriptors :+=
-          new ConsumerDescriptor(
+          (new ConsumerDescriptor(
             componentId,
             clz.getName,
             consumerSrc,
@@ -930,7 +943,8 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor))
+            protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor)): @nowarn(
+            "msg=deprecated"))
 
       case clz if Reflect.isAutonomousAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -1080,6 +1094,30 @@ private final class Sdk(
 
         agentRegistryInfo :+= AgentRegistryImpl.agentDetailsFor(agentClass)
 
+      case clz if Reflect.isEvaluator(clz) =>
+        val componentId = Reflect.readComponentId(clz)
+        val evaluatorClass = clz.asInstanceOf[Class[Evaluator]]
+        val bindings = EvaluatorSettings.agentBindings(applicationConfig, componentId)
+
+        val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { _ =>
+          new EvaluatorImpl[Evaluator](
+            // the runtime sets OTel baggage akka.evaluation.id around evaluate, so the wired
+            // ComponentClient inherits it from the ambient context for judge-call correlation
+            () => wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(None)),
+            evaluatorClass,
+            sdkExecutionContext)
+        }
+
+        evaluatorDescriptors :+=
+          new EvaluatorDescriptor(
+            componentId,
+            clz.getName,
+            name = Reflect.readComponentName(clz),
+            description = Reflect.readComponentDescription(clz),
+            bindings = bindings,
+            instanceFactory = instanceFactory,
+            provided = isProvided(clz))
+
       case clz if Reflect.isView(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
 
@@ -1159,6 +1197,7 @@ private final class Sdk(
         workflowDescriptors ++
         agentDescriptors ++
         autonomousAgentDescriptors ++
+        evaluatorDescriptors ++
         mcpEndpoints)
         .filterNot(isDisabled(combinedDisabledComponents))
 

@@ -68,6 +68,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
   private static final String WORKFLOW_KEY = "workflow";
   private static final String AGENT_KEY = "agent";
   private static final String AUTONOMOUS_AGENT_KEY = "autonomous-agent";
+  private static final String EVALUATOR_KEY = "evaluator";
   private static final String SERVICE_SETUP_KEY = "service-setup";
 
   private static final List<String> ALL_COMPONENT_TYPES =
@@ -83,6 +84,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
           WORKFLOW_KEY,
           AGENT_KEY,
           AUTONOMOUS_AGENT_KEY,
+          EVALUATOR_KEY,
           SERVICE_SETUP_KEY);
 
   private boolean alreadyRan = false;
@@ -269,6 +271,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
       case "akka.javasdk.view.View" -> VIEW_KEY;
       case "akka.javasdk.agent.Agent" -> AGENT_KEY;
       case "akka.javasdk.agent.autonomous.AutonomousAgent" -> AUTONOMOUS_AGENT_KEY;
+      case "akka.javasdk.evaluation.Evaluator" -> EVALUATOR_KEY;
       case "java.lang.Object" ->
           throw new IllegalArgumentException(
               "Unknown supertype for class ["
