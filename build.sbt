@@ -217,3 +217,8 @@ def updatePomVersion(
 }
 
 addCommandAlias("formatAll", "scalafmtAll; javafmtAll")
+
+// extract Akka Runtime version for tooling with
+// print akka-javasdk / akkaRuntimeVersion
+val akkaRuntimeVersion = settingKey[String]("Akka Runtime version")
+ThisBuild / akkaRuntimeVersion := Dependencies.AkkaRuntimeVersion
