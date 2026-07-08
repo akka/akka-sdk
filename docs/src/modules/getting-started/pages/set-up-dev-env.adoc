@@ -1,0 +1,143 @@
+= Set up your dev env
+:page-aliases: getting-started:dev-container.adoc
+:page-summary: Three ways to set up an Akka development environment — with an AI harness, without AI, or in a container. Pick one; each is self-contained.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+There are three ways to set up an Akka development environment. Pick the one that fits how you want to work. Each path is self-contained and lists its own prerequisites.
+
+* <<_set_up_your_ai_harness>> — install the Akka Specify Plugin and let it install and configure everything else. This is the fastest path.
+* <<_set_up_your_env_without_ai>> — install the Akka CLI, Java, and Maven directly.
+* <<_containerized_dev_environment>> — run everything in a Docker container, with no local Java, Maven, or CLI install.
+
+Every tutorial and sample links back to the path it needs, so you set up once here and refer to it from everywhere else.
+
+[#_set_up_your_ai_harness]
+== Set up your AI harness
+
+Install the Akka Specify Plugin in your AI coding assistant. From there the plugin installs and configures the rest of the toolchain for you.
+
+.Prerequisites
+* A supported AI coding assistant (Claude Code recommended; Akka supports 30 AI-assist tools).
+* An link:https://account.akka.io/token[Akka download token, window="new"] (free).
+
+=== Install the plugin
+
+In Claude Code, install the Akka plugin from the AI Marketplace:
+
+[source]
+----
+/plugin marketplace add akka/ai-marketplace
+/plugin install akka@ai-marketplace
+/reload-plugins
+----
+
+TIP: If you cannot add the marketplace, clone the plugin repository and add it as a local marketplace: `git clone https://github.com/akka/ai-marketplace.git`, then `/plugin marketplace add /path/to/ai-marketplace`.
+
+NOTE: Not using Claude Code? See xref:sdk:spec-driven-development.adoc[Spec-driven development] for plugin installation instructions for your tool.
+
+=== Configure your environment
+
+[source]
+----
+/akka:setup
+----
+
+This ensures the Akka CLI is installed, Java and Maven are available, and your Akka download token is configured. Once it completes, you are ready to build — continue with xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent].
+
+[#_set_up_your_env_without_ai]
+== Set up your env without AI
+
+Install the toolchain directly on your machine. Use this path if you do not want an AI harness, or your AI-assist tool does not support plugins.
+
+.Prerequisites
+* Java {java-version} (see https://adoptium.net/marketplace/[Adoptium, window="new"]).
+* Apache Maven {minimum_maven_version} or later.
+* An link:https://account.akka.io/token[Akka download token, window="new"] (free).
+
+=== Install the Akka CLI
+
+include::ROOT:partial$cli-install-short.adoc[]
+
+=== Create a project
+
+Create a new project from a sample and start building:
+
+[source,bash]
+----
+akka code init --name helloworld-agent --repo akka-samples/helloworld-agent.git
+----
+
+To use spec-driven development without an AI plugin, use `akka specify init <dir>` instead — see xref:sdk:spec-driven-development.adoc[Spec-driven development]. Then continue with xref:getting-started:author-your-first-service.adoc[Code-first hello agent].
+
+[#_containerized_dev_environment]
+== Containerized dev environment
+
+Run Akka inside a pre-built Docker container. Nothing but Docker is installed on your machine — the container bundles Java {java-version}, Maven, the Akka CLI, and pre-cached SDK dependencies.
+
+.Prerequisites
+* https://www.docker.com/products/docker-desktop/[Docker Desktop, window="new"].
+* An link:https://account.akka.io/token[Akka download token, window="new"] (free).
+
+=== Set environment variables
+
+The download token is required. AI provider keys are optional and only needed for agent samples.
+
+[source,bash]
+----
+export AKKA_RESOLVER_TOKEN=<your-token>       # required
+export GOOGLE_AI_GEMINI_API_KEY=<your-key>    # optional, for agent samples
+export ANTHROPIC_API_KEY=<your-key>           # optional, for agent samples
+export OPENAI_API_KEY=<your-key>              # optional, for agent samples
+----
+
+=== Create a project and start the container
+
+. Create a new project from a sample:
++
+[source,bash]
+----
+akka code init --name helloworld-agent --repo akka-samples/helloworld-agent.git
+----
+. Start the dev container with the project directory mounted:
++
+[source,bash]
+----
+docker run -d --name akka-dev \
+  -v "$(pwd)/helloworld-agent":/workspace \
+  -p 9000:9000 \
+  -p 9889:9889 \
+  -e AKKA_RESOLVER_TOKEN \
+  -e GOOGLE_AI_GEMINI_API_KEY \
+  -e ANTHROPIC_API_KEY \
+  -e OPENAI_API_KEY \
+  registry.akka.io/akka-dev-container:latest
+----
++
+This forwards `localhost:9000` for your service endpoint and `localhost:9889` for the Akka local console.
+
+=== Run the service
+
+Build commands run inside the container with `docker exec`; your files stay on the host through the bind mount.
+
+[source,bash]
+----
+docker exec -w /workspace akka-dev mvn compile exec:java
+----
+
+Test it from your host:
+
+[source,bash]
+----
+curl -i -XPOST http://localhost:9000/hello \
+  --header "Content-Type: application/json" \
+  --data '{"user": "alice", "text": "Hello, I am Alice"}'
+----
+
+Start the local console with `docker exec -t -w /workspace akka-dev akka local console --bind-address 0.0.0.0`, then open http://localhost:9889[localhost:9889, window="new"].
+
+== See also
+
+* xref:getting-started:index.adoc[Getting started]
+* xref:sdk:spec-driven-development.adoc[Spec-driven development]
