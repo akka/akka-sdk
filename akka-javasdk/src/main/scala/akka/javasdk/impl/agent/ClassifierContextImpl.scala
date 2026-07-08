@@ -6,14 +6,14 @@ package akka.javasdk.impl.agent
 
 import akka.annotation.InternalApi
 import akka.javasdk.agent.ClassifierClient
-import akka.javasdk.agent.GuardrailContext
+import akka.javasdk.agent.ClassifierContext
 import com.typesafe.config.Config
 
 /**
  * INTERNAL API
  */
-@InternalApi private[javasdk] final class GuardrailContextImpl(
+@InternalApi private[javasdk] final class ClassifierContextImpl(
     override val name: String,
     override val config: Config,
     override val classifierClient: ClassifierClient)
-    extends GuardrailContext
+    extends ClassifierContext

@@ -18,6 +18,7 @@ import akka.javasdk.Sanitizer;
 import akka.javasdk.ServiceSetup;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
+import akka.javasdk.agent.ClassifierClient;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
@@ -851,6 +852,7 @@ public class TestKit {
   private Optional<DependencyProvider> dependencyProvider;
   private AgentRegistry agentRegistry;
   private Sanitizer sanitizer;
+  private ClassifierClient classifierClient;
   private int eventingTestKitPort = -1;
   private Config applicationConfig;
   private String serviceName;
@@ -1004,6 +1006,7 @@ public class TestKit {
       dependencyProvider =
           Optional.ofNullable(startupContext.dependencyProvider().getOrElse(() -> null));
       sanitizer = startupContext.sanitizer();
+      classifierClient = startupContext.classifierClient();
 
       settings.modelProvidersByAgentId.forEach(
           (agentId, modelProvider) ->
@@ -1459,6 +1462,14 @@ public class TestKit {
    */
   public Sanitizer getSanitizer() {
     return sanitizer;
+  }
+
+  /**
+   * @return The configured classifier client for the service, for test assertions and for invoking
+   *     a configured classifier directly without going through a component.
+   */
+  public ClassifierClient getClassifierClient() {
+    return classifierClient;
   }
 
   /** Stop the testkit and local runtime. */
