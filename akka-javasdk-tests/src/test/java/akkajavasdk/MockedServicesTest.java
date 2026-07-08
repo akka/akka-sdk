@@ -51,6 +51,16 @@ public class MockedServicesTest {
     }
 
     @Override
+    public TestGrpcServiceOuterClass.Out echoCallerSpiffe(TestGrpcServiceOuterClass.In in) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TestGrpcServiceOuterClass.Out delegateEchoCallerSpiffe(TestGrpcServiceOuterClass.In in) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     public TestGrpcServiceOuterClass.Out customStatus(TestGrpcServiceOuterClass.In in) {
       throw new UnsupportedOperationException();
     }

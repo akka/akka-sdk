@@ -42,6 +42,7 @@ import akka.javasdk.Principals
 import akka.javasdk.Retries
 import akka.javasdk.Sanitizer
 import akka.javasdk.ServiceSetup
+import akka.javasdk.SpiffeContext
 import akka.javasdk.Tracing
 import akka.javasdk.UnhandledExceptionContext
 import akka.javasdk.UnhandledExceptionHandler
@@ -69,6 +70,7 @@ import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
 import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.SdkRunner.extractSpiSettings
+import akka.javasdk.impl.SpiffeContextImpl
 import akka.javasdk.impl.agent.AgentImpl
 import akka.javasdk.impl.agent.AgentImpl.AgentContextImpl
 import akka.javasdk.impl.agent.AgentRegistryImpl
@@ -134,6 +136,7 @@ import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgent
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiConfiguredGuardrail
+import akka.runtime.sdk.spi.SpiConsumer
 import akka.runtime.sdk.spi.SpiDeployedEventingSettings
 import akka.runtime.sdk.spi.SpiDevModeSettings
 import akka.runtime.sdk.spi.SpiDevObjectStorageBucketConfig
@@ -153,8 +156,10 @@ import akka.runtime.sdk.spi.SpiMockedEventingSettings
 import akka.runtime.sdk.spi.SpiSanitizerEngine
 import akka.runtime.sdk.spi.SpiServiceInfo
 import akka.runtime.sdk.spi.SpiSettings
+import akka.runtime.sdk.spi.SpiSpiffeContext
 import akka.runtime.sdk.spi.SpiTask
 import akka.runtime.sdk.spi.SpiTestSettings
+import akka.runtime.sdk.spi.SpiTimedAction
 import akka.runtime.sdk.spi.SpiUnhandledException
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.StartContext
@@ -631,18 +636,19 @@ private final class Sdk(
       regionInfo,
       runtimeComponentClients,
       { context =>
-
+        val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
         val workflow = wiredInstance("Workflow", clz) {
-          sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].telemetryContext).orElse {
-            // remember to update component type API doc and docs if changing the set of injectables
-            case p if p == classOf[WorkflowContext] => context
-            case p if p == classOf[NotificationPublisher[_]] =>
-              new NotificationPublisher[Any] {
-                override def publish(msg: Any): Unit = {
-                  factoryContext.publishToTopic.apply(serializer.toBytes(msg))
+          sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].telemetryContext, callerSpiffe)
+            .orElse {
+              // remember to update component type API doc and docs if changing the set of injectables
+              case p if p == classOf[WorkflowContext] => context
+              case p if p == classOf[NotificationPublisher[_]] =>
+                new NotificationPublisher[Any] {
+                  override def publish(msg: Any): Unit = {
+                    factoryContext.publishToTopic.apply(serializer.toBytes(msg))
+                  }
                 }
-              }
-          }
+            }
         }
         workflow
       })(system)
@@ -716,7 +722,7 @@ private final class Sdk(
       case p if p == classOf[ComponentClient] => scanTimeComponentClient
       case r if r == classOf[AgentRegistry]   => scanTimeAgentRegistry
     }
-    overrides.orElse(sideEffectingComponentInjects(None))
+    overrides.orElse(sideEffectingComponentInjects(None, callerSpiffe = None))
   }
 
   private def isProvided(clz: Class[_]): Boolean = {
@@ -879,13 +885,15 @@ private final class Sdk(
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)
         val timedActionClass = clz.asInstanceOf[Class[TimedAction]]
-        val timedActionSpi =
+        val timedActionInstanceFactory: SpiTimedAction.FactoryContext => SpiTimedAction = { factoryContext =>
+          val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
           new TimedActionImpl[TimedAction](
             componentId,
             context =>
               wiredInstance("Timed Action", timedActionClass)(
                 sideEffectingComponentInjects(
-                  context.asInstanceOf[TimedActionImpl.CommandContextImpl].telemetryContext)),
+                  context.asInstanceOf[TimedActionImpl.CommandContextImpl].telemetryContext,
+                  callerSpiffe)),
             timedActionClass,
             system.classicSystem,
             runtimeComponentClients.timerClient,
@@ -894,13 +902,12 @@ private final class Sdk(
             serializer,
             regionInfo,
             ComponentDescriptor.descriptorFor(timedActionClass, serializer))
-        // TODO(governance): temporary — the dev-snapshot SPI deprecates this eager constructor in
-        // favour of the instanceFactory one; migrate the timed-action wiring on the governance branch
+        }
         timedActionDescriptors :+=
           (new TimedActionDescriptor(
             componentId,
             clz.getName,
-            timedActionSpi,
+            timedActionInstanceFactory,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
@@ -914,12 +921,13 @@ private final class Sdk(
         val consumerDest = consumerDestination(consumerClass)
         val consumerSrc = consumerSource(consumerClass)
         val componentDescriptor = ComponentDescriptor.descriptorFor(consumerClass, serializer)
-        val consumerSpi =
+        val consumerInstanceFactory: SpiConsumer.FactoryContext => SpiConsumer = { factoryContext =>
+          val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
           new ConsumerImpl[Consumer](
             componentId,
             context =>
               wiredInstance("Consumer", consumerClass)(
-                sideEffectingComponentInjects(context.asInstanceOf[MessageContextImpl].telemetryContext)),
+                sideEffectingComponentInjects(context.asInstanceOf[MessageContextImpl].telemetryContext, callerSpiffe)),
             consumerClass,
             consumerSrc,
             consumerDest,
@@ -931,15 +939,14 @@ private final class Sdk(
             ComponentDescriptorFactory.findIgnore(consumerClass),
             componentDescriptor,
             regionInfo)
-        // TODO(governance): temporary — the dev-snapshot SPI deprecates this eager constructor in
-        // favour of the instanceFactory one; migrate the consumer wiring on the governance branch
+        }
         consumerDescriptors :+=
           (new ConsumerDescriptor(
             componentId,
             clz.getName,
             consumerSrc,
             consumerDestination(consumerClass),
-            consumerSpi,
+            consumerInstanceFactory,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
@@ -1004,12 +1011,13 @@ private final class Sdk(
           // Build SPI capabilities from SDK capabilities
           val spiCapabilities = agentCapabilityConverter.toSpiCapabilities(agentDefinition.capabilities)
 
+          val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
           new AutonomousAgentImpl(
             componentId,
             factoryContext.instanceId,
             context =>
               wiredInstance("AutonomousAgent", autonomousAgentClass) {
-                sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)
+                sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext, callerSpiffe)
               },
             sdkExecutionContext,
             sdkTracerFactory,
@@ -1056,15 +1064,17 @@ private final class Sdk(
         }
 
         val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
+          val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
           new AgentImpl(
             componentId,
             factoryContext.sessionId,
             context =>
               wiredInstance("Agent", agentClass) {
-                sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext).orElse {
-                  // remember to update component type API doc and docs if changing the set of injectables
-                  case p if p == classOf[AgentContext] => context
-                }
+                sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext, callerSpiffe)
+                  .orElse {
+                    // remember to update component type API doc and docs if changing the set of injectables
+                    case p if p == classOf[AgentContext] => context
+                  }
               },
             sdkExecutionContext,
             sdkTracerFactory,
@@ -1099,11 +1109,12 @@ private final class Sdk(
         val evaluatorClass = clz.asInstanceOf[Class[Evaluator]]
         val bindings = EvaluatorSettings.agentBindings(applicationConfig, componentId)
 
-        val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { _ =>
+        val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { factoryContext =>
+          val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
           new EvaluatorImpl[Evaluator](
             // the runtime sets OTel baggage akka.evaluation.id around evaluate, so the wired
             // ComponentClient inherits it from the ambient context for judge-call correlation
-            () => wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(None)),
+            () => wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(None, callerSpiffe)),
             evaluatorClass,
             sdkExecutionContext)
         }
@@ -1132,11 +1143,25 @@ private final class Sdk(
   // these are available for injecting in all kinds of component that are primarily
   // for side effects
   // Note: config is also always available through the combination with user DI way down below
-  private def sideEffectingComponentInjects(telemetryContext: Option[OtelContext]): PartialFunction[Class[_], Any] = {
+  private def callerSpiffeHeaderValue(spiffeContext: Option[SpiSpiffeContext]): Option[String] =
+    spiffeContext.flatMap { ctx =>
+      if (remoteIdentification.isDefined)
+        // Local dev: no l5d to establish service identity, send the full SPIFFE ID
+        Some(ctx.spiffeId)
+      else
+        // Production: service prefix is established by the service mesh; send only the component path
+        ctx.componentPath
+    }
+
+  // callerSpiffe deliberately has no default: every component factory must decide whether outbound
+  // calls carry the component's SPIFFE identity (None only where there is no component identity)
+  private def sideEffectingComponentInjects(
+      telemetryContext: Option[OtelContext],
+      callerSpiffe: Option[String]): PartialFunction[Class[_], Any] = {
     // remember to update component type API doc and docs if changing the set of injectables
     case p if p == classOf[ComponentClient]    => componentClient(telemetryContext)
-    case h if h == classOf[HttpClientProvider] => httpClientProvider(telemetryContext)
-    case g if g == classOf[GrpcClientProvider] => grpcClientProvider(telemetryContext)
+    case h if h == classOf[HttpClientProvider] => httpClientProvider(telemetryContext, callerSpiffe)
+    case g if g == classOf[GrpcClientProvider] => grpcClientProvider(telemetryContext, callerSpiffe)
     case t if t == classOf[TimerScheduler]     => timerScheduler(telemetryContext)
     case m if m == classOf[Materializer]       => sdkMaterializer
     case a if a == classOf[Retries]            => retries
@@ -1158,12 +1183,12 @@ private final class Sdk(
         //        pass auth headers with the runner startup context from the runtime
         Some(
           wiredInstance[ServiceSetup]("Service Setup", serviceClassClass.asInstanceOf[Class[ServiceSetup]])(
-            sideEffectingComponentInjects(None)))
+            sideEffectingComponentInjects(None, callerSpiffe = None)))
 
       case Some(serviceClassClass) =>
         //just wiring the class
         wiredInstance[Any]("Service Setup", serviceClassClass.asInstanceOf[Class[Any]])(
-          sideEffectingComponentInjects(None))
+          sideEffectingComponentInjects(None, callerSpiffe = None))
         None
       case _ => None
     }
@@ -1353,8 +1378,9 @@ private final class Sdk(
     (context: HttpEndpointConstructionContext) =>
       lazy val requestContext = new HttpRequestContextImpl(context, sdkTracerFactory, regionInfo)(
         SystemMaterializer(system).materializer)
+      val callerSpiffe = callerSpiffeHeaderValue(context.spiffeContext)
       val instance = wiredInstance("HTTP Endpoint", httpEndpointClass) {
-        sideEffectingComponentInjects(Option(context.telemetryContext)).orElse {
+        sideEffectingComponentInjects(Option(context.telemetryContext), callerSpiffe).orElse {
           case p if p == classOf[RequestContext] => requestContext
         }
       }
@@ -1367,6 +1393,7 @@ private final class Sdk(
 
   private def grpcEndpointFactory[E](grpcEndpointClass: Class[E]): GrpcEndpointRequestConstructionContext => E =
     (context: GrpcEndpointRequestConstructionContext) => {
+      val callerSpiffe = callerSpiffeHeaderValue(context.spiffeContext)
 
       lazy val grpcRequestContext = new GrpcRequestContext {
         override def getPrincipals: Principals =
@@ -1385,10 +1412,13 @@ private final class Sdk(
         override def tracing(): Tracing = new SpanTracingImpl(Option(context.telemetryContext), sdkTracerFactory)
 
         override def selfRegion(): String = regionInfo.selfRegion
+
+        override def getSpiffeContext(): java.util.Optional[SpiffeContext] =
+          SpiffeContextImpl.fromSpiOpt(context.spiffeContext)
       }
 
       val instance = wiredInstance("gRPC Endpoint", grpcEndpointClass) {
-        sideEffectingComponentInjects(Option(context.telemetryContext)).orElse {
+        sideEffectingComponentInjects(Option(context.telemetryContext), callerSpiffe).orElse {
           case p if p == classOf[GrpcRequestContext] => grpcRequestContext
         }
       }
@@ -1403,6 +1433,7 @@ private final class Sdk(
     (context: McpEndpointConstructionContext) =>
 
       val telemetryContext = Option(context.telemetryContext)
+      val callerSpiffe = callerSpiffeHeaderValue(context.spiffeContext)
 
       lazy val mcpRequestContext = new McpRequestContext {
         override def getPrincipals: Principals =
@@ -1426,11 +1457,14 @@ private final class Sdk(
           // Note: force cast to Java header model
           context.requestHeaders.allHeaders.asInstanceOf[Seq[HttpHeader]].asJava
 
+        override def getSpiffeContext(): Optional[SpiffeContext] =
+          SpiffeContextImpl.fromSpiOpt(context.spiffeContext)
+
       }
 
       val instance = wiredInstance("MCP Endpoint", mcpEndpointClass) {
-        sideEffectingComponentInjects(telemetryContext).orElse {
-          case p if p == classOf[GrpcRequestContext] => mcpRequestContext
+        sideEffectingComponentInjects(telemetryContext, callerSpiffe).orElse {
+          case p if p == classOf[McpRequestContext] => mcpRequestContext
         }
       }
       instance match {
@@ -1520,11 +1554,12 @@ private final class Sdk(
     new TimerSchedulerImpl(runtimeComponentClients.timerClient, metadata)
   }
 
-  private def httpClientProvider(telemetryContext: Option[OtelContext]): HttpClientProvider =
-    telemetryContext match {
-      case None          => httpClientProvider
-      case Some(context) => httpClientProvider.withTelemetryContext(context)
-    }
+  private def httpClientProvider(
+      telemetryContext: Option[OtelContext],
+      callerSpiffe: Option[String]): HttpClientProvider = {
+    val withSpiffe = callerSpiffe.fold(httpClientProvider)(httpClientProvider.withCallerSpiffeHeader)
+    telemetryContext.fold(withSpiffe: HttpClientProvider)(withSpiffe.withTelemetryContext)
+  }
 
   private def objectStorageProvider(telemetryContext: Option[OtelContext]): ObjectStorageProvider =
     telemetryContext match {
@@ -1532,9 +1567,8 @@ private final class Sdk(
       case Some(context) => objectStorageProvider.withTelemetryContext(context)
     }
 
-  private def grpcClientProvider(telemetryContext: Option[OtelContext]): GrpcClientProvider =
-    telemetryContext match {
-      case None          => grpcClientProvider
-      case Some(context) => grpcClientProvider.withTelemetryContext(context)
-    }
+  private def grpcClientProvider(
+      telemetryContext: Option[OtelContext],
+      callerSpiffe: Option[String]): GrpcClientProvider =
+    grpcClientProvider.withCallContext(telemetryContext, callerSpiffe)
 }

@@ -27,6 +27,7 @@ import akka.javasdk.impl.Settings
 import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl.AuthHeaders
 import akka.runtime.sdk.spi.SpiBackofficeServiceSettings
+import akka.runtime.sdk.spi.SpiSpiffeContext
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.grpc.CallCredentials
@@ -248,32 +249,42 @@ private[akka] final class GrpcClientProviderImpl(
   }
 
   // FIXME(tracing): have context propagators provided by the runtime
-  def withTelemetryContext(telemetryContext: OtelContext): GrpcClientProvider = {
+  def withCallContext(telemetryContext: Option[OtelContext], callerSpiffeHeader: Option[String]): GrpcClientProvider = {
     val otelTraceHeaders: Vector[(String, String)] = {
       val builder = Vector.newBuilder[(String, String)]
-      W3CTraceContextPropagator
-        .getInstance()
-        .inject(
-          telemetryContext,
-          null,
-          // Note: side-effecting instead of mutable collection
-          (_: scala.Any, key: String, value: String) => {
-            builder += ((key, value))
-          })
+      telemetryContext.foreach(context =>
+        W3CTraceContextPropagator
+          .getInstance()
+          .inject(
+            context,
+            null,
+            // Note: side-effecting instead of mutable collection
+            (_: scala.Any, key: String, value: String) => {
+              builder += ((key, value))
+            }))
       builder.result()
     }
-    if (otelTraceHeaders.isEmpty) this
+    if (otelTraceHeaders.isEmpty && callerSpiffeHeader.isEmpty) this
     else
+      // A wrapper around this provider rather than a new provider instance, so that the underlying client
+      // cache (and its channels) is shared: header decoration per lookup is cheap, while a separate provider
+      // would create and cache a new client per component instance or request.
       new GrpcClientProvider {
         override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T = {
           val client = GrpcClientProviderImpl.this.grpcClientFor(serviceClass, serviceName)
           // Skip header propagation for mocked clients — user-provided mock subclasses don't
           // typically implement addRequestHeader and would throw or return a non-mock instance.
           if (grpcMockLookup(ClientKey(serviceClass, serviceName)).isDefined) client
-          else
-            otelTraceHeaders.foldLeft(client) { case (acc, (key, value)) =>
+          else {
+            // the caller's SPIFFE identity goes on cross-service (Akka) calls, never on external ones
+            val headers =
+              if (isAkkaService(serviceName))
+                otelTraceHeaders ++ callerSpiffeHeader.map(SpiSpiffeContext.CallerSpiffeHeaderName -> _)
+              else otelTraceHeaders
+            headers.foldLeft(client) { case (acc, (key, value)) =>
               acc.addRequestHeader(key, value).asInstanceOf[T]
             }
+          }
         }
       }
   }
