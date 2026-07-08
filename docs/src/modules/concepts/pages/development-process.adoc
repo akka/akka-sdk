@@ -232,4 +232,3 @@ The following topics may also be of interest:
 == See also
 
 * xref:sdk:spec-driven-development.adoc[] — Full reference for writing and generating from Akka specifications.
-* {url-blog-introducing-specify}[Introducing Specify] — Blog post on the vision behind Spec-Driven Development.

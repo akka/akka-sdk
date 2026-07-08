@@ -1,4 +1,4 @@
-= Setup and configuration
+= Service configuration
 include::ROOT:partial$include.adoc[]
 
 Akka provides several built-in features for dependency injection, data serialization, error handling, access control, authentication and local development configuration, making development more convenient and efficient.

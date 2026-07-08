@@ -59,4 +59,3 @@ Implement webhooks for external system callbacks using xref:sdk:http-endpoints.a
 * xref:sdk:streaming.adoc[Streaming]
 * xref:operations:projects/message-brokers.adoc[Configure message brokers]
 * xref:reference:cli/akka-cli/akka_projects_config.adoc#_see_also[`akka projects config` commands]
-* https://doc.akka.io/libraries/alpakka/current[Alpakka connectors, window="new"]

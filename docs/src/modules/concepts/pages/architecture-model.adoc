@@ -94,8 +94,3 @@ Once you are familiar with the project structure, continue with:
 
 You may also begin development right away using the xref:sdk:index.adoc[Akka SDK].
 
-== See Also
-
-- {url-akka-how-it-works}[How Akka Works]
-- {url-blog-cell-based}[Cell-Based Architecture]
-- {url-blog-clustering}[Clustering in Akka]
