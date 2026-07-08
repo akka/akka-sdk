@@ -18,6 +18,7 @@ import akka.runtime.sdk.spi.SpiSchema.SpiInteger
 import akka.runtime.sdk.spi.SpiSchema.SpiList
 import akka.runtime.sdk.spi.SpiSchema.SpiString
 import akka.runtime.sdk.spi.SpiSchema.SpiTimestamp
+import akka.runtime.sdk.spi.SpiffePattern
 import akka.runtime.sdk.spi.ViewDescriptor
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -58,6 +59,8 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
         val acl = options.aclOpt.get
         acl.allow.head match {
           case _: Principal => fail()
+          // TODO: SpiffePattern is handled in the SPIFFE ACL PR stacked on top of this one
+          case _: SpiffePattern => fail()
           case pattern: ServiceNamePattern =>
             pattern.pattern shouldBe "test"
         }
@@ -70,6 +73,8 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
         val acl = query.methodOptions.acl.get
         acl.allow.head match {
           case _: Principal => fail()
+          // TODO: SpiffePattern is handled in the SPIFFE ACL PR stacked on top of this one
+          case _: SpiffePattern => fail()
           case pattern: ServiceNamePattern =>
             pattern.pattern shouldBe "test"
         }

@@ -1099,11 +1099,12 @@ private final class Sdk(
         val evaluatorClass = clz.asInstanceOf[Class[Evaluator]]
         val bindings = EvaluatorSettings.agentBindings(applicationConfig, componentId)
 
-        val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { _ =>
+        val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { factoryContext =>
+          val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
           new EvaluatorImpl[Evaluator](
             // the runtime sets OTel baggage akka.evaluation.id around evaluate, so the wired
             // ComponentClient inherits it from the ambient context for judge-call correlation
-            () => wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(None)),
+            () => wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(None, callerSpiffe)),
             evaluatorClass,
             sdkExecutionContext)
         }
