@@ -1,0 +1,91 @@
+= Akka Internals
+:page-aliases: how-akka-works.adoc
+:page-role: capability
+:page-summary: How Akka works under the hood — unified data and logic, an event-driven runtime, in-memory durable state, and clustering across clouds.
+:page-persona: all
+
+include::ROOT:partial$include.adoc[]
+
+== Overview
+
+Akka is a full-stack platform for building, running, and operating agentic and event-driven systems. It brings three layers together under one model: a developer experience for expressing application logic, an event-driven runtime that executes and persists that logic, and the governance and operational controls needed to run it in production.
+
+The defining idea is _unified data and logic_. Instead of splitting an application into stateless services on one side and databases on the other, Akka collocates state with the code that owns it. Each component encapsulates its own state and behavior, so the application itself becomes the system of record. That collocation removes a class of coordination, serialization, and latency overhead that dominates traditional service-plus-database designs.
+
+image::capabilities/akka-platform.png[The Akka platform: developer experience, runtime, and governance,width=900]
+
+== Execution patterns
+
+Agentic workloads rarely fit a single request/response shape. Akka is built around three execution patterns that can be combined in one system.
+
+Long-lived processes::
+Multi-step agents and workflows that run for seconds to days. They persist state through snapshots and change events, so they can pause, resume, or recover without losing context — even as they move across distributed infrastructure.
+
+Transactional processes::
+Lightweight, isolated units of execution, each maintaining its own state. Because there is no shared bottleneck, they process work in a fast, parallel, and elastic way.
+
+Continuous processes::
+High-throughput, low-latency data flows such as audio and video streams or sensor telemetry, handled with built-in flow control so producers cannot overwhelm consumers.
+
+== The event-driven runtime
+
+Underneath every Akka service is an event-driven runtime that handles messaging, persistence, and coordination so you do not implement these patterns by hand.
+
+Asynchronous messaging::
+Components communicate through non-blocking message passing. Producers are decoupled from consumers, and components react when events arrive rather than blocking while they wait.
+
+Event sourcing::
+Every meaningful change is captured as an entry in a durable, replayable log. This yields audit trails, temporal debugging, and robust recovery: state can be rebuilt by replaying events, optionally starting from a snapshot.
+
+Distributed coordination::
+Calls to external systems — APIs, databases, other agents — are made asynchronously and guarded with circuit breakers, retries with backoff, and supervision. Failures stay isolated and recoverable instead of cascading.
+
+=== In-memory durable state
+
+Akka keeps active state in memory for low-latency access while durably recording every change as snapshots and events. The runtime, not you, manages that durable log and the infrastructure behind it. If a process or node is lost, state is reconstructed automatically from its events — auto-recovery without manual intervention.
+
+== Scaling from zero to many and back
+
+An Akka service embeds a distributed runtime, so a single service can scale elastically without a separate orchestration layer bolted on. Scaling happens along several dimensions at once.
+
+Sharding::
+Application data is partitioned across durable nodes, and requests are routed automatically to the node that owns the relevant state.
+
+Rebalancing::
+As the cluster grows or shrinks, shards are redistributed across nodes to keep load even.
+
+Query elasticity::
+Read-side queries can be offloaded to separate compute, so the write side and the read side scale independently of each other.
+
+Location transparency::
+Self-contained components recover through event sourcing and can relocate across the cluster. Callers address them by identity, not by physical location, so the runtime is free to move work to reduce latency.
+
+For write-heavy workloads, Akka supports multiple read-write instances using eventual consistency and CRDT techniques. Concurrent modifications converge automatically — much like collaborative editing in a shared document, but for application data.
+
+image::capabilities/sharded-data.png[Data sharded across nodes, requests routed to the owner,width=620]
+
+== Clustering across clouds
+
+Akka nodes form a masterless, self-organizing cluster. There is no central coordinator to become a bottleneck or a single point of failure. Nodes communicate over brokerless, encrypted gRPC messaging, and built-in split-brain resolution keeps the cluster consistent when the network partitions. A single cluster can span multiple clouds and data centers, so services run close to their users and their data.
+
+== A foundation of proven patterns
+
+Rather than asking every team to re-implement distributed systems patterns, Akka embeds them directly into the SDK and runtime. The programming model is grounded in the Reactive Principles — responsiveness, resilience, elasticity, and message-driven design — so the guarantees you want are properties of the platform instead of code you have to write and maintain.
+
+image::capabilities/embedded-expertise.png[Distributed systems patterns embedded in the SDK and runtime,width=620]
+
+== From development to operations
+
+Akka is a full-stack platform, which means the same model carries a service from your laptop to production:
+
+* *Developer experience* — an SDK and spec-driven workflow for expressing agents, workflows, entities, and views as ordinary code.
+* *Runtime* — the event-driven, clustered execution layer that persists state, routes messages, and scales services up and down.
+* *Governance and operations* — the controls for deploying, observing, and operating services across environments and regions.
+
+If you are new to the platform, start with the architecture model to see how these pieces fit together, then move into the getting-started guide to build your first service.
+
+== See also
+
+* xref:concepts:architecture-model.adoc[Architecture]
+* xref:sdk:spec-driven-development.adoc[Spec-driven development]
+* xref:getting-started:index.adoc[Getting started]

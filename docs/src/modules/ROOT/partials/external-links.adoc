@@ -17,6 +17,8 @@
 :url-akka-pricing: https://akka.io/pricing
 :url-akka-trust-center: https://trust.akka.io
 :url-akka-professional-services: https://akka.io/professional-services
+:url-akka-specify-plugin: https://akka.io/blog/introducing-akka-specify
+:url-libraries-docs: https://doc.akka.io/libraries/
 
 // -- akka.io application type pages --
 :url-akka-app-agentic-ai: https://akka.io/app-types/agentic-ai

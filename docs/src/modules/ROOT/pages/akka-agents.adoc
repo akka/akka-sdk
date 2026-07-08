@@ -1,0 +1,91 @@
+= Agents
+:page-role: capability
+:page-summary: AI model-backed components that gather context, reason with a model, call tools, and act — with durable session memory and multi-agent collaboration.
+:page-persona: builder-developer, builder-ai-ml
+:page-related: sdk:agents.adoc, concepts:ai-agents.adoc
+
+include::ROOT:partial$include.adoc[]
+
+== Overview
+
+Akka Agents let you build autonomous, goal-directed AI agents that gather context, reason with a language model, and take action — all within a well-defined lifecycle that keeps agent behavior predictable and aligned with your business objectives.
+
+An agent moves through a clear sequence on every request: it assembles context from memory and its inputs, calls a model to reason over that context, invokes tools to act on the outside world, and evaluates whether it has met its goal. Because this lifecycle is structured rather than ad hoc, agents behave consistently in production and remain observable and testable.
+
+Akka handles the surrounding concerns — session memory, model orchestration, tool calling, streaming, and error handling — so you focus on the agent's purpose instead of the plumbing.
+
+image::capabilities/akka-agents.png[An Akka agent gathers context, reasons with a model, calls tools, and evaluates its goal,width=760]
+
+== What an agent does
+
+An agent is a component that combines three ingredients:
+
+* *Instructions* — a system prompt that defines the agent's role, goals, and constraints.
+* *A model* — the language model the agent reasons with, chosen declaratively and swappable without rewriting the agent.
+* *Tools* — the functions, APIs, and remote services the agent can call to gather information or take action.
+
+Given a request, the agent decides which tools to call, in what order, and how to combine their results with model reasoning to produce a response. The runtime manages the loop between model and tools, retrying and recovering when a step fails.
+
+== Tools
+
+Tools are how an agent affects the world beyond generating text. Akka Agents support native tool calling, exposing your functions, service APIs, and remote tools to the model as callable operations.
+
+image::capabilities/native-tool-calling-alt.png[Native tool calling: the model requests tools and the runtime executes them,width=420]
+
+* *Local functions* — expose methods on the agent as tools the model can invoke directly.
+* *Service calls* — let an agent call other components and endpoints in your system to read or change state.
+* *Remote MCP tools* — connect to tools published over the Model Context Protocol (MCP), so an agent can use capabilities hosted by other systems without custom integration code.
+
+The runtime handles the tool-calling loop: it presents available tools to the model, executes the calls the model requests, feeds results back for further reasoning, and enforces limits so a run terminates cleanly.
+
+== Memory
+
+Agents keep durable, in-memory session state that preserves the history of a conversation across requests, restarts, and failures. This means an agent remembers what has already happened in a session without you wiring up an external store.
+
+image::capabilities/built-in-memory-alt.png[Built-in durable session memory for agents,width=420]
+
+Memory is durable by default — an agent's context survives process restarts and infrastructure failures, so long-running or multi-turn interactions resume where they left off rather than starting over. You can also shape what an agent remembers, trimming or summarizing history to control token usage and keep the model focused on what matters.
+
+== Multi-agent collaboration
+
+Complex problems are often better solved by several specialized agents than by one general agent. Akka Agents collaborate by exchanging messages: an agent can delegate a subtask to another agent, react to another agent's progress, and combine partial results — all asynchronously.
+
+Because agents communicate through messages rather than a single centralized controller, multi-agent systems can be composed and scaled without a bottleneck orchestrator. When you need deterministic, step-by-step coordination, pair agents with a durable workflow that sequences their work and guarantees each step runs to completion.
+
+== Autonomous agents
+
+For work that runs as a durable, goal-directed process rather than a single request, Akka provides the *Autonomous Agent* — a model-driven component the runtime drives through a decision loop until its work is done. You give it typed tasks; it decides what to consult, which tools to call, and when a task is complete, iterating across many model round-trips. Its progress and results are persisted, so a task survives crashes and restarts and can be queried, resumed, or handed to another agent long after it started.
+
+Autonomous agents are built for coordination. An agent can delegate subtasks to specialist workers, hand off work to peers, lead a team that shares a task list, or moderate a turn-taking conversation. The runtime exposes these patterns to the model as tools, so multi-agent systems compose from focused, single-purpose agents without you writing orchestration code. Guardrails, interaction logging, and evaluation hooks apply to autonomous agents just as they do to request-based agents.
+
+Reach for an autonomous agent when the work is open-ended — the model decides the next step from what the last step revealed — when several agents must coordinate, or when a typed result needs its own durable lifecycle. Reach for a request-based agent, paired with a xref:ROOT:akka-orchestration.adoc[workflow] when you need fixed step ordering, for request-response interactions. See xref:sdk:autonomous-agents.adoc[Autonomous Agents] for the full component reference.
+
+== Protocols and interoperability
+
+Akka Agents interoperate with the wider agent ecosystem through open protocols:
+
+* *MCP (Model Context Protocol)* — consume tools published by other systems, and publish your own capabilities as MCP tools that other agents and clients can call.
+* *A2A (Agent-to-Agent)* — communicate with agents built on other platforms using a common agent-to-agent protocol.
+* *ACP (Agent Communication Protocol)* — exchange messages with agents across organizational and platform boundaries.
+
+Supporting these protocols means an Akka agent can act as both a client and a provider of agentic capabilities, rather than being locked to a single vendor's ecosystem.
+
+== Endpoints
+
+An agent's capabilities are exposed through the interfaces your clients need. The same agent can be reached as an HTTP API for web and mobile clients, a gRPC endpoint for service-to-service calls, or an MCP tool for other agents and AI clients. You define the agent once; the runtime handles exposing it over the transports you choose.
+
+image::capabilities/mcp-grpc-http.png[The same agent exposed over MCP, gRPC, and HTTP,width=620]
+
+== Streaming
+
+Agents can stream results as they are produced rather than making callers wait for a complete response. Token-by-token model output and incremental tool results flow to clients in real time, which keeps interactive experiences responsive and lets downstream systems begin processing partial output immediately.
+
+== Guardrails
+
+Predictable agents need boundaries. Akka Agents give you places to enforce guardrails around a run — validating and constraining inputs before they reach the model, checking tool calls before they execute, and reviewing model output before it is returned or acted upon. Combined with the structured lifecycle, run limits, and error handling, this keeps agent behavior within the bounds you define.
+
+== See also
+
+* xref:sdk:agents.adoc[Agents component reference]
+* xref:sdk:autonomous-agents.adoc[Autonomous Agents]
+* xref:concepts:ai-agents.adoc[]

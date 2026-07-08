@@ -1,27 +1,15 @@
-<span class="drop-down">
-    <span>Developers<span class="child-triggerm"></span></span>
-    <div class="drop-down-content-wrapper">
-        <div class="drop-down-content">
-            <div class="col">
-            <h3>Docs</h3>
-            <a data-context="Mega Menu - Developers - Docs" href="/java/index.html">SDK</a>
-            <a data-context="Mega Menu - Developers - Docs" href="https://doc.akka.io/libraries/">Libraries</a>
-            </div>
-            {{!-- <div class="divider"></div> --}}
-            <div class="col">
-                <h3>Resources</h3>
-                <a data-context="Mega Menu - Developers - Docs" class="kapa-trigger kapa-modal-open-ai hidden">Ask AI</a>
-                <a data-context="Mega Menu - Developers - Docs" href="https://www.akka.io/blog">Blog</a>
-                <a data-context="Mega Menu - Developers - Docs" href="/reference/release-notes.html">Release Notes</a>
-                <a data-context="Mega Menu - Developers - Docs" href="https://portal.akka.io">Support</a>
-            </div>
-            {{!-- <div class="divider"></div> --}}
-            <div class="col">
-            <h3>Architecture</h3>
-            <a data-context="Mega Menu - Developers - Docs" href="https://www.reactiveprinciples.org/">Principles</a>
-            <a data-context="Mega Menu - Developers - Docs" href="https://akkademy.akka.io/">Free Training</a>
-            </div>
-        </div>
-    </div>
-</span>
-
+<div class="akka-doc-switch" role="note">This is the <strong>Akka&nbsp;SDK</strong> used for rapid composition of real-time agentic AI systems. For <strong>Akka&nbsp;Libraries</strong>, a framework for implementing actors, remoting, and streams <a href="https://doc.akka.io/libraries/akka-core/current/typed/guide/index.html">go here&nbsp;&rarr;</a></div>
+<style>
+  .akka-doc-switch{max-width:34rem;font-size:.74rem;line-height:1.45;color:rgba(255,255,255,.8);align-self:center}
+  .akka-doc-switch strong{color:#fff;font-weight:600}
+  .akka-doc-switch a{color:rgba(255,255,255,.8);text-decoration:none}
+  .akka-doc-switch a:hover{color:#fff;text-decoration:underline}
+  @media (max-width:1024px){.akka-doc-switch{display:none}}
+</style>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var bar = document.querySelector('.akka-doc-switch');
+    var top = document.querySelector('#topbar-nav');
+    if (bar && top && bar.parentNode !== top) { top.insertBefore(bar, top.firstChild); }
+  });
+</script>

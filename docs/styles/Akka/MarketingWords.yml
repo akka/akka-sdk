@@ -1,0 +1,14 @@
+extends: existence
+message: "Marketing language: '%s'. Documentation uses plain, technical prose (see writing-standards.md)."
+level: error
+ignorecase: true
+tokens:
+  - seamless(ly)?
+  - supercharges?
+  - game[ -]?changer
+  - blazing(ly)?[ -]fast
+  - turnkey
+  - best[ -]in[ -]class
+  - cutting[ -]edge
+  - revolutioniz(e|es|ed|ing)
+  - effortless(ly)?
