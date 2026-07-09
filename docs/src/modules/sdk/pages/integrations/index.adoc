@@ -21,7 +21,7 @@ Akka connects to any data store with a Java client library.
 * **Relational databases:** PostgreSQL, MySQL — via R2DBC or JDBC
 * **NoSQL databases:** MongoDB, DynamoDB, Cassandra — via their Java client libraries
 * **Search engines:** Elasticsearch, OpenSearch — via their Java client libraries
-* xref:sdk:use-cases/rag-and-knowledge.adoc[Retrieval-Augmented Generation (RAG)] — semantic search on vector databases to enrich AI model requests
+* xref:getting-started:ask-akka-agent/index.adoc[Retrieval-Augmented Generation (RAG)] — semantic search on vector databases to enrich AI model requests
 
 === No caching layer needed
 

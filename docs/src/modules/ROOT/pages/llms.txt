@@ -46,18 +46,9 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Consumers](https://doc.akka.io/sdk/consuming-producing.html.md): Stream-based event consumption and production
 - [Timed Actions](https://doc.akka.io/sdk/timed-actions.html.md): Scheduled and delayed calls
 
-## Use Cases
+## Samples and blueprints
 
-- [Conversational AI](https://doc.akka.io/sdk/use-cases/conversational-ai.html.md): Session memory, streaming, multi-turn interactions
-- [Autonomous agents](https://doc.akka.io/sdk/use-cases/autonomous-agents.html.md): Independent processing with minimal human intervention
-- [Multi-agent systems](https://doc.akka.io/sdk/use-cases/multi-agent-systems.html.md): Agent collaboration with tool planning and handoffs
-- [Memory & state](https://doc.akka.io/sdk/use-cases/memory-and-state.html.md): Durable state with sub-10ms access
-- [RAG & knowledge](https://doc.akka.io/sdk/use-cases/rag-and-knowledge.html.md): Vector search, knowledge indexing, and LangChain4J integration
-- [Streaming AI](https://doc.akka.io/sdk/use-cases/streaming-ai.html.md): Real-time streams with AI feedback loops
-- [Orchestration & durability](https://doc.akka.io/sdk/use-cases/orchestration-and-durability.html.md): Workflows, sagas, reliable timers
-- [APIs & exposure](https://doc.akka.io/sdk/use-cases/apis-and-exposure.html.md): REST, gRPC, MCP, OpenAPI, WebSocket
-- [Governance & compliance](https://doc.akka.io/sdk/use-cases/governance-and-compliance.html.md): Runtime policies, PII sanitization, EU AI Act
-- [Enterprise patterns](https://doc.akka.io/sdk/use-cases/enterprise-patterns.html.md): Shopping carts, sagas, Spring integration
+- [Samples and blueprints catalog](https://doc.akka.io/getting-started/samples.html.md): Browse runnable samples and generate systems from blueprints, filtered by AI use case, pattern, domain, components, and governance.
 
 ## Integrations
 

@@ -1,4 +1,4 @@
-= Developer best practices
+= Design considerations
 
 include::ROOT:partial$include.adoc[]
 
@@ -6,7 +6,7 @@ include::ROOT:partial$include.adoc[]
 
 Akka is ideally suited for the creation of _Microservices_. Microservices generally follow the Unix philosophy of "Do one thing and do it well." Akka allows developers to build systems that follow https://principles.reactive.foundation/[the Reactive Principles, window="new"] without having to become distributed data or distributed computing experts. As a best practice, following the Reactive Principles in your design makes it easier to build distributed systems. https://akkademy.akka.io/learn/public/catalog/view/3[Akkademy, window="new"] offers free courses on Reactive Architecture.
 
-== Domain Driven Design
+== Domain-driven design
 
 [sidebar]
 Domain-driven design (DDD) is the concept that the structure and language of software code (class names, class methods, class variables) should match the business domain. For example, if a software processes loan applications, it might have classes such as LoanApplication and Customer, and methods such as AcceptOffer and Withdraw. &mdash; https://en.wikipedia.org/wiki/Domain-driven_design[Wikipedia, window="new"]
@@ -26,10 +26,6 @@ image::bounded-context.svg[Bounded Context]
 === Events first
 
 Defining your data structures first, and splitting them into bounded contexts, will also help you think about all the different interactions your data needs to have. These interactions, like `ItemAddedToShoppingCart` or `LightbulbTurnedOn` are the events that are persisted and processed in Akka. Defining your data structures first, makes it easier to think about which events are needed and where they fit into your design. These data structures and events will live in your domain model layer as described in xref:concepts:architecture-model.adoc[].
-
-=== Message migration
-
-Behind the scenes everything in Akka is ultimately message driven. Plan for the evolution of your messages. Commands and events use data structures that often must evolve over time. Fields get added, fields get removed, the meaning of fields may change. How do you handle this over time as your system grows and evolves? Akka will make this easier, but you are ultimately responsible for schema evolution. 
 
 == Right-sizing your services
 
@@ -78,7 +74,7 @@ When designing your entity state and the messages (commands and events) that flo
 | Strict limit for input parameters. Use an Entity ID reference for larger payloads.
 |===
 
-==== The 1 MB Replication Ceiling
+==== The 1 MB replication ceiling
 While an entity can technically store a state or snapshot up to **10 MB**, any state change or event exceeding **1 MB** will fail to replicate across regions. 
 
 [IMPORTANT]
@@ -86,7 +82,7 @@ While an entity can technically store a state or snapshot up to **10 MB**, any s
 If an entity stores state or events larger than 1 MB, it becomes "isolated." It cannot be synchronized to other regions, nor can it be consumed by other services via eventing. 
 ====
 
-==== Performance Recommendations
+==== Performance recommendations
 * **Entity Latency & Throughput**: For optimal performance, aim to keep individual requests and responses **targeting** entities below **500 KB**. 
 * **Large Assets**: If you need to associate large assets (like images or large documents) with an entity, store the asset in an external blob store and keep only the reference (URL/ID) in the entity state.
 
