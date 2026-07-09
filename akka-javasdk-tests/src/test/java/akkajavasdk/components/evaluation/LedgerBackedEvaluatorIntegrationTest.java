@@ -72,10 +72,10 @@ public class LedgerBackedEvaluatorIntegrationTest extends TestKitSupport {
 
     InteractionRecord record = LedgerEvalProbe.all().iterator().next();
     assertThat(record.agentComponentId()).isEqualTo("ledger-eval-agent");
-    assertThat(record.userText()).isEqualTo("What is 2+2?");
-    assertThat(record.finalAssistantText()).isEqualTo("The answer is 4.");
+    assertThat(record.inputText()).isEqualTo("What is 2+2?");
+    assertThat(record.finalResponseText()).isEqualTo("The answer is 4.");
     assertThat(record.isFlowInteraction()).isFalse();
     assertThat(record.failed()).isFalse();
-    assertThat(record.transcript()).contains("Assistant: The answer is 4.");
+    assertThat(record.transcript()).contains("Response: The answer is 4.");
   }
 }

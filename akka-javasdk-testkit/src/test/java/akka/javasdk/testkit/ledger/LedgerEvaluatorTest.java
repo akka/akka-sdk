@@ -60,7 +60,7 @@ public class LedgerEvaluatorTest {
     var evaluation = result.getEvaluations().get(0);
     assertTrue(evaluation.passed());
     assertEquals("The answer is 4.", evaluation.attributes().get("finalText"));
-    assertTrue(evaluation.attributes().get("transcript").contains("Assistant: The answer is 4."));
+    assertTrue(evaluation.attributes().get("transcript").contains("Response: The answer is 4."));
   }
 
   @Test

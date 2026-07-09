@@ -17,9 +17,9 @@ import java.util.stream.Collectors;
 /**
  * The full record of a single agent interaction, as fetched from the ledger.
  *
- * <p>Beyond the raw fields, this type offers pure convenience accessors — {@link #userText()},
- * {@link #finalAssistantText()}, {@link #toolCalls()}, token totals, {@link #failureSummary()} —
- * and a flattened {@link #transcript()} rendering, for use when evaluating an interaction.
+ * <p>Beyond the raw fields, this type offers pure convenience accessors — {@link #inputText()},
+ * {@link #finalResponseText()}, {@link #toolCalls()}, token totals, {@link #failureSummary()} — and
+ * a flattened {@link #transcript()} rendering, for use when evaluating an interaction.
  *
  * @param interactionId the globally unique id of the interaction
  * @param sessionId the id of the session the interaction belongs to
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  *     interaction
  * @param metadata metadata about the model call(s) of the interaction
  * @param systemMessage the system message the model was given
- * @param userMessage the user message content given to the model, in order
+ * @param inputMessage the input message content given to the model, in order
  * @param modelResponses the model call(s) of the interaction, in order
  * @param toolCallResponses tool call responses that arrived as input to a model call
  * @param taskContext autonomous-agent task metadata, present only for flow interactions
@@ -42,7 +42,7 @@ public record InteractionRecord(
     Optional<String> flowId,
     InteractionMetadata metadata,
     String systemMessage,
-    List<MessageContent> userMessage,
+    List<MessageContent> inputMessage,
     List<ModelResponse> modelResponses,
     List<ToolCallResponse> toolCallResponses,
     Optional<TaskContext> taskContext,
@@ -60,11 +60,11 @@ public record InteractionRecord(
   }
 
   /**
-   * The user message rendered as plain text: the text of every {@link TextMessageContent} in {@link
-   * #userMessage()}, joined by newlines. Non-text content (images, PDFs) is omitted.
+   * The input message rendered as plain text: the text of every {@link TextMessageContent} in
+   * {@link #inputMessage()}, joined by newlines. Non-text content (images, PDFs) is omitted.
    */
-  public String userText() {
-    return userMessage.stream()
+  public String inputText() {
+    return inputMessage.stream()
         .filter(c -> c instanceof TextMessageContent)
         .map(c -> ((TextMessageContent) c).text())
         .collect(Collectors.joining("\n"));
@@ -74,7 +74,7 @@ public record InteractionRecord(
    * The text content of the last model response that produced any, or an empty string if the model
    * produced no text (for example an interaction that only made tool calls, or that failed).
    */
-  public String finalAssistantText() {
+  public String finalResponseText() {
     for (int i = modelResponses.size() - 1; i >= 0; i--) {
       var content = modelResponses.get(i).content();
       if (content != null && !content.isEmpty()) {
@@ -110,7 +110,7 @@ public record InteractionRecord(
   }
 
   /**
-   * A flattened, ordered, readable transcript of the interaction: the system message, the user
+   * A flattened, ordered, readable transcript of the interaction: the system message, the input
    * message, each model response (including any thinking and tool calls), and the tool call
    * responses the model saw as input.
    *
@@ -122,17 +122,17 @@ public record InteractionRecord(
     if (systemMessage != null && !systemMessage.isEmpty()) {
       sb.append("System: ").append(systemMessage).append("\n");
     }
-    var user =
-        userMessage.stream().map(InteractionRecord::render).collect(Collectors.joining("\n"));
-    if (!user.isEmpty()) {
-      sb.append("User: ").append(user).append("\n");
+    var input =
+        inputMessage.stream().map(InteractionRecord::render).collect(Collectors.joining("\n"));
+    if (!input.isEmpty()) {
+      sb.append("Input: ").append(input).append("\n");
     }
     for (ModelResponse response : modelResponses) {
       if (response.thinking() != null && !response.thinking().isEmpty()) {
-        sb.append("Assistant (thinking): ").append(response.thinking()).append("\n");
+        sb.append("Thinking: ").append(response.thinking()).append("\n");
       }
       if (response.content() != null && !response.content().isEmpty()) {
-        sb.append("Assistant: ").append(response.content()).append("\n");
+        sb.append("Response: ").append(response.content()).append("\n");
       }
       for (ToolCall toolCall : response.toolCalls()) {
         sb.append("Tool call ")

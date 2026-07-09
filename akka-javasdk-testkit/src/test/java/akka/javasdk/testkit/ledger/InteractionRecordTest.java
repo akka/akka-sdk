@@ -65,8 +65,8 @@ public class InteractionRecordTest {
   public void accessorsFlattenTheRecord() {
     var record = record(Optional.empty());
 
-    assertEquals("What is 2+2?", record.userText());
-    assertEquals("The answer is 4.", record.finalAssistantText());
+    assertEquals("What is 2+2?", record.inputText());
+    assertEquals("The answer is 4.", record.finalResponseText());
     assertEquals(1, record.toolCalls().size());
     assertEquals("calc", record.toolCalls().get(0).name());
     assertEquals(18, record.totalInputTokens());
@@ -77,10 +77,10 @@ public class InteractionRecordTest {
   }
 
   @Test
-  public void finalAssistantTextSkipsResponsesWithoutContent() {
+  public void finalResponseTextSkipsResponsesWithoutContent() {
     // the last response has content; a trailing tool-only response should not blank it out
     var record = record(Optional.empty());
-    assertEquals("The answer is 4.", record.finalAssistantText());
+    assertEquals("The answer is 4.", record.finalResponseText());
   }
 
   @Test
@@ -95,15 +95,15 @@ public class InteractionRecordTest {
   public void transcriptFlattensInOrder() {
     var transcript = record(Optional.empty()).transcript();
 
-    // exact rendering: system, then user, then each model response (thinking, content, tool calls
+    // exact rendering: system, then input, then each model response (thinking, content, tool calls
     // in order), then the tool call responses the model saw as input
     var expected =
         """
         System: You are a calculator.
-        User: What is 2+2?
-        Assistant (thinking): let me think
+        Input: What is 2+2?
+        Thinking: let me think
         Tool call calc({"expr":"2+2"}) -> 4
-        Assistant: The answer is 4.
+        Response: The answer is 4.
         Tool response calc: 4
         """;
     assertEquals(expected, transcript);
@@ -129,15 +129,15 @@ public class InteractionRecordTest {
             Optional.empty(),
             Instant.EPOCH);
 
-    // non-text content is dropped from userText but rendered as placeholders in the transcript
-    assertEquals("describe these", record.userText());
+    // non-text content is dropped from inputText but rendered as placeholders in the transcript
+    assertEquals("describe these", record.inputText());
 
     var expected =
         """
-        User: describe these
+        Input: describe these
         [image https://example.com/cat.png]
         [pdf https://example.com/doc.pdf]
-        Assistant: a cat and a document
+        Response: a cat and a document
         """;
     assertEquals(expected, record.transcript());
   }

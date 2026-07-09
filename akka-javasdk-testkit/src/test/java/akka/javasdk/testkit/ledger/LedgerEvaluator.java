@@ -11,7 +11,7 @@ import akka.javasdk.ledger.LedgerClient;
 
 /**
  * An evaluator that fetches the interaction under evaluation from the ledger and passes if the
- * assistant produced any final text. Used to exercise ledger injection into an evaluator.
+ * agent produced any final response text. Used to exercise ledger injection into an evaluator.
  */
 public class LedgerEvaluator extends Evaluator {
 
@@ -24,13 +24,13 @@ public class LedgerEvaluator extends Evaluator {
   @Override
   public Effect evaluate(EvaluationContext context) {
     var interaction = ledger.getInteraction(context.subject().interactionId());
-    var finalText = interaction.finalAssistantText();
+    var finalText = interaction.finalResponseText();
     if (finalText.isEmpty()) {
-      return effects().complete(Evaluation.failed("assistant produced no final text"));
+      return effects().complete(Evaluation.failed("agent produced no final response text"));
     }
     return effects()
         .complete(
-            Evaluation.passed("assistant answered")
+            Evaluation.passed("agent responded")
                 .withAttribute("finalText", finalText)
                 .withAttribute("transcript", interaction.transcript()));
   }
