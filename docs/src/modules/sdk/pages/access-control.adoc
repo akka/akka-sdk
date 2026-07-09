@@ -101,9 +101,9 @@ the component type, and the component id.
 
 The pattern is matched against the component-path suffix of the caller's SPIFFE id, of the form
 `svc/<service>/<component-type>/<component-id>`. It supports segment-aware glob matching over the `/`-separated path:
-`*` matches within a single path segment, while `**` (only allowed as the final token) matches across segments. So an
-exact value matches a single component, a single `*` matches one path segment, and a trailing `**` matches everything
-below a prefix:
+`*` matches within a single path segment, while `**` (only allowed as the final token) matches across segments. An
+exact value therefore matches a single component, a single `*` matches one path segment, and a trailing `**` matches
+everything below a prefix:
 
 [source,java,indent=0]
 ----
