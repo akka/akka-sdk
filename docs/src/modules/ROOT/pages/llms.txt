@@ -77,17 +77,12 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 ## Concepts
 
 - [AI Agents](https://doc.akka.io/concepts/ai-agents.html.md): Foundational concepts for building AI agents in Akka
-- [Architecture](https://doc.akka.io/concepts/architecture-model.html.md): Full-stack platform architecture
-- [Governance & the runtime](https://doc.akka.io/concepts/governance-and-the-runtime.html.md): Why bolt-on governance fails
-- [Development process](https://doc.akka.io/concepts/development-process.html.md): SDD-first development workflow
+- [Architecture model](https://doc.akka.io/concepts/architecture-model.html.md): How an Akka project is structured across api, application, and domain layers
 - [Distributed systems](https://doc.akka.io/concepts/distributed-systems.html.md): Resilience, elasticity, and responsiveness
 - [Multi-region operations](https://doc.akka.io/concepts/multi-region.html.md): Active-active HA/DR across regions
 - [Declarative effects](https://doc.akka.io/concepts/declarative-effects.html.md): Composable, testable side effects
-- [Saga patterns](https://doc.akka.io/concepts/saga-patterns.html.md): Distributed transaction patterns
-- [AI orchestration patterns](https://doc.akka.io/concepts/ms-agent-patterns.html.md): Patterns for composing and orchestrating agentic applications
-- [Inter-agent communications](https://doc.akka.io/concepts/inter-agent-comms.html.md): Patterns for agent collaboration and communication
-- [gRPC vs HTTP Endpoints](https://doc.akka.io/concepts/grpc-vs-http-endpoints.html.md): Comparison of gRPC and HTTP endpoint types and when to use each
-- [Entity state models](https://doc.akka.io/concepts/state-model.html.md): Understanding different entity state modeling approaches in Akka
+- [AI orchestration patterns](https://doc.akka.io/concepts/ai-orchestration-patterns.html.md): Patterns for composing and orchestrating agentic applications
+- [State model](https://doc.akka.io/concepts/state-model.html.md): Understanding different entity state modeling approaches in Akka
 - [Deployment model](https://doc.akka.io/concepts/deployment-model.html.md): Understanding how Akka services are packaged and deployed
 - [Design considerations](https://doc.akka.io/sdk/dev-best-practices.html.md): Reactive principles, domain-driven design, service sizing, and deduplication
 
@@ -141,7 +136,6 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Run locally with a broker](https://doc.akka.io/sdk/running-with-broker.html.md): Run an Akka service locally against a Kafka broker or the Google Pub/Sub emulator
 - [Run a local cluster](https://doc.akka.io/sdk/local-cluster.html.md): Run a multi-node Akka cluster locally
 - [Using an AI coding assistant](https://doc.akka.io/sdk/ai-coding-assistant.html.md): Enable AI assistants to use the Akka CLI natively
-- [Access Control List concepts](https://doc.akka.io/concepts/acls.html.md): Core concepts behind Access Control Lists and how they secure Akka services
 - [Developing Access Control Lists (ACLs)](https://doc.akka.io/sdk/access-control.html.md): Implementing ACLs to control access to your Akka service endpoints
 - [JSON Web Tokens (JWTs)](https://doc.akka.io/reference/jwts.html.md): Understanding JWT concepts and their role in Akka authentication
 - [Developing JSON Web Tokens (JWT)](https://doc.akka.io/sdk/auth-with-jwts.html.md): Implementing JWT-based authentication in your Akka services

@@ -1,4 +1,5 @@
 = Design considerations
+:page-aliases: concepts:saga-patterns.adoc
 
 include::ROOT:partial$include.adoc[]
 
@@ -291,3 +292,22 @@ Keep in mind that using collection types not supported by the Jackson serializat
  - Memory and storage requirements for keeping command IDs.
  - Performance consideration for effective data structure for command IDs.
  - Custom serialization for non-standard collection types.
+
+[#saga-patterns]
+== Saga patterns
+
+Saga patterns manage long-running business processes in distributed systems by dividing them into a series of transactions. Each transaction either completes or triggers compensating actions if something goes wrong. There are two approaches, orchestrator-based and choreography-based; both keep the system consistent and differ only in how coordination is handled.
+
+[cols="1,1", options="header"]
+|===
+| Orchestrator pattern
+| Choreography pattern
+
+| A central controller coordinates the process, managing the sequence of steps and the compensating actions on failure. Implement it with the xref:sdk:workflows.adoc[Workflow] component, which defines each step and manages retries, timeouts, and compensation.
+| Each service listens for events and acts independently, emitting an event that triggers the next service and handling its own rollback on failure. Implement it by combining xref:sdk:event-sourced-entities.adoc[Entities] and xref:sdk:consuming-producing.adoc[Consumers] that produce and react to events.
+
+| Example: https://github.com/akka-samples/transfer-workflow-orchestration[Funds transfer workflow, window="new"]
+| Example: https://github.com/akka-samples/choreography-saga-quickstart[User registration service, window="new"]
+|===
+
+Use *orchestration* when steps are tightly coordinated and you need central visibility, consistent retry and compensation, and clear state tracking. Use *choreography* when services are autonomous, you prefer low coupling and high scalability, and eventual consistency is acceptable. You can combine the two: an orchestrator manages the main flow while individual services use choreography for local side effects.

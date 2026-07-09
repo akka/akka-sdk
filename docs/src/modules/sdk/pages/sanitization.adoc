@@ -2,7 +2,7 @@
 include::ROOT:partial$include.adoc[]
 :page-summary: Runtime-level PII scrubbing that enforces data governance as a built-in property of your Akka service, not an afterthought.
 :page-when-to-use: When your service handles user-generated content containing personally identifiable information (PII) and you need automated, consistent sanitization across logs and agent interactions.
-:page-related: xref:concepts:governance-and-the-runtime.adoc[], xref:sdk:agents/guardrails.adoc[]
+:page-related: xref:sdk:agents/guardrails.adoc[]
 :page-prerequisites: An Akka service with `application.conf` configured; familiarity with xref:setup-and-dependency-injection.adoc[dependency injection].
 :page-persona: governance-compliance, governance-infosec, developer
 
@@ -116,5 +116,4 @@ In tests you can access the sanitizer directly from the `getSanitizer` method in
 
 == See also
 
-* xref:concepts:governance-and-the-runtime.adoc[] — How the Akka runtime enforces governance policies including sanitization, guardrails, and audit logging.
 * xref:sdk:agents/guardrails.adoc[] — Input and output guardrails that complement data sanitization for responsible AI.

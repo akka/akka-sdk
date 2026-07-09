@@ -7,7 +7,6 @@ specify lists of what can access your services, at multiple granularity. For exa
 initiates a payment on a payment service to only accept requests from the shopping cart service. You can also control
 whether services or methods can be invoked from the Internet.
 
-For a conceptual introduction, see xref:concepts:acls.adoc[] in the **Concepts** section.
 
 ==  Principals
 

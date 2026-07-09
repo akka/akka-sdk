@@ -1,3 +1,0 @@
-= Background execution
-
-include::ROOT:partial$background-execution.adoc[]

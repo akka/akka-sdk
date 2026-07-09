@@ -1,19 +1,16 @@
 // Understanding/Concepts
 ** xref:concepts:index.adoc[]
 *** xref:concepts:concepts.adoc[]
-*** xref:concepts:distributed-systems.adoc[]
-*** xref:concepts:architecture-model.adoc[]
-*** xref:concepts:deployment-model.adoc[]
-*** xref:concepts:development-process.adoc[]
-*** xref:concepts:background-execution.adoc[]
-*** xref:concepts:declarative-effects.adoc[]
-*** xref:concepts:state-model.adoc[]
-*** xref:concepts:multi-region.adoc[]
-*** xref:concepts:saga-patterns.adoc[]
-*** xref:concepts:grpc-vs-http-endpoints.adoc[]
-*** xref:concepts:ai-agents.adoc[]
-*** xref:concepts:inter-agent-comms.adoc[]
-*** xref:concepts:ms-agent-patterns.adoc[]
-*** xref:concepts:acls.adoc[]
-*** xref:concepts:governance-and-the-runtime.adoc[]
+*** Foundations
+**** xref:concepts:distributed-systems.adoc[]
+**** xref:concepts:architecture-model.adoc[]
+**** xref:concepts:deployment-model.adoc[]
+*** State and execution
+**** xref:concepts:state-model.adoc[]
+**** xref:concepts:declarative-effects.adoc[]
+**** xref:concepts:multi-region.adoc[]
+*** Agentic concepts
+**** xref:concepts:ai-agents.adoc[]
+**** xref:concepts:ai-orchestration-patterns.adoc[]
+ section
 *** xref:ROOT:resources.adoc[Resources]
