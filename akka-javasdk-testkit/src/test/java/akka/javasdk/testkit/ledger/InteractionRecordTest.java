@@ -4,9 +4,7 @@
 
 package akka.javasdk.testkit.ledger;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.MessageContent.TextMessageContent;
@@ -65,30 +63,30 @@ public class InteractionRecordTest {
   public void accessorsFlattenTheRecord() {
     var record = record(Optional.empty());
 
-    assertEquals("What is 2+2?", record.inputText());
-    assertEquals("The answer is 4.", record.finalResponseText());
-    assertEquals(1, record.toolCalls().size());
-    assertEquals("calc", record.toolCalls().get(0).name());
-    assertEquals(18, record.totalInputTokens());
-    assertEquals(11, record.totalOutputTokens());
-    assertFalse(record.isFlowInteraction());
-    assertFalse(record.failed());
-    assertTrue(record.failureSummary().isEmpty());
+    assertThat(record.inputText()).isEqualTo("What is 2+2?");
+    assertThat(record.finalResponseText()).isEqualTo("The answer is 4.");
+    assertThat(record.toolCalls()).hasSize(1);
+    assertThat(record.toolCalls().get(0).name()).isEqualTo("calc");
+    assertThat(record.totalInputTokens()).isEqualTo(18);
+    assertThat(record.totalOutputTokens()).isEqualTo(11);
+    assertThat(record.isFlowInteraction()).isFalse();
+    assertThat(record.failed()).isFalse();
+    assertThat(record.failureSummary()).isEmpty();
   }
 
   @Test
   public void finalResponseTextSkipsResponsesWithoutContent() {
     // the last response has content; a trailing tool-only response should not blank it out
     var record = record(Optional.empty());
-    assertEquals("The answer is 4.", record.finalResponseText());
+    assertThat(record.finalResponseText()).isEqualTo("The answer is 4.");
   }
 
   @Test
   public void failureSummaryRendersReasonAndDescription() {
     var record = record(Optional.of(new Failure(Failure.FailureReason.TOOL_CALL, "calc exploded")));
 
-    assertTrue(record.failed());
-    assertEquals("TOOL_CALL: calc exploded", record.failureSummary().orElseThrow());
+    assertThat(record.failed()).isTrue();
+    assertThat(record.failureSummary()).contains("TOOL_CALL: calc exploded");
   }
 
   @Test
@@ -106,7 +104,7 @@ public class InteractionRecordTest {
         Response: The answer is 4.
         Tool response calc: 4
         """;
-    assertEquals(expected, transcript);
+    assertThat(transcript).isEqualTo(expected);
   }
 
   @Test
@@ -130,7 +128,7 @@ public class InteractionRecordTest {
             Instant.EPOCH);
 
     // non-text content is dropped from inputText but rendered as placeholders in the transcript
-    assertEquals("describe these", record.inputText());
+    assertThat(record.inputText()).isEqualTo("describe these");
 
     var expected =
         """
@@ -139,6 +137,6 @@ public class InteractionRecordTest {
         [pdf https://example.com/doc.pdf]
         Response: a cat and a document
         """;
-    assertEquals(expected, record.transcript());
+    assertThat(record.transcript()).isEqualTo(expected);
   }
 }

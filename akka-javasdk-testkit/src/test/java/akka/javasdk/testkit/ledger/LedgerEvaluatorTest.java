@@ -4,9 +4,8 @@
 
 package akka.javasdk.testkit.ledger;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import akka.javasdk.agent.MessageContent.TextMessageContent;
 import akka.javasdk.evaluation.Subject;
@@ -56,22 +55,24 @@ public class LedgerEvaluatorTest {
     EvaluatorResult result =
         testKit.evaluate(new Subject.AgentInteraction("math-agent", "interaction-1"));
 
-    assertTrue(result.isComplete());
+    assertThat(result.isComplete()).isTrue();
     var evaluation = result.getEvaluations().get(0);
-    assertTrue(evaluation.passed());
-    assertEquals("The answer is 4.", evaluation.attributes().get("finalText"));
-    assertTrue(evaluation.attributes().get("transcript").contains("Response: The answer is 4."));
+    assertThat(evaluation.passed()).isTrue();
+    assertThat(evaluation.attributes().get("finalText")).isEqualTo("The answer is 4.");
+    assertThat(evaluation.attributes().get("transcript")).contains("Response: The answer is 4.");
   }
 
   @Test
   public void missingInteractionFailsWithNoSuchElement() {
     var ledger = TestLedgerClient.create();
 
-    assertThrows(NoSuchElementException.class, () -> ledger.getInteraction("missing"));
+    assertThatThrownBy(() -> ledger.getInteraction("missing"))
+        .isInstanceOf(NoSuchElementException.class);
 
-    var async = ledger.getInteractionAsync("missing").toCompletableFuture();
     // join wraps the failure in a CompletionException; the cause is the no-such-element error
-    var thrown = assertThrows(CompletionException.class, async::join);
-    assertTrue(thrown.getCause() instanceof NoSuchElementException);
+    var async = ledger.getInteractionAsync("missing").toCompletableFuture();
+    assertThatThrownBy(async::join)
+        .isInstanceOf(CompletionException.class)
+        .hasCauseInstanceOf(NoSuchElementException.class);
   }
 }
