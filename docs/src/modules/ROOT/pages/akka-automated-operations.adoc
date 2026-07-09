@@ -50,13 +50,13 @@ Multi-region replication is the foundation for continuity. Because state already
 
 At the instance level, AAO snapshots agent and service state and captures individual state changes as they happen. When a component fails, the platform restores it by replaying its most recent snapshot and then applying the captured changes in order, bringing the instance back to exactly where it left off.
 
-This recovery is automatic and does not depend on operator intervention. Failure handling is part of the runtime rather than a manual runbook, so transient faults are absorbed instead of turning into incidents.
+This recovery is automatic and does not depend on operator intervention. Failure handling is part of the runtime rather than a manual procedure, so transient faults are absorbed instead of turning into incidents.
 
 == Rolling updates
 
 New versions are rolled out gradually across regions and clusters while the system keeps serving. Instances are updated in waves so that healthy capacity always remains available to handle traffic, and end users are not disrupted while the change propagates.
 
-This holds even when the update changes your data model. AAO coordinates schema and state changes as part of the rollout, so evolving how your agents and services store data does not require downtime or a maintenance window.
+This holds even when the update changes your data model. AAO coordinates schema and state changes as part of the rolling update, so evolving how your agents and services store data does not require downtime or a maintenance window.
 
 image::capabilities/zero-downtime.png[Rolling updates in waves with no downtime,width=620]
 
@@ -64,7 +64,7 @@ image::capabilities/zero-downtime.png[Rolling updates in waves with no downtime,
 
 Operational changes to a running system — updating configuration, rotating credentials, migrating between environments — are applied while the system stays live.
 
-Certificate and key rotation is automated, so security material is refreshed on an ongoing basis without manual coordination or service interruption. Larger moves are handled the same way: infrastructure upgrades, cloud-to-cloud migrations, federating a serverless deployment into your own VPC, and repatriating workloads back on-premises are all performed through replication with automated cutover, so the running system transitions without going offline.
+Certificate and key rotation is automated, so security material is refreshed on an ongoing basis without manual coordination or service interruption. Larger moves are handled the same way: infrastructure upgrades, cloud-to-cloud migrations, federating a serverless deployment into your own VPC, and repatriating workloads back on-premises are all performed through replication with an automated switch, so the running system transitions without going offline.
 
 == Observability
 

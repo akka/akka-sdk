@@ -21,7 +21,7 @@ image::capabilities/akka-agents.png[An Akka agent gathers context, reasons with 
 An agent is a component that combines three ingredients:
 
 * *Instructions* — a system prompt that defines the agent's role, goals, and constraints.
-* *A model* — the language model the agent reasons with, chosen declaratively and swappable without rewriting the agent.
+* *A model* — the language model the agent reasons with, chosen declaratively and able to be swapped without rewriting the agent.
 * *Tools* — the functions, APIs, and remote services the agent can call to gather information or take action.
 
 Given a request, the agent decides which tools to call, in what order, and how to combine their results with model reasoning to produce a response. The runtime manages the loop between model and tools, retrying and recovering when a step fails.

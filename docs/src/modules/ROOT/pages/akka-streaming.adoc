@@ -44,7 +44,7 @@ image::capabilities/brokerless-decentralized-messaging-alt1.png[Brokerless, dece
 
 === Back-pressure and flow control
 
-High-frequency event sources are bursty. Left unchecked, a fast producer will overwhelm a slower consumer — the model that consumer calls, the database it writes to, or the downstream agent it feeds. Akka Streaming manages flow in _both directions_ automatically:
+High-frequency event sources arrive in bursts. Left unchecked, a fast producer will overwhelm a slower consumer — the model that consumer calls, the database it writes to, or the downstream agent it feeds. Akka Streaming manages flow in _both directions_ automatically:
 
 * When a consumer cannot keep up, the stream slows the producer rather than buffering without bound.
 * When input rates spike, consumers are protected from being flooded.

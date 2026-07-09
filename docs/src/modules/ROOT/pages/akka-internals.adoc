@@ -42,7 +42,7 @@ Asynchronous messaging::
 Components communicate through non-blocking message passing. Producers are decoupled from consumers, and components react when events arrive rather than blocking while they wait.
 
 Event sourcing::
-Every meaningful change is captured as an entry in a durable, replayable log. This yields audit trails, temporal debugging, and robust recovery: state can be rebuilt by replaying events, optionally starting from a snapshot.
+Every meaningful change is captured as an entry in a durable log that can be replayed. This yields audit trails, temporal debugging, and robust recovery: state can be rebuilt by replaying events, optionally starting from a snapshot.
 
 Distributed coordination::
 Calls to external systems — APIs, databases, other agents — are made asynchronously and guarded with circuit breakers, retries with backoff, and supervision. Failures stay isolated and recoverable instead of cascading.
@@ -73,7 +73,7 @@ image::capabilities/sharded-data.png[Data sharded across nodes, requests routed 
 
 == Clustering across clouds
 
-Akka nodes form a masterless, self-organizing cluster. There is no central coordinator to become a bottleneck or a single point of failure. Nodes communicate over brokerless, encrypted gRPC messaging, and built-in split-brain resolution keeps the cluster consistent when the network partitions. A single cluster can span multiple clouds and data centers, so services run close to their users and their data.
+Akka nodes form a self-organizing cluster with no primary node. There is no central coordinator to become a bottleneck or a single point of failure. Nodes communicate over brokerless, encrypted gRPC messaging, and built-in split-brain resolution keeps the cluster consistent when the network partitions. A single cluster can span multiple clouds and data centers, so services run close to their users and their data.
 
 == A foundation of proven patterns
 

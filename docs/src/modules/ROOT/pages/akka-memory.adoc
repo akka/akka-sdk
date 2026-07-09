@@ -46,7 +46,7 @@ image::capabilities/memory-event-journal-alt.png[State tracked as an appended ev
 
 Agent state is sharded across in-memory, durable nodes. Each piece of state lives on exactly one node at a time, which keeps access consistent and avoids coordination overhead on every write.
 
-As the runtime scales nodes up or down, state rebalances automatically across the cluster. You do not manually partition data or repoint clients; the runtime moves shards and routes requests to wherever the state currently lives.
+As the runtime scales nodes up or down, state rebalances automatically across the cluster. You do not manually partition data or redirect clients; the runtime moves shards and routes requests to wherever the state currently lives.
 
 This combination — in-memory placement plus single-owner sharding — is what delivers sub-10ms writes without a bolt-on caching layer.
 
