@@ -61,6 +61,7 @@ private[javasdk] object ComponentLocator {
   val TimedActionKey = "timed-action"
   val ViewKey = "view"
   val WorkflowKey = "workflow"
+  val WorkflowEvaluatorKey = "workflow-evaluator"
 
   private val AllComponentTypeKeys = Seq(
     AgentKey,
@@ -74,7 +75,8 @@ private[javasdk] object ComponentLocator {
     McpEndpointKey,
     TimedActionKey,
     ViewKey,
-    WorkflowKey)
+    WorkflowKey,
+    WorkflowEvaluatorKey)
 
   private val logger = LoggerFactory.getLogger(getClass)
 

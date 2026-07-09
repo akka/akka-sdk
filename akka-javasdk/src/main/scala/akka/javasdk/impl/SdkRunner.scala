@@ -61,6 +61,7 @@ import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.evaluation.Evaluator
+import akka.javasdk.evaluation.WorkflowEvaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.grpc.AbstractGrpcEndpoint
@@ -92,6 +93,7 @@ import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.consumer.MessageContextImpl
 import akka.javasdk.impl.evaluation.EvaluatorImpl
 import akka.javasdk.impl.evaluation.EvaluatorSettings
+import akka.javasdk.impl.evaluation.WorkflowEvaluatorImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
@@ -1187,6 +1189,38 @@ private final class Sdk(
             bindings = bindings,
             instanceFactory = instanceFactory,
             provided = isProvided(clz))
+
+      case clz if Reflect.isWorkflowEvaluator(clz) =>
+        val componentId = Reflect.readComponentId(clz)
+        val evaluatorClass = clz.asInstanceOf[Class[WorkflowEvaluator[Nothing]]]
+        val stateType = Reflect.workflowEvaluatorStateType(clz).asInstanceOf[Class[Nothing]]
+        serializer.registerTypeHints(stateType)
+
+        // TODO runtime SPI: register as an evaluator with a workflow execution kind — carrying the
+        // agent bindings (EvaluatorSettings.agentBindings) so the trigger projection starts it, and
+        // limiting the number of active instances for backpressure. For the prototype it is hosted
+        // as a plain workflow, driven only by the built-in start command.
+        workflowDescriptors :+=
+          new WorkflowDescriptor(
+            componentId,
+            clz.getName,
+            readOnlyCommandNames = Set.empty,
+            instanceFactory = { factoryContext =>
+              val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
+              new WorkflowEvaluatorImpl[Nothing, WorkflowEvaluator[Nothing]](
+                factoryContext.workflowId,
+                evaluatorClass,
+                stateType,
+                () =>
+                  wiredInstance("Workflow Evaluator", evaluatorClass)(
+                    sideEffectingComponentInjects(None, callerSpiffe)),
+                serializer,
+                sdkExecutionContext)
+            },
+            name = Reflect.readComponentName(clz),
+            description = Reflect.readComponentDescription(clz),
+            provided = false,
+            protobufDescriptors = Nil)
 
       case clz if Reflect.isView(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)

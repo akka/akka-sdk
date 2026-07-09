@@ -1,0 +1,107 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.impl.evaluation
+
+import scala.jdk.CollectionConverters._
+
+import akka.annotation.InternalApi
+import akka.japi.function
+import akka.javasdk.evaluation.Evaluation
+import akka.javasdk.evaluation.WorkflowEvaluator
+import akka.javasdk.evaluation.WorkflowEvaluator.Effect
+import akka.javasdk.evaluation.WorkflowEvaluator.WithInput
+import akka.javasdk.impl.client.MethodRefResolver
+import akka.javasdk.impl.workflow.WorkflowDescriptor
+
+/**
+ * INTERNAL API
+ *
+ * Effect model for [[WorkflowEvaluator]]. A deliberately small subset of the workflow effects: state update plus either
+ * a step transition or a terminal evaluation outcome (complete / inconclusive). There is no pause, end, delete or reply
+ * — the component's lifecycle guarantees are enforced by construction.
+ */
+@InternalApi
+private[javasdk] object WorkflowEvaluatorEffects {
+
+  sealed trait Transition
+  final case class StepTransition(stepName: String, input: Option[Any], declaringClass: Class[_]) extends Transition
+  final case class CompleteTransition(evaluations: List[Evaluation]) extends Transition
+  final case class InconclusiveTransition(reason: String) extends Transition
+
+  sealed trait Persistence[+S]
+  final case class UpdateState[S](newState: S) extends Persistence[S] {
+    require(newState != null, "Updated state must not be null")
+  }
+  case object NoPersistence extends Persistence[Nothing]
+
+  def createBuilder[S](): Effect.Builder[S] = BuilderImpl(NoPersistence)
+
+  final case class EffectImpl[S](persistence: Persistence[S], transition: Transition) extends Effect
+
+  private def resolveStep(methodRef: AnyRef): (String, Class[_]) = {
+    val method = MethodRefResolver.resolveMethodRef(methodRef)
+    (WorkflowDescriptor.stepMethodName(method), method.getDeclaringClass)
+  }
+
+  private def completeEffect[S](persistence: Persistence[S], evaluations: List[Evaluation]): Effect = {
+    require(evaluations.nonEmpty, "Evaluations must not be empty")
+    EffectImpl(persistence, CompleteTransition(evaluations))
+  }
+
+  private def inconclusiveEffect[S](persistence: Persistence[S], reason: String): Effect = {
+    require(reason != null && reason.nonEmpty, "Given reason must not be null or empty")
+    EffectImpl(persistence, InconclusiveTransition(reason))
+  }
+
+  private def transitionEffect[S](persistence: Persistence[S], methodRef: AnyRef): Effect = {
+    val (stepName, declaringClass) = resolveStep(methodRef)
+    EffectImpl(persistence, StepTransition(stepName, None, declaringClass))
+  }
+
+  private def transitionWithInput[S, I](persistence: Persistence[S], methodRef: AnyRef): WithInput[I, Effect] = {
+    val (stepName, declaringClass) = resolveStep(methodRef)
+    (input: I) => EffectImpl(persistence, StepTransition(stepName, Some(input), declaringClass))
+  }
+
+  final case class BuilderImpl[S](persistence: Persistence[S]) extends Effect.Builder[S] {
+
+    override def updateState(newState: S): Effect.PersistenceEffectBuilder[S] =
+      PersistenceEffectBuilderImpl(UpdateState(newState))
+
+    override def transitionTo[W](methodRef: function.Function[W, Effect]): Effect =
+      transitionEffect(persistence, methodRef)
+
+    override def transitionTo[W, I](methodRef: function.Function2[W, I, Effect]): WithInput[I, Effect] =
+      transitionWithInput(persistence, methodRef)
+
+    override def complete(evaluation: Evaluation, more: Evaluation*): Effect =
+      completeEffect(persistence, evaluation :: more.toList)
+
+    override def complete(evaluations: java.util.List[Evaluation]): Effect =
+      completeEffect(persistence, evaluations.asScala.toList)
+
+    override def inconclusive(reason: String): Effect =
+      inconclusiveEffect(persistence, reason)
+  }
+
+  final case class PersistenceEffectBuilderImpl[S](persistence: Persistence[S])
+      extends Effect.PersistenceEffectBuilder[S] {
+
+    override def transitionTo[W](methodRef: function.Function[W, Effect]): Effect =
+      transitionEffect(persistence, methodRef)
+
+    override def transitionTo[W, I](methodRef: function.Function2[W, I, Effect]): WithInput[I, Effect] =
+      transitionWithInput(persistence, methodRef)
+
+    override def complete(evaluation: Evaluation, more: Evaluation*): Effect =
+      completeEffect(persistence, evaluation :: more.toList)
+
+    override def complete(evaluations: java.util.List[Evaluation]): Effect =
+      completeEffect(persistence, evaluations.asScala.toList)
+
+    override def inconclusive(reason: String): Effect =
+      inconclusiveEffect(persistence, reason)
+  }
+}
