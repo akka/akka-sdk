@@ -94,7 +94,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 ## Operating
 
 - [Akka Automated Operations](https://doc.akka.io/operations/akka-platform.html.md): Managed platform for deploying and operating Akka services
-- [Deploy a service](https://doc.akka.io/operations/services/deploy-service.html.md): Deploying to Akka
+- [Deploy a service](https://doc.akka.io/operations/services/deploy-service.html): Deploying to Akka
 - [Observability](https://doc.akka.io/operations/observability-and-monitoring/index.html.md): Metrics, logs, traces, OTEL export
 - [Secrets management](https://doc.akka.io/operations/projects/secrets.html.md): Built-in secrets with Azure KeyVault integration
 - [CLI installation](https://doc.akka.io/operations/cli/installation.html.md): Install the Akka CLI
@@ -104,7 +104,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 
 - [Glossary](https://doc.akka.io/reference/glossary.html.md): Terms including AI, governance, and distributed systems terminology
 - [Configuration reference](https://doc.akka.io/reference/config/reference.html.md): Full configuration reference
-- [CLI command reference](https://doc.akka.io/reference/cli/akka-cli/index.html.md): All Akka CLI commands
+- [CLI command reference](https://doc.akka.io/reference/cli/akka-cli/index.html): All Akka CLI commands
 - [Release notes](https://doc.akka.io/reference/release-notes.html.md): Latest updates and changes
 - [Model provider details](https://doc.akka.io/sdk/model-provider-details.html.md): Anthropic, OpenAI, Google, AWS Bedrock, Ollama, and more
 - [Guardrails](https://doc.akka.io/sdk/agents/guardrails.html.md): Runtime policy enforcement
