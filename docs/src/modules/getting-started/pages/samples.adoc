@@ -11,7 +11,8 @@ Two ways to start from this catalog:
 
 ++++
 <style>
-  .sb-facets{margin:1rem 0;border:1px solid rgba(127,127,127,.25);border-radius:8px;padding:.5rem .9rem}
+  .sb-facets{margin:1rem 0;border:1px solid rgba(127,127,127,.25);border-radius:8px;padding:.7rem .9rem .6rem}
+  .sb-title{font-size:1.1rem;font-weight:700;letter-spacing:-.01em;margin:0 0 .6rem;padding-bottom:.5rem;border-bottom:1px solid rgba(127,127,127,.2)}
   .sb-frow{display:flex;gap:.5rem;align-items:baseline;padding:.4rem 0;border-top:1px solid rgba(127,127,127,.15)}
   .sb-frow:first-child{border-top:0}
   .sb-flabel{flex:0 0 8rem;font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;opacity:.55;padding-top:.25rem}
@@ -67,7 +68,7 @@ include::partial$catalog-data.json[]
   }
   function activeCount(){var n=0;FACETS.forEach(function(f){n+=sel[f.key].length;});return n;}
   function renderFacets(){
-    facetsEl.innerHTML=FACETS.map(function(f){
+    facetsEl.innerHTML='<div class="sb-title">Find an Akka example&hellip;</div>'+FACETS.map(function(f){
       var pills=f.opts.filter(function(o){return total(f,o)>0;}).map(function(o){
         var lab=(f.lab&&f.lab[o])?f.lab[o]:o, on=sel[f.key].indexOf(o)>=0?' on':'';
         return '<button type="button" class="sb-pill'+on+'" data-f="'+f.key+'" data-o="'+esc(o)+'">'+esc(lab)+'<span class="n">'+total(f,o)+'</span></button>';
