@@ -53,7 +53,6 @@
 *** xref:sdk:model-provider-details.adoc[]
 *** xref:sdk:sanitization.adoc[Data sanitization]
 *** xref:sdk:metric.adoc[]
-** Running locally
 *** xref:sdk:running-locally.adoc[]
 *** xref:sdk:running-with-broker.adoc[]
 *** xref:sdk:local-cluster.adoc[]
