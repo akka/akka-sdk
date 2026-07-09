@@ -37,7 +37,7 @@ In Claude Code, install the Akka plugin from the AI Marketplace:
 [source]
 ----
 /plugin marketplace add akka/ai-marketplace
-/plugin install akka@ai-marketplace
+/plugin install akka@akka-ai-marketplace
 /reload-plugins
 ----
 
@@ -51,7 +51,7 @@ TIP: If you are unable to add the marketplace, clone the Akka plugin repository 
 ----
 /akka:setup
 ----
-+
+
 This configures your environment — ensuring the Akka CLI is installed, Java and Maven are available, and your Akka download token is properly configured. Once setup completes, you are ready to start building.
 
 [TIP.manual]
@@ -82,10 +82,10 @@ Crucially, this single file specification is usually written mostly by humans. I
 === Formal spec-driven process
 A single `SPEC.md` or `specification.md` file may be enough for some projects. Many sample or demonstration applications can be built properly with just a single file. However, when your needs and complexity reach a certain point, you need a formal process. This process is iterative, git-friendly, and enlists the aid of the AI assistant both in building the spec and generating the code from it. It addresses the need to build formal specifications that are consumable by both human and AI alike while reducing random and unexpected output. This process is covered in detail below.
 
-== Initializing a spec-driven project
-To start a new spec-driven project, use the `akka specify init` command instead of `akka code init`. It provisions everything you need for the spec-driven development cycle.
+== Using Akka specify
+Akka makes it incredibly easy to get started with a new _Spec-Driven_ project. Instead of using `akka code init`, use the newer `akka specify init` command. This will give you everything you need to kick off your Spec-Driven development cycle.
 
-If you installed the <<_step_1_install_the_akka_plugin,Akka Specify Plugin>> (recommended), the `/akka:setup` skill handles project initialization for you. The information below describes what happens under the hood, and applies if you used the `akka specify init <dir>` fallback.
+If you installed the Akka plugin (recommended), the `/akka:setup` skill handles project initialization for you. The information below describes what happens under the hood, and applies if you used the `akka specify init <dir>` fallback.
 
 === Initialization and constitution adoption
 Running `akka specify init <dir>` provisions a new AI-assist ready project directory. It scaffolds an empty Akka project and grabs all of the markdown templates necessary for the spec-driven process. Once you have run this command, change to the directory of your new project (if you are not already there) and launch your favorite code assistant.
@@ -173,7 +173,7 @@ The default Akka constitution mandates both unit and integration tests, so these
 When the code is complete, you should be able to exercise any RESTful APIs or user interfaces created. Akka makes this step easier as well.
 
 === Build and run locally
-You do not have to leave your agent chat during the spec-driven SDLC. The `/akka.build` command does more than `mvn compile exec:java`:
+You should never have to leave your agent chat during the spec-driven SDLC. If you use the `/akka.build` command, you get a ton of extra bonus features beyond a simple `mvn compile exec:java`.
 
 * Pre-existing services are shut down
 * Anything using the target port is shut down
@@ -196,7 +196,7 @@ Once your service is running -- either locally after `/akka.build` or deployed v
 This is spec-driven _verification_ -- your agent checks that the running service actually behaves the way the specification says it should. If inspect finds issues, iterate with `/akka.implement` and `/akka.build` before deploying.
 
 === Deploy to Akka
-If you want to deploy your service to Akka's infrastructure through _Akka Automated Operations_, use the `/akka.deploy` command. This command prompts you for the organization and project into which you want to deploy. It then deploys your service, automatically doing a rolling update of the service cluster if one is already running. After deployment, the command verifies component health and inspects the deployed service using backoffice tools.
+If you want to deploy your service to Akka's infrastructure through _Akka Automated Operations_, use the `/akka.deploy` command. This command prompts you for the organization and project into which you want to deploy. It then seamlessly deploys your service, automatically doing a rolling update of the service cluster if one is already running. After deployment, the command verifies component health and inspects the deployed service using backoffice tools.
 
 === Review and analyze
 Two additional commands help you maintain quality as your project evolves:
@@ -204,8 +204,12 @@ Two additional commands help you maintain quality as your project evolves:
 * `/akka.review` reviews the implemented code against the spec, plan, and constitution. Use this after implementation to catch deviations before they compound.
 * `/akka.analyze` performs a non-destructive cross-artifact consistency and quality analysis across your spec, plan, and task list. Use this after task generation to verify that all artifacts are aligned before implementation begins.
 
-== Summary
-The full spec-driven cycle is `init` -> `specify` -> `clarify` -> `plan` -> `tasks` -> `implement` -> `build` -> `inspect` -> `deploy`. Each step produces a version-controlled artifact, and the AI assistant generates the code from those artifacts. Scope features small enough that the acceptance criteria are clear and the generated code is easy to review.
+== Specify your ideas!
+The greatest barrier to building new things is rarely the idea. It is usually in the implementation. Spec-Driven Development frees you from this barrier, letting you turn your ideas into specification and plan prompts, and watching as your agent generates and populates a to-do list and implements all of the code for you.
+
+You no longer have to invest massive amounts of time in "what-if" scenarios -- you can just _specify and go_. All you need is `init` -> `specify` -> `clarify` -> `plan` -> `tasks` -> `implement` -> `build` -> `inspect` -> `deploy`.
+
+Using SDD with careful feature scoping and concise technical implementation plans, you are never more than a matter of minutes from a feature you can interact with. With Akka, those features automatically become powerful, resilient, scalable distributed systems.
 
 == SDD commands in your coding assistant
 
@@ -231,5 +235,8 @@ These commands are also listed in the xref:reference:specify/index.adoc[].
 
 == See also
 
+* {url-blog-introducing-specify}[Introducing Akka Specify, window="new"] -- the blog post that launched SDD on Akka.
+* https://github.github.com/spec-kit/index.html[spec-kit, window="new"] -- the specification pattern Akka's SDD process follows.
+* https://modelcontextprotocol.io/docs/getting-started/intro[Model Context Protocol (MCP), window="new"] -- the protocol behind the `/akka.*` slash-commands.
 * xref:operations:cli/installation.adoc[]
 * xref:ai-coding-assistant.adoc[]
