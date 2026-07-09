@@ -9,19 +9,17 @@ Two ways to start from this catalog:
 * *Clone a sample* — a complete, prebuilt app you download and run. Best when you want working code to read or adapt.
 * *Generate from a blueprint* — a recipe that the xref:sdk:spec-driven-development.adoc[Akka Specify Plugin] turns into runnable AI systems. We have 460 more examples for you to explore.
 
-Select any combination of facets. Choosing several values within one facet widens the results; choosing across facets narrows them.
-
 ++++
 <style>
   .sb-facets{margin:1rem 0;border:1px solid rgba(127,127,127,.25);border-radius:8px;padding:.5rem .9rem}
-  .sb-search{width:100%;max-width:24rem;padding:.4rem .6rem;margin:.2rem 0 .6rem;border:1px solid rgba(127,127,127,.4);border-radius:6px;background:transparent;color:inherit;font:inherit}
   .sb-frow{display:flex;gap:.5rem;align-items:baseline;padding:.4rem 0;border-top:1px solid rgba(127,127,127,.15)}
   .sb-frow:first-child{border-top:0}
   .sb-flabel{flex:0 0 8rem;font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;opacity:.55;padding-top:.25rem}
   .sb-pills{display:flex;flex-wrap:wrap;gap:.35rem}
   .sb-pill{font-size:.76rem;padding:.22rem .6rem;border-radius:999px;border:1px solid rgba(127,127,127,.4);background:transparent;color:inherit;cursor:pointer;line-height:1.2}
   .sb-pill .n{opacity:.5;margin-left:.4rem}
-  .sb-pill.on{background:rgba(90,150,210,.22);border-color:rgba(90,150,210,.75)}
+  .sb-pill.on{background:#FFD100;border-color:#E6BC00;color:#1a1a1a;font-weight:600}
+  .sb-pill.on .n{opacity:.6}
   .sb-actions{display:flex;justify-content:space-between;align-items:center;margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(127,127,127,.15);font-size:.8rem;opacity:.9}
   .sb-clear{font-size:.76rem;padding:.25rem .7rem;border:1px solid rgba(127,127,127,.5);border-radius:6px;background:transparent;color:inherit;cursor:pointer}
   .sb-summary{font-size:.85rem;opacity:.8;margin:.6rem 0}
@@ -33,7 +31,6 @@ Select any combination of facets. Choosing several values within one facet widen
   .sb-meta{font-size:.72rem;opacity:.7;margin-top:.35rem}
 </style>
 <div class="sb-catalog">
-  <input type="search" class="sb-search" id="sb-q" placeholder="Search name or description">
   <div class="sb-facets" id="sb-facets"></div>
   <div class="sb-summary" id="sb-summary"></div>
   <div class="sb-list" id="sb-list"></div>
@@ -57,7 +54,8 @@ include::partial$catalog-data.json[]
     {key:'x',label:'Context & state',arr:1,opts:['durable_execution','short_term_memory','long_term_memory','documents','vector_semantic','graph_db','summarization_memory'],lab:{durable_execution:'Durable execution',short_term_memory:'Short-term memory',long_term_memory:'Long-term memory',documents:'Documents',vector_semantic:'Vector / semantic',graph_db:'Graph DB',summarization_memory:'Summarization memory'}}
   ];
   var sel={}; FACETS.forEach(function(f){sel[f.key]=[];});
-  var q=document.getElementById('sb-q'), facetsEl=document.getElementById('sb-facets'),
+  sel['c']=['AutonomousAgent']; sel['t']=['sample'];
+  var facetsEl=document.getElementById('sb-facets'),
       sum=document.getElementById('sb-summary'), list=document.getElementById('sb-list');
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function total(f,opt){var n=0;for(var i=0;i<CATALOG.length;i++){var v=CATALOG[i][f.key];if(f.arr){if(v&&v.indexOf(opt)>=0)n++;}else if(v===opt)n++;}return n;}
@@ -65,8 +63,6 @@ include::partial$catalog-data.json[]
     for(var i=0;i<FACETS.length;i++){var f=FACETS[i],s=sel[f.key];if(!s.length)continue;var v=e[f.key],ok=false;
       if(f.arr){for(var j=0;j<(v||[]).length;j++){if(s.indexOf(v[j])>=0){ok=true;break;}}}else{ok=s.indexOf(v)>=0;}
       if(!ok)return false;}
-    var qq=(q.value||'').toLowerCase();
-    if(qq&&((e.n||'')+' '+(e.d||'')).toLowerCase().indexOf(qq)<0)return false;
     return true;
   }
   function activeCount(){var n=0;FACETS.forEach(function(f){n+=sel[f.key].length;});return n;}
@@ -79,7 +75,7 @@ include::partial$catalog-data.json[]
       return '<div class="sb-frow"><div class="sb-flabel">'+f.label+'</div><div class="sb-pills">'+pills+'</div></div>';
     }).join('')+'<div class="sb-actions"><span><strong>'+activeCount()+'</strong> filters active</span><button type="button" class="sb-clear" id="sb-clear">Clear all</button></div>';
     [].forEach.call(facetsEl.querySelectorAll('.sb-pill'),function(b){b.onclick=function(){var k=b.getAttribute('data-f'),o=b.getAttribute('data-o'),i=sel[k].indexOf(o);if(i>=0)sel[k].splice(i,1);else sel[k].push(o);renderFacets();renderList();};});
-    facetsEl.querySelector('#sb-clear').onclick=function(){FACETS.forEach(function(f){sel[f.key]=[];});q.value='';renderFacets();renderList();};
+    facetsEl.querySelector('#sb-clear').onclick=function(){FACETS.forEach(function(f){sel[f.key]=[];});renderFacets();renderList();};
   }
   function renderList(){
     var out=CATALOG.filter(matches);
@@ -93,7 +89,6 @@ include::partial$catalog-data.json[]
         '<p>'+esc(e.d)+'</p><div class="sb-meta">'+esc(PATTERN_LABEL[e.p]||e.p)+' · '+esc(e.dm)+'</div></div>';
     }).join('')+(out.length>300?'<p class="sb-meta">Showing first 300 of '+out.length+'. Narrow with filters.</p>':'');
   }
-  q.addEventListener('input',renderList);
   renderFacets();renderList();
 })();
 </script>
