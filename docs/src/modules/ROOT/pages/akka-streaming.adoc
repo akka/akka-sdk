@@ -8,7 +8,7 @@ include::ROOT:partial$include.adoc[]
 
 == Overview
 
-Akka Streaming is a declarative, actor-based stream processing engine for ambient, adaptive, and real-time AI. It lets your services and agents act on data the moment it arrives — telemetry from sensors, audio and video frames, chat messages, API feeds, and other multimodal inputs — instead of waiting on batch jobs or polling loops.
+Akka Streaming is an actor-based stream processing engine for real-time AI. It lets your services and agents act on data the moment it arrives: telemetry from sensors, audio and video frames, chat messages, API feeds, and other multimodal inputs. No batch jobs, no polling loops.
 
 [NOTE]
 ====
@@ -31,13 +31,13 @@ Agentic systems are only as current as the data feeding them. A model that reaso
 
 === Producers and consumers
 
-A _producer_ emits an event stream — a state change, a domain event, a chunk of model output, or an ingested external message. A _consumer_ subscribes to that stream and reacts to each element in order. Consumers are the primary way to build stream processing in Akka: they attach to a source, receive elements as they are published, and drive downstream effects such as updating state, calling a model, or emitting a new stream.
+A _producer_ emits an event stream: a state change, a domain event, a chunk of model output, or an ingested external message. A _consumer_ subscribes to that stream and reacts to each element in order. Consumers are the primary way to build stream processing in Akka: they attach to a source, receive elements as they are published, and drive downstream effects such as updating state, calling a model, or emitting a new stream.
 
 Because consumers process a durable, ordered log of events, a consumer that falls behind or restarts resumes from where it left off. This gives you _at-least-once_ delivery: every event is delivered, and consumers are written to be idempotent so that a redelivered event produces the same result as the first delivery.
 
 === Event streams
 
-Data moves through the system as _event streams_ rather than one-off request and response calls. A stream is an ordered, potentially unbounded sequence of elements. Modeling data this way means the same feed can drive many independent consumers — one updating a projection, another triggering an agent, a third fanning results out to connected clients — without the producer needing to know who is listening.
+Data moves through the system as _event streams_ rather than one-off request and response calls. A stream is an ordered, potentially unbounded sequence of elements. Modeling data this way means the same feed can drive many independent consumers: one updating a projection, another triggering an agent, a third fanning results out to connected clients. The producer never needs to know who is listening.
 
 === Brokerless, decentralized pub/sub
 
@@ -49,12 +49,12 @@ image::capabilities/brokerless-decentralized-messaging-alt1.png[Brokerless, dece
 
 === Back-pressure and flow control
 
-High-frequency event sources arrive in bursts. Left unchecked, a fast producer will overwhelm a slower consumer — the model that consumer calls, the database it writes to, or the downstream agent it feeds. Akka Streaming manages flow in _both directions_ automatically:
+High-frequency event sources arrive in bursts. Left unchecked, a fast producer will overwhelm a slower consumer: the model that consumer calls, the database it writes to, or the downstream agent it feeds. Akka Streaming manages flow in _both directions_ automatically:
 
 * When a consumer cannot keep up, the stream slows the producer rather than buffering without bound.
 * When input rates spike, consumers are protected from being flooded.
 
-This _back-pressure_ mechanism keeps agents responsive during traffic bursts and guarantees bounded resource usage at any scale — the system degrades gracefully under load instead of exhausting memory.
+This _back-pressure_ mechanism keeps agents responsive during traffic bursts and guarantees bounded resource usage at any scale. The system degrades gracefully under load instead of exhausting memory.
 
 image::capabilities/akka-streaming-flow-control-alt.png[Back-pressure regulates flow in both directions,width=620]
 
@@ -74,7 +74,7 @@ A typical streaming flow in an Akka application looks like this:
 . A producer publishes an event stream — from an Akka service, an external broker, or a direct endpoint.
 . One or more consumers subscribe to that stream and process each element in order, with at-least-once delivery.
 . A consumer reasons over the data, invokes a model or tool, and updates memory or emits a new stream.
-. Results stream back to the caller — token by token or event by event — while back-pressure keeps every stage within its capacity.
+. Results stream back to the caller, token by token or event by event, while back-pressure keeps every stage within its capacity.
 
 == See also
 

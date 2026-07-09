@@ -8,11 +8,11 @@ include::ROOT:partial$include.adoc[]
 
 == Overview
 
-Akka Agents let you build autonomous, goal-directed AI agents that gather context, reason with a language model, and take action — all within a well-defined lifecycle that keeps agent behavior predictable and aligned with your business objectives.
+Akka Agents let you build goal-directed AI agents that gather context, reason with a language model, and take action. A well-defined lifecycle holds it all together, keeping agent behavior predictable and aligned with your business objectives.
 
 An agent moves through a clear sequence on every request: it assembles context from memory and its inputs, calls a model to reason over that context, invokes tools to act on the outside world, and evaluates whether it has met its goal. Because this lifecycle is structured rather than ad hoc, agents behave consistently in production and remain observable and testable.
 
-Akka handles the surrounding concerns — session memory, model orchestration, tool calling, streaming, and error handling — so you focus on the agent's purpose instead of the plumbing.
+Akka handles the surrounding concerns: session memory, model orchestration, tool calling, streaming, and error handling. That leaves you free to focus on the agent's purpose instead of the plumbing.
 
 image::capabilities/akka-agents.png[An Akka agent gathers context, reasons with a model, calls tools, and evaluates its goal,width=760]
 
@@ -48,7 +48,7 @@ Memory is durable by default — an agent's context survives process restarts an
 
 == Multi-agent collaboration
 
-Complex problems are often better solved by several specialized agents than by one general agent. Akka Agents collaborate by exchanging messages: an agent can delegate a subtask to another agent, react to another agent's progress, and combine partial results — all asynchronously.
+Complex problems are often better solved by several specialized agents than by one general agent. Akka Agents collaborate by exchanging messages: an agent can delegate a subtask to another agent, react to another agent's progress, and combine partial results, all asynchronously.
 
 Because agents communicate through messages rather than a single centralized controller, multi-agent systems can be composed and scaled without a bottleneck orchestrator. When you need deterministic, step-by-step coordination, pair agents with a durable workflow that sequences their work and guarantees each step runs to completion.
 
@@ -58,7 +58,7 @@ For work that runs as a durable, goal-directed process rather than a single requ
 
 Autonomous agents are built for coordination. An agent can delegate subtasks to specialist workers, hand off work to peers, lead a team that shares a task list, or moderate a turn-taking conversation. The runtime exposes these patterns to the model as tools, so multi-agent systems compose from focused, single-purpose agents without you writing orchestration code. Guardrails, interaction logging, and evaluation hooks apply to autonomous agents just as they do to request-based agents.
 
-Reach for an autonomous agent when the work is open-ended — the model decides the next step from what the last step revealed — when several agents must coordinate, or when a typed result needs its own durable lifecycle. Reach for a request-based agent, paired with a xref:ROOT:akka-orchestration.adoc[workflow] when you need fixed step ordering, for request-response interactions. See xref:sdk:autonomous-agents.adoc[Autonomous Agents] for the full component reference.
+Reach for an autonomous agent when the work is open-ended: the model decides each step from what the last one revealed. Reach for it too when several agents must coordinate, or when a typed result needs its own durable lifecycle. Reach for a request-based agent, paired with a xref:ROOT:akka-orchestration.adoc[workflow] when you need fixed step ordering, for request-response interactions. See xref:sdk:autonomous-agents.adoc[Autonomous Agents] for the full component reference.
 
 == Protocols and interoperability
 
@@ -81,7 +81,7 @@ Agents can stream results as they are produced rather than making callers wait f
 
 == Guardrails
 
-Predictable agents need boundaries. Akka Agents give you places to enforce guardrails around a run — validating and constraining inputs before they reach the model, checking tool calls before they execute, and reviewing model output before it is returned or acted upon. Combined with the structured lifecycle, run limits, and error handling, this keeps agent behavior within the bounds you define.
+Predictable agents need boundaries. Akka Agents give you places to enforce guardrails around a run: validating and constraining inputs before they reach the model, checking tool calls before they execute, and reviewing model output before it is returned or acted upon. Combined with the structured lifecycle, run limits, and error handling, this keeps agent behavior within the bounds you define.
 
 == See also
 

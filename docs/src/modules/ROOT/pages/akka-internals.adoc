@@ -26,7 +26,7 @@ This page looks under the hood at how those layers execute your application. The
 Agentic workloads rarely fit a single request/response shape. Akka is built around three execution patterns that can be combined in one system.
 
 Long-lived processes::
-Multi-step agents and workflows that run for seconds to days. They persist state through snapshots and change events, so they can pause, resume, or recover without losing context — even as they move across distributed infrastructure.
+Multi-step agents and workflows that run for seconds to days. They persist state through snapshots and change events, so they can pause, resume, or recover without losing context, even as they move across distributed infrastructure.
 
 Transactional processes::
 Lightweight, isolated units of execution, each maintaining its own state. Because there is no shared bottleneck, they process work in a fast, parallel, and elastic way.
@@ -45,11 +45,11 @@ Event sourcing::
 Every meaningful change is captured as an entry in a durable log that can be replayed. This yields audit trails, temporal debugging, and robust recovery: state can be rebuilt by replaying events, optionally starting from a snapshot.
 
 Distributed coordination::
-Calls to external systems — APIs, databases, other agents — are made asynchronously and guarded with circuit breakers, retries with backoff, and supervision. Failures stay isolated and recoverable instead of cascading.
+Calls to external systems such as APIs, databases, and other agents are made asynchronously and guarded with circuit breakers, retries with backoff, and supervision. Failures stay isolated and recoverable instead of cascading.
 
 === In-memory durable state
 
-Akka keeps active state in memory for low-latency access while durably recording every change as snapshots and events. The runtime, not you, manages that durable log and the infrastructure behind it. If a process or node is lost, state is reconstructed automatically from its events — auto-recovery without manual intervention.
+Akka keeps active state in memory for low-latency access while durably recording every change as snapshots and events. The runtime, not you, manages that durable log and the infrastructure behind it. If a process or node is lost, state is reconstructed automatically from its events. That is auto-recovery, no manual intervention required.
 
 == Scaling from zero to many and back
 
@@ -67,7 +67,7 @@ Read-side queries can be offloaded to separate compute, so the write side and th
 Location transparency::
 Self-contained components recover through event sourcing and can relocate across the cluster. Callers address them by identity, not by physical location, so the runtime is free to move work to reduce latency.
 
-For write-heavy workloads, Akka supports multiple read-write instances using eventual consistency and CRDT techniques. Concurrent modifications converge automatically — much like collaborative editing in a shared document, but for application data.
+For write-heavy workloads, Akka supports multiple read-write instances using eventual consistency and CRDT techniques. Concurrent modifications converge automatically, much like collaborative editing in a shared document but for application data.
 
 image::capabilities/sharded-data.png[Data sharded across nodes, requests routed to the owner,width=620]
 
@@ -77,7 +77,7 @@ Akka nodes form a self-organizing cluster with no primary node. There is no cent
 
 == A foundation of proven patterns
 
-Rather than asking every team to re-implement distributed systems patterns, Akka embeds them directly into the SDK and runtime. The programming model is grounded in the Reactive Principles — responsiveness, resilience, elasticity, and message-driven design — so the guarantees you want are properties of the platform instead of code you have to write and maintain.
+Rather than asking every team to re-implement distributed systems patterns, Akka embeds them directly into the SDK and runtime. The programming model is grounded in the Reactive Principles: responsiveness, resilience, elasticity, and message-driven design. The guarantees you want become properties of the platform instead of code you have to write and maintain.
 
 image::capabilities/embedded-expertise.png[Distributed systems patterns embedded in the SDK and runtime,width=620]
 

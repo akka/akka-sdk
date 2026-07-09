@@ -8,7 +8,7 @@ include::ROOT:partial$include.adoc[]
 
 == Overview
 
-Akka Memory provides durable, in-memory, sharded state for AI agents. It is the foundation for context engineering: structuring and optimizing the information an agent can see so it performs complex, multi-step tasks reliably.
+Akka Memory provides durable, in-memory, sharded state for AI agents. It is the foundation for context engineering: shaping what an agent can see so it performs complex, multi-step tasks reliably.
 
 Memory is intrinsic to Akka agents. State is captured and persisted as agents run, so you do not have to hand-roll persistence, wire up a cache, or reconcile a separate data store. The runtime keeps working state in memory for fast access and durably records every change so nothing is lost across restarts, rescheduling, or hardware failure.
 
@@ -48,7 +48,7 @@ Agent state is sharded across in-memory, durable nodes. Each piece of state live
 
 As the runtime scales nodes up or down, state rebalances automatically across the cluster. You do not manually partition data or redirect clients; the runtime moves shards and routes requests to wherever the state currently lives.
 
-This combination — in-memory placement plus single-owner sharding — is what delivers sub-10ms writes without a bolt-on caching layer.
+This combination of in-memory placement and single-owner sharding is what delivers sub-10ms writes without a bolt-on caching layer.
 
 image::capabilities/sharded-data.png[Agent state sharded across nodes with single ownership,width=620]
 

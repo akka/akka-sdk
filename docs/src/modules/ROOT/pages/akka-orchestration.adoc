@@ -8,7 +8,7 @@ include::ROOT:partial$include.adoc[]
 
 == Overview
 
-Akka Orchestration guides, moderates, and controls long-running processes so that agents and services reliably reach their goals despite failures, delays, or execution that spans seconds, days, or months. It gives you a durable execution engine for coordinating the steps of a business process, a multi-step agent plan, or a distributed transaction — without writing your own retry loops, state machines, or recovery logic.
+Akka Orchestration guides and controls long-running processes so that agents and services reliably reach their goals despite failures, delays, or runs that stretch from seconds to months. It gives you a durable execution engine for coordinating the steps of a business process, a multi-step agent plan, or a distributed transaction. You never write the retry loops, state machines, or recovery logic yourself.
 
 Orchestration is the coordination layer of the platform. Where an individual agent decides _what_ to do next, orchestration governs _how_ that work is sequenced, retried, compensated, and resumed. It is exposed through the Workflow component in the SDK.
 
@@ -40,7 +40,7 @@ image::capabilities/integrate-with-external-apis.png[External API calls modeled 
 
 === Error handling and compensation
 
-Each step can define timeouts, retry policies, and recovery strategies. When a later step fails, _compensation handlers_ reverse the effects of earlier completed steps — the saga pattern — so a partially executed workflow can be unwound to a consistent state. This is what makes it safe to orchestrate distributed transactions across systems that have no shared transaction boundary.
+Each step can define timeouts, retry policies, and recovery strategies. When a later step fails, _compensation handlers_ reverse the effects of earlier completed steps. This is the saga pattern, and it lets a partially executed workflow unwind to a consistent state. This is what makes it safe to orchestrate distributed transactions across systems that have no shared transaction boundary.
 
 image::capabilities/error-handling-compensation.png[Compensation handlers unwind completed steps when a later step fails,width=620]
 
@@ -61,7 +61,7 @@ Akka Orchestration supports the range of coordination shapes that agentic and bu
 
 == Where orchestration fits in the platform
 
-Orchestration works together with the other components: xref:ROOT:akka-agents.adoc[Agents] provide the reasoning for each step, xref:ROOT:akka-memory.adoc[Memory] provides durable state that steps read from and write to, and xref:ROOT:akka-streaming.adoc[Streaming] provides the flow of events that workflows react to. Orchestration ties these together, turning individual agent actions into coordinated, durable, long-running processes.
+Orchestration works together with the other components: xref:ROOT:akka-agents.adoc[Agents] provide the reasoning for each step, xref:ROOT:akka-memory.adoc[Memory] provides durable state that steps read from and write to, and xref:ROOT:akka-streaming.adoc[Streaming] provides the flow of events that workflows react to. Orchestration ties these together, turning individual agent actions into durable, long-running processes.
 
 == See also
 
