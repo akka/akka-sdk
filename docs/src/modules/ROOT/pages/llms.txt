@@ -98,7 +98,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 ## Reference
 
 - [Glossary](https://doc.akka.io/reference/glossary.html.md): Terms including AI, governance, and distributed systems terminology
-- [Configuration reference](https://doc.akka.io/reference/config/reference.html.md): Full configuration reference
+- [Service configuration](https://doc.akka.io/reference/config/reference.html.md): Full HOCON configuration reference
 - [CLI command reference](https://doc.akka.io/reference/cli/akka-cli/index.html): All Akka CLI commands
 - [Release notes](https://doc.akka.io/reference/release-notes.html.md): Latest updates and changes
 - [Model provider details](https://doc.akka.io/sdk/model-provider-details.html.md): Anthropic, OpenAI, Google, AWS Bedrock, Ollama, and more
@@ -121,7 +121,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Autonomous agent client API](https://doc.akka.io/sdk/autonomous-agents/client.html.md): runSingleTask, assignTasks, pause/resume, agent state, notification stream
 - [Autonomous agent notifications](https://doc.akka.io/sdk/autonomous-agents/notifications.html.md): Lifecycle, task, handoff, delegation, team, conversation, messaging, and struggle notifications
 - [Testing autonomous agents](https://doc.akka.io/sdk/autonomous-agents/testing.html.md): Mocking with TestModelProvider and AutonomousAgentTools helpers
-- [Views reference](https://doc.akka.io/reference/views/index.html.md): Detailed reference for views
+- [Views](https://doc.akka.io/reference/views/index.html.md): Detailed reference for views
 - [View Query Syntax](https://doc.akka.io/reference/views/syntax/query.html.md): View query language syntax
 - [View Query Result Mapping](https://doc.akka.io/reference/views/concepts/result-mapping.html.md): How view query results are mapped into Java classes
 - [Advanced Views](https://doc.akka.io/reference/views/concepts/advanced-views.html.md): Views for queries over tables populated from multiple different entities
