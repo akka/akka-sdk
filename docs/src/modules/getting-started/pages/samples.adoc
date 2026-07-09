@@ -7,7 +7,7 @@ include::ROOT:partial$include.adoc[]
 Two ways to start from this catalog:
 
 * *Clone a sample* — a complete, prebuilt app you download and run. Best when you want working code to read or adapt.
-* *Generate from a blueprint* — a recipe that the xref:sdk:spec-driven-development.adoc[Akka Specify Plugin] turns into buildable, runnable AI systems. We have 460 more examples for you to explore.
+* *Generate from a blueprint* — a recipe that the xref:sdk:spec-driven-development.adoc[Akka Specify Plugin] turns into runnable AI systems. We have 460 more examples for you to explore.
 
 Select any combination of facets. Choosing several values within one facet widens the results; choosing across facets narrows them.
 

@@ -16,7 +16,7 @@ Every tutorial and sample links back to the path it needs, so you set up once he
 [#_set_up_your_ai_harness]
 == Set up your AI harness
 
-Install the Akka Specify Plugin in your AI coding assistant. From there the plugin installs and configures the rest of the toolchain for you.
+Install the Akka Specify Plugin in your AI coding assistant. From there the plugin installs and configures the rest of the tools for you.
 
 .Prerequisites
 * A supported AI coding assistant (Claude Code recommended; Akka supports 30 AI-assist tools).
@@ -49,7 +49,7 @@ This ensures the Akka CLI is installed, Java and Maven are available, and your A
 [#_set_up_your_env_without_ai]
 == Set up your env without AI
 
-Install the toolchain directly on your machine. Use this path if you do not want an AI harness, or your AI-assist tool does not support plugins.
+Install the tools directly on your machine. Use this path if you do not want an AI harness, or your AI-assist tool does not support plugins.
 
 .Prerequisites
 * Java {java-version} (see https://adoptium.net/marketplace/[Adoptium, window="new"]).

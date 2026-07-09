@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Start here to set up a development environment and build your first Akka service. This section is a set of guided tutorials plus a browsable catalog of samples and blueprints.
+Start here to set up a development environment and build your first Akka service. This section is a set of guided tutorials plus a catalog of samples and blueprints you can browse.
 
 == Set up
 
