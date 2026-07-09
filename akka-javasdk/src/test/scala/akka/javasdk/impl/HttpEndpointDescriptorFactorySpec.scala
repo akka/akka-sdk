@@ -17,6 +17,7 @@ import akka.runtime.sdk.spi.HttpEndpointMethodSpec
 import akka.runtime.sdk.spi.Internet
 import akka.runtime.sdk.spi.ServiceNamePattern
 import akka.runtime.sdk.spi.SpiJsonSchema
+import akka.runtime.sdk.spi.SpiffePattern
 import akka.runtime.sdk.spi.StaticClaim
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -203,7 +204,7 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       val descriptor = HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointAcls], _ => null)
 
       descriptor.mainPath should ===(Some("/acls/"))
-      descriptor.methods should have size 3
+      descriptor.methods should have size 4
 
       descriptor.componentOptions.aclOpt should not be empty
       descriptor.componentOptions.aclOpt.get.deny shouldBe List(All)
@@ -228,6 +229,10 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
         "that")
       thisAndThat.methodOptions.acl.get.deny shouldBe empty
       thisAndThat.methodOptions.acl.get.denyHttpCode should contain(Forbidden)
+
+      val spiffe = byMethodName("spiffe")
+      spiffe.methodOptions.acl should not be empty
+      spiffe.methodOptions.acl.get.allow.collect { case p: SpiffePattern => p.pattern } shouldBe Seq("svc/checkout/*")
     }
 
     "throw error if annotations are not valid" in {
@@ -235,10 +240,19 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
         HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointInvalidAcl], _ => null)
       }
 
+      assertThrows[IllegalArgumentException] {
+        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointInvalidAclSpiffe], _ => null)
+      }
+
       val caught = intercept[IllegalArgumentException] {
         HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointInvalidAclDenyCode], _ => null)
       }
       caught.getMessage should include("Invalid HTTP status code: 123123")
+
+      val spiffeCaught = intercept[IllegalArgumentException] {
+        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointInvalidAclSpiffePattern], _ => null)
+      }
+      spiffeCaught.getMessage should include("`**` is only allowed as the final token")
     }
 
     //Utility to compare StaticClaim to avoid creating `equals` in the original.

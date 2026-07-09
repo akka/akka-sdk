@@ -58,8 +58,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
         val options = desc.componentOptions
         val acl = options.aclOpt.get
         acl.allow.head match {
-          case _: Principal => fail()
-          // TODO: SpiffePattern is handled in the SPIFFE ACL PR stacked on top of this one
+          case _: Principal     => fail()
           case _: SpiffePattern => fail()
           case pattern: ServiceNamePattern =>
             pattern.pattern shouldBe "test"
@@ -72,8 +71,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
         val query = desc.queries.find(_.name == "getEmployeeByEmail").get
         val acl = query.methodOptions.acl.get
         acl.allow.head match {
-          case _: Principal => fail()
-          // TODO: SpiffePattern is handled in the SPIFFE ACL PR stacked on top of this one
+          case _: Principal     => fail()
           case _: SpiffePattern => fail()
           case pattern: ServiceNamePattern =>
             pattern.pattern shouldBe "test"
