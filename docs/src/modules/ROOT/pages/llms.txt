@@ -21,15 +21,26 @@ certifications including EU AI Act and ISO 42001.
 Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), Operators
 (Platform Engineers, SREs), Governance & Oversight (Compliance Analysts, InfoSec, FinOps).
 
+## About Akka
+
+- [What is Akka?](https://doc.akka.io/what-is-akka.html.md): An agentic AI platform for enterprises — build, run, and govern production-grade agentic AI
+- [Agents](https://doc.akka.io/akka-agents.html.md): Model-backed components with memory, tools, and multi-agent collaboration
+- [Orchestration](https://doc.akka.io/akka-orchestration.html.md): Durable, multi-step coordination of agents and workflows
+- [Memory](https://doc.akka.io/akka-memory.html.md): Durable, in-memory, sharded state for agents and entities
+- [Streaming](https://doc.akka.io/akka-streaming.html.md): Real-time stream processing for event-driven and AI workloads
+- [Automated Operations](https://doc.akka.io/akka-automated-operations.html.md): Run services with elastic scaling, resilience, and no-downtime updates
+- [Akka Internals](https://doc.akka.io/akka-internals.html.md): How Akka works under the hood
+
 ## Getting Started
 
 - [Getting started](https://doc.akka.io/getting-started/index.html.md): Install the Akka plugin, set up your environment, and run your first specification
+- [Set up your dev env](https://doc.akka.io/getting-started/set-up-dev-env.html.md): Three self-contained setup paths — with an AI harness, without AI, or in a container
 - [Spec-Driven Development](https://doc.akka.io/sdk/spec-driven-development.html.md): The primary development approach — describe requirements, Akka generates the system
-- [Spec-first greeting agent](https://doc.akka.io/getting-started/spec-your-first-agent.html.md): Build your first agent with SDD
-- [Build your first agent](https://doc.akka.io/getting-started/author-your-first-service.html.md): Classic hands-on Java tutorial
-- [Multi-agent planner](https://doc.akka.io/getting-started/planner-agent/index.html.md): Build a multi-agent planning system
-- [RAG chat agent](https://doc.akka.io/getting-started/ask-akka-agent/index.html.md): Build a retrieval-augmented generation agent
-- [Shopping cart](https://doc.akka.io/getting-started/shopping-cart/index.html.md): Classic event-sourced example
+- [Spec-first hello agent](https://doc.akka.io/getting-started/spec-your-first-agent.html.md): Build your first agent with spec-driven development
+- [Code-first hello agent](https://doc.akka.io/getting-started/author-your-first-service.html.md): Build the same agent by hand in Java
+- [Multi-agent tutorial](https://doc.akka.io/getting-started/planner-agent/index.html.md): Orchestrate multiple agents with a workflow
+- [RAG chat tutorial](https://doc.akka.io/getting-started/ask-akka-agent/index.html.md): Build a retrieval-augmented chat agent
+- [Shopping cart tutorial](https://doc.akka.io/getting-started/shopping-cart/index.html.md): Build an event-sourced service with entities and views
 
 ## SDK Components
 
@@ -78,7 +89,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [gRPC vs HTTP Endpoints](https://doc.akka.io/concepts/grpc-vs-http-endpoints.html.md): Comparison of gRPC and HTTP endpoint types and when to use each
 - [Entity state models](https://doc.akka.io/concepts/state-model.html.md): Understanding different entity state modeling approaches in Akka
 - [Deployment model](https://doc.akka.io/concepts/deployment-model.html.md): Understanding how Akka services are packaged and deployed
-- [Developer best practices](https://doc.akka.io/sdk/dev-best-practices.html.md): Guidelines and recommended patterns for effective Akka SDK development
+- [Design considerations](https://doc.akka.io/sdk/dev-best-practices.html.md): Reactive principles, domain-driven design, service sizing, and deduplication
 
 ## Operating
 
@@ -119,7 +130,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [View Query Syntax](https://doc.akka.io/reference/views/syntax/query.html.md): View query language syntax
 - [View Query Result Mapping](https://doc.akka.io/reference/views/concepts/result-mapping.html.md): How view query results are mapped into Java classes
 - [Advanced Views](https://doc.akka.io/reference/views/concepts/advanced-views.html.md): Views for queries over tables populated from multiple different entities
-- [Setup and configuration](https://doc.akka.io/sdk/setup-and-configuration/index.html.md): Configuring and initializing Akka services
+- [Configuration](https://doc.akka.io/sdk/setup-and-configuration/index.html.md): Configuring and initializing Akka services
 - [Setup and dependency injection](https://doc.akka.io/sdk/setup-and-dependency-injection.html.md): Integrating dependency injection with Akka services
 - [Serialization](https://doc.akka.io/sdk/serialization.html.md): Configuring and customizing serialization for entity data and messages
 - [Retrieval-Augmented Generation (RAG)](https://doc.akka.io/getting-started/ask-akka-agent/rag.html.md): Semantic search on vector databases to enrich AI model requests
@@ -127,8 +138,9 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 ## Optional
 
 - [Run a service locally](https://doc.akka.io/sdk/running-locally.html.md): Steps to run and test Akka services in a local development environment
-- [Running locally with a message broker](https://doc.akka.io/sdk/running-with-broker.html.md): Running an Akka service locally against a real Kafka broker or the Google Pub/Sub emulator
-- [AI coding assistant](https://doc.akka.io/sdk/ai-coding-assistant.html.md): How to set up AI coding assistant tools with Akka
+- [Run locally with a broker](https://doc.akka.io/sdk/running-with-broker.html.md): Run an Akka service locally against a Kafka broker or the Google Pub/Sub emulator
+- [Run a local cluster](https://doc.akka.io/sdk/local-cluster.html.md): Run a multi-node Akka cluster locally
+- [Using an AI coding assistant](https://doc.akka.io/sdk/ai-coding-assistant.html.md): Enable AI assistants to use the Akka CLI natively
 - [Access Control List concepts](https://doc.akka.io/concepts/acls.html.md): Core concepts behind Access Control Lists and how they secure Akka services
 - [Developing Access Control Lists (ACLs)](https://doc.akka.io/sdk/access-control.html.md): Implementing ACLs to control access to your Akka service endpoints
 - [JSON Web Tokens (JWTs)](https://doc.akka.io/reference/jwts.html.md): Understanding JWT concepts and their role in Akka authentication
@@ -157,11 +169,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Regions](https://doc.akka.io/operations/organizations/regions.html.md): Understanding geographical regions for Akka Platform deployments
 - [Operating - Akka Automated Operations (AAO)](https://doc.akka.io/operations/akka-platform.html.md): Automatically manages, monitors, and gathers insights from your deployed services and managed infrastructure.
 - [Operating - Self-managed nodes](https://doc.akka.io/operations/index.html.md): Guide to running Akka on self-managed infrastructure
-- [Why Akka](https://doc.akka.io/why-akka.html.md): Three barriers, three dimensions
-- [What is Akka](https://doc.akka.io/what-is-akka.html.md): Platform overview and application types
-- [Who uses Akka](https://doc.akka.io/who-uses-akka.html.md): Persona-based documentation navigation
-- [Resources](https://doc.akka.io/resources.html.md): Blogs, demos, webinars, customer stories, foundational works
-- [Customer Stories](https://akka.io/customer-stories): Production deployments by industry
+- [Resources](https://doc.akka.io/resources.html.md): Blogs, demos, webinars, foundational works, training, and community
 - [Reactive Manifesto](https://www.reactivemanifesto.org): Foundational philosophy behind Akka
 - [Reactive Principles](https://www.reactiveprinciples.org): Cloud-native and edge-native design principles
 - [Blog](https://akka.io/blog): Technical articles and product updates
