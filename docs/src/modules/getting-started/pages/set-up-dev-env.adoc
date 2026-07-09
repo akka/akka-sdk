@@ -7,7 +7,7 @@ include::ROOT:partial$include.adoc[]
 
 There are three ways to set up an Akka development environment. Pick the one that fits how you want to work. Each path is self-contained and lists its own prerequisites.
 
-* <<_set_up_your_ai_harness>> — install the Akka Specify Plugin and let it install and configure everything else. This is the fastest path.
+* <<_set_up_your_ai_harness>> — install the Akka Specify Plugin and let it install and configure everything else.
 * <<_set_up_your_env_without_ai>> — install the Akka CLI, Java, and Maven directly.
 * <<_containerized_dev_environment>> — run everything in a Docker container, with no local Java, Maven, or CLI install.
 
