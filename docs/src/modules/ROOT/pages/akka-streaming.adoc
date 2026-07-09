@@ -10,6 +10,11 @@ include::ROOT:partial$include.adoc[]
 
 Akka Streaming is a declarative, actor-based stream processing engine for ambient, adaptive, and real-time AI. It lets your services and agents act on data the moment it arrives — telemetry from sensors, audio and video frames, chat messages, API feeds, and other multimodal inputs — instead of waiting on batch jobs or polling loops.
 
+[NOTE]
+====
+*Akka Streaming* is the SDK capability described here: real-time events processed through xref:sdk:consuming-producing.adoc[consumers and producers] over durable event streams. It is built on the lower-level *Akka Streams* library, a Source/Flow/Sink/back-pressure framework. For the SDK capability, see xref:sdk:streaming.adoc[Streaming]; for the library, see {url-libraries-streams}[Akka Streams].
+====
+
 Streaming is one of the building blocks of the platform, alongside agents, orchestration, and memory. Where memory gives an agent durable context and orchestration coordinates work across agents, streaming is how live data flows _into_ that system and how intermediate results flow _back out_ to users in real time.
 
 image::capabilities/flexible-data-sources-alt.png[Live data streams into agents from many sources,width=620]

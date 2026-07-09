@@ -67,7 +67,7 @@ Akka Memory is not limited to raw conversation transcripts. The same durable, sh
 
 == Context window optimization
 
-Model context windows are finite, and stuffing them degrades both cost and quality. Akka Memory supports compaction to keep the working context focused — summarizing or pruning older material so the agent carries forward what matters without exceeding the window.
+Model context windows are finite, and stuffing them degrades both cost and quality. Akka Memory supports xref:sdk:agents/memory.adoc#_compaction[compaction] to keep the working context focused, summarizing or pruning older material so the agent carries forward what matters without exceeding the window.
 
 Because memory is durable, compaction does not lose information: detail that is compacted out of the live context remains available in the journal and long-term store for retrieval when it is needed again.
 
@@ -83,6 +83,8 @@ Akka Memory works alongside the rest of the Akka programming model. In practice 
 * xref:sdk:key-value-entities.adoc[Key Value Entities] persist the latest value directly when you do not need a full event history.
 
 Both are sharded and kept in memory by the runtime, so the durability, scaling, and low-latency access characteristics apply whichever model you choose.
+
+To read the latest value across many entities, xref:sdk:views.adoc[Views] project entity state into a read model you can query, rather than serving as primary storage.
 
 == See also
 

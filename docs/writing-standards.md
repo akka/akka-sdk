@@ -19,6 +19,7 @@ document, never *how it reads*):
 - Marketing words (Vale-flagged): seamless, supercharge, game-changer, blazing fast, turnkey,
   best-in-class, cutting-edge, revolutionize, effortless.
 - Rhetorical questions, dramatic em-dashes, "isn't just X — it's Y".
+- **Structural AI tells** (reviewer-enforced): stacked em-dash asides ("X — the thing that Y — …"), rule-of-three lists ("build, run, and govern"; "faster, simpler, cheaper"), and uniform rhythm (every paragraph 3–4 sentences of similar length). Vary sentence and paragraph length on purpose; prefer a plain list or a reworded sentence over a set of three; use the em-dash sparingly.
 - **Governance:** assert a checkable/enforced corpus — never quote counts of regulations, controls, or certifications.
 - **Service tiers:** not documented.
 - **No `_internal` / "Dojo" content.**

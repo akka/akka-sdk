@@ -65,14 +65,13 @@ Reach for an autonomous agent when the work is open-ended — the model decides 
 Akka Agents interoperate with the wider agent ecosystem through open protocols:
 
 * *MCP (Model Context Protocol)* — consume tools published by other systems, and publish your own capabilities as MCP tools that other agents and clients can call.
-* *A2A (Agent-to-Agent)* — communicate with agents built on other platforms using a common agent-to-agent protocol.
-* *ACP (Agent Communication Protocol)* — exchange messages with agents across organizational and platform boundaries.
+* *A2A (Agent-to-Agent)* — communicate with agents built on other platforms using a common agent-to-agent protocol. A2A now incorporates the earlier Agent Communication Protocol (ACP).
 
 Supporting these protocols means an Akka agent can act as both a client and a provider of agentic capabilities, rather than being locked to a single vendor's ecosystem.
 
 == Endpoints
 
-An agent's capabilities are exposed through the interfaces your clients need. The same agent can be reached as an HTTP API for web and mobile clients, a gRPC endpoint for service-to-service calls, or an MCP tool for other agents and AI clients. You define the agent once; the runtime handles exposing it over the transports you choose.
+An agent's capabilities are exposed through the interfaces your clients need. The same agent can be reached as an HTTP API for web and mobile clients, a gRPC endpoint for service-to-service calls, or an MCP tool for other agents and AI clients. You define the agent once, then expose it through the HTTP, gRPC, or MCP endpoints your clients need.
 
 image::capabilities/mcp-grpc-http.png[The same agent exposed over MCP, gRPC, and HTTP,width=620]
 

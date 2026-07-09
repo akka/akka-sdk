@@ -86,7 +86,7 @@ A single `SPEC.md` or `specification.md` file may be enough for some projects. M
 == Initializing a spec-driven project
 To start a new spec-driven project, use the `akka specify init` command instead of `akka code init`. It provisions everything you need for the spec-driven development cycle.
 
-If you installed the Akka Specify Plugin (recommended), the `/akka:setup` skill handles project initialization for you. The information below describes what happens under the hood, and applies if you used the `akka specify init <dir>` fallback.
+If you installed the <<_step_1_install_the_akka_plugin,Akka Specify Plugin>> (recommended), the `/akka:setup` skill handles project initialization for you. The information below describes what happens under the hood, and applies if you used the `akka specify init <dir>` fallback.
 
 === Initialization and constitution adoption
 Running `akka specify init <dir>` provisions a new AI-assist ready project directory. It scaffolds an empty Akka project and grabs all of the markdown templates necessary for the spec-driven process. Once you have run this command, change to the directory of your new project (if you are not already there) and launch your favorite code assistant.

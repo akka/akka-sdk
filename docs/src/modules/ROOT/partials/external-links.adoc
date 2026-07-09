@@ -19,6 +19,7 @@
 :url-akka-professional-services: https://akka.io/professional-services
 :url-akka-specify-plugin: https://akka.io/blog/introducing-akka-specify
 :url-libraries-docs: https://doc.akka.io/libraries/
+:url-libraries-streams: https://doc.akka.io/libraries/akka-core/current/stream/index.html
 
 // -- akka.io application type pages --
 :url-akka-app-agentic-ai: https://akka.io/app-types/agentic-ai
