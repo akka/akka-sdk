@@ -196,7 +196,7 @@ Once your service is running -- either locally after `/akka.build` or deployed v
 This is spec-driven _verification_ -- your agent checks that the running service actually behaves the way the specification says it should. If inspect finds issues, iterate with `/akka.implement` and `/akka.build` before deploying.
 
 === Deploy to Akka
-If you want to deploy your service to Akka's infrastructure through _Akka Automated Operations_, use the `/akka.deploy` command. This command prompts you for the organization and project into which you want to deploy. It then seamlessly deploys your service, automatically doing a rolling update of the service cluster if one is already running. After deployment, the command verifies component health and inspects the deployed service using backoffice tools.
+If you want to deploy your service to Akka's infrastructure through _Akka Automated Operations_, use the `/akka.deploy` command. This command prompts you for the organization and project into which you want to deploy. It then deploys your service, automatically doing a rolling update of the service cluster if one is already running. After deployment, the command verifies component health and inspects the deployed service using backoffice tools.
 
 === Review and analyze
 Two additional commands help you maintain quality as your project evolves:
@@ -205,7 +205,7 @@ Two additional commands help you maintain quality as your project evolves:
 * `/akka.analyze` performs a non-destructive cross-artifact consistency and quality analysis across your spec, plan, and task list. Use this after task generation to verify that all artifacts are aligned before implementation begins.
 
 == Specify your ideas!
-The greatest barrier to building new things is rarely the idea. It is usually in the implementation. Spec-Driven Development frees you from this barrier, letting you turn your ideas into specification and plan prompts, and watching as your agent generates and populates a to-do list and implements all of the code for you.
+The greatest barrier to building new things is rarely the idea. It is usually in the implementation. Spec-Driven Development frees you from this barrier, letting you turn your ideas into specification and plan prompts, and watching as your agent generates and populates a to-do list and implements all code for you.
 
 You no longer have to invest massive amounts of time in "what-if" scenarios -- you can just _specify and go_. All you need is `init` -> `specify` -> `clarify` -> `plan` -> `tasks` -> `implement` -> `build` -> `inspect` -> `deploy`.
 
