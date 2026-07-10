@@ -54,6 +54,7 @@ RedirectMatch 301 ^/docs/akka/2.5.(\d+)/java.html$       https://doc.akka.io/lib
 # ===================================
 # Akka SDK
 # ===================================
+RedirectMatch 302 ^/libraries/index.html                      https://doc.akka.io/libraries/akka-dependencies/current/overview.html
 RedirectMatch 302 ^/support/(.*)                              https://doc.akka.io/reference/support.html
 RedirectMatch 301 ^/operations/organizations/billing(\.html(\.md)?)?$ https://akka.io/contact-us
 # 2025-11-06 rename '/java' to '/sdk', but keep Runtime < 1.5.21 version check URL
