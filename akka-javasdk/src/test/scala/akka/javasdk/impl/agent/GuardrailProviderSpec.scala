@@ -4,18 +4,18 @@
 
 package akka.javasdk.impl.agent
 
+import java.net.URI
+
 import scala.annotation.nowarn
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-import java.net.URI
-
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.javasdk.agent.Decision
-import akka.javasdk.agent.MessageContent
 import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.GuardrailContext
+import akka.javasdk.agent.MessageContent
 import akka.javasdk.agent.ModelGuardrail
 import akka.javasdk.agent.SimilarityGuard
 import akka.javasdk.agent.TextGuardrail
