@@ -16,3 +16,4 @@
 *** xref:concepts:ms-agent-patterns.adoc[]
 *** xref:concepts:acls.adoc[]
 *** xref:concepts:governance-and-the-runtime.adoc[]
+*** xref:ROOT:resources.adoc[Resources]

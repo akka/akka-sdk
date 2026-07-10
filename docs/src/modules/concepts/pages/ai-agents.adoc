@@ -133,10 +133,3 @@ Topics covered in the video include:
 - Why prompt structure, token count, and caching all matter
 - How concepts like agency and stateful workflows connect to agentic AI and Akka
 
-== See also
-
-* link:{url-blog-what-is-agentic}[What is agentic AI?] -- a foundational overview of agentic AI concepts and terminology.
-* link:{url-blog-agentic-distributed-systems}[Agentic systems are distributed systems] -- why distributed systems expertise is essential for production AI agents.
-* link:{url-blog-key-capabilities}[Key capabilities for agentic AI] -- the platform capabilities that separate prototypes from production-grade agent systems.
-* link:{url-blog-framework-obstacles}[Beyond the hype: AI agent framework obstacles] -- a deeper look at the barriers most frameworks face.
-* link:{url-blog-trustworthy-ai}[Trustworthy AI with Akka] -- how Akka enables auditable, governed AI agent deployments.

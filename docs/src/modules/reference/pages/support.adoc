@@ -9,5 +9,4 @@ include::ROOT:partial$include.adoc[]
 
 == See also
 
-* https://status.akka.io/[Akka platform status]
 * xref:security-announcements/index.adoc[]
