@@ -9,7 +9,7 @@ Akka allows exporting and importing data to and from your services.
 * Migrating data out of Akka
 * Disaster recovery - note, Akka already backs up all data for disaster recovery purposes
 
-Akka exports/imports data to/from local cloud object stores. If your service is deployed to an AWS region, then you can export/import data to/from S3, and if GCP, then to/from GCS. Event sourced entities and value entities are supported, however at present views are not supported.
+Akka exports/imports data to/from local cloud object stores. If your service is deployed to an AWS region, then you can export/import data to/from S3, if GCP, then to/from GCS, and if Azure, then to/from Azure Blob Storage. Event sourced entities and value entities are supported, however at present views are not supported.
 
 The export format can either be protobuf or line separated JSON.
 
@@ -124,6 +124,52 @@ You now need to place the previously created key in an Akka secret. For the purp
 ----
 akka secrets create generic my-credentials --from-file key.json=path/to/key.json
 ----
+
+=== Preparing on Azure
+
+On Azure, you will need to:
+
+. Create an Azure Storage account and a blob container for the export/import to be written to or read from.
+. Register a Microsoft Entra application (service principal) for Akka to use to perform operations on the container.
+. Create a client secret for the application.
+. Assign the service principal a role granting access to the container.
+. Place the service principal credentials in an Akka secret.
+
+==== Create a storage account and container
+
+We recommend creating the storage account in the same region as the Akka region your service is running in. If you already have a storage account and container that you would like to use for this, you can skip this step. For the purposes of these instructions, we're going to call the storage account `myakkastorage` and the container `my-akka-container`.
+
+Instructions for creating a storage account can be found https://learn.microsoft.com/azure/storage/common/storage-account-create[here], and for creating a blob container https://learn.microsoft.com/azure/storage/blobs/blob-containers-portal[here].
+
+==== Register an application
+
+For the purposes of these instructions, we're going to call the application `my-akka-app`. Registering an application creates an associated service principal that Akka will authenticate as. Instructions for registering an application in Microsoft Entra ID can be found https://learn.microsoft.com/entra/identity-platform/quickstart-register-app[here].
+
+Once registered, note the *Application (client) ID* and the *Directory (tenant) ID* from the application's overview page — these are needed later.
+
+==== Create a client secret
+
+You will need to create a client secret for `my-akka-app` for Akka to use to authenticate. Instructions for doing this can be found https://learn.microsoft.com/entra/identity-platform/quickstart-register-app#add-credentials[here]. Copy the secret *Value* when it is created — it cannot be retrieved again afterwards.
+
+==== Assign a role
+
+For exports, you will need to assign the service principal the *Storage Blob Data Contributor* role on the container, which grants read, write, and delete permissions. For imports, the *Storage Blob Data Reader* role is sufficient. Roles can be assigned at the container, storage account, or resource group scope; we recommend scoping to the container for least privilege.
+
+Instructions for assigning Azure roles to a service principal can be found https://learn.microsoft.com/azure/role-based-access-control/role-assignments-portal[here].
+
+==== Create an Akka secret
+
+You now need to place the service principal credentials in an Akka secret. For the purpose of these instructions, we're going to call this secret `my-credentials`:
+
+[source,bash]
+----
+akka secrets create generic my-credentials \
+  --literal tenant-id=<directory-tenant-id> \
+  --literal client-id=<application-client-id> \
+  --literal client-secret=<client-secret-value>
+----
+
+Note that the keys `tenant-id`, `client-id`, and `client-secret` can be called by other names, but these are the default names that the data management tool expects, so using these names will require less configuration later on.
 
 == Data format
 
@@ -274,6 +320,22 @@ To export to GCS, you must supply the GCS credentials secret via the `--gcs-secr
 
 An optional prefix can be prepended to the names of the files that get exported, this can be specified using the `--gcs-object-prefix` argument.
 
+=== Exporting to Azure Blob Storage
+
+To export to Azure Blob Storage, you must supply the credentials secret via the `--abs-secret` argument. You also need to supply the container name using the `--abs-container` argument, and the storage account endpoint using the `--abs-endpoint-url` argument (for example, `https://myakkastorage.blob.core.windows.net`).
+
+[source,bash]
+----
+akka service data export assets --abs-secret my-credentials \
+  --abs-container my-akka-container \
+  --abs-endpoint-url https://myakkastorage.blob.core.windows.net \
+  --include-event-sourced-entities
+----
+
+If the keys inside the secret use names other than the defaults (`tenant-id`, `client-id`, `client-secret`), supply them with the `--abs-tenant-id-key`, `--abs-client-id-key`, and `--abs-client-secret-key` arguments respectively.
+
+An optional prefix can be prepended to the names of the files that get exported, this can be specified using the `--abs-object-prefix` argument.
+
 == Running imports
 
 The `akka service data import` command can be used to run an import. For example:
@@ -306,11 +368,11 @@ akka service data import assets --platform-managed \
   --include-event-sourced-entities
 ----
 
-=== Importing from S3 or GCS
+=== Importing from S3, GCS or Azure Blob Storage
 
-The names of the files to import can either be specified explicitly, by passing `--event-sourced-entity-object`, `--event-sourced-entity-snapshot-object` and/or `--value-entity-object` flags, or Akka can use the default filenames that it selects when creating an export. In the latter case, `--s3-object-prefix` and `--gcs-object-prefix` can be used, and `--include-event-sourced-entities` and `--include-value-entities` can be used to control which export types Akka will look for.
+The names of the files to import can either be specified explicitly, by passing `--event-sourced-entity-object`, `--event-sourced-entity-snapshot-object` and/or `--value-entity-object` flags, or Akka can use the default filenames that it selects when creating an export. In the latter case, `--s3-object-prefix`, `--gcs-object-prefix`, and `--abs-object-prefix` can be used, and `--include-event-sourced-entities` and `--include-value-entities` can be used to control which export types Akka will look for.
 
-The flags for specifying credentials and object names specific to S3 and GCS are the same as for exporting.
+The flags for specifying credentials and object names specific to S3, GCS, and Azure Blob Storage are the same as for exporting.
 
 == Managing tasks
 

@@ -1,0 +1,13 @@
+# CLI doc redirects: keeps old (bookmarked) page URLs alive after a command rename.
+#
+# When a CLI command is renamed, its generated page filename changes, so the old
+# URL would 404. This file maps the NEW page to the OLD page name(s); the
+# generator (bin/generate_cli_docs.sh) injects a `:page-aliases:` attribute into
+# the new page, and Antora produces a redirect stub at each old URL.
+#
+# Format (one mapping per line):
+#   new-page-basename : old-page-basename[, old-page-basename...]
+# Use the basename WITHOUT the .adoc extension. Lines starting with # are ignored.
+
+akka_services_components_workflows_get : akka_services_components_get-workflow
+akka_local_services_components_workflows_get : akka_local_services_components_get-workflow

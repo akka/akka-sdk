@@ -15,7 +15,7 @@ It is also possible to deploy a pre-built sample project in https://console.akka
 | <<Hello World>>                               |    | ✅ | ✅ |
 | <<Hello World (Kotlin)>>                      |    | ✅ | ✅ |
 | <<Multi-agent planning and execution>>        | ✅ | ✅ | ✅ | ✅
-| <<Autonomous agents playground>>.             | ✅ | ✅ | ✅ | ✅
+| <<Autonomous agents playground>>              | ✅ | ✅ | ✅ | ✅
 | <<Chat agent with RAG>>                       |    | ✅ | ✅ | ✅
 | <<Travel planning agent>>                     |    | ✅ |    |
 | <<Agentic haiku>>                             | ✅ | ✅ |    |
