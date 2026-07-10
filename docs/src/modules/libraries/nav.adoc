@@ -1,1 +1,1 @@
-* https://doc.akka.io/libraries/akka-core/current/typed/guide/index.html[Akka Libraries, window="new"]
+* https://doc.akka.io/libraries/akka-dependencies/current/overview.html[Akka Libraries, window="new"]
