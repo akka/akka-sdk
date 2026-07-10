@@ -1,202 +1,96 @@
-= Additional samples
+= Samples and blueprints
 :page-aliases: java:samples.adoc, sdk:samples.adoc
+:page-summary: Browse runnable samples and governance-aware blueprints. Filter by pattern, domain, integration, components, governance, and context.
+
 include::ROOT:partial$include.adoc[]
 
-include::ROOT:partial$new-to-akka-start-here.adoc[]
+Two ways to start from this catalog:
 
-In addition to our getting started guides and SDK reference material, we also have many samples available that demonstrate important patterns and abstractions. Full sources for the samples can be downloaded with `akka code init` or cloned from their respective GitHub repositories. Please refer to the `README` file in each repository for setup and usage instructions.
+* *Clone a sample* — a complete, prebuilt app you download and run. Best when you want working code to read or adapt.
+* *Generate from a blueprint* — a recipe that the xref:sdk:spec-driven-development.adoc[Akka Specify Plugin] turns into runnable AI systems. We have 460 more examples for you to explore.
 
-[sidebar]
-It is also possible to deploy a pre-built sample project in https://console.akka.io[the Akka console, window="new"], eliminating the need for local development.
-
-[cols="4,^1,^1,^1,^1"]
-|===
-| Sample | Orchestration | Agents | Memory | Streaming
-| <<Hello World>>                               |    | ✅ | ✅ |
-| <<Hello World (Kotlin)>>                      |    | ✅ | ✅ |
-| <<Multi-agent planning and execution>>        | ✅ | ✅ | ✅ | ✅
-| <<Autonomous agents playground>>              | ✅ | ✅ | ✅ | ✅
-| <<Chat agent with RAG>>                       |    | ✅ | ✅ | ✅
-| <<Travel planning agent>>                     |    | ✅ |    |
-| <<Agentic haiku>>                             | ✅ | ✅ |    |
-| <<Medical discharge summary tagging>>         | ✅ | ✅ |    |
-| <<IoT sensor monitoring>>                     |    | ✅ | ✅ | ✅
-| <<Release note summarizer>>                   | ✅ | ✅ |    |
-| <<Adaptive multi-agent orchestration>>        | ✅ | ✅ | ✅ |
-| <<Customer service chat workflow>>            | ✅ | ✅ | ✅ |
-| <<Trip booking with tools>>                   | ✅ | ✅ | ✅ | ✅
-| <<Multi-source health sensor analysis>>       |    | ✅ | ✅ | ✅
-| <<Akka Chess>>                                |    |    |    |
-| <<Shopping cart>>                             | ✅ |    |    |
-| <<Customer data store>>                       |    |    |    |
-| <<Wallet transfer>>                           | ✅ |    |    |
-| <<Wallet transfer with failure compensation>> | ✅ |    |    |
-| <<Choreographed user signup flow>>            |    |    |    |
-
-|===
-
-== Hello World
-
-This sample uses an agent and LLM to generate greetings in different languages. It illustrates how the agent maintains contextual history in a session memory.
-
-[%hardbreaks]
-**Concepts**: _Agent_, _LLM_
-**Level**: _Beginner_
-xref:getting-started:author-your-first-service.adoc[Step-by-step guide]
-link:https://github.com/akka-samples/helloworld-agent[GitHub Repository, window="new"]
-
-
-== Hello World (Kotlin)
-
-This sample uses an agent and LLM to generate greetings in different languages. It illustrates how the agent maintains contextual history in a session memory. This sample is built with Kotlin
-
-[%hardbreaks]
-**Concepts**: _Agent_, _LLM_
-**Level**: _Beginner_
-link:https://github.com/akka-samples/helloworld-agent-kotlin[GitHub Repository, window="new"]
-
-== Multi-agent planning and execution
-
-This sample models an outdoor activities planner. It demonstrates how to build a multi-agent system using Akka and an AI model. An Autonomous Agent coordinator delegates to a weather agent and an activity agent through the built-in delegation capability; the model decides which workers to consult for each request and synthesizes the final suggestion.
-
-[%hardbreaks]
-**Concepts**: _Agent_, _Autonomous Agent_, _Delegation_, _Multi-agent_
-**Level**: _Intermediate_
-xref:getting-started:planner-agent/index.adoc[Step-by-step guide]
-link:https://github.com/akka-samples/multi-agent[GitHub Repository,window="new"]
-
-[#autonomous_agents_playground]
-== Autonomous agents playground
-
-Samples demonstrating the autonomous agents — an LLM-driven component with built-in durable execution and multi-agent coordination. An Autonomous Agent runs as a process: iterating through an LLM decision loop until its assigned tasks are complete.
-
-Each sample focuses on a specific capability or coordination pattern. They progress from minimal usage to sophisticated multi-agent systems.
-
-[%hardbreaks]
-**Concepts**: _AutonomousAgent_, _Multi-agent_, _LLM_
-**Level**: _Advanced_
-link:https://github.com/akka-samples/autonomous-agent-playground[GitHub Repository,window="new"]
-
-== Chat agent with RAG
-
-This sample illustrates how to use a batching workflow to create embeddings for vector databases, how to consume LLMs and maintain conversation history, use RAG to add knowledge to fixed LLMs, and expose it all as a streaming service. It uses MongoDB Atlas and OpenAI.
-
-[%hardbreaks]
-**Concepts**: _Agent_, _RAG_, _Vector database_
-**Level**: _Intermediate_
-xref:getting-started:ask-akka-agent/index.adoc[Step-by-step guide]
-link:https://github.com/akka-samples/ask-akka-agent[GitHub Repository, window="new"]
-
-== Travel planning agent
-
-This sample illustrates reliable interaction with an LLM using a workflow. Entities are used for durable state of user preferences and generated trips.
-
-[%hardbreaks]
-**Concepts**: _Agent_, _Agent Memory_, _Workflow_, _Entity_
-**Level**: _Beginner_
-link:https://github.com/akka-samples/travel-agent[GitHub Repository, window="new"]
-
-== Agentic haiku
-
-The sample demonstrates a workflow orchestration using AI agents to generate haiku poetry and an accompanying image with quality assurance.
-
-[%hardbreaks]
-**Concepts**: _Agent_, _Workflow_, _Evaluations_
-**Level**: _Beginner_
-link:https://github.com/akka-samples/agentic-haiku[GitHub Repository, window="new"]
-
-== Medical discharge summary tagging
-This sample illustrate the use of LLMs and prompts to summarize activities. It assigns tags to the medical discharge summaries, while also enabling human verification and comparative analysis. Interactions are from a workflow with an agent using the OpenAI API with configurable model choice.
-
-[%hardbreaks]
-**Concepts**: _Agent_, _Summarization_, _Workflow_, _Entity_, _OpenAI_, _Human in the loop_
-**Level**: _Intermediate_
-link:https://github.com/akka-samples/medical-tagging-agent[GitHub Repository, window="new"]
-
-== IoT sensor monitoring
-This sample is a temperature monitoring system that collects, aggregates, and analyzes temperature data from IoT sensors. The system uses AI to generate insights about temperature trends and anomalies across different locations. Collects and aggregates temperature data using Key Value Entities. OpenAI is used for anomaly and trend detection.
-
-[%hardbreaks]
-**Concepts**: _Agent_, _IoT_, _Trend analysis_, _Anomaly detection_, _Entity_, _OpenAI_
-**Level**: _Intermediate_
-link:https://github.com/akka-samples/temperature-monitoring-agent[GitHub Repository, window="new"]
-
-== Release note summarizer
-This sample is designed to run every time there is a release from configured GitHub repositories. It interacts with Anthropic Claude from an agent and uses tools to retrieve detailed information from GitHub. Entities are used for storing release summaries. A timed action looks for new releases periodically and creates the summary using the LLM.
-
-[%hardbreaks]
-**Concepts**: _Agent_, _Entity_, _Timed Action_, _Anthropic Claude_, _Tools_, _Summarization_
-**Level**: _Intermediate_
-link:https://github.com/akka-samples/changelog-agent[GitHub Repository, window="new"]
-
-== Customer service chat workflow
-The real-estate customer service agent demonstrates how to combine Akka features with an LLM model. It illustrates an agentic workflow for customer service. It processes incoming real-estate inquiries, analyzes the content to extract details, provides follow-up when needed and saves the collected information for future reference.
-
-[%hardbreaks]
-**Concepts**: _Agent_, _Workflow_, _Analysis_, _Detail extraction_, _Human in the loop_, _Agent Memory_
-**Level**: _Intermediate_
-link:https://github.com/akka-samples/real-estate-cs-agent[GitHub Repository, window="new"]
-
-== Trip booking with tools
-This app represents a travel agency that searches for flights and accommodations. It's composed by an LLM (Anthropic) using Spring AI and AI tools to find flights, accommodations and sending mails.
-
-[%hardbreaks]
-**Concepts**: _Agent_, _Tools_, _Anthropic_, _Spring AI_, _Workflow_
-link:https://github.com/akka-samples/trip-agent[GitHub Repository, window="new"]
-
-== Multi-source health sensor analysis
-This sample illustrates an AI agent that uses an LLM and multiple tools to analyze data from fitness trackers, medical records and other sensors. It integrates with Fitbit and MongoDB Atlas.
-
-[%hardbreaks]
-**Concepts**: _Agent_, _Analysis_, _Integrations_, _Vector database_
-**Level**: _Intermediate_
-link:https://github.com/akka-samples/healthcare-agent[GitHub Repository, window="new"]
-
-== Shopping cart
-This sample illustrates the basics of building a shopping cart with entities, views, and other core Akka components. There is also a step-by-step guide that gradually adds features to a core cart.
-
-[%hardbreaks]
-**Concepts**: _Entity_, _Events_, _HTTP Endpoint_
-**Level**: _Beginner_
-xref:getting-started:shopping-cart/build-and-deploy-shopping-cart.adoc[Step-by-step guide]
-link:https://github.com/akka-samples/shopping-cart-quickstart[GitHub Repository, window="new"]
-
-== Customer data store
-This sample illustrates the use of entities and query capabilities with a view. It shows a simple set of traditional queries and the standard create, update, and delete mutations through events.
-
-[%hardbreaks]
-**Concepts**: _Entity_, _View_, _HTTP Endpoint_
-**Level**: Intermediate
-link:https://github.com/akka-samples/event-sourced-customer-registry[GitHub Repository, window="new"]
-
-== Wallet transfer
-This example illustrates a funds transfer workflow between two wallets, where the workflow orchestrates the interaction with an external service to perform the transfer.
-
-[%hardbreaks]
-**Concepts**: _Transactions_, _Workflow_
-**Level**: _Intermediate_
-link:https://github.com/akka-samples/transfer-workflow-orchestration[GitHub Repository, window="new"]
-
-== Wallet transfer with failure compensation
-This example illustrates a funds transfer workflow between two wallets. It also illustrates how to set up workflow _compensation_ in order to self-heal work when one or more steps in the workflow fail.
-
-[%hardbreaks]
-**Concepts**: _Transactions_, _Workflow_, _Entity_
-**Level**: _Intermediate_
-link:https://github.com/akka-samples/transfer-workflow-compensation[GitHub Repository, window="new"]
-
-== Choreographed user signup flow
-This example is a user registration service where the user's new signup flow implemented as a choreography saga.
-
-[%hardbreaks]
-**Concepts**: _Choreography_, _Saga_, _Workflow_
-**Level**: _Advanced_
-link:https://github.com/akka-samples/choreography-saga-quickstart[GitHub Repository, window="new"]
-
-== Akka Chess
-This example represents a complete, resilient, automatically scalable, event-sourced chess game. We will be adding a guided tour that will include adding an agent to act as a non-player "brain" that plays chess in real time against human players.
-
-[%hardbreaks]
-**Concepts**: _Embedded UI_, _Entity_, _Workflow_, _View_, _Timed Action_
-**Level**: _Advanced_
-link:https://github.com/akka-samples/akka-chess[GitHub Repository, window="new"]
+++++
+<style>
+  .sb-facets{margin:1rem 0;border:1px solid rgba(127,127,127,.25);border-radius:8px;padding:.7rem .9rem .6rem}
+  .sb-title{font-size:1.1rem;font-weight:700;letter-spacing:-.01em;margin:0 0 .6rem;padding-bottom:.5rem;border-bottom:1px solid rgba(127,127,127,.2)}
+  .sb-frow{display:flex;gap:.5rem;align-items:baseline;padding:.4rem 0;border-top:1px solid rgba(127,127,127,.15)}
+  .sb-frow:first-child{border-top:0}
+  .sb-flabel{flex:0 0 8rem;font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;opacity:.55;padding-top:.25rem}
+  .sb-pills{display:flex;flex-wrap:wrap;gap:.35rem}
+  .sb-pill{font-size:.76rem;padding:.22rem .6rem;border-radius:999px;border:1px solid rgba(127,127,127,.4);background:transparent;color:inherit;cursor:pointer;line-height:1.2}
+  .sb-pill .n{opacity:.5;margin-left:.4rem}
+  .sb-pill.on{background:#FFD100;border-color:#E6BC00;color:#1a1a1a;font-weight:600}
+  .sb-pill.on .n{opacity:.6}
+  .sb-actions{display:flex;justify-content:space-between;align-items:center;margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(127,127,127,.15);font-size:.8rem;opacity:.9}
+  .sb-clear{font-size:.76rem;padding:.25rem .7rem;border:1px solid rgba(127,127,127,.5);border-radius:6px;background:transparent;color:inherit;cursor:pointer}
+  .sb-summary{font-size:.85rem;opacity:.8;margin:.6rem 0}
+  .sb-list{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+  .sb-card{border:1px solid rgba(127,127,127,.25);border-radius:8px;padding:.7rem .8rem}
+  .sb-card h4{margin:0 0 .3rem;font-size:.98rem}
+  .sb-card p{margin:.3rem 0 0;font-size:.85rem;opacity:.85;line-height:1.35}
+  .sb-badge{display:inline-block;font-size:.66rem;text-transform:uppercase;letter-spacing:.03em;padding:.08rem .4rem;border-radius:999px;margin-right:.3rem;border:1px solid rgba(127,127,127,.5)}
+  .sb-meta{font-size:.72rem;opacity:.7;margin-top:.35rem}
+</style>
+<div class="sb-catalog">
+  <div class="sb-facets" id="sb-facets"></div>
+  <div class="sb-summary" id="sb-summary"></div>
+  <div class="sb-list" id="sb-list"></div>
+</div>
+<script>
+const CATALOG =
+include::partial$catalog-data.json[]
+;
+(function(){
+  var PATTERN_LABEL={'single-agent':'Single agent','sequential-pipeline':'Sequential pipeline','delegation-supervisor-workers':'Supervisor + workers','handoff-routing':'Handoff / routing','team-shared-list':'Team / shared list','moderation-turn-taking':'Moderation / turn-taking','planner-executor':'Planner + executor','evaluator-optimizer':'Evaluator + optimizer','debate-multi-perspective':'Debate / multi-perspective','continuous-monitor':'Continuous monitor','human-in-loop-gate':'Human-in-loop gate','composite-multi-team':'Composite / multi-team','blackboard':'Blackboard','contract-net':'Contract-net auction','market-making-auction':'Market-making auction'};
+  function byCountDesc(field){var m={};CATALOG.forEach(function(e){var v=e[field];if(v)m[v]=(m[v]||0)+1;});return Object.keys(m).sort(function(a,b){return m[b]-m[a]||a.localeCompare(b);});}
+  var FACETS=[
+    {key:'uc',label:'Use case',arr:1,opts:['assist_converse','answer_retrieve','extract_structure','classify_route','summarize_synthesize','generate_draft','plan_decompose','decide_recommend','monitor_detect','automate_execute'],lab:{assist_converse:'Assist / converse',answer_retrieve:'Answer / retrieve',extract_structure:'Extract / structure',classify_route:'Classify / route',summarize_synthesize:'Summarize / synthesize',generate_draft:'Generate / draft',plan_decompose:'Plan / decompose',decide_recommend:'Decide / recommend',monitor_detect:'Monitor / detect',automate_execute:'Automate / execute'}},
+    {key:'t',label:'Type',arr:0,opts:['tutorial','sample','blueprint'],lab:{tutorial:'Tutorials',sample:'Samples',blueprint:'Blueprints'}},
+    {key:'b',label:'Coordination',arr:0,opts:['agent','agent+workflow','autonomous-agent','autonomous-agent+workflow'],lab:{'agent':'Agent','agent+workflow':'Agent + Workflow','autonomous-agent':'AutonomousAgent','autonomous-agent+workflow':'AutonomousAgent + Workflow'}},
+    {key:'p',label:'Pattern',arr:0,opts:Object.keys(PATTERN_LABEL),lab:PATTERN_LABEL},
+    {key:'dm',label:'Domain',arr:0,opts:byCountDesc('dm'),lab:null},
+    {key:'ti',label:'Integration',arr:0,opts:['T1','T2','T3','T4'],lab:{T1:'None',T2:'Third-party service',T3:'Requires Docker sidecar',T4:'Browser or sandbox execution'}},
+    {key:'c',label:'Components',arr:1,opts:['Agent','AutonomousAgent','Workflow','View','Entity','Consumer','Timer','Endpoint'],lab:null},
+    {key:'m',label:'Governance',arr:1,opts:['guardrail','hitl','hotl','sanitizer','eval-periodic','eval-event','ci-gate','halt'],lab:{guardrail:'Guardrail',hitl:'Human-in-the-loop',hotl:'Human-on-the-loop',sanitizer:'Sanitizer','eval-periodic':'Periodic eval','eval-event':'Event-triggered eval','ci-gate':'CI build-gate',halt:'Halt'}},
+    {key:'x',label:'Context & state',arr:1,opts:['durable_execution','short_term_memory','long_term_memory','documents','vector_semantic','graph_db','summarization_memory'],lab:{durable_execution:'Durable execution',short_term_memory:'Short-term memory',long_term_memory:'Long-term memory',documents:'Documents',vector_semantic:'Vector / semantic',graph_db:'Graph DB',summarization_memory:'Summarization memory'}}
+  ];
+  var sel={}; FACETS.forEach(function(f){sel[f.key]=[];});
+  sel['c']=['AutonomousAgent']; sel['t']=['sample'];
+  var facetsEl=document.getElementById('sb-facets'),
+      sum=document.getElementById('sb-summary'), list=document.getElementById('sb-list');
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function total(f,opt){var n=0;for(var i=0;i<CATALOG.length;i++){var v=CATALOG[i][f.key];if(f.arr){if(v&&v.indexOf(opt)>=0)n++;}else if(v===opt)n++;}return n;}
+  function matches(e){
+    for(var i=0;i<FACETS.length;i++){var f=FACETS[i],s=sel[f.key];if(!s.length)continue;var v=e[f.key],ok=false;
+      if(f.arr){for(var j=0;j<(v||[]).length;j++){if(s.indexOf(v[j])>=0){ok=true;break;}}}else{ok=s.indexOf(v)>=0;}
+      if(!ok)return false;}
+    return true;
+  }
+  function activeCount(){var n=0;FACETS.forEach(function(f){n+=sel[f.key].length;});return n;}
+  function renderFacets(){
+    facetsEl.innerHTML='<div class="sb-title">Find an Akka example&hellip;</div>'+FACETS.map(function(f){
+      var pills=f.opts.filter(function(o){return total(f,o)>0;}).map(function(o){
+        var lab=(f.lab&&f.lab[o])?f.lab[o]:o, on=sel[f.key].indexOf(o)>=0?' on':'';
+        return '<button type="button" class="sb-pill'+on+'" data-f="'+f.key+'" data-o="'+esc(o)+'">'+esc(lab)+'<span class="n">'+total(f,o)+'</span></button>';
+      }).join('');
+      return '<div class="sb-frow"><div class="sb-flabel">'+f.label+'</div><div class="sb-pills">'+pills+'</div></div>';
+    }).join('')+'<div class="sb-actions"><span><strong>'+activeCount()+'</strong> filters active</span><button type="button" class="sb-clear" id="sb-clear">Clear all</button></div>';
+    [].forEach.call(facetsEl.querySelectorAll('.sb-pill'),function(b){b.onclick=function(){var k=b.getAttribute('data-f'),o=b.getAttribute('data-o'),i=sel[k].indexOf(o);if(i>=0)sel[k].splice(i,1);else sel[k].push(o);renderFacets();renderList();};});
+    facetsEl.querySelector('#sb-clear').onclick=function(){FACETS.forEach(function(f){sel[f.key]=[];});renderFacets();renderList();};
+  }
+  function renderList(){
+    var out=CATALOG.filter(matches);
+    var so={shipped:0,planned:1,'not-started':2};
+    out.sort(function(a,b){var d=(so[a.s]==null?3:so[a.s])-(so[b.s]==null?3:so[b.s]);return d||(a.n||'').localeCompare(b.n||'');});
+    var c={tutorial:0,sample:0,blueprint:0};out.forEach(function(e){c[e.t]++;});
+    sum.textContent=out.length+' results — '+c.tutorial+' tutorials, '+c.sample+' samples, '+c.blueprint+' blueprints. Blueprints open their README in the blueprints repository.';
+    list.innerHTML=out.slice(0,300).map(function(e){
+      return '<div class="sb-card"><h4><a href="'+esc(e.u)+'"'+(e.t!=='tutorial'?' target="_blank" rel="noopener"':'')+'>'+esc(e.n)+'</a></h4>'+
+        '<div><span class="sb-badge">'+esc(e.t)+'</span>'+(e.g?'<span class="sb-badge">governance</span>':'')+'</div>'+
+        '<p>'+esc(e.d)+'</p><div class="sb-meta">'+esc(PATTERN_LABEL[e.p]||e.p)+' · '+esc(e.dm)+'</div></div>';
+    }).join('')+(out.length>300?'<p class="sb-meta">Showing first 300 of '+out.length+'. Narrow with filters.</p>':'');
+  }
+  renderFacets();renderList();
+})();
+</script>
+++++
