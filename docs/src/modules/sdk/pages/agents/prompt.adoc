@@ -144,5 +144,5 @@ Although the system message has a dedicated method to use the prompt template, y
 
 == Adding more context
 
-xref:use-cases/rag-and-knowledge.adoc[RAG] is a technique to provide additional, relevant content in the user message.
+xref:getting-started:ask-akka-agent/index.adoc[RAG] is a technique to provide additional, relevant content in the user message.
 

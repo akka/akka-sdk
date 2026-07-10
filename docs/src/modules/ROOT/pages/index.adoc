@@ -54,7 +54,6 @@ Learn xref:ROOT:what-is-akka.adoc[about what Akka provides] or find xref:ROOT:wh
 **Foundational topics** on how Akka services are designed and behave.
 
 * xref:concepts:ai-agents.adoc[AI agents]
-* xref:concepts:governance-and-the-runtime.adoc[Governance & the runtime]
 * xref:concepts:architecture-model.adoc[Architecture]
 * xref:concepts:distributed-systems.adoc[]
 * xref:concepts:multi-region.adoc[Multi-region operations]

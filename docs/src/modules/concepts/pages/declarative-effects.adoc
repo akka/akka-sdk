@@ -1,4 +1,4 @@
-= Delegation with Effects
+= Declarative effects
 
 include::ROOT:partial$effect-behavior-and-execution.adoc[]
 
@@ -34,3 +34,9 @@ For details on the specific Effect types, refer to the documentation for each co
 | xref:sdk:consuming-producing.adoc#_effect_api[Consumers] | Publish to Topic, Confirm Message, Ignore
 
 |===
+
+== Background execution
+
+Because effects are declarative, the runtime can carry them out on your behalf as background execution rather than requiring you to manage the work directly.
+
+include::ROOT:partial$background-execution.adoc[]

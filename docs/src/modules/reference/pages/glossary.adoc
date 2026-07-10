@@ -1,4 +1,4 @@
-= Glossary of Terms
+= Glossary of terms
 :page-summary: "Glossary of Akka terms including AI, agentic systems, distributed systems, and governance terminology."
 
 include::ROOT:partial$include.adoc[]

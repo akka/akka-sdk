@@ -1,4 +1,4 @@
-= Release notes for Akka
+= Release notes
 
 include::ROOT:partial$include.adoc[]
 

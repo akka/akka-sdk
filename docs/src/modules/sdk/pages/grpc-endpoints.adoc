@@ -9,7 +9,7 @@ gRPC was designed to support service evolution and decoupling by enforcing a pro
 gRPC Endpoint components make it possible to conveniently define APIs accepting and responding in protobuf --
 the binary, typed protocol used by gRPC which is designed to handle evolution of a service over time.
 
-TIP: Our recommendation is to use gRPC Endpoints for cross-service calls (be it with another Akka service or other backend services) and HTTP Endpoints for APIs consumed directly by client-facing / frontend applications -- for which the use of gRPC comes at a greater cost. For a deeper dive into the differences between gRPC and HTTP Endpoints, see xref:concepts:grpc-vs-http-endpoints.adoc[].
+TIP: Our recommendation is to use gRPC Endpoints for cross-service calls (be it with another Akka service or other backend services) and HTTP Endpoints for APIs consumed directly by client-facing / frontend applications -- for which the use of gRPC comes at a greater cost.
 
 
 == Basics ==

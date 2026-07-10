@@ -6,7 +6,7 @@ index.adoc is auto-generated from
 Please DON'T modify file index.adoc directly.
 Instead, you might want to modify file "cli-index-header.template.txt"
 ////
-= CLI command reference
+= CLI commands
 
 The `akka` command line tool enables you to interact with your Akka projects and services using the command line. See xref:operations:cli/installation.adoc[] for information on how to download `akka`. Use xref:reference:cli/akka-cli/akka_version.adoc[`akka version`] to check the version.
 

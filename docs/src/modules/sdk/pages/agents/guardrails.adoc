@@ -1,7 +1,7 @@
 = Guardrails
 :page-summary: Runtime-enforced guardrails that validate agent inputs and outputs, providing governance controls for toxicity, PII, jailbreak detection, and compliance without bolting on external tooling.
 :page-when-to-use: When you need to enforce content policies, prevent prompt injection, protect sensitive data, or satisfy regulatory requirements such as the EU AI Act across your agent fleet.
-:page-related: xref:concepts:governance-and-the-runtime.adoc[], xref:sdk:sanitization.adoc[], xref:sdk:agents/index.adoc[]
+:page-related: xref:sdk:sanitization.adoc[], xref:sdk:agents/index.adoc[]
 :page-prerequisites: An Akka project with at least one agent defined.
 :page-persona: governance-compliance, governance-infosec, developer
 
@@ -118,5 +118,4 @@ You can use this for other things than jailbreak attempt detection.
 
 == See also
 
-* xref:concepts:governance-and-the-runtime.adoc[] — Why governance must live in the runtime, not in a sidecar.
 * xref:sdk:sanitization.adoc[] — Complementary PII protection through input and output sanitization.
