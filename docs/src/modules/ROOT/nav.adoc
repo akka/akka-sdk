@@ -1,4 +1,9 @@
 // Top-level landing pages
-* xref:ROOT:why-akka.adoc[Why Akka]
-** xref:ROOT:what-is-akka.adoc[What is Akka]
-** xref:ROOT:who-uses-akka.adoc[Who uses Akka]
+* xref:ROOT:about-akka.adoc[About Akka]
+** xref:ROOT:what-is-akka.adoc[What is Akka?]
+** xref:ROOT:akka-agents.adoc[Agents]
+** xref:ROOT:akka-orchestration.adoc[Orchestration]
+** xref:ROOT:akka-memory.adoc[Memory]
+** xref:ROOT:akka-streaming.adoc[Streaming]
+** xref:ROOT:akka-automated-operations.adoc[Automated Operations]
+** xref:ROOT:akka-internals.adoc[Akka Internals]
