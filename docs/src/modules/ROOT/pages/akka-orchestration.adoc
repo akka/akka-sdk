@@ -6,8 +6,6 @@
 
 include::ROOT:partial$include.adoc[]
 
-== Overview
-
 Akka Orchestration guides and controls long-running processes so that agents and services reliably reach their goals despite failures, delays, or runs that stretch from seconds to months. It gives you a durable execution engine for coordinating the steps of a business process, a multi-step agent plan, or a distributed transaction. You never write the retry loops, state machines, or recovery logic yourself.
 
 Orchestration is the coordination layer of the platform. Where an individual agent decides _what_ to do next, orchestration governs _how_ that work is sequenced, retried, compensated, and resumed. It is exposed through the Workflow component in the SDK.

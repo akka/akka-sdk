@@ -6,8 +6,6 @@
 
 include::ROOT:partial$include.adoc[]
 
-== Overview
-
 Akka Streaming is an actor-based stream processing engine for real-time AI. It lets your services and agents act on data the moment it arrives: telemetry from sensors, audio and video frames, chat messages, API feeds, and other multimodal inputs. No batch jobs, no polling loops.
 
 [NOTE]

@@ -6,8 +6,6 @@
 
 include::ROOT:partial$include.adoc[]
 
-== Overview
-
 Akka is an agentic AI platform for enterprises: a full-stack system for building, running, and governing production-grade agentic AI. It brings developer experience, runtime, and governance together in one integrated system.
 
 image::capabilities/akka-platform-intro.png[The Akka agentic platform — build, run, and govern agentic AI in one integrated system,width=900]

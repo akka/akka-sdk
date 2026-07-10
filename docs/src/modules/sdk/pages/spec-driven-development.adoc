@@ -7,8 +7,6 @@
 
 include::ROOT:partial$include.adoc[]
 
-== Overview
-
 Spec-Driven Development (SDD) turns your natural-language specifications into the single source of truth for an entire application. You write the _what_ and _why_; AI generates all the code.
 
 *What it does.* SDD provides a structured, iterative workflow -- specify, clarify, plan, task, implement, build, deploy, inspect -- backed by a constitution of unbreakable project rules. Every artifact is version-controlled, and automated CI can detect divergence between specification and code.
@@ -27,7 +25,7 @@ Spec-Driven Development (SDD) turns your natural-language specifications into th
 
 The workflow is a sequence of commands you drive from your AI coding assistant. Each step produces a version-controlled artifact that feeds the next.
 
-image::sdd-workflow.svg[Spec-driven development workflow: init, specify, clarify, plan, tasks, implement, build, inspect, deploy — with an iteration loop that refines the spec and regenerates.]
+image::sdd-workflow.png[Spec-driven development workflow: init, specify, clarify, plan, tasks, implement, build, inspect, deploy — with an iteration loop that refines the spec and regenerates.]
 
 == Getting started with SDD
 

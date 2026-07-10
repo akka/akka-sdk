@@ -6,8 +6,6 @@
 
 include::ROOT:partial$include.adoc[]
 
-== Overview
-
 Akka Automated Operations (AAO) is the operational plane that runs your agents and services in production. It automates the day-2 work that normally slows teams down: scaling to demand, replicating state across regions, recovering from failures, rolling out new versions, and keeping the whole system observable. All of it happens without taking traffic offline.
 
 AAO runs the same way wherever you deploy. You can operate on Akka's serverless cloud, inside your own VPC, or across your own data centers, and the operational model stays identical. This lets you move workloads between environments without re-learning how they are run or re-building your operations tooling.

@@ -6,8 +6,6 @@
 
 include::ROOT:partial$include.adoc[]
 
-== Overview
-
 Akka Agents let you build goal-directed AI agents that gather context, reason with a language model, and take action. A well-defined lifecycle holds it all together, keeping agent behavior predictable and aligned with your business objectives.
 
 An agent moves through a clear sequence on every request: it assembles context from memory and its inputs, calls a model to reason over that context, invokes tools to act on the outside world, and evaluates whether it has met its goal. Because this lifecycle is structured rather than ad hoc, agents behave consistently in production and remain observable and testable.
