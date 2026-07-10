@@ -119,13 +119,20 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
         maxRetries,
         failoverTo = new SpiWorkflow.StepTransition(RecordStepName, Some(failedOutcomePayload)))
 
+    // the record step retries forever
+    val recordStepConfig = new SpiWorkflow.StepConfig(
+      RecordStepName,
+      stepTimeout = None,
+      recoveryStrategy = Some(recordFailure(Int.MaxValue)))
+
     new SpiWorkflow.WorkflowConfig(
       workflowTimeout = settings.evaluationTimeout().toScala.map(_.toScala),
-      failoverRecoverStrategy = Some(recordFailure(0)),
+      // after an evaluation timeout the failover record step must also keep retrying forever
+      failoverRecoverStrategy = Some(recordFailure(Int.MaxValue)),
       defaultStepTimeout = settings.defaultStepTimeout().toScala.map(_.toScala),
       defaultStepRecoverStrategy = Some(
         recordFailure(settings.maxStepRetries().toScala.map(_.intValue()).getOrElse(0))),
-      stepConfigs = Map.empty,
+      stepConfigs = Map(RecordStepName -> recordStepConfig),
       passivationDelay = None)
   }
 

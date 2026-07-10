@@ -232,5 +232,17 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
         serializer.fromBytes(classOf[Outcome], config.failoverRecoverStrategy.get.failoverTo.input.get)
       failoverOutcome.kind() shouldBe Outcome.Kind.FAILED
     }
+
+    "retry the record step forever" in {
+      val config = newImpl().configuration
+
+      // recording is idempotent, a transient failure must never fail over (which would overwrite
+      // the actual outcome) nor give up and leave the evaluation unrecorded
+      val recordStepStrategy = config.stepConfigs(RecordStepName).recoveryStrategy.get
+      recordStepStrategy.maxRetries shouldBe Int.MaxValue
+
+      // same for the failover record step running after an evaluation timeout
+      config.failoverRecoverStrategy.get.maxRetries shouldBe Int.MaxValue
+    }
   }
 }
