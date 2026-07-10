@@ -1,11 +1,11 @@
-= Build your first agent
+= Code-first hello agent
 :page-aliases: java:build-your-first-application.adoc, java:author-your-first-service.adoc, sdk:author-your-first-service.adoc
-:page-summary: Hands-on tutorial to build your first Akka agent — start with Spec-Driven Development or follow the classic manual approach.
+:page-summary: Hands-on tutorial to build your first Akka agent by hand in Java.
 :page-persona: builder-developer
 
 include::ROOT:partial$include.adoc[]
 
-TIP: The recommended way to build your first agent is with xref:getting-started:spec-your-first-agent.adoc[Spec-Driven Development]. The tutorial below walks through the manual, hands-on Java approach — ideal for understanding how Akka components work under the hood.
+TIP: The recommended way to build your first agent is the xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent] tutorial. The tutorial below walks through the manual, hands-on Java approach — ideal for understanding how Akka components work under the hood.
 
 == Introduction
 
@@ -21,11 +21,9 @@ In this guide, you will:
 
 == Prerequisites
 
-include::ROOT:partial$local-dev-prerequisites.adoc[]
-* Git
-* https://platform.openai.com/api-keys[OpenAI API key, window="new"]
-
-Akka has support for many AI providers, and this sample is using OpenAI. Sign up for free at https://platform.openai.com/api-keys[platform.openai.com/api-keys, window="new"].
+* Complete xref:getting-started:set-up-dev-env.adoc#_set_up_your_env_without_ai[Set up your env without AI] — install the Akka CLI, Java, and Maven.
+* Git.
+* An https://platform.openai.com/api-keys[OpenAI API key, window="new"]. This sample uses OpenAI; sign up for free at https://platform.openai.com/api-keys[platform.openai.com/api-keys, window="new"].
 
 [#clone_sample]
 == Clone the sample project
@@ -293,4 +291,3 @@ Now that you have a basic service running, it's time to learn more about buildin
 
 * xref:sdk:spec-driven-development.adoc[]
 * xref:getting-started:planner-agent/index.adoc[]
-* link:{url-ext-akkademy}[Akkademy training, window="new"]
