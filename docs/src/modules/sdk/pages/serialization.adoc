@@ -23,6 +23,8 @@ It’s *highly recommended* to add a `@TypeName` annotation to sealed interfaces
 
 == Schema evolution
 
+Everything in Akka is ultimately message-driven, so plan for your messages to evolve. Commands and events use data structures that change over time as fields are added, removed, or repurposed. Akka makes this manageable, but you are responsible for schema evolution.
+
 When using Event Sourcing, but also for rolling updates, schema evolution becomes an important aspect of your application development. A production-ready solution should be able to update any persisted models. The requirements as well as our own understanding of the business domain may (and will) change over time.
 
 === Removing a field

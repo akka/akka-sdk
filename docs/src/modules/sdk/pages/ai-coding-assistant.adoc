@@ -2,6 +2,11 @@
 
 include::ROOT:partial$include.adoc[]
 
+[NOTE]
+====
+These guidelines are for enabling AI assistants to use the Akka CLI natively. If you are using the xref:sdk:spec-driven-development.adoc[Akka Specify Plugin] with spec-driven development, all of this configuration and these best practices are enabled within the Akka Specify Plugin automatically.
+====
+
 AI coding assistants can increase your productivity when developing Akka services. This guide will give you some practical hints of how to setup Akka knowledge and how to prompt the AI assistant. We are using https://docs.claude.com/en/docs/claude-code/overview[Claude code, window="new"],  https://www.qodo.ai[Qodo, window="new"], https://www.cursor.com[Cursor, window="new"] and https://www.jetbrains.com/help/idea/ai-assistant-in-jetbrains-ides.html[IntelliJ IDEA, window="new"] as examples of such coding assistants, but the techniques are applicable for other tools as well.
 
 Some key benefits of using an AI coding assistant:

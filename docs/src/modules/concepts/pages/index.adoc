@@ -2,34 +2,26 @@
 
 include::ROOT:partial$include.adoc[]
 
-This content here introduces key xref:concepts.adoc[concepts] to be aware of when developing Akka applications and services.
+This section introduces the key concepts to understand when developing Akka applications and services.
 
-Everything in Akka is based on the xref:distributed-systems.adoc[fundamental principles for distributed systems].
+The xref:concepts.adoc[concepts overview] describes the anatomy of an agentic system and how Akka components fit together. Everything in Akka builds on the xref:distributed-systems.adoc[fundamental principles for distributed systems], and the xref:architecture-model.adoc[architecture model] explains how applications are structured in layers.
 
-xref:architecture-model.adoc[Service structure and layers] explains how Akka applications are structured in different layers.
+Akka manages the operational aspects of your application. To learn how services run across distributed infrastructure and may span multiple _Regions_, see the xref:deployment-model.adoc[deployment model] and xref:multi-region.adoc[multi-region operations].
 
-Akka manages the operational aspects of your application. To learn about how Akka Services run in distributed infrastructure and may span multiple _Regions_, see xref:deployment-model.adoc[Deployment Model]. Once deployed, Akka's xref:operations:observability-and-monitoring/index.adoc[Telemetry and Monitoring] provides operational insights into your deployment.
-
-When you are familiar with the main aspects for Akka applications, continue with xref:concepts:development-process.adoc[Development process] to understand the steps involved to implement a _Service_.
-
-Components in Akka decouple behavior from execution by using xref:declarative-effects.adoc[].
-
-A detailed explanation to how _Entities_ persist their state, is presented in xref:state-model.adoc[] should you wish to learn more.
-
-Orchestration use cases are often catered for best by considering _Sagas_ which is discussed in xref:saga-patterns.adoc[].
+Components decouple behavior from execution through xref:declarative-effects.adoc[declarative effects], and the xref:state-model.adoc[state model] explains how _Entities_ persist their state. The xref:ai-agents.adoc[AI agents] and xref:ai-orchestration-patterns.adoc[AI orchestration patterns] pages cover how to design agentic systems.
 
 == Topics
 
 * xref:concepts:concepts.adoc[]
-* xref:concepts:distributed-systems.adoc[]
-* xref:concepts:architecture-model.adoc[]
-* xref:concepts:deployment-model.adoc[]
-* xref:concepts:development-process.adoc[]
-* xref:declarative-effects.adoc[]
-* xref:concepts:state-model.adoc[]
-* xref:concepts:multi-region.adoc[]
-* xref:concepts:saga-patterns.adoc[]
-* xref:concepts:grpc-vs-http-endpoints.adoc[]
-* xref:concepts:ai-agents.adoc[]
-* xref:concepts:inter-agent-comms.adoc[]
-* xref:concepts:acls.adoc[]
+* Foundations
+** xref:concepts:distributed-systems.adoc[]
+** xref:concepts:architecture-model.adoc[]
+** xref:concepts:deployment-model.adoc[]
+* State and execution
+** xref:concepts:state-model.adoc[]
+** xref:concepts:declarative-effects.adoc[]
+** xref:concepts:multi-region.adoc[]
+* Agentic concepts
+** xref:concepts:ai-agents.adoc[]
+** xref:concepts:ai-orchestration-patterns.adoc[]
+* xref:ROOT:resources.adoc[Resources]

@@ -1,4 +1,4 @@
-= View reference
+= Views
 
 This reference guide provides comprehensive documentation for Akka Views and the View query language, which enables you to query and filter data from your Views using SQL-like syntax.
 

@@ -1,4 +1,4 @@
-=  Descriptors
+= Descriptors
 
 include::ROOT:partial$include.adoc[]
 
