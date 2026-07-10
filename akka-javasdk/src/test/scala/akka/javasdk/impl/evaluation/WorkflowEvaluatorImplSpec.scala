@@ -9,42 +9,50 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
+import akka.Done
 import akka.javasdk.evaluation.TranscriptQualityEvaluator
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorImpl.OnEvaluationCommandName
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorImpl.RecordStepName
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.Outcome
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.StartEvaluation
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.StateEnvelope
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiEntity
+import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
+import akka.runtime.sdk.spi.SpiWorkflowEvaluator
+import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers {
+class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValues {
 
   private val serializer = new Serializer
   private val evaluationId = "evaluation-1"
 
-  private def newImpl() =
+  private final class RecorderProbe extends SpiWorkflowEvaluator.EvaluationRecorder {
+    var recorded: Option[(String, SpiWorkflowEvaluator.Result)] = None
+    override def recordResult(evaluationId: String, result: SpiWorkflowEvaluator.Result): Future[Done] = {
+      recorded = Some((evaluationId, result))
+      Future.successful(Done)
+    }
+  }
+
+  private def newImpl(recorder: SpiWorkflowEvaluator.EvaluationRecorder = new RecorderProbe) =
     new WorkflowEvaluatorImpl[TranscriptQualityEvaluator.State, TranscriptQualityEvaluator](
       evaluationId,
       classOf[TranscriptQualityEvaluator],
       classOf[TranscriptQualityEvaluator.State],
       () => new TranscriptQualityEvaluator,
+      recorder,
       serializer,
       ExecutionContext.global)
 
-  private def startCommand(interactionId: String = "interaction-1") =
-    new SpiEntity.Command(
-      OnEvaluationCommandName,
-      Some(serializer.toBytes(new StartEvaluation(null, "my-agent", interactionId))),
-      sequenceNumber = 0L,
-      isDeleted = false,
-      metadata = SpiMetadata.empty,
-      telemetryContext = null)
+  private def trigger(interactionId: String = "interaction-1") =
+    new SpiEvaluator.Trigger(
+      evaluationId,
+      SpiEvaluator.TriggerSource.OnInteraction,
+      new SpiEvaluator.AgentInteraction("my-agent", interactionId))
 
   private def stepCommand(stepName: String, input: Option[BytesPayload] = None) =
     new SpiWorkflow.StepCommand(stepName, input, SpiMetadata.empty, null)
@@ -58,8 +66,8 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers {
 
   "WorkflowEvaluatorImpl" should {
 
-    "start the evaluation with the built-in command and persist the subject envelope" in {
-      val effect = await(newImpl().handleCommand(None, startCommand()))
+    "start the evaluation with the structured trigger and persist the subject envelope" in {
+      val effect = await(newImpl().handleEvaluationStart(None, trigger()))
 
       effect shouldBe a[SpiWorkflow.CommandTransitionalEffect]
       val transitional = effect.asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
@@ -75,20 +83,20 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers {
 
     "ack a duplicate start without re-running the evaluation" in {
       val impl = newImpl()
-      val started = await(impl.handleCommand(None, startCommand()))
+      val started = await(impl.handleEvaluationStart(None, trigger()))
       val persistedState = started
         .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
         .persistence
         .asInstanceOf[SpiWorkflow.UpdateState]
         .newState
 
-      val effect = await(impl.handleCommand(Some(persistedState), startCommand()))
+      val effect = await(impl.handleEvaluationStart(Some(persistedState), trigger()))
       effect shouldBe a[SpiWorkflow.ReadOnlyEffect]
     }
 
     "run a step that updates state and transitions with input" in {
       val impl = newImpl()
-      val started = await(impl.handleCommand(None, startCommand()))
+      val started = await(impl.handleEvaluationStart(None, trigger()))
       val persistedState = started
         .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
         .persistence
@@ -113,7 +121,7 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers {
 
     "complete the evaluation by transitioning to the built-in record step" in {
       val impl = newImpl()
-      val started = await(impl.handleCommand(None, startCommand()))
+      val started = await(impl.handleEvaluationStart(None, trigger()))
       val startState = started
         .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
         .persistence
@@ -139,7 +147,7 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers {
     "report inconclusive by transitioning to the built-in record step" in {
       val impl = newImpl()
       val started =
-        await(impl.handleCommand(None, startCommand(TranscriptQualityEvaluator.EMPTY_INTERACTION_ID)))
+        await(impl.handleEvaluationStart(None, trigger(TranscriptQualityEvaluator.EMPTY_INTERACTION_ID)))
       val startState = started
         .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
         .persistence
@@ -157,17 +165,49 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers {
       outcome.reason() should include(TranscriptQualityEvaluator.EMPTY_INTERACTION_ID)
     }
 
-    "record the outcome and delete the instance in the built-in record step" in {
+    "record the outcome via the SPI recorder and delete the instance in the built-in record step" in {
+      val recorder = new RecorderProbe
       val outcomePayload = serializer.toBytes(Outcome.inconclusive("no verdict"))
 
-      val result = await(newImpl().invokeStep(None, stepCommand(RecordStepName, Some(outcomePayload))))
+      val result = await(newImpl(recorder).invokeStep(None, stepCommand(RecordStepName, Some(outcomePayload))))
         .asInstanceOf[SpiWorkflow.StepTransitionalEffect]
 
       result.persistence shouldBe SpiWorkflow.NoPersistence
       result.transition shouldBe SpiWorkflow.Delete
+
+      val (recordedId, recordedResult) = recorder.recorded.value
+      recordedId shouldBe evaluationId
+      recordedResult shouldBe a[SpiWorkflowEvaluator.InconclusiveResult]
+      recordedResult.asInstanceOf[SpiWorkflowEvaluator.InconclusiveResult].reason shouldBe "no verdict"
     }
 
-    "reject unknown commands, command handling is built in" in {
+    "record a completed outcome with its evaluations" in {
+      val recorder = new RecorderProbe
+      val impl = newImpl(recorder)
+      val started = await(impl.handleEvaluationStart(None, trigger()))
+      val startState = started
+        .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
+        .persistence
+        .asInstanceOf[SpiWorkflow.UpdateState]
+        .newState
+      val fetched = await(impl.invokeStep(Some(startState), stepCommand("fetchTranscript")))
+        .asInstanceOf[SpiWorkflow.StepTransitionalEffect]
+      val fetchedState = fetched.persistence.asInstanceOf[SpiWorkflow.UpdateState].newState
+      val judgeInput = fetched.transition.asInstanceOf[SpiWorkflow.StepTransition].input
+      val judged = await(impl.invokeStep(Some(fetchedState), stepCommand("judge", judgeInput)))
+        .asInstanceOf[SpiWorkflow.StepTransitionalEffect]
+      val recordInput = judged.transition.asInstanceOf[SpiWorkflow.StepTransition].input
+
+      await(impl.invokeStep(Some(fetchedState), stepCommand(RecordStepName, recordInput)))
+
+      val (recordedId, recordedResult) = recorder.recorded.value
+      recordedId shouldBe evaluationId
+      val completed = recordedResult.asInstanceOf[SpiWorkflowEvaluator.CompletedResult]
+      completed.evaluations should have size 1
+      completed.evaluations.head.passed shouldBe true
+    }
+
+    "reject all commands, command handling is built in" in {
       val command = new SpiEntity.Command(
         "someUserCommand",
         None,

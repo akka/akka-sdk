@@ -24,6 +24,7 @@ import akka.javasdk.agent.evaluator.ToxicityEvaluator
 import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.evaluation.Evaluator
+import akka.javasdk.evaluation.WorkflowEvaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.agent.task.BacklogEntity
 import akka.javasdk.keyvalueentity.KeyValueEntity
@@ -243,7 +244,8 @@ private[javasdk] object ComponentLocator {
         ComponentType.View -> classOf[AnyRef],
         ComponentType.Agent -> classOf[Agent],
         ComponentType.AutonomousAgent -> classOf[AutonomousAgent],
-        ComponentType.Evaluator -> classOf[Evaluator])
+        ComponentType.Evaluator -> classOf[Evaluator],
+        ComponentType.WorkflowEvaluator -> classOf[WorkflowEvaluator[_]])
 
     // Alternative to but inspired by the stdlib SPI style of registering in META-INF/services
     // since we don't always have top supertypes and want to inject things into component constructors

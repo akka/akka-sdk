@@ -13,45 +13,16 @@ import java.util.Map;
 /**
  * INTERNAL API
  *
- * <p>Serialized messages of the workflow evaluator: the start command, the state envelope wrapping
- * the user state, and the evaluation outcome carried to the built-in record step.
- *
- * <p>PROTOTYPE NOTE: JSON shapes for now; the actual protocol between the runtime trigger
- * projection and the evaluator workflow is to be defined on the SPI (protobuf), see
- * https://github.com/lightbend/akka-runtime/issues/5332.
+ * <p>SDK-internal serialized shapes of the workflow evaluator: the persisted state envelope
+ * wrapping the user state, and the evaluation outcome carried as input to the built-in record step.
+ * Both are written and read only by the SDK — the start of an evaluation and the recording of its
+ * result cross the runtime boundary as structured types on the SPI ({@code SpiWorkflowEvaluator}).
  */
 @InternalApi
 public final class WorkflowEvaluatorProtocol {
 
   private WorkflowEvaluatorProtocol() {}
 
-  /**
-   * The command the runtime sends to start the evaluation. The evaluation id is the workflow id, so
-   * only the subject is carried. {@code flowId} is null for a direct agent interaction.
-   */
-  public record StartEvaluation(String flowId, String agentComponentId, String interactionId) {
-
-    public Subject toSubject() {
-      if (flowId != null)
-        return new Subject.FlowInteraction(flowId, agentComponentId, interactionId);
-      else return new Subject.AgentInteraction(agentComponentId, interactionId);
-    }
-
-    public static StartEvaluation fromSubject(Subject subject) {
-      return switch (subject) {
-        case Subject.FlowInteraction flow ->
-            new StartEvaluation(flow.flowId(), flow.agentComponentId(), flow.interactionId());
-        case Subject.AgentInteraction agent ->
-            new StartEvaluation(null, agent.agentComponentId(), agent.interactionId());
-      };
-    }
-  }
-
-  /**
-   * The persisted state of an evaluation: the subject (so the {@code EvaluationContext} survives
-   * recovery without the user copying it into their own state) and the user-defined state as nested
-   * serialized bytes. {@code userState} is null until the first {@code updateState}.
-   */
   public record StateEnvelope(
       String flowId,
       String agentComponentId,
@@ -59,18 +30,29 @@ public final class WorkflowEvaluatorProtocol {
       byte[] userState,
       String userStateContentType) {
 
-    public Subject toSubject() {
-      return new StartEvaluation(flowId, agentComponentId, interactionId).toSubject();
+    public Subject getSubject() {
+      if (flowId != null)
+        return new Subject.FlowInteraction(flowId, agentComponentId, interactionId);
+      else return new Subject.AgentInteraction(agentComponentId, interactionId);
     }
 
     public static StateEnvelope of(Subject subject, byte[] userState, String userStateContentType) {
-      var start = StartEvaluation.fromSubject(subject);
-      return new StateEnvelope(
-          start.flowId(),
-          start.agentComponentId(),
-          start.interactionId(),
-          userState,
-          userStateContentType);
+      return switch (subject) {
+        case Subject.FlowInteraction flow ->
+            new StateEnvelope(
+                flow.flowId(),
+                flow.agentComponentId(),
+                flow.interactionId(),
+                userState,
+                userStateContentType);
+        case Subject.AgentInteraction agent ->
+            new StateEnvelope(
+                null,
+                agent.agentComponentId(),
+                agent.interactionId(),
+                userState,
+                userStateContentType);
+      };
     }
   }
 

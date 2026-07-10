@@ -24,15 +24,17 @@ import akka.javasdk.impl.evaluation.WorkflowEvaluatorEffects.InconclusiveTransit
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorEffects.NoPersistence
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorEffects.StepTransition
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorEffects.UpdateState
+import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.EvaluationData
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.Outcome
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.StartEvaluation
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.StateEnvelope
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.workflow.WorkflowDescriptor
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiEntity
+import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
+import akka.runtime.sdk.spi.SpiWorkflowEvaluator
 import akka.util.ByteString
 import org.slf4j.LoggerFactory
 
@@ -43,13 +45,7 @@ import org.slf4j.LoggerFactory
 private[javasdk] object WorkflowEvaluatorImpl {
 
   /**
-   * Reserved command sent by the runtime's trigger projection to start the evaluation. The workflow id is the
-   * evaluation id, which makes the start idempotent for the at-least-once projection.
-   */
-  val OnEvaluationCommandName = "_on-evaluation"
-
-  /**
-   * Built-in final step: records the evaluation outcome with the runtime and deletes the instance. Also the failover
+   * Built-in final step: records the evaluation outcome with the runtime and deletes the instance. Also, the failover
    * target when a step exhausts its retries or the evaluation times out, so every run terminates with a recorded
    * outcome.
    */
@@ -59,14 +55,22 @@ private[javasdk] object WorkflowEvaluatorImpl {
     override def subject(): Subject = evaluationSubject
     override def evaluationId(): String = id
   }
+
+  private def toSdkSubject(subject: SpiEvaluator.Subject): Subject =
+    subject match {
+      case flow: SpiEvaluator.FlowInteraction =>
+        new Subject.FlowInteraction(flow.flowId, flow.agentComponentId, flow.interactionId)
+      case agent: SpiEvaluator.AgentInteraction =>
+        new Subject.AgentInteraction(agent.agentComponentId, agent.interactionId)
+    }
 }
 
 /**
  * INTERNAL API
  *
- * Adapts a user [[WorkflowEvaluator]] to the [[SpiWorkflow]] expected by the runtime. The evaluator is hosted as a
- * workflow — one instance per evaluation — with a built-in start command and a built-in final step that records the
- * outcome and deletes the instance.
+ * Adapts a user [[WorkflowEvaluator]] to the [[SpiWorkflowEvaluator]] expected by the runtime. The evaluator is hosted
+ * as a workflow — one instance per evaluation, started by the runtime with the structured trigger — with a built-in
+ * final step that records the outcome and deletes the instance.
  */
 @InternalApi
 private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]](
@@ -74,9 +78,10 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
     evaluatorClass: Class[E],
     stateClass: Class[S],
     factory: () => E,
+    recorder: SpiWorkflowEvaluator.EvaluationRecorder,
     serializer: Serializer,
     sdkExecutionContext: ExecutionContext)
-    extends SpiWorkflow {
+    extends SpiWorkflowEvaluator {
 
   import WorkflowEvaluatorImpl._
 
@@ -124,50 +129,47 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
       passivationDelay = None)
   }
 
+  override def handleEvaluationStart(
+      state: Option[SpiWorkflow.State],
+      trigger: SpiEvaluator.Trigger): Future[SpiWorkflow.CommandEffect] = {
+    val ack = serializer.toBytes(Done.getInstance())
+    if (state.exists(_.nonEmpty)) {
+      // at-least-once delivery from the trigger projection: ack the duplicate start so it can advance
+      Future.successful(new SpiWorkflow.ReadOnlyEffect(ack, SpiMetadata.empty))
+    } else {
+      val subject = toSdkSubject(trigger.subject)
+      Future {
+        val evaluator = factory()
+        val context = new EvaluationContextImpl(workflowId, subject)
+        evaluator._internalSetup(evaluator.emptyState(), context)
+        val effect = evaluator.onEvaluation(context)
+        effect match {
+          case EffectImpl(persistence, transition) =>
+            // the envelope is always persisted on start, even without a state update, so the
+            // subject survives recovery and a duplicate start is detected
+            val newUserState = persistence match {
+              case UpdateState(newState) => Some(newState)
+              case NoPersistence         => None
+            }
+            new SpiWorkflow.CommandTransitionalEffect(
+              envelopePersistence(subject, newUserState),
+              toSpiTransition(transition),
+              ack,
+              SpiMetadata.empty)
+        }
+      }
+    }
+  }
+
   override def handleCommand(
       userState: Option[SpiWorkflow.State],
       command: SpiEntity.Command): Future[SpiWorkflow.CommandEffect] =
-    command.name match {
-      case OnEvaluationCommandName =>
-        val ack = serializer.toBytes(Done.getInstance())
-        if (userState.exists(_.nonEmpty)) {
-          // duplicate start for an already running evaluation: ack so the trigger projection can advance
-          Future.successful(new SpiWorkflow.ReadOnlyEffect(ack, SpiMetadata.empty))
-        } else {
-          val payload = command.payload.getOrElse {
-            throw new IllegalArgumentException(s"Missing payload for [$OnEvaluationCommandName] command")
-          }
-          val start = serializer.fromBytes(classOf[StartEvaluation], payload)
-          val subject = start.toSubject
-          Future {
-            val evaluator = factory()
-            val context = new EvaluationContextImpl(workflowId, subject)
-            evaluator._internalSetup(evaluator.emptyState(), context)
-            val effect = evaluator.onEvaluation(context)
-            effect match {
-              case EffectImpl(persistence, transition) =>
-                // the envelope is always persisted on start, even without a state update, so the
-                // subject survives recovery and a duplicate start is detected
-                val newUserState = persistence match {
-                  case UpdateState(newState) => Some(newState)
-                  case NoPersistence         => None
-                }
-                new SpiWorkflow.CommandTransitionalEffect(
-                  envelopePersistence(subject, newUserState),
-                  toSpiTransition(transition),
-                  ack,
-                  SpiMetadata.empty)
-            }
-          }
-        }
-
-      case other =>
-        // command handling is built in; there are no user-defined command handlers
-        Future.failed(
-          new IllegalArgumentException(
-            s"Unknown command [$other] for WorkflowEvaluator [${evaluatorClass.getName}], " +
-            s"only [$OnEvaluationCommandName] is supported"))
-    }
+    // command handling is built in: the runtime starts the evaluation via handleEvaluationStart,
+    // there are no user-defined command handlers
+    Future.failed(
+      new IllegalArgumentException(
+        s"Unexpected command [${command.name}] for WorkflowEvaluator [${evaluatorClass.getName}], " +
+        "a workflow evaluator does not accept commands"))
 
   override def invokeStep(
       userState: Option[BytesPayload],
@@ -177,7 +179,7 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
     } else {
       val envelope = decodeEnvelope(userState).getOrElse {
         throw new IllegalStateException(
-          s"Evaluation [$workflowId] has no state for step [${stepCommand.stepName}], was it started via [$OnEvaluationCommandName]?")
+          s"Evaluation [$workflowId] has no state for step [${stepCommand.stepName}], was the evaluation started by the runtime?")
       }
       val stepMethod = stepMethods.getOrElse(
         stepCommand.stepName,
@@ -187,7 +189,7 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
 
       Future {
         val evaluator = factory()
-        val subject = envelope.toSubject
+        val subject = envelope.getSubject
         evaluator._internalSetup(decodeUserState(envelope), new EvaluationContextImpl(workflowId, subject))
         val effect =
           if (stepMethod.getParameterCount == 1) {
@@ -211,17 +213,29 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
       case Some(payload) => serializer.fromBytes(classOf[Outcome], payload)
       case None          => throw new IllegalStateException(s"Missing outcome input for [$RecordStepName] step")
     }
-    // TODO SPI: record the outcome with the runtime — EvaluationClient.recordResult(evaluationId, outcome),
-    // idempotent on the evaluation id since this step can be retried. Stubbed in the prototype.
-    log.info(
-      "Evaluation [{}] finished with [{}]{} (recording stubbed, not yet supported by the runtime SPI)",
-      workflowId,
-      outcome.kind(),
-      if (outcome.evaluations().isEmpty) "" else s", evaluations [${outcome.evaluations().asScala.mkString(", ")}]")
-
-    //TODO end or delete or a setting for that?
-    Future.successful(new SpiWorkflow.StepTransitionalEffect(SpiWorkflow.NoPersistence, SpiWorkflow.Delete))
+    // recording is idempotent on the evaluation id: this step is retried until it succeeds
+    recorder.recordResult(workflowId, toSpiResult(outcome)).map { _ =>
+      log.debug("Evaluation [{}] finished with [{}]", workflowId, outcome.kind())
+      //TODO end or delete or a setting for that?
+      new SpiWorkflow.StepTransitionalEffect(SpiWorkflow.NoPersistence, SpiWorkflow.Delete)
+    }
   }
+
+  private def toSpiResult(outcome: Outcome): SpiWorkflowEvaluator.Result =
+    outcome.kind() match {
+      case Outcome.Kind.COMPLETED =>
+        new SpiWorkflowEvaluator.CompletedResult(outcome.evaluations().asScala.toSeq.map(toSpiEvaluation))
+      case Outcome.Kind.INCONCLUSIVE => new SpiWorkflowEvaluator.InconclusiveResult(outcome.reason())
+      case Outcome.Kind.FAILED       => new SpiWorkflowEvaluator.FailedResult(outcome.reason())
+    }
+
+  private def toSpiEvaluation(data: EvaluationData): SpiEvaluator.Evaluation =
+    new SpiEvaluator.Evaluation(
+      data.passed(),
+      data.explanation(),
+      Option(data.score()).map(_.doubleValue()),
+      Option(data.label()),
+      data.attributes().asScala.toMap)
 
   private def invokeStepMethod(method: Method, evaluator: E, input: Option[Any]): WorkflowEvaluator.Effect =
     try {

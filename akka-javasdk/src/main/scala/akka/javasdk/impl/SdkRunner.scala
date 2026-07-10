@@ -177,6 +177,7 @@ import akka.runtime.sdk.spi.TimedActionDescriptor
 import akka.runtime.sdk.spi.UserFunctionError
 import akka.runtime.sdk.spi.ViewDescriptor
 import akka.runtime.sdk.spi.WorkflowDescriptor
+import akka.runtime.sdk.spi.WorkflowEvaluatorDescriptor
 import akka.runtime.sdk.spi.tracing.InMemorySpanExporter
 import akka.runtime.sdk.spi.{ LedgerClient => SpiLedgerClient }
 import akka.stream.Materializer
@@ -452,6 +453,7 @@ private object ComponentType {
   val Agent = "agent"
   val AutonomousAgent = "autonomous-agent"
   val Evaluator = "evaluator"
+  val WorkflowEvaluator = "workflow-evaluator"
 }
 
 /**
@@ -745,6 +747,7 @@ private final class Sdk(
   private var agentDescriptors = Vector.empty[AgentDescriptor]
   private var autonomousAgentDescriptors = Vector.empty[AutonomousAgentDescriptor]
   private var evaluatorDescriptors = Vector.empty[EvaluatorDescriptor]
+  private var workflowEvaluatorDescriptors = Vector.empty[WorkflowEvaluatorDescriptor]
   // Populated during scanning: componentId → (agentDefinition, spiTaskDefinitions)
   // Used by delegation wiring inside instanceFactory (called lazily after all agents registered)
   private var autonomousAgentDefinitionMap =
@@ -1196,31 +1199,29 @@ private final class Sdk(
         val stateType = Reflect.workflowEvaluatorStateType(clz).asInstanceOf[Class[Nothing]]
         serializer.registerTypeHints(stateType)
 
-        // TODO runtime SPI: register as an evaluator with a workflow execution kind — carrying the
-        // agent bindings (EvaluatorSettings.agentBindings) so the trigger projection starts it, and
-        // limiting the number of active instances for backpressure. For the prototype it is hosted
-        // as a plain workflow, driven only by the built-in start command.
-        workflowDescriptors :+=
-          new WorkflowDescriptor(
+        val workflowEvaluatorBindings = EvaluatorSettings.agentBindings(applicationConfig, componentId)
+
+        workflowEvaluatorDescriptors :+=
+          new WorkflowEvaluatorDescriptor(
             componentId,
             clz.getName,
-            readOnlyCommandNames = Set.empty,
+            name = Reflect.readComponentName(clz),
+            description = Reflect.readComponentDescription(clz),
+            bindings = workflowEvaluatorBindings,
             instanceFactory = { factoryContext =>
               val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
               new WorkflowEvaluatorImpl[Nothing, WorkflowEvaluator[Nothing]](
-                factoryContext.workflowId,
+                factoryContext.evaluationId,
                 evaluatorClass,
                 stateType,
                 () =>
                   wiredInstance("Workflow Evaluator", evaluatorClass)(
                     sideEffectingComponentInjects(None, callerSpiffe)),
+                factoryContext.recorder,
                 serializer,
                 sdkExecutionContext)
             },
-            name = Reflect.readComponentName(clz),
-            description = Reflect.readComponentDescription(clz),
-            provided = false,
-            protobufDescriptors = Nil)
+            provided = false)
 
       case clz if Reflect.isView(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
@@ -1318,6 +1319,7 @@ private final class Sdk(
         agentDescriptors ++
         autonomousAgentDescriptors ++
         evaluatorDescriptors ++
+        workflowEvaluatorDescriptors ++
         mcpEndpoints)
         .filterNot(isDisabled(combinedDisabledComponents))
 
