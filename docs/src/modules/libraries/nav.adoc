@@ -1,1 +1,1 @@
-* xref:index.adoc[Akka Libraries]
+* https://doc.akka.io/libraries/akka-core/current/typed/guide/index.html[Akka Libraries, window="new"]
