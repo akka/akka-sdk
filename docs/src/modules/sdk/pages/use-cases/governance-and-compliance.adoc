@@ -6,8 +6,6 @@ include::ROOT:partial$include.adoc[]
 
 Enforce runtime policies, sanitize personally identifiable information (PII), and build toward EU AI Act compliance with Akka's built-in governance capabilities. This pattern covers guardrails that validate agent inputs and outputs, sanitization pipelines that scrub sensitive data, and observability hooks for audit trails and compliance reporting.
 
-NOTE: *Status: Partial* -- This pattern guide describes the governance approach and available components. A dedicated governance-focused sample project is pending; a full code walkthrough will be added when that sample is available.
-
 == Overview
 
 === When to Use This Pattern
@@ -29,8 +27,6 @@ The following sample projects demonstrate aspects of this pattern:
 
 * https://github.com/akka-samples/medical-tagging-agent[medical-discharge-tagging,window="new"] -- human verification workflow for AI-generated medical classifications
 * https://github.com/akka-samples/transfer-workflow-compensation[transfer-workflow-compensation,window="new"] -- compensation logic demonstrating rollback and recovery controls
-
-NOTE: A dedicated governance-focused sample may be needed for a full end-to-end walkthrough of this pattern.
 
 == See Also
 

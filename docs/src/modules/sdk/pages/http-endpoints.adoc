@@ -511,4 +511,3 @@ include::example$doc-snippets/src/test/java/com/example/api/ExampleWebSocketTest
 - xref:reference:jwts.adoc[]
 - xref:operations:tls-certificates.adoc[]
 - xref:operations:services/invoke-service.adoc#_http_basic_authentication[HTTP Basic authentication]
-

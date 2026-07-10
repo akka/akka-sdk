@@ -13,28 +13,6 @@ A curated collection of Akka technical content beyond the SDK documentation.
 * link:{url-ext-reactive-principles}[The Reactive Principles, window="new"] — By Jonas Bonér et al. 8 principles and 6 patterns for cloud-native and edge-native design. Companion to the Reactive Manifesto.
 * **Reactive Design Patterns** (Manning) — By Roland Kuhn, Brian Hanafee, Jamie Allen. Patterns for building reactive systems.
 
-== Product Pages
-
-* link:{url-akka-platform}[Platform Overview, window="new"]
-* link:{url-akka-agents}[Akka Agents, window="new"]
-* link:{url-akka-orchestration}[Akka Orchestration, window="new"]
-* link:{url-akka-memory}[Akka Memory, window="new"]
-* link:{url-akka-streaming}[Akka Streaming, window="new"]
-* link:{url-akka-aao}[Automated Operations, window="new"]
-* link:{url-akka-how-it-works}[How Akka Works, window="new"]
-* link:{url-akka-pricing}[Pricing, window="new"]
-
-== Application Types
-
-* link:{url-akka-app-agentic-ai}[Agentic AI, window="new"]
-* link:{url-akka-app-event-sourced}[Event-Sourced, window="new"]
-* link:{url-akka-app-transactional}[Transactional, window="new"]
-* link:{url-akka-app-digital-twins}[Digital Twins, window="new"]
-* link:{url-akka-app-durable-execution}[Durable Execution, window="new"]
-* link:{url-akka-app-analytics}[Analytics, window="new"]
-* link:{url-akka-app-streaming}[Streaming, window="new"]
-* link:{url-akka-app-edge}[Edge, window="new"]
-
 == Blogs & Articles
 
 === Agentic AI Concepts
@@ -44,9 +22,6 @@ A curated collection of Akka technical content beyond the SDK documentation.
 * link:{url-blog-agentic-distributed-systems}[Agentic Systems Are Distributed Systems, window="new"]
 * link:{url-blog-event-sourcing-backbone}[Event Sourcing: The Backbone of Agentic AI, window="new"]
 * link:{url-blog-key-capabilities}[5 Key Capabilities for Agentic AI, window="new"]
-* link:{url-blog-experience-matters}[Why Experience Matters More Than Hype, window="new"]
-* link:{url-blog-framework-obstacles}[Beyond the Hype: AI Agent Framework Obstacles, window="new"]
-* link:{url-blog-frameworks-guide}[Agentic AI Frameworks: A 2026 Guide, window="new"]
 * link:{url-blog-trustworthy-ai}[Trustworthy AI with Akka, window="new"]
 * link:{url-blog-demystifying-ai}[Demystifying AI, LLMs, and RAG, window="new"]
 
@@ -68,11 +43,6 @@ A curated collection of Akka technical content beyond the SDK documentation.
 * link:{url-blog-orchestration}[Akka Orchestration: Guide, Moderate, and Control Agents, window="new"]
 * link:{url-blog-memory}[Akka Memory: Durable, In-Memory, and Sharded Data, window="new"]
 * link:{url-blog-streaming}[Akka Streaming: High-Performance Stream Processing, window="new"]
-
-=== Use Cases
-
-* link:{url-blog-agentic-use-cases}[21 Agentic AI Use Cases, window="new"]
-* link:{url-blog-financial-services}[Adopting Agentic AI for Financial Services, window="new"]
 
 == Demos & Videos
 
@@ -102,19 +72,6 @@ A curated collection of Akka technical content beyond the SDK documentation.
 * link:{url-blog-webinar-event-sourcing}[Mastering Event Sourcing, window="new"]
 * link:{url-blog-webinar-blueprint}[Blueprint for Agentic AI Services, window="new"]
 * link:{url-blog-webinar-certainty}[Creating Certainty in the Age of Agentic AI, window="new"]
-
-== Customer Stories
-
-* link:{url-story-swiggy}[Swiggy — 2x latency improvement in ML/AI platform, window="new"]
-* link:{url-story-manulife}[Manulife — Enterprise agentic AI for financial services, window="new"]
-* link:{url-story-llaama}[Llaama — AI-driven biopharma treatments, window="new"]
-* link:{url-story-mrcall}[MrCall — AI call center, thousands of simultaneous VoIP requests, window="new"]
-* link:{url-story-capital-one}[Capital One — Real-time auto loan decisioning, window="new"]
-* link:{url-story-doctolib}[Doctolib — 1M+ healthcare providers, resilient messaging, window="new"]
-* link:{url-story-verizon}[Verizon — Doubled performance on half hardware, window="new"]
-* link:{url-story-renault}[Renault — Digital twin platform for global manufacturing, window="new"]
-* link:{url-story-cern}[CERN — 2.5M signals per day for physics experiments, window="new"]
-* link:{url-story-all}[All Customer Stories, window="new"]
 
 == Benchmarks
 

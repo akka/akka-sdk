@@ -118,4 +118,3 @@ In tests you can access the sanitizer directly from the `getSanitizer` method in
 
 * xref:concepts:governance-and-the-runtime.adoc[] — How the Akka runtime enforces governance policies including sanitization, guardrails, and audit logging.
 * xref:sdk:agents/guardrails.adoc[] — Input and output guardrails that complement data sanitization for responsible AI.
-* {url-blog-trustworthy-ai}[Building Trustworthy AI^] — Background on the design principles behind Akka's governance capabilities.
