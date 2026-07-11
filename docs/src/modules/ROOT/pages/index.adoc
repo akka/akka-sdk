@@ -54,7 +54,6 @@ Learn xref:ROOT:what-is-akka.adoc[about what Akka provides] or find xref:ROOT:wh
 **Foundational topics** on how Akka services are designed and behave.
 
 * xref:concepts:ai-agents.adoc[AI agents]
-* xref:concepts:governance-and-the-runtime.adoc[Governance & the runtime]
 * xref:concepts:architecture-model.adoc[Architecture]
 * xref:concepts:distributed-systems.adoc[]
 * xref:concepts:multi-region.adoc[Multi-region operations]
@@ -95,7 +94,7 @@ Blogs, demos, webinars, customer stories, foundational works, training, and comm
 listed in the xref:ROOT:resources.adoc[Resources] section.
 
 [discrete]
-== xref:libraries:index.adoc[Akka Libraries]
+== https://doc.akka.io/libraries/akka-dependencies/current/overview.html[Akka Libraries]
 
 Libraries for building and running responsive applications, used in production for over a decade.
-Learn about xref:libraries:index.adoc[the Akka Libraries].
+Learn about https://doc.akka.io/libraries/akka-dependencies/current/overview.html[the Akka Libraries].

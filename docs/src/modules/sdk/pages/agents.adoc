@@ -177,5 +177,3 @@ The ability to reach into the rest of a distributed Akka application to _augment
 * xref:sdk:autonomous-agents.adoc[Autonomous Agents]
 * xref:sdk:agents/guardrails.adoc[Guardrails]
 * xref:sdk:agents/memory.adoc[Agent Memory]
-* link:{url-blog-agents}[Akka Agents deep-dive, window="new"]
-* link:{url-blog-mcp-a2a-acp}[MCP, A2A, ACP: What Does It All Mean?, window="new"]

@@ -1,8 +1,8 @@
-= Memory models
+= State model
 
 include::ROOT:partial$include.adoc[]
 
-Akka provides an in-memory, durable store for stateful data. Stateful data can be scoped to a single agent, or made available system-wide. Stateful data is persisted in an embedded event store that tracks incremental state changes, which enables recovery of system state (resilience) to its last known modification. State is automatically sharded and rebalanced across Akka nodes running in a cluster to support elastic scaling to terabytes of memory. State can also be replicated across regions for failover and disaster recovery.
+Akka provides an in-memory, durable store for stateful data. Stateful data can be scoped to a single agent, or made available system-wide. Stateful data is persisted in an embedded event store that tracks incremental state changes, which enables recovery of system state (resilience) to its last known modification. State is automatically sharded and rebalanced across Akka nodes running in a cluster to support elastic scaling. State can also be replicated across regions for failover and disaster recovery.
 
 Memory in Akka is structured around xref:reference:glossary.adoc#entity[entities]. An entity holds a particular slice of application state and evolves it over time according to a defined xref:reference:glossary.adoc#state_model[state model]. These state models determine how state is stored, updated, and replicated. This approach provides consistency and durability across the system, even in the face of failure. xref:sdk:agents.adoc[Agents], for example, manage their memory through entities, whether for short-lived context or persistent behavior.
 

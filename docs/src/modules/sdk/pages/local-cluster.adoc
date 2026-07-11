@@ -1,4 +1,4 @@
-= Running a local cluster
+= Run a local cluster
 
 include::ROOT:partial$include.adoc[]
 

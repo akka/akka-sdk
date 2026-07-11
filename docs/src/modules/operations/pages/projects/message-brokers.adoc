@@ -24,7 +24,3 @@ For running Akka services that integrate with a message broker locally, see xref
 == See also
 
 - xref:reference:cli/akka-cli/akka_projects_config.adoc#_see_also[`akka projects config` commands]
-- https://cloud.google.com/pubsub/docs/overview[Google Cloud Pub/Sub, window="new"]
-- https://www.confluent.io/confluent-cloud[Confluent Cloud, window="new"]
-- https://aws.amazon.com/msk/[Amazon MSK, window="new"]
-- https://aiven.io/kafka[Aiven for Apache Kafka, window="new"]

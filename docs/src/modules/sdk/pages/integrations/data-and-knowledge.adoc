@@ -40,4 +40,4 @@ Akka's Entity components (Event Sourced Entities, Key Value Entities) are in-mem
 
 * xref:sdk:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:sdk:key-value-entities.adoc[Key Value Entities]
-* xref:sdk:use-cases/rag-and-knowledge.adoc[RAG & knowledge use case]
+* xref:getting-started:ask-akka-agent/index.adoc[RAG chat tutorial]

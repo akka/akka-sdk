@@ -1,4 +1,5 @@
-= Developer best practices
+= Design considerations
+:page-aliases: concepts:saga-patterns.adoc
 
 include::ROOT:partial$include.adoc[]
 
@@ -6,7 +7,7 @@ include::ROOT:partial$include.adoc[]
 
 Akka is ideally suited for the creation of _Microservices_. Microservices generally follow the Unix philosophy of "Do one thing and do it well." Akka allows developers to build systems that follow https://principles.reactive.foundation/[the Reactive Principles, window="new"] without having to become distributed data or distributed computing experts. As a best practice, following the Reactive Principles in your design makes it easier to build distributed systems. https://akkademy.akka.io/learn/public/catalog/view/3[Akkademy, window="new"] offers free courses on Reactive Architecture.
 
-== Domain Driven Design
+== Domain-driven design
 
 [sidebar]
 Domain-driven design (DDD) is the concept that the structure and language of software code (class names, class methods, class variables) should match the business domain. For example, if a software processes loan applications, it might have classes such as LoanApplication and Customer, and methods such as AcceptOffer and Withdraw. &mdash; https://en.wikipedia.org/wiki/Domain-driven_design[Wikipedia, window="new"]
@@ -26,10 +27,6 @@ image::bounded-context.svg[Bounded Context]
 === Events first
 
 Defining your data structures first, and splitting them into bounded contexts, will also help you think about all the different interactions your data needs to have. These interactions, like `ItemAddedToShoppingCart` or `LightbulbTurnedOn` are the events that are persisted and processed in Akka. Defining your data structures first, makes it easier to think about which events are needed and where they fit into your design. These data structures and events will live in your domain model layer as described in xref:concepts:architecture-model.adoc[].
-
-=== Message migration
-
-Behind the scenes everything in Akka is ultimately message driven. Plan for the evolution of your messages. Commands and events use data structures that often must evolve over time. Fields get added, fields get removed, the meaning of fields may change. How do you handle this over time as your system grows and evolves? Akka will make this easier, but you are ultimately responsible for schema evolution. 
 
 == Right-sizing your services
 
@@ -78,7 +75,7 @@ When designing your entity state and the messages (commands and events) that flo
 | Strict limit for input parameters. Use an Entity ID reference for larger payloads.
 |===
 
-==== The 1 MB Replication Ceiling
+==== The 1 MB replication ceiling
 While an entity can technically store a state or snapshot up to **10 MB**, any state change or event exceeding **1 MB** will fail to replicate across regions. 
 
 [IMPORTANT]
@@ -86,7 +83,7 @@ While an entity can technically store a state or snapshot up to **10 MB**, any s
 If an entity stores state or events larger than 1 MB, it becomes "isolated." It cannot be synchronized to other regions, nor can it be consumed by other services via eventing. 
 ====
 
-==== Performance Recommendations
+==== Performance recommendations
 * **Entity Latency & Throughput**: For optimal performance, aim to keep individual requests and responses **targeting** entities below **500 KB**. 
 * **Large Assets**: If you need to associate large assets (like images or large documents) with an entity, store the asset in an external blob store and keep only the reference (URL/ID) in the entity state.
 
@@ -295,3 +292,22 @@ Keep in mind that using collection types not supported by the Jackson serializat
  - Memory and storage requirements for keeping command IDs.
  - Performance consideration for effective data structure for command IDs.
  - Custom serialization for non-standard collection types.
+
+[#saga-patterns]
+== Saga patterns
+
+Saga patterns manage long-running business processes in distributed systems by dividing them into a series of transactions. Each transaction either completes or triggers compensating actions if something goes wrong. There are two approaches, orchestrator-based and choreography-based; both keep the system consistent and differ only in how coordination is handled.
+
+[cols="1,1", options="header"]
+|===
+| Orchestrator pattern
+| Choreography pattern
+
+| A central controller coordinates the process, managing the sequence of steps and the compensating actions on failure. Implement it with the xref:sdk:workflows.adoc[Workflow] component, which defines each step and manages retries, timeouts, and compensation.
+| Each service listens for events and acts independently, emitting an event that triggers the next service and handling its own rollback on failure. Implement it by combining xref:sdk:event-sourced-entities.adoc[Entities] and xref:sdk:consuming-producing.adoc[Consumers] that produce and react to events.
+
+| Example: https://github.com/akka-samples/transfer-workflow-orchestration[Funds transfer workflow, window="new"]
+| Example: https://github.com/akka-samples/choreography-saga-quickstart[User registration service, window="new"]
+|===
+
+Use *orchestration* when steps are tightly coordinated and you need central visibility, consistent retry and compensation, and clear state tracking. Use *choreography* when services are autonomous, you prefer low coupling and high scalability, and eventual consistency is acceptable. You can combine the two: an orchestrator manages the main flow while individual services use choreography for local side effects.

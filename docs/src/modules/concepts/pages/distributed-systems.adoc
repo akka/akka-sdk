@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Modern distributed systems—whether agentic AI, microservices applications, or edge computing—demand more than just scalable infrastructure. They require systems that are resilient under stress, responsive under load, elastic with demand, and maintainable at scale. Akka is built from the ground up on proven battle-tested principles of distributed computing, reflecting more than a decade-long commitment to applying architectural discipline to the nondeterminism and chaos of concurrency, distribution, and failure.
+Modern distributed systems—whether agentic AI, microservices applications, or edge computing—demand more than just scalable infrastructure. They require systems that are resilient under stress, responsive under load, elastic with demand, and maintainable at scale. Akka is built on proven principles of distributed computing, applying architectural discipline to the nondeterminism and chaos of concurrency, distribution, and failure.
 
 NOTE: Akka’s approach is to make the _inherent complexity_ of the problem space—the _nondeterminism_ of distributed systems and _stochastic_ nature of LLMs—first-class in the programming model, allowing it to be managed and kept under control as the system grows over time.
 
@@ -58,7 +58,7 @@ Akka embodies these principles as concrete implementation guidelines. Every feat
 
 == Grounded in distributed systems patterns and principles
 
-The foundation of Akka is detailed in the https://content.akka.io/guide/principles-and-patterns-for-distributed-application-architecture[O'Reilly Technical Guide: Principles and Patterns for Distributed Application Architecture] (authored by Akka CTO and founder Jonas Bonér). Psst - get a free copy by clicking the link! This guide outlines architectural patterns that are essential for building robust systems, including how to leverage:
+The foundation of Akka is detailed in the https://content.akka.io/guide/principles-and-patterns-for-distributed-application-architecture[O'Reilly Technical Guide: Principles and Patterns for Distributed Application Architecture] (authored by Akka CTO and founder Jonas Bonér). This guide outlines architectural patterns that are essential for building robust systems, including how to leverage:
 
 - Event sourcing and CQRS for reliable state management and auditability.
 - Event-driven communication, coordination, and integration. 
@@ -69,7 +69,7 @@ The foundation of Akka is detailed in the https://content.akka.io/guide/principl
 - Failure signaling and supervision, allowing systems to self-heal and degrade gracefully.
 - Automatic and transparent self-replication of agents and services for failover, redundancy, and scale. 
 
-These constructs are operationalized in Akka’s runtime through xref:sdk:agents.adoc[Agents], xref:sdk:event-sourced-entities.adoc[Entities], xref:sdk:views.adoc[Views], xref:sdk:http-endpoints.adoc[Endpoints], xref:sdk:workflows.adoc[Workflows], and xref:sdk:consuming-producing.adoc[Consumers] backed by actors, event-sourced persistence, multi-region replication, durable streaming real-time projections, and sharded clusters—all battle-tested in production systems across industries for over a decade, providing a tuned and proven runtime for enterprise-grade services.
+These constructs are operationalized in Akka’s runtime through xref:sdk:agents.adoc[Agents], xref:sdk:event-sourced-entities.adoc[Entities], xref:sdk:views.adoc[Views], xref:sdk:http-endpoints.adoc[Endpoints], xref:sdk:workflows.adoc[Workflows], and xref:sdk:consuming-producing.adoc[Consumers] backed by actors, event-sourced persistence, multi-region replication, durable streaming real-time projections, and sharded clusters.
 
 == Designed for multi-agent AI 
 
@@ -85,8 +85,8 @@ The demands of multi-agent AI systems—which involve large numbers of autonomou
 - Loose coupling and evolvability, aided by schema-versioned messages and contract-first APIs.
 - Multi-region replication based on CRDTs for collaborative knowledge sharing and eventual consistency without global locking.
 
-== Why It Matters
+== Why it matters
 
-Building agentic AI systems—or modern cloud-native microservices—on unstable foundations leads to brittle architectures that fail under real-world conditions. Akka mitigates this risk by enforcing principles and patterns anticipating failure, load, inconsistency, and change.
+Building agentic AI systems—or modern cloud-native microservices—on unstable foundations can lead to brittle architectures that fail under real-world conditions. Akka addresses this by applying principles and patterns that anticipate failure, load, inconsistency, and change.
 
-Whether deploying thousands of autonomous AI agents or orchestrating business-critical microservices, Akka gives you the architectural clarity and operational reliability to build systems that thrive in the real world, not just in theory.
+Whether you deploy many autonomous AI agents or orchestrate business-critical microservices, these foundations are intended to provide architectural clarity and operational reliability under real-world conditions.
