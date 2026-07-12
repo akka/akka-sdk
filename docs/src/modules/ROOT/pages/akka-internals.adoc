@@ -17,7 +17,7 @@ The platform is organized into four layers:
 * *Cloud Stack* — the infrastructure behind xref:ROOT:akka-automated-operations.adoc[Automated Operations]: active-active HA/DR, runtime patching, rolling updates, elastic scaling, and shared compute.
 * *Harnesses* — the tooling to build, test, and evaluate agentic AI: the dev sandbox, operations console, TestKit, EvalKit, xref:sdk:spec-driven-development.adoc[spec-driven development], infosec controls, and cost management.
 
-This page looks under the hood at how those layers execute your application. The defining idea is _unified data and logic_. Instead of splitting an application into stateless services on one side and databases on the other, Akka collocates state with the code that owns it. Each component encapsulates its own state and behavior, so the application itself becomes the system of record. That collocation removes a class of coordination, serialization, and latency overhead that dominates traditional service-plus-database designs.
+This page looks under the hood at how those layers execute your application. The defining idea is _unified data and logic_. Instead of splitting an application into stateless services on one side and databases on the other, Akka colocates state with the code that owns it. Each component encapsulates its own state and behavior, so the application itself becomes the system of record. That colocation removes a class of coordination, serialization, and latency overhead that dominates traditional service-plus-database designs.
 
 == Execution patterns
 
