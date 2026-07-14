@@ -162,15 +162,15 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
 
 @InternalApi private[javasdk] object ClassifierProvider {
 
-  private def toClassification(r: SpiClassifier.Result): Classification =
+  private def toClassification(r: SpiClassifier.Classification): Classification =
     new Classification(
       r.score.map(Double.box).toJava,
       r.label.toJava,
       r.confidence.map(Double.box).toJava,
       r.attributes.asJava)
 
-  private def fromClassification(c: Classification): SpiClassifier.Result =
-    new SpiClassifier.Result(
+  private def fromClassification(c: Classification): SpiClassifier.Classification =
+    new SpiClassifier.Classification(
       c.score.toScala.map(Double.unbox),
       c.label.toScala,
       c.confidence.toScala.map(Double.unbox),
@@ -184,7 +184,7 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
    * per-call context parameter, so the content's `telemetryContext` isn't surfaced to the user's classifier.
    */
   private final class SpiClassifierAdapter(resolve: () => Classifier) extends SpiClassifier {
-    override def classify(content: SpiClassifier.Content): Future[SpiClassifier.Result] =
+    override def classify(content: SpiClassifier.Content): Future[SpiClassifier.Classification] =
       content match {
         case text: SpiClassifier.TextContent =>
           resolve().classifyAsync(text.text).asScala.map(fromClassification)(ExecutionContext.parasitic)

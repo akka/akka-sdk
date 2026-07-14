@@ -50,9 +50,22 @@ class ClassifierSettingsSpec extends AnyWordSpec with Matchers {
           threshold = 0.5
         }
         """)
-      intercept[com.typesafe.config.ConfigException] {
+      val ex = intercept[IllegalArgumentException] {
         ClassifierSettings(faulty)
       }
+      ex.getMessage should include("no class")
+      ex.getMessage should include("class")
+    }
+
+    "reject a classifier entry that is not a config object" in {
+      val faulty = ConfigFactory.parseString("""
+        "not an object" = 42
+        """)
+      val ex = intercept[IllegalArgumentException] {
+        ClassifierSettings(faulty)
+      }
+      ex.getMessage should include("not an object")
+      ex.getMessage should include("config object")
     }
   }
 }

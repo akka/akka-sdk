@@ -16,8 +16,11 @@ import com.typesafe.config.ConfigObject
 @InternalApi private[javasdk] object ClassifierSettings {
   def apply(config: Config): ClassifierSettings = {
     val configuredClassifiers =
-      config.root.asScala.iterator.collect { case (key, value: ConfigObject) =>
-        ConfiguredClassifier(key, value.toConfig)
+      config.root.asScala.iterator.map {
+        case (key, value: ConfigObject) =>
+          ConfiguredClassifier(key, value.toConfig)
+        case (key, value) =>
+          throw new IllegalArgumentException(s"Classifier [$key] must be a config object, but was [${value.valueType}]")
       }.toSeq
     new ClassifierSettings(configuredClassifiers)
   }
@@ -32,8 +35,11 @@ import com.typesafe.config.ConfigObject
  * INTERNAL API
  */
 @InternalApi private[javasdk] object ConfiguredClassifier {
-  def apply(name: String, config: Config): ConfiguredClassifier =
+  def apply(name: String, config: Config): ConfiguredClassifier = {
+    if (!config.hasPath("class"))
+      throw new IllegalArgumentException(s"Classifier [$name] must define [class]")
     new ConfiguredClassifier(name = name, implementationClass = config.getString("class"), config = config)
+  }
 }
 
 /**

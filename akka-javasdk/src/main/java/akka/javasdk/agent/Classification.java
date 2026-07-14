@@ -22,6 +22,10 @@ public record Classification(
     Optional<Double> confidence,
     Map<String, String> attributes) {
 
+  public Classification {
+    attributes = Map.copyOf(attributes); // defensive, unmodifiable copy
+  }
+
   /** Creates a {@link Classification} with only a score. */
   public static Classification score(double score) {
     return new Classification(Optional.of(score), Optional.empty(), Optional.empty(), Map.of());

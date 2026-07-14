@@ -117,7 +117,7 @@ object ClassifierProviderSpec {
 
     def register(configured: Seq[SpiConfiguredClassifier]): Unit = byName = configured.map(c => c.name -> c).toMap
 
-    override def classify(name: String, content: SpiClassifier.Content): Future[SpiClassifier.Result] =
+    override def classify(name: String, content: SpiClassifier.Content): Future[SpiClassifier.Classification] =
       byName.get(name) match {
         case Some(c) => Future(c.instance.classify(content))(ExecutionContext.parasitic).flatten
         case None    => Future.failed(new IllegalArgumentException(s"No classifier registered with name [$name]"))
