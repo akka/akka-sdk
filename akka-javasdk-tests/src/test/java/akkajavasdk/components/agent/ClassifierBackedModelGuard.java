@@ -17,9 +17,8 @@ import akka.javasdk.agent.ModelGuardrail;
  * rather than a string literal, so the guardrail-to-classifier binding can be re-pointed at
  * deployment time without rebuilding -- the canonical pattern for governance-owned names.
  *
- * <p>decide(...) is still synchronous (a known limitation, see ToolGuardrail's FIXME), so this uses
- * the blocking {@link ClassifierClient#classify}, which itself completes asynchronously, exercising
- * that combination.
+ * <p>decide(...) is synchronous, so this uses the blocking {@link ClassifierClient#classify}, which
+ * itself completes asynchronously, exercising that combination.
  */
 public class ClassifierBackedModelGuard implements ModelGuardrail {
   private final ClassifierClient classifierClient;

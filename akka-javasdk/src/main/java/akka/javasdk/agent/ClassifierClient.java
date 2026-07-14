@@ -12,10 +12,6 @@ import java.util.concurrent.CompletionStage;
  *
  * <p>Can be injected in agents, guardrails, evaluators, and application code — including into
  * another classifier's constructor, to compose an ensemble out of several configured classifiers.
- * Unlike the classifiers themselves, which the user implements, the client is how they are
- * <em>called</em>: it never hands back a {@link Classifier} instance, only classifies through one
- * by name, the same way the rest of the SDK talks to a component through a client rather than
- * returning the component.
  *
  * <p>Not for user extension, implementation provided by the SDK.
  */

@@ -97,11 +97,9 @@ object ClassifierProviderSpec {
       CompletableFuture.completedFuture(Classification.label(s"dual:$input"))
   }
 
-  // Test-only stand-in for the runtime's classifier dispatch (akka-runtime's
-  // RuntimeClassifierClient + Classifier wrapper + EmbeddedSdkDispatch.wrapClassifier): looks a
-  // registered classifier up by name and invokes it, wrapping the call in Future(...).flatten so a
-  // synchronous throw becomes a failed Future -- exactly the normalization the real runtime
-  // provides. The SDK side itself does not double-translate.
+  // Test-only stand-in for the runtime's classifier dispatch: looks a registered classifier up by
+  // name and invokes it, wrapping the call in Future(...).flatten so a synchronous throw becomes a
+  // failed Future, as the runtime does.
   final class LoopbackSpiClassifierClient extends SpiClassifierClient {
     @volatile private var byName: Map[String, SpiConfiguredClassifier] = Map.empty
 
@@ -114,11 +112,9 @@ object ClassifierProviderSpec {
       }
   }
 
-  // Mirrors Sdk.wiredInstance's unwrapping of InvocationTargetException, so a classifier
-  // constructor's own exceptions (e.g. missing config, cyclic dependency) surface as themselves
-  // rather than wrapped -- matching production wiring. Does NOT mirror wiredInstance's
-  // single-public-constructor requirement or general dependency injection; those live in
-  // Sdk.wireClassifier and are out of this spec's reach.
+  // Simplified stand-in for Sdk.wiredInstance: unwraps InvocationTargetException so a classifier
+  // constructor's own exceptions (e.g. missing config) surface as themselves. Does not do the
+  // dependency injection or single-public-constructor enforcement that production wiring adds.
   private def wireClassifier(clz: Class[Classifier], context: ClassifierContext): Classifier =
     try {
       try clz.getConstructor(classOf[ClassifierContext]).newInstance(context)

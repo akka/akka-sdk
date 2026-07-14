@@ -34,20 +34,14 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
  * per-agent/per-boundary selection here -- just construction, validation, and a [[ClassifierClient]] that classifies
  * through them by name.
  *
- * The [[ClassifierClient]] never returns a [[Classifier]] instance -- it exposes `classify(name, input)`, delegating
- * through the runtime's [[SpiClassifierClient]] -- so, like the rest of the SDK, callers talk to a classifier through a
- * client rather than holding a reference to it. An ensemble composes by having a [[ClassifierClient]] injected into its
- * constructor and calling other classifiers by name.
+ * The [[ClassifierClient]] exposes `classify(name, input)` rather than returning a [[Classifier]] instance. An ensemble
+ * composes by having a [[ClassifierClient]] injected into its constructor and calling other classifiers by name.
+ * Construction does not resolve sibling instances, so it cannot form a dependency graph: each classifier is built once
+ * and memoized.
  *
- * Because composition no longer resolves sibling instances at construction time, construction cannot form a dependency
- * graph, and there is no construction-time cycle to guard against: each classifier is built once and memoized. A cycle
- * is now only possible at invocation (A calls B calls A), which would need call-context propagation to detect -- a
- * follow-up, ideally with the chain carried on [[SpiClassifier.Content]].
- *
- * Invocation delegates through the runtime's [[SpiClassifierClient]], not a local call. The runtime is the single choke
- * point for observability, context propagation, and ledger recording; a thrown exception surfaces as a failed
- * `CompletionStage` because the runtime's own dispatch already normalizes synchronous throws into a failed `Future`
- * -- this class deliberately does not duplicate that translation.
+ * Invocation delegates through the runtime's [[SpiClassifierClient]], the single choke point for observability, context
+ * propagation, and ledger recording. A synchronous throw from a classifier surfaces as a failed `CompletionStage`,
+ * since the runtime's dispatch normalizes it into a failed `Future`.
  */
 @InternalApi private[javasdk] final class ClassifierProvider(
     system: ActorSystem[_],
@@ -67,9 +61,8 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
   private val cache = mutable.Map.empty[String, Classifier]
 
   /**
-   * The client handed out where no per-call `telemetryContext` is available yet -- to a guardrail's `GuardrailContext`,
-   * to another classifier's `ClassifierContext` for ensemble composition, and via the testkit. Known v1 gap: those
-   * classifications ride a root OTel context rather than the caller's (#5383).
+   * The client for call sites with no per-call `telemetryContext` -- a guardrail's `GuardrailContext`, another
+   * classifier's `ClassifierContext`, and the testkit. Its invocations carry a root OTel context.
    */
   val client: ClassifierClient = clientFor(TelemetryContext.root())
 
@@ -130,12 +123,10 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
   /**
    * The classifiers to register with the runtime, so [[SpiClassifierClient]] calls have something to invoke.
    *
-   * Deliberately does not call `getOrCreate` here: this is built while assembling `SpiComponents`, which the runtime
-   * handshake requires synchronously, before `preStart` runs `validate()` (see `SdkRunner`'s `validateClassifiers`)
-   * -- i.e. before a user `DependencyProvider` may exist yet. Each adapter instead resolves its classifier lazily, on
-   * first `classify(...)` call, which is guaranteed to be after `preStart` completes (nothing can call `classify()`
-   * before the service has started); `validate()` still forces and caches every instance eagerly at that point, so bad
-   * config/classes still fail at startup, just from `preStart` rather than from this constructor.
+   * Each adapter resolves its classifier lazily, on first `classify(...)` call, rather than here: this runs while
+   * assembling `SpiComponents` (required synchronously for the runtime handshake), before `preStart` runs `validate()`
+   * and before a user `DependencyProvider` exists. `validate()` forces and caches every instance at startup, so bad
+   * config or classes fail there.
    */
   def spiConfiguredClassifiers: Seq[SpiConfiguredClassifier] =
     configuredClassifiers.map { c =>
@@ -164,11 +155,9 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
       c.attributes.asScala.toMap)
 
   /**
-   * Wraps a user classifier so the runtime can invoke it once registered. `resolve` is called on every invocation
-   * rather than once at adapter-construction time, so registration (`spiConfiguredClassifiers`) can happen before the
-   * classifier itself is safe to construct (see the scaladoc there); `getOrCreate` memoizes, so this is cheap after the
-   * first real resolution. Only [[SpiClassifier.TextContent]] exists in v1; the public `classify(String)` has no
-   * per-call context parameter, so the content's `telemetryContext` isn't surfaced to the user's classifier.
+   * Wraps a user classifier so the runtime can invoke it once registered. `resolve` runs on every invocation rather
+   * than at construction, so registration (`spiConfiguredClassifiers`) can happen before the classifier is safe to
+   * construct; `getOrCreate` memoizes, so it is cheap after the first resolution.
    */
   private final class SpiClassifierAdapter(resolve: () => Classifier) extends SpiClassifier {
     override def classify(content: SpiClassifier.Content): Future[SpiClassifier.Classification] =
