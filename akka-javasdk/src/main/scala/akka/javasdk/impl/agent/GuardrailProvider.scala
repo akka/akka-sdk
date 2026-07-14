@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.agent
 
+import java.util.concurrent.CompletionStage
+
 import scala.annotation.nowarn
 import scala.concurrent.Future
 import scala.util.Failure
@@ -12,7 +14,7 @@ import scala.util.control.NonFatal
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Tracing
-import akka.javasdk.agent.Classifier
+import akka.javasdk.agent.Classification
 import akka.javasdk.agent.ClassifierClient
 import akka.javasdk.agent.Decision
 import akka.javasdk.agent.Decision.Allow
@@ -209,10 +211,12 @@ import io.opentelemetry.context.{ Context => OtelContext }
   private val ToolSideUseFor: Set[UseFor] = Set(UseFor.BeforeToolCall)
   private val ModelSideUseFor: Set[UseFor] = Set(UseFor.ModelRequest, UseFor.ModelResponse)
 
-  // Default classifierClient for call sites (and tests) that don't supply one; any lookup fails
+  // Default classifierClient for call sites (and tests) that don't supply one; any call fails
   // descriptively instead of silently returning something.
   private val NoClassifiersConfigured: ClassifierClient = new ClassifierClient {
-    override def classifier(name: String): Classifier =
+    override def classify(name: String, input: String): Classification =
+      throw new IllegalArgumentException(s"No classifier configured with name [$name] (no ClassifierClient available)")
+    override def classifyAsync(name: String, input: String): CompletionStage[Classification] =
       throw new IllegalArgumentException(s"No classifier configured with name [$name] (no ClassifierClient available)")
   }
 }

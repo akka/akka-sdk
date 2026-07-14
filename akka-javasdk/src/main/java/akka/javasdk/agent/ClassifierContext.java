@@ -19,8 +19,9 @@ public interface ClassifierContext {
   Config config();
 
   /**
-   * A client for looking up other configured classifiers, for composing e.g. an ensemble classifier
-   * out of several underlying ones.
+   * A client for invoking other configured classifiers by name, for composing e.g. an ensemble
+   * classifier out of several underlying ones. Equivalent to injecting a {@link ClassifierClient}
+   * directly into the constructor, which is the preferred style.
    */
   ClassifierClient classifierClient();
 }

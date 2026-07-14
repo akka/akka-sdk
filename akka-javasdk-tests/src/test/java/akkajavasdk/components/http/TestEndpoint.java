@@ -79,11 +79,7 @@ public class TestEndpoint extends AbstractHttpEndpoint {
 
   @Get("/classify/{text}")
   public String classify(String text) {
-    return classifierClient
-        .classifier("toxicity-test-classifier")
-        .classify(text)
-        .label()
-        .orElse("no label");
+    return classifierClient.classify("toxicity-test-classifier", text).label().orElse("no label");
   }
 
   public record BigDecimalRequest(BigDecimal value) {}

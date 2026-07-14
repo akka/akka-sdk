@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.agent;
 
-import akka.javasdk.agent.Classifier;
+import akka.javasdk.agent.ClassifierClient;
 import akka.javasdk.agent.Decision;
 import akka.javasdk.agent.GuardrailContext;
 import akka.javasdk.agent.ModelGuardrail;
@@ -18,21 +18,22 @@ import akka.javasdk.agent.ModelGuardrail;
  * deployment time without rebuilding -- the canonical pattern for governance-owned names.
  *
  * <p>decide(...) is still synchronous (a known limitation, see ToolGuardrail's FIXME), so this uses
- * the blocking {@link Classifier#classify}, which itself completes asynchronously, exercising that
- * combination.
+ * the blocking {@link ClassifierClient#classify}, which itself completes asynchronously, exercising
+ * that combination.
  */
 public class ClassifierBackedModelGuard implements ModelGuardrail {
-  private final Classifier classifier;
+  private final ClassifierClient classifierClient;
+  private final String classifierName;
 
   public ClassifierBackedModelGuard(GuardrailContext context) {
-    this.classifier =
-        context.classifierClient().classifier(context.config().getString("classifier"));
+    this.classifierClient = context.classifierClient();
+    this.classifierName = context.config().getString("classifier");
   }
 
   @Override
   public Decision decide(CallContext ctx) {
     try {
-      var classification = classifier.classify(ctx.text());
+      var classification = classifierClient.classify(classifierName, ctx.text());
       if (classification.label().map(l -> l.equals("toxic")).orElse(false)) {
         return new Decision.Deny("blocked by classifier: " + classification.label().get());
       }

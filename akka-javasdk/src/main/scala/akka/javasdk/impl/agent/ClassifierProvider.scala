@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.agent
 
+import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
 
 import scala.collection.mutable
@@ -19,6 +20,7 @@ import akka.javasdk.agent.Classification
 import akka.javasdk.agent.Classifier
 import akka.javasdk.agent.ClassifierClient
 import akka.javasdk.agent.ClassifierContext
+import akka.javasdk.impl.ErrorHandling
 import akka.runtime.sdk.spi.SpiClassifier
 import akka.runtime.sdk.spi.SpiClassifierClient
 import akka.runtime.sdk.spi.SpiConfiguredClassifier
@@ -29,19 +31,21 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
  * INTERNAL API
  *
  * Classifiers are looked up by name (never dispatched by the runtime), so unlike [[GuardrailProvider]] there's no
- * per-agent/per-boundary selection here -- just construction, validation, and a [[ClassifierClient]] handing out
- * runtime-backed handles by name.
+ * per-agent/per-boundary selection here -- just construction, validation, and a [[ClassifierClient]] that classifies
+ * through them by name.
  *
- * Construction (via `wireClassifier`, routed through the SDK's general `wiredInstance` DI mechanism so any component
- * dependency -- not just [[ClassifierContext]] -- can be injected; the class must have a single public constructor, per
- * the component convention `wiredInstance` enforces) is lazy and memoized, guarded against cycles: a classifier's
- * constructor may pull in another configured classifier (through
- * [[akka.javasdk.agent.ClassifierContext.classifierClient]]) to build an ensemble, and resolving such a dependency
- * chain that loops back on itself fails with a clear error rather than a `StackOverflowError`.
+ * The [[ClassifierClient]] never returns a [[Classifier]] instance -- it exposes `classify(name, input)`, delegating
+ * through the runtime's [[SpiClassifierClient]] -- so, like the rest of the SDK, callers talk to a classifier through a
+ * client rather than holding a reference to it. An ensemble composes by having a [[ClassifierClient]] injected into its
+ * constructor and calling other classifiers by name.
  *
- * Invocation is different from construction: every `classify(...)` call -- direct, from a guardrail, or from ensemble
- * composition -- delegates through the runtime's [[SpiClassifierClient]], not a local call. The runtime is the single
- * choke point for observability, context propagation, and ledger recording; a thrown exception surfaces as a failed
+ * Because composition no longer resolves sibling instances at construction time, construction cannot form a dependency
+ * graph, and there is no construction-time cycle to guard against: each classifier is built once and memoized. A cycle
+ * is now only possible at invocation (A calls B calls A), which would need call-context propagation to detect -- a
+ * follow-up, ideally with the chain carried on [[SpiClassifier.Content]].
+ *
+ * Invocation delegates through the runtime's [[SpiClassifierClient]], not a local call. The runtime is the single choke
+ * point for observability, context propagation, and ledger recording; a thrown exception surfaces as a failed
  * `CompletionStage` because the runtime's own dispatch already normalizes synchronous throws into a failed `Future`
  * -- this class deliberately does not duplicate that translation.
  */
@@ -58,64 +62,47 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
   private lazy val byName: Map[String, ConfiguredClassifier] =
     configuredClassifiers.map(c => c.name -> c).toMap
 
-  // Guarded by this provider's monitor. Construction happens once per name (at validate() time,
-  // or lazily on first lookup), so contention is not a concern; the monitor is reentrant, which is
-  // what allows a classifier's own construction to recursively resolve another one by name.
+  // Guarded by this provider's monitor. Each classifier is constructed once (at validate() time, or
+  // lazily on first invocation via the SPI adapter) and memoized.
   private val cache = mutable.Map.empty[String, Classifier]
-  private val inProgress = mutable.LinkedHashSet.empty[String]
 
   /**
-   * The client handed out at construction time -- to a guardrail's `GuardrailContext`, to another classifier's
-   * `ClassifierContext` for ensemble composition, and via the testkit -- where no per-call `telemetryContext` is
-   * available yet. Known v1 gap: those classifications ride a root OTel context rather than the caller's (#5383).
+   * The client handed out where no per-call `telemetryContext` is available yet -- to a guardrail's `GuardrailContext`,
+   * to another classifier's `ClassifierContext` for ensemble composition, and via the testkit. Known v1 gap: those
+   * classifications ride a root OTel context rather than the caller's (#5383).
    */
   val client: ClassifierClient = clientFor(TelemetryContext.root())
 
   /** A `ClassifierClient` whose invocations carry `telemetryContext` -- one per component injection. */
   def clientFor(telemetryContext: TelemetryContext): ClassifierClient = new ClassifierClient {
-    private val handles = mutable.Map.empty[String, Classifier]
-
-    override def classifier(name: String): Classifier = {
-      // Construct (validating existence and detecting cycles eagerly) before taking this client's
-      // monitor: construction can recurse into another client's classifier(...) (ensemble
-      // constructors), which nests provider-monitor -> client-monitor -- so this lookup must not
-      // nest them in the opposite order.
-      getOrCreate(name)
-      synchronized {
-        handles.getOrElseUpdate(
-          name,
-          new Classifier {
-            override def classifyAsync(input: String): CompletionStage[Classification] =
-              runtimeClassifierClient
-                .classify(name, new SpiClassifier.TextContent(input, telemetryContext))
-                .map(ClassifierProvider.toClassification)(ExecutionContext.parasitic)
-                .asJava
-          })
-      }
+    override def classifyAsync(name: String, input: String): CompletionStage[Classification] = {
+      requireConfigured(name)
+      runtimeClassifierClient
+        .classify(name, new SpiClassifier.TextContent(input, telemetryContext))
+        .map(ClassifierProvider.toClassification)(ExecutionContext.parasitic)
+        .asJava
     }
+
+    override def classify(name: String, input: String): Classification =
+      try classifyAsync(name, input).toCompletableFuture.join()
+      catch {
+        case e: CompletionException => throw ErrorHandling.unwrapCompletionException(e)
+      }
   }
+
+  private def requireConfigured(name: String): Unit =
+    if (!byName.contains(name))
+      throw new IllegalArgumentException(
+        s"No classifier configured with name [$name]. Configured classifiers: [${byName.keys.mkString(", ")}]")
 
   private def getOrCreate(name: String): Classifier = synchronized {
     cache.get(name) match {
       case Some(instance) => instance
       case None =>
-        if (inProgress.contains(name))
-          throw new IllegalStateException(
-            s"Cyclic classifier dependency detected: ${(inProgress.toSeq :+ name).mkString(" -> ")}")
-
-        val configured = byName.getOrElse(
-          name,
-          throw new IllegalArgumentException(
-            s"No classifier configured with name [$name]. Configured classifiers: [${byName.keys.mkString(", ")}]"))
-
-        inProgress += name
-        try {
-          val instance = createClassifier(configured)
-          cache(name) = instance
-          instance
-        } finally {
-          inProgress -= name
-        }
+        requireConfigured(name)
+        val instance = createClassifier(byName(name))
+        cache(name) = instance
+        instance
     }
   }
 

@@ -224,9 +224,7 @@ public class HttpEndpointTest extends TestKitSupport {
     assertThat(response.body()).isEqualTo("toxic");
 
     var directUsageResult =
-        getClassifierClient()
-            .classifier("toxicity-test-classifier")
-            .classify("a perfectly fine message");
+        getClassifierClient().classify("toxicity-test-classifier", "a perfectly fine message");
     assertThat(directUsageResult.label()).contains("clean");
   }
 
@@ -236,10 +234,7 @@ public class HttpEndpointTest extends TestKitSupport {
     // TestGrpcServiceClient constructor param resolvable only via
     // Bootstrap.createDependencyProvider(), not via any platform-managed inject -- proves
     // classifier construction runs after Bootstrap.createDependencyProvider().
-    var result =
-        getClassifierClient()
-            .classifier("dependency-provided-test-classifier")
-            .classify("anything");
+    var result = getClassifierClient().classify("dependency-provided-test-classifier", "anything");
     assertThat(result.label()).contains("resolved");
   }
 

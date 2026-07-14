@@ -14,14 +14,14 @@ import java.util.concurrent.CompletionStage;
  * small specialised model, a prompted or fine-tuned LLM, or an external classification API — the
  * implementation is just user code calling out to whatever it needs.
  *
- * <p>An implementation has a public constructor, optionally taking a {@link ClassifierContext}
- * parameter, which gives access to the classifier's configured name, its config section, and a
- * {@link ClassifierClient} for composing other configured classifiers (for example, an ensemble
- * classifier combining several underlying classifiers).
+ * <p>An implementation has a public constructor into which the platform's managed dependencies can
+ * be injected — including a {@link ClassifierClient}, for composing other configured classifiers
+ * (for example, an ensemble classifier combining several underlying ones), or a {@link
+ * ClassifierContext} for the classifier's configured name and config section.
  *
  * <p>Unlike a {@link Guardrail}, a classifier is never bound to a call boundary and is never
  * dispatched by the runtime. It is invoked inline, wherever a guardrail, an evaluator, or
- * application code needs it, by looking it up from an injected {@link ClassifierClient}.
+ * application code needs it, through an injected {@link ClassifierClient} by name.
  *
  * <p>Classifiers are enabled with configuration; see agent documentation.
  */
