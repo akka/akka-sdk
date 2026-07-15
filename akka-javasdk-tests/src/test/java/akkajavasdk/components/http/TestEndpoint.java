@@ -10,6 +10,7 @@ import akka.http.javadsl.model.HttpEntity.Strict;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.Sanitizer;
+import akka.javasdk.agent.ClassifierClient;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
@@ -33,14 +34,17 @@ import java.util.List;
 public class TestEndpoint extends AbstractHttpEndpoint {
 
   private final Sanitizer sanitizer;
+  private final ClassifierClient classifierClient;
   private final ComponentClient componentClient;
   private final ObjectStorageProvider objectStorageProvider;
 
   public TestEndpoint(
       Sanitizer sanitizer,
+      ClassifierClient classifierClient,
       ComponentClient componentClient,
       ObjectStorageProvider objectStorageProvider) {
     this.sanitizer = sanitizer;
+    this.classifierClient = classifierClient;
     this.componentClient = componentClient;
     this.objectStorageProvider = objectStorageProvider;
   }
@@ -71,6 +75,11 @@ public class TestEndpoint extends AbstractHttpEndpoint {
   @Get("/sanitized")
   public String sanitized() {
     return sanitizer.sanitize("Here's a string to sanitize: sanitizesanitizesanitize");
+  }
+
+  @Get("/classify/{text}")
+  public String classify(String text) {
+    return classifierClient.classify("toxicity-test-classifier", text).label().orElse("no label");
   }
 
   public record BigDecimalRequest(BigDecimal value) {}

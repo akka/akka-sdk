@@ -7,6 +7,7 @@ package akka.javasdk.testkit;
 import akka.grpc.javadsl.AkkaGrpcClient;
 import akka.javasdk.Principal;
 import akka.javasdk.Sanitizer;
+import akka.javasdk.agent.ClassifierClient;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.timer.TimerScheduler;
@@ -116,5 +117,13 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
    */
   public Sanitizer getSanitizer() {
     return testKit.getSanitizer();
+  }
+
+  /**
+   * @return The configured classifier client for the service, for test assertions and for invoking
+   *     a configured classifier directly without going through a component.
+   */
+  public ClassifierClient getClassifierClient() {
+    return testKit.getClassifierClient();
   }
 }

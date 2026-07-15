@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.agent
 
+import java.util.concurrent.CompletionStage
+
 import scala.annotation.nowarn
 import scala.concurrent.Future
 import scala.util.Failure
@@ -12,6 +14,8 @@ import scala.util.control.NonFatal
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Tracing
+import akka.javasdk.agent.Classification
+import akka.javasdk.agent.ClassifierClient
 import akka.javasdk.agent.Decision
 import akka.javasdk.agent.Decision.Allow
 import akka.javasdk.agent.Decision.Deny
@@ -206,6 +210,15 @@ import io.opentelemetry.context.{ Context => OtelContext }
   // McpToolRequest/McpToolResponse.
   private val ToolSideUseFor: Set[UseFor] = Set(UseFor.BeforeToolCall)
   private val ModelSideUseFor: Set[UseFor] = Set(UseFor.ModelRequest, UseFor.ModelResponse)
+
+  // Default classifierClient for call sites (and tests) that don't supply one; any call fails
+  // descriptively instead of silently returning something.
+  private val NoClassifiersConfigured: ClassifierClient = new ClassifierClient {
+    override def classify(name: String, input: String): Classification =
+      throw new IllegalArgumentException(s"No classifier configured with name [$name] (no ClassifierClient available)")
+    override def classifyAsync(name: String, input: String): CompletionStage[Classification] =
+      throw new IllegalArgumentException(s"No classifier configured with name [$name] (no ClassifierClient available)")
+  }
 }
 
 /**
@@ -214,7 +227,10 @@ import io.opentelemetry.context.{ Context => OtelContext }
 @InternalApi private[javasdk] final class GuardrailProvider(
     system: ActorSystem[_],
     applicationConfig: Config,
-    tracerFactory: () => Tracer) {
+    tracerFactory: () => Tracer,
+    // Defaulted so existing call sites (and tests) that don't care about classifiers are unaffected;
+    // SdkRunner always passes the real ClassifierClient.
+    classifierClient: ClassifierClient = GuardrailProvider.NoClassifiersConfigured) {
   import GuardrailProvider._
 
   lazy val configuredGuardrails: Seq[ConfiguredGuardrail] = {
@@ -244,7 +260,7 @@ import io.opentelemetry.context.{ Context => OtelContext }
   }
 
   private def createGuardrail(c: ConfiguredGuardrail): Guardrail = {
-    val guardrailContext = new GuardrailContextImpl(c.name, c.config)
+    val guardrailContext = new GuardrailContextImpl(c.name, c.config, classifierClient)
     val instance = system.dynamicAccess
       .createInstanceFor[Guardrail](c.implementationClass, (classOf[GuardrailContext] -> guardrailContext) :: Nil)
       .recoverWith { case _: ClassNotFoundException | _: NoSuchMethodException =>

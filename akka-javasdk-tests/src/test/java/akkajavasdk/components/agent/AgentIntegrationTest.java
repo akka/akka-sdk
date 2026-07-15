@@ -70,6 +70,7 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(ProtobufAgentWithConformsTo.class, testModelProvider)
         .withModelProvider(ProtobufAgentWithResponseAs.class, testModelProvider)
         .withModelProvider(ModelGuardrailTestAgent.class, testModelProvider)
+        .withModelProvider(ClassifierBackedGuardrailTestAgent.class, testModelProvider)
         .withDependencyProvider(depsProvider);
   }
 
@@ -619,6 +620,44 @@ public class AgentIntegrationTest extends TestKitSupport {
     // then
     // the GuardrailException still reaches onFailure even for the new ModelGuardrail
     assertThat(result.response()).contains("blocked by test model guard");
+  }
+
+  @Test
+  public void shouldAllowResponseWhenClassifierBackedGuardrailDoesNotFlagIt() {
+    // given
+    // classifier-backed-guardrail-test-agent is configured to use ClassifierBackedModelGuard,
+    // which delegates to the "toxicity-test-classifier" resolved via
+    // GuardrailContext.classifierClient()
+    testModelProvider.whenMessage(s -> s.equals("hello")).reply("a perfectly fine response");
+
+    // when
+    ClassifierBackedGuardrailTestAgent.SomeResponse result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(ClassifierBackedGuardrailTestAgent::mapLlmResponse)
+            .invoke("hello");
+
+    // then
+    assertThat(result.response()).isEqualTo("a perfectly fine response");
+  }
+
+  @Test
+  public void shouldBlockResponseWhenClassifierBackedGuardrailFlagsIt() {
+    // given
+    testModelProvider.whenMessage(s -> s.equals("hello")).reply("this response is toxic");
+
+    // when
+    ClassifierBackedGuardrailTestAgent.SomeResponse result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(ClassifierBackedGuardrailTestAgent::mapLlmResponse)
+            .invoke("hello");
+
+    // then
+    // the guardrail's Decision.Deny reason surfaces through the GuardrailException
+    assertThat(result.response()).contains("blocked by classifier: toxic");
   }
 
   @Test
