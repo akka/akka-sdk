@@ -94,6 +94,7 @@ import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.HttpRequestContextImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
+import akka.javasdk.impl.ledger.LedgerClientImpl
 import akka.javasdk.impl.objectstorage.ObjectStorageProviderImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
@@ -107,6 +108,7 @@ import akka.javasdk.impl.workflow.WorkflowContextImpl
 import akka.javasdk.impl.workflow.WorkflowImpl
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
+import akka.javasdk.ledger.LedgerClient
 import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
 import akka.javasdk.objectstorage.ObjectStorageProvider
@@ -168,6 +170,7 @@ import akka.runtime.sdk.spi.UserFunctionError
 import akka.runtime.sdk.spi.ViewDescriptor
 import akka.runtime.sdk.spi.WorkflowDescriptor
 import akka.runtime.sdk.spi.tracing.InMemorySpanExporter
+import akka.runtime.sdk.spi.{ LedgerClient => SpiLedgerClient }
 import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import com.typesafe.config.Config
@@ -393,6 +396,7 @@ class SdkRunner private (
         startContext.materializer,
         startContext.componentClients,
         startContext.eventLogClient,
+        startContext.ledgerClient,
         startContext.remoteIdentification,
         startContext.tracerFactory,
         startContext.sdkMeter,
@@ -473,7 +477,8 @@ private[javasdk] object Sdk {
     classOf[Retries],
     classOf[AgentContext],
     classOf[AgentRegistry],
-    classOf[ObjectStorageProvider])
+    classOf[ObjectStorageProvider],
+    classOf[LedgerClient])
 
   // Run a user-supplied callback, logging any failure on the user component's own logger so it reaches the user.
   // Rethrows by default; pass rethrow = false where a failing callback must not abort the surrounding flow.
@@ -497,6 +502,7 @@ private final class Sdk(
     sdkMaterializer: Materializer,
     runtimeComponentClients: ComponentClients,
     eventLogClient: EventLogClient,
+    spiLedgerClient: SpiLedgerClient,
     remoteIdentification: Option[RemoteIdentification],
     tracerFactory: String => Tracer,
     sdkMeter: Meter,
@@ -591,6 +597,8 @@ private final class Sdk(
   }
 
   lazy private val sanitizer = SanitizerImpl(runtimeSanitizer)
+
+  private lazy val ledgerClient: LedgerClient = new LedgerClientImpl(spiLedgerClient, sdkExecutionContext)
 
   private def hasComponentId(clz: Class[_]): Boolean = {
     if (clz.hasAnnotation[Component]) {
@@ -1169,8 +1177,9 @@ private final class Sdk(
     case e if e == classOf[Executor]           =>
       // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
       sdkExecutionContext.asInstanceOf[Executor]
-    case s if s == classOf[Sanitizer] => sanitizer
-    case s if s == classOf[Meter]     => sdkMeter
+    case s if s == classOf[Sanitizer]    => sanitizer
+    case l if l == classOf[LedgerClient] => ledgerClient
+    case s if s == classOf[Meter]        => sdkMeter
     case o if o == classOf[ObjectStorageProvider] =>
       objectStorageProvider(telemetryContext)
   }
