@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.agent
 
+import java.net.URI
+
 import scala.annotation.nowarn
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -13,12 +15,14 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.javasdk.agent.Decision
 import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.GuardrailContext
+import akka.javasdk.agent.MessageContent
 import akka.javasdk.agent.ModelGuardrail
 import akka.javasdk.agent.SimilarityGuard
 import akka.javasdk.agent.TextGuardrail
 import akka.javasdk.agent.ToolGuardrail
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiJsonSchema
+import akka.util.ByteString
 import com.typesafe.config.ConfigException
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.OpenTelemetry
@@ -100,6 +104,17 @@ object GuardrailProviderSpec {
   class MyModelGuard(context: GuardrailContext) extends ModelGuardrail {
     override def decide(ctx: ModelGuardrail.CallContext): Decision =
       new Decision.Deny(s"${context.name} says no")
+  }
+
+  // Records the per-call context so a test can assert what the model guard received. The provider
+  // instantiates the guard via reflection, so the captured context is published through this holder.
+  @volatile var capturedModelContext: ModelGuardrail.CallContext = _
+
+  class CapturingModelGuard extends ModelGuardrail {
+    override def decide(ctx: ModelGuardrail.CallContext): Decision = {
+      capturedModelContext = ctx
+      new Decision.Allow()
+    }
   }
 
   class BothGuard extends ToolGuardrail with ModelGuardrail {
@@ -384,6 +399,148 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root())), 3.seconds)
       result.passed shouldBe false
       result.explanation shouldBe "my model guard says no"
+    }
+
+    "expose multimodal content to a ModelGuardrail via CallContext.contents()" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "capturing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+              use-for = ["model-request"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).modelRequestGuardrails.head
+
+      val contents = Seq[SpiAgent.MessageContent](
+        new SpiAgent.TextMessageContent("describe this"),
+        new SpiAgent.ImageBytesMessageContent(ByteString("imgbytes"), "image/png", SpiAgent.ImageMessageContent.Auto),
+        new SpiAgent.ImageUriMessageContent(
+          URI.create("https://example.com/x.png"),
+          SpiAgent.ImageMessageContent.High,
+          None))
+      val multimodal = new SpiAgent.Guardrail.MultimodalContent(contents, Context.root())
+
+      val result = Await.result(spiGuardrail.evaluate(multimodal), 3.seconds)
+      result.passed shouldBe true
+
+      val ctx = capturedModelContext
+      // text() is empty for multimodal content; the text prompt is carried in contents() instead
+      ctx.textOnly() shouldBe false
+      ctx.text() shouldBe ""
+
+      val received = ctx.contents()
+      received.size shouldBe 3
+      received.get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "describe this"
+
+      val image = received.get(1).asInstanceOf[MessageContent.ImageDataMessageContent]
+      image.data() shouldBe "imgbytes".getBytes
+      image.mimeType() shouldBe java.util.Optional.of("image/png")
+
+      received.get(2).asInstanceOf[MessageContent.ImageUrlMessageContent].uri() shouldBe URI.create(
+        "https://example.com/x.png")
+    }
+
+    "preserve multiple text parts as-is in contents() without joining them into text()" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "capturing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+              use-for = ["model-request"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).modelRequestGuardrails.head
+
+      // two text parts on either side of an image part
+      val contents = Seq[SpiAgent.MessageContent](
+        new SpiAgent.TextMessageContent("first"),
+        new SpiAgent.ImageBytesMessageContent(ByteString("imgbytes"), "image/png", SpiAgent.ImageMessageContent.Auto),
+        new SpiAgent.TextMessageContent("second"))
+      val multimodal = new SpiAgent.Guardrail.MultimodalContent(contents, Context.root())
+
+      Await.result(spiGuardrail.evaluate(multimodal), 3.seconds).passed shouldBe true
+
+      val ctx = capturedModelContext
+      // multimodal text() is empty regardless of how many text parts there are: no joining
+      ctx.textOnly() shouldBe false
+      ctx.text() shouldBe ""
+
+      val received = ctx.contents()
+      // the text parts are preserved individually, in order, alongside the image part
+      received.size shouldBe 3
+      received.get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "first"
+      received.get(1) shouldBe a[MessageContent.ImageDataMessageContent]
+      received.get(2).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "second"
+    }
+
+    "expose an image-only multimodal message with empty text()" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "capturing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+              use-for = ["model-request"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).modelRequestGuardrails.head
+
+      val contents = Seq[SpiAgent.MessageContent](
+        new SpiAgent.ImageBytesMessageContent(ByteString("imgbytes"), "image/png", SpiAgent.ImageMessageContent.Auto))
+      val multimodal = new SpiAgent.Guardrail.MultimodalContent(contents, Context.root())
+
+      Await.result(spiGuardrail.evaluate(multimodal), 3.seconds).passed shouldBe true
+
+      val ctx = capturedModelContext
+      ctx.textOnly() shouldBe false
+      ctx.text() shouldBe ""
+      ctx.contents().size shouldBe 1
+      ctx.contents().get(0) shouldBe a[MessageContent.ImageDataMessageContent]
+    }
+
+    "expose a text-only model request as textOnly with the text in text() and contents()" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "capturing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+              use-for = ["model-request"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).modelRequestGuardrails.head
+
+      val textContent = new SpiAgent.Guardrail.TextContent("just text", Context.root())
+      Await.result(spiGuardrail.evaluate(textContent), 3.seconds).passed shouldBe true
+
+      val ctx = capturedModelContext
+      ctx.textOnly() shouldBe true
+      ctx.text() shouldBe "just text"
+      ctx.contents().size shouldBe 1
+      ctx.contents().get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "just text"
     }
 
     "translate a Decision.Fail into a failed Future preserving reason and cause" in {
