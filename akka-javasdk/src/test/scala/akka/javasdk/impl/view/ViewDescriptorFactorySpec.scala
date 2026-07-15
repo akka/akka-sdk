@@ -13,12 +13,12 @@ import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.Principal
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.ServiceNamePattern
-import akka.runtime.sdk.spi.SpiffePattern
 import akka.runtime.sdk.spi.SpiSchema.SpiClass
 import akka.runtime.sdk.spi.SpiSchema.SpiInteger
 import akka.runtime.sdk.spi.SpiSchema.SpiList
 import akka.runtime.sdk.spi.SpiSchema.SpiString
 import akka.runtime.sdk.spi.SpiSchema.SpiTimestamp
+import akka.runtime.sdk.spi.SpiffePattern
 import akka.runtime.sdk.spi.ViewDescriptor
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
