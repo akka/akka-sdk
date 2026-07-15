@@ -836,7 +836,6 @@ private final class Sdk(
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[EventSourcedEntityContext] => context
                 case s if s == classOf[Sanitizer]                 => sanitizer
-                case c if c == classOf[ClassifierClient]          => classifierClient
                 case r if r == classOf[AgentRegistry]             => agentRegistry
                 case p if p == classOf[NotificationPublisher[_]] =>
                   new NotificationPublisher[Any] {
@@ -890,7 +889,6 @@ private final class Sdk(
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[KeyValueEntityContext] => context
                 case s if s == classOf[Sanitizer]             => sanitizer
-                case c if c == classOf[ClassifierClient]      => classifierClient
                 case r if r == classOf[AgentRegistry]         => agentRegistry
                 case p if p == classOf[NotificationPublisher[_]] =>
                   new NotificationPublisher[Any] {
