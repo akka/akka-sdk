@@ -325,13 +325,13 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
             class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$DualPurpose"
             agents = ["some-agent"]
             category = TOXIC
-            use-for = ["model-response"]
+            use-for = ["before-agent-response"]
           }
         }
         """)
       val guardrailProvider = new GuardrailProvider(system, guardrailCfg, testTracerFactory)
       guardrailProvider.validate()
-      guardrailProvider.agentGuardrails("some-agent", role = None).modelResponseGuardrails.size shouldBe 1
+      guardrailProvider.agentGuardrails("some-agent", role = None).beforeAgentResponseGuardrails.size shouldBe 1
     }
   }
 }

@@ -4,7 +4,6 @@
 
 package akka.javasdk.impl.agent
 
-import java.net.URI
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.CountDownLatch
@@ -109,6 +108,20 @@ object GuardrailProviderSpec {
     override def decide(ctx: ModelGuardrail.CallContext): Decision =
       new Decision.Deny(s"${context.name} says no")
   }
+
+  // Echoes every context identifier into the deny reason so a test can assert the full mapping.
+  class EchoingModelGuard extends ModelGuardrail {
+    override def decide(ctx: ModelGuardrail.CallContext): Decision =
+      new Decision.Deny(s"${ctx.agentId}|${ctx.sessionId}|${ctx.modelName}|${ctx.text}")
+  }
+
+  private def agentResponseContent(text: String): SpiAgent.Guardrail.AgentResponseContent =
+    new SpiAgent.Guardrail.AgentResponseContent(
+      content = new SpiAgent.TextMessageContent(text),
+      agentId = "model-agent",
+      sessionId = "session-1",
+      modelName = "test-model",
+      telemetryContext = Context.root())
 
   // Records the per-call context so a test can assert what the model guard received. The provider
   // instantiates the guard via reflection, so the captured context is published through this holder.
@@ -416,6 +429,31 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       byName("other-tool") shouldBe 0
     }
 
+    "register a ModelGuardrail at before-agent-response and expose ids via CallContext" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "echoing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$EchoingModelGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+              use-for = ["before-agent-response"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val g = provider.agentGuardrails("model-agent", role = None)
+      g.beforeAgentResponseGuardrails.size shouldBe 1
+      g.modelResponseGuardrails shouldBe empty
+
+      val result =
+        Await.result(g.beforeAgentResponseGuardrails.head.evaluate(agentResponseContent("final reply")), 3.seconds)
+      result.passed shouldBe false
+      result.explanation shouldBe "model-agent|session-1|test-model|final reply"
+    }
+
     "register a ModelGuardrail and produce a working SpiAgent.Guardrail" in {
       val cfg = ConfigFactory
         .parseString(s"""
@@ -424,7 +462,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyModelGuard"
               agents = ["model-agent"]
               category = MODEL_POLICY
-              use-for = ["model-response"]
+              use-for = ["before-agent-response"]
             }
           }
         """)
@@ -432,20 +470,20 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
 
       val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       val g = provider.agentGuardrails("model-agent", role = None)
-      g.modelResponseGuardrails.size shouldBe 1
+      g.beforeAgentResponseGuardrails.size shouldBe 1
       g.mcpToolRequestGuardrails shouldBe empty
 
-      val spiGuardrail = g.modelResponseGuardrails.head
+      val spiGuardrail = g.beforeAgentResponseGuardrails.head
       spiGuardrail.name shouldBe "my model guard"
       spiGuardrail.category shouldBe "MODEL_POLICY"
 
       val result =
-        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root())), 3.seconds)
+        Await.result(spiGuardrail.evaluate(agentResponseContent("anything")), 3.seconds)
       result.passed shouldBe false
       result.explanation shouldBe "my model guard says no"
     }
 
-    "expose multimodal content to a ModelGuardrail via CallContext.contents()" in {
+    "expose a non-text agent reply to a ModelGuardrail via CallContext.contents() with empty text()" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -453,45 +491,36 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelGuard"
               agents = ["model-agent"]
               category = MODEL_POLICY
-              use-for = ["model-request"]
+              use-for = ["before-agent-response"]
             }
           }
         """)
         .withFallback(config)
 
       val provider = new GuardrailProvider(system, cfg, testTracerFactory)
-      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).modelRequestGuardrails.head
+      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).beforeAgentResponseGuardrails.head
 
-      val contents = Seq[SpiAgent.MessageContent](
-        new SpiAgent.TextMessageContent("describe this"),
+      val imageReply = new SpiAgent.Guardrail.AgentResponseContent(
         new SpiAgent.ImageBytesMessageContent(ByteString("imgbytes"), "image/png", SpiAgent.ImageMessageContent.Auto),
-        new SpiAgent.ImageUriMessageContent(
-          URI.create("https://example.com/x.png"),
-          SpiAgent.ImageMessageContent.High,
-          None))
-      val multimodal = new SpiAgent.Guardrail.MultimodalContent(contents, Context.root())
+        "model-agent",
+        "session-1",
+        "test-model",
+        Context.root())
 
-      val result = Await.result(spiGuardrail.evaluate(multimodal), 3.seconds)
-      result.passed shouldBe true
+      Await.result(spiGuardrail.evaluate(imageReply), 3.seconds).passed shouldBe true
 
       val ctx = capturedModelContext
-      // text() is empty for multimodal content; the text prompt is carried in contents() instead
+      // text() is empty for a non-text reply; the part is carried in contents() instead
       ctx.textOnly() shouldBe false
       ctx.text() shouldBe ""
 
-      val received = ctx.contents()
-      received.size shouldBe 3
-      received.get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "describe this"
-
-      val image = received.get(1).asInstanceOf[MessageContent.ImageDataMessageContent]
+      ctx.contents().size shouldBe 1
+      val image = ctx.contents().get(0).asInstanceOf[MessageContent.ImageDataMessageContent]
       image.data() shouldBe "imgbytes".getBytes
       image.mimeType() shouldBe java.util.Optional.of("image/png")
-
-      received.get(2).asInstanceOf[MessageContent.ImageUrlMessageContent].uri() shouldBe URI.create(
-        "https://example.com/x.png")
     }
 
-    "preserve multiple text parts as-is in contents() without joining them into text()" in {
+    "expose a text-only agent reply as textOnly with the text in text() and contents()" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -499,85 +528,16 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelGuard"
               agents = ["model-agent"]
               category = MODEL_POLICY
-              use-for = ["model-request"]
+              use-for = ["before-agent-response"]
             }
           }
         """)
         .withFallback(config)
 
       val provider = new GuardrailProvider(system, cfg, testTracerFactory)
-      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).modelRequestGuardrails.head
+      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).beforeAgentResponseGuardrails.head
 
-      // two text parts on either side of an image part
-      val contents = Seq[SpiAgent.MessageContent](
-        new SpiAgent.TextMessageContent("first"),
-        new SpiAgent.ImageBytesMessageContent(ByteString("imgbytes"), "image/png", SpiAgent.ImageMessageContent.Auto),
-        new SpiAgent.TextMessageContent("second"))
-      val multimodal = new SpiAgent.Guardrail.MultimodalContent(contents, Context.root())
-
-      Await.result(spiGuardrail.evaluate(multimodal), 3.seconds).passed shouldBe true
-
-      val ctx = capturedModelContext
-      // multimodal text() is empty regardless of how many text parts there are: no joining
-      ctx.textOnly() shouldBe false
-      ctx.text() shouldBe ""
-
-      val received = ctx.contents()
-      // the text parts are preserved individually, in order, alongside the image part
-      received.size shouldBe 3
-      received.get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "first"
-      received.get(1) shouldBe a[MessageContent.ImageDataMessageContent]
-      received.get(2).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "second"
-    }
-
-    "expose an image-only multimodal message with empty text()" in {
-      val cfg = ConfigFactory
-        .parseString(s"""
-          akka.javasdk.agent.guardrails {
-            "capturing model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelGuard"
-              agents = ["model-agent"]
-              category = MODEL_POLICY
-              use-for = ["model-request"]
-            }
-          }
-        """)
-        .withFallback(config)
-
-      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
-      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).modelRequestGuardrails.head
-
-      val contents = Seq[SpiAgent.MessageContent](
-        new SpiAgent.ImageBytesMessageContent(ByteString("imgbytes"), "image/png", SpiAgent.ImageMessageContent.Auto))
-      val multimodal = new SpiAgent.Guardrail.MultimodalContent(contents, Context.root())
-
-      Await.result(spiGuardrail.evaluate(multimodal), 3.seconds).passed shouldBe true
-
-      val ctx = capturedModelContext
-      ctx.textOnly() shouldBe false
-      ctx.text() shouldBe ""
-      ctx.contents().size shouldBe 1
-      ctx.contents().get(0) shouldBe a[MessageContent.ImageDataMessageContent]
-    }
-
-    "expose a text-only model request as textOnly with the text in text() and contents()" in {
-      val cfg = ConfigFactory
-        .parseString(s"""
-          akka.javasdk.agent.guardrails {
-            "capturing model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelGuard"
-              agents = ["model-agent"]
-              category = MODEL_POLICY
-              use-for = ["model-request"]
-            }
-          }
-        """)
-        .withFallback(config)
-
-      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
-      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).modelRequestGuardrails.head
-
-      val textContent = new SpiAgent.Guardrail.TextContent("just text", Context.root())
+      val textContent = agentResponseContent("just text")
       Await.result(spiGuardrail.evaluate(textContent), 3.seconds).passed shouldBe true
 
       val ctx = capturedModelContext
@@ -595,7 +555,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$FailingModelGuard"
               agents = ["failing-agent"]
               category = MODEL_POLICY
-              use-for = ["model-response"]
+              use-for = ["before-agent-response"]
             }
           }
         """)
@@ -603,10 +563,10 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
 
       val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       val g = provider.agentGuardrails("failing-agent", role = None)
-      val spiGuardrail = g.modelResponseGuardrails.head
+      val spiGuardrail = g.beforeAgentResponseGuardrails.head
 
       val failure = intercept[RuntimeException] {
-        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root())), 3.seconds)
+        Await.result(spiGuardrail.evaluate(agentResponseContent("anything")), 3.seconds)
       }
       failure.getMessage shouldBe "could not decide"
       failure.getCause shouldBe a[IllegalStateException]
@@ -621,17 +581,17 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$FailedStageModelGuard"
               agents = ["failed-stage-agent"]
               category = MODEL_POLICY
-              use-for = ["model-response"]
+              use-for = ["before-agent-response"]
             }
           }
         """)
         .withFallback(config)
 
       val provider = new GuardrailProvider(system, cfg, testTracerFactory)
-      val spiGuardrail = provider.agentGuardrails("failed-stage-agent", role = None).modelResponseGuardrails.head
+      val spiGuardrail = provider.agentGuardrails("failed-stage-agent", role = None).beforeAgentResponseGuardrails.head
 
       val failure = intercept[RuntimeException] {
-        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root())), 3.seconds)
+        Await.result(spiGuardrail.evaluate(agentResponseContent("anything")), 3.seconds)
       }
       failure.getMessage shouldBe "stage blew up"
       failure.getCause shouldBe a[IllegalStateException]
@@ -646,17 +606,17 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$NullStageModelGuard"
               agents = ["null-stage-agent"]
               category = MODEL_POLICY
-              use-for = ["model-response"]
+              use-for = ["before-agent-response"]
             }
           }
         """)
         .withFallback(config)
 
       val provider = new GuardrailProvider(system, cfg, testTracerFactory)
-      val spiGuardrail = provider.agentGuardrails("null-stage-agent", role = None).modelResponseGuardrails.head
+      val spiGuardrail = provider.agentGuardrails("null-stage-agent", role = None).beforeAgentResponseGuardrails.head
 
       val failure = intercept[RuntimeException] {
-        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root())), 3.seconds)
+        Await.result(spiGuardrail.evaluate(agentResponseContent("anything")), 3.seconds)
       }
       failure.getCause shouldBe a[NullPointerException]
     }
@@ -669,17 +629,17 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$NullDecisionModelGuard"
               agents = ["null-decision-agent"]
               category = MODEL_POLICY
-              use-for = ["model-response"]
+              use-for = ["before-agent-response"]
             }
           }
         """)
         .withFallback(config)
 
       val provider = new GuardrailProvider(system, cfg, testTracerFactory)
-      val spiGuardrail = provider.agentGuardrails("null-decision-agent", role = None).modelResponseGuardrails.head
+      val spiGuardrail = provider.agentGuardrails("null-decision-agent", role = None).beforeAgentResponseGuardrails.head
 
       val failure = intercept[NullPointerException] {
-        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root())), 3.seconds)
+        Await.result(spiGuardrail.evaluate(agentResponseContent("anything")), 3.seconds)
       }
       failure.getMessage should include("null Decision")
     }
@@ -692,16 +652,16 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$PublishingSlowModelGuard"
               agents = ["slow-agent"]
               category = MODEL_POLICY
-              use-for = ["model-response"]
+              use-for = ["before-agent-response"]
             }
           }
         """)
         .withFallback(config)
 
       val provider = new GuardrailProvider(system, cfg, testTracerFactory)
-      val spiGuardrail = provider.agentGuardrails("slow-agent", role = None).modelResponseGuardrails.head
+      val spiGuardrail = provider.agentGuardrails("slow-agent", role = None).beforeAgentResponseGuardrails.head
 
-      val eventual = spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root()))
+      val eventual = spiGuardrail.evaluate(agentResponseContent("anything"))
 
       // evaluate(...) returned while the guard's decision is still outstanding
       slowModelGuard.started.await(3, TimeUnit.SECONDS) shouldBe true
@@ -722,7 +682,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$ThrowingModelGuard"
               agents = ["throwing-agent"]
               category = MODEL_POLICY
-              use-for = ["model-response"]
+              use-for = ["before-agent-response"]
             }
           }
         """)
@@ -730,10 +690,10 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
 
       val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       val g = provider.agentGuardrails("throwing-agent", role = None)
-      val spiGuardrail = g.modelResponseGuardrails.head
+      val spiGuardrail = g.beforeAgentResponseGuardrails.head
 
       val failure = intercept[RuntimeException] {
-        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root())), 3.seconds)
+        Await.result(spiGuardrail.evaluate(agentResponseContent("anything")), 3.seconds)
       }
       failure.getMessage shouldBe "kaboom"
       failure.getCause shouldBe a[IllegalStateException]
@@ -826,7 +786,93 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val provider = new GuardrailProvider(system, faultyConfig, testTracerFactory)
       intercept[IllegalArgumentException] {
         provider.validate()
-      }.getMessage should include("can only be bound to model-side use-for")
+      }.getMessage should include("can only be bound to model-side use-for values")
+    }
+
+    "reject a ModelGuardrail bound to a deprecated model-side use-for value" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "misbound model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyModelGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+              use-for = ["model-response"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      intercept[IllegalArgumentException] {
+        provider.validate()
+      }.getMessage should include("can only be bound to model-side use-for values")
+    }
+
+    "reject a TextGuardrail bound to before-agent-response" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "misbound text guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agents = ["model-agent"]
+              category = TOXIC
+              use-for = ["before-agent-response"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      intercept[IllegalArgumentException] {
+        provider.validate()
+      }.getMessage should include("can only be bound to the deprecated use-for values")
+    }
+
+    "expand the use-for wildcard per guardrail interface type" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "wildcard text guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agents = ["wildcard-agent"]
+              category = TOXIC
+              use-for = ["*"]
+            }
+            "wildcard model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyModelGuard"
+              agents = ["wildcard-agent"]
+              category = MODEL_POLICY
+              use-for = ["*"]
+            }
+            "wildcard tool guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$AllowingToolGuard"
+              agents = ["wildcard-agent"]
+              category = PERMISSION
+              use-for = ["*"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val g = provider.agentGuardrails("wildcard-agent", role = None)
+
+      // TextGuardrail "*": the four legacy boundaries, exactly as before this change
+      g.modelRequestGuardrails.map(_.name) should contain("wildcard text guard")
+      g.modelResponseGuardrails.map(_.name) should contain("wildcard text guard")
+      g.mcpToolRequestGuardrails.map(_.name) should contain("wildcard text guard")
+      g.mcpToolResponseGuardrails.map(_.name) should contain("wildcard text guard")
+
+      // ModelGuardrail "*": before-agent-response only
+      g.beforeAgentResponseGuardrails.map(_.name) shouldBe Seq("wildcard model guard")
+      g.modelRequestGuardrails.map(_.name) should not contain "wildcard model guard"
+      g.modelResponseGuardrails.map(_.name) should not contain "wildcard model guard"
+
+      // ToolGuardrail "*": before-tool-call only
+      val descriptors = g.withToolGuardrails(Seq(toolDescriptor("some-tool")))
+      descriptors.head.requestGuardrails.map(_.name) shouldBe Seq("wildcard tool guard")
+      g.beforeAgentResponseGuardrails.map(_.name) should not contain "wildcard tool guard"
     }
 
   }

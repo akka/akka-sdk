@@ -743,8 +743,7 @@ private[impl] final class AgentImpl(
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
               onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
-              requestGuardrails = guardrails.modelRequestGuardrails,
-              responseGuardrails = guardrails.modelResponseGuardrails,
+              boundGuardrails = guardrails.boundGuardrails,
               contentLoader = spiContentLoader,
               callToolFunction = request => Future(toolExecutor.executeMultimodal(request))(sdkExecutionContext))
 

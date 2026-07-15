@@ -83,12 +83,19 @@ private[impl] final class AutonomousAgentImpl(
     override val modelProvider: SpiAgent.ModelProvider,
     override val toolDescriptors: Seq[SpiAgent.ToolDescriptor],
     override val mcpClientDescriptors: Seq[SpiAgent.McpToolEndpointDescriptor],
-    override val requestGuardrails: Seq[SpiAgent.Guardrail],
-    override val responseGuardrails: Seq[SpiAgent.Guardrail],
+    override val guardrails: SpiAgent.BoundGuardrails,
     override val capabilities: Seq[SpiAutonomousAgent.Capability])
     extends SpiAutonomousAgent
     with SpiAutonomousAgentMultimodalTools {
   import AgentImpl._
+
+  // Still abstract on the SPI trait for compatibility with older SDKs; derived from the
+  // grouped guardrails so there is a single source of truth.
+  override def requestGuardrails: Seq[SpiAgent.Guardrail] =
+    guardrails.boundTo(SpiAgent.GuardrailBoundary.ModelRequest)
+
+  override def responseGuardrails: Seq[SpiAgent.Guardrail] =
+    guardrails.boundTo(SpiAgent.GuardrailBoundary.ModelResponse)
 
   implicit val system: ActorSystem[_] = _system
   private val materializer: Materializer = SystemMaterializer(system).materializer
