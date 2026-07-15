@@ -8,6 +8,7 @@ import akka.javasdk.agent.ClassifierClient;
 import akka.javasdk.agent.Decision;
 import akka.javasdk.agent.GuardrailContext;
 import akka.javasdk.agent.ModelGuardrail;
+import java.util.concurrent.CompletionStage;
 
 /**
  * A ModelGuardrail that delegates the decision to a configured classifier, resolved via {@link
@@ -17,8 +18,8 @@ import akka.javasdk.agent.ModelGuardrail;
  * rather than a string literal, so the guardrail-to-classifier binding can be re-pointed at
  * deployment time without rebuilding -- the canonical pattern for governance-owned names.
  *
- * <p>decide(...) is synchronous, so this uses the blocking {@link ClassifierClient#classify}, which
- * itself completes asynchronously, exercising that combination.
+ * <p>Composes {@link ClassifierClient#classifyAsync} without blocking, and maps a classifier
+ * failure to an explicit {@link Decision.Fail}, exercising that combination.
  */
 public class ClassifierBackedModelGuard implements ModelGuardrail {
   private final ClassifierClient classifierClient;
@@ -30,15 +31,16 @@ public class ClassifierBackedModelGuard implements ModelGuardrail {
   }
 
   @Override
-  public Decision decide(CallContext ctx) {
-    try {
-      var classification = classifierClient.classify(classifierName, ctx.text());
-      if (classification.label().map(l -> l.equals("toxic")).orElse(false)) {
-        return new Decision.Deny("blocked by classifier: " + classification.label().get());
-      }
-      return new Decision.Allow();
-    } catch (RuntimeException e) {
-      return new Decision.Fail("classifier invocation failed", e);
-    }
+  public CompletionStage<Decision> decide(CallContext ctx) {
+    return classifierClient
+        .classifyAsync(classifierName, ctx.text())
+        .thenApply(
+            classification ->
+                classification
+                    .label()
+                    .filter("toxic"::equals)
+                    .<Decision>map(label -> new Decision.Deny("blocked by classifier: " + label))
+                    .orElseGet(Decision.Allow::new))
+        .exceptionally(e -> new Decision.Fail("classifier invocation failed", e));
   }
 }
