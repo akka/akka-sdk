@@ -129,6 +129,29 @@ authenticated; matching a specific component additionally trusts the calling ser
 honestly.
 ====
 
+=== Inspecting the caller's identity
+
+Beyond matching in an `@Acl`, an HTTP, gRPC, or MCP endpoint can read the SPIFFE identity of its caller
+programmatically. The request context — `akka.javasdk.http.RequestContext`, `akka.javasdk.grpc.GrpcRequestContext`,
+or `akka.javasdk.mcp.McpRequestContext` — exposes `getSpiffeContext()`, which returns an
+`akka.javasdk.SpiffeContext` when SPIFFE is enabled:
+
+[source,java,indent=0]
+----
+requestContext.getSpiffeContext().ifPresent(spiffe -> {
+  String ownId = spiffe.getSpiffeId();                          // this endpoint's own SPIFFE id
+  spiffe.getCallerContext().ifPresent(caller -> {
+    String callerId = caller.getSpiffeId();                     // the calling component's SPIFFE id
+    // ... apply custom logic based on who is calling
+  });
+});
+----
+
+`getSpiffeContext()` is empty when SPIFFE is disabled. The caller context (`akka.javasdk.CallerSpiffeContext`) is
+present only when the request came from another Akka service in the same project — it is empty for external and
+internet callers. The service-level part of the caller's identity is attested by the service mesh; use this to make
+authorization or routing decisions that go beyond what a static `@Acl` matcher can express.
+
 == Default ACL
 
 If no ACLs are defined at all, Akka will deny requests from both other services and the internet to all components of

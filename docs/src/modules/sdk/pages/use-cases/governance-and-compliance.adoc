@@ -19,7 +19,9 @@ NOTE: *Status: Partial* -- This pattern guide describes the governance approach 
 
 === Akka Components Involved
 
-* *Guardrails* -- validate and filter agent inputs and outputs against defined policies
+* *Guardrails* -- validate and filter agent inputs, outputs, and tool calls against defined policies, and can stop an interaction at the boundary
+* *Classifiers* -- score or label text (toxicity, sentiment, PII likelihood, or any custom signal), consulted by guardrails, evaluators, or application code
+* *Evaluators* -- assess each interaction of a bound agent out of band, recording a verdict, and read the interaction ledger for the record to assess
 * *Sanitizers* -- detect and redact PII and sensitive data in agent interactions
 * *Agents* -- integrate governance checks into the agent processing pipeline
 
@@ -35,5 +37,7 @@ NOTE: A dedicated governance-focused sample may be needed for a full end-to-end 
 == See Also
 
 * xref:sdk:agents/guardrails.adoc[]
+* xref:sdk:agents/classifiers.adoc[]
+* xref:sdk:evaluators.adoc[]
 * xref:sdk:sanitization.adoc[]
 * xref:concepts:governance-and-the-runtime.adoc[]

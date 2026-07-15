@@ -1,0 +1,201 @@
+= Evaluators
+:page-component-type: evaluator
+:page-summary: A component the runtime triggers for each interaction of a bound agent, to assess it and record a verdict.
+:page-when-to-use: When you want agent interactions assessed automatically as they happen — for quality tracking, regression detection, or compliance — without wiring evaluation calls into the agents themselves.
+:page-related: xref:sdk:agents/llm_eval.adoc[], xref:sdk:agents.adoc[], xref:concepts:governance-and-the-runtime.adoc[]
+:page-prerequisites: An Akka project with at least one agent defined.
+:page-persona: developer, governance-compliance
+
+include::ROOT:partial$include.adoc[]
+
+== Overview
+
+An link:{attachmentsdir}/api/akka/javasdk/evaluation/Evaluator.html[`Evaluator`] is a stateless component that assesses agent interactions.
+It is bound to one or more agents in configuration; the runtime then invokes the evaluator once for each interaction of a bound agent, passing the interaction to be evaluated.
+The evaluator returns a verdict — pass or fail, optionally with a score, a label, and attributes — which is recorded in metrics and traces.
+
+The key difference from calling an evaluator agent yourself (see xref:sdk:agents/llm_eval.adoc[LLM evaluation]) is *who triggers it and when*.
+An LLM-as-judge agent is a `how` — a way to compute a verdict. The Evaluator component is the `when/what`: the runtime drives it per interaction, so evaluation coverage is a property of the deployment rather than something each call site must remember to invoke.
+An Evaluator can, and often does, delegate the actual judging to a judge agent.
+
+NOTE: Evaluators run out of band, after the interaction they assess has completed, so they do not add latency to the agent's response. To make an evaluation part of the agent's own flow — so its outcome can steer the next step — call the judge from the agent or workflow directly, as described in xref:sdk:agents/llm_eval.adoc[LLM evaluation].
+
+== Implementing an evaluator
+
+An evaluator extends `Evaluator`, is annotated with `@Component`, and implements `evaluate(EvaluationContext)`.
+The context identifies the interaction to assess; the evaluator fetches that interaction from the xref:_the_ledger_client[ledger], reaches a verdict, and returns it through the `Effect` builder:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/InteractionQualityEvaluator.java[InteractionQualityEvaluator.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/InteractionQualityEvaluator.java[tag=all]
+----
+<1> An evaluator is a component and needs a `@Component` id. The id is how the evaluator is referred to in configuration.
+<2> Extend `Evaluator`.
+<3> A `LedgerClient` is injected to fetch the interaction under evaluation.
+<4> `EvaluationContext.subject().interactionId()` identifies the interaction; fetch its record from the ledger.
+<5> `inconclusive` reports that the evaluator ran but reached no verdict — distinct from a failing verdict.
+<6> `complete` with an `Evaluation` records the verdict.
+<7> An `Evaluation` can carry a score, a label, and arbitrary attributes for downstream analysis.
+
+=== The evaluation subject
+
+link:{attachmentsdir}/api/akka/javasdk/evaluation/EvaluationContext.html[`EvaluationContext`] exposes the link:{attachmentsdir}/api/akka/javasdk/evaluation/Subject.html[`Subject`] being evaluated and the `evaluationId()` of this evaluation.
+A `Subject` identifies a single interaction by its stable `interactionId()`, together with the `agentComponentId()` that produced it.
+It is one of two kinds: an `AgentInteraction` produced directly by an agent, or a `FlowInteraction` produced by an agent running as part of an autonomous-agent flow (which additionally carries the `flowId`).
+
+=== Recording the verdict
+
+The link:{attachmentsdir}/api/akka/javasdk/evaluation/Evaluation.html[`Evaluation`] captures whether the interaction passed, an explanation, and optional quantitative (`score`) and categorical (`label`) results, plus arbitrary `attributes`.
+Build one with the fluent factories:
+
+[source,java,indent=0]
+----
+Evaluation.passed("Response was accurate and helpful")
+    .withScore(0.92)
+    .withLabel("excellent")
+    .withAttribute("model", "gpt-4o");
+----
+
+The `Effect` returned by `evaluate` is one of:
+
+* `effects().complete(evaluation, ...)` — the evaluation completed with one or more verdicts.
+* `effects().inconclusive(reason)` — the evaluator ran but reached no verdict, for example there was no transcript or the interaction was not applicable.
+* `effects().asyncEffect(futureEffect)` — continue asynchronously from a `CompletionStage` of another effect (see <<_durable_multi_step_evaluation>>).
+
+== Binding evaluators to agents
+
+Evaluators are bound to agents under `akka.javasdk.evaluation.evaluators`, keyed by the evaluator's `@Component` id.
+Each bound agent declares a `trigger` — currently only `interaction`, meaning the evaluator runs for each interaction of that agent:
+
+[source,conf,indent=0]
+.src/main/resources/application.conf
+----
+akka.javasdk.evaluation.evaluators {
+  interaction-quality-evaluator {                 // <1>
+    agents {
+      support-agent { trigger = interaction }     // <2>
+      billing-agent { trigger = interaction, enabled = false } // <3>
+    }
+  }
+}
+----
+<1> The evaluator's `@Component` id.
+<2> Bind the evaluator to `support-agent`; it runs for each of that agent's interactions.
+<3> A binding can be disabled — for example in a deployment override — with `enabled = false`.
+
+Both an evaluator and an individual agent binding may set `enabled` (default `true`); set it to `false` to disable the whole evaluator or a single agent binding.
+Defaults applied to every evaluator and agent binding live under `akka.javasdk.evaluation.defaults`; change a default there to affect all bindings, or set the same key on an individual entry to override just that one.
+
+NOTE: Evaluators typically use an LLM and therefore have a cost and overhead. You may want to enable them in test or staging environments and keep them disabled, or sampled, in high-volume production. Toggling a binding's `enabled` per deployment is the mechanism for that.
+
+== Dependency injection
+
+An evaluator constructor can accept the platform's managed dependencies — `akka.javasdk.client.ComponentClient`, `akka.javasdk.http.HttpClientProvider`, `akka.javasdk.timer.TimerScheduler`, `akka.stream.Materializer`, `com.typesafe.config.Config`, `akka.javasdk.agent.AgentRegistry`, and `akka.javasdk.ledger.LedgerClient` — as well as any custom type provided by the service's `DependencyProvider`.
+See xref:sdk:setup-and-dependency-injection.adoc[].
+
+Blocking calls made from `evaluate` run on virtual threads, so it is safe to use the blocking `LedgerClient.getInteraction` and `ComponentClient.invoke` methods directly.
+
+=== Delegating to a judge agent
+
+A common pattern is to have the evaluator delegate the verdict to an LLM-as-judge agent, run in its own evaluation-scoped session:
+
+[source,java,indent=0]
+----
+QualityJudge.Verdict verdict = componentClient
+    .forAgent()
+    .inSession(context.evaluationId() + "-quality-judge") // isolated from the subject's session
+    .method(QualityJudge::evaluate)
+    .invoke(transcript);
+
+return effects().complete(
+    Evaluation.of(verdict.passed(), verdict.reason()).withScore(verdict.score()));
+----
+
+For implementing the judge agent itself, see xref:sdk:agents/llm_eval.adoc[LLM evaluation].
+
+=== Durable multi-step evaluation
+
+For an evaluation that involves several steps and must survive restarts, delegate to a xref:sdk:workflows.adoc[workflow] and suspend on its result with `asyncEffect`:
+
+[source,java,indent=0]
+----
+CompletionStage<Effect> futureEffect = componentClient
+    .forWorkflow(context.evaluationId())
+    .method(EvaluationWorkflow::run)
+    .invokeAsync(transcript)
+    .thenCompose(started -> reportStage)     // await the workflow's completion report
+    .thenApply(report ->
+        effects().complete(Evaluation.passed(report.reason()).withScore(report.score())));
+
+return effects().asyncEffect(futureEffect);
+----
+
+The workflow provides the durability; the evaluator suspends until it reports back.
+
+[#_the_ledger_client]
+== The ledger client
+
+The ledger is the log of recorded agent interactions — the same interaction log used for console visibility, troubleshooting, and auditing.
+An link:{attachmentsdir}/api/akka/javasdk/ledger/LedgerClient.html[`LedgerClient`] fetches records from it and can be injected into any component; an evaluator is its primary consumer.
+
+[source,java,indent=0]
+----
+InteractionRecord record = ledger.getInteraction(interactionId);        // <1>
+CompletionStage<InteractionRecord> async = ledger.getInteractionAsync(interactionId); // <2>
+----
+<1> Fetch the full record for an interaction id. Blocks the calling thread — safe on a virtual thread — and throws `NoSuchElementException` if no interaction exists with that id.
+<2> The non-blocking variant.
+
+=== The interaction record
+
+link:{attachmentsdir}/api/akka/javasdk/ledger/InteractionRecord.html[`InteractionRecord`] holds the full record of a single interaction, plus convenience accessors for the common cases:
+
+[cols="1,3", options="header"]
+|===
+| Accessor | Description
+
+| `inputText()`, `finalResponseText()`
+| The user input, and the agent's final response text.
+
+| `toolCalls()`
+| The tool calls the model made during the interaction, as `ToolCall` records (id, name, JSON arguments, response).
+
+| `totalInputTokens()`, `totalOutputTokens()`
+| Token totals across the interaction's model calls.
+
+| `failed()`, `failureSummary()`
+| Whether the interaction terminated in a failure, and a summary of it.
+
+| `transcript()`
+| A flattened text rendering of the interaction, convenient for handing to a judge.
+
+| `isFlowInteraction()`
+| Whether the interaction was produced by an agent running as part of a flow.
+|===
+
+Beyond these, the raw fields expose the full structure: `systemMessage`, `inputMessage`, the ordered `modelResponses` (each a `ModelResponse` with content, thinking, token counts, and requested `toolCalls`), the `toolCallResponses` that arrived as model input, the model `metadata` (an `InteractionMetadata` wrapping the structured `ModelConfig` and the raw config map, call timings, and finish reason), an optional `TaskContext` for flow interactions, and an optional `Failure` when the interaction failed.
+
+== Testing
+
+Use link:{attachmentsdir}/testkit/akka/javasdk/testkit/EvaluatorTestKit.html[`EvaluatorTestKit`] to run an evaluator's `evaluate` handler over a chosen `Subject` and assert on the outcome, supplying whatever dependencies the evaluator needs (for example a stub `LedgerClient`) through the factory:
+
+[source,java,indent=0]
+----
+var testKit = EvaluatorTestKit.of(() -> new InteractionQualityEvaluator(stubLedger));
+
+EvaluatorResult result = testKit.evaluate(
+    new Subject.AgentInteraction("support-agent", "interaction-1"));
+
+assertThat(result.isComplete()).isTrue();
+assertThat(result.getEvaluations()).hasSize(1);
+assertThat(result.getEvaluations().get(0).passed()).isTrue();
+----
+
+An asynchronous effect is resolved before the `EvaluatorResult` is returned, so `isComplete()` and `isInconclusive()` reflect the terminal outcome; `isAsync()` additionally reports whether the effect was produced asynchronously.
+
+== See also
+
+* xref:sdk:agents/llm_eval.adoc[] — Implementing LLM-as-judge evaluator agents, including the built-in evaluators.
+* xref:sdk:agents/classifiers.adoc[] — Classifiers an evaluator can call to score an interaction.
+* xref:concepts:governance-and-the-runtime.adoc[] — Where evaluation fits in Akka's governance model.
