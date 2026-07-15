@@ -1,33 +1,8 @@
 = Akka Documentation
 
-Akka is the agentic systems platform built for Reliability, Risk Control, and Repeatability at enterprise scale. The only full-stack platform for agentic AI: developer experience, runtime, and governance in one integrated system.
+*Build, run, and govern agentic AI.*
 
-[discrete]
-== xref:ROOT:why-akka.adoc[Why Akka]
-
-Three barriers stand between AI prototypes and production:
-
-* the **Production Gap**,
-* **Liability**,
-* and the **Specialist Trap**.
-
-Learn xref:ROOT:why-akka.adoc[how Akka solves them].
-
-[discrete]
-== xref:ROOT:what-is-akka.adoc[What is Akka]
-
-Akka is the only full-stack platform for agentic AI: developer experience, runtime, and governance in one integrated system.
-Learn xref:ROOT:what-is-akka.adoc[about what Akka provides] or find xref:ROOT:who-uses-akka.adoc[the docs for your role].
-
-[discrete]
-== xref:getting-started:index.adoc[Tutorials]
-
-**Start here**: hands-on introduction to building with Akka.
-
-* xref:getting-started:spec-your-first-agent.adoc[Spec-first greeting agent] — Build your first agent with Spec-Driven Development
-* xref:getting-started:author-your-first-service.adoc[Hello world agent] — Classic hands-on tutorial
-* xref:getting-started:planner-agent/index.adoc[Build an AI multi-agent planner]
-* xref:getting-started:samples.adoc[Explore other sample applications]
+Akka is a full-stack platform for agentic AI: developer experience, runtime, and governance in one integrated system. You describe what you need, Akka generates a production-ready system, and that system runs as a durable, event-driven, distributed application.
 
 [.akka-docs-homepage-grid]
 ====
@@ -35,15 +10,28 @@ Learn xref:ROOT:what-is-akka.adoc[about what Akka provides] or find xref:ROOT:wh
 [.grid-item]
 --
 [discrete]
-== xref:sdk:index.adoc[Developing]
+== xref:getting-started:index.adoc[Getting started]
 
-**Build with Akka** — Spec-Driven Development, SDK components, use cases, and integrations.
+**Build your first service** — guided, end-to-end tutorials plus samples.
 
-* xref:sdk:spec-driven-development.adoc[Spec-Driven Development]
-* xref:sdk:agents.adoc[Agents]
-* xref:sdk:workflows.adoc[Orchestration]
-* xref:sdk:event-sourced-entities.adoc[Memory]
-* xref:sdk:consuming-producing.adoc[Streaming]
+* xref:getting-started:set-up-dev-env.adoc[Set up your dev env]
+* xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent]
+* xref:getting-started:planner-agent/index.adoc[Multi-agent tutorial]
+* xref:getting-started:samples.adoc[Samples and blueprints]
+--
+
+[.grid-item]
+--
+[discrete]
+== xref:ROOT:about-akka.adoc[About Akka]
+
+**Understand the platform** — what Akka is and the capabilities it provides.
+
+* xref:ROOT:what-is-akka.adoc[What is Akka?]
+* xref:ROOT:akka-agents.adoc[Agents]
+* xref:ROOT:akka-orchestration.adoc[Orchestration]
+* xref:ROOT:akka-memory.adoc[Memory]
+* xref:ROOT:akka-streaming.adoc[Streaming]
 --
 
 [.grid-item]
@@ -51,12 +39,25 @@ Learn xref:ROOT:what-is-akka.adoc[about what Akka provides] or find xref:ROOT:wh
 [discrete]
 == xref:concepts:index.adoc[Understanding]
 
-**Foundational topics** on how Akka services are designed and behave.
+**Key concepts** behind how Akka services are designed and behave.
 
-* xref:concepts:ai-agents.adoc[AI agents]
-* xref:concepts:architecture-model.adoc[Architecture]
-* xref:concepts:distributed-systems.adoc[]
+* xref:concepts:concepts.adoc[Concepts overview]
+* xref:concepts:architecture-model.adoc[Architecture model]
+* xref:concepts:distributed-systems.adoc[Distributed systems]
 * xref:concepts:multi-region.adoc[Multi-region operations]
+--
+
+[.grid-item]
+--
+[discrete]
+== xref:sdk:index.adoc[Developing]
+
+**Build with the SDK** — components, integrations, and configuration.
+
+* xref:sdk:spec-driven-development.adoc[Spec-driven development]
+* xref:sdk:components/index.adoc[Components]
+* xref:sdk:integrations/index.adoc[Integrations]
+* xref:sdk:setup-and-configuration/index.adoc[Configuration]
 --
 
 [.grid-item]
@@ -64,13 +65,12 @@ Learn xref:ROOT:what-is-akka.adoc[about what Akka provides] or find xref:ROOT:wh
 [discrete]
 == xref:operations:index.adoc[Operating]
 
-**Deploy, observe, and manage** Akka services in production.
+**Deploy, run, and monitor** Akka services in production.
 
+* xref:operations:configuring.adoc[Self-managed operations]
 * xref:operations:akka-platform.adoc[Akka Automated Operations]
-* xref:operations:services/deploy-service.adoc[]
-* xref:operations:observability-and-monitoring/metrics.adoc[]
-* xref:operations:cli/installation.adoc[]
-* xref:operations:integrating-cicd/github-actions.adoc[]
+* xref:operations:services/deploy-service.adoc[Deploy a service]
+* xref:operations:observability-and-monitoring/index.adoc[Observability and monitoring]
 --
 
 [.grid-item]
@@ -78,23 +78,18 @@ Learn xref:ROOT:what-is-akka.adoc[about what Akka provides] or find xref:ROOT:wh
 [discrete]
 == xref:reference:index.adoc[Reference]
 
-**Technical reference** for releases, APIs, tooling, and terminology.
+**Look it up** — CLI, APIs, configuration, and release notes.
 
-* xref:reference:release-notes.adoc[Release notes]
+* xref:reference:cli/akka-cli/index.adoc[CLI commands]
 * xref:reference:api-docs.adoc[API documentation]
-* xref:reference:cli/akka-cli/index.adoc[CLI command reference]
-* xref:reference:glossary.adoc[Glossary]
+* xref:reference:config/reference.adoc[Service configuration]
+* xref:reference:release-notes.adoc[Release notes]
+* xref:reference:glossary.adoc[Glossary of terms]
 --
 ====
 
 [discrete]
-== xref:ROOT:resources.adoc[Resources]
+== More
 
-Blogs, demos, webinars, customer stories, foundational works, training, and community links are
-listed in the xref:ROOT:resources.adoc[Resources] section.
-
-[discrete]
-== https://doc.akka.io/libraries/akka-dependencies/current/overview.html[Akka Libraries]
-
-Libraries for building and running responsive applications, used in production for over a decade.
-Learn about https://doc.akka.io/libraries/akka-dependencies/current/overview.html[the Akka Libraries].
+* xref:ROOT:resources.adoc[Resources] — blogs, demos, webinars, training, and community links.
+* https://doc.akka.io/libraries/akka-dependencies/current/overview.html[Akka Libraries] — the Akka libraries for the JVM, in production for over a decade.
