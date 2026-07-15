@@ -18,6 +18,7 @@ import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.javasdk.agent.Classification
 import akka.javasdk.agent.Classifier
+import akka.javasdk.agent.ClassifierClient
 import akka.javasdk.agent.ClassifierContext
 import akka.javasdk.agent.Decision
 import akka.javasdk.agent.ModelGuardrail
@@ -49,27 +50,26 @@ object ClassifierProviderSpec {
 
   class ToxicityClassifier(context: ClassifierContext) extends Classifier {
     private val threshold = context.config().getDouble("threshold")
-    override def classifyAsync(input: String): CompletionStage[Classification] =
+    override def classify(input: String): CompletionStage[Classification] =
       CompletableFuture.completedFuture(Classification.of(threshold, s"classified:$input"))
   }
 
   class NoContextClassifier extends Classifier {
-    override def classifyAsync(input: String): CompletionStage[Classification] =
+    override def classify(input: String): CompletionStage[Classification] =
       CompletableFuture.completedFuture(Classification.label("ok"))
   }
 
   class ThrowingClassifier extends Classifier {
-    override def classifyAsync(input: String): CompletionStage[Classification] =
+    override def classify(input: String): CompletionStage[Classification] =
       throw new IllegalStateException("kaboom")
   }
 
   class WrongClassifier
 
-  // Composes another configured classifier by calling it through the client, never holding a
-  // reference to the classifier itself.
-  class EnsembleClassifier(context: ClassifierContext) extends Classifier {
-    private val client = context.classifierClient()
-    override def classifyAsync(input: String): CompletionStage[Classification] =
+  // Composes another configured classifier by calling it through the injected client, never holding
+  // a reference to the classifier itself.
+  class EnsembleClassifier(client: ClassifierClient) extends Classifier {
+    override def classify(input: String): CompletionStage[Classification] =
       client.classifyAsync("toxicity", input)
   }
 
@@ -78,7 +78,7 @@ object ClassifierProviderSpec {
   // Tracks how many calls are in flight concurrently, to check the shared singleton instance
   // doesn't corrupt state across parallel classify() calls.
   class ConcurrentClassifier extends Classifier {
-    override def classifyAsync(input: String): CompletionStage[Classification] = {
+    override def classify(input: String): CompletionStage[Classification] = {
       val inFlight = ConcurrentCallCount.incrementAndGet()
       try CompletableFuture.completedFuture(Classification.score(inFlight.toDouble))
       finally ConcurrentCallCount.decrementAndGet()
@@ -93,7 +93,7 @@ object ClassifierProviderSpec {
   // other's context type.
   class DualPurpose extends ModelGuardrail with Classifier {
     override def decide(ctx: ModelGuardrail.CallContext): Decision = new Decision.Allow()
-    override def classifyAsync(input: String): CompletionStage[Classification] =
+    override def classify(input: String): CompletionStage[Classification] =
       CompletableFuture.completedFuture(Classification.label(s"dual:$input"))
   }
 
@@ -112,14 +112,20 @@ object ClassifierProviderSpec {
       }
   }
 
-  // Simplified stand-in for Sdk.wiredInstance: unwraps InvocationTargetException so a classifier
-  // constructor's own exceptions (e.g. missing config) surface as themselves. Does not do the
-  // dependency injection or single-public-constructor enforcement that production wiring adds.
-  private def wireClassifier(clz: Class[Classifier], context: ClassifierContext): Classifier =
+  // Simplified stand-in for Sdk.wiredInstance: injects a ClassifierClient or ClassifierContext by
+  // constructor shape and unwraps InvocationTargetException so a classifier constructor's own
+  // exceptions (e.g. missing config) surface as themselves. Does not do the full dependency
+  // injection or single-public-constructor enforcement that production wiring adds.
+  private def wireClassifier(
+      client: => ClassifierClient)(clz: Class[Classifier], context: ClassifierContext): Classifier =
     try {
-      try clz.getConstructor(classOf[ClassifierContext]).newInstance(context)
+      try clz.getConstructor(classOf[ClassifierClient]).newInstance(client)
       catch {
-        case _: NoSuchMethodException => clz.getConstructor().newInstance()
+        case _: NoSuchMethodException =>
+          try clz.getConstructor(classOf[ClassifierContext]).newInstance(context)
+          catch {
+            case _: NoSuchMethodException => clz.getConstructor().newInstance()
+          }
       }
     } catch {
       case exc: java.lang.reflect.InvocationTargetException if exc.getCause != null => throw exc.getCause
@@ -128,7 +134,8 @@ object ClassifierProviderSpec {
   /** Builds a provider wired to a fresh loopback runtime client, registered with whatever's configured. */
   private def newProvider(system: akka.actor.typed.ActorSystem[_], config: Config): ClassifierProvider = {
     val runtimeClient = new LoopbackSpiClassifierClient
-    val provider = new ClassifierProvider(system, config, runtimeClient, wireClassifier)
+    var provider: ClassifierProvider = null
+    provider = new ClassifierProvider(system, config, runtimeClient, wireClassifier(provider.client))
     runtimeClient.register(provider.spiConfiguredClassifiers)
     provider
   }
@@ -154,7 +161,11 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
           }
           """)
           .withFallback(config)
-      val provider = new ClassifierProvider(system, faultyConfig, new LoopbackSpiClassifierClient, wireClassifier)
+      val provider = new ClassifierProvider(
+        system,
+        faultyConfig,
+        new LoopbackSpiClassifierClient,
+        wireClassifier(sys.error("no ClassifierClient in this test")))
       intercept[IllegalArgumentException] {
         provider.validate()
       }.getMessage should include("must implement [akka.javasdk.agent.Classifier]")
@@ -170,7 +181,11 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
             }
           }
           """)
-      val provider = new ClassifierProvider(system, faultyConfig, new LoopbackSpiClassifierClient, wireClassifier)
+      val provider = new ClassifierProvider(
+        system,
+        faultyConfig,
+        new LoopbackSpiClassifierClient,
+        wireClassifier(sys.error("no ClassifierClient in this test")))
       intercept[ConfigException] {
         provider.validate()
       }

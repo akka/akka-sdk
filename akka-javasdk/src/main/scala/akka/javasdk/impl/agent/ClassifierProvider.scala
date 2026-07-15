@@ -113,7 +113,7 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
         s"Classifier [${c.name}] must implement [${classOf[Classifier].getName}], " +
         s"but [${c.implementationClass}] does not")
 
-    val context = new ClassifierContextImpl(c.name, c.config, client)
+    val context = new ClassifierContextImpl(c.name, c.config)
     wireClassifier(clz.asInstanceOf[Class[Classifier]], context)
   }
 
@@ -163,7 +163,7 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
     override def classify(content: SpiClassifier.Content): Future[SpiClassifier.Classification] =
       content match {
         case text: SpiClassifier.TextContent =>
-          resolve().classifyAsync(text.text).asScala.map(fromClassification)(ExecutionContext.parasitic)
+          resolve().classify(text.text).asScala.map(fromClassification)(ExecutionContext.parasitic)
       }
   }
 }

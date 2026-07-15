@@ -26,7 +26,7 @@ public class DependencyProvidedClassifier implements Classifier {
   }
 
   @Override
-  public CompletionStage<Classification> classifyAsync(String input) {
+  public CompletionStage<Classification> classify(String input) {
     return CompletableFuture.completedFuture(
         Classification.label(dependencyProvidedClient != null ? "resolved" : "missing"));
   }

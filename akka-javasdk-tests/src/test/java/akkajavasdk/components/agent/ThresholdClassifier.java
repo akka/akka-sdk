@@ -27,7 +27,7 @@ public class ThresholdClassifier implements Classifier {
   }
 
   @Override
-  public CompletionStage<Classification> classifyAsync(String input) {
+  public CompletionStage<Classification> classify(String input) {
     return CompletableFuture.supplyAsync(
         () -> {
           boolean toxic = input.toLowerCase().contains("toxic");

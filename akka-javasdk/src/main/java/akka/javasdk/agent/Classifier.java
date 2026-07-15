@@ -4,8 +4,6 @@
 
 package akka.javasdk.agent;
 
-import akka.javasdk.impl.ErrorHandling;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -16,7 +14,7 @@ import java.util.concurrent.CompletionStage;
  *
  * <p>An implementation has a public constructor into which the platform's managed dependencies can
  * be injected — including a {@link ClassifierClient}, for composing other configured classifiers
- * (for example, an ensemble classifier combining several underlying ones), or a {@link
+ * (for example, an ensemble classifier combining several underlying ones), and a {@link
  * ClassifierContext} for the classifier's configured name and config section.
  *
  * <p>Unlike a {@link Guardrail}, a classifier is never bound to a call boundary and is never
@@ -30,20 +28,7 @@ public interface Classifier {
   /**
    * Classifies {@code input} and returns the resulting {@link Classification}.
    *
-   * @return the classification
-   */
-  default Classification classify(String input) {
-    try {
-      return classifyAsync(input).toCompletableFuture().join();
-    } catch (CompletionException e) {
-      throw ErrorHandling.unwrapCompletionException(e);
-    }
-  }
-
-  /**
-   * Async variant of {@link #classify}.
-   *
    * @return a CompletionStage with the classification
    */
-  CompletionStage<Classification> classifyAsync(String input);
+  CompletionStage<Classification> classify(String input);
 }
