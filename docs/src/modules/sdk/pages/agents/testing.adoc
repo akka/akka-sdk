@@ -77,13 +77,10 @@ Note that you should use `http`, and not `https`, the connection will be encrypt
 To exercise your configured xref:sdk:agents/classifiers.adoc[classifiers] in a test, obtain a `ClassifierClient` from the testkit with `getClassifierClient()` and invoke them by name:
 
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/classifier/ClassifierTestSample.java[ClassifierTestSample.java]
 ----
-var classifierClient = testKit.getClassifierClient();
-var classification = classifierClient.classify("toxicity", "some input text");
-assertThat(classification.label()).contains("clean");
+include::example$doc-snippets/src/test/java/com/example/classifier/ClassifierTestSample.java[tag=classify]
 ----
-
-`TestKitSupport` exposes the same accessor, so a test extending `TestKitSupport` can call `getClassifierClient()` directly.
 
 == Evaluators
 

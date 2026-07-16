@@ -158,16 +158,9 @@ The classifier is configured separately under `akka.javasdk.agent.classifiers`; 
 When a `ModelGuardrail` returns `Decision.Deny` with `report-only = false`, the interaction is aborted and the reason is surfaced to the agent's failure handling as a `Guardrail.GuardrailException`, which you can map in `onFailure`:
 
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/guardrail/GuardedAgent.java[GuardedAgent.java]
 ----
-return effects()
-    .systemMessage("You are a helpful...")
-    .userMessage(question)
-    .map(SomeResponse::new)
-    .onFailure(cause -> switch (cause) {
-      case Guardrail.GuardrailException e -> new SomeResponse(e.getMessage());
-      default -> throw new RuntimeException(cause);
-    })
-    .thenReply();
+include::example$doc-snippets/src/main/java/com/example/guardrail/GuardedAgent.java[tag=on-failure]
 ----
 
 With `report-only = true`, a `Deny` is recorded in logs, metrics, and traces but the interaction continues.

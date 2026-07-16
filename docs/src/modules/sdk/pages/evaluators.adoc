@@ -49,13 +49,10 @@ It is one of two kinds: an `AgentInteraction` produced directly by an agent, or 
 The link:{attachmentsdir}/api/akka/javasdk/evaluation/Evaluation.html[`Evaluation`] captures whether the interaction passed, an explanation, and optional quantitative (`score`) and categorical (`label`) results, plus arbitrary `attributes`.
 Build one with the fluent factories:
 
-// TODO: replace this inline example with a compiled snippet (e.g. from doc-snippets)
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/EvaluationBuilding.java[EvaluationBuilding.java]
 ----
-Evaluation.passed("Response was accurate and helpful")
-    .withScore(0.92)
-    .withLabel("excellent")
-    .withAttribute("model", "gpt-4o");
+include::example$doc-snippets/src/main/java/com/example/evaluator/EvaluationBuilding.java[tag=build]
 ----
 
 The `Effect` returned by `evaluate` is one of:
@@ -101,17 +98,10 @@ Blocking calls made from `evaluate` run on virtual threads, so it is safe to use
 
 A common pattern is to have the evaluator delegate the verdict to an LLM-as-judge agent, run in its own evaluation-scoped session:
 
-// TODO: replace this inline example with a compiled snippet (e.g. from doc-snippets)
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/JudgeDelegatingEvaluator.java[JudgeDelegatingEvaluator.java]
 ----
-QualityJudge.Verdict verdict = componentClient
-    .forAgent()
-    .inSession(context.evaluationId() + "-quality-judge") // isolated from the subject's session
-    .method(QualityJudge::evaluate)
-    .invoke(transcript);
-
-return effects().complete(
-    Evaluation.of(verdict.passed(), verdict.reason()).withScore(verdict.score()));
+include::example$doc-snippets/src/main/java/com/example/evaluator/JudgeDelegatingEvaluator.java[tag=delegate]
 ----
 
 For implementing the judge agent itself, see xref:sdk:agents/llm_eval.adoc[LLM evaluation].
@@ -120,18 +110,10 @@ For implementing the judge agent itself, see xref:sdk:agents/llm_eval.adoc[LLM e
 
 For an evaluation that involves several steps and must survive restarts, delegate to a xref:sdk:workflows.adoc[workflow] and suspend on its result with `asyncEffect`:
 
-// TODO: replace this inline example with a compiled snippet (e.g. from doc-snippets)
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/DurableEvaluator.java[DurableEvaluator.java]
 ----
-CompletionStage<Effect> futureEffect = componentClient
-    .forWorkflow(context.evaluationId())
-    .method(EvaluationWorkflow::run)
-    .invokeAsync(transcript)
-    .thenCompose(started -> reportStage)     // await the workflow's completion report
-    .thenApply(report ->
-        effects().complete(Evaluation.passed(report.reason()).withScore(report.score())));
-
-return effects().asyncEffect(futureEffect);
+include::example$doc-snippets/src/main/java/com/example/evaluator/DurableEvaluator.java[tag=async]
 ----
 
 The workflow provides the durability; the evaluator suspends until it reports back.
@@ -142,11 +124,10 @@ The workflow provides the durability; the evaluator suspends until it reports ba
 The ledger is the log of recorded agent interactions. It is also used for console visibility and auditing.
 An link:{attachmentsdir}/api/akka/javasdk/ledger/LedgerClient.html[`LedgerClient`] fetches records from it. It can be injected into any component, but in practice it is mainly evaluators that use it.
 
-// TODO: replace this inline example with a compiled snippet (e.g. from doc-snippets)
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.java[LedgerUsage.java]
 ----
-InteractionRecord record = ledger.getInteraction(interactionId);        // <1>
-CompletionStage<InteractionRecord> async = ledger.getInteractionAsync(interactionId); // <2>
+include::example$doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.java[tag=fetch]
 ----
 <1> Fetch the full record for an interaction id. Blocks the calling thread — safe on a virtual thread — and throws `NoSuchElementException` if no interaction exists with that id.
 <2> The non-blocking variant.
@@ -184,17 +165,10 @@ Beyond these, the raw fields expose the full structure: `systemMessage`, `inputM
 
 Use link:{attachmentsdir}/testkit/akka/javasdk/testkit/EvaluatorTestKit.html[`EvaluatorTestKit`] to run an evaluator's `evaluate` handler over a chosen `Subject` and assert on the outcome, supplying whatever dependencies the evaluator needs (for example a stub `LedgerClient`) through the factory:
 
-// TODO: replace this inline example with a compiled snippet (e.g. from doc-snippets)
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[EvaluatorTestKitSample.java]
 ----
-var testKit = EvaluatorTestKit.of(() -> new InteractionQualityEvaluator(stubLedger));
-
-EvaluatorResult result = testKit.evaluate(
-    new Subject.AgentInteraction("support-agent", "interaction-1"));
-
-assertThat(result.isComplete()).isTrue();
-assertThat(result.getEvaluations()).hasSize(1);
-assertThat(result.getEvaluations().get(0).passed()).isTrue();
+include::example$doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[tag=test]
 ----
 
 An asynchronous effect is resolved before the `EvaluatorResult` is returned, so `isComplete()` and `isInconclusive()` reflect the terminal outcome; `isAsync()` additionally reports whether the effect was produced asynchronously.

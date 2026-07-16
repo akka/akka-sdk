@@ -60,10 +60,9 @@ A `ClassifierClient` can be injected into your components — such as a workflow
 It resolves a configured classifier by name and invokes it:
 
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/classifier/ClassifierUsage.java[ClassifierUsage.java]
 ----
-Classification result = classifierClient.classify("toxicity", text); // <1>
-result.label().ifPresent(label -> { /* ... */ });
-result.score().ifPresent(score -> { /* ... */ });
+include::example$doc-snippets/src/main/java/com/example/classifier/ClassifierUsage.java[tag=invoke]
 ----
 <1> `classify` blocks for the result and is safe to call on a Loom virtual thread. Use `classifyAsync` for the non-blocking variant. Both throw `IllegalArgumentException` if no classifier is configured with that name.
 
