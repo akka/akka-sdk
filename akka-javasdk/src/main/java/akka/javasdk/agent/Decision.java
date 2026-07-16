@@ -5,8 +5,8 @@
 package akka.javasdk.agent;
 
 /**
- * The outcome of evaluating a {@link ToolGuardrail} or {@link ModelGuardrail}: {@link Allow},
- * {@link Deny}, or {@link Fail}.
+ * The verdict of a {@link ToolGuardrail} or {@link ModelGuardrail}: {@link Allow}, {@link Deny}, or
+ * {@link Fail}.
  */
 public sealed interface Decision {
 
@@ -31,7 +31,7 @@ public sealed interface Decision {
   record Deny(String reason) implements Decision {}
 
   /**
-   * The guardrail could not reach a verdict because evaluation itself failed.
+   * The guardrail could not reach a verdict because the check itself failed.
    *
    * @param reason human-readable explanation surfaced to the user
    * @param cause the underlying throwable, or {@code null} if none

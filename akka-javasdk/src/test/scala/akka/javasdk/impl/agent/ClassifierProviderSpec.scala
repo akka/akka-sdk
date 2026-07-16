@@ -92,7 +92,8 @@ object ClassifierProviderSpec {
   // guardrail construction only matches (GuardrailContext) or (), and neither path matches the
   // other's context type.
   class DualPurpose extends ModelGuardrail with Classifier {
-    override def decide(ctx: ModelGuardrail.CallContext): Decision = new Decision.Allow()
+    override def decide(ctx: ModelGuardrail.CallContext): CompletionStage[Decision] =
+      CompletableFuture.completedFuture(new Decision.Allow())
     override def classify(input: String): CompletionStage[Classification] =
       CompletableFuture.completedFuture(Classification.label(s"dual:$input"))
   }

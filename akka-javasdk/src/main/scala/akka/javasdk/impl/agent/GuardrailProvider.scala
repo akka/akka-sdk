@@ -7,8 +7,10 @@ package akka.javasdk.impl.agent
 import java.util.concurrent.CompletionStage
 
 import scala.annotation.nowarn
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
+import scala.jdk.FutureConverters._
 import scala.util.Failure
 import scala.util.control.NonFatal
 
@@ -142,10 +144,7 @@ import io.opentelemetry.context.{ Context => OtelContext }
     override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
       content match {
         case toolCall: SpiAgent.Guardrail.ToolCallContent =>
-          // TODO: thrown exceptions and explicit new Decision.Fail(...) currently collapse onto the same
-          // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
-          // fail-closed/fail-open (explicit error) — keep them separable when that lands.
-          evaluateSafely(
+          decideSafely(
             guardrail.decide(
               new ToolGuardrailCallContextImpl(
                 toolCall.agentId,
@@ -169,18 +168,15 @@ import io.opentelemetry.context.{ Context => OtelContext }
       extends SpiAgent.Guardrail {
 
     override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
-      // TODO: thrown exceptions and explicit new Decision.Fail(...) currently collapse onto the same
-      // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
-      // fail-closed/fail-open (explicit error) — keep them separable when that lands.
       content match {
         case textContent: SpiAgent.Guardrail.TextContent =>
           val contents = java.util.List.of[MessageContent](MessageContent.TextMessageContent.from(textContent.text))
-          evaluateSafely(
+          decideSafely(
             guardrail.decide(
               new ModelGuardrailCallContextImpl(contents, Option(textContent.telemetryContext), tracerFactory)))
         case multimodalContent: SpiAgent.Guardrail.MultimodalContent =>
           val contents = multimodalContent.contents.map(AgentImpl.fromSpiMessageContent).asJava
-          evaluateSafely(
+          decideSafely(
             guardrail.decide(
               new ModelGuardrailCallContextImpl(contents, Option(multimodalContent.telemetryContext), tracerFactory)))
         case other =>
@@ -194,14 +190,23 @@ import io.opentelemetry.context.{ Context => OtelContext }
     override val reportOnly: Boolean = entry.configuredGuardrail.reportOnly
   }
 
-  // A thrown exception from a guardrail's evaluate(...) is treated as if the guardrail had
-  // returned new Decision.Fail(message, throwable) — propagated to the runtime as a failed Future.
-  private def evaluateSafely(decision: => Decision): Future[SpiAgent.Guardrail.Result] =
-    try decisionToSpiResult(decision)
-    catch {
-      case NonFatal(t) =>
-        decisionToSpiResult(new Decision.Fail(Option(t.getMessage).getOrElse(t.getClass.getName), t))
-    }
+  // A guardrail can fail to reach a verdict in three ways: throw from decide(...), return a failed
+  // CompletionStage, or complete with an explicit Decision.Fail. All three are treated as if it had
+  // returned new Decision.Fail(message, throwable). A null stage NPEs here and lands on the same path.
+  //
+  // TODO: thrown exceptions and explicit new Decision.Fail(...) currently collapse onto the same
+  // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
+  // fail-closed/fail-open (explicit error) — keep them separable when that lands.
+  private def decideSafely(decide: => CompletionStage[Decision]): Future[SpiAgent.Guardrail.Result] = {
+    val decision =
+      try decide.asScala
+      catch { case NonFatal(t) => Future.failed(t) }
+
+    decision
+      .recover { case NonFatal(t) => new Decision.Fail(Option(t.getMessage).getOrElse(t.getClass.getName), t) }(
+        ExecutionContext.parasitic)
+      .flatMap(decisionToSpiResult)(ExecutionContext.parasitic)
+  }
 
   // Decision.Fail becomes a failed Future so the cause Throwable flows through the runtime's
   // existing handling in AgentGuardrailInteractions, where it ends up as the cause of the

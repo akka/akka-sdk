@@ -5,6 +5,10 @@
 package akka.javasdk.impl.agent
 
 import java.net.URI
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 import scala.annotation.nowarn
 import scala.concurrent.Await
@@ -70,20 +74,24 @@ object GuardrailProviderSpec {
       new Guardrail.Result(false, s"${context.name} says no")
   }
 
+  private def completed(decision: Decision): CompletionStage[Decision] =
+    CompletableFuture.completedFuture(decision)
+
   class MyToolGuard(context: GuardrailContext) extends ToolGuardrail {
-    override def decide(ctx: ToolGuardrail.CallContext): Decision =
-      new Decision.Deny(s"${context.name} says no")
+    override def decide(ctx: ToolGuardrail.CallContext): CompletionStage[Decision] =
+      completed(new Decision.Deny(s"${context.name} says no"))
   }
 
   class AllowingToolGuard extends ToolGuardrail {
-    override def decide(ctx: ToolGuardrail.CallContext): Decision =
-      new Decision.Allow()
+    override def decide(ctx: ToolGuardrail.CallContext): CompletionStage[Decision] =
+      completed(new Decision.Allow())
   }
 
   // Echoes every context field into the deny reason so a test can assert the full mapping.
   class EchoingToolGuard extends ToolGuardrail {
-    override def decide(ctx: ToolGuardrail.CallContext): Decision =
-      new Decision.Deny(s"${ctx.agentId}|${ctx.toolName}|${ctx.toolCallId}|${ctx.arguments}|${ctx.sessionId}")
+    override def decide(ctx: ToolGuardrail.CallContext): CompletionStage[Decision] =
+      completed(
+        new Decision.Deny(s"${ctx.agentId}|${ctx.toolName}|${ctx.toolCallId}|${ctx.arguments}|${ctx.sessionId}"))
   }
 
   private def emptySchema: SpiJsonSchema.JsonSchemaObject =
@@ -102,8 +110,8 @@ object GuardrailProviderSpec {
       telemetryContext = Context.root())
 
   class MyModelGuard(context: GuardrailContext) extends ModelGuardrail {
-    override def decide(ctx: ModelGuardrail.CallContext): Decision =
-      new Decision.Deny(s"${context.name} says no")
+    override def decide(ctx: ModelGuardrail.CallContext): CompletionStage[Decision] =
+      completed(new Decision.Deny(s"${context.name} says no"))
   }
 
   // Records the per-call context so a test can assert what the model guard received. The provider
@@ -111,31 +119,60 @@ object GuardrailProviderSpec {
   @volatile var capturedModelContext: ModelGuardrail.CallContext = _
 
   class CapturingModelGuard extends ModelGuardrail {
-    override def decide(ctx: ModelGuardrail.CallContext): Decision = {
+    override def decide(ctx: ModelGuardrail.CallContext): CompletionStage[Decision] = {
       capturedModelContext = ctx
-      new Decision.Allow()
+      completed(new Decision.Allow())
     }
   }
 
   class BothGuard extends ToolGuardrail with ModelGuardrail {
-    override def decide(ctx: ModelGuardrail.CallContext): Decision = new Decision.Allow()
-    override def decide(ctx: ToolGuardrail.CallContext): Decision = new Decision.Allow()
+    override def decide(ctx: ModelGuardrail.CallContext): CompletionStage[Decision] = completed(new Decision.Allow())
+    override def decide(ctx: ToolGuardrail.CallContext): CompletionStage[Decision] = completed(new Decision.Allow())
   }
 
   class FailingModelGuard extends ModelGuardrail {
     val cause = new IllegalStateException("upstream classifier unreachable")
-    override def decide(ctx: ModelGuardrail.CallContext): Decision =
-      new Decision.Fail("evaluation failed", cause)
+    override def decide(ctx: ModelGuardrail.CallContext): CompletionStage[Decision] =
+      completed(new Decision.Fail("could not decide", cause))
   }
 
   class ThrowingModelGuard extends ModelGuardrail {
-    override def decide(ctx: ModelGuardrail.CallContext): Decision =
+    override def decide(ctx: ModelGuardrail.CallContext): CompletionStage[Decision] =
       throw new IllegalStateException("kaboom")
   }
 
   class ThrowingToolGuard extends ToolGuardrail {
-    override def decide(ctx: ToolGuardrail.CallContext): Decision =
+    override def decide(ctx: ToolGuardrail.CallContext): CompletionStage[Decision] =
       throw new IllegalStateException("kaboom")
+  }
+
+  // Fails the returned stage rather than throwing or returning Decision.Fail -- the third way a
+  // guardrail can fail to reach a verdict.
+  class FailedStageModelGuard extends ModelGuardrail {
+    override def decide(ctx: ModelGuardrail.CallContext): CompletionStage[Decision] =
+      CompletableFuture.failedFuture(new IllegalStateException("stage blew up"))
+  }
+
+  class NullStageModelGuard extends ModelGuardrail {
+    override def decide(ctx: ModelGuardrail.CallContext): CompletionStage[Decision] = null
+  }
+
+  // Completes only when released, so a test can observe that decide(...) doesn't block the caller.
+  class SlowModelGuard extends ModelGuardrail {
+    val started = new CountDownLatch(1)
+    val release = new CompletableFuture[Decision]()
+
+    override def decide(ctx: ModelGuardrail.CallContext): CompletionStage[Decision] = {
+      started.countDown()
+      release
+    }
+  }
+
+  @volatile var slowModelGuard: SlowModelGuard = _
+
+  // The provider instantiates guards reflectively, so publish the instance for the test to drive.
+  class PublishingSlowModelGuard extends SlowModelGuard {
+    slowModelGuard = this
   }
 
   class WrongGuard
@@ -564,9 +601,87 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val failure = intercept[RuntimeException] {
         Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root())), 3.seconds)
       }
-      failure.getMessage shouldBe "evaluation failed"
+      failure.getMessage shouldBe "could not decide"
       failure.getCause shouldBe a[IllegalStateException]
       failure.getCause.getMessage shouldBe "upstream classifier unreachable"
+    }
+
+    "translate a failed CompletionStage from a ModelGuardrail into a failed Future preserving the cause" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "failed stage model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$FailedStageModelGuard"
+              agents = ["failed-stage-agent"]
+              category = MODEL_POLICY
+              use-for = ["model-response"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("failed-stage-agent", role = None).modelResponseGuardrails.head
+
+      val failure = intercept[RuntimeException] {
+        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root())), 3.seconds)
+      }
+      failure.getMessage shouldBe "stage blew up"
+      failure.getCause shouldBe a[IllegalStateException]
+      failure.getCause.getMessage shouldBe "stage blew up"
+    }
+
+    "translate a null CompletionStage from a ModelGuardrail into a failed Future" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "null stage model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$NullStageModelGuard"
+              agents = ["null-stage-agent"]
+              category = MODEL_POLICY
+              use-for = ["model-response"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("null-stage-agent", role = None).modelResponseGuardrails.head
+
+      val failure = intercept[RuntimeException] {
+        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root())), 3.seconds)
+      }
+      failure.getCause shouldBe a[NullPointerException]
+    }
+
+    "not block the caller while a ModelGuardrail's decision is still pending" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "slow model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$PublishingSlowModelGuard"
+              agents = ["slow-agent"]
+              category = MODEL_POLICY
+              use-for = ["model-response"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("slow-agent", role = None).modelResponseGuardrails.head
+
+      val eventual = spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything", Context.root()))
+
+      // evaluate(...) returned while the guard's decision is still outstanding
+      slowModelGuard.started.await(3, TimeUnit.SECONDS) shouldBe true
+      eventual.isCompleted shouldBe false
+
+      slowModelGuard.release.complete(new Decision.Deny("took its time"))
+
+      val result = Await.result(eventual, 3.seconds)
+      result.passed shouldBe false
+      result.explanation shouldBe "took its time"
     }
 
     "translate a thrown exception from a ModelGuardrail into a failed Future preserving the throwable as cause" in {
