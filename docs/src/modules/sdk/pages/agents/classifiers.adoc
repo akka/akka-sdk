@@ -26,7 +26,7 @@ include::example$doc-snippets/src/main/java/com/example/classifier/ToxicityClass
 ----
 <1> Implement the `Classifier` interface.
 <2> An optional link:{attachmentsdir}/api/akka/javasdk/agent/ClassifierContext.html[`ClassifierContext`] constructor parameter gives access to the classifier's configured name and its config section.
-<3> `classify` returns a `CompletionStage`, so the work can run off the calling thread.
+<3> `classify` returns a `CompletionStage`, so the work can run on a separate thread.
 <4> A `Classification` carries a score, a label, or both. Use the `score`, `label`, and `of` factory methods, or the full constructor to add confidence and attributes.
 
 The `Classification` record has four components — `score`, `label`, `confidence` (all `Optional`), and an `attributes` map — so a classifier can return only what it computes.
@@ -52,7 +52,7 @@ akka.javasdk.agent.classifiers {
 <3> An application-specific property, read by the classifier from `ClassifierContext.config()`.
 
 A classifier configuration has no `agents`, `agent-roles`, `use-for`, or `category`: a classifier is not scoped to a boundary or a set of agents.
-Callers just invoke it by name where they need it.
+Callers invoke it by name where they need it.
 
 == Invoking a classifier
 
@@ -83,7 +83,7 @@ include::example$doc-snippets/src/main/java/com/example/classifier/EnsembleClass
 <3> Resolve and invoke each member by name.
 <4> Combine the members' results into a single `Classification`.
 
-The corresponding configuration wires the members by name:
+The corresponding configuration lists the members by name:
 
 [source,conf,indent=0]
 .src/main/resources/application.conf

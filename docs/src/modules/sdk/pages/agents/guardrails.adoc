@@ -11,7 +11,7 @@ include::ROOT:partial$include.adoc[]
 
 Guardrails are runtime-enforced checks that validate what goes into and comes out of your agents.
 They protect against harmful inputs — such as jailbreak attempts and prompt injection — and damaging outputs — such as toxic language, hallucinated claims, or accidental disclosure of a competitor's product.
-A guardrail can also sit in front of a tool call and reject it before it runs.
+A guardrail can also intercept a tool call and reject it before it runs.
 
 Unlike external validation layers that sit outside your application, Akka guardrails are **part of the runtime itself**.
 You declare them in configuration, and the runtime enforces them on every interaction — whether the request targets a model, an MCP tool, or a function tool.
@@ -139,7 +139,7 @@ NOTE: The `*` wildcard expands to the model and MCP-tool boundaries only. A `Too
 
 A guardrail can delegate its decision to a xref:sdk:agents/classifiers.adoc[classifier], resolved by name through `GuardrailContext.classifierClient()`.
 The classifier does the scoring — how toxic the text is — and the guardrail turns that score into an allow or a deny.
-Because the classifier name comes from config, you can point the guardrail at a different classifier without rebuilding:
+Because the classifier name comes from config, you can configure the guardrail to use a different classifier without rebuilding:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/guardrail/ClassifierBackedGuard.java[ClassifierBackedGuard.java]
