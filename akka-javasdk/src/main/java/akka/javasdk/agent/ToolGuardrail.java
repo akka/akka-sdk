@@ -5,6 +5,7 @@
 package akka.javasdk.agent;
 
 import akka.javasdk.Tracing;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -57,11 +58,31 @@ public non-sealed interface ToolGuardrail extends Guardrail {
   /**
    * Decides whether the tool call described by {@code ctx} may be dispatched.
    *
-   * <p>Use {@link Decision.Deny} to refuse the call. Completing with {@link Decision.Fail}, failing
-   * the returned stage, and throwing are equivalent: all three mean the guardrail reached no
-   * verdict, which is distinct from refusing the call.
+   * <p>Use {@link Decision.Deny} to refuse the call. Returning {@link Decision.Fail} and throwing
+   * are equivalent: both mean the guardrail reached no verdict, which is distinct from refusing the
+   * call.
+   *
+   * <p>This is the method to implement. It may block: guardrails are always evaluated on virtual
+   * threads.
+   *
+   * @return the decision
+   */
+  Decision decide(CallContext ctx);
+
+  /**
+   * Async variant of {@link #decide}, for implementations that prefer composing futures.
+   *
+   * <p>The default implementation delegates to {@link #decide}. When this method is overridden,
+   * {@link #decide} is no longer used, and it is then safe to have it throw {@link
+   * UnsupportedOperationException} or return {@code null}.
+   *
+   * <p>Completing with {@link Decision.Fail}, failing the returned stage, and throwing are
+   * equivalent: all three mean the guardrail reached no verdict, which is distinct from refusing
+   * the call.
    *
    * @return a CompletionStage with the decision
    */
-  CompletionStage<Decision> decide(CallContext ctx);
+  default CompletionStage<Decision> decideAsync(CallContext ctx) {
+    return CompletableFuture.completedFuture(decide(ctx));
+  }
 }

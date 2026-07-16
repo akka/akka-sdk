@@ -4,6 +4,7 @@
 
 package akka.javasdk.agent;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -28,7 +29,23 @@ public interface Classifier {
   /**
    * Classifies {@code input} and returns the resulting {@link Classification}.
    *
+   * <p>This is the method to implement. It may block: classifiers are always invoked on virtual
+   * threads.
+   *
+   * @return the classification
+   */
+  Classification classify(String input);
+
+  /**
+   * Async variant of {@link #classify}, for implementations that prefer composing futures.
+   *
+   * <p>The default implementation delegates to {@link #classify}. When this method is overridden,
+   * {@link #classify} is no longer used, and it is then safe to have it throw {@link
+   * UnsupportedOperationException} or return {@code null}.
+   *
    * @return a CompletionStage with the classification
    */
-  CompletionStage<Classification> classify(String input);
+  default CompletionStage<Classification> classifyAsync(String input) {
+    return CompletableFuture.completedFuture(classify(input));
+  }
 }
