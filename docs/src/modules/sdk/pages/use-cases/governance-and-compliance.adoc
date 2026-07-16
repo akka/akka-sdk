@@ -21,7 +21,7 @@ NOTE: *Status: Partial* -- This pattern guide describes the governance approach 
 
 * *Guardrails* -- validate and filter agent inputs, outputs, and tool calls against defined policies, and can stop an interaction at the boundary
 * *Classifiers* -- score or label text (toxicity, sentiment, PII likelihood, or any custom signal), consulted by guardrails, evaluators, or application code
-* *Evaluators* -- assess each interaction of a bound agent out of band, recording a verdict, and read the interaction ledger for the record to assess
+* *Evaluators* -- assess each interaction of a bound agent out of band, recording a verdict, and read the ledger for the record to assess
 * *Sanitizers* -- detect and redact PII and sensitive data in agent interactions
 * *Agents* -- integrate governance checks into the agent processing pipeline
 

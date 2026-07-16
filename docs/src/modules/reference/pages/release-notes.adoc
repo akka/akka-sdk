@@ -10,22 +10,6 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
-== July 2026
-
-[sidebar]
-****
-
-**Governance suite**
-
-The governance capabilities have been extended beyond xref:sdk:agents/guardrails.adoc[guardrails] into a set of composable constructs:
-
-- **Enhanced guardrails** — guardrails now implement `ModelGuardrail` or `ToolGuardrail` and return an `Allow` / `Deny` / `Fail` xref:sdk:agents/guardrails.adoc#_kinds_of_guardrail[decision]. `ToolGuardrail` evaluates a function-tool call, with its name and arguments, before it is dispatched. The earlier `TextGuardrail` interface is deprecated.
-- **Classifiers** — the new xref:sdk:agents/classifiers.adoc[Classifier] maps text to a score and/or label. Unlike a guardrail it is never dispatched by the runtime; it is invoked inline by name through a `ClassifierClient`, and a guardrail can consult one to reach its decision.
-- **Evaluators** — the new xref:sdk:evaluators.adoc[Evaluator] component is triggered by the runtime for each interaction of a bound agent, records a verdict, and reads the interaction under evaluation from the interaction ledger via an injected `LedgerClient`.
-- **Component-level access control** — `@Acl` matchers can now match on the caller's xref:sdk:access-control.adoc#_component_level_access_with_spiffe[SPIFFE identity] for finer granularity than a whole service, and that identity is propagated across service boundaries and can be xref:sdk:access-control.adoc#_inspecting_the_callers_identity[read programmatically] in an endpoint.
-
-****
-
 == May 2026
 
 * Akka CLI 3.0.64

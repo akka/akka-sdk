@@ -10,7 +10,7 @@ include::ROOT:partial$include.adoc[]
 
 == Overview
 
-An link:{attachmentsdir}/api/akka/javasdk/evaluation/Evaluator.html[`Evaluator`] is a stateless component that assesses agent interactions.
+An link:{attachmentsdir}/api/akka/javasdk/evaluation/Evaluator.html[`Evaluator`] is a component that assesses agent interactions.
 It is bound to one or more agents in configuration; the runtime then invokes the evaluator once for each interaction of a bound agent, passing the interaction to be evaluated.
 The evaluator returns a verdict — pass or fail, optionally with a score, a label, and attributes — which is recorded in metrics and traces.
 
@@ -49,6 +49,7 @@ It is one of two kinds: an `AgentInteraction` produced directly by an agent, or 
 The link:{attachmentsdir}/api/akka/javasdk/evaluation/Evaluation.html[`Evaluation`] captures whether the interaction passed, an explanation, and optional quantitative (`score`) and categorical (`label`) results, plus arbitrary `attributes`.
 Build one with the fluent factories:
 
+// TODO: replace this inline example with a compiled snippet (e.g. from doc-snippets)
 [source,java,indent=0]
 ----
 Evaluation.passed("Response was accurate and helpful")
@@ -100,6 +101,7 @@ Blocking calls made from `evaluate` run on virtual threads, so it is safe to use
 
 A common pattern is to have the evaluator delegate the verdict to an LLM-as-judge agent, run in its own evaluation-scoped session:
 
+// TODO: replace this inline example with a compiled snippet (e.g. from doc-snippets)
 [source,java,indent=0]
 ----
 QualityJudge.Verdict verdict = componentClient
@@ -118,6 +120,7 @@ For implementing the judge agent itself, see xref:sdk:agents/llm_eval.adoc[LLM e
 
 For an evaluation that involves several steps and must survive restarts, delegate to a xref:sdk:workflows.adoc[workflow] and suspend on its result with `asyncEffect`:
 
+// TODO: replace this inline example with a compiled snippet (e.g. from doc-snippets)
 [source,java,indent=0]
 ----
 CompletionStage<Effect> futureEffect = componentClient
@@ -136,9 +139,10 @@ The workflow provides the durability; the evaluator suspends until it reports ba
 [#_the_ledger_client]
 == The ledger client
 
-The ledger is the log of recorded agent interactions — the same interaction log used for console visibility, troubleshooting, and auditing.
+The ledger is the log of recorded agent interactions, used for console visibility, troubleshooting, and auditing.
 An link:{attachmentsdir}/api/akka/javasdk/ledger/LedgerClient.html[`LedgerClient`] fetches records from it and can be injected into any component; an evaluator is its primary consumer.
 
+// TODO: replace this inline example with a compiled snippet (e.g. from doc-snippets)
 [source,java,indent=0]
 ----
 InteractionRecord record = ledger.getInteraction(interactionId);        // <1>
@@ -180,6 +184,7 @@ Beyond these, the raw fields expose the full structure: `systemMessage`, `inputM
 
 Use link:{attachmentsdir}/testkit/akka/javasdk/testkit/EvaluatorTestKit.html[`EvaluatorTestKit`] to run an evaluator's `evaluate` handler over a chosen `Subject` and assert on the outcome, supplying whatever dependencies the evaluator needs (for example a stub `LedgerClient`) through the factory:
 
+// TODO: replace this inline example with a compiled snippet (e.g. from doc-snippets)
 [source,java,indent=0]
 ----
 var testKit = EvaluatorTestKit.of(() -> new InteractionQualityEvaluator(stubLedger));

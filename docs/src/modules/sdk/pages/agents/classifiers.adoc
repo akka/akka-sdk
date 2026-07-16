@@ -1,5 +1,5 @@
 = Classifiers
-:page-summary: Named, config-bound classifiers that map text to a score and/or label, invoked inline by a client rather than dispatched by the runtime.
+:page-summary: Named, config-bound classifiers that map text to a score and/or label, for use by guardrails, evaluators, or application code.
 :page-when-to-use: When you need to score or categorize text — for toxicity, sentiment, topic, PII likelihood, or any custom signal — and consume that result from a guardrail, an evaluator, or application code.
 :page-related: xref:sdk:agents/guardrails.adoc[], xref:sdk:agents/llm_eval.adoc[], xref:concepts:governance-and-the-runtime.adoc[]
 :page-prerequisites: An Akka project with at least one agent defined.
@@ -12,10 +12,8 @@ include::ROOT:partial$include.adoc[]
 A classifier maps an input string to a link:{attachmentsdir}/api/akka/javasdk/agent/Classification.html[`Classification`] — a numeric score and/or a categorical label, with optional confidence and attributes.
 How the mapping is computed is entirely up to the implementation: rules or a regex, embeddings, a traditional ML model, a small specialized model, a prompted or fine-tuned LLM, or an external classification API.
 
-Unlike a xref:sdk:agents/guardrails.adoc[guardrail], a classifier is **not bound to a call boundary and is never dispatched by the runtime**.
-It is enabled in configuration, given a name, and invoked inline — wherever a guardrail, an evaluator, or application code needs it — through an injected link:{attachmentsdir}/api/akka/javasdk/agent/ClassifierClient.html[`ClassifierClient`], by name.
-This separation is deliberate: a guardrail *decides* whether a call may proceed, while a classifier only *produces a signal*.
-The same classifier can inform a guardrail's decision on one path, feed an evaluator on another, and be called directly from a workflow on a third.
+A classifier is enabled in configuration and given a name.
+It is invoked by name through a link:{attachmentsdir}/api/akka/javasdk/agent/ClassifierClient.html[`ClassifierClient`], wherever a guardrail, an evaluator, or application code needs to score or categorize some text.
 
 == Implementing a classifier
 
@@ -53,12 +51,12 @@ akka.javasdk.agent.classifiers {
 <2> Implementation class. It must be public and have a public constructor.
 <3> An application-specific property, read by the classifier from `ClassifierContext.config()`.
 
-Unlike a guardrail, a classifier configuration has no `agents`, `agent-roles`, `use-for`, or `category` — a classifier is not scoped to a boundary or a set of agents.
+A classifier configuration has no `agents`, `agent-roles`, `use-for`, or `category`: a classifier is not scoped to a boundary or a set of agents.
 It exists as a named capability, and the caller decides where and when to use it.
 
 == Invoking a classifier
 
-A `ClassifierClient` can be injected into agents, guardrails, evaluators, and application code.
+A `ClassifierClient` can be injected into your components — such as a workflow or an endpoint — and into guardrails and evaluators.
 It resolves a configured classifier by name and invokes it:
 
 [source,java,indent=0]
@@ -118,6 +116,6 @@ See xref:sdk:agents/testing.adoc#_classifiers[Testing classifiers].
 
 == See also
 
-* xref:sdk:agents/guardrails.adoc[] — Runtime-dispatched checks that can consult a classifier to reach a decision.
+* xref:sdk:agents/guardrails.adoc[] — Checks that can consult a classifier to reach a decision.
 * xref:sdk:agents/llm_eval.adoc[] — Evaluators can call classifiers as part of assessing an interaction.
 * xref:concepts:governance-and-the-runtime.adoc[] — Where classifiers fit in Akka's governance model.

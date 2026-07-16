@@ -33,15 +33,15 @@ Akka's governance is not a separate product or integration. It is a property of 
 * **Runtime policy enforcement** — Guardrails, classifiers, evaluators, LLMs-as-a-judge, and sanitizers are fully embedded within the runtime. Bad requests get stopped before they consume tokens, not after.
 * **Self-explanation** — Every decision can be traced and explained, satisfying regulatory requirements for transparency.
 * **Self-containment** — Failures are contained at the point of origin. A misbehaving agent cannot cascade into other parts of your system.
-* **Interaction logging** — Every interaction is recorded immutably by the runtime that executed it, in the interaction ledger.
+* **Interaction logging** — Every interaction is recorded immutably by the runtime that executed it, in the ledger.
 * **Causal analysis** — Trace the chain of decisions that led to any outcome.
 
 These capabilities play distinct roles, and they compose:
 
 * **Guardrails** *enforce* — they run at a call boundary and can stop an interaction. See xref:sdk:agents/guardrails.adoc[].
-* **Classifiers** *score* — they map text to a score or label, and are consulted by guardrails, evaluators, or application code rather than dispatched by the runtime. See xref:sdk:agents/classifiers.adoc[].
+* **Classifiers** *score* — they map text to a score or label, consulted by guardrails, evaluators, or application code. See xref:sdk:agents/classifiers.adoc[].
 * **Evaluators** *assess* — the runtime triggers them per interaction to record a verdict, out of band. See xref:sdk:evaluators.adoc[].
-* **The interaction ledger** *audits* — it records every interaction immutably, and evaluators read from it. See xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client].
+* **The ledger** *audits* — it records every interaction immutably, and evaluators read from it. See xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client].
 
 == Compliance Certifications
 
@@ -56,7 +56,7 @@ Akka holds more than 19 compliance certifications including:
 
 * xref:sdk:agents/guardrails.adoc[Guardrails] — Configure runtime policy enforcement
 * xref:sdk:agents/classifiers.adoc[Classifiers] — Score or label text for guardrails, evaluators, and application code
-* xref:sdk:evaluators.adoc[Evaluators] — Assess agent interactions per interaction, and read the interaction ledger
+* xref:sdk:evaluators.adoc[Evaluators] — Assess agent interactions per interaction, and read the ledger
 * xref:sdk:sanitization.adoc[Data sanitization] — PII scrubbing implementation
 * xref:sdk:access-control.adoc[Access Control] — Service-level and component-level access control lists
 
