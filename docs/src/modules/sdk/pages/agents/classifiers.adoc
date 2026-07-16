@@ -1,5 +1,5 @@
 = Classifiers
-:page-summary: Named, config-bound classifiers that map text to a score and/or label, for use by guardrails, evaluators, or application code.
+:page-summary: Named, config-bound classifiers that map text to a score or label, for use by guardrails, evaluators, or application code.
 :page-when-to-use: When you need to score or categorize text — for toxicity, sentiment, topic, PII likelihood, or any custom signal — and consume that result from a guardrail, an evaluator, or application code.
 :page-related: xref:sdk:agents/guardrails.adoc[], xref:sdk:agents/llm_eval.adoc[], xref:concepts:governance-and-the-runtime.adoc[]
 :page-prerequisites: An Akka project with at least one agent defined.
@@ -9,11 +9,11 @@ include::ROOT:partial$include.adoc[]
 
 == Overview
 
-A classifier maps an input string to a link:{attachmentsdir}/api/akka/javasdk/agent/Classification.html[`Classification`] — a numeric score and/or a categorical label, with optional confidence and attributes.
-How the mapping is computed is entirely up to the implementation: rules or a regex, embeddings, a traditional ML model, a small specialized model, a prompted or fine-tuned LLM, or an external classification API.
+A classifier maps an input string to a link:{attachmentsdir}/api/akka/javasdk/agent/Classification.html[`Classification`]: a numeric score, a categorical label, or both, with optional confidence and attributes.
+You decide how it gets there — a regex, an embedding model, or a call out to an external classifier are all fair game.
 
 A classifier is enabled in configuration and given a name.
-It is invoked by name through a link:{attachmentsdir}/api/akka/javasdk/agent/ClassifierClient.html[`ClassifierClient`], wherever a guardrail, an evaluator, or application code needs to score or categorize some text.
+Wherever a guardrail, an evaluator, or your own code needs to score or categorize some text, it calls the classifier by that name through a link:{attachmentsdir}/api/akka/javasdk/agent/ClassifierClient.html[`ClassifierClient`].
 
 == Implementing a classifier
 
@@ -27,7 +27,7 @@ include::example$doc-snippets/src/main/java/com/example/classifier/ToxicityClass
 <1> Implement the `Classifier` interface.
 <2> An optional link:{attachmentsdir}/api/akka/javasdk/agent/ClassifierContext.html[`ClassifierContext`] constructor parameter gives access to the classifier's configured name and its config section.
 <3> `classify` returns a `CompletionStage`, so the work can run off the calling thread.
-<4> A `Classification` carries a score and/or a label. Use the `score`, `label`, and `of` factory methods, or the full constructor to add confidence and attributes.
+<4> A `Classification` carries a score, a label, or both. Use the `score`, `label`, and `of` factory methods, or the full constructor to add confidence and attributes.
 
 The `Classification` record has four components — `score`, `label`, `confidence` (all `Optional`), and an `attributes` map — so a classifier can return only what it computes.
 A regex rule might return only a label; a scoring model might return only a score; an ensemble might return a score plus per-member detail in the attributes.
@@ -52,7 +52,7 @@ akka.javasdk.agent.classifiers {
 <3> An application-specific property, read by the classifier from `ClassifierContext.config()`.
 
 A classifier configuration has no `agents`, `agent-roles`, `use-for`, or `category`: a classifier is not scoped to a boundary or a set of agents.
-It exists as a named capability, and the caller decides where and when to use it.
+Callers just invoke it by name where they need it.
 
 == Invoking a classifier
 

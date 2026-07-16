@@ -36,12 +36,12 @@ Akka's governance is not a separate product or integration. It is a property of 
 * **Interaction logging** — Every interaction is recorded immutably by the runtime that executed it, in the ledger.
 * **Causal analysis** — Trace the chain of decisions that led to any outcome.
 
-These capabilities play distinct roles, and they compose:
+These pieces play different roles and work together:
 
-* **Guardrails** *enforce* — they run at a call boundary and can stop an interaction. See xref:sdk:agents/guardrails.adoc[].
-* **Classifiers** *score* — they map text to a score or label, consulted by guardrails, evaluators, or application code. See xref:sdk:agents/classifiers.adoc[].
-* **Evaluators** *assess* — the runtime triggers them per interaction to record a verdict, out of band. See xref:sdk:evaluators.adoc[].
-* **The ledger** *audits* — it records every interaction immutably, and evaluators read from it. See xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client].
+* xref:sdk:agents/guardrails.adoc[Guardrails] run at a call boundary and can stop an interaction.
+* xref:sdk:agents/classifiers.adoc[Classifiers] map text to a score or label, for a guardrail, an evaluator, or your own code to act on.
+* xref:sdk:evaluators.adoc[Evaluators] run after each interaction, out of band, to record a verdict.
+* The xref:sdk:evaluators.adoc#_the_ledger_client[ledger] records every interaction immutably, and evaluators read from it.
 
 == Compliance Certifications
 

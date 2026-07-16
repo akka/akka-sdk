@@ -11,12 +11,12 @@ include::ROOT:partial$include.adoc[]
 == Overview
 
 An link:{attachmentsdir}/api/akka/javasdk/evaluation/Evaluator.html[`Evaluator`] is a component that assesses agent interactions.
-It is bound to one or more agents in configuration; the runtime then invokes the evaluator once for each interaction of a bound agent, passing the interaction to be evaluated.
+You bind it to one or more agents in configuration, and the runtime then invokes it once for each interaction of a bound agent, passing the interaction to evaluate.
 The evaluator returns a verdict — pass or fail, optionally with a score, a label, and attributes — which is recorded in metrics and traces.
 
-The key difference from calling an evaluator agent yourself (see xref:sdk:agents/llm_eval.adoc[LLM evaluation]) is *who triggers it and when*.
-An LLM-as-judge agent is a `how` — a way to compute a verdict. The Evaluator component is the `when/what`: the runtime drives it per interaction, so evaluation coverage is a property of the deployment rather than something each call site must remember to invoke.
-An Evaluator can, and often does, delegate the actual judging to a judge agent.
+You can already run an LLM-as-judge yourself by calling a judge agent (see xref:sdk:agents/llm_eval.adoc[LLM evaluation]).
+What an Evaluator adds is who starts it: the runtime runs it for every interaction of a bound agent, so the binding alone gives you evaluation coverage, with no call to add at each site.
+An Evaluator often hands the judging itself off to a judge agent.
 
 NOTE: Evaluators run out of band, after the interaction they assess has completed, so they do not add latency to the agent's response. To make an evaluation part of the agent's own flow — so its outcome can steer the next step — call the judge from the agent or workflow directly, as described in xref:sdk:agents/llm_eval.adoc[LLM evaluation].
 
@@ -139,8 +139,8 @@ The workflow provides the durability; the evaluator suspends until it reports ba
 [#_the_ledger_client]
 == The ledger client
 
-The ledger is the log of recorded agent interactions, used for console visibility, troubleshooting, and auditing.
-An link:{attachmentsdir}/api/akka/javasdk/ledger/LedgerClient.html[`LedgerClient`] fetches records from it and can be injected into any component; an evaluator is its primary consumer.
+The ledger is the log of recorded agent interactions that also drives console visibility and auditing.
+An link:{attachmentsdir}/api/akka/javasdk/ledger/LedgerClient.html[`LedgerClient`] fetches records from it. It can be injected into any component, but in practice it's the evaluators that reach for it.
 
 // TODO: replace this inline example with a compiled snippet (e.g. from doc-snippets)
 [source,java,indent=0]

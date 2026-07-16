@@ -17,7 +17,7 @@ include::ROOT:partial$include.adoc[]
 
 [[CICD]]CI/CD:: You can deploy <<service>>s using a Continuous Integration/Continuous Delivery service. See xref:operations:integrating-cicd/index.adoc[] for instructions.
 
-[[classifier]]Classifier:: A named, config-bound unit that maps input text to a score and/or label, with optional confidence and attributes. It is invoked by name through a `ClassifierClient` — from a guardrail, an <<evaluator>>, or application code — and can compose other classifiers into an ensemble. See xref:sdk:agents/classifiers.adoc[].
+[[classifier]]Classifier:: A named, config-bound unit that maps input text to a score or label, with optional confidence and attributes. It is invoked by name through a `ClassifierClient` — from a guardrail, an <<evaluator>>, or application code — and can compose other classifiers into an ensemble. See xref:sdk:agents/classifiers.adoc[].
 
 [[command]]Command:: A command comes from a _sender_, and a reply may be sent to the sender. A command expresses the intention to alter the state or retrieve information based on the state of an <<entity>> or <<workflow>>. A command is materialized by a message received by a component implementation. Commands are not persisted and might fail.
 

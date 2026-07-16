@@ -138,7 +138,8 @@ NOTE: The `*` wildcard expands to the model and MCP-tool boundaries only. A `Too
 == Classifier-backed guardrails
 
 A guardrail can delegate its decision to a xref:sdk:agents/classifiers.adoc[classifier], resolved by name through `GuardrailContext.classifierClient()`.
-This keeps the decision logic (deny when the classifier labels the text toxic) separate from the scoring logic (how toxicity is measured), and lets the guardrail-to-classifier binding be re-pointed at deployment time:
+The classifier does the scoring — how toxic the text is — and the guardrail turns that score into an allow or a deny.
+Because the classifier name comes from config, you can point the guardrail at a different classifier without rebuilding:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/guardrail/ClassifierBackedGuard.java[ClassifierBackedGuard.java]
@@ -199,7 +200,7 @@ You can use this for other things than jailbreak attempt detection.
 
 == See also
 
-* xref:sdk:agents/classifiers.adoc[] — Named scoring/labeling components a guardrail can consult to reach a decision.
+* xref:sdk:agents/classifiers.adoc[] — Components that score or label text, which a guardrail can consult to reach a decision.
 * xref:concepts:governance-and-the-runtime.adoc[] — Why governance must live in the runtime, not in a sidecar.
 * xref:sdk:sanitization.adoc[] — Complementary PII protection through input and output sanitization.
 * {url-blog-trustworthy-ai}[Building Trustworthy AI^] — Background on the design principles behind Akka's risk controls.
