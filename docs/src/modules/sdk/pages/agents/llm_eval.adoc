@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Evaluating AI quality is critical when refining prompts and model parameters. Without evaluation with realistic scenarios and data, you won’t know whether a change improves performance, breaks a use case, or has no impact at all.
+Evaluating AI quality is critical when refining prompts and model parameters. Without evaluation with realistic scenarios and data, you will not know whether a change improves performance, breaks a use case, or has no impact at all.
 
 [NOTE]
 ====
@@ -10,7 +10,7 @@ This page covers how to compute a verdict — implementing an LLM-as-judge as an
 To have the runtime run an evaluation automatically for each interaction of an agent, bind an xref:sdk:evaluators.adoc[Evaluator component] to that agent; an Evaluator commonly delegates to one of the judge agents described here.
 ====
 
-Testing with generative AI is difficult no matter what you're using to implement it. Interactions with an LLM are not _deterministic_. In other words, you shouldn't expect to get the same answer twice for the same prompt. Because interactions with an LLM are not deterministic, traditional assertions don't work.
+Testing with generative AI is difficult no matter what you are using to implement it. Interactions with an LLM are not _deterministic_. In other words, you should not expect to get the same answer twice for the same prompt. Because interactions with an LLM are not deterministic, traditional assertions do not work.
 
 How can you write assertions for something like that? There are a ton of solutions, but most of them revolve around the idea that to verify an LLM's answer, you need another LLM. This pattern is often called "LLM-as-judge". You can get an answer from one agent, and then use another agent or model to review the session history and prompts to infer, with some level of confidence, if the agent behaved the way you want it to.
 
@@ -25,7 +25,7 @@ You can implement an LLM-as-judge evaluator as an Akka `Agent`. The result of th
 ----
 include::example$doc-snippets/src/main/java/com/example/evaluator/HumanVsAiEvaluator.java[tag=all]
 ----
-<1> It's an ordinary `Agent`
+<1> It is an ordinary `Agent`
 <2> It can have any type of request parameter
 <3> The result from the model
 <4> The return type must implement `EvaluationResult`, but may also include more information
@@ -33,7 +33,7 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/HumanVsAiEvalu
 <6> The method with return type implementing `EvaluationResult`
 <7> Transform the model result
 
-In this example, we use one result representation from the model, and a slightly different as the response type. These could be the same, but the model might be more accurate when using text labels instead of boolean values. It's also good to include validation in that transformation.
+In this example, we use one result representation from the model, and a slightly different as the response type. These could be the same, but the model might be more accurate when using text labels instead of boolean values. It is also good to include validation in that transformation.
 
 Since the evaluator is an ordinary `Agent` you can call it with the component client in the same way as any other agent. For example, from a Consumer that listens for task completions from an xref:sdk:autonomous-agents.adoc[Autonomous Agent]:
 
@@ -48,7 +48,7 @@ include::example$multi-agent/src/main/java/demo/multiagent/application/Evaluatio
 <4> Call the custom evaluator agent. Additional logging is included here, but metrics and traces are updated automatically from the evaluation result.
 <5> Call the built-in `ToxicityEvaluator` on the final answer.
 
-This illustrates that evaluation happens asynchronously, in the background, to capture the results for analytics and later development improvements of prompts. However, the evaluators can also be part of the core agent workflow and thereby have a more immediate impact on the workflow. For example, if the outcome of some step in the workflow doesn't pass the evaluation it can refine the plan and iterate. In this case it's still good to capture the results in metrics and traces by using the `EvaluationResult`. The concrete, application specific, result may include more things than `EvaluationResult`, which can be used for adjusting the execution plan in the workflow.
+This illustrates that evaluation happens asynchronously, in the background, to capture the results for analytics and later development improvements of prompts. However, the evaluators can also be part of the core agent workflow and thereby have a more immediate impact on the workflow. For example, if the outcome of some step in the workflow does not pass the evaluation it can refine the plan and iterate. In this case it is still good to capture the results in metrics and traces by using the `EvaluationResult`. The concrete, application specific, result may include more things than `EvaluationResult`, which can be used for adjusting the execution plan in the workflow.
 
 NOTE: Evaluator agents have an associated cost and overhead since they typically use an LLM. You might want to enable them only in test environments and not for large scale production environments. You can xref:setup-and-dependency-injection.adoc#_disabling_components[disable consumers] that are calling evaluator agents.
 
@@ -58,7 +58,7 @@ External evaluation products can be integrated with Akka by operating on the tra
 
 == Built-in evaluators
 
-As shown above, it's easy to implement your own evaluator agents, but for convenience Akka provides a few built-in evaluators that you can use by calling them with the `ComponentClient`. The `EvaluationConsumer` example above also shows how to call the built-in `ToxicityEvaluator`.
+As shown above, it is easy to implement your own evaluator agents, but for convenience Akka provides a few built-in evaluators that you can use by calling them with the `ComponentClient`. The `EvaluationConsumer` example above also shows how to call the built-in `ToxicityEvaluator`.
 
 The model provider for these agents can be defined in a specific configuration for each agent, which by default is the same as the default model provider.
 

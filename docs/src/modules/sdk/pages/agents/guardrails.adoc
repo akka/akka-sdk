@@ -112,7 +112,7 @@ akka.javasdk.agent.guardrails {
 <4> Enable this guardrail for agents with these roles.
 <5> The type of validation, such as PII and TOXIC.
 <6> The boundary the guardrail binds to; a `ModelGuardrail` binds to `before-agent-response`, the final agent reply.
-<7> If it didn't pass the evaluation criteria, the execution can either be aborted or continue anyway. In both cases, the result is tracked in logs, metrics and traces.
+<7> If it did not pass the evaluation criteria, the execution can either be aborted or continue anyway. In both cases, the result is tracked in logs, metrics and traces.
 <8> An application-specific property, read by the guardrail from its `GuardrailContext`.
 <9> A `ToolGuardrail` binds to the `before-tool-call` boundary.
 
@@ -191,7 +191,7 @@ akka.javasdk.agent.guardrails {
 }
 ----
 
-Here, it's using predefined examples of jailbreak prompts in `guardrail/jailbreak`. Those have been incorporated from https://github.com/verazuo/jailbreak_llms/[https://github.com/verazuo/jailbreak_llms, window="new"], but you can define your own examples and place in a subdirectory of  `src/main/resources/`. All text files in the configured `bad-examples-resource-dir` are included in the similarity search.
+Here, it is using predefined examples of jailbreak prompts in `guardrail/jailbreak`. Those have been incorporated from https://github.com/verazuo/jailbreak_llms/[https://github.com/verazuo/jailbreak_llms, window="new"], but you can define your own examples and place in a subdirectory of  `src/main/resources/`. All text files in the configured `bad-examples-resource-dir` are included in the similarity search.
 
 You can use this for other things than jailbreak attempt detection.
 
