@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Evaluating AI quality is critical when refining prompts and model parameters. Without evaluation with realistic scenarios and data, you will not know whether a change improves performance, breaks a use case, or has no impact at all.
+LLM evaluation verifies an agent's model interactions by judging their quality, typically with another model. Use it when refining prompts and model parameters: without evaluation against realistic scenarios and data, you will not know whether a change improves performance, breaks a use case, or has no impact at all.
 
 [NOTE]
 ====
@@ -12,7 +12,7 @@ To have the runtime run an evaluation automatically for each interaction of an a
 
 Testing with generative AI is difficult no matter what you are using to implement it. Interactions with an LLM are not _deterministic_. In other words, you should not expect to get the same answer twice for the same prompt. Because interactions with an LLM are not deterministic, traditional assertions do not work.
 
-How can you write assertions for something like that? There are a ton of solutions, but most of them revolve around the idea that to verify an LLM's answer, you need another LLM. This pattern is often called "LLM-as-judge". You can get an answer from one agent, and then use another agent or model to review the session history and prompts to infer, with some level of confidence, if the agent behaved the way you want it to.
+How can you write assertions for something like that? Most solutions revolve around the idea that to verify an LLM's answer, you need another LLM. This pattern is often called "LLM-as-judge". You can get an answer from one agent, and then use another agent or model to review the session history and prompts to infer, with some level of confidence, if the agent behaved the way you want it to.
 
 For instance, after a test run, you could send the session history to a powerful model like GPT-4 with a prompt like: "Based on the user's question about activities, did the agent correctly use the provided `getWeather` tool? Respond with only YES or NO."
 

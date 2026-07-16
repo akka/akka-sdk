@@ -1,4 +1,4 @@
-= Testing the agent
+= Testing
 
 include::ROOT:partial$include.adoc[]
 
