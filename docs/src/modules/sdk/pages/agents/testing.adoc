@@ -72,7 +72,7 @@ akka.javasdk {
 Note that you should use `http`, and not `https`, the connection will be encrypted with TLS, but that is handled by the platform.
 
 [#_classifiers]
-== Classifiers
+== Testing classifiers
 
 To exercise your configured xref:sdk:agents/classifiers.adoc[classifiers] in a test, obtain a `ClassifierClient` from the testkit with `getClassifierClient()` and invoke them by name:
 
@@ -82,7 +82,7 @@ To exercise your configured xref:sdk:agents/classifiers.adoc[classifiers] in a t
 include::example$doc-snippets/src/test/java/com/example/classifier/ClassifierTestSample.java[tag=classify]
 ----
 
-== Evaluators
+== Testing evaluators
 
 To unit-test an xref:sdk:evaluators.adoc[Evaluator] in isolation — without binding it to an agent or running the full runtime — use `EvaluatorTestKit`; see xref:sdk:evaluators.adoc#_testing[Testing evaluators].
 
@@ -95,3 +95,8 @@ To see exactly what is sent to and received from the AI model, you can enable th
   <logger name="kalix.runtime.agent.AkkaLangChain4jHttpClient" level="TRACE"/>
 ----
 
+== See also
+
+* xref:sdk:agents.adoc[Agents]
+* xref:sdk:evaluators.adoc[Evaluators]
+* xref:sdk:autonomous-agents/testing.adoc[Testing autonomous agents]

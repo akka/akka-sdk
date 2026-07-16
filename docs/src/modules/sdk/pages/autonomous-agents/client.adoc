@@ -174,7 +174,7 @@ include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSa
 
 The same shape applies to `suspendAsync()`, `resumeAsync()`, `terminateAsync()`, `assignTasksAsync(...)`, `runSingleTaskAsync(...)`, and the `forTask` operations. Each returns a `CompletionStage` that completes once the runtime acknowledges the operation. Mixing styles is fine: use synchronous calls where they read more clearly, async ones where the call needs to compose with other futures.
 
-== See Also
+== See also
 
 * xref:sdk:autonomous-agents/notifications.adoc[Notifications] for the full notification reference
 * xref:sdk:autonomous-agents/tasks.adoc[Tasks]

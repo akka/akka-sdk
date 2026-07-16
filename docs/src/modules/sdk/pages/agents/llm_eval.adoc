@@ -109,3 +109,7 @@ Default system message:
 include::example$akka-javasdk/src/main/java/akka/javasdk/agent/evaluator/HallucinationEvaluator.java[tag=prompt]
 ----
 
+== See also
+
+* xref:sdk:evaluators.adoc[Evaluators]
+* xref:sdk:agents/testing.adoc[Testing the agent]

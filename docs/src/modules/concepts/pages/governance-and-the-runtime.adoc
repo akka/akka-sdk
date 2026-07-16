@@ -60,7 +60,7 @@ Akka holds more than 19 compliance certifications including:
 * xref:sdk:sanitization.adoc[Data sanitization] — PII scrubbing implementation
 * xref:sdk:access-control.adoc[Access Control] — Service-level and component-level access control lists
 
-== See Also
+== See also
 
 * link:{url-blog-trustworthy-ai}[Trustworthy AI with Akka, window="new"]
 * link:{url-blog-webinar-certainty}[Webinar: Creating Certainty in the Age of Agentic AI, window="new"]

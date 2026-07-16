@@ -170,7 +170,7 @@ include::example$doc-snippets/src/main/java/com/example/guardrail/GuardedAgent.j
 With `report-only = true`, a `Deny` is recorded in logs, metrics, and traces but the interaction continues.
 A `Decision.Fail` is always propagated as a failure regardless of `report-only`, since the guardrail reached no verdict.
 
-== Guardrail of similar text
+== Similarity guardrail
 
 The built-in link:{attachmentsdir}/api/akka/javasdk/agent/SimilarityGuard.html[`SimilarityGuard`] evaluates the text by making a similarity search in a dataset of "bad examples". If the similarity exceeds a threshold, the result is flagged as blocked.
 
@@ -194,6 +194,10 @@ akka.javasdk.agent.guardrails {
 Here, it is using predefined examples of jailbreak prompts in `guardrail/jailbreak`. Those have been incorporated from https://github.com/verazuo/jailbreak_llms/[https://github.com/verazuo/jailbreak_llms, window="new"], but you can define your own examples and place in a subdirectory of  `src/main/resources/`. All text files in the configured `bad-examples-resource-dir` are included in the similarity search.
 
 You can use this for other things than jailbreak attempt detection.
+
+== Testing
+
+Guardrails run in integration tests the same way they run in production. Configure the guardrail in `src/test/resources/application.conf`, run the agent with `TestKitSupport`, and use a `TestModelProvider` to produce text that triggers or passes the guardrail. A denied interaction surfaces as a `GuardrailException`, which the agent handles as shown in <<Handling a denied interaction>>.
 
 == See also
 
