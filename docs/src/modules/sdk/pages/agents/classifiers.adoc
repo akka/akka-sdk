@@ -10,7 +10,7 @@ include::ROOT:partial$include.adoc[]
 == Overview
 
 A classifier maps an input string to a link:{attachmentsdir}/api/akka/javasdk/agent/Classification.html[`Classification`]: a numeric score, a categorical label, or both, with optional confidence and attributes.
-You decide how it gets there — a regex, an embedding model, or a call out to an external classifier are all fair game.
+You decide how it does that, for example with a regex, an embedding model, or a call to an external classification service.
 
 A classifier is enabled in configuration and given a name.
 Wherever a guardrail, an evaluator, or your own code needs to score or categorize some text, it calls the classifier by that name through a link:{attachmentsdir}/api/akka/javasdk/agent/ClassifierClient.html[`ClassifierClient`].
