@@ -163,13 +163,14 @@ Beyond these, the raw fields expose the full structure: `systemMessage`, `inputM
 
 == Testing
 
-Use link:{attachmentsdir}/testkit/akka/javasdk/testkit/EvaluatorTestKit.html[`EvaluatorTestKit`] to run an evaluator's `evaluate` handler over a chosen `Subject` and assert on the outcome, supplying whatever dependencies the evaluator needs (for example a stub `LedgerClient`) through the factory:
+Use link:{attachmentsdir}/testkit/akka/javasdk/testkit/EvaluatorTestKit.html[`EvaluatorTestKit`] to run an evaluator's `evaluate` handler over a chosen `Subject` and assert on the outcome, supplying whatever dependencies the evaluator needs through the factory. For an evaluator that reads from the ledger, seed a link:{attachmentsdir}/testkit/akka/javasdk/testkit/TestLedgerClient.html[`TestLedgerClient`] with the interaction records it should fetch, instead of running a real ledger:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[EvaluatorTestKitSample.java]
 ----
 include::example$doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[tag=test]
 ----
+<1> `TestLedgerClient.create().seed(...)` builds an in-memory `LedgerClient` holding the given records, keyed by interaction id.
 
 An asynchronous effect is resolved before the `EvaluatorResult` is returned, so `isComplete()` and `isInconclusive()` reflect the terminal outcome; `isAsync()` additionally reports whether the effect was produced asynchronously.
 
