@@ -105,7 +105,8 @@ akka.javasdk.agent.classifiers {
 
 == Dependency injection
 
-Besides `ClassifierContext` and `ClassifierClient`, a classifier constructor can accept any type provided by a service's `DependencyProvider`, so a classifier can be given an HTTP client, a model client, or other collaborators it needs to compute a classification.
+Besides `ClassifierContext` and `ClassifierClient`, a classifier constructor can accept the platform's managed dependencies — for example `ComponentClient` or `HttpClientProvider` — and any custom type provided by the service's `DependencyProvider`.
+That lets a classifier use whatever it needs to compute a classification, such as a model client or an external HTTP service.
 See xref:sdk:setup-and-dependency-injection.adoc[].
 
 == Testing
