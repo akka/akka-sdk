@@ -14,7 +14,7 @@ The simplest pattern: create a task, start an agent, and automatically stop the 
 include::example$autonomous-agent-playground/src/main/java/demo/helloworld/api/QuestionEndpoint.java[tag=run-single-task]
 ----
 
-This returns the task id for later status checks. Each call spins up an independent agent instance.
+This returns the task id for later status checks. Each call starts an independent agent instance.
 
 `runSingleTask` only constrains how the work starts. It provides exactly one task to the agent. Once the agent is running, its capabilities can still create more tasks during the loop. A coordinator with a `Delegation` capability creates subtasks for its workers, and a team lead with `TeamLeadership` creates tasks in the team's shared list. The agent stops automatically once its task queue is fully drained, including the original task and anything spawned along the way.
 
@@ -25,11 +25,9 @@ For more control over multiple tasks, pipelines, or long-lived agents, create ta
 *Create tasks:*
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/pipeline/api/PipelineEndpoint.java[PipelineEndpoint.java]
 ----
-var taskId = UUID.randomUUID().toString();
-componentClient
-  .forTask(taskId)
-  .create(PipelineTasks.COLLECT.instructions("Collect data on: " + topic));
+include::example$autonomous-agent-playground/src/main/java/demo/pipeline/api/PipelineEndpoint.java[tag=create-task]
 ----
 
 *Assign tasks to an agent:*
@@ -49,10 +47,9 @@ If the agent uses xref:sdk:autonomous-agents/defining.adoc#dynamic-configuration
 *Terminate an agent:*
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
 ----
-componentClient
-  .forAutonomousAgent(ReportAgent.class, agentInstanceId)
-  .terminate();
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=terminate]
 ----
 
 IMPORTANT: When you manage tasks and agents separately, you are responsible for the agent's lifecycle. Call `terminate()` when an agent is permanently done. The `runSingleTask` shortcut handles this automatically. The explicit `assignTasks` flow does not. Idle agents are passivated automatically to release memory, and reactivates transparently on the next command (e.g. `assignTask`). An agent that holds access to a shared backlog stays resident rather than passivating, so it does not miss new claimable tasks pushed to it.
@@ -64,8 +61,9 @@ Beyond `create` and `get`, the `forTask(...)` client exposes the operations that
 *Assign a task to an owner:*
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[PublishingEndpoint.java]
 ----
-componentClient.forTask(taskId).assign("alice@example.com");
+include::example$autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[tag=assign]
 ----
 
 A task must be assigned before it can be completed or failed. The assignee is a free-form identifier (a user id, team name, or process identifier) that records who took ownership.
@@ -73,10 +71,9 @@ A task must be assigned before it can be completed or failed. The assignee is a 
 *Complete a task with a typed result:*
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[PublishingEndpoint.java]
 ----
-componentClient
-  .forTask(taskId)
-  .complete(PublishingTasks.APPROVAL, new ApprovalDecision("alice", "Looks good"));
+include::example$autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[tag=complete]
 ----
 
 The result is validated against the task definition's result type. The task transitions to `COMPLETED` and any dependents become eligible to start.
@@ -84,8 +81,9 @@ The result is validated against the task definition's result type. The task tran
 *Fail a task with a reason:*
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[PublishingEndpoint.java]
 ----
-componentClient.forTask(taskId).fail("Approval rejected: tone is too informal");
+include::example$autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[tag=fail]
 ----
 
 The task transitions to `FAILED`. Any dependents are cancelled automatically.
@@ -95,34 +93,21 @@ The task transitions to `FAILED`. Any dependents are cancelled automatically.
 A running agent can be suspended and later resumed. While suspended, the agent stops iterating: it will not start new model calls or process queued tasks. Tasks already assigned remain in the queue and are processed when the agent resumes.
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
 ----
-// Suspend the agent
-componentClient
-  .forAutonomousAgent(ReportAgent.class, agentInstanceId)
-  .suspend();
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=suspend-resume]
+----
 
-// Resume the agent
-componentClient
-  .forAutonomousAgent(ReportAgent.class, agentInstanceId)
-  .resume();
-----
+Both `suspend(...)` and `terminate(...)` accept an optional reason string, recorded on the corresponding `Suspended` and `Stopped` notifications.
 
 == Agent state
 
 Query the current state of an agent instance with `getState()`. The returned `AgentState` provides a snapshot of the agent's execution status.
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
 ----
-var state = componentClient
-  .forAutonomousAgent(ReportAgent.class, agentInstanceId)
-  .getState();
-
-state.phase();           // execution phase, e.g. "model", "tools", "stopped"
-state.suspended();       // whether the agent is suspended
-state.instructions();    // the agent's current instructions
-state.totalTokenUsage(); // cumulative token usage (inputTokens, outputTokens)
-state.currentTask();     // Optional<TaskKey> with the task currently being worked on
-state.pendingTaskIds();  // List<String> with ids of tasks queued but not yet started
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=get-state]
 ----
 
 The `currentTask()` returns an `Optional<TaskKey>` containing the `id` and `name` of the task the agent is actively processing. When the agent is idle or between tasks, it is empty.
@@ -134,20 +119,17 @@ Task results are typed based on the task definition's `resultConformsTo` type. T
 *Read a snapshot:*
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
 ----
-var snapshot = componentClient.forTask(taskId).get(ResearchTasks.BRIEF);
-if (snapshot.status() == TaskStatus.COMPLETED) {
-  ResearchBrief brief = snapshot.result().orElseThrow();
-  var title = brief.title();
-  var findings = brief.keyFindings();
-}
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=get-snapshot]
 ----
 
 *Wait for the terminal result:*
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
 ----
-ResearchBrief brief = componentClient.forTask(taskId).result(ResearchTasks.BRIEF);
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=result]
 ----
 
 `result(...)` blocks the calling thread until the task is `COMPLETED`, `FAILED`, or `CANCELLED`. It returns the typed result on success, or throws `TaskException.Failed` / `TaskException.Cancelled` on failure or cancellation. Use it when the caller wants to wait for the outcome rather than poll. In non-blocking code paths, prefer the async variant covered in <<asynchronous-execution>>.
@@ -158,11 +140,9 @@ ResearchBrief brief = componentClient.forTask(taskId).result(ResearchTasks.BRIEF
 Subscribe to notifications for an agent instance to observe its execution progress in real time. Notifications are published by the runtime, not by user code, as the agent moves through its execution loop and participates in coordination patterns.
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
 ----
-componentClient
-  .forAutonomousAgent(QuestionAnswerer.class, agentInstanceId)
-  .notificationStream()
-  .runForeach(System.out::println, materializer);
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=notification-stream]
 ----
 
 Subscribe before triggering the agent to avoid missing early events. The stream stays open as long as the agent instance exists. Use it for dashboards, logging, cost tracking, or coordinating external processes with agent progress.
@@ -170,15 +150,9 @@ Subscribe before triggering the agent to avoid missing early events. The stream 
 Every notification implements the `Notification` sealed interface and exactly one capability-grouped marker sub-interface. Pattern-match on a marker to handle a whole family generically:
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
 ----
-agentClient.notificationStream().runForeach(n -> {
-  switch (n) {
-    case Notification.LifecycleNotification lifecycle -> renderLifecycle(lifecycle);
-    case Notification.TaskNotification task -> renderTask(task);
-    case Notification.TeamNotification team -> renderTeam(team);
-    default -> { /* ignore */ }
-  }
-}, materializer);
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=notification-families]
 ----
 
 For the full set of notification types and their fields, see xref:sdk:autonomous-agents/notifications.adoc[].
@@ -193,12 +167,9 @@ WARNING: Notifications should not be used to drive business logic. Akka does not
 The `ComponentClient` calls in this page use the synchronous form, which is the right default for most code. Each call has an `*Async` variant that returns a `CompletionStage<T>` instead. Use the async form when you want to start work and continue without blocking, fan out several calls in parallel, or compose with other asynchronous code:
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
 ----
-var stateF = componentClient
-  .forAutonomousAgent(ReportAgent.class, agentInstanceId)
-  .getStateAsync();
-
-stateF.thenAccept(state -> log.info("Phase: {}", state.phase()));
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=async]
 ----
 
 The same shape applies to `suspendAsync()`, `resumeAsync()`, `terminateAsync()`, `assignTasksAsync(...)`, `runSingleTaskAsync(...)`, and the `forTask` operations. Each returns a `CompletionStage` that completes once the runtime acknowledges the operation. Mixing styles is fine: use synchronous calls where they read more clearly, async ones where the call needs to compose with other futures.
