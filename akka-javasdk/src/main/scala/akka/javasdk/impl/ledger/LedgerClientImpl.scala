@@ -15,8 +15,8 @@ import scala.jdk.OptionConverters._
 
 import akka.annotation.InternalApi
 import akka.javasdk.agent.MessageContent
-import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.evaluation.Evaluation
+import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.Failure
 import akka.javasdk.ledger.InteractionMetadata
