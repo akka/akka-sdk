@@ -6,7 +6,7 @@ index.adoc is auto-generated from
 Please DON'T modify file index.adoc directly.
 Instead, you might want to modify file "cli-index-header.template.txt"
 ////
-= CLI commands
+= CLI command reference
 
 The `akka` command line tool enables you to interact with your Akka projects and services using the command line. See xref:operations:cli/installation.adoc[] for information on how to download `akka`. Use xref:reference:cli/akka-cli/akka_version.adoc[`akka version`] to check the version.
 
@@ -268,6 +268,7 @@ See also the xref:reference:cli/akka-cli/akka_projects_regions.adoc#_see_also[ak
 
 The xref:reference:cli/akka-cli/akka_regions.adoc[akka regions] command includes the following options:
 
+* xref:reference:cli/akka-cli/akka_regions_list-stores.adoc[akka regions list-stores]
 * xref:reference:cli/akka-cli/akka_regions_list.adoc[akka regions list]
 
 == Roles

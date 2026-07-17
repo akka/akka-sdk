@@ -1,41 +1,25 @@
-= akka projects new
+= akka regions list-stores
 
-Create a new Akka project.
+List the Postgres store clusters available in each region.
 
 == Synopsis
 
-The `akka project new _name_ _[description]_ --region _region_ --organization _organization_` command will create a new project in the chosen organization, giving it the name _name_ and the optional description _description_.
-It will be created in the region _region_.
+The `akka regions list-stores` command lists the Postgres store clusters configured in each region.
+An assignable store may be passed to `akka project new --store` or set in a project descriptor (when store selection is enabled for your organization);
+otherwise the platform resolves one automatically.
 
-Project names should describe the project so that you and other project members can identify it and its purpose.
-
-Project names must conform to the following:
-
-* Up to 63 characters long
-* Can include:
- ** lowercase letters
- ** numbers
- ** hyphens (-)
-* Must not:
- ** start or end with hyphens (-)
-* Cannot include:
- ** underscores (_)
- ** spaces
- ** non-alphanumeric characters
-
-Use `akka regions list` to get a list of possible regions.
+Optional `--organization` limits the listing to a single organization's regions, and `--region` to a single region.
 
 ----
-akka projects new NAME [DESCRIPTION] --region REGION [flags]
+akka regions list-stores [flags]
 ----
 
 == Options
 
 ----
-  -h, --help                  help for new
-      --organization string   organization which will own the new project
-      --region string         the region where the project gets created
-      --store string          the store cluster to assign the project to (defaults to a platform-selected store)
+  -h, --help                  help for list-stores
+      --organization string   list stores for regions in this organization
+      --region string         only list stores for this region
 ----
 
 == Options inherited from parent commands
@@ -56,7 +40,7 @@ akka projects new NAME [DESCRIPTION] --region REGION [flags]
 
 == SEE ALSO
 
-* link:akka_projects.html[akka projects]	 - Manage your Akka projects.
+* link:akka_regions.html[akka regions]	 - Manage available regions.
 
 [discrete]
 
