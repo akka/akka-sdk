@@ -168,16 +168,26 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
 
     "record the outcome via the SPI recorder and delete the instance in the built-in record step" in {
       val recorder = new RecorderProbe
+      val impl = newImpl(recorder)
+      // the record step rebuilds the trigger from the envelope persisted on start
+      val started = await(impl.handleEvaluationStart(None, trigger()))
+      val startState = started
+        .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
+        .persistence
+        .asInstanceOf[SpiWorkflow.UpdateState]
+        .newState
       val outcomePayload = serializer.toBytes(Outcome.inconclusive("no verdict"))
 
-      val result = await(newImpl(recorder).invokeStep(None, stepCommand(RecordStepName, Some(outcomePayload))))
+      val result = await(impl.invokeStep(Some(startState), stepCommand(RecordStepName, Some(outcomePayload))))
         .asInstanceOf[SpiWorkflow.StepTransitionalEffect]
 
       result.persistence shouldBe SpiWorkflow.NoPersistence
       result.transition shouldBe SpiWorkflow.Delete
 
-      val (recordedId, recordedResult) = recorder.recorded.value
-      recordedId shouldBe evaluationId
+      val (recordedTrigger, recordedResult) = recorder.recorded.value
+      recordedTrigger.id shouldBe evaluationId
+      recordedTrigger.source shouldBe SpiEvaluator.TriggerSource.OnInteraction
+      recordedTrigger.subject.asInstanceOf[SpiEvaluator.AgentInteraction].interactionId shouldBe "interaction-1"
       recordedResult shouldBe a[spi.SpiEvaluator.InconclusiveResult]
       recordedResult.asInstanceOf[spi.SpiEvaluator.InconclusiveResult].reason shouldBe "no verdict"
     }
@@ -201,8 +211,8 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
 
       await(impl.invokeStep(Some(fetchedState), stepCommand(RecordStepName, recordInput)))
 
-      val (recordedId, recordedResult) = recorder.recorded.value
-      recordedId shouldBe evaluationId
+      val (recordedTrigger, recordedResult) = recorder.recorded.value
+      recordedTrigger.id shouldBe evaluationId
       val completed = recordedResult.asInstanceOf[spi.SpiEvaluator.CompletedResult]
       completed.evaluations should have size 1
       completed.evaluations.head.passed shouldBe true
