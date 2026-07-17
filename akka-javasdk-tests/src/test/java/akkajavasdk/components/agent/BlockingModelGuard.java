@@ -4,12 +4,9 @@
 
 package akkajavasdk.components.agent;
 
-import static java.util.concurrent.CompletableFuture.completedFuture;
-
 import akka.javasdk.agent.Decision;
 import akka.javasdk.agent.GuardrailContext;
 import akka.javasdk.agent.ModelGuardrail;
-import java.util.concurrent.CompletionStage;
 
 public class BlockingModelGuard implements ModelGuardrail {
   private final String blockReason;
@@ -19,7 +16,7 @@ public class BlockingModelGuard implements ModelGuardrail {
   }
 
   @Override
-  public CompletionStage<Decision> decide(CallContext ctx) {
-    return completedFuture(new Decision.Deny(blockReason));
+  public Decision decide(CallContext ctx) {
+    return new Decision.Deny(blockReason);
   }
 }

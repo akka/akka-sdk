@@ -12,8 +12,9 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * Test classifier: labels input containing "toxic" as toxic with score 1.0, everything else as
- * clean with score 0.0. Completes on a separate thread (rather than the calling thread) to exercise
- * the case of an async classifier invoked from a still-synchronous guardrail.
+ * clean with score 0.0. Overrides the async {@link #classifyAsync} variant (the poweruser shape),
+ * completing on a separate thread to exercise an async classifier invoked through both client
+ * methods.
  */
 public class ThresholdClassifier implements Classifier {
   private final double threshold;
@@ -27,7 +28,13 @@ public class ThresholdClassifier implements Classifier {
   }
 
   @Override
-  public CompletionStage<Classification> classify(String input) {
+  public Classification classify(String input) {
+    throw new UnsupportedOperationException(
+        "sync classify must not be called, classifyAsync is overridden");
+  }
+
+  @Override
+  public CompletionStage<Classification> classifyAsync(String input) {
     return CompletableFuture.supplyAsync(
         () -> {
           boolean toxic = input.toLowerCase().contains("toxic");

@@ -18,8 +18,9 @@ import java.util.concurrent.CompletionStage;
  * rather than a string literal, so the guardrail-to-classifier binding can be re-pointed at
  * deployment time without rebuilding -- the canonical pattern for governance-owned names.
  *
- * <p>Composes {@link ClassifierClient#classifyAsync} without blocking, and maps a classifier
- * failure to an explicit {@link Decision.Fail}, exercising that combination.
+ * <p>Overrides the async {@link #decideAsync} variant (the poweruser shape), composing {@link
+ * ClassifierClient#classifyAsync} without blocking and mapping a classifier failure to an explicit
+ * {@link Decision.Fail}, exercising that combination end-to-end.
  */
 public class ClassifierBackedModelGuard implements ModelGuardrail {
   private final ClassifierClient classifierClient;
@@ -31,7 +32,13 @@ public class ClassifierBackedModelGuard implements ModelGuardrail {
   }
 
   @Override
-  public CompletionStage<Decision> decide(CallContext ctx) {
+  public Decision decide(CallContext ctx) {
+    throw new UnsupportedOperationException(
+        "sync decide must not be called, decideAsync is overridden");
+  }
+
+  @Override
+  public CompletionStage<Decision> decideAsync(CallContext ctx) {
     return classifierClient
         .classifyAsync(classifierName, ctx.text())
         .thenApply(

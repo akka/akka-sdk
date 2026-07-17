@@ -50,17 +50,17 @@ object ClassifierProviderSpec {
 
   class ToxicityClassifier(context: ClassifierContext) extends Classifier {
     private val threshold = context.config().getDouble("threshold")
-    override def classify(input: String): CompletionStage[Classification] =
-      CompletableFuture.completedFuture(Classification.of(threshold, s"classified:$input"))
+    override def classify(input: String): Classification =
+      Classification.of(threshold, s"classified:$input")
   }
 
   class NoContextClassifier extends Classifier {
-    override def classify(input: String): CompletionStage[Classification] =
-      CompletableFuture.completedFuture(Classification.label("ok"))
+    override def classify(input: String): Classification =
+      Classification.label("ok")
   }
 
   class ThrowingClassifier extends Classifier {
-    override def classify(input: String): CompletionStage[Classification] =
+    override def classify(input: String): Classification =
       throw new IllegalStateException("kaboom")
   }
 
@@ -69,8 +69,17 @@ object ClassifierProviderSpec {
   // Composes another configured classifier by calling it through the injected client, never holding
   // a reference to the classifier itself.
   class EnsembleClassifier(client: ClassifierClient) extends Classifier {
-    override def classify(input: String): CompletionStage[Classification] =
-      client.classifyAsync("toxicity", input)
+    override def classify(input: String): Classification =
+      client.classify("toxicity", input)
+  }
+
+  // Overrides the async variant instead of the sync one -- the poweruser shape. classify throwing
+  // proves the SDK only ever invokes classifyAsync.
+  class AsyncOnlyClassifier extends Classifier {
+    override def classify(input: String): Classification =
+      throw new UnsupportedOperationException("sync classify must not be called when classifyAsync is overridden")
+    override def classifyAsync(input: String): CompletionStage[Classification] =
+      CompletableFuture.supplyAsync(() => Classification.label(s"async:$input"))
   }
 
   val ConcurrentCallCount = new AtomicInteger(0)
@@ -78,9 +87,9 @@ object ClassifierProviderSpec {
   // Tracks how many calls are in flight concurrently, to check the shared singleton instance
   // doesn't corrupt state across parallel classify() calls.
   class ConcurrentClassifier extends Classifier {
-    override def classify(input: String): CompletionStage[Classification] = {
+    override def classify(input: String): Classification = {
       val inFlight = ConcurrentCallCount.incrementAndGet()
-      try CompletableFuture.completedFuture(Classification.score(inFlight.toDouble))
+      try Classification.score(inFlight.toDouble)
       finally ConcurrentCallCount.decrementAndGet()
     }
   }
@@ -92,10 +101,10 @@ object ClassifierProviderSpec {
   // guardrail construction only matches (GuardrailContext) or (), and neither path matches the
   // other's context type.
   class DualPurpose extends ModelGuardrail with Classifier {
-    override def decide(ctx: ModelGuardrail.CallContext): CompletionStage[Decision] =
-      CompletableFuture.completedFuture(new Decision.Allow())
-    override def classify(input: String): CompletionStage[Classification] =
-      CompletableFuture.completedFuture(Classification.label(s"dual:$input"))
+    override def decide(ctx: ModelGuardrail.CallContext): Decision =
+      new Decision.Allow()
+    override def classify(input: String): Classification =
+      Classification.label(s"dual:$input")
   }
 
   // Test-only stand-in for the runtime's classifier dispatch: looks a registered classifier up by
@@ -251,6 +260,23 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
       val provider = newProvider(system, cfg)
       val result = provider.client.classifyAsync("ensemble", "hi").toCompletableFuture.get(3, TimeUnit.SECONDS)
       result.label() shouldBe java.util.Optional.of("classified:hi")
+    }
+
+    "invoke the overridden classifyAsync(...) and never the sync classify(...)" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.classifiers {
+            "async-only" {
+              class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$AsyncOnlyClassifier"
+            }
+          }
+          """)
+      val provider = newProvider(system, cfg)
+
+      // the async override is used, both through the async and the blocking client method
+      val result = provider.client.classifyAsync("async-only", "x").toCompletableFuture.get(3, TimeUnit.SECONDS)
+      result.label() shouldBe java.util.Optional.of("async:x")
+      provider.client.classify("async-only", "y").label() shouldBe java.util.Optional.of("async:y")
     }
 
     "handle concurrent classify(...) calls against the shared singleton instance safely" in {

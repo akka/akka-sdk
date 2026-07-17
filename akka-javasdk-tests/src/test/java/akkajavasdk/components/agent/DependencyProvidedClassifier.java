@@ -8,8 +8,6 @@ import akka.javasdk.agent.Classification;
 import akka.javasdk.agent.Classifier;
 import akka.javasdk.agent.ClassifierContext;
 import akkajavasdk.protocol.TestGrpcServiceClient;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 /**
  * Test classifier whose constructor takes a dependency resolvable only via the service's {@code
@@ -26,8 +24,7 @@ public class DependencyProvidedClassifier implements Classifier {
   }
 
   @Override
-  public CompletionStage<Classification> classify(String input) {
-    return CompletableFuture.completedFuture(
-        Classification.label(dependencyProvidedClient != null ? "resolved" : "missing"));
+  public Classification classify(String input) {
+    return Classification.label(dependencyProvidedClient != null ? "resolved" : "missing");
   }
 }

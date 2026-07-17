@@ -163,7 +163,7 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
     override def classify(content: SpiClassifier.Content): Future[SpiClassifier.Classification] =
       content match {
         case text: SpiClassifier.TextContent =>
-          resolve().classify(text.text).asScala.map(fromClassification)(ExecutionContext.parasitic)
+          resolve().classifyAsync(text.text).asScala.map(fromClassification)(ExecutionContext.parasitic)
       }
   }
 }

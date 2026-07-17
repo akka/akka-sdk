@@ -145,7 +145,7 @@ import io.opentelemetry.context.{ Context => OtelContext }
       content match {
         case toolCall: SpiAgent.Guardrail.ToolCallContent =>
           decideSafely(
-            guardrail.decide(
+            guardrail.decideAsync(
               new ToolGuardrailCallContextImpl(
                 toolCall.agentId,
                 toolCall.toolName,
@@ -172,12 +172,12 @@ import io.opentelemetry.context.{ Context => OtelContext }
         case textContent: SpiAgent.Guardrail.TextContent =>
           val contents = java.util.List.of[MessageContent](MessageContent.TextMessageContent.from(textContent.text))
           decideSafely(
-            guardrail.decide(
+            guardrail.decideAsync(
               new ModelGuardrailCallContextImpl(contents, Option(textContent.telemetryContext), tracerFactory)))
         case multimodalContent: SpiAgent.Guardrail.MultimodalContent =>
           val contents = multimodalContent.contents.map(AgentImpl.fromSpiMessageContent).asJava
           decideSafely(
-            guardrail.decide(
+            guardrail.decideAsync(
               new ModelGuardrailCallContextImpl(contents, Option(multimodalContent.telemetryContext), tracerFactory)))
         case other =>
           Future.failed(
@@ -190,9 +190,10 @@ import io.opentelemetry.context.{ Context => OtelContext }
     override val reportOnly: Boolean = entry.configuredGuardrail.reportOnly
   }
 
-  // A guardrail can fail to reach a verdict in three ways: throw from decide(...), return a failed
-  // CompletionStage, or complete with an explicit Decision.Fail. All three are treated as if it had
-  // returned new Decision.Fail(message, throwable). A null stage NPEs here and lands on the same path.
+  // A guardrail can fail to reach a verdict in three ways: throw from decide/decideAsync, return a
+  // failed CompletionStage, or complete with an explicit Decision.Fail. All three are treated as if
+  // it had returned new Decision.Fail(message, throwable). A null stage NPEs here and lands on the
+  // same path; a null Decision is rejected in decisionToSpiResult.
   //
   // TODO: thrown exceptions and explicit new Decision.Fail(...) currently collapse onto the same
   // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
@@ -216,6 +217,7 @@ import io.opentelemetry.context.{ Context => OtelContext }
       case a: Allow => Future.successful(new SpiAgent.Guardrail.Result(true, a.reason))
       case d: Deny  => Future.successful(new SpiAgent.Guardrail.Result(false, d.reason))
       case e: Fail  => Future.failed(new RuntimeException(e.reason, e.cause))
+      case null     => Future.failed(new NullPointerException("Guardrail returned a null Decision"))
     }
 
   @nowarn("cat=deprecation")
