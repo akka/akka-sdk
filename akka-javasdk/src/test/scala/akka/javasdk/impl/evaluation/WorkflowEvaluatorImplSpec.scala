@@ -32,7 +32,7 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
   private val evaluationId = "evaluation-1"
 
   private final class RecorderProbe extends spi.SpiEvaluator.EvaluationRecorder {
-    var recorded: Option[(SpiEvaluator.Triggesr, SpiEvaluator.Result)] = None
+    var recorded: Option[(SpiEvaluator.Trigger, SpiEvaluator.Result)] = None
 
     override def recordResult(trigger: SpiEvaluator.Trigger, result: SpiEvaluator.Result): Future[Done] = {
       recorded = Some((trigger, result))
