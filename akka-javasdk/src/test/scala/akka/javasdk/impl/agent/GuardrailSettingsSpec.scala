@@ -23,11 +23,25 @@ object GuardrailSettingsSpec {
 
       "my guard" {
         class = "test.MyGuard"
-        agent-roles = ["worker"]                      
+        agent-roles = ["worker"]
         category = TOXIC
         use-for = ["model-response", "mcp-tool-response"]
         report-only = true
         some-other-property = "foo"
+      }
+
+      "agent response guard" {
+        class = "test.MyModelGuard"
+        agents = ["some-agent"]
+        category = TOXIC
+        use-for = ["before-agent-response"]
+      }
+
+      "wildcard guard" {
+        class = "test.MyGuard"
+        agents = ["some-agent"]
+        category = TOXIC
+        use-for = ["*"]
       }
     }
     """)
@@ -39,7 +53,7 @@ class GuardrailSettingsSpec extends AnyWordSpec with Matchers {
   "The GuardrailSettings" should {
     "load from config" in {
       val settings = GuardrailSettings(config.getConfig("akka.javasdk.agent.guardrails"))
-      settings.configuredGuardrails.size shouldBe 2
+      settings.configuredGuardrails.size shouldBe 4
 
       val first = settings.configuredGuardrails.find(_.name == "request prompt injection").get
       first.implementationClass shouldBe "akka.javasdk.agent.SimilarityGuard"
@@ -55,6 +69,12 @@ class GuardrailSettingsSpec extends AnyWordSpec with Matchers {
       second.agentRoles shouldBe Set("worker")
       second.useFor shouldBe Set(UseFor.ModelResponse, UseFor.McpToolResponse)
       second.config.getString("some-other-property") shouldBe "foo"
+
+      val third = settings.configuredGuardrails.find(_.name == "agent response guard").get
+      third.useFor shouldBe Set(UseFor.BeforeAgentResponse)
+
+      val fourth = settings.configuredGuardrails.find(_.name == "wildcard guard").get
+      fourth.useFor shouldBe Set(UseFor.Wildcard)
     }
 
   }

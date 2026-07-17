@@ -36,6 +36,7 @@ import akka.runtime.sdk.spi.SpiAgent
 import com.typesafe.config.Config
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
+import org.slf4j.LoggerFactory
 
 /**
  * INTERNAL API
@@ -63,6 +64,9 @@ import io.opentelemetry.context.{ Context => OtelContext }
    */
   @InternalApi private[javasdk] final class ModelGuardrailCallContextImpl(
       contentList: java.util.List[MessageContent],
+      override val agentId: String,
+      override val sessionId: String,
+      override val modelName: String,
       telemetryContext: Option[OtelContext],
       tracerFactory: () => Tracer)
       extends ModelGuardrail.CallContext {
@@ -98,6 +102,16 @@ import io.opentelemetry.context.{ Context => OtelContext }
       collectGuardrails(UseFor.McpToolRequest)
     val mcpToolResponseGuardrails: Seq[SpiAgent.Guardrail] =
       collectGuardrails(UseFor.McpToolResponse)
+    val beforeAgentResponseGuardrails: Seq[SpiAgent.Guardrail] =
+      collectGuardrails(UseFor.BeforeAgentResponse)
+
+    // The model-side guardrails grouped by their SPI boundaries, as handed to the runtime.
+    // MCP and before-tool-call guardrails travel on their descriptors instead.
+    val boundGuardrails: SpiAgent.BoundGuardrails =
+      SpiAgent.BoundGuardrails
+        .add(SpiAgent.GuardrailBoundary.ModelRequest, modelRequestGuardrails)
+        .add(SpiAgent.GuardrailBoundary.ModelResponse, modelResponseGuardrails)
+        .add(SpiAgent.GuardrailBoundary.BeforeAgentResponse, beforeAgentResponseGuardrails)
 
     // The before-tool-call guardrails applicable to the given tool. An entry with an empty `tools`
     // set applies to every tool on the agent; otherwise only to the named tools.
@@ -169,20 +183,21 @@ import io.opentelemetry.context.{ Context => OtelContext }
 
     override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
       content match {
-        case textContent: SpiAgent.Guardrail.TextContent =>
-          val contents = java.util.List.of[MessageContent](MessageContent.TextMessageContent.from(textContent.text))
+        case agentResponse: SpiAgent.Guardrail.AgentResponseContent =>
+          val contents = java.util.List.of[MessageContent](AgentImpl.fromSpiMessageContent(agentResponse.content))
           decideSafely(
             guardrail.decideAsync(
-              new ModelGuardrailCallContextImpl(contents, Option(textContent.telemetryContext), tracerFactory)))
-        case multimodalContent: SpiAgent.Guardrail.MultimodalContent =>
-          val contents = multimodalContent.contents.map(AgentImpl.fromSpiMessageContent).asJava
-          decideSafely(
-            guardrail.decideAsync(
-              new ModelGuardrailCallContextImpl(contents, Option(multimodalContent.telemetryContext), tracerFactory)))
+              new ModelGuardrailCallContextImpl(
+                contents,
+                agentResponse.agentId,
+                agentResponse.sessionId,
+                agentResponse.modelName,
+                Option(agentResponse.telemetryContext),
+                tracerFactory)))
         case other =>
           Future.failed(
             new IllegalArgumentException(
-              s"Only text and multimodal content is supported, but was [${other.getClass.getName}]"))
+              s"Only agent response content is supported, but was [${other.getClass.getName}]"))
       }
 
     override val name: String = entry.configuredGuardrail.name
@@ -232,12 +247,16 @@ import io.opentelemetry.context.{ Context => OtelContext }
   private def toSpiSimilarityGuard(g: SimilarityGuard, c: ConfiguredGuardrail): SpiAgent.SimilarityGuard =
     new SpiAgent.SimilarityGuard(c.name, c.category, c.reportOnly, g.badExamplesResourceDir, g.threshold)
 
-  // ToolGuardrail currently binds only to the before-tool-call boundary (in-process function tools).
-  // FIXME: extend to the MCP tool request/response boundaries. That requires ToolGuardrailAdapter to
-  // build a ToolGuardrailContext from the MCP TextContent and ToolSideUseFor to also include
+  // Each guardrail interface is pinned to its own use-for values. The legacy values are reachable
+  // only by the deprecated TextGuardrail; new boundaries only by the new interfaces.
+  // FIXME: extend ToolGuardrail to the MCP tool request/response boundaries (MCP-as-tool-call
+  // unification is a separate issue). That requires ToolGuardrailAdapter to build a
+  // ToolGuardrailContext from the MCP TextContent and ToolSideUseFor to also include
   // McpToolRequest/McpToolResponse.
   private val ToolSideUseFor: Set[UseFor] = Set(UseFor.BeforeToolCall)
-  private val ModelSideUseFor: Set[UseFor] = Set(UseFor.ModelRequest, UseFor.ModelResponse)
+  private val ModelSideUseFor: Set[UseFor] = Set(UseFor.BeforeAgentResponse)
+  private val TextSideUseFor: Set[UseFor] =
+    Set(UseFor.ModelRequest, UseFor.ModelResponse, UseFor.McpToolRequest, UseFor.McpToolResponse)
 
   // Default classifierClient for call sites (and tests) that don't supply one; any call fails
   // descriptively instead of silently returning something.
@@ -261,6 +280,8 @@ import io.opentelemetry.context.{ Context => OtelContext }
     classifierClient: ClassifierClient = GuardrailProvider.NoClassifiersConfigured) {
   import GuardrailProvider._
 
+  private val log = LoggerFactory.getLogger(classOf[GuardrailProvider])
+
   lazy val configuredGuardrails: Seq[ConfiguredGuardrail] = {
     GuardrailSettings(applicationConfig.getConfig("akka.javasdk.agent.guardrails")).configuredGuardrails
   }
@@ -269,9 +290,7 @@ import io.opentelemetry.context.{ Context => OtelContext }
     configuredGuardrails.foldLeft(Map.empty[String, Vector[GuardrailEntry]]) {
       case (acc, config) if config.useFor.nonEmpty =>
         config.agents.foldLeft(acc) { case (acc2, componentId) =>
-          acc2.updated(
-            componentId,
-            acc2.getOrElse(componentId, Vector.empty) :+ GuardrailEntry(config, createGuardrail(config)))
+          acc2.updated(componentId, acc2.getOrElse(componentId, Vector.empty) :+ createGuardrail(config))
         }
       case (acc, _) => acc
     }
@@ -281,13 +300,13 @@ import io.opentelemetry.context.{ Context => OtelContext }
     configuredGuardrails.foldLeft(Map.empty[String, Vector[GuardrailEntry]]) {
       case (acc, config) if config.useFor.nonEmpty =>
         config.agentRoles.foldLeft(acc) { case (acc2, role) =>
-          acc2.updated(role, acc2.getOrElse(role, Vector.empty) :+ GuardrailEntry(config, createGuardrail(config)))
+          acc2.updated(role, acc2.getOrElse(role, Vector.empty) :+ createGuardrail(config))
         }
       case (acc, _) => acc
     }
   }
 
-  private def createGuardrail(c: ConfiguredGuardrail): Guardrail = {
+  private def createGuardrail(c: ConfiguredGuardrail): GuardrailEntry = {
     val guardrailContext = new GuardrailContextImpl(c.name, c.config, classifierClient)
     val instance = system.dynamicAccess
       .createInstanceFor[Guardrail](c.implementationClass, (classOf[GuardrailContext] -> guardrailContext) :: Nil)
@@ -302,8 +321,11 @@ import io.opentelemetry.context.{ Context => OtelContext }
       .get
 
     validateSingleInterface(c.name, instance)
-    validateUseFor(c, instance)
-    instance
+    warnOnDeprecatedUseFor(c)
+
+    val expanded = expandWildcard(c, instance)
+    validateUseFor(expanded, instance)
+    GuardrailEntry(expanded, instance)
   }
 
   // Guardrail is sealed (permits TextGuardrail, ToolGuardrail, ModelGuardrail) so any instance
@@ -323,9 +345,35 @@ import io.opentelemetry.context.{ Context => OtelContext }
         s"but [${instance.getClass.getName}] implements [${implemented.mkString(", ")}]")
   }
 
-  // ToolGuardrail must bind to before-tool-call; ModelGuardrail to model-side. before-tool-call is
-  // reserved for ToolGuardrail, so any other guardrail declaring it is rejected.
-  // (When new boundary names land, this validation moves with them.)
+  // "*" expands to the boundaries the guardrail's interface may bind to.
+  @nowarn("cat=deprecation")
+  private def expandWildcard(c: ConfiguredGuardrail, instance: Guardrail): ConfiguredGuardrail =
+    if (!c.useFor.contains(UseFor.Wildcard)) c
+    else {
+      val expansion = instance match {
+        case _: ToolGuardrail  => ToolSideUseFor
+        case _: ModelGuardrail => ModelSideUseFor
+        // TextGuardrail, including the built-in SimilarityGuard
+        case _ => TextSideUseFor
+      }
+      c.copy(useFor = c.useFor - UseFor.Wildcard ++ expansion)
+    }
+
+  // Runs on the DECLARED use-for set (before wildcard expansion) so a "*" declaration
+  // does not trigger the warning.
+  private def warnOnDeprecatedUseFor(c: ConfiguredGuardrail): Unit = {
+    val deprecated = c.useFor.intersect(Set[UseFor](UseFor.ModelRequest, UseFor.ModelResponse))
+    if (deprecated.nonEmpty)
+      log.warn(
+        "Guardrail [{}] uses deprecated use-for value(s) [{}]. Implement " +
+        "akka.javasdk.agent.ModelGuardrail and bind it to [before-agent-response] instead.",
+        c.name,
+        deprecated.mkString(", "))
+  }
+
+  // Each interface may only bind to its own use-for values (see the pinned sets above).
+  // Validation runs on the wildcard-expanded set, so a "*" declaration is always valid.
+  @nowarn("cat=deprecation")
   private def validateUseFor(c: ConfiguredGuardrail, instance: Guardrail): Unit =
     instance match {
       case _: ToolGuardrail if !c.useFor.subsetOf(ToolSideUseFor) =>
@@ -337,12 +385,13 @@ import io.opentelemetry.context.{ Context => OtelContext }
         val invalid = c.useFor.diff(ModelSideUseFor)
         throw new IllegalArgumentException(
           s"ModelGuardrail [${c.name}] can only be bound to model-side use-for values " +
-          s"(model-request, model-response), but was also bound to [${invalid.mkString(", ")}]")
-      case _: ToolGuardrail | _: ModelGuardrail => // ok
-      case _ if c.useFor.contains(UseFor.BeforeToolCall) =>
+          s"(before-agent-response), but was also bound to [${invalid.mkString(", ")}]")
+      case _: TextGuardrail if !c.useFor.subsetOf(TextSideUseFor) =>
+        val invalid = c.useFor.diff(TextSideUseFor)
         throw new IllegalArgumentException(
-          s"Guardrail [${c.name}] (class [${instance.getClass.getName}]) is bound to before-tool-call, " +
-          s"which is only valid for a [${classOf[ToolGuardrail].getName}].")
+          s"TextGuardrail [${c.name}] can only be bound to the deprecated use-for values " +
+          s"(model-request, model-response, mcp-tool-request, mcp-tool-response), " +
+          s"but was also bound to [${invalid.mkString(", ")}]")
       case _ => // ok
     }
 

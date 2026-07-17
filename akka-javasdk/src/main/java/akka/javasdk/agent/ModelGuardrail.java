@@ -10,13 +10,18 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * A guardrail that decides whether a model-side call (for example, a model request or an agent
- * response) may proceed.
+ * A guardrail that decides whether a model-side interaction may proceed.
+ *
+ * <p>Bound via configuration to one or more model-side boundaries, expressed as {@code use-for}
+ * values:
+ *
+ * <ul>
+ *   <li>{@code before-agent-response} — fired once per agent interaction, on the final agent reply
+ * </ul>
  *
  * <p>An implementation has a public constructor, optionally taking a {@link GuardrailContext}
  * parameter, which gives access to the guardrail's configured name and config section. The per-call
- * data is delivered to {@link #decide} via {@link CallContext}. Guardrails are enabled and bound to
- * boundaries via configuration; see the agent documentation.
+ * data is delivered to {@link #decide} via {@link CallContext}.
  */
 public non-sealed interface ModelGuardrail extends Guardrail {
 
@@ -30,10 +35,18 @@ public non-sealed interface ModelGuardrail extends Guardrail {
    */
   public interface CallContext {
 
+    /** The component id of the agent this interaction belongs to. */
+    String agentId();
+
+    /** The id of the session this interaction belongs to. */
+    String sessionId();
+
+    /** The name of the model involved in the interaction being checked. */
+    String modelName();
+
     /**
-     * The text being checked: the user input for a model request, the model output for an agent
-     * response. Non-empty only when {@link #textOnly()} is true; empty for multimodal content,
-     * whose parts must be inspected via {@link #contents()}.
+     * The text being checked. Non-empty only when {@link #textOnly()} is true; empty for multimodal
+     * content, whose parts must be inspected via {@link #contents()}.
      */
     String text();
 
@@ -66,7 +79,7 @@ public non-sealed interface ModelGuardrail extends Guardrail {
   }
 
   /**
-   * Decides whether the model call described by {@code ctx} may proceed.
+   * Decides whether the interaction described by {@code ctx} may proceed.
    *
    * <p>Use {@link Decision.Deny} to refuse the call. Returning {@link Decision.Fail} and throwing
    * are equivalent: both mean the guardrail reached no verdict, which is distinct from refusing the

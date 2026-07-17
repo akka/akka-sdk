@@ -59,25 +59,29 @@ import com.typesafe.config.ConfigObject
     final case object McpToolRequest extends UseFor
     final case object McpToolResponse extends UseFor
     final case object BeforeToolCall extends UseFor
+    final case object BeforeAgentResponse extends UseFor
 
-    // Note: the "*" wildcard expands to the legacy text/model boundaries only. BeforeToolCall is
-    // intentionally excluded — it is reachable only by a ToolGuardrail that explicitly declares it.
-    val all: Seq[UseFor] = ModelRequest :: ModelResponse :: McpToolRequest :: McpToolResponse :: Nil
+    // Placeholder for a "*" declaration. It expands per guardrail interface type once the
+    // implementation class is known (GuardrailProvider), not at parse time.
+    final case object Wildcard extends UseFor {
+      override def toString: String = "*"
+    }
   }
 
   def apply(name: String, config: Config): ConfiguredGuardrail = {
-    val useFor = config
+    val useFor: Set[UseFor] = config
       .getStringList("use-for")
       .iterator
       .asScala
       .map(_.toLowerCase(Locale.ROOT))
       .flatMap {
-        case "model-request"     => UseFor.ModelRequest :: Nil
-        case "model-response"    => UseFor.ModelResponse :: Nil
-        case "mcp-tool-request"  => UseFor.McpToolRequest :: Nil
-        case "mcp-tool-response" => UseFor.McpToolResponse :: Nil
-        case "before-tool-call"  => UseFor.BeforeToolCall :: Nil
-        case "*"                 => UseFor.all
+        case "model-request"         => UseFor.ModelRequest :: Nil
+        case "model-response"        => UseFor.ModelResponse :: Nil
+        case "mcp-tool-request"      => UseFor.McpToolRequest :: Nil
+        case "mcp-tool-response"     => UseFor.McpToolResponse :: Nil
+        case "before-tool-call"      => UseFor.BeforeToolCall :: Nil
+        case "before-agent-response" => UseFor.BeforeAgentResponse :: Nil
+        case "*"                     => UseFor.Wildcard :: Nil
         case other =>
           throw new IllegalArgumentException(s"Unknown use-for [$other] in guardrail configuration [$name]")
       }
