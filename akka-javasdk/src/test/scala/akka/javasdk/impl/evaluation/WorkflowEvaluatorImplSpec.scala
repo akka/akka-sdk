@@ -15,6 +15,7 @@ import akka.javasdk.impl.evaluation.WorkflowEvaluatorImpl.RecordStepName
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.Outcome
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.StateEnvelope
 import akka.javasdk.impl.serialization.Serializer
+import akka.runtime.sdk.spi
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiEvaluator
@@ -30,15 +31,16 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
   private val serializer = new Serializer
   private val evaluationId = "evaluation-1"
 
-  private final class RecorderProbe extends SpiWorkflowEvaluator.EvaluationRecorder {
-    var recorded: Option[(String, SpiWorkflowEvaluator.Result)] = None
-    override def recordResult(evaluationId: String, result: SpiWorkflowEvaluator.Result): Future[Done] = {
-      recorded = Some((evaluationId, result))
+  private final class RecorderProbe extends spi.SpiEvaluator.EvaluationRecorder {
+    var recorded: Option[(SpiEvaluator.Triggesr, SpiEvaluator.Result)] = None
+
+    override def recordResult(trigger: SpiEvaluator.Trigger, result: SpiEvaluator.Result): Future[Done] = {
+      recorded = Some((trigger, result))
       Future.successful(Done)
     }
   }
 
-  private def newImpl(recorder: SpiWorkflowEvaluator.EvaluationRecorder = new RecorderProbe) =
+  private def newImpl(recorder: SpiEvaluator.EvaluationRecorder = new RecorderProbe) =
     new WorkflowEvaluatorImpl[TranscriptQualityEvaluator.State, TranscriptQualityEvaluator](
       evaluationId,
       classOf[TranscriptQualityEvaluator],
@@ -177,8 +179,8 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
 
       val (recordedId, recordedResult) = recorder.recorded.value
       recordedId shouldBe evaluationId
-      recordedResult shouldBe a[SpiWorkflowEvaluator.InconclusiveResult]
-      recordedResult.asInstanceOf[SpiWorkflowEvaluator.InconclusiveResult].reason shouldBe "no verdict"
+      recordedResult shouldBe a[spi.SpiEvaluator.InconclusiveResult]
+      recordedResult.asInstanceOf[spi.SpiEvaluator.InconclusiveResult].reason shouldBe "no verdict"
     }
 
     "record a completed outcome with its evaluations" in {
@@ -202,7 +204,7 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
 
       val (recordedId, recordedResult) = recorder.recorded.value
       recordedId shouldBe evaluationId
-      val completed = recordedResult.asInstanceOf[SpiWorkflowEvaluator.CompletedResult]
+      val completed = recordedResult.asInstanceOf[spi.SpiEvaluator.CompletedResult]
       completed.evaluations should have size 1
       completed.evaluations.head.passed shouldBe true
     }
