@@ -6,11 +6,12 @@ package akkajavasdk.components.evaluation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import akka.javasdk.evaluation.Subject;
+import akka.javasdk.ledger.EvaluationRecord;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akkajavasdk.Junit5LogCapturing;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
@@ -25,6 +26,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * ResponseQualityWorkflowEvaluator}, which runs its evaluation as a workflow — fetching the
  * transcript in one step and judging it with an LLM-as-judge agent (also stubbed) in another —
  * until the verdict is recorded.
+ *
+ * <p>The verdict is asserted on the evaluation as recorded in the ledger, so the built-in record
+ * step is covered too: the record only exists once that step has reported the outcome to the
+ * runtime.
  */
 @ExtendWith(Junit5LogCapturing.class)
 public class WorkflowEvaluatorIntegrationTest extends TestKitSupport {
@@ -49,7 +54,7 @@ public class WorkflowEvaluatorIntegrationTest extends TestKitSupport {
 
   @BeforeEach
   public void beforeEach() {
-    ResponseQualityWorkflowEvaluator.clearCompleted();
+    ResponseQualityWorkflowEvaluator.clearEvaluationIds();
   }
 
   @AfterEach
@@ -75,23 +80,19 @@ public class WorkflowEvaluatorIntegrationTest extends TestKitSupport {
             .invoke("How do I reset my password?");
     assertThat(answer).isNotBlank();
 
-    Awaitility.await()
-        .atMost(30, TimeUnit.SECONDS)
-        .untilAsserted(
-            () -> {
-              var completed = ResponseQualityWorkflowEvaluator.completedEvaluations();
-              assertThat(completed).hasSize(1);
+    EvaluationRecord record = awaitRecordedEvaluation();
 
-              var result = completed.values().iterator().next();
-              assertThat(result.subject()).isInstanceOf(Subject.AgentInteraction.class);
-              assertThat(result.subject().agentComponentId()).isEqualTo("wf-evaluated-agent");
-              assertThat(result.evaluationId()).isNotBlank();
+    assertThat(record.evaluatorComponentId()).isEqualTo("response-quality-workflow-evaluator");
+    assertThat(record.agentComponentId()).isEqualTo("wf-evaluated-agent");
+    assertThat(record.interactionId()).isNotBlank();
+    assertThat(record.trigger()).isEqualTo(EvaluationRecord.Trigger.ON_INTERACTION);
+    assertThat(record.outcome()).isInstanceOf(EvaluationRecord.Outcome.Verdict.class);
 
-              var evaluation = result.evaluation();
-              assertThat(evaluation.passed()).isTrue();
-              assertThat(evaluation.score()).hasValue(0.9);
-              assertThat(evaluation.explanation()).isEqualTo("clear and helpful");
-            });
+    assertThat(record.evaluations()).hasSize(1);
+    var evaluation = record.evaluations().getFirst();
+    assertThat(evaluation.passed()).isTrue();
+    assertThat(evaluation.score()).hasValue(0.9);
+    assertThat(evaluation.explanation()).isEqualTo("clear and helpful");
   }
 
   @Test
@@ -111,16 +112,30 @@ public class WorkflowEvaluatorIntegrationTest extends TestKitSupport {
             .invoke("How do I export my data?");
     assertThat(answer).isNotBlank();
 
+    EvaluationRecord record = awaitRecordedEvaluation();
+
+    assertThat(record.evaluations()).hasSize(1);
+    var evaluation = record.evaluations().get(0);
+    assertThat(evaluation.passed()).isFalse();
+    assertThat(evaluation.explanation()).isEqualTo("dismissive and unhelpful");
+  }
+
+  /**
+   * Await the evaluation the agent interaction triggered, as recorded in the ledger: first the id
+   * the evaluator ran with, then the record the built-in record step writes when the evaluation
+   * terminates.
+   */
+  private EvaluationRecord awaitRecordedEvaluation() {
     Awaitility.await()
         .atMost(30, TimeUnit.SECONDS)
         .untilAsserted(
-            () -> {
-              var completed = ResponseQualityWorkflowEvaluator.completedEvaluations();
-              assertThat(completed).hasSize(1);
+            () -> assertThat(ResponseQualityWorkflowEvaluator.evaluationIds()).hasSize(1));
 
-              var evaluation = completed.values().iterator().next().evaluation();
-              assertThat(evaluation.passed()).isFalse();
-              assertThat(evaluation.explanation()).isEqualTo("dismissive and unhelpful");
-            });
+    String evaluationId = ResponseQualityWorkflowEvaluator.evaluationIds().iterator().next();
+
+    return Awaitility.await()
+        .atMost(30, TimeUnit.SECONDS)
+        .ignoreException(NoSuchElementException.class)
+        .until(() -> getLedgerClient().getEvaluation(evaluationId), record -> record != null);
   }
 }

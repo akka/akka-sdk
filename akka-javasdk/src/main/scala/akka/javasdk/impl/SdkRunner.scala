@@ -473,6 +473,7 @@ private[javasdk] object Sdk {
       serializer: Serializer,
       sanitizer: Sanitizer,
       classifierClient: ClassifierClient,
+      ledgerClient: LedgerClient,
       inMemorySpanExporter: Option[InMemorySpanExporter])
 
   private val platformManagedDependency = Set[Class[_]](
@@ -1340,6 +1341,7 @@ private final class Sdk(
               serializer,
               sanitizer,
               classifierClient,
+              ledgerClient,
               inMemorySpanExporter))
           Future.successful(Done)
         case Some(setup) =>
@@ -1380,6 +1382,7 @@ private final class Sdk(
               serializer,
               sanitizer,
               classifierClient,
+              ledgerClient,
               inMemorySpanExporter))
           Future.successful(Done)
       }

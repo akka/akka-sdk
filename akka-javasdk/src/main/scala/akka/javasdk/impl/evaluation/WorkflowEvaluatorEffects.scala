@@ -9,7 +9,6 @@ import scala.jdk.CollectionConverters._
 import akka.annotation.InternalApi
 import akka.japi.function
 import akka.javasdk.evaluation.Evaluation
-import akka.javasdk.evaluation.WorkflowEvaluator
 import akka.javasdk.evaluation.WorkflowEvaluator.Effect
 import akka.javasdk.evaluation.WorkflowEvaluator.WithInput
 import akka.javasdk.impl.client.MethodRefResolver
@@ -18,9 +17,9 @@ import akka.javasdk.impl.workflow.WorkflowDescriptor
 /**
  * INTERNAL API
  *
- * Effect model for [[WorkflowEvaluator]]. A deliberately small subset of the workflow effects: state update plus either
- * a step transition or a terminal evaluation outcome (complete / inconclusive). There is no pause, end, delete or reply
- * — the component's lifecycle guarantees are enforced by construction.
+ * Effect model for [[akka.javasdk.evaluation.WorkflowEvaluator]]. A deliberately small subset of the workflow effects:
+ * state update plus either a step transition or a terminal evaluation outcome (complete / inconclusive). There is no
+ * pause, end, delete or reply — the component's lifecycle guarantees are enforced by construction.
  */
 @InternalApi
 private[javasdk] object WorkflowEvaluatorEffects {
@@ -40,9 +39,11 @@ private[javasdk] object WorkflowEvaluatorEffects {
 
   final case class EffectImpl[S](persistence: Persistence[S], transition: Transition) extends Effect
 
-  private def resolveStep(methodRef: AnyRef): (String, Class[_]) = {
+  private final case class StepRef(stepName: String, declaringClass: Class[_])
+
+  private def resolveStep(methodRef: AnyRef): StepRef = {
     val method = MethodRefResolver.resolveMethodRef(methodRef)
-    (WorkflowDescriptor.stepMethodName(method), method.getDeclaringClass)
+    StepRef(WorkflowDescriptor.stepMethodName(method), method.getDeclaringClass)
   }
 
   private def completeEffect[S](persistence: Persistence[S], evaluations: List[Evaluation]): Effect = {
@@ -56,13 +57,13 @@ private[javasdk] object WorkflowEvaluatorEffects {
   }
 
   private def transitionEffect[S](persistence: Persistence[S], methodRef: AnyRef): Effect = {
-    val (stepName, declaringClass) = resolveStep(methodRef)
-    EffectImpl(persistence, StepTransition(stepName, None, declaringClass))
+    val step = resolveStep(methodRef)
+    EffectImpl(persistence, StepTransition(step.stepName, None, step.declaringClass))
   }
 
   private def transitionWithInput[S, I](persistence: Persistence[S], methodRef: AnyRef): WithInput[I, Effect] = {
-    val (stepName, declaringClass) = resolveStep(methodRef)
-    (input: I) => EffectImpl(persistence, StepTransition(stepName, Some(input), declaringClass))
+    val step = resolveStep(methodRef)
+    (input: I) => EffectImpl(persistence, StepTransition(step.stepName, Some(input), step.declaringClass))
   }
 
   final case class BuilderImpl[S](persistence: Persistence[S]) extends Effect.Builder[S] {

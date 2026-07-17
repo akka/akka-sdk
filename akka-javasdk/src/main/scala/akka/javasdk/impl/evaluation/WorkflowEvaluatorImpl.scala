@@ -27,6 +27,7 @@ import akka.javasdk.impl.evaluation.WorkflowEvaluatorEffects.UpdateState
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.EvaluationData
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.Outcome
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.StateEnvelope
+import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.TriggerSource
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.workflow.WorkflowDescriptor
 import akka.runtime.sdk.spi.BytesPayload
@@ -63,6 +64,26 @@ private[javasdk] object WorkflowEvaluatorImpl {
       case agent: SpiEvaluator.AgentInteraction =>
         new Subject.AgentInteraction(agent.agentComponentId, agent.interactionId)
     }
+
+  private def toSpiSubject(subject: Subject): SpiEvaluator.Subject =
+    subject match {
+      case flow: Subject.FlowInteraction =>
+        new SpiEvaluator.FlowInteraction(flow.flowId(), flow.agentComponentId(), flow.interactionId())
+      case agent: Subject.AgentInteraction =>
+        new SpiEvaluator.AgentInteraction(agent.agentComponentId(), agent.interactionId())
+    }
+
+  private def toProtocolTriggerSource(source: SpiEvaluator.TriggerSource): TriggerSource =
+    source match {
+      case SpiEvaluator.TriggerSource.Manual        => TriggerSource.MANUAL
+      case SpiEvaluator.TriggerSource.OnInteraction => TriggerSource.ON_INTERACTION
+    }
+
+  private def toSpiTriggerSource(source: TriggerSource): SpiEvaluator.TriggerSource =
+    source match {
+      case TriggerSource.MANUAL         => SpiEvaluator.TriggerSource.Manual
+      case TriggerSource.ON_INTERACTION => SpiEvaluator.TriggerSource.OnInteraction
+    }
 }
 
 /**
@@ -78,7 +99,7 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
     evaluatorClass: Class[E],
     stateClass: Class[S],
     factory: () => E,
-    recorder: SpiWorkflowEvaluator.EvaluationRecorder,
+    recorder: SpiEvaluator.EvaluationRecorder,
     serializer: Serializer,
     sdkExecutionContext: ExecutionContext)
     extends SpiWorkflowEvaluator {
@@ -145,6 +166,7 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
       Future.successful(new SpiWorkflow.ReadOnlyEffect(ack, SpiMetadata.empty))
     } else {
       val subject = toSdkSubject(trigger.subject)
+      val triggerSource = toProtocolTriggerSource(trigger.source)
       Future {
         val evaluator = factory()
         val context = new EvaluationContextImpl(workflowId, subject)
@@ -153,13 +175,13 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
         effect match {
           case EffectImpl(persistence, transition) =>
             // the envelope is always persisted on start, even without a state update, so the
-            // subject survives recovery and a duplicate start is detected
+            // trigger survives recovery and a duplicate start is detected
             val newUserState = persistence match {
               case UpdateState(newState) => Some(newState)
               case NoPersistence         => None
             }
             new SpiWorkflow.CommandTransitionalEffect(
-              envelopePersistence(subject, newUserState),
+              envelopePersistence(triggerSource, subject, newUserState),
               toSpiTransition(transition),
               ack,
               SpiMetadata.empty)
@@ -180,14 +202,15 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
 
   override def invokeStep(
       userState: Option[BytesPayload],
-      stepCommand: SpiWorkflow.StepCommand): Future[SpiWorkflow.StepResult] =
+      stepCommand: SpiWorkflow.StepCommand): Future[SpiWorkflow.StepResult] = {
+    // the envelope is persisted on start, before any step can run, so it is always there
+    val envelope = decodeEnvelope(userState).getOrElse {
+      throw new IllegalStateException(
+        s"Evaluation [$workflowId] has no state for step [${stepCommand.stepName}], was the evaluation started by the runtime?")
+    }
     if (stepCommand.stepName == RecordStepName) {
-      recordOutcome(stepCommand.input)
+      recordOutcome(envelope, stepCommand.input)
     } else {
-      val envelope = decodeEnvelope(userState).getOrElse {
-        throw new IllegalStateException(
-          s"Evaluation [$workflowId] has no state for step [${stepCommand.stepName}], was the evaluation started by the runtime?")
-      }
       val stepMethod = stepMethods.getOrElse(
         stepCommand.stepName,
         throw new IllegalArgumentException(
@@ -210,30 +233,39 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
           }
         effect match {
           case EffectImpl(persistence, transition) =>
-            new SpiWorkflow.StepTransitionalEffect(toSpiPersistence(persistence, subject), toSpiTransition(transition))
+            new SpiWorkflow.StepTransitionalEffect(
+              toSpiPersistence(persistence, envelope.triggerSource(), subject),
+              toSpiTransition(transition))
         }
       }
     }
+  }
 
-  private def recordOutcome(input: Option[BytesPayload]): Future[SpiWorkflow.StepResult] = {
+  private def recordOutcome(envelope: StateEnvelope, input: Option[BytesPayload]): Future[SpiWorkflow.StepResult] = {
     val outcome = input match {
       case Some(payload) => serializer.fromBytes(classOf[Outcome], payload)
       case None          => throw new IllegalStateException(s"Missing outcome input for [$RecordStepName] step")
     }
+    // the trigger the evaluation was started with, rebuilt from the persisted envelope, so the
+    // recorded result is linked to the evaluated interaction
+    val trigger = new SpiEvaluator.Trigger(
+      workflowId,
+      toSpiTriggerSource(envelope.triggerSource()),
+      toSpiSubject(envelope.getSubject))
     // recording is idempotent on the evaluation id: this step is retried until it succeeds
-    recorder.recordResult(workflowId, toSpiResult(outcome)).map { _ =>
+    recorder.recordResult(trigger, toSpiResult(outcome)).map { _ =>
       log.debug("Evaluation [{}] finished with [{}]", workflowId, outcome.kind())
       //TODO end or delete or a setting for that?
       new SpiWorkflow.StepTransitionalEffect(SpiWorkflow.NoPersistence, SpiWorkflow.Delete)
     }
   }
 
-  private def toSpiResult(outcome: Outcome): SpiWorkflowEvaluator.Result =
+  private def toSpiResult(outcome: Outcome): SpiEvaluator.Result =
     outcome.kind() match {
       case Outcome.Kind.COMPLETED =>
-        new SpiWorkflowEvaluator.CompletedResult(outcome.evaluations().asScala.toSeq.map(toSpiEvaluation))
-      case Outcome.Kind.INCONCLUSIVE => new SpiWorkflowEvaluator.InconclusiveResult(outcome.reason())
-      case Outcome.Kind.FAILED       => new SpiWorkflowEvaluator.FailedResult(outcome.reason())
+        new SpiEvaluator.CompletedResult(outcome.evaluations().asScala.toSeq.map(toSpiEvaluation))
+      case Outcome.Kind.INCONCLUSIVE => new SpiEvaluator.InconclusiveResult(outcome.reason())
+      case Outcome.Kind.FAILED       => new SpiEvaluator.FailedResult(outcome.reason())
     }
 
   private def toSpiEvaluation(data: EvaluationData): SpiEvaluator.Evaluation =
@@ -258,19 +290,23 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
 
   private def toSpiPersistence(
       persistence: WorkflowEvaluatorEffects.Persistence[Any],
+      triggerSource: TriggerSource,
       subject: Subject): SpiWorkflow.Persistence =
     persistence match {
-      case UpdateState(newState) => envelopePersistence(subject, Some(newState))
+      case UpdateState(newState) => envelopePersistence(triggerSource, subject, Some(newState))
       case NoPersistence         => SpiWorkflow.NoPersistence
     }
 
-  private def envelopePersistence(subject: Subject, userState: Option[Any]): SpiWorkflow.UpdateState = {
+  private def envelopePersistence(
+      triggerSource: TriggerSource,
+      subject: Subject,
+      userState: Option[Any]): SpiWorkflow.UpdateState = {
     val envelope = userState match {
       case Some(state) =>
         val payload = serializer.toBytes(state)
-        StateEnvelope.of(subject, payload.bytes.toArrayUnsafe(), payload.contentType)
+        StateEnvelope.of(triggerSource, subject, payload.bytes.toArrayUnsafe(), payload.contentType)
       case None =>
-        StateEnvelope.of(subject, null, null)
+        StateEnvelope.of(triggerSource, subject, null, null)
     }
     new SpiWorkflow.UpdateState(serializer.toBytes(envelope))
   }

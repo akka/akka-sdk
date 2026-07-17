@@ -16,6 +16,8 @@ import scala.jdk.OptionConverters._
 import akka.annotation.InternalApi
 import akka.javasdk.agent.MessageContent
 import akka.javasdk.impl.ErrorHandling
+import akka.javasdk.evaluation.Evaluation
+import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.Failure
 import akka.javasdk.ledger.InteractionMetadata
 import akka.javasdk.ledger.InteractionRecord
@@ -48,6 +50,15 @@ private[javasdk] final class LedgerClientImpl(spiLedgerClient: SpiLedgerClient, 
 
   override def getInteractionAsync(interactionId: String): CompletionStage[InteractionRecord] =
     spiLedgerClient.getInteraction(interactionId).map(LedgerClientImpl.toInteractionRecord).asJava
+
+  override def getEvaluation(evaluationId: String): EvaluationRecord =
+    try getEvaluationAsync(evaluationId).toCompletableFuture.join()
+    catch {
+      case e: CompletionException => throw ErrorHandling.unwrapCompletionException(e)
+    }
+
+  override def getEvaluationAsync(evaluationId: String): CompletionStage[EvaluationRecord] =
+    spiLedgerClient.getEvaluation(evaluationId).map(LedgerClientImpl.toEvaluationRecord).asJava
 }
 
 /**
@@ -70,6 +81,44 @@ private[ledger] object LedgerClientImpl {
       record.taskContext.map(toTaskContext).toJava,
       record.failure.map(toFailure).toJava,
       record.timestamp)
+
+  def toEvaluationRecord(record: SpiLedger.EvaluationRecord): EvaluationRecord = {
+    val subject = record.subject match {
+      case interaction: SpiLedger.InteractionSubject => interaction
+    }
+    new EvaluationRecord(
+      record.evaluationId,
+      record.evaluatorComponentId,
+      toEvaluationTrigger(record.trigger),
+      subject.interactionId,
+      subject.agentComponentId,
+      toEvaluationOutcome(record.outcome),
+      record.timestamp)
+  }
+
+  private def toEvaluationTrigger(trigger: SpiLedger.EvaluationTrigger): EvaluationRecord.Trigger =
+    trigger match {
+      case SpiLedger.EvaluationTrigger.Unspecified   => EvaluationRecord.Trigger.UNSPECIFIED
+      case SpiLedger.EvaluationTrigger.Manual        => EvaluationRecord.Trigger.MANUAL
+      case SpiLedger.EvaluationTrigger.OnInteraction => EvaluationRecord.Trigger.ON_INTERACTION
+    }
+
+  private def toEvaluationOutcome(outcome: SpiLedger.EvaluationOutcome): EvaluationRecord.Outcome =
+    outcome match {
+      case verdict: SpiLedger.EvaluationVerdict =>
+        new EvaluationRecord.Outcome.Verdict(verdict.evaluations.map(toEvaluation).asJava)
+      case inconclusive: SpiLedger.EvaluationInconclusive =>
+        new EvaluationRecord.Outcome.Inconclusive(inconclusive.reason)
+      case failure: SpiLedger.EvaluationFailure =>
+        new EvaluationRecord.Outcome.Failed(failure.reason)
+    }
+
+  private def toEvaluation(evaluation: SpiLedger.Evaluation): Evaluation = {
+    val withScore =
+      evaluation.score.foldLeft(Evaluation.of(evaluation.passed, evaluation.explanation))(_.withScore(_))
+    val withLabel = evaluation.label.foldLeft(withScore)(_.withLabel(_))
+    withLabel.withAttributes(evaluation.attributes.asJava)
+  }
 
   private def toMetadata(metadata: SpiLedger.InteractionMetadata): InteractionMetadata =
     new InteractionMetadata(

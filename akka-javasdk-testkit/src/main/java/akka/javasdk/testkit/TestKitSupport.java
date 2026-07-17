@@ -10,6 +10,7 @@ import akka.javasdk.Sanitizer;
 import akka.javasdk.agent.ClassifierClient;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpClient;
+import akka.javasdk.ledger.LedgerClient;
 import akka.javasdk.timer.TimerScheduler;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -125,5 +126,13 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
    */
   public ClassifierClient getClassifierClient() {
     return testKit.getClassifierClient();
+  }
+
+  /**
+   * @return The ledger client for the service, for fetching recorded interactions and evaluations
+   *     directly without going through a component.
+   */
+  public LedgerClient getLedgerClient() {
+    return testKit.getLedgerClient();
   }
 }

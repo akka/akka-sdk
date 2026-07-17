@@ -23,7 +23,14 @@ public final class WorkflowEvaluatorProtocol {
 
   private WorkflowEvaluatorProtocol() {}
 
+  /** What created the trigger the evaluation was started with. */
+  public enum TriggerSource {
+    MANUAL,
+    ON_INTERACTION
+  }
+
   public record StateEnvelope(
+      TriggerSource triggerSource,
       String flowId,
       String agentComponentId,
       String interactionId,
@@ -36,10 +43,15 @@ public final class WorkflowEvaluatorProtocol {
       else return new Subject.AgentInteraction(agentComponentId, interactionId);
     }
 
-    public static StateEnvelope of(Subject subject, byte[] userState, String userStateContentType) {
+    public static StateEnvelope of(
+        TriggerSource triggerSource,
+        Subject subject,
+        byte[] userState,
+        String userStateContentType) {
       return switch (subject) {
         case Subject.FlowInteraction flow ->
             new StateEnvelope(
+                triggerSource,
                 flow.flowId(),
                 flow.agentComponentId(),
                 flow.interactionId(),
@@ -47,6 +59,7 @@ public final class WorkflowEvaluatorProtocol {
                 userStateContentType);
         case Subject.AgentInteraction agent ->
             new StateEnvelope(
+                triggerSource,
                 null,
                 agent.agentComponentId(),
                 agent.interactionId(),
