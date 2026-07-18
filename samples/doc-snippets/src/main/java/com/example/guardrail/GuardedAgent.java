@@ -12,14 +12,15 @@ public class GuardedAgent extends Agent {
   public Effect<SomeResponse> ask(String question) {
     // tag::on-failure[]
     return effects()
-        .systemMessage("You are a helpful...")
-        .userMessage(question)
-        .map(SomeResponse::new)
-        .onFailure(cause -> switch (cause) {
+      .systemMessage("You are a helpful...")
+      .userMessage(question)
+      .map(SomeResponse::new)
+      .onFailure(cause ->
+        switch (cause) {
           case Guardrail.GuardrailException e -> new SomeResponse(e.getMessage());
           default -> throw new RuntimeException(cause);
         })
-        .thenReply();
+      .thenReply();
     // end::on-failure[]
   }
 }

@@ -11,12 +11,13 @@ public class ClassifierTestSample extends TestKitSupport {
   @Override
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT.withAdditionalConfig(
-        """
-        akka.javasdk.agent.classifiers.toxicity {
-          class = "com.example.classifier.ToxicityClassifier"
-          threshold = 0.5
-        }
-        """);
+      """
+      akka.javasdk.agent.classifiers.toxicity {
+        class = "com.example.classifier.ToxicityClassifier"
+        threshold = 0.5
+      }
+      """
+    );
   }
 
   @Test

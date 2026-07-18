@@ -10,9 +10,11 @@ public class QualityJudge extends Agent {
 
   public Effect<Verdict> evaluate(String transcript) {
     return effects()
-        .systemMessage("Judge the quality of the interaction. Reply with a passed flag, a reason, and a score.")
-        .userMessage(transcript)
-        .responseConformsTo(Verdict.class)
-        .thenReply();
+      .systemMessage(
+        "Judge the quality of the interaction. Reply with a passed flag, a reason, and a score."
+      )
+      .userMessage(transcript)
+      .responseConformsTo(Verdict.class)
+      .thenReply();
   }
 }

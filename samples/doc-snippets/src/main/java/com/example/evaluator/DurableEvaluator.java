@@ -31,18 +31,20 @@ public class DurableEvaluator extends Evaluator {
     // tag::async[]
     // Subscribe to the workflow's completion report before starting it, so it can't be missed.
     CompletionStage<EvaluationWorkflow.Report> reportStage = componentClient
-        .forWorkflow(workflowId)
-        .notificationStream(EvaluationWorkflow::updates)
-        .source()
-        .runWith(Sink.head(), materializer);
+      .forWorkflow(workflowId)
+      .notificationStream(EvaluationWorkflow::updates)
+      .source()
+      .runWith(Sink.head(), materializer);
 
     CompletionStage<Effect> futureEffect = componentClient
-        .forWorkflow(workflowId)
-        .method(EvaluationWorkflow::run)
-        .invokeAsync(transcript)
-        .thenCompose(started -> reportStage)
-        .thenApply(report ->
-            effects().complete(Evaluation.passed(report.reason()).withScore(report.score())));
+      .forWorkflow(workflowId)
+      .method(EvaluationWorkflow::run)
+      .invokeAsync(transcript)
+      .thenCompose(started -> reportStage)
+      .thenApply(
+        report ->
+          effects().complete(Evaluation.passed(report.reason()).withScore(report.score()))
+      );
 
     return effects().asyncEffect(futureEffect);
     // end::async[]

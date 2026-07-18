@@ -20,13 +20,13 @@ public class JudgeDelegatingEvaluator extends Evaluator {
     String transcript = context.subject().interactionId();
     // tag::delegate[]
     QualityJudge.Verdict verdict = componentClient
-        .forAgent()
-        .inSession(context.evaluationId() + "-quality-judge") // isolated from the subject's session
-        .method(QualityJudge::evaluate)
-        .invoke(transcript);
+      .forAgent()
+      .inSession(context.evaluationId() + "-quality-judge") // isolated from the subject's session
+      .method(QualityJudge::evaluate)
+      .invoke(transcript);
 
-    return effects().complete(
-        Evaluation.of(verdict.passed(), verdict.reason()).withScore(verdict.score()));
+    return effects()
+      .complete(Evaluation.of(verdict.passed(), verdict.reason()).withScore(verdict.score()));
     // end::delegate[]
   }
 }

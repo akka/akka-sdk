@@ -4,8 +4,6 @@ package com.example.classifier;
 import akka.javasdk.agent.Classification;
 import akka.javasdk.agent.Classifier;
 import akka.javasdk.agent.ClassifierContext;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 public class ToxicityClassifier implements Classifier { // <1>
 
@@ -16,12 +14,10 @@ public class ToxicityClassifier implements Classifier { // <1>
   }
 
   @Override
-  public CompletionStage<Classification> classify(String input) { // <3>
-    return CompletableFuture.supplyAsync(() -> {
-      double score = score(input); // a real implementation might call a model or an external API
-      String label = score >= threshold ? "toxic" : "clean";
-      return Classification.of(score, label); // <4>
-    });
+  public Classification classify(String input) { // <3>
+    double score = score(input); // a real implementation might call a model or an external API
+    String label = score >= threshold ? "toxic" : "clean";
+    return Classification.of(score, label); // <4>
   }
 
   private double score(String input) {

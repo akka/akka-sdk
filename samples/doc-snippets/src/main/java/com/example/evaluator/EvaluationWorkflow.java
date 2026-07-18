@@ -28,16 +28,16 @@ public class EvaluationWorkflow extends Workflow<EvaluationWorkflow.State> {
 
   public Effect<String> run(String transcript) {
     return effects()
-        .updateState(new State(transcript, 0))
-        .transitionTo(EvaluationWorkflow::scoreStep)
-        .thenReply("started");
+      .updateState(new State(transcript, 0))
+      .transitionTo(EvaluationWorkflow::scoreStep)
+      .thenReply("started");
   }
 
   private StepEffect scoreStep() {
     int score = currentState().transcript().length();
     return stepEffects()
-        .updateState(currentState().scored(score))
-        .thenTransitionTo(EvaluationWorkflow::finishStep);
+      .updateState(currentState().scored(score))
+      .thenTransitionTo(EvaluationWorkflow::finishStep);
   }
 
   private StepEffect finishStep() {

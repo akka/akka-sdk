@@ -17,7 +17,7 @@ Wherever a guardrail, an evaluator, or your own code needs to score or categoriz
 
 == Implementing a classifier
 
-A classifier implements the link:{attachmentsdir}/api/akka/javasdk/agent/Classifier.html[`Classifier`] interface, whose single method returns a `CompletionStage<Classification>`:
+A classifier implements the link:{attachmentsdir}/api/akka/javasdk/agent/Classifier.html[`Classifier`] interface: `classify` maps the input string to a `Classification`:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/classifier/ToxicityClassifier.java[ToxicityClassifier.java]
@@ -26,7 +26,7 @@ include::example$doc-snippets/src/main/java/com/example/classifier/ToxicityClass
 ----
 <1> Implement the `Classifier` interface.
 <2> An optional link:{attachmentsdir}/api/akka/javasdk/agent/ClassifierContext.html[`ClassifierContext`] constructor parameter gives access to the classifier's configured name and its config section.
-<3> `classify` returns a `CompletionStage`, so the work can run on a separate thread.
+<3> `classify` may block, for example on a model or external API call: classifiers are always invoked on virtual threads. Implementations that prefer composing futures can override `classifyAsync` instead.
 <4> A `Classification` carries a score, a label, or both. Use the `score`, `label`, and `of` factory methods, or the full constructor to add confidence and attributes.
 
 The `Classification` record has four components — `score`, `label`, `confidence` (all `Optional`), and an `attributes` map — so a classifier can return only what it computes.

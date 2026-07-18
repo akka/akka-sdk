@@ -19,8 +19,7 @@ public class InteractionQualityEvaluator extends Evaluator { // <2>
 
   @Override
   public Effect evaluate(EvaluationContext context) {
-    InteractionRecord interaction =
-        ledger.getInteraction(context.subject().interactionId()); // <4>
+    InteractionRecord interaction = ledger.getInteraction(context.subject().interactionId()); // <4>
 
     if (interaction.failed()) {
       return effects().inconclusive("interaction failed, nothing to evaluate"); // <5>
@@ -30,10 +29,12 @@ public class InteractionQualityEvaluator extends Evaluator { // <2>
     if (finalText.isEmpty()) {
       return effects().complete(Evaluation.failed("agent produced no final response")); // <6>
     }
-    return effects().complete(
+    return effects()
+      .complete(
         Evaluation.passed("agent responded")
-            .withScore(1.0)
-            .withAttribute("length", Integer.toString(finalText.length()))); // <7>
+          .withScore(1.0)
+          .withAttribute("length", Integer.toString(finalText.length()))
+      ); // <7>
   }
 }
 // end::all[]

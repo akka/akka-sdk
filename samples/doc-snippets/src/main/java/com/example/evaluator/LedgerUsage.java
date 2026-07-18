@@ -14,7 +14,7 @@ public class LedgerUsage {
 
   void fetch(String interactionId) {
     // tag::fetch[]
-    InteractionRecord record = ledger.getInteraction(interactionId);                      // <1>
+    InteractionRecord record = ledger.getInteraction(interactionId); // <1>
     CompletionStage<InteractionRecord> async = ledger.getInteractionAsync(interactionId); // <2>
     // end::fetch[]
   }

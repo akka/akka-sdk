@@ -6,8 +6,6 @@ import akka.javasdk.agent.Classifier;
 import akka.javasdk.agent.ClassifierClient;
 import akka.javasdk.agent.ClassifierContext;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 public class EnsembleClassifier implements Classifier {
 
@@ -20,15 +18,14 @@ public class EnsembleClassifier implements Classifier {
   }
 
   @Override
-  public CompletionStage<Classification> classify(String input) {
-    return CompletableFuture.supplyAsync(() -> {
-      double worst = members.stream()
-          .map(name -> classifierClient.classify(name, input)) // <3>
-          .flatMap(c -> c.score().stream())
-          .max(Double::compare)
-          .orElse(0.0);
-      return Classification.score(worst); // <4>
-    });
+  public Classification classify(String input) {
+    double worst = members
+      .stream()
+      .map(name -> classifierClient.classify(name, input)) // <3>
+      .flatMap(c -> c.score().stream())
+      .max(Double::compare)
+      .orElse(0.0);
+    return Classification.score(worst); // <4>
   }
 }
 // end::all[]
