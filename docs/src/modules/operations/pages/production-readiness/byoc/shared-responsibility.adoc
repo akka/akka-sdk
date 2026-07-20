@@ -24,7 +24,7 @@ The sections below summarize each area at a glance. For the authoritative row-by
 Shared responsibility extends to going live. Akka has a set of standards Akka expects of customer applications before flipping prod traffic on: sizing, observability, CI/CD, functional and non-functional testing, DR (disaster recovery) and rollback rehearsal. The xref:operations:production-readiness/byoc/checklist.adoc[production readiness checklist] captures those standards and the sign-off gate Akka recommends before launch.
 
 [IMPORTANT]
-.Catch-all
+.*Catch-all*
 ====
 Anything not explicitly listed in this document is the customer's responsibility. This includes the underlying cloud account, customer application code, customer-side operational tooling, and any concern not explicitly assigned to Akka. The customer may request additional operational support from Akka through the standard support channel.
 ====
@@ -101,7 +101,7 @@ At a glance::
 * *Customer*: Owns the cloud account, pays the bill, and creates the IAM permissions that Akka uses. Can cut off Akka's access at any time.
 * *Akka*: Documents the required permissions and provides the akka-bootstrap utility. Operates within the IAM scope the customer grants, and nothing outside it.
 
-.Responsibilities
+.*Responsibilities*
 [%collapsible]
 ====
 [cols="2,1,4", options="header"]
@@ -126,7 +126,7 @@ At a glance::
 * *Akka*: Builds the in-region VPC, load balancers, and certificate issuer. Publishes the connectivity-pattern whitepaper so the customer can choose.
 * *Customer*: Allocates the CIDR block, configures peering or hub-and-spoke to the corporate network, maintains IP allowlists and DNS records.
 
-.Responsibilities
+.*Responsibilities*
 [%collapsible]
 ====
 [cols="2,1,4", options="header"]
@@ -152,7 +152,7 @@ At a glance::
 * *Akka*: Provisions the region (networking, K8s, persistence, registry, observability, operators), installs Teleport for federation, and configures region groups.
 * *Customer*: Identifies region groupings and provides a recurring 1 to 4 hour weekly maintenance window that Akka uses for any operation that may cause downtime.
 
-.Responsibilities
+.*Responsibilities*
 [%collapsible]
 ====
 [cols="2,1,4", options="header"]
@@ -176,7 +176,7 @@ At a glance::
 * *Akka*: Patches infrastructure, upgrades Kubernetes and the database, and ships regular releases of the runtime, region machinery, and Federation Plane.
 * *Customer*: Receives advance notice of any maintenance that causes downtime; Akka operates within the agreed maintenance window.
 
-.Responsibilities
+.*Responsibilities*
 [%collapsible]
 ====
 [cols="2,1,4", options="header"]
@@ -197,7 +197,7 @@ At a glance::
 * *Akka*: Auto-provisions and de-provisions compute and persistence to match utilization. HA (high availability) is the default. Triages and prioritizes customer feature requests.
 * *Customer*: Reviews their cloud-account spend, selects sizing options, and signals expected demand spikes (e.g., performance testing) so Akka can pre-warm.
 
-.Responsibilities
+.*Responsibilities*
 [%collapsible]
 ====
 [cols="2,1,4", options="header"]
@@ -220,7 +220,7 @@ At a glance::
 * *Akka*: Encrypts data in transit (TLS) and at rest using cloud-provider encryption services. Default keys are Akka-managed.
 * *Customer*: Maintains key material in their KMS when CMEK is used; provides TLS certificates for private load balancers or customer-owned domains.
 
-.Responsibilities
+.*Responsibilities*
 [%collapsible]
 ====
 [cols="2,1,4", options="header"]
@@ -242,7 +242,7 @@ At a glance::
 * *Akka*: Monitors platform availability and region telemetry, publishes uptime reports on request. Filters SDK logs at the source so application data stays with the customer.
 * *Customer*: Exports application telemetry to their observability platform via Akka SDK integration patterns. Owns cloud-native audit logging on the cloud account.
 
-.Responsibilities
+.*Responsibilities*
 [%collapsible]
 ====
 [cols="2,1,4", options="header"]
@@ -267,7 +267,7 @@ At a glance::
 * *Customer*: Notifies Akka after ad-hoc backups; specifies replication mode per service; is consulted before failover.
 * *Shared*: Annual disaster-recovery exercise (or as agreed) jointly run by Akka and the customer.
 
-.Responsibilities
+.*Responsibilities*
 [%collapsible]
 ====
 [cols="2,1,4", options="header"]
@@ -293,7 +293,7 @@ At a glance::
 * *Customer*: Provides the IdP that authenticates console/CLI users, enforces MFA, and manages own users, teams, and role assignments.
 * *Akka*: Manages service accounts within the cloud account, uses Teleport for session-recorded privileged access, and delivers quarterly access-control reports.
 
-.Responsibilities
+.*Responsibilities*
 [%collapsible]
 ====
 [cols="2,1,4", options="header"]
@@ -320,7 +320,7 @@ At a glance::
 * *Akka*: Runs the Federation Plane, 24/7 incident response (Sev 1: 1 hr, Sev 2: 4 business hr), 48 hr maintenance notice, postmortems, ops sync, executive review.
 * *Shared*: BYOC onboarding, support and communication channels, customer portal training, end-of-contract decommission within 30 days.
 
-.Responsibilities
+.*Responsibilities*
 [%collapsible]
 ====
 [cols="2,1,4", options="header"]
@@ -350,7 +350,7 @@ At a glance::
 * *Akka*: Maintains SOC 2 Type II, annual third-party pen test, continuous vulnerability scanning, sanctions screening, data-residency commitments, and audit log delivery.
 * *Customer*: Secures Federation Plane tokens and project access. Is the controller of application PII; handles GDPR Data Subject Requests directly.
 
-.Responsibilities
+.*Responsibilities*
 [%collapsible]
 ====
 [cols="2,1,4", options="header"]
@@ -382,7 +382,7 @@ Applications that the customer builds with the Akka SDK are owned end-to-end by 
 At a glance::
 *Customer (end-to-end)*: Source, build, deploy, version, roll back. Service config and secrets. Application IAM (JWT/JWKS), Service ACLs, security logs. SDLC tooling (IDE, repos, CI/CD). All application observability.
 
-.Responsibilities
+.*Responsibilities*
 [%collapsible]
 ====
 [cols="2,1,4", options="header"]
@@ -406,7 +406,7 @@ At a glance::
 
 == Appendix A: Architecture in brief
 
-.Details
+.*Details*
 [%collapsible]
 ====
 AAO consists of two planes:
@@ -419,7 +419,7 @@ Communication between Federation Plane and Application Plane uses TLS with token
 
 == Appendix B: Data protection in brief
 
-.Details
+.*Details*
 [%collapsible]
 ====
 All application data stays within the customer's cloud region and VPC and is isolated from the Federation Plane. Data at rest is encrypted using the cloud provider's encryption mechanism. Customers can rely on Akka-managed encryption or use Customer-Managed Encryption Keys (CMEK).
@@ -437,7 +437,7 @@ Customer-specific targets may be agreed where the standard does not meet the cus
 
 == Appendix C: Private connectivity via Teleport
 
-.Details
+.*Details*
 [%collapsible]
 ====
 Some enterprises require that Kubernetes API servers in their cloud accounts have no public endpoint. Akka supports this through Teleport, an identity-aware proxy and certificate authority that creates an authenticated, encrypted bridge between the Federation Plane and private Kubernetes clusters.
@@ -450,7 +450,7 @@ Some enterprises require that Kubernetes API servers in their cloud accounts hav
 
 == Appendix D: Glossary
 
-.Glossary
+.*Glossary*
 [%collapsible]
 ====
 [cols="1,3", options="header"]
@@ -508,7 +508,7 @@ Some enterprises require that Kubernetes API servers in their cloud accounts hav
 
 == Appendix E: Where to find more
 
-.Details
+.*Details*
 [%collapsible]
 ====
 * https://trust.akka.io[trust.akka.io], SOC 2 Type II, SOC 3, subprocessor list, current compliance evidence, applicable policies.

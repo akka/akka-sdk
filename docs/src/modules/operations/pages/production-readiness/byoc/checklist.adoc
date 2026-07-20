@@ -9,7 +9,7 @@ What Akka expects of customer applications before going live in BYOC (Bring Your
 == Overview
 
 [TIP]
-.How to use this page
+.*How to use this page*
 ====
 This page is a guideline, not the final checklist: the authoritative version for your application is the one you and your Akka team build and manage together.
 
@@ -22,7 +22,7 @@ Akka Automated Operations runs the platform end-to-end inside your cloud account
 
 This page targets the typical *Day 2 Ops* engagement (1 dev region + 1 prod region, single prod region with cold-rebuild DR (Disaster Recovery), the plan and procedures for restoring service after a region or platform-level outage). The final section covers the additional requirements that apply to the *Business Continuity* tier (multi-region with cross-region failover).
 
-.At a glance, what we ask of you
+.*At a glance, what we ask of you*
 [NOTE]
 ====
 . *Size with us; capture the result in writing.* The FDE works through the sizing exercise with you once. Cluster shape, broker capacity, and dev/prod parity should live in version control alongside your descriptors.
@@ -34,13 +34,13 @@ This page targets the typical *Day 2 Ops* engagement (1 dev region + 1 prod regi
 ====
 
 [NOTE]
-.Tier note
+.*Tier note*
 ====
 If your business requires rapid, automated cross-region failover, Day 2 Ops is not the right tier. DR at Day 2 is a cold rebuild, the recovery window is on the order of hours, driven by data-export frequency and rebuild time. Confirm this with the business early.
 ====
 
 [NOTE]
-.Akka's side
+.*Akka's side*
 ====
 Akka runs a parallel internal pre-production validation against the platform-side commitments captured in the RACI: backups, replication, observability stack, baseline regional alerts, certificate monitoring, and similar. This page covers the customer-side complement; the two are designed to pair.
 ====
@@ -54,7 +54,7 @@ Akka runs a parallel internal pre-production validation against the platform-sid
 | Akka | FDE walks the sizing exercise, validates platform-cores and service-cores numbers, names the AZ (Availability Zone) spread and persistence headroom recommendations.
 |===
 
-.Detailed checklist
+.*Detailed checklist*
 [%collapsible]
 =====
 [discrete]
@@ -104,7 +104,7 @@ Akka runs a parallel internal pre-production validation against the platform-sid
 | Akka | Emits Akka-runtime telemetry (cluster, persistence, endpoints, agents, workflows, consumers) and filters SDK logs at the source. Operates platform observability internally.
 |===
 
-.Detailed checklist
+.*Detailed checklist*
 [%collapsible]
 =====
 [discrete]
@@ -145,7 +145,7 @@ Akka runs a parallel internal pre-production validation against the platform-sid
 =====
 
 [NOTE]
-.Akka's side
+.*Akka's side*
 ====
 Akka instruments the platform with its own observability stack and runs baseline regional alerts (cluster health, persistence, replication, certificate expiration). PII is obfuscated in Akka's internal observability data; customer-side application observability flows through the customer's own exporter and never enters Akka's stack. Akka's platform telemetry is for Akka SRE; the customer's runbooks and dashboards are owned by the customer.
 ====
@@ -159,7 +159,7 @@ Akka instruments the platform with its own observability stack and runs baseline
 | Akka | Provides the Akka CLI and GitHub Actions integration; supports descriptor-driven configuration and no-downtime rolling updates.
 |===
 
-.Detailed checklist
+.*Detailed checklist*
 [%collapsible]
 =====
 [discrete]
@@ -197,7 +197,7 @@ Akka instruments the platform with its own observability stack and runs baseline
 | Customer | Owns unit, component, integration, and E2E test coverage for the application, including Akka-specific paths (agents, entities, workflows, views, endpoints, consumers).
 |===
 
-.Detailed checklist
+.*Detailed checklist*
 [%collapsible]
 =====
 [discrete]
@@ -240,7 +240,7 @@ Akka instruments the platform with its own observability stack and runs baseline
 
 Run all of these against the dev region, sized realistically. Without realistic dev-region sizing, results are meaningless.
 
-.Detailed checklist
+.*Detailed checklist*
 [%collapsible]
 =====
 [discrete]
@@ -300,7 +300,7 @@ Tools: Chaos Mesh, Litmus, Gremlin, or scripted via cloud APIs. Start in dev; do
 | Shared | Annual disaster-recovery exercise jointly run by Akka and the customer; Akka 24/7 SRE escalation path is part of the DR runbook.
 |===
 
-.Detailed checklist
+.*Detailed checklist*
 [%collapsible]
 =====
 [discrete]
@@ -344,12 +344,12 @@ Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and par
 The sections above cover Day 2 Ops with a single prod region. For the Business Continuity tier (multi-region with cross-region failover), the following requirements layer on top of those above; they are not a replacement.
 
 [IMPORTANT]
-.Tier requirement
+.*Tier requirement*
 ====
 Akka reads from both regions, so cross-region failover is typically very fast, often sub-minute. Replication lag for the most recent writes is driven mostly by overall system load rather than by a tunable platform setting. The bullets below cover the application-side responsibilities that need to be in place to operate correctly in a multi-region setup.
 ====
 
-.Detailed checklist
+.*Detailed checklist*
 [%collapsible]
 =====
 [discrete]
@@ -380,7 +380,7 @@ Akka reads from both regions, so cross-region failover is typically very fast, o
 
 Before flipping prod traffic on:
 
-.Required sign-offs
+.*Required sign-offs*
 * [ ] Architecture review
 * [ ] Security review (CISO / InfoSec)
 * [ ] Compliance review (if regulated)
@@ -390,7 +390,7 @@ Before flipping prod traffic on:
 * [ ] DR tabletop completed and the agreed live simulation executed (or cross-region failover drill at Business Continuity)
 
 [IMPORTANT]
-.The gate
+.*The gate*
 ====
 A single named individual owns the application end-to-end and has explicitly approved its readiness for production. Without a named owner, the checklist becomes an aggregate of assumed readiness in which each party presumes coverage by another.
 ====
