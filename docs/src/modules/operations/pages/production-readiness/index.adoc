@@ -1,5 +1,5 @@
-= Shared responsibility and production readiness
-:page-summary: How operational responsibility is divided between Akka and you across the deployment models, and what your team owns to reach production.
+= Production readiness
+:page-summary: What production readiness means with Akka, the partnership behind it, and where the detailed responsibility matrix (the Shared Responsibility Model and RACI) is defined.
 :page-when-to-use: Use this when planning a move to production, to agree who owns what and to walk the readiness items with your Akka team.
 :page-related: xref:operations:index.adoc[], xref:concepts:deployment-model.adoc[], xref:operations:operator-best-practices.adoc[]
 :page-persona: operator-platform, operator-sre
