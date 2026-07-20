@@ -17,6 +17,8 @@ include::ROOT:partial$include.adoc[]
 
 [[CICD]]CI/CD:: You can deploy <<service>>s using a Continuous Integration/Continuous Delivery service. See xref:operations:integrating-cicd/index.adoc[] for instructions.
 
+[[classifier]]Classifier:: A named, config-bound unit that maps input text to a score or label, with optional confidence and attributes. It is invoked by name through a `ClassifierClient` — from a guardrail, an <<evaluator>>, or application code — and can compose other classifiers into an ensemble. See xref:sdk:agents/classifiers.adoc[].
+
 [[command]]Command:: A command comes from a _sender_, and a reply may be sent to the sender. A command expresses the intention to alter the state or retrieve information based on the state of an <<entity>> or <<workflow>>. A command is materialized by a message received by a component implementation. Commands are not persisted and might fail.
 
 [[command_handler]]Command handler::
@@ -43,6 +45,8 @@ A _command handler_ is the code that handles a command. It may validate the comm
 
 [[eu_ai_act]]EU AI Act:: The European Union's regulation on artificial intelligence, requiring transparency, explainability, and human oversight for AI systems. Akka supports EU AI Act compliance through runtime-embedded governance, audit trails, and policy enforcement via <<guardrails>>.
 
+[[evaluator]]Evaluator:: A <<component>> that assesses <<agent>> interactions. Bound to one or more agents in configuration, the runtime triggers it for each interaction of a bound agent, out of band, and records its verdict (pass/fail, with optional score, label, and attributes). An evaluator reads the interaction it assesses from the <<ledger>> and may delegate the verdict to an <<llm>>-as-judge agent. See xref:sdk:evaluators.adoc[].
+
 [[event]]Event:: An _event_  indicates that a change has occurred to an entity and persists the current state. Events are stored in a _journal_, and are read and replayed each time the entity is reloaded by the Akka runtime state management system. An event emitted by one component or service might be interpreted as a command by another.
 
 [[event_handler]]Event handler::
@@ -57,6 +61,8 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 [[journal]]Journal:: Persistent storage for <<event>>s from <<event_sourced_entity>>s. Some documentation uses the terms _Event Log_ or _Event Store_ instead of journal. Akka handles event storage for you, relieving you of connecting to, configuring, or managing the journal.
 
 [[key_value_entity]]Key Value Entity:: A Key Value Entity stores state in an update-in-place model, similar to a Key-Value store that supports CRUD (Create, Read, Update, Delete) operations. In Domain Driven Design (DDD) terms, a Value Entity is an "Entity." In contrast with "Value Objects," you reference Entities by an identifier and the value associated with that identifier can change (be updated) over time. These are discussed in more detail in xref:concepts:state-model.adoc#_the_key_value_state_model[Key Value state model].
+
+[[ledger]]Ledger:: The immutable log of recorded <<agent>> interactions — the model calls, tool calls, token usage, and outcomes of every interaction — kept by the runtime for console visibility, troubleshooting, and auditing. An <<evaluator>> reads from it through an injected `LedgerClient`. See xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client].
 
 [[llm]]LLM (Large Language Model):: AI models trained on large datasets that generate text, code, and structured output. Akka <<agent>>s use LLMs as their reasoning engine, with Akka providing the runtime infrastructure for durability, state management, and tool integration.
 
@@ -81,6 +87,8 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 [[sdd]]SDD (Spec-Driven Development):: Akka's primary development approach where specifications are the source of truth and code is AI-generated. SDD uses a <<constitution>> for project-wide rules and individual specs for each component, enabling repeatable, high-quality development without requiring distributed systems expertise.
 
 [[service]]Service:: A service is implemented by the Akka SDK. At runtime, Akka enriches the incoming and outgoing messages with state management capabilities, such as the ability to receive and update state. You implement the  business logic for the service, which includes stateful entities. You deploy your services and Akka adds a <<runtime>> that handles incoming communication and persistence at runtime.
+
+[[spiffe]]SPIFFE identity:: A https://spiffe.io[SPIFFE] identity is the workload identity Akka assigns each component, encoding the calling <<service>>, component type, and component id (for example `spiffe://trust/svc/checkout/workflow/order`). It enables component-level access control finer than a whole service — matched in an `@Acl` or read programmatically — and is propagated across service boundaries. The service-level part is attested by the service mesh and cannot be spoofed. See xref:sdk:access-control.adoc[].
 
 [[snapshot]]Snapshot::
 A snapshot records current state of an <<event_sourced_entity>>. Akka persists snapshots periodically as an optimization. With snapshots, when the Entity is reloaded from the journal, the entire journal doesn't need to be replayed, just the changes since the last snapshot.

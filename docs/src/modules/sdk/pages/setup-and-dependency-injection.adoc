@@ -118,7 +118,9 @@ The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpo
 | `java.util.concurrent.Executor`
 | An executor which runs each task in a virtual thread, and is safe to use for blocking async work, for example with `CompletableFuture.supplyAsync(() -> blocking, executor)`
 | `akka.javasdk.ledger.LedgerClient`
-| For fetching recorded agent interactions from the ledger, primarily for evaluators.
+| For fetching recorded agent interactions from the ledger, primarily for evaluators, see xref:evaluators.adoc[]
+| `akka.javasdk.agent.ClassifierClient`
+| For invoking a configured classifier by name, see xref:agents/classifiers.adoc[]
 |===
 
 Furthermore, the following component specific types can also be injected:

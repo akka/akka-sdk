@@ -70,6 +70,7 @@ effectful
 enum
 env
 etcd
+evaluator's
 eventhubs
 exfiltration
 expirationSeconds

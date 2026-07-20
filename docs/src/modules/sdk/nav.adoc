@@ -11,6 +11,7 @@
 **** xref:sdk:agents/streaming.adoc[Streaming responses]
 **** xref:sdk:agents/orchestrating.adoc[Orchestrating multiple agents]
 **** xref:sdk:agents/guardrails.adoc[Guardrails]
+**** xref:sdk:agents/classifiers.adoc[Classifiers]
 **** xref:sdk:agents/llm_eval.adoc[LLM evaluation]
 **** xref:sdk:agents/testing.adoc[Testing]
 
@@ -32,6 +33,7 @@
 *** xref:sdk:workflows.adoc[Workflows]
 *** xref:sdk:timed-actions.adoc[Timers]
 *** xref:sdk:consuming-producing.adoc[Consumers]
+*** xref:sdk:evaluators.adoc[Evaluators]
 ** xref:sdk:use-cases/index.adoc[Use cases]
 *** xref:sdk:use-cases/conversational-ai.adoc[]
 *** xref:sdk:use-cases/autonomous-agents.adoc[]

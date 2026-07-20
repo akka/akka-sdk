@@ -4,6 +4,12 @@ include::ROOT:partial$include.adoc[]
 
 Evaluating AI quality is critical when refining prompts and model parameters. Without evaluation with realistic scenarios and data, you won’t know whether a change improves performance, breaks a use case, or has no impact at all.
 
+[NOTE]
+====
+This page covers how to compute a verdict — implementing an LLM-as-judge as an agent, and the built-in evaluator agents.
+To have the runtime run an evaluation automatically for each interaction of an agent, bind an xref:sdk:evaluators.adoc[Evaluator component] to that agent; an Evaluator commonly delegates to one of the judge agents described here.
+====
+
 Testing with generative AI is difficult no matter what you're using to implement it. Interactions with an LLM are not _deterministic_. In other words, you shouldn't expect to get the same answer twice for the same prompt. Because interactions with an LLM are not deterministic, traditional assertions don't work.
 
 How can you write assertions for something like that? There are a ton of solutions, but most of them revolve around the idea that to verify an LLM's answer, you need another LLM. This pattern is often called "LLM-as-judge". You can get an answer from one agent, and then use another agent or model to review the session history and prompts to infer, with some level of confidence, if the agent behaved the way you want it to.

@@ -26,6 +26,13 @@ In Akka, a principal is an abstract entity that represents the origin or source 
 ** Requests labeled with the *internet principal* are validated by mTLS, but this does not imply that mTLS was used to connect to the ingress from the internet client itself. To enforce mTLS on connections from internet clients, refer to xref:operations:tls-certificates.adoc[].
 * *Component identity (SPIFFE)*: For finer granularity than a whole service, you can match on the calling component's SPIFFE identity, which encodes the calling service, component type and component id. This allows rules such as "only the `checkout` workflow" or "any agent". See xref:sdk:access-control.adoc[] for details.
 
+When one component in a service calls another service, the caller's component identity is propagated across the service
+boundary, so the receiving service can both match it in an `@Acl` and read it programmatically. The service-level part
+of that identity is attested by the service mesh and cannot be spoofed; the component-level part is asserted by the
+calling service. Requests that originate from the internet carry no component identity. See
+xref:sdk:access-control.adoc#_inspecting_the_callers_identity[Inspecting the caller's identity] for how to read it in
+an endpoint.
+
 == Configuring ACLs
 To configure ACLs and secure your Akka services effectively, follow these steps:
 
