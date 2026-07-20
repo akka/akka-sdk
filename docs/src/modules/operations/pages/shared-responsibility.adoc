@@ -8,7 +8,7 @@ include::ROOT:partial$include.adoc[]
 
 == Overview
 
-Production readiness is something you reach with Akka, not a bar you clear alone. Akka runs the platform and owns its reliability, drawing on years of operating distributed systems in production at scale, while your team owns a clearly defined set of activities. It is a partnership: Akka stays engaged from onboarding through operations rather than handing you a checklist. The detailed division of responsibility between Akka and your team is set out in the Shared Responsibility Model. It shifts with the xref:concepts:deployment-model.adoc[deployment model] you choose, summarized below. This page focuses on what "production-ready" means: the items Akka has found necessary across production deployments, worked through with you.
+Production readiness is something you reach with Akka, not a bar you clear alone. Akka runs the platform and owns its reliability, drawing on years of operating distributed systems in production at scale, while your team owns a clearly defined set of activities. The detailed division of responsibility between Akka and your team is set out in the Shared Responsibility Model, and it shifts with the xref:concepts:deployment-model.adoc[deployment model] you choose. This page focuses on what "production-ready" means and how you reach it with Akka.
 // TODO: link "Shared Responsibility Model" to its docs page once it exists (SRM not yet in docs).
 
 [NOTE]
@@ -16,15 +16,9 @@ Production readiness is something you reach with Akka, not a bar you clear alone
 This page is a general reference and evolves over time. The authoritative, tailored readiness plan for your account is produced and maintained with your Akka team.
 ====
 
-== How the split shifts by deployment model
+== Getting to production with Akka
 
-Akka behaves identically across xref:concepts:deployment-model.adoc[deployment models]. What changes is how much of the operational surface you run:
-
-* *Dedicated*: Akka hosts and operates the platform and connects to you over a private data link. Your team carries the least.
-* *BYOC (Bring Your Own Cloud)*: Akka operates the platform inside your own cloud account. You own the account, networking, and data boundary.
-* *BYOK8s (Bring Your Own Kubernetes)*: you run Akka on the Kubernetes cluster you operate and own more of the stack, including the cluster, its upgrades, and backups. See xref:operations:configuring.adoc[Self-managed operations].
-
-The further you move toward BYOK8s, the more of the readiness items below fall to your team.
+Reaching production is part of what you get with Akka, not something you face alone. Akka's team embeds with yours from onboarding through ongoing operations, bringing years of taking demanding distributed systems to production. The readiness items that follow are what that experience has shown to be necessary, and your team works through them with Akka rather than discovering them under pressure. Contact your Akka team to plan a production-readiness review.
 
 == Production readiness
 
@@ -51,6 +45,12 @@ Akka rotates platform-managed TLS ahead of expiry. Monitor and rehearse rotation
 Ownership::
 Name a single individual accountable for production readiness end-to-end, with the authority to declare readiness or hold the launch.
 
-== Getting to production with Akka
+== How the split shifts by deployment model
 
-Production readiness is a joint effort. Akka's team embeds with yours from onboarding through ongoing operations, bringing the operational practices behind the platform's reliability, so you reach production on proven ground rather than discovering it under pressure. Contact your Akka team to plan a production-readiness review.
+Akka behaves identically across xref:concepts:deployment-model.adoc[deployment models]. What changes is how much of the operational surface you run:
+
+* *Dedicated*: Akka hosts and operates the platform and connects to you over a private data link. Your team carries the least.
+* *BYOC (Bring Your Own Cloud)*: Akka operates the platform inside your own cloud account. You own the account, networking, and data boundary.
+* *BYOK8s (Bring Your Own Kubernetes)*: you run Akka on the Kubernetes cluster you operate and own more of the stack, including the cluster, its upgrades, and backups. See xref:operations:configuring.adoc[Self-managed operations].
+
+The further you move toward BYOK8s, the more of the readiness items fall to your team.
