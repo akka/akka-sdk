@@ -31,27 +31,24 @@ Anything not explicitly listed in this document is the customer's responsibility
 
 == Layered view of AAO
 
-The customer brings the cloud account at the bottom and owns the applications at the top. Akka manages the platform layer in the middle.
+The customer owns the applications and the underlying cloud account; Akka manages the platform layer in between.
 
-....
-+-------------------------------------------------------------------------+
-| Customer Applications (Akka SDK services)                Customer owns  |
-|   - Source, build, deploy            - App ACLs / IAM (JWTs)            |
-|   - Service config & secrets         - App observability / SDK logs    |
-+-------------------------------------------------------------------------+
-| Akka Platform (managed by Akka)                              Akka owns  |
-|   - Akka runtime & operators         - Backups, restore testing        |
-|   - Region Kubernetes cluster        - Scaling, patching, releases      |
-|   - Persistence store                - Federation Plane integration    |
-|   - Container registry               - Platform observability          |
-|   - Encryption (at rest, in transit, mTLS)                             |
-+-------------------------------------------------------------------------+
-| Cloud Account (AWS account / GCP project / Azure sub.)   Customer owns  |
-|   - Billing & quotas                 - DNS records, IP allowlists      |
-|   - IAM that grants Akka access      - Cloud-native audit logs         |
-|   - CIDR allocation, peering         - Customer-managed KMS keys        |
-+-------------------------------------------------------------------------+
-....
+[cols="1,1,2", options="header"]
+|===
+| Layer | Owner | Responsibilities
+
+| Customer Applications (Akka SDK services)
+| Customer
+| Source, build, deploy; service config and secrets; app ACLs / IAM (JWTs); app observability / SDK logs
+
+| Akka Platform (managed by Akka)
+| Akka
+| Akka runtime and operators; region Kubernetes cluster; persistence store; container registry; encryption (at rest, in transit, mTLS); backups and restore testing; scaling, patching, releases; Federation Plane integration; platform observability
+
+| Cloud Account (AWS account / GCP project / Azure subscription)
+| Customer
+| Billing and quotas; IAM that grants Akka access; CIDR allocation, peering; DNS records, IP allowlists; cloud-native audit logs; customer-managed KMS keys
+|===
 
 == How to read this
 

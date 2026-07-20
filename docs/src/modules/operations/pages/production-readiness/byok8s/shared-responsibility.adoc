@@ -29,37 +29,24 @@ Anything not explicitly listed in this document is the Customer's responsibility
 
 == Layered view of Akka on BYOK8s
 
-The Customer brings the cloud account and the Kubernetes cluster at the bottom and owns the applications at the top. Akka runs inside the Customer's cluster and manages the platform components in the middle.
+The Customer owns the applications and the underlying cloud account, Kubernetes cluster, and database; Akka runs inside that cluster and manages the platform components.
 
-....
-==================================================================
-  Customer Applications (Akka SDK services)          Customer owns
-==================================================================
-    * Source, build, deploy
-    * Service config & secrets
-    * App ACLs / IAM (JWTs)
-    * App observability / SDK logs
+[cols="1,1,2", options="header"]
+|===
+| Layer | Owner | Responsibilities
 
-==================================================================
-  Akka Platform                                          Akka owns
-  (managed by Akka, deployed into the Customer's cluster)
-==================================================================
-    * Akka runtime & operators
-    * Inter-component mTLS
-    * Scaling, patching, releases
-    * Federation Plane integration
-    * Platform observability
+| Customer Applications (Akka SDK services)
+| Customer
+| Source, build, deploy; service config and secrets; app ACLs / IAM (JWTs); app observability / SDK logs
 
-==================================================================
-  Cloud Account, Kubernetes Cluster & Database       Customer owns
-==================================================================
-    * Billing, quotas, dedicated cloud account
-    * Kubernetes cluster (creation, upgrades, capacity)
-    * Database (creation, upgrades, backups)
-    * IAM that grants Akka access into the cluster
-    * CIDR allocation, peering, DNS, IP allowlists
-    * Customer-managed KMS keys, cloud audit logs
-....
+| Akka Platform (managed by Akka, deployed into the Customer's cluster)
+| Akka
+| Akka runtime and operators; inter-component mTLS; scaling, patching, releases; Federation Plane integration; platform observability
+
+| Cloud Account, Kubernetes cluster, and database
+| Customer
+| Billing, quotas, dedicated cloud account; Kubernetes cluster (creation, upgrades, capacity); database (creation, upgrades, backups); IAM that grants Akka access into the cluster; CIDR allocation, peering, DNS, IP allowlists; customer-managed KMS keys, cloud audit logs
+|===
 
 == How to read this
 
