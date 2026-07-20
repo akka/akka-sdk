@@ -15,28 +15,28 @@ Akka's team embeds with yours from onboarding through ongoing operations. Gettin
 
 == Production readiness
 
-Production readiness spans a lot, and that breadth is the point: these are the areas that decide whether go-live is smooth rather than fraught. Take the list as the high-level shape; the full, tailored checklist is the larger piece your Akka team works through with you.
+Production readiness spans a lot, and that breadth is the point: these are the areas that decide whether getting to production, and staying there, is smooth rather than fraught. Take the list as the high-level shape; the full, tailored checklist is the larger piece your Akka team works through with you.
 
 Sizing and capacity::
-Forecast load and agree on compute and persistence shapes before launch.
+Forecast peak load and size compute and persistence to meet it.
 
 Observability::
-Export application logs, metrics, and traces to your own tooling; be ready to monitor and alert on anything affecting the service, including database and persistence health.
+Application logs, metrics, and traces flowing to your own tooling, with the monitoring and alerting to act on them, including database and persistence health.
 
 Delivery and rollback::
-Automate deployment and rehearse rollback, not only of container images but of configuration and data.
+A pipeline that ships and rolls back safely, covering configuration and data as well as container images.
 
 Backups and recovery::
-Configure, monitor, and retain database and Kubernetes-state backups to meet your recovery point objective, and test a restore.
+Backups and recovery for your data and cluster state, sized to your recovery objectives.
 
 Multi-region resilience::
-Choose replication behaviour per service and rehearse failover and failback.
+Replication and failover behaviour chosen per service to meet your availability needs.
 
 Certificates::
-Akka rotates platform-managed TLS ahead of expiry; monitor and rehearse rotation for any customer-managed certificates.
+Valid TLS end to end: Akka rotates platform-managed certificates, and you manage any you provide.
 
 Ownership::
-Name a single individual accountable for production readiness end-to-end, with the authority to declare readiness or hold the launch.
+A single named owner accountable for production readiness, with the authority to declare it or hold the launch.
 
 The how-to for each area lives across the rest of xref:operations:index.adoc[Operating].
 
