@@ -345,7 +345,7 @@ Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and par
 
 The sections above cover Day 2 Ops with a single prod region. For the Business Continuity tier (multi-region with cross-region failover), the following requirements layer on top of those above; they are not a replacement.
 
-[NOTE]
+[IMPORTANT]
 .*Tier requirement*
 ====
 Akka reads from both regions, so cross-region failover is typically very fast, often sub-minute. Replication lag for the most recent writes is driven mostly by overall system load rather than by a tunable platform setting. The bullets below cover the application-side responsibilities that need to be in place to operate correctly in a multi-region setup.
@@ -383,13 +383,13 @@ Akka reads from both regions, so cross-region failover is typically very fast, o
 Before flipping prod traffic on:
 
 .*Required sign-offs*
-* Architecture review
-* Security review (CISO / InfoSec)
-* Compliance review (if regulated)
-* SRE / Platform, runbook tested, on-call ready
-* FinOps, cost forecast accepted
-* Product owner, accepts SLOs _including the recovery window_
-* DR tabletop completed and the agreed live simulation executed (or cross-region failover drill at Business Continuity)
+* [ ] Architecture review
+* [ ] Security review (CISO / InfoSec)
+* [ ] Compliance review (if regulated)
+* [ ] SRE / Platform, runbook tested, on-call ready
+* [ ] FinOps, cost forecast accepted
+* [ ] Product owner, accepts SLOs _including the recovery window_
+* [ ] DR tabletop completed and the agreed live simulation executed (or cross-region failover drill at Business Continuity)
 
 [IMPORTANT]
 .*The gate*
