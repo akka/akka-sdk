@@ -68,6 +68,8 @@ Each activity in the matrix has an owner, the party that is Responsible and Acco
 | Akka and the customer share responsibility. The split is described in the row's description.
 |===
 
+Because Akka operates inside infrastructure you control, coordinate with Akka before infrastructure changes that could affect the Region.
+
 == Responsibility summary at a glance
 
 [cols="2,1,3", options="header"]
