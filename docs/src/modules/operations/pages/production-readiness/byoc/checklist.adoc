@@ -318,6 +318,11 @@ DR is typically run as a two-session event. The first session is a tabletop that
 * [ ] RTO measured against business expectation (typically hours, not minutes)
 * [ ] RPO driven by export frequency; business accepts the number
 
+[NOTE]
+====
+RTO and RPO are the Recovery Time Objective and Recovery Point Objective. Default platform commitments are in the Shared Responsibility Model (Section 8 and Appendix B).
+====
+
 [discrete]
 ==== Rollback testing
 
