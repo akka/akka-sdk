@@ -200,4 +200,3 @@ You can use this for other things than jailbreak attempt detection.
 * xref:sdk:agents/classifiers.adoc[] — Components that score or label text, which a guardrail can consult to reach a decision.
 * xref:concepts:governance-and-the-runtime.adoc[] — Why governance must live in the runtime, not in a sidecar.
 * xref:sdk:sanitization.adoc[] — Complementary PII protection through input and output sanitization.
-* {url-blog-trustworthy-ai}[Building Trustworthy AI^] — Background on the design principles behind Akka's risk controls.

@@ -1,6 +1,6 @@
 = OFFSET
 
-The `OFFSET` clause specifies the number of rows to skip before starting to return rows from the query. It's primarily used for implementing pagination or skipping initial results.
+The `OFFSET` clause specifies the number of rows to skip before starting to return rows from the query. It is primarily used for implementing pagination or skipping initial results.
 
 == Syntax
 

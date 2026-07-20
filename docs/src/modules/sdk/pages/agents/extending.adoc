@@ -1,10 +1,8 @@
-= Extending agents with function tools
+= Function tools
 
 include::ROOT:partial$include.adoc[]
 
-You may frequently hear people say things like "the LLM can make a call" or "the LLM can use a tool". While these statements get the point across, they're not entirely accurate. In truth, the agent will tell the LLM which _tools_ are available for use. The LLM then determines from the prompt which tools it needs to call and with which parameters.
-
-The Agent will then in turn execute the tool requested by the LLM, incorporate the tool results into the session context, and then send a new prompt. This will continue in a loop until the LLM no longer indicates it needs to invoke a tool to perform its task.
+Function tools are Java methods that an agent makes available to the model. The agent tells the model which tools exist, and the model determines from the prompt which tools to request and with which parameters. The agent then executes the requested tool, incorporates the result into the session context, and sends a new prompt. This continues in a loop until the model no longer requests a tool.
 
 There are four ways to add function tools to your agent:
 
@@ -21,7 +19,7 @@ passing them to the `effects().tools()` method in your agent's command handler. 
 
 NOTE: A class (either the agent itself, Akka components, or an external tool class) can have multiple methods annotated with `@FunctionTool`. Each annotated method will be registered as a separate tool that the LLM can choose to invoke based on the task requirements.
 
-You can use either approach independently or combine them based on your needs. Let's look at a complete example showing both approaches:
+You can use either approach independently or combine them based on your needs. The following complete example shows both approaches:
 
 [source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[WeatherAgent.java]
@@ -85,7 +83,7 @@ include::example$doc-snippets/src/main/java/com/example/application/LazyWeatherA
 
 When you pass a `Class` instead of an instance, the class is only instantiated when the agent actually needs to use the tool.
 
-For this approach to work, you must register the class with a xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[DependencyProvider] in your service setup. The DependencyProvider is responsible for creating and managing instances of these classes when they're needed. This gives you complete control over how tool dependencies are instantiated and managed throughout your application.
+For this approach to work, you must register the class with a xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[DependencyProvider] in your service setup. The DependencyProvider is responsible for creating and managing instances of these classes when they are needed. This gives you complete control over how tool dependencies are instantiated and managed throughout your application.
 
 [#component_tools]
 == Using Akka components as function tools
@@ -206,3 +204,8 @@ By default, this value is set to 100. You can adjust this in your configuration:
 akka.javasdk.agent.max-tool-call-steps = 150
 ----
 
+== See also
+
+* xref:sdk:agents.adoc[Agents]
+* xref:sdk:mcp-endpoints.adoc[MCP Endpoints]
+* xref:sdk:agents/testing.adoc[Testing the agent]

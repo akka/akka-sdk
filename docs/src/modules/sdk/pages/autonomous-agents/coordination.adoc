@@ -18,7 +18,7 @@ Tool:: A tool is a function the model can request to fetch information, perform 
 
 Task:: A task is a typed unit of work with its own identity, result schema, and lifecycle. Tasks persist independently of the agent that handles them. They can be queried by external clients, depend on other tasks, hand off between agents, and produce results that survive the agent. Use a task when the work has a meaningful structured result, when it might succeed or fail independently, when other tasks should depend on it, or when an external actor such as a human or another service needs to observe or complete it.
 
-Agent:: An autonomous agent is a process with a `@Component` description, accepted task types, and tools. The description captures the agent's purpose and expected outcome: it tells coordinators when to delegate to it and is injected into its own system message. Use a separate agent when the work benefits from a focused context, a distinct purpose, or a different model. The most common reasons are coordination, when you want to delegate, hand off, or moderate, and isolation, when you don't want the parent agent's context contaminated by the details of the sub-work. Optional `instructions(...)` on the definition can add tone, persona, domain rules, or procedural guidance for the model; multi-agent orchestration mechanics belong in capabilities, not in instructions.
+Agent:: An autonomous agent is a process with a `@Component` description, accepted task types, and tools. The description captures the agent's purpose and expected outcome: it tells coordinators when to delegate to it and is injected into its own system message. Use a separate agent when the work benefits from a focused context, a distinct purpose, or a different model. The most common reasons are coordination, when you want to delegate, hand off, or moderate, and isolation, when you do not want the parent agent's context contaminated by the details of the sub-work. Optional `instructions(...)` on the definition can add tone, persona, domain rules, or procedural guidance for the model; multi-agent orchestration mechanics belong in capabilities, not in instructions.
 
 === Choosing between them
 
@@ -193,7 +193,7 @@ The coordination patterns compose at different levels. Some examples:
 
 *Delegative coordinator with sequential workers.* A coordinator fans out to workers, but each worker internally runs a multi-step pipeline (research, draft, self-review) before returning results.
 
-== See Also
+== See also
 
 * xref:sdk:autonomous-agents/capabilities.adoc[Coordination capabilities] for the SDK constructs that implement these patterns
 * xref:sdk:autonomous-agents.adoc[Autonomous Agents]

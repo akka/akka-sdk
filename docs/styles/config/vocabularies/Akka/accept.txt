@@ -67,6 +67,7 @@ DTDs
 [Ee]mptyState
 evolvability
 effectful
+Entra
 enum
 env
 etcd
@@ -331,3 +332,4 @@ rehydrates
 UIs
 peerreview
 inlined
+passivating

@@ -14,6 +14,17 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * The built-in Event Sourced Entity that stores each task's state and lifecycle history.
+ *
+ * <p>The Akka runtime registers this entity automatically when a service uses tasks. Application
+ * code normally drives tasks through {@link akka.javasdk.client.TaskClient} (via {@code
+ * componentClient.forTask(taskId)}) rather than by calling this entity directly. Like any entity,
+ * its events can be consumed with a subscribing Consumer, for example to react to task completions.
+ *
+ * <p>Command validity is governed by the task's {@link TaskStatus}: for example a task can only be
+ * assigned when {@code PENDING}, and completion is idempotent once the task is in a terminal state.
+ */
 @Component(id = "akka-task")
 public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
 
@@ -27,6 +38,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     this.notificationPublisher = notificationPublisher;
   }
 
+  /** Command to create a task, capturing the fields of the {@link Task} it was created from. */
   public record CreateRequest(
       String name,
       String description,
@@ -36,8 +48,10 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
       List<TaskAttachment> attachments,
       List<String> ruleClassNames) {}
 
+  /** Command to reject a completion result, naming the {@link TaskRule} that rejected it. */
   public record RejectResultRequest(String ruleClassName, String reason) {}
 
+  /** Command to reassign an in-progress task, with context for the new assignee. */
   public record ReassignRequest(String newAssignee, String context) {}
 
   @Override
@@ -45,6 +59,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     return TaskState.empty();
   }
 
+  /** Create the task. Fails if a task with this ID already exists. */
   public Effect<Done> create(CreateRequest request) {
     if (!currentState().taskId().isEmpty()) {
       return effects().error("Task already exists");
@@ -67,6 +82,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
         .thenReply(__ -> done());
   }
 
+  /** Assign the task to an owner. Only valid when {@code PENDING} and not already assigned. */
   public Effect<Done> assign(String assignee) {
     if (currentState().taskId().isEmpty()) {
       return effects().error("Task does not exist");
@@ -82,6 +98,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
         .thenReply(__ -> done());
   }
 
+  /** Mark the task as in progress. Only valid when {@code ASSIGNED}. */
   public Effect<Done> start() {
     if (currentState().taskId().isEmpty()) {
       return effects().error("Task does not exist");
@@ -94,6 +111,10 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
         .thenReply(__ -> done());
   }
 
+  /**
+   * Complete the task with a serialized result and publish a {@link TaskNotification.Completed}.
+   * Idempotent once the task is in any terminal state.
+   */
   public Effect<Done> complete(String result) {
     if (isTerminal()) {
       return effects().reply(done()); // idempotent for any terminal state
@@ -114,6 +135,11 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
             });
   }
 
+  /**
+   * Record that a {@link TaskRule} rejected the completion result and publish a {@link
+   * TaskNotification.ResultRejected}. The task moves to {@code RESULT_REJECTED} so the assignee can
+   * correct and resubmit.
+   */
   public Effect<Done> rejectResult(TaskEntity.RejectResultRequest request) {
     if (currentState().taskId().isEmpty()) {
       return effects().error("Task does not exist");
@@ -137,6 +163,10 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
             });
   }
 
+  /**
+   * Fail the task and publish a {@link TaskNotification.Failed}. Idempotent once the task is in any
+   * terminal state.
+   */
   public Effect<Done> fail(String reason) {
     if (isTerminal()) {
       return effects().reply(done()); // idempotent for any terminal state
@@ -157,6 +187,11 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
             });
   }
 
+  /**
+   * Cancel the task before execution begins and publish a {@link TaskNotification.Cancelled}. Only
+   * valid when {@code PENDING} or {@code ASSIGNED}; idempotent once the task is in any terminal
+   * state.
+   */
   public Effect<Done> cancel(String reason) {
     if (isTerminal()) {
       return effects().reply(done()); // idempotent for any terminal state
@@ -175,6 +210,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
             });
   }
 
+  /** Reassign the task to a new owner. Only valid when {@code IN_PROGRESS}. */
   public Effect<Done> reassign(ReassignRequest request) {
     if (currentState().taskId().isEmpty()) {
       return effects().error("Task does not exist");
@@ -195,10 +231,12 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
         || currentState().status() == TaskStatus.CANCELLED;
   }
 
+  /** The stream of {@link TaskNotification}s published by this task. */
   public NotificationPublisher.NotificationStream<TaskNotification> notifications() {
     return notificationPublisher.stream();
   }
 
+  /** The task's current state. Fails if the task does not exist. */
   public ReadOnlyEffect<TaskState> getState() {
     if (currentState().taskId().isEmpty()) {
       return effects().error("Task does not exist");

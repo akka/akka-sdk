@@ -2,6 +2,11 @@
 
 include::ROOT:partial$include.adoc[]
 
+[NOTE]
+====
+These guidelines are for enabling AI assistants to use the Akka CLI natively. If you are using the xref:sdk:spec-driven-development.adoc[Akka Specify Plugin] with spec-driven development, all of this configuration and these best practices are enabled within the Akka Specify Plugin automatically.
+====
+
 AI coding assistants can increase your productivity when developing Akka services. This guide will give you some practical hints of how to setup Akka knowledge and how to prompt the AI assistant. We are using https://docs.claude.com/en/docs/claude-code/overview[Claude code, window="new"],  https://www.qodo.ai[Qodo, window="new"], https://www.cursor.com[Cursor, window="new"] and https://www.jetbrains.com/help/idea/ai-assistant-in-jetbrains-ides.html[IntelliJ IDEA, window="new"] as examples of such coding assistants, but the techniques are applicable for other tools as well.
 
 Some key benefits of using an AI coding assistant:
@@ -20,9 +25,9 @@ In summary, we will look at the following:
 . Use our coding guidelines template for better code generation
 . Follow the prompt examples for common Akka development tasks
 
-== Why doesn't AI know about latest Akka?
+== Why does not AI know about latest Akka?
 
-The LLMs have been trained on web content that didn't include the latest documentation of the Akka SDK. If you ask it questions about Akka it will answer based on the knowledge it was trained on, which most certainly was about the Akka libraries. Some assistants will try to use web search to retrieve the latest information, but that is typically not enough and not an efficient way for a coding assistant. For example, if you ask:
+The LLMs have been trained on web content that did not include the latest documentation of the Akka SDK. If you ask it questions about Akka it will answer based on the knowledge it was trained on, which most certainly was about the Akka libraries. Some assistants will try to use web search to retrieve the latest information, but that is typically not enough and not an efficient way for a coding assistant. For example, if you ask:
 
 [source]
 ----
@@ -79,7 +84,7 @@ The `akka-context` documentation bundle is also available as link:../sdk/_attach
 
 Add `akka-context` to your `.gitignore` file, if you use git.
 
-If your AI coding assistant isn't included in the Akka CLI you can use the https://agents.md[AGENTS.md, window="new"] option in the Akka CLI, or download it from link:../_attachments/AGENTS.md[Akka AGENTS.md, window="new"].
+If your AI coding assistant is not included in the Akka CLI you can use the https://agents.md[AGENTS.md, window="new"] option in the Akka CLI, or download it from link:../_attachments/AGENTS.md[Akka AGENTS.md, window="new"].
 
 === Notes about Claude code
 
@@ -119,11 +124,11 @@ Make sure that you download the latest documentation regularly to make use of do
 
 For Gemini CLI you can use `akka code init` and select Claude as coding assistant. Then rename the file `CLAUDE.md` to `GEMINI.md`.
 
-If Gemini CLI doesn't make use of the documentation in `akka-context` directory it can be because it is listed in `.gitignore`. Then you have to remove `akka-context` from `.gitignore`.
+If Gemini CLI does not make use of the documentation in `akka-context` directory it can be because it is listed in `.gitignore`. Then you have to remove `akka-context` from `.gitignore`.
 
 === Notes about OpenAI Codex
 
-If Codex doesn't make use of the documentation in `akka-context` directory it can be because it is listed in `.gitignore`. Then you have to remove `akka-context` from `.gitignore`.
+If Codex does not make use of the documentation in `akka-context` directory it can be because it is listed in `.gitignore`. Then you have to remove `akka-context` from `.gitignore`.
 
 == Verify that it works
 
@@ -163,7 +168,7 @@ The coding assistant will generate more accurate code if we give it some detaile
 
 For some assistants you can define instructions in configuration settings or files like `AGENTS.md` or `CLAUDE.md`.
 
-If your AI coding assistant doesn't support that, you can include the guidelines directly in the chat session prompt like this:
+If your AI coding assistant does not support that, you can include the guidelines directly in the chat session prompt like this:
 
 [source]
 ----
@@ -180,11 +185,11 @@ Here are some examples of prompts that you can use as templates when giving inst
 
 === General advise
 
-* Develop incrementally and don't ask for too much at the same time.
+* Develop incrementally and do not ask for too much at the same time.
 * Compile and test after each step using `mvn test` or `mvn verify`. Fix compilation errors and test failures before proceeding too far.
 * Commit the changes often so that you can compare and revert if something goes wrong.
-* Be precise in the instructions and make corrections by further instructions if it doesn't generate what you want.
-* Even with custom docs, AI might still occasionally "hallucinate" or provide slightly off answers. It's important to include time for human review in the development loop.
+* Be precise in the instructions and make corrections by further instructions if it does not generate what you want.
+* Even with custom docs, AI might still occasionally "hallucinate" or provide slightly off answers. It is important to include time for human review in the development loop.
 * Make sure that the AI does not introduce security vulnerabilities. You are still responsible for the generated code.
 * Some things are just easier with ordinary IDE tooling, such as simple refactoring.
 

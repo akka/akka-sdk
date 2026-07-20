@@ -97,7 +97,7 @@ The response body and `Location` header carry the task id. Retrieve the suggesti
 curl -i -XGET --location "http://localhost:9000/activities/alice/{taskId}"
 ----
 
-Each worker logs when it is invoked, so the service logs reveal which agents the coordinator chose to consult. For this request the coordinator should call both the `WeatherAgent` and the `ActivityAgent`. Try a request where weather isn't relevant, for example:
+Each worker logs when it is invoked, so the service logs reveal which agents the coordinator chose to consult. For this request the coordinator should call both the `WeatherAgent` and the `ActivityAgent`. Try a request where weather is not relevant, for example:
 
 [source, command line]
 ----

@@ -110,7 +110,7 @@ The `total_count()` function requires counting all matching rows in the view, wh
 
 * Only include `total_count()` when the count is actually needed by the client
 * Use `has_more()` instead when you only need to know if additional pages exist
-* Consider caching the total count if it doesn't change frequently
+* Consider caching the total count if it does not change frequently
 * For large datasets, approximate counts might be sufficient for UI purposes
 
 == Related Features

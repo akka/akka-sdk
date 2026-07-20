@@ -1,6 +1,6 @@
 == Create the empty project
 
-. From a command line, use the Akka CLI to create a new project. See xref:quick-install-cli.adoc[installation instructions] if you haven't installed the CLI yet.
+. From a command line, use the Akka CLI to create a new project. See xref:quick-install-cli.adoc[installation instructions] if you have not installed the CLI yet.
 +
 [source, command line]
 ----

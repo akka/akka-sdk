@@ -1,4 +1,4 @@
-= Running locally with a message broker
+= Run locally with a broker
 include::ROOT:partial$include.adoc[]
 
 When a service uses xref:sdk:consuming-producing.adoc#consume_topic[topic consumers] or xref:sdk:consuming-producing.adoc#topic_producing[topic producers], one option during local development is to run the service against a real message broker. This page describes how to set that up for the broker technologies that Akka supports.

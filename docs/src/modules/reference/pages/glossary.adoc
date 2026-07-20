@@ -1,4 +1,4 @@
-= Glossary of Terms
+= Glossary of terms
 :page-summary: "Glossary of Akka terms including AI, agentic systems, distributed systems, and governance terminology."
 
 include::ROOT:partial$include.adoc[]
@@ -10,6 +10,10 @@ include::ROOT:partial$include.adoc[]
 [[acp]]ACP (Agent Communication Protocol):: A Linux Foundation protocol for agent communication, providing a vendor-neutral standard for how AI agents discover, connect to, and interact with one another.
 
 [[agent]]Agent:: A component that interacts with an AI model to perform a specific task. It is typically backed by a large language model (LLM). It maintains contextual history in a session memory, which may be shared between multiple agents that are collaborating on the same goal. It may provide function tools and call them as requested by the model.
+
+[[akka_specify_plugin]]Akka Specify Plugin:: The command-line and marketplace tool that runs <<sdd,Spec-Driven Development>> from an AI coding assistant. It installs and configures the tools and drives the `specify`, `clarify`, `plan`, `tasks`, `implement`, `build`, and `deploy` commands.
+
+[[blueprint]]Blueprint:: A recipe that the <<akka_specify_plugin>> turns into runnable AI systems.
 
 [[agentic_ai]]Agentic AI:: AI systems capable of autonomous decision-making, tool use, and multi-step reasoning. Unlike traditional AI that responds to single prompts, agentic AI can plan, execute, and adapt across complex workflows while interacting with external systems.
 
@@ -37,7 +41,7 @@ A _command handler_ is the code that handles a command. It may validate the comm
 [[consumer]]Consumer:: A component used to consume or produce a stream of changes.
 
 
-[[endpoint]]Endpoint:: An _endpoint_ component is a way to expose a service to the outside world. They act as controllers ahead of the other components, like <<entity>>s or <<view>>s. They don't require <<component_id>> because URL address is enough to identify them.
+[[endpoint]]Endpoint:: An _endpoint_ component is a way to expose a service to the outside world. They act as controllers ahead of the other components, like <<entity>>s or <<view>>s. They do not require <<component_id>> because URL address is enough to identify them.
 
 [[entity]]Entity:: Components like <<key_value_entity>> and <<event_sourced_entity>> are usually referred as entities. An entity is conceptually equivalent to a class, or a type of state. It will have multiple <<entity_instance>>s, each of which has a unique ID and can handle commands. For example, a service may implement a chat room entity, encompassing the logic associated with chat rooms, and a particular chat room may be an instance of that entity, containing a list of the users currently in the room and a history of the messages sent to it. Entities cache their state and persist it using <<effect>> APIs.
 
@@ -91,7 +95,7 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 [[spiffe]]SPIFFE identity:: A https://spiffe.io[SPIFFE] identity is the workload identity Akka assigns each component, encoding the calling <<service>>, component type, and component id (for example `spiffe://trust/svc/checkout/workflow/order`). It enables component-level access control finer than a whole service — matched in an `@Acl` or read programmatically — and is propagated across service boundaries. The service-level part is attested by the service mesh and cannot be spoofed. See xref:sdk:access-control.adoc[].
 
 [[snapshot]]Snapshot::
-A snapshot records current state of an <<event_sourced_entity>>. Akka persists snapshots periodically as an optimization. With snapshots, when the Entity is reloaded from the journal, the entire journal doesn't need to be replayed, just the changes since the last snapshot.
+A snapshot records current state of an <<event_sourced_entity>>. Akka persists snapshots periodically as an optimization. With snapshots, when the Entity is reloaded from the journal, the entire journal does not need to be replayed, just the changes since the last snapshot.
 
 [[specialist_trap]]Specialist Trap:: The barrier where agentic AI delivery depends on scarce distributed systems experts, limiting how many teams can build and operate production AI systems. One of the <<three_barriers>> that Akka solves through <<sdd,Spec-Driven Development>> and <<repeatability>>.
 
@@ -110,6 +114,8 @@ A component like <<key_value_entity>>,<<event_sourced_entity>> or <<workflow>>
 [[three_dimensions]]Three Dimensions:: The three ways Akka delivers reliable agentic AI: <<reliability>>, <<risk_control>>, and <<repeatability>>. Together, they address the <<three_barriers>> and enable enterprise-grade AI systems.
 
 [[timed_action]]Timed actions:: A Timed Action provides consistent scheduling and execution of a call to another <<component>> at specified intervals or delays. They are convenient for automating repetitive work and handling timeouts within business logic implementation.
+
+[[tool]]Tool:: A function, service call, or remote capability an <<agent>> can invoke to gather information or take action. Akka agents call local functions, other components, and remote tools published over <<mcp>>.
 
 [[view]]View:: A View provides a way to retrieve state from multiple Entities based on a query. You can query non-key data items. You can create views from Key Value Entity state, Event Sourced Entity events, and by subscribing to topics.
 

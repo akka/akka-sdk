@@ -270,7 +270,7 @@ WHERE shipping.address.zipCode = '10001'
 * Conditions in the WHERE clause are applied before any GROUP BY, ORDER BY, or LIMIT operations
 * For complex conditions, use parentheses to explicitly control the order of evaluation
 * Type compatibility is enforced - you cannot directly compare values of different types
-* NULL values require special handling with IS NULL and IS NOT NULL - standard comparison operators don't work with NULL
+* NULL values require special handling with IS NULL and IS NOT NULL - standard comparison operators do not work with NULL
 * The LIKE operator requires a non-wildcard prefix or suffix for optimal performance
 * For pagination efficiency, ensure your WHERE conditions match available indexes
 

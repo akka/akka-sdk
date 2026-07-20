@@ -1,7 +1,7 @@
 = Create a new project
 include::ROOT:partial$include.adoc[]
 
-When creating a new project in Akka, you’ll need to provide a *name*, an optional *description*, and select a *region*. The region determines both the cloud provider and geographical location where your project will be hosted.
+When creating a new project in Akka, you will need to provide a *name*, an optional *description*, and select a *region*. The region determines both the cloud provider and geographical location where your project will be hosted.
 
 
 == Project names
@@ -27,7 +27,7 @@ To create a new project, use either the Akka CLI or the https://console.akka.io[
 --
 CLI::
 +
-. If you haven't done so yet, xref:cli/installation.adoc[install the Akka CLI] and log into your account:
+. If you have not done so yet, xref:cli/installation.adoc[install the Akka CLI] and log into your account:
 +
 [source,command window]
 ----

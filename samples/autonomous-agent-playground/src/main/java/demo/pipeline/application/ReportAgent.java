@@ -22,6 +22,7 @@ public class ReportAgent extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
+    // tag::definition[]
     return define()
       .capability(
         TaskAcceptance.of(
@@ -30,6 +31,7 @@ public class ReportAgent extends AutonomousAgent {
           PipelineTasks.REPORT
         ).maxIterationsPerTask(5)
       );
+    // end::definition[]
   }
 
   @FunctionTool(description = "Collect data on a topic and return findings")

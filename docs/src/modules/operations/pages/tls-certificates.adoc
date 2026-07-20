@@ -15,11 +15,11 @@ By default, Akka's setup does not authenticate the client’s identity, which me
 == Client Certificates (Mutual TLS)
 Client certificates (mTLS) allow you to require clients to present a trusted certificate to connect, offering a secure and coarse-grained level of authentication. This setup is ideal when you want to restrict access to services you control.
 
-* *Certificate Authority (CA)*: To enable client certificates, you need a CA capable of issuing certificates to trusted clients. Many organizations use solutions like https://www.vaultproject.io/[HashiCorp Vault, window="new"] or https://cert-manager.io[Kubernetes cert-manager]. If you already have a CA, you’ll only need its certificate to configure client certificate validation in Akka.
+* *Certificate Authority (CA)*: To enable client certificates, you need a CA capable of issuing certificates to trusted clients. Many organizations use solutions like https://www.vaultproject.io/[HashiCorp Vault, window="new"] or https://cert-manager.io[Kubernetes cert-manager]. If you already have a CA, you will only need its certificate to configure client certificate validation in Akka.
 
 === Creating your own CA
 
-If you don’t have an existing CA, you can create one using the https://smallstep.com/cli/[smallstep CLI, window="new"]:
+If you do not have an existing CA, you can create one using the https://smallstep.com/cli/[smallstep CLI, window="new"]:
 
 . *Install smallstep CLI* (installation instructions available at https://smallstep.com/cli/[smallstep, window="new"]).
 . Create a CA certificate and key:
@@ -53,7 +53,7 @@ akka secret create tls-ca my-root-ca --cert ./my-root-ca.crt
 +
 We now need to configure a route to use a secret. Routes can be created by following the instructions in xref:operations:services/invoke-service.adoc#exposing-internet[exposing services to the internet].
 
-* If you haven’t created your route, use the following command to create it with mTLS enabled:
+* If you have not created your route, use the following command to create it with mTLS enabled:
 +
 [source,shell]
 ----
@@ -87,11 +87,11 @@ routes:
 
 == Testing mTLS setup
 
-Once configured, you can test the setup with curl. Here’s an example:
+Once configured, you can test the setup with curl. Here is an example:
 
 * *Without Client Certificate*: the connection fails
 +
-Your service should now be secured. You can test that it's secured using curl. Let's say the URL that your service is exposed on is `spring-tooth-3406.us-east1.akka.services`. Try issuing a simple curl request on it:
+Your service should now be secured. You can test that it is secured using curl. Suppose the URL that your service is exposed on is `spring-tooth-3406.us-east1.akka.services`. Try issuing a simple curl request on it:
 +
 [source]
 ----
@@ -177,7 +177,7 @@ routes:
 
 While Let’s Encrypt automatically provides server certificates, you may wish to use a custom server certificate in certain situations:
 
-* *CA Authorization*: Your domain's Certification Authority Authorization (CAA) policy doesn’t permit Let’s Encrypt.
+* *CA Authorization*: Your domain's Certification Authority Authorization (CAA) policy does not permit Let’s Encrypt.
 * *Non-Public Certificates*: You may prefer certificates trusted only by your internal clients and servers.
 
 To configure a custom TLS secret:

@@ -80,8 +80,3 @@ Using the Akka CLI, you control all aspects of your Akka account from your comma
 - xref:operations:cli/using-cli.adoc[]
 - xref:operations:cli/command-completion.adoc[]
 
-== See Also
-
-* {url-akka-aao}[Akka Automated Operations product page^]
-* {url-blog-demo-surviving-split}[Demo: Surviving the split — how Akka handles disaster scenarios^]
-* {url-blog-demo-destroyed-region}[Demo: Recovering a completely destroyed region^]

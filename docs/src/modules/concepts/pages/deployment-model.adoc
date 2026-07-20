@@ -31,7 +31,7 @@ Akka supports three deployment models. Behaviour remains consistent across them,
 
 |This optional product helps automate day 2 operations. It provides a global federation plane for managing federated regions, along with an application plane for running services in a secure way. Services can be deployed from the Akka CLI to either xref:operations:index.adoc[Akka’s serverless cloud] or a xref:operations:index.adoc[privately managed VPC region].
 
-For enterprise users, we also support a shared operations responsibility model where your team manages the underlying Kubernetes setup and Akka injects our specific components.
+For enterprise users, a shared operations responsibility model is also available, where your team manages the underlying Kubernetes setup and Akka injects its specific components.
 
 AAO supports multi-region setups, including replication of durable state, failover arrangements, and data pinning for compliance needs. It provides elasticity based on observed traffic, memory auto-scaling, rolling upgrades without downtime, and access control at the organizational level. Observability is available through the https://console.akka.io[Akka console, window="new"] or by xref:operations:observability-and-monitoring/observability-exports.adoc[exporting logs, metrics, and traces].
 
@@ -60,11 +60,11 @@ With self-managed operations, a region maps to one cluster. With AAO, you can ha
 
 A region corresponds to a cloud provider’s location, such as AWS "US East." Akka spans availability zones and can scale multiple hyperscaler clouds. Projects specify the regions where they run. Each region receives a unique endpoint with region-specific DNS, much like services such as S3 or SQS. xref:operations:projects/container-registries.adoc[Container registries] exist in all regions to reduce latency.
 
-We offer a set of regions for serverless deployments to choose from.
+A set of regions is available for serverless deployments.
 
-Our high degree of automation allows us to support your needs for additional Akka regions in your VPC on all major cloud providers with very short lead times. We establish the full setup and provide monitoring and management.
+Additional Akka regions can be provisioned in your VPC on all major cloud providers, including the full setup along with monitoring and management.
 
-In case your organization requires more detailed control over the exact cloud setup, we offer models with a shared infrastructure responsibility.
+Organizations that require more detailed control over the exact cloud setup can use a shared infrastructure responsibility model.
 
 == About Akka clustering
 

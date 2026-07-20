@@ -1,4 +1,4 @@
-= Build your first agent with Spec-Driven Development
+= Spec-first hello agent
 
 include::ROOT:partial$include.adoc[]
 
@@ -14,61 +14,8 @@ In this guide, you will:
 
 == Prerequisites
 
-* An AI coding assistant like Claude Code to build and implement the specification
-* https://platform.openai.com/api-keys[OpenAI API key, window="new"]
-
-Akka has support for many AI providers, and this sample code uses OpenAI. Sign up for free at https://platform.openai.com/api-keys[platform.openai.com/api-keys, window="new"]. Note that the _application code_ uses OpenAI, not necessarily your AI coding assistant.
-
-IMPORTANT: Before proceeding, you **MUST** set the `OPENAI_API_KEY` environment variable and make it available to child processes (on Mac/Linux, that means using `export`) before running `akka specify` or starting your coding assistant in the terminal.
-
-=== Additional prerequisites for those without an AI marketplace
-
-If you are not using the Akka plugin (which installs these automatically), you will need:
-
-include::ROOT:partial$local-dev-prerequisites.adoc[]
-* Git
-* xref:quick-install-cli.adoc[Akka CLI]
-
-== Install the Claude Code Plugin
-If you're using Claude Code, then you can take advantage of the plugin marketplace to install the https://github.com/akka/ai-marketplace[Akka specification plugin, window="new"], which will also automatically install and verify the Akka CLI for you.
-
-With Claude Code running within the directory you plan to use for your new project, issue the following commands:
-
-```
-/plugin marketplace add akka/ai-marketplace
-/plugin install akka@ai-marketplace
-/reload-plugins
-/akka:setup
-```
-
-You should now have everything you need to easily use Spec-Driven Development to build Akka applications, including the CLI. A typical output from Claude Code looks as follows (your output will vary slightly):
-
-```
-/akka:setup — Complete
-
-    Java 25 (Temurin)      ✓ installed
-    Maven 3.9.11           ✓ installed
-    Akka CLI dev-3.0.53    ✓ installed
-    Akka download token    ⚠ could not verify (dot-directory restriction)
-    Docker                 ✓ available
-    MCP capabilities       ✓ all available (sdd, build, local, platform, git)
-    SDK version            ✓ 3.5.16 (latest)
-    Project scaffolded     ✓ com.example:akka-ssd-test-19
-    Akka context docs      ✓ 203 files
-    AI keys                ⏭ deferred (not needed for standard development)
-
-  One thing to verify: I couldn't check ~/.m2/settings.xml due to the dot-directory permission restriction. If you haven't previously run `akka code token`, you'll need to do so before Maven can download Akka SDK dependencies. You can run it with `! akka code token` — it will open a browser for a free Akka account login.
-
-  IMPORTANT: The MCP server configuration (.mcp.json) was created during setup. Claude Code only loads MCP servers at session start, so you need to restart. Use `claude --resume` to restart without losing your session context. After restarting, the Akka MCP tools will be available.
-
-  Ready to go! After restarting, run /akka:specify to start building your first feature.
-```
-
-As the instructions say, you'll need to restart Claude Code in order to load the newly installed MCP server from the Akka CLI.
-
-IMPORTANT: From now on, any time you see `/akka.\{command\}` in the documentation referring to using Claude Code _without_ the marketplace plugin, you should substitute the `/akka:\{command\}` plugin-based alternative.
-
-NOTE: Not using Claude Code? Akka supports 30 different AI assist utilities. Visit xref:sdk:spec-driven-development.adoc[Spec-Driven Development] for details on how to configure each.
+* Complete xref:getting-started:set-up-dev-env.adoc#_set_up_your_ai_harness[Set up your AI harness] — install the Akka Specify Plugin and run `/akka:setup`.
+* An https://platform.openai.com/api-keys[OpenAI API key, window="new"]. This sample's application code uses OpenAI (not necessarily your AI coding assistant). Set `OPENAI_API_KEY` in your environment — on Mac/Linux use `export` so child processes inherit it — before starting your coding assistant.
 
 Now you're ready to initialize a specification.
 

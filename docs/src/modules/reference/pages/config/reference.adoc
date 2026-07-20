@@ -1,4 +1,4 @@
-= Service reference configuration (HOCON)
+= Service configuration
 include::ROOT:partial$include.adoc[]
 
 == Akka SDK reference configuration

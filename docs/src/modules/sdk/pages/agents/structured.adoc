@@ -19,8 +19,14 @@ Some models, such as OpenAI and Google Gemini, have specific support for structu
 ----
 include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=structured-response-schema]
 ----
-<1> Instructions to the model doesn't have to include details about the JSON response format.
+<1> Instructions to the model does not have to include details about the JSON response format.
 <2> `Activity` record is used to map the JSON response to a Java object. It can optionally have `akka.javasdk.annotations.Description` of the fields, which will be included in the JSON schema.
 <3> Use the `responseConformsTo` method  to specify the expected response type, which is also used for creating the JSON schema.
 
-If you still don't get expected JSON responses from the model, you can combine those two approaches of both including the JSON schema and giving instructions about the format in the system message.
+If you still do not get expected JSON responses from the model, you can combine those two approaches of both including the JSON schema and giving instructions about the format in the system message.
+
+== See also
+
+* xref:sdk:agents.adoc[Agents]
+* xref:sdk:serialization.adoc[Serialization]
+* xref:sdk:agents/prompt.adoc[Prompts]

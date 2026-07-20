@@ -9,22 +9,22 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 The first step in building a RAG agent is _indexing_. Each time a user submits a query or prompt to the agent, the agent _retrieves_ relevant documents by performing a semantic search on a vector database. Before we can perform that search, we need to populate the vector database with all the knowledge that we want to make available to the agent.
 
-Populating the vector database by creating embeddings is the _indexing_ step. In this guide we're going to use an Akka workflow to manage the indexing of a large number of documents as a long-running process.
+Populating the vector database by creating embeddings is the _indexing_ step. In this guide we are going to use an Akka workflow to manage the indexing of a large number of documents as a long-running process.
 
 == Prerequisites
 
 include::ROOT:partial$local-dev-prerequisites.adoc[]
 * https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
-You can either create a link:https://www.mongodb.com/atlas[Mongo DB Atlas] account or run MongoDB locally using Docker. We'll be using the vector indexing capability of this database for the retrieval portion of the RAG flow. You can do all the indexing necessary for this sample with a free account if you choose so. Once you've created the account, make note of the secure connection string as you'll need it later. If you choose to run a local instance, further instructions are provided in <<Running the service>>.
+You can either create a link:https://www.mongodb.com/atlas[Mongo DB Atlas] account or run MongoDB locally using Docker. We will be using the vector indexing capability of this database for the retrieval portion of the RAG flow. You can do all the indexing necessary for this sample with a free account if you choose so. Once you have created the account, make note of the secure connection string as you will need it later. If you choose to run a local instance, further instructions are provided in <<Running the service>>.
 
-If you are following along with each step rather than using the completed solution, then you'll need the code you wrote in the previous step.
+If you are following along with each step rather than using the completed solution, then you will need the code you wrote in the previous step.
 
 include::ROOT:partial$recommend-ai-video.adoc[]
 
 == Updating the pom
 
-We're going to use `langchain4j` for this sample, so add those dependencies to your Maven pom file. The full file should look like this when done:
+We are going to use `langchain4j` for this sample, so add those dependencies to your Maven pom file. The full file should look like this when done:
 
 [source, xml, indent=0]
 .{sample-base-url}/ask-akka-agent/pom.xml[pom.xml]
@@ -34,9 +34,9 @@ include::sdk:example$ask-akka-agent/pom.xml[]
 
 == Adding a workflow
 
-In your code, add a new empty Java file at `src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java`. The imports section is large enough that we won't show it here (you can see it in the source code link).
+In your code, add a new empty Java file at `src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java`. The imports section is large enough that we will not show it here (you can see it in the source code link).
 
-Let's start with the outer shell of the workflow class (this won't compile yet as we haven't included the workflow definition).
+Start with the outer shell of the workflow class (this will not compile yet as we have not included the workflow definition).
 
 [source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
@@ -57,7 +57,7 @@ include::sdk:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/R
 <3> If there is more work, transition to `processing` again
 <4> If there are no files pending, the workflow will _pause_
 
-Because this workflow only ever transitions to and from the same state, it might help to think of it as a _recursive_ workflow. An interesting aspect of this workflow is that it never ends. If it runs out of files to process, then it simply pauses itself. We haven't coded it in this sample, but it would be fairly easy to add an endpoint that allowed a user to enqueue more files for the indexer and wake/unpause it.
+Because this workflow only ever transitions to and from the same state, it might help to think of it as a _recursive_ workflow. An interesting aspect of this workflow is that it never ends. If it runs out of files to process, then it simply pauses itself. We have not coded it in this sample, but it would be fairly easy to add an endpoint that allowed a user to enqueue more files for the indexer and wake/unpause it.
 
 The actual work of doing the indexing is in the `indexFile` function:
 
@@ -76,7 +76,7 @@ include::sdk:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/R
 ----
 <1> Send the embedding segment to the vector database
 
-Everything that we've done so far has been completely asynchronous. When the workflow starts (shown below), it builds the list of pending documents by walking the documents directory and adding each markdown (`*.md`) file it finds. You can find all of these documents in the sample folder `src/main/resources/md-docs`.
+Everything that we have done so far has been completely asynchronous. When the workflow starts (shown below), it builds the list of pending documents by walking the documents directory and adding each markdown (`*.md`) file it finds. You can find all of these documents in the sample folder `src/main/resources/md-docs`.
 
 [source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
@@ -87,7 +87,7 @@ include::sdk:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/R
 
 == Injecting the MongoDB client
 
-If you've been following along, then you might be wondering how we inject an `embeddingStore` field into this workflow. This field is of type `MongoDbEmbeddingStore`, and to create an instance of that we need to inject a `MongoClient` to the workflow's constructor:
+If you have been following along, then you might be wondering how we inject an `embeddingStore` field into this workflow. This field is of type `MongoDbEmbeddingStore`, and to create an instance of that we need to inject a `MongoClient` to the workflow's constructor:
 [source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
 ----
@@ -114,7 +114,7 @@ include::sdk:example$ask-akka-agent/src/main/java/akka/ask/indexer/api/IndexerEn
 
 == Running the service
 
-As you'll see in the next step in this guide, we'll add the indexed knowledge to the agent.
+As you will see in the next step in this guide, we will add the indexed knowledge to the agent.
 
 For now, we suggest that you play around with indexing and the kind of results you see in MongoDB. Parameters like the size of chunks can sometimes impact the reliability or quality of the semantic search results. There are also several other types of document splitters. Explore those and see how it impacts the index.
 
@@ -139,6 +139,6 @@ This call will take an extract of the Akka SDK documentation and create a vector
 The documentation files are located in `src/main/resources/md-docs/`. That said, you can also add your own documentation files to this directory.
 
 == Next steps
-Next we'll xref:ask-akka-agent/rag.adoc[add the indexed knowledge to the agent] to be able to run meaningful queries against the _Ask Akka_ AI assistant!
+Next we will xref:ask-akka-agent/rag.adoc[add the indexed knowledge to the agent] to be able to run meaningful queries against the _Ask Akka_ AI assistant!
 
 

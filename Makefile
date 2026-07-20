@@ -40,7 +40,9 @@ attributes: prepare
 		> "${managed_partials}/attributes.adoc"
 	docs/bin/version.sh | xargs -0  printf ":akka-javasdk-version: %s" \
 		> "${managed_partials}/attributes.adoc"
-	echo ":akka-cli-version: 3.0.63" >> "${managed_partials}/attributes.adoc"
+	echo ":akka-runtime-version: $$(docs/bin/runtime-version-from-sbt.sh)" \
+		>> "${managed_partials}/attributes.adoc"
+	echo ":akka-cli-version: 3.0.66" >> "${managed_partials}/attributes.adoc"
 	echo ":akka-cli-min-version: 3.0.4" >> "${managed_partials}/attributes.adoc"
 	# see https://adoptium.net/marketplace/
 	echo ":java-version: 21" \
@@ -111,6 +113,9 @@ validate-links:
 		--entrypoint /bin/sh \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
 		-c "cd /antora/${BASE_PATH} && find src -name '*.adoc' -print0 | xargs -0 -n1 asciidoc-link-check --progress --config config/validate-links.json"
+
+verify-internal-refs:
+	ruby docs/bin/verify-internal-refs.rb
 
 deploy: clean managed
 	bin/deploy.sh --module java --upstream ${upstream} --branch ${branch} ${sources}

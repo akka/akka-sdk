@@ -16,6 +16,7 @@ public class ProjectLead extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
+    // tag::definition[]
     return define()
       .instructions(
         """
@@ -25,6 +26,7 @@ public class ProjectLead extends AutonomousAgent {
       )
       .capability(TaskAcceptance.of(ProjectTasks.PLAN))
       .capability(TeamLeadership.of(TeamMember.of(Developer.class).maxInstances(3)));
+    // end::definition[]
   }
 }
 // end::class[]

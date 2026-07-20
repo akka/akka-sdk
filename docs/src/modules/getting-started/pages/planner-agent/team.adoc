@@ -36,11 +36,11 @@ include::sdk:example$doc-snippets/src/main/java/agent_guide/part4/AgentTeamWorkf
 <5> Request to the `ActivityAgent`.
 <6> The final result is stored in the workflow state.
 
-You might have noticed that we don't pass the forecast as a parameter to the `ActivityAgent`. How would it then know about the weather? The `WeatherAgent` and `Activity` agents share the same session memory and thereby the `ActivityAgent` will have the weather forecast in the context that is sent to the AI model.
+You might have noticed that we do not pass the forecast as a parameter to the `ActivityAgent`. How would it then know about the weather? The `WeatherAgent` and `Activity` agents share the same session memory and thereby the `ActivityAgent` will have the weather forecast in the context that is sent to the AI model.
 
 == Adjust the endpoint
 
-Let's modify the endpoint to use the `AgentTeamWorkflow` workflow instead of calling the agent directly.
+Modify the endpoint to use the `AgentTeamWorkflow` workflow instead of calling the agent directly.
 
 [source,java,indent=0]
 .ActivityEndpoint.java
@@ -48,7 +48,7 @@ Let's modify the endpoint to use the `AgentTeamWorkflow` workflow instead of cal
 include::sdk:example$doc-snippets/src/main/java/agent_guide/part4/ActivityEndpoint.java[tag=workflow]
 ----
 <1> Spawn the workflow by calling the `start` method.
-<2> Since the workflow is running in the background we can't wait for the final answer, but instead reply with a HTTP `CREATED` status code.
+<2> Since the workflow is running in the background we cannot wait for the final answer, but instead reply with a HTTP `CREATED` status code.
 
 This is returning `akka.http.javadsl.model.HttpResponse`, which is created with `akka.javasdk.http.HttpResponses`.
 

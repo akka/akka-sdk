@@ -15,11 +15,13 @@ public class ReviewModerator extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
+    // tag::definition[]
     return define()
       .capability(TaskAcceptance.of(ReviewTasks.REVIEW))
       .capability(
         Moderation.of(TechnicalReviewer.class, StyleReviewer.class, ComplianceReviewer.class)
       );
+    // end::definition[]
   }
 }
 // end::class[]
