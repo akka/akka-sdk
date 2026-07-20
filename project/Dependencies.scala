@@ -8,12 +8,13 @@ object Dependencies {
     val ProtocolVersionMinor = 1
   }
 
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.10")
+  // FIXME pinned to locally published snapshot of akka-runtime wip-mcp-endpoint-structured-tool-output, restore to release version once runtime PR is merged
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.10-11-1fcafba0-SNAPSHOT")
 
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
-  val AkkaVersion = "2.10.18"
+  val AkkaVersion = "2.10.20"
   val AkkaHttpVersion = "10.7.4" // Note: should at least the Akka HTTP version required by Akka gRPC
   val AkkaGrpcVersion = akka.grpc.gen.BuildInfo.version
   val GoogleProtobufVersion = akka.grpc.gen.BuildInfo.googleProtobufVersion
