@@ -20,6 +20,7 @@ import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.GuardrailContext
 import akka.javasdk.agent.MessageContent
 import akka.javasdk.agent.ModelGuardrail
+import akka.javasdk.agent.ModelGuardrail.CallContext.ConversationMessage
 import akka.javasdk.agent.SimilarityGuard
 import akka.javasdk.agent.TextGuardrail
 import akka.javasdk.agent.ToolGuardrail
@@ -118,6 +119,15 @@ object GuardrailProviderSpec {
   private def agentResponseContent(text: String): SpiAgent.Guardrail.AgentResponseContent =
     new SpiAgent.Guardrail.AgentResponseContent(
       content = new SpiAgent.TextMessageContent(text),
+      agentId = "model-agent",
+      sessionId = "session-1",
+      modelName = "test-model",
+      telemetryContext = Context.root())
+
+  private def modelCallContent(messages: Seq[SpiAgent.ContextMessage]): SpiAgent.Guardrail.ModelCallContent =
+    new SpiAgent.Guardrail.ModelCallContent(
+      systemMessage = "system prompt",
+      messages = messages,
       agentId = "model-agent",
       sessionId = "session-1",
       modelName = "test-model",
@@ -429,6 +439,95 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       byName("other-tool") shouldBe 0
     }
 
+    "register a ModelGuardrail at before-model-call and expose the newest frame via CallContext" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "echoing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$EchoingModelGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+              use-for = ["before-model-call"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val g = provider.agentGuardrails("model-agent", role = None)
+      g.beforeModelCallGuardrails.size shouldBe 1
+      g.beforeAgentResponseGuardrails shouldBe empty
+
+      // the newest frame entering this model call is the tool result, not the earlier turns
+      val messages = Seq(
+        new SpiAgent.ContextMessage.UserMessage("first question"),
+        new SpiAgent.ContextMessage.AiMessage(
+          "calling tool",
+          Seq(new SpiAgent.ToolCallRequest("id-1", "search", "{}")),
+          None,
+          Map.empty),
+        new SpiAgent.ContextMessage.ToolCallResponseMessage("id-1", "search", "tool result text"))
+
+      val result =
+        Await.result(g.beforeModelCallGuardrails.head.evaluate(modelCallContent(messages)), 3.seconds)
+      result.passed shouldBe false
+      result.explanation shouldBe "model-agent|session-1|test-model|tool result text"
+    }
+
+    "expose the conversation with origins to a ModelGuardrail at before-model-call" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "capturing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+              use-for = ["before-model-call"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).beforeModelCallGuardrails.head
+
+      val messages = Seq(
+        new SpiAgent.ContextMessage.UserMessage("first question"),
+        new SpiAgent.ContextMessage.AiMessage(
+          "calling tool",
+          Seq(new SpiAgent.ToolCallRequest("id-1", "search", "{}")),
+          None,
+          Map.empty),
+        new SpiAgent.ContextMessage.ToolCallResponseMessage("id-1", "search", "tool result text"))
+
+      Await.result(spiGuardrail.evaluate(modelCallContent(messages)), 3.seconds).passed shouldBe true
+
+      val ctx = capturedModelContext
+      ctx.boundary() shouldBe ModelGuardrail.CallContext.Boundary.BEFORE_MODEL_CALL
+      ctx.isBeforeModelCall() shouldBe true
+
+      val conversation = ctx.conversation().get()
+      conversation.systemMessage() shouldBe "system prompt"
+
+      val received = conversation.messages()
+      received.size shouldBe 3
+
+      val userMessage = received.get(0).asInstanceOf[ConversationMessage.UserMessage]
+      userMessage.contents().get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "first question"
+
+      val aiMessage = received.get(1).asInstanceOf[ConversationMessage.AiMessage]
+      aiMessage.text() shouldBe "calling tool"
+      aiMessage.toolRequests().get(0).name() shouldBe "search"
+
+      val toolResult = received.get(2).asInstanceOf[ConversationMessage.ToolCallResult]
+      toolResult.toolName() shouldBe "search"
+      toolResult.contents().get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "tool result text"
+
+      // contents() stays the newest frame; the conversation is only in conversation().messages()
+      ctx.textOnly() shouldBe true
+      ctx.text() shouldBe "tool result text"
+    }
+
     "register a ModelGuardrail at before-agent-response and expose ids via CallContext" in {
       val cfg = ConfigFactory
         .parseString(s"""
@@ -541,10 +640,14 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       Await.result(spiGuardrail.evaluate(textContent), 3.seconds).passed shouldBe true
 
       val ctx = capturedModelContext
+      ctx.boundary() shouldBe ModelGuardrail.CallContext.Boundary.BEFORE_AGENT_RESPONSE
+      ctx.isBeforeAgentResponse() shouldBe true
       ctx.textOnly() shouldBe true
       ctx.text() shouldBe "just text"
       ctx.contents().size shouldBe 1
       ctx.contents().get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "just text"
+      // the before-agent-response boundary carries no conversation
+      ctx.conversation().isPresent shouldBe false
     }
 
     "translate a Decision.Fail into a failed Future preserving reason and cause" in {
@@ -864,7 +967,8 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       g.mcpToolRequestGuardrails.map(_.name) should contain("wildcard text guard")
       g.mcpToolResponseGuardrails.map(_.name) should contain("wildcard text guard")
 
-      // ModelGuardrail "*": before-agent-response only
+      // ModelGuardrail "*": the model-side boundaries only
+      g.beforeModelCallGuardrails.map(_.name) shouldBe Seq("wildcard model guard")
       g.beforeAgentResponseGuardrails.map(_.name) shouldBe Seq("wildcard model guard")
       g.modelRequestGuardrails.map(_.name) should not contain "wildcard model guard"
       g.modelResponseGuardrails.map(_.name) should not contain "wildcard model guard"
