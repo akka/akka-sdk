@@ -8,7 +8,7 @@ include::ROOT:partial$include.adoc[]
 
 == Overview
 
-Production readiness is a partnership with Akka, not something you do alone. Akka provides the platform and years of operating distributed systems in production at scale; your team owns a clearly defined set of activities. How much of the running and the reliability each side owns is set out in a Shared Responsibility Model, and shifts with the xref:concepts:deployment-model.adoc[deployment model] you choose.
+Production readiness is a partnership with Akka, not something you do alone. Akka provides the platform and years of experience operating distributed systems in production at scale; your team owns a clearly defined set of activities. How much of the running and the reliability each side owns is set out in a Shared Responsibility Model, and shifts with the xref:concepts:deployment-model.adoc[deployment model] you choose.
 // TODO: link "Shared Responsibility Model" to its docs page once it exists (SRM not yet in docs).
 
 Akka's team embeds with yours from onboarding through ongoing operations. Getting to production is demanding, and it is where that experience earns its place: the disciplines below are the shape of what it has shown to be necessary, worked through with you rather than discovered under pressure. If you want this experience behind your own path to production, https://akka.io/contact-us[talk to Akka].
@@ -18,10 +18,10 @@ Akka's team embeds with yours from onboarding through ongoing operations. Gettin
 Production readiness spans a lot, and that breadth is the point: these are the areas that decide whether go-live is smooth rather than fraught. Take the list as the high-level shape; the full, tailored checklist is the larger piece your Akka team works through with you.
 
 Sizing and capacity::
-Forecast load and agree compute and persistence shapes before launch.
+Forecast load and agree on compute and persistence shapes before launch.
 
 Observability::
-Export application logs, metrics, and traces to your own tooling, and monitor database and persistence health.
+Export application logs, metrics, and traces to your own tooling; be ready to monitor and alert on anything affecting the service, including database and persistence health.
 
 Delivery and rollback::
 Automate deployment and rehearse rollback, not only of container images but of configuration and data.
@@ -44,8 +44,9 @@ The how-to for each area lives across the rest of xref:operations:index.adoc[Ope
 
 Akka behaves identically across xref:concepts:deployment-model.adoc[deployment models]. What changes is how much of the operational surface you run:
 
-* *Dedicated*: Akka hosts and operates the platform and connects to you over a private data link. Your team carries the least.
+* *Dedicated*: Akka hosts and operates the platform and connects to you over a private data link, leaving your team the least to run.
 * *BYOC (Bring Your Own Cloud)*: Akka operates the platform inside your own cloud account. You own the account, networking, and data boundary.
-* *BYOK8s (Bring Your Own Kubernetes)*: you run Akka on the Kubernetes cluster you operate and own more of the stack, including the cluster, its upgrades, and backups. See xref:operations:configuring.adoc[Self-managed operations].
+* *BYOK8s (Bring Your Own Kubernetes)*: you run Akka on the Kubernetes cluster you operate and own more of the stack, including the cluster, its upgrades, and backups.
 
 The further you move toward BYOK8s, the more of the readiness items fall to your team.
+// TODO: link each model above to its Shared Responsibility Model and Production Readiness pages once authored (RACI linked from the SRM).
