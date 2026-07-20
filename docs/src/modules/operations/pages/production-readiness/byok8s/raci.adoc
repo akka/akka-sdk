@@ -38,6 +38,10 @@ Filter by category or owner, or search across activity, description, and cadence
 
 ++++
 <style>
+  /* Full-width matrix: drop the right "On This Page" nav and the 840px prose cap.
+     The category/owner filters provide the in-page navigation instead. */
+  aside.toc.sidebar{display:none!important}
+  article.doc{max-width:none!important;grid-column:1 / -1!important}
   .pe-bar{display:flex;flex-wrap:wrap;gap:.6rem 1.4rem;align-items:center;margin:1rem 0 .4rem;padding:.7rem .9rem;border:1px solid rgba(127,127,127,.25);border-radius:8px}
   .pe-grp{display:flex;gap:.5rem;align-items:baseline;flex-wrap:wrap}
   .pe-lbl{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;opacity:.55;padding-top:.2rem}
