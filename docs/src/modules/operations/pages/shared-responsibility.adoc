@@ -8,7 +8,7 @@ include::ROOT:partial$include.adoc[]
 
 == Overview
 
-Akka runs the platform and owns its reliability, drawing on years of operating distributed systems in production at scale. Your team always owns a clearly defined set of activities. How that responsibility matrix is drawn, what sits with you versus Akka, shifts with the xref:concepts:deployment-model.adoc[deployment model] you choose. This page maps that division and what "production-ready" means. These items are what Akka has found necessary across production deployments, and your Akka team works through them with you, so production readiness is something you reach with Akka rather than a bar you clear alone.
+Production readiness is something you reach with Akka, not a bar you clear alone. Akka runs the platform and owns its reliability, drawing on years of operating distributed systems in production at scale. Your team always owns a clearly defined set of activities. How that responsibility matrix is drawn, what sits with you versus Akka, shifts with the xref:concepts:deployment-model.adoc[deployment model] you choose. This page maps that division and what "production-ready" means, and the items here are what Akka has found necessary across production deployments and works through with you.
 
 [NOTE]
 ====
