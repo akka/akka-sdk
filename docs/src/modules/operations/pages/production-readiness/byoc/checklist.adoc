@@ -1,4 +1,4 @@
-= Production readiness checklist (BYOC)
+= Production readiness checklist
 :page-summary: The customer-side checklist Akka expects an application to satisfy before going live in a BYOC deployment, covering sizing, observability, CI/CD, testing, multi-region, sign-off, and post-launch.
 :page-persona: operator-platform, operator-sre
 

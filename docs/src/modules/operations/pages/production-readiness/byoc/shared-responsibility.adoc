@@ -1,4 +1,4 @@
-= Shared responsibility model (BYOC)
+= Shared responsibility model
 :page-summary: How operational responsibilities are divided between Akka and the customer when running Akka Automated Operations (AAO) inside the customer's own cloud account under the BYOC deployment model.
 :page-persona: operator-platform, operator-sre
 
@@ -6,7 +6,7 @@ include::ROOT:partial$include.adoc[]
 
 This page describes how responsibilities are divided between Akka and the customer when running Akka Automated Operations (AAO) inside the customer's cloud account under the BYOC (Bring Your Own Cloud) deployment model.
 
-The at-a-glance summary and the per-area sections below assign an owner to each activity. For the authoritative row-by-row breakdown, with the full Responsible / Accountable / Consulted / Informed split, see the xref:operations:production-readiness/byoc/raci.adoc[RACI]. This Shared Responsibility Model is where that RACI is linked from.
+The at-a-glance summary and the per-area sections below assign an owner to each activity. For the authoritative row-by-row breakdown, with the full Responsible / Accountable / Consulted / Informed split, see the xref:operations:production-readiness/byoc/raci.adoc[RACI].
 
 [NOTE]
 ====
@@ -21,7 +21,7 @@ Because AAO operates inside your cloud account, the model is genuinely shared. A
 
 The sections below summarize each area at a glance. For the authoritative row-by-row breakdown, every activity with the full Responsible / Accountable / Consulted / Informed split, descriptions, and cadences, see the xref:operations:production-readiness/byoc/raci.adoc[RACI].
 
-Shared responsibility extends to going live. Akka has a set of standards Akka expects of customer applications before flipping prod traffic on: sizing, observability, CI/CD, functional and non-functional testing, DR (disaster recovery) and rollback rehearsal. The xref:operations:production-readiness/index.adoc[production readiness] page captures those standards and the sign-off gate Akka recommends before launch.
+Shared responsibility extends to going live. Akka has a set of standards Akka expects of customer applications before flipping prod traffic on: sizing, observability, CI/CD, functional and non-functional testing, DR (disaster recovery) and rollback rehearsal. The xref:operations:production-readiness/byoc/checklist.adoc[production readiness checklist] captures those standards and the sign-off gate Akka recommends before launch.
 
 [IMPORTANT]
 .Catch-all

@@ -1,4 +1,4 @@
-= Production readiness checklist (BYOK8s)
+= Production readiness checklist
 :page-summary: Customer-side production readiness checklist for BYOK8s deployments, covering sizing, observability, CI/CD, functional and non-functional testing, operational testing, multi-region, sign-off, and day-1 readiness.
 :page-persona: operator-platform, operator-sre
 

@@ -1,4 +1,4 @@
-= Production readiness checklist (Dedicated)
+= Production readiness checklist
 :page-summary: The Dedicated production readiness checklist. Placeholder pending content.
 
 include::ROOT:partial$include.adoc[]

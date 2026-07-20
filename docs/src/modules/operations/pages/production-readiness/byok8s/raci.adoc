@@ -1,4 +1,4 @@
-= RACI (BYOK8s)
+= RACI
 :page-summary: The complete BYOK8s (Bring Your Own Kubernetes) RACI matrix, listing every operational activity with its Responsible, Accountable, Consulted, and Informed split, plus descriptions and cadences.
 :page-persona: operator-platform, operator-sre
 

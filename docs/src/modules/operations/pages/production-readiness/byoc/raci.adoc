@@ -1,4 +1,4 @@
-= RACI (BYOC)
+= RACI
 :page-summary: The BYOC RACI matrix listing every operational activity and its Responsible, Accountable, Consulted, and Informed assignments across the Customer and Akka, with descriptions and cadences.
 :page-persona: operator-platform, operator-sre
 

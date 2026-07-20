@@ -1,4 +1,4 @@
-= Shared responsibility model (BYOK8s)
+= Shared responsibility model
 :page-summary: How responsibilities are divided between Akka and the Customer when Akka runs inside a Kubernetes cluster the Customer provides and operates (BYOK8s).
 :page-persona: operator-platform, operator-sre
 
