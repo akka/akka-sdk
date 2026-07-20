@@ -339,7 +339,6 @@ Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and par
 [discrete]
 ==== Certificate management
 
-* [ ] Akka rotates platform-managed TLS ahead of expiry
 * [ ] Customer-managed TLS (private LBs, BYO domains, BYO certs): customer monitors expiration, rotation procedure rehearsed pre-go-live
 * [ ] Cert rotation rollback path documented and tested in dev
 =====
