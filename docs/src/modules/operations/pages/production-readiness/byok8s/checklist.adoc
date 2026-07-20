@@ -236,9 +236,9 @@ Run all of these against the dev region, sized realistically. Without realistic 
 
 .Detailed checklist
 [%collapsible]
-====
+=====
 [discrete]
-=== Load (expected peak)
+==== Load (expected peak)
 
 * [ ] Tool selected (k6, Gatling, Locust); profile matches forecast peak
 * [ ] Peak sustained >= 30 min; p95/p99 targets met
@@ -247,7 +247,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 * [ ] Broker keeps up, no consumer lag accumulating
 
 [discrete]
-=== Stress (identify breaking point)
+==== Stress (identify breaking point)
 
 * [ ] Load ramped past peak until a failure is reached
 * [ ] Breaking point documented (RPS, sessions, token rate)
@@ -255,7 +255,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 * [ ] Auto-scaling engages before the breaking point and recovers afterward
 
 [discrete]
-=== Soak / endurance
+==== Soak / endurance
 
 * [ ] 60–80% peak sustained >= 24h (ideally 48–72)
 * [ ] No memory leaks (heap and off-heap stable)
@@ -264,7 +264,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 * [ ] Token spend matches FinOps forecast
 
 [discrete]
-=== Spike
+==== Spike
 
 * [ ] Traffic jumps from idle to peak in seconds
 * [ ] Scale-up / cold-start latency acceptable for SLO
@@ -272,7 +272,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 * [ ] Clean return to steady state after spike
 
 [discrete]
-=== Chaos
+==== Chaos
 
 * [ ] Pod/node kill: sharding rebalances, traffic routes correctly
 * [ ] AZ outage: cluster survives loss of one AZ (3 AZ spread)
@@ -283,7 +283,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 * [ ] Container registry unavailable: running services keep running
 
 Tools: Chaos Mesh, Litmus, Gremlin, or scripted via cloud APIs. Start in dev; document expected vs. actual for each scenario.
-====
+=====
 
 == Operational testing
 

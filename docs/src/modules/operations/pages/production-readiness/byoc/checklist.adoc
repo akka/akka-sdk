@@ -52,9 +52,9 @@ Akka runs a parallel internal pre-production validation against the platform-sid
 
 .Detailed checklist
 [%collapsible]
-====
+=====
 [discrete]
-=== Forecast inputs
+==== Forecast inputs
 
 * [ ] Requests/sec at average and peak, per endpoint
 * [ ] Concurrent active sessions, agents, workflows, ES entity instances
@@ -64,7 +64,7 @@ Akka runs a parallel internal pre-production validation against the platform-sid
 * [ ] Broker throughput at peak (messages/sec)
 
 [discrete]
-=== Akka-specific sizing
+==== Akka-specific sizing
 
 * [ ] *Platform cores* (Akka's infra in your VPC, the isolated network in your cloud account where the Akka region is deployed): node count, instance type, AZ spread confirmed with FDE
 * [ ] *Service cores* (your workload, what Akka bills): sized to peak with rolling-update headroom (~+25%)
@@ -74,7 +74,7 @@ Akka runs a parallel internal pre-production validation against the platform-sid
 * [ ] Persistence sized; auto-scaling ceilings set
 
 [discrete]
-=== Dependencies
+==== Dependencies
 
 * [ ] Broker provisioned for peak throughput with headroom
 * [ ] External secret stores reachable from prod with IAM (Identity and Access Management)
@@ -84,12 +84,12 @@ Akka runs a parallel internal pre-production validation against the platform-sid
 * [ ] Per-service configs reviewed for prod parity (ACLs (Access Control Lists), JWT issuers, secrets, autoscaling)
 
 [discrete]
-=== Validation
+==== Validation
 
 * [ ] Dev region at 30–50% of prod capacity with the same instance shapes; smaller dev environments produce misleading load-test results
 * [ ] Sizing reviewed with FDE
 * [ ] Cost forecast signed off by FinOps
-====
+=====
 
 == Observability
 
@@ -102,9 +102,9 @@ Akka runs a parallel internal pre-production validation against the platform-sid
 
 .Detailed checklist
 [%collapsible]
-====
+=====
 [discrete]
-=== Telemetry pipeline
+==== Telemetry pipeline
 
 * [ ] Exporter configured (OTLP (OpenTelemetry Protocol), Prometheus, Splunk HEC (HTTP Event Collector), Azure Monitor, Google Cloud) pointing at your enterprise platform
 * [ ] Logs, metrics, traces flowing end-to-end; sampling rates verified
@@ -112,7 +112,7 @@ Akka runs a parallel internal pre-production validation against the platform-sid
 * [ ] Log retention meets compliance and debugging needs
 
 [discrete]
-=== Akka runtime telemetry confirmed
+==== Akka runtime telemetry confirmed
 
 * [ ] Cluster: nodes, sharding, rebalance events, split-brain indicators
 * [ ] Persistence: read/write latencies, memory, replication lag
@@ -122,7 +122,7 @@ Akka runs a parallel internal pre-production validation against the platform-sid
 * [ ] Consumers: lag, throughput, redeliveries, DLQ (Dead Letter Queue) depth
 
 [discrete]
-=== Dashboards and alerting
+==== Dashboards and alerting
 
 * [ ] Per-service RED (Rate, Errors, Duration) dashboards at p50/p95/p99
 * [ ] Cluster health dashboard (nodes, rolling-deploy status)
@@ -134,11 +134,11 @@ Akka runs a parallel internal pre-production validation against the platform-sid
 * [ ] Runbook linked from every alert
 
 [discrete]
-=== Validation
+==== Validation
 
 * [ ] Synthetic checks on a critical user journey from outside the VPC
 * [ ] Fire-drill each major alert in dev; confirm the right person gets paged with the right context
-====
+=====
 
 [NOTE]
 .Akka's side
@@ -157,9 +157,9 @@ Akka instruments the platform with its own observability stack and runs baseline
 
 .Detailed checklist
 [%collapsible]
-====
+=====
 [discrete]
-=== Pipeline
+==== Pipeline
 
 * [ ] CI integrated via Akka CLI or GitHub Actions
 * [ ] Pipeline: compile -> test -> container build -> image scan -> push
@@ -168,14 +168,14 @@ Akka instruments the platform with its own observability stack and runs baseline
 * [ ] Secret scanning prevents accidental commits
 
 [discrete]
-=== Descriptor-driven config
+==== Descriptor-driven config
 
 * [ ] All descriptors in version control (project, service, route, observability, secret)
 * [ ] Environments managed by descriptor diffs; no manual prod console edits
 * [ ] PR review for descriptor changes; protected main
 
 [discrete]
-=== Deployment and validation
+==== Deployment and validation
 
 * [ ] Prod deployments include an explicit gate (manual approval, change ticket, or equivalent appropriate to the customer's process)
 * [ ] No-downtime rolling updates verified (graceful shutdown, readiness gates, in-flight requests)
@@ -183,7 +183,7 @@ Akka instruments the platform with its own observability stack and runs baseline
 * [ ] Deploy artifacts immutable, traceable to commit
 * [ ] End-to-end pipeline tested: PR -> CI -> dev -> prod approval -> prod -> smoke pass
 * [ ] Each gate tested with a deliberate failure to confirm it blocks
-====
+=====
 
 == Functional testing
 
@@ -195,9 +195,9 @@ Akka instruments the platform with its own observability stack and runs baseline
 
 .Detailed checklist
 [%collapsible]
-====
+=====
 [discrete]
-=== Coverage by component
+==== Coverage by component
 
 * [ ] Meaningful unit coverage on business logic, evaluated by behavioral coverage rather than coverage percentage alone; fast enough to run on every commit
 * [ ] *Agents*: prompt outputs, response schemas, tool-call paths, failure modes (timeout, tool error, LLM error)
@@ -209,7 +209,7 @@ Akka instruments the platform with its own observability stack and runs baseline
 * [ ] *Consumers*: idempotency, redelivery, DLQ routing
 
 [discrete]
-=== Integration and E2E
+==== Integration and E2E
 
 * [ ] Tests against a real broker or high-fidelity local equivalent, not pure mocks
 * [ ] Real LLM-provider tests in a slow suite; deterministic mock for fast CI
@@ -217,20 +217,20 @@ Akka instruments the platform with its own observability stack and runs baseline
 * [ ] Critical user journeys covered E2E, run against dev after each deploy
 
 [discrete]
-=== AI evaluation (if running agents)
+==== AI evaluation (if running agents)
 
 * [ ] LLM eval checkpoints in code; thresholds gate CI
 * [ ] Regression suite of known-good and known-bad inputs, each scored
 * [ ] Guardrails tested: confirm they block what they should block and pass what they should pass
 
 [discrete]
-=== Negative paths and regression
+==== Negative paths and regression
 
 * [ ] Backward-compatibility: previous client + new service, old events still readable
 * [ ] Negative paths: invalid input, malformed JSON, expired JWTs, oversized payloads, event schema violations
 * [ ] Performance regression check in CI: lightweight benchmark gates p95 latency on key endpoints
 * [ ] Every prod incident produces >=1 automated regression test before the post-mortem closes
-====
+=====
 
 == Non-functional testing
 
@@ -238,9 +238,9 @@ Run all of these against the dev region, sized realistically. Without realistic 
 
 .Detailed checklist
 [%collapsible]
-====
+=====
 [discrete]
-=== Load (expected peak)
+==== Load (expected peak)
 
 * [ ] Tool selected (k6, Gatling, Locust); profile matches forecast peak
 * [ ] Peak sustained >= 30 min; p95/p99 targets met
@@ -249,7 +249,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 * [ ] Broker keeps up, no consumer lag accumulating
 
 [discrete]
-=== Stress (identify breaking point)
+==== Stress (identify breaking point)
 
 * [ ] Load ramped past peak until a failure is reached
 * [ ] Breaking point documented (RPS, sessions, token rate)
@@ -257,7 +257,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 * [ ] Auto-scaling engages before the breaking point and recovers afterward
 
 [discrete]
-=== Soak / endurance
+==== Soak / endurance
 
 * [ ] 60–80% peak sustained >= 24h (ideally 48–72)
 * [ ] No memory leaks (heap and off-heap stable)
@@ -266,7 +266,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 * [ ] Token spend matches FinOps forecast
 
 [discrete]
-=== Spike
+==== Spike
 
 * [ ] Traffic jumps from idle to peak in seconds
 * [ ] Scale-up / cold-start latency acceptable for SLO
@@ -274,7 +274,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 * [ ] Clean return to steady state after spike
 
 [discrete]
-=== Chaos
+==== Chaos
 
 * [ ] Pod/node kill: sharding rebalances, traffic routes correctly
 * [ ] AZ outage: cluster survives loss of one AZ (3 AZ spread)
@@ -285,7 +285,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 * [ ] Container registry unavailable: running services keep running
 
 Tools: Chaos Mesh, Litmus, Gremlin, or scripted via cloud APIs. Start in dev; document expected vs. actual for each scenario.
-====
+=====
 
 == Operational testing
 
@@ -298,9 +298,9 @@ Tools: Chaos Mesh, Litmus, Gremlin, or scripted via cloud APIs. Start in dev; do
 
 .Detailed checklist
 [%collapsible]
-====
+=====
 [discrete]
-=== Disaster recovery drills
+==== Disaster recovery drills
 
 Day 2 Ops has no automatic multi-region failover; DR is a cold rebuild. The single most important rehearsal at this tier.
 
@@ -315,7 +315,7 @@ DR is typically run as a two-session event. The first session is a tabletop that
 * [ ] RPO driven by export frequency; business accepts the number
 
 [discrete]
-=== Rollback testing
+==== Rollback testing
 
 Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and partial data migrations frequently are not. Incidents tend to extend significantly when those rollback paths have not been exercised.
 
@@ -328,12 +328,12 @@ Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and par
 * [ ] Time-to-rollback measured (minutes, not hours)
 
 [discrete]
-=== Certificate management
+==== Certificate management
 
 * [ ] Akka rotates platform-managed TLS ahead of expiry
 * [ ] Customer-managed TLS (private LBs, BYO domains, BYO certs): customer monitors expiration, rotation procedure rehearsed pre-go-live
 * [ ] Cert rotation rollback path documented and tested in dev
-====
+=====
 
 == Multi-region (Business Continuity tier)
 
@@ -347,16 +347,16 @@ Akka reads from both regions, so cross-region failover is typically very fast, o
 
 .Detailed checklist
 [%collapsible]
-====
+=====
 [discrete]
-=== Architecture (per workload)
+==== Architecture (per workload)
 
 * [ ] Replication mode chosen per service (region-pinned or replicated); documented as ADR (Architecture Decision Record)
 * [ ] Cross-region workflow idempotency validated
 * [ ] Eventual-consistency lag tolerance documented and surfaced to the business
 
 [discrete]
-=== Drills and validation
+==== Drills and validation
 
 * [ ] Multi-region smoke test post-setup (Akka typically runs immediately; customer should see the result)
 * [ ] Cross-region failover drills: pull the primary, confirm the other region serves writes within the agreed window
@@ -365,12 +365,12 @@ Akka reads from both regions, so cross-region failover is typically very fast, o
 * [ ] DNS / global LB cutover automated where possible; manual steps timed and rehearsed
 
 [discrete]
-=== Operational additions
+==== Operational additions
 
 * [ ] Per-region capacity sized for full traffic alone, so loss of one region does not degrade SLO
 * [ ] Egress and replication bandwidth in the cost forecast
 * [ ] Region-aware on-call: rotation knows which region is primary and how to fail over
-====
+=====
 
 == Pre-production sign-off
 
