@@ -38,8 +38,6 @@ Valid TLS end to end: Akka rotates platform-managed certificates, and you manage
 Ownership::
 A single named owner accountable for production readiness, with the authority to declare it or hold the launch.
 
-The how-to for each area lives across the rest of xref:operations:index.adoc[Operating].
-
 == How the split shifts by deployment model
 
 Akka behaves identically across xref:concepts:deployment-model.adoc[deployment models]. What changes is how much of the operational surface you run:
