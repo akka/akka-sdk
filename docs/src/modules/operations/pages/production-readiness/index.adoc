@@ -11,7 +11,7 @@ include::ROOT:partial$include.adoc[]
 Production readiness is a partnership with Akka, not something you do alone. Akka provides the platform and years of operating distributed systems in production at scale; your team owns a clearly defined set of activities. How much of the running and the reliability each side owns is set out in a Shared Responsibility Model, and shifts with the xref:concepts:deployment-model.adoc[deployment model] you choose.
 // TODO: link "Shared Responsibility Model" to its docs page once it exists (SRM not yet in docs).
 
-Akka's team embeds with yours from onboarding through ongoing operations. The disciplines below are the shape of what that production experience has shown to be necessary. Each links to the detailed operations guidance, and is worked through with you rather than discovered under pressure.
+Akka's team embeds with yours from onboarding through ongoing operations. Getting to production is demanding, and it is where that experience earns its place: the disciplines below are the shape of what it has shown to be necessary, worked through with you rather than discovered under pressure.
 
 [TIP]
 ====
@@ -20,28 +20,30 @@ If you want this experience behind your own path to production, https://akka.io[
 
 == Production readiness
 
-The disciplines that decide whether go-live is smooth. Each links to the relevant operations guidance.
+Production readiness spans a lot, and that breadth is the point: these are the areas that decide whether go-live is smooth rather than fraught. Take the list as the high-level shape; the full, tailored checklist is the larger piece your Akka team works through with you.
 
 Sizing and capacity::
-Forecast load and agree compute and persistence shapes before launch. See xref:operations:regions/index.adoc[] and xref:operations:regions/infrastructure.adoc[].
+Forecast load and agree compute and persistence shapes before launch.
 
 Observability::
-Export application logs, metrics, and traces to your own tooling, and confirm database and persistence health is monitored. See xref:operations:observability-and-monitoring/index.adoc[].
+Export application logs, metrics, and traces to your own tooling, and monitor database and persistence health.
 
 Delivery and rollback::
-Automate deployment and rehearse rollback, not only of container images but of configuration and data. See xref:operations:integrating-cicd/index.adoc[] and xref:operations:services/deploy-service.adoc[].
+Automate deployment and rehearse rollback, not only of container images but of configuration and data.
 
 Backups and recovery::
-Confirm database and Kubernetes-state backups are configured, monitored, and retained to meet your recovery point objective, and that a restore has been tested. See xref:operations:services/data-management.adoc[] and xref:operations:operator-best-practices.adoc[].
+Configure, monitor, and retain database and Kubernetes-state backups to meet your recovery point objective, and test a restore.
 
 Multi-region resilience::
-Choose replication behaviour per service and rehearse failover and failback. See xref:operations:regions/index.adoc#selecting-primary[Selecting primary for stateful components] and xref:operations:operator-best-practices.adoc[].
+Choose replication behaviour per service and rehearse failover and failback.
 
 Certificates::
-Akka rotates platform-managed TLS ahead of expiry. Monitor and rehearse rotation for any customer-managed certificates. See xref:operations:tls-certificates.adoc[].
+Akka rotates platform-managed TLS ahead of expiry; monitor and rehearse rotation for any customer-managed certificates.
 
 Ownership::
 Name a single individual accountable for production readiness end-to-end, with the authority to declare readiness or hold the launch.
+
+The how-to for each area lives across the rest of xref:operations:index.adoc[Operating].
 
 == How the split shifts by deployment model
 
