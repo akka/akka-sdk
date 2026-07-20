@@ -8,7 +8,7 @@ include::ROOT:partial$include.adoc[]
 
 == Overview
 
-Akka runs the platform and owns its reliability. A defined set of activities stays with your team, and the split shifts with your xref:concepts:deployment-model.adoc[deployment model]. This page is a high-level map of that division and of what "production-ready" means on your side. It complements the per-area guidance across xref:operations:index.adoc[Operating].
+Akka runs the platform and owns its reliability, drawing on years of operating distributed systems in production at scale. A defined, and deliberately small, set of activities stays with your team, and the split shifts with your xref:concepts:deployment-model.adoc[deployment model]. This page maps that division and what "production-ready" means on your side, so nothing is left to assumption. These items are what Akka has found necessary across production deployments, and your Akka team works through them with you rather than handing you a checklist.
 
 [NOTE]
 ====
@@ -70,4 +70,4 @@ Name a single individual accountable for production readiness end-to-end, with t
 
 == Getting to production with Akka
 
-Your Akka team walks these items with you ahead of go-live and stays engaged through operations. Contact your Akka team to plan a production-readiness review.
+Production readiness is a joint effort. Akka's team embeds with yours from onboarding through ongoing operations, bringing the operational practices behind the platform's reliability, so you reach production on proven ground rather than discovering it under pressure. Contact your Akka team to plan a production-readiness review.
