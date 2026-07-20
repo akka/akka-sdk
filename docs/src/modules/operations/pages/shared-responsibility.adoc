@@ -1,0 +1,73 @@
+= Shared responsibility and production readiness
+:page-summary: How operational responsibility is divided between Akka and you across the deployment models, and what your team owns to reach production.
+:page-when-to-use: Use this when planning a move to production, to agree who owns what and to walk the readiness items with your Akka team.
+:page-related: xref:operations:index.adoc[], xref:concepts:deployment-model.adoc[], xref:operations:operator-best-practices.adoc[]
+:page-persona: operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+== Overview
+
+Akka runs the platform and owns its reliability. A defined set of activities stays with your team, and the split shifts with your xref:concepts:deployment-model.adoc[deployment model]. This page is a high-level map of that division and of what "production-ready" means on your side. It complements the per-area guidance across xref:operations:index.adoc[Operating].
+
+[NOTE]
+====
+This page is a general reference and evolves over time. The authoritative, tailored readiness plan for your account is produced and maintained with your Akka team.
+====
+
+== How responsibility is divided
+
+[cols="1,3", options="header"]
+|===
+|Owner |Responsibilities
+
+|*Akka*
+|The platform and runtime, elastic scaling, patching, multi-region replication, self-healing recovery, platform observability, and 24/7 SRE. See xref:operations:akka-platform.adoc[Akka Automated Operations].
+
+|*Shared*
+|Sizing and capacity planning, disaster-recovery exercises, onboarding and go-live, and backups (the exact split depends on the deployment model).
+
+|*You*
+|Your application and its data, service configuration and secrets, application-level access control, application observability, and the go-live readiness items below.
+|===
+
+Anything not explicitly owned by Akka is the customer's responsibility.
+
+== How the split shifts by deployment model
+
+Akka behaves identically across xref:concepts:deployment-model.adoc[deployment models]. What changes is how much of the operational surface you run:
+
+* *Akka Automated Operations (serverless)*: Akka hosts and operates everything. Your team carries the least.
+* *Akka Automated Operations (in your VPC)*: Akka operates the platform inside your own cloud account. You own the account, networking, and data boundary.
+* *Self-managed operations*: you run Akka on your own infrastructure and own more of the stack, including the cluster, its upgrades, and backups. See xref:operations:configuring.adoc[Self-managed operations].
+
+The further you move toward self-managed, the more of the readiness items below fall to your team.
+
+== Production readiness
+
+The disciplines that decide whether go-live is smooth. Each links to the relevant operations guidance.
+
+Sizing and capacity::
+Forecast load and agree compute and persistence shapes before launch. See xref:operations:regions/index.adoc[] and xref:operations:regions/infrastructure.adoc[].
+
+Observability::
+Export application logs, metrics, and traces to your own tooling, and confirm database and persistence health is monitored. See xref:operations:observability-and-monitoring/index.adoc[].
+
+Delivery and rollback::
+Automate deployment and rehearse rollback, not only of container images but of configuration and data. See xref:operations:integrating-cicd/index.adoc[] and xref:operations:services/deploy-service.adoc[].
+
+Backups and recovery::
+Confirm database and Kubernetes-state backups are configured, monitored, and retained to meet your recovery point objective, and that a restore has been tested. See xref:operations:services/data-management.adoc[] and xref:operations:operator-best-practices.adoc[].
+
+Multi-region resilience::
+Choose replication behaviour per service and rehearse failover and failback. See xref:operations:regions/index.adoc#selecting-primary[Selecting primary for stateful components] and xref:operations:operator-best-practices.adoc[].
+
+Certificates::
+Akka rotates platform-managed TLS ahead of expiry. Monitor and rehearse rotation for any customer-managed certificates. See xref:operations:tls-certificates.adoc[].
+
+Ownership::
+Name a single individual accountable for production readiness end-to-end, with the authority to declare readiness or hold the launch.
+
+== Getting to production with Akka
+
+Your Akka team walks these items with you ahead of go-live and stays engaged through operations. Contact your Akka team to plan a production-readiness review.
