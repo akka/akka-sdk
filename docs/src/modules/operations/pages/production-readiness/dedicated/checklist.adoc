@@ -1,0 +1,7 @@
+= Production readiness checklist (Dedicated)
+:page-summary: The Dedicated production readiness checklist. Placeholder pending content.
+
+include::ROOT:partial$include.adoc[]
+
+// Placeholder: migrate the Dedicated production readiness checklist here.
+This page is a work in progress.

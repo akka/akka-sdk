@@ -1,0 +1,7 @@
+= Shared responsibility model (BYOC)
+:page-summary: The BYOC shared responsibility model: who owns what between Akka and your team. Placeholder pending content.
+
+include::ROOT:partial$include.adoc[]
+
+// Placeholder: migrate the BYOC Shared Responsibility Model here. The BYOC RACI will be linked from this page.
+This page is a work in progress.

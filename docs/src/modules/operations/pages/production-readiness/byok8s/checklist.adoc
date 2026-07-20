@@ -1,0 +1,7 @@
+= Production readiness checklist (BYOK8s)
+:page-summary: The BYOK8s production readiness checklist. Placeholder pending content.
+
+include::ROOT:partial$include.adoc[]
+
+// Placeholder: migrate the BYOK8s production readiness checklist here.
+This page is a work in progress.

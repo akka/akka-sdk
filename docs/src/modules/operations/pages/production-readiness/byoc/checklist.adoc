@@ -1,0 +1,7 @@
+= Production readiness checklist (BYOC)
+:page-summary: The BYOC production readiness checklist. Placeholder pending content.
+
+include::ROOT:partial$include.adoc[]
+
+// Placeholder: migrate the BYOC production readiness checklist here.
+This page is a work in progress.
