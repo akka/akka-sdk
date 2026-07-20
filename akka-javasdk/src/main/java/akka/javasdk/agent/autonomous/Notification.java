@@ -104,13 +104,16 @@ public sealed interface Notification {
   /** Agent completed a task successfully. */
   record TaskCompleted(String taskId, String taskName) implements TaskNotification {}
 
-  /** Agent failed a task via explicit fail_task. */
+  /**
+   * A task terminated during execution — either the agent's explicit decision to fail it, or the
+   * framework terminating it when the iteration limit was reached. The reason distinguishes the
+   * two.
+   */
   record TaskFailed(String taskId, String taskName, String reason) implements TaskNotification {}
 
   /**
-   * Task was cancelled by the framework — dependency failure, max iterations, orphan cleanup, etc.
-   * Distinct from {@link TaskFailed}, which represents the agent's explicit decision to fail the
-   * task.
+   * A task was cancelled before execution began — for example because a dependency task failed.
+   * Distinct from {@link TaskFailed}, which covers any termination during execution.
    */
   record TaskCancelled(String taskId, String taskName, String reason) implements TaskNotification {}
 

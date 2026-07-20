@@ -24,6 +24,7 @@ public record TaskState(
     List<String> reassignmentContext,
     List<String> ruleClassNames) {
 
+  /** The state of a task that has not been created yet. */
   public static TaskState empty() {
     return new TaskState(
         "",
@@ -41,6 +42,7 @@ public record TaskState(
         List.of());
   }
 
+  /** Copy with the given status. */
   public TaskState withStatus(TaskStatus status) {
     return new TaskState(
         taskId,
@@ -58,6 +60,7 @@ public record TaskState(
         ruleClassNames);
   }
 
+  /** Copy with the given assignee, moving to {@code ASSIGNED}. */
   public TaskState withAssignee(String assignee) {
     return new TaskState(
         taskId,
@@ -75,6 +78,7 @@ public record TaskState(
         ruleClassNames);
   }
 
+  /** Copy with the given result, moving to {@code COMPLETED}. */
   public TaskState withResult(String result) {
     return new TaskState(
         taskId,
@@ -92,6 +96,7 @@ public record TaskState(
         ruleClassNames);
   }
 
+  /** Copy with the rejection reason, moving to {@code RESULT_REJECTED}. */
   public TaskState withResultRejection(String reason) {
     return new TaskState(
         taskId,
@@ -109,6 +114,7 @@ public record TaskState(
         ruleClassNames);
   }
 
+  /** Copy with the failure reason, moving to {@code FAILED}. */
   public TaskState withFailure(String reason) {
     return new TaskState(
         taskId,
@@ -126,6 +132,7 @@ public record TaskState(
         ruleClassNames);
   }
 
+  /** Copy with the cancellation reason, moving to {@code CANCELLED}. */
   public TaskState withCancellation(String reason) {
     return new TaskState(
         taskId,
@@ -143,6 +150,7 @@ public record TaskState(
         ruleClassNames);
   }
 
+  /** Copy with a new assignee, appending the handover context. */
   public TaskState withReassignment(String newAssignee, String context) {
     var updated = new ArrayList<>(this.reassignmentContext);
     updated.add(context);

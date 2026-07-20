@@ -1,0 +1,81 @@
+= Automated Operations
+:page-role: capability
+:page-summary: The operational plane that runs Akka services in production — elastic scaling, multi-region replication, HA/DR, rolling updates, and live patching.
+:page-persona: operator-platform, operator-sre
+:page-related: operations:index.adoc
+
+include::ROOT:partial$include.adoc[]
+
+Akka Automated Operations (AAO) is the operational plane that runs your agents and services in production. It automates the day-2 work that normally slows teams down: scaling to demand, replicating state across regions, recovering from failures, rolling out new versions, and keeping the whole system observable. All of it happens without taking traffic offline.
+
+AAO runs the same way wherever you deploy. You can operate on Akka's serverless cloud, inside your own VPC, or across your own data centers, and the operational model stays identical. This lets you move workloads between environments without re-learning how they are run or re-building your operations tooling.
+
+image::capabilities/one-click-deploys-alt.png[Deploy and operate services across environments with one model,width=620]
+
+== Automated operations
+
+Operating a distributed, stateful system by hand is where most of the effort and most of the risk lives. AAO takes over the repetitive and error-prone parts of that work so your team can focus on building agents and services rather than tending infrastructure.
+
+The platform continuously supervises the services you deploy. It provisions capacity, places instances, replicates data, watches health, and reacts to change automatically. Operators set intent: where services should run, how they should scale, how data should move. The platform enforces it.
+
+== Elastic scaling
+
+AAO adjusts capacity to match real workload. When traffic rises, it starts additional instances of your agents and services; when demand falls or a workload goes idle, it scales back down. Cold starts are handled automatically, so infrequently used services can rest without penalizing the first request when traffic returns.
+
+This elasticity is continuous rather than manual. You do not pre-provision for peak load or file tickets to add capacity. The system tracks demand and keeps the running footprint sized to it, which keeps latency predictable during spikes and avoids paying for idle capacity between them.
+
+== Multi-region operations
+
+Agents and services can be deployed across multiple regions, clouds, and data centers as a single logical system. AAO coordinates the placement and keeps the deployment coherent no matter how many locations it spans.
+
+State moves with the workload. The platform replicates agent memory and service state across regions, and lets you filter what is replicated so that only the data you intend to distribute leaves its origin. This gives users in each region fast, local access to state while keeping a consistent view of the system as a whole.
+
+Routing is region-aware. Requests and messages are directed with an understanding of where they originate and where data is allowed to live, so traffic stays close to users and within the boundaries you define.
+
+image::capabilities/muilt-region-replicated-write.png[State replicated across regions with region-aware routing,width=620]
+
+=== Data residency
+
+Because routing and replication are region-aware, you can keep data processing and persistence inside specific geographies to meet residency requirements such as GDPR and CCPA. Metadata tagging and region-scoped routing let you control where individual records are handled, rather than applying one global policy to everything.
+
+== High availability and disaster recovery
+
+AAO is built to keep serving through the failures that distributed systems inevitably encounter: a lost instance, a degraded zone, or an entire region going offline.
+
+Multi-region replication is the foundation for continuity. Because state already exists in more than one location, the system can fail over when a region becomes unavailable and continue serving from the regions that remain. You define failover and disaster-recovery policies that describe how the platform should respond, and it carries them out automatically.
+
+=== Resilience and recovery
+
+At the instance level, AAO snapshots agent and service state and captures individual state changes as they happen. When a component fails, the platform restores it by replaying its most recent snapshot and then applying the captured changes in order, bringing the instance back to exactly where it left off.
+
+This recovery is automatic and does not depend on operator intervention. Failure handling is part of the runtime rather than a manual procedure, so transient faults are absorbed instead of turning into incidents.
+
+== Rolling updates
+
+New versions are rolled out gradually across regions and clusters while the system keeps serving. Instances are updated in waves so that healthy capacity always remains available to handle traffic, and end users are not disrupted while the change propagates.
+
+This holds even when the update changes your data model. AAO coordinates schema and state changes as part of the rolling update, so evolving how your agents and services store data does not require downtime or a maintenance window.
+
+image::capabilities/zero-downtime.png[Rolling updates in waves with no downtime,width=620]
+
+== Live patching
+
+Everyday operational changes are applied while the system stays live: updating configuration, rotating credentials, migrating between environments.
+
+Certificate and key rotation is automated, so security material is refreshed on an ongoing basis without manual coordination or service interruption. Larger moves are handled the same way: infrastructure upgrades, cloud-to-cloud migrations, federating a serverless deployment into your own VPC, and repatriating workloads back on-premises are all performed through replication with an automated switch, so the running system transitions without going offline.
+
+== Observability
+
+AAO gives you real-time visibility into the running system across every layer. Logs, metrics, and traces are collected continuously so you can see how agents and services are behaving, where time is being spent, and where problems are emerging.
+
+You can view this telemetry in the Akka Control Tower or stream it directly to your terminal during development. For production monitoring, the platform integrates with the tools you already run: it supports OpenTelemetry, Prometheus remote write, and Splunk HEC, so AAO telemetry flows into your existing dashboards, alerting, and analysis pipelines rather than living in a silo.
+
+== Multi-tenancy and access control
+
+Services can be operated as multi-tenant systems, with access governed across multiple organizations. AAO manages the operational controls that keep tenants isolated and secure: automated rotation of certificates and keys, and oversight of how state is persisted. A shared platform can serve many tenants without compromising separation between them.
+
+The platform operates under a zero-trust model, applying attestation and enforcing security policy across the workloads it runs rather than assuming trust based on network location.
+
+== See also
+
+* xref:operations:index.adoc[Operating]

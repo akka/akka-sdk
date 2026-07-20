@@ -5,7 +5,7 @@ Running a service locally is helpful to test and debug. The following sections p
 
 == Prerequisites
 
-In order to run your service locally, you'll need to have the following prerequisites:
+In order to run your service locally, you will need to have the following prerequisites:
 
 include::ROOT:partial$local-dev-prerequisites.adoc[]
 
@@ -139,7 +139,7 @@ With both services configured, we can start them independently by running `mvn c
 
 == Invoking cloud based services from local services
 
-Sometimes, when developing services locally that depend on other services, rather than running those services locally as well, it's more convenient to use instances of those services running in the cloud. Akka allows this through its backoffice proxy. The cloud services do not need to be exposed to the internet, rather, requests are forwarded through a proxy that authenticates and authorizes developers using their Akka platform credentials.
+Sometimes, when developing services locally that depend on other services, rather than running those services locally as well, it is more convenient to use instances of those services running in the cloud. Akka allows this through its backoffice proxy. The cloud services do not need to be exposed to the internet, rather, requests are forwarded through a proxy that authenticates and authorizes developers using their Akka platform credentials.
 
 NOTE: By default, local services use an in-memory data store, so state is lost on each restart. When connecting to cloud-based services, this means views and consumers subscribed to cloud event streams must replay events from the beginning on each restart, which can be slow for large event stores. To preserve local state and offsets across restarts, see <<persistence-enabled>>.
 
@@ -164,7 +164,7 @@ include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=backo
 * `project` - This can either be the project UUID, or the project name.
 * `organization` - This is usually not necessary, however if you ar referring to the project by its name, and you are a member of two organizations that have projects with that same name, this will be used to disambiguate them. Either an organization UUID or an organization name can be set here.
 * `service-name` - Can be used if you wish to use a service with a different name running in the cloud to the one referenced from your locally running service.
-* `region` - If you have a multi-region project, and you don't want to use the primary region, this can be used to select the region.
+* `region` - If you have a multi-region project, and you do not want to use the primary region, this can be used to select the region.
 
 [#local_cluster]
 == Running a local cluster

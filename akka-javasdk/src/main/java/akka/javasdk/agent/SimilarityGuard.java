@@ -13,15 +13,18 @@ public final class SimilarityGuard implements TextGuardrail {
   private final String badExamplesResourceDir;
   private final double threshold;
 
+  /** Reads {@code bad-examples-resource-dir} and {@code threshold} from the guardrail's config. */
   public SimilarityGuard(GuardrailContext context) {
     this.badExamplesResourceDir = context.config().getString("bad-examples-resource-dir");
     this.threshold = context.config().getDouble("threshold");
   }
 
+  /** The similarity score above which text is flagged as blocked. */
   public double threshold() {
     return threshold;
   }
 
+  /** The classpath resource directory holding the "bad examples" dataset. */
   public String badExamplesResourceDir() {
     return badExamplesResourceDir;
   }

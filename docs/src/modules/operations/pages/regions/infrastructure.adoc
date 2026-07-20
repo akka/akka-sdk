@@ -36,11 +36,11 @@ certificate, the communication is blocked.
 === Root CAs
 Each region group has a separate root Certificate Authority (CA). The root CA is used to issue client and server certificates
 for mTLS authentication. Since each region group uses a different Root CA, authenticated communication between region groups
-is impossible and thus effectively isolated, since client certificates issued to services in one region group won't be trusted
+is impossible and thus effectively isolated, since client certificates issued to services in one region group will not be trusted
 by services in any other region group.
 
 === Multi-region certificates
-All region group CAs are created on and managed by the Akka Federation Plane. It's here that they are rotated. The private keys
+All region group CAs are created on and managed by the Akka Federation Plane. It is here that they are rotated. The private keys
 for the root CAs are never shared anywhere outside the Akka Federation Plane.
 For each region in a region group, an intermediate CA certificate is issued, managed and rotated by the Akka Federation Plane.
 This certificate has name restrictions allowing the intermediate CA to only issue certificates for its local domain names. There
@@ -63,7 +63,7 @@ for how TLS certificates are provisioned, depending on the type of hostname bein
 
 === Auto-generated Hostname Certificates
 By default, Akka provisions server certificates for auto-generated hostnames (e.g., `<generated-name>.$\{AKKA_REGION_APPS_HOSTNAME}`)
-by solving DNS-01 challenges using https://letsencrypt.org/[Let's Encrypt]. However, using Let's Encrypt DNS-01 challenges isn't
+by solving DNS-01 challenges using https://letsencrypt.org/[Let's Encrypt]. However, using Let's Encrypt DNS-01 challenges is not
 always feasible or possible, particularly for BYOC/BYOK8s customers who bring their own DNS zones that Akka does not control.
 To support these cases, Akka allows customers to provide their own certificate provider configuration in the form of a cert-manager
 `ClusterIssuer`. When configured, the operator picks up the customer-provided `ClusterIssuer` and uses it in place of the default

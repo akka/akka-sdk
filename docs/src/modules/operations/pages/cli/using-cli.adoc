@@ -42,8 +42,8 @@ This command opens the Akka console login screen in your default web browser. Th
 Upon successful authentication:
 
 * If you have one project, it is automatically set as the `current` project.
-* If no projects exist, you'll need to create one and set it manually.
-* If you have multiple projects, you'll need to specify the target project manually (see below).
+* If no projects exist, you will need to create one and set it manually.
+* If you have multiple projects, you will need to specify the target project manually (see below).
 
 To set your current project:
 [source, shell]
@@ -60,7 +60,7 @@ You can also refer to the xref:reference:cli/akka-cli/akka_auth.adoc[auth] page.
 
 === Handling Proxies
 
-In corporate environments with HTTP proxy servers that don't support HTTP/2, you may encounter issues since the `akka` CLI uses gRPC. To bypass these limitations, you can configure the CLI to use grpc-web, which works over HTTP/1.1 and HTTP/2.
+In corporate environments with HTTP proxy servers that do not support HTTP/2, you may encounter issues since the `akka` CLI uses gRPC. To bypass these limitations, you can configure the CLI to use grpc-web, which works over HTTP/1.1 and HTTP/2.
 
 Log in with grpc-web enabled:
 [source, shell]
@@ -68,7 +68,7 @@ Log in with grpc-web enabled:
 akka auth login --use-grpc-web
 ----
 
-If you're already logged in but need to switch to grpc-web, configure it with:
+If you are already logged in but need to switch to grpc-web, configure it with:
 [source, shell]
 ----
 akka config set api-server-use-grpc-web true
@@ -150,7 +150,7 @@ To deploy a service using a Docker image, run:
 akka services deploy my-service my-container-uri/container-name:tag-name
 ----
 
-Ensure you've set up your container registry credentials before deploying. For more details, see xref:projects/container-registries.adoc[container registry] page.
+Ensure you have set up your container registry credentials before deploying. For more details, see xref:projects/container-registries.adoc[container registry] page.
 
 === Exposing a route for inbound traffic
 

@@ -1,0 +1,26 @@
+= About Akka
+:page-aliases: why-akka.adoc, who-uses-akka.adoc
+:page-summary: Akka is a full-stack platform for agentic AI — developer experience, runtime, and governance in one integrated system.
+:page-persona: all
+
+include::ROOT:partial$include.adoc[]
+
+Akka is a full-stack platform for agentic AI: developer experience, runtime, and governance in one integrated system. You describe what you need, Akka generates a production-ready system, and that system runs as a durable, event-driven, distributed application.
+
+== In this section
+
+The capabilities below make up the platform. Each page explains what the capability is, when to use it, and where to find its SDK reference.
+
+* xref:ROOT:what-is-akka.adoc[What is Akka?] — a short summary of what Akka is and the three layers that make it up.
+* xref:ROOT:akka-agents.adoc[Agents] — AI model-backed components with memory, tools, and multi-agent collaboration.
+* xref:ROOT:akka-orchestration.adoc[Orchestration] — durable, multi-step coordination of agents and workflows.
+* xref:ROOT:akka-memory.adoc[Memory] — durable, in-memory, sharded state for agents and entities.
+* xref:ROOT:akka-streaming.adoc[Streaming] — real-time stream processing for event-driven and AI workloads.
+* xref:ROOT:akka-automated-operations.adoc[Automated Operations] — running Akka services with elastic scaling, resilience, and no-downtime updates.
+* xref:ROOT:akka-internals.adoc[Akka Internals] — how the platform works under the hood: the event-driven runtime, in-memory durable state, and clustering.
+
+== Next steps
+
+* xref:getting-started:index.adoc[Getting started] — build your first Akka service.
+* xref:sdk:spec-driven-development.adoc[Spec-driven development] — the primary way to build with Akka.
+

@@ -1,6 +1,6 @@
 = Data Types
 
-The View query language supports a range of data types that map to Java types in your View components. This page explains the supported data types, how they're used in queries, and how they map between the query language and Java.
+The View query language supports a range of data types that map to Java types in your View components. This page explains the supported data types, how they are used in queries, and how they map between the query language and Java.
 
 == Supported Data Types
 
@@ -185,7 +185,7 @@ WHERE price < :maxPrice
 WHERE tags = ANY(:tagList)
 ----
 
-The Java type of the parameter must be compatible with how it's used in the query.
+The Java type of the parameter must be compatible with how it is used in the query.
 
 == Related Features
 

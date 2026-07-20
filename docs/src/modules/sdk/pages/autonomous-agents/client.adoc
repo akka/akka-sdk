@@ -55,7 +55,7 @@ componentClient
   .terminate();
 ----
 
-IMPORTANT: When you manage tasks and agents separately, you are responsible for stopping the agent. Autonomous agents do not auto-passivate when their queue drains. An agent that is not stopped holds its in-memory state until you call `terminate()`, even though it is idle and making no model calls. The `runSingleTask` shortcut handles this automatically. The explicit `assignTasks` flow does not. Suspend is another way to release the actor: a paused agent passivates after a short delay, and resume rehydrates it.
+IMPORTANT: When you manage tasks and agents separately, you are responsible for the agent's lifecycle. Call `terminate()` when an agent is permanently done. The `runSingleTask` shortcut handles this automatically. The explicit `assignTasks` flow does not. Idle agents are passivated automatically to release memory, and reactivates transparently on the next command (e.g. `assignTask`). An agent that holds access to a shared backlog stays resident rather than passivating, so it does not miss new claimable tasks pushed to it.
 
 == Task lifecycle operations
 

@@ -13,6 +13,13 @@ akka services data import SERVICE [flags]
 == Options
 
 ----
+      --abs-client-id-key string                           If exporting to Azure Blob Storage, the name of the key inside the Akka secret that holds the Microsoft Entra client id (application id). Defaults to client-id. (default "client-id")
+      --abs-client-secret-key string                       If exporting to Azure Blob Storage, the name of the key inside the Akka secret that holds the Microsoft Entra client secret. Defaults to client-secret. (default "client-secret")
+      --abs-container string                               If exporting to Azure Blob Storage, the name of the blob container to export to.
+      --abs-endpoint-url string                            If exporting to Azure Blob Storage, a custom endpoint url to connect to. Defaults to https://<account_name>.blob.core.windows.net.
+      --abs-object-prefix string                           If exporting to Azure Blob Storage, a prefix to prepend to the object name, for example, 'my-export/'
+      --abs-secret string                                  If exporting to Azure Blob Storage, the name of an Akka secret holding the Microsoft Entra service principal credentials to access Azure Blob Storage with.
+      --abs-tenant-id-key string                           If exporting to Azure Blob Storage, the name of the key inside the Akka secret that holds the Microsoft Entra tenant id. Defaults to tenant-id. (default "tenant-id")
       --async                                              Whether the command should return immediately once the operation has been accepted, or if it should wait for the operation to complete.
       --compression string                                 The compression to use on the export. Either gzip or none. Defaults to gzip. (default "gzip")
       --event-sourced-entity-object stringArray            A storage object name (relative to the bucket and object prefix) to import from. Multiple may be specified. If not specified, the default object names used by the export process are used. Implies --include-event-sourced-entities.

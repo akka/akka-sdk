@@ -1,8 +1,8 @@
-= Managing session memory
+= Session memory
 
 include::ROOT:partial$include.adoc[]
 
-Session Memory provides a history mechanism that enables agents to maintain context across multiple interactions. This feature is essential for building agents that can remember previous exchanges with users, understand context, and provide coherent responses over time.
+Session Memory provides a history mechanism that enables agents to maintain context across multiple interactions. Agents use it to remember previous exchanges with users and provide coherent responses over time.
 
 When an agent interacts with an AI model, both the user message and the AI response are automatically stored in the session memory. These messages are then included as additional context in subsequent requests to the model, allowing it to reference previous parts of the interaction.
 
@@ -48,7 +48,7 @@ The link:{attachmentsdir}/api/akka/javasdk/agent/MemoryProvider.html[`MemoryProv
 
 * `MemoryProvider.none()` - Disables both reading from and writing to session memory
 * `MemoryProvider.limitedWindow()` - Configures memory with options to, e.g.:
-  ** Setup **read only** memory, in which the agent reads the memory but does not allow write any interactions to it. This is ideal for multi-agent sessions where some agents can store memory and others can't.
+  ** Setup **read only** memory, in which the agent reads the memory but does not allow write any interactions to it. This is ideal for multi-agent sessions where some agents can store memory and others cannot.
   ** Setup **write only** memory, in which the agent register the interactions to the session memory but does not take those in consideration when processing the user message.
   ** Limit the amount of messages used as context in each interaction, i.e. use only the last N number of messages for context (good for token usage control).
   ** Apply **filters** to selectively include or exclude messages based on agent component ID or role.
@@ -148,7 +148,7 @@ var filter = MemoryFilter.excludeFromAgentId("debug-agent")
     .excludeFromAgentRole("internal");
 ----
 
-This creates a single Exclude filter that will exclude messages from "debug-agent" OR messages with the "internal" role. Only messages that don't match either criterion will be included.
+This creates a single Exclude filter that will exclude messages from "debug-agent" OR messages with the "internal" role. Only messages that do not match either criterion will be included.
 
 == Intercepting interaction writes
 
@@ -183,7 +183,7 @@ include::example$doc-snippets/src/main/java/com/example/application/SessionMemor
 
 This can be useful for more granular control over token usage but also to allow external integrations and analytics over these details.
 
-== Compaction
+== Session memory compaction
 
 You can update the session memory to reduce the size of the history. One technique is to let an LLM summarize the interaction history and use the new summary instead of the full history. Such agent can look like this:
 
@@ -195,7 +195,7 @@ include::example$doc-snippets/src/main/java/com/example/application/CompactionAg
 <1> Instructions to create the summary of user and AI messages and result as JSON.
 <2> The full history from the `SessionMemoryEntity`.
 <3> Format and concatenate the messages.
-<4> The `CompactionAgent` itself doesn't need any session memory.
+<4> The `CompactionAgent` itself does not need any session memory.
 
 One way to trigger compaction is to use a consumer of the session memory events and call the `CompactionAgent` from that consumer when a threshold is exceeded.
 
@@ -214,3 +214,9 @@ include::example$doc-snippets/src/main/java/com/example/application/SessionMemor
 == Multi-region replication
 
 The session memory can be replicated to other regions, but it has the multi-region replication filter enabled to only include the local region when using `request-region` primary selection. When accessed from another region the filter will automatically be expanded to include the other region too, and thereby contain the same information.
+
+== See also
+
+* xref:sdk:agents.adoc[Agents]
+* xref:sdk:agents/prompt.adoc[Prompts]
+* xref:sdk:sanitization.adoc[Data sanitization]

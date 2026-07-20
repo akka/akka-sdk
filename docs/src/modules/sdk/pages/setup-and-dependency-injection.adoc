@@ -223,7 +223,7 @@ include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=full-
 
 To access the configuration in application code you can use a constructor parameter `com.typesafe.config.Config` in all components and the `ServiceSetup` class. An example of this is shown in xref:setup-and-dependency-injection.adoc#_disabling_components[].
 
-WARNING: Don't use `ConfigFactory.load()` since that will not load the `application.conf` as you intended. Use dependency injection of `Config` instead.
+WARNING: Do not use `ConfigFactory.load()` since that will not load the `application.conf` as you intended. Use dependency injection of `Config` instead.
 
 === Test configuration
 

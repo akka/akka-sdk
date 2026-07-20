@@ -4,6 +4,14 @@
 
 package akka.javasdk.agent;
 
+import akka.annotation.InternalApi;
+
+/**
+ * INTERNAL API
+ *
+ * @hidden
+ */
+@InternalApi
 public class SessionMessageConverter {
 
   public static SessionMessage apply(SessionMemoryEntity.Event.MultimodalUserMessageAdded event) {

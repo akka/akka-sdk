@@ -6,7 +6,7 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 == Overview
 
-Activities may depend on the weather, so let's add an agent that retrieves a weather forecast.
+Activities may depend on the weather, so add an agent that retrieves a weather forecast.
 
 In this part of the guide you will:
 
@@ -33,7 +33,7 @@ include::sdk:example$doc-snippets/src/main/java/agent_guide/part3/WeatherAgent.j
 
 Methods annotated with `@FunctionTool` in the agent will automatically be made available to the AI model, which will extract the location from the original query and request to execute the tool to retrieve the forecast.
 
-If you don't want to use the real weather service, you can change the implementation to return a hard-coded weather, such as `"It's always sunny"`.
+If you do not want to use the real weather service, you can change the implementation to return a hard-coded weather, such as `"It is always sunny"`.
 
 We could make a request to the `WeatherAgent` from the endpoint before calling the `ActivityAgent` but a better approach is to introduce a workflow that orchestrates the calls between the agents.
 
@@ -50,7 +50,7 @@ include::sdk:example$doc-snippets/src/test/java/agent_guide/part3/WeatherAgentIn
 ----
 <1> Extend `TestKitSupport`.
 <2> Use the component client to call the agent.
-<3> Not much we can assert, since the weather is different every day, but at least we can see the result and that it doesn't fail.
+<3> Not much we can assert, since the weather is different every day, but at least we can see the result and that it does not fail.
 
 You can sign up for a free API for the weather service at link:https://www.weatherapi.com[window="new"] and then expose it as an environment variable:
 

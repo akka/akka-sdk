@@ -41,6 +41,13 @@ public class HallucinationEvaluator extends LlmAsJudge {
     super(COMPONENT_ID, componentClient, config);
   }
 
+  /**
+   * An answer to judge for hallucinated content.
+   *
+   * @param query the question the answer responds to
+   * @param referenceText the source of truth the answer must be grounded in
+   * @param answer the answer to evaluate
+   */
   public record EvaluationRequest(String query, String referenceText, String answer) {}
 
   record ModelResult(String explanation, String label) {
@@ -60,6 +67,10 @@ public class HallucinationEvaluator extends LlmAsJudge {
     }
   }
 
+  /**
+   * The verdict for an answer: whether it passed the hallucination check, and the judge's
+   * explanation for the label it assigned.
+   */
   public record Result(String explanation, boolean passed) implements EvaluationResult {}
 
   static final String COMPONENT_ID = "hallucination-evaluator";
@@ -111,6 +122,11 @@ Your response must be a single JSON object with the following fields:
       """
           .stripIndent();
 
+  /**
+   * Judge whether the given answer contains information not available in the reference text.
+   *
+   * @param req the query, reference text, and answer to evaluate
+   */
   public Effect<Result> evaluate(EvaluationRequest req) {
     String evaluationPrompt =
         prompt(USER_MESSAGE_PROMPT_ID, USER_MESSAGE_TEMPLATE)

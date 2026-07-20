@@ -58,6 +58,10 @@ public class ToxicityEvaluator extends LlmAsJudge {
     }
   }
 
+  /**
+   * The verdict for a piece of text: whether it passed the toxicity check, and the judge's
+   * explanation for the label it assigned.
+   */
   public record Result(String explanation, boolean passed) implements EvaluationResult {}
 
   static final String COMPONENT_ID = "toxicity-evaluator";
@@ -98,6 +102,11 @@ Your response must be a single JSON object with the following fields:
       """
           .stripIndent();
 
+  /**
+   * Judge whether the given text is racist, biased, or toxic.
+   *
+   * @param text the text to evaluate
+   */
   public Effect<Result> evaluate(String text) {
     String evaluationPrompt = prompt(USER_MESSAGE_PROMPT_ID, USER_MESSAGE_TEMPLATE).formatted(text);
 

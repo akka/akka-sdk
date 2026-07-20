@@ -44,7 +44,7 @@ Every component in Akka needs to be identifiable by the rest of the system. This
 
 As with all other components, you supply an identifier for the component class using the `@Component` annotation.
 
-In the case of agents, you don't supply a unique identifier for the instance of the agent. Instead, you supply an identifier for the _session_ to which the agent is bound. This lets you have multiple components with different component IDs all performing various agentic tasks within the same shared session.
+In the case of agents, you do not supply a unique identifier for the instance of the agent. Instead, you supply an identifier for the _session_ to which the agent is bound. This lets you have multiple components with different component IDs all performing various agentic tasks within the same shared session.
 
 [#_effect_api]
 == Agent's effect API
@@ -63,7 +63,7 @@ The Agent's Effect defines the operations that Akka should perform when an incom
 
 For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
 
-== Basic Agent Structure
+== Basic agent structure
 
 An agent implementation has the following code structure.
 
@@ -107,7 +107,7 @@ include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=agent
 
 The API key can be defined with an environment variable, `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in the above examples.
 
-The default model will be used if the agent doesn't specify another model. Different agents can use different models by defining the `ModelProvider` in the Agent effect:
+The default model will be used if the agent does not specify another model. Different agents can use different models by defining the `ModelProvider` in the Agent effect:
 
 [source,java,indent=0]
 .MyAgent.java
@@ -167,15 +167,17 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 <2> Retrieve preferences from an entity.
 <3> Enrich the user message with the preferences.
 
-This also illustrates the important point that the context of the request to the AI model can be built from additional information in the service and doesn't only have to come from the session memory.
+This also illustrates the important point that the context of the request to the AI model can be built from additional information in the service and does not only have to come from the session memory.
 
 The ability to reach into the rest of a distributed Akka application to _augment_ requests makes behavior like Retrieval Augmented Generation (RAG) simple and less error prone than doing things manually without Akka.
 
-== See Also
+== Testing
+
+Test agents with the testkit's `TestModelProvider`, which substitutes configured responses for a real model so tests exercise the agent's logic, tools, and effects deterministically, without calling a real model. See xref:sdk:agents/testing.adoc[Testing the agent].
+
+== See also
 
 * xref:concepts:ai-agents.adoc[AI Agents concepts]
 * xref:sdk:autonomous-agents.adoc[Autonomous Agents]
 * xref:sdk:agents/guardrails.adoc[Guardrails]
 * xref:sdk:agents/memory.adoc[Agent Memory]
-* link:{url-blog-agents}[Akka Agents deep-dive, window="new"]
-* link:{url-blog-mcp-a2a-acp}[MCP, A2A, ACP: What Does It All Mean?, window="new"]

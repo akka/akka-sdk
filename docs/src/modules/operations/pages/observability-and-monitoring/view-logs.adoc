@@ -34,7 +34,7 @@ Logs can be exported for searching, reporting, alerting and long term storage by
 
 The JSON log messages include a `trace_id` field when tracing is xref:operations:observability-and-monitoring/observability-exports.adoc#activating_tracing[enabled].
 
-This way, the trace ID that's passed through your components will be added to your logs. For more information on tracing, click xref:operations:observability-and-monitoring/traces.adoc[here].
+This way, the trace ID that is passed through your components will be added to your logs. For more information on tracing, click xref:operations:observability-and-monitoring/traces.adoc[here].
 
 == See also
 

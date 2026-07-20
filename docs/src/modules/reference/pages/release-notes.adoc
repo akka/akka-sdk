@@ -1,4 +1,4 @@
-= Release notes for Akka
+= Release notes
 
 include::ROOT:partial$include.adoc[]
 
@@ -6,9 +6,15 @@ Akka constantly gets updates and improvements enabling new features and expandin
 
 Current versions
 
-* xref:sdk:index.adoc[Akka SDK {akka-javasdk-version}]
+* xref:sdk:index.adoc[Akka SDK {akka-javasdk-version}] (relies on Akka Runtime {akka-runtime-version})
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
+
+== July 2026
+
+* Akka CLI 3.0.66
+- Dependency updates
+- Added support for store pinning for enabled Organization
 
 == May 2026
 

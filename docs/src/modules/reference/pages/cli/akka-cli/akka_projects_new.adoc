@@ -35,6 +35,7 @@ akka projects new NAME [DESCRIPTION] --region REGION [flags]
   -h, --help                  help for new
       --organization string   organization which will own the new project
       --region string         the region where the project gets created
+      --store string          the store cluster to assign the project to (defaults to a platform-selected store)
 ----
 
 == Options inherited from parent commands

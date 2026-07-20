@@ -93,3 +93,20 @@ jobs:
       - name: Run path verification script
         run:
           ./docs/bin/verify-include-paths.sh
+
+  verify-internal-refs:
+    runs-on: Akka-Default
+
+    steps:
+      - name: Checkout
+        # https://github.com/actions/checkout/releases
+        uses: actions/checkout@v6
+
+      - name: Install Asciidoctor
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y asciidoctor
+
+      - name: Run internal reference verification script
+        run:
+          ruby docs/bin/verify-internal-refs.rb

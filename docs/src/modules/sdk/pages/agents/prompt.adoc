@@ -1,4 +1,4 @@
-= Choosing the prompt
+= Prompts
 
 include::ROOT:partial$include.adoc[]
 
@@ -18,7 +18,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 <2> Use the system message in the effect builder.
 <3> Define the user message for the specific request, and use in the effect builder.
 
-Keep in mind that some models have preferences in how you wrap or label user input within the system prompt and you'll need to take that into account when defining your system message.
+Keep in mind that some models have preferences in how you wrap or label user input within the system prompt and you will need to take that into account when defining your system message.
 
 == Multimodal user message
 
@@ -124,7 +124,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ActivityPromptEndpoi
 <2> `PromptTemplate::update` update the prompt value.
 <3> `PromptTemplate::get` retrieves the current prompt value.
 
-Keeping the prompt in the Event Sourced Entity lets you see the history of all changes. It's also possible to subscribe to changes in the prompt template entity, so that you can build a xref:views.adoc[View] or react to changes in the prompt.
+Keeping the prompt in the Event Sourced Entity lets you see the history of all changes. It is also possible to subscribe to changes in the prompt template entity, so that you can build a xref:views.adoc[View] or react to changes in the prompt.
 
 The following table describes all of the methods available for the `PromptTemplate` entity:
 
@@ -144,5 +144,10 @@ Although the system message has a dedicated method to use the prompt template, y
 
 == Adding more context
 
-xref:use-cases/rag-and-knowledge.adoc[RAG] is a technique to provide additional, relevant content in the user message.
+xref:getting-started:ask-akka-agent/index.adoc[RAG] is a technique to provide additional, relevant content in the user message.
 
+== See also
+
+* xref:sdk:agents.adoc[Agents]
+* xref:sdk:agents/memory.adoc[Session memory]
+* xref:sdk:agents/structured.adoc[Structured responses]

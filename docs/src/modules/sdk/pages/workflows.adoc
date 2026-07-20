@@ -97,7 +97,7 @@ Now that we have our workflow state defined, the remaining tasks can be summariz
 
 == Starting workflow
 
-Let's have a look at what our transfer workflow will look like for the first 2 points from the above list. We will now define how to launch a workflow with a `startTransfer` command handler that will return an `Effect` to start a workflow by providing a transition to the first step. Also, we will update the state with an initial value.
+Have a look at what our transfer workflow will look like for the first 2 points from the above list. We will now define how to launch a workflow with a `startTransfer` command handler that will return an `Effect` to start a workflow by providing a transition to the first step. Also, we will update the state with an initial value.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
@@ -152,7 +152,7 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 ----
 <1> Return the current state as reply for the request.
 
-IMPORTANT: We are returning the internal state directly back to the requester. In the endpoint, it's usually best to convert this internal domain model into a public model so the internal representation is free to evolve without breaking clients code.
+IMPORTANT: We are returning the internal state directly back to the requester. In the endpoint, it is usually best to convert this internal domain model into a public model so the internal representation is free to evolve without breaking clients code.
 
 A full transfer workflow source code sample can be downloaded as a link:../java/_attachments/workflow-quickstart.zip[zip file]. Follow the `README` file to run and test it.
 
@@ -167,7 +167,7 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 ----
 <1> Instruction to delete the workflow.
 
-When you give the instruction to delete a running workflow, it's equivalent to ending and deleting a workflow. For already finished workflows, it is possible to delete them in the command handler. The actual removal of the workflow state is delayed to give downstream consumers time to process all prior updates. Including the fact that the workflow has been deleted (via method annotated with `@DeleteHandler`). By default, the existence of the workflow is completely cleaned up after a week.
+When you give the instruction to delete a running workflow, it is equivalent to ending and deleting a workflow. For already finished workflows, it is possible to delete them in the command handler. The actual removal of the workflow state is delayed to give downstream consumers time to process all prior updates. Including the fact that the workflow has been deleted (via method annotated with `@DeleteHandler`). By default, the existence of the workflow is completely cleaned up after a week.
 
 You can still handle read requests to the workflow until it has been completely removed, but the current state will be empty (or null). To check whether the workflow has been deleted, you can use the `isDeleted` method inherited from the `Workflow` class.
 
@@ -176,7 +176,7 @@ It is best to not reuse the same workflow id after deletion, but if that happens
 == Terminating workflow
 
 A running workflow can be terminated from the outside by calling `terminate` directly on the component client. Once
-terminated, the workflow cannot be resumed, and calling `terminate` again is safe — it's a no-op on an already-finished workflow.
+terminated, the workflow cannot be resumed, and calling `terminate` again is safe — it is a no-op on an already-finished workflow.
 
 If a step is in flight, the workflow does not wait for it to complete, and any result is ignored.
 
@@ -307,7 +307,7 @@ WARNING: Notifications should not be used for building business logic. Akka does
 
 == Error handling
 
-Design for failure is one of the key attributes of all Akka components. Workflow has the richest set of configurations from all of them. It's essential to build robust and reliable solutions.
+Design for failure is one of the key attributes of all Akka components. Workflow has the richest set of configurations from all of them. It is essential to build robust and reliable solutions.
 
 === Timeouts
 
@@ -328,7 +328,7 @@ NOTE: When a global workflow timeout occurs, the workflow finishes and no furthe
 
 === Recover strategy
 
-It's time to define what should happen in case of step timeout or any other unhandled error.
+It is time to define what should happen in case of step timeout or any other unhandled error.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
@@ -340,7 +340,7 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 
 === Compensation
 
-The idea behind the Workflow error handling is that workflows should only fail due to unknown errors during execution. In general, you should always write your workflows so that they do not fail on any known edge cases. If you expect an error, it's better to be explicit about it, possibly with your domain types. Based on this information and the flexible Workflow API you can define a compensation for any workflow step.
+The idea behind the Workflow error handling is that workflows should only fail due to unknown errors during execution. In general, you should always write your workflows so that they do not fail on any known edge cases. If you expect an error, it is better to be explicit about it, possibly with your domain types. Based on this information and the flexible Workflow API you can define a compensation for any workflow step.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
@@ -354,7 +354,7 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 <5> Correct compensation can finish the workflow.
 <6> Any other result might be handled by a default recovery strategy.
 
-Compensating a workflow step(s) might involve multiple logical steps and thus is part of the overall business logic that must be defined within the workflow itself. For simplicity, in the example above, the compensation is applied only to `withdraw` step. Whereas `deposit` step itself might also require a compensation. In case of a step timeout we can't be certain about step successful or error outcome.
+Compensating a workflow step(s) might involve multiple logical steps and thus is part of the overall business logic that must be defined within the workflow itself. For simplicity, in the example above, the compensation is applied only to `withdraw` step. Whereas `deposit` step itself might also require a compensation. In case of a step timeout we cannot be certain about step successful or error outcome.
 
 A full error handling and compensation sample can be downloaded as a link:../java/_attachments/workflow-quickstart.zip[zip file]. Run `TransferWorkflowIntegrationTest` and examine the logs from the application.
 

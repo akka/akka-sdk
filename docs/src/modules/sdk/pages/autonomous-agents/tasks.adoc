@@ -82,7 +82,7 @@ A `TaskTemplate` is a task definition with a parameterized instruction string. P
 [source,java,indent=0]
 .{sample-base-url}/autonomous-agent-playground/src/main/java/demo/devteam/application/DeveloperTasks.java[DeveloperTasks.java]
 ----
-include::example$autonomous-agent-playground/src/main/java/demo/devteam/application/DeveloperTasks.java[]
+include::example$autonomous-agent-playground/src/main/java/demo/devteam/application/DeveloperTasks.java[tag=class]
 ----
 
 Resolve a template into a `Task` in one of two ways:
@@ -91,10 +91,9 @@ Resolve a template into a `Task` in one of two ways:
 * `instructions(String)` discards the template and uses free-form instructions instead, the same as for a regular `Task`.
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
 ----
-var task = DeveloperTasks.IMPLEMENT.params(Map.of(
-  "feature", "rate limiter",
-  "requirements", "10 requests per second per user, with 1-minute window"));
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=template-params]
 ----
 
 A `TaskTemplate` is a `TaskDefinition` and can be passed wherever a `Task` definition is accepted (`TaskAcceptance.of(...)`, delegation tools, the team task list). When a coordinator's or team-lead's model creates a task from a template, the runtime presents the template parameters as structured tool arguments, so the model fills them in directly.
@@ -134,12 +133,9 @@ Both failure paths (model decision and iteration-limit termination) emit `Notifi
 Query a task's current state with the `ComponentClient`. The snapshot includes the status, description, instructions, typed result (if completed), and failure reason (if failed).
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
 ----
-var snapshot = componentClient.forTask(taskId).get(ReviewTasks.REVIEW);
-var status = snapshot.status();        // PENDING, ASSIGNED, IN_PROGRESS, RESULT_REJECTED,
-                                       // COMPLETED, FAILED, or CANCELLED
-var result = snapshot.result();        // Optional<ReviewResult>, present if completed
-var reason = snapshot.failureReason(); // Optional<String>, present if failed
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=snapshot]
 ----
 
 == Task dependencies
@@ -179,8 +175,8 @@ include::example$doc-snippets/src/main/java/com/example/api/TaskNotificationEndp
 <2> Map each `TaskNotification` to a public representation so the wire shape is decoupled from the SDK record.
 <3> A small wire shape with a `kind` discriminator lets clients handle the four terminal cases without depending on SDK types.
 
-== See Also
+== See also
 
 * xref:sdk:autonomous-agents/client.adoc[Client API]
 * xref:sdk:autonomous-agents/notifications.adoc[Notifications]
-* xref:sdk:autonomous-agents/defining.adoc[Defining an autonomous agent]
+* xref:sdk:autonomous-agents/defining.adoc[Agent definition]

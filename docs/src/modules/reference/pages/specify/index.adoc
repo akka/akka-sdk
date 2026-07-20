@@ -1,4 +1,4 @@
-= Specify command reference
+= Specify commands
 
 Commands available through the Akka AI Marketplace plugin for xref:sdk:spec-driven-development.adoc[Spec-driven development].
 
