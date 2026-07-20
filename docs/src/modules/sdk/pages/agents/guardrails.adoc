@@ -39,7 +39,7 @@ Both return a link:{attachmentsdir}/api/akka/javasdk/agent/Decision.html[`Decisi
 [NOTE]
 ====
 The earlier link:{attachmentsdir}/api/akka/javasdk/agent/TextGuardrail.html[`TextGuardrail`] interface — which returns a `Guardrail.Result` (a boolean plus explanation) rather than a `Decision` — is deprecated for removal.
-Existing `TextGuardrail` implementations still run, and the built-in `SimilarityGuard` (see <<_guardrail_of_similar_text>>) is configured the same way.
+Existing `TextGuardrail` implementations still run, and the built-in `SimilarityGuard` (see <<_similarity_guardrail>>) is configured the same way.
 New guardrails should implement `ModelGuardrail` or `ToolGuardrail`.
 ====
 
