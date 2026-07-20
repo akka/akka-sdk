@@ -13,6 +13,11 @@ Production readiness is a partnership with Akka, not something you do alone. Akk
 
 Akka's team embeds with yours from onboarding through ongoing operations. The disciplines below are the shape of what that production experience has shown to be necessary. Each links to the detailed operations guidance, and is worked through with you rather than discovered under pressure.
 
+[TIP]
+====
+If you want this experience behind your own path to production, https://akka.io[talk to Akka].
+====
+
 == Production readiness
 
 The disciplines that decide whether go-live is smooth. Each links to the relevant operations guidance.
