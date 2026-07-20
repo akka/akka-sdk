@@ -75,7 +75,7 @@ OpenTelemetry semantic convention attributes::
 
 | `http.route`
 | string
-| Conditionally required: If and only if it's available
+| Conditionally required: If and only if it is available
 | The matched route template, e.g. `/pets/\{id}`.
 
 | `server.address`
@@ -151,7 +151,7 @@ OpenTelemetry semantic convention attributes::
 
 | `http.route`
 | string
-| Conditionally required: If and only if it's available
+| Conditionally required: If and only if it is available
 | The matched route template, e.g. `/pets/\{id}`.
 
 | `server.address`
@@ -237,7 +237,7 @@ OpenTelemetry semantic convention attributes::
 
 | `http.route`
 | string
-| Conditionally required: If and only if it's available
+| Conditionally required: If and only if it is available
 | The matched route template, e.g. `/pets/\{id}`.
 
 | `server.address`
@@ -323,7 +323,7 @@ OpenTelemetry semantic convention attributes::
 
 | `http.route`
 | string
-| Conditionally required: If and only if it's available
+| Conditionally required: If and only if it is available
 | The matched route template, e.g. `/pets/\{id}`.
 
 | `server.address`

@@ -24,6 +24,7 @@ public class ConsultingCoordinator extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
+    // tag::definition[]
     return define()
       .tools(new ConsultingTools())
       .capability(
@@ -31,6 +32,7 @@ public class ConsultingCoordinator extends AutonomousAgent {
       )
       .capability(Delegation.to(ConsultingResearcher.class).maxParallelWorkers(2))
       .capability(Delegation.to(FactCheckAgent.class));
+    // end::definition[]
   }
 }
 // end::class[]

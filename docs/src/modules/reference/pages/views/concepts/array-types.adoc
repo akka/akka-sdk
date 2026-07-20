@@ -195,7 +195,7 @@ Empty arrays are handled as follows:
 
 === NULL vs. Empty Array
 
-There's a distinction between NULL arrays and empty arrays:
+There is a distinction between NULL arrays and empty arrays:
 
 * NULL array: The array field itself is missing (`array IS NULL`)
 * Empty array: The array exists but contains no elements (`array = '{}'`)

@@ -17,12 +17,14 @@ public class TriageAgent extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
+    // tag::definition[]
     return define()
       .capability(
         TaskAcceptance.of(SupportTasks.RESOLVE)
           .maxIterationsPerTask(3)
           .canHandoffTo(BillingSpecialist.class, TechnicalSpecialist.class)
       );
+    // end::definition[]
   }
 }
 // end::class[]

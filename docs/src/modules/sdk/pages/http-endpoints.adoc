@@ -179,7 +179,7 @@ It is also possible to interact with other services over HTTP. This is done thro
 When the other service is also an Akka service deployed in the same project, it can be looked up via the deployed name
 of the service:
 
-ifdef::todo[TODO: this sample is a bit too synthetic to be good, we accept a request and pass it on, and then we don't look at the response body at all]
+ifdef::todo[TODO: this sample is a bit too synthetic to be good, we accept a request and pass it on, and then we do not look at the response body at all]
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry-subscriber/src/main/java/customer/api/CustomerRegistryEndpoint.java[CustomerRegistryEndpoint.java]
@@ -191,7 +191,7 @@ include::example$event-sourced-customer-registry-subscriber/src/main/java/custom
 <3> Issue an HTTP POST request to the service
 <4> Turn the response it into our own response
 
-TIP: If you're looking to test this locally, you will likely need to run the 2 services with different ports. For more details, consult xref:running-locally.adoc#multiple_services[Running multiple services].
+TIP: If you are looking to test this locally, you will likely need to run the 2 services with different ports. For more details, consult xref:running-locally.adoc#multiple_services[Running multiple services].
 
 It is also possible to interact with arbitrary non-Akka services using the `HttpClientProvider`, for such use,
 pass a string with `https://example.com` or `http://example.com` instead of a service name.
@@ -447,7 +447,7 @@ A WebSocket endpoint is created by annotating a method with `@WebSocket()` and h
 The `Flow` can be a request-response type of interaction where each incoming message from a client leads to one or more response messages.
 Another alternative is separate, detached, input and output streams using `Flow.fromSinkAndSource`.
 
-Here's an example that streams view updates from the server to the client WebSocket:
+Here is an example that streams view updates from the server to the client WebSocket:
 
 [source,java,indent=0]
 .{sample-base-url}/key-value-customer-registry/src/main/java/customer/api/WebSocketsEndpoint.java[WebSocketsEndpoint.java]

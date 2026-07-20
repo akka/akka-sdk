@@ -12,7 +12,7 @@ Akka is ideally suited for the creation of _Microservices_. Microservices genera
 [sidebar]
 Domain-driven design (DDD) is the concept that the structure and language of software code (class names, class methods, class variables) should match the business domain. For example, if a software processes loan applications, it might have classes such as LoanApplication and Customer, and methods such as AcceptOffer and Withdraw. &mdash; https://en.wikipedia.org/wiki/Domain-driven_design[Wikipedia, window="new"]
 
-Akka makes it easy and fast to build services using the concepts of Domain Driven Design (DDD). While it's not necessary to understand all the ins and outs of Domain Driven Design, you'll find a few of the concepts that make building services even more straightforward below. See xref:concepts:architecture-model.adoc[] for more information on the role of your domain model in Akka. Akkademy provides a free course on https://akkademy.akka.io/learn/courses/6/reactive-architecture2-domain-driven-design[Domain Driven Design, window="new"].
+Akka makes it easy and fast to build services using the concepts of Domain Driven Design (DDD). While it is not necessary to understand all the ins and outs of Domain Driven Design, you will find a few of the concepts that make building services even more straightforward below. See xref:concepts:architecture-model.adoc[] for more information on the role of your domain model in Akka. Akkademy provides a free course on https://akkademy.akka.io/learn/courses/6/reactive-architecture2-domain-driven-design[Domain Driven Design, window="new"].
 
 [[bounded-context]]
 === Bounded context
@@ -34,7 +34,7 @@ Each Akka Service consists of one or more Components and is packaged and deploye
 
 === How big to make your services
 
-Deciding how many components and concepts to fit into a single service can be complex. Generally smaller is better hence the name microservices often being used. When you design a series of small services that don't share code and can be deployed independently, you reap these benefits:
+Deciding how many components and concepts to fit into a single service can be complex. Generally smaller is better hence the name microservices often being used. When you design a series of small services that do not share code and can be deployed independently, you reap these benefits:
 
 - *Your development velocity is higher*. It is faster and less complex to write and debug them because they focus on a small set of operations, usually around a single business concern (be it with one or multiple types of xref:reference:glossary.adoc#entity[_Entities_]).
 - *Your operating velocity is higher*. Using smaller independent services simplifies operational concerns and provide scalability because they can be deployed, stopped and started independently of the rest of the system.
@@ -43,7 +43,7 @@ Deciding how many components and concepts to fit into a single service can be co
 - *Your development team is more productive*. A team can focus on features of a single service at a time, without worrying about what other services or teams are doing, or when they are releasing, allowing more parallel teams to focus on other services, allowing your development efforts to scale as needed.
 - *You gain flexibility for upgrades*. You can upgrade services in a "rolling" fashion, where new instances are started before older instances are removed, allowing new versions to be deployed with no downtime or interruption.
 - *You gain security*. Services serve as a security boundary both in your system overall and between teams.
-- *You get granular visibility into costs*. Services are all billed separately, so it's easier to see and understand costs and billing on a per-service basis if you break your services up in some way that matches your organizational needs overall.
+- *You get granular visibility into costs*. Services are all billed separately, so it is easier to see and understand costs and billing on a per-service basis if you break your services up in some way that matches your organizational needs overall.
 
 === Payload and state size
 
@@ -94,15 +94,15 @@ In the realm of distributed systems, Akka embraces an at-least-once delivery gua
 
 NOTE: When consuming from Akka components like Event Sourced Entity, Key Value Entity or another Akka service, the Akka runtime not only guarantees at-least-once delivery, but also the order of messages. Meaning that a series of duplicated messages might be redelivered but always in the same order as they were produced.
 
-To ensure system integrity, consumers must be capable of handling duplicate messages gracefully. Effective deduplication is not just an optimization — it's a core architectural requirement, turning the challenge of message redeliveries into a structured and predictable system behavior.
+To ensure system integrity, consumers must be capable of handling duplicate messages gracefully. Effective deduplication is not just an optimization — it is a core architectural requirement, turning the challenge of message redeliveries into a structured and predictable system behavior.
 
-There is no one-size-fits-all solution to this challenge. Usually it's a mix of business requirements and possible technical tricks in a given context.
+There is no one-size-fits-all solution to this challenge. Usually it is a mix of business requirements and possible technical tricks in a given context.
 
 === Idempotent updates
 
 The most common approach to deduplication is to make the processing of messages idempotent. An idempotent operation is one that can be applied multiple times without changing the result beyond the initial application. This means that if the same message is processed multiple times, the result will be the same as if it were processed only once.
 
-To demonstrate this, let's consider a simple example of a `CustomerStore` that persist customer data outside Akka ecosystem.
+To demonstrate this, consider a simple example of a `CustomerStore` that persist customer data outside Akka ecosystem.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/application/CustomerStore.java[CustomerStore.java]
@@ -182,7 +182,7 @@ NOTE: A monotonically increased sequence number is available only when consuming
 
 NOTE: Akka View component has a built-in support for sequence number tracking. {sample-base-url}/event-sourced-counter-brokers/src/test/java/counter/application/CounterByValueViewTest.java[CounterByValueViewTest] demonstrates how it can be verified.
 
-Let's assume that we want to populate a view storage outside Akka ecosystem. To focus on the deduplication aspect, the following snippet shows the in-memory implementation of the `CounterStore`.
+Assume that we want to populate a view storage outside Akka ecosystem. To focus on the deduplication aspect, the following snippet shows the in-memory implementation of the `CounterStore`.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterStore.java[CounterStore.java]
@@ -204,9 +204,9 @@ include::example$event-sourced-counter-brokers/src/main/java/counter/application
 <4> Otherwise, the event is processed and the last processed sequence number is updated.
 <5> Updates are not idempotent, but the deduplication mechanism ensures that the view is correct in case of processing duplicates.
 
-Keep in mind that the `CounterEntry` corresponds to a single entity instance, that's why we can use the sequence number as a deduplication token.
+Keep in mind that the `CounterEntry` corresponds to a single entity instance, that is why we can use the sequence number as a deduplication token.
 
-It's important to test your deduplication mechanism. The {sample-base-url}/event-sourced-counter-brokers/src/test/java/counter/application/CounterStoreUpdaterTest.java[CounterStoreUpdaterTest] demonstrates how it can be done with the `EventingTestKit`.
+It is important to test your deduplication mechanism. The {sample-base-url}/event-sourced-counter-brokers/src/test/java/counter/application/CounterStoreUpdaterTest.java[CounterStoreUpdaterTest] demonstrates how it can be done with the `EventingTestKit`.
 
 *Benefits*
 
@@ -214,7 +214,7 @@ It's important to test your deduplication mechanism. The {sample-base-url}/event
 
 *Challenges*
 
- - Only works per entity instance, can't be used globally.
+ - Only works per entity instance, cannot be used globally.
 
 === Deterministic hashing
 
@@ -242,7 +242,7 @@ The token might be also xref:dev-best-practices.adoc#events-enrichment[precalcul
 [#request-deduplication]
 == Request deduplication
 
-A different aspect of deduplication is how to deal with, possibly duplicated, incoming commands that mutate Akka stateful components. Let's examine this based on a `WalletEntity` example.
+A different aspect of deduplication is how to deal with, possibly duplicated, incoming commands that mutate Akka stateful components. The `WalletEntity` example below shows how to handle this.
 
 
 [source,java,indent=0]
@@ -273,7 +273,7 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/wallet
 <3> To rebuild the state we need to store the command ID in the event.
 <4> To keep the collection size constrained we can remove old command IDs.
 
-This simple solution reveals a few important limitations of the deduplication that are common across many distributed technologies. It's very expensive (and often not possible) to have a total deduplication of all incoming requests/commands. There will always be some constraints like:
+This simple solution reveals a few important limitations of the deduplication that are common across many distributed technologies. It is very expensive (and often not possible) to have a total deduplication of all incoming requests/commands. There will always be some constraints like:
 
  - the size of the collection, e.g. keep only last 1000 command IDs, like in the example above,
  - the time window, e.g. keep only command IDs from the last 24 hours,
@@ -285,7 +285,7 @@ Keep in mind that using collection types not supported by the Jackson serializat
 
 *Benefits*
 
-- Solution doesn't require additional infrastructure to store already processed command IDs.
+- Solution does not require additional infrastructure to store already processed command IDs.
 
 *Challenges*
 

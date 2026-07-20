@@ -6,9 +6,9 @@ The Akka SDK provides several mechanisms dealing with validation or when somethi
 
 == Errors
 
-The first line of the defense is the validation of the incoming data on the `Endpoint` level. Already described is details in the xref:http-endpoints.adoc#_advanced_http_requests_and_responses[request and response] section. This is a basic request validation, which doesn't require domain state. It's better to handle it as soon as possible, since it will reduce the load on the system. The logic can reject the request before it reaches the entity.
+The first line of the defense is the validation of the incoming data on the `Endpoint` level. Already described is details in the xref:http-endpoints.adoc#_advanced_http_requests_and_responses[request and response] section. This is a basic request validation, which does not require domain state. It is better to handle it as soon as possible, since it will reduce the load on the system. The logic can reject the request before it reaches the entity.
 
-The next phase is domain validation error. An incoming command doesn't fulfil the requirements or the current state doesn't allow the command to be handled. Such errors can be signalled back to the client as an error effect using the `effects().error(message)` function.
+The next phase is domain validation error. An incoming command does not fulfil the requirements or the current state does not allow the command to be handled. Such errors can be signalled back to the client as an error effect using the `effects().error(message)` function.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterEntity.java[CounterEntity.java]
@@ -39,7 +39,7 @@ Content-Length: 28
 Increasing counter above 10000 is blocked
 ----
 
-For more fine-tuned control over the error handling it's possible to catch the `CommandException` and transform it into a proper HTTP error.
+For more fine-tuned control over the error handling it is possible to catch the `CommandException` and transform it into a proper HTTP error.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]
@@ -50,7 +50,7 @@ include::example$event-sourced-counter-brokers/src/main/java/counter/api/Counter
 
 Remember that the xref:component-and-service-calls.adoc#_akka_components[called component] can be on a different node. Only the `CommandException` and its subtypes are serialized and sent over the network. The xref:serialization.adoc[Jackson] serialization is configured to ignore fields like stack trace or cause from the Java `java.lang.Throwable` class. Other exceptions are not serializable and will be transformed into a generic HTTP 500 error.
 
-Using the `effects().error(commandException)` method or simply throwing a `CommandException` will have the same effect. It's possible to have a more dedicated exceptions that will be used to signal different situations. For example, you can create a `CounterLimitExceededException` that extends `CommandException` and use it in the command handler.
+Using the `effects().error(commandException)` method or simply throwing a `CommandException` will have the same effect. It is possible to have a more dedicated exceptions that will be used to signal different situations. For example, you can create a `CounterLimitExceededException` that extends `CommandException` and use it in the command handler.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterEntity.java[CounterEntity.java]
@@ -74,7 +74,7 @@ Custom exceptions are not the only option to deal with errors in a more structur
 
 == Failures
 
-All unexpected exception (that doesn't extend `CommandException`) thrown by the user code are transformed into an HTTP 500 error. When running the service locally in dev mode, a stack trace will be a part of the HTTP response. In production, this information is hidden, to not leak internal details about the service to a client. The client will receive a non-descriptive message with a correlation ID, like below.
+All unexpected exception (that does not extend `CommandException`) thrown by the user code are transformed into an HTTP 500 error. When running the service locally in dev mode, a stack trace will be a part of the HTTP response. In production, this information is hidden, to not leak internal details about the service to a client. The client will receive a non-descriptive message with a correlation ID, like below.
 
 [source]
 ----

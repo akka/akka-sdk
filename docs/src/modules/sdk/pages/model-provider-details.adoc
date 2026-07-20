@@ -29,7 +29,7 @@ smaller k values (like 10) produce more focused outputs while larger
 values (like 50) allow for more diversity.
 
 === max-tokens or max-completion-tokens
-If this value is supplied and the model supports this property, then it will stop operations in mid flight if the token quota runs out. It's important to check _how_ the model counts tokens, as some may count differently. Be aware of the fact that this parameter name frequently varies from one provider to the next. Make sure you're using the right property name.
+If this value is supplied and the model supports this property, then it will stop operations in mid flight if the token quota runs out. It is important to check _how_ the model counts tokens, as some may count differently. Be aware of the fact that this parameter name frequently varies from one provider to the next. Make sure you are using the right property name.
 
 === Thinking
 Some models support thinking, also sometimes referred to as "thought process" or reasoning, where the model generates an intermediate 
@@ -40,7 +40,7 @@ For models that support thinking, it is enabled through model-specific configura
 by a toggle. Thinking is disabled for all models by default.
 
 == Model configuration
-The following is a list of all natively supported model configurations. Remember that if you don't see your model or model format here, you can always create your own custom configuration and still use all of the Agent-related components.
+The following is a list of all natively supported model configurations. Remember that if you do not see your model or model format here, you can always create your own custom configuration and still use all of the Agent-related components.
 
 === Anthropic
 
@@ -690,7 +690,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.VertexAi.html[`Mo
 
 == Default model configuration
 
-The default model will be used if the agent doesn't specify another model.
+The default model will be used if the agent does not specify another model.
 
 You can define a default model in `application.conf`:
 

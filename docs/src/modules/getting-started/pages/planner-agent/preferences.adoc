@@ -101,7 +101,7 @@ import akka.javasdk.http.HttpResponses;
 
 == Running the service
 
-Stop the service with `ctrl-c` if it's still running.
+Stop the service with `ctrl-c` if it is still running.
 
 Start your service locally:
 

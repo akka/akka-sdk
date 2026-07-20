@@ -43,10 +43,12 @@ public class PipelineEndpoint extends AbstractHttpEndpoint {
   @Post
   public PipelineResponse create(CreatePipeline request) {
     // tag::create-with-deps[]
+    // tag::create-task[]
     // Create collect task (no dependencies)
     var collectTaskId = componentClient
       .forTask(UUID.randomUUID().toString())
       .create(PipelineTasks.COLLECT.instructions("Collect data on: " + request.topic()));
+    // end::create-task[]
 
     // Create analyze task (depends on collect)
     var analyzeTaskId = componentClient

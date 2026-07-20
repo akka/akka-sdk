@@ -39,6 +39,12 @@ public class SummarizationEvaluator extends LlmAsJudge {
     super(COMPONENT_ID, componentClient, config);
   }
 
+  /**
+   * A summary to judge against the document it was produced from.
+   *
+   * @param document the original text that was summarized
+   * @param summary the summary to evaluate
+   */
   public record EvaluationRequest(String document, String summary) {}
 
   record ModelResult(String explanation, String label) {
@@ -58,6 +64,10 @@ public class SummarizationEvaluator extends LlmAsJudge {
     }
   }
 
+  /**
+   * The verdict for a summarization task: whether the summary passed the quality check, and the
+   * judge's explanation for the label it assigned.
+   */
   public record Result(String explanation, boolean passed) implements EvaluationResult {}
 
   static final String COMPONENT_ID = "summarization-evaluator";
@@ -98,6 +108,11 @@ Your response must be a single JSON object with the following fields:
       """
           .stripIndent();
 
+  /**
+   * Judge whether the given summary is a good summarization of the given document.
+   *
+   * @param req the document and the summary to evaluate
+   */
   public Effect<Result> evaluate(EvaluationRequest req) {
     String evaluationPrompt =
         prompt(USER_MESSAGE_PROMPT_ID, USER_MESSAGE_TEMPLATE).formatted(req.summary, req.document);
