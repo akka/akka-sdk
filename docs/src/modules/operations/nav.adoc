@@ -58,10 +58,13 @@
 *** xref:operations:production-readiness/index.adoc[]
 **** Dedicated
 ***** xref:operations:production-readiness/dedicated/shared-responsibility.adoc[]
+***** xref:operations:production-readiness/dedicated/raci.adoc[]
 ***** xref:operations:production-readiness/dedicated/checklist.adoc[]
 **** BYOC
 ***** xref:operations:production-readiness/byoc/shared-responsibility.adoc[]
+***** xref:operations:production-readiness/byoc/raci.adoc[]
 ***** xref:operations:production-readiness/byoc/checklist.adoc[]
 **** BYOK8s
 ***** xref:operations:production-readiness/byok8s/shared-responsibility.adoc[]
+***** xref:operations:production-readiness/byok8s/raci.adoc[]
 ***** xref:operations:production-readiness/byok8s/checklist.adoc[]

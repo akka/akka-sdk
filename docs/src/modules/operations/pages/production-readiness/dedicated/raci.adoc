@@ -1,0 +1,7 @@
+= RACI (Dedicated)
+:page-summary: The Dedicated RACI matrix. Placeholder pending content.
+
+include::ROOT:partial$include.adoc[]
+
+// Placeholder: migrate the Dedicated RACI here.
+This page is a work in progress.

@@ -1,7 +1,456 @@
 = Shared responsibility model (BYOK8s)
-:page-summary: The BYOK8s shared responsibility model: who owns what between Akka and your team. Placeholder pending content.
+:page-summary: How responsibilities are divided between Akka and the Customer when Akka runs inside a Kubernetes cluster the Customer provides and operates (BYOK8s).
+:page-persona: operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
 
-// Placeholder: migrate the BYOK8s Shared Responsibility Model here. The BYOK8s RACI will be linked from this page.
-This page is a work in progress.
+This page describes how responsibilities are divided between Akka and the Customer in the BYOK8s (Bring Your Own Kubernetes) deployment model, where Akka runs inside a Kubernetes cluster the Customer provides and operates.
+
+[NOTE]
+====
+This is a customer-facing reference. The policies on https://trust.akka.io[trust.akka.io] and the Customer Support Policy take precedence over any summary here.
+====
+
+== Executive summary
+
+In the BYOK8s deployment model, Akka runs inside a Kubernetes cluster that the Customer provides and operates. Akka takes responsibility for the platform itself: the runtime, operators, inter-component mTLS, region installation, scaling, patching, observability of the platform, and the operational rituals that surround them. Encryption of customer data (database at rest and in transit, ingress TLS) is the Customer's responsibility (see the Encryption section). The Customer takes responsibility for the cloud account, the Kubernetes cluster and its underlying infrastructure, database backups, the network, the human identities that access the Akka console, the applications built with the Akka SDK, and the data those applications process.
+
+Because Akka runs inside infrastructure the Customer operates, the model is genuinely shared. Akka manages the platform layer end-to-end; the Customer manages the layers above and below it; a number of activities are jointly owned with the lead and consulted parties named explicitly. Compared to the BYOC model, the Customer carries more of the infrastructure-side responsibility in BYOK8s, including the cluster, its upgrades, and database backups.
+
+The sections below summarize each area at a glance. For the authoritative row-by-row breakdown, every activity with the full Responsible / Accountable / Consulted / Informed split, descriptions, and cadences, see the xref:operations:production-readiness/byok8s/raci.adoc[RACI] matrix.
+
+Shared responsibility extends to going live. Akka has a set of standards Akka expects of customer applications before flipping prod traffic on: sizing, observability, CI/CD, functional and non-functional testing, DR (disaster recovery) and rollback rehearsal. The xref:operations:production-readiness/byok8s/checklist.adoc[production readiness checklist] captures those standards and the sign-off gate Akka recommends before launch.
+
+[IMPORTANT]
+.Catch-all
+====
+Anything not explicitly listed in this document is the Customer's responsibility. This includes the underlying cloud account, customer application code, customer-side operational tooling, and any concern not explicitly assigned to Akka. The Customer may request additional operational support from Akka through the standard support channel.
+====
+
+== Layered view of Akka on BYOK8s
+
+The Customer brings the cloud account and the Kubernetes cluster at the bottom and owns the applications at the top. Akka runs inside the Customer's cluster and manages the platform components in the middle.
+
+....
+==================================================================
+  Customer Applications (Akka SDK services)          Customer owns
+==================================================================
+    * Source, build, deploy
+    * Service config & secrets
+    * App ACLs / IAM (JWTs)
+    * App observability / SDK logs
+
+==================================================================
+  Akka Platform                                          Akka owns
+  (managed by Akka, deployed into the Customer's cluster)
+==================================================================
+    * Akka runtime & operators
+    * Inter-component mTLS
+    * Scaling, patching, releases
+    * Federation Plane integration
+    * Platform observability
+
+==================================================================
+  Cloud Account, Kubernetes Cluster & Database       Customer owns
+==================================================================
+    * Billing, quotas, dedicated cloud account
+    * Kubernetes cluster (creation, upgrades, capacity)
+    * Database (creation, upgrades, backups)
+    * IAM that grants Akka access into the cluster
+    * CIDR allocation, peering, DNS, IP allowlists
+    * Customer-managed KMS keys, cloud audit logs
+....
+
+== How to read this
+
+Each activity in the matrix has an owner, the party that is Responsible and Accountable. The other party may be Consulted or Informed; called out in the description where relevant.
+
+[cols="1,3", options="header"]
+|===
+| Owner | Meaning
+
+| Customer
+| The Customer is Responsible and Accountable for the activity. Akka may be Consulted or Informed.
+
+| Akka
+| Akka is Responsible and Accountable for the activity. The Customer may be Consulted or Informed.
+
+| Shared
+| Akka and the Customer share responsibility. The split is described in the row's description.
+|===
+
+== Responsibility summary at a glance
+
+[cols="2,1,4", options="header"]
+|===
+| Area | Lead | One-line summary
+
+| Cloud account, cluster & billing | Customer | Customer owns the cloud account and Kubernetes cluster, pays the bill, and controls the access Akka uses to operate inside the cluster.
+| Networking & DNS | Customer | Customer owns the cluster's networking end-to-end: CIDR, peering, allowlists, DNS, and private connectivity.
+| Region install & federation | Akka | Akka provisions, federates, and validates the Akka region.
+| Platform patching & releases | Akka | Akka maintains the runtime and platform components.
+| Kubernetes & database upgrades | Customer | Customer schedules and runs upgrades after consulting Akka on certified target versions.
+| Compute & storage scaling | Customer | Customer ensures cluster and database can scale; Akka manages elasticity of the application workloads on top.
+| Encryption (customer data) | Customer | Customer is responsible for database encryption (at rest and in transit) and ingress TLS.
+| Encryption (platform-internal) | Akka | Akka manages mTLS between Akka components, TLS to the Federation Plane, and encryption of FP-synced secrets.
+| Platform observability | Akka | Akka monitors the platform and publishes uptime reports on request.
+| Application observability | Customer | Customer exports app telemetry to their own observability stack.
+| Database backups | Customer | Customer configures recurring database backups in their environment; Akka is informed.
+| K8s resource backups & restore testing | Shared | Akka uses Velero to back up K8s resources; Customer provides the IAM binding and object storage. Restore testing is performed jointly.
+| Disaster recovery exercises | Shared | Annual or as-agreed joint exercises.
+| Multi-region failover | Akka | Akka provides tooling and runbooks; Customer is consulted before failover.
+| Akka console & CLI identity | Customer | Customer's identity provider (IDP) authenticates console/CLI users with MFA.
+| Akka platform-side privileged access | Akka | Teleport-mediated, session-recorded; logs available to Customer on request.
+| Compliance posture (SOC 2, pen test) | Akka | Akka maintains and publishes compliance evidence on trust.akka.io.
+| GDPR / PII for application data | Customer | Customer is the controller of application data and handles DSRs (Data Subject Requests).
+| Customer applications (SDK services) | Customer | Customer owns source, deploy, config, secrets, ACLs end-to-end.
+|===
+
+== Cloud account
+
+The Customer owns the cloud-provider account that hosts the Akka region. Akka receives narrowly scoped programmatic access to install, operate, and maintain the platform inside that account. The Customer can revoke that access at any time.
+
+Customer:: Owns the cloud account, pays the bill, and creates the IAM permissions that Akka uses. Can cut off Akka's access at any time.
+Akka:: Documents the access Akka requires into the Customer's cluster. Operates within the access the Customer grants, and nothing outside it.
+
+[cols="2,1,5", options="header"]
+|===
+| Activity | Owner | Description
+
+| Cloud account provisioning | Customer | Customer sets up a dedicated AWS account, GCP project, or Azure subscription that hosts the Kubernetes cluster Akka runs in. Dedicated account is recommended to simplify cost tracking and security boundaries.
+| Quotas and service limits | Customer | Customer ensures sufficient quota for compute, storage, and networking. Akka advises on expected consumption.
+| Dedicated account recommendation | Customer | For optimal platform management, Akka recommends a dedicated cloud account. Akka operates within the access the Customer grants and cannot manage resources outside of that access; the Customer controls Akka's access into the account and can revoke it at any time. Akka further advises against provisioning additional resources in this account to prevent management conflicts. If the Customer adds anything outside this scope, it becomes the Customer's responsibility.
+| Billing | Customer | Customer owns and operates the account and pays the bill.
+|===
+
+== Networking and connectivity
+
+Akka creates the VPC (Virtual Private Cloud) and all in-region networking using cloud-provider best practices. The Customer provides the CIDR range and owns the surrounding network: peering or hub-and-spoke topologies, IP allowlists, DNS, and any private-connectivity bridge to the corporate network.
+
+Akka:: Builds the in-region VPC, load balancers, and certificate issuer. Publishes the connectivity-pattern whitepaper so the Customer can choose.
+Customer:: Allocates the CIDR block, configures peering or hub-and-spoke to the corporate network, maintains IP allowlists and DNS records.
+
+[cols="2,1,5", options="header"]
+|===
+| Activity | Owner | Description
+
+| Private connectivity | Customer | The Customer designs, implements, and operates private connectivity into and out of the cluster using whatever pattern fits their environment.
+| Connectivity pattern whitepaper | Akka | Akka publishes implementation details for each supported pattern, which the Customer reviews when choosing.
+| Public ingress/egress | Akka | Akka installs a load balancer for the region and configures a certificate issuer (Let's Encrypt by default) for platform APIs and generated application hostnames.
+| Private ingress/egress | Akka | Where private connectivity is selected, Akka installs the region using the chosen pattern, with an automatically generated load-balancer IP so internal traffic does not traverse the public internet.
+| CIDR allocation | Customer | Customer assigns an appropriately sized CIDR block, especially where peering or hub-and-spoke is required.
+| VPC peering / hub-and-spoke | Customer | Customer configures peering or hub-and-spoke between the Akka region's VPC and other corporate networks. Availability depends on cloud provider.
+| IP allowlist on NAT and load balancers | Customer | Customer configures and maintains the IP allowlist for the NAT (Network Address Translation) gateways and the public load balancer. The Customer informs Akka of changes that may affect Platform connectivity.
+| DNS records | Customer | Customer creates and maintains DNS records for platform machinery and applications in the cloud-provider DNS zones configured by Akka.
+|===
+
+== Platform setup and bootstrap
+
+Akka installs the platform machinery into the Kubernetes cluster the Customer has provisioned, federates it to the Akka Federation Plane, and runs smoke tests before handing it over.
+
+Akka:: Installs the platform machinery (Akka runtime, operators, registry, observability) into the Customer's cluster and configures region groups.
+Customer:: Provisions the cluster and database, installs Teleport for federation using the short-lived token Akka provides, identifies region groupings, and provides a recurring 1 to 4 hour weekly maintenance window that Akka uses for any operation that may cause downtime.
+
+[cols="2,1,5", options="header"]
+|===
+| Activity | Owner | Description
+
+| Platform bootstrapping | Akka | Akka installs the platform machinery (runtime, operators, registry, observability) into the Customer's Kubernetes cluster after the Customer provisions the underlying infrastructure.
+| Teleport identity-aware proxy | Customer | The Customer installs and maintains the Teleport identity-aware proxy used by the Federation Plane to reach private Kubernetes API servers, including ongoing operational health and version upgrades. Akka provides a short-lived token and the installation command at setup time. See the Teleport appendix.
+| Kubernetes access via Teleport | Akka | Akka uses Teleport for human access to platform infrastructure, with full session recording and audit logging. Access requires explicit justification and approval per the Access Control Policy.
+| Region group identification | Customer | Customer identifies region groupings appropriate for the workloads (e.g., for cross-region replication scope) and informs Akka.
+| Region group configuration | Akka | Akka configures region groups on the Federation Plane to match the Customer's groupings.
+| Maintenance window | Customer | Customer provides a recurring maintenance window (typically 1 to 4 hours per week). Akka uses this window for any operation that may cause downtime.
+|===
+
+== Platform maintenance and releases
+
+Akka manages the lifecycle of the platform itself: patching, runtime/infra releases, and security remediations. The Customer operates Kubernetes and database upgrades on their own infrastructure, consulting Akka first on certified versions.
+
+Akka:: Patches platform infrastructure (JVM, container base image, Akka runtime) and ships regular releases of the runtime, region machinery, and Federation Plane.
+Customer:: Schedules and runs K8s and database upgrades after consulting Akka on certified versions. Receives advance notice of Akka-led maintenance.
+
+[cols="2,1,5", options="header"]
+|===
+| Activity | Owner | Description
+
+| Infrastructure patching & vulnerability management | Akka | Akka manages patching and vulnerability remediation for the Platform components, including the JVM, container base image, and Akka runtime that ship with the customer's deployed services. Vulnerability reports available from trust.akka.io.
+| Kubernetes and database upgrades | Customer | The Customer schedules and runs Kubernetes and database upgrades. The Customer must consult Akka in advance so that Akka can certify the target versions against the Platform. Running an unverified version may break Platform functionality and is the Customer's responsibility.
+| Releases (runtime, region machinery, Federation Plane) | Akka | Akka schedules regular releases to installations covering the Akka runtime, region machinery, and Federation Plane components.
+|===
+
+== Operations and scaling
+
+Akka auto-scales compute and persistence within the region's defined sizing standards. The Customer retains visibility and control over cost and capacity decisions with business impact.
+
+Akka:: Auto-provisions and de-provisions compute and persistence to match utilization. HA (high availability) is the default. Triages and prioritizes Customer feature requests.
+Customer:: Reviews their cloud-account spend, selects sizing options, and signals expected demand spikes (e.g., performance testing) so Akka can pre-warm.
+
+[cols="2,1,5", options="header"]
+|===
+| Activity | Owner | Description
+
+| Cost controls | Customer | Customer reviews their cloud-account subscription and monthly charges. Akka auto-provisions and de-provisions to match utilization; HA is the default posture; sizing options keep cost in check.
+| Infrastructure scalability | Customer | Customer is responsible for ensuring scalability of the underlying infrastructure, including compute capacity for node pools and database scaling.
+| Application elasticity | Akka | Akka dynamically adds and removes compute and persistence to accommodate real-time traffic against the Customer's performance SLA (Service Level Agreement) targets. This elasticity is contingent on the Customer ensuring sufficient cluster compute and database capacity headroom (see Infrastructure scalability).
+| Region decommission | Shared | On Customer request (end of contract, scope change, topology adjustment), Akka follows the documented decommissioning runbook to gracefully remove the region from the Federation Plane and clean up stale platform resources. The Customer is responsible for deleting the underlying cloud infrastructure.
+| Feature requests | Customer | Customer submits feature requests via the support channel. Akka triages, prioritizes, and communicates status.
+|===
+
+== Encryption, keys, and certificates
+
+In BYOK8s, encryption of customer data is the Customer's responsibility: database (at rest and in transit) and ingress TLS in transit (either by providing a certificate issuer or by granting Akka enough access to solve DNS-01 / HTTP-01 challenges). Akka manages encryption internal to the platform: mTLS between Akka components and TLS to the Federation Plane (see the Architecture appendix), and encryption of secrets synced from the Federation Plane (see the Data protection appendix). Lifecycle of cryptographic materials follows Akka's Key Management and Cryptography Policy.
+
+Customer:: Owns customer-data encryption end-to-end: database (at rest and in transit), ingress TLS via certificate issuer or DNS/HTTP-01 access. Manages CMEK key material.
+Akka:: Manages encryption internal to the platform: mTLS between Akka components, TLS to the Federation Plane, and encryption of FP-synced secrets.
+
+[cols="2,1,5", options="header"]
+|===
+| Activity | Owner | Description
+
+| Customer-data encryption | Customer | The Customer is responsible for setting up encryption of customer data: database (at rest and in transit) and ingress TLS (certificate issuer, or DNS-01 / HTTP-01 access for Akka).
+| Platform-internal encryption | Akka | Akka manages encryption internal to the platform: mTLS between Akka components (per the Architecture appendix), TLS to the Federation Plane, and encryption of FP-synced secrets (per the Data protection appendix).
+| Cryptographic key management | Customer | Lifecycle, rotation, and access control of cryptographic materials follow the Akka Key Management and Cryptography Policy. Cloud-native KMS handles lifecycle for Akka-managed materials. Customer-managed keys (CMEK, BYO certificates) are managed by the Customer per the same policy.
+| Customer-managed database encryption keys (CMEK) | Customer | Where CMEK is selected, Customer creates and maintains key material in their KMS and shares the identifier with Akka. Customer is responsible for ensuring continued access to the CMEK.
+| Customer-provided TLS certificates | Customer | Where Akka cannot automatically provision TLS (e.g., private load balancers, customer-owned domains), the Customer provides certificates or configures cert-manager. Akka validates and deploys.
+|===
+
+== Observability and monitoring
+
+Akka monitors the platform; the Customer monitors their applications. Application telemetry is exported to the Customer's observability vendor of choice.
+
+Akka:: Monitors platform availability and region telemetry, publishes uptime reports on request. Filters SDK logs at the source so application data stays with the Customer.
+Customer:: Exports application telemetry to their observability platform via Akka SDK integration patterns. Owns cloud-native audit logging on the cloud account.
+
+[cols="2,1,5", options="header"]
+|===
+| Activity | Owner | Description
+
+| Platform availability monitoring | Akka | Akka monitors and reports availability of the Akka Platform. Uptime reports available on request. Platform availability commitments are governed by the Akka Federation Plane SLA Policy. Availability of customer-deployed services running on the platform is the Customer's responsibility, see the Customer applications section.
+| Platform logs (excluding SDK logs) | Akka | Akka monitors all platform logs other than SDK logs. SDK logs are filtered at the source so they are not sent to Akka's internal observability stack.
+| Akka region platform telemetry | Akka | Akka monitors region-level metrics and logs and notifies the Customer as needed.
+| Customer-side platform telemetry (optional) | Customer | Customer may optionally configure their own telemetry over the cluster and database since they own the cloud account. Akka can advise on which components are appropriate to observe externally.
+| Cloud-native audit logging | Customer | Customer enables cloud-native audit/security services (e.g., CloudTrail, Cloud Audit Logs, equivalents) and notifies Akka if any suspicious SIEM alerts are observed.
+| Application telemetry export | Customer | Customer configures export of application logs, metrics, and traces to their observability platform via the Akka SDK integration patterns.
+|===
+
+== Backups, disaster recovery, and multi-region
+
+The Customer runs database backups on their infrastructure; Akka uses Velero for Kubernetes resource backups with infrastructure the Customer provides. Restore testing, disaster-recovery exercises, and replication topology are joint decisions, and Akka provides multi-region failover tooling.
+
+Akka:: Operates Velero for K8s resource backups (against Customer-provided IAM and object storage), provides multi-region failover tooling and runbooks, publishes default RTO/RPO.
+Customer:: Configures recurring database backups, notifies Akka after ad-hoc backups, specifies replication mode per service, is consulted before failover.
+Shared:: Velero (Customer provides IAM/storage, Akka operates), restore testing, and the annual or as-agreed disaster-recovery exercise.
+
+[cols="2,1,5", options="header"]
+|===
+| Activity | Owner | Description
+
+| Automated database backups | Customer | Customer configures recurring database backups in their environment. Akka is informed. *8-day retention recommended.*
+| Ad-hoc database backups | Customer | Customer notifies Akka after taking ad-hoc database backups (e.g., before high-risk changes, or snapshots taken for incident handling).
+| Kubernetes resource backups (Velero) | Shared | Akka uses Velero to back up stateful Kubernetes resources for point-in-time recovery. Customer provides the necessary IAM binding and object storage.
+| Backup restore testing | Shared | Akka and the Customer perform periodic restore testing against backups; results are summarized on request. The Disaster Recovery Exercise row covers joint exercises. *Quarterly.*
+| Disaster recovery exercise | Shared | Akka and the Customer work together periodically to simulate a disaster and fully recover from it, ensuring the recovery meets or exceeds the Customer's needs. *Annual or as agreed.*
+| Cross-region replication configuration | Shared | Customer specifies replication mode (e.g., region-pinned, replicated) per service. Akka enables and operates the underlying replication.
+| Multi-region failover procedure | Akka | Akka provides tooling and runbooks for failover. The Customer is consulted before failover and informed of execution.
+| RTO/RPO commitments | Akka | Akka publishes default RTO/RPO. Customer-specific targets can be agreed where Akka's standard does not meet the Customer's needs.
+|===
+
+== Identity, access, and permissions
+
+The Customer owns enterprise identity for human users and configures access in the Akka console. Akka manages its own non-human identities and any privileged human access into customer environments.
+
+Customer:: Provides the IdP that authenticates console/CLI users, enforces MFA, and manages own users, teams, and role assignments.
+Akka:: Uses Teleport for session-recorded privileged access and delivers quarterly access-control reports. Operates within the service-account access the Customer grants.
+
+[cols="2,1,5", options="header"]
+|===
+| Activity | Owner | Description
+
+| Akka IAM integration | Akka | Akka Federation Plane integrates with the Customer's identity provider to manage organizations, users, and team access controls.
+| IAM (CLI and console) | Customer | Customer provides the enterprise identity, authentication, and authorization systems and policies used to access the Akka console and CLI.
+| Customer user and team management | Customer | Customer manages its own users, teams, and role assignments within the Akka console.
+| MFA on Akka Console & CLI | Customer | Customer's IdP enforces MFA for users accessing the Akka console and CLI. Akka enforces MFA on its own internal access.
+| Infrastructure access control & IAM (cloud account) | Customer | Customer is responsible for maintaining strict access control to the cloud infrastructure.
+| Service accounts & keys | Customer | Customer creates and manages the service accounts, keys, and IAM bindings required for Platform operation within the cloud account.
+| Privileged access via Teleport | Akka | Akka uses Teleport for human access to platform infrastructure, with session recording and audit logging. Access requires explicit justification and approval. Audit logs available to the Customer on request.
+| Just-in-time access for customer data | Akka | Where access to customer-confidential data is required (e.g., for incident handling), Akka requests authorization per the Access Control for Customer-Confidential Data policy. Audit logs available on request.
+| Quarterly access-control reports | Akka | Akka delivers *quarterly* access-control reports covering Akka's own privileged access to the Customer's installation. The Customer manages their own IAM independently.
+|===
+
+== Federation Plane procedures and engagement
+
+Akka operates the Federation Plane and the recurring rituals that surround it: incidents, maintenance notifications, operations reviews, customer onboarding/offboarding.
+
+Akka:: Runs the Federation Plane, 24/7 incident response (Sev 1: 1 hr, Sev 2: 4 business hr), 48 hr maintenance notice, postmortems, ops sync, executive review.
+Shared:: BYOK8s onboarding, support & communication channels, customer portal training, end-of-contract decommission within 30 days.
+
+[cols="2,1,5", options="header"]
+|===
+| Activity | Owner | Description
+
+| Federation Plane disaster recovery | Akka | Akka maintains uptime for the Federation Plane and configures its disaster recovery. An unavailable Federation Plane does not impact running Akka applications.
+| Support and communication channels | Shared | At onboarding, Akka and the Customer agree on operational and engagement-level communication channels (e.g., shared Slack, distribution lists, cadence). Formal support and incident channels are governed by the Customer Support Policy and the Incident Response row.
+| Incident response | Akka | Akka provides 24/7 incident response per the Customer Support Policy. Incidents are opened via support.akka.io, the Akka console, or support@akka.io. *Severity 1 initial response within 1 hour (24/7); Severity 2 within 4 business hours.* Subsequent updates per the Incident Management Process.
+| Postmortem delivery | Akka | Akka delivers post-incident reviews for Severity 1 and 2 incidents within an agreed cadence following resolution.
+| Maintenance notifications | Akka | Akka notifies the Customer at least *48 hours in advance* of planned maintenance windows that could affect availability, and via release-notify emails for runtime/SDK releases.
+| Operations sync | Akka | Recurring operational review covering system health, maintenance, incidents, and roadmap items relevant to the Customer.
+| Strategic steering | Akka | Periodic alignment session covering usage, capacity, product direction, and Customer priorities.
+| Executive partnership review | Akka | Executive-level partnership review covering relationship health, escalation status, and strategic items.
+| BYOK8s onboarding | Shared | Joint onboarding covering account setup, region provisioning, connectivity validation, and acceptance criteria.
+| Customer portal access & training | Shared | Customer signs up for portal access; Akka assigns the region and walks the Customer through console, CLI, and ticketing flows.
+| Customer offboarding & data return | Shared | At end of contract, Akka coordinates region decommission, return or destruction of customer data, and revocation of access per the Data Retention Policy. *Standard cadence: 30 days from termination.*
+| Issue tracking | Akka | Akka tracks customer-raised issues and remediation through to closure with status visibility to the Customer.
+|===
+
+== Compliance and audit
+
+Akka maintains the platform's compliance posture (SOC 2, encryption, vulnerability management, sanctions screening, personnel security). The Customer remains the controller of any data their applications process.
+
+Akka:: Maintains SOC 2 Type II, annual third-party pen test, continuous vulnerability scanning, sanctions screening, data-residency commitments, and audit log delivery.
+Customer:: Secures Federation Plane tokens and project access. Is the controller of application PII; handles GDPR Data Subject Requests directly.
+
+[cols="2,1,5", options="header"]
+|===
+| Activity | Owner | Description
+
+| SOC 2 Type II | Akka | Akka maintains SOC 2 Type II for the Akka Platform. Report available under NDA via trust.akka.io. SOC 3 is also available as a publicly-shareable companion. *Annual report; trust.akka.io kept current.*
+| Penetration testing | Akka | Annual third-party penetration testing as part of the SOC 2 audit cycle. Executive summary available under NDA via trust.akka.io.
+| Vulnerability scanning | Akka | Akka performs continuous vulnerability scanning of platform components and dependencies; findings are tracked to remediation per the Vulnerability Management Policy. Customers are notified of critical and high severity security patches via security advisory emails and the trust center; disclosure occurs no later than the date the patch is made available.
+| Personnel security & background checks | Akka | Akka performs background checks on personnel with access to customer environments and provides security awareness training, per the Personnel Security Policy. *Annual access certification.*
+| Data residency | Akka | Customer data is stored within the cloud region(s) configured for the customer's installation. Multi-region installations replicate within customer-selected regions only. Each customer's data is isolated in dedicated database resources; no shared data plane across customers.
+| Multi-tenant data security (Federation Plane) | Akka | Akka secures all customer data located within the Federation Plane.
+| Customer data security (Federation Plane tokens & projects) | Customer | Customer is responsible for securing Federation Plane tokens and access to projects.
+| GDPR / application data | Customer | Customer is responsible for how its services handle PII and for ensuring compliance with GDPR or other applicable privacy regulations. Akka acts as neither controller nor processor of data handled by the Customer's services.
+| GDPR / Federation Plane data | Shared | The Federation Plane does not handle customer application data; it processes only minimal PII consisting of customer user and administrator identities, in accordance with Akka's GDPR-compliant privacy policy.
+| Subprocessor list | Akka | Current subprocessor list maintained at trust.akka.io.
+| Customer audit log delivery | Akka | Akka maintains audit logs of control-plane actions (authentication, project and service lifecycle, IAM and token changes). Logs delivered on request; recurring cadences can be arranged.
+| Security questionnaire response | Akka | Akka responds to Customer CAIQ/SIG and bespoke security questionnaires drawing on the ISMS control library.
+| Data breach notification | Akka | Akka notifies the Customer without undue delay where a breach of Akka-held customer data poses risk, including nature, scope, and remediation.
+| Sanctions screening | Akka | Customer organizations are screened against sanctions lists periodically. The Customer is informed if a screening result requires action.
+| End-of-life notification | Akka | Akka provides advance notice of any planned product or feature end-of-life with sufficient lead time for migration planning.
+|===
+
+== Customer applications (Akka SDK services)
+
+Applications that the Customer builds with the Akka SDK are owned end-to-end by the Customer: source, deployment, configuration, secrets, runtime monitoring, and access control.
+
+Customer (end-to-end):: Source, build, deploy, version, roll back. Service config and secrets. Application IAM (JWT/JWKS), Service ACLs, security logs. SDLC tooling (IDE, repos, CI/CD). All application observability.
+
+[cols="2,1,5", options="header"]
+|===
+| Activity | Owner | Description
+
+| Application code & dependency patching | Customer | Customer reviews their application code and any libraries or dependencies they introduce for security issues and vulnerabilities. The JVM, container base image, OS, and Akka runtime packaged into the deployed service are patched by Akka (see Platform maintenance and releases, Infrastructure patching).
+| Service configuration (incl. secrets) | Customer | Customer configures services to enable their functionality, including secrets used to access other services.
+| Integrations setup (broker, object storage, etc.) | Customer | Where services depend on integrations such as message brokers or object storage, the Customer configures these for the Akka Project before service deployment.
+| Application deployments | Customer | Customer owns and manages the lifecycle of Akka SDK applications: build, version, deploy, roll back.
+| Source code management | Customer | Source code management for Akka service implementations is the Customer's responsibility.
+| Service scaling limits | Customer | Customer controls service instance counts within configured platform limits.
+| Application logs | Customer | Metrics and logs from services built with the Akka SDK are sent to the Customer's logging platform. Akka filters these at the source so they are not sent to Akka's internal observability stack.
+| SDK logs | Customer | Customer monitors SDK and application logs in their own observability platform.
+| Application security logs | Customer | Customer can configure dashboards over cloud security logs and stream them to a GSOC (Global Security Operations Center) or observability tool.
+| Service ACLs | Customer | Customer configures Service ACLs to protect access to non-public service endpoints.
+| Application IAM (JWT/JWKS) | Customer | Akka SDK supports access scoping through JWTs and JWKS. The Customer configures issuer trust, claims, and ACLs appropriate for their application.
+| SDLC tooling (IDE, repos, CI/CD) | Customer | Customer owns and operates the SDLC environment used to build services running on Akka. Akka ships developer tooling that the Customer integrates into their SDLC.
+|===
+
+== Appendix A: Architecture in brief
+
+Akka Automated Operations consists of two planes:
+
+* *Federation Plane*, a globally-accessible coordination service managed by Akka. Handles organizations, accounts, role assignments, key rotation, access tokens, and application deployment across regions. Designed to be highly resilient. If the Federation Plane is briefly unavailable, applications running in the Application Plane continue to operate.
+* *Application Plane*, one or more federated regions. In BYOK8s, each region runs inside a Kubernetes cluster that the Customer provides and operates inside their cloud account. The cluster hosts the Akka operators for routing, elasticity, deployment, certificate management, key rotation, and cross-region failover, together with the persistence store. The Customer is responsible for the cluster, its upgrades, the database, and their own container registry; Akka manages the Akka components running on top.
+
+Communication between Federation Plane and Application Plane uses TLS with token-based authentication. Inter-region communication between applications uses mutual TLS (mTLS) with per-component certificates.
+
+== Appendix B: Data protection in brief
+
+All application data stays within the Customer's cloud region and VPC and is isolated from the Federation Plane. Data at rest is encrypted using the cloud provider's encryption mechanism. Customers can rely on Akka-managed encryption or use Customer-Managed Encryption Keys (CMEK).
+
+Akka applies an additional encryption layer for sensitive material that is synced from the Federation Plane to regional execution clusters: project secrets, authentication tokens, OpenID refresh tokens, and Customer-supplied secrets. Lifecycle, rotation, and access control of cryptographic materials follow the Akka Key Management and Cryptography Policy.
+
+=== Default platform RTO/RPO
+
+* Persistence: RPO *5 minutes*, RTO *24 hours*.
+* Kubernetes resources: RPO/RTO *1 hour*.
+
+Customer-specific targets may be agreed where the standard does not meet the Customer's needs. Compliance posture (SOC 2 Type II, annual third-party penetration test, current subprocessor list) is published on trust.akka.io.
+
+== Appendix C: Private connectivity via Teleport
+
+Some enterprises require that Kubernetes API servers in their cloud accounts have no public endpoint. Akka supports this through Teleport, an identity-aware proxy and certificate authority that creates an authenticated, encrypted bridge between the Federation Plane and private Kubernetes clusters.
+
+* No public Kubernetes API endpoints, API servers remain entirely private.
+* Reverse tunnels, Teleport agents in each region initiate outbound connections to the Teleport proxy; the Federation Plane never connects directly into the region.
+* Complete audit trail, all authentication and API calls are logged. Audit logs are available to the Customer on request.
+* Cloud-portable, works across AWS, GCP, Azure, and on-premises.
+
+== Appendix D: Glossary
+
+[cols="1,3", options="header"]
+|===
+| Term | Definition
+
+| AAO | Akka Automated Operations, Akka's managed PaaS that runs inside the Customer's environment (cloud account in BYOC, Kubernetes cluster in BYOK8s).
+| BYOC | Bring Your Own Cloud, deployment model where Akka provisions and operates the Kubernetes cluster inside the Customer's cloud account.
+| BYOK8s | Bring Your Own Kubernetes, deployment model where Akka runs inside a Kubernetes cluster the Customer provides and operates.
+| Akka SDK | The software development kit used to build Akka services (APIs, workflows, streaming consumers, timers, views).
+| Application Plane | The runtime environment within a region that hosts Akka applications. Runs inside the Customer's cloud account.
+| Federation Plane | The global coordination service managed by Akka that federates regions, handles accounts/billing, and orchestrates cross-region operations.
+| Region | A single Akka Application Plane installation inside a cloud-provider region.
+| Region Group | A logical grouping of regions used to scope cross-region replication and routing.
+| CMEK | Customer-Managed Encryption Key. When used, the Customer's KMS provides the key material that Akka uses to encrypt the database.
+| Federation Plane SLA Policy | The policy on trust.akka.io that defines platform availability commitments.
+| Customer Support Policy | The policy on trust.akka.io that defines severity classifications, response time SLOs, and escalation procedures.
+| Teleport | An identity-aware proxy and certificate authority used to bridge the Federation Plane to private Kubernetes API servers.
+| RTO / RPO | Recovery Time Objective / Recovery Point Objective. Default platform commitments are in the Backups section and Appendix B.
+| FDE | Forward Deployed Engineer. The named Akka engineer assigned to your account who guides production readiness and stays engaged through operations.
+| SRE | Site Reliability Engineering. Akka's operations function responsible for platform health, incident response, and runbook execution.
+| DR | Disaster Recovery. The plan and procedures for restoring service after a region or platform-level outage.
+| SLO | Service Level Objective. An internal target for a service-level indicator (e.g., 99.9% availability over 30 days).
+| SLA | Service Level Agreement. The contractual commitment Akka makes to the Customer (see Federation Plane SLA Policy).
+| VPC | Virtual Private Cloud. The isolated network in your cloud account where the Akka region is deployed.
+| AZ | Availability Zone. An isolated failure domain within a cloud-provider region.
+| CIDR | Classless Inter-Domain Routing. The notation Akka uses to scope the IP address range allocated to a region.
+| DSR | Data Subject Request. A request made under GDPR or similar privacy regulation to access, correct, or delete personal data.
+| IAM | Identity and Access Management. The system controlling who can access what, covering both cloud-account access and Akka console access.
+| ACL | Access Control List. Akka SDK construct restricting which callers can invoke a given service or endpoint.
+| JWT / JWKS | JSON Web Token / JSON Web Key Set. Token format and key publication mechanism used for application authentication.
+| IDP | Identity Provider. The Customer's enterprise identity system (Okta, Entra, etc.) federated with the Akka console.
+| KMS | Key Management Service. The cloud-provider service that stores and manages encryption keys.
+| DLQ | Dead Letter Queue. Where broker messages land when consumers cannot process them after retries.
+| DPA | Data Processing Agreement.
+| ADR | Architecture Decision Record. A short document capturing an architectural choice and its rationale.
+| NACL | Network Access Control List. Subnet-level firewall in cloud-provider VPCs.
+| NAT | Network Address Translation. Gateway used for outbound traffic from a VPC.
+| GSOC | Global Security Operations Center. The Customer's security operations function consuming application security logs.
+| SOC 2 | Service Organization Controls 2. Audit framework Akka maintains for security and availability.
+| HA | High Availability. Architecture pattern designed to remain operational despite individual component failures.
+| CAIQ | Consensus Assessments Initiative Questionnaire. The Cloud Security Alliance's standard cloud-security questionnaire used by enterprise procurement.
+| SIG | Standard Information Gathering. The Shared Assessments Group's standard security and risk questionnaire used by enterprise procurement.
+| ISMS | Information Security Management System. The set of policies, procedures, and controls Akka uses to manage information security risk; the basis for SOC 2 attestation.
+| IaC | Infrastructure as Code. Provisioning and configuration of infrastructure using declarative code (e.g., Terraform).
+| MCP | Model Context Protocol. An open protocol for connecting tools and data sources to LLM agents.
+| OTLP | OpenTelemetry Protocol. Standard wire format for emitting traces, metrics, and logs to observability backends.
+| HEC | HTTP Event Collector. Splunk's HTTP ingestion endpoint for events.
+| RED | Rate, Errors, Duration. A method for instrumenting services by tracking request rate, error rate, and request duration.
+| SAST | Static Application Security Testing. Source-code analysis for security flaws, run in CI.
+| SCA | Software Composition Analysis. Analysis of third-party dependencies for known vulnerabilities, run in CI.
+| CVE | Common Vulnerabilities and Exposures. The public identifier system for known software vulnerabilities.
+| gRPC | A high-performance remote procedure call framework using HTTP/2 and Protocol Buffers.
+|===
+
+== Appendix E: Where to find more
+
+* https://trust.akka.io[trust.akka.io], SOC 2 Type II, SOC 3, subprocessor list, current compliance evidence, applicable policies.
+* https://support.akka.io[support.akka.io], Customer Support Portal for opening cases.
+* https://console.akka.io/support[console.akka.io/support], in-console support entry point.
+* mailto:support@akka.io[support@akka.io], email channel for support cases.
+
+[NOTE]
+====
+This document is maintained as a living reference and updated periodically as Akka's platform and operational practices evolve. To receive notifications of material updates, email mailto:support@akka.io[support@akka.io].
+
+Where this document and any Akka policy on trust.akka.io diverge, the policy on trust.akka.io takes precedence.
+====

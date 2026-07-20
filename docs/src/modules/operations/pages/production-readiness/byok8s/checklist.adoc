@@ -1,7 +1,386 @@
 = Production readiness checklist (BYOK8s)
-:page-summary: The BYOK8s production readiness checklist. Placeholder pending content.
+:page-summary: Customer-side production readiness checklist for BYOK8s deployments, covering sizing, observability, CI/CD, functional and non-functional testing, operational testing, multi-region, sign-off, and day-1 readiness.
+:page-persona: operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
 
-// Placeholder: migrate the BYOK8s production readiness checklist here.
-This page is a work in progress.
+This page describes what Akka expects of customer applications before going live in BYOK8s (Bring Your Own Kubernetes, the deployment model where Akka runs inside a Kubernetes cluster the Customer provides and operates). The platform handles a substantial portion of the operational surface, and Akka protects the deployment within those bounds, but a robust production system is a shared outcome, and the items below sit on the Customer side of that line.
+
+== Overview
+
+[TIP]
+.How to use this page
+====
+Walk this page before going live, using the at-a-glance below as the quick entry point and the detailed checklists for the specifics. The items are a baseline drawn from what Akka has found necessary across BYOK8s deployments; each application should add anything specific to its own request flows and failure modes. Modifications or removals are also possible but should be discussed with your Forward Deployed Engineer (FDE), the named Akka engineer assigned to your account, so the original rationale can be shared and the change evaluated jointly. As the Customer-side complement to the Shared Responsibility Model, each item is yours to verify, and Akka recommends not advancing to production until each is appropriately covered. Akka strongly encourages engaging your FDE and Akka's customer success and support teams (mailto:support@akka.io[support@akka.io]) throughout this preparation to make go-live as smooth as possible, although the work can also be completed independently.
+====
+
+In BYOK8s, the Customer provides and operates the Kubernetes cluster, the database, and the underlying cloud infrastructure; Akka runs the platform end-to-end inside that cluster: runtime, region installation, scaling, patching of platform components, observability of the platform itself, and the operational rituals around them. The items on this page are the customer-side preparation that complements that work, so production is reliable from day one. Your FDE walks through the principal items ahead of go-live.
+
+This page targets the typical *Day 2 Ops* engagement (1 dev region + 1 prod region, single prod region with cold-rebuild DR (Disaster Recovery), the plan and procedures for restoring service after a region or platform-level outage). The final section covers the additional requirements that apply to the *Business Continuity* tier (multi-region with cross-region failover).
+
+=== At a glance, what we ask of you
+
+. *Size with us; capture the result in writing.* The FDE works through the sizing exercise with you once. Cluster shape, broker capacity, and dev/prod parity should live in version control alongside your descriptors.
+. *Wire your observability.* Logs, metrics, and traces flow through your enterprise platform via the Akka-supplied exporter. Akka cannot see your application data, so this responsibility sits with the Customer, and it is what allows your team and your on-call to answer "is the system healthy?".
+. *Make CI/CD routine, including rollback.* Image rollback is the most commonly rehearsed path. Descriptor changes, JWT (JSON Web Token) rotations, and partial migrations require rehearsed rollback paths as well.
+. *Test under stress, not just happy path.* Load, soak, spike, chaos, run them against a realistically-sized dev region before production traffic hits. Cheap to do, expensive to skip.
+. *Rehearse recovery.* Day 2 Ops DR is typically a two-session exercise: a tabletop covering scenarios, then a live simulation of the scenario(s) the Customer and Akka jointly agree matter most. Business Continuity adds cross-region failover and failback drills on top.
+. *Sign off explicitly.* A named individual owns the application and declares it production-ready.
+
+[IMPORTANT]
+.Tier note
+====
+If your business requires rapid, automated cross-region failover, Day 2 Ops is not the right tier. DR at Day 2 is a cold rebuild, the recovery window is on the order of hours, driven by data-export frequency and rebuild time. Confirm this with the business early.
+====
+
+[NOTE]
+.Akka's side
+====
+Akka runs a parallel internal pre-production validation against the platform-side commitments captured in the RACI, replication, observability stack, baseline regional alerts, certificate monitoring, and similar. Database backups sit on the Customer side in BYOK8s, so they are covered in the items below rather than in Akka's parallel validation. This page covers the customer-side complement; the two are designed to pair.
+====
+
+== Sizing and capacity planning
+
+[cols="1,3", options="header"]
+|===
+| Role | Responsibility
+| Customer | Forecasts traffic, captures sizing inputs and assumptions in writing, agrees compute and persistence shapes with Akka, signs off the cost forecast.
+| Akka | FDE walks the sizing exercise, validates platform-cores and service-cores numbers, names the AZ (Availability Zone) spread and persistence headroom recommendations.
+|===
+
+=== Detailed checklist
+
+==== Forecast inputs
+
+* [ ] Requests/sec at average and peak, per endpoint
+* [ ] Concurrent active sessions, agents, workflows, ES entity instances
+* [ ] Payload sizes (average and tail) for endpoints and events
+* [ ] LLM token throughput per agent at peak (input + output), if running agents
+* [ ] State growth: events/day per entity type, view materialization size
+* [ ] Broker throughput at peak (messages/sec)
+
+==== Akka-specific sizing
+
+* [ ] *Platform cores* (Akka's infra in your VPC): node count, instance type, AZ spread confirmed with FDE
+* [ ] *Service cores* (your workload, what Akka bills): sized to peak with rolling-update headroom (~+25%)
+* [ ] 3+ AZ cluster spread in prod
+* [ ] VPC CIDR has scale-out headroom; security groups and NACLs reviewed
+* [ ] Container registry in or near the prod region
+* [ ] Persistence sized; auto-scaling ceilings set
+
+==== Dependencies
+
+* [ ] Broker provisioned for peak throughput with headroom
+* [ ] External secret stores reachable from prod with IAM
+* [ ] LLM rate limits cover peak; fallback model configured
+* [ ] Upstream/downstream dependencies mapped with SLAs
+* [ ] Cross-service single points of failure documented (shared brokers, DBs, identity)
+* [ ] Per-service configs reviewed for prod parity (ACLs, JWT issuers, secrets, autoscaling)
+
+==== Validation
+
+* [ ] Dev region at 30–50% of prod capacity with the same instance shapes; smaller dev environments produce misleading load-test results
+* [ ] Sizing reviewed with FDE
+* [ ] Cost forecast signed off by FinOps
+
+== Observability
+
+[cols="1,3", options="header"]
+|===
+| Role | Responsibility
+| Customer | Configures the telemetry exporter to your enterprise observability platform; defines SLOs (Service Level Objectives) and burn-rate alerts; runs synthetic checks; ensures runbooks are linked from every alert.
+| Akka | Emits Akka-runtime telemetry (cluster, persistence, endpoints, agents, workflows, consumers) and filters SDK logs at the source. Operates platform observability internally.
+|===
+
+=== Detailed checklist
+
+==== Telemetry pipeline
+
+* [ ] Exporter configured (OTLP, Prometheus, Splunk HEC, Azure Monitor, Google Cloud) pointing at your enterprise platform
+* [ ] Logs, metrics, traces flowing end-to-end; sampling rates verified
+* [ ] Trace correlation across services, endpoints, agents, tools, broker hops (W3C context)
+* [ ] Log retention meets compliance and debugging needs
+
+==== Akka runtime telemetry confirmed
+
+* [ ] Cluster: nodes, sharding, rebalance events, split-brain indicators
+* [ ] Persistence: read/write latencies, memory, replication lag
+* [ ] Endpoints: rate, errors, p50/p95/p99 per HTTP/gRPC/MCP endpoint
+* [ ] Agents (if running): invocations/sec, token spend, guardrail verdicts, tool calls, eval outcomes
+* [ ] Workflows: started/completed/failed/in-flight, step duration
+* [ ] Consumers: lag, throughput, redeliveries, DLQ (Dead Letter Queue) depth
+
+==== Dashboards and alerting
+
+* [ ] Per-service RED dashboards at p50/p95/p99
+* [ ] Cluster health dashboard (nodes, rolling-deploy status)
+* [ ] Token-spend dashboard by team/project/agent (if running agents)
+* [ ] SLOs defined per service; alerts on burn rate, not raw thresholds
+* [ ] Multi-window multi-burn-rate alerts for primary SLOs
+* [ ] Capacity alerts (service cores, persistence, broker lag)
+* [ ] Alerts route to PagerDuty/Opsgenie with Akka 24/7 SRE (Site Reliability Engineering) escalation
+* [ ] Runbook linked from every alert
+
+==== Validation
+
+* [ ] Synthetic checks on a critical user journey from outside the VPC
+* [ ] Fire-drill each major alert in dev; confirm the right person gets paged with the right context
+
+[NOTE]
+.Akka's side
+====
+Akka instruments the platform with its own observability stack and runs baseline regional alerts (cluster health, persistence, replication, certificate expiration). PII is obfuscated in Akka's internal observability data; customer-side application observability flows through the customer's own exporter and never enters Akka's stack. Akka's platform telemetry is for Akka SRE; the customer's runbooks and dashboards are owned by the customer.
+====
+
+== CI/CD
+
+[cols="1,3", options="header"]
+|===
+| Role | Responsibility
+| Customer | Owns the SDLC: pipeline, image scanning, descriptor management in version control, gated prod deploys, smoke tests, and end-to-end testing of the pipeline including failure paths.
+| Akka | Provides the Akka CLI and GitHub Actions integration; supports descriptor-driven configuration and no-downtime rolling updates.
+|===
+
+=== Detailed checklist
+
+==== Pipeline
+
+* [ ] CI integrated via Akka CLI or GitHub Actions
+* [ ] Pipeline: compile → test → container build → image scan → push
+* [ ] Image scan blocks on critical CVEs (Trivy, Snyk, or equivalent)
+* [ ] SAST and SCA gates; findings triaged
+* [ ] Secret scanning prevents accidental commits
+
+==== Descriptor-driven config
+
+* [ ] All descriptors in version control (project, service, route, observability, secret)
+* [ ] Environments managed by descriptor diffs; no manual prod console edits
+* [ ] PR review for descriptor changes; protected main
+
+==== Deployment and validation
+
+* [ ] Prod deployments include an explicit gate (manual approval, change ticket, or equivalent appropriate to the Customer's process)
+* [ ] No-downtime rolling updates verified (graceful shutdown, readiness gates, in-flight requests)
+* [ ] Smoke test runs against the deployed service and gates promotion
+* [ ] Deploy artifacts immutable, traceable to commit
+* [ ] End-to-end pipeline tested: PR → CI → dev → prod approval → prod → smoke pass
+* [ ] Each gate tested with a deliberate failure to confirm it blocks
+
+== Functional testing
+
+[cols="1,3", options="header"]
+|===
+| Role | Responsibility
+| Customer | Owns unit, component, integration, and E2E test coverage for the application; including Akka-specific paths (agents, entities, workflows, views, endpoints, consumers).
+|===
+
+=== Detailed checklist
+
+==== Coverage by component
+
+* [ ] Meaningful unit coverage on business logic, evaluated by behavioral coverage rather than coverage percentage alone; fast enough to run on every commit
+* [ ] *Agents*: prompt outputs, response schemas, tool-call paths, failure modes (timeout, tool error, LLM error)
+* [ ] *Event-sourced entities*: command handling, event application, snapshot/recovery
+* [ ] *Key-value entities*: write/read consistency, concurrent updates
+* [ ] *Workflows*: happy path + every compensation/saga branch, retry idempotency, durability across simulated restarts
+* [ ] *Views*: query correctness, table-updater logic, eventual-consistency lag bounds
+* [ ] *Endpoints (HTTP/gRPC/MCP)*: request validation, ACLs, JWT
+* [ ] *Consumers*: idempotency, redelivery, DLQ routing
+
+==== Integration and E2E
+
+* [ ] Tests against a real broker or high-fidelity local equivalent, not pure mocks
+* [ ] Real LLM-provider tests in a slow suite; deterministic mock for fast CI
+* [ ] Contract tests for external integrations
+* [ ] Critical user journeys covered E2E, run against dev after each deploy
+
+==== AI evaluation (if running agents)
+
+* [ ] LLM eval checkpoints in code; thresholds gate CI
+* [ ] Regression suite of known-good and known-bad inputs, each scored
+* [ ] Guardrails tested: confirm they block what they should block and pass what they should pass
+
+==== Negative paths and regression
+
+* [ ] Backward-compatibility: previous client + new service, old events still readable
+* [ ] Negative paths: invalid input, malformed JSON, expired JWTs, oversized payloads, event schema violations
+* [ ] Performance regression check in CI: lightweight benchmark gates p95 latency on key endpoints
+* [ ] Every prod incident produces at least one automated regression test before the post-mortem closes
+
+== Non-functional testing
+
+Run all of these against the dev region, sized realistically. Without realistic dev-region sizing, results are meaningless.
+
+=== Load (expected peak)
+
+* [ ] Tool selected (k6, Gatling, Locust); profile matches forecast peak
+* [ ] Peak sustained >= 30 min; p95/p99 targets met
+* [ ] Sub-10ms memory read/write under load
+* [ ] Token throughput stays under LLM rate limits
+* [ ] Broker keeps up, no consumer lag accumulating
+
+=== Stress (identify breaking point)
+
+* [ ] Load ramped past peak until a failure is reached
+* [ ] Breaking point documented (RPS, sessions, token rate)
+* [ ] Failure mode characterized: graceful degradation versus catastrophic
+* [ ] Auto-scaling engages before the breaking point and recovers afterward
+
+=== Soak / endurance
+
+* [ ] 60–80% peak sustained >= 24h (ideally 48–72)
+* [ ] No memory leaks (heap and off-heap stable)
+* [ ] No connection-pool exhaustion (DB, broker, LLM)
+* [ ] Persistence growth predictable; auto-scaling responds
+* [ ] Token spend matches FinOps forecast
+
+=== Spike
+
+* [ ] Traffic jumps from idle to peak in seconds
+* [ ] Scale-up / cold-start latency acceptable for SLO
+* [ ] Cluster stable during rapid scale-out
+* [ ] Clean return to steady state after spike
+
+=== Chaos
+
+* [ ] Pod/node kill: sharding rebalances, traffic routes correctly
+* [ ] AZ outage: cluster survives loss of one AZ (3 AZ spread)
+* [ ] Broker disruption (1, 5, 15 min): recovery, no data loss, DLQ behavior
+* [ ] LLM degradation: fallback triggers, circuit breakers protect
+* [ ] Network partition: timeouts, retries, circuit breakers behave
+* [ ] Secret store unavailable: cached creds, no crash
+* [ ] Container registry unavailable: running services keep running
+
+Tools: Chaos Mesh, Litmus, Gremlin, or scripted via cloud APIs. Start in dev; document expected vs. actual for each scenario.
+
+== Operational testing
+
+[cols="1,3", options="header"]
+|===
+| Role | Responsibility
+| Customer | Owns the application-side DR runbook, schedules and runs the drills, rehearses every rollback path (image, descriptor, schema, data, config), and measures time-to-rollback.
+| Shared | Annual disaster-recovery exercise jointly run by Akka and the Customer; Akka 24/7 SRE escalation path is part of the DR runbook.
+|===
+
+=== Detailed checklist
+
+==== Disaster recovery drills
+
+Day 2 Ops has no automatic multi-region failover; DR is a cold rebuild. The single most important rehearsal at this tier.
+
+DR is typically run as a two-session event. The first session is a tabletop that walks through a range of failure scenarios and how each would be handled end-to-end. The Customer and Akka then jointly decide which scenario or scenarios are most important to validate live. The second session is the live simulation of those scenarios, scheduled separately so the right people and the right environment can be assembled for them.
+
+* [ ] Scheduled data exports to storage outside the prod region (cross-region or different account)
+* [ ] Export integrity verified by periodic restore-to-scratch and row/event-count validation
+* [ ] DR runbook documented end-to-end: declaration criteria, comms, Akka SRE escalation, region rebuild via CLI + descriptors, data restore via `akka services data import`, DNS cutover, verification
+* [ ] DR tabletop completed at least annually: scenarios walked through, gaps captured, scenarios selected for live simulation
+* [ ] Live DR simulation of the selected scenario(s) executed with the right people and environment; smoke tests pass against the rebuilt environment
+* [ ] RTO measured against business expectation (typically hours, not minutes)
+* [ ] RPO driven by export frequency; business accepts the number
+* [ ] Post-drill: gaps documented, runbook updated, next tabletop and simulation scheduled
+
+[NOTE]
+====
+RTO and RPO are the Recovery Time Objective and Recovery Point Objective. Default platform commitments are in the Shared Responsibility Model (Section 8 and Appendix B).
+====
+
+==== Rollback testing
+
+Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and partial data migrations frequently are not. Incidents tend to extend significantly when those rollback paths have not been exercised.
+
+* [ ] Service rollback rehearsed via `akka services` (pause, restart, restore previous), actually executed in dev
+* [ ] Image rollback tested via pipeline: in-flight requests handled correctly
+* [ ] Descriptor rollback tested: revert via git + reapply
+* [ ] Schema/event rollback strategy verified (expand-then-contract for ES state)
+* [ ] Data-migration rollback documented and tested
+* [ ] Config rollback (secrets, JWT keys, ACLs) with documented revert path
+* [ ] Time-to-rollback measured (minutes, not hours)
+
+==== Certificate management
+
+* [ ] Akka rotates platform-managed TLS ahead of expiry
+* [ ] Customer-managed TLS (private LBs, BYO domains, BYO certs): customer monitors expiration, rotation procedure rehearsed pre-go-live
+* [ ] Cert rotation rollback path documented and tested in dev
+
+== Multi-region (Business Continuity tier)
+
+The sections above cover Day 2 Ops with a single prod region. For the Business Continuity tier (multi-region with cross-region failover), the following requirements layer on top of those above; they are not a replacement.
+
+[NOTE]
+.Tier requirement
+====
+Akka reads from both regions, so cross-region failover is typically very fast, often sub-minute. Replication lag for the most recent writes is driven mostly by overall system load rather than by a tunable platform setting. The bullets below cover the application-side responsibilities that need to be in place to operate correctly in a multi-region setup.
+====
+
+=== Detailed checklist
+
+==== Architecture (per workload)
+
+* [ ] Replication mode chosen per service (region-pinned or replicated); documented as ADR (Architecture Decision Record)
+* [ ] Cross-region workflow idempotency validated
+* [ ] Eventual-consistency lag tolerance documented and surfaced to the business
+
+==== Drills and validation
+
+* [ ] Multi-region smoke test post-setup (Akka typically runs immediately; customer should see the result)
+* [ ] Cross-region failover drills: pull the primary, confirm the other region serves writes within the agreed window
+* [ ] Failback drills (returning to the original primary), which are commonly overlooked
+* [ ] Replication-lag SLO defined and monitored; alert on tolerance breach
+* [ ] DNS / global LB cutover automated where possible; manual steps timed and rehearsed
+
+==== Operational additions
+
+* [ ] Per-region capacity sized for full traffic alone, so loss of one region does not degrade SLO
+* [ ] Egress and replication bandwidth in the cost forecast
+* [ ] Region-aware on-call: rotation knows which region is primary and how to fail over
+
+== Pre-production sign-off
+
+Before flipping prod traffic on:
+
+.Required sign-offs
+* Architecture review
+* Security review (CISO / InfoSec)
+* Compliance review (if regulated)
+* SRE / Platform, runbook tested, on-call ready
+* FinOps, cost forecast accepted
+* Product owner, accepts SLOs _including the recovery window_
+* DR tabletop completed and the agreed live simulation executed (or cross-region failover drill at Business Continuity)
+
+[IMPORTANT]
+.The gate
+====
+A single named individual owns the application end-to-end and has explicitly approved its readiness for production. Without a named owner, the checklist becomes an aggregate of assumed readiness in which each party presumes coverage by another.
+====
+
+== Day-1 and post-launch readiness
+
+=== Launch criteria
+
+* [ ] Success criteria at 24h, 7 days, 30 days (latency, token spend, error rate, business metrics)
+* [ ] Criteria signed off by product owner
+
+=== Hypercare
+
+* [ ] Hypercare period defined: dashboard watchers, on-call coverage, heightened alert thresholds
+* [ ] Deliberate exit to steady-state ops with a named owner
+
+=== Feedback loop
+
+* [ ] First-week incidents, near-misses, observability gaps flow into the backlog with a named owner
+* [ ] Weekly review during hypercare
+
+== Common pitfalls
+
+Three recurring failure modes worth identifying early:
+
+. *Sizing assumptions remain undocumented.* When traffic profiles change or staff transition, subsequent capacity decisions have no recorded baseline. Capture inputs, assumptions, and resulting cluster shape in version control alongside descriptors.
+. *DR and chaos drills are scheduled and then repeatedly deferred.* Recurring deferrals can extend planned exercises by many months. Establish a recurring calendar entry, assign a named owner, and treat skipped drills as a sign-off blocker for the next release.
+. *Rollback procedures cover code but not configuration.* Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and partial data migrations frequently are not, and that is where incidents extend significantly.
+
+The most commonly omitted requirement is a single named owner of the application, accountable for production readiness end-to-end and with the authority to declare readiness or identify remaining gaps.
+
+[NOTE]
+====
+This page is part of the BYOK8s Shared Responsibility Model and is designed to pair with the full RACI matrix. It is maintained as a living reference and updated periodically as Akka's platform and operational practices evolve. To receive notifications of material updates, email mailto:support@akka.io[support@akka.io].
+====
