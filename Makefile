@@ -114,5 +114,8 @@ validate-links:
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
 		-c "cd /antora/${BASE_PATH} && find src -name '*.adoc' -print0 | xargs -0 -n1 asciidoc-link-check --progress --config config/validate-links.json"
 
+verify-internal-refs:
+	ruby docs/bin/verify-internal-refs.rb
+
 deploy: clean managed
 	bin/deploy.sh --module java --upstream ${upstream} --branch ${branch} ${sources}

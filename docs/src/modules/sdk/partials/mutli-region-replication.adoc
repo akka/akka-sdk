@@ -30,6 +30,6 @@ This also means that you might not see your own writes, immediately. Consider th
 * after receiving the response of the write request, you send a read request that is served by the non-primary region
 * the stateful component instance in the non-primary region might not have seen the replicated changes yet, and therefore replies with "stale" information
 
-If it's important for some read requests to have seen latest writes you can use `Effect` for such command handler, even though it is not persisting any events. Then the request will be routed to the primary and use the latest fully consistent state.
+If it is important for some read requests to have seen latest writes you can use `Effect` for such command handler, even though it is not persisting any events. Then the request will be routed to the primary and use the latest fully consistent state.
 
 The operational aspects are described in xref:operations:regions/index.adoc[].

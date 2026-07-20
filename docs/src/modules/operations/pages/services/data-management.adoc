@@ -30,13 +30,13 @@ On AWS, you will need to:
 
 ==== Create an S3 bucket
 
-We recommend creating an S3 bucket in the same region as the Akka region your service is running in. If you already have a bucket that you would like to use for this, you can skip this step. For the purposes of these instructions, we're going to call the bucket `my-akka-bucket`.
+We recommend creating an S3 bucket in the same region as the Akka region your service is running in. If you already have a bucket that you would like to use for this, you can skip this step. For the purposes of these instructions, we are going to call the bucket `my-akka-bucket`.
 
 Instructions for creating a bucket in AWS can be found https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-bucket-overview.html[here, window="new"].
 
 ==== Create a user
 
-For the purposes of these instructions, we're going to call the user `my-akka-user`. Instructions for creating users in AWS can be found https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html[here, window="new"].
+For the purposes of these instructions, we are going to call the user `my-akka-user`. Instructions for creating users in AWS can be found https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html[here, window="new"].
 
 ==== Create an IAM policy
 
@@ -77,7 +77,7 @@ Now that the user has the right permissions, you need to create an access key fo
 
 ==== Create an Akka secret with the access key
 
-Now the access key that you created needs to be given to Akka. This can be done by creating an Akka secret. We're going to call this secret `my-credentials`:
+Now the access key that you created needs to be given to Akka. This can be done by creating an Akka secret. We are going to call this secret `my-credentials`:
 
 [source,bash]
 ----
@@ -100,13 +100,13 @@ On GCP, you will need to:
 
 ==== Create a GCS bucket
 
-We recommend creating a GCS bucket in the same region as the Akka service is running. If you already have a bucket that you would like to use for this, you can skip this step. For the purposes of these instructions, we're going to call the bucket `my-akka-bucket`.
+We recommend creating a GCS bucket in the same region as the Akka service is running. If you already have a bucket that you would like to use for this, you can skip this step. For the purposes of these instructions, we are going to call the bucket `my-akka-bucket`.
 
 Instructions for creating a bucket in GCS can be found https://cloud.google.com/storage/docs/creating-buckets[here, window="new"].
 
 ==== Create a service account
 
-For the purposes of these instructions, we're going to call the user `my-akka-service-account`. Instructions for creating service accounts in GCP can be found https://cloud.google.com/iam/docs/service-accounts-create[here, window="new"].
+For the purposes of these instructions, we are going to call the user `my-akka-service-account`. Instructions for creating service accounts in GCP can be found https://cloud.google.com/iam/docs/service-accounts-create[here, window="new"].
 
 ==== Granting access
 
@@ -118,7 +118,7 @@ You will need to create a JSON service account key for the `my-akka-service-acco
 
 ==== Create an Akka secret
 
-You now need to place the previously created key in an Akka secret. For the purpose of these instructions, we're going to call this secret `my-credentials`. While the name of the file in the secret can be anything, we recommend `key.json` as this is the default that subsequent commands will use.
+You now need to place the previously created key in an Akka secret. For the purpose of these instructions, we are going to call this secret `my-credentials`. While the name of the file in the secret can be anything, we recommend `key.json` as this is the default that subsequent commands will use.
 
 [source,bash]
 ----
@@ -310,7 +310,7 @@ akka service data export assets --platform-managed \
 
 === Exporting to AWS S3
 
-To export to S3, you must supply the S3 credentials secret via the `--s3-secret` argument. You also need to supply the bucket name using the `--s3-bucket` argument, and if that bucket doesn't live in the same region as your service is running, you must supply the region name with the `--s3-region` argument.
+To export to S3, you must supply the S3 credentials secret via the `--s3-secret` argument. You also need to supply the bucket name using the `--s3-bucket` argument, and if that bucket does not live in the same region as your service is running, you must supply the region name with the `--s3-region` argument.
 
 An optional prefix can be prepended to the names of the files that get exported, this can be specified using the `--s3-object-prefix` argument.
 

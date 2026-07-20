@@ -1,8 +1,8 @@
-= Orchestrating multiple agents
+= Multi-agent orchestration
 
 include::ROOT:partial$include.adoc[]
 
-A single agent performs one well-defined task. Several agents collaborating on a common goal need a *supervisor* that decides which agent runs and in what order. Agents don't communicate directly with each other; the supervisor handles routing, retries, and recovery so the individual agents stay simple and reusable.
+A single agent performs one well-defined task. Several agents collaborating on a common goal need a *supervisor* that decides which agent runs and in what order. Agents do not communicate directly with each other; the supervisor handles routing, retries, and recovery so the individual agents stay simple and reusable.
 
 Akka offers two ways to be that supervisor: a xref:sdk:workflows.adoc[Workflow] when the sequence of agent calls is fixed in code, or an xref:sdk:autonomous-agents.adoc[Autonomous Agent] coordinator when the model decides which agent runs next. Both run on the Akka runtime with the same durable-execution, retry, and audit guarantees.
 
@@ -20,7 +20,7 @@ Both approaches give the same durable-execution, retry, and audit guarantees. Th
 
 == Workflow-driven orchestration
 
-Let's first look at how to define a workflow that orchestrates several agents in a predefined steps. It uses both the `WeatherAgent` and the `ActivityAgent`. First it retrieves the weather forecast and then it finds suitable activities.
+First, look at how to define a workflow that orchestrates several agents in a predefined steps. It uses both the `WeatherAgent` and the `ActivityAgent`. First it retrieves the weather forecast and then it finds suitable activities.
 
 [source,java,indent=0]
 ----
@@ -40,7 +40,7 @@ The workflow will automatically execute the steps in a reliable and durable way.
 
 When the orchestration sequence itself is a model judgment, the supervisor is an xref:sdk:autonomous-agents.adoc[Autonomous Agent] coordinator. The coordinator declares a xref:sdk:autonomous-agents/capabilities.adoc#delegation[`Delegation`] capability listing the worker agents it may call. The runtime exposes each worker to the coordinator's model as a tool. The model picks which worker to invoke based on the workers' `@Component` descriptions and what previous calls returned. The runtime persists task state, retries failed steps, and bounds the loop by an iteration limit.
 
-Workers stay as plain request-based xref:sdk:agents.adoc[Agents]. They don't know they are being orchestrated; the coordinator handles the routing.
+Workers stay as plain request-based xref:sdk:agents.adoc[Agents]. They do not know they are being orchestrated; the coordinator handles the routing.
 
 [source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/ActivityCoordinator.java[ActivityCoordinator.java]
@@ -48,7 +48,7 @@ Workers stay as plain request-based xref:sdk:agents.adoc[Agents]. They don't kno
 include::example$multi-agent/src/main/java/demo/multiagent/application/ActivityCoordinator.java[tag=all]
 ----
 <1> Extend `AutonomousAgent`. There is no command handler; the runtime drives the loop until each task completes.
-<2> Optional definition-level instructions for guidance specific to this coordinator. Most coordinators don't need this.
+<2> Optional definition-level instructions for guidance specific to this coordinator. Most coordinators do not need this.
 <3> Declare the accepted task type. `maxIterationsPerTask` bounds the model loop as a safety net.
 <4> List the workers the coordinator may delegate to. `Delegation.to` accepts both request-based Agents and other Autonomous Agents.
 
@@ -67,3 +67,8 @@ See xref:sdk:autonomous-agents.adoc[] for more details and the other coordinatio
 == Combining the two approaches
 
 The two approaches are not mutually exclusive. A workflow can invoke an xref:sdk:autonomous-agents.adoc[Autonomous Agent] from any of its steps, the same way it invokes a request-based Agent. This fits scenarios where the overall sequence is fixed but a particular stage benefits from model-driven coordination. For example, a research stage where a coordinator delegates to several specialists, or a review stage that runs as a team or a moderated conversation. The workflow keeps the durable state machine across stages, while the Autonomous Agent handles the elaboration within a stage.
+
+== See also
+
+* xref:sdk:workflows.adoc[Workflows]
+* xref:sdk:autonomous-agents.adoc[Autonomous Agents]

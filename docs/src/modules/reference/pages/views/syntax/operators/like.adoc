@@ -68,7 +68,7 @@ For optimal performance, LIKE operations require specific index structures:
 * `column LIKE 'prefix%'` - Requires a prefix index on the column
 * `column LIKE '%suffix'` - Requires a suffix index on the column
 
-Patterns that don't have a non-wildcard prefix or suffix cannot be efficiently indexed and are therefore not supported.
+Patterns that do not have a non-wildcard prefix or suffix cannot be efficiently indexed and are therefore not supported.
 
 == Limitations
 

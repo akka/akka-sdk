@@ -45,7 +45,7 @@ You can also output the full event data in JSON format:
 akka service components list-events my-service com.example.MyEntity entity-id -o json
 ----
 
-This outputs the list of events as a JSON array, and contains the full event data as JSON. Note that, if you're storing your events in protobuf format, `akka` will decode the events to JSON in order to render the output. You can use the `--raw` flag to skip decoding and see the event data as a base64 encoded string:
+This outputs the list of events as a JSON array, and contains the full event data as JSON. Note that, if you are storing your events in protobuf format, `akka` will decode the events to JSON in order to render the output. You can use the `--raw` flag to skip decoding and see the event data as a base64 encoded string:
 
 [source,bash]
 ----

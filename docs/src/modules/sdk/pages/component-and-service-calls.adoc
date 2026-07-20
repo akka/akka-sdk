@@ -7,7 +7,7 @@ An Akka service comprises many components. These components might depend on one 
 
 == Calling Akka components
 
-Since Akka is an auto-scaling solution, components run distributed across many nodes within the same service. That's why calls between Akka components are done via a client rather than through regular method calls. The receiving component instance may be on the same node, but it may also be on a different node.
+Since Akka is an auto-scaling solution, components run distributed across many nodes within the same service. That is why calls between Akka components are done via a client rather than through regular method calls. The receiving component instance may be on the same node, but it may also be on a different node.
 
 Requests and responses are always serialized to JSON during transmission between the client and the component.
 

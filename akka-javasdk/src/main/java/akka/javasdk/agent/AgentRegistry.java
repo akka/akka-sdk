@@ -32,6 +32,7 @@ import java.util.Set;
  */
 public interface AgentRegistry {
   record AgentInfo(String id, String name, String description, String role) {
+    /** Whether this agent has the given role. */
     public boolean hasRole(String r) {
       return role != null && role.equals(r);
     }

@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-image:ROOT:key-value-entity.png[Key value entity,width=100,float=left] xref:reference:glossary.adoc#key_value_entity[Key Value Entities] are entities that persist the full state on every change. Only the latest state is stored, so we don’t have access to any of the history of changes, unlike the event sourced storage used by xref:sdk:event-sourced-entities.adoc[Event Sourced Entities].
+image:ROOT:key-value-entity.png[Key value entity,width=100,float=left] xref:reference:glossary.adoc#key_value_entity[Key Value Entities] are entities that persist the full state on every change. Only the latest state is stored, so we do not have access to any of the history of changes, unlike the event sourced storage used by xref:sdk:event-sourced-entities.adoc[Event Sourced Entities].
 
 // break the paragraph to avoid floating "Important" on the image above.
 ++++
@@ -102,7 +102,7 @@ include::example$key-value-counter/src/main/java/com/example/application/Counter
 
 What if this is the first command we are receiving for this entity? The initial state is provided by overriding `emptyState()`. We recommend always overriding `emptyState()` to return a sensible default. If not overridden, `currentState()` will return `null` until the first state update, which requires null checks in all command handlers.
 
-IMPORTANT: We are returning the internal state directly back to the requester. In the endpoint, it's usually best to convert this internal domain model into a public model so the internal representation is free to evolve without breaking clients code.
+IMPORTANT: We are returning the internal state directly back to the requester. In the endpoint, it is usually best to convert this internal domain model into a public model so the internal representation is free to evolve without breaking clients code.
 
 [#deleting-state]
 === Deleting state
@@ -120,7 +120,7 @@ When you give the instruction to delete the entity it will still exist with an e
 
 It is not allowed to make further changes after the entity has been "marked" as deleted. You can still handle read requests to the entity until it has been completely removed, but the current state will be empty. To check whether the entity has been deleted, you can use the `isDeleted` method inherited from the `KeyValueEntity` class.
 
-NOTE: If you don't want to permanently delete an entity, you can instead use the `updateState` effect with an empty state. This will work the same as resetting the entity to its initial state.
+NOTE: If you do not want to permanently delete an entity, you can instead use the `updateState` effect with an empty state. This will work the same as resetting the entity to its initial state.
 
 It is best to not reuse the same entity id after deletion, but if that happens after the entity has been completely removed it will be instantiated as a completely new entity without any knowledge of previous state.
 
@@ -154,7 +154,7 @@ include::example$doc-snippets/src/main/java/com/example/replicationfilter/Counte
 <1> Enable the replication filter feature by adding the `@EnableReplicationFilter` annotation.
 <2> Define the replication filter with the `updateReplicationFilter` effect.
 
-After enabling the replication filter the entity is still replicated to all regions until specific regions are defined with the `updateReplicationFilter` effect. This effect can be combined with updating the state of the entity. It can also be used without persisting state update, e.g. if it's an explicit command to change the filter, but it's not changing the state of the entity.
+After enabling the replication filter the entity is still replicated to all regions until specific regions are defined with the `updateReplicationFilter` effect. This effect can be combined with updating the state of the entity. It can also be used without persisting state update, e.g. if it is an explicit command to change the filter, but it is not changing the state of the entity.
 
 The filter can only be updated from the entity's primary region. With the `request-region` primary selection strategy, updating the filter from a non-primary region will cause that region to become the new primary. The filter is durable for the specific entity instance and can be changed without deploying a new version.
 
@@ -215,7 +215,7 @@ WARNING: Notifications should not be used for building business logic. Akka does
 
 == Side effects
 
-An entity doesn't perform any external side effects aside from persisting state changes, replying to the request, and publishing notifications. Other side effects, such as calling external services or other components, should be handled from the Workflow, Consumer, or Endpoint components that are calling the entity.
+An entity does not perform any external side effects aside from persisting state changes, replying to the request, and publishing notifications. Other side effects, such as calling external services or other components, should be handled from the Workflow, Consumer, or Endpoint components that are calling the entity.
 
 == Testing the entity
 
@@ -240,7 +240,7 @@ NOTE: The `KeyValueEntityTestKit` is stateful, and it holds the state of a singl
 
 === Integration tests
 
-The skeleton of an Integration Test is included in the xref:getting-started:author-your-first-service.adoc[getting started sample]. Let's see what it could look like to test our Counter Entity:
+The skeleton of an Integration Test is included in the xref:getting-started:author-your-first-service.adoc[getting started sample]. The following shows what it could look like to test our Counter Entity:
 
 [source,java,indent=0]
 .{sample-base-url}/key-value-counter/src/test/java/com/example/CounterIntegrationTest.java[CounterIntegrationTest.java]

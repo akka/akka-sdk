@@ -49,8 +49,8 @@ TLS configuration for a route.
 |===
 |Field                |Type               |Description
 
-|*clientValidationCa* |<<ObjectRef>> |The name of a secret of type CA that should be used to validate client certificates provided to the server. The presence of this configuration will cause any requests that do not provide a client certificate, or do not provide a certificate that is trusted by this CA, to be rejected.
-|*serverCertificate*  |<<ObjectRef>> |The name of a secret of type TLS that should be used as the servers certificate. Allows a custom TLS certificate to be used for the host, instead of Akka's automatic certificate provisioning from Let's Encrypt.
+|*clientValidationCa* |xref:descriptors/service-descriptor.adoc#_objectref[ObjectRef] |The name of a secret of type CA that should be used to validate client certificates provided to the server. The presence of this configuration will cause any requests that do not provide a client certificate, or do not provide a certificate that is trusted by this CA, to be rejected.
+|*serverCertificate*  |xref:descriptors/service-descriptor.adoc#_objectref[ObjectRef] |The name of a secret of type TLS that should be used as the servers certificate. Allows a custom TLS certificate to be used for the host, instead of Akka's automatic certificate provisioning from Let's Encrypt.
 |===
 
 === RouteValidation

@@ -18,9 +18,11 @@ public class ResearchCoordinator extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
+    // tag::definition[]
     return define()
       .capability(TaskAcceptance.of(ResearchTasks.BRIEF).maxIterationsPerTask(5))
       .capability(Delegation.to(Researcher.class, Analyst.class).maxParallelWorkers(3));
+    // end::definition[]
   }
 }
 // end::class[]

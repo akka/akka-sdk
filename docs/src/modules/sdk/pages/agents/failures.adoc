@@ -1,8 +1,8 @@
-= Handling failures
+= Failure handling
 
 include::ROOT:partial$include.adoc[]
 
-The `onFailure` method in the agent's effect API provides comprehensive error handling capabilities for various types of failures that can occur during model processing. This allows you to implement robust fallback strategies and provide meaningful responses even when things go wrong.
+The `onFailure` method in the agent's effect API handles failures that occur during model processing. Use it to implement fallback strategies and return a meaningful response when a request fails.
 
 == Types of exceptions handled
 
@@ -24,9 +24,9 @@ The `onFailure` method can handle the following types of exceptions:
   ** `JsonParsingException` - Response parsing failures (as shown in structured responses)
 
 * **Unknown exceptions:**
-  ** `RuntimeException` - For any unexpected errors that don't fall into the above categories
+  ** `RuntimeException` - For any unexpected errors that do not fall into the above categories
 
-Apart from the listed specific exceptions, users can still encounter `RuntimeException` instances that wrap unexpected errors. Therefore, when handling errors in the `onFailure` method, it's recommended to always include a `default` case to handle any unknown exception types gracefully.
+Apart from the listed specific exceptions, users can still encounter `RuntimeException` instances that wrap unexpected errors. Therefore, when handling errors in the `onFailure` method, it is recommended to always include a `default` case to handle any unknown exception types gracefully.
 
 == Implementing fallback strategies
 
@@ -42,3 +42,8 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 
 This approach ensures your agents remain resilient and can provide meaningful responses even when encountering various types of failures during model interaction.
 
+== See also
+
+* xref:sdk:agents.adoc[Agents]
+* xref:sdk:errors-and-failures.adoc[Errors and failures]
+* xref:sdk:agents/guardrails.adoc[Guardrails]
