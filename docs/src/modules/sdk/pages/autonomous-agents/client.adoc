@@ -25,9 +25,9 @@ For more control over multiple tasks, pipelines, or long-lived agents, create ta
 *Create tasks:*
 
 [source,java,indent=0]
-.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/pipeline/api/PipelineEndpoint.java[PipelineEndpoint.java]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
 ----
-include::example$autonomous-agent-playground/src/main/java/demo/pipeline/api/PipelineEndpoint.java[tag=create-task]
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=create-task]
 ----
 
 *Assign tasks to an agent:*
@@ -61,9 +61,9 @@ Beyond `create` and `get`, the `forTask(...)` client exposes the operations that
 *Assign a task to an owner:*
 
 [source,java,indent=0]
-.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[PublishingEndpoint.java]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
 ----
-include::example$autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[tag=assign]
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=assign]
 ----
 
 A task must be assigned before it can be completed or failed. The assignee is a free-form identifier (a user id, team name, or process identifier) that records who took ownership.
@@ -71,9 +71,9 @@ A task must be assigned before it can be completed or failed. The assignee is a 
 *Complete a task with a typed result:*
 
 [source,java,indent=0]
-.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[PublishingEndpoint.java]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
 ----
-include::example$autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[tag=complete]
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=complete]
 ----
 
 The result is validated against the task definition's result type. The task transitions to `COMPLETED` and any dependents become eligible to start.
@@ -81,9 +81,9 @@ The result is validated against the task definition's result type. The task tran
 *Fail a task with a reason:*
 
 [source,java,indent=0]
-.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[PublishingEndpoint.java]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
 ----
-include::example$autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[tag=fail]
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=fail]
 ----
 
 The task transitions to `FAILED`. Any dependents are cancelled automatically.
