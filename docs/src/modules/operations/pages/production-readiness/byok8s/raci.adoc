@@ -34,6 +34,86 @@ Each RACI cell uses one of the following:
 
 Anything not explicitly listed in this matrix is the Customer's responsibility.
 
+Filter by category or owner, or search across activity, description, and cadence. Owner is derived from the Responsible column: Customer, Akka, or shared.
+
+++++
+<style>
+  .pe-bar{display:flex;flex-wrap:wrap;gap:.6rem 1.4rem;align-items:center;margin:1rem 0 .4rem;padding:.7rem .9rem;border:1px solid rgba(127,127,127,.25);border-radius:8px}
+  .pe-grp{display:flex;gap:.5rem;align-items:baseline;flex-wrap:wrap}
+  .pe-lbl{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;opacity:.55;padding-top:.2rem}
+  .pe-pill{font-size:.76rem;padding:.2rem .6rem;border-radius:999px;border:1px solid rgba(127,127,127,.4);background:transparent;color:inherit;cursor:pointer;line-height:1.25}
+  .pe-pill:hover{border-color:rgba(127,127,127,.7)}
+  .pe-pill.on{background:#FFD100;border-color:#E6BC00;color:#1a1a1a;font-weight:600}
+  .pe-search{flex:1 1 14rem;min-width:12rem;font-size:.82rem;padding:.32rem .6rem;border:1px solid rgba(127,127,127,.4);border-radius:6px;background:transparent;color:inherit}
+  .pe-search:focus{outline:none;border-color:#E6BC00}
+  .pe-count{font-size:.8rem;opacity:.7;margin:.2rem 0 .4rem}
+</style>
+<div class="pe-wrap">
+  <div class="pe-bar">
+    <div class="pe-grp"><span class="pe-lbl">Category</span><span id="pe-cat"></span></div>
+    <div class="pe-grp"><span class="pe-lbl">Owner</span><span id="pe-own"></span></div>
+    <input type="search" class="pe-search" id="pe-q" placeholder="Search activity, description, cadence...">
+  </div>
+  <div class="pe-count" id="pe-count"></div>
+</div>
+<script>
+(function(){
+  function init(){
+    var CATS=['General','Platform','Federation Plane','Services'];
+    var OWN=[['all','All'],['customer','Customer'],['akka','Akka'],['shared','Shared']];
+    var ownerOf=function(r){r=(r||'').trim();return r==='C'?'customer':r==='A'?'akka':r==='±'?'shared':'';};
+    var tables=[].slice.call(document.querySelectorAll('table')).filter(function(t){
+      var th=t.querySelector('thead th');
+      return th && th.textContent.trim()==='Sub-category';
+    });
+    var model=tables.map(function(t){
+      var sect=t.closest('.sect1');
+      var h2=sect?sect.querySelector('h2'):null;
+      var cat=h2?h2.textContent.trim():'';
+      var rows=[].slice.call(t.querySelectorAll('tbody tr')).map(function(tr){
+        var tds=tr.querySelectorAll('td');
+        return {tr:tr,owner:ownerOf(tds[2]?tds[2].textContent:''),hay:tr.textContent.toLowerCase()};
+      });
+      return {cat:cat,sect:sect,rows:rows};
+    });
+    var total=model.reduce(function(n,m){return n+m.rows.length;},0);
+    var catSel='all',ownSel='all',q='';
+    var catEl=document.getElementById('pe-cat'),ownEl=document.getElementById('pe-own'),
+        qEl=document.getElementById('pe-q'),cntEl=document.getElementById('pe-count');
+    function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+    function pill(text,active){return '<button type="button" class="pe-pill'+(active?' on':'')+'">'+esc(text)+'</button>';}
+    function renderPills(){
+      catEl.innerHTML=pill('All',catSel==='all')+CATS.map(function(c){return pill(c,catSel===c);}).join('');
+      ownEl.innerHTML=OWN.map(function(o){return pill(o[1],ownSel===o[0]);}).join('');
+      var cb=catEl.querySelectorAll('.pe-pill');
+      cb[0].onclick=function(){catSel='all';render();};
+      CATS.forEach(function(c,i){cb[i+1].onclick=function(){catSel=c;render();};});
+      var ob=ownEl.querySelectorAll('.pe-pill');
+      OWN.forEach(function(o,i){ob[i].onclick=function(){ownSel=o[0];render();};});
+    }
+    function apply(){
+      var shown=0;
+      model.forEach(function(m){
+        var vis=0;
+        m.rows.forEach(function(r){
+          var ok=(catSel==='all'||m.cat===catSel)&&(ownSel==='all'||r.owner===ownSel)&&(!q||r.hay.indexOf(q)>=0);
+          r.tr.style.display=ok?'':'none';
+          if(ok)vis++;
+        });
+        if(m.sect)m.sect.style.display=vis?'':'none';
+        shown+=vis;
+      });
+      cntEl.textContent='Showing '+shown+' of '+total+' activities';
+    }
+    function render(){renderPills();apply();}
+    qEl.oninput=function(){q=qEl.value.trim().toLowerCase();apply();};
+    render();
+  }
+  if(document.readyState!=='loading')init();else document.addEventListener('DOMContentLoaded',init);
+})();
+</script>
+++++
+
 == General
 
 [cols="1,2,^1,^1,^1,^1,4,2", options="header"]
