@@ -11,11 +11,6 @@ include::ROOT:partial$include.adoc[]
 Production readiness is a partnership with Akka, not something you do alone. Akka runs the platform and owns its reliability, drawing on years of operating distributed systems in production at scale, while your team owns a clearly defined set of activities. The detailed division of responsibility between Akka and your team is set out in a Shared Responsibility Model, which shifts with the xref:concepts:deployment-model.adoc[deployment model] you choose. This page focuses on what "production-ready" means and how you reach it with Akka.
 // TODO: link "Shared Responsibility Model" to its docs page once it exists (SRM not yet in docs).
 
-[NOTE]
-====
-This page is a general reference and evolves over time. The authoritative, tailored readiness plan for your account is produced and maintained with your Akka team.
-====
-
 == Getting to production with Akka
 
 Reaching production is part of what you get with Akka, not something you face alone. Akka's team embeds with yours from onboarding through ongoing operations, bringing years of taking demanding distributed systems to production. The readiness items that follow are what that experience has shown to be necessary, and your team works through them with Akka rather than discovering them under pressure. Contact your Akka team to plan a production-readiness review.
