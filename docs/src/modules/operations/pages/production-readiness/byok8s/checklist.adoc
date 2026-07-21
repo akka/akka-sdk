@@ -340,6 +340,75 @@ Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and par
 * [ ] Cert rotation rollback path documented and tested in dev
 =====
 
+== Operational readiness (often missed)
+
+These sit in the cracks between teams and are the most commonly skipped. They apply at both tiers.
+
+[cols="1,3", options="header"]
+|===
+| Role | Responsibility
+| Customer | Owns the operational scaffolding around the application: environment parity, data classification, production access and break-glass, runbook coverage, incident command, on-call onboarding, and recurring game days.
+| Shared | Akka's 24/7 SRE is part of the incident escalation path and is consulted on runbooks that touch the Platform.
+|===
+
+.*Detailed checklist*
+[%collapsible]
+=====
+[discrete]
+==== Environment parity
+
+* [ ] Dev/prod descriptor diff reviewed before each release (broker config, observability exporters, ACLs, JWT issuers, secret references, autoscaling bounds)
+* [ ] Drift documented and resolved, or explicitly accepted
+
+[discrete]
+==== Data classification and handling
+
+* [ ] Data classes flowing through each service documented (PII, PHI, financial, GDPR or EU AI Act regulated)
+* [ ] Sanitization, retention, log scrubbing, and evidence-export scope derived from the classification
+* [ ] A named owner for data handling (this often falls between security and compliance)
+
+[discrete]
+==== Production access and break-glass
+
+* [ ] Documented who can restart services, read prod logs, and rotate secrets
+* [ ] Break-glass procedure for emergency access defined
+* [ ] Akka 24/7 SRE scope clarified: what they can and cannot do without customer approval
+* [ ] Admin actions audit-logged and exported to your SIEM (Security Information and Event Management)
+
+[discrete]
+==== Runbook coverage
+
+Walk the alert list and the dependency list; every plausible failure should have a runbook. Confirm runbooks exist for at least:
+
+* [ ] Prod-region cold rebuild
+* [ ] Broker outage
+* [ ] LLM provider outage
+* [ ] Secret rotation gone wrong
+* [ ] Descriptor reapply failure
+* [ ] Certificate expiration
+* [ ] Agent guardrail false-positive storm (if running agents)
+* [ ] Log pipeline backed up
+
+[discrete]
+==== Incident command and on-call
+
+* [ ] Incident commander role defined, with a clear assignment or rotation
+* [ ] Communication roles defined: leadership comms, customer comms, scribe or timeline-keeper
+* [ ] On-call onboarding: new on-call is paged through each alert in dev, has run a deploy and a rollback, and has joined at least one DR or chaos drill
+
+[discrete]
+==== Game days
+
+* [ ] Recurring game day scheduled with a named owner: an unannounced failure scenario the full team responds to, surfacing process and communication gaps that technical chaos testing alone does not
+
+[discrete]
+==== Ownership and documentation
+
+* [ ] Every service has a named owning team (not "Platform"), an on-call rotation, and an escalation path, tagged in descriptors and dashboards
+* [ ] ADRs (Architecture Decision Records) written and version-controlled for major decisions (region pinning, broker choice, LLM provider, guardrail configuration, sizing assumptions)
+* [ ] Bus-factor check: the team can operate prod if the most senior engineer is unavailable
+=====
+
 == Multi-region (Business Continuity tier)
 
 The sections above cover Day 2 Ops with a single prod region. For the Business Continuity tier (multi-region with cross-region failover), the following requirements layer on top of those above; they are not a replacement.
