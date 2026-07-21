@@ -388,6 +388,8 @@ Walk the alert list and the dependency list; every plausible failure should have
 * [ ] Certificate expiration
 * [ ] Agent guardrail false-positive storm (if running agents)
 * [ ] Log pipeline backed up
+* [ ] Kubernetes cluster or node-pool failure (you operate the cluster in BYOK8s)
+* [ ] Kubernetes or database upgrade rollback (upgrades are yours in BYOK8s; coordinate certified versions with Akka)
 
 [discrete]
 ==== Incident command and on-call
@@ -407,6 +409,44 @@ Walk the alert list and the dependency list; every plausible failure should have
 * [ ] Every service has a named owning team (not "Platform"), an on-call rotation, and an escalation path, tagged in descriptors and dashboards
 * [ ] ADRs (Architecture Decision Records) written and version-controlled for major decisions (region pinning, broker choice, LLM provider, guardrail configuration, sizing assumptions)
 * [ ] Bus-factor check: the team can operate prod if the most senior engineer is unavailable
+=====
+
+== Compliance and governance
+
+Not every customer is regulated, but where you are, these are the items auditors and regulators ask for. Consider each; skip only with a documented reason. In BYOK8s you operate the cluster, database, and cloud infrastructure, so more of the evidence and continuity planning is yours.
+
+[cols="1,3", options="header"]
+|===
+| Role | Responsibility
+| Customer | Ingests and retains audit evidence in your own SIEM (including cluster, node, and cloud-infrastructure logs you operate), owns continuity planning for the cluster, database, and every dependency your application relies on, and rehearses producing compliance evidence for your regulators.
+| Shared | Akka delivers control-plane audit events and maintains platform compliance posture (SOC 2 / SOC 3, penetration-test summary, subprocessor list via trust.akka.io) that feeds your evidence.
+|===
+
+.*Detailed checklist*
+[%collapsible]
+=====
+[discrete]
+==== Audit logging
+
+* [ ] Akka control-plane audit events (authentication, project and service lifecycle, IAM and token changes, deploys, descriptor changes, secret rotations, prod-log access) delivered and ingested into your SIEM (Security Information and Event Management), with retention set to your compliance needs
+* [ ] Cluster, node, and cloud-account audit logs (you operate the cluster and account in BYOK8s) collected and retained alongside them
+
+[discrete]
+==== Vendor and dependency continuity
+
+* [ ] Kubernetes cluster or node-pool outage: response plan documented (you operate the cluster)
+* [ ] Database outage or failover: response plan documented (you operate the database)
+* [ ] Akka control-plane outage: response plan documented (applications keep running; deploys and control-plane operations pause)
+* [ ] LLM provider outage: escalation path and fallback model documented
+* [ ] Broker provider regional outage: response documented
+* [ ] Every external dependency has a known fallback or an explicitly accepted risk
+
+[discrete]
+==== Compliance evidence
+
+* [ ] Regulatory evidence scenario rehearsed end-to-end: for a specific agent decision from N months ago, produce the prompt, model version, guardrail verdict, and tool authorization in the format your regulator accepts
+* [ ] Gaps surfaced in the rehearsal closed before launch
+* [ ] Akka's compliance artifacts located for your own evidence pack (SOC 2 / SOC 3, penetration-test summary, subprocessor list via trust.akka.io)
 =====
 
 == Multi-region (Business Continuity tier)

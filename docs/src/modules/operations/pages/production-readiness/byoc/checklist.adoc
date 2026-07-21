@@ -412,6 +412,42 @@ Walk the alert list and the dependency list; every plausible failure should have
 * [ ] Bus-factor check: the team can operate prod if the most senior engineer is unavailable
 =====
 
+== Compliance and governance
+
+Not every customer is regulated, but where you are, these are the items auditors and regulators ask for. Consider each; skip only with a documented reason.
+
+[cols="1,3", options="header"]
+|===
+| Role | Responsibility
+| Customer | Ingests and retains audit evidence in your own SIEM, owns continuity planning for the dependencies your application relies on, and rehearses producing compliance evidence for your regulators.
+| Shared | Akka delivers control-plane audit events and maintains platform compliance posture (SOC 2 / SOC 3, penetration-test summary, subprocessor list via trust.akka.io) that feeds your evidence.
+|===
+
+.*Detailed checklist*
+[%collapsible]
+=====
+[discrete]
+==== Audit logging
+
+* [ ] Akka control-plane audit events (authentication, project and service lifecycle, IAM and token changes, deploys, descriptor changes, secret rotations, prod-log access) delivered and ingested into your SIEM (Security Information and Event Management), with retention set to your compliance needs
+* [ ] Cloud-account audit logs (the account is yours in BYOC) collected and retained alongside them
+
+[discrete]
+==== Vendor and dependency continuity
+
+* [ ] Akka control-plane outage: response plan documented (applications keep running; deploys and control-plane operations pause)
+* [ ] LLM provider outage: escalation path and fallback model documented
+* [ ] Broker provider regional outage: response documented
+* [ ] Every external dependency has a known fallback or an explicitly accepted risk
+
+[discrete]
+==== Compliance evidence
+
+* [ ] Regulatory evidence scenario rehearsed end-to-end: for a specific agent decision from N months ago, produce the prompt, model version, guardrail verdict, and tool authorization in the format your regulator accepts
+* [ ] Gaps surfaced in the rehearsal closed before launch
+* [ ] Akka's compliance artifacts located for your own evidence pack (SOC 2 / SOC 3, penetration-test summary, subprocessor list via trust.akka.io)
+=====
+
 == Multi-region (Business Continuity tier)
 
 The sections above cover Day 2 Ops with a single prod region. For the Business Continuity tier (multi-region with cross-region failover), the following requirements layer on top of those above; they are not a replacement.
