@@ -161,7 +161,7 @@ Customer:: Allocates the CIDR block, configures peering or hub-and-spoke to the 
 
 Akka installs the platform machinery into the Kubernetes cluster the Customer has provisioned, federates it to the Akka Federation Plane, and runs smoke tests before handing it over.
 
-Akka:: Installs the platform machinery (Akka runtime, operators, registry, observability) into the Customer's cluster and configures region groups.
+Akka:: Installs the platform machinery (Akka runtime, operators, observability) into the Customer's cluster and configures region groups.
 Customer:: Provisions the cluster and database, installs Teleport for federation using the short-lived token Akka provides, identifies region groupings, and provides a recurring 1 to 4 hour weekly maintenance window that Akka uses for any operation that may cause downtime.
 
 .*Responsibilities*
@@ -171,7 +171,7 @@ Customer:: Provisions the cluster and database, installs Teleport for federation
 |===
 | Activity | Owner | Description
 
-| Platform bootstrapping | Akka | Akka installs the platform machinery (runtime, operators, registry, observability) into the Customer's Kubernetes cluster after the Customer provisions the underlying infrastructure.
+| Platform bootstrapping | Akka | Akka installs the platform machinery (runtime, operators, observability) into the Customer's Kubernetes cluster after the Customer provisions the underlying infrastructure.
 | Teleport identity-aware proxy | Customer | The Customer installs and maintains the Teleport identity-aware proxy used by the Federation Plane to reach private Kubernetes API servers, including ongoing operational health and version upgrades. Akka provides a short-lived token and the installation command at setup time. See the Teleport appendix.
 | Kubernetes access via Teleport | Akka | Akka uses Teleport for human access to platform infrastructure, with full session recording and audit logging. Access requires explicit justification and approval per the Access Control Policy.
 | Region group identification | Customer | Customer identifies region groupings appropriate for the workloads (e.g., for cross-region replication scope) and informs Akka.
