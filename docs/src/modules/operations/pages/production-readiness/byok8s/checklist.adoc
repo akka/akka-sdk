@@ -169,6 +169,11 @@ Akka instruments the platform with its own observability stack and runs baseline
 * [ ] SAST and SCA gates; findings triaged
 * [ ] Secret scanning prevents accidental commits
 
+[NOTE]
+====
+*Scope scans to what you control.* Scan your application code and the dependencies you introduce. The container base image, JVM, OS, and the Akka runtime (including the dependencies it provides at runtime) are patched by Akka (see the xref:operations:production-readiness/byok8s/shared-responsibility.adoc[Shared Responsibility Model]), so findings against those are Akka's to remediate; scope or triage them out so the report reflects what you own.
+====
+
 [discrete]
 ==== Descriptor-driven config
 
