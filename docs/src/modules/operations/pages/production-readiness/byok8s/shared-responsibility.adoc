@@ -182,7 +182,7 @@ Customer:: Provisions the cluster and database, installs Teleport for federation
 
 == Platform maintenance and releases
 
-Akka manages the lifecycle of the platform itself: patching, runtime/infra releases, and security remediations. The Customer operates Kubernetes and database upgrades on their own infrastructure, consulting Akka first on certified versions. Most Akka-led maintenance requires no downtime; where downtime is unavoidable, Akka coordinates it with the Customer in advance and operates within the agreed maintenance window. Runtime and SDK releases are announced by release-notification email.
+Akka manages the lifecycle of the platform itself: patching, runtime/infra releases, and security remediations. The Customer operates Kubernetes and database upgrades on their own infrastructure, consulting Akka first on certified versions.
 
 Akka:: Patches platform infrastructure (JVM, container base image, Akka runtime) and ships regular releases of the runtime, region machinery, and Federation Plane.
 Customer:: Schedules and runs K8s and database upgrades after consulting Akka on certified versions. Receives advance notice of Akka-led maintenance.
