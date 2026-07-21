@@ -249,6 +249,11 @@ Run all of these against the dev region, sized realistically. Without realistic 
 [%collapsible]
 =====
 [discrete]
+==== Baseline
+
+* [ ] Baseline performance metrics captured (latency, throughput, resource use) as the reference for the tests below
+
+[discrete]
 ==== Load (expected peak)
 
 * [ ] Tool selected (k6, Gatling, Locust); profile matches forecast peak
@@ -340,6 +345,7 @@ Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and par
 * [ ] Data-migration rollback documented and tested
 * [ ] Config rollback (secrets, JWT keys, ACLs) with documented revert path
 * [ ] Time-to-rollback measured (minutes, not hours)
+* [ ] Recovery from a failed rollback planned: a documented path for when a rollback cannot complete safely (for event-sourced state this is usually roll-forward / fix-forward rather than reverting)
 
 [discrete]
 ==== Certificate management
@@ -481,6 +487,7 @@ Akka reads from both regions, so cross-region failover is typically very fast, o
 * [ ] Failback drills (returning to the original primary), which are commonly overlooked
 * [ ] Replication-lag SLO defined and monitored; alert on tolerance breach
 * [ ] DNS / global LB cutover automated where possible; manual steps timed and rehearsed
+* [ ] Active-active validated with concurrent writes from both regions (exercises conflict resolution)
 
 [discrete]
 ==== Operational additions
