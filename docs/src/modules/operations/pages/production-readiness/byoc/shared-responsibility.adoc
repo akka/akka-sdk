@@ -172,7 +172,7 @@ At a glance::
 
 == 4. Platform maintenance and releases
 
-Akka manages the lifecycle of the platform itself: patching, upgrades, runtime/infra releases, and security remediations.
+Akka manages the lifecycle of the platform itself: patching, upgrades, runtime/infra releases, and security remediations. Most of this maintenance requires no downtime; where downtime is unavoidable, Akka coordinates it with the Customer in advance and operates within the agreed maintenance window. Runtime and SDK releases are announced by release-notification email.
 
 At a glance::
 * *Akka*: Patches infrastructure, upgrades Kubernetes and the database, and ships regular releases of the runtime, region machinery, and Federation Plane.
@@ -256,7 +256,7 @@ At a glance::
 | Akka region platform telemetry | Akka | Akka monitors region-level metrics and logs and notifies the customer as needed.
 | Customer-side platform telemetry (optional) | Customer | Customer may optionally configure their own telemetry over the cluster and database since they own the cloud account. Akka can advise on which components are appropriate to observe externally.
 | Cloud-native audit logging | Customer | Customer enables cloud-native audit/security services (e.g., CloudTrail, Cloud Audit Logs, equivalents) and notifies Akka if any suspicious SIEM alerts are observed.
-| Application telemetry export | Customer | Customer configures export of application logs, metrics, and traces to their observability platform via the Akka SDK integration patterns.
+| Application telemetry export | Customer | Customer configures export of application logs, metrics, and traces to their observability platform via Akka's OpenTelemetry (OTLP) exporters, which support any OpenTelemetry-compatible backend.
 |===
 ====
 

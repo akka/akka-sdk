@@ -182,7 +182,7 @@ Customer:: Provisions the cluster and database, installs Teleport for federation
 
 == Platform maintenance and releases
 
-Akka manages the lifecycle of the platform itself: patching, runtime/infra releases, and security remediations. The Customer operates Kubernetes and database upgrades on their own infrastructure, consulting Akka first on certified versions.
+Akka manages the lifecycle of the platform itself: patching, runtime/infra releases, and security remediations. The Customer operates Kubernetes and database upgrades on their own infrastructure, consulting Akka first on certified versions. Most Akka-led maintenance requires no downtime; where downtime is unavoidable, Akka coordinates it with the Customer in advance and operates within the agreed maintenance window. Runtime and SDK releases are announced by release-notification email.
 
 Akka:: Patches platform infrastructure (JVM, container base image, Akka runtime) and ships regular releases of the runtime, region machinery, and Federation Plane.
 Customer:: Schedules and runs K8s and database upgrades after consulting Akka on certified versions. Receives advance notice of Akka-led maintenance.
@@ -263,7 +263,7 @@ Customer:: Exports application telemetry to their observability platform via Akk
 | Akka region platform telemetry | Akka | Akka monitors region-level metrics and logs and notifies the Customer as needed.
 | Customer-side platform telemetry (optional) | Customer | Customer may optionally configure their own telemetry over the cluster and database since they own the cloud account. Akka can advise on which components are appropriate to observe externally.
 | Cloud-native audit logging | Customer | Customer enables cloud-native audit/security services (e.g., CloudTrail, Cloud Audit Logs, equivalents) and notifies Akka if any suspicious SIEM alerts are observed.
-| Application telemetry export | Customer | Customer configures export of application logs, metrics, and traces to their observability platform via the Akka SDK integration patterns.
+| Application telemetry export | Customer | Customer configures export of application logs, metrics, and traces to their observability platform via Akka's OpenTelemetry (OTLP) exporters, which support any OpenTelemetry-compatible backend.
 |===
 ====
 

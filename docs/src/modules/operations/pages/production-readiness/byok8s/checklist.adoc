@@ -108,7 +108,7 @@ Akka runs a parallel internal pre-production validation against the platform-sid
 [discrete]
 ==== Telemetry pipeline
 
-* [ ] Exporter configured (OTLP, Prometheus, Splunk HEC, Azure Monitor, Google Cloud) pointing at your enterprise platform
+* [ ] Exporter configured (OTLP, Prometheus, Splunk HEC, Azure Monitor, Google Cloud, or any OpenTelemetry-compatible backend) pointing at your enterprise platform
 * [ ] Logs, metrics, traces flowing end-to-end; sampling rates verified
 * [ ] Trace correlation across services, endpoints, agents, tools, broker hops (W3C context)
 * [ ] Log retention meets compliance and debugging needs
