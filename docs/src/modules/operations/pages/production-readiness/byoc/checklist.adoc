@@ -429,7 +429,7 @@ Not every customer is regulated, but where you are, these are the items auditors
 [discrete]
 ==== Audit logging
 
-* [ ] Akka control-plane audit events (authentication, project and service lifecycle, IAM and token changes, deploys, descriptor changes, secret rotations, prod-log access) delivered and ingested into your SIEM (Security Information and Event Management), with retention set to your compliance needs
+* [ ] Akka control-plane audit events (authentication, project and service lifecycle, IAM and token changes, deploys, descriptor changes, secret rotations, prod-log access) obtained from Akka, delivered on request or on a recurring cadence you arrange, then ingested and retained in your SIEM (Security Information and Event Management) to your compliance needs
 * [ ] Cloud-account audit logs (the account is yours in BYOC) collected and retained alongside them
 
 [discrete]
