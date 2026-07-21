@@ -112,7 +112,7 @@ See xref:sdk:setup-and-dependency-injection.adoc[].
 == Testing
 
 In a test, obtain a `ClassifierClient` from the testkit with `getClassifierClient()` and invoke your configured classifiers directly.
-See xref:sdk:agents/testing.adoc#_classifiers[Testing classifiers].
+See xref:sdk:agents/testing.adoc#_testing_classifiers[Testing classifiers].
 
 == See also
 

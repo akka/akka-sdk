@@ -5,37 +5,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 import akka.javasdk.evaluation.Subject;
 import akka.javasdk.ledger.InteractionMetadata;
 import akka.javasdk.ledger.InteractionRecord;
-import akka.javasdk.ledger.LedgerClient;
 import akka.javasdk.ledger.ModelConfig;
 import akka.javasdk.ledger.ModelResponse;
 import akka.javasdk.testkit.EvaluatorResult;
 import akka.javasdk.testkit.EvaluatorTestKit;
+import akka.javasdk.testkit.TestLedgerClient;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import org.junit.jupiter.api.Test;
 
 public class EvaluatorTestKitSample {
 
-  // A stub ledger that returns a canned interaction, so the evaluator can be run in isolation.
-  private final LedgerClient stubLedger = new LedgerClient() {
-    @Override
-    public InteractionRecord getInteraction(String interactionId) {
-      return sampleRecord(interactionId);
-    }
-
-    @Override
-    public CompletionStage<InteractionRecord> getInteractionAsync(String interactionId) {
-      return CompletableFuture.completedFuture(sampleRecord(interactionId));
-    }
-  };
-
   @Test
   public void evaluatesAnInteraction() {
     // tag::test[]
+    var stubLedger = TestLedgerClient.create().seed(sampleRecord("interaction-1")); // <1>
+
     var testKit = EvaluatorTestKit.of(() -> new InteractionQualityEvaluator(stubLedger));
 
     EvaluatorResult result = testKit.evaluate(
