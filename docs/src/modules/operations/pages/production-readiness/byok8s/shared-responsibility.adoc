@@ -17,6 +17,22 @@ In the BYOK8s deployment model, Akka runs inside a Kubernetes cluster that the C
 
 Because Akka runs inside infrastructure the Customer operates, the model is genuinely shared. Akka manages the platform layer end-to-end; the Customer manages the layers above and below it; a number of activities are jointly owned with the lead and consulted parties named explicitly. Compared to the BYOC model, the Customer carries more of the infrastructure-side responsibility in BYOK8s, including the cluster, its upgrades, and database backups.
 
+[NOTE]
+.*What you take on in BYOK8s (compared to BYOC)*
+====
+In BYOC, Akka operates the Kubernetes cluster, database, and in-account networking for you. Choosing BYOK8s means you additionally own:
+
+* The *Kubernetes cluster*: creation, node pools, capacity and scaling, patching, and version upgrades.
+* The *database*: provisioning, capacity, version upgrades, backups, and restores.
+* The *network and ingress*: connectivity, ingress TLS (provide a certificate issuer or grant Akka DNS access), and IP allowlists.
+* The *Teleport proxy* the Federation Plane uses to reach the cluster: install, upgrade, and operational health.
+* *Encryption of your data* at rest and in transit (database and ingress).
+* *Cluster and node audit logs* (the Kubernetes and infrastructure layer you operate).
+* For *Business Continuity* (multi-region): standing up and operating a cluster, database, and cross-region networking in each region.
+
+Akka still owns the platform layer in both models: the runtime, operators, inter-component mTLS, region installation, scaling logic, platform observability, and releases.
+====
+
 The sections below summarize each area at a glance. For the authoritative row-by-row breakdown, every activity with the full Responsible / Accountable / Consulted / Informed split, descriptions, and cadences, see the xref:operations:production-readiness/byok8s/raci.adoc[RACI] matrix.
 
 Shared responsibility extends to going live. Akka has a set of standards Akka expects of customer applications before flipping prod traffic on: sizing, observability, CI/CD, functional and non-functional testing, DR (disaster recovery) and rollback rehearsal. The xref:operations:production-readiness/byok8s/checklist.adoc[production readiness checklist] captures those standards and the sign-off gate Akka recommends before launch.
