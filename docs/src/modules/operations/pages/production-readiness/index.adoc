@@ -13,6 +13,8 @@ Production readiness is a partnership with Akka, not something you do alone. Akk
 
 Akka's team embeds with yours from onboarding through ongoing operations. Getting to production is demanding, and it is where that experience earns its place: the disciplines below are the shape of what it has shown to be necessary, worked through with you rather than discovered under pressure. If you want this experience behind your own path to production, https://akka.io/contact-us[talk to Akka].
 
+Reaching the reliability and availability your deployment is built for is part of that partnership: it depends on working the readiness items through with your Akka team. Your agreement with Akka defines the specific availability commitments and the conditions attached to them.
+
 == Production readiness
 
 Production readiness spans a lot, and that breadth is the point: these are the areas that decide whether getting to production, and staying there, is smooth rather than fraught. Take the list as the high-level shape; the full, tailored checklist is the larger piece your Akka team works through with you.
