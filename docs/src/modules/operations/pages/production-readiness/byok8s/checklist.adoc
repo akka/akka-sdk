@@ -460,6 +460,19 @@ Not every customer is regulated, but where you are, these are the items auditors
 * [ ] Regulatory evidence scenario rehearsed end-to-end: for a specific agent decision from N months ago, produce the prompt, model version, guardrail verdict, and tool authorization in the format your regulator accepts
 * [ ] Gaps surfaced in the rehearsal closed before launch
 * [ ] Akka's compliance artifacts located for your own evidence pack (SOC 2 / SOC 3, penetration-test summary, subprocessor list via trust.akka.io)
+
+[discrete]
+==== Application security and SDLC governance
+
+* [ ] SBOM (Software Bill of Materials) generated for the application and its dependencies
+* [ ] Threat model performed for the application and reviewed
+* [ ] OSS license compliance checked for the dependencies you introduce
+* [ ] Application penetration test performed and findings remediated (distinct from Akka's platform penetration testing)
+* [ ] DPIA (Data Protection Impact Assessment) completed where the application processes regulated personal data
+* [ ] Developer secure-coding and security-awareness training for the team
+* [ ] Change-management process for production changes (approvals and records)
+* [ ] Business continuity plan (BCP) documented for the service
+* [ ] Blameless postmortem process established (the per-incident regression test itself is covered under Functional testing)
 =====
 
 == Multi-region (Business Continuity tier)
