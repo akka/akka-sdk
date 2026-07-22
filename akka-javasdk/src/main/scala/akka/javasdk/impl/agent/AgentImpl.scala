@@ -636,6 +636,7 @@ private[impl] final class AgentImpl(
       serializer)
   }
 
+  @nowarn("msg=deprecated")
   override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] =
     Future {
 

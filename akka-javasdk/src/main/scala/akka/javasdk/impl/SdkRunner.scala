@@ -61,6 +61,7 @@ import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.evaluation.Evaluator
+import akka.javasdk.evaluation.WorkflowEvaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.grpc.AbstractGrpcEndpoint
@@ -92,6 +93,7 @@ import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.consumer.MessageContextImpl
 import akka.javasdk.impl.evaluation.EvaluatorImpl
 import akka.javasdk.impl.evaluation.EvaluatorSettings
+import akka.javasdk.impl.evaluation.WorkflowEvaluatorImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
@@ -175,6 +177,7 @@ import akka.runtime.sdk.spi.TimedActionDescriptor
 import akka.runtime.sdk.spi.UserFunctionError
 import akka.runtime.sdk.spi.ViewDescriptor
 import akka.runtime.sdk.spi.WorkflowDescriptor
+import akka.runtime.sdk.spi.WorkflowEvaluatorDescriptor
 import akka.runtime.sdk.spi.tracing.InMemorySpanExporter
 import akka.runtime.sdk.spi.{ LedgerClient => SpiLedgerClient }
 import akka.stream.Materializer
@@ -450,6 +453,7 @@ private object ComponentType {
   val Agent = "agent"
   val AutonomousAgent = "autonomous-agent"
   val Evaluator = "evaluator"
+  val WorkflowEvaluator = "workflow-evaluator"
 }
 
 /**
@@ -469,6 +473,7 @@ private[javasdk] object Sdk {
       serializer: Serializer,
       sanitizer: Sanitizer,
       classifierClient: ClassifierClient,
+      ledgerClient: LedgerClient,
       inMemorySpanExporter: Option[InMemorySpanExporter])
 
   private val platformManagedDependency = Set[Class[_]](
@@ -743,6 +748,7 @@ private final class Sdk(
   private var agentDescriptors = Vector.empty[AgentDescriptor]
   private var autonomousAgentDescriptors = Vector.empty[AutonomousAgentDescriptor]
   private var evaluatorDescriptors = Vector.empty[EvaluatorDescriptor]
+  private var workflowEvaluatorDescriptors = Vector.empty[WorkflowEvaluatorDescriptor]
   // Populated during scanning: componentId → (agentDefinition, spiTaskDefinitions)
   // Used by delegation wiring inside instanceFactory (called lazily after all agents registered)
   private var autonomousAgentDefinitionMap =
@@ -1187,6 +1193,36 @@ private final class Sdk(
             instanceFactory = instanceFactory,
             provided = isProvided(clz))
 
+      case clz if Reflect.isWorkflowEvaluator(clz) =>
+        val componentId = Reflect.readComponentId(clz)
+        val evaluatorClass = clz.asInstanceOf[Class[WorkflowEvaluator[Nothing]]]
+        val stateType = Reflect.workflowEvaluatorStateType(clz).asInstanceOf[Class[Nothing]]
+        serializer.registerTypeHints(stateType)
+
+        val workflowEvaluatorBindings = EvaluatorSettings.agentBindings(applicationConfig, componentId)
+
+        workflowEvaluatorDescriptors :+=
+          new WorkflowEvaluatorDescriptor(
+            componentId,
+            clz.getName,
+            name = Reflect.readComponentName(clz),
+            description = Reflect.readComponentDescription(clz),
+            bindings = workflowEvaluatorBindings,
+            instanceFactory = { factoryContext =>
+              val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
+              new WorkflowEvaluatorImpl[Nothing, WorkflowEvaluator[Nothing]](
+                factoryContext.evaluationId,
+                evaluatorClass,
+                stateType,
+                () =>
+                  wiredInstance("Workflow Evaluator", evaluatorClass)(
+                    sideEffectingComponentInjects(None, callerSpiffe)),
+                factoryContext.recorder,
+                serializer,
+                sdkExecutionContext)
+            },
+            provided = false)
+
       case clz if Reflect.isView(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
 
@@ -1283,6 +1319,7 @@ private final class Sdk(
         agentDescriptors ++
         autonomousAgentDescriptors ++
         evaluatorDescriptors ++
+        workflowEvaluatorDescriptors ++
         mcpEndpoints)
         .filterNot(isDisabled(combinedDisabledComponents))
 
@@ -1303,6 +1340,7 @@ private final class Sdk(
               serializer,
               sanitizer,
               classifierClient,
+              ledgerClient,
               inMemorySpanExporter))
           Future.successful(Done)
         case Some(setup) =>
@@ -1343,6 +1381,7 @@ private final class Sdk(
               serializer,
               sanitizer,
               classifierClient,
+              ledgerClient,
               inMemorySpanExporter))
           Future.successful(Done)
       }

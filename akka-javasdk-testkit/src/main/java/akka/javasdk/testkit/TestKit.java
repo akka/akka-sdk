@@ -35,6 +35,7 @@ import akka.javasdk.impl.http.HttpClientImpl;
 import akka.javasdk.impl.serialization.Serializer;
 import akka.javasdk.impl.timer.TimerSchedulerImpl;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akka.javasdk.ledger.LedgerClient;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
 import akka.javasdk.testkit.impl.MockedGrpcServicesImpl;
 import akka.javasdk.testkit.impl.MockedHttpServicesImpl;
@@ -853,6 +854,7 @@ public class TestKit {
   private AgentRegistry agentRegistry;
   private Sanitizer sanitizer;
   private ClassifierClient classifierClient;
+  private LedgerClient ledgerClient;
   private int eventingTestKitPort = -1;
   private Config applicationConfig;
   private String serviceName;
@@ -1007,6 +1009,7 @@ public class TestKit {
           Optional.ofNullable(startupContext.dependencyProvider().getOrElse(() -> null));
       sanitizer = startupContext.sanitizer();
       classifierClient = startupContext.classifierClient();
+      ledgerClient = startupContext.ledgerClient();
 
       settings.modelProvidersByAgentId.forEach(
           (agentId, modelProvider) ->
@@ -1470,6 +1473,14 @@ public class TestKit {
    */
   public ClassifierClient getClassifierClient() {
     return classifierClient;
+  }
+
+  /**
+   * @return The ledger client for the service, for fetching recorded interactions and evaluations
+   *     directly without going through a component.
+   */
+  public LedgerClient getLedgerClient() {
+    return ledgerClient;
   }
 
   /** Stop the testkit and local runtime. */

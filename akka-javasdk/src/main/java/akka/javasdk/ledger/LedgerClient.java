@@ -39,4 +39,26 @@ public interface LedgerClient {
    *     NoSuchElementException} if no interaction exists with that id
    */
   CompletionStage<InteractionRecord> getInteractionAsync(String interactionId);
+
+  /**
+   * Fetch the record for the evaluation with the given {@code evaluationId}. An evaluation is
+   * recorded when it terminates, so the record exists only once the evaluation has finished.
+   *
+   * <p>Blocks the calling thread until the record has been fetched. Safe to call on a Loom virtual
+   * thread. Use {@link #getEvaluationAsync(String)} for the non-blocking variant.
+   *
+   * @param evaluationId the globally unique id of the evaluation to fetch
+   * @return the evaluation record
+   * @throws NoSuchElementException if no evaluation exists with that id
+   */
+  EvaluationRecord getEvaluation(String evaluationId);
+
+  /**
+   * Async variant of {@link #getEvaluation(String)}.
+   *
+   * @param evaluationId the globally unique id of the evaluation to fetch
+   * @return a stage that completes with the evaluation record, or fails with {@link
+   *     NoSuchElementException} if no evaluation exists with that id
+   */
+  CompletionStage<EvaluationRecord> getEvaluationAsync(String evaluationId);
 }
