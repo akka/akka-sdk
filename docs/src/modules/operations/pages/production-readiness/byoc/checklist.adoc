@@ -45,6 +45,35 @@ If your business requires rapid, automated cross-region failover, Day 2 Ops is n
 Akka runs a parallel internal pre-production validation against the platform-side commitments captured in the RACI: backups, replication, observability stack, baseline regional alerts, certificate monitoring, and similar. This page covers the customer-side complement; the two are designed to pair.
 ====
 
+== Architecture and design review
+
+Akka reviews your application's high-level architecture and design so we understand the whole system, not isolated snippets, and can guide it toward production. Do this mid-stream, not only right before go-live, so the findings can still shape the build.
+
+[cols="1,3", options="header"]
+|===
+| Role | Responsibility
+| Customer | Discloses the high-level architecture and application design: request and data flows, project structure, data sources, and evaluation frameworks.
+| Akka | FDE reviews the architecture against production best practices and captures recommendations, treating the disclosed design as confidential per the agreement.
+|===
+
+.*Detailed checklist*
+[%collapsible]
+=====
+[discrete]
+==== Disclosure
+
+* [ ] High-level architecture shared: request and data flows, and how the application uses Akka SDK components (entities, views, workflows, endpoints, consumers, agents)
+* [ ] Project structure shared: the services, projects, and how they are organized
+* [ ] Data sources documented: databases (including per-project database layout), brokers, and external services
+* [ ] Evaluation frameworks / eval matrix shared, if running agents: how outputs are evaluated, guardrails, and acceptance criteria (supports governance)
+* [ ] The full design shared rather than snippets, so Akka understands the complete application
+
+[discrete]
+==== Review
+
+* [ ] Akka architecture review completed mid-stream (not only before go-live), with recommendations captured and fed back into the build
+=====
+
 == Sizing and capacity planning
 
 [cols="1,3", options="header"]
@@ -76,6 +105,9 @@ Akka runs a parallel internal pre-production validation against the platform-sid
 * [ ] VPC CIDR (Classless Inter-Domain Routing) has scale-out headroom; security groups and NACLs (Network Access Control Lists) reviewed
 * [ ] Container registry in or near the prod region
 * [ ] Persistence sized; auto-scaling ceilings set
+* [ ] Per-service instance types chosen for each workload (defaults reviewed; pinned where a service needs a specific shape)
+* [ ] Database layout planned per project (a dedicated database per project where isolation or independent scaling is needed, versus a shared database) and sized accordingly
+* [ ] Region optimization / environment sizing reviewed with Akka, so the region and per-service configuration is right-sized for the workload before go-live
 
 [discrete]
 ==== Dependencies
