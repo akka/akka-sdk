@@ -387,6 +387,7 @@ These sit in the cracks between teams and are the most commonly skipped. They ap
 * [ ] Break-glass procedure for emergency access defined
 * [ ] Akka 24/7 SRE scope clarified: what they can and cannot do without customer approval
 * [ ] Admin actions audit-logged and exported to your SIEM (Security Information and Event Management)
+* [ ] Region deletion policy decided with Akka: hard-lock the region (deletion forbidden) or set disabled-by-default, protecting services and associated resources from accidental deletion in production. Deployment is unaffected; the choice can differ per region
 
 [discrete]
 ==== Runbook coverage
