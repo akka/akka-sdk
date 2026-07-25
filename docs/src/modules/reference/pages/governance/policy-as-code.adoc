@@ -15,6 +15,21 @@ For example, `github.com/manulife/akka-specify-governance`. The repository is pr
 
 In v1 the governance repository *is* the source of truth: the organization owns the whole chain, and no Akka platform service is required.
 
+== Repository layout
+
+The repository needs one required file and one recommended one:
+
+[source]
+----
+akka-specify-governance/
+├── policy.yaml            # required — the org floor (schema below)
+└── .github/workflows/     # recommended — CI that enforces the floor
+    └── conformance.yml
+----
+
+`policy.yaml`:: The single source of truth for the floor, at the repository root. `/akka:setup` fetches this file; its schema is described below.
+CI workflow:: A pipeline that runs the Akka conformance check against `policy.yaml`. Because a developer can bypass local checks, the organization's own CI is the enforcement backstop — the gate a change must pass to merge or ship. Use the `.github/workflows/` directory on GitHub, or the equivalent for your provider.
+
 == Governance levels
 
 Each condition in the policy is assigned a *governance level* — a clean 2×2 of default state (on or off) and developer configurability (locked or configurable):
@@ -46,6 +61,66 @@ Alongside conditions and their levels, a policy sets:
 * the *ship definition* — the organization-authored terminal action(s) and the conditions that must be green before ship fires (see xref:sdk:enforced-mode.adoc#shipping[Shipping and receipts]);
 * waiver rules — whether waivers are allowed, and whether they require approval;
 * the toolchain pin — the approved Akka CLI, plugin, and SDK versions.
+
+== Example policy.yaml
+
+A representative floor. Adopt library conditions by `ref`, set each one's governance level, and define corporate conditions inline within a type:
+
+[source,yaml]
+----
+apiVersion: akka-specify/v1
+kind: OrgPolicy
+org: manulife
+version: 3                     # bump on every change; pinned into .akka/policy.lock
+
+mode:
+  default: enforced            # enforced | a-la-carte
+  allowed: [enforced]
+  locked: true                 # developers cannot drop out of Enforced
+
+ship:                          # org-authored terminal action(s)
+  steps:
+    - name: push-to-governed-repo
+      action: "git push origin release"
+  in_scope_auditor_tiers: [product-local, project, process]
+  emit_receipt: true
+
+toolchain:
+  akka_cli: "3.0.65"           # approved version; drift triggers /akka:setup
+  locked: true
+
+exit_conditions:
+  # Adopt and lock library conditions by id
+  - ref: PROJ-SCAN-SAST-CLEAN
+    level: ALWAYS-APPLY
+  - ref: SEC-SECRETS-NOT-COMMITTED
+    level: ALWAYS-APPLY
+  - ref: PROJ-TEST-COVERAGE
+    level: ON-BUT-DEV-CONFIGURABLE
+    params: { min_line_coverage: 0.80 }
+  # A corporate condition, defined inline within a type
+  - id: CORP-DATA-RESIDENCY-EU
+    level: ALWAYS-APPLY
+    tier: product
+    dod_type: security-compliance
+    invariant: "customer PII is stored only in EU-region datastores"
+    pass: "count(pii_entities where region not startswith 'eu-') == 0"
+    autonomy: human-signoff
+
+completion_policy:
+  default_preset: all-must-pass          # confidence-pass | percent-threshold | all-must-pass
+  human_review_required_for: [security-compliance, data-integrity]
+
+waivers:
+  allowed: true
+  require_approval_for: [ALWAYS-APPLY]   # locked-condition waivers need approval
+  default_expiry_days: 30
+  approvers: ["@manulife/platform-governance"]
+
+rollout:
+  mode: warn-then-enforce                # newly-locked conditions don't turn projects red overnight
+  enforce_after: "2026-09-01"
+----
 
 == How a project sources the floor
 

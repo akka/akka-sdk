@@ -133,7 +133,26 @@ When ship completes, Akka writes a *conformance receipt* -- which conditions wer
 [#governance]
 == Enterprise governance
 
-In Enforced mode an organization authors a floor of mandatory exit conditions and definitions of done -- security, compliance, repository hygiene, its "way of working" -- that Akka enforces and developers can tighten but never loosen. The floor is versioned policy-as-code in the organization's own git repository, and each condition is assigned a governance level (`always-apply`, `never-apply`, `on-but-dev-configurable`, `off-but-dev-configurable`). The organization's own CI is the enforcement backstop. See xref:reference:governance/policy-as-code.adoc[Policy as code] for the format and the governance levels.
+In Enforced mode an organization authors a floor of mandatory exit conditions and definitions of done -- security, compliance, repository hygiene, its "way of working" -- that Akka enforces and developers can tighten but never loosen. Each condition is assigned a governance level (`always-apply`, `never-apply`, `on-but-dev-configurable`, `off-but-dev-configurable`).
+
+=== Set up the governance repository
+
+The floor lives as versioned policy-as-code in a git repository your organization owns and controls. Set it up once:
+
+. *Create the repository*, named by convention:
++
+[source]
+----
+<source-provider>/<org>/akka-specify-governance
+----
++
+For example, `github.com/manulife/akka-specify-governance`. It is provider-agnostic (GitHub, GitLab, Bitbucket, or an enterprise-hosted server) and governed entirely by your own access controls -- private repository, SSO, RBAC, and branch protection.
+
+. *Add `policy.yaml`* at the repository root -- the single source of truth for the floor. It declares the allowed mode, the ship definition, the toolchain version, the exit conditions and their governance levels, and the completion, waiver, and rollout policies. See xref:reference:governance/policy-as-code.adoc[Policy as code] for the full schema and an annotated example.
+
+. *Add a CI workflow* that runs the Akka conformance check against the policy. The organization's own CI is the enforcement backstop: local tooling is advisory and guided; CI is the gate a change must pass to merge or ship.
+
+When a developer runs `/akka:setup`, the CLI git-fetches this repository, merges the floor under the project and developer layers (tighten-only), and records the pinned commit in `.akka/policy.lock`. Publishing a new floor version makes that lock stale -- the xref:sdk:enforced-mode.adoc#dod-types[Environment & Dependencies] condition goes red until the developer re-runs `/akka:setup`.
 
 Beyond the organization floor, the xref:reference:exit-conditions/default-library.adoc[default library] provides a rich, curated set of best-practice conditions on by default; you strike what does not apply, and strikes are recorded. For inspiration on what else to require, browse the xref:reference:exit-conditions/catalog/index.adoc[exit condition catalog], organized by type and project flavor.
 
