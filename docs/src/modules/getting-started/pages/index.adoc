@@ -15,8 +15,7 @@ Start here to set up a development environment and build your first Akka service
 
 Guided, end-to-end walkthroughs that teach by building one thing.
 
-* xref:getting-started:hello-agent-enforced.adoc[Spec-driven hello agent — Enforced] — define done as exit conditions and let the assistant drive the build to green.
-* xref:getting-started:spec-your-first-agent.adoc[Spec-driven hello agent — À la carte] — run the specification commands yourself, one at a time.
+* xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent] — build an agent with spec-driven development, in Enforced or À la carte mode.
 * xref:getting-started:author-your-first-service.adoc[Code-first hello agent] — build the same agent by hand in Java.
 * xref:getting-started:planner-agent/index.adoc[Multi-agent tutorial] — orchestrate multiple agents with a workflow.
 * xref:getting-started:ask-akka-agent/index.adoc[RAG chat tutorial] — build a retrieval-augmented chat agent.

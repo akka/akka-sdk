@@ -1,8 +1,7 @@
 //  Getting Started
 * xref:getting-started:index.adoc[Getting Started]
 ** xref:getting-started:set-up-dev-env.adoc[Set up your dev env]
-** xref:getting-started:hello-agent-enforced.adoc[Spec-driven hello agent — Enforced]
-** xref:getting-started:spec-your-first-agent.adoc[Spec-driven hello agent — À la carte]
+** xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent]
 ** xref:getting-started:author-your-first-service.adoc[Code-first hello agent]
 ** xref:getting-started:planner-agent/index.adoc[Multi-agent tutorial]
 *** xref:getting-started:planner-agent/activity.adoc[]

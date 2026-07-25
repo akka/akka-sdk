@@ -53,12 +53,6 @@ Setup scaffolds your project with a **constitution**. The `constitution.md` file
 
 The constitution is typically defined once at the start of a project and only refined as necessary.
 
-== Styles of AI-assisted development
-
-There are a few common ways people work with an AI assistant. The simplest is _direct prompting_ -- you ask for code and get it back -- which is fine for demos but has no reliable source of truth, since the same prompt can produce different output each time. A step up is a _single-file specification_: one markdown file capturing the _what_, _why_, and _how_ of the application. It gives you a version-controlled source of truth an LLM can check generated code against, but it is written mostly by hand and becomes unwieldy as complexity grows.
-
-Spec-driven development is the formal version of that idea. Instead of one large hand-written file, it uses an iterative, git-friendly process where the AI assistant helps build the specification _and_ generate the code from it -- producing specs that are consumable by both humans and AI while reducing random, unexpected output.
-
 == See also
 
 * xref:sdk:enforced-mode.adoc[] and xref:sdk:a-la-carte-mode.adoc[] -- the two modes in detail.

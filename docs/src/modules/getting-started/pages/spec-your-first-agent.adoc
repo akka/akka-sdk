@@ -1,18 +1,124 @@
-= Spec-driven hello agent — À la carte
+= Spec-first hello agent
 
 include::ROOT:partial$include.adoc[]
 
-This guide builds a "hello world" greeting agent in xref:sdk:a-la-carte-mode.adoc[À la carte mode]: you run each specification command yourself -- specify, plan, tasks, implement, build -- one at a time. For the guided version where you define "done" and the assistant drives the build to it, see xref:getting-started:hello-agent-enforced.adoc[the Enforced-mode tutorial].
+This guide builds a "hello world" greeting agent with spec-driven development. The agent greets each user in a new language every turn and tracks the languages it has already used in the session.
 
-The agent greets each user in a new language every turn and tracks the languages it has already used in the session.
+Spec-driven development runs in two modes, and you can build this agent either way. Choose your style below.
+
+== Choose your style
+
+* *xref:sdk:enforced-mode.adoc[Enforced mode]* (the default) -- you define "done" as machine-checkable exit conditions and the assistant drives the build until they are met. A cleaner, auditable result. Follow <<enforced,Build in Enforced mode>>.
+* *xref:sdk:a-la-carte-mode.adoc[À la carte mode]* -- you run each specification command yourself, one at a time. Faster and lighter; you own the rigor. Follow <<a-la-carte,Build À la carte>>.
+
+New installs start in *Enforced* mode. To use À la carte, switch first:
+
+[source]
+----
+/akka:mode a-la-carte
+----
 
 == Prerequisites
 
-* Complete xref:getting-started:set-up-dev-env.adoc#_set_up_your_ai_harness[Set up your AI harness] — install the Akka Specify Plugin and run `/akka:setup`.
-* Switch to À la carte mode with `/akka:mode a-la-carte` — new installs default to Enforced mode, where these commands fold into `/akka:specify`.
+* Complete xref:getting-started:set-up-dev-env.adoc#_set_up_your_ai_harness[Set up your AI harness] -- install the Akka Specify Plugin and run `/akka:setup`.
 * An https://platform.openai.com/api-keys[OpenAI API key, window="new"]. The application code calls OpenAI, independently of your AI coding assistant. Set `OPENAI_API_KEY` in your environment before starting your assistant; on Mac/Linux use `export` so child processes inherit it.
 
-== Specify the feature
+[#enforced]
+== Build in Enforced mode
+
+In Enforced mode you drive the whole flow through one re-entrant command, `/akka:specify`. You do not run `clarify`, `plan`, `tasks`, or `implement` yourself -- they fold into it.
+
+=== Specify the feature
+
+.Feature specification
+[cols="1"]
+:table-caption: Prompt
+|===
+|**/akka:specify** greeter agent - _greet each user in a new language every turn, remembering which languages were used per session_
+|===
+
+The engine infers a *definition of done* from your intent and Akka's own surfaces, and shows it grouped by business category. Some conditions are covered by the platform, some are the machine's to build, and a few need a decision from you:
+
+[source]
+----
+DEFINITION OF DONE                                    17 conditions
+── Product ──────────────────────────────────────────────────────
+ ✓ [akka] Reliability — cluster survives node loss ... covered by Akka
+ ✓ [akka] Observability — traces, logs, metrics ...... covered by Akka
+ ○ Functional — a greeting every turn ................ machine will build
+ ○ Functional — no language repeats per session ...... machine will build
+ ○ Data Integrity — session history invariant ........ machine will build
+ ? Performance — p95 response latency ................ decision needed
+── Project ──────────────────────────────────────────────────────
+ 🔒 Pipeline & Scanning — SAST + secrets clean ........ org floor
+ ? Code & Test Health — coverage threshold ........... decision needed
+── Process ──────────────────────────────────────────────────────
+ 🔒 Process Integrity — APIs cited, none invented ..... org floor
+----
+
+See xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done types] for what each category covers.
+
+=== Answer the open decisions
+
+Enforced mode will not build while a required decision is open. The engine ends every turn with a definitive status and the exact next command:
+
+[source]
+----
+NEEDS_INPUT — decisions to close before I can build:
+  • Code & Test Health — coverage threshold?     I suggest 80%
+  • Performance — p95 latency target?            I suggest < 10 ms
+NEXT → /akka:specify <your answers>
+----
+
+Answer in your own words -- accept the suggestions or set your own. Akka's runtime comfortably supports a tight latency target:
+
+.Decisions
+[cols="1"]
+:table-caption: Prompt
+|===
+|**/akka:specify** keep 80% coverage, and tighten p95 to < 5 ms
+|===
+
+The engine records your decisions, locks the definition of done, and starts building.
+
+=== Let the build run
+
+The machine derives the exit conditions, wires xref:sdk:enforced-mode.adoc#auditors[auditors], plans, implements, and loops until every locally runnable condition is green. It reports `WORKING` and interrupts only if it cannot reach a condition, hits an unresolved ambiguity, or finds a conflict with the organization's floor.
+
+[source]
+----
+WORKING — 16 active conditions
+  plan → tasks → implement → verify
+  ✓ compiles   ✓ 6/6 tests   ✓ no repeats   ✓ session isolation   ✓ p95 4.1 ms
+NEXT → wait, or /akka:status
+----
+
+Check progress at any time without interrupting the build with `/akka:status`.
+
+=== Ship
+
+When the completion policy is met, the engine reports `READY_TO_SHIP`:
+
+[source]
+----
+READY_TO_SHIP — completion policy met
+  17 conditions · 12 verified · 3 asserted by Akka · 1 deferred → staging
+NEXT → /akka:ship
+----
+
+Run `/akka:ship`. It runs the in-scope auditors one last time, fires the terminal action your organization defined, and writes a xref:sdk:enforced-mode.adoc#shipping[conformance receipt] recording what was verified and what deferred downstream.
+
+[#a-la-carte]
+== Build À la carte
+
+In À la carte mode you run each command yourself. Switch to it first (new installs default to Enforced):
+
+[source]
+----
+/akka:mode a-la-carte
+----
+
+=== Specify the feature
 
 Run `/akka:specify` with the feature description:
 
@@ -32,7 +138,7 @@ Approve the MCP tool calls when prompted. The assistant creates a new git branch
 
 If the summary does not match your intent, re-run `/akka:specify` with a revised prompt. For a single-feature application like this, skip `/akka:clarify`.
 
-== Create a plan
+=== Create a plan
 
 Run `/akka:plan` with the technical implementation prompt. The plan defines _how_ to implement the specification — architecture, components, and constraints:
 
@@ -88,7 +194,7 @@ The architecture summary describes:
 
 All four constitution principles pass: Akka SDK First, Design Principles, Test Coverage, and Simplicity. No code has been written yet.
 
-== Generate tasks
+=== Generate tasks
 
 Run `/akka:tasks` to convert the plan into an ordered task list. The assistant marks which tasks can run in parallel:
 
@@ -107,7 +213,7 @@ Run `/akka:tasks` to convert the plan into an ordered task list. The assistant m
 
 T004 and T005 can run in parallel after T003; T007 and T008 can run in parallel. The MVP (User Stories 1 and 2) is functional after the first five tasks.
 
-== Implement the agent
+=== Implement the agent
 
 Run `/akka:implement` and approve the operations it requests. Expect the assistant to hit compilation or test failures and correct them on its own; step in only if it stops converging after repeated attempts. To change the result, re-run `/akka:implement` with a different model or effort level.
 
@@ -130,7 +236,7 @@ All four tests pass (1 agent unit, 3 endpoint integration) and `mvn verify` succ
 
 Exercise the application before reviewing the code. If it does not meet the requirements, re-run `/akka:plan` or `/akka:specify` and regenerate. Do not merge the feature branch to `main` until you have exercised the result.
 
-== Exercise the agent API
+=== Exercise the agent API
 
 Run `/akka:build`. This compiles the project, runs the tests, starts the service, and issues a sample request to the endpoint. The AI picks a default port for the service, usually port `9000`.
 

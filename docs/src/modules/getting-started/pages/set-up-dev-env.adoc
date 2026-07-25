@@ -50,7 +50,7 @@ New installs start in *Enforced* mode. Switch at any time:
 /akka:mode a-la-carte
 ----
 
-See xref:sdk:spec-driven-development.adoc#choosing-your-mode[Choosing your mode] for the trade-offs. Then build your first agent -- xref:getting-started:hello-agent-enforced.adoc[the Enforced-mode tutorial], or the xref:getting-started:spec-your-first-agent.adoc[À la carte version] if you switched.
+See xref:sdk:spec-driven-development.adoc#choosing-your-mode[Choosing your mode] for the trade-offs. Then build your first agent with the xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent] tutorial, which walks the same build in either mode.
 
 [#_set_up_your_env_without_ai]
 == Set up your env without AI
