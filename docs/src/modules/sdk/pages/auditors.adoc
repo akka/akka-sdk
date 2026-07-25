@@ -1,0 +1,64 @@
+= Auditors
+:page-summary: How Akka Specify checks each exit condition — requirement-aware auditors and the four ways a condition resolves.
+:page-when-to-use: Read this to understand how exit conditions are evaluated and why some resolve to deferred or open instead of green or red.
+:page-related: xref:sdk:exit-conditions.adoc[], xref:sdk:shipping-and-receipts.adoc[]
+:page-persona: Developer, Tech Lead, Architect
+
+include::ROOT:partial$include.adoc[]
+
+An *auditor* is the executable check bound to an xref:sdk:exit-conditions.adoc[exit condition]. When the tooling evaluates the definition of done, it runs each condition's auditor and records a verdict. Auditors are what make "done" checkable rather than a matter of opinion.
+
+== Requirement-aware evaluation
+
+An auditor declares what it needs in order to run. Before evaluating, the tooling checks whether that requirement is available in the current environment, and resolves the condition accordingly rather than blindly failing. Common requirements:
+
+[cols="1,3"]
+|===
+| Requirement | The auditor needs
+
+| Git | A git repository (history, branch state, working-tree cleanliness).
+| Maven | A Maven project it can compile, test, and resolve dependencies against.
+| GitHub | Access to the repository's CI/CD and scanning results.
+| Live service | A running service — locally or deployed — to exercise endpoints, entity state, views, and workflows.
+|===
+
+Requirement-awareness is what lets the same definition of done travel across environments: a live-service auditor simply defers where no service is running, instead of turning the condition red.
+
+== The four resolution paths
+
+Every condition resolves in one of four ways:
+
+[cols="1,3"]
+|===
+| Resolution | When
+
+| *Asserted*
+| The condition is guaranteed by the Akka platform (an `akka-intrinsic` condition such as observability, resilience, or scalability). It is trusted green without running a check.
+
+| *Executable*
+| The auditor's requirement is available, so it runs and returns green or red.
+
+| *Deferred*
+| The auditor's requirement is not available in this environment (for example, a live-service check before deployment). The condition is carried downstream to where it can run, and recorded in the xref:sdk:shipping-and-receipts.adoc[conformance receipt].
+
+| *Open*
+| The condition has no runnable auditor yet, or requires a human sign-off. It blocks completion until resolved.
+|===
+
+The difference between deferred and open matters: a deferred condition is not a gap — it is a check that will run elsewhere. An open condition is unfinished work.
+
+== What auditors check
+
+The built-in library spans the xref:sdk:definition-of-done-types.adoc[Definition-of-Done types]. Examples of the kinds of checks auditors perform:
+
+* *Build* — the project compiles, tests pass, and dependencies resolve (Maven).
+* *Repository hygiene* — the working tree is clean and no secrets are committed (Git).
+* *Pipeline and scanning* — prior commits are CI-green and scanning is complete (GitHub).
+* *Documentation* — required documents (such as ADRs) exist.
+* *Live service* — endpoints respond correctly, entity state holds its invariants, and the cluster survives fault injection (a running service; deferred before deployment).
+
+Akka's backoffice and local tooling provide the runtime probes that live-service auditors use, so runtime behavior is checked against the specification, not just asserted.
+
+== Custom auditors
+
+The built-in library covers the platform-agnostic conditions every Akka service should meet. Organizations extend the definition of done by adding conditions — and the auditors that check them — within the existing types, as part of their governance floor. See xref:sdk:conformance-modes.adoc[Conformance modes] for how the floor is applied.
