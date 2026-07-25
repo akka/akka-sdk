@@ -1,12 +1,15 @@
-= Spec-first hello agent
+= Spec-driven hello agent — À la carte
 
 include::ROOT:partial$include.adoc[]
 
-This guide builds a "hello world" greeting agent end to end with spec-driven development: specify the feature, plan it, generate tasks, implement, and run it locally. The agent greets each user in a new language every turn and tracks the languages it has already used in the session. You drive the whole flow from your AI coding assistant.
+This guide builds a "hello world" greeting agent in xref:sdk:a-la-carte-mode.adoc[À la carte mode]: you run each specification command yourself -- specify, plan, tasks, implement, build -- one at a time. For the guided version where you define "done" and the assistant drives the build to it, see xref:getting-started:hello-agent-enforced.adoc[the Enforced-mode tutorial].
+
+The agent greets each user in a new language every turn and tracks the languages it has already used in the session.
 
 == Prerequisites
 
 * Complete xref:getting-started:set-up-dev-env.adoc#_set_up_your_ai_harness[Set up your AI harness] — install the Akka Specify Plugin and run `/akka:setup`.
+* Switch to À la carte mode with `/akka:mode a-la-carte` — new installs default to Enforced mode, where these commands fold into `/akka:specify`.
 * An https://platform.openai.com/api-keys[OpenAI API key, window="new"]. The application code calls OpenAI, independently of your AI coding assistant. Set `OPENAI_API_KEY` in your environment before starting your assistant; on Mac/Linux use `export` so child processes inherit it.
 
 == Specify the feature

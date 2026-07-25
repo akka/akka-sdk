@@ -1,0 +1,114 @@
+= Spec-driven hello agent — Enforced mode
+
+include::ROOT:partial$include.adoc[]
+
+This guide builds a "hello world" greeting agent in xref:sdk:enforced-mode.adoc[Enforced mode]: you define "done" as machine-checkable exit conditions, and the assistant drives the build until they are met. Instead of running each phase yourself, you drive the whole flow through one re-entrant command, `/akka:specify`. For the manual, command-by-command version of the same agent, see xref:getting-started:spec-your-first-agent.adoc[the À la carte tutorial].
+
+The agent greets each user in a new language every turn and tracks the languages it has already used in the session.
+
+== Prerequisites
+
+* Complete xref:getting-started:set-up-dev-env.adoc#_set_up_your_ai_harness[Set up your AI harness] -- install the Akka Specify Plugin and run `/akka:setup`. New installs are already in Enforced mode; if you switched, run `/akka:mode enforced`.
+* An https://platform.openai.com/api-keys[OpenAI API key, window="new"]. The application code calls OpenAI, independently of your AI coding assistant. Set `OPENAI_API_KEY` in your environment before starting your assistant.
+
+== Specify the feature
+
+Describe the feature to `/akka:specify`. You do not run `clarify`, `plan`, `tasks`, or `implement` yourself -- in Enforced mode they fold into this one command.
+
+.Feature specification
+[cols="1"]
+:table-caption: Prompt
+|===
+|**/akka:specify** greeter agent - _greet each user in a new language every turn, remembering which languages were used per session_
+|===
+
+The engine infers a *definition of done* from your intent and Akka's own surfaces, and shows it grouped by business category. Some conditions are covered by the platform, some are the machine's to build, and a few need a decision from you:
+
+[source]
+----
+DEFINITION OF DONE                                    17 conditions
+── Product ──────────────────────────────────────────────────────
+ ✓ [akka] Reliability — cluster survives node loss ... covered by Akka
+ ✓ [akka] Observability — traces, logs, metrics ...... covered by Akka
+ ○ Functional — a greeting every turn ................ machine will build
+ ○ Functional — no language repeats per session ...... machine will build
+ ○ Data Integrity — session history invariant ........ machine will build
+ ? Performance — p95 response latency ................ decision needed
+── Project ──────────────────────────────────────────────────────
+ 🔒 Pipeline & Scanning — SAST + secrets clean ........ org floor
+ ? Code & Test Health — coverage threshold ........... decision needed
+── Process ──────────────────────────────────────────────────────
+ 🔒 Process Integrity — APIs cited, none invented ..... org floor
+----
+
+See xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done types] for what each category covers, and xref:sdk:enforced-mode.adoc#exit-conditions[Exit conditions and Definition of Done] for the model.
+
+== Answer the open decisions
+
+Enforced mode will not build while a required decision is open. The engine ends every turn with a definitive status and the exact next command:
+
+[source]
+----
+NEEDS_INPUT — decisions to close before I can build:
+  • Code & Test Health — coverage threshold?     I suggest 80%
+  • Performance — p95 latency target?            I suggest < 10 ms
+NEXT → /akka:specify <your answers>
+----
+
+Answer in your own words. You can accept the suggestions or set your own -- Akka's runtime comfortably supports a tight latency target:
+
+.Decisions
+[cols="1"]
+:table-caption: Prompt
+|===
+|**/akka:specify** keep 80% coverage, and tighten p95 to < 5 ms
+|===
+
+The engine records your decisions, locks the definition of done, and starts building.
+
+== Let the build run
+
+The machine now derives the exit conditions, wires xref:sdk:enforced-mode.adoc#auditors[auditors], plans, implements, and loops until every locally runnable condition is green. It reports `WORKING` and interrupts only if it cannot reach a condition, hits an ambiguity you did not resolve, or finds a conflict with the organization's floor.
+
+[source]
+----
+WORKING — 16 active conditions
+  plan → tasks → implement → verify
+  ✓ compiles   ✓ 6/6 tests   ✓ no repeats   ✓ session isolation   ✓ p95 4.1 ms
+NEXT → wait, or /akka:status
+----
+
+While it works, check progress at any time without interrupting it:
+
+[source]
+----
+/akka:status
+----
+
+== Ship
+
+When the completion policy is met, the engine reports `READY_TO_SHIP`:
+
+[source]
+----
+READY_TO_SHIP — completion policy met
+  17 conditions · 12 verified · 3 asserted by Akka · 1 deferred → staging
+NEXT → /akka:ship
+----
+
+Ship the feature. `/akka:ship` runs the in-scope auditors one last time and fires the terminal action your organization defined, then writes a xref:sdk:enforced-mode.adoc#shipping[conformance receipt] recording what was verified and what deferred downstream.
+
+[source]
+----
+/akka:ship
+----
+
+== What you did
+
+You defined "done" in business terms, answered only the decisions the engine could not safely infer, and let the machine build to a verified result -- without running each phase by hand. Everything the build proved is captured in the definition of done and the conformance receipt.
+
+== Next steps
+
+* xref:getting-started:spec-your-first-agent.adoc[Build the same agent À la carte] -- run each command yourself.
+* xref:sdk:enforced-mode.adoc[] -- the full Enforced-mode model.
+* xref:reference:exit-conditions/catalog/index.adoc[Exit condition catalog] -- conditions to consider for your own projects.
