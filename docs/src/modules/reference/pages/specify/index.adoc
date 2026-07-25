@@ -25,6 +25,7 @@ The commands are used from within an AI coding assistant (such as Claude Code) a
 |xref:specify/status.adoc[`/akka:status`]             | Show the definition-of-done rollup and current phase
 |xref:specify/ship.adoc[`/akka:ship`]                 | Fire the organization-authored terminal action
 |xref:specify/mode.adoc[`/akka:mode`]                 | Switch between Enforced and À la carte modes
+|xref:specify/docs.adoc[`/akka:docs`]                 | Generate rendered project documentation into `docs/`
 |====
 
 == Concepts

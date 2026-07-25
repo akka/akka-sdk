@@ -338,6 +338,7 @@
 **** xref:specify/constitution.adoc[/akka:constitution]
 **** xref:specify/converge.adoc[/akka:converge]
 **** xref:specify/deploy.adoc[/akka:deploy]
+**** xref:specify/docs.adoc[/akka:docs]
 **** xref:specify/implement.adoc[/akka:implement]
 **** xref:specify/inspect.adoc[/akka:inspect]
 **** xref:specify/issues.adoc[/akka:issues]

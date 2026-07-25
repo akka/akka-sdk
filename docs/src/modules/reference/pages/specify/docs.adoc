@@ -1,0 +1,29 @@
+= /akka:docs
+
+Generate rendered documentation for the current Akka project.
+
+== Usage
+
+[source]
+----
+/akka:docs
+----
+
+== Description
+
+Introspects the project's components, design artifacts, and source, then generates a self-contained documentation site into the project's `docs/` folder:
+
+* an *entity diagram* -- each entity's state fields, its events, and the domain objects it references;
+* an *interaction diagram* -- a sequence view of how a request flows through endpoints, entities, views, and workflows;
+* a *component graph* -- the components grouped by layer (edge, domain, read model);
+* a *component reference* -- every component explained, with a syntax-highlighted code excerpt.
+
+Everything is assembled into `docs/index.html`, styled to match Akka, with each section collapsible so you can open just what you need. When generation finishes, the command prints the path to the rendered documentation -- open `docs/index.html` in a browser to read it.
+
+.Rendered `docs/index.html` for a sample shopping-cart service
+image::akka-docs-output.png[Rendered Akka project documentation showing the entity diagram, interaction diagram, component graph, and component reference,width=100%]
+
+== See also
+
+* xref:sdk:a-la-carte-mode.adoc[]
+* xref:reference:specify/index.adoc[]
