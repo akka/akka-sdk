@@ -1,4 +1,4 @@
-= /akka.analyze
+= /akka:analyze
 
 Cross-artifact consistency and quality analysis.
 

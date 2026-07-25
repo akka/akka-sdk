@@ -332,3 +332,7 @@ UIs
 peerreview
 inlined
 passivating
+Codex
+Copilot
+Cursor
+Gemini

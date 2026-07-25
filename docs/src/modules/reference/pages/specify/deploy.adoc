@@ -1,4 +1,4 @@
-= /akka.deploy
+= /akka:deploy
 
 Deploy the service to Akka Automated Operations.
 
