@@ -44,6 +44,10 @@ There are a few common ways people work with an AI assistant. The simplest is _d
 
 Spec-driven development is the formal version of that idea. Instead of one large hand-written file, it uses an iterative, git-friendly process where the AI assistant helps build the specification _and_ generate the code from it -- producing specs that are consumable by both humans and AI while reducing random, unexpected output. The rest of this page covers that process in detail.
 
+== Defining done with exit conditions
+
+Spec-driven development expresses "done" as machine-checkable xref:sdk:exit-conditions.adoc[exit conditions], organized by xref:sdk:definition-of-done-types.adoc[Definition-of-Done type] and evaluated by xref:sdk:auditors.adoc[auditors]. Depending on the xref:sdk:conformance-modes.adoc[conformance mode], the definition of done is either a hard gate (Enforced) or an advisory checklist (À la carte). When a feature ships, a xref:sdk:shipping-and-receipts.adoc[conformance receipt] records what was verified and what defers downstream.
+
 == Using Akka specify
 
 With your environment set up and your project's constitution in place, you drive the entire spec-driven workflow from inside your AI coding assistant.

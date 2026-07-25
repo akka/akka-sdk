@@ -1,0 +1,51 @@
+= Exit condition schema
+
+An *exit condition* is the technical unit of "done" in xref:sdk:spec-driven-development.adoc[spec-driven development]. Each condition carries the fields below. See xref:sdk:exit-conditions.adoc[Exit conditions and Definition of Done] for the conceptual model.
+
+== Fields
+
+`id`::
+A stable identifier for the condition (for example, `OPS-COMPILES`, `SEC-SECRETS`). Used in status output, receipts, and waivers.
+
+`summary`::
+A short human-readable statement of what the condition requires.
+
+`dod_type`::
+The xref:sdk:definition-of-done-types.adoc[Definition-of-Done type] the condition belongs to (for example, `Functional`, `Reliability`, `Repository Hygiene`). Required on every condition. Determines the tier (Product, Project, or Process) the condition rolls up into.
+
+`provenance`::
+Where the condition comes from, which determines whether a developer can change it:
++
+[cols="1,3"]
+|===
+| Value | Meaning
+
+| `akka-intrinsic` | Guaranteed by the platform; always on, asserted green, never authored by a developer.
+| `recommended-default` | From the default library; on by default, may be struck.
+| `corporate` | Inherited from the organization floor; locked according to its governance level.
+| `developer` | Added by the developer for this feature.
+|===
+
+`governance_level`::
+For `corporate` conditions, the level that controls developer configurability (see xref:reference:governance/policy-as-code.adoc[Policy as code]): `always-apply`, `never-apply`, `on-but-dev-configurable`, or `off-but-dev-configurable`.
+
+`pass`::
+The binary predicate that defines success — a check over an observable surface that evaluates to true or false. A condition whose success cannot be expressed as a binary predicate is not yet an exit condition.
+
+`auditor`::
+The check bound to the condition and the requirement it needs to run (git, Maven, GitHub, or a live service). See xref:sdk:auditors.adoc[Auditors].
+
+`state`::
+The condition's current resolution: `green`, `red`, `open`, `deferred`, or `asserted`.
+
+`waiver`::
+An optional modifier attached to a still-active condition. It does not disable or remove the condition — the unmet state stays visible — but annotates who waived it, why, and an expiration. On expiry the condition reverts to blocking. Waivers are policy-gated; the organization may forbid them or require approval.
+
+`struck`::
+Whether a `recommended-default` condition has been struck as inapplicable. Strikes are bounded (an organization-locked condition cannot be struck) and recorded in the conformance receipt.
+
+== Related
+
+* xref:sdk:exit-conditions.adoc[]
+* xref:reference:exit-conditions/default-library.adoc[]
+* xref:reference:governance/policy-as-code.adoc[]

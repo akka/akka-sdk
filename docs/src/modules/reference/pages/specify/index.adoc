@@ -20,4 +20,7 @@ These commands are used from within an AI coding assistant (such as Claude Code)
 |xref:specify/inspect.adoc[`/akka:inspect`]           | Inspect a running service's runtime state against the spec
 |xref:specify/deploy.adoc[`/akka:deploy`]             | Deploy to Akka Automated Operations
 |xref:specify/issues.adoc[`/akka:issues`]             | Convert tasks into GitHub issues
+|xref:specify/status.adoc[`/akka:status`]             | Show the definition-of-done rollup and current phase
+|xref:specify/ship.adoc[`/akka:ship`]                 | Fire the organization-authored terminal action
+|xref:specify/mode.adoc[`/akka:mode`]                 | Switch between Enforced and À la carte modes
 |====

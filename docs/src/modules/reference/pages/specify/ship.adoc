@@ -1,0 +1,22 @@
+= /akka:ship
+
+Fire the organization-authored terminal action for the feature.
+
+== Usage
+
+[source]
+----
+/akka:ship
+----
+
+== Description
+
+Runs the in-scope auditors and, if the completion policy is satisfied, fires the terminal action the organization defined — for example, deploy and activate, or push to a repository and open a pull request. In Enforced mode `ship` refuses unless the feature is ready to ship; in À la carte mode it proceeds regardless of condition status.
+
+On success it writes a xref:sdk:shipping-and-receipts.adoc[conformance receipt] recording what was verified and what deferred downstream, and in Enforced mode it offers to shut down the local services the build started.
+
+== See also
+
+* xref:sdk:shipping-and-receipts.adoc[]
+* xref:sdk:conformance-modes.adoc[]
+* xref:reference:specify/index.adoc[]

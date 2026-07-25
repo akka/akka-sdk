@@ -1,0 +1,20 @@
+= /akka:status
+
+Show a read-only rollup of the definition of done.
+
+== Usage
+
+[source]
+----
+/akka:status
+----
+
+== Description
+
+Prints the current definition-of-done manifest: every exit condition grouped by xref:sdk:definition-of-done-types.adoc[Definition-of-Done type], with its provenance, lock status, and resolution state (green, red, open, deferred, or asserted), plus the current phase and any blockers. It is read-only and changes nothing. Status is most useful during the autonomous build phase, when you want to see progress without interrupting the machine.
+
+== See also
+
+* xref:sdk:conformance-modes.adoc[]
+* xref:sdk:exit-conditions.adoc[]
+* xref:reference:specify/index.adoc[]
