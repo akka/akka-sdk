@@ -1,0 +1,157 @@
+= Operability exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Operability] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
+
+== Deployment & rollout strategy
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `OPS-ROLLING-UPDATE-AAO` | The service deploys via an AAO rolling update with no full-fleet restart or downtime window.
+| `OPS-ZERO-DOWNTIME-DEPLOY` | A deploy completes with zero failed requests observed against a continuous synthetic probe.
+| `OPS-CANARY-STAGE-GATED` | Rollout advances through a canary stage that is promoted only after health and error thresholds pass.
+| `OPS-BLUE-GREEN-CUTOVER` | Traffic cutover between blue and green environments is atomic and reversible within one step.
+| `OPS-DEPLOY-MAX-SURGE-BOUND` | Rolling update honors configured maxSurge and maxUnavailable so capacity never drops below a floor.
+| `OPS-IMMUTABLE-ARTIFACT` | The deployed image is an immutable, content-addressed artifact matching the promoted build digest.
+| `OPS-DEPLOY-VERSION-STAMPED` | The running service exposes its build version and commit SHA on a discoverable endpoint.
+| `OPS-PROGRESSIVE-ROLLOUT-HALT` | Rollout automatically halts when the new revision's error rate exceeds the prior revision's baseline.
+| `OPS-DEPLOY-IDEMPOTENT` | Re-applying the same deployment manifest produces no change and no restart.
+|===
+
+== Health, readiness & liveness probes
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `OPS-LIVENESS-PROBE-DEFINED` | A liveness probe endpoint exists and returns healthy only when the process can make progress.
+| `OPS-READINESS-PROBE-DEFINED` | A readiness probe reports not-ready until dependencies and warmup are complete.
+| `OPS-READINESS-GATES-TRAFFIC` | The load balancer withholds traffic from an instance until its readiness probe passes.
+| `OPS-STARTUP-PROBE-SLOW-BOOT` | A startup probe covers slow initialization so a warming instance is not killed prematurely.
+| `OPS-PROBE-DEPENDENCY-AWARE` | Readiness reflects the reachability of critical downstream dependencies, not just process liveness.
+| `OPS-CLUSTER-HEALTH-REPORTED` | The Akka cluster reports all expected members as Up with no unreachable nodes.
+| `OPS-PROBE-TIMEOUT-BOUNDED` | Health probes complete within a bounded timeout and never block on long-running work.
+| `OPS-HEALTH-NO-FALSE-HEALTHY` | The liveness probe fails when the service is deadlocked or unable to serve, not just when the port is open.
+|===
+
+== Structured logging & retention
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `OPS-LOGS-STRUCTURED-JSON` | Application logs are emitted as structured, machine-parseable records rather than free-form text.
+| `OPS-LOG-CORRELATION-ID` | Every log line carries a correlation or trace id that ties it to a request or workflow.
+| `OPS-COMPONENT-LOGS-EMITTED` | Each Akka component emits lifecycle and error logs to the platform log stream.
+| `OPS-LOG-LEVELS-RUNTIME` | Log verbosity is configurable at runtime without a redeploy.
+| `OPS-NO-SECRETS-IN-LOGS` | Logs contain no credentials, tokens, or PII, verified against a redaction ruleset.
+| `OPS-LOG-RETENTION-DEFINED` | A log retention period is configured and enforced against the retention policy.
+| `OPS-ERROR-LOGS-STACKTRACE` | Error-level logs include a stack trace or structured cause sufficient to diagnose the failure.
+| `OPS-LOG-SAMPLING-BOUNDED` | High-volume log sources are sampled or rate-limited so logging cannot exhaust I/O or budget.
+| `OPS-LOG-TIMESTAMP-UTC` | Log timestamps are ISO-8601 UTC with millisecond precision for cross-service ordering.
+|===
+
+== Metrics & dashboards
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `OPS-RED-METRICS-EMITTED` | Request rate, error rate, and duration are exported for every served endpoint.
+| `OPS-USE-METRICS-RESOURCES` | Utilization, saturation, and errors are exported for CPU, memory, and thread pools.
+| `OPS-COMPONENT-METRICS-EMITTED` | Each Akka component emits invocation, latency, and failure metrics to the platform.
+| `OPS-LATENCY-PERCENTILES` | Endpoint latency is reported as p50, p95, and p99 rather than an average alone.
+| `OPS-DASHBOARD-GOLDEN-SIGNALS` | A dashboard exists covering the four golden signals for the service's primary flows.
+| `OPS-METRICS-CARDINALITY-BOUND` | Metric label cardinality is bounded so the metrics backend cannot be overwhelmed.
+| `OPS-QUEUE-DEPTH-METRIC` | Internal queue and mailbox depths are exported to reveal backpressure before saturation.
+| `OPS-METRIC-NAMING-CONVENTION` | Exported metrics follow a consistent naming and unit convention across the service.
+| `OPS-BUSINESS-KPI-METRIC` | At least one domain-level success metric is exported alongside infrastructure metrics.
+|===
+
+== Distributed tracing
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `OPS-OTEL-TRACES-EXPORTED` | The service exports OpenTelemetry spans to the configured collector.
+| `OPS-TRACE-CONTEXT-PROPAGATED` | W3C trace context propagates across service and component boundaries without breaks.
+| `OPS-COMPONENT-SPANS-EMITTED` | Each Akka component invocation produces a span linked to its parent request trace.
+| `OPS-CONSOLE-REQUEST-TRACKED` | Requests are traceable end-to-end in the Akka console's request tracking view.
+| `OPS-TRACE-SPAN-ATTRIBUTES` | Spans carry attributes for component name, operation, and outcome sufficient to debug failures.
+| `OPS-TRACE-SAMPLING-CONFIG` | Trace sampling is configurable and preserves error and high-latency traces.
+| `OPS-TRACE-ERROR-RECORDED` | Failed operations set span status to error and attach the exception detail.
+| `OPS-CROSS-SERVICE-TRACE-JOIN` | A single trace spans calls across multiple services in the request path.
+|===
+
+== Alerting & on-call
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `OPS-ALERT-ON-ERROR-RATE` | An alert fires when the endpoint error rate crosses a defined threshold.
+| `OPS-ALERT-ON-LATENCY-SLO` | An alert fires when latency breaches the SLO target over the evaluation window.
+| `OPS-ALERT-ROUTED-ONCALL` | Every alert routes to a named on-call rotation with no unassigned severities.
+| `OPS-ALERT-RUNBOOK-LINKED` | Each alert links to a runbook describing triage and remediation steps.
+| `OPS-ALERT-ACTIONABLE` | Alerts are symptom-based and actionable, with no alert that requires no operator response.
+| `OPS-ALERT-NO-FLAPPING` | Alerts use hysteresis or a for-duration so transient blips do not page.
+| `OPS-ALERT-DEPENDENCY-DOWN` | An alert fires when a critical downstream dependency becomes unreachable.
+| `OPS-PAGE-SEVERITY-TIERED` | Alerts are classified by severity so only user-impacting issues page out of hours.
+|===
+
+== SLOs, SLIs & error budgets
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `OPS-SLI-DEFINED` | Each user-facing flow has a measurable SLI backed by an exported metric.
+| `OPS-SLO-TARGET-SET` | A numeric SLO target and evaluation window are defined for every SLI.
+| `OPS-ERROR-BUDGET-TRACKED` | The remaining error budget is computed and reported against its SLO.
+| `OPS-ERROR-BUDGET-ALERT` | An alert fires when error-budget burn rate threatens exhaustion before the window ends.
+| `OPS-AVAILABILITY-SLO-MEASURED` | Service availability is measured from the consumer's perspective, not just process uptime.
+| `OPS-LATENCY-SLO-THRESHOLD` | A latency SLO defines the acceptable percentile and threshold for each critical endpoint.
+| `OPS-SLO-DASHBOARD` | An SLO dashboard shows current attainment and budget for each objective.
+| `OPS-SLO-REPORTING-PERIOD` | SLO attainment is reported over a defined rolling period for review.
+|===
+
+== Configuration & secrets management
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `OPS-CONFIG-EXTERNALIZED` | All environment-specific configuration is externalized, not baked into the image.
+| `OPS-SECRETS-NOT-IN-IMAGE` | No secret material is present in the container image, source, or manifests.
+| `OPS-SECRETS-INJECTED-RUNTIME` | Secrets are injected at runtime from a managed secret store.
+| `OPS-SECRET-ROTATION-SUPPORTED` | Secrets can be rotated without a code change or full redeploy.
+| `OPS-CONFIG-VALIDATED-STARTUP` | Invalid or missing required configuration fails fast at startup with a clear error.
+| `OPS-CONFIG-DEFAULTS-SAFE` | Configuration defaults are safe for production and never silently enable debug behavior.
+| `OPS-CONFIG-CHANGE-AUDITED` | Configuration and secret changes are recorded in an auditable change log.
+| `OPS-ENV-PARITY` | Configuration schema is identical across environments, differing only in values.
+| `OPS-TLS-CERT-EXPIRY-MONITORED` | Certificate and secret expiry is monitored and alerts before expiration.
+|===
+
+== Rollback, graceful shutdown & resilience
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `OPS-ROLLBACK-ONE-STEP` | The prior known-good revision can be restored in a single operation.
+| `OPS-ROLLBACK-DATA-SAFE` | Rollback is safe against the current data and schema, with no forward-only migration blocking it.
+| `OPS-GRACEFUL-SHUTDOWN-DRAIN` | On termination the service drains in-flight requests before exiting within the grace period.
+| `OPS-SIGTERM-HANDLED` | The process handles SIGTERM by stopping intake, completing work, and closing resources cleanly.
+| `OPS-CONNECTION-DRAIN-LB` | The load balancer stops routing to a terminating instance before it shuts down.
+| `OPS-RESTART-STATE-RECOVERED` | A restarted instance rejoins the cluster and recovers durable state without data loss.
+| `OPS-DEPLOY-CANARY-AUTOROLLBACK` | A failed canary automatically rolls back without manual intervention.
+| `OPS-IDEMPOTENT-RETRY-SAFE` | Operations retried after a failed deploy or restart do not produce duplicate side effects.
+|===
+
+== Capacity, autoscaling & runtime cost
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `OPS-RESOURCE-LIMITS-SET` | CPU and memory requests and limits are set for every workload.
+| `OPS-AUTOSCALE-POLICY-DEFINED` | An autoscaling policy scales the service on a defined saturation signal.
+| `OPS-AUTOSCALE-BOUNDS` | Autoscaling has minimum and maximum replica bounds to cap both risk and cost.
+| `OPS-LOAD-TEST-CAPACITY` | A load test establishes the per-instance throughput ceiling used to size capacity.
+| `OPS-COST-BUDGET-DEFINED` | A runtime cost budget is defined for the service and tracked against actuals.
+| `OPS-COST-ANOMALY-ALERT` | An alert fires when runtime spend deviates materially from its budgeted trend.
+| `OPS-SCALE-TO-FLOOR` | The service scales down to a minimum footprint under low load without dropping availability.
+| `OPS-RESOURCE-HEADROOM` | Steady-state utilization leaves defined headroom to absorb traffic spikes before autoscaling reacts.
+|===

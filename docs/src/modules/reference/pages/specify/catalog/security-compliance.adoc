@@ -1,63 +1,174 @@
 = Security & Compliance exit conditions
 
-Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Security & Compliance] type. Browse and adopt what fits your project; these are considerations, not a mandatory set. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to read these.
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Security & Compliance] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
 
-== Authentication & authorization
-
-[cols="2,2,4,2",options="header"]
+== Authentication
+[cols="2,3",options="header"]
 |===
-| Condition | Applies to | Check | Source
+| Exit condition | What it checks
 
-| `SEC-AUTHZ-DEFAULT-DENY` -- endpoints deny by default | Any HTTP/gRPC endpoints | Every route has an explicit authorization rule; an unauthenticated call returns 401/403 | OWASP ASVS V4
-| `SEC-AUTHZ-OBJECT-LEVEL` -- no broken object-level access | Multi-user / multi-tenant | User A cannot read or mutate user B's resources (no IDOR) | OWASP API1:2023 (BOLA)
-| `SEC-AUTHN-STRONG` -- strong authentication | User-facing auth | Passwords hashed with a modern KDF (argon2/bcrypt); MFA available | OWASP ASVS V2
-| `SEC-SESSION-LIFECYCLE` -- sessions expire and revoke | Sessioned services | Sessions have expiry and can be revoked server-side | OWASP ASVS V3
-| `SEC-JWT-VERIFY` -- tokens fully verified | JWT auth | Signature verified; `exp`, `aud`, `iss` validated | OWASP ASVS V3
-|===
-
-== Data protection & privacy
-
-[cols="2,2,4,2",options="header"]
-|===
-| Condition | Applies to | Check | Source
-
-| `SEC-PII-NO-LOGS` -- no PII or secrets in logs | Any | Structured-log scan finds no PII or credentials | OWASP ASVS V7; GDPR
-| `SEC-TLS-TRANSIT` -- encrypted in transit | Networked services | All traffic over TLS 1.2+ | OWASP ASVS V9
-| `SEC-ENCRYPT-REST` -- encrypted at rest | Sensitive data | Sensitive fields encrypted at rest | PCI DSS; SOC 2
-| `SEC-PII-MINIMIZE` -- data minimization | Collects PII | Only necessary PII is collected and retained | GDPR
-| `SEC-DATA-ERASURE` -- right to erasure | Stores user data | User data can be deleted on request | GDPR
+| `SEC-AUTHN-REQUIRED` | Every non-public endpoint rejects unauthenticated requests with 401 rather than serving content.
+| `SEC-AUTHN-CREDENTIAL-HASH` | Stored passwords use a memory-hard adaptive hash (bcrypt, scrypt, or Argon2) with a per-user salt, never plaintext or fast hashes.
+| `SEC-AUTHN-BRUTE-FORCE-LOCKOUT` | Repeated failed login attempts trigger throttling or lockout within a bounded number of tries.
+| `SEC-AUTHN-GENERIC-ERROR` | Authentication failures return a generic message that does not disclose whether the username or password was wrong.
+| `SEC-AUTHN-MFA-ENFORCED` | Accounts flagged as privileged require a second factor before authentication succeeds.
+| `SEC-AUTHN-NO-DEFAULT-CREDS` | No default, shipped, or hardcoded credentials authenticate against any environment.
+| `SEC-AUTHN-CREDENTIAL-TRANSIT` | Credentials are only accepted over TLS and never appear in URLs, query strings, or GET parameters.
+| `SEC-AUTHN-PASSWORD-POLICY` | Submitted passwords are checked against a minimum length and a breached-password denylist before acceptance.
+| `SEC-AUTHN-TIMING-SAFE` | Credential comparison uses constant-time equality to prevent timing-based enumeration.
+| `SEC-AUTHN-RESET-TOKEN-EXPIRY` | Password-reset tokens are single-use and expire within a short, fixed window.
 |===
 
-== Input & output handling
-
-[cols="2,2,4,2",options="header"]
+== Authorization & access control
+[cols="2,3",options="header"]
 |===
-| Condition | Applies to | Check | Source
+| Exit condition | What it checks
 
-| `SEC-INPUT-VALIDATE` -- boundary validation | Endpoints | Inputs validated at the boundary for type, length, and format | OWASP ASVS V5
-| `SEC-NO-INJECTION` -- no injection | Queries / commands | Parameterized queries; no SQL, command, or path injection | OWASP Top 10 A03
-| `SEC-XSS-OUTPUT` -- output encoding | Web UI | User-influenced output is encoded to prevent XSS | OWASP Top 10 A03
-| `SEC-RATE-LIMIT` -- abuse protection | Public endpoints | Rate limiting / throttling in place | OWASP API4:2023
-|===
-
-== Secrets & supply chain
-
-[cols="2,2,4,2",options="header"]
-|===
-| Condition | Applies to | Check | Source
-
-| `SEC-SECRETS-NO-COMMIT` -- no committed secrets | All | Secret scanner over history returns zero findings | OWASP; SLSA
-| `SEC-DEP-VULN` -- no vulnerable dependencies | All | SCA scan reports no critical/high advisories | OWASP Top 10 A06
-| `SEC-DEP-PINNED` -- reproducible dependencies | All | Dependencies pinned; builds reproducible | SLSA
-| `SEC-LICENSE` -- license compliance | All | Dependency licenses reviewed against policy | Org policy
+| `SEC-AUTHZ-OBJECT-OWNERSHIP` | Every object access verifies the caller owns or is granted the specific record, preventing BOLA/IDOR across sequential identifiers.
+| `SEC-AUTHZ-FUNCTION-LEVEL` | Administrative or privileged functions reject callers lacking the required role, preventing BFLA.
+| `SEC-AUTHZ-DENY-BY-DEFAULT` | Access control defaults to deny, so any route without an explicit grant is inaccessible.
+| `SEC-AUTHZ-SERVER-SIDE` | Authorization decisions are enforced server-side and never rely on client-supplied role or permission flags.
+| `SEC-AUTHZ-PROPERTY-LEVEL` | Requests cannot read or write object properties the caller is not authorized for (mass-assignment / excessive data exposure).
+| `SEC-AUTHZ-HORIZONTAL-ISOLATION` | A user of one account cannot access or mutate resources belonging to a peer account at the same privilege tier.
+| `SEC-AUTHZ-PRIVILEGE-ESCALATION` | Role or permission changes cannot be self-granted through any request parameter or workflow.
+| `SEC-AUTHZ-FORCED-BROWSING` | Direct navigation to hidden or unlinked privileged URLs is denied without a valid grant.
+| `SEC-AUTHZ-CONTEXT-REVALIDATION` | Long-running or multi-step flows re-check authorization at each state transition rather than trusting the initial grant.
+| `SEC-AUTHZ-AKKA-ENDPOINT-ACL` | Every Akka HTTP endpoint declares an explicit ACL and none inherit an unintended public default.
 |===
 
-== Auditing & compliance
-
-[cols="2,2,4,2",options="header"]
+== Session & token handling
+[cols="2,3",options="header"]
 |===
-| Condition | Applies to | Check | Source
+| Exit condition | What it checks
 
-| `SEC-AUDIT-LOG` -- audit trail | Regulated | Security-relevant actions produce tamper-evident audit records | SOC 2; HIPAA
-| `SEC-HEADERS` -- security headers | Web | HSTS, CSP, and `X-Content-Type-Options` set | OWASP Secure Headers
+| `SEC-SESSION-COOKIE-FLAGS` | Session cookies set `Secure`, `HttpOnly`, and an appropriate `SameSite` attribute.
+| `SEC-SESSION-ID-ENTROPY` | Session identifiers are generated with a cryptographically secure random source of sufficient length.
+| `SEC-SESSION-ROTATE-ON-AUTH` | The session identifier is regenerated on login and privilege change to prevent fixation.
+| `SEC-SESSION-IDLE-TIMEOUT` | Sessions expire after a bounded period of inactivity and after an absolute maximum lifetime.
+| `SEC-SESSION-SERVER-INVALIDATION` | Logout invalidates the session server-side, not only by clearing the client cookie.
+| `SEC-TOKEN-JWT-SIGNATURE` | JWTs are verified with a fixed expected algorithm, rejecting `none` and algorithm-confusion attacks.
+| `SEC-TOKEN-JWT-CLAIMS` | Token validation checks issuer, audience, and expiry claims before trusting any embedded identity.
+| `SEC-TOKEN-AKKA-JWT-VALIDATED` | Akka endpoints requiring JWT reject tokens with a missing, expired, or untrusted signature before handler execution.
+| `SEC-TOKEN-REVOCATION` | Revoked or logged-out tokens are rejected before their natural expiry via a denylist or short lifetime plus refresh.
+| `SEC-TOKEN-NO-SENSITIVE-CLAIMS` | Tokens carry no secrets or sensitive PII in their unencrypted payload.
+| `SEC-CSRF-PROTECTION` | State-changing requests over cookie-based sessions require a validated anti-CSRF token or equivalent.
+|===
+
+== Secrets management
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `SEC-SECRET-NO-HARDCODE` | No API keys, passwords, or private keys appear as literals in source, config, or container images.
+| `SEC-SECRET-EXTERNAL-STORE` | Runtime secrets are loaded from a managed secret store or injected environment, not committed files.
+| `SEC-SECRET-NO-LOG-LEAK` | Secrets and tokens are redacted from application logs, error traces, and telemetry.
+| `SEC-SECRET-ROTATION` | Long-lived credentials support rotation without code changes and are rotated within policy intervals.
+| `SEC-SECRET-SCOPED-LEAST-PRIV` | Each service credential is scoped to the minimum permissions its workload requires.
+| `SEC-SECRET-NO-CLIENT-EXPOSURE` | No secret is embedded in client-side bundles, mobile binaries, or responses sent to browsers.
+| `SEC-SECRET-ENCRYPTED-AT-REST` | Secrets stored by the platform are encrypted at rest with managed keys.
+| `SEC-SECRET-GIT-HISTORY-CLEAN` | Repository history contains no previously committed live secrets detectable by a scanning pass.
+| `SEC-SECRET-ENV-VAR-NAMING` | Provider keys follow the canonical `\{PROVIDER}_\{SERVICE}_API_KEY` naming convention so the correct credential is unambiguously resolved.
+|===
+
+== Transport & at-rest encryption
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `SEC-TLS-ENFORCED` | All external traffic is served over TLS and plaintext HTTP requests are redirected or refused.
+| `SEC-TLS-MIN-VERSION` | The service negotiates only TLS 1.2 or higher and disables deprecated protocol versions.
+| `SEC-TLS-STRONG-CIPHERS` | Only modern cipher suites without known weaknesses are offered.
+| `SEC-TLS-HSTS` | Responses include a `Strict-Transport-Security` header with a meaningful max-age.
+| `SEC-TLS-CERT-VALIDATION` | Outbound service-to-service calls validate certificates and do not disable verification.
+| `SEC-CRYPTO-AT-REST` | Sensitive data at rest is encrypted with a vetted algorithm and managed keys.
+| `SEC-CRYPTO-NO-WEAK-ALGO` | No broken or deprecated primitives (MD5, SHA-1, DES, ECB mode) are used for security purposes.
+| `SEC-CRYPTO-STRONG-RANDOM` | Security-sensitive random values use a cryptographically secure generator, not a predictable PRNG.
+| `SEC-CRYPTO-KEY-SEPARATION` | Encryption keys are separated by purpose and environment, with no key reuse across tenants.
+| `SEC-PCI-PAN-PROTECTION` | Primary account numbers are masked in display and rendered unreadable in storage per PCI DSS.
+|===
+
+== Input validation & injection
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `SEC-INPUT-SCHEMA-VALIDATION` | Every request payload is validated against a strict schema for type, length, format, and range before processing.
+| `SEC-INJECT-SQL-PARAMETERIZED` | Database access uses parameterized queries or an ORM, never string-concatenated user input.
+| `SEC-INJECT-NOSQL` | NoSQL queries reject operator injection by validating and typing user-supplied filter values.
+| `SEC-INJECT-COMMAND` | User input never reaches shell or OS command execution without strict allowlisting.
+| `SEC-INJECT-LDAP` | Directory queries escape or parameterize user input to prevent LDAP injection.
+| `SEC-INJECT-TEMPLATE` | User input is not evaluated inside server-side templates, preventing SSTI.
+| `SEC-INPUT-PATH-TRAVERSAL` | File paths derived from input are canonicalized and confined to an allowed base directory.
+| `SEC-INPUT-SIZE-LIMIT` | Request bodies, uploads, and fields enforce maximum size limits to bound resource use.
+| `SEC-INPUT-CONTENT-TYPE` | Requests are rejected when their `Content-Type` does not match the expected format.
+| `SEC-INPUT-CANONICAL-ENCODING` | Input is normalized to a canonical encoding before validation to defeat double-encoding bypasses.
+|===
+
+== Output encoding & response safety
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `SEC-XSS-OUTPUT-ENCODING` | Dynamic values are context-encoded on output so user data cannot execute as script.
+| `SEC-XSS-CSP` | Responses set a restrictive `Content-Security-Policy` that blocks inline and untrusted script sources.
+| `SEC-HEADERS-SECURITY` | Responses include `X-Content-Type-Options`, `X-Frame-Options` or frame-ancestors, and `Referrer-Policy`.
+| `SEC-CORS-ALLOWLIST` | CORS allows only explicitly listed origins and never reflects arbitrary origins with credentials.
+| `SEC-SSRF-EGRESS-CONTROL` | Server-side fetches from user-supplied URLs are restricted by allowlist and blocked from internal/metadata addresses.
+| `SEC-DESERIAL-SAFE` | Untrusted input is never deserialized into arbitrary object types that could trigger gadget chains.
+| `SEC-RESPONSE-NO-STACKTRACE` | Error responses omit stack traces, internal paths, and framework version details.
+| `SEC-RESPONSE-NO-OVER-DISCLOSURE` | API responses return only fields the caller is authorized to see, with no leaked internal attributes.
+| `SEC-OPENREDIRECT` | Redirect targets are validated against an allowlist to prevent open-redirect abuse.
+| `SEC-CLICKJACKING` | Framing of sensitive pages is prevented via frame-ancestors or `X-Frame-Options`.
+|===
+
+== Rate limiting & abuse prevention
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `SEC-RATE-LIMIT-ENDPOINT` | Each externally reachable endpoint enforces a per-client request-rate limit.
+| `SEC-RATE-LIMIT-AUTH` | Authentication and token endpoints apply stricter rate limits to slow credential-stuffing.
+| `SEC-RATE-QUOTA-RESOURCE` | Expensive operations enforce quotas to prevent resource-exhaustion denial of service.
+| `SEC-RATE-LIMIT-HEADERS` | Throttled responses return 429 with retry metadata rather than failing opaquely.
+| `SEC-RATE-PAGINATION-BOUND` | List endpoints cap page size so callers cannot request unbounded result sets.
+| `SEC-RATE-AKKA-AGENT-BUDGET` | Agent invocations enforce a token or cost budget so a single request cannot exhaust model spend.
+| `SEC-ABUSE-ENUMERATION` | Endpoints that reveal existence of records resist enumeration through rate limits and uniform responses.
+| `SEC-ABUSE-UPLOAD-SCAN` | Uploaded files are type-verified and size-bounded before storage or processing.
+| `SEC-ABUSE-BOT-PROTECTION` | High-value unauthenticated actions require a challenge or proof-of-work under abusive load.
+|===
+
+== Dependency & supply chain
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `SEC-DEP-NO-KNOWN-VULN` | No dependency ships with an unresolved known-critical or high CVE at build time.
+| `SEC-DEP-PINNED-VERSIONS` | Dependencies are pinned to exact versions or lockfiles so builds are reproducible.
+| `SEC-DEP-INTEGRITY-VERIFIED` | Fetched artifacts are verified against checksums or signatures before use.
+| `SEC-SUPPLY-SBOM` | A software bill of materials is generated and available for the deployed artifact.
+| `SEC-SUPPLY-SLSA-PROVENANCE` | Build artifacts carry SLSA provenance attesting to their source and build process.
+| `SEC-SUPPLY-SIGNED-IMAGE` | Container images are signed and their signatures verified before deployment.
+| `SEC-DEP-NO-UNMAINTAINED` | No security-relevant dependency is abandoned or past end-of-life without a remediation plan.
+| `SEC-DEP-LICENSE-COMPLIANT` | All dependency licenses conform to policy, flagging incompatible or copyleft terms.
+| `SEC-SUPPLY-BUILD-ISOLATION` | Builds run in an isolated environment without inheriting developer credentials into artifacts.
+|===
+
+== Logging, audit & privacy compliance
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `SEC-LOG-NO-PII` | Application logs redact or omit personal data such as emails, tokens, and payment details.
+| `SEC-LOG-SECURITY-EVENTS` | Authentication, authorization, and privileged actions emit structured security-audit events.
+| `SEC-AUDIT-IMMUTABLE-TRAIL` | Audit records are tamper-evident and cannot be silently modified or deleted by application users.
+| `SEC-AUDIT-ATTRIBUTION` | Every audited action records actor identity, timestamp, and source for accountability.
+| `SEC-PRIVACY-DATA-MINIMIZATION` | Only personal data necessary for the stated purpose is collected and persisted (GDPR minimization).
+| `SEC-PRIVACY-RETENTION` | Personal data is deleted or anonymized once its retention period expires.
+| `SEC-PRIVACY-ERASURE` | A verified data-subject deletion request removes personal data across primary and derived stores.
+| `SEC-PRIVACY-EXPORT` | Data-subject access requests return the individual's personal data in a portable format.
+| `SEC-PRIVACY-CONSENT` | Processing that requires consent proceeds only when a recorded, valid consent exists.
+| `SEC-DATA-RESIDENCY` | Regulated data is stored and processed only within its permitted geographic regions.
+| `SEC-TENANT-ISOLATION` | Cross-tenant queries are impossible, so one tenant's data never surfaces in another tenant's responses.
+| `SEC-AKKA-PII-ENTITY-STATE` | Personal data held in entity state is classified and covered by encryption, retention, and erasure controls.
+| `SEC-AKKA-AGENT-GUARDRAILS` | Agent inputs and outputs pass guardrail checks that block prompt injection, data exfiltration, and disallowed content.
 |===

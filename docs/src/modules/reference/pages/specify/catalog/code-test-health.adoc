@@ -1,42 +1,165 @@
 = Code & Test Health exit conditions
 
-Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Code & Test Health] type. Browse and adopt what fits your project. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to read these.
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Code & Test Health] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
 
-== Test coverage & balance
-
-[cols="2,2,4,2",options="header"]
+== Test coverage
+[cols="2,3",options="header"]
 |===
-| Condition | Applies to | Check | Source
+| Exit condition | What it checks
 
-| `TEST-COVERAGE-MIN` -- minimum coverage | All | Line/branch coverage at or above a threshold (for example 80%) | Team standard
-| `TEST-DIFF-COVERAGE` -- new code covered | All | New or changed code meets a higher bar (for example 90%) | Diff coverage
-| `TEST-PYRAMID-BALANCE` -- respects the pyramid | All | Unit : integration : end-to-end ratio within budget (for example ~70/20/10) | Test pyramid
-| `TEST-CRITICAL-PATH` -- critical paths tested | All | Every critical path has an integration test | --
-|===
-
-== Test quality
-
-[cols="2,2,4,2",options="header"]
-|===
-| Condition | Applies to | Check | Source
-
-| `TEST-NO-FLAKY` -- no flaky tests | All | No quarantined or intermittently failing tests in the suite | --
-| `TEST-DETERMINISTIC` -- deterministic | All | Tests have no dependence on wall-clock time, randomness, or execution order | --
-| `TEST-FAST` -- fast feedback | All | The unit suite runs under a time budget | --
-| `TEST-MEANINGFUL` -- real assertions | All | Tests assert behavior; no assertion-free or always-passing tests | --
+| `TEST-LINE-COVERAGE-MIN` | Overall line coverage meets or exceeds the configured minimum threshold.
+| `TEST-BRANCH-COVERAGE-MIN` | Overall branch/decision coverage meets or exceeds the configured minimum threshold.
+| `TEST-DIFF-COVERAGE-MIN` | Lines added or changed in the diff meet the required line-coverage percentage.
+| `TEST-DIFF-BRANCH-COVERAGE` | Branches introduced or modified in the diff meet the required branch-coverage percentage.
+| `TEST-COVERAGE-NO-REGRESSION` | Total coverage does not drop below the previous baseline for the branch.
+| `TEST-CRITICAL-PATH-COVERAGE` | Modules tagged as business-critical meet a stricter per-module coverage floor.
+| `TEST-UNCOVERED-LINES-CAP` | The absolute count of uncovered executable lines stays under the configured cap.
+| `TEST-COVERAGE-PER-MODULE` | Every source module individually clears its minimum coverage threshold.
+| `TEST-NEW-CODE-FULLY-COVERED` | Newly introduced public methods each have at least one exercising test.
 |===
 
-== Code maintainability
-
-[cols="2,2,4,2",options="header"]
+== Test pyramid and suite balance
+[cols="2,3",options="header"]
 |===
-| Condition | Applies to | Check | Source
+| Exit condition | What it checks
 
-| `CODE-COMPLEXITY` -- complexity budget | All | Cyclomatic complexity per function under a budget | --
-| `CODE-FILE-SIZE` -- file-size budget | All | No file exceeds a size limit (for example 500 lines) | Rule of 500
-| `CODE-DUPLICATION` -- low duplication | All | Duplicated-code ratio below a threshold | --
-| `CODE-NO-DEAD` -- no dead code | All | No orphaned, unreachable, or unused code | --
-| `CODE-LINT-CLEAN` -- lint clean | All | Linter and formatter pass with no warnings | --
-| `CODE-NO-BLOCKING-TODO` -- no blocking TODOs | All | No `TODO`/`FIXME` left on shipped code paths | --
-| `CODE-TYPED-BOUNDARIES` -- typed public APIs | Typed languages | Public APIs are fully typed, with no untyped escapes | --
+| `TEST-PYRAMID-UNIT-RATIO` | Unit tests make up at least the required share of the total test count.
+| `TEST-PYRAMID-INTEGRATION-RATIO` | Integration tests fall within the configured proportional band of the suite.
+| `TEST-PYRAMID-E2E-CAP` | End-to-end tests stay below the configured maximum share of the suite.
+| `TEST-UNIT-PRESENT-PER-UNIT` | Each public domain class has at least one dedicated unit test class.
+| `TEST-INTEGRATION-PER-ENDPOINT` | Every exposed HTTP endpoint has at least one integration test.
+| `TEST-E2E-CRITICAL-JOURNEY` | Each critical user journey is covered by at least one end-to-end test.
+| `TEST-NO-INVERTED-PYRAMID` | Slow high-level tests do not outnumber fast unit tests.
+| `TEST-SUITE-COUNT-GROWTH` | Test count grows proportionally with added production code in the diff.
+|===
+
+== Test reliability and determinism
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `TEST-NO-FLAKY` | No test in the suite is marked or detected as flaky.
+| `TEST-NO-QUARANTINED` | No tests remain in a quarantined or skipped state without waiver.
+| `TEST-QUARANTINE-EXPIRY` | Any quarantined test carries an unexpired remediation deadline.
+| `TEST-DETERMINISTIC-RERUN` | Repeated runs of the suite produce identical pass/fail results.
+| `TEST-NO-WALL-CLOCK` | Tests do not depend on real wall-clock time or `sleep` for timing.
+| `TEST-NO-RANDOM-UNSEEDED` | Any randomness used in tests is explicitly seeded for reproducibility.
+| `TEST-ISOLATED-STATE` | Each test sets up and tears down its own state without leaking to others.
+| `TEST-NO-ORDER-DEPENDENCE` | Tests pass regardless of execution order or shuffling.
+| `TEST-NO-EXTERNAL-NETWORK` | Tests make no calls to live external network services.
+| `TEST-CLEAN-TEARDOWN` | Every test releases resources and leaves no residual files or connections.
+|===
+
+== Test quality and assertions
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `TEST-ASSERTION-PRESENT` | Every test method contains at least one assertion.
+| `TEST-NO-TRIVIAL-ASSERT` | Tests avoid tautological assertions such as `assertTrue(true)`.
+| `TEST-ASSERTION-DENSITY` | Tests meet the minimum ratio of assertions to executed statements.
+| `TEST-NO-DISABLED-ASSERT` | No assertions are commented out or conditionally disabled.
+| `TEST-MUTATION-SCORE-MIN` | The mutation-testing kill score meets the configured minimum.
+| `TEST-MUTATION-NO-SURVIVORS-CRITICAL` | No mutants survive in modules tagged business-critical.
+| `TEST-PROPERTY-BASED-PRESENT` | Designated invariant-heavy logic has property-based test coverage.
+| `TEST-CONTRACT-CONSUMER` | Each consumed external API has a consumer-side contract test.
+| `TEST-CONTRACT-PROVIDER` | Each provided API verifies published consumer contracts.
+| `TEST-TDD-EVIDENCE` | New behavior lands with its test in the same or an earlier commit.
+| `TEST-NO-SNAPSHOT-STALE` | Snapshot/golden files are regenerated and match current output.
+|===
+
+== Test speed, fixtures, and mocks
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `TEST-SUITE-DURATION-CAP` | The full test suite completes within the configured time budget.
+| `TEST-UNIT-DURATION-CAP` | Each individual unit test runs under its per-test time limit.
+| `TEST-SLOW-TEST-TAGGED` | Tests exceeding the fast threshold are explicitly tagged as slow.
+| `TEST-PARALLEL-SAFE` | Tests are safe to execute in parallel without shared-state contention.
+| `TEST-FIXTURE-NO-SHARED-MUTABLE` | Fixtures expose no shared mutable state across test cases.
+| `TEST-MOCK-VERIFIED` | Configured mock expectations are actually verified, not merely stubbed.
+| `TEST-NO-OVER-MOCKING` | Mock count per test stays under the configured limit to avoid brittle tests.
+| `TEST-BUILDERS-FOR-FIXTURES` | Complex test data is constructed via builders rather than ad-hoc literals.
+| `TEST-NO-PROD-CREDENTIALS` | Tests reference no production credentials, hosts, or secrets.
+|===
+
+== Akka test harness conventions
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `TEST-EVENTSOURCED-TESTKIT-UNIT` | Each Event Sourced Entity has a unit test using `EventSourcedTestKit`.
+| `TEST-KEYVALUE-TESTKIT-UNIT` | Each Key Value Entity has a unit test using its `TestKit`.
+| `TEST-WORKFLOW-TESTKIT` | Each Workflow has a test exercising its steps via the Workflow `TestKit`.
+| `TEST-TESTKITSUPPORT-INTEGRATION` | Integration tests extend `TestKitSupport` to bootstrap the service under test.
+| `TEST-HTTPCLIENT-ENDPOINT` | Endpoint integration tests drive requests through the provided `httpClient`.
+| `TEST-TESTMODELPROVIDER-AGENT` | Agent tests use `TestModelProvider` to make model responses deterministic.
+| `TEST-VIEW-EVENTUAL-CONSISTENCY` | View tests use `awaitAssert` to tolerate eventual consistency correctly.
+| `TEST-CONSUMER-TESTKIT` | Each Consumer has a test verifying its handling of consumed events.
+| `TEST-TIMED-ACTION-TESTKIT` | Each Timed Action has a test verifying its scheduled invocation behavior.
+|===
+
+== Code complexity and size
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `CODE-CYCLOMATIC-BUDGET` | No method exceeds the configured cyclomatic-complexity budget.
+| `CODE-COGNITIVE-BUDGET` | No method exceeds the configured cognitive-complexity budget.
+| `CODE-FILE-SIZE-500` | No source file exceeds the 500-line Rule of 500 limit.
+| `CODE-FUNCTION-LENGTH-LIMIT` | No function or method exceeds the configured line-length limit.
+| `CODE-PARAM-COUNT-LIMIT` | No function signature exceeds the configured parameter-count limit.
+| `CODE-NESTING-DEPTH-LIMIT` | Block nesting depth stays within the configured maximum.
+| `CODE-CLASS-SIZE-LIMIT` | No class exceeds the configured line-count limit.
+| `CODE-HALSTEAD-EFFORT` | Halstead effort per method stays under the configured ceiling.
+| `CODE-METHOD-COUNT-PER-CLASS` | No class exceeds the configured number of methods.
+|===
+
+== Duplication and dead code
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `CODE-DUPLICATION-THRESHOLD` | Duplicated-code percentage stays under the configured threshold.
+| `CODE-NO-COPY-PASTE-BLOCK` | No duplicated block exceeds the configured minimum token length.
+| `CODE-DEAD-CODE-NONE` | Static analysis reports no unreachable or unused production code.
+| `CODE-UNUSED-IMPORTS` | The codebase contains no unused imports.
+| `CODE-UNUSED-VARIABLES` | The codebase contains no unused local variables or fields.
+| `CODE-UNREACHABLE-CODE` | No statements are provably unreachable.
+| `CODE-UNUSED-PRIVATE-MEMBERS` | No private methods or fields are left unreferenced.
+| `CODE-NO-COMMENTED-CODE` | No blocks of commented-out source code remain.
+|===
+
+== Static analysis, lint, and type safety
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `CODE-LINT-CLEAN` | The linter reports zero violations at or above the configured severity.
+| `CODE-FORMAT-CLEAN` | All files conform to the project's automated formatter output.
+| `CODE-NO-COMPILER-WARNINGS` | Compilation produces no warnings under the project's warning settings.
+| `CODE-NO-SUPPRESSED-WARNINGS` | No unjustified warning-suppression annotations are present.
+| `CODE-NO-RAW-TYPES` | No raw generic types are used where parameterization is required.
+| `CODE-NO-UNCHECKED-CASTS` | No unchecked or unsafe type casts remain in the code.
+| `CODE-NULLABILITY-ANNOTATED` | Public API surfaces carry explicit nullability annotations.
+| `CODE-NO-MAGIC-NUMBERS` | Unnamed numeric literals are replaced by named constants.
+| `CODE-NAMING-CONVENTIONS` | Identifiers conform to the project's naming-convention rules.
+| `CODE-STATIC-ANALYSIS-ZERO-CRITICAL` | Static analysis reports zero critical- or blocker-severity findings.
+|===
+
+== Architecture, maintainability, and error handling
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `CODE-LAYER-DIRECTION` | Dependencies flow only in the permitted direction across architectural layers.
+| `CODE-NO-CIRCULAR-DEPS` | No circular dependencies exist between packages or modules.
+| `CODE-COUPLING-BUDGET` | Efferent/afferent coupling per module stays within the configured budget.
+| `CODE-COHESION-MIN` | Class cohesion (LCOM) meets the configured minimum.
+| `CODE-MAINTAINABILITY-INDEX` | The maintainability index meets or exceeds the configured floor.
+| `CODE-ERROR-HANDLING-COMPLETE` | All checked error and failure paths are explicitly handled.
+| `CODE-NO-SWALLOWED-EXCEPTIONS` | No caught exception is silently ignored without logging or rethrow.
+| `CODE-NO-GENERIC-CATCH` | No overly broad catch of generic exception types without justification.
+| `CODE-PUBLIC-API-DOCUMENTED` | Every public type and method carries documentation comments.
 |===
