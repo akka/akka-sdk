@@ -129,7 +129,7 @@ Exercise the application before reviewing the code. If it does not meet the requ
 
 == Exercise the agent API
 
-Run `/akka:build`. This recompiles the project, runs the tests, starts the service, and issues a sample request to the endpoint. To save time, stop any running instance of the service and free port `9000` first.
+Run `/akka:build`. This recompiles the project, runs the tests, starts the service, and issues a sample request to the endpoint. The AI picks a default port for the service, usually port `9000`.
 
 .Local build results
 [cols="1,2"]
