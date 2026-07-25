@@ -1,0 +1,20 @@
+= /akka:converge
+
+Assess the codebase against the feature's spec, plan, and tasks, and queue any remaining work.
+
+== Usage
+
+[source]
+----
+/akka:converge
+----
+
+== Description
+
+Compares the current codebase against the feature's specification, plan, and task list, then appends any remaining unbuilt work to `tasks.md` as new tasks so xref:reference:specify/implement.adoc[`/akka:implement`] can complete it. Use it to close the gap between what was specified and what has actually been built -- for example, after partial implementation or manual edits.
+
+== See also
+
+* xref:reference:specify/tasks.adoc[]
+* xref:reference:specify/implement.adoc[]
+* xref:reference:specify/index.adoc[]

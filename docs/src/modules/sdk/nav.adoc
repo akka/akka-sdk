@@ -1,11 +1,8 @@
 * xref:sdk:index.adoc[]
 ** Building with AI
 *** xref:sdk:spec-driven-development.adoc[]
-*** xref:sdk:exit-conditions.adoc[]
-*** xref:sdk:definition-of-done-types.adoc[]
-*** xref:sdk:conformance-modes.adoc[]
-*** xref:sdk:auditors.adoc[]
-*** xref:sdk:shipping-and-receipts.adoc[]
+*** xref:sdk:enforced-mode.adoc[]
+*** xref:sdk:a-la-carte-mode.adoc[]
 *** xref:sdk:ai-coding-assistant.adoc[]
 ** xref:sdk:components/index.adoc[]
 *** xref:sdk:agents.adoc[Agents]

@@ -1,0 +1,152 @@
+= Enforced mode
+:page-summary: The default Akka Specify mode — define done as machine-checkable exit conditions up front, and ship only when they are met.
+:page-when-to-use: Use Enforced mode when you want a repeatable, auditable result and are willing to define "done" before code is written.
+:page-related: xref:sdk:a-la-carte-mode.adoc[], xref:reference:governance/policy-as-code.adoc[], xref:reference:exit-conditions/default-library.adoc[]
+:page-persona: Developer, Tech Lead, Architect
+
+include::ROOT:partial$include.adoc[]
+
+Enforced mode is the default. It guides you to define "done" up front as machine-checkable conditions, then will not let a feature ship until those conditions are met. You get a cleaner, auditable result -- at the cost of more up-front definition and a longer, more thorough build. For the lighter, run-the-commands-yourself flow, see xref:sdk:a-la-carte-mode.adoc[À la carte mode]; switch between the two with `/akka:mode`.
+
+[#exit-conditions]
+== Exit conditions and Definition of Done
+
+Enforced mode treats "done" as something the system checks, not a judgment call. It separates "done" into three layers, each with a distinct owner:
+
+[cols="1,2,2"]
+|===
+| Layer | What it is | Who authors it
+
+| *Definition of Done*
+| The business statement of done, in the customer's own terms ("greetings are personalized", "the service survives a node loss").
+| The project owner and the organization.
+
+| *Exit condition (EC)*
+| The technical translation of a Definition of Done item into a precise, binary `pass` predicate over an observable surface.
+| Derived by the tooling; refined by the developer.
+
+| *Auditor*
+| The executable check that evaluates an exit condition and returns a verdict.
+| Akka (built-in) or the organization (custom).
+|===
+
+The layers roll up in the other direction: an auditor produces a verdict, verdicts set each exit condition's status, and those aggregate into a *Definition-of-Done type* status. A developer sees progress in business language ("Reliability: covered", "Functional: 2 of 3 met") while the machine works in precise conditions underneath.
+
+Every exit condition resolves to a single boolean `pass` -- there is no "mostly done". A requirement that cannot be expressed as a binary predicate over an observable surface is not yet an exit condition; it is a Definition of Done item still waiting to be made precise.
+
+Every condition also carries a *provenance* that determines whether a developer can change it: `akka-intrinsic` (platform guarantees, always on and asserted), `recommended-default` (from the xref:reference:exit-conditions/default-library.adoc[default library], strikable), `corporate` (the organization floor, locked), and `developer` (added for this feature). Done is layered and additive -- the organization sets a floor and developers add to it, tightening but never loosening it. See the xref:reference:exit-conditions/schema.adoc[exit condition schema] for the full field set.
+
+[#dod-types]
+== Definition-of-Done types
+
+Every exit condition is tagged with a fixed, versioned *Definition-of-Done type*. Types are the scaffold the tooling walks to infer which conditions a feature needs, and the buckets progress rolls up into. Each is pinned to a distinct Akka observable surface. They are organized into three tiers -- the "three P's".
+
+*Product* -- does the software work? (developer- and customer-led)
+
+[cols="1,3"]
+|===
+| Type | Covers
+| Functional | Endpoint, event, view, and workflow behavior.
+| Data Integrity | Entity state and its invariants.
+| Reliability | Cluster behavior and fault injection -- recovery, supervision, surviving node loss.
+| Performance | Timing and throughput.
+| Security & Compliance | Authorization, audit, and PII handling at runtime.
+| Operability | Deployment, health, telemetry, and runtime cost.
+| Experience | Browser-facing behavior -- accessibility, responsiveness, page performance. On by default; struck as a group for a headless or API-only service.
+|===
+
+*Project* -- is the codebase healthy and standards-compliant? (heavily organization-authored)
+
+[cols="1,3"]
+|===
+| Type | Covers
+| Documentation & Training | Documentation completeness, content standards, training material, changelog history.
+| Repository Hygiene | Clean git history -- rebased, no lingering commits, no orphaned dead code.
+| Pipeline & Scanning | Prior commits CI-green; code scanning (SAST, SCA, secrets, license) complete.
+| Code & Test Health | Coverage thresholds, test-pyramid balance, and maintainability budgets.
+| Environment & Dependencies | Every dependency identified, available, and verified, and the local environment current with the resolved governance. A drift check, not a run-once flag.
+|===
+
+*Process* -- did the AI build stay honest and efficient? (organization floor)
+
+[cols="1,3"]
+|===
+| Type | Covers
+| Process Integrity | Meta-guardrails on the build, including source-grounding -- API usage cited to official docs, no invented APIs.
+| Build Efficiency | Token-to-cost budgets and model routing.
+|===
+
+The core types are closed and versioned. Organizations extend "done" by adding conditions *within* a type, not by inventing new types.
+
+== The guided flow
+
+Enforced mode is two human touchpoints book-ending a silent machine phase -- not a gate at every step.
+
+. *Define* (you). Frame the feature and define done in business terms. The engine infers a full draft of the definition of done from your intent and Akka's fixed surfaces, then asks only about the residue it cannot safely infer -- a threshold, a genuine fork, a type toggle -- each anchored to a proposed default. Inferred conditions are marked and do not become the contract until you confirm them. The organization's mandatory conditions are merged in, locked. Enforced mode will not build while a required decision is open.
+. *Build* (the machine). The engine derives exit conditions, wires auditors, plans, and implements, looping until every locally runnable auditor is green. It stops only for a short, closed list of reasons: a condition it cannot reach after repeated tries, an ambiguity Define did not resolve, or a conflict between your definition and the organization's.
+. *Review* (you). Validate the definition, not the code. A review miss becomes a new condition and loops back to Build. Close any conditions that need your sign-off, then ship.
+. *Ship*. `/akka:ship` runs the in-scope auditors and fires the organization-authored terminal action.
+
+=== The /akka:specify engine
+
+You drive the whole flow through one re-entrant command. You always run `/akka:specify <input>` -- a spec, a clarification answer, review feedback, or a decision -- and it always ends with a definitive status line and the exact next command. Every call resolves to exactly one of three states:
+
+[cols="1,3"]
+|===
+| State | Meaning and next step
+| *NEEDS_INPUT* | Your turn -- a clarification, threshold, decision, or review feedback is required. Next: `/akka:specify <your response>`.
+| *WORKING* | The machine's turn -- building autonomously. Next: wait, or `/akka:status`.
+| *READY_TO_SHIP* | The completion policy is satisfied. Next: `/akka:ship`.
+|===
+
+Because every call ends in exactly one of these three states with one explicit next command, the workflow is predictable enough to follow by eye and to parse in CI.
+
+READY_TO_SHIP does not mean every condition is green. It means the *completion policy* -- itself part of the definition of done, authored by the project owner -- is satisfied: human review after a confidence pass, a percentage-of-conditions threshold, or all-must-pass.
+
+[#auditors]
+== Auditors
+
+An *auditor* is the executable check bound to an exit condition. Each declares what it needs to run; the tooling checks availability and resolves the condition accordingly rather than blindly failing. Common requirements are Git (repository state), Maven (compile, test, resolve), GitHub (CI and scanning results), and a live service (exercise endpoints, entity state, views, workflows).
+
+Every condition resolves in one of four ways:
+
+[cols="1,3"]
+|===
+| Resolution | When
+| *Asserted* | Guaranteed by the platform (an `akka-intrinsic` condition such as observability, resilience, or scalability); trusted green without running a check.
+| *Executable* | The requirement is available, so the auditor runs and returns green or red.
+| *Deferred* | The requirement is unavailable here (for example, a live-service check before deployment); the condition is carried downstream and recorded in the conformance receipt.
+| *Open* | No runnable auditor yet, or a human sign-off is required; blocks completion until resolved.
+|===
+
+A deferred condition is not a gap -- it is a check that will run elsewhere. An open condition is unfinished work.
+
+[#shipping]
+== Shipping and receipts
+
+`/akka:ship` runs the in-scope auditors and, if they pass, fires the terminal action the organization defined. Akka provides the mechanism; the organization writes what "ship" does -- deploy and activate, push to a repository, open a pull request, publish an artifact, or a sequence of these. There is no fixed menu of ship profiles.
+
+One rule holds regardless: *ship fires only when every in-scope condition is green.* What ship targets determines what "done" proves. A deploy-and-activate ship verifies the full definition of done, including live-service conditions. A push-to-repository ship cannot run live-service auditors, so those defer downstream and Akka guarantees only the pre-handoff conditions.
+
+When ship completes, Akka writes a *conformance receipt* -- which conditions were green, which auditors ran, which deferred and to whom, and any waivers in effect. The receipt is what makes an AI-built handoff auditable: the downstream owner sees exactly what was verified and what remains. In Enforced mode, a successful ship also offers to shut down the local services the build started, closing the lifecycle that `/akka:setup` opened.
+
+[#governance]
+== Enterprise governance
+
+In Enforced mode an organization authors a floor of mandatory exit conditions and definitions of done -- security, compliance, repository hygiene, its "way of working" -- that Akka enforces and developers can tighten but never loosen. The floor is versioned policy-as-code in the organization's own git repository, and each condition is assigned a governance level (`always-apply`, `never-apply`, `on-but-dev-configurable`, `off-but-dev-configurable`). The organization's own CI is the enforcement backstop. See xref:reference:governance/policy-as-code.adoc[Policy as code] for the format and the governance levels.
+
+Beyond the organization floor, the xref:reference:exit-conditions/default-library.adoc[default library] provides a rich, curated set of best-practice conditions on by default; you strike what does not apply, and strikes are recorded. For inspiration on what else to require, browse the xref:reference:exit-conditions/catalog/index.adoc[exit condition catalog], organized by type and project flavor.
+
+== Commands in Enforced mode
+
+Enforced mode deliberately exposes a small menu; the individual phase commands fold into `/akka:specify`.
+
+[cols="1,3"]
+|===
+| Command | Role
+| xref:reference:specify/specify.adoc[`/akka:specify`] | The re-entrant engine that drives the whole flow.
+| xref:reference:specify/status.adoc[`/akka:status`] | Read-only rollup of the definition of done by business category.
+| xref:reference:specify/ship.adoc[`/akka:ship`] | Fire the organization-authored terminal action, gated on the in-scope conditions.
+| xref:reference:specify/mode.adoc[`/akka:mode`] | Switch mode within the organization-allowed set.
+| xref:reference:specify/setup.adoc[`/akka:setup`] | Install and repair the local environment and source the governance floor.
+|===

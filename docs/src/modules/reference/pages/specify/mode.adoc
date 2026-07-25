@@ -14,10 +14,10 @@ Switch between the Enforced and À la carte conformance modes.
 
 Rewrites the available command set to match the target mode and prompts you to restart your assistant so the new command menu loads. A developer can switch only within the modes the organization allows; if the organization has locked the mode, the command refuses and says so. Switching out of Enforced mode is recorded.
 
-See xref:sdk:conformance-modes.adoc[Conformance modes] for what each mode does.
+See xref:sdk:spec-driven-development.adoc#choosing-your-mode[Conformance modes] for what each mode does.
 
 == See also
 
-* xref:sdk:conformance-modes.adoc[]
+* xref:sdk:spec-driven-development.adoc#choosing-your-mode[Choosing your mode]
 * xref:reference:governance/policy-as-code.adoc[]
 * xref:reference:specify/index.adoc[]

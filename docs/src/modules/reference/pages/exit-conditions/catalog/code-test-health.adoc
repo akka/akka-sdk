@@ -1,0 +1,42 @@
+= Code & Test Health exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Code & Test Health] type. Browse and adopt what fits your project. See xref:reference:exit-conditions/catalog/index.adoc[the catalog overview] for how to read these.
+
+== Test coverage & balance
+
+[cols="2,2,4,2",options="header"]
+|===
+| Condition | Applies to | Check | Source
+
+| `TEST-COVERAGE-MIN` -- minimum coverage | All | Line/branch coverage at or above a threshold (for example 80%) | Team standard
+| `TEST-DIFF-COVERAGE` -- new code covered | All | New or changed code meets a higher bar (for example 90%) | Diff coverage
+| `TEST-PYRAMID-BALANCE` -- respects the pyramid | All | Unit : integration : end-to-end ratio within budget (for example ~70/20/10) | Test pyramid
+| `TEST-CRITICAL-PATH` -- critical paths tested | All | Every critical path has an integration test | --
+|===
+
+== Test quality
+
+[cols="2,2,4,2",options="header"]
+|===
+| Condition | Applies to | Check | Source
+
+| `TEST-NO-FLAKY` -- no flaky tests | All | No quarantined or intermittently failing tests in the suite | --
+| `TEST-DETERMINISTIC` -- deterministic | All | Tests have no dependence on wall-clock time, randomness, or execution order | --
+| `TEST-FAST` -- fast feedback | All | The unit suite runs under a time budget | --
+| `TEST-MEANINGFUL` -- real assertions | All | Tests assert behavior; no assertion-free or always-passing tests | --
+|===
+
+== Code maintainability
+
+[cols="2,2,4,2",options="header"]
+|===
+| Condition | Applies to | Check | Source
+
+| `CODE-COMPLEXITY` -- complexity budget | All | Cyclomatic complexity per function under a budget | --
+| `CODE-FILE-SIZE` -- file-size budget | All | No file exceeds a size limit (for example 500 lines) | Rule of 500
+| `CODE-DUPLICATION` -- low duplication | All | Duplicated-code ratio below a threshold | --
+| `CODE-NO-DEAD` -- no dead code | All | No orphaned, unreachable, or unused code | --
+| `CODE-LINT-CLEAN` -- lint clean | All | Linter and formatter pass with no warnings | --
+| `CODE-NO-BLOCKING-TODO` -- no blocking TODOs | All | No `TODO`/`FIXME` left on shipped code paths | --
+| `CODE-TYPED-BOUNDARIES` -- typed public APIs | Typed languages | Public APIs are fully typed, with no untyped escapes | --
+|===

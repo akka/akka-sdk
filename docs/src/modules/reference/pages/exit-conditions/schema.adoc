@@ -1,6 +1,6 @@
 = Exit condition schema
 
-An *exit condition* is the technical unit of "done" in xref:sdk:spec-driven-development.adoc[spec-driven development]. Each condition carries the fields below. See xref:sdk:exit-conditions.adoc[Exit conditions and Definition of Done] for the conceptual model.
+An *exit condition* is the technical unit of "done" in xref:sdk:spec-driven-development.adoc[spec-driven development]. Each condition carries the fields below. See xref:sdk:enforced-mode.adoc#exit-conditions[Exit conditions and Definition of Done] for the conceptual model.
 
 == Fields
 
@@ -11,7 +11,7 @@ A stable identifier for the condition (for example, `OPS-COMPILES`, `SEC-SECRETS
 A short human-readable statement of what the condition requires.
 
 `dod_type`::
-The xref:sdk:definition-of-done-types.adoc[Definition-of-Done type] the condition belongs to (for example, `Functional`, `Reliability`, `Repository Hygiene`). Required on every condition. Determines the tier (Product, Project, or Process) the condition rolls up into.
+The xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done type] the condition belongs to (for example, `Functional`, `Reliability`, `Repository Hygiene`). Required on every condition. Determines the tier (Product, Project, or Process) the condition rolls up into.
 
 `provenance`::
 Where the condition comes from, which determines whether a developer can change it:
@@ -33,7 +33,7 @@ For `corporate` conditions, the level that controls developer configurability (s
 The binary predicate that defines success — a check over an observable surface that evaluates to true or false. A condition whose success cannot be expressed as a binary predicate is not yet an exit condition.
 
 `auditor`::
-The check bound to the condition and the requirement it needs to run (git, Maven, GitHub, or a live service). See xref:sdk:auditors.adoc[Auditors].
+The check bound to the condition and the requirement it needs to run (git, Maven, GitHub, or a live service). See xref:sdk:enforced-mode.adoc#auditors[Auditors].
 
 `state`::
 The condition's current resolution: `green`, `red`, `open`, `deferred`, or `asserted`.
@@ -46,6 +46,6 @@ Whether a `recommended-default` condition has been struck as inapplicable. Strik
 
 == Related
 
-* xref:sdk:exit-conditions.adoc[]
+* xref:sdk:enforced-mode.adoc#exit-conditions[Exit conditions and Definition of Done]
 * xref:reference:exit-conditions/default-library.adoc[]
 * xref:reference:governance/policy-as-code.adoc[]

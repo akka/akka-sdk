@@ -1,6 +1,6 @@
 = Policy as code
 
-Organizations govern spec-driven development with *policy as code* — a version-controlled definition of the mandatory floor every project inherits: which xref:sdk:exit-conditions.adoc[exit conditions] are required, which mode is allowed, what "ship" does, and the toolchain to use. Developers can tighten the floor, never loosen it.
+Organizations govern spec-driven development with *policy as code* — a version-controlled definition of the mandatory floor every project inherits: which xref:sdk:enforced-mode.adoc#exit-conditions[exit conditions] are required, which mode is allowed, what "ship" does, and the toolchain to use. Developers can tighten the floor, never loosen it.
 
 == The governance repository
 
@@ -43,7 +43,7 @@ Only the two locked levels always win. Where the policy is silent, the platform-
 Alongside conditions and their levels, a policy sets:
 
 * the allowed conformance mode(s) and whether the mode is locked (see xref:reference:specify/mode.adoc[`/akka:mode`]);
-* the *ship definition* — the organization-authored terminal action(s) and the conditions that must be green before ship fires (see xref:sdk:shipping-and-receipts.adoc[Shipping and receipts]);
+* the *ship definition* — the organization-authored terminal action(s) and the conditions that must be green before ship fires (see xref:sdk:enforced-mode.adoc#shipping[Shipping and receipts]);
 * waiver rules — whether waivers are allowed, and whether they require approval;
 * the toolchain pin — the approved Akka CLI, plugin, and SDK versions.
 
@@ -60,12 +60,12 @@ Because the floor is pulled live rather than vendored, a new project always gets
 
 == Drift and enforcement
 
-The locked policy version participates in the xref:sdk:definition-of-done-types.adoc[Environment & Dependencies] drift check: when the organization publishes a new floor, the project's `.akka/policy.lock` becomes stale, the condition goes red, and the fix is to re-run `/akka:setup` (subject to a warn-then-enforce grace period so a newly locked condition does not turn every in-flight project red overnight).
+The locked policy version participates in the xref:sdk:enforced-mode.adoc#dod-types[Environment & Dependencies] drift check: when the organization publishes a new floor, the project's `.akka/policy.lock` becomes stale, the condition goes red, and the fix is to re-run `/akka:setup` (subject to a warn-then-enforce grace period so a newly locked condition does not turn every in-flight project red overnight).
 
 The enforcement backstop is the *organization's own CI*, which reads the same repository and fails the build if the floor is not met. The local CLI is advisory and guided; CI is the gate — the same way enterprises already enforce standards. You can bypass checks locally, but you cannot merge or ship past CI.
 
 == Related
 
-* xref:sdk:conformance-modes.adoc[]
-* xref:sdk:shipping-and-receipts.adoc[]
+* xref:sdk:spec-driven-development.adoc#choosing-your-mode[Choosing your mode]
+* xref:sdk:enforced-mode.adoc#shipping[Shipping and receipts]
 * xref:reference:exit-conditions/schema.adoc[]

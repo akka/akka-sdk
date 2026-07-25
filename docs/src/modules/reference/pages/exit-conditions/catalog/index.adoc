@@ -1,0 +1,21 @@
+= Exit condition catalog
+
+An extensive, browsable catalog of candidate exit conditions to consider for a project, organized by xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done type] and by project flavor. The shipped xref:reference:exit-conditions/default-library.adoc[default library] is deliberately small -- this catalog is for inspiration. Browse it, and adopt the conditions that fit your project.
+
+Each entry names a candidate condition, when it applies, how it would be checked, and a source standard.
+
+== Catalogs by type
+
+* xref:reference:exit-conditions/catalog/security-compliance.adoc[Security & Compliance]
+* xref:reference:exit-conditions/catalog/code-test-health.adoc[Code & Test Health]
+
+[NOTE]
+====
+This catalog is being built out type by type. Security & Compliance and Code & Test Health are the first two; the remaining Definition-of-Done types are on the way.
+====
+
+== Related
+
+* xref:reference:exit-conditions/default-library.adoc[]
+* xref:reference:exit-conditions/schema.adoc[]
+* xref:sdk:enforced-mode.adoc[]

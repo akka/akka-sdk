@@ -1,0 +1,63 @@
+= Security & Compliance exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Security & Compliance] type. Browse and adopt what fits your project; these are considerations, not a mandatory set. See xref:reference:exit-conditions/catalog/index.adoc[the catalog overview] for how to read these.
+
+== Authentication & authorization
+
+[cols="2,2,4,2",options="header"]
+|===
+| Condition | Applies to | Check | Source
+
+| `SEC-AUTHZ-DEFAULT-DENY` -- endpoints deny by default | Any HTTP/gRPC endpoints | Every route has an explicit authorization rule; an unauthenticated call returns 401/403 | OWASP ASVS V4
+| `SEC-AUTHZ-OBJECT-LEVEL` -- no broken object-level access | Multi-user / multi-tenant | User A cannot read or mutate user B's resources (no IDOR) | OWASP API1:2023 (BOLA)
+| `SEC-AUTHN-STRONG` -- strong authentication | User-facing auth | Passwords hashed with a modern KDF (argon2/bcrypt); MFA available | OWASP ASVS V2
+| `SEC-SESSION-LIFECYCLE` -- sessions expire and revoke | Sessioned services | Sessions have expiry and can be revoked server-side | OWASP ASVS V3
+| `SEC-JWT-VERIFY` -- tokens fully verified | JWT auth | Signature verified; `exp`, `aud`, `iss` validated | OWASP ASVS V3
+|===
+
+== Data protection & privacy
+
+[cols="2,2,4,2",options="header"]
+|===
+| Condition | Applies to | Check | Source
+
+| `SEC-PII-NO-LOGS` -- no PII or secrets in logs | Any | Structured-log scan finds no PII or credentials | OWASP ASVS V7; GDPR
+| `SEC-TLS-TRANSIT` -- encrypted in transit | Networked services | All traffic over TLS 1.2+ | OWASP ASVS V9
+| `SEC-ENCRYPT-REST` -- encrypted at rest | Sensitive data | Sensitive fields encrypted at rest | PCI DSS; SOC 2
+| `SEC-PII-MINIMIZE` -- data minimization | Collects PII | Only necessary PII is collected and retained | GDPR
+| `SEC-DATA-ERASURE` -- right to erasure | Stores user data | User data can be deleted on request | GDPR
+|===
+
+== Input & output handling
+
+[cols="2,2,4,2",options="header"]
+|===
+| Condition | Applies to | Check | Source
+
+| `SEC-INPUT-VALIDATE` -- boundary validation | Endpoints | Inputs validated at the boundary for type, length, and format | OWASP ASVS V5
+| `SEC-NO-INJECTION` -- no injection | Queries / commands | Parameterized queries; no SQL, command, or path injection | OWASP Top 10 A03
+| `SEC-XSS-OUTPUT` -- output encoding | Web UI | User-influenced output is encoded to prevent XSS | OWASP Top 10 A03
+| `SEC-RATE-LIMIT` -- abuse protection | Public endpoints | Rate limiting / throttling in place | OWASP API4:2023
+|===
+
+== Secrets & supply chain
+
+[cols="2,2,4,2",options="header"]
+|===
+| Condition | Applies to | Check | Source
+
+| `SEC-SECRETS-NO-COMMIT` -- no committed secrets | All | Secret scanner over history returns zero findings | OWASP; SLSA
+| `SEC-DEP-VULN` -- no vulnerable dependencies | All | SCA scan reports no critical/high advisories | OWASP Top 10 A06
+| `SEC-DEP-PINNED` -- reproducible dependencies | All | Dependencies pinned; builds reproducible | SLSA
+| `SEC-LICENSE` -- license compliance | All | Dependency licenses reviewed against policy | Org policy
+|===
+
+== Auditing & compliance
+
+[cols="2,2,4,2",options="header"]
+|===
+| Condition | Applies to | Check | Source
+
+| `SEC-AUDIT-LOG` -- audit trail | Regulated | Security-relevant actions produce tamper-evident audit records | SOC 2; HIPAA
+| `SEC-HEADERS` -- security headers | Web | HSTS, CSP, and `X-Content-Type-Options` set | OWASP Secure Headers
+|===

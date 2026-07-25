@@ -1,6 +1,6 @@
 = Default exit-condition library
 
-The default library is the curated set of exit conditions Akka Specify starts from, organized by xref:sdk:definition-of-done-types.adoc[Definition-of-Done type]. It is what makes the definition of done rich by default instead of empty. See xref:sdk:exit-conditions.adoc[Exit conditions and Definition of Done] for the model.
+The default library is the curated set of exit conditions Akka Specify starts from, organized by xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done type]. It is what makes the definition of done rich by default instead of empty. See xref:sdk:enforced-mode.adoc#exit-conditions[Exit conditions and Definition of Done] for the model.
 
 == Two kinds of default
 
@@ -54,6 +54,6 @@ An organization can promote a recommended default to a locked floor condition, o
 
 == Related
 
-* xref:sdk:exit-conditions.adoc[]
+* xref:sdk:enforced-mode.adoc#exit-conditions[Exit conditions and Definition of Done]
 * xref:reference:exit-conditions/schema.adoc[]
 * xref:reference:governance/policy-as-code.adoc[]
