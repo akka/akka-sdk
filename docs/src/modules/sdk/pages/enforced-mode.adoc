@@ -1,7 +1,7 @@
 = Enforced mode
 :page-summary: The default Akka Specify mode — define done as machine-checkable exit conditions up front, and ship only when they are met.
 :page-when-to-use: Use Enforced mode when you want a repeatable, auditable result and are willing to define "done" before code is written.
-:page-related: xref:sdk:a-la-carte-mode.adoc[], xref:reference:governance/policy-as-code.adoc[], xref:reference:exit-conditions/default-library.adoc[]
+:page-related: xref:sdk:a-la-carte-mode.adoc[], xref:reference:specify/policies.adoc[], xref:reference:specify/default-library.adoc[]
 :page-persona: Developer, Tech Lead, Architect
 
 include::ROOT:partial$include.adoc[]
@@ -34,7 +34,7 @@ The layers roll up in the other direction: an auditor produces a verdict, verdic
 
 Every exit condition resolves to a single boolean `pass` -- there is no "mostly done". A requirement that cannot be expressed as a binary predicate over an observable surface is not yet an exit condition; it is a Definition of Done item still waiting to be made precise.
 
-Every condition also carries a *provenance* that determines whether a developer can change it: `akka-intrinsic` (platform guarantees, always on and asserted), `recommended-default` (from the xref:reference:exit-conditions/default-library.adoc[default library], strikable), `corporate` (the organization floor, locked), and `developer` (added for this feature). Done is layered and additive -- the organization sets a floor and developers add to it, tightening but never loosening it. See the xref:reference:exit-conditions/schema.adoc[exit condition schema] for the full field set.
+Every condition also carries a *provenance* that determines whether a developer can change it: `akka-intrinsic` (platform guarantees, always on and asserted), `recommended-default` (from the xref:reference:specify/default-library.adoc[default library], strikable), `corporate` (the organization floor, locked), and `developer` (added for this feature). Done is layered and additive -- the organization sets a floor and developers add to it, tightening but never loosening it. See the xref:reference:specify/exit-condition-schema.adoc[exit condition schema] for the full field set.
 
 [#dod-types]
 == Definition-of-Done types
@@ -148,13 +148,13 @@ The floor lives as versioned policy-as-code in a git repository your organizatio
 +
 For example, `github.com/manulife/akka-specify-governance`. It is provider-agnostic (GitHub, GitLab, Bitbucket, or an enterprise-hosted server) and governed entirely by your own access controls -- private repository, SSO, RBAC, and branch protection.
 
-. *Add `policy.yaml`* at the repository root -- the single source of truth for the floor. It declares the allowed mode, the ship definition, the toolchain version, the exit conditions and their governance levels, and the completion, waiver, and rollout policies. See xref:reference:governance/policy-as-code.adoc[Policy as code] for the full schema and an annotated example.
+. *Add `policy.yaml`* at the repository root -- the single source of truth for the floor. It declares the allowed mode, the ship definition, the toolchain version, the exit conditions and their governance levels, and the completion, waiver, and rollout policies. See xref:reference:specify/policies.adoc[Policies] for the full schema and an annotated example.
 
 . *Add a CI workflow* that runs the Akka conformance check against the policy. The organization's own CI is the enforcement backstop: local tooling is advisory and guided; CI is the gate a change must pass to merge or ship.
 
 When a developer runs `/akka:setup`, the CLI git-fetches this repository, merges the floor under the project and developer layers (tighten-only), and records the pinned commit in `.akka/policy.lock`. Publishing a new floor version makes that lock stale -- the xref:sdk:enforced-mode.adoc#dod-types[Environment & Dependencies] condition goes red until the developer re-runs `/akka:setup`.
 
-Beyond the organization floor, the xref:reference:exit-conditions/default-library.adoc[default library] provides a rich, curated set of best-practice conditions on by default; you strike what does not apply, and strikes are recorded. For inspiration on what else to require, browse the xref:reference:exit-conditions/catalog/index.adoc[exit condition catalog], organized by type and project flavor.
+Beyond the organization floor, the xref:reference:specify/default-library.adoc[default library] provides a rich, curated set of best-practice conditions on by default; you strike what does not apply, and strikes are recorded. For inspiration on what else to require, browse the xref:reference:specify/catalog/index.adoc[exit condition catalog], organized by type and project flavor.
 
 == Commands in Enforced mode
 

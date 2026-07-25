@@ -27,7 +27,7 @@ Where the condition comes from, which determines whether a developer can change 
 |===
 
 `governance_level`::
-For `corporate` conditions, the level that controls developer configurability (see xref:reference:governance/policy-as-code.adoc[Policy as code]): `always-apply`, `never-apply`, `on-but-dev-configurable`, or `off-but-dev-configurable`.
+For `corporate` conditions, the level that controls developer configurability (see xref:reference:specify/policies.adoc[Policies]): `always-apply`, `never-apply`, `on-but-dev-configurable`, or `off-but-dev-configurable`.
 
 `pass`::
 The binary predicate that defines success — a check over an observable surface that evaluates to true or false. A condition whose success cannot be expressed as a binary predicate is not yet an exit condition.
@@ -47,5 +47,5 @@ Whether a `recommended-default` condition has been struck as inapplicable. Strik
 == Related
 
 * xref:sdk:enforced-mode.adoc#exit-conditions[Exit conditions and Definition of Done]
-* xref:reference:exit-conditions/default-library.adoc[]
-* xref:reference:governance/policy-as-code.adoc[]
+* xref:reference:specify/default-library.adoc[]
+* xref:reference:specify/policies.adoc[]

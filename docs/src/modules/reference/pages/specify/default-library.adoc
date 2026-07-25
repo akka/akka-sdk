@@ -1,0 +1,65 @@
+= Default exit-condition library
+
+The default library is the curated set of exit conditions Akka Specify starts from, organized by xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done type]. It is what makes the definition of done rich by default instead of empty. See xref:sdk:enforced-mode.adoc#exit-conditions[Exit conditions and Definition of Done] for the model.
+
+== Two kinds of default
+
+[cols="1,3"]
+|===
+| Provenance | Behavior
+
+| `akka-intrinsic`
+| Guarantees the Akka platform provides — observability, resilience, scalability. Always on, asserted green, and never authored or disabled by a developer. They document what Akka covers in the rollup ("Resilience: covered by Akka") and lighten how much a developer has to define.
+
+| `recommended-default`
+| Best-practice conditions the tooling proposes for a feature. On by default; a developer can strike any that do not apply.
+|===
+
+== Default-rich, opt-out
+
+The library is deliberately rich, and the developer *strikes* what is inapplicable — it is never sparse-by-default with conditions you must remember to add. The asymmetry justifies it: the cost of a wrong default is one recorded strike, while the cost of a missing opt-in is shipping without a condition nobody remembered.
+
+Strikes are:
+
+* *Bounded* — a developer cannot strike an organization-locked condition.
+* *Recorded* — every strike is captured in the conformance receipt with its reason.
+* *Grouped* — related conditions strike together. Declaring a service headless or API-only strikes the whole Experience cluster (accessibility, page performance, responsive layout) in one gesture.
+
+During the DEFINE step the engine proactively suggests a strike when it is confident one applies (for example, no UI framework or routes are present), but still requires explicit confirmation.
+
+== Library conditions and their ids
+
+Every library condition has a stable *id*. That id is the registry key: a policy names it in a `ref:` field to adopt and govern the condition (see xref:reference:specify/policies.adoc[Policies]), and the tooling resolves the id back to the condition's type, `pass` predicate, and auditor. A representative sample:
+
+[cols="2,2,3",options="header"]
+|===
+| Id | Type | What it checks
+
+| `FUNC-API-CONTRACT-FIRST` | Functional | API is contract-first with backward compatibility and defined error semantics.
+| `PERF-WEB-VITALS` | Performance | Core Web Vitals and a bundle-size budget (UI-only).
+| `SEC-OWASP-TOP10` | Security & Compliance | No OWASP Top 10 class of vulnerability is present.
+| `SEC-SECRETS-NOT-COMMITTED` | Security & Compliance | No secrets committed to source or history.
+| `SEC-DEP-VULN-AUDIT` | Security & Compliance | Dependency vulnerability (SCA) scan is clean.
+| `OPS-STRUCTURED-LOGGING` | Operability | Structured logging with RED metrics and tracing.
+| `OPS-ROLLBACK-SAFE` | Operability | Rollout is rollback-safe (feature-flagged / staged).
+| `EXP-A11Y-WCAG-2.1-AA` | Experience | WCAG 2.1 AA accessibility (UI-only).
+| `PROJ-TEST-COVERAGE` | Code & Test Health | Line/branch coverage at or above a threshold.
+| `PROJ-CODE-COMPLEXITY` | Code & Test Health | Complexity, file-size, and duplication within budget.
+| `PROJ-DOC-ADR` | Documentation & Training | Architecture decision records and API docs present.
+| `PROJ-REPO-NO-UNMERGED-DRIFT` | Repository Hygiene | Clean history, rebased on base, no orphaned code.
+| `PROJ-SCAN-SAST-CLEAN` | Pipeline & Scanning | Static analysis (SAST) reports no findings.
+| `PROJ-CI-GREEN` | Pipeline & Scanning | Prior commits passed CI.
+| `PROC-SOURCE-GROUNDING` | Process Integrity | API usage cited to official docs; no invented APIs.
+|===
+
+Some conditions are UI-only and apply only when a feature has a user interface; for a headless Akka service they are struck as a group. The catalog of further candidates to consider is in the xref:reference:specify/catalog/index.adoc[exit condition catalog].
+
+== Organization control
+
+An organization can promote a recommended default to a locked floor condition, or disable one across the whole organization, through its governance policy. See xref:reference:specify/policies.adoc[Policies].
+
+== Related
+
+* xref:sdk:enforced-mode.adoc#exit-conditions[Exit conditions and Definition of Done]
+* xref:reference:specify/exit-condition-schema.adoc[]
+* xref:reference:specify/policies.adoc[]

@@ -1,4 +1,4 @@
-= Policy as code
+= Policies
 
 Organizations govern spec-driven development with *policy as code* — a version-controlled definition of the mandatory floor every project inherits: which xref:sdk:enforced-mode.adoc#exit-conditions[exit conditions] are required, which mode is allowed, what "ship" does, and the toolchain to use. Developers can tighten the floor, never loosen it.
 
@@ -61,6 +61,36 @@ Alongside conditions and their levels, a policy sets:
 * the *ship definition* — the organization-authored terminal action(s) and the conditions that must be green before ship fires (see xref:sdk:enforced-mode.adoc#shipping[Shipping and receipts]);
 * waiver rules — whether waivers are allowed, and whether they require approval;
 * the toolchain pin — the approved Akka CLI, plugin, and SDK versions.
+
+== Exit conditions in a policy
+
+Each entry under `exit_conditions` is one of two things:
+
+*Adopt a library condition* -- reference an existing condition from the xref:reference:specify/default-library.adoc[default library] by its `id` and set its governance level (and any parameters). The id is how Akka Specify knows the entry is an exit condition: it resolves the id back to the library, which already defines the condition's type, `pass` predicate, and auditor, and applies it to every project the policy governs.
+
+[source,yaml]
+----
+- ref: PROJ-SCAN-SAST-CLEAN        # an id from the default library
+  level: ALWAYS-APPLY
+- ref: PROJ-TEST-COVERAGE
+  level: ON-BUT-DEV-CONFIGURABLE
+  params: { min_line_coverage: 0.80 }
+----
+
+*Define a corporate condition* -- to require something the library does not cover, declare a new condition inline with its own `id` and the fields the tooling needs to check it: the `dod_type` it belongs to, the `invariant` in business terms, the binary `pass` predicate, the `signal`/`probe` its auditor uses, and its `autonomy` (for example `human-signoff`). This is how a new organization-specific exit condition is created and added to projects.
+
+[source,yaml]
+----
+- id: CORP-DATA-RESIDENCY-EU       # a new corporate condition
+  level: ALWAYS-APPLY
+  tier: product
+  dod_type: security-compliance
+  invariant: "customer PII is stored only in EU-region datastores"
+  pass: "count(pii_entities where region not startswith 'eu-') == 0"
+  autonomy: human-signoff
+----
+
+See the xref:reference:specify/exit-condition-schema.adoc[exit condition schema] for the full field set, and the xref:reference:specify/default-library.adoc[default library] for the adoptable ids.
 
 == Example policy.yaml
 
@@ -143,4 +173,4 @@ The enforcement backstop is the *organization's own CI*, which reads the same re
 
 * xref:sdk:spec-driven-development.adoc#choosing-your-mode[Choosing your mode]
 * xref:sdk:enforced-mode.adoc#shipping[Shipping and receipts]
-* xref:reference:exit-conditions/schema.adoc[]
+* xref:reference:specify/exit-condition-schema.adoc[]

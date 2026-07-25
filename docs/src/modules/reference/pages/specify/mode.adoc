@@ -19,5 +19,5 @@ See xref:sdk:spec-driven-development.adoc#choosing-your-mode[Conformance modes] 
 == See also
 
 * xref:sdk:spec-driven-development.adoc#choosing-your-mode[Choosing your mode]
-* xref:reference:governance/policy-as-code.adoc[]
+* xref:reference:specify/policies.adoc[]
 * xref:reference:specify/index.adoc[]

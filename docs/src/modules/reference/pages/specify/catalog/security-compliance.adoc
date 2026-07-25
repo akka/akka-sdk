@@ -1,6 +1,6 @@
 = Security & Compliance exit conditions
 
-Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Security & Compliance] type. Browse and adopt what fits your project; these are considerations, not a mandatory set. See xref:reference:exit-conditions/catalog/index.adoc[the catalog overview] for how to read these.
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Security & Compliance] type. Browse and adopt what fits your project; these are considerations, not a mandatory set. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to read these.
 
 == Authentication & authorization
 

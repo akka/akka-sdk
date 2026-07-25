@@ -125,7 +125,7 @@ A component like <<key_value_entity>>,<<event_sourced_entity>> or <<workflow>>
 
 [[provenance]]Provenance:: Where an <<exit_condition>> originates — akka-intrinsic, recommended-default, corporate, or developer — which determines whether a developer can change it.
 
-[[governance_level]]Governance level:: The setting an organization assigns to a governed <<exit_condition>>, controlling its default state and whether a developer can change it: always-apply, never-apply, on-but-dev-configurable, or off-but-dev-configurable. See xref:reference:governance/policy-as-code.adoc[].
+[[governance_level]]Governance level:: The setting an organization assigns to a governed <<exit_condition>>, controlling its default state and whether a developer can change it: always-apply, never-apply, on-but-dev-configurable, or off-but-dev-configurable. See xref:reference:specify/policies.adoc[].
 
 [[waiver]]Waiver:: A time-bound modifier attached to a still-active <<exit_condition>> that records who accepted its unmet state, why, and when the waiver expires. The condition stays visible and reverts to blocking on expiry.
 

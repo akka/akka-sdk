@@ -1,8 +1,10 @@
-= Specify commands
+= Specify
 
-Commands available through the Akka AI Marketplace plugin for xref:sdk:spec-driven-development.adoc[Spec-driven development].
+Reference for Akka Specify, the xref:sdk:spec-driven-development.adoc[Spec-driven development] tooling: the commands you run from an AI coding assistant, and the concepts behind them.
 
-These commands are used from within an AI coding assistant (such as Claude Code) after installing the Akka plugin.
+== Commands
+
+The commands are used from within an AI coding assistant (such as Claude Code) after installing the Akka plugin.
 
 [cols="1,~"]
 |====
@@ -24,3 +26,10 @@ These commands are used from within an AI coding assistant (such as Claude Code)
 |xref:specify/ship.adoc[`/akka:ship`]                 | Fire the organization-authored terminal action
 |xref:specify/mode.adoc[`/akka:mode`]                 | Switch between Enforced and À la carte modes
 |====
+
+== Concepts
+
+* xref:reference:specify/exit-condition-schema.adoc[Exit condition schema] — the fields of an exit condition.
+* xref:reference:specify/default-library.adoc[Default exit-condition library] — the built-in conditions and their ids.
+* xref:reference:specify/catalog/index.adoc[Exit condition catalog] — further candidate conditions to consider, by type.
+* xref:reference:specify/policies.adoc[Policies] — the enterprise governance floor as policy-as-code.

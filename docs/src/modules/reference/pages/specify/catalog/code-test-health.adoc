@@ -1,6 +1,6 @@
 = Code & Test Health exit conditions
 
-Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Code & Test Health] type. Browse and adopt what fits your project. See xref:reference:exit-conditions/catalog/index.adoc[the catalog overview] for how to read these.
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Code & Test Health] type. Browse and adopt what fits your project. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to read these.
 
 == Test coverage & balance
 
