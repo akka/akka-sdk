@@ -78,6 +78,8 @@ Every exit condition is tagged with a fixed, versioned *Definition-of-Done type*
 
 The core types are closed and versioned. Organizations extend "done" by adding conditions *within* a type, not by inventing new types.
 
+Akka ships a browsable xref:reference:specify/catalog/index.adoc[exit condition catalog] of candidate conditions for every type. Browse it for inspiration, or point your AI coding assistant at it to help identify the conditions that make sense for your project.
+
 == The guided flow
 
 Enforced mode is two human touchpoints book-ending a silent machine phase -- not a gate at every step.
