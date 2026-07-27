@@ -2,6 +2,7 @@ accessor
 Ack
 ACLs
 ACRs
+AI's
 Adoptium
 [Aa]gentic
 Agrona
@@ -31,6 +32,7 @@ burstable
 CA
 CA's
 CAs
+CLI's
 caSecret
 Cembaluk
 [Cc]hatbots
@@ -308,6 +310,8 @@ Grafana
 [Ii]nfosec
 Hanafee
 Llaama
+Intune
+Jamf
 Manulife
 QCon
 regionalized
