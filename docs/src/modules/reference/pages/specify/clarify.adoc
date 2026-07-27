@@ -1,4 +1,4 @@
-= /akka.clarify
+= /akka:clarify
 
 Identify gaps in the current feature specification.
 

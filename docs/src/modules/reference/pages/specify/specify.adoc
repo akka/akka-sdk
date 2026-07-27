@@ -1,4 +1,4 @@
-= /akka.specify
+= /akka:specify
 
 Supply a prompt to produce a feature specification.
 

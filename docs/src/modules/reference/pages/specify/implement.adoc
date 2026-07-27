@@ -1,4 +1,4 @@
-= /akka.implement
+= /akka:implement
 
 Generate the required code, tests, and harnesses.
 
