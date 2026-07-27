@@ -15,7 +15,7 @@ auditor:
     module: web                             # the sub-project it runs in (relative to the root)
 ----
 
-It is green when the command exits zero, red otherwise. The point is delegation: the auditor does not encode knowledge of React or Akka — it runs the ecosystem's own type-checker, test runner, or linter where the surface lives. So "no invented APIs" is largely "it type-checks in every language present": `tsc --noEmit` fails on an invented React hook, `mvn compile` fails on an invented Akka method. New auditor work is needed per *ecosystem*, not per dependency.
+It is green when the command exits zero, red otherwise. The point is delegation: the auditor does not encode knowledge of React or Akka — it runs the ecosystem's own type-checker, test runner, or linter where the surface lives. In practice, "no invented APIs" reduces to "it type-checks in every language present": `tsc --noEmit` fails on an invented React hook, `mvn compile` fails on an invented Akka method. New auditor work is needed per *ecosystem*, not per dependency.
 
 == Provenance and trust
 
