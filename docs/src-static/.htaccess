@@ -106,30 +106,30 @@ RedirectMatch 301 ^/docs/akka/[^/]+/scala/scaladoc.*          https://doc.akka.i
 
 # akka-core versions
 RedirectMatch 301 ^/docs/akka/1.1(\.\d+)?(/?|/.*)$            https://doc.akka.io/libraries/akka-core/1.1.3$2
-RedirectMatch 301 ^/(api|japi)/akka/1.1(\.\d+)?(/?|/.*)$      https://doc.akka.io/$1/akka-core/1.1.3$2
+RedirectMatch 301 ^/(libraries|api|japi)/akka/1.1(\.\d+)?(/?|/.*)$      https://doc.akka.io/$1/akka-core/1.1.3$2
 
 RedirectMatch 301 ^/docs/akka/1.3(/?|/.*)$                    https://doc.akka.io/libraries/akka-core/1.3.1$1
-RedirectMatch 301 ^/(api|japi)/akka/1.3(/?|/.*)$              https://doc.akka.io/$1/akka-core/1.3.1$2
+RedirectMatch 301 ^/(libraries|api|japi)/akka/1.3(/?|/.*)$              https://doc.akka.io/$1/akka-core/1.3.1$2
 
 RedirectMatch 301 ^/docs/akka/2.0(\.\d+)?(/?|/.*)$            https://doc.akka.io/libraries/akka-core/2.0.5$2
-RedirectMatch 301 ^/(api|japi)/akka/2.0\.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.0.5$2
+RedirectMatch 301 ^/(libraries|api|japi)/akka/2.0\.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.0.5$2
 
 RedirectMatch 301 ^/docs/akka/2.1(\.\d+)?(/?|/.*)$            https://doc.akka.io/libraries/akka-core/2.1$2
-RedirectMatch 301 ^/(api|japi)/akka/2.1\.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.1$2
+RedirectMatch 301 ^/(libraries|api|japi)/akka/2.1\.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.1$2
 
 RedirectMatch 301 ^/docs/akka/2.2(\.\d+)?(/?|/.*)$            https://doc.akka.io/libraries/akka-core/2.2$2
-RedirectMatch 301 ^/(api|japi)/akka/2.2\.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.2$2
+RedirectMatch 301 ^/(libraries|api|japi)/akka/2.2\.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.2$2
 
 RedirectMatch 301 ^/docs/akka/2.3(\.\d+)?(/?|/.*)$            https://doc.akka.io/libraries/akka-core/2.3$2
-RedirectMatch 301 ^/(api|japi)/akka/2.3\.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.3$2
+RedirectMatch 301 ^/(libraries|api|japi)/akka/2.3\.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.3$2
 
 RedirectMatch 301 ^/docs/akka/2.4.11.\d+(/?|/.*)$            https://doc.akka.io/libraries/akka-core/2.4$1
-RedirectMatch 301 ^/(api|japi)/akka/2.4.11.\d+(/?|/.*)$      https://doc.akka.io/$1/akka-core/2.4/$2
+RedirectMatch 301 ^/(libraries|api|japi)/akka/2.4.11.\d+(/?|/.*)$      https://doc.akka.io/$1/akka-core/2.4/$2
 RedirectMatch 301 ^/docs/akka/2.4(\.\d+)?(/?|/.*)$           https://doc.akka.io/libraries/akka-core/2.4$2
-RedirectMatch 301 ^/(api|japi)/akka/2.4.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.4$2
+RedirectMatch 301 ^/(libraries|api|japi)/akka/2.4.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.4$2
 
 RedirectMatch 301 ^/docs/akka/2.5(\.\d+)?(/?|/.*)$           https://doc.akka.io/libraries/akka-core/2.5$2
-RedirectMatch 301 ^/(api|japi)/akka/2.5.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.5$2
+RedirectMatch 301 ^/(libraries|api|japi)/akka/2.5.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.5$2
 
 RedirectMatch 301 ^/docs/akka/2.5.(\d+)/general(.*)          https://doc.akka.io/libraries/akka-core/2.5/scala/general$2
 RedirectMatch 301 ^/docs/akka/2.5.(\d+)/additional(.*)       https://doc.akka.io/libraries/akka-core/2.5/scala/additional$2
@@ -138,19 +138,19 @@ RedirectMatch 301 ^/docs/akka/2.5.(\d+)/project(.*)          https://doc.akka.io
 RedirectMatch 301 ^/docs/akka/2.5.(\d+)/security(.*)         https://doc.akka.io/libraries/akka-core/2.5/scala/security$2
 
 RedirectMatch 301 ^/docs/akka/2.6(\.\d+)?(/?|/.*)$           https://doc.akka.io/libraries/akka-core/2.6$2
-RedirectMatch 301 ^/(api|japi)/akka/2.6.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.6$1
+RedirectMatch 301 ^/(libraries|api|japi)/akka/2.6.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.6$1
 
 # 2.7.x still alive 2024-10-29
 RedirectMatch 301 ^/docs/akka/2.7(\.\d+)?(/?|/.*)$           https://doc.akka.io/libraries/akka-core/2.7$2
-RedirectMatch 301 ^/(api|japi)/akka/2.7.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.7$2
+RedirectMatch 301 ^/(libraries|api|japi)/akka/2.7.\d+(/?|/.*)$         https://doc.akka.io/$1/akka-core/2.7$2
 
 # 2.8.x still alive 2024-10-29
 RedirectMatch 301 ^/docs/akka/2.8(\.\d+)?(/?|/.*)$           https://doc.akka.io/libraries/akka-core/2.8$1$2
-RedirectMatch 301 ^/(api|japi)/akka/2.8.(\d+)(/?|/.*)$       https://doc.akka.io/$1/akka-core/2.8$1$2
+RedirectMatch 301 ^/(libraries|api|japi)/akka/2.8.(\d+)(/?|/.*)$       https://doc.akka.io/$1/akka-core/2.8$1$2
 
 # 2.9.x still alive 2024-10-29
 RedirectMatch 301 ^/docs/akka/2.9(\.\d+)?(/?|/.*)$           https://doc.akka.io/libraries/akka-core/2.9$1$2
-RedirectMatch 301 ^/(api|japi)/akka/2.9.(\d+)(/?|/.*)$       https://doc.akka.io/$1/akka-core/2.9$1$2
+RedirectMatch 301 ^/(libraries|api|japi)/akka/2.9.(\d+)(/?|/.*)$       https://doc.akka.io/$1/akka-core/2.9$1$2
 
 # Rename to akka-core
 RedirectMatch 301 ^/docs/akka/current(/?|/.*)$                    https://doc.akka.io/libraries/akka-core/current$1
