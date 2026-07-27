@@ -22,7 +22,7 @@ Where the condition comes from, which determines whether a developer can change 
 
 | `akka-intrinsic` | Guaranteed by the platform; always on, asserted green, never authored by a developer.
 | `recommended-default` | From the default library; on by default, may be struck.
-| `corporate` | Inherited from the organization floor; locked according to its governance level.
+| `corporate` | Inherited from the organization policy; locked according to its governance level.
 | `developer` | Added by the developer for this feature.
 |===
 

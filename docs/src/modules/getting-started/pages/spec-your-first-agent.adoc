@@ -26,7 +26,7 @@ New installs start in *Enforced* mode. To use À la carte, switch first:
 [#enforced]
 == Build in Enforced mode
 
-In Enforced mode you drive the whole flow through one re-entrant command, `/akka:specify`. You do not run `clarify`, `plan`, `tasks`, or `implement` yourself -- they fold into it.
+In Enforced mode you drive the whole build through one re-entrant command, `/akka:specify`, instead of running `clarify`, `plan`, `tasks`, and `implement` individually -- `/akka:specify` sequences those phases for you.
 
 === Specify the feature
 
@@ -50,10 +50,10 @@ DEFINITION OF DONE                                    17 conditions
  ○ Data Integrity — session history invariant ........ machine will build
  ? Performance — p95 response latency ................ decision needed
 ── Project ──────────────────────────────────────────────────────
- 🔒 Pipeline & Scanning — SAST + secrets clean ........ org floor
+ 🔒 Pipeline & Scanning — SAST + secrets clean ........ org policy
  ? Code & Test Health — coverage threshold ........... decision needed
 ── Process ──────────────────────────────────────────────────────
- 🔒 Process Integrity — APIs cited, none invented ..... org floor
+ 🔒 Process Integrity — APIs cited, none invented ..... org policy
 ----
 
 See xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done types] for what each category covers.
@@ -83,7 +83,7 @@ The engine records your decisions, locks the definition of done, and starts buil
 
 === Let the build run
 
-The machine derives the exit conditions, wires xref:sdk:enforced-mode.adoc#auditors[auditors], plans, implements, and loops until every locally runnable condition is green. It reports `WORKING` and interrupts only if it cannot reach a condition, hits an unresolved ambiguity, or finds a conflict with the organization's floor.
+The machine derives the exit conditions, wires xref:sdk:enforced-mode.adoc#auditors[auditors], plans, implements, and loops until every locally runnable condition is green. It reports `WORKING` and interrupts only if it cannot reach a condition, hits an unresolved ambiguity, or finds a conflict with the organization's policy.
 
 [source]
 ----

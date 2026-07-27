@@ -12,9 +12,16 @@ Switch between the Enforced and À la carte conformance modes.
 
 == Description
 
-Rewrites the available command set to match the target mode and prompts you to restart your assistant so the new command menu loads. A developer can switch only within the modes the organization allows; if the organization has locked the mode, the command refuses and says so. Switching out of Enforced mode is recorded.
+Sets the project's conformance mode (recorded in `.akka/exit-conditions.yaml`) or, with no argument, prints the current mode.
 
-See xref:sdk:spec-driven-development.adoc#choosing-your-mode[Conformance modes] for what each mode does.
+The mode controls one thing: whether unmet exit conditions block shipping.
+
+* *Enforced* (the default) -- `ship` refuses to release the project until every in-scope exit condition is satisfied: green, platform-asserted, waived, or signed off. You use `signoff`, `strike`, and `waive` to resolve each open condition before `ship` will proceed.
+* *À la carte* -- `ship` proceeds even when conditions are unmet, recording an explicit override. The conditions are still shown and evaluated; they simply do not block.
+
+Every Specify command is available in both modes -- the mode changes the ship gate, not the command set. A developer can switch only within the modes the organization allows; if the organization has locked the mode (see xref:reference:specify/policies.adoc[Policies]), the command refuses and says so.
+
+See xref:sdk:spec-driven-development.adoc#choosing-your-mode[Conformance modes] for more on choosing a mode.
 
 == See also
 

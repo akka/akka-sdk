@@ -1,33 +1,26 @@
 = Policies
 
-Organizations govern spec-driven development with *policy as code* — a version-controlled definition of the mandatory floor every project inherits: which xref:sdk:enforced-mode.adoc#exit-conditions[exit conditions] are required, which mode is allowed, what "ship" does, and the toolchain to use. Developers can tighten the floor, never loosen it.
+Organizations govern spec-driven development with *policy as code* — a version-controlled definition of the mandatory controls every project inherits: which xref:sdk:enforced-mode.adoc#exit-conditions[exit conditions] are required, which mode is allowed, what "ship" does, and the toolchain to use. Developers can make these controls stricter, never weaker.
 
-== The governance repository
+== The governance policy
 
-The policy lives in the organization's own git repository, by convention named:
+The policy is a single file, `policy.yaml`, that your organization authors, owns, and controls. Version-control it — most teams keep it in a dedicated git repository (for example `github.com/manulife/akka-specify-governance`), governed by your normal access controls: private repository, SSO, RBAC, and branch protection. Akka does not host it.
 
-[source]
-----
-<source-provider>/<org>/akka-specify-governance
-----
+The CLI does not require any particular host, provider, or repository name. It fetches the `policy.yaml` at the URL your organization configures (see <<_applying_the_policy_in_every_project>>), so the policy can live in a git repository, an internal mirror, or any location the CLI can read over HTTPS. A git repository is recommended simply because it gives you version history and a place to run CI that enforces the policy — see <<_drift_and_enforcement>>.
 
-For example, `github.com/manulife/akka-specify-governance`. The repository is provider-agnostic (GitHub, GitLab, Bitbucket, or an enterprise-hosted server) and is governed by the organization's own access controls — private repository, SSO, RBAC, branch protection, and optionally signed tags. Akka does not host it.
+== Recommended repository layout
 
-In v1 the governance repository *is* the source of truth: the organization owns the whole chain, and no Akka platform service is required.
-
-== Repository layout
-
-The repository needs one required file and one recommended one:
+When you keep the policy in a git repository, a typical layout holds one required file and one recommended one:
 
 [source]
 ----
-akka-specify-governance/
-├── policy.yaml            # required — the org floor (schema below)
-└── .github/workflows/     # recommended — CI that enforces the floor
+akka-specify-governance/       # name it whatever you like
+├── policy.yaml                # required — the organization policy (schema below)
+└── .github/workflows/         # recommended — CI that enforces the policy
     └── conformance.yml
 ----
 
-`policy.yaml`:: The single source of truth for the floor, at the repository root. `/akka:setup` fetches this file; its schema is described below.
+`policy.yaml`:: The single source of truth for the policy. `/akka:setup` downloads it from the URL you configure; its schema is described below.
 CI workflow:: A pipeline that runs the Akka conformance check against `policy.yaml`. Because a developer can bypass local checks, the organization's own CI is the enforcement backstop — the gate a change must pass to merge or ship. Use the `.github/workflows/` directory on GitHub, or the equivalent for your provider.
 
 == Governance levels
@@ -51,7 +44,7 @@ Each condition in the policy is assigned a *governance level* — a clean 2×2 o
 | Off by default; a developer may opt in.
 |===
 
-Only the two locked levels always win. Where the policy is silent, the platform-intrinsic conditions and the recommended-default library fill in. The floor is a floor, not a ceiling: it constrains only in the stricter direction.
+Only the two locked levels always win. Where the policy is silent, the platform-intrinsic conditions and the recommended-default library fill in. The policy sets a minimum, not a maximum: it constrains only in the stricter direction.
 
 == What a policy defines
 
@@ -94,14 +87,14 @@ See the xref:reference:specify/exit-condition-schema.adoc[exit condition schema]
 
 == Example policy.yaml
 
-A representative floor. Adopt library conditions by `ref`, set each one's governance level, and define corporate conditions inline within a type:
+A representative policy. Adopt library conditions by `ref`, set each one's governance level, and define corporate conditions inline within a type:
 
 [source,yaml]
 ----
 apiVersion: akka-specify/v1
 kind: OrgPolicy
 org: manulife
-version: 3                     # bump on every change; pinned into .akka/policy.lock
+version: 3                     # bump on every policy change
 
 mode:
   default: enforced            # enforced | a-la-carte
@@ -152,22 +145,56 @@ rollout:
   enforce_after: "2026-09-01"
 ----
 
-== How a project sources the floor
+== How a project sources the policy
 
 `/akka:setup` resolves the policy for a project:
 
-. Fetch the organization's governance repository at a pinned ref and, if signed tags are used, verify them.
-. Merge the layers — organization floor, then project, then developer additions — applying locks.
-. Materialize the result: the Enforced command surface, the MCP configuration, and the default conditions with their lock state.
-. Write a resolved `.akka/policy.lock` recording the repository URL and commit SHA the project is bound to.
+. Download the organization's `policy.yaml` to `.akka/governance/policy.yaml`, when a `governance-policy-url` is configured (see <<_applying_the_policy_in_every_project>>).
+. Merge the layers — the default library, then the organization policy, then developer additions — applying locks (tighten-only: a developer may add conditions but never loosen a locked one).
+. Materialize the result: the MCP configuration and the resolved conditions with their lock state, on/off, and provenance, ready for `status`, `conform`, and `ship`.
 
-Because the floor is pulled live rather than vendored, a new project always gets the current policy, never a stale template.
+Because the policy is fetched fresh rather than vendored into the project, re-running `/akka:setup` always picks up the organization's current policy, never a stale template.
+
+== Applying the policy in every project
+
+A policy is a set of standards an organization defines once, centrally, and enforces everywhere. The governance repository holds that central definition; for it to take effect, each developer's CLI has to know where the policy lives and that it is mandatory. That is a one-time setting owned by IT — not a per-project choice — deployed through the Akka CLI's managed system configuration, the same read-only channel enterprises already use to push other defaults.
+
+[cols="1,2"]
+|===
+| Platform | Managed configuration file
+
+| macOS (MDM)
+| `/Library/Managed Preferences/io.akka.cli.plist` — deploy via Jamf, Intune, or another MDM
+
+| macOS / Linux / Windows
+| `config.yml` under the platform's system configuration directory
+|===
+
+Set the `governance-policy-url` key to the raw URL of the repository's `policy.yaml`:
+
+[source,yaml]
+----
+governance-policy-url: https://raw.githubusercontent.com/manulife/akka-specify-governance/main/policy.yaml
+----
+
+With this configured:
+
+* `/akka:setup` downloads the policy to `.akka/governance/policy.yaml` and refreshes it when it changes centrally;
+* every conformance check — `akka specify status`, `conform`, and `ship`, plus the `akka_ec_*` MCP tools — applies the policy *by default*, with no flag to pass;
+* the central policy always wins: a developer can add stricter conditions with `--policy`, but can never weaken the organization's policy, and any `--policy` that tries is ignored.
+
+Because the setting lives in a file that IT controls and the developer cannot edit, the policy cannot be skipped by leaving off a flag. The `--policy` flag is for local experimentation only, and is superseded whenever a central policy is in place. This is the same managed-configuration channel that already controls other CLI defaults (such as project templates and the AI context bundle); for the full key list, file locations, and an MDM profile example, see xref:operations:cli/system-config.adoc[System Configuration].
+
+[NOTE]
+====
+The CLI fetches `policy.yaml` over plain HTTPS, so the URL must work without an interactive login. If the governance repository is private, publish `policy.yaml` somewhere the CLI can read it non-interactively — for example a URL that carries an access token, an internal mirror, or a copy your IT team syncs onto each machine — rather than a link that would prompt the developer to sign in.
+====
 
 == Drift and enforcement
 
-The locked policy version participates in the xref:sdk:enforced-mode.adoc#dod-types[Environment & Dependencies] drift check: when the organization publishes a new floor, the project's `.akka/policy.lock` becomes stale, the condition goes red, and the fix is to re-run `/akka:setup` (subject to a warn-then-enforce grace period so a newly locked condition does not turn every in-flight project red overnight).
+When the organization changes the policy, a developer picks up the new version by running `/akka:setup` again, which re-downloads the current `policy.yaml`.
 
-The enforcement backstop is the *organization's own CI*, which reads the same repository and fails the build if the floor is not met. The local CLI is advisory and guided; CI is the gate — the same way enterprises already enforce standards. You can bypass checks locally, but you cannot merge or ship past CI.
+The enforcement backstop is the *organization's own CI*, which reads the same policy and fails the build if the policy is not met. The local CLI is advisory and guided; CI is the gate — the same way enterprises already enforce standards. You can bypass checks locally, but you cannot merge or ship past CI.
 
 == Related
 

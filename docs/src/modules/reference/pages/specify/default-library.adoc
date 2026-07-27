@@ -56,7 +56,7 @@ Some conditions are UI-only and apply only when a feature has a user interface; 
 
 == Organization control
 
-An organization can promote a recommended default to a locked floor condition, or disable one across the whole organization, through its governance policy. See xref:reference:specify/policies.adoc[Policies].
+An organization can promote a recommended default to a locked, mandatory condition, or disable one across the whole organization, through its governance policy. See xref:reference:specify/policies.adoc[Policies].
 
 == Related
 

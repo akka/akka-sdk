@@ -33,4 +33,4 @@ The commands are used from within an AI coding assistant (such as Claude Code) a
 * xref:reference:specify/exit-condition-schema.adoc[Exit condition schema] — the fields of an exit condition.
 * xref:reference:specify/default-library.adoc[Default exit-condition library] — the built-in conditions and their ids.
 * xref:reference:specify/catalog/index.adoc[Exit condition catalog] — further candidate conditions to consider, by type.
-* xref:reference:specify/policies.adoc[Policies] — the enterprise governance floor as policy-as-code.
+* xref:reference:specify/policies.adoc[Policies] — the enterprise governance controls, defined as policy-as-code.

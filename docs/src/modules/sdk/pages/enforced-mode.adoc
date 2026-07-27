@@ -34,7 +34,7 @@ The layers roll up in the other direction: an auditor produces a verdict, verdic
 
 Every exit condition resolves to a single boolean `pass` -- there is no "mostly done". A requirement that cannot be expressed as a binary predicate over an observable surface is not yet an exit condition; it is a Definition of Done item still waiting to be made precise.
 
-Every condition also carries a *provenance* that determines whether a developer can change it: `akka-intrinsic` (platform guarantees, always on and asserted), `recommended-default` (from the xref:reference:specify/default-library.adoc[default library], strikable), `corporate` (the organization floor, locked), and `developer` (added for this feature). Done is layered and additive -- the organization sets a floor and developers add to it, tightening but never loosening it. See the xref:reference:specify/exit-condition-schema.adoc[exit condition schema] for the full field set.
+Every condition also carries a *provenance* that determines whether a developer can change it: `akka-intrinsic` (platform guarantees, always on and asserted), `recommended-default` (from the xref:reference:specify/default-library.adoc[default library], strikable), `corporate` (the organization policy, locked), and `developer` (added for this feature). Done is layered and additive -- the organization defines mandatory controls and developers add to them, tightening but never loosening. See the xref:reference:specify/exit-condition-schema.adoc[exit condition schema] for the full field set.
 
 [#dod-types]
 == Definition-of-Done types
@@ -67,7 +67,7 @@ Every exit condition is tagged with a fixed, versioned *Definition-of-Done type*
 | Environment & Dependencies | Every dependency identified, available, and verified, and the local environment current with the resolved governance. A drift check, not a run-once flag.
 |===
 
-*Process* -- did the AI build stay honest and efficient? (organization floor)
+*Process* -- did the AI build stay honest and efficient? (organization policy)
 
 [cols="1,3"]
 |===
@@ -135,32 +135,25 @@ When ship completes, Akka writes a *conformance receipt* -- which conditions wer
 [#governance]
 == Enterprise governance
 
-In Enforced mode an organization authors a floor of mandatory exit conditions and definitions of done -- security, compliance, repository hygiene, its "way of working" -- that Akka enforces and developers can tighten but never loosen. Each condition is assigned a governance level (`always-apply`, `never-apply`, `on-but-dev-configurable`, `off-but-dev-configurable`).
+In Enforced mode an organization defines a mandatory baseline of exit conditions and definitions of done -- security, compliance, repository hygiene, its "way of working" -- that Akka enforces and developers can tighten but never loosen. Each condition is assigned a governance level (`always-apply`, `never-apply`, `on-but-dev-configurable`, `off-but-dev-configurable`).
 
-=== Set up the governance repository
+=== Author the governance policy
 
-The floor lives as versioned policy-as-code in a git repository your organization owns and controls. Set it up once:
+The policy is a single `policy.yaml`, versioned somewhere your organization owns and controls. Set it up once:
 
-. *Create the repository*, named by convention:
-+
-[source]
-----
-<source-provider>/<org>/akka-specify-governance
-----
-+
-For example, `github.com/manulife/akka-specify-governance`. It is provider-agnostic (GitHub, GitLab, Bitbucket, or an enterprise-hosted server) and governed entirely by your own access controls -- private repository, SSO, RBAC, and branch protection.
+. *Store `policy.yaml` under version control.* Keep it in a dedicated git repository -- name it whatever you like (`github.com/<org>/akka-specify-governance` is a common example) -- governed by your own access controls: private repository, SSO, RBAC, and branch protection. Akka does not host it, and the CLI does not require any particular provider or name; it fetches the file from the URL you configure.
 
-. *Add `policy.yaml`* at the repository root -- the single source of truth for the floor. It declares the allowed mode, the ship definition, the toolchain version, the exit conditions and their governance levels, and the completion, waiver, and rollout policies. See xref:reference:specify/policies.adoc[Policies] for the full schema and an annotated example.
+. *Define the policy in `policy.yaml`* -- the single source of truth. It declares the allowed mode, the ship definition, the toolchain version, the exit conditions and their governance levels, and the completion, waiver, and rollout policies. See xref:reference:specify/policies.adoc[Policies] for the full schema and an annotated example.
 
 . *Add a CI workflow* that runs the Akka conformance check against the policy. The organization's own CI is the enforcement backstop: local tooling is advisory and guided; CI is the gate a change must pass to merge or ship.
 
-When a developer runs `/akka:setup`, the CLI git-fetches this repository, merges the floor under the project and developer layers (tighten-only), and records the pinned commit in `.akka/policy.lock`. Publishing a new floor version makes that lock stale -- the xref:sdk:enforced-mode.adoc#dod-types[Environment & Dependencies] condition goes red until the developer re-runs `/akka:setup`.
+For the policy to reach developers, IT points each machine's Akka CLI at this repository one time, through a managed setting named `governance-policy-url` — a configuration file the developer cannot edit. From then on, whenever a developer runs `/akka:setup`, the CLI downloads `policy.yaml`, applies it on top of the developer's own choices (which may only make the rules stricter, never looser), and enforces it automatically in `status`, `conform`, and `ship` — with no flag required and no way to opt out. When the organization changes the policy, developers pick up the new version by running `/akka:setup` again. See xref:reference:specify/policies.adoc#_applying_the_policy_in_every_project[Applying the policy in every project] for how IT sets this up.
 
-Beyond the organization floor, the xref:reference:specify/default-library.adoc[default library] provides a rich, curated set of best-practice conditions on by default; you strike what does not apply, and strikes are recorded. For inspiration on what else to require, browse the xref:reference:specify/catalog/index.adoc[exit condition catalog], organized by type and project flavor.
+Beyond the organization policy, the xref:reference:specify/default-library.adoc[default library] provides a rich, curated set of best-practice conditions on by default; you strike what does not apply, and strikes are recorded. For inspiration on what else to require, browse the xref:reference:specify/catalog/index.adoc[exit condition catalog], organized by type and project flavor.
 
-== Commands in Enforced mode
+== Working in Enforced mode
 
-Enforced mode deliberately exposes a small menu; the individual phase commands fold into `/akka:specify`.
+Every Specify command remains available -- Enforced mode changes the ship gate, not the command set (see xref:reference:specify/mode.adoc[`/akka:mode`]). In practice you drive an Enforced build through `/akka:specify` as the re-entrant engine, and use the governance commands to inspect progress and release:
 
 [cols="1,3"]
 |===
@@ -169,5 +162,5 @@ Enforced mode deliberately exposes a small menu; the individual phase commands f
 | xref:reference:specify/status.adoc[`/akka:status`] | Read-only rollup of the definition of done by business category.
 | xref:reference:specify/ship.adoc[`/akka:ship`] | Fire the organization-authored terminal action, gated on the in-scope conditions.
 | xref:reference:specify/mode.adoc[`/akka:mode`] | Switch mode within the organization-allowed set.
-| xref:reference:specify/setup.adoc[`/akka:setup`] | Install and repair the local environment and source the governance floor.
+| xref:reference:specify/setup.adoc[`/akka:setup`] | Install and repair the local environment and source the governance policy.
 |===
