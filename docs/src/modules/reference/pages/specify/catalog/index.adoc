@@ -11,7 +11,7 @@ To add a catalog condition to a project, reference it by its id:
 * *In a policy* -- an organization adds the id under `exit_conditions` in its governance policy, so every project it governs inherits the condition. See xref:reference:specify/policies.adoc[Policies].
 * *In your project* -- ask your AI coding assistant to add the condition to your definition of done during `/akka:specify`, naming the id.
 
-Not every id here ships in the built-in library. Ids present in the xref:reference:specify/default-library.adoc[default library] resolve to a condition Akka already knows how to check; ids that are not are adopted as new conditions, for which the assistant (or your policy) wires an auditor.
+Whether an id ships in the xref:reference:specify/default-library.adoc[default library] or not, adopting it requires a covering auditor for the surface it checks. Auditors are not a fixed, closed set Akka ships; they are authored declaratively per ecosystem (see xref:reference:specify/auditors.adoc[Auditors]). Ids present in the default library arrive with their condition already defined; the assistant (or your policy) authors the declarative auditor that runs the ecosystem's own tool to decide the invariant.
 
 == Point your assistant at this catalog
 

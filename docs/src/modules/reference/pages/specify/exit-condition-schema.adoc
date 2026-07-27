@@ -33,7 +33,29 @@ For `corporate` conditions, the level that controls developer configurability (s
 The binary predicate that defines success — a check over an observable surface that evaluates to true or false. A condition whose success cannot be expressed as a binary predicate is not yet an exit condition.
 
 `auditor`::
-The check bound to the condition and the requirement it needs to run (git, Maven, GitHub, or a live service). See xref:sdk:enforced-mode.adoc#auditors[Auditors].
+The check bound to the condition. Most auditors are declarative: they delegate to a tool the ecosystem already provides and are green when that tool exits zero, red otherwise. The sub-schema has two fields:
++
+[cols="1,3"]
+|===
+| Field | Meaning
+
+| `run`
+| The command that decides the invariant, given as an argument array (for example `["npm", "run", "-s", "typecheck"]` or `["mvn", "-q", "compile"]`). A zero exit code is green.
+
+| `applies_to`
+| Where the command runs. `requirement` names the environment it needs (`node`, `maven`, `git`, and so on); `module` names the sub-project it runs in, relative to the repository root (for example `web`).
+|===
++
+[source,yaml]
+----
+auditor:
+  run: ["npm", "run", "-s", "typecheck"]
+  applies_to:
+    requirement: node
+    module: web
+----
++
+A `developer` condition can be materialized from `/akka:specify` feedback and carry its own inline `auditor` written the same way. See xref:reference:specify/auditors.adoc[Auditors].
 
 `state`::
 The condition's current resolution: `green`, `red`, `open`, `deferred`, or `asserted`.

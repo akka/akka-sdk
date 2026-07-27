@@ -119,7 +119,13 @@ A component like <<key_value_entity>>,<<event_sourced_entity>> or <<workflow>>
 
 [[exit_condition]]Exit condition:: The technical unit of "done" in <<sdd,Spec-Driven Development>> — a precise, binary pass/fail predicate over an observable surface (an endpoint response, entity state, a build result), backed by an <<auditor>>. See xref:sdk:enforced-mode.adoc#exit-conditions[Exit conditions and Definition of Done].
 
-[[auditor]]Auditor:: The executable check bound to an <<exit_condition>> that evaluates it and returns a verdict. Requirement-aware — it defers when it cannot run in the current environment. See xref:sdk:enforced-mode.adoc#auditors[Auditors].
+[[auditor]]Auditor:: The check bound to an <<exit_condition>> that proves the condition's invariant holds. Most auditors are _declarative_ and delegate to a tool the ecosystem already provides -- a type-checker, test-runner, or linter -- and are green when that command exits zero, red otherwise. There is no provided-auditor repository; a coverage gap is closed by authoring a declarative check. See xref:reference:specify/auditors.adoc[Auditors].
+
+[[coverage_gate]]Coverage gate:: The locked process-integrity gate `PROC-AUDITOR-COVERAGE`: every material build surface must have a covering <<auditor>>, or the gate is red. Surfaces are detected from markers such as `pom.xml`, `package.json`, `go.mod`, `Cargo.toml`, `pyproject.toml`, and `Dockerfile`, skipping vendored directories. A surface can be waived with a recorded reason. See xref:reference:specify/coverage-gate.adoc[The coverage gate].
+
+[[adequacy_review]]Adequacy review:: The locked process-integrity gate `PROC-ADEQUACY-REVIEWED`: a fresh adversarial review, keyed to the current checks, covers every <<auditor>>. The review looks for an input where a check passes while its invariant is false. It is keyed to a signature of the active checks, so feedback that changes a check stales the review and forces a re-run. See xref:reference:specify/adequacy-review.adoc[The adequacy review].
+
+[[falsifiability_gate]]Falsifiability gate:: The rule that a requirement becomes an <<exit_condition>> only if a binary pass predicate can be stated that is false exactly when the requirement is violated.
 
 [[conformance_mode]]Conformance mode:: Whether the <<definition_of_done>> is a hard gate (Enforced) or an advisory checklist (À la carte). See xref:sdk:spec-driven-development.adoc#choosing-your-mode[Choosing your mode].
 

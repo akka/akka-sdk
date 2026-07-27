@@ -59,7 +59,7 @@ Alongside conditions and their levels, a policy sets:
 
 Each entry under `exit_conditions` is one of two things:
 
-*Adopt a library condition* -- reference an existing condition from the xref:reference:specify/default-library.adoc[default library] by its `id` and set its governance level (and any parameters). The id is how Akka Specify knows the entry is an exit condition: it resolves the id back to the library, which already defines the condition's type, `pass` predicate, and auditor, and applies it to every project the policy governs.
+*Adopt a library condition* -- reference an existing condition from the xref:reference:specify/default-library.adoc[default library] by its `id` and set its governance level (and any parameters). The id is how Akka Specify knows the entry is an exit condition: it resolves the id back to the library, which defines the condition's type, `invariant`, and `pass` predicate, and applies it to every project the policy governs. The covering auditor is authored declaratively for each ecosystem the project uses (see xref:reference:specify/auditors.adoc[Auditors]), not shipped as a fixed check.
 
 [source,yaml]
 ----
@@ -70,7 +70,7 @@ Each entry under `exit_conditions` is one of two things:
   params: { min_line_coverage: 0.80 }
 ----
 
-*Define a corporate condition* -- to require something the library does not cover, declare a new condition inline with its own `id` and the fields the tooling needs to check it: the `dod_type` it belongs to, the `invariant` in business terms, the binary `pass` predicate, the `signal`/`probe` its auditor uses, and its `autonomy` (for example `human-signoff`). This is how a new organization-specific exit condition is created and added to projects.
+*Define a corporate condition* -- to require something the library does not cover, declare a new condition inline with its own `id` and the fields the tooling needs to check it: the `dod_type` it belongs to, the `invariant` in business terms, the binary `pass` predicate, the declarative `auditor` (its `run` command and `applies_to`), and its `autonomy` (for example `human-signoff`). This is how a new organization-specific exit condition is created and added to projects.
 
 [source,yaml]
 ----
@@ -80,6 +80,11 @@ Each entry under `exit_conditions` is one of two things:
   dod_type: security-compliance
   invariant: "customer PII is stored only in EU-region datastores"
   pass: "count(pii_entities where region not startswith 'eu-') == 0"
+  auditor:
+    run: ["./scripts/check-pii-region.sh"]
+    applies_to:
+      requirement: node
+      module: .
   autonomy: human-signoff
 ----
 
@@ -113,6 +118,11 @@ toolchain:
   locked: true
 
 exit_conditions:
+  # The two locked process-integrity gates: always on, cannot be struck
+  - ref: PROC-AUDITOR-COVERAGE
+    level: ALWAYS-APPLY
+  - ref: PROC-ADEQUACY-REVIEWED
+    level: ALWAYS-APPLY
   # Adopt and lock library conditions by id
   - ref: PROJ-SCAN-SAST-CLEAN
     level: ALWAYS-APPLY
@@ -128,6 +138,11 @@ exit_conditions:
     dod_type: security-compliance
     invariant: "customer PII is stored only in EU-region datastores"
     pass: "count(pii_entities where region not startswith 'eu-') == 0"
+    auditor:
+      run: ["./scripts/check-pii-region.sh"]
+      applies_to:
+        requirement: node
+        module: .
     autonomy: human-signoff
 
 completion_policy:

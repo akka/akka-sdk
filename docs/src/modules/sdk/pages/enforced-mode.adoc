@@ -108,7 +108,9 @@ READY_TO_SHIP does not mean every condition is green. It means the *completion p
 [#auditors]
 == Auditors
 
-An *auditor* is the executable check bound to an exit condition. Each declares what it needs to run; the tooling checks availability and resolves the condition accordingly rather than blindly failing. Common requirements are Git (repository state), Maven (compile, test, resolve), GitHub (CI and scanning results), and a live service (exercise endpoints, entity state, views, workflows).
+An *auditor* is the check bound to an exit condition. Most auditors are *declarative*: a command that delegates to a tool the ecosystem already ships — `tsc --noEmit` for a TypeScript/React surface, `mvn compile`/`test` for Java/Akka, `go build`, a linter — declared as `{run: [...], applies_to: {requirement, module}}` and green when the command exits zero. This is why "no invented APIs" is largely "it type-checks in every language present": the auditor does not encode knowledge of React or Akka, it runs the type-checker where the surface lives. New auditor work is needed per *ecosystem*, not per dependency, and there is no fixed, closed set — a project (or the assistant, on your approval) authors a check for whatever it adds.
+
+Each auditor declares what it needs to run (a git tree, Maven, a live service); the tooling checks availability and resolves the condition accordingly rather than blindly failing. Provenance sets how far an auditor is trusted: Akka-provided and organization-declared (in `policy.yaml`) auditors are trusted; a project- or assistant-authored auditor runs only after you approve its exact command, and is reviewed adversarially for adequacy (see the two gates below).
 
 Every condition resolves in one of four ways:
 
@@ -122,6 +124,15 @@ Every condition resolves in one of four ways:
 |===
 
 A deferred condition is not a gap -- it is a check that will run elsewhere. An open condition is unfinished work.
+
+=== The two locked gates
+
+Two Process-integrity conditions are always on and cannot be struck -- they make the verification apparatus police itself:
+
+* *Coverage* (`PROC-AUDITOR-COVERAGE`) -- every material build surface (a `pom.xml`, `package.json`, `go.mod`, `Dockerfile`, and so on) must have a covering auditor. Add a React app and the gate goes red until a web check is authored; a folder that genuinely needs no check can be waived.
+* *Adequacy review* (`PROC-ADEQUACY-REVIEWED`) -- before the build advances, each check is reviewed *adversarially*: could it pass while its invariant is false? A fresh review, keyed to the current checks, must cover every auditor. Feedback that changes a check stales the review and forces it to re-run -- so an auditor can never quietly drift out of adequacy.
+
+New or changed checks are surfaced to you for approval at the exit-condition level -- "here are the checks and how I'll check them" -- never as a low-level "approve running a command". See xref:reference:specify/auditors.adoc[Auditors] for the full model.
 
 [#shipping]
 == Shipping and receipts

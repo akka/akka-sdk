@@ -95,6 +95,36 @@ NEXT → wait, or /akka:status
 
 Check progress at any time without interrupting the build with `/akka:status`.
 
+=== Add a check with feedback
+
+`/akka:specify` is re-entrant: send it plain-language feedback at any time and it materializes the change as a new exit condition with a covering auditor. Ask for a compile-clean guarantee on every build:
+
+.Feedback
+[cols="1"]
+:table-caption: Prompt
+|===
+|**/akka:specify** every build must compile with no errors before it ships
+|===
+
+The engine adds one exit condition and wires a _declarative_ auditor that delegates to the project's own toolchain -- here `mvn -q compile`, whose non-zero exit is the red verdict:
+
+[source]
+----
++ Code & Test Health — build compiles clean ........ auditor: mvn -q compile
+----
+
+Adding an auditor recomputes the two locked process-integrity gates. Check them with `/akka:status`:
+
+[source]
+----
+WORKING — 17 active conditions
+  ✓ PROC-AUDITOR-COVERAGE   every build surface has a covering auditor
+  ○ PROC-ADEQUACY-REVIEWED  adversarial review re-running for the new check
+NEXT → wait, or /akka:status
+----
+
+`PROC-ADEQUACY-REVIEWED` re-runs because the set of checks changed; once the review clears, the gate turns green.
+
 === Ship
 
 When the completion policy is met, the engine reports `READY_TO_SHIP`:
@@ -102,7 +132,8 @@ When the completion policy is met, the engine reports `READY_TO_SHIP`:
 [source]
 ----
 READY_TO_SHIP — completion policy met
-  17 conditions · 12 verified · 3 asserted by Akka · 1 deferred → staging
+  18 conditions · 13 verified · 3 asserted by Akka · 1 deferred → staging
+  ✓ PROC-AUDITOR-COVERAGE   ✓ PROC-ADEQUACY-REVIEWED
 NEXT → /akka:ship
 ----
 

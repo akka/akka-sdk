@@ -351,6 +351,11 @@
 **** xref:specify/specify.adoc[/akka:specify]
 **** xref:specify/status.adoc[/akka:status]
 **** xref:specify/tasks.adoc[/akka:tasks]
+*** Auditors & gates
+**** xref:specify/auditors.adoc[Auditors]
+**** xref:specify/coverage-gate.adoc[The coverage gate]
+**** xref:specify/adequacy-review.adoc[The adequacy review]
+**** xref:specify/requirement-analysis.adoc[Requirement analysis]
 *** Exit conditions
 **** xref:specify/exit-condition-schema.adoc[Exit condition schema]
 **** xref:specify/default-library.adoc[Default exit-condition library]

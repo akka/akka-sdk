@@ -57,6 +57,7 @@ The constitution is typically defined once at the start of a project and only re
 
 * xref:sdk:enforced-mode.adoc[] and xref:sdk:a-la-carte-mode.adoc[] -- the two modes in detail.
 * xref:reference:specify/index.adoc[] -- every command, with options and examples.
+* xref:reference:specify/auditors.adoc[] -- the declarative delegation model, where each exit condition delegates its check to the ecosystem's own toolchain, together with the xref:reference:specify/coverage-gate.adoc[coverage gate], the xref:reference:specify/adequacy-review.adoc[adequacy review], and xref:reference:specify/requirement-analysis.adoc[requirement analysis]. Feedback that changes a check re-runs the adequacy review, so what is verified stays aligned with your current intent.
 * {url-blog-introducing-specify}[Introducing Akka Specify, window="new"] -- the blog post that launched SDD on Akka.
 * https://github.github.com/spec-kit/index.html[spec-kit, window="new"] -- the specification pattern Akka's SDD process follows.
 * https://modelcontextprotocol.io/docs/getting-started/intro[Model Context Protocol (MCP), window="new"] -- the protocol behind the `/akka:*` slash-commands.

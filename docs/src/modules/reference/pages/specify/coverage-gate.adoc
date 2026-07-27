@@ -1,0 +1,22 @@
+= The coverage gate
+
+`PROC-AUDITOR-COVERAGE` is a locked, always-on Process-integrity exit condition: *every material build surface must have a covering auditor.* It makes an unverified part of the project a visible failure rather than a silent blind spot.
+
+== How it works
+
+The engine detects surfaces from build/deploy markers — `pom.xml`, `package.json`, `go.mod`, `Cargo.toml`, `pyproject.toml`/`requirements.txt`, `Dockerfile` — skipping vendored directories (`node_modules`, `vendor`, `target`). Every detected surface is treated as material.
+
+A surface is *covered* when an active xref:reference:specify/auditors.adoc[auditor] runs in its module. If any material surface has no covering auditor, the gate is red, naming the gap (for example `web (node)`).
+
+== Closing a gap
+
+You do not adopt a check from a repository — there is no provided-auditor repository. A gap is closed by *authoring* a declarative check for that surface (delegating to its ecosystem's toolchain), which is then reviewed adversarially and approved. Add a React app under `web/` and the gate goes red until a `web` check exists.
+
+== Waiving
+
+A surface that genuinely needs no check can be marked intentionally unaudited, with a recorded reason; the gate then skips it. This is the escape hatch for the "every surface is material" default.
+
+== Related
+
+* xref:reference:specify/auditors.adoc[Auditors]
+* xref:reference:specify/adequacy-review.adoc[The adequacy review]

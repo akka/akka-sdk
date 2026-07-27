@@ -11,9 +11,9 @@ Fire the organization-authored terminal action for the feature.
 
 == Description
 
-Runs the in-scope auditors and, if the completion policy is satisfied, fires the terminal action the organization defined — for example, deploy and activate, or push to a repository and open a pull request. In Enforced mode `ship` refuses unless the feature is ready to ship; in À la carte mode it proceeds regardless of condition status.
+Runs the in-scope auditors and the adversarial adequacy review, and, if the completion policy is satisfied, fires the terminal action the organization defined — for example, deploy and activate, or push to a repository and open a pull request. In Enforced mode `ship` refuses while either process-integrity gate — `PROC-AUDITOR-COVERAGE` or `PROC-ADEQUACY-REVIEWED` — is red; in À la carte mode it proceeds regardless of condition status.
 
-On success it writes a xref:sdk:enforced-mode.adoc#shipping[conformance receipt] recording what was verified and what deferred downstream, and in Enforced mode it offers to shut down the local services the build started.
+On success it writes a xref:sdk:enforced-mode.adoc#shipping[conformance receipt] recording what was verified and what deferred downstream — including the auditor coverage and the adequacy review result — and in Enforced mode it offers to shut down the local services the build started.
 
 == See also
 

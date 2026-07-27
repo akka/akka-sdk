@@ -24,8 +24,24 @@ Users are uniquely identified by a username and authenticate via password.
 Users can edit their profile and upload a small avatar image.
 ----
 
+== How feedback becomes checks
+
+Feedback you give to `/akka:specify` is captured as exit conditions and their auditors, never left as prose. When you refine what the feature must do, the command records the requirement as an exit condition and binds a check that proves it — see xref:reference:specify/requirement-analysis.adoc[] and xref:reference:specify/auditors.adoc[].
+
+A requirement that cannot be stated as a binary, falsifiable check is not turned into an invented check. Instead it routes to a clarifying question and the requirement enters a `NEEDS_INPUT` state until you supply an answer that can be checked.
+
+Every new or changed check is run through an adversarial self-check — the command constructs an input where the check would pass while its invariant is false — and is then surfaced at the exit-condition level for your veto. You approve, adjust, or skip each check. Approval is presented as "here are the checks and how I will verify each," which covers both the check's design and the command it runs. See xref:reference:specify/adequacy-review.adoc[] and xref:reference:specify/coverage-gate.adoc[].
+
+Capture-as-exit-conditions and the adversarial review run the same way in both conformance modes. Only the ship gate differs: enforced mode blocks ship while a gate is red; à la carte mode computes the gates as advisory and you drive the phases (see xref:reference:specify/mode.adoc[]).
+
+You reply to `/akka:specify` normally — no slash prefix is required on each turn. The gates are state-based: a reply that is not recorded as an exit condition or auditor stalls the relevant gate rather than letting it pass by default.
+
 == See also
 
 * xref:sdk:spec-driven-development.adoc[]
 * xref:reference:specify/index.adoc[]
 * xref:reference:specify/clarify.adoc[]
+* xref:reference:specify/requirement-analysis.adoc[]
+* xref:reference:specify/auditors.adoc[]
+* xref:reference:specify/adequacy-review.adoc[]
+* xref:reference:specify/coverage-gate.adoc[]

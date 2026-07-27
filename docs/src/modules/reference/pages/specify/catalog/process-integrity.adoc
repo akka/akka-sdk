@@ -3,12 +3,14 @@
 Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Process Integrity] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
 
 == Source grounding and anti-hallucination
+
+"No invented APIs" is not a standalone auditor; it is enforced by delegation. A declarative type-check auditor on each ecosystem surface (`tsc --noEmit`, `mvn compile`, and so on) fails on a symbol that does not exist, so the invariant is folded into `PROC-AUDITOR-COVERAGE` (a covering auditor exists for the surface) and `PROC-ADEQUACY-REVIEWED` (the auditor is reviewed to catch it). What remains as a distinct source-grounding condition is citing API usage to official documentation.
+
 [cols="2,3",options="header"]
 |===
 | Exit condition | What it checks
 
-| `PROC-API-EXISTS-IN-DEPS` | Every framework or library symbol the AI references resolves to a real API in a declared dependency version.
-| `PROC-NO-INVENTED-APIS` | No method, class, annotation, or config key is used that does not exist in the resolved dependency surface.
+| `PROC-SOURCE-GROUNDING` | API usage is cited to official documentation; invented APIs are caught by the delegated type-check auditors under coverage and adequacy.
 | `PROC-DOCS-CITED-FOR-FRAMEWORK` | Each non-trivial framework usage cites the official documentation section it was derived from.
 | `PROC-IMPORTS-RESOLVE` | All imports and package references compile against the pinned dependency set with no unresolved symbols.
 | `PROC-NO-PHANTOM-CONFIG` | Configuration keys written by the AI exist in the target framework's documented configuration schema.
@@ -76,17 +78,19 @@ Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Process 
 |===
 
 == Auditor coverage and verifiability
+
+Two of these conditions are the locked process-integrity gates: they are always on and cannot be struck. `PROC-AUDITOR-COVERAGE` requires that every material build surface has a covering auditor (see xref:reference:specify/coverage-gate.adoc[Coverage gate]); `PROC-ADEQUACY-REVIEWED` requires a fresh adversarial review of every auditor, keyed to the current checks (see xref:reference:specify/adequacy-review.adoc[Adequacy review]).
+
 [cols="2,3",options="header"]
 |===
 | Exit condition | What it checks
 
-| `PROC-EVERY-EC-HAS-AUDITOR` | Every declared exit condition has an associated auditor that can evaluate it.
+| `PROC-AUDITOR-COVERAGE` | Every material build surface has a covering auditor, else the gate is red. Locked: always on, cannot be struck.
+| `PROC-ADEQUACY-REVIEWED` | A fresh adversarial review, keyed to the current checks, covers every auditor and confirms it cannot pass while its invariant is false. Locked: always on, cannot be struck.
 | `PROC-NO-UNVERIFIABLE-CLAIMS` | No condition is asserted as met without a machine-checkable auditor backing it.
 | `PROC-AUDITOR-RUNS-CLEAN` | Each auditor executes without error and returns a definite pass or fail verdict.
 | `PROC-EVIDENCE-RETAINED-PER-EC` | Evidence supporting each verified condition is retained and retrievable.
 | `PROC-EVIDENCE-MATCHES-VERDICT` | Retained evidence actually substantiates the pass/fail verdict recorded for the condition.
-| `PROC-AUDITOR-OBSERVES-REAL-SURFACE` | Each auditor inspects the real observable surface, not a placeholder or simulated one.
-| `PROC-NO-TAUTOLOGICAL-AUDITOR` | No auditor is constructed so that it trivially always passes.
 |===
 
 == Reproducibility and determinism

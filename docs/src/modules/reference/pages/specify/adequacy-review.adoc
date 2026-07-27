@@ -1,0 +1,24 @@
+= The adequacy review
+
+`PROC-ADEQUACY-REVIEWED` is a locked, always-on Process-integrity exit condition: *before the build advances, every check must have passed a current, adversarial adequacy review.* A check that "covers" a requirement but proves nothing is worse than no check — this gate is what keeps checks honest.
+
+== Adversarial, not confirmatory
+
+For each auditor the review attempts to construct an input where *the check passes while its invariant is false*. If one can be constructed, the check is inadequate and must be tightened or clarified. Asking "is this adequate?" invites a rubber stamp; asking "how does this pass while being wrong?" does not.
+
+The review runs on every feedback turn, whenever a check is authored, and always before ship.
+
+== Keyed to the current checks
+
+The review is recorded as an artifact keyed to a *state signature* — a hash of the active conditions' invariants and pass predicates plus the auditor definitions. It deliberately does not include the code: adequacy is a property of _(requirement, check)_, not of the code content, so a comment-only edit does not force a re-review. A newly-appeared surface is the xref:reference:specify/coverage-gate.adoc[coverage gate]'s concern instead.
+
+Because the signature is derived from the checks, *feedback that changes a check stales the review and forces it to re-run* — an auditor can never quietly drift out of adequacy.
+
+== What the engine guarantees
+
+The engine guarantees the review *occurred and covered every check*; it cannot guarantee it was deep. Depth is backstopped by the adversarial framing and your in-context veto when a new or changed check is surfaced for approval.
+
+== Related
+
+* xref:reference:specify/auditors.adoc[Auditors]
+* xref:reference:specify/requirement-analysis.adoc[Requirement analysis]

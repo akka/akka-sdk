@@ -1,0 +1,52 @@
+= Auditors
+
+An *auditor* is the check bound to an xref:reference:specify/exit-condition-schema.adoc[exit condition] — the thing that proves the condition's invariant holds. Auditors are not a fixed, closed set the CLI ships; most are *declarative* and delegate to a tool the ecosystem already provides.
+
+== The declarative model
+
+A declarative auditor is a command plus the surface it applies to:
+
+[source,yaml]
+----
+auditor:
+  run: ["npm", "run", "-s", "typecheck"]   # the command that decides the invariant
+  applies_to:
+    requirement: node                       # environment it needs (node, maven, git, …)
+    module: web                             # the sub-project it runs in (relative to the root)
+----
+
+It is green when the command exits zero, red otherwise. The point is delegation: the auditor does not encode knowledge of React or Akka — it runs the ecosystem's own type-checker, test runner, or linter where the surface lives. So "no invented APIs" is largely "it type-checks in every language present": `tsc --noEmit` fails on an invented React hook, `mvn compile` fails on an invented Akka method. New auditor work is needed per *ecosystem*, not per dependency.
+
+== Provenance and trust
+
+Where an auditor comes from sets how far it is trusted:
+
+[cols="1,3"]
+|===
+| Provenance | Trust
+
+| Akka-provided / organization-declared (in `policy.yaml`)
+| Trusted; runs without a separate approval.
+
+| Project- or assistant-authored
+| Runs only after you approve its exact command (the first-run execution gate), and is reviewed adversarially for adequacy.
+|===
+
+New or changed checks are surfaced to you at the *exit-condition level* — "I'd like to add these exit conditions, and here is how I'll check each" — for you to approve, adjust, or skip. It is never phrased as a low-level "approve running a command"; approving the exit condition is the single decision that covers both its design and running its command.
+
+== The two locked gates
+
+Two Process-integrity conditions are always on and cannot be struck. They make the verification apparatus police itself:
+
+* *`PROC-AUDITOR-COVERAGE`* — every material build surface has a covering auditor, else red. See xref:reference:specify/coverage-gate.adoc[The coverage gate].
+* *`PROC-ADEQUACY-REVIEWED`* — a fresh adversarial review, keyed to the current checks, covers every auditor. See xref:reference:specify/adequacy-review.adoc[The adequacy review].
+
+== Waiving a surface
+
+A detected surface that genuinely needs no check (a demos or scripts folder) can be marked intentionally unaudited, with a recorded reason; the coverage gate then skips it. This is the escape hatch for the "every surface is material" rule.
+
+== Related
+
+* xref:reference:specify/requirement-analysis.adoc[Requirement analysis] — how a requirement becomes an exit condition and an auditor
+* xref:reference:specify/exit-condition-schema.adoc[Exit condition schema]
+* xref:sdk:enforced-mode.adoc#auditors[Enforced mode: auditors]

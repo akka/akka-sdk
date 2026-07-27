@@ -29,7 +29,7 @@ During the DEFINE step the engine proactively suggests a strike when it is confi
 
 == Library conditions and their ids
 
-Every library condition has a stable *id*. That id is the registry key: a policy names it in a `ref:` field to adopt and govern the condition (see xref:reference:specify/policies.adoc[Policies]), and the tooling resolves the id back to the condition's type, `pass` predicate, and auditor. A representative sample:
+Every library condition has a stable *id*. That id is the registry key: a policy names it in a `ref:` field to adopt and govern the condition (see xref:reference:specify/policies.adoc[Policies]), and the tooling resolves the id back to the condition's type, `invariant`, and `pass` predicate. The library supplies the exit condition; its covering auditor is authored declaratively for each ecosystem the project uses (see xref:reference:specify/auditors.adoc[Auditors]), not shipped as a fixed, closed set. A representative sample:
 
 [cols="2,2,3",options="header"]
 |===

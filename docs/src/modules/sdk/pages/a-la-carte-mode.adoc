@@ -29,6 +29,8 @@ The short description becomes a branch name like `00#-feature-short-description`
 
 This creates a specification in `specs/001-core-users` on the `001-core-users` branch. Resist manually editing the spec -- clarification is the next step. Keep features scoped small enough that you have a clear idea of the acceptance criteria and the generated code is easy to review.
 
+NOTE: Even in À la carte mode, `/akka:specify` captures your definition of done as exit conditions and runs the adversarial adequacy review, exactly as it does in Enforced mode. The difference is only at ship time: the `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED` gates are advisory here. They are computed and reported, but you drive the phases and `/akka:ship` is not blocked when they are red.
+
 == Clarify the specification
 
 Clarification is a critical step. Start it with a single command, no parameters:
