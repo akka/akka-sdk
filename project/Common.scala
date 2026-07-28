@@ -1,7 +1,7 @@
 import akka.grpc.sbt.AkkaGrpcPlugin
 import sbt.*
 import sbt.Keys.*
-import de.heikoseeberger.sbtheader.{ AutomateHeaderPlugin, HeaderPlugin }
+import sbtheader.{ AutomateHeaderPlugin, HeaderPlugin }
 import org.scalafmt.sbt.ScalafmtPlugin
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
 import sbtprotoc.ProtocPlugin
@@ -122,7 +122,7 @@ object CommonHeaderSettings extends AutoPlugin {
   override def trigger = allRequirements
 
   import HeaderPlugin.autoImport._
-  import de.heikoseeberger.sbtheader.FileType
+  import sbtheader.FileType
 
   override def projectSettings = AutomateHeaderPlugin.projectSettings ++ Seq(
     headerLicense := Some(

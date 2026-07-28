@@ -44,6 +44,9 @@ object FunctionTools {
     def invoke(args: Array[Any]): Any
 
     def returnType: Class[_]
+
+    /** Defaults to returnType */
+    def genericReturnType: Type = returnType
   }
 
   /**
@@ -71,6 +74,9 @@ object FunctionTools {
 
     override def returnType: Class[_] =
       method.getReturnType
+
+    override def genericReturnType: Type =
+      method.getGenericReturnType
   }
 
   private val uniqueId = "uniqueId"

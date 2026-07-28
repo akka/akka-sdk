@@ -146,7 +146,7 @@ private[javasdk] class CapabilityConverter(
     sdkTargets.map { agentClass =>
       val componentId = Reflect.readComponentId(agentClass)
       val effectMethod =
-        agentClass.getDeclaredMethods
+        agentClass.getMethods
           .find { method =>
             Reflect.isCommandHandlerCandidate[Agent.Effect[_]](method) ||
             Reflect.isCommandHandlerCandidate[Agent.StreamEffect](method)

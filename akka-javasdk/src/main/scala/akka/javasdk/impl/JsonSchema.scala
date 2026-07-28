@@ -152,6 +152,8 @@ private[impl] object JsonSchema {
               (new JsonSchemaString(description), true)
             case _ if clazz.isArray =>
               (new JsonSchemaArray(jsonSchemaTypeFor(clazz.getComponentType, None, seenTypes)._1, None), true)
+            case g: GenericArrayType =>
+              (new JsonSchemaArray(jsonSchemaTypeFor(g.getGenericComponentType, None, seenTypes)._1, description), true)
             case p: ParameterizedType if clazz == classOf[Optional[_]] =>
               val (jsonFieldType, _) = jsonSchemaTypeFor(p.getActualTypeArguments.head, description, seenTypes)
               (jsonFieldType, false)

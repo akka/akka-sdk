@@ -27,8 +27,8 @@ public interface AutonomousAgentClient {
 
   /**
    * Create a task, assign it to a fresh agent instance, and automatically stop the agent when done.
-   * Each call spins up an independent agent workflow. Returns the task ID for later status checks
-   * via {@link TaskClient}.
+   * Each call starts an independent agent instance. Returns the task ID for later status checks via
+   * {@link TaskClient}.
    *
    * @param task the task to execute
    * @return the task ID

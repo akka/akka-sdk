@@ -12,10 +12,10 @@ package akka.javasdk.agent;
  * implementations only need to override the variant(s) they want to transform.
  *
  * <p>Hooks are provided for each top-level {@link SessionMessage} variant: user messages (text and
- * multimodal), AI replies, and tool call responses. Tool requests are nested inside {@link
- * SessionMessage.AiMessage} and are not exposed as a dedicated hook; rewrite them by overriding
- * {@link #beforeWrite(String, SessionMessage.AiMessage)} and rebuilding the message with the
- * transformed list.
+ * multimodal), AI replies, and tool call responses (text and multimodal). Tool requests are nested
+ * inside {@link SessionMessage.AiMessage} and are not exposed as a dedicated hook; rewrite them by
+ * overriding {@link #beforeWrite(String, SessionMessage.AiMessage)} and rebuilding the message with
+ * the transformed list.
  *
  * <p>Read-side behavior (history limit, filters, read/write toggles) is configured through {@link
  * MemoryProvider} and is not exposed here.
@@ -102,6 +102,20 @@ public interface SessionMemoryInterceptor {
    */
   default SessionMessage.ToolCallResponse beforeWrite(
       String sessionId, SessionMessage.ToolCallResponse toolCallResponse) {
+    return toolCallResponse;
+  }
+
+  /**
+   * Called immediately before a {@link SessionMessage.MultimodalToolCallResponse} is persisted to
+   * session memory. The returned message is what gets written. The default implementation returns
+   * the input unchanged.
+   *
+   * @param sessionId The unique identifier for the contextual session
+   * @param toolCallResponse The multimodal tool call response about to be persisted
+   * @return The (possibly transformed) message to persist; must not be {@code null}
+   */
+  default SessionMessage.MultimodalToolCallResponse beforeWrite(
+      String sessionId, SessionMessage.MultimodalToolCallResponse toolCallResponse) {
     return toolCallResponse;
   }
 }

@@ -17,8 +17,10 @@ public class ResearchEditor extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
+    // tag::definition[]
     return define()
       .capability(TaskAcceptance.of(EditorialTasks.RESEARCH))
       .capability(Delegation.to(Reporter.class).maxParallelWorkers(2));
+    // end::definition[]
   }
 }

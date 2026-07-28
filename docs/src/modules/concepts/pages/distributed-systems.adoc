@@ -58,7 +58,7 @@ Akka embodies these principles as concrete implementation guidelines. Every feat
 
 == Grounded in distributed systems patterns and principles
 
-The foundation of Akka is detailed in the https://content.akka.io/guide/principles-and-patterns-for-distributed-application-architecture[O'Reilly Technical Guide: Principles and Patterns for Distributed Application Architecture] (authored by Akka CTO and founder Jonas Bonér). This guide outlines architectural patterns that are essential for building robust systems, including how to leverage:
+The foundation of Akka is detailed in the https://www.oreilly.com/library/view/principles-and-patterns/9781098181260/[O'Reilly Technical Guide: Principles and Patterns for Distributed Application Architecture] (authored by Akka CTO and founder Jonas Bonér). This guide outlines architectural patterns that are essential for building robust systems, including how to leverage:
 
 - Event sourcing and CQRS for reliable state management and auditability.
 - Event-driven communication, coordination, and integration. 

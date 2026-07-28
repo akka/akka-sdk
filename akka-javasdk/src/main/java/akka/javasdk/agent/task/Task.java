@@ -112,8 +112,10 @@ public final class Task<R> implements TaskDefinition<R> {
 
   /** Return a new task with the given content items attached. */
   public Task<R> attach(MessageContent... content) {
+    var toAttach = List.of(content);
+    MessageContent.requireSendableAsInput(toAttach);
     var updated = new ArrayList<>(this.attachments);
-    updated.addAll(List.of(content));
+    updated.addAll(toAttach);
     return new Task<>(
         this.name,
         this.description,

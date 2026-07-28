@@ -39,7 +39,7 @@ A _command handler_ is the code that handles a command. It may validate the comm
 [[consumer]]Consumer:: A component used to consume or produce a stream of changes.
 
 
-[[endpoint]]Endpoint:: An _endpoint_ component is a way to expose a service to the outside world. They act as controllers ahead of the other components, like <<entity>>s or <<view>>s. They don't require <<component_id>> because URL address is enough to identify them.
+[[endpoint]]Endpoint:: An _endpoint_ component is a way to expose a service to the outside world. They act as controllers ahead of the other components, like <<entity>>s or <<view>>s. They do not require <<component_id>> because URL address is enough to identify them.
 
 [[entity]]Entity:: Components like <<key_value_entity>> and <<event_sourced_entity>> are usually referred as entities. An entity is conceptually equivalent to a class, or a type of state. It will have multiple <<entity_instance>>s, each of which has a unique ID and can handle commands. For example, a service may implement a chat room entity, encompassing the logic associated with chat rooms, and a particular chat room may be an instance of that entity, containing a list of the users currently in the room and a history of the messages sent to it. Entities cache their state and persist it using <<effect>> APIs.
 
@@ -87,7 +87,7 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 [[service]]Service:: A service is implemented by the Akka SDK. At runtime, Akka enriches the incoming and outgoing messages with state management capabilities, such as the ability to receive and update state. You implement the  business logic for the service, which includes stateful entities. You deploy your services and Akka adds a <<runtime>> that handles incoming communication and persistence at runtime.
 
 [[snapshot]]Snapshot::
-A snapshot records current state of an <<event_sourced_entity>>. Akka persists snapshots periodically as an optimization. With snapshots, when the Entity is reloaded from the journal, the entire journal doesn't need to be replayed, just the changes since the last snapshot.
+A snapshot records current state of an <<event_sourced_entity>>. Akka persists snapshots periodically as an optimization. With snapshots, when the Entity is reloaded from the journal, the entire journal does not need to be replayed, just the changes since the last snapshot.
 
 [[specialist_trap]]Specialist Trap:: The barrier where agentic AI delivery depends on scarce distributed systems experts, limiting how many teams can build and operate production AI systems. One of the <<three_barriers>> that Akka solves through <<sdd,Spec-Driven Development>> and <<repeatability>>.
 

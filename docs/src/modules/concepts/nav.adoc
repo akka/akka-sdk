@@ -12,5 +12,4 @@
 *** Agentic concepts
 **** xref:concepts:ai-agents.adoc[]
 **** xref:concepts:ai-orchestration-patterns.adoc[]
- section
 *** xref:ROOT:resources.adoc[Resources]

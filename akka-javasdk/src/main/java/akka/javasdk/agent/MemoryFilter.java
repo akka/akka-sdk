@@ -265,22 +265,27 @@ public sealed interface MemoryFilter {
    */
   record Include(Set<String> ids, Set<String> roles) implements MemoryFilter {
 
+    /** Combine with another Include filter, taking the union of both filters' IDs and roles. */
     public Include merge(Include other) {
       return new Include(union(ids, other.ids), union(roles, other.roles));
     }
 
+    /** An Include filter matching a single agent component ID. */
     public static MemoryFilter agentId(String id) {
       return new Include(Set.of(id), Set.of());
     }
 
+    /** An Include filter matching any of the given agent component IDs. */
     public static MemoryFilter agentIds(Set<String> ids) {
       return new Include(ids, Set.of());
     }
 
+    /** An Include filter matching a single agent role. */
     public static MemoryFilter agentRole(String role) {
       return new Include(Set.of(), Set.of(role));
     }
 
+    /** An Include filter matching any of the given agent roles. */
     public static MemoryFilter agentRoles(Set<String> roles) {
       return new Include(Set.of(), roles);
     }
@@ -312,22 +317,27 @@ public sealed interface MemoryFilter {
    */
   record Exclude(Set<String> ids, Set<String> roles) implements MemoryFilter {
 
+    /** Combine with another Exclude filter, taking the union of both filters' IDs and roles. */
     public Exclude merge(Exclude other) {
       return new Exclude(union(ids, other.ids), union(roles, other.roles));
     }
 
+    /** An Exclude filter matching a single agent component ID. */
     public static MemoryFilter agentId(String id) {
       return new Exclude(Set.of(id), Set.of());
     }
 
+    /** An Exclude filter matching any of the given agent component IDs. */
     public static MemoryFilter agentIds(Set<String> ids) {
       return new Exclude(ids, Set.of());
     }
 
+    /** An Exclude filter matching a single agent role. */
     public static MemoryFilter agentRole(String role) {
       return new Exclude(Set.of(), Set.of(role));
     }
 
+    /** An Exclude filter matching any of the given agent roles. */
     public static MemoryFilter agentRoles(Set<String> roles) {
       return new Exclude(Set.of(), roles);
     }

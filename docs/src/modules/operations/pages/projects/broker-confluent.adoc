@@ -7,7 +7,7 @@ Akka connects to https://confluent.cloud[Confluent Cloud, window="new"] Kafka se
 
 Take the following steps to configure access to your Confluent Cloud Kafka broker for your Akka project.
 
-. Log in to https://confluent.cloud/[Confluent Cloud, window="new"] and select the cluster Akka should connect to. Create a new cluster if you don't have one already.
+. Log in to https://confluent.cloud/[Confluent Cloud, window="new"] and select the cluster Akka should connect to. Create a new cluster if you do not have one already.
 
 . Create an API key for authentication
 

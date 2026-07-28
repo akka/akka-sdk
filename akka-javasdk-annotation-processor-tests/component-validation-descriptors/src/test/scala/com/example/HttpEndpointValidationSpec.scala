@@ -64,6 +64,10 @@ abstract class AbstractHttpEndpointValidationSpec(val validationMode: Validation
       assertValid("valid/ValidHttpEndpointAllMethods.java")
     }
 
+    "accept valid HTTP endpoint with routes inherited from a base class" in {
+      assertValid("valid/ValidHttpEndpointWithInheritedMethods.java")
+    }
+
     // ==================== Public Modifier Validation ====================
 
     "reject non-public HTTP endpoint" in {
@@ -103,6 +107,14 @@ abstract class AbstractHttpEndpointValidationSpec(val validationMode: Validation
         "The parameter [bob]",
         "does not match the method parameter name [value]",
         "HttpEndpointWrongSecondParamName.list3")
+    }
+
+    "reject HTTP endpoint with wrong parameter name on an inherited method" in {
+      assertInvalid(
+        "invalid/HttpEndpointInheritedWrongParamName.java",
+        "The parameter [id]",
+        "does not match the method parameter name [bob]",
+        "inherited")
     }
 
     "reject HTTP endpoint with too many parameters" in {

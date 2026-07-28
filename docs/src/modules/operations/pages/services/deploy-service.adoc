@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-This guide will walk you through deploying Akka services using the Akka Console and the Akka CLI. By the end, you’ll be able to deploy, check the status, update, and remove services.
+This guide will walk you through deploying Akka services using the Akka Console and the Akka CLI. By the end, you will be able to deploy, check the status, update, and remove services.
 
 NOTE: Akka also supports a descriptor for a full project configuration spanning over multiple services and other project-level settings. Please refer to xref:reference:descriptors/project-descriptor.adoc[] for details.
 

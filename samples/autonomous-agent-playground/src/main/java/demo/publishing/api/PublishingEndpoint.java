@@ -137,13 +137,17 @@ public class PublishingEndpoint extends AbstractHttpEndpoint {
   /** Human approves the draft — assigns and completes the approval task. */
   @Post("/approve/{approvalTaskId}")
   public String approve(String approvalTaskId, ApproveRequest request) {
+    // tag::assign[]
     componentClient.forTask(approvalTaskId).assign(request.approvedBy());
+    // end::assign[]
+    // tag::complete[]
     componentClient
       .forTask(approvalTaskId)
       .complete(
         PublishingTasks.APPROVAL,
         new ApprovalDecision(request.approvedBy(), request.comment())
       );
+    // end::complete[]
     return "Approved";
   }
 
@@ -154,7 +158,9 @@ public class PublishingEndpoint extends AbstractHttpEndpoint {
   @Post("/reject/{approvalTaskId}")
   public String reject(String approvalTaskId, RejectRequest request) {
     componentClient.forTask(approvalTaskId).assign(request.rejectedBy());
+    // tag::fail[]
     componentClient.forTask(approvalTaskId).fail(request.reason());
+    // end::fail[]
     return "Rejected";
   }
 

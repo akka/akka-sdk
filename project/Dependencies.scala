@@ -8,12 +8,12 @@ object Dependencies {
     val ProtocolVersionMinor = 1
   }
 
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.3")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.13")
 
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
-  val AkkaVersion = "2.10.18"
+  val AkkaVersion = "2.10.20"
   val AkkaHttpVersion = "10.7.4" // Note: should at least the Akka HTTP version required by Akka gRPC
   val AkkaGrpcVersion = akka.grpc.gen.BuildInfo.version
   val GoogleProtobufVersion = akka.grpc.gen.BuildInfo.googleProtobufVersion
@@ -33,8 +33,8 @@ object Dependencies {
   val JUnitVersion = "4.13.2"
   val JUnitInterfaceVersion = "0.11"
   val JUnitJupiterVersion = "5.10.1"
-  val OpenTelemetryVersion = "1.57.0"
-  val OpenTelemetrySemConv = "1.34.0"
+  val OpenTelemetryVersion = "1.64.0"
+  val OpenTelemetrySemConv = "1.39.0"
 
   val CommonsIoVersion = "2.11.0"
   val MunitVersion = "0.7.29"
@@ -71,7 +71,6 @@ object Dependencies {
 
   val opentelemetryApi = "io.opentelemetry" % "opentelemetry-api" % OpenTelemetryVersion
   val opentelemetrySdk = "io.opentelemetry" % "opentelemetry-sdk" % OpenTelemetryVersion
-  val opentelemetryExporterOtlp = "io.opentelemetry" % "opentelemetry-exporter-otlp" % OpenTelemetryVersion
   val opentelemetryContext = "io.opentelemetry" % "opentelemetry-context" % OpenTelemetryVersion
   val opentelemetrySemConv = "io.opentelemetry.semconv" % "opentelemetry-semconv" % OpenTelemetrySemConv
 
@@ -83,7 +82,6 @@ object Dependencies {
   private val sdkDeps = Seq(
     opentelemetryApi,
     opentelemetrySdk,
-    opentelemetryExporterOtlp,
     opentelemetryContext,
     opentelemetrySemConv,
     // akka-http is pulling akka-pki and akka-discovery, we need to force it to be same version

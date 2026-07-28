@@ -1,10 +1,8 @@
-= Extending agents with function tools
+= Function tools
 
 include::ROOT:partial$include.adoc[]
 
-You may frequently hear people say things like "the LLM can make a call" or "the LLM can use a tool". While these statements get the point across, they're not entirely accurate. In truth, the agent will tell the LLM which _tools_ are available for use. The LLM then determines from the prompt which tools it needs to call and with which parameters.
-
-The Agent will then in turn execute the tool requested by the LLM, incorporate the tool results into the session context, and then send a new prompt. This will continue in a loop until the LLM no longer indicates it needs to invoke a tool to perform its task.
+Function tools are Java methods that an agent makes available to the model. The agent tells the model which tools exist, and the model determines from the prompt which tools to request and with which parameters. The agent then executes the requested tool, incorporates the result into the session context, and sends a new prompt. This continues in a loop until the model no longer requests a tool.
 
 There are four ways to add function tools to your agent:
 
@@ -21,7 +19,7 @@ passing them to the `effects().tools()` method in your agent's command handler. 
 
 NOTE: A class (either the agent itself, Akka components, or an external tool class) can have multiple methods annotated with `@FunctionTool`. Each annotated method will be registered as a separate tool that the LLM can choose to invoke based on the task requirements.
 
-You can use either approach independently or combine them based on your needs. Let's look at a complete example showing both approaches:
+You can use either approach independently or combine them based on your needs. The following complete example shows both approaches:
 
 [source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[WeatherAgent.java]
@@ -85,7 +83,7 @@ include::example$doc-snippets/src/main/java/com/example/application/LazyWeatherA
 
 When you pass a `Class` instead of an instance, the class is only instantiated when the agent actually needs to use the tool.
 
-For this approach to work, you must register the class with a xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[DependencyProvider] in your service setup. The DependencyProvider is responsible for creating and managing instances of these classes when they're needed. This gives you complete control over how tool dependencies are instantiated and managed throughout your application.
+For this approach to work, you must register the class with a xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[DependencyProvider] in your service setup. The DependencyProvider is responsible for creating and managing instances of these classes when they are needed. This gives you complete control over how tool dependencies are instantiated and managed throughout your application.
 
 [#component_tools]
 == Using Akka components as function tools
@@ -141,6 +139,57 @@ include::example$doc-snippets/src/main/java/com/example/application/RemoteMcpWea
 
 When using MCP endpoints in other Akka services, the service ACLs apply just like for xref:http-endpoints.adoc[HTTP endpoints] and xref:grpc-endpoints.adoc[gRPC endpoints].
 
+[#returning_images_or_pdfs]
+== Returning images or PDFs from a function tool
+
+A function tool usually returns text (or a value that is serialized to JSON), but it can also return an image or a PDF that the agent forwards to the model as part of the conversation. This is useful when the tool dynamically produces media — for example fetching a Street View image for a location the user just mentioned.
+
+To do this, declare the tool's return type as `MessageContent` and return inline bytes built with `ImageMessageContent.fromBytes(...)` or `PdfMessageContent.fromBytes(...)`:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/StreetViewAgent.java[StreetViewAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/StreetViewAgent.java[tag=class]
+----
+<1> Declare the return type as `MessageContent` — this signals that the result is multimodal.
+<2> Produce the binary content (here, the raw image bytes).
+<3> Wrap the bytes with their media type; the framework hands them to the model as image content.
+
+The model receives the image directly, with no need to upload it to object storage first.
+
+A tool that declares a single `MessageContent` return type must always return a non-null value; returning `null` results in an `IllegalArgumentException`. If the tool has no media to return, return a `TextMessageContent` instead.
+
+[#returning_a_list_of_contents]
+=== Returning multiple contents
+
+A tool can also declare its return type as `List<MessageContent>` to send several pieces of content in one tool result — for example a caption plus an image, or text plus a PDF. Every element is delivered to the model in list order. A subtype element (`List<ImageMessageContent>`) or a bounded wildcard (`List<? extends MessageContent>`) is accepted as well; any other element type makes the result a plain JSON tool response.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ChartAgent.java[ChartAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ChartAgent.java[tag=class]
+----
+<1> Declare the return type as `List<MessageContent>`.
+<2> The first element — a text caption.
+<3> The second element — the rendered image, delivered right after the caption.
+
+Individual `null` elements are filtered out, but the tool must return at least one non-null `MessageContent`: returning `null`, an empty list, or a list containing only `null` elements results in an `IllegalArgumentException`, just like the single-`MessageContent` form. Each element follows the same persistence rules described below: text and URI-referenced contents are kept in session memory, while inline bytes become a `[image]`/`[pdf]` placeholder.
+
+[IMPORTANT]
+====
+Inline bytes returned from a tool are *not persisted*. They are forwarded to the model for the current request only — they are never written to xref:agents/memory.adoc[session memory] (the session records a `[image]` or `[pdf]` placeholder in their place) and they are never uploaded to xref:integrations/object-storage.adoc[object storage].
+
+If you need the media to survive across requests — so the model can refer back to it later, or so it is available
+outside the conversation — persist it yourself in the tool: inject an `ObjectStorageProvider`, store the bytes in a bucket, and return an `ImageUrlMessageContent` or `PdfUrlMessageContent` referencing the stored object (for example via `ImageUrlMessageContent.create(bucket, key)`). The `object://` reference *is* persisted in session memory, and the SDK resolves it back to the bytes on each request  (see xref:integrations/object-storage.adoc[object storage] for more details).
+====
+
+[NOTE]
+====
+Inline bytes are only supported as a function tool *return* value. To send an image or PDF as part of a user message, reference it by URI instead (see xref:agents/prompt.adoc[multimodal user messages]) — for example an `object://bucket/key` reference backed by xref:integrations/object-storage.adoc[object storage].
+
+Only some model providers accept multimodal tool results (currently Anthropic, Bedrock, and Google AI Gemini).
+====
+
 [#configuring_tool_call_limits]
 == Configuring tool call limits
 
@@ -155,3 +204,8 @@ By default, this value is set to 100. You can adjust this in your configuration:
 akka.javasdk.agent.max-tool-call-steps = 150
 ----
 
+== See also
+
+* xref:sdk:agents.adoc[Agents]
+* xref:sdk:mcp-endpoints.adoc[MCP Endpoints]
+* xref:sdk:agents/testing.adoc[Testing the agent]

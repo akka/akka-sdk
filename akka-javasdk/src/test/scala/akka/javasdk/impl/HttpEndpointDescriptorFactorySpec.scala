@@ -170,6 +170,27 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       lowLevelBodyOnly.methodSpec shouldBe Spec(requestBody = Spec.lowLevelBody())
     }
 
+    "pick up routes inherited from a base class" in {
+      val descriptor = HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.InheritingEndpoint], _ => null)
+      val byMethodName = descriptor.methods.map(md => md.userMethod.getName -> md).toMap
+
+      descriptor.mainPath should ===(Some("/inheriting/"))
+      byMethodName.keySet should ===(Set("inherited", "inheritedPost", "own", "overridden"))
+
+      val inherited = byMethodName("inherited")
+      inherited.pathExpression should ===("inherited")
+      inherited.httpMethod should ===(HttpMethods.GET)
+
+      val inheritedPost = byMethodName("inheritedPost")
+      inheritedPost.pathExpression should ===("inherited-post")
+      inheritedPost.httpMethod should ===(HttpMethods.POST)
+
+      val overridden = byMethodName("overridden")
+      overridden.pathExpression should ===("overridden")
+      overridden.httpMethod should ===(HttpMethods.GET)
+      overridden.userMethod.getDeclaringClass should ===(classOf[http.TestEndpoints.InheritingEndpoint])
+    }
+
     "hide double slash when combining prefix with method path" in {
       val descriptor = HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.WithRootPrefix], _ => null)
       val byMethodName = descriptor.methods.map(md => md.userMethod.getName -> md).toMap

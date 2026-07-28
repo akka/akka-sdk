@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -42,7 +43,9 @@ public class DevTeamIntegrationTest extends TestKitSupport {
   private final TestModelProvider developerModel = new TestModelProvider()
     .withMessageSelector(DevTeamIntegrationTest::preferToolResult);
 
-  /** Select the last tool result if present, otherwise the last message. */
+  /**
+   * Select the last tool result if present, otherwise the last message.
+   */
   private static TestModelProvider.InputMessage preferToolResult(
     List<TestModelProvider.InputMessage> messages
   ) {
@@ -58,8 +61,21 @@ public class DevTeamIntegrationTest extends TestKitSupport {
   );
 
   private static final Pattern TASK_ID_PATTERN = Pattern.compile(
-    "\"task_id\"\\s*:\\s*\"([^\"]+)\""
+    "Task\\s+([0-9a-f-]{36})\\s*\\([^)]*\\):\\s*\\[available]"
   );
+
+  private static final Pattern TEAM_ID_PATTERN = Pattern.compile("ID:\\s*([0-9a-f-]{36})");
+
+  /**
+   * The team id (which doubles as the team's backlog id) from a create_team tool result.
+   */
+  private static String extractBacklogId(String content) {
+    var matcher = TEAM_ID_PATTERN.matcher(content);
+    if (matcher.find()) {
+      return matcher.group(1);
+    }
+    throw new IllegalStateException("No team id found in: " + content);
+  }
 
   @Override
   protected TestKit.Settings testKitSettings() {
@@ -70,12 +86,15 @@ public class DevTeamIntegrationTest extends TestKitSupport {
       .withModelProvider(Developer.class, developerModel);
   }
 
-  /** Configure the developer model to react to backlog messages. */
+  /**
+   * Configure the developer model to react to backlog messages.
+   */
   private void setupDeveloperModel(Object taskResult) {
+    // Any wake message (the team member notification) triggers a backlog check; the
+    // claim/complete flow is then driven by the tool results. The model selector prefers the
+    // latest tool result, so the task instructions delivered as a user message during task
+    // processing are superseded by the claim_task result that drives completion.
     developerModel.fixedResponse(msg -> {
-      if (msg instanceof TestModelProvider.UserMessage) {
-        return new AiResponse("Ready for work.");
-      }
       if (msg instanceof TestModelProvider.ToolResult toolResult) {
         return switch (toolResult.name()) {
           case GET_BACKLOG_STATUS -> {
@@ -160,6 +179,10 @@ public class DevTeamIntegrationTest extends TestKitSupport {
   @Test
   public void shouldRecreateTeamForSecondPhase() {
     var teamsCreated = new AtomicInteger(0);
+    // Track the current team's backlog id (the team id doubles as its backlog id). After the
+    // first team is disbanded the lead manages two backlogs, so the managed-backlog tools must
+    // be scoped to a specific backlog.
+    var currentBacklogId = new AtomicReference<String>();
 
     // Lead: two-phase workflow — create team, add task, wait, disband, repeat, then complete
     leadModel.fixedResponse(msg -> {
@@ -171,19 +194,20 @@ public class DevTeamIntegrationTest extends TestKitSupport {
       if (msg instanceof TestModelProvider.ToolResult toolResult) {
         return switch (toolResult.name()) {
           case CREATE_TEAM -> {
+            currentBacklogId.set(extractBacklogId(toolResult.content()));
             var params = teamsCreated.get() == 1
               ? Map.of("feature", "API", "requirements", "Build the API layer")
               : Map.of("feature", "tests", "requirements", "Build the test suite");
             yield new AiResponse(createTaskForBacklog(DeveloperTasks.IMPLEMENT, params));
           }
           case String s when s.equals(IMPLEMENT_TASK_TOOL) -> new AiResponse(
-            getManagedBacklogStatus()
+            getManagedBacklogStatus(currentBacklogId.get())
           );
           case GET_MANAGED_BACKLOG_STATUS -> {
             if (toolResult.content().contains("completed")) {
               yield new AiResponse(disbandTeam());
             }
-            yield new AiResponse(getManagedBacklogStatus());
+            yield new AiResponse(getManagedBacklogStatus(currentBacklogId.get()));
           }
           case DISBAND_TEAM -> {
             if (teamsCreated.get() < 2) {

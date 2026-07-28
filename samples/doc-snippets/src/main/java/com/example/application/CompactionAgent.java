@@ -89,6 +89,19 @@ public class CompactionAgent extends Agent {
           }
           case SessionMessage.ToolCallResponse toolRes -> "\n\nTOOL_CALL_RESPONSE:\n" +
           toolRes.text();
+          // end::compaction[]
+          case SessionMessage.MultimodalToolCallResponse multimodalToolRes -> multimodalToolRes
+            .contents()
+            .stream()
+            .map(content ->
+              switch (content) {
+                case MessageContent.ImageUriMessageContent image -> "image from " +
+                image.uri();
+                case MessageContent.PdfUriMessageContent pdf -> "pdf from " + pdf.uri();
+                case MessageContent.TextMessageContent text -> text.text();
+              })
+            .reduce("", (acc, text) -> "\n\nTOOL_CALL_RESPONSE:\n" + text, String::concat);
+          // tag::compaction[]
         };
       })
       .collect(Collectors.joining()); // <3>

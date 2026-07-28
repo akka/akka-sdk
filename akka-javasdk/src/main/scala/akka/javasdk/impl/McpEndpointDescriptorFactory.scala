@@ -371,7 +371,9 @@ object McpEndpointDescriptorFactory {
 
   private def methodsWithAnnotation[T <: Annotation](clazz: Class[_])(implicit
       classTag: ClassTag[T]): Seq[(T, Method)] =
-    clazz.getDeclaredMethods.toVector.flatMap { method =>
+    // getMethods (not getDeclaredMethods) so that annotated methods inherited from a base class are
+    // included; an override without the annotation opts the inherited method out.
+    clazz.getMethods.toVector.flatMap { method =>
       val annotation = method.getAnnotation(classTag.runtimeClass.asInstanceOf[Class[T]])
       if (annotation != null) {
         failOnMethodAclOrJwt(method)

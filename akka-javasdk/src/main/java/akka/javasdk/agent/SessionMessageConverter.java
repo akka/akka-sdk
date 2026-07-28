@@ -4,6 +4,14 @@
 
 package akka.javasdk.agent;
 
+import akka.annotation.InternalApi;
+
+/**
+ * INTERNAL API
+ *
+ * @hidden
+ */
+@InternalApi
 public class SessionMessageConverter {
 
   public static SessionMessage apply(SessionMemoryEntity.Event.MultimodalUserMessageAdded event) {
@@ -31,6 +39,12 @@ public class SessionMessageConverter {
         event.timestamp(), event.componentId(), event.id(), event.name(), event.content());
   }
 
+  public static SessionMessage apply(
+      SessionMemoryEntity.Event.MultimodalToolResponseMessageAdded event) {
+    return new SessionMessage.MultimodalToolCallResponse(
+        event.timestamp(), event.componentId(), event.id(), event.name(), event.contents());
+  }
+
   public static SessionMessage apply(SessionMemoryEntity.Event.Message event) {
     return switch (event) {
       case SessionMemoryEntity.Event.UserMessageAdded userMsg -> apply(userMsg);
@@ -41,6 +55,9 @@ public class SessionMessageConverter {
       case SessionMemoryEntity.Event.AiMessageAdded aiMsg -> apply(aiMsg);
 
       case SessionMemoryEntity.Event.ToolResponseMessageAdded toolMsg -> apply(toolMsg);
+
+      case SessionMemoryEntity.Event.MultimodalToolResponseMessageAdded multimodalToolMsg ->
+          apply(multimodalToolMsg);
     };
   }
 }

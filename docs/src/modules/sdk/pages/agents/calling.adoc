@@ -1,4 +1,4 @@
-= Calling agents
+= Agent invocation
 
 include::ROOT:partial$include.adoc[]
 
@@ -13,7 +13,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 
 The session id is used by the xref:sdk:agents/memory.adoc[session memory], but it is also important for observability tracking and AI evaluation.
 
-You can use a new random UUID for each call if the agent doesn't collaborate with other agents nor have a multi-step interaction with the AI model. Deciding how you manage sessions will be an important part of designing the agentic parts of your application.
+You can use a new random UUID for each call if the agent does not collaborate with other agents nor have a multi-step interaction with the AI model. Deciding how you manage sessions will be an important part of designing the agentic parts of your application.
 
 For more details about the `ComponentClient`, see xref:component-and-service-calls.adoc[].
 
@@ -23,7 +23,7 @@ Agents make external calls to the AI model and possibly other services, and ther
 
 A workflow will typically orchestrate several agents, which collaborate in achieving a common goal. Even if you only have a single agent, having a workflow manage retries, failures, and timeouts can be invaluable.
 
-We will look more at xref:sdk:agents/orchestrating.adoc[multi-agent systems], but let's start with a workflow for the single activities agent.
+We will look more at xref:sdk:agents/orchestrating.adoc[multi-agent systems], but start with a workflow for the single activities agent.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgentManager.java[ActivityAgentManager.java]
@@ -50,7 +50,7 @@ Keep in mind that AI requests are typically slow (many seconds), and you need to
 .stepConfig(ActivityAgentManager::suggestActivities, ofSeconds(60))
 ----
 
-Additionally, you should define a workflow recovery strategy so that it doesn't retry failing requests infinitely. This is specified in the workflow definition with:
+Additionally, you should define a workflow recovery strategy so that it does not retry failing requests infinitely. This is specified in the workflow definition with:
 
 [source,java,indent=0]
 ----
@@ -84,3 +84,9 @@ include::example$doc-snippets/src/main/java/com/example/application/DynamicAgent
 ----
 
 Dynamic dispatch and the registry are building blocks for planner-driven multi-agent systems. For most multi-agent problems an xref:sdk:autonomous-agents.adoc[Autonomous Agent] coordinator with a `Delegation` capability is simpler and recommended; see xref:sdk:agents/orchestrating.adoc#_model_driven_orchestration[Model-driven orchestration]. Reach for `AgentRegistry` and `dynamicCall` when you need a custom planner that selects targets at runtime from an open-ended set of agents.
+
+== See also
+
+* xref:sdk:agents.adoc[Agents]
+* xref:sdk:agents/orchestrating.adoc[Multi-agent orchestration]
+* xref:sdk:component-and-service-calls.adoc[Component and service calls]

@@ -14,7 +14,6 @@ import akka.javasdk.agent.task.Task;
 import akka.javasdk.agent.task.TaskDefinition;
 import akka.javasdk.agent.task.TaskTemplate;
 import akka.javasdk.annotations.Component;
-import akka.javasdk.impl.agent.DataMessageContentImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
@@ -115,8 +114,29 @@ public final class TestModelProvider implements ModelProvider.Custom {
     }
   }
 
-  /** Represents a tool result. This is used to simulate a response from a tool invocation. */
-  public record ToolResult(String name, String content) implements InputMessage {}
+  /**
+   * Represents a tool result. This is used to simulate a response from a tool invocation.
+   *
+   * <p>A tool result may be multimodal (text plus image/PDF content, e.g. when a
+   * {@code @FunctionTool} returns image bytes); inspect {@link #contents()} to assert on what the
+   * model received. {@link #content()} returns the text-only view (text parts joined, image/PDF
+   * omitted).
+   */
+  public record ToolResult(String name, List<MessageContent> contents) implements InputMessage {
+
+    /** Text-only tool result. */
+    public ToolResult(String name, String content) {
+      this(name, List.of(MessageContent.TextMessageContent.from(content)));
+    }
+
+    @Override
+    public String content() {
+      return contents.stream()
+          .filter(c -> c instanceof MessageContent.TextMessageContent)
+          .map(c -> ((MessageContent.TextMessageContent) c).text())
+          .collect(java.util.stream.Collectors.joining("\n"));
+    }
+  }
 
   private List<Pair<Predicate<InputMessage>, Function<InputMessage, AiResponse>>>
       responsePredicates = new ArrayList<>();
@@ -288,50 +308,51 @@ public final class TestModelProvider implements ModelProvider.Custom {
   /** Converts a langchain4j chat message to an {@link InputMessage}, or null if not applicable. */
   private InputMessage toInputMessage(dev.langchain4j.data.message.ChatMessage chatMessage) {
     if (chatMessage instanceof dev.langchain4j.data.message.UserMessage userMessage) {
-      List<MessageContent> contents =
-          userMessage.contents().stream()
-              .<MessageContent>map(
-                  content ->
-                      switch (content) {
-                        case TextContent textContent ->
-                            MessageContent.TextMessageContent.from(textContent.text());
-                        case ImageContent imageContent -> {
-                          var image = imageContent.image();
-                          var detail = toDetailLevel(imageContent.detailLevel());
-                          if (image.url() != null) {
-                            yield new MessageContent.ImageUrlMessageContent(image.url(), detail);
-                          } else if (image.base64Data() != null) {
-                            var data = java.util.Base64.getDecoder().decode(image.base64Data());
-                            yield new DataMessageContentImpl.Image(
-                                data, Optional.ofNullable(image.mimeType()), detail);
-                          } else {
-                            throw new IllegalStateException(
-                                "Image content has neither url nor base64 data");
-                          }
-                        }
-                        case PdfFileContent pdfContent -> {
-                          var pdf = pdfContent.pdfFile();
-                          if (pdf.url() != null) {
-                            yield new MessageContent.PdfUrlMessageContent(pdf.url());
-                          } else if (pdf.base64Data() != null) {
-                            var data = java.util.Base64.getDecoder().decode(pdf.base64Data());
-                            yield new DataMessageContentImpl.Pdf(
-                                data, Optional.ofNullable(pdf.mimeType()));
-                          } else {
-                            throw new IllegalStateException(
-                                "PDF content has neither url nor base64 data");
-                          }
-                        }
-                        default ->
-                            throw new IllegalStateException(
-                                "Not supported content type: " + content);
-                      })
-              .toList();
-      return new UserMessage(contents);
+      return new UserMessage(userMessage.contents().stream().map(this::toMessageContent).toList());
     } else if (chatMessage instanceof ToolExecutionResultMessage toolResult) {
-      return new ToolResult(toolResult.toolName(), toolResult.text());
+      // A tool result may be multimodal (e.g. a @FunctionTool returning image bytes); map each
+      // content part rather than calling toolResult.text(), which throws on non-text results.
+      return new ToolResult(
+          toolResult.toolName(),
+          toolResult.contents().stream().map(this::toMessageContent).toList());
     }
     return null;
+  }
+
+  /** Converts a single langchain4j content element to its SDK {@link MessageContent} form. */
+  private MessageContent toMessageContent(dev.langchain4j.data.message.Content content) {
+
+    return switch (content) {
+      case TextContent textContent -> MessageContent.TextMessageContent.from(textContent.text());
+
+      case ImageContent imageContent -> {
+        var image = imageContent.image();
+        var detail = toDetailLevel(imageContent.detailLevel());
+        if (image.url() != null) {
+          yield new MessageContent.ImageUrlMessageContent(image.url(), detail);
+        } else if (image.base64Data() != null) {
+          var data = java.util.Base64.getDecoder().decode(image.base64Data());
+          yield new MessageContent.ImageBytesMessageContent(
+              data, Optional.ofNullable(image.mimeType()), detail);
+        } else {
+          throw new IllegalStateException("Image content has neither url nor base64 data");
+        }
+      }
+
+      case PdfFileContent pdfContent -> {
+        var pdf = pdfContent.pdfFile();
+        if (pdf.url() != null) {
+          yield new MessageContent.PdfUrlMessageContent(pdf.url());
+        } else if (pdf.base64Data() != null) {
+          var data = java.util.Base64.getDecoder().decode(pdf.base64Data());
+          yield new MessageContent.PdfBytesMessageContent(data);
+        } else {
+          throw new IllegalStateException("PDF content has neither url nor base64 data");
+        }
+      }
+
+      default -> throw new IllegalStateException("Not supported content type: " + content);
+    };
   }
 
   private MessageContent.ImageMessageContent.DetailLevel toDetailLevel(

@@ -71,7 +71,7 @@ Akka's gRPC endpoints can be secured by multiple approaches:
 
 Endpoints are commonly used to interact with other components in a service. This is done through
 the `akka.javasdk.client.ComponentClient`. If the constructor of the endpoint class has a parameter of this type,
-it will be injected by the SDK and can then be available for use when processing requests. Let's see how this is done:
+it will be injected by the SDK and can then be available for use when processing requests. This is done as follows:
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[CustomerGrpcEndpointImpl.java]

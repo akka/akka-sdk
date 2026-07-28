@@ -20,8 +20,9 @@ private[impl] object AgentDescriptorFactory extends ComponentDescriptorFactory {
 
   override def buildDescriptorFor(component: Class[_], serializer: Serializer): ComponentDescriptor = {
     //TODO remove capitalization of method name, can't be done per component, because component client reuse the same logic for all
+    // getMethods (not getDeclaredMethods) so a command handler inherited from a base class is included
     val commandHandlerMethods = if (classOf[Agent].isAssignableFrom(component)) {
-      component.getDeclaredMethods.collect {
+      component.getMethods.collect {
         case method
             if isCommandHandlerCandidate[Agent.Effect[_]](method) || isCommandHandlerCandidate[Agent.StreamEffect](
               method) =>

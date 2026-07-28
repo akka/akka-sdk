@@ -157,6 +157,7 @@ import akka.runtime.sdk.spi.TimedActionDescriptor
 import akka.runtime.sdk.spi.UserFunctionError
 import akka.runtime.sdk.spi.ViewDescriptor
 import akka.runtime.sdk.spi.WorkflowDescriptor
+import akka.runtime.sdk.spi.tracing.InMemorySpanExporter
 import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import com.typesafe.config.Config
@@ -393,7 +394,8 @@ class SdkRunner private (
         getSettings,
         startContext.sanitizer,
         httpMockLookup,
-        grpcMockLookup)
+        grpcMockLookup,
+        startContext.inMemorySpanExporter)
       Future.successful(app.spiComponents)
     } catch {
       case NonFatal(ex) =>
@@ -443,7 +445,8 @@ private[javasdk] object Sdk {
       agentCapabilityConverter: CapabilityConverter,
       overrideModelProvider: OverrideModelProvider,
       serializer: Serializer,
-      sanitizer: Sanitizer)
+      sanitizer: Sanitizer,
+      inMemorySpanExporter: Option[InMemorySpanExporter])
 
   private val platformManagedDependency = Set[Class[_]](
     classOf[ComponentClient],
@@ -460,6 +463,17 @@ private[javasdk] object Sdk {
     classOf[AgentContext],
     classOf[AgentRegistry],
     classOf[ObjectStorageProvider])
+
+  // Run a user-supplied callback, logging any failure on the user component's own logger so it reaches the user.
+  // Rethrows by default; pass rethrow = false where a failing callback must not abort the surrounding flow.
+  private def runUserCallback[T](userInstance: AnyRef, callbackName: String, rethrow: Boolean = true)(body: => T): T =
+    try body
+    catch {
+      case NonFatal(ex) =>
+        LoggerFactory.getLogger(userInstance.getClass).error(s"$callbackName threw an exception", ex)
+        if (rethrow) throw ex
+        else null.asInstanceOf[T]
+    }
 }
 
 /**
@@ -484,7 +498,8 @@ private final class Sdk(
     runtimeSanitizer: SpiSanitizerEngine,
     httpMockLookup: String => Option[
       java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
-    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient]) {
+    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient],
+    inMemorySpanExporter: Option[InMemorySpanExporter]) {
 
   import Sdk._
 
@@ -709,7 +724,7 @@ private final class Sdk(
         val componentId = Reflect.readComponentId(clz)
 
         val readOnlyCommandNames =
-          clz.getDeclaredMethods.collect {
+          clz.getMethods.collect {
             case method
                 if isCommandHandlerCandidate[EventSourcedEntity.Effect[_]](method) && method.getReturnType == classOf[
                   EventSourcedEntity.ReadOnlyEffect[_]] =>
@@ -775,7 +790,7 @@ private final class Sdk(
         val componentId = Reflect.readComponentId(clz)
 
         val readOnlyCommandNames =
-          clz.getDeclaredMethods.collect {
+          clz.getMethods.collect {
             case method
                 if isCommandHandlerCandidate[KeyValueEntity.Effect[_]](method) && method.getReturnType == classOf[
                   KeyValueEntity.ReadOnlyEffect[_]] =>
@@ -836,7 +851,7 @@ private final class Sdk(
           clz.asInstanceOf[Class[Workflow[_]]])
 
         val readOnlyCommandNames =
-          clz.getDeclaredMethods.collect {
+          clz.getMethods.collect {
             case method
                 if isCommandHandlerCandidate[Workflow.Effect[_]](method) && method.getReturnType == classOf[
                   Workflow.ReadOnlyEffect[_]] =>
@@ -1120,9 +1135,17 @@ private final class Sdk(
     val combinedDisabledComponents =
       if (overrideDisabledComponents)
         disabledComponents.map(_.getName)
-      else
-        (serviceSetup.map(_.disabledComponents().asScala.toSet).getOrElse(Set.empty) ++ disabledComponents)
-          .map(_.getName)
+      else {
+        val setupDisabledComponents =
+          serviceSetup match {
+            case Some(setup) =>
+              runUserCallback(setup, "disabledComponents()") {
+                setup.disabledComponents().asScala.toSet
+              }
+            case None => Set.empty[Class[_]]
+          }
+        (setupDisabledComponents ++ disabledComponents).map(_.getName)
+      }
 
     val descriptors =
       (eventSourcedEntityDescriptors ++
@@ -1152,14 +1175,17 @@ private final class Sdk(
               agentCapabilityConverter,
               overrideModelProvider,
               serializer,
-              sanitizer))
+              sanitizer,
+              inMemorySpanExporter))
           Future.successful(Done)
         case Some(setup) =>
           if (dependencyProviderOpt.nonEmpty) {
             logger.info("Service configured with TestKit DependencyProvider")
           } else {
-            dependencyProviderOpt = Option(setup.createDependencyProvider())
-            dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
+            runUserCallback(setup, "createDependencyProvider()") {
+              dependencyProviderOpt = Option(setup.createDependencyProvider())
+              dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
+            }
           }
           // Only register the shutdown task if the user actually overrode onShutdown,
           // otherwise we'd add a no-op task to coordinated shutdown for every service.
@@ -1169,14 +1195,9 @@ private final class Sdk(
             CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceStop, "user-service-on-shutdown") {
               () =>
                 SdkRunner.userServiceLog.info("Running onShutdown lifecycle hook")
-                try {
+                // do not fail the shutdown phase
+                runUserCallback(setup, "onShutdown()", rethrow = false) {
                   setup.onShutdown()
-                } catch {
-                  case NonFatal(ex) =>
-                    // Make sure it reaches the user, but do not fail the shutdown phase.
-                    LoggerFactory
-                      .getLogger(setup.getClass)
-                      .error("onShutdown() threw an exception", ex)
                 }
                 SdkRunner.FutureDone
             }
@@ -1192,7 +1213,8 @@ private final class Sdk(
               agentCapabilityConverter,
               overrideModelProvider,
               serializer,
-              sanitizer))
+              sanitizer,
+              inMemorySpanExporter))
           Future.successful(Done)
       }
     }
@@ -1202,13 +1224,8 @@ private final class Sdk(
         case None => Future.successful(Done)
         case Some(setup) =>
           logger.debug("Running onStart lifecycle hook")
-          try {
+          runUserCallback(setup, "onStartup()") {
             setup.onStartup()
-          } catch {
-            case NonFatal(ex) =>
-              // Make sure it reaches the user
-              LoggerFactory.getLogger(setup.getClass).error("onStartup() threw an exception", ex)
-              throw ex
           }
           Future.successful(Done)
       }
@@ -1245,12 +1262,8 @@ private final class Sdk(
               override def componentId(): String = spiCtx.componentId
               override def componentClassName(): String = spiCtx.componentClassName
             }
-            try handler.onUnhandledException(context)
-            catch {
-              case NonFatal(ex) =>
-                LoggerFactory
-                  .getLogger(handler.getClass)
-                  .error("onUnhandledException() threw an exception", ex)
+            runUserCallback(handler, "onUnhandledException()", rethrow = false) {
+              handler.onUnhandledException(context)
             }
             Done
           }(sdkExecutionContext)

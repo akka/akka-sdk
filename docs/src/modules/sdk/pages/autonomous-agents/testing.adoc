@@ -27,34 +27,22 @@ include::example$autonomous-agent-playground/src/test/java/demo/helloworld/Quest
 
 The `TestModelProvider.AutonomousAgentTools` class provides factory methods for the built-in coordination tools that the runtime exposes to the model. Always prefer these over raw `ToolInvocationRequest` instances with string tool names: the helpers serialize result objects to JSON, derive the right tool name from the agent's component id and the task definition, and stay correct if the runtime renames a tool.
 
+Import the helpers statically with `import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.*`.
+
 *Task lifecycle tools:*
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/AutonomousAgentToolsSample.java[AutonomousAgentToolsSample.java]
 ----
-import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.*;
-
-// Complete a task: pass a result object matching the task's result type
-completeTask(new Answer("2 plus 2 equals 4.", 100));
-
-// Complete a task with raw JSON (must be a valid JSON object)
-completeTaskJson("{\"answer\":\"2 plus 2 equals 4.\",\"confidence\":100}");
-
-// Fail a task with a reason
-failTask("Not enough information to proceed.");
+include::example$autonomous-agent-playground/src/test/java/demo/docs/AutonomousAgentToolsSample.java[tag=task-lifecycle-tools]
 ----
 
 *Handoff and delegation tools:*
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/AutonomousAgentToolsSample.java[AutonomousAgentToolsSample.java]
 ----
-// Hand off the current task to another agent
-handoffTo(BillingSpecialist.class, "Customer has billing dispute");
-
-// Delegate a subtask to a worker agent
-delegateTo(ResearchTasks.FINDINGS, Researcher.class, "Research quantum computing");
-
-// Delegate to a request-based agent
-delegateTo(FactCheckAgent.class, "{\"claim\":\"Carbon emissions reduced by 40%\"}");
+include::example$autonomous-agent-playground/src/test/java/demo/docs/AutonomousAgentToolsSample.java[tag=handoff-delegation-tools]
 ----
 
 `AutonomousAgentTools` also exposes helpers for the team, backlog, messaging, and moderation capabilities (`createTeam`, `claimTask`, `sendMessage`, `startScriptedConversation`, `submitTurn`, …). For full coverage, see the xref:getting-started:samples.adoc#autonomous_agents_playground[autonomous agents samples] that exercise those patterns: `devteam` for teams and shared backlogs, and `debate`, `negotiation`, `peerreview` for moderation.
@@ -115,7 +103,7 @@ The runtime treats `fail_task` as a terminal failure for the task. Use `failTask
 include::example$autonomous-agent-playground/src/test/java/demo/helloworld/QuestionAnswererIntegrationTest.java[tag=failure]
 ----
 
-== See Also
+== See also
 
 * xref:sdk:agents/testing.adoc[Testing request-based agents]
 * xref:sdk:autonomous-agents/client.adoc[Client API]

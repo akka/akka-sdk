@@ -78,6 +78,26 @@ public class ViewTestModels {
     }
   }
 
+  // Base class declaring a @Query method that a concrete View subclass inherits.
+  public abstract static class BaseQueryView extends View {
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> inheritedQuery(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @Component(id = "users_view")
+  public static class ViewWithInheritedQuery extends BaseQueryView {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {}
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> ownQuery(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
   @Component(id = "users_view")
   public static class ViewWithLowerCaseQuery extends View {
 

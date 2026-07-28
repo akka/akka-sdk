@@ -17,6 +17,7 @@ import akka.javasdk.agent.SessionMemoryInterceptor
 import akka.javasdk.agent.SessionMessage
 import akka.javasdk.agent.SessionMessage.AiMessage
 import akka.javasdk.agent.SessionMessage.MessageContent.TextMessageContent
+import akka.javasdk.agent.SessionMessage.MultimodalToolCallResponse
 import akka.javasdk.agent.SessionMessage.MultimodalUserMessage
 import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
@@ -147,6 +148,32 @@ class InterceptingSessionMemorySpec extends AnyWordSpec with Matchers {
       delegate.lastMessages.size() shouldBe 1
       val seen = delegate.lastMessages.get(0).asInstanceOf[ToolCallResponse]
       seen.text() shouldBe "this is a short one"
+    }
+
+    "reflect multimodal tool call response transform in messages list" in {
+      val delegate = new RecordingSessionMemory
+      val interceptor = new SessionMemoryInterceptor {
+        override def beforeWrite(sessionId: String, mtcr: MultimodalToolCallResponse): MultimodalToolCallResponse =
+          new MultimodalToolCallResponse(
+            mtcr.timestamp(),
+            mtcr.componentId(),
+            mtcr.id(),
+            mtcr.name(),
+            util.List.of(new TextMessageContent("redacted")))
+      }
+      val memory = new InterceptingSessionMemory(delegate, interceptor)
+
+      val mtcr = new MultimodalToolCallResponse(
+        Instant.EPOCH,
+        "agent",
+        "id1",
+        "render_chart",
+        util.List.of(new TextMessageContent("caption"), new TextMessageContent("more")))
+      memory.addInteraction("s1", userMessage("hi"), util.List.of(mtcr))
+
+      delegate.lastMessages.size() shouldBe 1
+      val seen = delegate.lastMessages.get(0).asInstanceOf[MultimodalToolCallResponse]
+      seen.contents().asScala.map(_.asInstanceOf[TextMessageContent].text()).toList shouldBe List("redacted")
     }
   }
 }

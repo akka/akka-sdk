@@ -72,11 +72,25 @@ public record RuntimeTypeDef(Class<?> clazz) implements TypeDef {
 
   @Override
   public List<MethodDef> getMethods() {
-    return Arrays.stream(clazz.getDeclaredMethods())
+    List<MethodDef> methods = new java.util.ArrayList<>();
+    // Methods declared in this type. Synthetic/bridge methods are skipped so the result matches
+    // the source-level view of CompileTimeTypeDef (e.g. erased-signature bridges for an inherited
+    // generic method would otherwise be counted as separate handlers).
+    Arrays.stream(clazz.getDeclaredMethods())
+        .filter(m -> !m.isSynthetic())
         .map(RuntimeMethodDef::new)
-        .map(m -> (MethodDef) m)
-        .sorted() // sorted to ensure predictable output in tests
-        .toList();
+        .forEach(methods::add);
+
+    // Methods inherited from the superclass hierarchy, matching CompileTimeTypeDef. Stops at
+    // Object so e.g. an inherited @Get/@Post endpoint method is discovered the same way in both
+    // modes.
+    Class<?> superclass = clazz.getSuperclass();
+    if (superclass != null && !superclass.equals(Object.class)) {
+      methods.addAll(new RuntimeTypeDef(superclass).getMethods());
+    }
+
+    // sorted to ensure predictable output in tests
+    return methods.stream().sorted().toList();
   }
 
   @Override

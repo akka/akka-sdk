@@ -5,6 +5,7 @@
 package akka.javasdk.agent;
 
 import akka.javasdk.agent.SessionMessage.AiMessage;
+import akka.javasdk.agent.SessionMessage.MultimodalToolCallResponse;
 import akka.javasdk.agent.SessionMessage.MultimodalUserMessage;
 import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.SessionMessage.UserMessage;
@@ -23,15 +24,33 @@ import java.util.Optional;
   @JsonSubTypes.Type(value = UserMessage.class, name = "UM"),
   @JsonSubTypes.Type(value = AiMessage.class, name = "AIM"),
   @JsonSubTypes.Type(value = ToolCallResponse.class, name = "TCR"),
-  @JsonSubTypes.Type(value = MultimodalUserMessage.class, name = "MUM")
+  @JsonSubTypes.Type(value = MultimodalUserMessage.class, name = "MUM"),
+  @JsonSubTypes.Type(value = MultimodalToolCallResponse.class, name = "MTCR")
 })
 public sealed interface SessionMessage {
   static int sizeInBytes(String text) {
     return text.length(); // simple implementation, but not correct for all encodings
   }
 
+  static int sizeInBytes(List<MessageContent> contents) {
+    return contents.stream()
+        .mapToInt(
+            content ->
+                switch (content) {
+                  case MessageContent.TextMessageContent text -> sizeInBytes(text.text());
+                  case MessageContent.ImageUriMessageContent image ->
+                      sizeInBytes(image.uri())
+                          + sizeInBytes(image.detailLevel().toString())
+                          + image.mimeType().map(SessionMessage::sizeInBytes).orElse(0);
+                  case MessageContent.PdfUriMessageContent pdf -> sizeInBytes(pdf.uri());
+                })
+        .sum();
+  }
+
+  /** The approximate size of this message in bytes, used to enforce memory size limits. */
   int size();
 
+  /** The component id of the agent that produced this message. */
   String componentId();
 
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -42,18 +61,24 @@ public sealed interface SessionMessage {
   })
   sealed interface MessageContent {
 
+    public static String IMAGE_PLACEHOLDER = "[image]";
+    public static String PDF_PLACEHOLDER = "[pdf]";
+
+    /** Persisted text content. */
     record TextMessageContent(String text) implements MessageContent {}
 
+    /** Persisted image content, referenced by URI rather than inline bytes. */
     record ImageUriMessageContent(
         String uri,
         akka.javasdk.agent.MessageContent.ImageMessageContent.DetailLevel detailLevel,
         Optional<String> mimeType)
         implements MessageContent {}
 
+    /** Persisted PDF content, referenced by URI rather than inline bytes. */
     record PdfUriMessageContent(String uri) implements MessageContent {}
   }
 
-  // need to introduce new message to keep backward compatibility
+  /** A multimodal user message, e.g. text combined with an image or PDF. */
   record MultimodalUserMessage(Instant timestamp, List<MessageContent> contents, String componentId)
       implements SessionMessage {
 
@@ -83,6 +108,7 @@ public sealed interface SessionMessage {
     }
   }
 
+  /** A plain text user message. */
   record UserMessage(Instant timestamp, String text, String componentId) implements SessionMessage {
 
     public UserMessage(Instant now, String text) {
@@ -95,17 +121,22 @@ public sealed interface SessionMessage {
     }
   }
 
+  /** A tool call requested by the model as part of an {@link AiMessage}. */
   record ToolCallRequest(String id, String name, String arguments) {}
 
+  /** Token usage for a single {@link AiMessage}. */
   record TokenUsage(int inputTokens, int outputTokens) {
+    /** No tokens consumed. */
     public static final TokenUsage EMPTY = new TokenUsage(0, 0);
 
+    /** The sum of this and another usage. */
     public TokenUsage add(TokenUsage tokenUsage) {
       return new TokenUsage(
           inputTokens + tokenUsage.inputTokens, outputTokens + tokenUsage.outputTokens);
     }
   }
 
+  /** The model's reply, with any tool calls it requested and the token usage it incurred. */
   record AiMessage(
       Instant timestamp,
       String text,
@@ -167,12 +198,24 @@ public sealed interface SessionMessage {
     }
   }
 
+  /** The text result of a tool call, fed back to the model as input. */
   record ToolCallResponse(
       Instant timestamp, String componentId, String id, String name, String text)
       implements SessionMessage {
     @Override
     public int size() {
       return SessionMessage.sizeInBytes(text);
+    }
+  }
+
+  /** The multimodal result of a tool call, fed back to the model as input. */
+  record MultimodalToolCallResponse(
+      Instant timestamp, String componentId, String id, String name, List<MessageContent> contents)
+      implements SessionMessage {
+
+    @Override
+    public int size() {
+      return SessionMessage.sizeInBytes(contents);
     }
   }
 }

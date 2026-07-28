@@ -176,7 +176,7 @@ private[impl] object Reflect {
   def isEvaluatorAgent(cls: Class[_]): Boolean = {
     isAgent(cls) && {
       val effectMethod =
-        cls.getDeclaredMethods
+        cls.getMethods
           .find { method =>
             isCommandHandlerCandidate[Agent.Effect[_]](method)
           }
@@ -198,7 +198,10 @@ private[impl] object Reflect {
     effectType.runtimeClass.isAssignableFrom(method.getReturnType) &&
     method.getParameterTypes.length <= 1 &&
     // Workflow will have lambdas returning Effect, we want to filter them out
-    !method.getName.startsWith("lambda$")
+    !method.getName.startsWith("lambda$") &&
+    // skip synthetic/bridge methods, e.g. the erased-signature bridge generated for an overridden
+    // generic command handler, which would otherwise be picked up as a duplicate candidate
+    !method.isSynthetic
   }
 
   def getReturnClass[T](declaringClass: Class[_], method: Method): Class[T] =
@@ -290,9 +293,14 @@ private[impl] object Reflect {
 
   def workflowKnownInputTypes(clz: Class[_]): List[Class[_]] = {
 
-    // register all inputs for methods returning StepEffect
+    // register all inputs for methods returning StepEffect, including steps inherited from a base
+    // class - traverse the hierarchy the same way as WorkflowDescriptor discovers step methods
+    def allMethods(c: Class[_]): Seq[Method] =
+      if (c == null || c == classOf[Object]) Seq.empty
+      else c.getDeclaredMethods.toSeq ++ allMethods(c.getSuperclass) ++ c.getInterfaces.flatMap(allMethods)
+
     val stepEffectClass = classOf[Workflow.StepEffect]
-    val methods = clz.getDeclaredMethods.filter { m =>
+    val methods = allMethods(clz).filter { m =>
       m.getParameterTypes.length == 1 && stepEffectClass.isAssignableFrom(m.getReturnType)
     }
 

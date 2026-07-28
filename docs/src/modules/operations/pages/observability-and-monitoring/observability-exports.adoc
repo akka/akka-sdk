@@ -105,7 +105,7 @@ Another possible use is to add a `traceparent` header when calling your Akka end
 
 ==== Setting sampling
 
-By default, Akka filters traces and exports them to your Akka Console. You'll get 1% of the traces produced by your services. You can adjust this percentage according to your needs.
+By default, Akka filters traces and exports them to your Akka Console. You will get 1% of the traces produced by your services. You can adjust this percentage according to your needs.
 
 This filtering is known as https://opentelemetry.io/docs/concepts/sampling/#head-sampling[head sampling, window="new"]. Sampling is configured at the top level of the observability descriptor using `traceSampling` and applies to all configured trace exporters. To configure it, set your observability descriptor as follows and xref:_updating_the_observability_configuration[update the observability configuration]:
 
@@ -216,7 +216,7 @@ In addition, the OTLP exporter supports <<TLS configuration>> and <<Custom heade
 
 === OTLP HTTP
 
-OTLP HTTP is the HTTP-based protocol used by OpenTelemetry, as an alternative to the gRPC-based OTLP exporter. It is supported for logs, metrics, and traces. This exporter is useful in environments where HTTP is preferred over gRPC, such as when behind proxies or firewalls that don't support HTTP/2.
+OTLP HTTP is the HTTP-based protocol used by OpenTelemetry, as an alternative to the gRPC-based OTLP exporter. It is supported for logs, metrics, and traces. This exporter is useful in environments where HTTP is preferred over gRPC, such as when behind proxies or firewalls that do not support HTTP/2.
 
 The primary piece of configuration it needs is a base URL endpoint. The exporter will automatically append the appropriate path for logs, metrics, or traces (e.g., `/v1/logs`, `/v1/metrics`, `/v1/traces`).
 
@@ -344,7 +344,7 @@ Google Cloud is supported for exporting logs, metrics, and traces. The primary p
 
 To create such a service account and key using the `gcloud` command, assuming you are logged in and have a Google project configured:
 
-. Create a service account. In this example, we'll call it `akka-exporter`.
+. Create a service account. In this example, we will call it `akka-exporter`.
 +
 [source,shellscript]
 ----
@@ -361,14 +361,14 @@ gcloud projects add-iam-policy-binding <gcp-project-id> \
     --member "serviceAccount:akka-exporter@<gcp-project-id>.iam.gserviceaccount.com" \
     --role "roles/logging.logWriter"
 ----
-. Generate a key file for your service account, we'll place it into a file called `key.json`.
+. Generate a key file for your service account, we will place it into a file called `key.json`.
 +
 [source,shellscript]
 ----
 gcloud iam service-accounts keys create key.json \
     --iam-account akka-exporter@<gcp-project-id>.iam.gserviceaccount.com
 ----
-. Place the key file in an Akka secret, we'll call the secret `gcp-credentials`. The key for key file must be `key.json`.
+. Place the key file in an Akka secret, we will call the secret `gcp-credentials`. The key for key file must be `key.json`.
 +
 [source,shellscript]
 ----
