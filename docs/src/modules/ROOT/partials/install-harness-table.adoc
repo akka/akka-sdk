@@ -1,0 +1,57 @@
+// Shared install instructions for Akka across AI coding harnesses.
+// Included by getting-started and sdk pages so the install steps stay in one place.
+// Renders as tabs (requires the @asciidoctor/tabs extension, enabled in the playbook).
+Akka installs into your AI coding harness through that harness's own plugin mechanism. Select your harness:
+
+[tabs]
+====
+Claude Code::
++
+--
+[source]
+----
+/plugin marketplace add akka/ai-marketplace
+/plugin install akka@ai-marketplace
+/reload-plugins
+----
+Can't add the marketplace? Clone the repository and add it as a local marketplace instead:
+
+[source]
+----
+git clone https://github.com/akka/ai-marketplace.git
+/plugin marketplace add /path/to/ai-marketplace
+----
+--
+
+Gemini CLI::
++
+--
+[source]
+----
+gemini extensions install https://github.com/akka/ai-marketplace
+----
+--
+
+Codex CLI::
++
+--
+[source]
+----
+codex plugin marketplace add akka/ai-marketplace
+codex plugin add akka@akka
+----
+Codex exposes the commands as skills. Where this documentation shows `/akka:specify`, use the `akka-specify` skill (`@akka-specify`, or ask Codex to run it).
+--
+
+Cursor, VS Code + Copilot::
++
+--
+[source]
+----
+akka specify init --agent cursor
+----
+Use `--agent vscode-copilot` for VS Code with Copilot. Cursor has no slash commands — the Akka tools are available over MCP; where this documentation shows `/akka:specify`, ask the agent to run that step.
+--
+====
+
+This installs the Akka commands and registers the Akka MCP server, giving your harness the full Akka toolset (CLI, MCP server, AI coding assistant, and project scaffolding).

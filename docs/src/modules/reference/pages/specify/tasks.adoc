@@ -1,4 +1,4 @@
-= /akka.tasks
+= /akka:tasks
 
 Generate an actionable, dependency-ordered task list.
 
