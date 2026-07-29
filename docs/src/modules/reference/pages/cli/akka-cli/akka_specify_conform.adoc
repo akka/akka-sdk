@@ -1,17 +1,25 @@
-= akka organizations
+= akka specify conform
 
-Manage your organizations on Akka
+Evaluate exit conditions and report the engine verdict.
 
 == Synopsis
 
-The `akka organizations` commands manage the organizations in your Akka account.
-Organizations are the root of the management hierarchy and serve as a container for all Projects where Services are deployed.
-For more details on organizations, see https://doc.akka.io/operations/organizations/index.html .
+[Incubating] Evaluate the resolved exit conditions against the project (running the available auditors), print the Definition-of-Done manifest, then report the engine verdict -- one of NEEDS_INPUT / WORKING / READY_TO_SHIP.
+
+Exits non-zero unless the verdict is READY_TO_SHIP, so it can gate CI or ship.
+
+Examples:   akka specify conform   akka specify conform --policy ./policy.yaml
+
+----
+akka specify conform [directory] [flags]
+----
 
 == Options
 
 ----
-  -h, --help   help for organizations
+      --dir string      project directory (default: current directory or positional arg)
+  -h, --help            help for conform
+      --policy string   path to an org governance policy-as-code file (policy.yaml)
 ----
 
 == Options inherited from parent commands
@@ -32,13 +40,7 @@ For more details on organizations, see https://doc.akka.io/operations/organizati
 
 == SEE ALSO
 
-* link:akka.html[akka]	 - Akka control
-* link:akka_organizations_auth.html[akka organizations auth]	 - Manage authentication for your organization on Akka
-* link:akka_organizations_get.html[akka organizations get]	 - Get organization information.
-* link:akka_organizations_identity-providers.html[akka organizations identity-providers]	 - Manage workload identity providers for your organization on Akka
-* link:akka_organizations_invitations.html[akka organizations invitations]	 - Invite new users to the organization with a specific role.
-* link:akka_organizations_list.html[akka organizations list]	 - List all organizations of which the user is a member of.
-* link:akka_organizations_users.html[akka organizations users]	 - Manage organization users.
+* link:akka_specify.html[akka specify]	 - [Incubating] Initialize and manage AI-assisted Akka development projects.
 
 [discrete]
 

@@ -41,7 +41,16 @@ The xref:reference:cli/akka-cli/akka_completion.adoc[akka completion] command ge
 == Use your AI assistant to implement an Akka Service from a specification
 The 'akka specify' commands set up Akka projects for AI-assisted development. Use 'akka specify init' to create a new project with all the resources needed for AI coding agents, including slash commands, templates, and MCP configuration.
 
+* xref:reference:cli/akka-cli/akka_specify_attest.adoc[akka specify attest]
+* xref:reference:cli/akka-cli/akka_specify_conform.adoc[akka specify conform]
+* xref:reference:cli/akka-cli/akka_specify_docs.adoc[akka specify docs]
 * xref:reference:cli/akka-cli/akka_specify_init.adoc[akka specify init]
+* xref:reference:cli/akka-cli/akka_specify_mode.adoc[akka specify mode]
+* xref:reference:cli/akka-cli/akka_specify_ship.adoc[akka specify ship]
+* xref:reference:cli/akka-cli/akka_specify_signoff.adoc[akka specify signoff]
+* xref:reference:cli/akka-cli/akka_specify_status.adoc[akka specify status]
+* xref:reference:cli/akka-cli/akka_specify_strike.adoc[akka specify strike]
+* xref:reference:cli/akka-cli/akka_specify_waive.adoc[akka specify waive]
 
 == Initialize a source code project
 To start a source code project for a new Akka Service, the `akka code init` command offers an interactive experience to get you started.
@@ -115,6 +124,14 @@ The xref:reference:cli/akka-cli/akka_organizations.adoc[akka organization] comma
 * xref:reference:cli/akka-cli/akka_organizations_auth_update.adoc[akka organizations auth update]
 * xref:reference:cli/akka-cli/akka_organizations_auth_update_openid.adoc[akka organizations auth update openid]
 * xref:reference:cli/akka-cli/akka_organizations_get.adoc[akka organizations get]
+* xref:reference:cli/akka-cli/akka_organizations_identity-providers.adoc[akka organizations identity-providers]
+* xref:reference:cli/akka-cli/akka_organizations_identity-providers_add.adoc[akka organizations identity-providers add]
+* xref:reference:cli/akka-cli/akka_organizations_identity-providers_add_oauth.adoc[akka organizations identity-providers add oauth]
+* xref:reference:cli/akka-cli/akka_organizations_identity-providers_list.adoc[akka organizations identity-providers list]
+* xref:reference:cli/akka-cli/akka_organizations_identity-providers_remove.adoc[akka organizations identity-providers remove]
+* xref:reference:cli/akka-cli/akka_organizations_identity-providers_show.adoc[akka organizations identity-providers show]
+* xref:reference:cli/akka-cli/akka_organizations_identity-providers_update.adoc[akka organizations identity-providers update]
+* xref:reference:cli/akka-cli/akka_organizations_identity-providers_update_oauth.adoc[akka organizations identity-providers update oauth]
 * xref:reference:cli/akka-cli/akka_organizations_invitations.adoc[akka organizations invitations]
 * xref:reference:cli/akka-cli/akka_organizations_invitations_cancel.adoc[akka organizations invitations cancel]
 * xref:reference:cli/akka-cli/akka_organizations_invitations_create.adoc[akka organizations invitations create]

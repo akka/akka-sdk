@@ -1,17 +1,24 @@
-= akka organizations
+= akka specify docs
 
-Manage your organizations on Akka
+Show where the generated project documentation is, and optionally open it.
 
 == Synopsis
 
-The `akka organizations` commands manage the organizations in your Akka account.
-Organizations are the root of the management hierarchy and serve as a container for all Projects where Services are deployed.
-For more details on organizations, see https://doc.akka.io/operations/organizations/index.html .
+Locate the rendered project documentation produced by the /akka:docs command.
+
+/akka:docs generates a self-contained docs/index.html -- a component reference with entity and interaction diagrams -- into the project's docs/ folder.
+This command prints its location and, with --open, opens it in your default browser.
+
+----
+akka specify docs [flags]
+----
 
 == Options
 
 ----
-  -h, --help   help for organizations
+      --dir string   project directory (default: current)
+  -h, --help         help for docs
+      --open         open the documentation in your default browser
 ----
 
 == Options inherited from parent commands
@@ -32,13 +39,7 @@ For more details on organizations, see https://doc.akka.io/operations/organizati
 
 == SEE ALSO
 
-* link:akka.html[akka]	 - Akka control
-* link:akka_organizations_auth.html[akka organizations auth]	 - Manage authentication for your organization on Akka
-* link:akka_organizations_get.html[akka organizations get]	 - Get organization information.
-* link:akka_organizations_identity-providers.html[akka organizations identity-providers]	 - Manage workload identity providers for your organization on Akka
-* link:akka_organizations_invitations.html[akka organizations invitations]	 - Invite new users to the organization with a specific role.
-* link:akka_organizations_list.html[akka organizations list]	 - List all organizations of which the user is a member of.
-* link:akka_organizations_users.html[akka organizations users]	 - Manage organization users.
+* link:akka_specify.html[akka specify]	 - [Incubating] Initialize and manage AI-assisted Akka development projects.
 
 [discrete]
 

@@ -32,7 +32,16 @@ Use 'akka specify init' to create a new project with all the resources needed fo
 == SEE ALSO
 
 * link:akka.html[akka]	 - Akka control
+* link:akka_specify_attest.html[akka specify attest]	 - Record an attestation that a delegated check ran externally, or a harness was activated.
+* link:akka_specify_conform.html[akka specify conform]	 - Evaluate exit conditions and report the engine verdict.
+* link:akka_specify_docs.html[akka specify docs]	 - Show where the generated project documentation is, and optionally open it.
 * link:akka_specify_init.html[akka specify init]	 - Initialize a new Akka project for AI-assisted development.
+* link:akka_specify_mode.html[akka specify mode]	 - Show or set the local project mode.
+* link:akka_specify_ship.html[akka specify ship]	 - Ship the project when all in-scope exit conditions are satisfied.
+* link:akka_specify_signoff.html[akka specify signoff]	 - Record a human sign-off that closes an exit condition.
+* link:akka_specify_status.html[akka specify status]	 - Show the exit-condition Definition-of-Done manifest.
+* link:akka_specify_strike.html[akka specify strike]	 - Strike (turn off) an inapplicable, non-locked exit condition.
+* link:akka_specify_waive.html[akka specify waive]	 - Attach a time-bound waiver to a still-active exit condition.
 
 [discrete]
 
