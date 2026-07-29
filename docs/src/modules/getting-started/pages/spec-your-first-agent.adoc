@@ -2,14 +2,168 @@
 
 include::ROOT:partial$include.adoc[]
 
-This guide builds a "hello world" greeting agent end to end with spec-driven development: specify the feature, plan it, generate tasks, implement, and run it locally. The agent greets each user in a new language every turn and tracks the languages it has already used in the session. You drive the whole flow from your AI coding assistant.
+This guide builds a "hello world" greeting agent with spec-driven development. The agent greets each user in a new language every turn and tracks the languages it has already used in the session.
+
+Spec-driven development runs in two modes, and you can build this agent either way. Choose your style below.
+
+== Choose your style
+
+* *xref:sdk:enforced-mode.adoc[Enforced mode]* (the default) -- you define "done" as machine-checkable exit conditions and the assistant drives the build until they are met. A cleaner, auditable result. Follow <<enforced,Build in Enforced mode>>.
+* *xref:sdk:a-la-carte-mode.adoc[À la carte mode]* -- you run each specification command yourself, one at a time. Faster and lighter; you own the rigor. Follow <<a-la-carte,Build À la carte>>.
+
+New installs start in *Enforced* mode. To use À la carte, switch first:
+
+[source]
+----
+/akka:mode a-la-carte
+----
 
 == Prerequisites
 
-* Complete xref:getting-started:set-up-dev-env.adoc#_set_up_your_ai_harness[Set up your AI harness] — install the Akka Specify Plugin and run `/akka:setup`.
+* Complete xref:getting-started:set-up-dev-env.adoc#_set_up_your_ai_harness[Set up your AI harness] -- install the Akka Specify Plugin and run `/akka:setup`.
 * An https://platform.openai.com/api-keys[OpenAI API key, window="new"]. The application code calls OpenAI, independently of your AI coding assistant. Set `OPENAI_API_KEY` in your environment before starting your assistant; on Mac/Linux use `export` so child processes inherit it.
 
-== Specify the feature
+[#enforced]
+== Build in Enforced mode
+
+In Enforced mode you drive the whole build through one re-entrant command, `/akka:specify`, instead of running `clarify`, `plan`, `tasks`, and `implement` individually -- `/akka:specify` sequences those phases for you.
+
+=== Specify the feature
+
+.Feature specification
+[cols="1"]
+:table-caption: Prompt
+|===
+|**/akka:specify** greeter agent - _greet each user in a new language every turn, remembering which languages were used per session_
+|===
+
+The engine infers a *definition of done* from your intent and Akka's own surfaces, and shows it grouped by tier -- Product, Project, and Process. Some conditions are asserted by the platform, some are the machine's to build, some defer downstream, and a few need a decision from you. Prohibitions -- the conditions that must never become true -- print in a separate `NEVER` section:
+
+[source]
+----
+DEFINITION OF DONE — 17 conditions (17 active)    mode: enforced · policy: none (library defaults)
+🔒 locked  ● on ○ off   ✓green ✗red ○open ⟳deferred ~waived   [akka]=intrinsic
+──────────────────────────────────────────────────────────────────────────────
+PRODUCT
+  operability             ●  AKKA-OBS-TRACES            ✓(akka) [akka]  — traces, logs, metrics
+  reliability             ●  AKKA-RES-RECOVERY          ✓(akka) [akka]  — recovers state after failure
+  reliability             ●  AKKA-SCALE-SHARDING        ✓(akka) [akka]  — shards across the cluster
+  operability             ●  OPS-COMPILES               ○               — machine will build
+  functional              ●  FUNC-TESTS-PASS            ○               — machine will build
+  data-integrity          ●  DATA-ENTITY-INVARIANTS     ⟳               — deferred: needs a running service
+  security-compliance     ●  SEC-AUTHZ-ENFORCED         ⟳               — deferred: needs a running service
+PROJECT
+  pipeline-scanning       ●  PROJ-SCAN-SAST-CLEAN       ○               — sign-off needed
+  code-test-health        ●  PROJ-TEST-COVERAGE         ○               — decision needed: coverage threshold
+  environment-dependencies ● ENV-DEPS-RESOLVE           ○               — machine will build
+PROCESS
+  process-integrity       ●  PROC-SOURCE-GROUNDING      ○               — APIs cited, none invented
+  process-integrity       🔒● PROC-AUDITOR-COVERAGE      ○               — every surface needs a check
+  process-integrity       🔒● PROC-ADEQUACY-REVIEWED     ○               — checks need an adequacy review
+  build-efficiency        ●  BUILD-WITHIN-BUDGET        ○               — sign-off needed
+
+NEVER
+PROJECT
+  pipeline-scanning       ●  SEC-SECRETS-NOT-COMMITTED  ✓               — no secret committed
+  repository-hygiene      ●  NEVER-COMMIT-BUILD-OUTPUT  ✓               — no build output tracked
+  environment-dependencies ● NEVER-UNPINNED-DEP         ✓               — lockfile present
+──────────────────────────────────────────────────────────────────────────────
+rollup — product: 5✓ 2○ 0✗   project: 3✓ 3○ 0✗   process: 0✓ 4○ 0✗
+----
+
+The status of each condition is one of `GREEN`, `RED`, `OPEN`, `DEFERRED`, `WAIVED`, `ASSERTED` (Akka-intrinsic, trusted green), or `OFF`. The two locked (🔒) Process-integrity conditions -- `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED` -- are always on and cannot be struck; they make the verification apparatus check itself. See xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done types] for what each tier covers.
+
+=== Answer the open decisions
+
+Enforced mode reports `NEEDS_INPUT` while any condition is `OPEN`. The engine ends every turn with a definitive verdict and the exact next command, and calls out the conditions that need a decision or a sign-off from you:
+
+[source]
+----
+NEEDS_INPUT — a decision to close before I can build:
+  • Code & Test Health — coverage threshold?     I suggest 80%
+NEXT → /akka:specify <your answer>
+----
+
+Answer in your own words -- accept the suggestion or set your own:
+
+.Decisions
+[cols="1"]
+:table-caption: Prompt
+|===
+|**/akka:specify** keep the suggested 80% coverage threshold
+|===
+
+The engine records your decisions, locks the definition of done, and starts building.
+
+=== Let the build run
+
+The machine derives the exit conditions, wires xref:sdk:enforced-mode.adoc#auditors[auditors], plans, implements, and loops until every locally runnable condition is green. It reports `WORKING` and interrupts only if it cannot reach a condition, hits an unresolved ambiguity, or finds a conflict with the organization's policy.
+
+[source]
+----
+WORKING — 17 active conditions
+  plan → tasks → implement → verify
+  ✓ OPS-COMPILES   ✓ FUNC-TESTS-PASS 6/6   ✓ ENV-DEPS-RESOLVE
+NEXT → wait, or /akka:status
+----
+
+Check progress at any time without interrupting the build with `/akka:status`.
+
+=== Add a check with feedback
+
+`/akka:specify` is re-entrant: send it plain-language feedback at any time and it materializes the change as a new exit condition with a covering auditor. Ask for a compile-clean guarantee on every build:
+
+.Feedback
+[cols="1"]
+:table-caption: Prompt
+|===
+|**/akka:specify** every build must compile with no errors before it ships
+|===
+
+The engine adds one exit condition and wires an _introspective_ auditor -- an inline command that inspects the working tree directly, delegating to the project's own toolchain. Here that is `mvn -q compile`, whose non-zero exit is the red verdict:
+
+[source]
+----
++ Code & Test Health — build compiles clean ........ auditor: mvn -q compile
+----
+
+Adding an auditor recomputes the two locked process-integrity gates. Check them with `/akka:status`:
+
+[source]
+----
+WORKING — 18 active conditions
+  ✓ PROC-AUDITOR-COVERAGE   every build surface has a covering auditor
+  ○ PROC-ADEQUACY-REVIEWED  adversarial review re-running for the new check
+NEXT → wait, or /akka:status
+----
+
+`PROC-ADEQUACY-REVIEWED` re-runs because the set of checks changed; once the review clears, the gate turns green.
+
+=== Ship
+
+When the completion policy is met, the engine reports `READY_TO_SHIP`:
+
+[source]
+----
+READY_TO_SHIP — completion policy met
+  18 conditions · 13 verified · 3 asserted by Akka · 2 deferred → staging
+  ✓ PROC-AUDITOR-COVERAGE   ✓ PROC-ADEQUACY-REVIEWED
+NEXT → /akka:ship
+----
+
+Run `/akka:ship`. It runs the in-scope auditors one last time, fires the terminal action your organization defined, and writes a xref:sdk:enforced-mode.adoc#shipping[conformance receipt] recording what was verified and what deferred downstream.
+
+[#a-la-carte]
+== Build À la carte
+
+In À la carte mode you run each command yourself. Switch to it first (new installs default to Enforced):
+
+[source]
+----
+/akka:mode a-la-carte
+----
+
+=== Specify the feature
 
 Run `/akka:specify` with the feature description:
 
@@ -29,7 +183,7 @@ Approve the MCP tool calls when prompted. The assistant creates a new git branch
 
 If the summary does not match your intent, re-run `/akka:specify` with a revised prompt. For a single-feature application like this, skip `/akka:clarify`.
 
-== Create a plan
+=== Create a plan
 
 Run `/akka:plan` with the technical implementation prompt. The plan defines _how_ to implement the specification — architecture, components, and constraints:
 
@@ -85,7 +239,7 @@ The architecture summary describes:
 
 All four constitution principles pass: Akka SDK First, Design Principles, Test Coverage, and Simplicity. No code has been written yet.
 
-== Generate tasks
+=== Generate tasks
 
 Run `/akka:tasks` to convert the plan into an ordered task list. The assistant marks which tasks can run in parallel:
 
@@ -104,7 +258,7 @@ Run `/akka:tasks` to convert the plan into an ordered task list. The assistant m
 
 T004 and T005 can run in parallel after T003; T007 and T008 can run in parallel. The MVP (User Stories 1 and 2) is functional after the first five tasks.
 
-== Implement the agent
+=== Implement the agent
 
 Run `/akka:implement` and approve the operations it requests. Expect the assistant to hit compilation or test failures and correct them on its own; step in only if it stops converging after repeated attempts. To change the result, re-run `/akka:implement` with a different model or effort level.
 
@@ -127,7 +281,7 @@ All four tests pass (1 agent unit, 3 endpoint integration) and `mvn verify` succ
 
 Exercise the application before reviewing the code. If it does not meet the requirements, re-run `/akka:plan` or `/akka:specify` and regenerate. Do not merge the feature branch to `main` until you have exercised the result.
 
-== Exercise the agent API
+=== Exercise the agent API
 
 Run `/akka:build`. This compiles the project, runs the tests, starts the service, and issues a sample request to the endpoint. The AI picks a default port for the service, usually port `9000`.
 

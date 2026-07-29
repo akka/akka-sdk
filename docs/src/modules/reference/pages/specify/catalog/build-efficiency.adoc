@@ -1,0 +1,106 @@
+= Build Efficiency exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Build Efficiency] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
+
+== Token & cost budgets
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `BUILD-TOKEN-BUDGET-PER-FEATURE` | Total tokens consumed to complete the feature stays within the declared per-feature ceiling.
+| `BUILD-COST-CEILING-USD` | Cumulative model spend for the build does not exceed the configured dollar cap.
+| `BUILD-INPUT-TOKEN-CAP` | Prompt (input) tokens across the build stay under the input-token allowance.
+| `BUILD-OUTPUT-TOKEN-CAP` | Generated (output) tokens across the build stay under the output-token allowance.
+| `BUILD-COST-PER-TASK-BOUNDED` | No single task exceeds its allotted share of the feature cost budget.
+| `BUILD-BUDGET-BURN-RATE` | Spend accrues no faster than the planned burn rate for the elapsed build progress.
+| `BUILD-COST-REGRESSION-GUARD` | Feature build cost does not regress beyond a threshold versus the prior baseline for comparable work.
+| `BUILD-OVERAGE-HALTS-BUILD` | The build stops and reports rather than silently continuing once a hard budget limit is hit.
+|===
+
+== Model routing & effort levels
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `BUILD-CHEAP-MODEL-FOR-MECHANICAL` | Mechanical steps (formatting, boilerplate, renames) are routed to the designated low-cost model.
+| `BUILD-STRONG-MODEL-FOR-HARD` | Reasoning-heavy steps are routed to the designated high-capability model.
+| `BUILD-EFFORT-LEVEL-MATCHED` | Each step's requested effort/reasoning level matches the difficulty class assigned to it.
+| `BUILD-NO-OVERPOWERED-ROUTING` | Trivial steps are not sent to premium models when a cheaper model meets the quality bar.
+| `BUILD-ROUTING-RULES-DECLARED` | A model-routing policy mapping step classes to models exists and is applied.
+| `BUILD-FALLBACK-MODEL-BOUNDED` | Escalation to a stronger model on failure occurs only after cheaper attempts and within a capped count.
+| `BUILD-MODEL-DOWNSHIFT-WHEN-SAFE` | Steps proven mechanical mid-build are downshifted to the cheaper model on subsequent runs.
+| `BUILD-ROUTING-DECISIONS-LOGGED` | Every step records which model handled it and the routing rationale.
+|===
+
+== Iteration & convergence control
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `BUILD-RETRY-COUNT-BOUNDED` | The number of retries for any failing step stays under the configured maximum.
+| `BUILD-CONVERGE-WITHIN-N` | The build reaches a passing state within the declared maximum number of attempts.
+| `BUILD-NO-INFINITE-LOOP` | No step re-attempts indefinitely; a hard attempt cap terminates non-converging loops.
+| `BUILD-DIMINISHING-RETURNS-STOP` | Iteration halts when successive attempts stop reducing the failing-condition count.
+| `BUILD-OSCILLATION-DETECTED` | The build detects and breaks cycles where edits alternate between two failing states.
+| `BUILD-PROGRESS-PER-ATTEMPT` | Each retry demonstrably changes the artifact or the outcome rather than repeating identically.
+| `BUILD-ATTEMPT-BUDGET-PER-PHASE` | Per-phase attempt counts respect their individual limits, not just the global cap.
+| `BUILD-STALL-ESCALATES` | A stalled step escalates to a stronger model or human rather than looping at the same tier.
+|===
+
+== Caching & reuse
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `BUILD-PROMPT-CACHE-UTILIZED` | Stable prompt prefixes are served from the provider prompt cache above the target hit rate.
+| `BUILD-CACHE-KEY-STABLE` | Cacheable prefixes are held byte-stable so cache entries are not needlessly invalidated.
+| `BUILD-INCREMENTAL-REUSE` | Unchanged modules reuse prior build outputs instead of being regenerated.
+| `BUILD-DEPENDENCY-CACHE-HIT` | Resolved dependencies and toolchain artifacts are served from cache across runs.
+| `BUILD-ARTIFACT-CACHE-REUSED` | Previously produced compiled or generated artifacts are reused when their inputs are unchanged.
+| `BUILD-NO-REDUNDANT-REGEN` | The same artifact is not regenerated twice within a build when its inputs did not change.
+| `BUILD-CACHE-INVALIDATION-SCOPED` | Cache invalidation is limited to entries whose inputs actually changed.
+| `BUILD-MEMOIZED-SUBRESULTS` | Repeated identical sub-queries within the build reuse a memoized result.
+|===
+
+== Context-window efficiency
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `BUILD-NO-WHOLE-FILE-DUMP` | Prompts include only the relevant spans of a file rather than dumping entire files.
+| `BUILD-CONTEXT-WINDOW-UTILIZATION` | Context supplied per step stays within the target fraction of the model's window.
+| `BUILD-RETRIEVAL-SCOPED` | Only files and symbols relevant to the current step are retrieved into context.
+| `BUILD-NO-DUPLICATE-CONTEXT` | The same content is not included multiple times within a single prompt.
+| `BUILD-SUMMARY-OVER-RAW` | Large histories are compacted to summaries rather than carried verbatim across steps.
+| `BUILD-CONTEXT-GROWTH-BOUNDED` | Accumulated context does not grow unbounded across a multi-step task.
+| `BUILD-STALE-CONTEXT-EVICTED` | Context no longer relevant to remaining steps is evicted before further generation.
+|===
+
+== Parallelism & time budgets
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `BUILD-PARALLEL-WHERE-SAFE` | Independent tasks with no shared dependencies are executed concurrently.
+| `BUILD-NO-UNSAFE-PARALLEL` | Tasks with data or ordering dependencies are not run in parallel.
+| `BUILD-TIME-BUDGET-PER-PHASE` | Each build phase completes within its allotted wall-clock time budget.
+| `BUILD-TOTAL-WALLCLOCK-CAP` | End-to-end build duration stays under the overall time ceiling.
+| `BUILD-CONCURRENCY-LIMIT-RESPECTED` | The number of simultaneous model or tool calls stays within the configured limit.
+| `BUILD-PHASE-TIMEOUT-HALTS` | A phase exceeding its time budget halts and reports rather than running unbounded.
+| `BUILD-CRITICAL-PATH-BOUNDED` | The dependency critical path length stays within its planned maximum.
+|===
+
+== Wasted-work detection & minimal re-verification
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `BUILD-ONLY-AFFECTED-RECHECKED` | Only exit conditions touched by the latest change are re-evaluated, not the full suite.
+| `BUILD-NO-REVERIFY-UNCHANGED` | Artifacts unchanged since their last passing check are not re-verified.
+| `BUILD-DISCARDED-WORK-FLAGGED` | Generated output later thrown away without use is detected and reported as waste.
+| `BUILD-DEAD-BRANCH-PRUNED` | Abandoned exploration branches are pruned rather than continued to completion.
+| `BUILD-NO-SPECULATIVE-OVERBUILD` | Work not required by any pending exit condition is not generated.
+| `BUILD-REDUNDANT-STEP-ELIDED` | Steps whose outputs are already satisfied by prior results are skipped.
+| `BUILD-INCREMENTAL-CHECK-SCOPE` | Re-verification scope is computed from the change's dependency closure, not the whole project.
+| `BUILD-WASTE-RATIO-BOUNDED` | The ratio of discarded to committed work stays below the configured waste threshold.
+|===

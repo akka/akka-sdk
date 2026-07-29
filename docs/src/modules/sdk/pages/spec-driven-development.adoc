@@ -2,7 +2,7 @@
 :page-aliases: concepts:development-process.adoc
 :page-summary: Treat specifications as executable, version-controlled documents that are the single source of truth. AI generates all code; divergence from the spec fails the build.
 :page-when-to-use: Use when building any non-trivial Akka application where you want repeatable, auditable, AI-generated code tied to a formal specification.
-:page-related: xref:ai-coding-assistant.adoc[], xref:operations:cli/installation.adoc[]
+:page-related: xref:sdk:enforced-mode.adoc[], xref:sdk:a-la-carte-mode.adoc[], xref:sdk:ai-coding-assistant.adoc[]
 :page-prerequisites: Akka CLI installed, a supported AI coding assistant (Claude Code recommended)
 :page-persona: Developer, Tech Lead, Architect
 
@@ -10,23 +10,28 @@ include::ROOT:partial$include.adoc[]
 
 Spec-Driven Development (SDD) turns your natural-language specifications into the single source of truth for an entire application. You write the _what_ and _why_; AI generates all the code.
 
-*What it does.* SDD provides a structured, iterative workflow -- specify, clarify, plan, task, implement, build, deploy, inspect -- backed by a constitution of unbreakable project rules. Every artifact is version-controlled, and automated CI can detect divergence between specification and code.
+SDD provides a structured, iterative workflow -- specify, clarify, plan, task, implement, build, inspect, deploy -- backed by a constitution of unbreakable project rules. Every artifact is version-controlled, and automated CI can detect divergence between specification and code.
 
-*When to use it.*
+image::sdd-workflow.png[Spec-driven development workflow: specify, clarify, plan, tasks, implement, build, inspect, deploy — with an iteration loop that refines the spec and regenerates.]
 
-* You are building an Akka service (or set of services) that will evolve over time.
-* You want repeatable, auditable AI code generation tied to formal specifications.
-* Your application is complex enough that a single prompt or single-file spec is insufficient.
+[#choosing-your-mode]
+== Choosing your mode
 
-*When NOT to use it.*
+Akka Specify runs in one of two modes. The mode decides whether your definition of done is a hard gate or an advisory checklist.
 
-* A quick demo or throwaway prototype -- direct prompting or a single-file spec is faster.
-* Your project has no AI coding assistant available.
-* The entire application can be fully described in a single specification file with no ambiguity.
+* *xref:sdk:enforced-mode.adoc[Enforced mode]* (the default) makes you define "done" -- as machine-checkable exit conditions -- before any code is written, and will not let a feature ship until those conditions are met. You get a cleaner, auditable, repeatable result. In Enforced mode an *enterprise can define exit conditions and definitions of done that Akka enforces* across every project. The cost is more up-front definition and a longer, more thorough build.
+* *xref:sdk:a-la-carte-mode.adoc[À la carte mode]* lets you run the specification commands individually -- specify, clarify, plan, tasks, implement, build, and the rest -- with nothing blocking you. It is faster and lighter; you own the rigor.
 
-The workflow is a sequence of commands you drive from your AI coding assistant. Each step produces a version-controlled artifact that feeds the next.
+[cols="1,2,2",options="header"]
+|===
+| | Enforced (default) | À la carte
 
-image::sdd-workflow.png[Spec-driven development workflow: init, specify, clarify, plan, tasks, implement, build, inspect, deploy — with an iteration loop that refines the spec and regenerates.]
+| Definition of done | Required, gated | Optional, advisory
+| Result | Cleaner, auditable, repeatable | Flexible, developer-driven
+| Cost & time | Higher -- more up front, more thorough | Lower -- run only what you need
+| Enterprise governance | Org-defined conditions enforced by Akka | Not enforced
+| Best for | Production systems, teams, regulated work | Prototypes, exploration, experienced solo developers
+|===
 
 == Getting started with SDD
 
@@ -183,14 +188,22 @@ Using SDD with careful feature scoping and concise technical implementation plan
 |xref:reference:specify/inspect.adoc[`/akka:inspect`]           | Inspect a running service's runtime state against the spec
 |xref:reference:specify/deploy.adoc[`/akka:deploy`]             | Deploy to Akka Automated Operations
 |xref:reference:specify/issues.adoc[`/akka:issues`]             | Convert tasks into GitHub issues
+|xref:reference:specify/converge.adoc[`/akka:converge`]         | Assess the codebase against spec, plan, and tasks; append remaining work to `tasks.md`
+|xref:reference:specify/reliability.adoc[`/akka:reliability`]   | Add or remove resilience-testing instrumentation for the reliability dashboard
+|xref:reference:specify/docs.adoc[`/akka:docs`]                 | Generate rendered project documentation into `docs/`
 |====
 
 These commands are also listed in the xref:reference:specify/index.adoc[].
 
 == See also
 
+* xref:sdk:enforced-mode.adoc[] and xref:sdk:a-la-carte-mode.adoc[] -- the two modes in detail.
+* xref:reference:specify/index.adoc[] -- every command, with options and examples.
+* xref:reference:specify/auditors.adoc[] and xref:reference:specify/auditor-kinds.adoc[] -- the auditor concept and its three kinds (introspective, provisioned, delegated), together with the xref:reference:specify/coverage-gate.adoc[coverage gate], the xref:reference:specify/adequacy-review.adoc[adequacy review], and xref:reference:specify/requirement-analysis.adoc[requirement analysis]. Feedback that changes a check re-runs the adequacy review, so what is verified stays aligned with your current intent.
+* xref:reference:specify/conform.adoc[] -- run the auditors and print the definition-of-done manifest with a verdict (`akka specify conform`, or `akka_ec_conform` from an MCP client).
+* xref:reference:specify/harnesses.adoc[] -- provisioned harness assets recorded in `.akka/harnesses.lock`.
 * {url-blog-introducing-specify}[Introducing Akka Specify, window="new"] -- the blog post that launched SDD on Akka.
 * https://github.github.com/spec-kit/index.html[spec-kit, window="new"] -- the specification pattern Akka's SDD process follows.
 * https://modelcontextprotocol.io/docs/getting-started/intro[Model Context Protocol (MCP), window="new"] -- the protocol behind the `/akka:*` slash-commands.
 * xref:operations:cli/installation.adoc[]
-* xref:ai-coding-assistant.adoc[]
+* xref:sdk:ai-coding-assistant.adoc[]

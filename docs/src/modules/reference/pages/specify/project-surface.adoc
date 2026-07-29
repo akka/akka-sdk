@@ -1,0 +1,43 @@
+= Project surface coverage
+
+A *surface* is a material part of the project that must be accounted for before a build ships. The xref:reference:specify/coverage-gate.adoc[coverage gate] (`PROC-AUDITOR-COVERAGE`) is a single gate over every surface: it reds when any surface has no covering auditor, harness, or documentation.
+
+== Three surface classes
+
+A surface has one of three classes, drawn from three sources:
+
+[cols="1,3",options="header"]
+|===
+| Surface class | Where it comes from
+
+| code | build and deploy markers detected in the tree
+| harness | the `required_surfaces` declared in the governance policy
+| doc | the `documentable` ids declared in the governance policy
+|===
+
+What counts as covered for each class is stated on the xref:reference:specify/coverage-gate.adoc[coverage gate] page.
+
+== How code surfaces are detected
+
+The engine walks the tree and reads build and deploy markers, recording one code surface per module:
+
+* `pom.xml` -> maven
+* `build.gradle` / `build.gradle.kts` -> gradle
+* `package.json` -> node
+* `go.mod` -> go
+* `Cargo.toml` -> rust
+* `pyproject.toml` / `requirements.txt` -> python
+* `Dockerfile` -> docker
+
+Vendored and generated directories are skipped: `node_modules`, `vendor`, `target`, `dist`, `build`, `.git`, `.akka`, `.gradle`. Harness and doc surfaces are not detected from the tree; they come from the policy's `required_surfaces` and `documentable` lists.
+
+== Waiving a surface
+
+A surface of any class that genuinely needs no coverage can be marked intentionally unaudited, with a recorded reason, and the gate then skips it. A waiver is recorded with the `akka_ec_waive_surface` tool. The mechanism does not vary by class: a demos folder with no code auditor, a harness the project does not need, and a documentable id that does not apply are waived the same way.
+
+== Related
+
+* xref:reference:specify/coverage-gate.adoc[The coverage gate]
+* xref:reference:specify/auditor-kinds.adoc[]
+* xref:reference:specify/harnesses.adoc[/akka:harnesses]
+* xref:reference:specify/content-governance.adoc[]

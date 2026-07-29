@@ -1,0 +1,166 @@
+= Repository Hygiene exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Repository Hygiene] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
+
+== Working tree and merge state
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REPO-CLEAN-WORKING-TREE` | The working tree has no uncommitted modifications, staged changes, or deletions.
+| `REPO-NO-UNTRACKED-FILES` | No untracked files remain outside those matched by `.gitignore`.
+| `REPO-NO-CONFLICT-MARKERS` | No unresolved Git merge-conflict markers appear in any tracked file.
+| `REPO-NO-STASH-ENTRIES` | The repository has no leftover stash entries associated with the change.
+| `REPO-MERGE-STATE-RESOLVED` | No in-progress merge, rebase, cherry-pick, or bisect state is present in `.git`.
+| `REPO-NO-SUBMODULE-DRIFT` | Every submodule points at a committed, pushed commit matching the recorded gitlink.
+| `REPO-NO-DETACHED-HEAD` | HEAD points at a named branch rather than a detached commit.
+| `REPO-INDEX-MATCHES-HEAD` | The staging index is identical to HEAD with no partially staged hunks.
+| `REPO-NO-EMPTY-COMMITS` | The branch contains no zero-diff empty commits.
+|===
+
+== Rebase and branch integration
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REPO-REBASED-ON-BASE` | The branch is rebased onto the current tip of its base branch with no divergence.
+| `REPO-NO-MERGE-COMMITS` | The branch history contains no merge commits from the base branch.
+| `REPO-LINEAR-HISTORY` | Commit history is strictly linear with a single parent per commit.
+| `REPO-NO-LINGERING-COMMITS` | No commits remain that were already merged to the base under a different hash.
+| `REPO-FAST-FORWARDABLE` | The branch can be fast-forwarded onto the base without conflicts.
+| `REPO-NO-REVERTED-CHURN` | The branch contains no commit that adds code later removed within the same branch.
+| `REPO-UP-TO-DATE-WITH-REMOTE` | The local branch is neither ahead of nor behind its tracked remote branch unexpectedly.
+| `REPO-NO-BACKMERGE` | The base branch was not merged back into the feature branch to resolve drift.
+|===
+
+== Commit quality and conventions
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REPO-CONVENTIONAL-COMMITS` | Every commit subject conforms to the Conventional Commits type/scope grammar.
+| `REPO-ATOMIC-COMMITS` | Each commit represents one coherent, independently revertible logical change.
+| `REPO-SUBJECT-LENGTH` | Commit subject lines stay within the configured maximum character length.
+| `REPO-IMPERATIVE-MOOD` | Commit subjects use imperative mood rather than past or gerund forms.
+| `REPO-BODY-WRAP` | Commit message bodies are wrapped at the configured column width.
+| `REPO-ISSUE-REFERENCE` | Each commit or the branch references a tracking issue or ticket identifier.
+| `REPO-NO-WIP-COMMITS` | No commit subjects contain `WIP`, `fixup`, `squash`, or `tmp` placeholders.
+| `REPO-NO-AUTOGEN-MESSAGES` | No commits retain default auto-generated messages like `Update file` or `amend`.
+| `REPO-SIGNED-OFF-BY` | Every commit carries a `Signed-off-by` trailer where DCO is required.
+| `REPO-COAUTHOR-TRAILERS` | Co-authorship is recorded via `Co-authored-by` trailers rather than prose.
+|===
+
+== Commit signing and provenance
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REPO-SIGNED-COMMITS` | Every commit carries a valid GPG, SSH, or S/MIME signature.
+| `REPO-VERIFIED-SIGNATURES` | Each commit signature verifies against a trusted, non-revoked key.
+| `REPO-SIGNED-TAGS` | Any release tags on the branch are annotated and cryptographically signed.
+| `REPO-AUTHOR-EMAIL-POLICY` | Commit author emails match the organization's allowed domain policy.
+| `REPO-NO-UNKNOWN-AUTHORS` | No commit is attributed to an author outside the recognized contributor set.
+| `REPO-CONSISTENT-IDENTITY` | Author and committer identities are consistent and non-spoofed across the branch.
+| `REPO-NO-IMPERSONATION` | No commit reuses another contributor's identity without a signing key match.
+| `REPO-KEY-EXPIRY-VALID` | Signing keys used were valid and unexpired at each commit's timestamp.
+|===
+
+== Branch policy and naming
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REPO-BRANCH-NAMING` | The branch name matches the configured prefix and slug naming convention.
+| `REPO-SHORT-LIVED-BRANCH` | The branch age is within the trunk-based short-lived branch threshold.
+| `REPO-BRANCH-PROTECTION` | The target base branch has required protection rules enabled.
+| `REPO-NO-DIRECT-PUSH` | No commits were pushed directly to a protected branch bypassing review.
+| `REPO-REQUIRED-CHECKS` | All required status checks are configured and passing on the branch.
+| `REPO-NO-STALE-BRANCHES` | No merged or abandoned branches for this work linger on the remote.
+| `REPO-SINGLE-TOPIC-BRANCH` | The branch scopes to one feature or fix rather than bundling unrelated work.
+| `REPO-BASE-IS-TRUNK` | The branch targets the canonical trunk rather than an intermediate long-lived branch.
+| `REPO-NO-FORCE-PUSH-SHARED` | No force-push rewrote history on a shared or protected branch.
+|===
+
+== Committed artifacts and file hygiene
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REPO-NO-LARGE-BINARIES` | No committed file exceeds the configured maximum binary size threshold.
+| `REPO-NO-GENERATED-FILES` | Build outputs, compiled artifacts, and generated code are not tracked.
+| `REPO-GITIGNORE-CORRECT` | `.gitignore` covers all build, dependency, and editor artifact patterns.
+| `REPO-NO-IGNORED-TRACKED` | No file already ignored by `.gitignore` is simultaneously tracked.
+| `REPO-NO-OS-CRUFT` | No `.DS_Store`, `Thumbs.db`, or similar OS metadata files are committed.
+| `REPO-NO-IDE-FILES` | No editor or IDE workspace files are tracked outside a sanctioned shared config.
+| `REPO-LFS-FOR-ASSETS` | Large binary assets are tracked via Git LFS rather than inline blobs.
+| `REPO-NO-VENDORED-DEPS` | No dependency directories such as `node_modules` or `vendor` are committed.
+| `REPO-CONSISTENT-LINE-ENDINGS` | Tracked text files use consistent line endings per `.gitattributes`.
+| `REPO-NO-BACKUP-FILES` | No `.bak`, `.orig`, `~`, or swap files remain in tracked paths.
+|===
+
+== Secret and sensitive data hygiene
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REPO-NO-SECRETS-TREE` | No credentials, tokens, or private keys appear in the current tree.
+| `REPO-NO-SECRETS-HISTORY` | No secret is recoverable from any commit in the branch history.
+| `REPO-NO-ENV-FILES` | No populated `.env` or credential files are tracked in the repository.
+| `REPO-NO-PRIVATE-KEYS` | No PEM, PKCS, or SSH private key material is committed.
+| `REPO-NO-HARDCODED-CREDS` | No hardcoded passwords or connection strings appear in source files.
+| `REPO-NO-CLOUD-KEYS` | No cloud provider access keys or service-account JSON files are present.
+| `REPO-SECRET-SCAN-CLEAN` | The configured secret-scanning tool reports zero findings on the diff.
+| `REPO-NO-INTERNAL-URLS` | No internal hostnames or private endpoints are exposed in tracked config.
+|===
+
+== Dead code and project structure
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REPO-NO-ORPHANED-CODE` | No unreferenced modules, functions, or files remain after the change.
+| `REPO-NO-DEAD-CODE` | Static analysis reports no unreachable or unused code paths.
+| `REPO-NO-COMMENTED-CODE` | No large blocks of commented-out source code are shipped.
+| `REPO-NO-TODO-FIXME` | No `TODO`, `FIXME`, or `XXX` markers remain on shipped code paths.
+| `REPO-CONSISTENT-LAYOUT` | New files follow the project's established directory and package layout.
+| `REPO-NO-DUPLICATE-FILES` | No byte-identical or near-duplicate files are introduced.
+| `REPO-NAMING-CONVENTIONS` | File and directory names follow the project's casing and naming rules.
+| `REPO-NO-EMPTY-DIRS` | No empty or placeholder-only directories are added.
+| `REPO-NO-ORPHANED-TESTS` | No test files reference deleted or renamed source modules.
+| `REPO-LICENSE-HEADERS` | New source files carry the required license or copyright header.
+| `REPO-EDITORCONFIG-COMPLIANT` | Tracked files conform to the repository's `.editorconfig` rules.
+| `REPO-FORMATTING-APPLIED` | All changed files pass the project's configured formatter with no diff.
+|===
+
+== Dependency and manifest hygiene
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REPO-LOCKFILE-PRESENT` | A dependency lockfile exists and is committed alongside the manifest.
+| `REPO-LOCKFILE-IN-SYNC` | The lockfile is consistent with the declared dependency manifest.
+| `REPO-REPRODUCIBLE-INSTALL` | A clean install from the lockfile reproduces the exact dependency tree.
+| `REPO-NO-UNUSED-DEPS` | No declared dependency is unused by any source file.
+| `REPO-NO-MISSING-DEPS` | Every imported package is declared in the dependency manifest.
+| `REPO-NO-PHANTOM-DEPS` | No code relies on transitive dependencies not directly declared.
+| `REPO-PINNED-VERSIONS` | Dependency versions are pinned per the project's version-range policy.
+| `REPO-NO-DUPLICATE-DEPS` | No dependency appears at conflicting duplicate versions in the tree.
+| `REPO-MANIFEST-SORTED` | Dependency manifest entries follow the required sorted, canonical order.
+| `REPO-NO-LOCAL-PATH-DEPS` | No manifest entries point at local filesystem paths or unpublished sources.
+|===
+
+== Pull request and review governance
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REPO-PR-SIZE-LIMIT` | The change stays within the configured maximum lines-changed per pull request.
+| `REPO-PR-FILE-COUNT` | The number of files touched stays within the configured review threshold.
+| `REPO-CODEOWNERS-PRESENT` | A `CODEOWNERS` file assigns reviewers for every path touched.
+| `REPO-CODEOWNERS-APPROVAL` | Required code owners have approved the changes to their paths.
+| `REPO-PR-DESCRIPTION` | The pull request includes a non-empty description linking scope and rationale.
+| `REPO-PR-LINKED-ISSUE` | The pull request references the tracking issue it resolves.
+| `REPO-REVIEW-APPROVED` | The change carries the minimum required number of approving reviews.
+| `REPO-NO-UNRESOLVED-THREADS` | No open, unresolved review comment threads remain on the change.
+| `REPO-SINGLE-CONCERN-PR` | The pull request addresses a single concern rather than bundling unrelated changes.
+|===

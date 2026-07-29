@@ -1,0 +1,40 @@
+= Auditor kinds
+
+Every xref:reference:specify/auditors.adoc[auditor] is one of three kinds. The kind is set by where the check can run, and each kind maps to the statuses the engine already has.
+
+== The three kinds
+
+[cols="1,2,2",options="header"]
+|===
+| Kind | Where the check runs | Resolves as
+
+| Introspective | The project's own tree: a compiler, a test runner, a linter, or a prose linter over `docs/`. | GREEN or RED, verified locally
+| Provisioned | A generated harness asset wired to an external system: a CI workflow, a scanner configuration, a supply-chain step, or a content package. | GREEN when the asset is present, current, and enforcing; RED when it is missing or the lock is stale
+| Delegated | An external system only, or a judgment the engine cannot make. | DEFERRED until a recorded attestation, then GREEN
+|===
+
+== Introspective
+
+An introspective auditor inspects the project's own tree and reads a tool's result. Two forms are introspective:
+
+* *Built-in.* Akka ships a set of introspective checks a condition binds by id in its `check` field: `maven-compile`, `maven-test`, `maven-deps`, `git-clean`, `git-secrets`, `no-build-output`, `deps-pinned`, `content-vale`, `file-adr`, `ci-green`.
+* *Inline authored.* A project — or the assistant, on your behalf — authors a command auditor `{run, applies_to}` under the condition's `auditor` field, for an ecosystem the built-ins do not cover.
+
+`tsc --noEmit` fails on an invented React hook; `mvn compile` fails on an invented Akka method; `vale` fails on a banned phrase. The verdict is local and immediate: GREEN or RED, with nothing deferred.
+
+An inline auditor that is not corporate-authored does not run on sight. It resolves OPEN ("needs your approval to run this check") until you approve its exact command. The approval is recorded as a hash of that command, so a changed command re-prompts. Built-in and corporate-authored checks run without a separate approval.
+
+== Provisioned
+
+A provisioned auditor verifies a generated harness asset. Its condition's check is `harness:<capability>`, and the auditor confirms the asset recorded in `.akka/harnesses.lock` is present and enforcing, and that its policy version is current. It resolves GREEN ("`<capability>` harness active") when the asset is present and current, and RED when the asset is missing or the lock is stale because the policy moved. A provisioned-harness gap is closed the way a coverage gap is: generate the asset and its auditor together, then approve it at the exit-condition level, where it also passes the xref:reference:specify/adequacy-review.adoc[adequacy review]. See xref:reference:specify/harnesses.adoc[/akka:harnesses].
+
+== Delegated
+
+A delegated auditor covers a check that runs only in an external system, or that needs a judgment the engine does not make. Its condition sets `autonomy: attested`. It resolves DEFERRED until a recorded xref:reference:specify/attestations.adoc[attestation] exists, and then it resolves GREEN. It never passes on its own: a delegated check that is never attested stalls at DEFERRED rather than turning into a false green, so the gap stays visible.
+
+== Related
+
+* xref:reference:specify/auditors.adoc[Auditors]
+* xref:reference:specify/attestations.adoc[]
+* xref:reference:specify/harnesses.adoc[/akka:harnesses]
+* xref:reference:specify/project-surface.adoc[]

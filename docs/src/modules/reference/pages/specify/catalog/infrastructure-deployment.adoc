@@ -1,0 +1,41 @@
+= Infrastructure & Deployment exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Infrastructure & Deployment] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
+
+This type covers the runtime and deployment surface — container and host hardening, image provenance, network posture, and the CIS Benchmark controls a platform team expects before a service goes live.
+
+[NOTE]
+====
+This is a defined, tiered Definition-of-Done type, but it ships no default-library conditions yet. When you deploy to xref:reference:specify/deploy.adoc[Akka Automated Operations] (AAO), these controls are asserted by the platform, which runs the hardened, benchmarked runtime. Off AAO, the ids below are candidates for inspiration — adopt one by authoring or provisioning its covering auditor.
+====
+
+== Host and container hardening
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `INFRA-CIS-BENCHMARK-MET` | The runtime satisfies the applicable CIS Benchmark profile for its host and orchestrator.
+| `INFRA-ROOTLESS-RUNTIME` | Containers run as a non-root user with no writable root filesystem.
+| `INFRA-NO-PRIVILEGED-CONTAINER` | No container runs privileged or with host namespaces mounted.
+| `INFRA-RESOURCE-LIMITS-SET` | CPU and memory limits are declared for every workload.
+|===
+
+== Network and transport
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `INFRA-TLS-ENFORCED` | Traffic to and between services is encrypted in transit with an enforced minimum TLS version.
+| `INFRA-NETWORK-POLICY-DEFINED` | A default-deny network policy scopes which workloads may reach the service.
+| `INFRA-SECRETS-EXTERNALIZED` | Runtime secrets resolve from an external store, not from the image or environment defaults.
+|===
+
+== Image and deployment provenance
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `INFRA-IMAGE-SIGNED` | The deployed image is signed, and its signature is verified at admission.
+| `INFRA-IMAGE-SCANNED` | The image passes a vulnerability scan against a current advisory database before deploy.
+| `INFRA-DEPLOY-REPRODUCIBLE` | The deployment is produced from committed, versioned configuration with no manual drift.
+|===

@@ -1,0 +1,34 @@
+= /akka:conform
+
+Run the auditors and report whether the feature is ready to ship.
+
+== Usage
+
+[source]
+----
+/akka:conform
+----
+
+== Description
+
+Runs the in-scope auditors, prints the definition-of-done manifest, and returns a verdict. For every machine-checkable exit condition, `conform` runs the condition's auditor — building, testing, linting, or probing as the check requires — and resolves it to a state. It then prints the same manifest xref:reference:specify/status.adoc[`/akka:status`] shows: every exit condition grouped by xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done type], with its provenance, lock status, and resolution state. Prohibition (NEVER) conditions print in a separate `NEVER` section after the completions — see xref:reference:specify/prohibitions.adoc[Prohibitions].
+
+`conform` is distinct from xref:reference:specify/converge.adoc[`/akka:converge`]: converge diffs the codebase against the spec, plan, and tasks and queues unbuilt work, while conform evaluates the exit conditions and reports readiness. It also differs from xref:reference:specify/status.adoc[`/akka:status`], which prints the same manifest but never runs an auditor. Status leaves machine-checkable conditions open; conform resolves them. Once conform has evaluated, the two agree.
+
+== Verdict
+
+`conform` returns one of three verdicts, in this order of precedence:
+
+* `NEEDS_INPUT` — at least one condition is open: active, not yet evaluated, or its pass is not binary. It needs a sign-off, a clarification, or an attestation before it can resolve.
+* `WORKING` — no condition is open, but at least one is red. A check failed, or a prohibition is unaudited.
+* `READY_TO_SHIP` — every in-scope condition is satisfied: green, platform-asserted, waived, or deferred downstream.
+
+xref:reference:specify/ship.adoc[`/akka:ship`] reads the same verdict: in enforced mode it releases only when the verdict is `READY_TO_SHIP`. An AI assistant obtains the verdict through the `akka_ec_conform` tool.
+
+== See also
+
+* xref:reference:specify/status.adoc[]
+* xref:reference:specify/converge.adoc[]
+* xref:reference:specify/ship.adoc[]
+* xref:reference:specify/mode.adoc[]
+* xref:reference:specify/index.adoc[]

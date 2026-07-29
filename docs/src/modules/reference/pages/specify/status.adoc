@@ -1,0 +1,20 @@
+= /akka:status
+
+Show a read-only rollup of the definition of done.
+
+== Usage
+
+[source]
+----
+/akka:status
+----
+
+== Description
+
+Prints the current definition-of-done manifest: every exit condition grouped by xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done type], with its provenance, lock status, and resolution state (green, red, open, deferred, waived, or asserted), plus the current phase and any blockers. The two locked process-integrity gates, `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED`, appear among the conditions like any other. The manifest reflects the project's own state — struck, waived, and signed-off conditions appear as such — so it agrees with xref:reference:specify/conform.adoc[`/akka:conform`]; the difference is that status does not run the auditors (it never builds or probes), so machine-checkable conditions stay open until conform evaluates them. It is read-only and changes nothing. Status is most useful during the autonomous build phase, when you want to see progress without interrupting the machine.
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc#choosing-your-mode[Choosing your mode]
+* xref:sdk:enforced-mode.adoc#exit-conditions[Exit conditions and Definition of Done]
+* xref:reference:specify/index.adoc[]
