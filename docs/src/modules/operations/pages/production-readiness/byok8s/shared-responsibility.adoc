@@ -84,6 +84,8 @@ Each activity in the matrix has an owner, the party that is Responsible and Acco
 
 Because Akka operates inside infrastructure you control, coordinate with Akka before infrastructure changes that could affect the Region.
 
+Reaching the reliability and availability your deployment is built for depends on both sides meeting the responsibilities below, worked through with your Akka team; your agreement and the Federation Plane SLA Policy remain the authoritative statement of what is committed. See the xref:operations:production-readiness/index.adoc[production readiness overview].
+
 == Responsibility summary at a glance
 
 [cols="2,1,4", options="header"]

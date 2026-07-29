@@ -15,6 +15,8 @@ This page is a guideline, not the final checklist: the authoritative version for
 
 Walk this page before going live, using the at-a-glance below as the quick entry point and the detailed checklists for the specifics. The items are a baseline drawn from what Akka has found necessary across BYOK8s deployments; each application should add anything specific to its own request flows and failure modes. Modifications or removals are also possible but should be discussed with your Forward Deployed Engineer (FDE), the named Akka engineer assigned to your account, so the original rationale can be shared and the change evaluated jointly.
 
+Reaching the reliability and availability your deployment is built for depends on working these items through with your Akka team; your agreement and the Federation Plane SLA Policy remain the authoritative statement of what is committed. See the xref:operations:production-readiness/index.adoc[production readiness overview].
+
 As the Customer-side complement to the Shared Responsibility Model, each item is yours to verify, and Akka recommends not advancing to production until each is appropriately covered. Akka strongly encourages engaging your FDE and Akka's customer success and support teams (mailto:support@akka.io[support@akka.io]) throughout this preparation to make go-live as smooth as possible, although the work can also be completed independently.
 ====
 
