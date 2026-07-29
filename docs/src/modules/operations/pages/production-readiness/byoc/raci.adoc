@@ -174,7 +174,7 @@ Filter by layer or owner, or search across activity, description, and cadence. O
 | Permissions | Privileged Access via Teleport | A | A | C |  | Akka uses Teleport for human access to platform infrastructure, with session recording and audit logging. Access requires explicit justification and approval per Akka's Access Control Policy. Teleport audit logs are available to the Customer on request. | 
 | Permissions | Just-in-Time Access for Customer Data | A | A | C |  | Where access to customer-confidential data is required (e.g., for incident handling), Akka requests authorization per the Access Control for Customer-Confidential Data policy. Audit logs of such access are available to the Customer on request. | 
 | Permissions | MFA on Akka Console & CLI | C | C | A |  | The Customer's IDP enforces MFA for users accessing Akka console and CLI. Akka enforces MFA on its own internal access. | 
-| Compliance | GDPR Requirements / Data Management | C | C |  |  | Customer is responsible for how services handle PII and to ensure such handling is compliant GDPR (or other applicable privacy regulations). Akka acts as neither controller nor processor of data handled by the Customer's services. | 
+| Compliance | GDPR Requirements / Data Management | C | C |  |  | Customer is responsible for how services handle PII and to ensure such handling is compliant with GDPR (or other applicable privacy regulations). Akka acts as neither controller nor processor of data handled by the Customer's services. | 
 |===
 
 == Federation Plane
