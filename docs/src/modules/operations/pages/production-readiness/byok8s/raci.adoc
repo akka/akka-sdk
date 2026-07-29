@@ -172,7 +172,7 @@ Filter by layer or owner, or search across activity, description, and cadence. O
 | Permissions | Privileged Access via Teleport | A | A | C |  | Akka uses Teleport for human access to platform infrastructure, with session recording and audit logging. Access requires explicit justification and approval per Akka's Access Control Policy. Teleport audit logs are available to the Customer on request. | 
 | Permissions | Just-in-Time Access for Customer Data | A | A | C |  | Where access to customer-confidential data is required (e.g., for incident handling), Akka requests authorization per the Access Control for Customer-Confidential Data policy. Audit logs of such access are available to the Customer on request. | 
 | Permissions | MFA on Akka Console & CLI | C | C | A |  | The Customer's IDP enforces MFA for users accessing Akka console and CLI. Akka enforces MFA on its own internal access. | 
-| Compliance | GDPR Requirements / Data Management | C | C |  |  | Customer is responsible for how services handle PII and to ensure such handling is compliant with GDPR or other applicable privacy regulations. Akka acts as neither controller nor processor of data handled by the Customer's services. | 
+| Compliance | GDPR Requirements / Data Management | C | C |  |  | Customer is responsible for how services handle PII and to ensure such handling is compliant GDPR (or other applicable privacy regulations). Akka acts as neither controller nor processor of data handled by the Customer's services. | 
 |===
 
 == Federation Plane
@@ -208,7 +208,7 @@ Filter by layer or owner, or search across activity, description, and cadence. O
 | Compliance | Data Residency | A | A |  |  | Customer data is stored within the cloud region(s) configured for the customer's installation. Multi-region installations replicate within customer-selected regions only. Each customer's data is isolated in dedicated database resources; no shared data plane across customers. | 
 | Compliance | Multi-Tenant Data Security | A | A |  |  | Akka is responsible for securing all customer data located within the Federation Plane. | 
 | Compliance | Customer Data Security | C | C |  |  | The Customer is responsible for securing Federation Plane tokens and access to projects. | 
-| Compliance | GDPR Requirements / Data Management | ± | ± |  |  | The Federation Plane does not handle customer data; it processes only minimal PII consisting of customer user and administrator identities, in accordance with Akka's GDPR-compliant privacy policy. | 
+| Compliance | GDPR Requirements / Data Management | ± | ± |  |  | The Federation Plane doesn't handle any customer data; it processes only minimal PII consisting of customer user and administrator identities, which is handled in accordance with Akka's GDPR-compliant privacy policy. | 
 | Compliance | Subprocessor List | A | A |  |  | Current subprocessor list maintained at trust.akka.io. | trust.akka.io kept current
 | Compliance | Penetration Testing | A | A |  |  | Annual third-party penetration testing conducted as part of SOC 2 audit cycle. Executive summary available under NDA via trust.akka.io. | Annual
 | Compliance | Customer Audit Log Delivery | A | A |  |  | Akka maintains audit logs of control-plane actions (e.g., authentication, project and service lifecycle, IAM and token changes). Logs delivered on request. Recurring delivery cadences can also be arranged. | 
