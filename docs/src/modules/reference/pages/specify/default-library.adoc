@@ -29,28 +29,43 @@ During the DEFINE step the engine proactively suggests a strike when it is confi
 
 == Library conditions and their ids
 
-Every library condition has a stable *id*. That id is the registry key: a policy names it in a `ref:` field to adopt and govern the condition (see xref:reference:specify/policies.adoc[Policies]), and the tooling resolves the id back to the condition's type, `invariant`, and `pass` predicate. The library supplies the exit condition; its covering auditor is authored declaratively for each ecosystem the project uses (see xref:reference:specify/auditors.adoc[Auditors]), not shipped as a fixed, closed set. A representative sample:
+Every library condition has a stable *id*. That id is the registry key: a policy names it in a `ref:` field to adopt and govern the condition (see xref:reference:specify/policies.adoc[Policies]), and the tooling resolves the id back to the condition's type, `invariant`, and `pass` predicate. The library supplies the exit condition; its covering auditor is one of the three xref:reference:specify/auditor-kinds.adoc[auditor kinds]. Akka ships a small set of built-in introspective auditors (for example `mvn compile`, `git-secrets`, and `vale`); the rest are authored per ecosystem, provisioned as a harness asset, or delegated to an attestation. The complete shipped library:
 
-[cols="2,2,3",options="header"]
+[cols="2,2,2,3",options="header"]
 |===
-| Id | Type | What it checks
+| Id | Type | Governance level | What it checks
 
-| `FUNC-API-CONTRACT-FIRST` | Functional | API is contract-first with backward compatibility and defined error semantics.
-| `PERF-WEB-VITALS` | Performance | Core Web Vitals and a bundle-size budget (UI-only).
-| `SEC-OWASP-TOP10` | Security & Compliance | No OWASP Top 10 class of vulnerability is present.
-| `SEC-SECRETS-NOT-COMMITTED` | Security & Compliance | No secrets committed to source or history.
-| `SEC-DEP-VULN-AUDIT` | Security & Compliance | Dependency vulnerability (SCA) scan is clean.
-| `OPS-STRUCTURED-LOGGING` | Operability | Structured logging with RED metrics and tracing.
-| `OPS-ROLLBACK-SAFE` | Operability | Rollout is rollback-safe (feature-flagged / staged).
-| `EXP-A11Y-WCAG-2.1-AA` | Experience | WCAG 2.1 AA accessibility (UI-only).
-| `PROJ-TEST-COVERAGE` | Code & Test Health | Line/branch coverage at or above a threshold.
-| `PROJ-CODE-COMPLEXITY` | Code & Test Health | Complexity, file-size, and duplication within budget.
-| `PROJ-DOC-ADR` | Documentation & Training | Architecture decision records and API docs present.
-| `PROJ-REPO-NO-UNMERGED-DRIFT` | Repository Hygiene | Clean history, rebased on base, no orphaned code.
-| `PROJ-SCAN-SAST-CLEAN` | Pipeline & Scanning | Static analysis (SAST) reports no findings.
-| `PROJ-CI-GREEN` | Pipeline & Scanning | Prior commits passed CI.
-| `PROC-SOURCE-GROUNDING` | Process Integrity | API usage cited to official docs; no invented APIs.
+| `AKKA-OBS-TRACES` | Operability | `always-apply` | Distributed tracing and observability, provided by the platform (akka-intrinsic, asserted).
+| `AKKA-RES-RECOVERY` | Reliability | `always-apply` | Supervision and recovery, provided by the platform (akka-intrinsic, asserted).
+| `AKKA-SCALE-SHARDING` | Reliability | `always-apply` | Cluster sharding and scale-out, provided by the platform (akka-intrinsic, asserted).
+| `FUNC-TESTS-PASS` | Functional | `on-but-dev-configurable` | The test suite passes (`mvn test`).
+| `DATA-ENTITY-INVARIANTS` | Data Integrity | `on-but-dev-configurable` | Entity invariants hold against a running service.
+| `SEC-AUTHZ-ENFORCED` | Security & Compliance | `on-but-dev-configurable` | Authorization is enforced against a running service.
+| `OPS-COMPILES` | Operability | `on-but-dev-configurable` | The service compiles (`mvn compile`).
+| `PERF-WEB-VITALS` | Performance | `on-but-dev-configurable` | Core Web Vitals and a bundle-size budget (UI-only).
+| `EXP-A11Y-WCAG-2.1-AA` | Experience | `on-but-dev-configurable` | WCAG 2.1 AA accessibility (UI-only, human sign-off).
+| `PROJ-CI-GREEN` | Pipeline & Scanning | `on-but-dev-configurable` | Prior commits passed CI.
+| `PROJ-SCAN-SAST-CLEAN` | Pipeline & Scanning | `on-but-dev-configurable` | Static analysis (SAST) reports no findings.
+| `SEC-SECRETS-NOT-COMMITTED` | Pipeline & Scanning | `on-but-dev-configurable` | *Prohibition.* No secrets are committed to source or history (`git-secrets`).
+| `PROJ-REPO-NO-UNMERGED-DRIFT` | Repository Hygiene | `on-but-dev-configurable` | Clean git tree, rebased on base, no orphaned code.
+| `NEVER-COMMIT-BUILD-OUTPUT` | Repository Hygiene | `on-but-dev-configurable` | *Prohibition.* No build output (`target`, `dist`, `node_modules`, `build`) is tracked.
+| `PROJ-TEST-COVERAGE` | Code & Test Health | `on-but-dev-configurable` | Line/branch coverage at or above a threshold.
+| `PROJ-ADR-RECORDED` | Documentation & Training | `on-but-dev-configurable` | Architecture decision records are present (human sign-off).
+| `ENV-SETUP-CURRENT` | Environment & Dependencies | `on-but-dev-configurable` | The project's environment setup is current.
+| `ENV-DEPS-RESOLVE` | Environment & Dependencies | `on-but-dev-configurable` | Declared dependencies resolve (`mvn dependency:resolve`).
+| `NEVER-UNPINNED-DEP` | Environment & Dependencies | `on-but-dev-configurable` | *Prohibition.* No dependency is unpinned; a lockfile or `go.sum` is present.
+| `CONTENT-LANGUAGE` | Content & Brand Governance | `off-but-dev-configurable` | *Prohibition, off by default.* Prose passes the content class's Vale configuration (`content-vale`).
+| `CONTENT-TONE` | Content & Brand Governance | `off-but-dev-configurable` | *Off by default.* Prose passes an attested tone judge (delegated).
+| `PROC-SOURCE-GROUNDING` | Process Integrity | `on-but-dev-configurable` | API usage is cited to official documentation; invented APIs are caught under coverage.
+| `PROC-AUDITOR-COVERAGE` | Process Integrity | `always-apply` | Every material build surface has a covering auditor (the coverage gate).
+| `PROC-ADEQUACY-REVIEWED` | Process Integrity | `always-apply` | A fresh adequacy review covers every active auditor.
+| `BUILD-WITHIN-BUDGET` | Build Efficiency | `on-but-dev-configurable` | The build stays within its time budget (human sign-off).
 |===
+
+[NOTE]
+====
+Four library conditions are *prohibitions* — a prohibition must never become true, and an unaudited prohibition is red rather than open: `SEC-SECRETS-NOT-COMMITTED`, `NEVER-COMMIT-BUILD-OUTPUT`, `NEVER-UNPINNED-DEP`, and `CONTENT-LANGUAGE`. The two Content & Brand Governance conditions (`CONTENT-LANGUAGE` and `CONTENT-TONE`) are the only library conditions *off by default*; opt in per project, or promote them in a policy.
+====
 
 Some conditions are UI-only and apply only when a feature has a user interface; for a headless Akka service they are struck as a group. The catalog of further candidates to consider is in the xref:reference:specify/catalog/index.adoc[exit condition catalog].
 

@@ -10,9 +10,11 @@ The review runs on every feedback turn, whenever a check is authored, and always
 
 == Keyed to the current checks
 
-The review is recorded as an artifact keyed to a *state signature* — a hash of the active conditions' invariants and pass predicates plus the auditor definitions. It deliberately does not include the code: adequacy is a property of _(requirement, check)_, not of the code content, so a comment-only edit does not force a re-review. A newly-appeared surface is the xref:reference:specify/coverage-gate.adoc[coverage gate]'s concern instead.
+The review is recorded as an artifact at `.akka/adequacy/review.json`, keyed to a *state signature* — a hash taken over each active, auditor-backed condition's id, invariant, pass predicate, and auditor spec (the built-in check name, or the JSON of an inline auditor). It deliberately does not include the code: adequacy is a property of _(requirement, auditor)_, not of the code content, so a comment-only edit does not force a re-review. A newly-appeared surface is the xref:reference:specify/coverage-gate.adoc[coverage gate]'s concern instead.
 
-Because the signature is derived from the checks, *feedback that changes a check stales the review and forces it to re-run* — an auditor can never quietly drift out of adequacy.
+The artifact's covered set must include every active auditor-backed condition, excluding the two meta gates. A condition missing from the covered set, or a signature that no longer matches the current conditions, leaves the gate OPEN until the review re-runs. When a project has no active auditors there is nothing to review and the gate is GREEN.
+
+Because the signature is derived from the checks, *feedback that changes a check stales the review and forces it to re-run* — an auditor can never quietly drift out of adequacy. The review is submitted with the `akka_ec_adequacy_submit` tool.
 
 == What the engine guarantees
 

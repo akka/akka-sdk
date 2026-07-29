@@ -188,6 +188,9 @@ Using SDD with careful feature scoping and concise technical implementation plan
 |xref:reference:specify/inspect.adoc[`/akka:inspect`]           | Inspect a running service's runtime state against the spec
 |xref:reference:specify/deploy.adoc[`/akka:deploy`]             | Deploy to Akka Automated Operations
 |xref:reference:specify/issues.adoc[`/akka:issues`]             | Convert tasks into GitHub issues
+|xref:reference:specify/converge.adoc[`/akka:converge`]         | Assess the codebase against spec, plan, and tasks; append remaining work to `tasks.md`
+|xref:reference:specify/reliability.adoc[`/akka:reliability`]   | Add or remove resilience-testing instrumentation for the reliability dashboard
+|xref:reference:specify/docs.adoc[`/akka:docs`]                 | Generate rendered project documentation into `docs/`
 |====
 
 These commands are also listed in the xref:reference:specify/index.adoc[].
@@ -196,7 +199,9 @@ These commands are also listed in the xref:reference:specify/index.adoc[].
 
 * xref:sdk:enforced-mode.adoc[] and xref:sdk:a-la-carte-mode.adoc[] -- the two modes in detail.
 * xref:reference:specify/index.adoc[] -- every command, with options and examples.
-* xref:reference:specify/auditors.adoc[] -- the declarative delegation model, where each exit condition delegates its check to the ecosystem's own toolchain, together with the xref:reference:specify/coverage-gate.adoc[coverage gate], the xref:reference:specify/adequacy-review.adoc[adequacy review], and xref:reference:specify/requirement-analysis.adoc[requirement analysis]. Feedback that changes a check re-runs the adequacy review, so what is verified stays aligned with your current intent.
+* xref:reference:specify/auditors.adoc[] and xref:reference:specify/auditor-kinds.adoc[] -- the auditor concept and its three kinds (introspective, provisioned, delegated), together with the xref:reference:specify/coverage-gate.adoc[coverage gate], the xref:reference:specify/adequacy-review.adoc[adequacy review], and xref:reference:specify/requirement-analysis.adoc[requirement analysis]. Feedback that changes a check re-runs the adequacy review, so what is verified stays aligned with your current intent.
+* xref:reference:specify/conform.adoc[] -- run the auditors and print the definition-of-done manifest with a verdict (`akka specify conform`, or `akka_ec_conform` from an MCP client).
+* xref:reference:specify/harnesses.adoc[] -- provisioned harness assets recorded in `.akka/harnesses.lock`.
 * {url-blog-introducing-specify}[Introducing Akka Specify, window="new"] -- the blog post that launched SDD on Akka.
 * https://github.github.com/spec-kit/index.html[spec-kit, window="new"] -- the specification pattern Akka's SDD process follows.
 * https://modelcontextprotocol.io/docs/getting-started/intro[Model Context Protocol (MCP), window="new"] -- the protocol behind the `/akka:*` slash-commands.

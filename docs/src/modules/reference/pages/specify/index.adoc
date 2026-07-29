@@ -17,12 +17,16 @@ The commands are used from within an AI coding assistant (such as Claude Code) a
 |xref:specify/analyze.adoc[`/akka:analyze`]           | Cross-artifact consistency and quality analysis
 |xref:specify/checklist.adoc[`/akka:checklist`]       | Generate a custom checklist for the current feature
 |xref:specify/implement.adoc[`/akka:implement`]       | Generate the required code, tests, harnesses, etc.
+|xref:specify/harnesses.adoc[`/akka:harnesses`]       | Generate the enterprise-configuration assets the policy requires
+|xref:specify/converge.adoc[`/akka:converge`]         | Assess the codebase against spec, plan, and tasks and queue remaining work
 |xref:specify/review.adoc[`/akka:review`]             | Review code against spec, plan, and constitution
 |xref:specify/build.adoc[`/akka:build`]               | Build, test, and run locally with hot reloading
 |xref:specify/inspect.adoc[`/akka:inspect`]           | Inspect a running service's runtime state against the spec
+|xref:specify/reliability.adoc[`/akka:reliability`]   | Add or remove resilience-testing instrumentation for the service
 |xref:specify/deploy.adoc[`/akka:deploy`]             | Deploy to Akka Automated Operations
 |xref:specify/issues.adoc[`/akka:issues`]             | Convert tasks into GitHub issues
 |xref:specify/status.adoc[`/akka:status`]             | Show the definition-of-done rollup and current phase
+|xref:specify/conform.adoc[`/akka:conform`]           | Run the auditors and return the definition-of-done verdict
 |xref:specify/ship.adoc[`/akka:ship`]                 | Fire the organization-authored terminal action
 |xref:specify/mode.adoc[`/akka:mode`]                 | Switch between Enforced and À la carte modes
 |xref:specify/docs.adoc[`/akka:docs`]                 | Generate rendered project documentation into `docs/`
@@ -31,6 +35,15 @@ The commands are used from within an AI coding assistant (such as Claude Code) a
 == Concepts
 
 * xref:reference:specify/exit-condition-schema.adoc[Exit condition schema] — the fields of an exit condition.
+* xref:reference:specify/prohibitions.adoc[Prohibitions] — NEVER conditions, and why an unaudited one reds.
 * xref:reference:specify/default-library.adoc[Default exit-condition library] — the built-in conditions and their ids.
+* xref:reference:specify/requirement-analysis.adoc[Requirement analysis] — how feedback becomes a checkable exit condition.
+* xref:reference:specify/auditors.adoc[Auditors] — how a check is authored and bound to a condition.
+* xref:reference:specify/auditor-kinds.adoc[Auditor kinds] — introspective, provisioned, and delegated checks.
+* xref:reference:specify/project-surface.adoc[Project surface coverage] — the code, harness, and doc surfaces a build must account for.
+* xref:reference:specify/coverage-gate.adoc[The coverage gate] — `PROC-AUDITOR-COVERAGE` over every surface.
+* xref:reference:specify/adequacy-review.adoc[The adequacy review] — `PROC-ADEQUACY-REVIEWED`, the adversarial check of the checks.
+* xref:reference:specify/attestations.adoc[Attestations] — recorded receipts that resolve delegated checks.
+* xref:reference:specify/content-governance.adoc[Content governance] — exit conditions over generated prose.
 * xref:reference:specify/catalog/index.adoc[Exit condition catalog] — further candidate conditions to consider, by type.
 * xref:reference:specify/policies.adoc[Policies] — the enterprise governance controls, defined as policy-as-code.

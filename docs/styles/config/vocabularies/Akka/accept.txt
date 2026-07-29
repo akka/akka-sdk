@@ -410,3 +410,9 @@ validator
 vendored
 viewport
 viewports
+Vale
+tsc
+pyproject
+SAST
+SIEM
+AAO

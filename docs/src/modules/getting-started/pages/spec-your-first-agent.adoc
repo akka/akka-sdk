@@ -37,46 +37,60 @@ In Enforced mode you drive the whole build through one re-entrant command, `/akk
 |**/akka:specify** greeter agent - _greet each user in a new language every turn, remembering which languages were used per session_
 |===
 
-The engine infers a *definition of done* from your intent and Akka's own surfaces, and shows it grouped by business category. Some conditions are covered by the platform, some are the machine's to build, and a few need a decision from you:
+The engine infers a *definition of done* from your intent and Akka's own surfaces, and shows it grouped by tier -- Product, Project, and Process. Some conditions are asserted by the platform, some are the machine's to build, some defer downstream, and a few need a decision from you. Prohibitions -- the conditions that must never become true -- print in a separate `NEVER` section:
 
 [source]
 ----
-DEFINITION OF DONE                                    17 conditions
-── Product ──────────────────────────────────────────────────────
- ✓ [akka] Reliability — cluster survives node loss ... covered by Akka
- ✓ [akka] Observability — traces, logs, metrics ...... covered by Akka
- ○ Functional — a greeting every turn ................ machine will build
- ○ Functional — no language repeats per session ...... machine will build
- ○ Data Integrity — session history invariant ........ machine will build
- ? Performance — p95 response latency ................ decision needed
-── Project ──────────────────────────────────────────────────────
- 🔒 Pipeline & Scanning — SAST + secrets clean ........ org policy
- ? Code & Test Health — coverage threshold ........... decision needed
-── Process ──────────────────────────────────────────────────────
- 🔒 Process Integrity — APIs cited, none invented ..... org policy
+DEFINITION OF DONE — 17 conditions (17 active)    mode: enforced · policy: none (library defaults)
+🔒 locked  ● on ○ off   ✓green ✗red ○open ⟳deferred ~waived   [akka]=intrinsic
+──────────────────────────────────────────────────────────────────────────────
+PRODUCT
+  operability             ●  AKKA-OBS-TRACES            ✓(akka) [akka]  — traces, logs, metrics
+  reliability             ●  AKKA-RES-RECOVERY          ✓(akka) [akka]  — recovers state after failure
+  reliability             ●  AKKA-SCALE-SHARDING        ✓(akka) [akka]  — shards across the cluster
+  operability             ●  OPS-COMPILES               ○               — machine will build
+  functional              ●  FUNC-TESTS-PASS            ○               — machine will build
+  data-integrity          ●  DATA-ENTITY-INVARIANTS     ⟳               — deferred: needs a running service
+  security-compliance     ●  SEC-AUTHZ-ENFORCED         ⟳               — deferred: needs a running service
+PROJECT
+  pipeline-scanning       ●  PROJ-SCAN-SAST-CLEAN       ○               — sign-off needed
+  code-test-health        ●  PROJ-TEST-COVERAGE         ○               — decision needed: coverage threshold
+  environment-dependencies ● ENV-DEPS-RESOLVE           ○               — machine will build
+PROCESS
+  process-integrity       ●  PROC-SOURCE-GROUNDING      ○               — APIs cited, none invented
+  process-integrity       🔒● PROC-AUDITOR-COVERAGE      ○               — every surface needs a check
+  process-integrity       🔒● PROC-ADEQUACY-REVIEWED     ○               — checks need an adequacy review
+  build-efficiency        ●  BUILD-WITHIN-BUDGET        ○               — sign-off needed
+
+NEVER
+PROJECT
+  pipeline-scanning       ●  SEC-SECRETS-NOT-COMMITTED  ✓               — no secret committed
+  repository-hygiene      ●  NEVER-COMMIT-BUILD-OUTPUT  ✓               — no build output tracked
+  environment-dependencies ● NEVER-UNPINNED-DEP         ✓               — lockfile present
+──────────────────────────────────────────────────────────────────────────────
+rollup — product: 5✓ 2○ 0✗   project: 3✓ 3○ 0✗   process: 0✓ 4○ 0✗
 ----
 
-See xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done types] for what each category covers.
+The status of each condition is one of `GREEN`, `RED`, `OPEN`, `DEFERRED`, `WAIVED`, `ASSERTED` (Akka-intrinsic, trusted green), or `OFF`. The two locked (🔒) Process-integrity conditions -- `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED` -- are always on and cannot be struck; they make the verification apparatus check itself. See xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done types] for what each tier covers.
 
 === Answer the open decisions
 
-Enforced mode will not build while a required decision is open. The engine ends every turn with a definitive status and the exact next command:
+Enforced mode reports `NEEDS_INPUT` while any condition is `OPEN`. The engine ends every turn with a definitive verdict and the exact next command, and calls out the conditions that need a decision or a sign-off from you:
 
 [source]
 ----
-NEEDS_INPUT — decisions to close before I can build:
+NEEDS_INPUT — a decision to close before I can build:
   • Code & Test Health — coverage threshold?     I suggest 80%
-  • Performance — p95 latency target?            I suggest < 10 ms
-NEXT → /akka:specify <your answers>
+NEXT → /akka:specify <your answer>
 ----
 
-Answer in your own words -- accept the suggestions or set your own. Akka's runtime comfortably supports a tight latency target:
+Answer in your own words -- accept the suggestion or set your own:
 
 .Decisions
 [cols="1"]
 :table-caption: Prompt
 |===
-|**/akka:specify** keep 80% coverage, and tighten p95 to < 5 ms
+|**/akka:specify** keep the suggested 80% coverage threshold
 |===
 
 The engine records your decisions, locks the definition of done, and starts building.
@@ -87,9 +101,9 @@ The machine derives the exit conditions, wires xref:sdk:enforced-mode.adoc#audit
 
 [source]
 ----
-WORKING — 16 active conditions
+WORKING — 17 active conditions
   plan → tasks → implement → verify
-  ✓ compiles   ✓ 6/6 tests   ✓ no repeats   ✓ session isolation   ✓ p95 4.1 ms
+  ✓ OPS-COMPILES   ✓ FUNC-TESTS-PASS 6/6   ✓ ENV-DEPS-RESOLVE
 NEXT → wait, or /akka:status
 ----
 
@@ -106,7 +120,7 @@ Check progress at any time without interrupting the build with `/akka:status`.
 |**/akka:specify** every build must compile with no errors before it ships
 |===
 
-The engine adds one exit condition and wires a _declarative_ auditor that delegates to the project's own toolchain -- here `mvn -q compile`, whose non-zero exit is the red verdict:
+The engine adds one exit condition and wires an _introspective_ auditor -- an inline command that inspects the working tree directly, delegating to the project's own toolchain. Here that is `mvn -q compile`, whose non-zero exit is the red verdict:
 
 [source]
 ----
@@ -117,7 +131,7 @@ Adding an auditor recomputes the two locked process-integrity gates. Check them 
 
 [source]
 ----
-WORKING — 17 active conditions
+WORKING — 18 active conditions
   ✓ PROC-AUDITOR-COVERAGE   every build surface has a covering auditor
   ○ PROC-ADEQUACY-REVIEWED  adversarial review re-running for the new check
 NEXT → wait, or /akka:status
@@ -132,7 +146,7 @@ When the completion policy is met, the engine reports `READY_TO_SHIP`:
 [source]
 ----
 READY_TO_SHIP — completion policy met
-  18 conditions · 13 verified · 3 asserted by Akka · 1 deferred → staging
+  18 conditions · 13 verified · 3 asserted by Akka · 2 deferred → staging
   ✓ PROC-AUDITOR-COVERAGE   ✓ PROC-ADEQUACY-REVIEWED
 NEXT → /akka:ship
 ----

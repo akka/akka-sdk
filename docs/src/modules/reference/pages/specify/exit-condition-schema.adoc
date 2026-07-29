@@ -4,6 +4,8 @@ An *exit condition* is the technical unit of "done" in xref:sdk:spec-driven-deve
 
 == Fields
 
+Most fields describe the condition; a few determine its auditor. An exit condition's auditor is expressed in one of four ways: a built-in introspective `check` id; an inline introspective `auditor` block; a provisioned `check: harness:<capability>`; or a delegated `autonomy: attested`. The three xref:reference:specify/auditor-kinds.adoc[auditor kinds] follow from that choice.
+
 `id`::
 A stable identifier for the condition (for example, `OPS-COMPILES`, `SEC-SECRETS`). Used in status output, receipts, and waivers.
 
@@ -12,6 +14,9 @@ A short human-readable statement of what the condition requires.
 
 `dod_type`::
 The xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done type] the condition belongs to (for example, `Functional`, `Reliability`, `Repository Hygiene`). Required on every condition. Determines the tier (Product, Project, or Process) the condition rolls up into.
+
+`kind`::
+Whether the condition is a `completion` or a `prohibition` (default `completion`). A completion condition must become true and starts `open`. A prohibition condition must never become true; an unaudited prohibition resolves `red` ("unenforced prohibition — needs a check"), and it cannot be closed by a human sign-off, because sign-offs only turn `open` green. See xref:reference:specify/prohibitions.adoc[Prohibition conditions].
 
 `provenance`::
 Where the condition comes from, which determines whether a developer can change it:
@@ -32,8 +37,11 @@ For `corporate` conditions, the level that controls developer configurability (s
 `pass`::
 The binary predicate that defines success — a check over an observable surface that evaluates to true or false. A condition whose success cannot be expressed as a binary predicate is not yet an exit condition.
 
+`check`::
+Names the auditor when it is not written inline. A built-in introspective check is named by id (`maven-compile`, `git-secrets`, `content-vale`, and so on). A provisioned harness auditor is named `harness:<capability>` and is satisfied by the matching `/harnesses` asset recorded in `.akka/harnesses.lock`. See xref:reference:specify/auditor-kinds.adoc[Auditor kinds].
+
 `auditor`::
-The check bound to the condition. Most auditors are declarative: they delegate to a tool the ecosystem already provides and are green when that tool exits zero, red otherwise. The sub-schema has two fields:
+An inline introspective auditor, used when a project introduces an ecosystem the built-in checks do not cover. It delegates to a tool the ecosystem already provides and is green when that tool exits zero, red otherwise. The sub-schema has two fields:
 +
 [cols="1,3"]
 |===
@@ -46,19 +54,25 @@ The check bound to the condition. Most auditors are declarative: they delegate t
 | Where the command runs. `requirement` names the environment it needs (`node`, `maven`, `git`, and so on); `module` names the sub-project it runs in, relative to the repository root (for example `web`).
 |===
 +
+The `pass` predicate states the invariant; the `auditor` block is the check that decides it:
++
 [source,yaml]
 ----
-auditor:
+pass: "tsc == 0"          # the invariant, on the condition
+auditor:                  # the inline introspective check that decides it
   run: ["npm", "run", "-s", "typecheck"]
   applies_to:
     requirement: node
     module: web
 ----
 +
-A `developer` condition can be materialized from `/akka:specify` feedback and carry its own inline `auditor` written the same way. See xref:reference:specify/auditors.adoc[Auditors].
+A `developer` condition can be materialized from `/akka:specify` feedback and carry its own inline `auditor`. A non-corporate inline auditor stays `open` until you approve its exact command on first run. See xref:reference:specify/auditors.adoc[Auditors].
+
+`autonomy`::
+How the condition closes: `auto` (the auditor closes it), `human-signoff` (a person closes it), or `attested` (a delegated check, closed by a recorded xref:reference:specify/attestations.adoc[attestation]). An `attested` condition resolves `deferred` until its attestation exists, then `green`.
 
 `state`::
-The condition's current resolution: `green`, `red`, `open`, `deferred`, or `asserted`.
+The condition's current status: `green` (passed), `red` (failed, or an unaudited prohibition), `open` (active but not yet resolved — not yet evaluated, or awaiting an approval or sign-off), `deferred` (not verifiable locally — a delegated check before attestation, or a requirement unavailable here), `waived` (unmet but under a time-bound waiver), `asserted` (an `akka-intrinsic` condition, trusted green), or `off` (not applied).
 
 `waiver`::
 An optional modifier attached to a still-active condition. It does not disable or remove the condition — the unmet state stays visible — but annotates who waived it, why, and an expiration. On expiry the condition reverts to blocking. Waivers are policy-gated; the organization may forbid them or require approval.

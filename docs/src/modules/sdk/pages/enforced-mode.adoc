@@ -26,8 +26,8 @@ Enforced mode treats "done" as something the system checks, not a judgment call.
 | Derived by the tooling; refined by the developer.
 
 | *Auditor*
-| The executable check that evaluates an exit condition and returns a verdict.
-| Akka (built-in) or the organization (custom).
+| The check that evaluates an exit condition and returns a verdict. It is one of three kinds -- introspective (runs in the tree), provisioned (verifies a harness asset), or delegated (resolved by an attestation).
+| Akka ships the built-in introspective set; projects and the organization author the rest.
 |===
 
 The layers roll up in the other direction: an auditor produces a verdict, verdicts set each exit condition's status, and those aggregate into a *Definition-of-Done type* status. A developer sees progress in business language ("Reliability: covered", "Functional: 2 of 3 met") while the machine works in precise conditions underneath.
@@ -108,19 +108,37 @@ READY_TO_SHIP does not mean every condition is green. It means the *completion p
 [#auditors]
 == Auditors
 
-An *auditor* is the check bound to an exit condition. Most auditors are *declarative*: a command that delegates to a tool the ecosystem already ships — `tsc --noEmit` for a TypeScript/React surface, `mvn compile`/`test` for Java/Akka, `go build`, a linter — declared as `{run: [...], applies_to: {requirement, module}}` and green when the command exits zero. This is why "no invented APIs" is largely "it type-checks in every language present": the auditor does not encode knowledge of React or Akka, it runs the type-checker where the surface lives. New auditor work is needed per *ecosystem*, not per dependency, and there is no fixed, closed set — a project (or the assistant, on your approval) authors a check for whatever it adds.
-
-Each auditor declares what it needs to run (a git tree, Maven, a live service); the tooling checks availability and resolves the condition accordingly rather than blindly failing. Provenance sets how far an auditor is trusted: Akka-provided and organization-declared (in `policy.yaml`) auditors are trusted; a project- or assistant-authored auditor runs only after you approve its exact command, and is reviewed adversarially for adequacy (see the two gates below).
-
-Every condition resolves in one of four ways:
+An *auditor* is the check bound to an exit condition. The engine resolves each condition's auditor into one of three *kinds*, set by where the check can run:
 
 [cols="1,3"]
 |===
-| Resolution | When
-| *Asserted* | Guaranteed by the platform (an `akka-intrinsic` condition such as observability, resilience, or scalability); trusted green without running a check.
-| *Executable* | The requirement is available, so the auditor runs and returns green or red.
-| *Deferred* | The requirement is unavailable here (for example, a live-service check before deployment); the condition is carried downstream and recorded in the conformance receipt.
-| *Open* | No runnable auditor yet, or a human sign-off is required; blocks completion until resolved.
+| Kind | What it is
+
+| *Introspective*
+| A check that inspects the working tree directly and returns green or red. This covers both the built-in set Akka ships (`mvn compile`/`test`, `git-clean`, `git-secrets`, `no-build-output`, `deps-pinned`, `vale`, `ci-green`, and so on) and an inline authored command auditor `{run, pass, applies_to}` that a project or the assistant adds for an ecosystem it introduces. An inline auditor that is not corporate-authored stays OPEN until you approve its exact command on first run.
+
+| *Provisioned*
+| A condition whose check is `harness:<capability>`, satisfied by a `/harnesses` asset recorded in `.akka/harnesses.lock` and checked for currency against the policy version. Green when the asset is present and enforcing; red when the lock is stale or the asset is missing. See xref:reference:specify/harnesses.adoc[/akka:harnesses].
+
+| *Delegated*
+| A condition with `autonomy: attested`, satisfied by a recorded xref:reference:specify/attestations.adoc[attestation]. It resolves DEFERRED until the attestation exists, then GREEN.
+|===
+
+The built-in introspective set is small, and there is no large closed catalogue of checks you pick from by id. Beyond the built-ins, auditors are authored per *ecosystem* (inline commands), provisioned as harness assets, or delegated via attestation. Each auditor declares what it needs to run (a git tree, Maven, a live service); the tooling checks availability and resolves the condition accordingly rather than blindly failing. See xref:reference:specify/auditor-kinds.adoc[Auditor kinds] for the full model.
+
+Every condition carries a *status*:
+
+[cols="1,3"]
+|===
+| Status | Meaning
+
+| *GREEN* | The auditor ran and the invariant holds.
+| *RED* | The auditor ran and the invariant is violated -- or a prohibition condition has no auditor, which reds rather than passing silently.
+| *OPEN* | Active but not yet resolved: not yet evaluated, awaiting a human sign-off, or a check whose command you have not yet approved.
+| *DEFERRED* | Not verifiable locally -- a delegated (attested) check before its attestation, or a requirement unavailable here (for example, a live-service check before deployment). Carried downstream and recorded in the conformance receipt.
+| *WAIVED* | Unmet, but covered by a time-bound waiver.
+| *ASSERTED* | Guaranteed by the platform (an `akka-intrinsic` condition such as observability, resilience, or scalability); trusted green without running a check.
+| *OFF* | Not applied.
 |===
 
 A deferred condition is not a gap -- it is a check that will run elsewhere. An open condition is unfinished work.
@@ -158,7 +176,7 @@ The policy is a single `policy.yaml`, versioned somewhere your organization owns
 
 . *Add a CI workflow* that runs the Akka conformance check against the policy. The organization's own CI is the enforcement backstop: local tooling is advisory and guided; CI is the gate a change must pass to merge or ship.
 
-For the policy to reach developers, IT points each machine's Akka CLI at this repository one time, through a managed setting named `governance-policy-url` — a configuration file the developer cannot edit. From then on, whenever a developer runs `/akka:setup`, the CLI downloads `policy.yaml`, applies it on top of the developer's own choices (which may only make the rules stricter, never looser), and enforces it automatically in `status`, `conform`, and `ship` — with no flag required and no way to opt out. When the organization changes the policy, developers pick up the new version by running `/akka:setup` again. See xref:reference:specify/policies.adoc#_applying_the_policy_in_every_project[Applying the policy in every project] for how IT sets this up.
+For the policy to reach developers, IT points each machine's Akka CLI at this repository one time, through a managed setting named `governance-policy-url` — a configuration file the developer cannot edit. From then on, whenever a developer runs `/akka:setup`, the CLI downloads `policy.yaml`, applies it on top of the developer's own choices (which may only make the rules stricter, never looser), and enforces it automatically in `status`, xref:reference:specify/conform.adoc[`conform`], and `ship` — with no flag required and no way to opt out. When the organization changes the policy, developers pick up the new version by running `/akka:setup` again. See xref:reference:specify/policies.adoc#_applying_the_policy_in_every_project[Applying the policy in every project] for how IT sets this up.
 
 Beyond the organization policy, the xref:reference:specify/default-library.adoc[default library] provides a rich, curated set of best-practice conditions on by default; you strike what does not apply, and strikes are recorded. For inspiration on what else to require, browse the xref:reference:specify/catalog/index.adoc[exit condition catalog], organized by type and project flavor.
 

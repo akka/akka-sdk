@@ -2,6 +2,11 @@
 
 Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Process Integrity] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
 
+[NOTE]
+====
+Only three of the ids on this page ship in the xref:reference:specify/default-library.adoc[default library]: `PROC-SOURCE-GROUNDING`, `PROC-AUDITOR-COVERAGE`, and `PROC-ADEQUACY-REVIEWED`. Every other id below is a candidate for inspiration -- adopting one means authoring the condition and its covering auditor.
+====
+
 == Source grounding and anti-hallucination
 
 "No invented APIs" is not a standalone auditor; it is enforced by delegation. A declarative type-check auditor on each ecosystem surface (`tsc --noEmit`, `mvn compile`, and so on) fails on a symbol that does not exist, so the invariant is folded into `PROC-AUDITOR-COVERAGE` (a covering auditor exists for the surface) and `PROC-ADEQUACY-REVIEWED` (the auditor is reviewed to catch it). What remains as a distinct source-grounding condition is citing API usage to official documentation.

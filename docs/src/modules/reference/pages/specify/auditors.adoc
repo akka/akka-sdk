@@ -1,10 +1,14 @@
 = Auditors
 
-An *auditor* is the check bound to an xref:reference:specify/exit-condition-schema.adoc[exit condition] — the thing that proves the condition's invariant holds. Auditors are not a fixed, closed set the CLI ships; most are *declarative* and delegate to a tool the ecosystem already provides.
+An *auditor* is the check bound to an xref:reference:specify/exit-condition-schema.adoc[exit condition] — the thing that proves the condition's invariant holds. Akka ships a small set of built-in introspective auditors. Beyond those, auditors are authored per ecosystem as inline commands, provisioned as harness assets, or delegated via attestation. There is no large closed catalogue of checks you pick from by id, but there is a built-in set.
 
-== The declarative model
+Every auditor is one of three xref:reference:specify/auditor-kinds.adoc[kinds] — introspective, provisioned, or delegated — set by where the check can run. This page describes the auditor concept; auditor kinds cover each kind in detail.
 
-A declarative auditor is a command plus the surface it applies to:
+== Built-in and inline auditors
+
+Akka's built-in auditors are introspective: they inspect the working tree and read a tool's exit code. `maven-compile` and `maven-test` for Java/Akka, `git-clean` and `git-secrets` over the git tree, `no-build-output` and `deps-pinned` for repository hygiene, `content-vale` over `docs/`, `ci-green` for prior CI runs, `file-adr` for a recorded decision. A condition binds one by naming its id in the `check` field.
+
+Where a project introduces an ecosystem the built-ins do not cover, it authors an *inline* introspective auditor: a command plus the surface it applies to, written under the condition's `auditor` field.
 
 [source,yaml]
 ----

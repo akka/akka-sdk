@@ -1,0 +1,37 @@
+= Content governance
+
+Content governance applies exit conditions to the generated prose of a project: its documentation and its marketing. It splits along one line: rules that can be decided deterministically become checks the engine runs, and rules that need a judgment become delegated checks the AI assistant runs and records. The engine never calls a model.
+
+== Deterministic rules delegate to Vale
+
+Most content rules are deterministic, and they become introspective auditors that delegate to the Vale prose linter, the same engine that already runs in CI. `CONTENT-LANGUAGE` covers this class. It is a xref:reference:specify/prohibitions.adoc[prohibition (NEVER) condition] — a banned construction must never appear, so an unaudited `CONTENT-LANGUAGE` reds rather than passing. It is a `content-brand-governance` condition and ships OFF by default; a project opts in.
+
+`CONTENT-LANGUAGE` checks that:
+
+* a banned phrase is absent (Vale `existence`);
+* a mandated substitution is honored, for example "use" not "utilize" (Vale `substitution`);
+* reading grade is within a bound (Vale `metric`);
+* terminology is correct, for example the full product name "Akka Specify Plugin".
+
+The engine shells out to `vale --config=<class>/.vale.ini` and maps a non-zero exit to red, the same way a declarative command auditor does. Structural rules — required sections present, heading conventions honored — are also deterministic and stay in the Documentation & Training type.
+
+== Tone is a delegated check
+
+The remaining rules are holistic and cannot be reduced to a token list: state a fact rather than a flourish, stay declarative rather than persuasive, read like a person wrote it. `CONTENT-TONE` covers this class as a completion condition resolved by a delegated check. Like `CONTENT-LANGUAGE`, it is a `content-brand-governance` condition and ships OFF by default.
+
+The judge is not a 1-to-5 score, which rubber-stamps. It is a set of single-criterion pass or fail predicates, framed adversarially ("find every place this reads like marketing"), run by a model from a different family than the one that generated the text, and converted to a pass or fail threshold. The judge runs in the AI assistant, not the CLI. The assistant applies the decomposed rubric and records the result with an xref:reference:specify/attestations.adoc[attestation]. The engine records that the judge ran and covered the current content signature; it does not score prose. Because the attestation is keyed to a content-plus-rubric signature, a rule change re-stales it and forces the judge to run again.
+
+== Completeness is the doc surface class
+
+Completeness of documentation is not a content-governance check. It is the doc surface class of the xref:reference:specify/project-surface.adoc[coverage gate]: an enumerable documentable thing with no page reds the single coverage gate.
+
+== Per-content-class scoping
+
+Rules attach to a content class the way Vale scopes by path. Product docs use plain technical prose, marketing uses brand voice, and case studies state facts rather than flourishes. The policy attaches an exit-condition set to a class, so the same engine can cover a separate marketing repository where the rules exist but are not yet enforced.
+
+== Related
+
+* xref:reference:specify/catalog/content-brand-governance.adoc[Content & Brand Governance exit conditions]
+* xref:reference:specify/attestations.adoc[]
+* xref:reference:specify/project-surface.adoc[]
+* xref:reference:specify/auditor-kinds.adoc[]
