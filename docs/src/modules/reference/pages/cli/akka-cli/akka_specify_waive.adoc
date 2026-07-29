@@ -1,17 +1,25 @@
-= akka organizations
+= akka specify waive
 
-Manage your organizations on Akka
+Attach a time-bound waiver to a still-active exit condition.
 
 == Synopsis
 
-The `akka organizations` commands manage the organizations in your Akka account.
-Organizations are the root of the management hierarchy and serve as a container for all Projects where Services are deployed.
-For more details on organizations, see https://doc.akka.io/operations/organizations/index.html .
+[Incubating] A waiver is a modifier on a still-active condition: the condition stays visible with its unmet state, annotated with who/why/expiration.
+Waiving a locked floor condition requires the org WaiverPolicy to permit it (and, where required, an approver via --by).
+
+----
+akka specify waive <condition-id> [flags]
+----
 
 == Options
 
 ----
-  -h, --help   help for organizations
+      --by string       who authorized the waiver
+      --dir string      project directory (default: current)
+  -h, --help            help for waive
+      --policy string   path to an org governance policy-as-code file (policy.yaml)
+      --reason string   why the condition is waived
+      --until string    expiration date (YYYY-MM-DD), or 'indefinite' (default)
 ----
 
 == Options inherited from parent commands
@@ -32,13 +40,7 @@ For more details on organizations, see https://doc.akka.io/operations/organizati
 
 == SEE ALSO
 
-* link:akka.html[akka]	 - Akka control
-* link:akka_organizations_auth.html[akka organizations auth]	 - Manage authentication for your organization on Akka
-* link:akka_organizations_get.html[akka organizations get]	 - Get organization information.
-* link:akka_organizations_identity-providers.html[akka organizations identity-providers]	 - Manage workload identity providers for your organization on Akka
-* link:akka_organizations_invitations.html[akka organizations invitations]	 - Invite new users to the organization with a specific role.
-* link:akka_organizations_list.html[akka organizations list]	 - List all organizations of which the user is a member of.
-* link:akka_organizations_users.html[akka organizations users]	 - Manage organization users.
+* link:akka_specify.html[akka specify]	 - [Incubating] Initialize and manage AI-assisted Akka development projects.
 
 [discrete]
 

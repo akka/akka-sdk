@@ -1,17 +1,23 @@
-= akka organizations
+= akka specify attest
 
-Manage your organizations on Akka
+Record an attestation that a delegated check ran externally, or a harness was activated.
 
 == Synopsis
 
-The `akka organizations` commands manage the organizations in your Akka account.
-Organizations are the root of the management hierarchy and serve as a container for all Projects where Services are deployed.
-For more details on organizations, see https://doc.akka.io/operations/organizations/index.html .
+[Incubating] A delegated check runs in an external system (a central SAST service, a SIEM) or reflects a judgment the CLI cannot make.
+Recording an attestation -- a receipt the engine trusts in place of running the check -- resolves the condition or covers the harness capability.
+Pass a condition id or a harness capability name (for example sast).
+
+----
+akka specify attest <key> [flags]
+----
 
 == Options
 
 ----
-  -h, --help   help for organizations
+      --dir string   project directory (default: current)
+  -h, --help         help for attest
+      --ref string   receipt reference (run URL, signature, or rubric hash)
 ----
 
 == Options inherited from parent commands
@@ -32,13 +38,7 @@ For more details on organizations, see https://doc.akka.io/operations/organizati
 
 == SEE ALSO
 
-* link:akka.html[akka]	 - Akka control
-* link:akka_organizations_auth.html[akka organizations auth]	 - Manage authentication for your organization on Akka
-* link:akka_organizations_get.html[akka organizations get]	 - Get organization information.
-* link:akka_organizations_identity-providers.html[akka organizations identity-providers]	 - Manage workload identity providers for your organization on Akka
-* link:akka_organizations_invitations.html[akka organizations invitations]	 - Invite new users to the organization with a specific role.
-* link:akka_organizations_list.html[akka organizations list]	 - List all organizations of which the user is a member of.
-* link:akka_organizations_users.html[akka organizations users]	 - Manage organization users.
+* link:akka_specify.html[akka specify]	 - [Incubating] Initialize and manage AI-assisted Akka development projects.
 
 [discrete]
 

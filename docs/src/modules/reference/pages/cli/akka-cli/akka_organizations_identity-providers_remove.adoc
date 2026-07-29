@@ -1,17 +1,20 @@
-= akka organizations
+= akka organizations identity-providers remove
 
-Manage your organizations on Akka
+Remove the given workload identity provider from the current (or specified) organization
 
 == Synopsis
 
-The `akka organizations` commands manage the organizations in your Akka account.
-Organizations are the root of the management hierarchy and serve as a container for all Projects where Services are deployed.
-For more details on organizations, see https://doc.akka.io/operations/organizations/index.html .
+The `akka organizations identity-providers remove` command removes a workload identity provider from the given organization in Akka.
+
+----
+akka organizations identity-providers remove PROVIDER-ID [flags]
+----
 
 == Options
 
 ----
-  -h, --help   help for organizations
+  -h, --help                  help for remove
+      --organization string   name or ID for organization
 ----
 
 == Options inherited from parent commands
@@ -32,13 +35,7 @@ For more details on organizations, see https://doc.akka.io/operations/organizati
 
 == SEE ALSO
 
-* link:akka.html[akka]	 - Akka control
-* link:akka_organizations_auth.html[akka organizations auth]	 - Manage authentication for your organization on Akka
-* link:akka_organizations_get.html[akka organizations get]	 - Get organization information.
 * link:akka_organizations_identity-providers.html[akka organizations identity-providers]	 - Manage workload identity providers for your organization on Akka
-* link:akka_organizations_invitations.html[akka organizations invitations]	 - Invite new users to the organization with a specific role.
-* link:akka_organizations_list.html[akka organizations list]	 - List all organizations of which the user is a member of.
-* link:akka_organizations_users.html[akka organizations users]	 - Manage organization users.
 
 [discrete]
 

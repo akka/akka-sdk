@@ -1,17 +1,26 @@
-= akka organizations
+= akka specify ship
 
-Manage your organizations on Akka
+Ship the project when all in-scope exit conditions are satisfied.
 
 == Synopsis
 
-The `akka organizations` commands manage the organizations in your Akka account.
-Organizations are the root of the management hierarchy and serve as a container for all Projects where Services are deployed.
-For more details on organizations, see https://doc.akka.io/operations/organizations/index.html .
+[Incubating] Evaluate exit conditions;
+if the verdict is READY_TO_SHIP, run the org-authored ship steps (from --policy).
+Refuses to ship otherwise.
+
+Ship steps are shown but NOT executed unless --execute is passed.
+
+----
+akka specify ship [directory] [flags]
+----
 
 == Options
 
 ----
-  -h, --help   help for organizations
+      --dir string      project directory (default: current directory or positional arg)
+      --execute         actually run the ship steps (default: dry run)
+  -h, --help            help for ship
+      --policy string   path to an org governance policy-as-code file (policy.yaml)
 ----
 
 == Options inherited from parent commands
@@ -32,13 +41,7 @@ For more details on organizations, see https://doc.akka.io/operations/organizati
 
 == SEE ALSO
 
-* link:akka.html[akka]	 - Akka control
-* link:akka_organizations_auth.html[akka organizations auth]	 - Manage authentication for your organization on Akka
-* link:akka_organizations_get.html[akka organizations get]	 - Get organization information.
-* link:akka_organizations_identity-providers.html[akka organizations identity-providers]	 - Manage workload identity providers for your organization on Akka
-* link:akka_organizations_invitations.html[akka organizations invitations]	 - Invite new users to the organization with a specific role.
-* link:akka_organizations_list.html[akka organizations list]	 - List all organizations of which the user is a member of.
-* link:akka_organizations_users.html[akka organizations users]	 - Manage organization users.
+* link:akka_specify.html[akka specify]	 - [Incubating] Initialize and manage AI-assisted Akka development projects.
 
 [discrete]
 

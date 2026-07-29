@@ -1,0 +1,46 @@
+= akka organizations identity-providers add oauth
+
+Add an OAuth/OIDC workload identity provider to the current (or specified) organization
+
+== Synopsis
+
+The `akka organizations identity-providers add oauth` command adds a workload identity provider backed by a standards-compliant OIDC token issuer to the given organization in Akka.
+
+On creation, Akka performs OpenID discovery against the supplied issuer and verifies that a valid JWKS keyset is reachable, returning an error if discovery fails or the keyset cannot be fetched.
+
+----
+akka organizations identity-providers add oauth PROVIDER-ID [flags]
+----
+
+== Options
+
+----
+      --claim-mapping stringToString   Maps a JWT claim to a named attribute on the workload identity principal, in the form attribute=claim. May be specified multiple times. (default [])
+  -h, --help                           help for oauth
+      --issuer string                  The HTTPS URL of the OIDC token issuer, e.g. https://token.actions.githubusercontent.com.
+      --organization string            name or ID for organization
+      --subject-claim string           The JWT claim whose value is used as the workload identity subject, e.g. sub. (default "sub")
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_organizations_identity-providers_add.html[akka organizations identity-providers add]	 - Add a workload identity provider to your organization on Akka
+
+[discrete]
+
