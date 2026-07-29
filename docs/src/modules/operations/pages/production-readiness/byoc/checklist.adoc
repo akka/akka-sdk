@@ -356,6 +356,7 @@ DR is typically run as a two-session event. The first session is a tabletop that
 * [ ] Export integrity verified by periodic restore-to-scratch and row/event-count validation
 * [ ] DR runbook documented end-to-end: declaration criteria, comms, Akka SRE escalation, region rebuild via CLI + descriptors, data restore via `akka services data import`, DNS cutover, verification
 * [ ] DR tabletop completed at least annually: scenarios walked through, gaps captured, scenarios selected for live simulation
+* [ ] Post-drill: gaps documented, runbook updated, next tabletop and simulation scheduled
 * [ ] Live DR simulation of the selected scenario(s) executed with the right people and environment; smoke tests pass against the rebuilt environment
 * [ ] RTO measured against business expectation (typically hours, not minutes)
 * [ ] RPO driven by export frequency; business accepts the number
@@ -515,13 +516,30 @@ The sections above cover Day 2 Ops with a single prod region. For the Business C
 Akka reads from both regions, so cross-region failover is typically very fast, often sub-minute. Replication lag for the most recent writes is driven mostly by overall system load rather than by a tunable platform setting. The bullets below cover the application-side responsibilities that need to be in place to operate correctly in a multi-region setup.
 ====
 
+[NOTE]
+.*Availability level and replication mode*
+====
+Availability comes in levels; choose per service against its needs.
+
+* *Single region, multiple availability zones*: the baseline, resilient to the loss of an availability zone. On Akka-operated infrastructure, high availability across zones is the default.
+* *Multi-region, replicated*: the highest-availability posture Akka offers, resilient to the loss of an entire region, with geographic failover and low-latency local access (xref:concepts:multi-region.adoc[]).
+
+Within multi-region, the replication mode set per service determines the failover behavior:
+
+* *Replicated writes*: every region can accept writes for the same data, and concurrent changes converge automatically without conflict. Highest write availability through a regional loss; the data model must tolerate concurrent, order-independent updates.
+* *Replicated reads, request-region primary*: one region owns writes for an entity, and that primary follows where writes happen, with strong consistency preserved across the switch-over. Best for user locality with automatic movement.
+* *Replicated reads, pinned-region primary*: a single static primary owns writes while other regions serve reads and take over on an operational failover. The classic one-primary, fail-over-on-outage posture.
+
+Single-region (not replicated) has no cross-region failover; recovery is a cold rebuild, the Day 2 Ops tier. Switch-over behavior and consistency are authoritative in xref:concepts:multi-region.adoc[]; operational setup is in xref:operations:regions/index.adoc[]. Terminology: "region-pinned" below means data that is not replicated across regions, which differs from the pinned-region primary above (a replicated mode); state which you mean in the ADR.
+====
+
 .*Detailed checklist*
 [%collapsible]
 =====
 [discrete]
 ==== Architecture (per workload)
 
-* [ ] Replication mode chosen per service (region-pinned or replicated); documented as ADR (Architecture Decision Record)
+* [ ] Replication mode chosen per service and recorded in an ADR (Architecture Decision Record), using the modes in xref:concepts:multi-region.adoc[] (see the availability note above)
 * [ ] Cross-region workflow idempotency validated
 * [ ] Eventual-consistency lag tolerance documented and surfaced to the business
 

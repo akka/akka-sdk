@@ -518,13 +518,42 @@ The sections above cover Day 2 Ops with a single prod region. For the Business C
 Akka reads from both regions, so cross-region failover is typically very fast, often sub-minute. Replication lag for the most recent writes is driven mostly by overall system load rather than by a tunable platform setting. The bullets below cover the application-side responsibilities that need to be in place to operate correctly in a multi-region setup.
 ====
 
+[NOTE]
+.*Availability level and replication mode*
+====
+Availability comes in levels; choose per service against its needs.
+
+* *Single region, multiple availability zones*: the baseline, resilient to the loss of an availability zone. In BYOK8s the zone spread is part of the cluster you operate.
+* *Multi-region, replicated*: the highest-availability posture Akka offers, resilient to the loss of an entire region, with geographic failover and low-latency local access (xref:concepts:multi-region.adoc[]).
+
+Within multi-region, the replication mode set per service determines the failover behavior:
+
+* *Replicated writes*: every region can accept writes for the same data, and concurrent changes converge automatically without conflict. Highest write availability through a regional loss; the data model must tolerate concurrent, order-independent updates.
+* *Replicated reads, request-region primary*: one region owns writes for an entity, and that primary follows where writes happen, with strong consistency preserved across the switch-over. Best for user locality with automatic movement.
+* *Replicated reads, pinned-region primary*: a single static primary owns writes while other regions serve reads and take over on an operational failover. The classic one-primary, fail-over-on-outage posture.
+
+Single-region (not replicated) has no cross-region failover; recovery is a cold rebuild, the Day 2 Ops tier. Switch-over behavior and consistency are authoritative in xref:concepts:multi-region.adoc[]; operational setup is in xref:operations:regions/index.adoc[]. Terminology: "region-pinned" below means data that is not replicated across regions, which differs from the pinned-region primary above (a replicated mode); state which you mean in the ADR.
+====
+
 .*Detailed checklist*
 [%collapsible]
 =====
 [discrete]
+==== Per-region infrastructure (customer-operated)
+
+In BYOK8s you operate the cluster, database, and networking in every region, so standing up an additional region is a substantial, customer-owned effort. Each item below is your single-region infrastructure repeated per region, plus the connectivity between them.
+
+* [ ] Conformant Kubernetes cluster stood up and operated in each region (node pools, availability-zone spread, versions within Akka's supported matrix)
+* [ ] Database provisioned and operated in each region, including that region's own backups and, where applicable, replication
+* [ ] Cross-region and cross-cluster connectivity (VPC peering or private links), with firewall rules and IP allowlists between regions
+* [ ] Federation Plane reachability established to each regional cluster (e.g., Teleport connectivity per region)
+* [ ] Per-region cluster and database upgrade/patch cadence coordinated with Akka's maintenance windows
+* [ ] Per-region secret stores and IAM reachable from each cluster
+
+[discrete]
 ==== Architecture (per workload)
 
-* [ ] Replication mode chosen per service (region-pinned or replicated); documented as ADR (Architecture Decision Record)
+* [ ] Replication mode chosen per service and recorded in an ADR (Architecture Decision Record), using the modes in xref:concepts:multi-region.adoc[] (see the availability note above)
 * [ ] Cross-region workflow idempotency validated
 * [ ] Eventual-consistency lag tolerance documented and surfaced to the business
 
