@@ -238,11 +238,16 @@ At a glance::
 
 == 7. Observability and monitoring
 
-Akka monitors the platform; the customer monitors their applications. Application telemetry is exported to the customer's observability vendor of choice.
+Monitoring follows the same platform/application boundary as the rest of this model: Akka watches the platform layer it operates, and the customer watches their own applications and the access tooling on their side. Application telemetry flows to whichever observability vendor the customer chooses.
 
 At a glance::
-* *Akka*: Monitors platform availability and region telemetry, publishes uptime reports on request. Filters SDK logs at the source so application data stays with the customer.
-* *Customer*: Exports application telemetry to their observability platform via Akka SDK integration patterns. Owns cloud-native audit logging on the cloud account.
+* *Akka*: Watches the health of the platform it operates, for example its system and infrastructure pods, database health and resource use, platform runtime errors, and internal processing-lag signals, and acts on them as part of running the region. Also tracks platform availability and region telemetry, with uptime reports on request.
+* *Customer*: Watches their own Akka applications, for example pod resource use, projection health, and any service-specific metrics, and sets the thresholds that make sense for their services. Configures Teleport alerting on their side, exports application telemetry over OTLP, and owns cloud-native audit logging on the cloud account.
+
+[NOTE]
+====
+This lays out the division of responsibility between the platform and application layers. It is not a fixed catalog of alerts, a set of committed thresholds, or a service-level guarantee, the signals and tooling Akka uses to run the platform change over time, and availability and support commitments live in the Akka Federation Plane SLA Policy and the Customer Support Policy. Monitoring of the customer's own application pods sits with the customer rather than Akka, since they are best placed to define what healthy looks like for their services, and Akka can share recommended metrics and thresholds on request.
+====
 
 .*Responsibilities*
 [%collapsible]
@@ -251,9 +256,12 @@ At a glance::
 |===
 | Activity | Owner | Description
 
+| Platform health monitoring | Akka | Akka monitors and responds to the health of the platform it operates, for example its system and infrastructure pods, database health and resource use, platform runtime errors, and internal processing-lag signals. Described generically; the specific signals and tooling change as the platform evolves.
 | Platform availability monitoring | Akka | Akka monitors and reports availability of the Akka Platform. Uptime reports available on request. Platform availability commitments are governed by the Akka Federation Plane SLA Policy. Availability of customer-deployed services running on the platform is the customer's responsibility, see Section 12.
 | Platform logs (excluding SDK logs) | Akka | Akka monitors all platform logs other than SDK logs. SDK logs are filtered at the source so they are not sent to Akka's internal observability stack.
 | Akka region platform telemetry | Akka | Akka monitors region-level metrics and logs and notifies the customer as needed.
+| Application monitoring | Customer | The customer monitors their own application pods, for example resource use, projection health, and service-specific metrics, and sets the thresholds that matter for their services. Recommended metrics and thresholds are available from Akka on request.
+| Teleport access monitoring | Customer | Teleport sits at the boundary between the customer's infrastructure and Akka's, so meaningful coverage needs both sides; the customer configures alerting for Teleport access on their side.
 | Customer-side platform telemetry (optional) | Customer | Customer may optionally configure their own telemetry over the cluster and database since they own the cloud account. Akka can advise on which components are appropriate to observe externally.
 | Cloud-native audit logging | Customer | Customer enables cloud-native audit/security services (e.g., CloudTrail, Cloud Audit Logs, equivalents) and notifies Akka if any suspicious SIEM alerts are observed.
 | Application telemetry export | Customer | Customer configures export of application logs, metrics, and traces to their observability platform via Akka's OpenTelemetry (OTLP) exporters, which support any OpenTelemetry-compatible backend.
