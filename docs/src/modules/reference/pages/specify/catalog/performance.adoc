@@ -1,0 +1,146 @@
+= Performance exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Performance] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
+
+== Response latency
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PERF-P50-LATENCY` | Median (p50) response time for the endpoint stays at or below the target budget under nominal load.
+| `PERF-P95-LATENCY` | The 95th-percentile response time stays at or below its target budget under nominal load.
+| `PERF-P99-LATENCY` | The 99th-percentile response time stays at or below its target budget under nominal load.
+| `PERF-TAIL-LATENCY-BUDGET` | Extreme tail latency (p99.9) stays within a defined ceiling so worst-case requests remain bounded.
+| `PERF-MAX-LATENCY-CEILING` | No individual request exceeds a hard maximum latency ceiling during the measured window.
+| `PERF-LATENCY-UNDER-LOAD` | Percentile latency targets still hold when the system is driven at its rated concurrency, not just at idle.
+| `PERF-COLD-START-LATENCY` | First-request (cold-start) latency after a deploy or scale-out stays within an allowed budget.
+| `PERF-TIME-TO-FIRST-BYTE` | Server time-to-first-byte for the endpoint stays under the target threshold.
+| `PERF-LATENCY-REGRESSION` | Measured latency does not regress beyond an allowed delta versus the recorded baseline.
+|===
+
+== Throughput and capacity
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PERF-SUSTAINED-RPS` | The service sustains the target requests-per-second without error-rate or latency breach over a sustained window.
+| `PERF-PEAK-RPS` | The service absorbs the specified peak requests-per-second burst without failing requests.
+| `PERF-THROUGHPUT-PER-CORE` | Throughput normalized per CPU core meets the efficiency target for the workload.
+| `PERF-SATURATION-POINT` | The measured saturation (knee) point occurs at or above the required load level.
+| `PERF-GOODPUT-RATIO` | The ratio of successfully completed requests to total offered load stays above the target under load.
+| `PERF-WRITE-THROUGHPUT` | Sustained write operations per second meet the target for the persistence path.
+| `PERF-READ-THROUGHPUT` | Sustained read operations per second meet the target for the query path.
+| `PERF-BATCH-THROUGHPUT` | Batch or bulk jobs process records at or above the required rate per unit time.
+| `PERF-QUEUE-DRAIN-RATE` | A backlog of queued work drains at a rate that keeps end-to-end lag within the target.
+|===
+
+== Resource utilization
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PERF-CPU-BUDGET` | Steady-state CPU utilization stays within the allocated budget at the rated load.
+| `PERF-MEMORY-CEILING` | Resident memory stays below the configured ceiling under sustained load.
+| `PERF-MEMORY-LEAK-FREE` | Memory usage returns to baseline after load and shows no upward drift across a soak run.
+| `PERF-GC-PAUSE-BUDGET` | Maximum garbage-collection pause time stays within the allowed budget.
+| `PERF-GC-OVERHEAD-RATIO` | The fraction of wall-clock time spent in garbage collection stays below the target ratio.
+| `PERF-HEAP-HEADROOM` | Peak heap usage leaves the required headroom below the maximum heap size under load.
+| `PERF-FILE-DESCRIPTOR-BUDGET` | Open file-descriptor and socket counts stay within the configured limit under load.
+| `PERF-THREAD-POOL-UTILIZATION` | Thread-pool saturation stays below the threshold that would cause queuing or starvation.
+| `PERF-DISK-IO-BUDGET` | Disk read/write IOPS and bandwidth stay within the provisioned budget under load.
+|===
+
+== Scalability and autoscaling
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PERF-HORIZONTAL-SCALE-LINEARITY` | Throughput scales near-linearly as replicas are added, within the target efficiency factor.
+| `PERF-SCALE-OUT-LATENCY` | Time from a scaling trigger to new capacity serving traffic stays within the target.
+| `PERF-SCALE-IN-STABILITY` | Scaling in does not drop in-flight requests or breach latency targets during downscale.
+| `PERF-AUTOSCALE-TRIGGER` | Autoscaling fires at the configured utilization threshold before saturation is reached.
+| `PERF-MAX-REPLICA-CAPACITY` | The system meets required total capacity at the maximum configured replica count.
+| `PERF-SCALE-EFFICIENCY` | Added capacity yields the expected marginal throughput gain rather than diminishing returns.
+| `PERF-NO-SCALE-OSCILLATION` | Autoscaler does not thrash (rapid scale up/down cycles) under a steady load pattern.
+| `PERF-COLD-CAPACITY-RESERVE` | Reserve capacity is sufficient to absorb a spike while new replicas are still starting.
+|===
+
+== Data access and caching efficiency
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PERF-NO-N-PLUS-ONE` | A request path issues no N+1 query pattern, verified by query-count assertions per operation.
+| `PERF-QUERY-LATENCY-BUDGET` | Individual database query latency stays within its target budget under load.
+| `PERF-INDEX-COVERAGE` | Hot query paths are served by an index and do not fall back to full scans.
+| `PERF-CONNECTION-POOL-SIZING` | The connection pool is sized to sustain target concurrency without excess idle connections.
+| `PERF-CONNECTION-POOL-EXHAUSTION` | Connection-pool wait time and exhaustion events stay within limits under peak load.
+| `PERF-SLOW-QUERY-THRESHOLD` | No query exceeds the slow-query threshold during the measured load window.
+| `PERF-DB-ROUNDTRIP-COUNT` | The number of database round-trips per request stays at or below the target.
+| `PERF-CACHE-HIT-RATE` | Cache hit rate for the cached surface meets or exceeds the target percentage under representative load.
+| `PERF-CACHE-STAMPEDE-GUARD` | Concurrent misses for a hot key do not trigger a stampede of duplicate backend work.
+| `PERF-PAGINATION-ENFORCED` | List and query endpoints enforce pagination or result caps rather than returning unbounded sets.
+| `PERF-RESPONSE-PAYLOAD-SIZE` | Response payload size stays within the target byte budget for the endpoint.
+|===
+
+== Concurrency and backpressure
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PERF-CONCURRENCY-LIMIT` | The service enforces a bounded in-flight concurrency limit rather than accepting unlimited work.
+| `PERF-BACKPRESSURE-APPLIED` | Under overload the system applies backpressure to upstream producers instead of buffering unboundedly.
+| `PERF-QUEUE-DEPTH-CEILING` | Internal queue depth stays below its configured ceiling under sustained load.
+| `PERF-NO-UNBOUNDED-BUFFER` | No stage in the request or stream path uses an unbounded in-memory buffer.
+| `PERF-BULKHEAD-ISOLATION` | Resource pools are bulkheaded so saturation of one dependency does not starve unrelated paths.
+| `PERF-RATE-LIMIT-ENFORCED` | Per-client or per-endpoint rate limits are enforced at the configured threshold.
+| `PERF-LOAD-SHEDDING` | Beyond capacity the system sheds load with fast rejections rather than degrading all requests.
+| `PERF-TIMEOUT-BUDGET` | Outbound calls enforce timeouts within budget so slow dependencies cannot pile up in-flight work.
+| `PERF-THREAD-STARVATION-FREE` | Blocking work is isolated so it does not starve the shared execution or event-loop threads.
+|===
+
+== Akka runtime performance
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PERF-ENTITY-THROUGHPUT` | A single entity sustains the target command throughput without breaching its latency budget.
+| `PERF-ENTITY-COMMAND-LATENCY` | Entity command round-trip latency stays within its percentile budget under load.
+| `PERF-SHARD-SCALE-OUT` | Aggregate entity throughput scales as shards are distributed across added nodes.
+| `PERF-SHARD-REBALANCE-IMPACT` | Shard rebalancing during scale events keeps latency impact within the allowed transient budget.
+| `PERF-VIEW-QUERY-LATENCY` | View query latency meets its percentile target under representative query load.
+| `PERF-VIEW-UPDATE-LAG` | View projection lag behind source events stays within the target eventual-consistency window.
+| `PERF-STREAM-PROCESSING-RATE` | A stream or consumer processes events at or above the required sustained rate.
+| `PERF-CONSUMER-LAG-BUDGET` | Consumer offset lag stays within the target bound under peak inbound event rate.
+| `PERF-PASSIVATION-EFFICIENCY` | Entity passivation keeps the active in-memory set and memory footprint within budget under a large key space.
+|===
+
+== Load, soak, and stress testing
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PERF-LOAD-TEST-PASS` | A load test at target load passes all latency, throughput, and error-rate thresholds.
+| `PERF-SOAK-STABILITY` | An extended soak run holds latency, throughput, and resource metrics stable without drift.
+| `PERF-STRESS-BREAKPOINT` | Under a ramping stress test the breaking point occurs at or above the required load level.
+| `PERF-SPIKE-RECOVERY` | After a traffic spike the system returns to baseline latency within the target recovery time.
+| `PERF-DEGRADATION-GRACEFUL` | Beyond capacity the system degrades gracefully rather than collapsing or cascading failures.
+| `PERF-BASELINE-REGRESSION-GATE` | A performance regression test gates the build when key metrics regress past the allowed delta.
+| `PERF-CAPACITY-HEADROOM` | Measured capacity leaves the required headroom above expected peak production load.
+| `PERF-ENDURANCE-NO-DRIFT` | Over an endurance run there is no monotonic drift in latency, memory, or connection counts.
+|===
+
+== Frontend performance
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PERF-LCP-BUDGET` | UI-only: Largest Contentful Paint stays within the Core Web Vitals target for the page.
+| `PERF-INP-BUDGET` | UI-only: Interaction to Next Paint stays within the responsiveness target for key interactions.
+| `PERF-CLS-BUDGET` | UI-only: Cumulative Layout Shift stays below the visual-stability target for the page.
+| `PERF-FCP-BUDGET` | UI-only: First Contentful Paint occurs within the target time on the reference network profile.
+| `PERF-TTI-BUDGET` | UI-only: Time to Interactive stays within the target so the page becomes usable promptly.
+| `PERF-JS-BUNDLE-SIZE` | UI-only: The shipped JavaScript bundle size stays within the byte budget after compression.
+| `PERF-MAIN-THREAD-BLOCKING` | UI-only: Total main-thread blocking time stays below the target to avoid input jank.
+| `PERF-IMAGE-WEIGHT-BUDGET` | UI-only: Total image and media weight for the page stays within the transfer budget.
+|===

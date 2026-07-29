@@ -1,0 +1,43 @@
+= Content & Brand Governance exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Content & Brand Governance] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these, and xref:reference:specify/content-governance.adoc[Content governance] for how the deterministic and holistic checks divide.
+
+This type covers the language and tone of generated prose. It is the set a company most often replaces with its own version, supplied through the governance repository and `governance-policy-url`. Documentation completeness and structure stay in the xref:reference:specify/catalog/documentation.adoc[Documentation & Training] type.
+
+[NOTE]
+====
+Two ids on this page ship in the xref:reference:specify/default-library.adoc[default library], both *off by default* (opt in per project or promote them in a policy): `CONTENT-LANGUAGE` -- a prohibition checked by the introspective Vale auditor -- and `CONTENT-TONE` -- a completion condition xref:reference:specify/auditor-kinds.adoc[delegated] to an attested tone judge. Every other id below is a candidate.
+====
+
+== Language (deterministic, introspective Vale auditor)
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `CONTENT-LANGUAGE` | *Prohibition, off by default.* The prose passes the content class's Vale configuration with a zero exit; a non-zero exit is red.
+| `CONTENT-NO-BANNED-PHRASE` | No phrase on the banned list is present (Vale `existence`, `reject.txt`).
+| `CONTENT-MANDATED-SUBSTITUTION` | Mandated substitutions are honored, for example "use" not "utilize" (Vale `substitution`).
+| `CONTENT-READING-GRADE` | Reading grade stays within the configured bound (Vale `metric`).
+| `CONTENT-TERMINOLOGY` | Product and feature terms match the approved terminology, for example "Akka Specify Plugin".
+| `CONTENT-VALE-CONFIG-CURRENT` | The Vale package matches the version the governance policy pins.
+|===
+
+== Tone (holistic, delegated to a judge)
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `CONTENT-TONE` | *Completion, delegated, off by default.* The prose passes the decomposed adversarial rubric, recorded by an attestation keyed to a content-plus-rubric signature.
+| `CONTENT-TONE-JUDGE-CROSS-FAMILY` | The tone judge runs a model from a different family than the one that generated the text.
+| `CONTENT-TONE-RUBRIC-CURRENT` | The recorded attestation covers the current rubric, and re-stales when the rubric changes.
+| `CONTENT-FACT-NOT-FLOURISH` | Case-study and marketing prose states verifiable facts rather than unsupported claims.
+|===
+
+== Per-content-class scoping
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `CONTENT-CLASS-ATTACHED` | Every governed content path resolves to a content class with an attached exit-condition set.
+| `CONTENT-MARKETING-REPO-COVERED` | A separate marketing repository governed by policy has its content class enforced, not only defined.
+|===

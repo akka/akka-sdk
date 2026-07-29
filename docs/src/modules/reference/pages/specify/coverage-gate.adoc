@@ -1,0 +1,36 @@
+= The coverage gate
+
+`PROC-AUDITOR-COVERAGE` is a locked, always-on Process-integrity exit condition: *every material surface must be covered.* It makes an unverified part of the project a visible failure rather than a silent blind spot.
+
+A xref:reference:specify/project-surface.adoc[surface] belongs to one of three classes — code, harness, or doc — and the gate decides coverage one class at a time.
+
+== When a surface is covered
+
+[cols="1,3",options="header"]
+|===
+| Surface class | Covered when
+
+| code | an active xref:reference:specify/auditors.adoc[auditor] runs in that module
+| harness | the required xref:reference:specify/harnesses.adoc[harness] is activated or resolved by an attestation
+| doc | a file under `docs/` names the exit condition id
+|===
+
+The engine collects the code, harness, and doc surfaces and evaluates each against its rule. A project with no surfaces passes the gate GREEN.
+
+== When it reds
+
+Any surface with no covering auditor, harness, or doc file makes the gate RED. The message names each gap — for example `uncovered: web (node)`. The gate stays red until every named surface is covered or waived.
+
+== Closing a gap
+
+A gap is closed by covering the surface, not by adopting a check from a catalogue. Author an auditor for a code surface (delegating to its ecosystem's toolchain, then reviewed adversarially and approved), activate or attest the required harness, or add a `docs/` file that names the id. Add a React app under `web/` and the gate reds until a `web` auditor exists.
+
+== Waiving
+
+A surface that genuinely needs no coverage can be marked intentionally unaudited, with a recorded reason; the gate then skips it. See xref:reference:specify/project-surface.adoc[Project surface coverage] for how surfaces are detected and waived.
+
+== Related
+
+* xref:reference:specify/project-surface.adoc[Project surface coverage]
+* xref:reference:specify/auditors.adoc[Auditors]
+* xref:reference:specify/adequacy-review.adoc[The adequacy review]

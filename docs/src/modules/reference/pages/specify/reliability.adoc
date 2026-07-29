@@ -1,0 +1,19 @@
+= /akka:reliability
+
+Add or remove resilience-testing instrumentation for the service.
+
+== Usage
+
+[source]
+----
+/akka:reliability
+----
+
+== Description
+
+Discovers the service's endpoints at runtime and writes a configuration file for the daemon-hosted reliability dashboard, adding (or removing) resilience-testing instrumentation. Use it to exercise the service under fault conditions and observe how it recovers.
+
+== See also
+
+* xref:reference:specify/inspect.adoc[]
+* xref:reference:specify/index.adoc[]

@@ -33,7 +33,24 @@ include::ROOT:partial$install-harness-table.adoc[]
 /akka:setup
 ----
 
-This ensures the Akka CLI is installed, Java and Maven are available, and your Akka download token is configured. Once it completes, you are ready to build — continue with xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent].
+This ensures the Akka CLI is installed, Java and Maven are available, and your Akka download token is configured.
+
+=== Choose your mode
+
+The Akka Specify plugin runs in one of two modes:
+
+* *Enforced* (the default) makes you define "done" as machine-checkable exit conditions before code is written, and gates shipping until they are met -- a cleaner, auditable result.
+* *À la carte* lets you run the specification commands individually, with nothing blocking you -- faster and lighter.
+
+New installs start in *Enforced* mode. Switch at any time:
+
+[source]
+----
+/akka:mode enforced
+/akka:mode a-la-carte
+----
+
+See xref:sdk:spec-driven-development.adoc#choosing-your-mode[Choosing your mode] for the trade-offs. Then build your first agent with the xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent] tutorial, which walks the same build in either mode.
 
 [#_set_up_your_env_without_ai]
 == Set up your env without AI

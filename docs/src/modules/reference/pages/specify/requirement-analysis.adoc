@@ -1,0 +1,28 @@
+= Requirement analysis
+
+When you give feedback to xref:reference:specify/index.adoc[`/akka:specify`], any requirement that can be checked is *captured* as an exit condition with a check — never left as prose. This is the rubric the assistant applies to each requirement.
+
+== The rubric
+
+1. *Classify* — an answer to an open decision (set the value in an existing condition), a new checkable invariant (a new exit condition), a revealed-inadequate check (tighten it), or a one-off/subjective item (do the task, or ask — do not invent a check).
+2. *Falsifiability gate* — an exit condition is created only if a *binary* pass predicate can be stated that is false exactly when the requirement is violated, over an observable signal. If not, a clarifying question is asked instead of inventing a meaningless check.
+3. *Define the condition* — id, tier, DoD type, a one-line invariant, and how it is checked.
+4. *Choose the auditor* — prefer the tool that already decides this, delegating rather than reimplementing. Pick, in order of preference, a built-in introspective auditor (a compiler, test runner, secret scanner, or prose linter Akka ships), an inline introspective command authored for the surface's ecosystem, a provisioned harness for a rule an external enterprise system enforces, or a delegated attestation when the judgment runs outside the engine. Write bespoke logic only when no tool observes the invariant. See xref:reference:specify/auditor-kinds.adoc[Auditor kinds].
+5. *The check must not* — be tautological, be able to pass while the invariant is false, be subjective without a probe, be over-broad, or duplicate an existing condition.
+6. *Adversarial self-check* — try to construct an input where the check passes while its invariant is false. If you can, fix it or clarify.
+7. *Surface for approval* — present the new or changed exit conditions plainly, each with "how I'll check it", for you to approve, adjust, or skip.
+
+== Clarification and trust
+
+We do not rely on the assistant to clarify every requirement well enough:
+
+* The *falsifiability gate* routes ambiguity to a clarifying question (a `NEEDS_INPUT` state) rather than a guessed check.
+* The xref:reference:specify/adequacy-review.adoc[adversarial review] plus your in-context veto catch a bad capture after the fact.
+* High-stakes conditions (security, data integrity, locked org checks) require your explicit confirmation of the predicate before they lock.
+
+The engine guarantees clarification and review *happened*; you guarantee they were good enough — with only a glance.
+
+== Related
+
+* xref:reference:specify/auditors.adoc[Auditors]
+* xref:reference:specify/adequacy-review.adoc[The adequacy review]
