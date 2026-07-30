@@ -44,7 +44,10 @@ public class StaticResourcesEndpoint {
   public HttpResponse status() {
     var html = "<html><body><h1>Service is running</h1></body></html>"; // <1>
     return HttpResponses.of(
-        StatusCodes.OK, ContentTypes.TEXT_HTML_UTF8, html.getBytes(StandardCharsets.UTF_8)); // <2>
+      StatusCodes.OK,
+      ContentTypes.TEXT_HTML_UTF8,
+      html.getBytes(StandardCharsets.UTF_8)
+    ); // <2>
   }
   // end::generated-html[]
 }
