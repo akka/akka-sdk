@@ -35,6 +35,7 @@ public class StaticResourcesEndpoint {
   public HttpResponse webPageResources(HttpRequest request) { // <2>
     return HttpResponses.staticResource(request, "/pages/"); // <3>
   }
+
   // end::static-resource-tree-from-classpath[]
 
   // build an HTML page at request time rather than serving a packaged file
@@ -43,10 +44,7 @@ public class StaticResourcesEndpoint {
   public HttpResponse status() {
     var html = "<html><body><h1>Service is running</h1></body></html>"; // <1>
     return HttpResponses.of(
-      StatusCodes.OK,
-      ContentTypes.TEXT_HTML_UTF8,
-      html.getBytes(StandardCharsets.UTF_8)
-    ); // <2>
+        StatusCodes.OK, ContentTypes.TEXT_HTML_UTF8, html.getBytes(StandardCharsets.UTF_8)); // <2>
   }
   // end::generated-html[]
 }
