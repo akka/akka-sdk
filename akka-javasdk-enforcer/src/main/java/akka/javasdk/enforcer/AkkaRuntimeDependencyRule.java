@@ -201,8 +201,8 @@ public class AkkaRuntimeDependencyRule extends AbstractEnforcerRule {
       sb.append("    Runtime version: ").append(c.runtimeVersion).append("\n\n");
     }
 
-    sb.append("These versions are not yours to choose: the runtime supplies them and its\n");
-    sb.append("jars come first, so a different version has no effect once deployed.\n\n");
+    sb.append("The Akka runtime supplies these libraries, and its jars come first on the\n");
+    sb.append("classpath, so a different version here has no effect once deployed.\n\n");
     sb.append("To fix, either:\n");
     sb.append("  - Remove the explicit version declaration, so that the akka-runtime-bom\n");
     sb.append("    imported by akka-javasdk-parent decides it\n");

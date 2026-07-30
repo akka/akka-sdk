@@ -90,15 +90,15 @@ case left to catch — a version the service declares explicitly — which is wh
 
 ## What a user can and cannot change
 
-Runtime-provided library versions are not the service's to choose. In platform deployment the
-runtime supplies them and its jars come first on the classpath, and the service image does not even
-package the ~50 artifacts listed in the parent POM's exclusion list. Declaring a different version
-of one of those changes local compilation and tests, and changes nothing in production — the jar it
-produces is discarded at packaging time.
+The runtime decides the versions of the libraries it provides. In platform deployment it supplies
+them and its jars come first on the classpath, and the service image does not even package the ~50
+artifacts listed in the parent POM's exclusion list. Declaring a different version of one of those
+changes local compilation and tests, and changes nothing in production — the jar it produces is
+discarded at packaging time.
 
-So there is no supported way to override a runtime-provided version. What the pieces above do is
-make the build say so: the BOM makes local resolution match production, and the enforcer fails the
-build when an explicit declaration has pulled something out of alignment.
+So a runtime-provided version cannot be overridden from the service. What the pieces above do is
+make the build say so early: the BOM makes local resolution match production, and the enforcer fails
+the build when an explicit declaration has pulled something out of alignment.
 
 The one genuine exit is standalone (self-managed) deployment, where the runtime does not supply the
 classpath. Those projects turn the check off with `-Dakka.dependency-check.skip=true` or the
@@ -183,8 +183,8 @@ which may cause unexpected behavior or errors.
     Your version:    35.0.0-jre  (newer than runtime)
     Runtime version: 33.5.0-jre
 
-These versions are not yours to choose: the runtime supplies them and its
-jars come first, so a different version has no effect once deployed.
+The Akka runtime supplies these libraries, and its jars come first on the
+classpath, so a different version here has no effect once deployed.
 
 To fix, either:
   - Remove the explicit version declaration, so that the akka-runtime-bom
