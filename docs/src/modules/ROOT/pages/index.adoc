@@ -56,6 +56,7 @@ Akka is a full-stack platform for agentic AI: developer experience, runtime, and
 
 * xref:sdk:spec-driven-development.adoc[Spec-driven development]
 * xref:sdk:components/index.adoc[Components]
+* xref:sdk:web-applications.adoc[Web applications]
 * xref:sdk:integrations/index.adoc[Integrations]
 * xref:sdk:setup-and-configuration/index.adoc[Configuration]
 --

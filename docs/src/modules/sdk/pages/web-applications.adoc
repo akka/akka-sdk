@@ -1,0 +1,136 @@
+= Web applications
+:page-summary: Serve a web application from an Akka service — single-page application assets, individual static files, or HTML generated at request time — alongside the API it calls.
+:page-when-to-use: Operator consoles, administrative panels, agent chat interfaces, live dashboards, demo and evaluation applications
+:page-related: sdk:http-endpoints.adoc, sdk:access-control.adoc, operations:services/invoke-service.adoc
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+An Akka service can serve a web application to a browser: the HTML, JavaScript, and CSS files of a single-page application, individual files such as images, or HTML generated when the request arrives. The same service serves the API that the application calls, so a browser-facing system can be a single deployable unit.
+
+== Overview
+
+Web application files are packaged with the service and returned from xref:sdk:http-endpoints.adoc[HTTP endpoints]. There is no separate web server to configure. The endpoint that returns a page and the endpoint that returns JSON live in the same codebase. Both run in the same service, so access control, traces, and metrics cover the pages and the API together.
+
+Use this when the user interface belongs to the service:
+
+* An operator console for a service that otherwise exposes only an API.
+* An administrative panel over xref:sdk:event-sourced-entities.adoc[Event Sourced Entities] and xref:sdk:views.adoc[Views].
+* A chat interface for an xref:sdk:agents.adoc[Agent] that displays model output as it is generated.
+* A dashboard that redraws as new data arrives.
+* A demo or evaluation application that ships with the service it exercises.
+
+Files are part of the service artifact. Changing a page means deploying the service again. If the user interface follows its own release cycle, or requires delivery through a content delivery network, host it separately and have it call the service API. The <<scope>> section describes the boundaries in full.
+
+== Serving a single-page application
+
+Place the application files in `src/main/resources/static-resources`. Map one endpoint method to a path prefix ending in `\**`, and pass the request to `HttpResponses.staticResource` together with the prefix to remove:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java[StaticResourcesEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java[tag=static-resource-tree-from-classpath]
+----
+<1> Match any request path under `/pages/`.
+<2> Accept `akka.http.javadsl.model.HttpRequest` so the method can read the requested path.
+<3> Remove the `/pages/` prefix and serve the matching file from `static-resources`.
+
+A request for `/pages/app.css` returns `static-resources/app.css`. Because `\**` also matches deeper paths, `/pages/images/logo.png` returns `static-resources/images/logo.png`.
+
+When the remaining path is empty or ends with `/`, `index.html` from that directory is served. A request to `/pages` or `/pages/` therefore returns the application shell, which is the behavior a single-page application needs at the root of its subtree.
+
+The response content type is set from the file extension. HTML, CSS, JavaScript, JSON, PNG, SVG, JPEG, GIF, ICO, PDF, XML, and YAML are recognized. Any other extension is served as `application/octet-stream`.
+
+== Serving individual files
+
+Map a method to one path when you want to control each file explicitly:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java[StaticResourcesEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java[tag=single-static-resource-from-classpath]
+----
+<1> The specific path `/`.
+<2> Serve `src/main/resources/static-resources/index.html`.
+<3> Another specific path.
+<4> The file to serve for that path.
+
+Paths passed to `HttpResponses.staticResource` are relative to `static-resources` and must not start with `/`. A path containing `..` returns 403 Forbidden. A path with no matching file returns 404 Not Found.
+
+== Generating HTML in an endpoint
+
+An endpoint method can build a response body itself instead of reading a packaged file. Return `HttpResponses.of` with an HTML content type:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java[StaticResourcesEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java[tag=generated-html]
+----
+<1> Build the markup. A template library can be used here, since an endpoint is ordinary Java.
+<2> Return the bytes with `text/html` so the browser renders them as a page.
+
+This suits pages whose content depends on the request or on current service state.
+
+== Updating the page as data changes
+
+A page does not have to poll for new data. An endpoint can hold a connection open and push updates to the browser.
+
+Server-sent events carry a one-way stream from the service to the page. The browser reconnects automatically, and the SDK can resume the stream from the last event the client saw. This is how a chat interface displays an agent's response as the model produces it. See xref:sdk:http-endpoints.adoc#sse[Server-sent events] and xref:sdk:agents/streaming.adoc[Streaming responses].
+
+WebSockets carry traffic in both directions over one connection. Use them when the page sends messages to the service as well as receiving them. See xref:sdk:http-endpoints.adoc#websocket[Streaming with WebSockets].
+
+NOTE: A deployed service needs route configuration before WebSocket connections succeed. Without it, the connection fails with 403 Forbidden. See xref:operations:services/invoke-service.adoc#websockets[WebSocket support].
+
+== Serving the application and its API on one hostname
+
+The application and the API it calls can live in one service, which keeps them on the same origin and avoids cross-origin configuration.
+
+They can also live in separate services behind one hostname. A route maps path prefixes to different services, so `/` can reach a service that serves the pages while `/api` reaches a service that serves JSON. Akka does not rewrite the path before passing the request on, so each service must handle the full path the client sent. See xref:operations:services/invoke-service.adoc#exposing-internet[Exposing services to the internet].
+
+When the page and the API are served from different hostnames, the browser applies its cross-origin rules. Enable Cross-Origin Resource Sharing (CORS) on the route and name the origins that are allowed to call it. See xref:operations:services/invoke-service.adoc#_enabling_cors[Enabling CORS].
+
+== Using your own domain name
+
+Register the hostname with your project, then create a `CNAME` record at your DNS provider pointing to the value Akka returns. Akka provisions a TLS certificate through Let's Encrypt and renews it, for hostnames you bring and for hostnames Akka generates. All traffic uses TLS.
+
+See xref:operations:services/invoke-service.adoc#exposing-internet[Exposing services to the internet] for the commands.
+
+== Restricting who can load a page
+
+Endpoint methods that serve pages are subject to the same access control as any other endpoint method. An endpoint reachable from a browser needs an Access Control List (ACL) that admits internet traffic, which is not the default.
+
+For pages that require a signed-in user, validate a JSON Web Token (JWT) on the endpoint. See xref:sdk:access-control.adoc[Access control lists] and xref:sdk:auth-with-jwts.adoc[Authentication with JWTs].
+
+== Serving from more than one region
+
+Routes are global by default. When a project runs in more than one region, a route replicates to each new region and requests are served by the closest one. The application files are packaged with the service, so every region serves them without extra configuration.
+
+See xref:concepts:multi-region.adoc[Multi-region operations].
+
+[#scope]
+== Scope and trade-offs
+
+Files are served by the service itself. Akka does not run a content delivery network, and the following characteristics follow from that:
+
+* Responses carry a `Last-Modified` header. They do not carry `ETag` or `Cache-Control`, and conditional requests are not answered with 304 Not Modified, so each request transfers the full file.
+* Files are read from the service classpath on each request rather than from an edge cache.
+* Images are served as packaged. There is no resizing or format conversion.
+* Files are part of the service artifact, so a change to the user interface requires deploying the service.
+* There is no build integration for server-side rendering frameworks. Akka serves the output of a front-end build; it does not run the build.
+
+For a user interface with heavy asset traffic, or one that is released independently of the service, deploy it separately and call the service API across the network.
+
+== Testing
+
+Endpoint methods that serve pages are tested like any other HTTP endpoint method. Extend `TestKitSupport` and call the endpoint through its `httpClient`, then assert on the status code and the content type of the response.
+
+For WebSocket endpoint methods, the testkit provides `akka.javasdk.testkit.WebSocketRouteTester`, reached through `TestKit#getSelfWebSocketRouteTester`. See xref:sdk:http-endpoints.adoc#_testing_websocket_endpoints[Testing WebSocket endpoints].
+
+Files under `src/main/resources/static-resources` are on the test classpath, so a test can verify that a request for a packaged file returns it.
+
+== See also
+
+* xref:sdk:http-endpoints.adoc[HTTP Endpoints]
+* xref:sdk:agents/streaming.adoc[Streaming responses]
+* xref:sdk:access-control.adoc[Access control lists]
+* xref:operations:services/invoke-service.adoc[Invoking Akka services]

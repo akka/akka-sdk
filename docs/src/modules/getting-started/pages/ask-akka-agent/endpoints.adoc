@@ -8,6 +8,8 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 == Overview
 In this step of the guide, you will add some endpoints to provide a client-friendly API in front of all of the RAG components you have been building. You will create an API for submitting your "Ask Akka" questions (prompts), and one that serves up a self-hosted, static asset web UI.
 
+By the end of this step the service hosts its own web application: the browser loads the page from the same service that answers its questions, with no separate web server involved. See xref:sdk:web-applications.adoc[Web applications] for what else a service can serve to a browser.
+
 == Prerequisites
 
 include::ROOT:partial$local-dev-prerequisites.adoc[]
