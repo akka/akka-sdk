@@ -569,23 +569,13 @@ When an HTTP method returns an `akka.http.javadsl.model.HttpResponse` instead of
 A service can serve its own browser UI. Put the files in `src/main/resources/static-resources`
 and return them from an endpoint method with `HttpResponses.staticResource`.
 
-For a single-page application, map one method to a `**` subtree and strip the prefix. Do not
-write one `@Get` per file:
+For a single-page application, map one method to a `**` subtree and pass the prefix to strip to
+`HttpResponses.staticResource(request, "/pages/")`. Do not write one `@Get` per file. See the
+compiled example at `samples/doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java`
+(the `static-resource-tree-from-classpath` tag).
 
-```java
-@HttpEndpoint
-@Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL)) // required for browser access
-public class UiEndpoint {
-
-  @Get("/ui/**")
-  public HttpResponse assets(HttpRequest request) {
-    return HttpResponses.staticResource(request, "/ui/");
-  }
-}
-```
-
-`GET /ui/app.css` serves `static-resources/app.css`. When the remaining path is empty or ends
-with `/`, `index.html` from that directory is served, so `GET /ui/` returns the application shell.
+`GET /pages/app.css` serves `static-resources/app.css`. When the remaining path is empty or ends
+with `/`, `index.html` from that directory is served, so `GET /pages/` returns the application shell.
 Content types are set from the file extension.
 
 Use `HttpResponses.of(StatusCodes.OK, ContentTypes.TEXT_HTML_UTF8, bytes)` when the page is

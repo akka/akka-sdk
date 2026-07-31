@@ -20,7 +20,25 @@ Use this when the user interface belongs to the service:
 * A dashboard that redraws as new data arrives.
 * A demo or evaluation application that ships with the service it exercises.
 
-Files are part of the service artifact. Changing a page means deploying the service again. If the user interface follows its own release cycle, or requires delivery through a content delivery network, host it separately and have it call the service API. The <<scope>> section describes the boundaries in full.
+Files are part of the service artifact. Changing a page means deploying the service again. The <<scope>> section describes the boundaries in full.
+
+== In-service or separately hosted
+
+The application can run inside the service or on a separate host.
+
+Host the application inside the service for:
+
+* User interfaces released together with the service.
+* Operator consoles, administrative panels, agent chat interfaces, dashboards, demo applications.
+* One origin, one set of ACLs, and one trace and metric surface across pages and API.
+* Delivery to every region the service runs in, with no extra hosting to configure.
+
+Host the application on a separate static site host or content delivery network for:
+
+* User interfaces released on their own cadence, independent of the service.
+* Traffic patterns that need edge caching, `ETag`, `Cache-Control`, or 304 Not Modified responses. The in-service path does not provide these. See <<scope>>.
+* Image resizing, format conversion, or delivery from a point of presence close to the browser.
+* One user interface shared by more than one service or more than one client application.
 
 == Serving a single-page application
 
@@ -103,7 +121,7 @@ For pages that require a signed-in user, validate a JSON Web Token (JWT) on the 
 
 == Serving from more than one region
 
-Routes are global by default. When a project runs in more than one region, a route replicates to each new region and requests are served by the closest one. The application files are packaged with the service, so every region serves them without extra configuration.
+Routes are global by default. When a project runs in more than one region, a route replicates to each new region so any region can serve the application. The application files are packaged with the service, so every region serves them without extra configuration. Which region a given request reaches is determined by the DNS resolution in front of Akka, not by Akka itself.
 
 See xref:concepts:multi-region.adoc[Multi-region operations].
 
