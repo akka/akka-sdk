@@ -59,6 +59,7 @@ import com.typesafe.config.ConfigObject
     final case object McpToolRequest extends UseFor
     final case object McpToolResponse extends UseFor
     final case object BeforeToolCall extends UseFor
+    final case object BeforeModelCall extends UseFor
     final case object BeforeAgentResponse extends UseFor
 
     // Placeholder for a "*" declaration. It expands per guardrail interface type once the
@@ -80,6 +81,7 @@ import com.typesafe.config.ConfigObject
         case "mcp-tool-request"      => UseFor.McpToolRequest :: Nil
         case "mcp-tool-response"     => UseFor.McpToolResponse :: Nil
         case "before-tool-call"      => UseFor.BeforeToolCall :: Nil
+        case "before-model-call"     => UseFor.BeforeModelCall :: Nil
         case "before-agent-response" => UseFor.BeforeAgentResponse :: Nil
         case "*"                     => UseFor.Wildcard :: Nil
         case other =>

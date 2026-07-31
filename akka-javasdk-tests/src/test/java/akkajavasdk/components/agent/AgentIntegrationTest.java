@@ -71,6 +71,7 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(ProtobufAgentWithResponseAs.class, testModelProvider)
         .withModelProvider(ModelGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(ClassifierBackedGuardrailTestAgent.class, testModelProvider)
+        .withModelProvider(BeforeModelCallGuardrailTestAgent.class, testModelProvider)
         .withDependencyProvider(depsProvider);
   }
 
@@ -620,6 +621,28 @@ public class AgentIntegrationTest extends TestKitSupport {
     // then
     // the GuardrailException still reaches onFailure even for the new ModelGuardrail
     assertThat(result.response()).contains("blocked by test model guard");
+  }
+
+  @Test
+  public void shouldFireBeforeModelCallGuardrailWithConversation() {
+    // given
+    // before-model-call-guardrail-test-agent uses BeforeModelCallGuard, a ModelGuardrail bound to
+    // before-model-call that denies while echoing the conversation it received. The reply is never
+    // reached because the guardrail blocks before the model is called.
+    testModelProvider.whenMessage(s -> s.equals("hello")).reply("never reached");
+
+    // when
+    BeforeModelCallGuardrailTestAgent.SomeResponse result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(BeforeModelCallGuardrailTestAgent::ask)
+            .invoke("hello");
+
+    // then
+    // the deny reason proves the boundary fired before the model and carried the full conversation
+    assertThat(result.response()).contains("system=[You are a helpful assistant]");
+    assertThat(result.response()).contains("user=[hello]");
   }
 
   @Test
