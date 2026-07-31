@@ -55,10 +55,11 @@ import java.util.function.Function;
  * further customized with additional headers, different status codes, or other modifications using
  * the Akka HTTP API.
  *
- * <p><strong>Static Resources:</strong> Use {@link #staticResource(String)} to serve files from the
- * {@code src/main/resources/static-resources} directory. This is convenient for documentation or
- * small web UIs but not recommended for production where UI and service lifecycles should be
- * decoupled.
+ * <p><strong>Static Resources:</strong> Use {@link #staticResource(String)} to serve a single file
+ * from the {@code src/main/resources/static-resources} directory, or {@link
+ * #staticResource(HttpRequest, String)} to serve a directory tree such as the assets of a
+ * single-page application. Files are packaged with the service, so changing them requires deploying
+ * the service again.
  */
 public class HttpResponses {
 
