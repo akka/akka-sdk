@@ -244,7 +244,6 @@ The condition stays visible on the manifest so a reviewer can see what was exclu
 
 `/akka:ship` releases only when the verdict is `READY_TO_SHIP` in enforced mode. In à la carte mode the ship proceeds anyway, with the verdict recorded as an override on the conformance receipt.
 
-
 == Ship tiers
 
 Every condition is declared at one of three ship tiers. The tier names *when* the condition must be green, orthogonal to its state (open/green/red), its kind (introspective/provisioned/delegated), and its properties (provenance/applicable/waiver).
