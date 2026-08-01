@@ -147,6 +147,8 @@ A component like <<key_value_entity>>,<<event_sourced_entity>> or <<workflow>>
 
 [[applicability]]Applicability:: A property on an <<exit_condition>> that says whether the condition applies to this project. An inapplicable condition stays visible on the manifest with an `applicable = false` marker and does not count for the ship verdict. Set through `/akka:scope` or by a policy strike on a `recommended-default` condition.
 
+[[ship_tier]]Ship tier:: The moment an <<exit_condition>> must be green. One of `author` (developer's own loop, precondition for every ship), `review` (before opening the change for team review), or `release` (before releasing to production). Tiers are monotonic — every ship at any target requires every author-tier condition to be green. See xref:reference:specify/exit-condition-states.adoc#ship-tiers[Ship tiers].
+
 [[ec_state]]Exit condition state:: One of `open`, `green`, or `red`. Set by the condition's auditor. When state is `open`, a `reason` is set to either `needs-user-action` or `blocked-outside-project`. See xref:reference:specify/exit-condition-states.adoc[Exit condition states].
 
 [[verified_at]]`verified_at`:: A timestamp on an <<exit_condition>> set when its auditor last returned `green`. Used by `/akka:ship` to detect drift: if any file in the project has been modified after `verified_at`, the condition is marked `stale` and the ship refuses until the auditor re-runs.

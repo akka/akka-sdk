@@ -151,7 +151,7 @@ READY_TO_SHIP — every applicable condition is green
 NEXT → /akka:ship
 ----
 
-Run `/akka:ship`. It runs the in-scope auditors one last time, fires the terminal action your organization defined, and writes a xref:sdk:enforced-mode.adoc#shipping[conformance receipt] recording what was verified.
+Run `/akka:ship release`. It runs the auditors for every applicable exit condition at any tier one last time, then runs the ship steps your organization declared for a release ship, and writes a xref:sdk:enforced-mode.adoc#shipping[conformance receipt] recording what was verified.
 
 [#a-la-carte]
 == Build À la carte

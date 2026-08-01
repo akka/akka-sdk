@@ -229,20 +229,71 @@ The condition stays visible on the manifest so a reviewer can see what was exclu
 
 == Verdicts
 
-`/akka:conform` returns one of two verdicts.
+`/akka:conform` and `/akka:ship` return one of two verdicts.
 
 [cols="1,3",options="header"]
 |===
 | Verdict | Meaning
 
 | `READY_TO_SHIP`
-| Every applicable condition is `green` and not stale, or covered by an effective waiver.
+| Every applicable, in-scope condition is `green` and not stale, or covered by an effective waiver.
 
 | `NOT_READY`
 | Anything else. The manifest lists the conditions blocking the ship, each with its state, its reason (for `open`), and any waiver record.
 |===
 
 `/akka:ship` releases only when the verdict is `READY_TO_SHIP` in enforced mode. In à la carte mode the ship proceeds anyway, with the verdict recorded as an override on the conformance receipt.
+
+== Ship tiers
+
+Every condition is declared at one of three ship tiers. The tier names *when* the condition must be green, orthogonal to its state (open/green/red), its kind (introspective/provisioned/delegated), and its properties (provenance/applicable/waiver).
+
+[cols="1,3",options="header"]
+|===
+| Tier | Meaning
+
+| `author`
+| Must be green in the developer's own loop, before any form of `/akka:ship` runs. Cheap and local — compile, unit tests, spec conformance, lint, git-secrets, the two locked process-integrity gates. An author-tier condition must be introspectively decidable on the developer's machine — a condition that only resolves via an attestation or a missing tool is not a valid author-tier condition.
+
+| `review`
+| Must be green before the change is opened for team review. Runs in minutes, may reach shared systems, does not touch production. SAST, coverage thresholds, integration tests, provisioned-auditor currency (harness lock matches policy version).
+
+| `release`
+| Must be green before the artifact reaches production. Expensive or external — DAST, penetration-test attestation, security review sign-off, DPIA, live-service probes, delegated attestations with fresh receipts.
+|===
+
+Tiers are monotonic. A release-time ship requires every review-time condition to be green, which requires every author-time condition to be green. Requesting a higher tier adds gates; it never skips lower ones.
+
+Author-time is a precondition, not a ship target. You never invoke `/akka:ship author` — author-time conditions are what every ship (review or release) requires before it runs its higher-tier auditors. If any author-time condition is red, open, or stale, `/akka:ship` refuses with an author-tier precondition failure regardless of the requested target.
+
+=== Assigning a tier
+
+Every condition ships with a default tier:
+
+* Prohibitions default to `author` — they must always hold, so they run every commit.
+* Attested (delegated) conditions default to `release` — the receipt is external and expensive.
+* Every other condition defaults to `review`.
+
+The default library overrides these defaults on cheap, critical conditions (compile, tests, dependency resolution, the two locked process-integrity gates) by declaring them at `author` explicitly. The organization policy may override any condition's tier in a single place; individual developers do not re-tier conditions.
+
+=== Ship verbs
+
+`/akka:ship` requires an explicit target and fails when called without one. Two targets are accepted:
+
+[cols="1,3",options="header"]
+|===
+| Command | What it runs
+
+| `/akka:ship review`
+| Runs the auditors for every applicable exit condition tagged `author` or `review`. Passes when every one of them is green (or waiver-covered) and not stale.
+
+| `/akka:ship release`
+| Runs the auditors for every applicable exit condition at any tier (`author`, `review`, and `release`). Passes when every one of them is green (or waiver-covered) and not stale.
+|===
+
+On success, `/akka:ship` runs the ship steps the organization declared in its policy for that target — for example, pushing the branch and opening a pull request on a review ship, or deploying to production on a release ship. Ship steps are org-specific; `/akka:ship` verifies the exit conditions and then runs whatever the policy says.
+
+Every condition remains visible on the manifest at every tier. A condition out of scope for the current ship target is displayed but not counted in the verdict.
 
 == Related
 

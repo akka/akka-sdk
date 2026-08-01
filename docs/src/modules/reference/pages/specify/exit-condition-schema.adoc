@@ -80,6 +80,9 @@ Set only when `state` is `open`. Names why the auditor has not decided the condi
 `applicable`::
 Whether the condition applies to this project. `true` by default. When `false`, the condition stays visible on the manifest with an `applicable = false` marker and does not count for the ship verdict. Set through `/akka:scope` or by a policy strike on a `recommended-default` condition.
 
+`ship_tier`::
+The ship target the condition is verified for: `author`, `review`, or `release`. Set by the library, the org policy, or (when omitted) defaulted by `/akka:conform` based on kind and autonomy — prohibitions default to `author`, attested conditions default to `release`, everything else defaults to `review`. Individual developers do not set this field; it is a policy-level choice. See xref:reference:specify/exit-condition-states.adoc#ship-tiers[Ship tiers].
+
 `waiver`::
 An optional modifier attached to a still-active condition. It does not change the state — the auditor still runs and the state still shows what it decided — but a waiver permits shipping despite `red` or `open`. Waivers record the accepter, the reason, and an expiration; on expiry the waiver is removed and the condition returns to blocking. Waivers are policy-gated; the organization may forbid them or require approval.
 

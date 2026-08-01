@@ -87,7 +87,7 @@ Enforced mode is two human touchpoints book-ending a silent machine phase -- not
 . *Define* (you). Frame the feature and define done in business terms. The engine infers a full draft of the definition of done from your intent and Akka's fixed surfaces, then asks only about the residue it cannot safely infer -- a threshold, a genuine fork, a type toggle -- each anchored to a proposed default. Inferred conditions are marked and do not become the contract until you confirm them. The organization's mandatory conditions are merged in, locked. Enforced mode will not build while a required decision is open.
 . *Build* (the machine). The engine derives exit conditions, wires auditors, plans, and implements, looping until every locally runnable auditor is green. It stops only for a short, closed list of reasons: a condition it cannot reach after repeated tries, an ambiguity Define did not resolve, or a conflict between your definition and the organization's.
 . *Review* (you). Validate the definition, not the code. A review miss becomes a new condition and loops back to Build. Close any conditions that need your sign-off, then ship.
-. *Ship*. `/akka:ship` runs the in-scope auditors and fires the organization-authored terminal action.
+. *Ship*. `/akka:ship <review|release>` runs the auditors for every applicable exit condition in scope for the target and, on pass, runs the ship steps the organization declared for that target.
 
 === The /akka:specify engine
 
@@ -151,9 +151,16 @@ New or changed checks are surfaced to you for approval at the exit-condition lev
 [#shipping]
 == Shipping and receipts
 
-`/akka:ship` runs the in-scope auditors and, if they pass, fires the terminal action the organization defined. Akka provides the mechanism; the organization writes what "ship" does -- deploy and activate, push to a repository, open a pull request, publish an artifact, or a sequence of these. There is no fixed menu of ship profiles.
+`/akka:ship <review|release>` runs the auditors for every applicable exit condition in scope for the target and, if they pass, runs the ship steps the organization declared for that target. Akka provides the mechanism; the organization writes what its ship steps do — push a branch, open a pull request, deploy and activate, publish an artifact, or a sequence of these. There is no fixed menu of ship profiles.
 
-One rule holds regardless: *ship fires only when every applicable condition is `green` and not stale, or covered by an effective waiver.* What ship targets determines what "done" proves. A deploy-and-activate ship verifies the full definition of done, including live-service conditions. A push-to-repository ship cannot run live-service auditors, so those conditions stay `open` with reason `blocked-outside-project` and the ship reports that the checks will be re-attempted downstream.
+`/akka:ship` requires an explicit target — `review` or `release` — and refuses when called without one. The target names which set of auditors runs:
+
+* *`/akka:ship review`* runs the auditors for every applicable exit condition tagged `author` or `review`, then runs the review ship steps declared in the organization's policy (typically pushing the branch and opening a pull request).
+* *`/akka:ship release`* runs the auditors for every applicable exit condition at any tier, then runs the release ship steps declared in the organization's policy (typically deploying to production).
+
+Author-time is a precondition, not a ship target. Every ship — review or release — refuses if any applicable author-tier condition is not green, before running any higher-tier auditors. See xref:reference:specify/exit-condition-states.adoc#ship-tiers[Ship tiers].
+
+One rule holds regardless of target: *the ship steps run only when every in-scope condition is `green` and not stale, or covered by an effective waiver.*
 
 When ship completes, Akka writes a *conformance receipt* -- which conditions were `green`, which auditors ran, which stayed `open` and why, and any waivers in effect. The receipt is what makes an AI-built handoff auditable: the downstream owner sees exactly what was verified and what remains. In Enforced mode, a successful ship also offers to shut down the local services the build started, closing the lifecycle that `/akka:setup` opened.
 
@@ -185,7 +192,7 @@ Every Specify command remains available -- Enforced mode changes the ship gate, 
 | Command | Role
 | xref:reference:specify/specify.adoc[`/akka:specify`] | The re-entrant engine that drives the whole flow.
 | xref:reference:specify/status.adoc[`/akka:status`] | Read-only rollup of the definition of done by business category.
-| xref:reference:specify/ship.adoc[`/akka:ship`] | Fire the organization-authored terminal action, gated on the in-scope conditions.
+| xref:reference:specify/ship.adoc[`/akka:ship`] | Run the auditors for the requested ship target and, on pass, run the organization's ship steps.
 | xref:reference:specify/mode.adoc[`/akka:mode`] | Switch mode within the organization-allowed set.
 | xref:reference:specify/setup.adoc[`/akka:setup`] | Install and repair the local environment and source the governance policy.
 |===
