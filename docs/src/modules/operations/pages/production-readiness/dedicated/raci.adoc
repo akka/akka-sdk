@@ -105,7 +105,7 @@ Filter by layer or owner, or search across activity, description, and cadence. O
 |===
 | Sub-category | Activity | R | A | C | I | Description | Cadence
 
-| Scope | Shared Responsibility | C | C |  |  | Anything not explicitly listed in this RACI is the Customer's responsibility. This includes the underlying cloud account, customer application code, customer-side operational tooling, and any concern not explicitly assigned to Akka in the rows below. The Customer may request additional operational support from Akka via the standard support channel. | 
+| Scope | Shared Responsibility | C | C |  |  | Anything not explicitly listed in this RACI is the Customer's responsibility. This includes the customer application code, customer-side operational tooling, and any concern not explicitly assigned to Akka in the rows below. The Customer may request additional operational support from Akka via the standard support channel. | 
 |===
 
 == Infrastructure
@@ -163,7 +163,6 @@ Filter by layer or owner, or search across activity, description, and cadence. O
 | Observability | Platform Logs Excluding SDK Logs | A | A |  |  | Akka monitors all Platform logs except for SDK logs. | 30-day retention
 | Observability | Availability | A | A |  |  | Akka monitors and reports availability of the Akka Platform, with uptime reports available on request. Platform availability commitments are governed by the Akka Federation Plane SLA Policy. Availability of customer-deployed services running on the platform is the Customer's responsibility; see the Services layer. | 
 | Observability | Akka Region Telemetry | A | A |  | C | Akka monitors metrics and logs and will notify the Customer as needed. | 
-| Observability | Akka Region Telemetry for the Customer | C | C | A |  | Customer can optionally choose to set up platform telemetry for the cluster and for the database instance as they own the account. Akka can be consulted for components that they can set up observability | 
 | Observability | Application Telemetry Export | C | C | A |  | The Customer configures export of application logs and metrics to its observability platform via Akka SDK integration patterns. | 
 | Backups and Recovery | Disaster Recovery Exercise | ± | ± |  |  | Akka and the Customer work together periodically to simulate a disaster and fully recover from it, ensuring the recovery meets or exceeds the Customer's needs. | Annual or as agreed
 | Backups and Recovery | Cross-Region Replication Configuration | ± | ± |  | C | The Customer specifies replication mode (e.g., region-pinned, replicated) per service. Akka enables and operates the underlying replication. | 
@@ -193,7 +192,7 @@ Filter by layer or owner, or search across activity, description, and cadence. O
 | Procedures | Operations Sync | A | A | C | C | Recurring operational review covering system health, maintenance, incidents, and roadmap items relevant to the Customer. | 
 | Procedures | Strategic Steering | A | A | C | C | Periodic alignment session covering usage, capacity, product direction, and Customer priorities. | 
 | Procedures | Executive Partnership Review | A | A | C | C | Executive-level partnership review covering relationship health, escalation status, and strategic items. | 
-| Procedures | BYOC Onboarding | ± | ± |  | C | Joint onboarding covering account setup, Region provisioning, connectivity validation, and acceptance criteria. | 
+| Procedures | Dedicated Onboarding | ± | ± |  | C | Joint onboarding covering account setup, Region provisioning, connectivity validation, and acceptance criteria. | 
 | Procedures | Customer Portal Access & Training | ± | A | C | C | Customers sign up for Portal access, Akka assigns their Region and walks them through console and CLI usage, and ticketing flow. | 
 | Procedures | Customer User & Team Management | C | C |  | C | The Customer manages its own users, teams, and role assignments within the Akka console. | 
 | Procedures | Customer Offboarding & Data Return | ± | ± |  |  | At end of contract, Akka coordinates region decommission, return or destruction of customer data, and revocation of access per the Data Retention Policy. | 30 days from termination
