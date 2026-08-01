@@ -34,7 +34,7 @@ The layers roll up in the other direction: an auditor produces a verdict, verdic
 
 Every exit condition resolves to a single boolean `pass` -- there is no "mostly done". A requirement that cannot be expressed as a binary predicate over an observable surface is not yet an exit condition; it is a Definition of Done item still waiting to be made precise.
 
-Every condition also carries a *provenance* that determines whether a developer can change it: `akka-intrinsic` (platform guarantees, always on and asserted), `recommended-default` (from the xref:reference:specify/default-library.adoc[default library], strikable), `corporate` (the organization policy, locked), and `developer` (added for this feature). Done is layered and additive -- the organization defines mandatory controls and developers add to them, tightening but never loosening. See the xref:reference:specify/exit-condition-schema.adoc[exit condition schema] for the full field set.
+Every condition also carries a *provenance* that determines whether a developer can change it: `akka-intrinsic` (platform-guaranteed; the trivial auditor returns `green` immediately, always applicable, annotated `[akka]`), `recommended-default` (from the xref:reference:specify/default-library.adoc[default library], may be marked inapplicable), `corporate` (the organization policy, locked), and `developer` (added for this feature). Done is layered and additive -- the organization defines mandatory controls and developers add to them, tightening but never loosening. See the xref:reference:specify/exit-condition-schema.adoc[exit condition schema] for the full field set.
 
 [#dod-types]
 == Definition-of-Done types
@@ -121,27 +121,23 @@ An *auditor* is the check bound to an exit condition. The engine resolves each c
 | A condition whose check is `harness:<capability>`, satisfied by a `/harnesses` asset recorded in `.akka/harnesses.lock` and checked for currency against the policy version. Green when the asset is present and enforcing; red when the lock is stale or the asset is missing. See xref:reference:specify/harnesses.adoc[/akka:harnesses].
 
 | *Delegated*
-| A condition with `autonomy: attested`, satisfied by a recorded xref:reference:specify/attestations.adoc[attestation]. It resolves DEFERRED until the attestation exists, then GREEN.
+| A condition with `autonomy: attested`, satisfied by a recorded xref:reference:specify/attestations.adoc[attestation]. It stays `open` with reason `needs-user-action` until the attestation is recorded, then goes `green`.
 |===
 
 The built-in introspective set is small, and there is no large closed catalogue of checks you pick from by id. Beyond the built-ins, auditors are authored per *ecosystem* (inline commands), provisioned as harness assets, or delegated via attestation. Each auditor declares what it needs to run (a git tree, Maven, a live service); the tooling checks availability and resolves the condition accordingly rather than blindly failing. See xref:reference:specify/auditor-kinds.adoc[Auditor kinds] for the full model.
 
-Every condition carries a *status*:
+Every condition carries a *state* and a set of *properties*. See xref:reference:specify/exit-condition-states.adoc[Exit condition states] for the full model. The three states:
 
 [cols="1,3"]
 |===
-| Status | Meaning
+| State | Meaning
 
-| *GREEN* | The auditor ran and the invariant holds.
-| *RED* | The auditor ran and the invariant is violated -- or a prohibition condition has no auditor, which reds rather than passing silently.
-| *OPEN* | Active but not yet resolved: not yet evaluated, awaiting a human sign-off, or a check whose command you have not yet approved.
-| *DEFERRED* | Not verifiable locally -- a delegated (attested) check before its attestation, or a requirement unavailable here (for example, a live-service check before deployment). Carried downstream and recorded in the conformance receipt.
-| *WAIVED* | Unmet, but covered by a time-bound waiver.
-| *ASSERTED* | Guaranteed by the platform (an `akka-intrinsic` condition such as observability, resilience, or scalability); trusted green without running a check.
-| *OFF* | Not applied.
+| *`open`* | The auditor has not decided the condition. It carries a `reason`: `needs-user-action` (a person on this project can move it forward) or `blocked-outside-project` (a required tool is missing, or the policy has no auditor mapped to the condition).
+| *`green`* | The auditor ran and the condition passed. An intrinsic condition goes directly to `green` with reason `platform-guaranteed`.
+| *`red`* | The auditor ran and the condition failed. A prohibition with no auditor is also `red`.
 |===
 
-A deferred condition is not a gap -- it is a check that will run elsewhere. An open condition is unfinished work.
+Alongside the state, three properties describe the condition itself: `provenance` (who guarantees it — `akka-intrinsic`, `recommended-default`, `corporate`, or `developer`), `waiver` (a time-bound record permitting shipping despite `red` or `open`), and `applicable` (whether the condition applies to this project). All three appear as annotations on the manifest and are described in the xref:reference:specify/exit-condition-states.adoc[states] page.
 
 === The two locked gates
 
@@ -157,9 +153,9 @@ New or changed checks are surfaced to you for approval at the exit-condition lev
 
 `/akka:ship` runs the in-scope auditors and, if they pass, fires the terminal action the organization defined. Akka provides the mechanism; the organization writes what "ship" does -- deploy and activate, push to a repository, open a pull request, publish an artifact, or a sequence of these. There is no fixed menu of ship profiles.
 
-One rule holds regardless: *ship fires only when every in-scope condition is green.* What ship targets determines what "done" proves. A deploy-and-activate ship verifies the full definition of done, including live-service conditions. A push-to-repository ship cannot run live-service auditors, so those defer downstream and Akka guarantees only the pre-handoff conditions.
+One rule holds regardless: *ship fires only when every applicable condition is `green` and not stale, or covered by an effective waiver.* What ship targets determines what "done" proves. A deploy-and-activate ship verifies the full definition of done, including live-service conditions. A push-to-repository ship cannot run live-service auditors, so those conditions stay `open` with reason `blocked-outside-project` and the ship reports that the checks will be re-attempted downstream.
 
-When ship completes, Akka writes a *conformance receipt* -- which conditions were green, which auditors ran, which deferred and to whom, and any waivers in effect. The receipt is what makes an AI-built handoff auditable: the downstream owner sees exactly what was verified and what remains. In Enforced mode, a successful ship also offers to shut down the local services the build started, closing the lifecycle that `/akka:setup` opened.
+When ship completes, Akka writes a *conformance receipt* -- which conditions were `green`, which auditors ran, which stayed `open` and why, and any waivers in effect. The receipt is what makes an AI-built handoff auditable: the downstream owner sees exactly what was verified and what remains. In Enforced mode, a successful ship also offers to shut down the local services the build started, closing the lifecycle that `/akka:setup` opened.
 
 [#governance]
 == Enterprise governance

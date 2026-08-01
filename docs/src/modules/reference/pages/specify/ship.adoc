@@ -11,9 +11,9 @@ Fire the organization-authored terminal action for the feature.
 
 == Description
 
-Runs the in-scope auditors — the auditor tiers the governance policy marks in scope for ship — and the adversarial adequacy review, then evaluates the definition-of-done xref:reference:specify/conform.adoc[verdict]. In Enforced mode `ship` refuses unless the verdict is `READY_TO_SHIP`: every in-scope condition green, platform-asserted, waived, or deferred downstream, with neither process-integrity gate — `PROC-AUDITOR-COVERAGE` or `PROC-ADEQUACY-REVIEWED` — red. When the verdict clears, `ship` runs the terminal steps the organization defined — for example, deploy and activate, or push to a repository and open a pull request. In À la carte mode `ship` proceeds even when the verdict is `WORKING` or `NEEDS_INPUT`, recording an explicit override.
+Runs the in-scope auditors — the auditor tiers the governance policy marks in scope for ship — and the adversarial adequacy review, then evaluates the definition-of-done xref:reference:specify/conform.adoc[verdict]. In Enforced mode `ship` refuses unless the verdict is `READY_TO_SHIP`: every applicable condition is `green` and not stale, or covered by an effective waiver, with neither process-integrity gate — `PROC-AUDITOR-COVERAGE` or `PROC-ADEQUACY-REVIEWED` — red. See xref:reference:specify/exit-condition-states.adoc[Exit condition states] for the state model and the drift and staleness rule. When the verdict clears, `ship` runs the terminal steps the organization defined — for example, deploy and activate, or push to a repository and open a pull request. In À la carte mode `ship` proceeds even when the verdict is `NOT_READY`, recording an explicit override.
 
-On success it writes a xref:sdk:enforced-mode.adoc#shipping[conformance receipt] recording what was verified and what deferred downstream — including the auditor coverage and the adequacy review result — and in Enforced mode it offers to shut down the local services the build started.
+On success it writes a xref:sdk:enforced-mode.adoc#shipping[conformance receipt] recording what was verified — including the auditor coverage and the adequacy review result — and any conditions that remained `open` with their reasons. In Enforced mode it offers to shut down the local services the build started.
 
 == See also
 

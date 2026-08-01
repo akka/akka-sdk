@@ -35,6 +35,7 @@ The commands are used from within an AI coding assistant (such as Claude Code) a
 == Concepts
 
 * xref:reference:specify/exit-condition-schema.adoc[Exit condition schema] — the fields of an exit condition.
+* xref:reference:specify/exit-condition-states.adoc[Exit condition states] — the three states, the two `open` reasons, the properties, and the drift model.
 * xref:reference:specify/prohibitions.adoc[Prohibitions] — NEVER conditions, and why an unaudited one reds.
 * xref:reference:specify/default-library.adoc[Default exit-condition library] — the built-in conditions and their ids.
 * xref:reference:specify/requirement-analysis.adoc[Requirement analysis] — how feedback becomes a checkable exit condition.

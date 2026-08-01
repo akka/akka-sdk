@@ -1,0 +1,253 @@
+= Exit condition states
+
+An xref:reference:specify/exit-condition-schema.adoc[exit condition] has one *state* and a set of *properties*. The state is what the auditor has decided. The properties describe the condition itself and modify how the state is treated by xref:reference:specify/ship.adoc[`/akka:ship`] and the xref:reference:specify/conform.adoc[verdict].
+
+== The three states
+
+The state answers one question: has the auditor decided this condition, and if so, what did it decide?
+
+[cols="1,3",options="header"]
+|===
+| State | Meaning
+
+| `open`
+| The auditor has not decided the condition. The condition carries a *reason* that says what has to happen for it to leave `open`.
+
+| `green`
+| The auditor ran and the condition passed.
+
+| `red`
+| The auditor ran and the condition failed. A prohibition with no auditor mapped to it is also `red`.
+|===
+
+Every exit condition is in exactly one of these three states. There are no others.
+
+== The three properties
+
+Each property is set on the condition, alongside its state. Properties are not states. A property answers a different question from "what did the auditor decide."
+
+[cols="1,3",options="header"]
+|===
+| Property | Question it answers
+
+| `provenance`
+| Who guarantees this condition, and who is allowed to change it. Values: `akka-intrinsic`, `recommended-default`, `corporate`, `developer`. See xref:reference:specify/exit-condition-schema.adoc[the schema] for how each value affects configurability.
+
+| `waiver`
+| Has a person accepted the condition in its current state to permit shipping? A waiver is null, or a record with an accepter, a reason, and an expiration. A waiver does not change the state — the auditor still runs and the state still shows what it decided — but a waiver permits shipping despite `red` or `open`. The waiver stays visible on the manifest.
+
+| `applicable`
+| Does this condition apply to this project? Values: `true` or `false`. An inapplicable condition stays visible on the manifest with an `applicable = false` marker, but does not count for the ship verdict.
+|===
+
+An `akka-intrinsic` condition is guaranteed by the Akka platform. Its auditor is trivial: it returns `green` immediately with the reason `platform-guaranteed`. This preserves the rule that every `green` is the result of an auditor run. Intrinsic conditions are annotated `[akka]` on the manifest so a reader sees which conditions the platform covers and which the project covers.
+
+== Reasons on `open`
+
+An `open` condition carries a `reason` that says what has to happen. The reason is one of two values.
+
+[cols="1,3",options="header"]
+|===
+| Reason | Meaning
+
+| `needs-user-action`
+| A person working on this project can move the condition forward. The reason payload names the specific action — record a receipt, approve a proposed command, answer a spec question, decide a waiver or tier promotion, or confirm whether the condition applies. The manifest shows the action inline.
+
+| `blocked-outside-project`
+| The condition cannot be resolved by anyone working on this project. The fix is elsewhere. Two cases fall under this reason: a required tool is missing on this machine (install the tool, or run the check on a machine that has it), or the organization's policy lists a requirement without attaching a way to verify it (contact the policy owner and ask them to add a verification method). The manifest shows which case and who to contact.
+|===
+
+Two reasons are enough. The specific action lives in the reason payload, next to the condition on the manifest, so the developer can read what to do without looking up a code.
+
+== The state machine
+
+Transitions are triggered by named events. Nothing else moves the state.
+
+[source]
+----
+                 activate
+                 ────────►  open  ──── auditor passes ──►  green
+                                └───── auditor fails ───►  red
+
+                            green  ─── project changes ──►  green (stale)
+                            green (stale) ── auditor re-runs ──► green or red
+
+                            red    ── re-evaluate ──► open ──► green or red
+----
+
+Rendered as a state diagram:
+
+[source,mermaid]
+----
+stateDiagram-v2
+    [*] --> open: activate
+
+    open --> green: auditor passes
+    open --> red: auditor fails
+
+    green --> green_stale: project changes
+    green_stale --> green: auditor re-runs, passes
+    green_stale --> red: auditor re-runs, fails
+
+    red --> open: re-evaluate
+----
+
+Notes on the transitions:
+
+* An intrinsic condition activates directly to `green` because its trivial auditor runs on activation.
+* `green_stale` is `green` with a `stale = true` overlay, not a fourth state. See <<drift>>.
+* `red` returns to `open` when the developer requests a re-evaluation (for example, after a fix). The re-evaluation runs the auditor, which then goes to `green` or `red`.
+* Removing a condition from scope sets `applicable = false`. The condition stays visible with that marker; the state does not change.
+
+== Drift and re-evaluation [[drift]]
+
+When an auditor returns `green`, the CLI records a `verified_at` timestamp on the condition. Before `/akka:ship` proceeds, the CLI computes the most recent modification time in the project tree — every file under the project root except `.akka/`, `.git/`, build outputs, and paths matched by `.gitignore` — and compares it to each `green` condition's `verified_at`.
+
+If any file has changed after the condition was verified, the condition is marked `stale`. The manifest still displays it as `green` (the previous verdict is honest — it was green at that time), and the manifest adds a `stale — auditor must re-run before ship` annotation.
+
+`/akka:ship` refuses while any condition is stale. The refusal lists the stale conditions and offers to run their auditors. Re-running an auditor updates `verified_at` on success or flips the state to `red` on failure.
+
+Drift detection is coarse in this release: any change anywhere in the project stales every `green` condition. A future release may add per-condition drift scopes so that unrelated changes do not stale a condition whose inputs did not change.
+
+== Waivers and the ship rule
+
+A waiver is a property, not a state. When a waiver is present:
+
+* The condition's state is whatever the auditor decided (`open`, `green`, or `red`).
+* The manifest shows the state as usual, plus the waiver record (`~ waived by <accepter> until <date> — <reason>`).
+* `/akka:ship` treats a `red` or `open` condition covered by an effective (unexpired) waiver as satisfied for the purpose of the ship verdict.
+* When the waiver expires, the CLI removes the waiver record. The condition returns to being blocking in whatever state it is in.
+
+The ship rule under this model:
+
+`READY_TO_SHIP` requires every applicable condition to be either (a) `green` and not stale, or (b) covered by an effective waiver.
+
+Any other combination is `NOT_READY`.
+
+== One worked example per state
+
+*`open` — `needs-user-action`*
+
+`FUNC-PAYMENT-PROCESSORS` was activated by `/akka:specify`, and the spec contained an unanswered `[CLARIFY-3]` marker asking which payment processors the system supports. The auditor cannot decide the condition without the answer.
+
+Manifest line:
+
+[source]
+----
+○ FUNC-PAYMENT-PROCESSORS    needs your action
+   → Your spec has an open question. Open the spec, find [CLARIFY-3], and
+     write the answer. The check will re-run automatically.
+----
+
+*`open` — `blocked-outside-project`*
+
+`CONTENT-LANGUAGE` uses the introspective `content-vale` check. The developer's machine does not have Vale installed.
+
+Manifest line:
+
+[source]
+----
+○ CONTENT-LANGUAGE           blocked outside this project
+   → This check needs Vale installed on this machine. Install Vale (see
+     /akka:setup#vale) or run this check on a machine that has it.
+----
+
+*`green`*
+
+`OPS-COMPILES` is bound to the built-in `maven-compile` check. `mvn compile` returned zero. The condition is `green` with `verified_at` set to the run timestamp.
+
+Manifest line:
+
+[source]
+----
+✓ OPS-COMPILES               green
+----
+
+*`green` (intrinsic)*
+
+`REL-OBSERVABILITY` has `provenance: akka-intrinsic`. Its trivial auditor returned `green` on activation with reason `platform-guaranteed`.
+
+Manifest line:
+
+[source]
+----
+✓ REL-OBSERVABILITY  [akka]  green — platform-guaranteed
+----
+
+*`green` (stale)*
+
+`OPS-COMPILES` was `green` at 09:12. At 09:31 the developer edited a source file. `latest_change_at` is now 09:31, which is after `verified_at`. The condition is `green (stale)`.
+
+Manifest line:
+
+[source]
+----
+✓ OPS-COMPILES               green · stale — auditor must re-run before ship
+----
+
+`/akka:ship` refuses. Re-running the auditor either restores `green` with a fresh `verified_at` or flips the condition to `red`.
+
+*`red`*
+
+`SEC-SECRETS` is bound to the built-in `git-secrets` check. The check found a credential-like string in a committed file. The condition is `red`.
+
+Manifest line:
+
+[source]
+----
+✗ SEC-SECRETS                red — git-secrets found a credential-like
+                             string in src/config/dev.yaml
+----
+
+*`red` with waiver*
+
+The developer opened a 14-day waiver on `COV-UNIT-THRESHOLD` during a migration. A reviewer accepted the waiver. The auditor still runs and still reports the coverage number.
+
+Manifest line:
+
+[source]
+----
+✗ COV-UNIT-THRESHOLD         red — coverage 71%, threshold 80%
+                             ~ waived by lead-eng until 2026-08-14 — migration
+----
+
+The ship verdict counts this condition as satisfied while the waiver is active.
+
+*Inapplicable*
+
+`INFRA-K8S-NETPOL` is a Kubernetes-specific condition. The project does not deploy to Kubernetes. The developer marked the condition `applicable = false` through `/akka:scope`.
+
+Manifest line:
+
+[source]
+----
+— INFRA-K8S-NETPOL           not applicable — project does not deploy to
+                             Kubernetes
+----
+
+The condition stays visible on the manifest so a reviewer can see what was excluded and why. It does not count toward the ship verdict.
+
+== Verdicts
+
+`/akka:conform` returns one of two verdicts.
+
+[cols="1,3",options="header"]
+|===
+| Verdict | Meaning
+
+| `READY_TO_SHIP`
+| Every applicable condition is `green` and not stale, or covered by an effective waiver.
+
+| `NOT_READY`
+| Anything else. The manifest lists the conditions blocking the ship, each with its state, its reason (for `open`), and any waiver record.
+|===
+
+`/akka:ship` releases only when the verdict is `READY_TO_SHIP` in enforced mode. In à la carte mode the ship proceeds anyway, with the verdict recorded as an override on the conformance receipt.
+
+== Related
+
+* xref:reference:specify/exit-condition-schema.adoc[Exit condition schema]
+* xref:reference:specify/conform.adoc[/akka:conform]
+* xref:reference:specify/ship.adoc[/akka:ship]
+* xref:reference:specify/attestations.adoc[Attestations]
+* xref:reference:specify/auditor-kinds.adoc[Auditor kinds]
