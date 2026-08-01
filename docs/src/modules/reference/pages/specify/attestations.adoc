@@ -1,0 +1,33 @@
+= Attestations
+
+An *attestation* is a recorded receipt that resolves a check the CLI cannot run in the project's tree. It is the delegated path: where an xref:reference:specify/auditor-kinds.adoc[auditor] is delegated, the receipt supplies the evidence the engine cannot gather itself.
+
+== What a receipt is
+
+The receipt is a durable reference to work that happened elsewhere: a run URL from an external system, a signature, or the hash of a rubric the AI assistant applied. The engine does not reproduce the work. It records that the receipt exists and that it covers the current state, then resolves the delegated condition GREEN.
+
+Until a receipt is recorded, the delegated condition resolves DEFERRED, not GREEN. A check that is never attested reds by stalling rather than passing, so a missing receipt is visible.
+
+== Keyed to the condition or capability
+
+An attestation is recorded under a key that names what it resolves: the id of the exit condition, or the capability of the xref:reference:specify/harnesses.adoc[harness] it covers. Recording a receipt under that key resolves the matching delegated condition.
+
+A delegated condition re-defers when the evidence it depends on changes. A tone attestation, for example, holds only against the content-plus-rubric signature it was recorded for, so a change to the prose or to the rubric forces the judge to run again. This is the same mechanism the xref:reference:specify/adequacy-review.adoc[adequacy review] uses to stay current.
+
+== How a receipt is recorded
+
+The AI assistant records a receipt through the `akka_harness_attest` tool, and the same action is available on the command line as `akka specify attest`. The recorded receipt is carried into the ship receipt, so the evidence that a delegated check was resolved travels with the shipped build.
+
+== When to use one
+
+Two cases produce a delegated check and therefore an attestation:
+
+* a xref:reference:specify/harnesses.adoc[harness] wired to a system only the owner can reach, where the plugin cannot inspect enforcement directly;
+* the tone dimension of xref:reference:specify/content-governance.adoc[content governance], where a judgment runs in the AI assistant rather than the engine.
+
+== Related
+
+* xref:reference:specify/auditor-kinds.adoc[]
+* xref:reference:specify/harnesses.adoc[/akka:harnesses]
+* xref:reference:specify/content-governance.adoc[]
+* xref:reference:specify/ship.adoc[/akka:ship]

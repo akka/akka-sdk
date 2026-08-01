@@ -108,7 +108,7 @@ xref:consuming-producing.adoc#consume-from-event-sourced-entity[@Consume.FromEve
 
 The event producer is a Consumer that consumes the events from a local source and makes them available for consumption from another service. This is done with an additional `@Produce.ServiceStream` annotation, the stream `id` is what identifies the specific stream of events from the consuming services. The ACL configuration is set to allow access from specific (or all) Akka services.
 
-To illustrate how to publish entity events, let's assume the existence of a `CustomerEntity` that emits events of types: `CustomerCreated`, `NameChanged` and `AddressChanged`. You will get the events delivered to a Consumer, transform them to a public set of event types and let them be published to a stream.
+To illustrate how to publish entity events, assume the existence of a `CustomerEntity` that emits events of types: `CustomerCreated`, `NameChanged` and `AddressChanged`. You will get the events delivered to a Consumer, transform them to a public set of event types and let them be published to a stream.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/api/CustomerEvents.java[CustomerEvents.java]
@@ -138,7 +138,7 @@ include::example$event-sourced-customer-registry-subscriber/src/main/java/custom
 <3> The public identifier of the specific stream. Corresponds to the `@Produce.ServiceStream id` in the service publishing the event stream.
 <4> Handler method per message type that the stream may contain.
 
-TIP: If you're looking to test this locally, you will likely need to run the 2 services with different ports. For more details, consult xref:running-locally.adoc#multiple_services[Running multiple services].
+TIP: If you are looking to test this locally, you will likely need to run the 2 services with different ports. For more details, consult xref:running-locally.adoc#multiple_services[Running multiple services].
 
 [#consume_topic]
 == Consume from a message broker Topic
@@ -258,11 +258,11 @@ When an Akka service relies on a broker, it might be useful to use integration t
 * Use TestKit's mocked topic:
 ** this offers a general API to inject messages into topics or read the messages written to another topic, regardless of the specific broker integration you have configured.
 * Run an external broker instance:
-** if you're interested in running your integration tests against a real instance, you need to provide the broker instance yourself by running it in a separate process in your local setup and make sure to disable the use of TestKit's test broker. Currently, the only external broker supported in integration tests is Google PubSub Emulator.
+** if you are interested in running your integration tests against a real instance, you need to provide the broker instance yourself by running it in a separate process in your local setup and make sure to disable the use of TestKit's test broker. Currently, the only external broker supported in integration tests is Google PubSub Emulator.
 
 === TestKit Mocked Incoming Messages
 
-Following up on the counter entity example used above, let's consider an example (composed by 2 Consumer and 1 Event Sourced Entity) as pictured below:
+Following up on the counter entity example used above, consider an example (composed by 2 Consumer and 1 Event Sourced Entity) as pictured below:
 
 ifdef::todo[TODO: convert this diagram once we have a standard language for this]
 

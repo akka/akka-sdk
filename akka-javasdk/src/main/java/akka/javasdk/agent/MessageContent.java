@@ -33,8 +33,10 @@ public sealed interface MessageContent {
    * internally and produced by the testkit so tests can inspect what the model received.
    */
   sealed interface DataMessageContent extends MessageContent {
+    /** The inline bytes. */
     byte[] data();
 
+    /** The media type of {@link #data()}, if known, e.g. {@code image/png}. */
     Optional<String> mimeType();
   }
 

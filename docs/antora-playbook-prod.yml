@@ -22,6 +22,8 @@ runtime:
   fetch: true
 
 asciidoc:
+  extensions:
+  - '@asciidoctor/tabs'
   attributes:
     # the following two attributes cause review and todo notes to display
     # review: ''

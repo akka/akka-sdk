@@ -1,0 +1,80 @@
+= Default exit-condition library
+
+The default library is the curated set of exit conditions Akka Specify starts from, organized by xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done type]. It is what makes the definition of done rich by default instead of empty. See xref:sdk:enforced-mode.adoc#exit-conditions[Exit conditions and Definition of Done] for the model.
+
+== Two kinds of default
+
+[cols="1,3"]
+|===
+| Provenance | Behavior
+
+| `akka-intrinsic`
+| Guarantees the Akka platform provides — observability, resilience, scalability. Always on, asserted green, and never authored or disabled by a developer. They document what Akka covers in the rollup ("Resilience: covered by Akka") and lighten how much a developer has to define.
+
+| `recommended-default`
+| Best-practice conditions the tooling proposes for a feature. On by default; a developer can strike any that do not apply.
+|===
+
+== Default-rich, opt-out
+
+The library is deliberately rich, and the developer *strikes* what is inapplicable — it is never sparse-by-default with conditions you must remember to add. The asymmetry justifies it: the cost of a wrong default is one recorded strike, while the cost of a missing opt-in is shipping without a condition nobody remembered.
+
+Strikes are:
+
+* *Bounded* — a developer cannot strike an organization-locked condition.
+* *Recorded* — every strike is captured in the conformance receipt with its reason.
+* *Grouped* — related conditions strike together. Declaring a service headless or API-only strikes the whole Experience cluster (accessibility, page performance, responsive layout) in one gesture.
+
+During the DEFINE step the engine proactively suggests a strike when it is confident one applies (for example, no UI framework or routes are present), but still requires explicit confirmation.
+
+== Library conditions and their ids
+
+Every library condition has a stable *id*. That id is the registry key: a policy names it in a `ref:` field to adopt and govern the condition (see xref:reference:specify/policies.adoc[Policies]), and the tooling resolves the id back to the condition's type, `invariant`, and `pass` predicate. The library supplies the exit condition; its covering auditor is one of the three xref:reference:specify/auditor-kinds.adoc[auditor kinds]. Akka ships a small set of built-in introspective auditors (for example `mvn compile`, `git-secrets`, and `vale`); the rest are authored per ecosystem, provisioned as a harness asset, or delegated to an attestation. The complete shipped library:
+
+[cols="2,2,2,3",options="header"]
+|===
+| Id | Type | Governance level | What it checks
+
+| `AKKA-OBS-TRACES` | Operability | `always-apply` | Distributed tracing and observability, provided by the platform (akka-intrinsic, asserted).
+| `AKKA-RES-RECOVERY` | Reliability | `always-apply` | Supervision and recovery, provided by the platform (akka-intrinsic, asserted).
+| `AKKA-SCALE-SHARDING` | Reliability | `always-apply` | Cluster sharding and scale-out, provided by the platform (akka-intrinsic, asserted).
+| `FUNC-TESTS-PASS` | Functional | `on-but-dev-configurable` | The test suite passes (`mvn test`).
+| `DATA-ENTITY-INVARIANTS` | Data Integrity | `on-but-dev-configurable` | Entity invariants hold against a running service.
+| `SEC-AUTHZ-ENFORCED` | Security & Compliance | `on-but-dev-configurable` | Authorization is enforced against a running service.
+| `OPS-COMPILES` | Operability | `on-but-dev-configurable` | The service compiles (`mvn compile`).
+| `PERF-WEB-VITALS` | Performance | `on-but-dev-configurable` | Core Web Vitals and a bundle-size budget (UI-only).
+| `EXP-A11Y-WCAG-2.1-AA` | Experience | `on-but-dev-configurable` | WCAG 2.1 AA accessibility (UI-only, human sign-off).
+| `PROJ-CI-GREEN` | Pipeline & Scanning | `on-but-dev-configurable` | Prior commits passed CI.
+| `PROJ-SCAN-SAST-CLEAN` | Pipeline & Scanning | `on-but-dev-configurable` | Static analysis (SAST) reports no findings.
+| `SEC-SECRETS-NOT-COMMITTED` | Pipeline & Scanning | `on-but-dev-configurable` | *Prohibition.* No secrets are committed to source or history (`git-secrets`).
+| `PROJ-REPO-NO-UNMERGED-DRIFT` | Repository Hygiene | `on-but-dev-configurable` | Clean git tree, rebased on base, no orphaned code.
+| `NEVER-COMMIT-BUILD-OUTPUT` | Repository Hygiene | `on-but-dev-configurable` | *Prohibition.* No build output (`target`, `dist`, `node_modules`, `build`) is tracked.
+| `PROJ-TEST-COVERAGE` | Code & Test Health | `on-but-dev-configurable` | Line/branch coverage at or above a threshold.
+| `PROJ-ADR-RECORDED` | Documentation & Training | `on-but-dev-configurable` | Architecture decision records are present (human sign-off).
+| `ENV-SETUP-CURRENT` | Environment & Dependencies | `on-but-dev-configurable` | The project's environment setup is current.
+| `ENV-DEPS-RESOLVE` | Environment & Dependencies | `on-but-dev-configurable` | Declared dependencies resolve (`mvn dependency:resolve`).
+| `NEVER-UNPINNED-DEP` | Environment & Dependencies | `on-but-dev-configurable` | *Prohibition.* No dependency is unpinned; a lockfile or `go.sum` is present.
+| `CONTENT-LANGUAGE` | Content & Brand Governance | `off-but-dev-configurable` | *Prohibition, off by default.* Prose passes the content class's Vale configuration (`content-vale`).
+| `CONTENT-TONE` | Content & Brand Governance | `off-but-dev-configurable` | *Off by default.* Prose passes an attested tone judge (delegated).
+| `PROC-SOURCE-GROUNDING` | Process Integrity | `on-but-dev-configurable` | API usage is cited to official documentation; invented APIs are caught under coverage.
+| `PROC-AUDITOR-COVERAGE` | Process Integrity | `always-apply` | Every material build surface has a covering auditor (the coverage gate).
+| `PROC-ADEQUACY-REVIEWED` | Process Integrity | `always-apply` | A fresh adequacy review covers every active auditor.
+| `BUILD-WITHIN-BUDGET` | Build Efficiency | `on-but-dev-configurable` | The build stays within its time budget (human sign-off).
+|===
+
+[NOTE]
+====
+Four library conditions are *prohibitions* — a prohibition must never become true, and an unaudited prohibition is red rather than open: `SEC-SECRETS-NOT-COMMITTED`, `NEVER-COMMIT-BUILD-OUTPUT`, `NEVER-UNPINNED-DEP`, and `CONTENT-LANGUAGE`. The two Content & Brand Governance conditions (`CONTENT-LANGUAGE` and `CONTENT-TONE`) are the only library conditions *off by default*; opt in per project, or promote them in a policy.
+====
+
+Some conditions are UI-only and apply only when a feature has a user interface; for a headless Akka service they are struck as a group. The catalog of further candidates to consider is in the xref:reference:specify/catalog/index.adoc[exit condition catalog].
+
+== Organization control
+
+An organization can promote a recommended default to a locked, mandatory condition, or disable one across the whole organization, through its governance policy. See xref:reference:specify/policies.adoc[Policies].
+
+== Related
+
+* xref:sdk:enforced-mode.adoc#exit-conditions[Exit conditions and Definition of Done]
+* xref:reference:specify/exit-condition-schema.adoc[]
+* xref:reference:specify/policies.adoc[]

@@ -28,7 +28,7 @@ In this guide, you will:
 [#clone_sample]
 == Clone the sample project
 
-. From a command line, use the Akka CLI to create a new project. See xref:quick-install-cli.adoc[installation instructions] if you haven't installed the CLI yet.
+. From a command line, use the Akka CLI to create a new project. See xref:quick-install-cli.adoc[installation instructions] if you have not installed the CLI yet.
 +
 [source, command line]
 ----
@@ -173,7 +173,7 @@ Previous greetings:
 ====
 What just happened?
 
-The greetings will be in different languages each time. The AI model itself is stateless, so it wouldn't know what languages it had used previously unless we included that information in each request to the model. Akka Agents automatically track context using *session memory*. In this case, the Agent is able to remember all the past messages and languages that were used in this session.
+The greetings will be in different languages each time. The AI model itself is stateless, so it would not know what languages it had used previously unless we included that information in each request to the model. Akka Agents automatically track context using *session memory*. In this case, the Agent is able to remember all the past messages and languages that were used in this session.
 
 Here we use the user `alice` as the session identifier. Give it a try to change the user field in the HTTP request, and you will see that it starts over without previous knowledge about Alice or the used languages.
 ====
@@ -271,17 +271,17 @@ You can also see the details of the session in the `SessionMemoryEntity`.
 
 image:hello-world-session-memory.png[Session memory in the Local Console]
 
-If you're curious about which components are called and for how long when you make a request of this agent, you can use the request creation console feature. Simply click on the `HelloworldEndpoint` and you will see the _Create a request_ box. Fill in the fields the way you might if you were manually using `curl`. After the request executes (it could take a few seconds), you will see an analysis of the request, as shown in this screenshot:
+If you are curious about which components are called and for how long when you make a request of this agent, you can use the request creation console feature. Simply click on the `HelloworldEndpoint` and you will see the _Create a request_ box. Fill in the fields the way you might if you were manually using `curl`. After the request executes (it could take a few seconds), you will see an analysis of the request, as shown in this screenshot:
 
 image:flowview_helloworld.png[An HTTP post calls the agent]
 
 A key insight to take away from this image is that 99.9% of the request's execution time was spent talking to OpenAI.
 
-This is a simple Hello World service, so there isn't much to see here yet. However, as you build more complex services, the console will become a more valuable tool for monitoring and debugging.
+This is a simple Hello World service, so there is not much to see here yet. However, as you build more complex services, the console will become a more valuable tool for monitoring and debugging.
 
 == Next steps
 
-Now that you have a basic service running, it's time to learn more about building real services in Akka.
+Now that you have a basic service running, it is time to learn more about building real services in Akka.
 
 * See the xref:getting-started:spec-your-first-agent.adoc[Spec-first greeting agent] sample if you use an AI assistant and want to see a xref:sdk:spec-driven-development.adoc[Spec-Driven Development] alternative to this example.
 * See xref:getting-started:planner-agent/index.adoc[multi-agent planner] to build a more realistic application.

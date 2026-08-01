@@ -11,7 +11,7 @@ This section presents how you create and manage JWTs with Akka. Using JWTs to se
 * *Signature*: Ensures the integrity of the JWT, verifying that it was issued by a trusted entity and has not been tampered with.
 
 === Use Cases
-* *User and Device Authentication*: JWTs authenticate internet users or devices and can define what actions they're authorized to perform.
+* *User and Device Authentication*: JWTs authenticate internet users or devices and can define what actions they are authorized to perform.
 * *Inter-Service Authorization*: JWTs facilitate secure serverless operations, where services validate tokens directly without needing an external verifier.
 
 TIP: Another common use case is to use claims for authorization. Imagine a social network, one of the services in that network is a friends service. When the user fetches their list of friends from the friends service, it may send them a JWT for each friend in their friends list. For each friend, the corresponding JWT will contain a claim indicating that the user is a friend of the logged in user. When the logged in user wants to send a message to another friend, they can include the JWT of that friend in their request to send a message, and the message service can verify that the JWT has the necessary friendship claim, and allow the message to be sent.
@@ -159,7 +159,7 @@ akka service jwks add my-service \
 |===
 |Flag |Description
 
-|`--allowed-algorithms` |List of algorithms permitted for this keyset (e.g. `RS256,ES256`). Restricts which signing algorithms are accepted even if the keyset itself doesn't specify one.
+|`--allowed-algorithms` |List of algorithms permitted for this keyset (e.g. `RS256,ES256`). Restricts which signing algorithms are accepted even if the keyset itself does not specify one.
 |`--refresh-interval` |How often Akka refreshes the keyset (e.g. `30m`, `2h`). Acts as an upper bound — if the source returns a shorter cache TTL, that is used instead. Defaults to `1h`.
 |`--skip-validation` |Skip the initial validation of the JWKS endpoint or OIDC discovery document. Useful when the endpoint is not yet publicly reachable at deploy time.
 |===

@@ -13,6 +13,7 @@ public class CopyEditor extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
+    // tag::definition[]
     return define()
       .instructions(
         """
@@ -23,5 +24,6 @@ public class CopyEditor extends AutonomousAgent {
       )
       .capability(TaskAcceptance.of(EditorialTasks.SECTION))
       .tools(DocumentTools.class);
+    // end::definition[]
   }
 }

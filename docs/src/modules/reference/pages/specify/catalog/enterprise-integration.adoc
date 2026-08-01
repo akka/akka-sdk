@@ -1,0 +1,40 @@
+= Enterprise Integration exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Enterprise Integration] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these, and xref:reference:specify/harnesses.adoc[/akka:harnesses] for the generator that produces the assets these conditions verify.
+
+This type covers the plumbing surfaces — identity, secrets vault, SIEM, artifact registry, service catalog — that do not fit the other types and are almost entirely xref:reference:specify/auditor-kinds.adoc[provisioned or delegated]. A provisioned condition verifies a generated harness asset is current and enforcing; a delegated condition resolves on a recorded xref:reference:specify/attestations.adoc[attestation].
+
+[NOTE]
+====
+This is a defined, tiered Definition-of-Done type, but it ships no default-library conditions yet. Today it is satisfied by the vault, SIEM, and registry plumbing you provision as xref:reference:specify/harnesses.adoc[harness] assets, verified against `.akka/harnesses.lock`. The ids below are candidates for inspiration.
+====
+
+== Identity and access integration
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `EI-IDENTITY-PROVIDER-WIRED` | The service authenticates against the mandated identity provider, not a local store.
+| `EI-SSO-ENFORCED` | Single sign-on is required for privileged access paths, verified where inspectable.
+| `EI-SERVICE-ACCOUNT-SCOPED` | Machine identities are scoped to least privilege and recorded in the directory.
+|===
+
+== Secrets and supply chain
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `EI-SECRETS-VAULT-INTEGRATED` | Secrets resolve from the mandated vault rather than from committed files or environment defaults.
+| `EI-VAULT-HARNESS-CURRENT` | The vault harness matches the current policy version and surface signature in `.akka/harnesses.lock`.
+| `EI-ARTIFACT-REGISTRY-WIRED` | Build artifacts publish to the mandated registry with the required signing step enforced.
+|===
+
+== Telemetry and catalog integration
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `EI-SIEM-FORWARDING-ACTIVE` | Security-relevant logs forward to the mandated SIEM, attested where the endpoint is unreachable by the plugin.
+| `EI-SERVICE-CATALOG-REGISTERED` | The service is registered in the enterprise service catalog with an owner recorded.
+| `EI-INTEGRATION-ATTESTED` | Each delegated integration the plugin cannot inspect carries a recorded attestation covering the current state.
+|===

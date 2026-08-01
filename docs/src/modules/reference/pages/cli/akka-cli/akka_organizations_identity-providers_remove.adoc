@@ -1,0 +1,41 @@
+= akka organizations identity-providers remove
+
+Remove the given workload identity provider from the current (or specified) organization
+
+== Synopsis
+
+The `akka organizations identity-providers remove` command removes a workload identity provider from the given organization in Akka.
+
+----
+akka organizations identity-providers remove PROVIDER-ID [flags]
+----
+
+== Options
+
+----
+  -h, --help                  help for remove
+      --organization string   name or ID for organization
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_organizations_identity-providers.html[akka organizations identity-providers]	 - Manage workload identity providers for your organization on Akka
+
+[discrete]
+

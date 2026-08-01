@@ -63,6 +63,12 @@ import java.util.function.Function;
  */
 public abstract class Agent implements AgentDelegationWorker {
 
+  /**
+   * The number of tokens consumed by a model interaction.
+   *
+   * @param inputTokens tokens in the request sent to the model
+   * @param outputTokens tokens in the response returned by the model
+   */
   public record TokenUsage(int inputTokens, int outputTokens) {}
 
   /**
@@ -100,10 +106,18 @@ public abstract class Agent implements AgentDelegationWorker {
     this.context = context;
   }
 
+  /**
+   * Start building an {@link Effect} to return from a message handler that replies with the model's
+   * full response.
+   */
   public final Effect.Builder effects() {
     return new BaseAgentEffectBuilder<>();
   }
 
+  /**
+   * Start building a {@link StreamEffect} to return from a message handler that streams the model's
+   * response token by token.
+   */
   public final StreamEffect.Builder streamEffects() {
     return new AgentStreamEffectImpl();
   }
@@ -512,6 +526,11 @@ public abstract class Agent implements AgentDelegationWorker {
     }
   }
 
+  /**
+   * A StreamEffect is a description of what the runtime needs to do after the command is handled,
+   * for a message handler that streams the model's response token by token instead of returning it
+   * as a single reply.
+   */
   public interface StreamEffect {
 
     /** Construct the effect for token streaming that is returned by the message handler. */

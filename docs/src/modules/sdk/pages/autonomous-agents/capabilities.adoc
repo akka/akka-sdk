@@ -17,11 +17,9 @@ Each capability maps to one or more patterns:
 A coordinator declares delegation targets by adding a `Delegation` capability. The framework provides delegation tools for each combination of accepted task type and target, and the model picks one of these tools when it decides to delegate. When called, the tool creates the subtask, spawns the worker agent, assigns the task, awaits the result, and returns it to the coordinator's tool loop.
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/research/application/ResearchCoordinator.java[ResearchCoordinator.java]
 ----
-import akka.javasdk.agent.autonomous.capability.Delegation;
-
-define()
-  .capability(Delegation.to(Researcher.class, Analyst.class))
+include::example$autonomous-agent-playground/src/main/java/demo/research/application/ResearchCoordinator.java[tag=definition]
 ----
 
 The coordinator pauses while workers execute, then resumes with their results. Delegated agents shut down after their task completes. The coordinator maintains full context and is responsible for synthesizing the results.
@@ -32,21 +30,20 @@ The coordinator pauses while workers execute, then resumes with their results. D
 
 === Parallel workers
 
-`maxParallelWorkers` caps how many delegated tasks within a single `Delegation` capability can run at the same time. The default is configured by `akka.javasdk.agent.autonomous.delegation.max-parallel-workers` (default 3). Lower it to 1 to force sequential execution, or raise it when subtasks are genuinely independent and you want more fan-out for latency or thoroughness:
+`maxParallelWorkers` caps how many delegated tasks within a single `Delegation` capability can run at the same time. The default is configured by `akka.javasdk.agent.autonomous.delegation.max-parallel-workers` (default 3). Lower it to 1 to force sequential execution, or raise it when subtasks are genuinely independent and more parallel work helps latency or thoroughness. The editorial sample's research editor limits its reporters to two at a time:
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/editorial/application/ResearchEditor.java[ResearchEditor.java]
 ----
-define()
-  .capability(Delegation.to(Researcher.class, Analyst.class).maxParallelWorkers(4));
+include::example$autonomous-agent-playground/src/main/java/demo/editorial/application/ResearchEditor.java[tag=definition]
 ----
 
-To group workers so each group has its own concurrency limit, declare several `Delegation` capabilities. Workers from different capabilities run independently, each with its own `maxParallelWorkers` budget. This is useful when one set of workers, for example fast research agents, can fan out widely while another set, such as an expensive review agent, should remain serialized:
+To group workers so each group has its own concurrency limit, declare several `Delegation` capabilities. Workers from different capabilities run independently, each with its own `maxParallelWorkers` budget. The consulting coordinator declares two: research delegation limited to two parallel researchers, and fact-checking with the default budget:
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingCoordinator.java[ConsultingCoordinator.java]
 ----
-define()
-  .capability(Delegation.to(Researcher.class).maxParallelWorkers(5))
-  .capability(Delegation.to(Reviewer.class).maxParallelWorkers(1));    // run sequentially
+include::example$autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingCoordinator.java[tag=definition]
 ----
 
 The coordinator delegates to specialist agents that each accept their own task type:
@@ -87,11 +84,9 @@ IMPORTANT: The `description` in the `@Component` annotation is included in the d
 An agent declares handoff targets on its `TaskAcceptance` capability. The framework provides a tool that transfers the current task to another agent. Unlike delegation, handoff transfers ownership: the current agent is done and the target agent takes over.
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/support/application/TriageAgent.java[TriageAgent.java]
 ----
-define()
-  .capability(
-    TaskAcceptance.of(SupportTasks.RESOLVE)
-      .canHandoffTo(BillingSpecialist.class, TechnicalSpecialist.class));
+include::example$autonomous-agent-playground/src/main/java/demo/support/application/TriageAgent.java[tag=definition]
 ----
 
 Handoff is peer-to-peer. The handing-off agent reassigns the task directly to the target agent and stops. The task entity updates its assignee and records the handoff context. The new agent picks up the same task with the accumulated context from the handoff.
@@ -136,25 +131,16 @@ include::example$autonomous-agent-playground/src/main/java/demo/support/applicat
 A moderator agent orchestrates turn-taking conversations between participant agents. The moderator declares which agent types can participate, and the framework manages conversation setup, turn-taking, and transcript collection. Participant agents are simple: their `@Component` description identifies them to the moderator and the framework handles the conversation mechanics automatically.
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/peerreview/application/ReviewModerator.java[ReviewModerator.java]
 ----
-import akka.javasdk.agent.autonomous.capability.Moderation;
-
-define()
-  .capability(Moderation.of(
-      TechnicalReviewer.class,
-      StyleReviewer.class,
-      ComplianceReviewer.class))
+include::example$autonomous-agent-playground/src/main/java/demo/peerreview/application/ReviewModerator.java[tag=definition]
 ----
 
-Configuration options:
+The capability has three options:
 
-[source,java,indent=0]
-----
-Moderation.of(Buyer.class, Seller.class)
-  .maxRounds(5)                    // safety limit for directed mode (default 5)
-  .maxIterationsPerTurn(10)        // max model iterations per participant turn (default 10)
-  .maxConcurrentConversations(1)   // max simultaneous conversations (default 1)
-----
+* `maxRounds(int)` — safety limit on conversation rounds in directed mode. Default 5.
+* `maxIterationsPerTurn(int)` — maximum model iterations a participant gets per turn. Default 10.
+* `maxConcurrentConversations(int)` — maximum simultaneous conversations for the group. Default 1.
 
 *Context flow:* Structured turn-taking. The moderator sees the full conversation history and generates contextual prompts for each participant. Participants see the moderator's prompt along with new entries from the conversation since their last turn, so they can respond to what others have said.
 
@@ -214,24 +200,15 @@ include::example$autonomous-agent-playground/src/main/java/demo/negotiation/appl
 
 === Multiple participants of the same type
 
-The moderator's model can use multiple instances of the same participant type with different reference names. For example, two critics with different review focuses. The reference name distinguishes them in the conversation:
+The moderator's model can use multiple instances of the same participant type with different reference names. For example, two critics with different review focuses. The reference name distinguishes them in the conversation. The debate sample's `Critic` is such a participant:
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/debate/application/Critic.java[Critic.java]
 ----
-@Component(
-  id = "critic",
-  description = "Provides critical analysis and critiques from a specific perspective"
-)
-public class Critic extends AutonomousAgent {
-
-  @Override
-  public AgentDefinition definition() {
-    return define();
-  }
-}
+include::example$autonomous-agent-playground/src/main/java/demo/debate/application/Critic.java[tag=class]
 ----
 
-The moderator declares `Critic.class` once in its `Moderation.of(...)` capability. At runtime, the moderator's model can create multiple participant references, for example a "technical-reviewer" and a "financial-reviewer". Both are backed by the same `Critic` agent type but operate with different context, shaped by the prompts the moderator generates for each.
+The moderator declares `Critic.class` once in its `Moderation.of(...)` capability. At runtime, the moderator's model can create multiple participant references, for example an "economic-critic" and an "ethical-critic". Both are backed by the same `Critic` agent type but operate with different context, shaped by the prompts the moderator generates for each.
 
 [#teams]
 == Teams
@@ -243,23 +220,12 @@ The `TeamLeadership` capability provides tools for the lead to create teams, add
 Team members can message each other directly without coordinating through the lead. Once a team is formed, every member knows about every other member, and a member can send a message to any peer to ask a question, share a result, or signal a dependency. The lead is in every member's contact list and can be messaged like any peer, but does not automatically see messages members send to each other. The lead does observe one thing across the whole team: the shared backlog, with tasks being claimed, released, and completed.
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/devteam/application/ProjectLead.java[ProjectLead.java]
 ----
-import akka.javasdk.agent.autonomous.capability.TeamLeadership;
-import akka.javasdk.agent.autonomous.capability.TeamLeadership.TeamMember;
-
-define()
-  .capability(TeamLeadership.of(TeamMember.of(Developer.class).maxInstances(3)));
+include::example$autonomous-agent-playground/src/main/java/demo/devteam/application/ProjectLead.java[tag=definition]
 ----
 
-By default, the lead can only run one team at a time. Use `maxConcurrentTeams` to allow the lead to manage multiple teams simultaneously, for example, when the task requires separate teams working on independent concerns in parallel:
-
-[source,java,indent=0]
-----
-define()
-  .capability(
-    TeamLeadership.of(TeamMember.of(Developer.class).maxInstances(3))
-      .maxConcurrentTeams(2));
-----
+`TeamMember.of(...).maxInstances(int)` caps how many instances of that member type the lead can add to the team. By default, the lead can only run one team at a time; `maxConcurrentTeams(int)` on the capability allows the lead to manage several teams simultaneously, for example when the task requires separate teams working on independent concerns in parallel.
 
 *Context flow:* Exchanged. Agents communicate as they work, sending messages that shape each other's reasoning. Each agent has its own context, influenced by the messages it receives.
 
@@ -374,8 +340,8 @@ include::example$autonomous-agent-playground/src/main/java/demo/consulting/appli
 
 The model decides at runtime whether to delegate a subtask (retaining ownership) or hand off the entire task (transferring ownership). Domain tools like `assessProblem` and `checkComplexity` give the model the information it needs to make this decision.
 
-== See Also
+== See also
 
 * xref:sdk:autonomous-agents/coordination.adoc[Coordination patterns] for the conceptual background
 * xref:sdk:autonomous-agents/notifications.adoc[Notifications] for events emitted during coordination
-* xref:sdk:autonomous-agents/defining.adoc[Defining an autonomous agent]
+* xref:sdk:autonomous-agents/defining.adoc[Agent definition]

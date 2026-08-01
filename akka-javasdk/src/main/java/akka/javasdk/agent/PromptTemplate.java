@@ -39,13 +39,17 @@ import java.util.Optional;
 public final class PromptTemplate
     extends EventSourcedEntity<PromptTemplate.Prompt, PromptTemplate.Event> {
 
+  /** The current state of a prompt template: its text, or empty if deleted. */
   public record Prompt(String value) { // a wrapper instead of a String to allow further evolution
   }
 
+  /** Events persisted by a {@link PromptTemplate}. */
   public sealed interface Event {
+    /** The prompt template was initialized or updated with new text. */
     @TypeName("akka-prompt-updated")
     record Updated(String prompt) implements Event {}
 
+    /** The prompt template was deleted. */
     @TypeName("akka-prompt-deleted")
     record Deleted() implements Event {}
   }

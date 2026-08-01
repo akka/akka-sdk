@@ -95,6 +95,10 @@ link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TeamNotific
 | link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TeamJoined.html[`Notification.TeamJoined`] | Member side. This agent joined a team.
 |===
 
+// The Notification.BacklogNotification family is intentionally left out of this
+// catalog. Backlogs stay internal until they are exposed as a general coordination
+// mechanism. See https://github.com/akka/akka-sdk/pull/1564#discussion_r3167266312
+
 === Conversation
 
 link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.ConversationNotification.html[`Notification.ConversationNotification`]: conversation creation, turns, and participation lifecycle.
@@ -155,7 +159,7 @@ Non-terminal transitions (created, assigned, started, reassigned) do not publish
 | link:{attachmentsdir}/api/akka/javasdk/agent/task/TaskNotification.Cancelled.html[`TaskNotification.Cancelled`] | Task was cancelled.
 |===
 
-== See Also
+== See also
 
 * xref:sdk:autonomous-agents/client.adoc#agent-notifications[Subscribing to the notification stream]
 * xref:sdk:autonomous-agents/tasks.adoc[Tasks]

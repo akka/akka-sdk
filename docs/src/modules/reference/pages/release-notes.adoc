@@ -12,6 +12,14 @@ Current versions
 
 == July 2026
 
+* https://github.com/akka/akka-sdk/releases/tag/v3.6.1[Akka SDK 3.6.1]
+- Function tools can return images and PDFs to the model
+- Function tools can return multiple contents in a single tool result
+- Command handlers, queries, and HTTP and MCP endpoint methods are discovered from base classes
+- Generic arrays are supported in the generated JSON schema
+- TestKit generates the gRPC endpoint classes it implements
+- Runtime 1.6.13
+
 * Akka CLI 3.0.66
 - Dependency updates
 - Added support for store pinning for enabled Organization

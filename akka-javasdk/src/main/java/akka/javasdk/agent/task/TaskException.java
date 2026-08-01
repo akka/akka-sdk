@@ -38,6 +38,7 @@ public abstract sealed class TaskException extends RuntimeException {
       this.ruleClassName = ruleClassName;
     }
 
+    /** The class name of the {@link TaskRule} that rejected the result. */
     public String ruleClassName() {
       return ruleClassName;
     }
@@ -63,6 +64,7 @@ public abstract sealed class TaskException extends RuntimeException {
       super(taskId, reason);
     }
 
+    /** The task was created with one task definition name but requested with another. */
     public static TypeMismatch forName(String taskId, String actualName, String requestedName) {
       return new TypeMismatch(
           taskId,
@@ -75,6 +77,7 @@ public abstract sealed class TaskException extends RuntimeException {
               + "]");
     }
 
+    /** The task has one result type but was requested with a definition declaring another. */
     public static TypeMismatch forResultType(
         String taskId, String actualType, String requestedType) {
       return new TypeMismatch(

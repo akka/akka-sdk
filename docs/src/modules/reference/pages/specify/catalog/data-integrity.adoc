@@ -1,0 +1,179 @@
+= Data Integrity exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Data Integrity] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
+
+== Entity state invariants
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DATA-INVARIANT-NON-NEGATIVE-BALANCE` | An entity field constrained to be non-negative is rejected by the command handler whenever a transition would drive it below zero.
+| `DATA-INVARIANT-STATE-MACHINE-TRANSITIONS` | Every state transition on the entity is one of the explicitly allowed edges, and disallowed transitions are refused rather than applied.
+| `DATA-INVARIANT-REQUIRED-FIELDS-SET` | An entity cannot reach an active lifecycle state while any field declared mandatory for that state is null or empty.
+| `DATA-INVARIANT-MONETARY-SCALE` | Monetary amounts persist with the declared currency scale and reject values with excess decimal precision.
+| `DATA-INVARIANT-BOUNDED-QUANTITY` | A quantity field stays within its declared minimum and maximum bounds across every command that modifies it.
+| `DATA-INVARIANT-MUTUALLY-EXCLUSIVE-FIELDS` | Fields declared mutually exclusive are never simultaneously populated in any persisted entity state.
+| `DATA-INVARIANT-DERIVED-FIELD-CONSISTENCY` | A stored derived field (such as a running total) always equals the recomputation from its source fields after every state change.
+| `DATA-INVARIANT-TERMINAL-STATE-IMMUTABLE` | Once an entity enters a terminal state, subsequent state-mutating commands are rejected and leave the state unchanged.
+| `DATA-INVARIANT-UNIQUE-COLLECTION-KEYS` | Collections held within an entity reject insertion of an element whose key already exists in the collection.
+| `DATA-INVARIANT-TIMESTAMP-MONOTONICITY` | An entity's last-updated timestamp never moves backward across successive persisted state changes.
+|===
+
+== Event sourcing correctness
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DATA-ES-EVENT-STATE-CONSISTENCY` | Applying an event-sourced entity's full event log through its event handler reproduces exactly the current in-memory state.
+| `DATA-ES-EVENT-HANDLER-TOTAL` | Every event type the entity can emit has a corresponding event handler, so no persisted event fails to apply on replay.
+| `DATA-ES-COMMAND-EMITS-BEFORE-STATE` | A command handler mutates state only by emitting events, never by writing state directly outside the event application path.
+| `DATA-ES-REPLAY-DETERMINISTIC` | Replaying the same event sequence twice yields byte-identical entity state with no dependence on wall-clock time or randomness.
+| `DATA-ES-EVENT-HANDLER-PURE` | Event handlers perform no side effects and no external calls, so replay produces state without emitting new commands or messages.
+| `DATA-ES-NO-EVENTS-ON-REJECT` | A rejected command persists zero events, leaving the event log unchanged.
+| `DATA-ES-EVENT-ORDER-PRESERVED` | Events are replayed in their original persisted sequence order, and reordering them is never required for correct state.
+| `DATA-ES-EMPTY-LOG-INITIAL-STATE` | An entity with no persisted events resolves to the declared empty initial state rather than null or an error.
+| `DATA-ES-EVENT-IMMUTABLE-AFTER-PERSIST` | Persisted events are never mutated or deleted in place; corrections are expressed as new compensating events.
+| `DATA-ES-SEQUENCE-NUMBER-CONTIGUOUS` | Persisted event sequence numbers for an entity are contiguous with no gaps or duplicates.
+|===
+
+== Schema evolution and upcasting
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DATA-SCHEMA-OLD-EVENTS-DESERIALIZE` | Events serialized under a prior schema version still deserialize successfully after the current schema change.
+| `DATA-SCHEMA-UPCASTER-COVERAGE` | Every historical event schema version has an upcasting path to the current version, with no version left unmapped.
+| `DATA-SCHEMA-NEW-FIELD-DEFAULTED` | A newly added event or state field deserializes to its declared default value when reading records written before the field existed.
+| `DATA-SCHEMA-REMOVED-FIELD-IGNORED` | A field removed from the schema is ignored on deserialization of old records rather than causing a parse failure.
+| `DATA-SCHEMA-RENAMED-FIELD-MAPPED` | A renamed field is mapped from its former name during deserialization so historical records retain their value.
+| `DATA-SCHEMA-ENUM-UNKNOWN-VALUE` | Deserializing an enum value absent from the current definition resolves to a defined fallback rather than throwing.
+| `DATA-SCHEMA-NO-BREAKING-TYPE-CHANGE` | A field's serialized type is not changed incompatibly (such as string to integer) without an upcaster bridging the old form.
+| `DATA-SCHEMA-VERSION-TAGGED` | Every serialized event carries a schema or type version marker enabling the correct upcaster to be selected on read.
+| `DATA-SCHEMA-ROUNDTRIP-STABLE` | Serializing then deserializing a current-version record yields a value equal to the original with no field loss.
+| `DATA-SCHEMA-REGISTRY-COMPATIBILITY` | A proposed event schema passes the registry's backward-compatibility check before it is allowed to be deployed.
+|===
+
+== Concurrency and versioning
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DATA-CONCURRENCY-OPTIMISTIC-VERSION-CHECK` | A write carrying a stale expected version is rejected rather than overwriting a concurrent update.
+| `DATA-CONCURRENCY-VERSION-INCREMENTS` | The entity's version or revision number increases by exactly one on each successfully persisted change.
+| `DATA-CONCURRENCY-NO-LOST-UPDATE` | Two concurrent updates against the same initial version result in one success and one rejection, never a silently merged loss.
+| `DATA-CONCURRENCY-SINGLE-WRITER-PER-KEY` | All mutations for a given entity key are serialized through a single writer so no two writes to that key interleave.
+| `DATA-CONCURRENCY-CAS-PRECONDITION` | A compare-and-set update applies only when the stored value matches the supplied precondition and otherwise fails without writing.
+| `DATA-CONCURRENCY-IDEMPOTENT-RETRY` | Retrying a persisted command with the same idempotency key produces no duplicate state change or duplicate event.
+| `DATA-CONCURRENCY-ETAG-HONORED` | An update request whose supplied entity tag no longer matches the current stored tag is rejected with a conflict.
+| `DATA-CONCURRENCY-STALE-READ-DETECTED` | A read-modify-write cycle detects that the underlying record changed since it was read and aborts rather than clobbering it.
+| `DATA-CONCURRENCY-DEDUPLICATION-WINDOW` | Duplicate commands arriving within the configured deduplication window are collapsed to a single applied effect.
+|===
+
+== Referential integrity
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DATA-REF-FK-TARGET-EXISTS` | A reference field is accepted only when the entity it points to currently exists.
+| `DATA-REF-NO-DANGLING-AFTER-DELETE` | Deleting a referenced entity is blocked, or cascades, so no surviving record retains a dangling reference to it.
+| `DATA-REF-CASCADE-DELETE-COMPLETE` | A cascading delete removes every dependent record, leaving no orphaned children of the deleted parent.
+| `DATA-REF-BIDIRECTIONAL-LINK-CONSISTENT` | When a relationship is stored on both sides, both directions agree and neither points at a partner that omits the back-reference.
+| `DATA-REF-CROSS-ENTITY-ID-FORMAT` | A stored foreign identifier conforms to the referenced entity's declared key format before it is persisted.
+| `DATA-REF-SELF-REFERENCE-ACYCLIC` | A self-referencing hierarchy rejects an edge that would introduce a cycle in the parent chain.
+| `DATA-REF-ORPHAN-SCAN-CLEAN` | A referential-integrity scan over the data store finds zero records whose mandatory references resolve to missing targets.
+| `DATA-REF-COUNT-MATCHES-CHILDREN` | A cached count of related children on a parent equals the actual number of existing child records.
+| `DATA-REF-SOFT-DELETE-EXCLUDED` | References resolve only to records not marked soft-deleted, treating soft-deleted targets as absent.
+|===
+
+== Persistence and transactional consistency
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DATA-PERSIST-ATOMIC-COMMIT` | A multi-write operation either commits all of its writes or none, never leaving a partial result.
+| `DATA-PERSIST-WRITE-DURABLE-BEFORE-ACK` | A command is acknowledged as successful only after its state change is durably persisted.
+| `DATA-PERSIST-READ-YOUR-WRITE` | A read issued after a successful write against the same entity observes that write.
+| `DATA-PERSIST-CONSISTENCY-BOUNDARY-SINGLE-ENTITY` | A transactional consistency boundary spans only one entity, and cross-entity coordination uses events rather than a shared transaction.
+| `DATA-PERSIST-NO-PARTIAL-BATCH` | A rejected item within a batch write does not leave earlier items in that batch persisted.
+| `DATA-PERSIST-CRASH-RECOVERY-STATE` | After a simulated crash mid-operation, recovery restores the entity to a valid committed state with no half-applied change.
+| `DATA-PERSIST-OUTBOX-EXACTLY-ONCE` | State change and its outbound message are persisted together so the message is neither lost nor emitted without the state change.
+| `DATA-PERSIST-NO-DIRTY-READ` | A read never observes state from an operation that was subsequently rolled back or rejected.
+| `DATA-PERSIST-STORAGE-QUOTA-ENFORCED` | A write that would exceed the entity's configured storage or event-count limit is rejected rather than silently truncated.
+|===
+
+== Snapshots and state recovery
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DATA-SNAPSHOT-MATCHES-REPLAY` | State restored from a snapshot plus subsequent events equals state obtained by replaying the full event log from the start.
+| `DATA-SNAPSHOT-DESERIALIZES-OLD-VERSION` | A snapshot written under a prior state schema version still restores correctly after the schema has evolved.
+| `DATA-SNAPSHOT-TAKEN-AT-INTERVAL` | A snapshot is produced at the configured event-count interval so replay length stays bounded.
+| `DATA-SNAPSHOT-CORRUPT-FALLS-BACK` | An unreadable snapshot causes recovery to fall back to full event replay rather than failing entity load.
+| `DATA-SNAPSHOT-SEQUENCE-ALIGNED` | A snapshot records the exact event sequence number it represents so only strictly later events are applied on top of it.
+| `DATA-SNAPSHOT-NO-SIDE-EFFECTS` | Producing or restoring a snapshot emits no events, commands, or external calls.
+| `DATA-SNAPSHOT-STALE-PRUNED` | Snapshots older than the retention policy are pruned without removing any snapshot still required for recovery.
+|===
+
+== Views and projection consistency
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DATA-VIEW-EVENTUALLY-CONSISTENT` | A view reflects a source entity change within the declared convergence bound after the change is persisted.
+| `DATA-VIEW-IDEMPOTENT-UPDATE` | Reprocessing the same source event into a view produces the same view row without double-counting.
+| `DATA-VIEW-HANDLES-OUT-OF-ORDER` | A projection tolerates receiving source events out of order and converges to the correct row regardless of arrival order.
+| `DATA-VIEW-ROW-MATCHES-SOURCE` | Each view row's fields equal the projection of the current source entity state it derives from.
+| `DATA-VIEW-DELETE-PROPAGATES` | Deleting a source entity removes or tombstones its corresponding view rows.
+| `DATA-VIEW-OFFSET-TRACKED` | A projection durably records its processed offset so a restart resumes without skipping or reprocessing consumed events.
+| `DATA-VIEW-NO-PARTIAL-ROW` | A view row is written with all of its projected fields populated, never a partially projected intermediate.
+| `DATA-VIEW-REBUILD-REPRODUCIBLE` | Rebuilding a view from the source event history reproduces the same rows as the incrementally maintained view.
+| `DATA-VIEW-GROUPING-KEY-STABLE` | A view's grouping or partition key is derived deterministically so a source event always maps to the same view row.
+|===
+
+== Workflow durable state
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DATA-WORKFLOW-STATE-SURVIVES-RESTART` | An in-flight workflow resumes from its last durably persisted step after a process restart rather than restarting from the beginning.
+| `DATA-WORKFLOW-STEP-IDEMPOTENT` | Re-executing a workflow step after a mid-step failure does not duplicate its effect on durable state.
+| `DATA-WORKFLOW-NO-ORPHAN-PENDING` | A workflow that completes or fails leaves no step stuck permanently in a pending state.
+| `DATA-WORKFLOW-COMPENSATION-RESTORES` | A compensating step for a failed workflow returns affected durable state to a consistent pre-transaction condition.
+| `DATA-WORKFLOW-TIMEOUT-PERSISTED` | A workflow's scheduled timeout is durably recorded so it still fires after a restart that spans the deadline.
+| `DATA-WORKFLOW-TRANSITION-RECORDED` | Each workflow step transition is persisted before the next step begins, so recovery never loses a completed step.
+| `DATA-WORKFLOW-TERMINAL-NO-RESUME` | A workflow in a completed or failed terminal state is not re-entered by a late-arriving step signal.
+|===
+
+== Data validation and PII handling
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DATA-VALIDATE-REQUIRED-AT-BOUNDARY` | Incoming command payloads are validated for required fields at the entity boundary before any event is emitted.
+| `DATA-VALIDATE-FORMAT-CONSTRAINTS` | String fields with declared format constraints (email, UUID, ISO date) reject values that do not match the format.
+| `DATA-VALIDATE-RANGE-BOUNDS` | Numeric and date fields reject values outside their declared valid range before persistence.
+| `DATA-VALIDATE-REJECT-UNKNOWN-FIELDS` | A payload containing fields not defined in the command schema is rejected or safely ignored rather than silently persisted.
+| `DATA-VALIDATE-ENCODING-NORMALIZED` | Text fields are normalized to a canonical encoding form before storage so equivalent inputs compare and deduplicate correctly.
+| `DATA-PII-ENCRYPTED-AT-REST` | Fields classified as PII are stored encrypted rather than in plaintext at the persistence layer.
+| `DATA-PII-NOT-IN-EVENT-PAYLOAD` | Sensitive personal data is excluded from event payloads, or tokenized, so it is not retained in the immutable event log.
+| `DATA-PII-REDACTED-IN-LOGS` | Persisted diagnostic and audit records redact PII fields rather than recording their raw values.
+| `DATA-PII-ERASURE-COMPLETE` | An erasure request removes or crypto-shreds all copies of a subject's PII across entity state, snapshots, and views.
+| `DATA-VALIDATE-IDEMPOTENCY-KEY-FORMAT` | A supplied idempotency key conforms to its required format before it is trusted for deduplication.
+|===
+
+== Data migration and backfill correctness
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DATA-MIGRATE-ROW-COUNT-PRESERVED` | A migration preserves the source record count in the target, with any intentional drops explicitly accounted for.
+| `DATA-MIGRATE-CHECKSUM-MATCHES` | Migrated records match their source by field-level checksum for every value expected to be carried over unchanged.
+| `DATA-MIGRATE-IDEMPOTENT-RERUN` | Re-running a migration over already-migrated data produces no duplicate or altered target records.
+| `DATA-MIGRATE-RESUMABLE` | A migration interrupted partway can resume from its last recorded checkpoint without reprocessing completed records.
+| `DATA-MIGRATE-BACKFILL-DEFAULTS` | A backfill populates a newly required field for all existing records so none remain missing the field after completion.
+| `DATA-MIGRATE-ROLLBACK-RESTORES` | A failed migration can be rolled back to leave the source data in its original pre-migration state.
+| `DATA-MIGRATE-NO-DUAL-WRITE-DRIFT` | During a dual-write cutover, records written to both old and new stores stay consistent with no divergence.
+| `DATA-MIGRATE-TYPE-COERCION-SAFE` | Type conversions performed during migration neither truncate nor overflow any source value.
+| `DATA-MIGRATE-VALIDATION-POST-RUN` | A post-migration validation pass confirms every migrated record satisfies the target schema's invariants.
+|===

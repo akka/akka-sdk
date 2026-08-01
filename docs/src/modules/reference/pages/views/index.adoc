@@ -124,7 +124,7 @@ Views are implemented in Java by extending the `akka.javasdk.view.View` class an
 1. **Table updaters** - Define how entity events or state changes update the view
 2. **Query methods** - Define the queries that can be executed against the view
 
-Here's a simple example:
+Here is a simple example:
 
 [source,java]
 ----

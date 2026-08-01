@@ -36,7 +36,7 @@ Shopping carts are excellent examples of agenticfootnote:[Defined as a stateful 
 
 For the purposes of this initial quickstart, we will just have a single endpoint and a single event-sourced entity to keep things easy to digest.
 
-Through our entity we expect to manage our cart, adding and removing items as we please. Being event-sourced means it will represent changes to state as a series of domain events. Let’s have a look at what kind of model we use to store the events our entity generates.
+Through our entity we expect to manage our cart, adding and removing items as we please. Being event-sourced means it will represent changes to state as a series of domain events. Have a look at what kind of model we use to store the events our entity generates.
 
 === The domain model
 
@@ -50,7 +50,7 @@ include::sdk:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/
 <1> Our `ShoppingCart` is fairly simple, being composed only by a `cartId` and a list of line items.
 <2> A `LineItem` represents a single product and the quantity we intend to buy.
 
-Next, we have a domain event for adding items to the cart. Here we've created an interface `ShoppingCartEvent` with the `ItemAdded` domain event in package `shoppingcart.domain`. This file is in the `src/main/java/shoppingcart/domain/` directory and named `ShoppingCartEvent.java`:
+Next, we have a domain event for adding items to the cart. Here we have created an interface `ShoppingCartEvent` with the `ItemAdded` domain event in package `shoppingcart.domain`. This file is in the `src/main/java/shoppingcart/domain/` directory and named `ShoppingCartEvent.java`:
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[ShoppingCartEvent.java]
@@ -110,7 +110,7 @@ include::sdk:example$shopping-cart-quickstart/src/main/java/shoppingcart/applica
 <2> Define the initial state.
 <3> Return the current state as a reply to the request.
 
-You should be intentional about when you query views versus when you query entity state. Views are _eventually_ consistent while entities are _strongly_ consistent. You don't have to worry about views yet, though, as there are none in this quickstart.
+You should be intentional about when you query views versus when you query entity state. Views are _eventually_ consistent while entities are _strongly_ consistent. You do not have to worry about views yet, though, as there are none in this quickstart.
 
 === The external API
 
@@ -141,7 +141,7 @@ mvn compile exec:java
 ----
 Once successfully started, any defined endpoints become available at `localhost:9000`.
 
-. Let's send some requests using `curl`. Add some T-shirts to a shopping cart:
+. Send some requests using `curl`. Add some T-shirts to a shopping cart:
 +
 [source, command line]
 ----
@@ -211,7 +211,7 @@ Here, you can view not only the http://localhost:9889/services/shopping-cart-qui
 
 == Deploy to akka.io
 
-Now that you've built and started the shopping cart service locally, it's time to run it on the Akka Agentic Platform without having to change any code.
+Now that you have built and started the shopping cart service locally, it is time to run it on the Akka Agentic Platform without having to change any code.
 
 . If you have not already done so, xref:operations:cli/installation.adoc[install the Akka CLI].
 
@@ -308,7 +308,7 @@ image:console-first-app-service.png[]
 
 == Next steps
 
-Now that you've built and deployed a shopping cart service, take your Akka skills to the next level:
+Now that you have built and deployed a shopping cart service, take your Akka skills to the next level:
 
 . *Add a view*: Continue to the xref:shopping-cart/addview.adoc[next step] in the tour.
 . *Expand on your own*: Explore xref:sdk:components/index.adoc[other Akka components] to enhance your application with additional features.

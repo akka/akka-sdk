@@ -39,7 +39,11 @@ public final class AgentState {
     this.pendingTaskIds = pendingTaskIds;
   }
 
-  /** The current phase of the agent (e.g. "idle", "running", "stopped"). */
+  /**
+   * The current phase of the agent's execution loop: "idle", "advance" (determining the next unit
+   * of work), "model" (a model call is in progress), "tools" (tool calls are executing), or
+   * "stopped".
+   */
   public String phase() {
     return phase;
   }

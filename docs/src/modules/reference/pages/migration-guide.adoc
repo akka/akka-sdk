@@ -44,7 +44,7 @@ public class MyAgent extends Agent {
 
 **Update imports**:
 
-- Add `import akka.javasdk.annotations.AgentRole;` if you're using agent roles
+- Add `import akka.javasdk.annotations.AgentRole;` if you are using agent roles
 - Keep `import akka.javasdk.annotations.Component;`
 
 **Backward compatibility**:

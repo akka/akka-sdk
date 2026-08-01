@@ -1,0 +1,119 @@
+= À la carte mode
+:page-summary: Run the Akka Specify commands individually — the flexible, command-by-command spec-driven workflow.
+:page-when-to-use: Use À la carte mode when you want to drive each phase yourself, without the hard gates of Enforced mode.
+:page-related: xref:sdk:enforced-mode.adoc[], xref:reference:specify/index.adoc[]
+:page-persona: Developer, Tech Lead, Architect
+
+include::ROOT:partial$include.adoc[]
+
+In À la carte mode you drive the spec-driven workflow one command at a time. Nothing blocks you, and `/akka:ship` proceeds whether or not a definition of done is met -- you own the rigor. It is faster and lighter than xref:sdk:enforced-mode.adoc[Enforced mode], which gates each phase on machine-checkable exit conditions. Switch between the two with `/akka:mode`.
+
+This page walks the commands in the order you would normally run them. Every command is also documented in the xref:reference:specify/index.adoc[Specify commands reference].
+
+== Specify a feature
+
+Supplying an entire application in one `/akka:specify` prompt is possible but not recommended -- if your application is that simple, a single-file spec is less overhead. To specify a new feature:
+
+```
+/akka:specify {feature short description} - {feature specification prompt}
+```
+
+The short description becomes a branch name like `00#-feature-short-description` (kebab case). The prompt should define exclusively the _what_ and _why_ of the feature, not technical implementation detail.
+
+.Chess core site feature
+[cols="1"]
+:table-caption: Prompt
+|===
+|**/akka:specify** core users - _The chess application manages its own users. It does not integrate with federation technologies like OAuth. Users are uniquely identified by a username and they authenticate via password. Users can edit their profile and supply a friendly name and upload a small avatar image. Email verification is not used. Users can delete their own accounts. Users can view the profile of other users, but anonymous (not logged in) users cannot see any data._
+|===
+
+This creates a specification in `specs/001-core-users` on the `001-core-users` branch. Resist manually editing the spec -- clarification is the next step. Keep features scoped small enough that you have a clear idea of the acceptance criteria and the generated code is easy to review.
+
+NOTE: Even in À la carte mode, `/akka:specify` captures your definition of done as exit conditions and runs the adversarial adequacy review, exactly as it does in Enforced mode. The difference is only at ship time: the `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED` gates are advisory here. They are computed and reported, but you drive the phases and `/akka:ship` is not blocked when they are red.
+
+== Clarify the specification
+
+Clarification is a critical step. Start it with a single command, no parameters:
+
+```
+/akka:clarify
+```
+
+Your assistant analyzes your constitution, feature specification, and conversation history and identifies gaps -- places where it would have to make a decision without enough information. Running `/akka:clarify` on the chess core users feature will likely raise several questions: how users are uniquely identified, what happens to deleted users, whether multiple concurrent sessions are allowed. This level of clarity is a hallmark of spec-driven development.
+
+== Define the implementation plan
+
+The plan is your technical architecture -- the _how_. Like specify, its input is a _prompt_, not the final plan; your agent produces the plan as output. If code generation later does not give you what you wanted, iterate on the plan; amendments are tracked alongside constitution and feature updates.
+
+.Chess feature implementation plan
+[cols="1"]
+:table-caption: Prompt
+|===
+|**/akka:plan** _The implementation is an Akka service with both a static asset website user experience and the supporting RESTful API. The website uses simple JavaScript and not large frameworks like React. These assets are exposed via an HTTP endpoint with the resources in src/main/resources and served statically._
+
+_The RESTful API is exposed via a separate HTTP endpoint. This API requires authentication for all operations except login. Active user sessions are maintained via Key Value entities and are created upon login. A `TimedAction` deletes sessions for users that have not submitted an API request after a timeout. The RESTful API routes start with a common `api/v1` prefix while static UI assets use the root prefix._
+|===
+
+The plan output is categorized by priority and functional requirements, making it easy to verify. Make sure you agree with the functional requirements before continuing.
+
+== Generate a task list
+
+```
+/akka:tasks
+```
+
+This converts your clarified specification and plan into a formal, dependency-ordered set of work items, identifying which can run in parallel. You can refine the list by discussing it with your agent.
+
+== Implement the code
+
+```
+/akka:implement
+```
+
+Your assistant writes the application code. Before running it, make sure you are satisfied with the effort or "thought" level -- results vary between medium and high. It is normal for the agent to hit compilation and test failures and iterate toward the answer; the default Akka constitution mandates both unit and integration tests.
+
+== Build and run locally
+
+```
+/akka:build
+```
+
+`/akka:build` does more than `mvn compile exec:java`: it shuts down pre-existing services and anything on the target port, recompiles, runs the tests, launches the service, and _exercises it through its real endpoints_. The service is left running and is recompiled and restarted automatically when project files change.
+
+== Inspect the running service
+
+```
+/akka:inspect
+```
+
+Once the service is running -- locally after `/akka:build` or deployed via `/akka:deploy` -- `/akka:inspect` verifies it against your specification at runtime: it exercises API endpoints, verifies entity state via backoffice tools, and validates the UI in the browser, then summarizes findings. If inspect finds issues, iterate with `/akka:implement` and `/akka:build`.
+
+== Deploy to Akka
+
+```
+/akka:deploy
+```
+
+To deploy through _Akka Automated Operations_, `/akka:deploy` prompts for the organization and project, builds and pushes a container image, and deploys -- doing a rolling update if the service is already running. After deployment it verifies component health and inspects the deployed service.
+
+== Other commands
+
+Beyond the core loop, several commands help you shape and maintain the work:
+
+[cols="1,3"]
+|===
+| Command | Use
+
+| xref:reference:specify/constitution.adoc[`/akka:constitution`] | Create or update the project constitution from principle inputs, keeping dependent templates in sync.
+| xref:reference:specify/analyze.adoc[`/akka:analyze`] | Non-destructive cross-artifact consistency and quality analysis across spec, plan, and tasks -- run after task generation to confirm the artifacts are aligned.
+| xref:reference:specify/checklist.adoc[`/akka:checklist`] | Generate a custom checklist for the current feature based on your requirements.
+| xref:reference:specify/review.adoc[`/akka:review`] | Review implemented code for Akka SDK best practices, and optionally against spec, plan, and constitution.
+| xref:reference:specify/converge.adoc[`/akka:converge`] | Assess the codebase against the feature's spec, plan, and tasks, and append any remaining unbuilt work to tasks.md so `implement` can complete it.
+| xref:reference:specify/reliability.adoc[`/akka:reliability`] | Add or remove resilience-testing instrumentation -- discovers endpoints at runtime and writes a config for the reliability dashboard.
+| xref:reference:specify/issues.adoc[`/akka:issues`] | Convert tasks into dependency-ordered GitHub issues for the feature.
+| xref:reference:specify/docs.adoc[`/akka:docs`] | Generate rendered project documentation -- a component reference plus entity and interaction diagrams -- into the `docs/` folder.
+|===
+
+== Full command reference
+
+Every command, with its options and examples, is in the xref:reference:specify/index.adoc[Specify commands reference].

@@ -1,0 +1,30 @@
+= /akka:mode
+
+Switch between the Enforced and À la carte conformance modes.
+
+== Usage
+
+[source]
+----
+/akka:mode enforced
+/akka:mode a-la-carte
+----
+
+== Description
+
+Sets the project's conformance mode (recorded in `.akka/exit-conditions.yaml`) or, with no argument, prints the current mode.
+
+The mode controls one thing: whether unmet exit conditions block shipping.
+
+* *Enforced* (the default) -- `ship` refuses to release the project until every in-scope exit condition is satisfied: green, platform-asserted, waived, or signed off. You use `signoff`, `strike`, and `waive` to resolve each open condition before `ship` will proceed.
+* *À la carte* -- `ship` proceeds even when conditions are unmet, recording an explicit override. The conditions are still shown and evaluated; they simply do not block.
+
+Every Specify command is available in both modes -- the mode changes the ship gate, not the command set. The two locked process-integrity gates, `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED`, apply in both modes; the difference is only that enforced mode blocks ship while either is red, whereas à la carte computes them as advisory. A developer can switch only within the modes the organization allows; if the organization has locked the mode (see xref:reference:specify/policies.adoc[Policies]), the command refuses and says so.
+
+See xref:sdk:spec-driven-development.adoc#choosing-your-mode[Conformance modes] for more on choosing a mode.
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc#choosing-your-mode[Choosing your mode]
+* xref:reference:specify/policies.adoc[]
+* xref:reference:specify/index.adoc[]

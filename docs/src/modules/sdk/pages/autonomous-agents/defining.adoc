@@ -1,4 +1,4 @@
-= Defining an autonomous agent
+= Agent definition
 
 include::ROOT:partial$include.adoc[]
 
@@ -15,18 +15,13 @@ The `@Component` description captures the agent's purpose and expected outcome: 
 * Documentation, observability, and other tooling pick it up to describe the agent.
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/helloworld/application/QuestionAnswerer.java[QuestionAnswerer.java]
 ----
-@Component(
-  id = "question-answerer",
-  description = "Answers questions clearly and concisely, showing reasoning step by step"
-)
-public class QuestionAnswerer extends AutonomousAgent {
-  @Override
-  public AgentDefinition definition() {
-    return define().capability(TaskAcceptance.of(QuestionTasks.ANSWER));
-  }
-}
+include::example$autonomous-agent-playground/src/main/java/demo/helloworld/application/QuestionAnswerer.java[tag=class]
 ----
+<1> The agent class extends `AutonomousAgent`.
+<2> The `@Component` annotation carries the mandatory id and description.
+<3> The `definition()` method declares the accepted task types and the rest of the configuration.
 
 Because the description has to be understandable to a coordinator deciding whether to pick this agent, writing it well naturally produces outcome-oriented prose. Avoid procedure ("first call X, then call Y") — describe *what the agent is for*.
 
@@ -34,13 +29,12 @@ The agent's behavior is then driven by its capabilities and the task types it ac
 
 === Optional instructions
 
-When you need to shape *how* the model speaks or judges, beyond the outcome statement in the description, add `instructions(...)` on the definition. Use this for tone, persona, role, or domain rules:
+When you need to shape *how* the model speaks or judges, beyond the outcome statement in the description, add `instructions(...)` on the definition. Use this for tone, persona, role, or domain rules. The editorial sample's copy editor uses instructions to explain how to work with the shared document workspace:
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/editorial/application/CopyEditor.java[CopyEditor.java]
 ----
-define()
-  .instructions("Respond in formal English. Always cite sources for factual claims.")
-  .capability(TaskAcceptance.of(QuestionTasks.ANSWER));
+include::example$autonomous-agent-playground/src/main/java/demo/editorial/application/CopyEditor.java[tag=definition]
 ----
 
 The runtime appends instructions to the system message alongside the description.
@@ -51,15 +45,12 @@ What does *not* belong in instructions is multi-agent orchestration: when to del
 
 == Accepted task types
 
-An agent declares which task types it can work on by adding a `TaskAcceptance` capability. The agent will only process tasks whose definition matches one of the accepted types.
+An agent declares which task types it can work on by adding a `TaskAcceptance` capability. The agent will only process tasks whose definition matches one of the accepted types. The pipeline sample's report agent accepts three task types:
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/pipeline/application/ReportAgent.java[ReportAgent.java]
 ----
-import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
-
-define()
-  .capability(
-    TaskAcceptance.of(PipelineTasks.COLLECT, PipelineTasks.ANALYZE, PipelineTasks.REPORT));
+include::example$autonomous-agent-playground/src/main/java/demo/pipeline/application/ReportAgent.java[tag=definition]
 ----
 
 See xref:sdk:autonomous-agents/tasks.adoc[] for how task types are defined.
@@ -87,10 +78,12 @@ include::example$autonomous-agent-playground/src/main/java/demo/consulting/appli
 Register the tool object in the definition:
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingCoordinator.java[ConsultingCoordinator.java]
 ----
-define()
-  .tools(new ConsultingTools())
+include::example$autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingCoordinator.java[tag=definition]
 ----
+
+The editorial sample's copy editor passes `DocumentTools.class` instead of an instance, so the runtime instantiates the tool class through the configured `DependencyProvider`.
 
 === Tools on the agent class
 
@@ -104,40 +97,24 @@ include::example$autonomous-agent-playground/src/main/java/demo/pipeline/applica
 
 === Akka components as tools
 
-Components, including Workflows, Event Sourced Entities, Key Value Entities, and Views, can also be used as tools. Pass the component `Class` (not an instance) to `tools()`. See xref:sdk:agents/extending.adoc#component_tools[Using Akka components as function tools] for details, and xref:sdk:agents/extending.adoc[Extending agents with function tools] for the broader reference on tool annotations, parameter descriptions, and return types.
+Components, including Workflows, Event Sourced Entities, Key Value Entities, and Views, can also be used as tools. Pass the component `Class` (not an instance) to `tools()`. See xref:sdk:agents/extending.adoc#component_tools[Using Akka components as function tools] for details, and xref:sdk:agents/extending.adoc[Function tools] for the broader reference on tool annotations, parameter descriptions, and return types.
 
 == MCP tools
 
-Remote MCP (Model Context Protocol) tool endpoints are added with `mcpTools()`.
-
-[source,java,indent=0]
-----
-define()
-  .mcpTools(RemoteMcpTools.create("https://mcp.example.com/tools"))
-----
-
-See xref:sdk:agents/extending.adoc#mcp_tools[Using tools from remote MCP servers] for details on configuring MCP tool endpoints.
+Remote MCP (Model Context Protocol) tool endpoints are added with `mcpTools(...)`, passing one or more `RemoteMcpTools.create("https://mcp.example.com/tools")` entries. See xref:sdk:agents/extending.adoc#mcp_tools[Using tools from remote MCP servers] for details on configuring MCP tool endpoints, including filtering and interceptors.
 
 == Guardrails
 
-Request and response guardrails constrain the model interaction at each iteration. Request guardrails evaluate prompts before they are sent to the model. Response guardrails evaluate responses received from the model.
-
-[source,java,indent=0]
-----
-define()
-  .requestGuardrails(MyRequestGuardrail.class)
-  .responseGuardrails(MyResponseGuardrail.class)
-----
-
-See xref:sdk:agents/guardrails.adoc[Guardrails] for details on implementing guardrail classes.
+Request and response guardrails constrain the model interaction at each iteration. Request guardrails evaluate prompts before they are sent to the model. Response guardrails evaluate responses received from the model. Register the guardrail classes on the definition with `requestGuardrails(...)` and `responseGuardrails(...)`. See xref:sdk:agents/guardrails.adoc[Guardrails] for details on implementing guardrail classes.
 
 == Iteration limit
 
-`maxIterationsPerTask()` on the `TaskAcceptance` capability sets the maximum number of model iterations before the agent fails the current task. The default is configured via `akka.javasdk.agent.autonomous.max-iterations-per-task`. Set this based on the expected complexity of the work. Simple tasks may need only 3 iterations, while complex coordination may need more.
+`maxIterationsPerTask()` on the `TaskAcceptance` capability sets the maximum number of model iterations before the agent fails the current task. The default is configured via `akka.javasdk.agent.autonomous.max-iterations-per-task`. Set this based on the expected complexity of the work. Simple tasks may need only 3 iterations, while complex coordination may need more. The support sample's triage agent only needs to classify and hand off, so it runs on a small budget:
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/support/application/TriageAgent.java[TriageAgent.java]
 ----
-TaskAcceptance.of(MyTasks.TASK).maxIterationsPerTask(5)
+include::example$autonomous-agent-playground/src/main/java/demo/support/application/TriageAgent.java[tag=definition]
 ----
 
 Right-size the budget to the agent's role. A triage or classifier agent that only needs to read the input and pick a target can run on a low budget (around 3). A resolver or synthesizer that calls tools, reasons over results, and produces a structured output usually needs more (5 or higher). The `support` sample illustrates this split: the triage agent uses `maxIterationsPerTask(3)` while the billing and technical specialists use `maxIterationsPerTask(5)`.
@@ -146,13 +123,7 @@ As the iteration budget approaches its limit, the runtime injects a reminder int
 
 == Model
 
-By default, the agent uses the model configured in `application.conf` (see xref:sdk:agents.adoc#model[Configuring the model]). Override with `modelProvider()` to use a different model for this agent.
-
-[source,java,indent=0]
-----
-define()
-  .modelProvider(ModelProvider.openAi().withModel("gpt-4o"))
-----
+By default, the agent uses the model configured in `application.conf` (see xref:sdk:agents.adoc#model[Configuring the model]). Override with `modelProvider(...)` on the definition, for example `modelProvider(ModelProvider.openAi().withModel("gpt-4o"))`, to use a different model for this agent.
 
 == Complete definition example
 
@@ -201,10 +172,9 @@ A task can carry image or PDF content as xref:sdk:autonomous-agents/tasks.adoc#_
 Attach content to a task by URI:
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/AttachmentSample.java[AttachmentSample.java]
 ----
-var task = ReviewTasks.REVIEW
-  .instructions("Describe this diagram")
-  .attach(MessageContent.ImageMessageContent.fromUri("https://example.com/diagram.png"));
+include::example$autonomous-agent-playground/src/test/java/demo/docs/AttachmentSample.java[tag=attach-uri]
 ----
 
 For the built-in URI schemes the runtime resolves the reference automatically, with no extra configuration:
@@ -215,27 +185,16 @@ For the built-in URI schemes the runtime resolves the reference automatically, w
 For object storage, build the reference with `ImageUrlMessageContent.create(bucket, key)` or `PdfUrlMessageContent.create(bucket, key)` and attach it to the task:
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/AttachmentSample.java[AttachmentSample.java]
 ----
-var imageBucket = objectStorageProvider.forBucket("images");
-imageBucket.put(key, body.getData(), body.getContentType());
-
-var task = ReviewTasks.REVIEW
-  .instructions("Describe this image")
-  .attach(MessageContent.ImageUrlMessageContent.create(imageBucket, key));
+include::example$autonomous-agent-playground/src/test/java/demo/docs/AttachmentSample.java[tag=attach-object-storage]
 ----
 
 See xref:sdk:integrations/object-storage.adoc[Object storage] for how to configure buckets and how the backend behaves in dev mode and tests.
 
 === Custom content loading
 
-When content lives behind an authenticated endpoint, in a private storage system, or under a custom URI scheme, implement a `ContentLoader` and register it on the definition with `contentLoader(...)`:
-
-[source,java,indent=0]
-----
-define()
-  .capability(TaskAcceptance.of(ReviewTasks.REVIEW))
-  .contentLoader(new MyContentLoader());
-----
+When content lives behind an authenticated endpoint, in a private storage system, or under a custom URI scheme, implement a `ContentLoader` and register it on the definition with `contentLoader(...)`.
 
 The `ContentLoader` interface has a single `load` method that receives a `LoadableMessageContent`. Use pattern matching to handle each content type, fetch the data, and return it with the appropriate MIME type. The interface is the same one used by request-based agents, so the implementation carries over unchanged. See the xref:sdk:agents/prompt.adoc#custom-content-loading[custom content loading example] for a full `ContentLoader` implementation.
 
@@ -245,9 +204,9 @@ Unlike a request-based agent, where the loader can be created per request to car
 
 NOTE: If the `load` method throws an exception, the current task fails.
 
-== See Also
+== See also
 
 * xref:sdk:autonomous-agents/tasks.adoc[Tasks]
 * xref:sdk:autonomous-agents/capabilities.adoc[Coordination capabilities]
-* xref:sdk:agents/extending.adoc[Extending agents with function tools]
+* xref:sdk:agents/extending.adoc[Function tools]
 * xref:sdk:agents/guardrails.adoc[Guardrails]

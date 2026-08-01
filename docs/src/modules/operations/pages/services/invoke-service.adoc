@@ -4,15 +4,15 @@ include::ROOT:partial$include.adoc[]
 For security reasons, _Services_ deployed to Akka have limited exposure by default. You can invoke services that have been deployed to Akka in the following ways:
 
 - From another Akka service in the same project
-- By <<_exposing_services_to_the_internet,exposing services to the internet>> using routes
-- <<_testing_and_development,During testing and development>> from the console or using the `akka` proxy command
+- By <<exposing-internet,exposing services to the internet>> using routes
+- <<_proxy_command,During testing and development>> from the console or using the `akka` proxy command
 
 [[exposing-internet]]
 == Exposing services to the internet
 
 Akka allows you to expose your services to the internet, using routes.
 
-A route declares how traffic to a particular hostname gets routed to your services. You can let Akka generate a hostname for you, or you can provide your own hostname at your own domain. If you want to use your own hostname, you'll need to register your domain and configure your Domain Name System (DNS) settings using a third party DNS service.
+A route declares how traffic to a particular hostname gets routed to your services. You can let Akka generate a hostname for you, or you can provide your own hostname at your own domain. If you want to use your own hostname, you will need to register your domain and configure your Domain Name System (DNS) settings using a third party DNS service.
 
 All traffic to Akka uses Transport Layer Security (TLS). Akka will automatically provision a certificate for you using https://letsencrypt.org/[Let's Encrypt, window="new"]. The certificate is provisioned whether you use an Akka provided hostname, or bring your own.
 
@@ -20,7 +20,7 @@ NOTE: Routes are global by default and will be replicated over to a new region i
 
 === Exposing a single service
 
-If you have a single service you want to expose to the internet using an Akka generated hostname, you can do so using the `akka service expose` command. This command is provided as a convenience, particularly when you're getting started with Akka:
+If you have a single service you want to expose to the internet using an Akka generated hostname, you can do so using the `akka service expose` command. This command is provided as a convenience, particularly when you are getting started with Akka:
 
 [source,bash]
 ----
@@ -48,7 +48,7 @@ When defining a route with a `prefix`, please note the following:
 
 ==== Provisioning a custom hostname
 
-If you want to provision a custom hostname, you first need to register it with your project. Only one project can use a given hostname. Let's say the hostname you want to register is called `ecommerce.acme.org`. To register a hostname, use the `akka project hostname add` command:
+If you want to provision a custom hostname, you first need to register it with your project. Only one project can use a given hostname. Suppose the hostname you want to register is called `ecommerce.acme.org`. To register a hostname, use the `akka project hostname add` command:
 
 [source,bash]
 ----
@@ -75,7 +75,7 @@ This shows the hostname that was just generated for you. You will need this when
 
 ==== Creating routes
 
-Let's assume you want to expose two HTTP services:
+Assume you want to expose two HTTP services:
 
 . `shopping-cart`, which has an HTTP Endpoint with path `/carts`
 . `product-info`, which has an HTTP Endpoint with path `/product`
@@ -85,7 +85,7 @@ Let's assume you want to expose two HTTP services:
 Because Akka does not perform path stripping, your service implementation must be aware of the full path defined in the route. If you map the prefix `/serviceA` to a service that internally expects `/doStuff`, the client must call `/serviceA/doStuff`, and the service must handle that full path.
 ====
 
-Let's also assume that you want to name the route `acme-ecommerce`, and that the hostname you want to serve it at is `ecommerce.acme.org`, and that you've already added this hostname to the project following the instructions above.
+Also assume that you want to name the route `acme-ecommerce`, and that the hostname you want to serve it at is `ecommerce.acme.org`, and that you have already added this hostname to the project following the instructions above.
 
 We can now create the route:
 
@@ -129,7 +129,7 @@ Status:
 		Message: 	Validating hostname
 ----
 
-Here you can see the exact error message - your hostname is not resolving. To rectify this, you would need to go to your DNS provider and update the DNS record for the host, and then wait for that change to propagate. Once the problem is fixed, there is nothing you need to do, Akka will periodically recheck the DNS configuration to see if it's updated, typically every 20 minutes. Note that DNS configuration can be cached in DNS servers for up to 24 hours, so it may take that long before Akka can see your changes.
+Here you can see the exact error message - your hostname is not resolving. To rectify this, you would need to go to your DNS provider and update the DNS record for the host, and then wait for that change to propagate. Once the problem is fixed, there is nothing you need to do, Akka will periodically recheck the DNS configuration to see if it is updated, typically every 20 minutes. Note that DNS configuration can be cached in DNS servers for up to 24 hours, so it may take that long before Akka can see your changes.
 
 ==== Updating routes
 
@@ -233,7 +233,7 @@ All routes are served with TLS certificates. In addition, you can also enable cl
 [#_http_basic_authentication]
 ==== HTTP Basic authentication
 
-It's also possible to enable HTTP Basic authentication on routes. HTTP Basic authentication requires configuring a realm, which is returned in the `WWW-Authenticate` header when authentication fails or no authentication headers are present. The realm name can be anything.
+It is also possible to enable HTTP Basic authentication on routes. HTTP Basic authentication requires configuring a realm, which is returned in the `WWW-Authenticate` header when authentication fails or no authentication headers are present. The realm name can be anything.
 
 Usernames and hashed passwords are stored directly in the route descriptor. Passwords can be hashed with either sha256, sha384 or sha512. Because the passwords are hashed without salt and use a computationally cheap algorithm, only strong, randomly generated passwords should be configured, to prevent brute force, password reuse or rainbow table based attacks, should the hashes be leaked. One way to generate such a password is to use OpenSSL, for example this will generate a strong password with 128 bits of entropy:
 

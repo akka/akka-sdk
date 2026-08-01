@@ -1,4 +1,4 @@
-= /akka.setup
+= /akka:setup
 
 Configure your development environment for Akka Spec-driven development.
 

@@ -46,7 +46,8 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/views.html.md` - Query models and projections
 - `akka-context/sdk/workflows.html.md` - Saga patterns and orchestration
 - `akka-context/sdk/consuming-producing.html.md` - Event consumption and topics
-- `akka-context/sdk/http-endpoints.html.md` - RESTful APIs
+- `akka-context/sdk/http-endpoints.html.md` - RESTful APIs, server-sent events, WebSockets, serving web application files
+- `akka-context/sdk/web-applications.html.md` - Serving a browser UI from the service: single-page application files, generated HTML, custom domains
 - `akka-context/sdk/grpc-endpoints.html.md` - Protocol buffer APIs
 - `akka-context/sdk/timed-actions.html.md` - Scheduling and timers
 - `akka-context/sdk/setup-and-dependency-injection.html.md` - Service bootstrap and dependency injection
@@ -565,8 +566,26 @@ When an HTTP method returns an `akka.http.javadsl.model.HttpResponse` instead of
 
 ### Endpoint with web UI
 
-Static resources such as HTML, CSS files can be packaged together with the service.
-See documentation "Serving static content" in `akka-context/sdk/http-endpoints.html.md`.
+A service can serve its own browser UI. Put the files in `src/main/resources/static-resources`
+and return them from an endpoint method with `HttpResponses.staticResource`.
+
+For a single-page application, map one method to a `**` subtree and pass the prefix to strip to
+`HttpResponses.staticResource(request, "/pages/")`. Do not write one `@Get` per file. See the
+compiled example at `samples/doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java`
+(the `static-resource-tree-from-classpath` tag).
+
+`GET /pages/app.css` serves `static-resources/app.css`. When the remaining path is empty or ends
+with `/`, `index.html` from that directory is served, so `GET /pages/` returns the application shell.
+Content types are set from the file extension.
+
+Use `HttpResponses.of(StatusCodes.OK, ContentTypes.TEXT_HTML_UTF8, bytes)` when the page is
+generated at request time rather than read from a packaged file.
+
+To push updates into an open page, use server-sent events or a `@WebSocket` method rather than
+polling from the browser.
+
+See "Serving web application assets" in `akka-context/sdk/http-endpoints.html.md` and the full
+guide in `akka-context/sdk/web-applications.html.md`.
 If the user gives no style preferences, you should use something similar to the CSS in `akka-context/ui/default-akka-style.css`
 
 ### Agent Testing Pattern
@@ -699,6 +718,8 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Return protobuf types from domain layer
 - Import `WorkflowSettings` -> WorkflowSettings is an inner class of Workflow, so no additional import is needed
 - Static import `maxRetries` -> use `RecoverStrategy.maxRetries()` (import `Workflow.RecoverStrategy`)
+- Write one `@Get` per file when serving a web UI → map a `**` subtree and strip the prefix with `HttpResponses.staticResource(request, prefix)`
+- Put web UI files directly in `src/main/resources` → they must be in `src/main/resources/static-resources`
 
 ✅ **DO:**
 - Use Java records for immutable data
