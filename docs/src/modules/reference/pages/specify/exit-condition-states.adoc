@@ -264,7 +264,11 @@ Every condition is declared at one of three ship tiers. The tier names *when* th
 
 Tiers are monotonic. A release-time ship requires every review-time condition to be green, which requires every author-time condition to be green. Requesting a higher tier adds gates; it never skips lower ones.
 
-Author-time is a precondition, not a ship target. You never invoke `/akka:ship author` — author-time conditions are what every ship (review or release) requires before it runs its higher-tier auditors. If any author-time condition is red, open, or stale, `/akka:ship` refuses with an author-tier precondition failure regardless of the requested target.
+Author-time is a precondition, not a ship target. You never invoke `/akka:ship author`. Author-time conditions are what every ship, review or release, requires before it runs its higher-tier auditors. If any author-time condition is red, open, or stale, `/akka:ship` refuses with an author-tier precondition failure regardless of the requested target. An active waiver satisfies the precondition the same way it satisfies any other condition. A waiver is a recorded, time-bound acceptance, not a bypass.
+
+The precondition is also what makes the tiering cheap. The author tier is evaluated first, on its own. In Enforced mode a ship that fails it stops there. The review-tier and release-tier auditors do not run, so you do not wait on a scan whose result cannot change the outcome. The verdict covers the author tier only. The higher tiers were skipped rather than failed, so no status is reported for them.
+
+À la carte mode ships regardless of the verdict, so stopping early would withhold information you are about to override. There the precondition is reported and the run continues through every in-scope tier.
 
 === Assigning a tier
 

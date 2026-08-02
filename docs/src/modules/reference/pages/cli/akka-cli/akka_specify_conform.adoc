@@ -4,7 +4,11 @@ Evaluate exit conditions and report the engine verdict.
 
 == Synopsis
 
-[Incubating] Evaluate the resolved exit conditions against the project (running the available auditors), print the Definition-of-Done manifest, then report the engine verdict -- one of NEEDS_INPUT / WORKING / READY_TO_SHIP.
+[Incubating] Evaluate the resolved exit conditions against the project (running the available auditors), print the Definition-of-Done manifest, then report the engine verdict -- either READY_TO_SHIP or NOT_READY.
+
+A NOT_READY verdict says what is blocking and what to do about it: conditions open with reason needs-user-action are waiting on you, conditions open with reason blocked-outside-project need a tool or policy change beyond this project, and stale greens need their auditor re-run.
+
+The verdict is assessed against the release tier, so it covers every applicable condition at every ship tier.
 
 Exits non-zero unless the verdict is READY_TO_SHIP, so it can gate CI or ship.
 

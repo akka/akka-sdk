@@ -29,9 +29,11 @@ Two targets are accepted:
 | Runs the auditors for every applicable exit condition at any tier (`author`, `review`, and `release`). Passes when every one of them is `green` (or waiver-covered) and not stale.
 |===
 
-Author-time is a precondition, not a ship target. There is no `/akka:ship author`. Every ship — review or release — requires every applicable author-tier condition to be `green` before higher-tier auditors run. If any author-tier condition is red, open, or stale, `/akka:ship` refuses with an author-tier precondition failure. See xref:reference:specify/exit-condition-states.adoc#ship-tiers[Ship tiers] for the tier model.
+Author-time is a precondition, not a ship target. There is no `/akka:ship author`. Every ship, review or release, requires every applicable author-tier condition to be `green` or waiver-covered. An active waiver satisfies the precondition the same way it satisfies any other condition. See xref:reference:specify/exit-condition-states.adoc#ship-tiers[Ship tiers] for the tier model.
 
-In Enforced mode `/akka:ship` refuses unless the verdict is `READY_TO_SHIP` for the requested target, with neither process-integrity gate — `PROC-AUDITOR-COVERAGE` or `PROC-ADEQUACY-REVIEWED` — red. In À la carte mode `/akka:ship` proceeds even when the verdict is `NOT_READY`, recording an explicit override on the conformance receipt.
+The author tier is evaluated first, on its own. In Enforced mode a ship that fails it stops there. The review-tier and release-tier auditors do not run, so a ship that cannot succeed does not first spend minutes on scanning, dynamic analysis, or live-service probes. The verdict covers the author tier only. Those higher-tier checks were skipped rather than failed, so the output reports no status for them.
+
+In Enforced mode `/akka:ship` refuses unless the verdict is `READY_TO_SHIP` for the requested target, with neither process-integrity gate, `PROC-AUDITOR-COVERAGE` or `PROC-ADEQUACY-REVIEWED`, red. In À la carte mode `/akka:ship` proceeds even when the verdict is `NOT_READY`, recording an explicit override on the conformance receipt. À la carte ships regardless of the verdict, so stopping early would withhold information you are about to override. There the author-tier precondition is reported, the run continues, and every in-scope tier is evaluated.
 
 On success, `/akka:ship` runs the ship steps the organization declared in its policy for that target — for example, pushing the branch and opening a pull request on a review ship, or deploying to production on a release ship. Ship steps are org-specific.
 

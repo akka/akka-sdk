@@ -91,19 +91,20 @@ Enforced mode is two human touchpoints book-ending a silent machine phase -- not
 
 === The /akka:specify engine
 
-You drive the whole flow through one re-entrant command. You always run `/akka:specify <input>` -- a spec, a clarification answer, review feedback, or a decision -- and it always ends with a definitive status line and the exact next command. Every call resolves to exactly one of three states:
+You drive the whole flow through one re-entrant command. You always run `/akka:specify <input>` -- a spec, a clarification answer, review feedback, or a decision -- and it always ends with a definitive status line and the exact next command. Every call resolves to exactly one of two states:
 
 [cols="1,3"]
 |===
 | State | Meaning and next step
-| *NEEDS_INPUT* | Your turn -- a clarification, threshold, decision, or review feedback is required. Next: `/akka:specify <your response>`.
-| *WORKING* | The machine's turn -- building autonomously. Next: wait, or `/akka:status`.
-| *READY_TO_SHIP* | The completion policy is satisfied. Next: `/akka:ship`.
+| *READY_TO_SHIP* | Every applicable condition in scope for the ship target is `green` and not stale, or waiver-covered. Next: `/akka:ship <review\|release>`.
+| *NOT_READY* | Something still blocks the ship. Next: whatever the status line names.
 |===
 
-Because every call ends in exactly one of these three states with one explicit next command, the workflow is predictable enough to follow by eye and to parse in CI.
+`NOT_READY` says why, and the reason determines whose turn it is. A condition that is `open` with reason `needs-user-action` is waiting on you, for a clarification, a threshold, a decision, or review feedback. A condition that is `open` with reason `blocked-outside-project` needs a tool installed or a policy changed beyond this project. A condition that is `red`, or `green` but stale, is the machine's to resolve, and the build loop continues autonomously. See xref:reference:specify/exit-condition-states.adoc[Exit condition states].
 
-READY_TO_SHIP does not mean every condition is green. It means the *completion policy* -- itself part of the definition of done, authored by the project owner -- is satisfied: human review after a confidence pass, a percentage-of-conditions threshold, or all-must-pass.
+Because every call ends in one of these two states with one explicit next command, the workflow is predictable enough to follow by eye and to parse in CI.
+
+READY_TO_SHIP does not mean every condition in the manifest is green. It means every condition that is both *applicable* and *in scope for the requested ship target* is green and not stale, or covered by an effective waiver. Conditions struck as inapplicable stay visible on the manifest but do not count. Conditions declared at a tier above the requested target are not evaluated for that ship at all.
 
 [#auditors]
 == Auditors
@@ -158,7 +159,9 @@ New or changed checks are surfaced to you for approval at the exit-condition lev
 * *`/akka:ship review`* runs the auditors for every applicable exit condition tagged `author` or `review`, then runs the review ship steps declared in the organization's policy (typically pushing the branch and opening a pull request).
 * *`/akka:ship release`* runs the auditors for every applicable exit condition at any tier, then runs the release ship steps declared in the organization's policy (typically deploying to production).
 
-Author-time is a precondition, not a ship target. Every ship — review or release — refuses if any applicable author-tier condition is not green, before running any higher-tier auditors. See xref:reference:specify/exit-condition-states.adoc#ship-tiers[Ship tiers].
+Author-time is a precondition, not a ship target. Every ship, review or release, requires every applicable author-tier condition to be green or waiver-covered. See xref:reference:specify/exit-condition-states.adoc#ship-tiers[Ship tiers].
+
+The author tier is evaluated first, on its own. In Enforced mode a ship that fails it stops there. The review-tier and release-tier auditors do not run, so you do not wait on a scan whose result cannot change the outcome. The verdict you get back covers the author tier only. The higher tiers were skipped rather than failed, so the output does not report a status for them.
 
 One rule holds regardless of target: *the ship steps run only when every in-scope condition is `green` and not stale, or covered by an effective waiver.*
 
