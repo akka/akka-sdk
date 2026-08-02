@@ -89,7 +89,7 @@ Reaching the reliability and availability your deployment is built for depends o
 | Database and K8s backups | Akka | Akka runs scheduled backups, performs restore tests, owns Velero.
 | Disaster recovery exercises | Shared | Annual or as-agreed joint exercises.
 | Multi-region failover | Akka | Akka operates the failover tooling and runbooks; customer is consulted before failover.
-| Akka console and CLI identity | Customer | Customer's identity provider (IDP) authenticates console/CLI users with MFA.
+| Akka console and CLI identity | Customer | Customer's identity provider (IdP) authenticates console/CLI users with MFA.
 | Akka platform-side privileged access | Akka | Teleport-mediated, session-recorded; logs available to customer on request.
 | Compliance posture (SOC 2, pen test) | Akka | Akka maintains and publishes compliance evidence on https://trust.akka.io[trust.akka.io].
 | GDPR / PII for application data | Customer | Customer is the controller of application data and handles DSRs (Data Subject Requests).
@@ -310,7 +310,7 @@ At a glance::
 | IAM (CLI and console) | Customer | Customer provides the enterprise identity, authentication, and authorization systems and policies used to access the Akka console and CLI.
 | Customer user and team management | Customer | Customer manages its own users, teams, and role assignments within the Akka console.
 | MFA on Akka Console and CLI | Customer | Customer's IdP enforces MFA for users accessing the Akka console and CLI. Akka enforces MFA on its own internal access.
-| Infrastructure access control and IAM (cloud account) | Akka | Akka runs akka-bootstrap and owns account-level IAM for the dedicated cloud account where the region is installed.
+| Infrastructure access control and IAM (cloud account) | Akka | Akka owns account-level IAM for the dedicated cloud account where the region is installed.
 | Service accounts and keys (Akka-managed) | Akka | Akka creates and manages the service accounts, keys, and IAM bindings required for platform operation within the dedicated cloud account.
 | Privileged access via Teleport | Akka | Akka uses Teleport for human access to platform infrastructure, with session recording and audit logging. Access requires explicit justification and approval. Audit logs available to the customer on request.
 | Just-in-time access for customer data | Akka | Where access to customer-confidential data is required (e.g., for incident handling), Akka requests authorization per the Access Control for Customer-Confidential Data policy. Audit logs available on request.
@@ -479,21 +479,15 @@ Some enterprises require that Kubernetes API servers have no public endpoint. Ak
 | FDE | Forward Deployed Engineer. The named Akka engineer assigned to your account who guides production readiness and stays engaged through operations.
 | SRE | Site Reliability Engineering. Akka's operations function responsible for platform health, incident response, and runbook execution.
 | DR | Disaster Recovery. The plan and procedures for restoring service after a region or platform-level outage.
-| SLO | Service Level Objective. An internal target for a service-level indicator (e.g., 99.9% availability over 30 days).
 | SLA | Service Level Agreement. The contractual commitment Akka makes to the customer (see Federation Plane SLA Policy).
 | VPC | Virtual Private Cloud. The isolated network where the Akka region is deployed; in Dedicated it sits in the Akka-operated cloud account.
-| AZ | Availability Zone. An isolated failure domain within a cloud-provider region.
 | CIDR | Classless Inter-Domain Routing. The notation Akka uses to scope the IP address range allocated to a region.
 | DSR | Data Subject Request. A request made under GDPR or similar privacy regulation to access, correct, or delete personal data.
 | IAM | Identity and Access Management. The system controlling who can access what, covering both cloud-account access and Akka console access.
 | ACL | Access Control List. Akka SDK construct restricting which callers can invoke a given service or endpoint.
 | JWT / JWKS | JSON Web Token / JSON Web Key Set. Token format and key publication mechanism used for application authentication.
-| IDP | Identity Provider. The customer's enterprise identity system (Okta, Entra, etc.) federated with the Akka console.
+| IdP | Identity Provider. The customer's enterprise identity system (Okta, Entra, etc.) federated with the Akka console.
 | KMS | Key Management Service. The cloud-provider service that stores and manages encryption keys.
-| DLQ | Dead Letter Queue. Where broker messages land when consumers cannot process them after retries.
-| DPA | Data Processing Agreement.
-| ADR | Architecture Decision Record. A short document capturing an architectural choice and its rationale.
-| NACL | Network Access Control List. Subnet-level firewall in cloud-provider VPCs.
 | NAT | Network Address Translation. Gateway used for outbound traffic from a VPC.
 | GSOC | Global Security Operations Center. The customer's security operations function consuming application security logs.
 | SOC 2 | Service Organization Controls 2. Audit framework Akka maintains for security and availability.
@@ -501,15 +495,7 @@ Some enterprises require that Kubernetes API servers have no public endpoint. Ak
 | CAIQ | Consensus Assessments Initiative Questionnaire. The Cloud Security Alliance's standard cloud-security questionnaire used by enterprise procurement.
 | SIG | Standard Information Gathering. The Shared Assessments Group's standard security and risk questionnaire used by enterprise procurement.
 | ISMS | Information Security Management System. The set of policies, procedures, and controls Akka uses to manage information security risk; the basis for SOC 2 attestation.
-| IaC | Infrastructure as Code. Provisioning and configuration of infrastructure using declarative code (e.g., Terraform).
-| MCP | Model Context Protocol. An open protocol for connecting tools and data sources to LLM agents.
 | OTLP | OpenTelemetry Protocol. Standard wire format for emitting traces, metrics, and logs to observability backends.
-| HEC | HTTP Event Collector. Splunk's HTTP ingestion endpoint for events.
-| RED | Rate, Errors, Duration. A method for instrumenting services by tracking request rate, error rate, and request duration.
-| SAST | Static Application Security Testing. Source-code analysis for security flaws, run in CI.
-| SCA | Software Composition Analysis. Analysis of third-party dependencies for known vulnerabilities, run in CI.
-| CVE | Common Vulnerabilities and Exposures. The public identifier system for known software vulnerabilities.
-| gRPC | A high-performance remote procedure call framework using HTTP/2 and Protocol Buffers.
 |===
 ====
 
