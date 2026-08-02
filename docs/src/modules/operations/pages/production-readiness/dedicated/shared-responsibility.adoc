@@ -283,10 +283,10 @@ At a glance::
 
 | Database point-in-time recovery (PITR) | Akka | Akka enables continuous point-in-time recovery for the database and notifies the customer once configured.
 | Kubernetes resource backups (Velero) | Akka | Akka uses Velero to back up stateful Kubernetes resources.
-| Backup restore testing | Akka | Akka performs periodic restore testing against backups; results are summarized on request. *Quarterly.*
+| Backup restore testing | Akka | Akka performs periodic restore testing against backups; results are summarized on request.
 | Disaster recovery validation | Akka | Akka periodically validates disaster recovery for the platform it operates. Joint exercises with the customer can be arranged as agreed.
 | Cross-region replication configuration | Shared | Customer specifies replication mode (e.g., region-pinned, replicated) per service. Akka enables and operates the underlying replication.
-| Multi-region failover procedure | Akka | Akka provides tooling and runbooks for failover. The customer is consulted before failover and informed of execution.
+| Multi-region failover procedure | Akka | Akka operates the failover tooling and runbooks. The customer is consulted before failover and informed of execution.
 | RTO/RPO commitments | Akka | Akka publishes default RTO/RPO. Customer-specific targets can be agreed where Akka's standard does not meet the customer's needs.
 |===
 ====
@@ -342,7 +342,7 @@ At a glance::
 | Strategic steering | Akka | Periodic alignment session covering usage, capacity, product direction, and customer priorities.
 | Executive partnership review | Akka | Executive-level partnership review covering relationship health, escalation status, and strategic items.
 | Dedicated onboarding | Shared | Joint onboarding covering account setup, region provisioning, connectivity validation, and acceptance criteria.
-| Customer portal access and training | Shared | Customer signs up for portal access; Akka assigns the region and walks the customer through console, CLI, and ticketing flows.
+| Customer portal access and training | Shared | Customer is assigned access to the portal; Akka assigns the region and walks the customer through console, CLI, and ticketing flows.
 | Customer offboarding and data return | Shared | At end of contract, Akka coordinates region decommission, return or destruction of customer data, and revocation of access per the Data Retention Policy and the terms of the agreement.
 | Issue tracking | Akka | Akka tracks customer-raised issues and remediation through to closure with status visibility to the customer.
 |===
