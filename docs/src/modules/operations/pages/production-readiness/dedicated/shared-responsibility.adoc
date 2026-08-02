@@ -271,7 +271,7 @@ This lays out the division of responsibility between the platform and applicatio
 Akka provides database point-in-time recovery, Kubernetes resource backups, and multi-region failover tooling. Replication topology is chosen with the customer.
 
 At a glance::
-* *Akka*: Provides database point-in-time recovery, Velero-based Kubernetes backups, periodic restore testing, and multi-region failover tooling and runbooks. Default RTO/RPO targets apply; customer-specific targets can be agreed.
+* *Akka*: Provides database point-in-time recovery, Velero-based Kubernetes backups, periodic restore testing, and multi-region failover tooling and runbooks. RTO/RPO targets are set by the agreement.
 * *Customer*: Specifies replication mode per service; is consulted before failover.
 
 .*Responsibilities*
@@ -287,7 +287,7 @@ At a glance::
 | Disaster recovery validation | Akka | Akka periodically validates disaster recovery for the platform it operates. Joint exercises with the customer can be arranged as agreed.
 | Cross-region replication configuration | Shared | Customer specifies replication mode (e.g., region-pinned, replicated) per service. Akka enables and operates the underlying replication.
 | Multi-region failover procedure | Akka | Akka operates the failover tooling and runbooks. The customer is consulted before failover and informed of execution.
-| RTO/RPO commitments | Akka | Akka publishes default RTO/RPO. Customer-specific targets can be agreed where Akka's standard does not meet the customer's needs.
+| RTO/RPO commitments | Akka | RTO/RPO targets are defined in the customer's agreement.
 |===
 ====
 
@@ -433,12 +433,11 @@ All application data stays within the dedicated cloud region and VPC and is isol
 Akka applies an additional encryption layer for sensitive material that is synced from the Federation Plane to regional execution clusters: project secrets, authentication tokens, OpenID refresh tokens, and customer-supplied secrets. Lifecycle, rotation, and access control of cryptographic materials follow the Akka Key Management and Cryptography Policy.
 
 [discrete]
-=== Default platform RTO/RPO
+=== Recovery objectives (RTO/RPO)
 
-* Persistence: RPO *5 minutes*, RTO *24 hours*.
-* Kubernetes resources: RPO/RTO *1 hour*.
+RTO and RPO targets are defined in the customer's agreement.
 
-Customer-specific targets may be agreed where the standard does not meet the customer's needs. Compliance posture (SOC 2 Type II, annual third-party penetration test, current subprocessor list) is published on https://trust.akka.io[trust.akka.io].
+Compliance posture (SOC 2 Type II, annual third-party penetration test, current subprocessor list) is published on https://trust.akka.io[trust.akka.io].
 ====
 
 == Appendix C: Private connectivity via Teleport
@@ -475,7 +474,7 @@ Some enterprises require that Kubernetes API servers have no public endpoint. Ak
 | Federation Plane SLA Policy | The policy on trust.akka.io that defines platform availability commitments.
 | Customer Support Policy | The policy on trust.akka.io that defines severity classifications, response time SLOs, and escalation procedures.
 | Teleport | An identity-aware proxy and certificate authority used to bridge the Federation Plane to private Kubernetes API servers.
-| RTO / RPO | Recovery Time Objective / Recovery Point Objective. Default platform commitments are in Section 8 and Appendix B.
+| RTO / RPO | Recovery Time Objective / Recovery Point Objective. Targets are defined in the customer's agreement.
 | FDE | Forward Deployed Engineer. The named Akka engineer assigned to your account who guides production readiness and stays engaged through operations.
 | SRE | Site Reliability Engineering. Akka's operations function responsible for platform health, incident response, and runbook execution.
 | DR | Disaster Recovery. The plan and procedures for restoring service after a region or platform-level outage.
