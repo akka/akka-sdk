@@ -34,7 +34,7 @@ This page targets the typical *Day 2 Ops* engagement (1 dev region + 1 prod regi
 . *Make CI/CD routine, including rollback.* Image rollback is the most commonly rehearsed path. Descriptor changes, JWT (JSON Web Token) rotations, and partial migrations require rehearsed rollback paths as well.
 . *Test under stress, not just happy path.* Load, soak, spike, chaos, run them against a realistically-sized dev region before production traffic hits. Cheap to do, expensive to skip.
 . *Rehearse recovery.* Day 2 Ops DR is typically a two-session exercise: a tabletop covering scenarios, then a live simulation of the scenario(s) the customer and Akka jointly agree matter most. Business Continuity adds cross-region failover and failback drills on top.
-. *Sign off explicitly.* A single named owner declares the application production-ready.
+. *Sign off explicitly.* A single named owner (an individual or a designated body such as a go-live board) declares the application production-ready.
 ====
 
 [NOTE]
@@ -577,7 +577,7 @@ Before flipping prod traffic on:
 [IMPORTANT]
 .*The gate*
 ====
-A single named owner is accountable for the application end-to-end and has explicitly approved its readiness for production. Without that owner, the checklist becomes an aggregate of assumed readiness in which each party presumes coverage by another.
+A single named owner (an individual or a designated body such as a go-live board) is accountable for the application end-to-end and has explicitly approved its readiness for production. Without that owner, the checklist becomes an aggregate of assumed readiness in which each party presumes coverage by another.
 ====
 
 == Day-1 and post-launch readiness
