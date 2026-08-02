@@ -203,7 +203,7 @@ At a glance::
 |===
 | Activity | Owner | Description
 
-| Cost controls | Akka | Akka pays the associated bill and periodically reviews the account subscription and monthly charges. Akka auto-provisions and de-provisions to match utilization; HA is the default posture; sizing options keep cost in check.
+| Cost controls | Akka | Akka pays the cloud bill and periodically reviews the account subscription and monthly charges. Akka auto-provisions and de-provisions to match utilization; HA is the default posture; sizing options keep cost in check.
 | Scalability planning | Shared | Akka monitors utilization and concurrency and auto-scales within sizing standards. Customer notifies Akka in advance of expected rapid expansion or pre-warming needs.
 | Application elasticity | Akka | Akka dynamically adds and removes compute and persistence to accommodate real-time traffic against the customer's performance SLA (Service Level Agreement) targets.
 | Region decommission | Akka | On customer request (end of contract, scope change, topology adjustment), Akka follows the documented decommissioning runbook to gracefully remove the region and clean up stale resources.
