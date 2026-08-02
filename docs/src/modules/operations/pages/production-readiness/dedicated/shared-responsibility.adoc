@@ -76,7 +76,7 @@ Reaching the reliability and availability your deployment is built for depends o
 |===
 | Area | Lead | One-line summary
 
-| Cloud account and billing | Akka | Akka owns and operates the account, pays the associated bill, and controls the account IAM.
+| Cloud account and billing | Akka | Akka owns and operates the account, pays the associated bill, and controls the account IAM; the customer's cost is set by an agreed structure.
 | Networking and DNS | Akka | Akka builds and operates the in-region network, CIDR, peering, allowlists, and DNS; customer coordinates only where it integrates its own network.
 | Account security monitoring | Akka | Akka operates cloud-native audit logging, SIEM, and cloud security posture for the dedicated account.
 | Region install and federation | Akka | Akka provisions, federates, and validates the Akka region.
@@ -98,7 +98,7 @@ Reaching the reliability and availability your deployment is built for depends o
 
 == 1. Cloud account
 
-Akka owns and operates the cloud-provider account that hosts the Akka region. In Dedicated, Akka provisions the account, pays the associated bill, holds the account-level IAM, and operates everything inside it. The customer does not own or operate the cloud account.
+Akka owns and operates the cloud-provider account that hosts the Akka region. In Dedicated, Akka provisions the account, pays the associated bill, holds the account-level IAM, and operates everything inside it; the customer's cost is set by an agreed structure. The customer does not own or operate the cloud account.
 
 At a glance::
 * *Akka*: Provisions, owns, pays for, and operates the dedicated cloud account. Sets quotas and holds all account IAM.
