@@ -164,7 +164,7 @@ Customer:: Allocates the CIDR block, configures peering or hub-and-spoke to the 
 Akka installs the platform machinery into the Kubernetes cluster the Customer has provisioned, federates it to the Akka Federation Plane, and runs smoke tests before handing it over.
 
 Akka:: Installs the platform machinery (Akka runtime, operators, observability) into the Customer's cluster and configures region groups.
-Customer:: Provisions the cluster and database, installs Teleport for federation using the short-lived token Akka provides, identifies region groupings, and provides a recurring 1 to 4 hour weekly maintenance window that Akka uses for any operation that may cause downtime.
+Customer:: Provisions the cluster and database, installs Teleport for federation using the short-lived token Akka provides, identifies region groupings, and provides a preferred maintenance window that Akka aims to use for operations that may cause downtime.
 
 .*Responsibilities*
 [%collapsible]
@@ -178,7 +178,7 @@ Customer:: Provisions the cluster and database, installs Teleport for federation
 | Kubernetes access via Teleport | Akka | Akka uses Teleport for human access to platform infrastructure, with full session recording and audit logging. Access requires explicit justification and approval per the Access Control Policy.
 | Region group identification | Customer | Customer identifies region groupings appropriate for the workloads (e.g., for cross-region replication scope) and informs Akka.
 | Region group configuration | Akka | Akka configures region groups on the Federation Plane to match the Customer's groupings.
-| Maintenance window | Customer | Customer provides a recurring maintenance window (typically 1 to 4 hours per week). Akka uses this window for any operation that may cause downtime.
+| Maintenance window | Customer | Customer provides a preferred maintenance window. Akka aims to use this window for operations that may cause downtime.
 |===
 ====
 
@@ -347,7 +347,7 @@ Shared:: BYOK8s onboarding, support & communication channels, customer portal tr
 | Support and communication channels | Shared | At onboarding, Akka and the Customer agree on operational and engagement-level communication channels (e.g., shared Slack, distribution lists, cadence). Formal support and incident channels are governed by the Customer Support Policy and the Incident Response row.
 | Incident response | Akka | Akka provides 24/7 incident response per the Customer Support Policy. Incidents are opened via support.akka.io, the Akka console, or support@akka.io. *Severity 1 initial response within 1 hour (24/7); Severity 2 within 4 business hours.* Subsequent updates per the Incident Management Process.
 | Postmortem delivery | Akka | Akka delivers post-incident reviews for Severity 1 and 2 incidents within an agreed cadence following resolution.
-| Maintenance notifications | Akka | Akka notifies the Customer at least *48 hours in advance* of planned maintenance windows that could affect availability, and via release-notify emails for runtime/SDK releases.
+| Maintenance notifications | Akka | Akka notifies the Customer in advance of planned maintenance windows that could affect availability, and via release-notify emails for runtime/SDK releases. Notice periods follow the Customer Support Policy.
 | Operations sync | Akka | Recurring operational review covering system health, maintenance, incidents, and roadmap items relevant to the Customer.
 | Strategic steering | Akka | Periodic alignment session covering usage, capacity, product direction, and Customer priorities.
 | Executive partnership review | Akka | Executive-level partnership review covering relationship health, escalation status, and strategic items.
