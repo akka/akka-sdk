@@ -40,7 +40,7 @@ Certificates::
 Valid TLS end to end: Akka rotates platform-managed certificates, and you manage any you provide.
 
 Ownership::
-A single named owner accountable for production readiness, with the authority to declare it or hold the launch.
+A single named owner (an individual or a designated body such as a go-live board) accountable for production readiness, with the authority to declare it or hold the launch.
 
 == How the split shifts by deployment model
 
@@ -52,7 +52,7 @@ xref:operations:production-readiness/dedicated/shared-responsibility.adoc[Shared
 * *BYOC (Bring Your Own Cloud)*: Akka operates the platform inside your own cloud account. You own the account, networking, and data boundary.
 +
 xref:operations:production-readiness/byoc/shared-responsibility.adoc[Shared Responsibility Model] · xref:operations:production-readiness/byoc/checklist.adoc[Production Readiness Checklist]
-* *BYOK8s (Bring Your Own Kubernetes)*: you run Akka on the Kubernetes cluster you operate and own more of the stack, including the cluster, its upgrades, and backups.
+* *BYOK8s (Bring Your Own Kubernetes)*: You run Akka on the Kubernetes cluster you operate and own more of the stack, including the cluster, its upgrades, and backups.
 +
 xref:operations:production-readiness/byok8s/shared-responsibility.adoc[Shared Responsibility Model] · xref:operations:production-readiness/byok8s/checklist.adoc[Production Readiness Checklist]
 

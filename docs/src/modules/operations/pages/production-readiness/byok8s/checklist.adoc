@@ -593,7 +593,7 @@ Before flipping prod traffic on:
 [IMPORTANT]
 .*The gate*
 ====
-A single named individual owns the application end-to-end and has explicitly approved its readiness for production. Without a named owner, the checklist becomes an aggregate of assumed readiness in which each party presumes coverage by another.
+A single named owner is accountable for the application end-to-end and has explicitly approved its readiness for production. Without that owner, the checklist becomes an aggregate of assumed readiness in which each party presumes coverage by another.
 ====
 
 == Day-1 and post-launch readiness
