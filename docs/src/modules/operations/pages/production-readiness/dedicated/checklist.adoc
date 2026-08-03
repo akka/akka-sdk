@@ -83,7 +83,7 @@ Akka reviews your application's high-level architecture and design so we underst
 [cols="1,3", options="header"]
 |===
 | Role | Responsibility
-| Customer | Forecasts traffic, captures sizing inputs and assumptions in writing, agrees compute and persistence shapes with Akka, signs off the cost forecast.
+| Customer | Forecasts traffic, captures sizing inputs and assumptions, agrees compute and persistence shapes with Akka, signs off the cost forecast.
 | Akka | FDE walks the sizing exercise, validates platform-cores and service-cores numbers, names the AZ (Availability Zone) spread and persistence headroom recommendations. Owns and sizes the cloud account and network in Dedicated.
 |===
 
@@ -104,7 +104,7 @@ Akka reviews your application's high-level architecture and design so we underst
 ==== Akka-specific sizing
 
 * [ ] Confirm with your FDE that Akka has sized the platform, account, and network for your forecast: node count and instance types, 3+ AZ spread, VPC / CIDR (Classless Inter-Domain Routing) and security groups, container registry, and persistence headroom with auto-scaling ceilings
-* [ ] *Service cores* (your workload, what Akka bills): sized to peak with rolling-update headroom (~+25%)
+* [ ] Service cores (your workload, what Akka bills): sized to peak with rolling-update headroom (~+25%)
 * [ ] Per-service instance types chosen for each workload (defaults reviewed; pinned where a service needs a specific shape)
 * [ ] Database layout planned per project (a dedicated database per project where isolation or independent scaling is needed, versus a shared database) and sized accordingly
 * [ ] Region optimization / environment sizing reviewed with Akka, so the region and per-service configuration is right-sized for the workload before go-live
@@ -122,7 +122,7 @@ Akka reviews your application's high-level architecture and design so we underst
 [discrete]
 ==== Validation
 
-* [ ] Dev region at 30–50% of prod capacity with the same instance shapes; smaller dev environments produce misleading load-test results
+* [ ] Dev region at 30–50% of prod capacity with the same instance shapes (a much smaller dev region makes load-test results misleading)
 * [ ] Sizing reviewed with FDE
 * [ ] Cost forecast signed off by FinOps
 =====
@@ -133,7 +133,7 @@ Akka reviews your application's high-level architecture and design so we underst
 |===
 | Role | Responsibility
 | Customer | Configures the telemetry exporter to your enterprise observability platform; defines SLOs (Service Level Objectives) and burn-rate alerts; runs synthetic checks; ensures runbooks are linked from every alert.
-| Akka | Emits Akka-runtime telemetry (cluster, persistence, endpoints, agents, workflows, consumers) and filters SDK logs at the source. Operates platform observability internally.
+| Akka | Emits Akka-runtime telemetry (cluster, persistence, endpoints, agents, workflows, consumers) and does not ingest customer SDK logs. Operates platform observability internally.
 |===
 
 .*Detailed checklist*
@@ -142,7 +142,7 @@ Akka reviews your application's high-level architecture and design so we underst
 [discrete]
 ==== Telemetry pipeline
 
-* [ ] Exporter configured (OTLP (OpenTelemetry Protocol), Prometheus, Splunk HEC (HTTP Event Collector), Azure Monitor, Google Cloud, or any OpenTelemetry-compatible backend) pointing at your enterprise platform
+* [ ] Exporter configured (e.g., OTLP (OpenTelemetry Protocol), Prometheus, Splunk HEC (HTTP Event Collector), Azure Monitor, Google Cloud, or any OpenTelemetry-compatible backend) pointing at your enterprise platform
 * [ ] Logs, metrics, traces flowing end-to-end; sampling rates verified
 * [ ] Trace correlation across services, endpoints, agents, tools, broker hops (W3C context)
 * [ ] Log retention meets compliance and debugging needs
@@ -166,7 +166,7 @@ Akka reviews your application's high-level architecture and design so we underst
 * [ ] SLOs defined per service; alerts on burn rate, not raw thresholds
 * [ ] Multi-window multi-burn-rate alerts for primary SLOs
 * [ ] Capacity alerts (service cores, persistence, broker lag)
-* [ ] Alerts route to PagerDuty/Opsgenie with Akka 24/7 SRE (Site Reliability Engineering) escalation
+* [ ] Alerts route to PagerDuty/Opsgenie, with escalation to Akka's 24/7 incident response
 * [ ] Runbook linked from every alert
 
 [discrete]
@@ -329,8 +329,6 @@ Run all of these against the dev region, sized realistically. Without realistic 
 * [ ] Network partition: timeouts, retries, circuit breakers behave
 * [ ] Secret store unavailable: cached creds, no crash
 * [ ] Container registry unavailable: running services keep running
-
-Tools: Chaos Mesh, Litmus, Gremlin, or scripted via cloud APIs. Start in dev; document expected vs. actual for each scenario.
 =====
 
 == Operational testing
@@ -348,7 +346,7 @@ Tools: Chaos Mesh, Litmus, Gremlin, or scripted via cloud APIs. Start in dev; do
 [discrete]
 ==== Disaster recovery drills
 
-Day 2 Ops has no automatic multi-region failover; DR is a cold rebuild. The single most important rehearsal at this tier.
+Day 2 Ops has no multi-region failover; DR is a cold rebuild. The single most important rehearsal at this tier.
 
 DR is typically run as a two-session event. The first session is a tabletop that walks through a range of failure scenarios and how each would be handled end-to-end. The customer and Akka then jointly decide which scenario or scenarios are most important to validate live. The second session is the live simulation of those scenarios, scheduled separately so the right people and the right environment can be assembled for them.
 
