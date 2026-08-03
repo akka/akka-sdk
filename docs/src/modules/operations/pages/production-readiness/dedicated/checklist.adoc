@@ -346,22 +346,17 @@ Run all of these against the dev region, sized realistically. Without realistic 
 [discrete]
 ==== Disaster recovery drills
 
-Day 2 Ops has no multi-region failover; DR is a cold rebuild. The single most important rehearsal at this tier.
+Day 2 Ops has no multi-region failover; DR is a cold rebuild, and rehearsing it is the single most important exercise at this tier.
 
-DR is typically run as a two-session event. The first session is a tabletop that walks through a range of failure scenarios and how each would be handled end-to-end. The customer and Akka then jointly decide which scenario or scenarios are most important to validate live. The second session is the live simulation of those scenarios, scheduled separately so the right people and the right environment can be assembled for them.
+There are many valid ways to run it: how data is exported and where it is kept, how the runbook is structured, which scenarios are simulated live, and how RTO and RPO are measured and agreed all depend on your application and topology. Rather than prescribe one path here, Akka works these through with you as part of DR planning. The essential outcomes:
 
-* [ ] Scheduled data exports to storage outside the prod region (cross-region or different account)
-* [ ] Export integrity verified by periodic restore-to-scratch and row/event-count validation
-* [ ] DR runbook documented end-to-end: declaration criteria, comms, Akka SRE escalation, region rebuild via CLI + descriptors, data restore via `akka services data import`, DNS cutover, verification
-* [ ] DR tabletop completed at least annually: scenarios walked through, gaps captured, scenarios selected for live simulation
-* [ ] Post-drill: gaps documented, runbook updated, next tabletop and simulation scheduled
-* [ ] Live DR simulation of the selected scenario(s) executed with the right people and environment; smoke tests pass against the rebuilt environment
-* [ ] RTO measured against business expectation (typically hours, not minutes)
-* [ ] RPO driven by export frequency; business accepts the number
+* [ ] DR runbook agreed and rehearsed end-to-end with Akka (declaration, data restore, region rebuild, cutover, verification)
+* [ ] A DR tabletop and a live simulation completed, with gaps captured and re-tests scheduled
+* [ ] RTO and RPO measured and accepted by the business
 
 [NOTE]
 ====
-RTO and RPO are the Recovery Time Objective and Recovery Point Objective. Default platform commitments are in the Shared Responsibility Model (Section 8 and Appendix B).
+RTO and RPO are the Recovery Time Objective and Recovery Point Objective. Targets are defined in your agreement; see the Shared Responsibility Model.
 ====
 
 [discrete]
