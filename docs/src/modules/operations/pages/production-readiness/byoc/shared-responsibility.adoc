@@ -260,7 +260,7 @@ This lays out the division of responsibility between the platform and applicatio
 
 | Platform health monitoring | Akka | Akka monitors and responds to the health of the platform it operates, for example its system and infrastructure pods, database health and resource use, platform runtime errors, and internal processing-lag signals. Described generically; the specific signals and tooling change as the platform evolves.
 | Platform availability monitoring | Akka | Akka monitors and reports availability of the Akka Platform. Uptime reports available on request. Platform availability commitments are governed by the Akka Federation Plane SLA Policy. Availability of customer-deployed services running on the platform is the customer's responsibility, see Section 12.
-| Platform logs (excluding SDK logs) | Akka | Akka monitors all platform logs other than SDK logs. SDK logs are filtered at the source so they are not sent to Akka's internal observability stack.
+| Platform logs (excluding SDK logs) | Akka | Akka monitors all platform logs other than SDK logs, which are not ingested into Akka's observability stack.
 | Akka region platform telemetry | Akka | Akka monitors region-level metrics and logs and notifies the customer as needed.
 | Application monitoring | Customer | The customer monitors their own application pods, for example resource use, projection health, and service-specific metrics, and sets the thresholds that matter for their services. Recommended metrics and thresholds are available from Akka on request.
 | Teleport access monitoring | Customer | Teleport sits at the boundary between the customer's infrastructure and Akka's, so meaningful coverage needs both sides; the customer configures alerting for Teleport access on their side.
@@ -407,7 +407,7 @@ At a glance::
 | Application deployments | Customer | Customer owns and manages the lifecycle of Akka SDK applications: build, version, deploy, roll back.
 | Source code management | Customer | Source code management for Akka service implementations is the customer's responsibility.
 | Service scaling limits | Customer | Customer controls service instance counts within configured platform limits.
-| Application logs | Customer | Metrics and logs from services built with the Akka SDK are sent to the customer's logging platform. Akka filters these at the source so they are not sent to Akka's internal observability stack.
+| Application logs | Customer | Metrics and logs from services built with the Akka SDK are sent to the customer's logging platform and are not ingested into Akka's observability stack.
 | SDK logs | Customer | Customer monitors SDK and application logs in their own observability platform.
 | Application security logs | Customer | Customer can configure dashboards over cloud security logs and stream them to a GSOC (Global Security Operations Center) or observability tool.
 | Service ACLs | Customer | Customer configures Service ACLs to protect access to non-public service endpoints.

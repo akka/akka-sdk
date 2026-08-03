@@ -434,12 +434,12 @@ Walk the alert list and the dependency list; every plausible failure should have
 
 * [ ] Incident commander role defined, with a clear assignment or rotation
 * [ ] Communication roles defined: leadership comms, customer comms, scribe or timeline-keeper
-* [ ] New on-call engineers onboarded before joining the rotation: each alert seen firing in dev, a deploy and a rollback performed, and at least one DR or chaos drill attended
+* [ ] New on-call engineers complete onboarding before joining the rotation: each alert seen firing in dev, a deploy and a rollback performed, and at least one DR or chaos drill attended
 
 [discrete]
 ==== Game days
 
-* [ ] Recurring game day scheduled with a named owner: an unannounced failure scenario the full team responds to, surfacing process and communication gaps that technical chaos testing alone does not
+* [ ] Recurring game day scheduled with a named owner or team: an unannounced failure scenario the full team responds to, surfacing process and communication gaps that technical chaos testing alone does not
 
 [discrete]
 ==== Ownership and documentation
@@ -565,19 +565,21 @@ A single named owner (an individual or a designated body such as a go-live board
 
 == Day-1 and post-launch readiness
 
+Going live is the start, not the finish. These items carry the launch through its first hours and weeks: what success looks like, how the team watches closely during hypercare, and how early findings feed back into the work.
+
 === Launch criteria
 
-* [ ] Success criteria at 24h, 7 days, 30 days (latency, token spend, error rate, business metrics)
+* [ ] Success criteria at 24h, 7 days, 30 days (e.g., latency, token spend, error rate, business metrics)
 * [ ] Criteria signed off by product owner
 
 === Hypercare
 
-* [ ] Hypercare period defined: dashboard watchers, on-call coverage, heightened alert thresholds
-* [ ] Deliberate exit to steady-state ops with a named owner
+* [ ] Hypercare period defined, including its duration: dashboard watchers, on-call coverage, heightened alert thresholds
+* [ ] Deliberate exit to steady-state ops with a named owner or team
 
 === Feedback loop
 
-* [ ] First-week incidents, near-misses, observability gaps flow into the backlog with a named owner
+* [ ] First-week incidents, near-misses, observability gaps flow into the backlog with a named owner or team
 * [ ] Weekly review during hypercare
 
 == Common pitfalls
@@ -585,10 +587,10 @@ A single named owner (an individual or a designated body such as a go-live board
 Three recurring failure modes worth identifying early:
 
 . *Sizing assumptions remain undocumented.* When traffic profiles change or staff transition, subsequent capacity decisions have no recorded baseline. Capture inputs, assumptions, and resulting cluster shape in version control alongside descriptors.
-. *DR and chaos drills are scheduled and then repeatedly deferred.* Recurring deferrals can extend planned exercises by many months. Establish a recurring calendar entry, assign a named owner, and treat skipped drills as a sign-off blocker for the next release.
+. *DR and chaos drills are scheduled and then repeatedly deferred.* Recurring deferrals can extend planned exercises by many months. Establish a recurring calendar entry, assign a named owner or team, and treat skipped drills as a sign-off blocker for the next release.
 . *Rollback procedures cover code but not configuration.* Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and partial data migrations frequently are not, and that is where incidents extend significantly.
 
-The most commonly omitted requirement is a single named owner of the application, accountable for production readiness end-to-end and with the authority to declare readiness or identify remaining gaps.
+The most commonly omitted requirement is a single named owner of the application (an individual or a designated body), accountable for production readiness end-to-end and with the authority to declare readiness or identify remaining gaps.
 
 [NOTE]
 ====
