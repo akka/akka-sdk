@@ -337,7 +337,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 |===
 | Role | Responsibility
 | Customer | Owns the application-side DR runbook, schedules and runs the drills, rehearses every rollback path (image, descriptor, schema, data, config), and measures time-to-rollback.
-| Shared | Annual disaster-recovery exercise jointly run by Akka and the customer; Akka 24/7 escalation path is part of the DR runbook.
+| Shared | Annual disaster-recovery exercise jointly run by Akka and the customer; Akka's 24/7 incident procedure is part of the DR runbook.
 |===
 
 .*Detailed checklist*
@@ -346,7 +346,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 [discrete]
 ==== Disaster recovery drills
 
-Day 2 Ops has no multi-region failover; DR is a cold rebuild, and rehearsing it is the single most important exercise at this tier.
+Without multi-region failover, DR is a cold rebuild, and rehearsing it is the single most important exercise at this tier.
 
 A DR rehearsal is worth as much for what it surfaces as for the recovery itself. Walking a real recovery end-to-end is where teams find the gaps that would otherwise appear mid-incident, e.g. who owns each step, a firewall rule that has to be opened for a rebuilt database, a data-export destination that was assumed rather than verified, or access that no one currently holds. There are many possible scenarios, and Akka works with you on the most prevalent so that you can be prepared.
 
@@ -360,6 +360,8 @@ Start with a tabletop: walk the failure scenarios end-to-end, confirm who does w
 ==== Rollback testing
 
 Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and partial data migrations frequently are not. Incidents tend to extend significantly when those rollback paths have not been exercised.
+
+Rehearse the paths your application relies on, at least:
 
 * [ ] Service rollback rehearsed via `akka services` (pause, restart, restore previous), actually executed in dev
 * [ ] Image rollback tested via pipeline: in-flight requests handled correctly
@@ -379,13 +381,13 @@ Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and par
 
 == Operational readiness (often missed)
 
-These sit in the cracks between teams and are the most commonly skipped. They apply at both tiers.
+These sit in the cracks between teams and are the most commonly skipped. They are baseline at Day 2 Ops, and Business Continuity builds on top of that baseline.
 
 [cols="1,3", options="header"]
 |===
 | Role | Responsibility
 | Customer | Owns the operational scaffolding around the application: environment parity, data classification, production access and break-glass, runbook coverage, incident command, on-call onboarding, and recurring game days.
-| Shared | Akka's 24/7 SRE is part of the incident escalation path and is consulted on runbooks that touch the Platform.
+| Shared | Akka's 24/7 incident procedure is part of the escalation path; Akka is consulted on runbooks that touch the Platform.
 |===
 
 .*Detailed checklist*
@@ -402,15 +404,15 @@ These sit in the cracks between teams and are the most commonly skipped. They ap
 
 * [ ] Data classes flowing through each service documented (PII, PHI, financial, GDPR or EU AI Act regulated)
 * [ ] Sanitization, retention, log scrubbing, and evidence-export scope derived from the classification
-* [ ] A named owner for data handling (this often falls between security and compliance)
+* [ ] Data-handling ownership assigned to a specific role or team (it often falls between security and compliance)
 
 [discrete]
 ==== Production access and break-glass
 
 * [ ] Documented who can restart services, read prod logs, and rotate secrets
 * [ ] Break-glass procedure for emergency access defined
-* [ ] Akka 24/7 SRE scope clarified: what they can and cannot do without customer approval
-* [ ] Admin actions audit-logged and exported to your SIEM (Security Information and Event Management)
+* [ ] Akka's 24/7 incident procedure understood: how it is initiated, and what Akka can and cannot do without customer approval
+* [ ] Your admin actions audit-logged and exported to your SIEM (Security Information and Event Management); Akka provides its control-plane audit events on request
 * [ ] Region deletion policy decided with Akka: hard-lock the region (deletion forbidden) or set disabled-by-default, protecting services and associated resources from accidental deletion in production. Deployment is unaffected; the choice can differ per region
 
 [discrete]
@@ -432,7 +434,7 @@ Walk the alert list and the dependency list; every plausible failure should have
 
 * [ ] Incident commander role defined, with a clear assignment or rotation
 * [ ] Communication roles defined: leadership comms, customer comms, scribe or timeline-keeper
-* [ ] On-call onboarding: new on-call is paged through each alert in dev, has run a deploy and a rollback, and has joined at least one DR or chaos drill
+* [ ] New on-call engineers onboarded before joining the rotation: each alert seen firing in dev, a deploy and a rollback performed, and at least one DR or chaos drill attended
 
 [discrete]
 ==== Game days
@@ -442,9 +444,9 @@ Walk the alert list and the dependency list; every plausible failure should have
 [discrete]
 ==== Ownership and documentation
 
-* [ ] Every service has a named owning team (not "Platform"), an on-call rotation, and an escalation path, tagged in descriptors and dashboards
-* [ ] ADRs (Architecture Decision Records) written and version-controlled for major decisions (region pinning, broker choice, LLM provider, guardrail configuration, sizing assumptions)
-* [ ] Bus-factor check: the team can operate prod if the most senior engineer is unavailable
+* [ ] Every service has a specific named owning team (not a generic catch-all), an on-call rotation, and an escalation path, tagged in descriptors and dashboards
+* [ ] Key architectural decisions recorded with their rationale (region pinning, broker choice, LLM provider, guardrail configuration, sizing assumptions), so the reasoning survives team changes
+* [ ] Lottery-factor check: the team can operate prod if the most senior engineer is unavailable
 =====
 
 == Compliance and governance
