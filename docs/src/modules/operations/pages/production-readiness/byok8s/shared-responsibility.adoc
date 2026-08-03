@@ -279,10 +279,10 @@ This lays out the division of responsibility between the platform and applicatio
 
 == Backups, disaster recovery, and multi-region
 
-The Customer runs database backups on their infrastructure; Akka uses Velero for Kubernetes resource backups with infrastructure the Customer provides. Restore testing, disaster-recovery exercises, and replication topology are joint decisions, and Akka provides multi-region failover tooling.
+The Customer runs the database with point-in-time recovery (PITR) on their infrastructure; Akka uses Velero for Kubernetes resource backups with infrastructure the Customer provides. Restore testing, disaster-recovery exercises, and replication topology are joint decisions, and Akka provides multi-region failover tooling.
 
 Akka:: Operates Velero for K8s resource backups (against Customer-provided IAM and object storage), provides multi-region failover tooling and runbooks. RTO/RPO targets are set by the agreement.
-Customer:: Configures recurring database backups, notifies Akka after ad-hoc backups, specifies replication mode per service, is consulted before failover.
+Customer:: Configures database point-in-time recovery (PITR), notifies Akka after ad-hoc backups, specifies replication mode per service, is consulted before failover.
 Shared:: Velero (Customer provides IAM/storage, Akka operates), restore testing, and the annual or as-agreed disaster-recovery exercise.
 
 .*Responsibilities*
@@ -292,10 +292,10 @@ Shared:: Velero (Customer provides IAM/storage, Akka operates), restore testing,
 |===
 | Activity | Owner | Description
 
-| Automated database backups | Customer | Customer configures recurring database backups in their environment. Akka is informed. *8-day retention recommended.*
+| Database point-in-time recovery (PITR) | Customer | Customer configures continuous point-in-time recovery (PITR) for the database in their environment. Akka is informed. *8-day retention recommended.*
 | Ad-hoc database backups | Customer | Customer notifies Akka after taking ad-hoc database backups (e.g., before high-risk changes, or snapshots taken for incident handling).
 | Kubernetes resource backups (Velero) | Shared | Akka uses Velero to back up stateful Kubernetes resources. Customer provides the necessary IAM binding and object storage.
-| Backup restore testing | Shared | Akka and the Customer perform periodic restore testing against backups; results are summarized on request. The Disaster Recovery Exercise row covers joint exercises. *Quarterly.*
+| Backup restore testing | Shared | Akka and the Customer perform periodic restore testing against backups; results are summarized on request. The Disaster Recovery Exercise row covers joint exercises.
 | Disaster recovery exercise | Shared | Akka and the Customer work together periodically to simulate a disaster and fully recover from it, ensuring the recovery meets or exceeds the Customer's needs. *Annual or as agreed.*
 | Cross-region replication configuration | Shared | Customer specifies replication mode (e.g., region-pinned, replicated) per service. Akka enables and operates the underlying replication.
 | Multi-region failover procedure | Akka | Akka provides tooling and runbooks for failover. The Customer is consulted before failover and informed of execution.

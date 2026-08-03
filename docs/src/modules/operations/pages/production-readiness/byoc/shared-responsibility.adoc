@@ -272,10 +272,10 @@ This lays out the division of responsibility between the platform and applicatio
 
 == 8. Backups, disaster recovery, and multi-region
 
-Akka runs scheduled backups and provides multi-region failover tooling. Disaster-recovery exercises and replication topology are joint decisions.
+Akka provides database point-in-time recovery and multi-region failover tooling. Disaster-recovery exercises and replication topology are joint decisions.
 
 At a glance::
-* *Akka*: Runs scheduled DB backups, Velero K8s backups, periodic restore testing, and provides multi-region failover tooling and runbooks. RTO/RPO targets are set by the agreement.
+* *Akka*: Provides database point-in-time recovery, Velero K8s backups, periodic restore testing, and multi-region failover tooling and runbooks. RTO/RPO targets are set by the agreement.
 * *Customer*: Notifies Akka after ad-hoc backups; specifies replication mode per service; is consulted before failover.
 * *Shared*: Annual disaster-recovery exercise (or as agreed) jointly run by Akka and the customer.
 
@@ -286,10 +286,10 @@ At a glance::
 |===
 | Activity | Owner | Description
 
-| Automated database backups | Akka | Akka enables scheduled database backups and notifies the customer once configured.
+| Database point-in-time recovery (PITR) | Akka | Akka enables continuous point-in-time recovery for the database and notifies the customer once configured.
 | Ad-hoc database backups | Customer | Customer notifies Akka after taking ad-hoc database backups (e.g., before high-risk changes, or snapshots taken for incident handling).
 | Kubernetes resource backups (Velero) | Akka | Akka uses Velero to back up stateful Kubernetes resources.
-| Backup restore testing | Akka | Akka performs periodic restore testing against backups; results are summarized on request. The Disaster Recovery Exercise row covers joint exercises. *Quarterly.*
+| Backup restore testing | Akka | Akka performs periodic restore testing against backups; results are summarized on request. The Disaster Recovery Exercise row covers joint exercises.
 | Disaster recovery exercise | Shared | Akka and the customer work together periodically to simulate a disaster and fully recover from it, ensuring the recovery meets or exceeds the customer's needs. *Annual or as agreed.*
 | Cross-region replication configuration | Shared | Customer specifies replication mode (e.g., region-pinned, replicated) per service. Akka enables and operates the underlying replication.
 | Multi-region failover procedure | Akka | Akka provides tooling and runbooks for failover. The customer is consulted before failover and informed of execution.
