@@ -348,7 +348,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 
 Day 2 Ops has no multi-region failover; DR is a cold rebuild, and rehearsing it is the single most important exercise at this tier.
 
-A DR rehearsal is worth as much for what it surfaces as for the recovery itself. Walking a real recovery end-to-end is where teams find the gaps that would otherwise appear mid-incident: who owns each step, a firewall rule that has to be opened for a rebuilt database, a data-export destination that was assumed rather than verified, access that no one currently holds. There are many valid ways to recover, and the right one depends on your application and topology, so Akka works this through with you rather than prescribing a single path here.
+A DR rehearsal is worth as much for what it surfaces as for the recovery itself. Walking a real recovery end-to-end is where teams find the gaps that would otherwise appear mid-incident, e.g. who owns each step, a firewall rule that has to be opened for a rebuilt database, a data-export destination that was assumed rather than verified, or access that no one currently holds. There are many possible scenarios, and Akka works with you on the most prevalent so that you can be prepared.
 
 Start with a tabletop: walk the failure scenarios end-to-end, confirm who does what, and capture the prerequisites and gaps. From there, choose the scenario(s) that matter most and exercise them live.
 
