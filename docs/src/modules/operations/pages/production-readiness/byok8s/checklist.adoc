@@ -166,7 +166,7 @@ Akka reviews your application's high-level architecture and design so we underst
 * [ ] SLOs defined per service; alerts on burn rate, not raw thresholds
 * [ ] Multi-window multi-burn-rate alerts for primary SLOs
 * [ ] Capacity alerts (service cores, persistence, broker lag)
-* [ ] Alerts route to PagerDuty/Opsgenie with escalation to Akka's 24/7 incident response
+* [ ] Alerts route to your on-call paging tool (e.g., PagerDuty, Opsgenie), with escalation to Akka's 24/7 incident response
 * [ ] Runbook linked from every alert
 
 [discrete]
