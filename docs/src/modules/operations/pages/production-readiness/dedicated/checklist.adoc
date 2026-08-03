@@ -466,16 +466,15 @@ Not every customer is regulated, but where you are, these are the items auditors
 [discrete]
 ==== Audit logging
 
-* [ ] Akka control-plane audit events (authentication, project and service lifecycle, IAM and token changes, deploys, descriptor changes, secret rotations, prod-log access) obtained from Akka, delivered on request or on a recurring cadence you arrange, then ingested and retained in your SIEM (Security Information and Event Management) to your compliance needs
-* [ ] Cloud-account and infrastructure security audit logs (the account is Akka's in Dedicated, and Akka operates SIEM over it) obtained from Akka, delivered on request or on a recurring cadence you arrange, then ingested and retained alongside them
+* [ ] Akka control-plane audit events (authentication, project and service lifecycle, IAM and token changes) obtained from Akka, delivered on request or on a recurring cadence you arrange, then ingested and retained in your SIEM (Security Information and Event Management) to your compliance needs
 
 [discrete]
 ==== Vendor and dependency continuity
 
-* [ ] Akka control-plane outage: response plan documented (applications keep running; deploys and control-plane operations pause)
-* [ ] LLM provider outage: escalation path and fallback model documented
-* [ ] Broker provider regional outage: response documented
-* [ ] Every external dependency has a known fallback or an explicitly accepted risk
+For governance and audit, document the continuity posture of each third-party dependency; the operational response runbooks live under Operational readiness.
+
+* [ ] Every external dependency (LLM provider, message broker, and the like) has a documented fallback or an explicitly accepted risk
+* [ ] Akka control-plane outage understood and documented: applications keep running; deploys and control-plane operations pause
 
 [discrete]
 ==== Compliance evidence
