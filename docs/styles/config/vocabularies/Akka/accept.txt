@@ -300,6 +300,8 @@ Zolotko
 [Aa]nthropic
 biopharma
 Datadog
+Opsgenie
+PagerDuty
 decisioning
 [Dd]elegative
 docreview
