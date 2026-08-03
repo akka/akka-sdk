@@ -515,13 +515,9 @@ Availability comes in levels; choose per service against its needs.
 * *Single region, multiple availability zones*: the baseline, resilient to the loss of an availability zone. On Akka-operated infrastructure, high availability across zones is the default.
 * *Multi-region, replicated*: the highest-availability posture Akka offers, resilient to the loss of an entire region, with geographic failover and low-latency local access (xref:concepts:multi-region.adoc[]).
 
-Within multi-region, the replication mode set per service determines the failover behavior:
+Within multi-region, the replication mode set per service determines the failover behavior. The modes, replicated writes, and replicated reads with a request-region or pinned-region primary, along with their consistency and switch-over semantics, are defined in xref:concepts:multi-region.adoc[].
 
-* *Replicated writes*: every region can accept writes for the same data, and concurrent changes converge automatically without conflict. Highest write availability through a regional loss; the data model must tolerate concurrent, order-independent updates.
-* *Replicated reads, request-region primary*: one region owns writes for an entity, and that primary follows where writes happen, with strong consistency preserved across the switch-over. Best for user locality with automatic movement.
-* *Replicated reads, pinned-region primary*: a single static primary owns writes while other regions serve reads and take over on an operational failover. The classic one-primary, fail-over-on-outage posture.
-
-Single-region (not replicated) has no cross-region failover; recovery is a cold rebuild, the Day 2 Ops tier. Switch-over behavior and consistency are authoritative in xref:concepts:multi-region.adoc[]; operational setup is in xref:operations:regions/index.adoc[]. Terminology: "region-pinned" below means data that is not replicated across regions, which differs from the pinned-region primary above (a replicated mode); state which you mean in the ADR.
+Single-region (not replicated) has no cross-region failover; recovery is a cold rebuild, the Day 2 Ops tier. Operational setup is in xref:operations:regions/index.adoc[].
 ====
 
 .*Detailed checklist*
@@ -530,7 +526,7 @@ Single-region (not replicated) has no cross-region failover; recovery is a cold 
 [discrete]
 ==== Architecture (per workload)
 
-* [ ] Replication mode chosen per service and recorded in an ADR (Architecture Decision Record), using the modes in xref:concepts:multi-region.adoc[] (see the availability note above)
+* [ ] Replication mode chosen per service and recorded with its rationale, using the modes in xref:concepts:multi-region.adoc[] (see the availability note above)
 * [ ] Cross-region workflow idempotency validated
 * [ ] Eventual-consistency lag tolerance documented and surfaced to the business
 
@@ -542,7 +538,7 @@ Single-region (not replicated) has no cross-region failover; recovery is a cold 
 * [ ] Failback drills (returning to the original primary), which are commonly overlooked
 * [ ] Replication-lag SLO defined and monitored; alert on tolerance breach
 * [ ] DNS / global LB cutover automated where possible; manual steps timed and rehearsed
-* [ ] Active-active validated with concurrent writes from both regions (exercises conflict resolution)
+* [ ] Replicated-writes mode validated with concurrent writes from both regions (exercises conflict-free convergence)
 
 [discrete]
 ==== Operational additions
@@ -557,13 +553,8 @@ Single-region (not replicated) has no cross-region failover; recovery is a cold 
 Before flipping prod traffic on:
 
 .*Required sign-offs*
-* [ ] Architecture review
-* [ ] Security review (CISO / InfoSec)
-* [ ] Compliance review (if regulated)
-* [ ] SRE / Platform, runbook tested, on-call ready
-* [ ] FinOps, cost forecast accepted
-* [ ] Product owner, accepts SLOs _including the recovery window_
-* [ ] DR tabletop completed and the agreed live simulation executed (or cross-region failover drill at Business Continuity)
+Gather the sign-offs your application and organization call for, commonly architecture, security (CISO / InfoSec), compliance (if regulated), SRE / platform (runbook tested, on-call ready), FinOps (cost forecast accepted), the product owner (accepting the SLOs, including the recovery window), and the DR tabletop plus its live simulation (or the cross-region failover drill at Business Continuity). Which apply depends on the application and the organization.
+
 * [ ] *Final go/no-go verification:* the named go/no-go owner confirms every item on this checklist is satisfied, and Akka reviews and confirms that readiness with them before production traffic is enabled
 
 [IMPORTANT]
