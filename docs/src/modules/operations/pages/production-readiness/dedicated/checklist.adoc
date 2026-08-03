@@ -337,7 +337,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 |===
 | Role | Responsibility
 | Customer | Owns the application-side DR runbook, schedules and runs the drills, rehearses every rollback path (image, descriptor, schema, data, config), and measures time-to-rollback.
-| Shared | Annual disaster-recovery exercise jointly run by Akka and the customer; Akka 24/7 SRE escalation path is part of the DR runbook.
+| Shared | Annual disaster-recovery exercise jointly run by Akka and the customer; Akka 24/7 escalation path is part of the DR runbook.
 |===
 
 .*Detailed checklist*
@@ -348,16 +348,13 @@ Run all of these against the dev region, sized realistically. Without realistic 
 
 Day 2 Ops has no multi-region failover; DR is a cold rebuild, and rehearsing it is the single most important exercise at this tier.
 
-There are many valid ways to run it: how data is exported and where it is kept, how the runbook is structured, which scenarios are simulated live, and how RTO and RPO are measured and agreed all depend on your application and topology. Rather than prescribe one path here, Akka works these through with you as part of DR planning. The essential outcomes:
+A DR rehearsal is worth as much for what it surfaces as for the recovery itself. Walking a real recovery end-to-end is where teams find the gaps that would otherwise appear mid-incident: who owns each step, a firewall rule that has to be opened for a rebuilt database, a data-export destination that was assumed rather than verified, access that no one currently holds. There are many valid ways to recover, and the right one depends on your application and topology, so Akka works this through with you rather than prescribing a single path here.
 
-* [ ] DR runbook agreed and rehearsed end-to-end with Akka (declaration, data restore, region rebuild, cutover, verification)
-* [ ] A DR tabletop and a live simulation completed, with gaps captured and re-tests scheduled
-* [ ] RTO and RPO measured and accepted by the business
+Start with a tabletop: walk the failure scenarios end-to-end, confirm who does what, and capture the prerequisites and gaps. From there, choose the scenario(s) that matter most and exercise them live.
 
-[NOTE]
-====
-RTO and RPO are the Recovery Time Objective and Recovery Point Objective. Targets are defined in your agreement; see the Shared Responsibility Model.
-====
+* [ ] DR tabletop run with Akka: scenarios walked end-to-end, ownership of each step confirmed, prerequisites and gaps captured (network/firewall changes, data-export destinations, access, and the like)
+* [ ] The most important scenario(s) from the tabletop exercised live, with gaps fed back and re-tests scheduled
+* [ ] DR runbook captured from the exercise: declaration criteria, data restore, region rebuild, cutover, verification
 
 [discrete]
 ==== Rollback testing
