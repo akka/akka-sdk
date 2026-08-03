@@ -134,10 +134,10 @@ Filter by layer or owner, or search across activity, description, and cadence. O
 | Cloud/Infrastructure Audit Logging | Infrastructure Security Audit Logs | C | C |  | A | If any suspicious SIEM alerts are found, please notify Akka. | 
 | PKI | Customer Managed Database Encryption Keys | C | C | A | A | The Customer creates and maintains the key material for the CMEK and shares its identifier with Akka. Customer is responsible for ensuring access to the CMEK | 
 | PKI | Customer-Provided TLS Certificates | C | C |  | C | Where Akka cannot automatically provision TLS certificates (e.g., private load balancers, or where the Customer brings its own domain), the Customer provides certificates or configures cert-manager. Akka validates and deploys. See https://doc.akka.io/operations/tls-certificates.html#_custom_server_certificates for details. | 
-| Backups and Recovery | Database Backups (Automated Recurring) | C | C |  | A | Customer is responsible for configuring recurring database backups | 8-day retention
+| Backups and Recovery | Database Point-in-Time Recovery (PITR) | C | C |  | A | Customer is responsible for configuring continuous point-in-time recovery (PITR) for the database | 8-day retention
 | Backups and Recovery | Database Backups (Ad-Hoc) | C | C |  | A | The Customer notifies Akka after taking ad-hoc database backups (e.g., before high-risk changes, or snapshots taken for incident handling). | 
 | Backups and Recovery | Velero Used for K8s Resources | ± | ± |  |  | Akka uses Velero to back up stateful Kubernetes resources so they can be restored. Customer sets up necessary IAM binding and object storage for Akka | 
-| Backups and Recovery | Backup Restore Testing | ± | ± | C |  | Akka performs periodic restore testing against backups; results are summarized on request. The Disaster Recovery Exercise row covers joint exercises. | Quarterly
+| Backups and Recovery | Backup Restore Testing | ± | ± | C |  | Akka performs periodic restore testing against backups; results are summarized on request. The Disaster Recovery Exercise row covers joint exercises. | 
 | Permissions | Service Accounts & Keys | C | C | A | A | Customer creates and manages the service accounts, service account keys, and IAM bindings required for Platform operation within the cloud account. | 
 |===
 
