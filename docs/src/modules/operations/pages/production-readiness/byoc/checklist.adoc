@@ -18,6 +18,8 @@ Walk this page before going live, using the at-a-glance below as the quick entry
 Reaching the reliability and availability your deployment is built for depends on working these items through with your Akka team; your agreement and the Federation Plane SLA Policy remain the authoritative statement of what is committed.
 
 As the customer-side complement to the Shared Responsibility Model, each item is yours to verify, and Akka recommends not advancing to production until each is appropriately covered. Akka strongly encourages engaging your FDE and Akka's customer success and support teams (mailto:support@akka.io[support@akka.io]) throughout this preparation to make go-live as smooth as possible, although the work can also be completed independently.
+
+Items also split across two levels. Some are *region-level*: set up once for the region and shared by every application running on it, much of disaster recovery, backups, and baseline platform alerting is operational and lives here. Others are *application-level*: handled per service, such as sizing, application observability, and rollback paths. This page lists both together; the tailored checklist your Akka team builds with you sorts each item to the right level, so region-level work is done once rather than repeated for every application.
 ====
 
 Akka Automated Operations runs the platform end-to-end inside your cloud account: runtime, region installation, scaling, patching, observability of the platform itself, backups, and the operational rituals around them. The items on this page are the customer-side preparation that complements that work, so production is reliable from day one. Your FDE walks through the principal items ahead of go-live.
