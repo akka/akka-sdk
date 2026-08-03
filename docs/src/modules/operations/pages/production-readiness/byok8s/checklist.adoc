@@ -337,7 +337,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 |===
 | Role | Responsibility
 | Customer | Owns the application-side DR runbook, schedules and runs the drills, rehearses every rollback path (image, descriptor, schema, data, config), and measures time-to-rollback.
-| Shared | Annual disaster-recovery exercise jointly run by Akka and the Customer; Akka 24/7 SRE escalation path is part of the DR runbook.
+| Shared | Annual disaster-recovery exercise jointly run by Akka and the Customer; Akka's 24/7 incident procedure is part of the DR runbook.
 |===
 
 .*Detailed checklist*
@@ -346,28 +346,22 @@ Run all of these against the dev region, sized realistically. Without realistic 
 [discrete]
 ==== Disaster recovery drills
 
-Day 2 Ops has no multi-region failover; DR is a cold rebuild. The single most important rehearsal at this tier.
+Without multi-region failover, DR is a cold rebuild, and rehearsing it is the single most important exercise at this tier.
 
-DR is typically run as a two-session event. The first session is a tabletop that walks through a range of failure scenarios and how each would be handled end-to-end. The Customer and Akka then jointly decide which scenario or scenarios are most important to validate live. The second session is the live simulation of those scenarios, scheduled separately so the right people and the right environment can be assembled for them.
+A DR rehearsal is worth as much for what it surfaces as for the recovery itself. Walking a real recovery end-to-end is where teams find the gaps that would otherwise appear mid-incident, e.g. who owns each step, a firewall rule that has to be opened for a rebuilt database, a data-export destination that was assumed rather than verified, or access that no one currently holds. There are many possible scenarios, and Akka works with you on the most prevalent so that you can be prepared.
 
-* [ ] Scheduled data exports to storage outside the prod region (cross-region or different account)
-* [ ] Export integrity verified by periodic restore-to-scratch and row/event-count validation
-* [ ] DR runbook documented end-to-end: declaration criteria, comms, Akka SRE escalation, region rebuild via CLI + descriptors, data restore via `akka services data import`, DNS cutover, verification
-* [ ] DR tabletop completed at least annually: scenarios walked through, gaps captured, scenarios selected for live simulation
-* [ ] Live DR simulation of the selected scenario(s) executed with the right people and environment; smoke tests pass against the rebuilt environment
-* [ ] RTO measured against business expectation (typically hours, not minutes)
-* [ ] RPO driven by export frequency; business accepts the number
-* [ ] Post-drill: gaps documented, runbook updated, next tabletop and simulation scheduled
+Start with a tabletop: walk the failure scenarios end-to-end, confirm who does what, and capture the prerequisites and gaps. From there, choose the scenario(s) that matter most and exercise them live.
 
-[NOTE]
-====
-RTO and RPO are the Recovery Time Objective and Recovery Point Objective. Default platform commitments are in the Shared Responsibility Model (Section 8 and Appendix B).
-====
+* [ ] DR tabletop run with Akka: scenarios walked end-to-end, ownership of each step confirmed, prerequisites and gaps captured (network/firewall changes, data-export destinations, access, and the like)
+* [ ] The most important scenario(s) from the tabletop exercised live, with gaps fed back and re-tests scheduled
+* [ ] DR runbook captured from the exercise: declaration criteria, data restore, region rebuild, cutover, verification
 
 [discrete]
 ==== Rollback testing
 
 Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and partial data migrations frequently are not. Incidents tend to extend significantly when those rollback paths have not been exercised.
+
+Rehearse the paths your application relies on, at least:
 
 * [ ] Service rollback rehearsed via `akka services` (pause, restart, restore previous), actually executed in dev
 * [ ] Image rollback tested via pipeline: in-flight requests handled correctly
@@ -387,13 +381,13 @@ Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and par
 
 == Operational readiness (often missed)
 
-These sit in the cracks between teams and are the most commonly skipped. They apply at both tiers.
+These sit in the cracks between teams and are the most commonly skipped. They are baseline at Day 2 Ops, and Business Continuity builds on top of that baseline.
 
 [cols="1,3", options="header"]
 |===
 | Role | Responsibility
 | Customer | Owns the operational scaffolding around the application: environment parity, data classification, production access and break-glass, runbook coverage, incident command, on-call onboarding, and recurring game days.
-| Shared | Akka's 24/7 SRE is part of the incident escalation path and is consulted on runbooks that touch the Platform.
+| Shared | Akka's 24/7 incident procedure is part of the escalation path; Akka is consulted on runbooks that touch the Platform.
 |===
 
 .*Detailed checklist*
@@ -410,15 +404,15 @@ These sit in the cracks between teams and are the most commonly skipped. They ap
 
 * [ ] Data classes flowing through each service documented (PII, PHI, financial, GDPR or EU AI Act regulated)
 * [ ] Sanitization, retention, log scrubbing, and evidence-export scope derived from the classification
-* [ ] A named owner for data handling (this often falls between security and compliance)
+* [ ] Data-handling ownership assigned to a specific role or team (it often falls between security and compliance)
 
 [discrete]
 ==== Production access and break-glass
 
 * [ ] Documented who can restart services, read prod logs, and rotate secrets
 * [ ] Break-glass procedure for emergency access defined
-* [ ] Akka 24/7 SRE scope clarified: what they can and cannot do without customer approval
-* [ ] Admin actions audit-logged and exported to your SIEM (Security Information and Event Management)
+* [ ] Akka's 24/7 incident procedure understood: how it is initiated, and what Akka can and cannot do without customer approval
+* [ ] Your admin actions audit-logged and exported to your SIEM (Security Information and Event Management); Akka provides its control-plane audit events on request
 * [ ] Region deletion policy decided with Akka: hard-lock the region (deletion forbidden) or set disabled-by-default, protecting services and associated resources from accidental deletion in production. Deployment is unaffected; the choice can differ per region
 
 [discrete]
@@ -435,6 +429,7 @@ Walk the alert list and the dependency list; every plausible failure should have
 * [ ] Agent guardrail false-positive storm (if running agents)
 * [ ] Log pipeline backed up
 * [ ] Kubernetes cluster or node-pool failure (you operate the cluster in BYOK8s)
+* [ ] Database outage or failover (you operate the database in BYOK8s)
 * [ ] Kubernetes or database upgrade rollback (upgrades are yours in BYOK8s; coordinate certified versions with Akka)
 
 [discrete]
@@ -442,19 +437,19 @@ Walk the alert list and the dependency list; every plausible failure should have
 
 * [ ] Incident commander role defined, with a clear assignment or rotation
 * [ ] Communication roles defined: leadership comms, customer comms, scribe or timeline-keeper
-* [ ] On-call onboarding: new on-call is paged through each alert in dev, has run a deploy and a rollback, and has joined at least one DR or chaos drill
+* [ ] New on-call engineers complete onboarding before joining the rotation: each alert seen firing in dev, a deploy and a rollback performed, and at least one DR or chaos drill attended
 
 [discrete]
 ==== Game days
 
-* [ ] Recurring game day scheduled with a named owner: an unannounced failure scenario the full team responds to, surfacing process and communication gaps that technical chaos testing alone does not
+* [ ] Recurring game day scheduled with a named owner or team: an unannounced failure scenario the full team responds to, surfacing process and communication gaps that technical chaos testing alone does not
 
 [discrete]
 ==== Ownership and documentation
 
-* [ ] Every service has a named owning team (not "Platform"), an on-call rotation, and an escalation path, tagged in descriptors and dashboards
-* [ ] ADRs (Architecture Decision Records) written and version-controlled for major decisions (region pinning, broker choice, LLM provider, guardrail configuration, sizing assumptions)
-* [ ] Bus-factor check: the team can operate prod if the most senior engineer is unavailable
+* [ ] Every service has a specific named owning team (not a generic catch-all), an on-call rotation, and an escalation path, tagged in descriptors and dashboards
+* [ ] Key architectural decisions recorded with their rationale (region pinning, broker choice, LLM provider, guardrail configuration, sizing assumptions), so the reasoning survives team changes
+* [ ] Lottery-factor check: the team can operate prod if the most senior engineer is unavailable
 =====
 
 == Compliance and governance
@@ -474,18 +469,16 @@ Not every customer is regulated, but where you are, these are the items auditors
 [discrete]
 ==== Audit logging
 
-* [ ] Akka control-plane audit events (authentication, project and service lifecycle, IAM and token changes, deploys, descriptor changes, secret rotations, prod-log access) obtained from Akka, delivered on request or on a recurring cadence you arrange, then ingested and retained in your SIEM (Security Information and Event Management) to your compliance needs
+* [ ] Akka control-plane audit events (authentication, project and service lifecycle, IAM and token changes) obtained from Akka, delivered on request or on a recurring cadence you arrange, then ingested and retained in your SIEM (Security Information and Event Management) to your compliance needs
 * [ ] Cluster, node, and cloud-account audit logs (you operate the cluster and account in BYOK8s) collected and retained alongside them
 
 [discrete]
 ==== Vendor and dependency continuity
 
-* [ ] Kubernetes cluster or node-pool outage: response plan documented (you operate the cluster)
-* [ ] Database outage or failover: response plan documented (you operate the database)
-* [ ] Akka control-plane outage: response plan documented (applications keep running; deploys and control-plane operations pause)
-* [ ] LLM provider outage: escalation path and fallback model documented
-* [ ] Broker provider regional outage: response documented
-* [ ] Every external dependency has a known fallback or an explicitly accepted risk
+For governance and audit, document the continuity posture of each third-party dependency; the operational response runbooks live under Operational readiness.
+
+* [ ] Every external dependency (LLM provider, message broker, and the like) has a documented fallback or an explicitly accepted risk
+* [ ] Akka control-plane outage understood and documented: applications keep running; deploys and control-plane operations pause
 
 [discrete]
 ==== Compliance evidence
@@ -526,13 +519,9 @@ Availability comes in levels; choose per service against its needs.
 * *Single region, multiple availability zones*: the baseline, resilient to the loss of an availability zone. In BYOK8s the zone spread is part of the cluster you operate.
 * *Multi-region, replicated*: the highest-availability posture Akka offers, resilient to the loss of an entire region, with geographic failover and low-latency local access (xref:concepts:multi-region.adoc[]).
 
-Within multi-region, the replication mode set per service determines the failover behavior:
+Within multi-region, the replication mode set per service determines the failover behavior. The modes, replicated writes, and replicated reads with a request-region or pinned-region primary, along with their consistency and switch-over semantics, are defined in xref:concepts:multi-region.adoc[].
 
-* *Replicated writes*: every region can accept writes for the same data, and concurrent changes converge automatically without conflict. Highest write availability through a regional loss; the data model must tolerate concurrent, order-independent updates.
-* *Replicated reads, request-region primary*: one region owns writes for an entity, and that primary follows where writes happen, with strong consistency preserved across the switch-over. Best for user locality with automatic movement.
-* *Replicated reads, pinned-region primary*: a single static primary owns writes while other regions serve reads and take over on an operational failover. The classic one-primary, fail-over-on-outage posture.
-
-Single-region (not replicated) has no cross-region failover; recovery is a cold rebuild, the Day 2 Ops tier. Switch-over behavior and consistency are authoritative in xref:concepts:multi-region.adoc[]; operational setup is in xref:operations:regions/index.adoc[]. Terminology: "region-pinned" below means data that is not replicated across regions, which differs from the pinned-region primary above (a replicated mode); state which you mean in the ADR.
+Single-region (not replicated) has no cross-region failover; recovery is a cold rebuild, the Day 2 Ops tier. Operational setup is in xref:operations:regions/index.adoc[].
 ====
 
 .*Detailed checklist*
@@ -553,7 +542,7 @@ In BYOK8s you operate the cluster, database, and networking in every region, so 
 [discrete]
 ==== Architecture (per workload)
 
-* [ ] Replication mode chosen per service and recorded in an ADR (Architecture Decision Record), using the modes in xref:concepts:multi-region.adoc[] (see the availability note above)
+* [ ] Replication mode chosen per service and recorded with its rationale, using the modes in xref:concepts:multi-region.adoc[] (see the availability note above)
 * [ ] Cross-region workflow idempotency validated
 * [ ] Eventual-consistency lag tolerance documented and surfaced to the business
 
@@ -565,7 +554,7 @@ In BYOK8s you operate the cluster, database, and networking in every region, so 
 * [ ] Failback drills (returning to the original primary), which are commonly overlooked
 * [ ] Replication-lag SLO defined and monitored; alert on tolerance breach
 * [ ] DNS / global LB cutover automated where possible; manual steps timed and rehearsed
-* [ ] Active-active validated with concurrent writes from both regions (exercises conflict resolution)
+* [ ] Replicated-writes mode validated with concurrent writes from both regions (exercises conflict-free convergence)
 
 [discrete]
 ==== Operational additions
@@ -580,13 +569,8 @@ In BYOK8s you operate the cluster, database, and networking in every region, so 
 Before flipping prod traffic on:
 
 .*Required sign-offs*
-* [ ] Architecture review
-* [ ] Security review (CISO / InfoSec)
-* [ ] Compliance review (if regulated)
-* [ ] SRE / Platform, runbook tested, on-call ready
-* [ ] FinOps, cost forecast accepted
-* [ ] Product owner, accepts SLOs _including the recovery window_
-* [ ] DR tabletop completed and the agreed live simulation executed (or cross-region failover drill at Business Continuity)
+Gather the sign-offs your application and organization call for, commonly architecture, security (CISO / InfoSec), compliance (if regulated), SRE / platform (runbook tested, on-call ready), FinOps (cost forecast accepted), the product owner (accepting the SLOs, including the recovery window), and the DR tabletop plus its live simulation (or the cross-region failover drill at Business Continuity). Which apply depends on the application and the organization.
+
 * [ ] *Final go/no-go verification:* the named go/no-go owner confirms every item on this checklist is satisfied, and Akka reviews and confirms that readiness with them before production traffic is enabled
 
 [IMPORTANT]
@@ -597,19 +581,21 @@ A single named owner (an individual or a designated body such as a go-live board
 
 == Day-1 and post-launch readiness
 
+Going live is the start, not the finish. These items carry the launch through its first hours and weeks: what success looks like, how the team watches closely during hypercare, and how early findings feed back into the work.
+
 === Launch criteria
 
-* [ ] Success criteria at 24h, 7 days, 30 days (latency, token spend, error rate, business metrics)
+* [ ] Success criteria at 24h, 7 days, 30 days (e.g., latency, token spend, error rate, business metrics)
 * [ ] Criteria signed off by product owner
 
 === Hypercare
 
-* [ ] Hypercare period defined: dashboard watchers, on-call coverage, heightened alert thresholds
-* [ ] Deliberate exit to steady-state ops with a named owner
+* [ ] Hypercare period defined, including its duration: dashboard watchers, on-call coverage, heightened alert thresholds
+* [ ] Deliberate exit to steady-state ops with a named owner or team
 
 === Feedback loop
 
-* [ ] First-week incidents, near-misses, observability gaps flow into the backlog with a named owner
+* [ ] First-week incidents, near-misses, observability gaps flow into the backlog with a named owner or team
 * [ ] Weekly review during hypercare
 
 == Common pitfalls
@@ -617,10 +603,10 @@ A single named owner (an individual or a designated body such as a go-live board
 Three recurring failure modes worth identifying early:
 
 . *Sizing assumptions remain undocumented.* When traffic profiles change or staff transition, subsequent capacity decisions have no recorded baseline. Capture inputs, assumptions, and resulting cluster shape in version control alongside descriptors.
-. *DR and chaos drills are scheduled and then repeatedly deferred.* Recurring deferrals can extend planned exercises by many months. Establish a recurring calendar entry, assign a named owner, and treat skipped drills as a sign-off blocker for the next release.
+. *DR and chaos drills are scheduled and then repeatedly deferred.* Recurring deferrals can extend planned exercises by many months. Establish a recurring calendar entry, assign a named owner or team, and treat skipped drills as a sign-off blocker for the next release.
 . *Rollback procedures cover code but not configuration.* Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and partial data migrations frequently are not, and that is where incidents extend significantly.
 
-The most commonly omitted requirement is a single named owner of the application, accountable for production readiness end-to-end and with the authority to declare readiness or identify remaining gaps.
+The most commonly omitted requirement is a single named owner of the application (an individual or a designated body), accountable for production readiness end-to-end and with the authority to declare readiness or identify remaining gaps.
 
 [NOTE]
 ====
