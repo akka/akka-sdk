@@ -510,11 +510,10 @@ Some enterprises require that Kubernetes API servers in their cloud accounts hav
 =====
 * https://trust.akka.io[trust.akka.io], SOC 2 Type II, SOC 3, subprocessor list, current compliance evidence, applicable policies.
 * https://support.akka.io[support.akka.io] or mailto:support@akka.io[support@akka.io], Customer Support Portal and email channel for opening cases.
+=====
 
-[NOTE]
-====
+'''
+
 This document is maintained as a living reference and updated periodically as Akka's platform and operational practices evolve. To receive notifications of material updates, email mailto:support@akka.io[support@akka.io].
 
-Where this document and any Akka policy on trust.akka.io diverge, the policy on trust.akka.io takes precedence.
-====
-=====
+Where this document and any Akka policy on https://trust.akka.io[trust.akka.io] diverge, the policy on trust.akka.io takes precedence.
