@@ -45,7 +45,7 @@ attributes: prepare
 	echo ":akka-cli-version: 3.0.68" >> "${managed_partials}/attributes.adoc"
 	echo ":akka-cli-min-version: 3.0.4" >> "${managed_partials}/attributes.adoc"
 	# see https://adoptium.net/marketplace/
-	echo ":java-version: 21" \
+	echo ":java-version: 25" \
 		>> "${managed_partials}/attributes.adoc"
 	# see https://maven.apache.org/docs/history.html
 	echo ":minimum_maven_version: 3.9" \
