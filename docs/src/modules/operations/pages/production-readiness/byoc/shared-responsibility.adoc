@@ -8,18 +8,11 @@ This page describes how responsibilities are divided between Akka and the custom
 
 The at-a-glance summary and the per-area sections below assign an owner to each activity. For the authoritative row-by-row breakdown, with the full Responsible / Accountable / Consulted / Informed split, see the xref:operations:production-readiness/byoc/raci.adoc[RACI].
 
-[NOTE]
-====
-This page is a customer-facing reference. The policies published on https://trust.akka.io[trust.akka.io] and the Customer Support Policy take precedence over any summary here.
-====
-
 == Executive summary
 
 Akka Automated Operations is a managed platform that runs inside your cloud account. Akka takes responsibility for the platform itself: the runtime, operators, encryption, region installation, scaling, patching, observability of the platform, backups, and the operational rituals that surround them. You take responsibility for the cloud account, the network you bring, the human identities that access the Akka console, the applications you build with the Akka SDK, and the data those applications process.
 
 Because AAO operates inside your cloud account, the model is genuinely shared. Akka manages the platform layer end-to-end; you manage the layers above and below it; a small number of activities are jointly owned with the lead and consulted parties named explicitly.
-
-The sections below summarize each area at a glance. For the authoritative row-by-row breakdown, every activity with the full Responsible / Accountable / Consulted / Informed split, descriptions, and cadences, see the xref:operations:production-readiness/byoc/raci.adoc[RACI].
 
 Shared responsibility extends to going live. Akka has a set of standards Akka expects of customer applications before flipping prod traffic on: sizing, observability, CI/CD, functional and non-functional testing, DR (disaster recovery) and rollback rehearsal. The xref:operations:production-readiness/byoc/checklist.adoc[production readiness checklist] captures those standards and the sign-off gate Akka recommends before launch.
 
@@ -70,7 +63,7 @@ Each activity in the matrix has an owner, the party that is Responsible and Acco
 
 Because Akka operates inside infrastructure you control, coordinate with Akka before infrastructure changes that could affect the Region.
 
-Reaching the reliability and availability your deployment is built for depends on both sides meeting the responsibilities below, worked through with your Akka team; your agreement and the Federation Plane SLA Policy remain the authoritative statement of what is committed. See the xref:operations:production-readiness/index.adoc[production readiness overview].
+Reaching the reliability and availability your deployment is built for depends on both sides meeting the responsibilities below, worked through with your Akka team; your agreement and the Federation Plane SLA Policy remain the authoritative statement of what is committed. See the xref:operations:production-readiness/index.adoc[production readiness overview] and the xref:operations:production-readiness/byoc/checklist.adoc[BYOC production readiness checklist].
 
 == Responsibility summary at a glance
 
@@ -87,7 +80,7 @@ Reaching the reliability and availability your deployment is built for depends o
 | Encryption (customer-managed keys) | Customer | Customer manages key material when CMEK is selected.
 | Platform observability | Akka | Akka monitors the platform and publishes uptime reports on request.
 | Application observability | Customer | Customer exports app telemetry to their own observability stack.
-| Database and K8s backups | Akka | Akka runs scheduled backups, performs restore tests, owns Velero.
+| Database and K8s backups | Akka | Akka provides database point-in-time recovery, performs restore tests, owns Velero.
 | Disaster recovery exercises | Shared | Annual or as-agreed joint exercises.
 | Multi-region failover | Akka | Akka provides tooling and runbooks; customer is consulted before failover.
 | Akka console and CLI identity | Customer | Customer's identity provider (IdP) authenticates console/CLI users with MFA.
@@ -112,7 +105,7 @@ At a glance::
 |===
 | Activity | Owner | Description
 
-| Cloud account provisioning | Customer | Customer sets up a dedicated AWS account, GCP project, or Azure subscription for Akka to host the platform in. Dedicated account is recommended to simplify cost tracking and security boundaries.
+| Cloud account provisioning | Customer | Customer sets up a dedicated AWS account, GCP project, or Azure subscription for Akka to host the platform in. A dedicated account is recommended to simplify cost tracking and security boundaries.
 | Quotas and service limits | Customer | Customer ensures sufficient quota for compute, storage, and networking. Akka advises on expected consumption.
 | Execute akka-bootstrap | Customer | Customer runs the Akka-provided Terragrunt utility to grant Akka programmatic access to the cloud account.
 | Terraform state backend | Customer | Customer owns and secures the Terraform state backend (cloud storage bucket, locking, encryption) used when running akka-bootstrap.
@@ -290,7 +283,7 @@ At a glance::
 | Ad-hoc database backups | Customer | Customer notifies Akka after taking ad-hoc database backups (e.g., before high-risk changes, or snapshots taken for incident handling).
 | Kubernetes resource backups (Velero) | Akka | Akka uses Velero to back up stateful Kubernetes resources.
 | Backup restore testing | Akka | Akka performs periodic restore testing against backups; results are summarized on request. The Disaster Recovery Exercise row covers joint exercises.
-| Disaster recovery exercise | Shared | Akka and the customer work together periodically to simulate a disaster and fully recover from it, ensuring the recovery meets or exceeds the customer's needs. *Annual or as agreed.*
+| Disaster recovery exercise | Shared | Akka and the customer work together, annually or as agreed, to simulate a disaster and fully recover from it, ensuring the recovery meets or exceeds the customer's needs.
 | Cross-region replication configuration | Shared | Customer specifies replication mode (e.g., region-pinned, replicated) per service. Akka enables and operates the underlying replication.
 | Multi-region failover procedure | Akka | Akka provides tooling and runbooks for failover. The customer is consulted before failover and informed of execution.
 | RTO/RPO commitments | Akka | RTO/RPO targets are defined in the customer's agreement.

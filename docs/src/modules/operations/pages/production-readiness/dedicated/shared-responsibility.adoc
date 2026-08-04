@@ -8,16 +8,9 @@ This page describes how responsibilities are divided between Akka and the custom
 
 The at-a-glance summary and the per-area sections below assign an owner to each activity. For the authoritative row-by-row breakdown, with the full Responsible / Accountable / Consulted / Informed split, see the xref:operations:production-readiness/dedicated/raci.adoc[RACI].
 
-[NOTE]
-====
-This page is a customer-facing reference. The policies published on https://trust.akka.io[trust.akka.io] and the Customer Support Policy take precedence over any summary here.
-====
-
 == Executive summary
 
 Akka Automated Operations is a managed platform. Under the Dedicated model, Akka owns and operates the cloud account that hosts it and runs everything within: the runtime, operators, encryption, region installation, scaling, patching, platform observability, backups, the in-region network, and the security monitoring over the account. That leaves you the least to run of the three deployment models (BYOK8s, BYOC, and Dedicated): you own the applications you build with the Akka SDK, the data they process, any customer-managed encryption keys or TLS certificates you bring, and your side of the operational partnership. A small number of activities are jointly owned, with the lead and consulted parties named explicitly.
-
-The sections below summarize each area at a glance. For the authoritative row-by-row breakdown, every activity with the full Responsible / Accountable / Consulted / Informed split, descriptions, and cadences, see the xref:operations:production-readiness/dedicated/raci.adoc[RACI].
 
 Shared responsibility extends to going live. Akka has a set of standards it expects of customer applications before flipping prod traffic on: sizing, observability, CI/CD, functional and non-functional testing, DR (disaster recovery) and rollback rehearsal. The xref:operations:production-readiness/dedicated/checklist.adoc[production readiness checklist] captures those standards and the sign-off gate Akka recommends before launch.
 
@@ -86,7 +79,7 @@ Reaching the reliability and availability your deployment is built for depends o
 | Encryption (customer-managed keys) | Customer | Customer manages key material when CMEK is selected.
 | Platform observability | Akka | Akka monitors the platform and publishes uptime reports on request.
 | Application observability | Customer | Customer exports app telemetry to their own observability stack.
-| Database and K8s backups | Akka | Akka runs scheduled backups, performs restore tests, owns Velero.
+| Database and K8s backups | Akka | Akka provides database point-in-time recovery, performs restore tests, owns Velero.
 | Disaster recovery exercises | Shared | Annual or as-agreed joint exercises.
 | Multi-region failover | Akka | Akka operates the failover tooling and runbooks; customer is consulted before failover.
 | Akka console and CLI identity | Customer | Customer's identity provider (IdP) authenticates console/CLI users with MFA.
