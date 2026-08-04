@@ -14,7 +14,7 @@ This means a dependency conflict — for example, the application transitively p
 
 ## The solution
 
-This project is one piece of a three-part solution:
+Alignment is done by a BOM, and this project is the backstop that catches what a BOM cannot:
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -22,20 +22,25 @@ This project is one piece of a three-part solution:
 │                                                                  │
 │  runtime-core ──── all runtime dependencies declared here        │
 │       │                                                          │
-│  runtime-dependencies ──── depends on runtime-core               │
-│       │                    resolves its full dependency tree     │
-│       │                    generates properties manifest         │
-│       ▼                    publishes as akka-runtime-dependencies│
-│  META-INF/akka-runtime-dependencies.properties                   │
-│    com.google.guava%guava=33.5.0-jre                             │
-│    com.fasterxml.jackson.core%jackson-databind=2.18.3            │
-│    io.grpc:grpc-api=1.72.0                                       │
-│    ...                                                           │
+│       ├── runtime-dependencies ── resolves runtime-core's full   │
+│       │       │                   dependency tree, renders it    │
+│       │       ▼                   as a properties manifest       │
+│       │   META-INF/akka-runtime-dependencies.properties          │
+│       │     com.google.guava%guava=33.5.0-jre                    │
+│       │     com.fasterxml.jackson.core%jackson-databind=2.18.3   │
+│       │     io.grpc%grpc-api=1.72.0                              │
+│       │     ...                                                  │
+│       │                                                          │
+│       └── runtime-bom ────────── same tree, rendered as a        │
+│               │                  pom-packaged Maven BOM          │
+│               ▼                                                  │
+│           akka-runtime-bom (<dependencyManagement> only)         │
 └──────────────────────────────────────────────────────────────────┘
-                              │
-                              │ published artifact (tiny jar, just
-                              │ the properties file, no transitive deps)
-                              ▼
+                    │                         │
+   published artifact (tiny jar,     published pom, imported
+   just the properties file)         by akka-javasdk-parent
+                    │                         │
+                    ▼                         │
 ┌──────────────────────────────────────────────────────────────────┐
 │  2. akka-javasdk-enforcer (this project)                         │
 │                                                                  │
@@ -46,12 +51,16 @@ This project is one piece of a three-part solution:
 │    - reports conflicts as errors or warnings                     │
 │    - configurable strictness and excludes                        │
 └──────────────────────────────────────────────────────────────────┘
-                              │
-                              │ wired into the parent POM so every
-                              │ user project gets the check automatically
-                              ▼
+                    │                         │
+                    │ wired into the parent POM so every
+                    │ user project gets both automatically
+                    ▼                         ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │  3. akka-javasdk-parent (pom.xml)                                │
+│                                                                  │
+│  <dependencyManagement>                                          │
+│    akka-runtime-bom  <scope>import</scope>  ← aligns versions    │
+│  </dependencyManagement>                                         │
 │                                                                  │
 │  <plugin>                                                        │
 │    maven-enforcer-plugin                                         │
@@ -62,13 +71,38 @@ This project is one piece of a three-part solution:
 │    <rules>                                                       │
 │      <akkaRuntimeDependencyCheck>                                │
 │        <failOnConflict>true</failOnConflict>                     │
+│        <versionStrictness>patch</versionStrictness>              │
 │      </akkaRuntimeDependencyCheck>                               │
 │    </rules>                                                      │
 │  </plugin>                                                       │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-The manifest is auto-generated from `runtime-core`'s actual resolved dependency tree, so there is no manually maintained list to keep in sync.
+Both the manifest and the BOM are auto-generated from `runtime-core`'s actual resolved dependency
+tree, by the same code, so there is no manually maintained list to keep in sync and the two cannot
+disagree.
+
+The BOM is what actually fixes the conflict: because every service inherits from
+`akka-javasdk-parent`, the imported `<dependencyManagement>` becomes part of the service's effective
+POM and overrides nearest-wins for every runtime-provided library. The enforcer then only has one
+case left to catch — a version the service declares explicitly — which is why the parent runs it at
+`patch` strictness rather than the rule's own `newer-only` default.
+
+## What a user can and cannot change
+
+The runtime decides the versions of the libraries it provides. In platform deployment it supplies
+them and its jars come first on the classpath, and the service image does not even package the ~50
+artifacts listed in the parent POM's exclusion list. Declaring a different version of one of those
+changes local compilation and tests, and changes nothing in production — the jar it produces is
+discarded at packaging time.
+
+So a runtime-provided version cannot be overridden from the service. What the pieces above do is
+make the build say so early: the BOM makes local resolution match production, and the enforcer fails
+the build when an explicit declaration has pulled something out of alignment.
+
+The one genuine exit is standalone (self-managed) deployment, where the runtime does not supply the
+classpath. Those projects turn the check off with `-Dakka.dependency-check.skip=true` or the
+equivalent POM setting below.
 
 ## Configuration
 
@@ -80,17 +114,17 @@ The rule is configured in the `maven-enforcer-plugin` section of the POM. The `a
 |---|---|---|
 | `skip` | `false` | Completely disable the check. Also supports `-Dakka.dependency-check.skip=true` on the command line or as a POM property. Useful for projects that deploy in standalone mode (self-managed). |
 | `failOnConflict` | `true` | `true` to fail the build on conflicts, `false` for warnings only |
-| `versionStrictness` | `newer-only` | How strictly to compare versions (see below): `newer-only`, `major`, `minor`, `patch`, `exact` |
+| `versionStrictness` | `newer-only` (the parent POM sets `patch`) | How strictly to compare versions (see below): `newer-only`, `major`, `minor`, `patch`, `exact` |
 | `excludes` | (empty) | List of `groupId%artifactId` keys to skip |
 
 ### Version strictness
 
 | Value | Behavior | Example: allowed | Example: conflict |
 |---|---|---|---|
-| `newer-only` | Only flag when the app resolves a **newer** version than the runtime provides. If the app has an older version, the runtime's newer version is backward compatible — no conflict. This is the recommended default. | `2.18.1` vs runtime `2.18.3` (app older) | `2.19.0` vs runtime `2.18.3` (app newer) |
+| `newer-only` | Only flag when the app resolves a **newer** version than the runtime provides. Note that this stays silent on a downgrade, including the security-patch downgrades the runtime pins against. | `2.18.1` vs runtime `2.18.3` (app older) | `2.19.0` vs runtime `2.18.3` (app newer) |
 | `major` | Flag when major versions differ, regardless of direction. Also flags qualifier differences when the major version matches. | `2.19.0` vs runtime `2.18.3` (same major) | `3.0.0` vs runtime `2.18.3` (different major) |
 | `minor` | Flag when major or minor versions differ. Also flags qualifier differences when major.minor matches. | `2.18.1` vs runtime `2.18.3` (same minor) | `2.19.0` vs runtime `2.18.3` (different minor) |
-| `patch` | Flag when major, minor, or patch versions differ. Qualifier-only differences are allowed (e.g., `-jre` vs `-android`). | `2.18.3-jre` vs runtime `2.18.3-android` (same base) | `2.18.4` vs runtime `2.18.3` (different patch) |
+| `patch` | Flag when major, minor, or patch versions differ. Qualifier-only differences are allowed (e.g., `-jre` vs `-android`). This is what `akka-javasdk-parent` configures, since the BOM already aligns everything the runtime provides. | `2.18.3-jre` vs runtime `2.18.3-android` (same base) | `2.18.4` vs runtime `2.18.3` (different patch) |
 | `exact` | Flag **any** version difference whatsoever. | `2.18.3` vs runtime `2.18.3` (identical) | `2.18.3-jre` vs runtime `2.18.3-android` (qualifier differs) |
 
 Version comparison uses Maven's built-in `ComparableVersion`, which correctly handles qualifiers (`-jre`, `-SNAPSHOT`, `-beta1`), milestone ordering, and all standard Maven version semantics. The `major`, `minor`, and `patch` modes also detect qualifier differences (e.g., `-SNAPSHOT` vs release, `-M1` vs `-M10`) when the relevant numeric components match.
@@ -141,18 +175,21 @@ When a conflict is detected, the build output shows exactly what mismatches and 
 
 Akka runtime dependency conflicts detected!
 ===========================================
-The following dependencies are provided by the Akka runtime in managed
-platform deployment. The runtime versions will take precedence on the
-classpath, which may cause unexpected behavior or errors.
+The following dependencies are provided by the Akka runtime in platform
+deployment. The runtime versions will take precedence on the classpath,
+which may cause unexpected behavior or errors.
 
   com.google.guava%guava
     Your version:    35.0.0-jre  (newer than runtime)
     Runtime version: 33.5.0-jre
 
+The Akka runtime supplies these libraries, and its jars come first on the
+classpath, so a different version here has no effect once deployed.
+
 To fix, either:
-  - Align your dependency versions to match the runtime versions above
-  - Exclude the conflicting transitive dependency from the library
-    that pulls it in
+  - Remove the explicit version declaration, so that the akka-runtime-bom
+    imported by akka-javasdk-parent decides it
+  - Align the declared version with the runtime version above
   - Add an <exclude> to the akkaRuntimeDependencyCheck rule
     configuration if the conflict is known to be safe
 ```
@@ -178,6 +215,21 @@ The Akka runtime always provides the `-jre` variant. The enforcer handles this c
 
 In short, Guava flavor mismatches are not a problem for the Akka runtime (which is always a JRE environment), and version conflicts are detected correctly regardless of which variant the application pulls in.
 
-## How the manifest is generated
+## How the manifest and the BOM are generated
 
-The `akka-runtime` build generates the manifest automatically and includes in artifact `akka-runtime-dependencies`
+The `akka-runtime` build renders both from `runtime-core`'s resolved dependency classpath, through a
+single shared helper (`project/RuntimeDependencies.scala`), and publishes them as
+`akka-runtime-dependencies` (a jar carrying only the properties file) and `akka-runtime-bom` (a pom,
+no jar).
+
+Two details are worth knowing when reading the generated output:
+
+- Artifact ids carry their Scala cross-version suffix, so they match the coordinates a Maven build
+  resolves (`io.akka:akka-sdk-spi_2.13`, not `akka-sdk-spi`).
+- The BOM manages classified artifacts with an entry of their own, because Maven matches managed
+  dependencies on classifier too. Without those, netty's native jars would keep resolving by
+  nearest-wins while their companion classes jars followed the BOM.
+
+The `akka-runtime-dev` module — `runtime-core` plus H2 and r2dbc-h2 — is what a service runs against
+locally. Those two extra artifacts are dev-mode only, are not part of what the platform provides, and
+are deliberately absent from both the manifest and the BOM.

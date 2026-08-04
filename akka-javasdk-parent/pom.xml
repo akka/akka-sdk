@@ -436,9 +436,15 @@
                         </goals>
                         <configuration>
                             <rules>
+                                <!-- Exact match: the akka-runtime-bom import below already aligns
+                                     every runtime-provided library, so the only way left to diverge
+                                     is declaring a version explicitly - a deliberate act, and one
+                                     that has no effect in production since the runtime's classpath
+                                     comes first. newer-only would stay silent on a downgrade, which
+                                     is precisely the case the runtime's CVE pins exist for. -->
                                 <akkaRuntimeDependencyCheck>
                                     <failOnConflict>true</failOnConflict>
-                                    <versionStrictness>newer-only</versionStrictness>
+                                    <versionStrictness>patch</versionStrictness>
                                 </akkaRuntimeDependencyCheck>
                                 <requireMavenVersion>
                                     <version>[3.9.0,)</version>
@@ -753,6 +759,19 @@
                 <groupId>io.akka</groupId>
                 <artifactId>akka-runtime-dev_2.13</artifactId>
                 <version>${akka-runtime.version}</version>
+            </dependency>
+            <!-- Pins every library the runtime puts on the production classpath, so a service
+                 compiles and tests against the versions the platform will actually supply.
+                 Without it those versions are decided by nearest-wins over the service's own
+                 transitive graph, and the divergence only shows up after deploy.
+                 Declared last: dependencyManagement is first-declaration-wins and an imported
+                 BOM expands in place, so a BOM above would override the entries here. -->
+            <dependency>
+                <groupId>io.akka</groupId>
+                <artifactId>akka-runtime-bom</artifactId>
+                <version>${akka-runtime.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
