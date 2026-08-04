@@ -120,9 +120,8 @@ Akka:: Documents the access Akka requires into the Customer's cluster. Operates 
 |===
 | Activity | Owner | Description
 
-| Cloud account provisioning | Customer | Customer sets up a dedicated AWS account, GCP project, or Azure subscription that hosts the Kubernetes cluster Akka runs in. A dedicated account is recommended to simplify cost tracking and security boundaries.
+| Cloud account provisioning | Customer | Customer sets up a dedicated AWS account, GCP project, or Azure subscription that hosts the Kubernetes cluster Akka runs in. A dedicated account is recommended to simplify cost tracking and security boundaries; Akka advises against provisioning other resources in it to avoid management conflicts, and anything the Customer adds outside this scope is the Customer's responsibility.
 | Quotas and service limits | Customer | Customer ensures sufficient quota for compute, storage, and networking. Akka advises on expected consumption.
-| Dedicated account recommendation | Customer | For optimal platform management, Akka recommends a dedicated cloud account. Akka operates within the access the Customer grants and cannot manage resources outside of that access; the Customer controls Akka's access into the account and can revoke it at any time. Akka further advises against provisioning additional resources in this account to prevent management conflicts. If the Customer adds anything outside this scope, it becomes the Customer's responsibility.
 | Billing | Customer | Customer owns and operates the account and pays the bill.
 |===
 ====

@@ -291,7 +291,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 [discrete]
 ==== Load (expected peak)
 
-* [ ] Tool selected (k6, Gatling, Locust); profile matches forecast peak
+* [ ] Tool selected (e.g., k6, Gatling, Locust); profile matches forecast peak
 * [ ] Peak sustained >= 30 min; p95/p99 targets met
 * [ ] Sub-10ms memory read/write under load
 * [ ] Token throughput stays under LLM rate limits

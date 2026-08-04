@@ -105,12 +105,11 @@ At a glance::
 |===
 | Activity | Owner | Description
 
-| Cloud account provisioning | Customer | Customer sets up a dedicated AWS account, GCP project, or Azure subscription for Akka to host the platform in. A dedicated account is recommended to simplify cost tracking and security boundaries.
+| Cloud account provisioning | Customer | Customer sets up a dedicated AWS account, GCP project, or Azure subscription for Akka to host the platform in. A dedicated account is recommended to simplify cost tracking and security boundaries; Akka advises against provisioning other resources in it to avoid management conflicts, and anything the customer adds outside this scope is the customer's responsibility.
 | Quotas and service limits | Customer | Customer ensures sufficient quota for compute, storage, and networking. Akka advises on expected consumption.
 | Execute akka-bootstrap | Customer | Customer runs the Akka-provided Terragrunt utility to grant Akka programmatic access to the cloud account.
 | Terraform state backend | Customer | Customer owns and secures the Terraform state backend (cloud storage bucket, locking, encryption) used when running akka-bootstrap.
 | Akka permissions | Customer | Customer creates and maintains the IAM permissions Akka uses. Akka has no permissions outside these and cannot manage anything beyond them. Access can be cut off at any time.
-| Dedicated account recommendation | Customer | For optimal platform management, Akka recommends a dedicated cloud account and advises against provisioning additional resources in it to prevent management conflicts. Anything the customer adds outside this scope becomes the customer's responsibility.
 | Billing | Customer | Customer owns and operates the account and pays the bill.
 |===
 ====
