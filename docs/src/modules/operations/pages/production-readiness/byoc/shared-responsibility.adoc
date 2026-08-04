@@ -8,6 +8,11 @@ This page describes how responsibilities are divided between Akka and the custom
 
 The at-a-glance summary and the per-area sections below assign an owner to each activity. For the authoritative row-by-row breakdown, with the full Responsible / Accountable / Consulted / Informed split, see the xref:operations:production-readiness/byoc/raci.adoc[RACI].
 
+[NOTE]
+====
+The policies published on https://trust.akka.io[trust.akka.io] and the Customer Support Policy take precedence over any summary here.
+====
+
 == Executive summary
 
 Akka Automated Operations is a managed platform that runs inside your cloud account. Akka takes responsibility for the platform itself: the runtime, operators, encryption, region installation, scaling, patching, observability of the platform, backups, and the operational rituals that surround them. You take responsibility for the cloud account, the network you bring, the human identities that access the Akka console, the applications you build with the Akka SDK, and the data those applications process.

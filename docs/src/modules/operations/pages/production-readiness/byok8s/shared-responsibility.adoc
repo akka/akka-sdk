@@ -6,6 +6,11 @@ include::ROOT:partial$include.adoc[]
 
 This page describes how responsibilities are divided between Akka and the Customer in the BYOK8s (Bring Your Own Kubernetes) deployment model, where Akka runs inside a Kubernetes cluster the Customer provides and operates.
 
+[NOTE]
+====
+The policies published on https://trust.akka.io[trust.akka.io] and the Customer Support Policy take precedence over any summary here.
+====
+
 == Executive summary
 
 In the BYOK8s deployment model, Akka runs inside a Kubernetes cluster that the Customer provides and operates. Akka takes responsibility for the platform itself: the runtime, operators, inter-component mTLS, region installation, scaling, patching, observability of the platform, and the operational rituals that surround them. Encryption of customer data (database at rest and in transit, ingress TLS) is the Customer's responsibility (see the Encryption section). The Customer takes responsibility for the cloud account, the Kubernetes cluster and its underlying infrastructure, database backups, the network, the human identities that access the Akka console, the applications built with the Akka SDK, and the data those applications process.
