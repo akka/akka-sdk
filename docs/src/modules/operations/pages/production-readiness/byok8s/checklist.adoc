@@ -472,6 +472,7 @@ Not every customer is regulated, but where you are, these are the items auditors
 
 * [ ] Akka control-plane audit events (authentication, project and service lifecycle, IAM and token changes) obtained from Akka, delivered on request or on a recurring cadence you arrange, then ingested and retained in your SIEM (Security Information and Event Management) to your compliance needs
 * [ ] Cluster, node, and cloud-account audit logs (you operate the cluster and account in BYOK8s) collected and retained alongside them
+* [ ] Cloud-account and cluster security monitoring and posture owned to the standard Akka would apply: threat detection and alerting over the account and cluster (e.g., GuardDuty, Security Command Center, Microsoft Defender) and cloud security posture / guardrails configured and reviewed (Akka operates this for you only in Dedicated)
 
 [discrete]
 ==== Vendor and dependency continuity
