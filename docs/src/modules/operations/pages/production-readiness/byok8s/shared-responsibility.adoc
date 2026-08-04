@@ -15,12 +15,12 @@ The policies published on https://trust.akka.io[trust.akka.io] and the Customer 
 
 In the BYOK8s deployment model, Akka runs inside a Kubernetes cluster that the Customer provides and operates. Akka takes responsibility for the platform itself: the runtime, operators, inter-component mTLS, region installation, scaling, patching, observability of the platform, and the operational rituals that surround them. Encryption of customer data (database at rest and in transit, ingress TLS) is the Customer's responsibility (see the Encryption section). The Customer takes responsibility for the cloud account, the Kubernetes cluster and its underlying infrastructure, database backups, the network, the human identities that access the Akka console, the applications built with the Akka SDK, and the data those applications process.
 
-Because Akka runs inside infrastructure the Customer operates, the model is genuinely shared. Akka manages the platform layer end-to-end; the Customer manages the layers above and below it; a number of activities are jointly owned with the lead and consulted parties named explicitly. Compared to the BYOC model, the Customer carries more of the infrastructure-side responsibility in BYOK8s, including the cluster, its upgrades, and database backups.
+Because Akka runs inside infrastructure the Customer operates, the model is genuinely shared. Akka manages the platform layer end-to-end; the Customer manages the layers above and below it; a number of activities are jointly owned with the lead and consulted parties named explicitly.
 
 [NOTE]
-.*What you take on in BYOK8s (compared to BYOC)*
+.*What you own in BYOK8s*
 ====
-In BYOC, Akka operates the Kubernetes cluster, database, and in-account networking for you. Choosing BYOK8s means you additionally own:
+In BYOK8s you own the infrastructure beneath the platform, not just the application. Beyond the application, you own:
 
 * The *Kubernetes cluster*: creation, node pools, capacity and scaling, patching, and version upgrades.
 * The *database*: provisioning, capacity, version upgrades, backups, and restores.
@@ -30,15 +30,15 @@ In BYOC, Akka operates the Kubernetes cluster, database, and in-account networki
 * *Cluster and node audit logs* (the Kubernetes and infrastructure layer you operate).
 * For *Business Continuity* (multi-region): standing up and operating a cluster, database, and cross-region networking in each region.
 
-Akka still owns the platform layer in both models: the runtime, operators, inter-component mTLS, region installation, scaling logic, platform observability, and releases.
+Akka still owns the platform layer: the runtime, operators, inter-component mTLS, region installation, scaling logic, platform observability, and releases.
 ====
 
-Shared responsibility extends to going live. Akka has a set of standards Akka expects of customer applications before flipping prod traffic on: sizing, observability, CI/CD, functional and non-functional testing, DR (disaster recovery) and rollback rehearsal. The xref:operations:production-readiness/byok8s/checklist.adoc[production readiness checklist] captures those standards and the sign-off gate Akka recommends before launch.
+Shared responsibility extends to going live. Akka has a set of standards it expects of customer applications before flipping prod traffic on: sizing, observability, CI/CD, functional and non-functional testing, DR (disaster recovery) and rollback rehearsal. The xref:operations:production-readiness/byok8s/checklist.adoc[production readiness checklist] captures those standards and the sign-off gate Akka recommends before launch.
 
 [IMPORTANT]
 .*Catch-all*
 ====
-Anything not explicitly listed in this document is the Customer's responsibility. This includes the underlying cloud account, customer application code, customer-side operational tooling, and any concern not explicitly assigned to Akka. The Customer may request additional operational support from Akka through the standard support channel.
+Anything not explicitly listed in this document is the Customer's responsibility. This includes customer application code, customer-side operational tooling, and any concern not explicitly assigned to Akka. The Customer may request additional operational support from Akka through the standard support channel.
 ====
 
 == Layered view of Akka on BYOK8s
@@ -95,12 +95,12 @@ Reaching the reliability and availability your deployment is built for depends o
 | Region install & federation | Akka | Akka provisions, federates, and validates the Akka region.
 | Platform patching & releases | Akka | Akka maintains the runtime and platform components.
 | Kubernetes & database upgrades | Customer | Customer schedules and runs upgrades after consulting Akka on certified target versions.
-| Compute & storage scaling | Customer | Customer ensures cluster and database can scale; Akka manages elasticity of the application workloads on top.
+| Compute & storage scaling | Shared | Customer ensures cluster and database can scale; Akka manages elasticity of the application workloads on top.
 | Encryption (customer data) | Customer | Customer is responsible for database encryption (at rest and in transit) and ingress TLS.
 | Encryption (platform-internal) | Akka | Akka manages mTLS between Akka components, TLS to the Federation Plane, and encryption of FP-synced secrets.
 | Platform observability | Akka | Akka monitors the platform and publishes uptime reports on request.
 | Application observability | Customer | Customer exports app telemetry to their own observability stack.
-| Database backups | Customer | Customer configures recurring database backups in their environment; Akka is informed.
+| Database backups | Customer | Customer runs database point-in-time recovery (PITR); Akka is informed.
 | K8s resource backups & restore testing | Shared | Akka uses Velero to back up K8s resources; Customer provides the IAM binding and object storage. Restore testing is performed jointly.
 | Disaster recovery exercises | Shared | Annual or as-agreed joint exercises.
 | Multi-region failover | Akka | Akka provides tooling and runbooks; Customer is consulted before failover.

@@ -19,12 +19,12 @@ Akka Automated Operations is a managed platform that runs inside your cloud acco
 
 Because AAO operates inside your cloud account, the model is genuinely shared. Akka manages the platform layer end-to-end; you manage the layers above and below it; a small number of activities are jointly owned with the lead and consulted parties named explicitly.
 
-Shared responsibility extends to going live. Akka has a set of standards Akka expects of customer applications before flipping prod traffic on: sizing, observability, CI/CD, functional and non-functional testing, DR (disaster recovery) and rollback rehearsal. The xref:operations:production-readiness/byoc/checklist.adoc[production readiness checklist] captures those standards and the sign-off gate Akka recommends before launch.
+Shared responsibility extends to going live. Akka has a set of standards it expects of customer applications before flipping prod traffic on: sizing, observability, CI/CD, functional and non-functional testing, DR (disaster recovery) and rollback rehearsal. The xref:operations:production-readiness/byoc/checklist.adoc[production readiness checklist] captures those standards and the sign-off gate Akka recommends before launch.
 
 [IMPORTANT]
 .*Catch-all*
 ====
-Anything not explicitly listed in this document is the customer's responsibility. This includes the underlying cloud account, customer application code, customer-side operational tooling, and any concern not explicitly assigned to Akka. The customer may request additional operational support from Akka through the standard support channel.
+Anything not explicitly listed in this document is the customer's responsibility. This includes customer application code, customer-side operational tooling, and any concern not explicitly assigned to Akka. The customer may request additional operational support from Akka through the standard support channel.
 ====
 
 == Layered view of AAO
