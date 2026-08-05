@@ -163,6 +163,7 @@ Akka reviews your application's high-level architecture and design so we underst
 
 * [ ] Per-service RED dashboards at p50/p95/p99
 * [ ] Cluster health dashboard (nodes, rolling-deploy status)
+* [ ] Cluster, node-pool, and database infrastructure health monitored: capacity and saturation, node and disk pressure, and database resource use, with alerting
 * [ ] Token-spend dashboard by team/project/agent (if running agents)
 * [ ] SLOs defined per service; alerts on burn rate, not raw thresholds
 * [ ] Multi-window multi-burn-rate alerts for primary SLOs
@@ -429,9 +430,9 @@ Walk the alert list and the dependency list; every plausible failure should have
 * [ ] Certificate expiration
 * [ ] Agent guardrail false-positive storm (if running agents)
 * [ ] Log pipeline backed up
-* [ ] Kubernetes cluster or node-pool failure (you operate the cluster in BYOK8s)
-* [ ] Database outage or failover (you operate the database in BYOK8s)
-* [ ] Kubernetes or database upgrade rollback (upgrades are yours in BYOK8s; coordinate certified versions with Akka)
+* [ ] Kubernetes cluster or node-pool failure
+* [ ] Database outage or failover
+* [ ] Kubernetes or database upgrade rollback (coordinate certified versions with Akka)
 
 [discrete]
 ==== Incident command and on-call
@@ -455,7 +456,7 @@ Walk the alert list and the dependency list; every plausible failure should have
 
 == Compliance and governance
 
-Not every customer is regulated, but where you are, these are the items auditors and regulators ask for. Consider each; skip only with a documented reason. In BYOK8s you operate the cluster, database, and cloud infrastructure, so more of the evidence and continuity planning is yours.
+Not every customer is regulated, but where you are, these are the items auditors and regulators ask for. Consider each; skip only with a documented reason. More of the evidence and continuity planning is yours, since you operate the cluster, database, and cloud infrastructure.
 
 [cols="1,3", options="header"]
 |===
@@ -471,7 +472,7 @@ Not every customer is regulated, but where you are, these are the items auditors
 ==== Audit logging
 
 * [ ] Akka control-plane audit events (authentication, project and service lifecycle, IAM and token changes) obtained from Akka, delivered on request or on a recurring cadence you arrange, then ingested and retained in your SIEM (Security Information and Event Management) to your compliance needs
-* [ ] Cluster, node, and cloud-account audit logs (you operate the cluster and account in BYOK8s) collected and retained alongside them
+* [ ] Cluster, node, and cloud-account audit logs collected and retained alongside them
 * [ ] Cloud-account and cluster security monitoring and posture owned to the standard Akka would apply: threat detection and alerting over the account and cluster (e.g., GuardDuty, Security Command Center, Microsoft Defender) and cloud security posture / guardrails configured and reviewed
 
 [discrete]
@@ -530,7 +531,7 @@ Single-region (not replicated) has no cross-region failover; recovery is a cold 
 [%collapsible]
 =====
 [discrete]
-==== Per-region infrastructure (customer-operated)
+==== Per-region infrastructure
 
 In BYOK8s you operate the cluster, database, and networking in every region, so standing up an additional region is a substantial, customer-owned effort. Each item below is your single-region infrastructure repeated per region, plus the connectivity between them.
 
@@ -612,5 +613,5 @@ The most commonly omitted requirement is a single named owner of the application
 
 [NOTE]
 ====
-This page is part of the BYOK8s Shared Responsibility Model and is designed to pair with the full RACI matrix. It is maintained as a living reference and updated periodically as Akka's platform and operational practices evolve. To receive notifications of material updates, email mailto:support@akka.io[support@akka.io].
+This page is part of the BYOK8s Shared Responsibility Model and is maintained as a living reference, updated periodically as Akka's platform and operational practices evolve. To receive notifications of material updates, email mailto:support@akka.io[support@akka.io].
 ====
