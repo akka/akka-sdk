@@ -329,6 +329,8 @@ private[impl] object AgentImpl {
               SpiAgent.ModelProvider.BedrockPromptCachePlacement.AfterUserMessage
             case ModelProvider.BedrockPromptCachePlacement.AFTER_TOOLS =>
               SpiAgent.ModelProvider.BedrockPromptCachePlacement.AfterTools
+            case ModelProvider.BedrockPromptCachePlacement.AFTER_LAST_USER_MESSAGE =>
+              SpiAgent.ModelProvider.BedrockPromptCachePlacement.AfterLastUserMessage
           })
       case p: ModelProvider.MistralAi =>
         new SpiAgent.ModelProvider.MistralAi(
