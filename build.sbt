@@ -22,6 +22,9 @@ ThisBuild / makeBomIncludeDependencies := true
 // see Dependencies.jacksonModules
 ThisBuild / dependencyOverrides ++= Dependencies.jacksonModules
 
+lazy val checkRuntimeDependencyAlignment =
+  taskKey[Unit]("Verify direct dependency versions against the versions the Akka Runtime resolves")
+
 lazy val `akka-javasdk-root` = project
   .in(file("."))
   .aggregate(
@@ -234,6 +237,14 @@ def updatePomVersion(
       other
   }
 }
+
+checkRuntimeDependencyAlignment := RuntimeDependencyCheck.check(
+  (akkaJavaSdk / dependencyResolution).value,
+  (akkaJavaSdk / scalaModuleInfo).value,
+  (akkaJavaSdk / libraryDependencies).value ++ (akkaJavaSdkTestKit / libraryDependencies).value,
+  (akkaJavaSdk / scalaVersion).value,
+  (akkaJavaSdk / scalaBinaryVersion).value,
+  streams.value.log)
 
 addCommandAlias("formatAll", "scalafmtAll; javafmtAll")
 
