@@ -49,6 +49,9 @@ private[impl] case class AgentInvokeReplyOnlyMethodRefImpl[A1, R](componentMetho
   private def toTokenUsage(metadata: Metadata): Agent.TokenUsage = {
     val input = metadata.get(SpiAgent.AgentInputTokensKey).map[Integer](_.toInt).orElse(0)
     val output = metadata.get(SpiAgent.AgentOutputTokensKey).map[Integer](_.toInt).orElse(0)
-    new Agent.TokenUsage(input, output)
+    // Absent when running against a runtime older than the one that added these keys.
+    val cacheRead = metadata.get(SpiAgent.AgentCacheReadTokensKey).map[Integer](_.toInt).orElse(0)
+    val cacheWrite = metadata.get(SpiAgent.AgentCacheWriteTokensKey).map[Integer](_.toInt).orElse(0)
+    new Agent.TokenUsage(input, output, cacheRead, cacheWrite)
   }
 }
