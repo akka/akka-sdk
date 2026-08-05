@@ -34,7 +34,7 @@ object Dependencies {
   val JUnitInterfaceVersion = "0.11"
   val JUnitJupiterVersion = "5.10.1"
   val OpenTelemetryVersion = "1.64.0"
-  val OpenTelemetrySemConv = "1.39.0"
+  val OpenTelemetrySemConv = "1.40.0"
 
   val CommonsIoVersion = "2.11.0"
   val MunitVersion = "0.7.29"
@@ -50,7 +50,7 @@ object Dependencies {
   val logbackJson = "ch.qos.logback.contrib" % "logback-json-classic" % LogbackContribVersion
   val logbackJackson = "ch.qos.logback.contrib" % "logback-jackson" % LogbackContribVersion
 
-  val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
+  val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.18"
 
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % JacksonVersion
   val jacksonAnnotations = "com.fasterxml.jackson.core" % "jackson-annotations" % JacksonAnnotationsVersion
@@ -74,8 +74,24 @@ object Dependencies {
   val opentelemetryContext = "io.opentelemetry" % "opentelemetry-context" % OpenTelemetryVersion
   val opentelemetrySemConv = "io.opentelemetry.semconv" % "opentelemetry-semconv" % OpenTelemetrySemConv
 
-  val typesafeConfig = "com.typesafe" % "config" % "1.4.6"
+  val typesafeConfig = "com.typesafe" % "config" % "1.4.8"
   val protobufJavaUtil = "com.google.protobuf" % "protobuf-java-util" % GoogleProtobufVersion
+
+  // Version constants that have to track whatever the Akka Runtime resolves, used by
+  // checkRuntimeDependencyAlignment to point at what to edit when a runtime bump leaves us behind.
+  val runtimeAlignedVersions: Map[String, String] = Map(
+    "AkkaVersion" -> AkkaVersion,
+    "AkkaHttpVersion" -> AkkaHttpVersion,
+    "AkkaGrpcVersion" -> AkkaGrpcVersion,
+    "GoogleProtobufVersion" -> GoogleProtobufVersion,
+    "ScalaVersion" -> ScalaVersion,
+    "JacksonVersion" -> JacksonVersion,
+    "JacksonDatabindVersion" -> JacksonDatabindVersion,
+    "JacksonAnnotationsVersion" -> JacksonAnnotationsVersion,
+    "LogbackVersion" -> LogbackVersion,
+    "LogbackContribVersion" -> LogbackContribVersion,
+    "OpenTelemetryVersion" -> OpenTelemetryVersion,
+    "OpenTelemetrySemConv" -> OpenTelemetrySemConv)
 
   private val deps = libraryDependencies
 
