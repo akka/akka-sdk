@@ -66,10 +66,25 @@ public abstract class Agent implements AgentDelegationWorker {
   /**
    * The number of tokens consumed by a model interaction.
    *
+   * <p>Raw provider counts. Anthropic and Bedrock report the cache counts outside {@code
+   * inputTokens}, OpenAI and Gemini report cache reads within it, so summing them requires knowing
+   * the provider.
+   *
    * @param inputTokens tokens in the request sent to the model
    * @param outputTokens tokens in the response returned by the model
+   * @param cacheReadInputTokens prompt tokens served from the provider's prompt cache, or 0 when
+   *     the provider reports nothing
+   * @param cacheWriteInputTokens prompt tokens written to the provider's prompt cache, or 0 when
+   *     the provider reports nothing
    */
-  public record TokenUsage(int inputTokens, int outputTokens) {}
+  public record TokenUsage(
+      int inputTokens, int outputTokens, int cacheReadInputTokens, int cacheWriteInputTokens) {
+
+    /** A usage with no prompt cache activity. */
+    public TokenUsage(int inputTokens, int outputTokens) {
+      this(inputTokens, outputTokens, 0, 0);
+    }
+  }
 
   /**
    * A detailed reply from an agent component call, containing both the result and additional
