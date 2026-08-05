@@ -103,7 +103,7 @@ Akka reviews your application's high-level architecture and design so we underst
 ==== Akka-specific sizing
 
 * [ ] *Platform cores* (Akka's infra in your VPC, the isolated network in your cloud account where the Akka region is deployed): node count, instance type, AZ spread confirmed with FDE
-* [ ] *Service cores* (your workload, what Akka bills): sized to peak with rolling-update headroom (~+25%)
+* [ ] *Service cores* (your workload): sized to peak with rolling-update headroom (~+25%)
 * [ ] 3+ AZ cluster spread in prod
 * [ ] VPC CIDR (Classless Inter-Domain Routing) has scale-out headroom; security groups and NACLs (Network Access Control Lists) reviewed
 * [ ] Container registry in or near the prod region
