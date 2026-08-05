@@ -51,7 +51,8 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Event Sourced Entities](https://doc.akka.io/sdk/event-sourced-entities.html.md): State persistence via immutable event log
 - [Key Value Entities](https://doc.akka.io/sdk/key-value-entities.html.md): State persistence via full-state snapshots
 - [Views](https://doc.akka.io/sdk/views.html.md): Read-optimized projections across entities
-- [HTTP Endpoints](https://doc.akka.io/sdk/http-endpoints.html.md): REST APIs with JSON, OpenAPI, and WebSocket support
+- [HTTP Endpoints](https://doc.akka.io/sdk/http-endpoints.html.md): REST APIs with JSON, OpenAPI, server-sent events, and WebSocket support, plus serving web application assets
+- [Web applications](https://doc.akka.io/sdk/web-applications.html.md): Serve a web application from a service — single-page application assets, static files, or generated HTML — alongside the API it calls, on your own domain with TLS
 - [gRPC Endpoints](https://doc.akka.io/sdk/grpc-endpoints.html.md): High-performance APIs with gRPC
 - [MCP Endpoints](https://doc.akka.io/sdk/mcp-endpoints.html.md): Expose services to MCP clients (A2A, ACP, MCP built into Agents)
 - [Consumers](https://doc.akka.io/sdk/consuming-producing.html.md): Stream-based event consumption and production
@@ -69,7 +70,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Data & knowledge](https://doc.akka.io/sdk/integrations/data-and-knowledge.html.md): Vector DBs, relational, NoSQL, search engines. No caching layer needed.
 - [Message broker integrations](https://doc.akka.io/sdk/integrations/messaging-and-events.html.md): Connecting Akka services with external message brokers
 - [Messaging & events](https://doc.akka.io/sdk/integrations/messaging-and-events.html.md): Akka-native first, external brokers when needed
-- [APIs & protocols](https://doc.akka.io/sdk/integrations/apis-and-protocols.html.md): REST, OpenAPI, WebSocket, gRPC, MCP, A2A, ACP
+- [APIs & protocols](https://doc.akka.io/sdk/integrations/apis-and-protocols.html.md): REST, OpenAPI, WebSocket, gRPC, MCP, A2A, ACP, and browser-facing web application assets
 - [Identity & security](https://doc.akka.io/sdk/integrations/identity-and-security.html.md): Native secrets, Azure KeyVault, standard Java APIs
 - [Observability](https://doc.akka.io/sdk/integrations/observability.html.md): OpenTelemetry metrics and logs exporting
 - [Streaming](https://doc.akka.io/sdk/streaming.html.md): Built-in stream processing and Akka Streams

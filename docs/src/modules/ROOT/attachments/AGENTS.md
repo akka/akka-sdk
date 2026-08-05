@@ -46,10 +46,24 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/views.html.md` - Query models and projections
 - `akka-context/sdk/workflows.html.md` - Saga patterns and orchestration
 - `akka-context/sdk/consuming-producing.html.md` - Event consumption and topics
-- `akka-context/sdk/http-endpoints.html.md` - RESTful APIs
+- `akka-context/sdk/http-endpoints.html.md` - RESTful APIs, server-sent events, WebSockets, serving web application files
+- `akka-context/sdk/web-applications.html.md` - Serving a browser UI from the service: single-page application files, generated HTML, custom domains
 - `akka-context/sdk/grpc-endpoints.html.md` - Protocol buffer APIs
+- `akka-context/sdk/mcp-endpoints.html.md` - Exposing tools, resources, and prompts to MCP clients
 - `akka-context/sdk/timed-actions.html.md` - Scheduling and timers
 - `akka-context/sdk/setup-and-dependency-injection.html.md` - Service bootstrap and dependency injection
+
+**Cross-cutting concerns:**
+- `akka-context/sdk/access-control.html.md` - ACLs on components and endpoints
+- `akka-context/sdk/auth-with-jwts.html.md` - JWT authentication
+- `akka-context/sdk/component-and-service-calls.html.md` - Calling other components and services
+- `akka-context/sdk/errors-and-failures.html.md` - Error handling and failure semantics
+- `akka-context/sdk/serialization.html.md` - `@TypeName`, JSON serialization, schema evolution
+- `akka-context/sdk/integrations/object-storage.html.md` - Binary objects in buckets, `object://` URIs for multimodal agents
+- `akka-context/sdk/sanitization.html.md` - Masking PII in agent interactions
+- `akka-context/sdk/metric.html.md` - Custom OpenTelemetry metrics
+- `akka-context/sdk/model-provider-details.html.md` - Model provider configuration and API keys
+- `akka-context/sdk/streaming.html.md` - Stream processing and Akka Streams
 
 **Guides and reference:**
 - `akka-context/getting-started/planner-agent/dynamic-team.html.md` - Dynamic agent planning and orchestration
@@ -82,10 +96,15 @@ Access these documentation files for detailed patterns:
 - Returns `Effect<T>` or `StreamEffect` (for streaming responses)
 - Use `effects().systemMessage().userMessage().thenReply()`
 - Three types of tools: `@FunctionTool` (agent methods), external tools via `.tools()`, MCP tools via `.mcpTools()`
+- A tool returning a plain type produces a JSON tool response. To return media to the model, declare the return type as `MessageContent` and return `ImageMessageContent.fromBytes(...)`, `PdfMessageContent.fromBytes(...)`, or `TextMessageContent` (SDK 3.6.1+)
+- To return several pieces of content in one tool result, declare `List<MessageContent>`; elements are delivered in list order. `List<? extends MessageContent>` and subtype lists work; any other element type falls back to a plain JSON response
+- A `MessageContent` tool must return a non-null value, and a list form must contain at least one non-null element — otherwise `IllegalArgumentException`
+- Inline bytes are not kept in session memory; they become an `[image]`/`[pdf]` placeholder. To keep media across turns, store it with `ObjectStorage` and return `ImageUrlMessageContent.create(bucket, key)` — the `object://` reference is persisted and resolved on each request
 - Stateless design (no mutable state in agent class)
 - Session memory automatic via session ID (shared across agents with same session ID)
 - Session ID typically UUID for new interactions, or workflow ID for orchestration
 - Control memory with `MemoryProvider.none()`, `.limitedWindow()`, or `.limitedWindow().readLast(N)`
+- In multi-agent sessions, restrict what an agent sees with `MemoryFilter.includeFromAgentId(...)`, `.excludeFromAgentId(...)`, or `.includeFromAgentRole(...)`; the factories return a supplier that chains fluently
 - Structured responses: use `responseConformsTo(Class)` (preferred) or `responseAs(Class)` with manual JSON instructions
 - Model config: prefer default in config, override with `.model(ModelProvider.openAi()...)` if needed
 - Error handling with `.onFailure(throwable -> fallbackValue)`
@@ -141,6 +160,7 @@ Access these documentation files for detailed patterns:
 - Step methods accept 0 or 1 parameter and return `StepEffect`
 - Steps use `@StepName`, `stepEffects()` in steps, `effects()` in commands
 - Compensation via `thenTransitionTo(compensationStep)` on failure
+- A running workflow can be stopped from outside with `componentClient.forWorkflow(id).terminate(MyWorkflow.class)`, or the overload taking a `reason`. It cannot be resumed afterwards, and calling `terminate` again is a safe no-op. The workflow passivates and stops consuming runtime resources
 
 **Consumer**
 - Extends `Consumer`, has `@Component(id = "...")`
@@ -563,10 +583,87 @@ Favor endpoint APIs that follow REST principles.
 
 When an HTTP method returns an `akka.http.javadsl.model.HttpResponse` instead of a custom type and it can return errors, avoid throwing exceptions. Instead, use HTTP error response methods such as `akka.javasdk.http.HttpResponses.badRequest` or `akka.javasdk.http.HttpResponses.notFound`.
 
+### MCP Endpoints
+
+Use an MCP endpoint to expose capabilities to MCP clients. This is the reverse direction from
+`.mcpTools()` on an agent, which *consumes* a remote MCP server.
+
+```java
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
+@McpEndpoint(serverName = "my-service-mcp", serverVersion = "0.0.1")
+public class MyMcpEndpoint {
+
+  @McpTool(name = "add", description = "Add two numbers")
+  public String add(@Description("The first number") int n1, @Description("The second number") int n2) {
+    return String.valueOf(n1 + n2);
+  }
+}
+```
+
+- Served at `/mcp` by default.
+- Three member kinds: `@McpTool` (callable), `@McpResource` (fetchable content), `@McpPrompt`.
+- Descriptions matter — the calling LLM relies on them. Use `@Description` on every parameter.
+- Tool input classes must use primitives, boxed primitives, or `String`. All fields are required
+  by default; make a parameter optional by typing it `Optional<T>`.
+- See `akka-context/sdk/mcp-endpoints.html.md`.
+
+### Object storage
+
+For binary data (images, PDFs, documents), inject `ObjectStorageProvider` and call `forBucket`.
+Do not put large binaries in entity state.
+
+```java
+public class ImageEndpoint {
+  private final ObjectStorage bucket;
+
+  public ImageEndpoint(ObjectStorageProvider provider) {
+    this.bucket = provider.forBucket("images");
+  }
+}
+```
+
+- `put`, `get`, `getMetadata`, `delete`, `list` for small to medium payloads.
+- `putStreamAsync`, `getStreamAsync`, `streamList` for large objects — prefer these over `list()`
+  on large buckets.
+- Objects are reachable by agents as multimodal content via `ImageUrlMessageContent.create(bucket, key)`
+  and `PdfUrlMessageContent.create(bucket, key)`, which produce `object://` URIs the SDK resolves.
+- Dev mode uses a local filesystem backend with no configuration; any bucket name is accepted.
+- `TestKitSupport` provides an in-memory backend, isolated per test class.
+- See `akka-context/sdk/integrations/object-storage.html.md`.
+
 ### Endpoint with web UI
 
-Static resources such as HTML, CSS files can be packaged together with the service.
-See documentation "Serving static content" in `akka-context/sdk/http-endpoints.html.md`.
+A service can serve its own browser UI. Put the files in `src/main/resources/static-resources`
+and return them from an endpoint method with `HttpResponses.staticResource`.
+
+For a single-page application, map one method to a `**` subtree and strip the prefix. Do not
+write one `@Get` per file:
+
+```java
+@HttpEndpoint
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL)) // required for browser access
+public class UiEndpoint {
+
+  @Get("/ui/**")
+  public HttpResponse assets(HttpRequest request) {
+    return HttpResponses.staticResource(request, "/ui/");
+  }
+}
+```
+
+`GET /ui/app.css` serves `static-resources/app.css`. When the remaining path is empty or ends
+with `/`, `index.html` from that directory is served, so `GET /ui/` returns the application shell.
+
+Content types are set from the file extension.
+
+Use `HttpResponses.of(StatusCodes.OK, ContentTypes.TEXT_HTML_UTF8, bytes)` when the page is
+generated at request time rather than read from a packaged file.
+
+To push updates into an open page, use server-sent events or a `@WebSocket` method rather than
+polling from the browser.
+
+See "Serving web application assets" in `akka-context/sdk/http-endpoints.html.md` and the full
+guide in `akka-context/sdk/web-applications.html.md`.
 If the user gives no style preferences, you should use something similar to the CSS in `akka-context/ui/default-akka-style.css`
 
 ### Agent Testing Pattern
@@ -699,6 +796,12 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Return protobuf types from domain layer
 - Import `WorkflowSettings` -> WorkflowSettings is an inner class of Workflow, so no additional import is needed
 - Static import `maxRetries` -> use `RecoverStrategy.maxRetries()` (import `Workflow.RecoverStrategy`)
+- Write one `@Get` per file when serving a web UI → map a `**` subtree and strip the prefix with `HttpResponses.staticResource(request, prefix)`
+- Put web UI files directly in `src/main/resources` → they must be in `src/main/resources/static-resources`
+- Store large binaries in entity state → put them in a bucket via `ObjectStorageProvider`
+- Return raw bytes from a `@FunctionTool` expecting the model to see an image → declare the return type as `MessageContent` and use `ImageMessageContent.fromBytes(...)`
+- Expect inline tool image/PDF bytes to persist in session memory → they become an `[image]`/`[pdf]` placeholder; store in a bucket and return `ImageUrlMessageContent.create(bucket, key)` to keep them
+- Use `@McpTool` parameter types other than primitives, boxed primitives, or `String` → unsupported; mark optional parameters `Optional<T>`
 
 ✅ **DO:**
 - Use Java records for immutable data

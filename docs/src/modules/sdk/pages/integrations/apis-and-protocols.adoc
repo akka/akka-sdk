@@ -1,5 +1,5 @@
 = APIs & protocols
-:page-summary: Built-in REST, OpenAPI, WebSocket, gRPC, and MCP support. A2A, ACP, and MCP clients baked into the Agent component.
+:page-summary: Built-in REST, OpenAPI, WebSocket, gRPC, and MCP support, plus web application assets served to a browser. A2A, ACP, and MCP clients baked into the Agent component.
 :page-persona: builder-developer, builder-ai-ml
 
 include::ROOT:partial$include.adoc[]
@@ -11,6 +11,7 @@ Akka provides built-in support for exposing your services through multiple proto
 * **REST APIs** — Define JSON-based HTTP endpoints with routing, request/response handling, and access control. See xref:sdk:http-endpoints.adoc[HTTP Endpoints].
 * **OpenAPI** — Schema generation is built in. See xref:sdk:http-endpoints.adoc#_openapi_endpoint_schema[OpenAPI Endpoint schema].
 * **WebSockets** — Real-time bidirectional communication is built in. See xref:sdk:http-endpoints.adoc#websocket[WebSocket support].
+* **Web application assets** — Serve the files of a single-page application, or HTML generated at request time, from the same service that serves the API. See xref:sdk:web-applications.adoc[Web applications].
 
 == gRPC
 
@@ -36,4 +37,5 @@ link:{url-blog-mcp-a2a-acp}[MCP, A2A, ACP: What does it all mean?, window="new"]
 * xref:sdk:http-endpoints.adoc[HTTP Endpoints]
 * xref:sdk:grpc-endpoints.adoc[gRPC Endpoints]
 * xref:sdk:mcp-endpoints.adoc[MCP Endpoints]
+* xref:sdk:web-applications.adoc[Web applications]
 * xref:sdk:agents.adoc[Agents]

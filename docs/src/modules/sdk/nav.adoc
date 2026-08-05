@@ -36,6 +36,7 @@
 *** xref:sdk:workflows.adoc[Workflows]
 *** xref:sdk:timed-actions.adoc[Timers]
 *** xref:sdk:consuming-producing.adoc[Consumers]
+** xref:sdk:web-applications.adoc[Web applications]
 ** xref:sdk:integrations/index.adoc[]
 *** xref:sdk:component-and-service-calls.adoc[]
 *** xref:sdk:integrations/ai-and-models.adoc[]
