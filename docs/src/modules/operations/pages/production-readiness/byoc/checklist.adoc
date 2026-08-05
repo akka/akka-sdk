@@ -201,7 +201,7 @@ Akka instruments the platform with its own observability stack and runs baseline
 ==== Pipeline
 
 * [ ] CI integrated via Akka CLI or GitHub Actions
-* [ ] Pipeline: compile -> test -> container build -> image scan -> push
+* [ ] Pipeline: compile → test → container build → image scan → push
 * [ ] Image scan blocks on critical CVEs (Common Vulnerabilities and Exposures) (Trivy, Snyk, or equivalent)
 * [ ] SAST (Static Application Security Testing) and SCA (Software Composition Analysis) gates; findings triaged
 * [ ] Secret scanning prevents accidental commits
@@ -225,7 +225,7 @@ Akka instruments the platform with its own observability stack and runs baseline
 * [ ] No-downtime rolling updates verified (graceful shutdown, readiness gates, in-flight requests)
 * [ ] Smoke test runs against the deployed service and gates promotion
 * [ ] Deploy artifacts immutable, traceable to commit
-* [ ] End-to-end pipeline tested: PR -> CI -> dev -> prod approval -> prod -> smoke pass
+* [ ] End-to-end pipeline tested: PR → CI → dev → prod approval → prod → smoke pass
 * [ ] Each gate tested with a deliberate failure to confirm it blocks
 =====
 
@@ -273,7 +273,7 @@ Akka instruments the platform with its own observability stack and runs baseline
 * [ ] Backward-compatibility: previous client + new service, old events still readable
 * [ ] Negative paths: invalid input, malformed JSON, expired JWTs, oversized payloads, event schema violations
 * [ ] Performance regression check in CI: lightweight benchmark gates p95 latency on key endpoints
-* [ ] Every prod incident produces >=1 automated regression test before the post-mortem closes
+* [ ] Every prod incident produces at least one automated regression test before the post-mortem closes
 =====
 
 == Non-functional testing
