@@ -1,10 +1,10 @@
 = Production readiness checklist
-:page-summary: Customer-side production readiness checklist for BYOK8s deployments, covering sizing, observability, CI/CD, functional and non-functional testing, operational testing, multi-region, sign-off, and day-1 readiness.
+:page-summary: customer-side production readiness checklist for BYOK8s deployments, covering sizing, observability, CI/CD, functional and non-functional testing, operational testing, multi-region, sign-off, and day-1 readiness.
 :page-persona: operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
 
-This page describes what Akka expects of customer applications before going live in BYOK8s (Bring Your Own Kubernetes, the deployment model where Akka runs inside a Kubernetes cluster the Customer provides and operates). The platform handles a substantial portion of the operational surface, and Akka protects the deployment within those bounds, but a robust production system is a shared outcome, and the items below sit on the Customer side of that line.
+This page describes what Akka expects of customer applications before going live in BYOK8s (Bring Your Own Kubernetes, the deployment model where Akka runs inside a Kubernetes cluster the customer provides and operates). The platform handles a substantial portion of the operational surface, and Akka protects the deployment within those bounds, but a robust production system is a shared outcome, and the items below sit on the customer side of that line.
 
 == Overview
 
@@ -17,11 +17,11 @@ Walk this page before going live, using the at-a-glance below as the quick entry
 
 Reaching the reliability and availability your deployment is built for depends on working these items through with your Akka team; your agreement and the Federation Plane SLA Policy remain the authoritative statement of what is committed.
 
-As the Customer-side complement to the Shared Responsibility Model, each item is yours to verify, and Akka recommends not advancing to production until each is appropriately covered. Akka strongly encourages engaging your FDE and Akka's customer success and support teams (mailto:support@akka.io[support@akka.io]) throughout this preparation to make go-live as smooth as possible, although the work can also be completed independently.
+As the customer-side complement to the Shared Responsibility Model, each item is yours to verify, and Akka recommends not advancing to production until each is appropriately covered. Akka strongly encourages engaging your FDE and Akka's customer success and support teams (mailto:support@akka.io[support@akka.io]) throughout this preparation to make go-live as smooth as possible, although the work can also be completed independently.
 
 Items also split across two levels. Some are *region-level*: established for the region and shared by every application running on it, much of disaster recovery, backups, and baseline platform alerting is operational and lives here. Others are *application-level*: handled per service, such as sizing, application observability, and rollback paths. This page lists both together; the tailored checklist your Akka team builds with you sorts each item to the right level, so region-level work is not repeated for every application, though it still recurs on its own cadence to stay current.
 
-In BYOK8s, the Customer provides and operates the Kubernetes cluster, the database, and the underlying cloud infrastructure; Akka runs the platform end-to-end inside that cluster: runtime, region installation, scaling, patching of platform components, observability of the platform itself, and the operational rituals around them. The items on this page are the customer-side preparation that complements that work, so production is reliable from day one. Your FDE walks through the principal items ahead of go-live.
+In BYOK8s, the customer provides and operates the Kubernetes cluster, the database, and the underlying cloud infrastructure; Akka runs the platform end-to-end inside that cluster: runtime, region installation, scaling, patching of platform components, observability of the platform itself, and the operational rituals around them. The items on this page are the customer-side preparation that complements that work, so production is reliable from day one. Your FDE walks through the principal items ahead of go-live.
 
 This page targets the typical *Day 2 Ops* engagement (1 dev region + 1 prod region, single prod region with cold-rebuild DR (Disaster Recovery), the plan and procedures for restoring service after a region or platform-level outage). The final section covers the additional requirements that apply to the *Business Continuity* tier (multi-region with cross-region failover).
 
@@ -31,19 +31,21 @@ This page targets the typical *Day 2 Ops* engagement (1 dev region + 1 prod regi
 If your business requires rapid, automated cross-region failover, Day 2 Ops is not the right tier. DR at Day 2 is a cold rebuild, the recovery window is on the order of hours, driven by data-export frequency and rebuild time. Confirm this with the business early.
 ====
 
-=== At a glance, what we ask of you
-
+.*At a glance, what we ask of you*
+[NOTE]
+====
 . *Size with us; capture the result in writing.* The FDE works through the sizing exercise with you once. Cluster shape, broker capacity, and dev/prod parity should live in version control alongside your descriptors.
-. *Wire your observability.* Logs, metrics, and traces flow through your enterprise platform via the Akka-supplied exporter. Akka cannot see your application data, so this responsibility sits with the Customer, and it is what allows your team and your on-call to answer "is the system healthy?".
+. *Wire your observability.* Logs, metrics, and traces flow through your enterprise platform via the Akka-supplied exporter. Akka cannot see your application data, so this responsibility sits with the customer, and it is what allows your team and your on-call to answer "is the system healthy?".
 . *Make CI/CD routine, including rollback.* Image rollback is the most commonly rehearsed path. Descriptor changes, JWT (JSON Web Token) rotations, and partial migrations require rehearsed rollback paths as well.
 . *Test under stress, not just happy path.* Load, soak, spike, chaos, run them against a realistically-sized dev region before production traffic hits. Cheap to do, expensive to skip.
-. *Rehearse recovery.* DR is typically a two-session exercise: a tabletop covering scenarios, then a live simulation of the scenario(s) the Customer and Akka jointly agree matter most. Business Continuity adds cross-region failover and failback drills on top.
+. *Rehearse recovery.* DR is typically a two-session exercise: a tabletop covering scenarios, then a live simulation of the scenario(s) the customer and Akka jointly agree matter most. Business Continuity adds cross-region failover and failback drills on top.
 . *Sign off explicitly.* A single named owner (an individual or a designated body such as a go-live board) declares the application production-ready.
+====
 
 [NOTE]
 .*Akka's side*
 ====
-Akka runs a parallel internal pre-production validation against the platform-side commitments captured in the RACI, replication, observability stack, baseline regional alerts, certificate monitoring, and similar. Database backups sit on the Customer side in BYOK8s, so they are covered in the items below rather than in Akka's parallel validation. This page covers the customer-side complement; the two are designed to pair.
+Akka runs a parallel internal pre-production validation against the platform-side commitments captured in the RACI, replication, observability stack, baseline regional alerts, certificate monitoring, and similar. Database backups sit on the customer side in BYOK8s, so they are covered in the items below rather than in Akka's parallel validation. This page covers the customer-side complement; the two are designed to pair.
 ====
 
 == Architecture and design review
@@ -220,7 +222,7 @@ Akka instruments the platform with its own observability stack and runs baseline
 [discrete]
 ==== Deployment and validation
 
-* [ ] Prod deployments include an explicit gate (manual approval, change ticket, or equivalent appropriate to the Customer's process)
+* [ ] Prod deployments include an explicit gate (manual approval, change ticket, or equivalent appropriate to the customer's process)
 * [ ] No-downtime rolling updates verified (graceful shutdown, readiness gates, in-flight requests)
 * [ ] Smoke test runs against the deployed service and gates promotion
 * [ ] Deploy artifacts immutable, traceable to commit
@@ -339,7 +341,7 @@ Run all of these against the dev region, sized realistically. Without realistic 
 |===
 | Role | Responsibility
 | Customer | Owns the application-side DR runbook, schedules and runs the drills, rehearses every rollback path (image, descriptor, schema, data, config), and measures time-to-rollback.
-| Shared | Annual disaster-recovery exercise jointly run by Akka and the Customer; Akka's 24/7 incident procedure is part of the DR runbook.
+| Shared | Annual disaster-recovery exercise jointly run by Akka and the customer; Akka's 24/7 incident procedure is part of the DR runbook.
 |===
 
 .*Detailed checklist*
