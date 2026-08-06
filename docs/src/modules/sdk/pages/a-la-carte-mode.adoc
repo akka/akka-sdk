@@ -1,12 +1,12 @@
 = À la carte mode
-:page-summary: Run the Akka Specify commands individually — the flexible, command-by-command spec-driven workflow.
+:page-summary: The default Akka Specify mode — run the commands individually, one at a time, with nothing blocking you.
 :page-when-to-use: Use À la carte mode when you want to drive each phase yourself, without the hard gates of Enforced mode.
 :page-related: xref:sdk:enforced-mode.adoc[], xref:reference:specify/index.adoc[]
 :page-persona: Developer, Tech Lead, Architect
 
 include::ROOT:partial$include.adoc[]
 
-In À la carte mode you drive the spec-driven workflow one command at a time. Nothing blocks you, and `/akka:ship` proceeds whether or not a definition of done is met -- you own the rigor. It is faster and lighter than xref:sdk:enforced-mode.adoc[Enforced mode], which gates each phase on machine-checkable exit conditions. Switch between the two with `/akka:mode`.
+À la carte is the default mode. You drive the spec-driven workflow one command at a time. Nothing blocks you, and `/akka:ship` proceeds whether or not a definition of done is met -- you own the rigor. It is faster and lighter than xref:sdk:enforced-mode.adoc[Enforced mode], which gates each phase on machine-checkable exit conditions. Switch to Enforced with `/akka:mode enforced` when you want that rigor, and back with `/akka:mode a-la-carte`.
 
 This page walks the commands in the order you would normally run them. Every command is also documented in the xref:reference:specify/index.adoc[Specify commands reference].
 

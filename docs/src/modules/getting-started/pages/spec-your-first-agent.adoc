@@ -8,14 +8,14 @@ Spec-driven development runs in two modes, and you can build this agent either w
 
 == Choose your style
 
-* *xref:sdk:enforced-mode.adoc[Enforced mode]* (the default) -- you define "done" as machine-checkable exit conditions and the assistant drives the build until they are met. A cleaner, auditable result. Follow <<enforced,Build in Enforced mode>>.
-* *xref:sdk:a-la-carte-mode.adoc[À la carte mode]* -- you run each specification command yourself, one at a time. Faster and lighter; you own the rigor. Follow <<a-la-carte,Build À la carte>>.
+* *xref:sdk:a-la-carte-mode.adoc[À la carte mode]* (the default) -- you run each specification command yourself, one at a time. Faster and lighter; you own the rigor. Follow <<a-la-carte,Build À la carte>>.
+* *xref:sdk:enforced-mode.adoc[Enforced mode]* -- you define "done" as machine-checkable exit conditions and the assistant drives the build until they are met. A cleaner, auditable result. Follow <<enforced,Build in Enforced mode>>.
 
-New installs start in *Enforced* mode. To use À la carte, switch first:
+New installs start in *À la carte* mode. To use Enforced, switch first:
 
 [source]
 ----
-/akka:mode a-la-carte
+/akka:mode enforced
 ----
 
 == Prerequisites
@@ -25,6 +25,13 @@ New installs start in *Enforced* mode. To use À la carte, switch first:
 
 [#enforced]
 == Build in Enforced mode
+
+Enforced mode is opt-in; switch to it first (new installs default to À la carte):
+
+[source]
+----
+/akka:mode enforced
+----
 
 In Enforced mode you drive the whole build through one re-entrant command, `/akka:specify`, instead of running `clarify`, `plan`, `tasks`, and `implement` individually -- `/akka:specify` sequences those phases for you.
 
@@ -156,12 +163,7 @@ Run `/akka:ship release`. It runs the auditors for every applicable exit conditi
 [#a-la-carte]
 == Build À la carte
 
-In À la carte mode you run each command yourself. Switch to it first (new installs default to Enforced):
-
-[source]
-----
-/akka:mode a-la-carte
-----
+In À la carte mode you run each command yourself. It is the default, so no switch is needed unless you previously moved to Enforced.
 
 === Specify the feature
 

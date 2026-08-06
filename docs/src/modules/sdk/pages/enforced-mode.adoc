@@ -1,12 +1,12 @@
 = Enforced mode
-:page-summary: The default Akka Specify mode — define done as machine-checkable exit conditions up front, and ship only when they are met.
+:page-summary: The opt-in Akka Specify mode — define done as machine-checkable exit conditions up front, and ship only when they are met.
 :page-when-to-use: Use Enforced mode when you want a repeatable, auditable result and are willing to define "done" before code is written.
 :page-related: xref:sdk:a-la-carte-mode.adoc[], xref:reference:specify/policies.adoc[], xref:reference:specify/default-library.adoc[]
 :page-persona: Developer, Tech Lead, Architect
 
 include::ROOT:partial$include.adoc[]
 
-Enforced mode is the default. It guides you to define "done" up front as machine-checkable conditions, then will not let a feature ship until those conditions are met. You get a cleaner, auditable result -- at the cost of more up-front definition and a longer, more thorough build. For the lighter, run-the-commands-yourself flow, see xref:sdk:a-la-carte-mode.adoc[À la carte mode]; switch between the two with `/akka:mode`.
+Enforced mode is opt-in. It guides you to define "done" up front as machine-checkable conditions, then will not let a feature ship until those conditions are met. You get a cleaner, auditable result -- at the cost of more up-front definition and a longer, more thorough build. New installs start in xref:sdk:a-la-carte-mode.adoc[À la carte mode], the lighter, run-the-commands-yourself flow; switch to Enforced with `/akka:mode enforced` (and back with `/akka:mode a-la-carte`).
 
 [#exit-conditions]
 == Exit conditions and Definition of Done
