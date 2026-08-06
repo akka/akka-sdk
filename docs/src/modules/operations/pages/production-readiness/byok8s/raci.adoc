@@ -1,0 +1,232 @@
+= RACI
+:page-summary: The complete BYOK8s (Bring Your Own Kubernetes) RACI matrix, listing every operational activity with its Responsible, Accountable, Consulted, and Informed split, plus descriptions and cadences.
+:page-persona: operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+This page lists every activity in the BYOK8s (Bring Your Own Kubernetes) shared responsibility model, where Akka runs inside a Kubernetes cluster that the Customer provides and operates. In BYOK8s the Customer owns more of the stack than in a fully Akka-managed model; for example, database backups and Kubernetes and database upgrades are Customer-owned here.
+
+The four RACI roles:
+
+* *R (Responsible):* the party that does the work.
+* *A (Accountable):* the party ultimately answerable for the outcome.
+* *C (Consulted):* the party whose input is sought before or during the work.
+* *I (Informed):* the party kept up to date on progress or results.
+
+Each role cell uses one of the following values: `C` = Customer, `A` = Akka, `±` = Akka and Customer, blank = not applicable.
+
+Filter by layer or owner, or search across activity, description, and cadence. Owner is derived from the Responsible column: Customer, Akka, or shared.
+
+++++
+<style>
+  /* Full-width matrix: drop the right "On This Page" nav and the 840px prose cap.
+     The layer/owner filters provide the in-page navigation instead. */
+  aside.toc.sidebar{display:none!important}
+  article.doc{max-width:none!important;grid-column:1 / -1!important}
+  .pe-bar{display:flex;flex-wrap:wrap;gap:.6rem 1.4rem;align-items:center;margin:1rem 0 .4rem;padding:.7rem .9rem;border:1px solid rgba(127,127,127,.25);border-radius:8px}
+  .pe-grp{display:flex;gap:.5rem;align-items:baseline;flex-wrap:wrap}
+  .pe-lbl{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;opacity:.55;padding-top:.2rem}
+  .pe-pill{font-size:.76rem;padding:.2rem .6rem;border-radius:999px;border:1px solid rgba(127,127,127,.4);background:transparent;color:inherit;cursor:pointer;line-height:1.25}
+  .pe-pill:hover{border-color:rgba(127,127,127,.7)}
+  .pe-pill.on{background:#FFD100;border-color:#E6BC00;color:#1a1a1a;font-weight:600}
+  .pe-search{flex:1 1 14rem;min-width:12rem;font-size:.82rem;padding:.32rem .6rem;border:1px solid rgba(127,127,127,.4);border-radius:6px;background:transparent;color:inherit}
+  .pe-search:focus{outline:none;border-color:#E6BC00}
+  .pe-count{font-size:.8rem;opacity:.7;margin:.2rem 0 .4rem}
+</style>
+<div class="pe-wrap">
+  <div class="pe-bar">
+    <div class="pe-grp"><span class="pe-lbl">Layer</span><span id="pe-cat"></span></div>
+    <div class="pe-grp"><span class="pe-lbl">Owner</span><span id="pe-own"></span></div>
+    <input type="search" class="pe-search" id="pe-q" placeholder="Search activity, description, cadence...">
+  </div>
+  <div class="pe-count" id="pe-count"></div>
+</div>
+<script>
+(function(){
+  function init(){
+    var CATS=['General','Infrastructure','Akka runtime & operators','Federation Plane','Services'];
+    var OWN=[['all','All'],['customer','Customer'],['akka','Akka'],['shared','Shared']];
+    var ownerOf=function(r){r=(r||'').trim();return r==='C'?'customer':r==='A'?'akka':r==='±'?'shared':'';};
+    var tables=[].slice.call(document.querySelectorAll('table')).filter(function(t){
+      var th=t.querySelector('thead th');
+      return th && th.textContent.trim()==='Sub-category';
+    });
+    var model=tables.map(function(t){
+      var sect=t.closest('.sect1');
+      var h2=sect?sect.querySelector('h2'):null;
+      var cat=h2?h2.textContent.trim():'';
+      var rows=[].slice.call(t.querySelectorAll('tbody tr')).map(function(tr){
+        var tds=tr.querySelectorAll('td');
+        return {tr:tr,owner:ownerOf(tds[2]?tds[2].textContent:''),hay:tr.textContent.toLowerCase()};
+      });
+      return {cat:cat,sect:sect,rows:rows};
+    });
+    var total=model.reduce(function(n,m){return n+m.rows.length;},0);
+    var catSel='all',ownSel='all',q='';
+    var catEl=document.getElementById('pe-cat'),ownEl=document.getElementById('pe-own'),
+        qEl=document.getElementById('pe-q'),cntEl=document.getElementById('pe-count');
+    function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+    function pill(text,active){return '<button type="button" class="pe-pill'+(active?' on':'')+'">'+esc(text)+'</button>';}
+    function renderPills(){
+      catEl.innerHTML=pill('All',catSel==='all')+CATS.map(function(c){return pill(c,catSel===c);}).join('');
+      ownEl.innerHTML=OWN.map(function(o){return pill(o[1],ownSel===o[0]);}).join('');
+      var cb=catEl.querySelectorAll('.pe-pill');
+      cb[0].onclick=function(){catSel='all';render();};
+      CATS.forEach(function(c,i){cb[i+1].onclick=function(){catSel=c;render();};});
+      var ob=ownEl.querySelectorAll('.pe-pill');
+      OWN.forEach(function(o,i){ob[i].onclick=function(){ownSel=o[0];render();};});
+    }
+    function apply(){
+      var shown=0;
+      model.forEach(function(m){
+        var vis=0;
+        m.rows.forEach(function(r){
+          var ok=(catSel==='all'||m.cat===catSel)&&(ownSel==='all'||r.owner===ownSel)&&(!q||r.hay.indexOf(q)>=0);
+          r.tr.style.display=ok?'':'none';
+          if(ok)vis++;
+        });
+        if(m.sect)m.sect.style.display=vis?'':'none';
+        shown+=vis;
+      });
+      cntEl.textContent='Showing '+shown+' of '+total+' activities';
+    }
+    function render(){renderPills();apply();}
+    qEl.oninput=function(){q=qEl.value.trim().toLowerCase();apply();};
+    render();
+  }
+  if(document.readyState!=='loading')init();else document.addEventListener('DOMContentLoaded',init);
+})();
+</script>
+++++
+
+== General
+
+[cols="12,18,^3,^3,^3,^3,36,15",options="header"]
+|===
+| Sub-category | Activity | R | A | C | I | Description | Cadence
+
+| Scope | Shared Responsibility | C | C |  |  | Anything not explicitly listed in this RACI is the Customer's responsibility. This includes the underlying cloud account, customer application code, customer-side operational tooling, and any concern not explicitly assigned to Akka in the rows below. The Customer may request additional operational support from Akka via the standard support channel. | 
+|===
+
+== Infrastructure
+
+[cols="12,18,^3,^3,^3,^3,36,15",options="header"]
+|===
+| Sub-category | Activity | R | A | C | I | Description | Cadence
+
+| Permissions | Infrastructure Access Control and IAM | C | C | A | C | Customer is responsible for maintaining strict access control to the cloud infrastructure | 
+| Cloud Account | Billing & Ownership | C | C |  |  | Customer owns and operates the account and pays the bill | 
+| Cloud Account | Provisioning | C | C | ± | ± | Customer sets up a dedicated cloud account for Akka to use for hosting the Platform. A dedicated account is recommended to simplify cost tracking and security boundaries; Akka advises against provisioning additional resources in it to prevent management conflicts, and anything the Customer adds outside this scope becomes the Customer's responsibility. | 
+| Cloud Account | Quotas & Service Limits | C | C | A | A | Customer ensures enough quota based on usage for compute, storage, etc in the cloud account | 
+| Networking | Private Connectivity | C | C |  | A | The Customer designs, implements, and operates private connectivity into and out of the cluster using whatever pattern fits their environment | 
+| Networking | Ingress/Egress Connectivity Using Public Patterns | A | A |  | C | AAO installs a load balancer for the region and configures a certificate issuer (Let's Encrypt by default). This certificate provider is used for platform APIs and generated application hostnames. | 
+| Networking | Ingress/Egress Connectivity Using Private Patterns with Auto-Generated IP Address | A | A | A | C | Akka provisions the load balancer for the region with an automatically generated IP address, ensuring internal communication without traversing the public internet. | 
+| Networking | IP Address Management / CIDR Range Allocation | C | C | A | A | Customer assigns an appropriately sized CIDR block for cases where peering or hub and spoke is desired. | 
+| Networking | VPC Peering or Hub and Spoke Enablement (Not available on all cloud providers) | C | C | A | A | Customer sets up VPC peering or hub and spoke enablement. | 
+| Networking | IP Allowlist | C | C | A | A | The Customer is responsible for setting up and maintaining the IP allowlist for NAT gateways and load balancer. The Customer informs Akka of changes that may affect Akka runtime & operators connectivity. | 
+| Networking | DNS | C | C | A | A | Customer is responsible for setting up DNS zones, and record sets as per AAO spec | 
+| Networking | Connectivity Pattern Whitepaper | A | A |  |  | Akka publishes a whitepaper and implementation details for the private connectivity patterns available on each cloud provider, which the Customer reviews when selecting a connectivity pattern. | 
+| Maintenance | K8s / DB Upgrades | C | C | A | A | The Kubernetes cluster and database are the Customer's infrastructure in BYOK8s. The Customer schedules and runs Kubernetes and database upgrades. The Customer must consult Akka in advance so that Akka can certify the target versions against the Akka runtime & operators. Running an unverified version may break Platform functionality and is the Customer's responsibility. | 
+| Maintenance | Infrastructure Change Coordination | C | C | A | A | The Customer informs and coordinates with Akka before any change to the cluster, database, networking, or other infrastructure the Akka runtime & operators run on. Unannounced infrastructure changes can break the Akka Region and are the Customer's responsibility. | 
+| Operations | Cost Controls | C | C | A |  | Customer periodically reviews their cloud account subscription and the monthly charges that are incurred. Akka auto-provisions and maintains the cloud infrastructure and overhead required to run an Akka region. Automatic provisioning and de-provisioning of compute instances to accommodate utilization demand. Storage for the underlying persistence store scales automatically; its compute does not. Akka has various sizing options to keep costs in check but HA is the default. | 
+| Operations | Scalability (Infrastructure) | C | C |  | A | Customer is responsible for ensuring scalability for the Akka runtime & operators; includes compute capacity availability for node pools and database scalability | 
+| Cloud/Infrastructure Audit Logging | Infrastructure Security Audit Logs | C | C |  | A | If any suspicious SIEM alerts are found, please notify Akka. | 
+| PKI | Customer Managed Database Encryption Keys | C | C | A | A | The Customer creates and maintains the key material for the CMEK and shares its identifier with Akka. Customer is responsible for ensuring access to the CMEK | 
+| PKI | Customer-Provided TLS Certificates | C | C |  | C | Where Akka cannot automatically provision TLS certificates (e.g., private load balancers, or where the Customer brings its own domain), the Customer provides certificates or configures cert-manager. Akka validates and deploys. See https://doc.akka.io/operations/tls-certificates.html#_custom_server_certificates for details. | 
+| Backups and Recovery | Database Point-in-Time Recovery (PITR) | C | C |  | A | Customer is responsible for configuring continuous point-in-time recovery (PITR) for the database | At least 8 days retention
+| Backups and Recovery | Database Backups (Ad-Hoc) | C | C |  | A | The Customer notifies Akka after taking ad-hoc database backups (e.g., before high-risk changes, or snapshots taken for incident handling). | 
+| Backups and Recovery | Velero Used for K8s Resources | ± | ± |  |  | Akka uses Velero to back up stateful Kubernetes resources so they can be restored. Customer sets up necessary IAM binding and object storage for Akka | 
+| Backups and Recovery | Backup Restore Testing | ± | ± | C |  | Akka performs periodic restore testing against backups; results are summarized on request. The Disaster Recovery Exercise row covers joint exercises. | 
+| Permissions | Service Accounts & Keys | C | C | A | A | Customer creates and manages the service accounts, service account keys, and IAM bindings required for Platform operation within the cloud account. | 
+|===
+
+== Akka runtime & operators
+
+[cols="12,18,^3,^3,^3,^3,36,15",options="header"]
+|===
+| Sub-category | Activity | R | A | C | I | Description | Cadence
+
+| Setup | Bootstrapping Platform | A | A | C | A | Akka installs the platform machinery after infrastructure is setup by the customer | 
+| Setup | Federation via Teleport | C | C | A | A | The Customer installs and maintains the Teleport identity-aware proxy used for federation, including ongoing operational health and version upgrades. Akka provides a short-lived token and the installation command at setup time. | 
+| Setup | Akka Region Group | C | C | A | A | The Customer identifies region groups based on their use case and informs Akka. | 
+| Setup | Region Group Configuration | A | A | C |  | Akka configures region groups on the Federation Plane based on the Customer's region groups configuration | 
+| Setup | Maintenance Window | C | C | A | A | The Customer provides a preferred maintenance window. Akka aims to use it for operations that may cause downtime. | 
+| Maintenance | Akka Runtime & Operators Patching / Vulnerability Management | A | A |  | C | Akka patches and remediates vulnerabilities in the Akka runtime & operators components it ships in the customer's deployed services: the JVM, the container base image, and the Akka runtime. The underlying Kubernetes cluster and node OS are the Customer's infrastructure (see Kubernetes & database upgrades). Vulnerability reports are available from Akka's trust center. | 
+| Maintenance | Releases | A | A |  | C | Akka schedules regular releases to installations, which can include the Runtime, Region machinery, and Federation Plane. | 
+| Operations | Your Akka App Elasticity | A | A | C | C | Akka dynamically adds and removes compute and persistence to accommodate real-time traffic against the Customer's performance SLA targets. This elasticity is contingent on the Customer ensuring sufficient cluster compute and database capacity headroom (see Scalability (Infrastructure)). | 
+| Operations | Akka Region Decommission | ± | ± | C | C | When the Customer requests removal of a Region (e.g., end of contract, scope change, or topology adjustment), Akka follows the documented decommissioning runbook to gracefully remove the Region from the Federation Plane and clean up stale resources. Customer is responsible for deleting cloud infrastructure | 
+| Operations | Feature Requests | C | C | A | C | The Customer submits feature requests via the support channel. Akka triages, prioritizes, and communicates status. | 
+| Observability | Platform Logs Excluding SDK Logs | A | A |  |  | Akka monitors all Platform logs except for SDK logs. | 30-day retention
+| Observability | Availability | A | A |  |  | Akka monitors and reports availability of the Akka Platform, with uptime reports available on request. Platform availability commitments are governed by the Akka Federation Plane SLA Policy. Availability of customer-deployed services running on the platform is the Customer's responsibility; see the Services layer. | 
+| Observability | Akka Region Telemetry | A | A |  | C | Akka monitors metrics and logs and will notify the Customer as needed. | 
+| Observability | Akka Region Telemetry for the Customer | C | C | A |  | Customer can optionally choose to set up platform telemetry for the cluster and for the database instance as they own the account. Akka can be consulted for components that they can set up observability | 
+| Observability | Application Telemetry Export | C | C | A |  | The Customer configures export of application logs and metrics to its observability platform via Akka SDK integration patterns. | 
+| Backups and Recovery | Disaster Recovery Exercise | ± | ± |  |  | Akka and the Customer work together periodically to simulate a disaster and fully recover from it, ensuring the recovery meets or exceeds the Customer's needs. | Annual or as agreed
+| Backups and Recovery | Cross-Region Replication Configuration | ± | ± |  | C | The Customer specifies replication mode (e.g., region-pinned, replicated) per service. Akka enables and operates the underlying replication. | 
+| Backups and Recovery | Multi-Region Failover Procedure | ± | ± | C | C | Akka and the Customer work together on failover: Akka provides the tooling and runbooks, and the Customer is consulted before failover and informed of execution. | 
+| Backups and Recovery | Recovery Time / Point Objectives | A | A | C | C | RTO/RPO targets are defined in the Customer's agreement. | 
+| Developer Experience | SDLC Tooling Procedures | C | C |  |  | The Customer owns and operates the SDLC environment used to build services running on Akka, including IDE choices, source code repository, CI/CD pipelines, and developer programming environments. Akka ships developer tooling that the Customer integrates into the SDLC: IDE AI assistants, a local development environment, unit and integration testing utilities, and deployment configuration / deployment tooling. | 
+| Permissions | Access-Control Reports | A | A |  |  | Akka provides access-control reports covering Akka's own privileged access to the Customer's installation. The Customer manages their own IAM independently. | On request
+| Permissions | Just-in-Time Access for Customer Data | A | A | C |  | Where access to customer-confidential data is required (e.g., for incident handling), Akka requests authorization per the Access Control for Customer-Confidential Data policy. Audit logs of such access are available to the Customer on request. | 
+| Permissions | MFA on Akka Console & CLI | C | C | A |  | The Customer's IDP enforces MFA for users accessing Akka console and CLI. Akka enforces MFA on its own internal access. | 
+| Permissions | Privileged Access via Teleport | A | A | C |  | Akka uses Teleport for human access to platform infrastructure, with session recording and audit logging. Access requires explicit justification and approval per Akka's Access Control Policy. Teleport audit logs are available to the Customer on request. | 
+| Compliance | GDPR Requirements / Data Management | C | C |  |  | Customer is responsible for how services handle PII and to ensure such handling is compliant with GDPR (or other applicable privacy regulations). Akka acts as neither controller nor processor of data handled by the Customer's services. | 
+|===
+
+== Federation Plane
+
+[cols="12,18,^3,^3,^3,^3,36,15",options="header"]
+|===
+| Sub-category | Activity | R | A | C | I | Description | Cadence
+
+| Security | Akka IAM Integration | A | A | C | C | Akka Federation Plane integrates with the Customer's identity provider to manage organizations, users, and team access controls. Application-level access scoping is handled separately via ACLs and tokens (see Services, Security, Service ACLs). | 
+| Security | IAM (CLI and Console) | C | C |  |  | The Customer provides enterprise identity, authentication, and authorization systems and policies. | 
+| Procedures | Disaster Recovery | A | A | C | C | Akka maintains uptime for the Federation Plane and configures disaster recovery for it. | 
+| Procedures | Support and Communication Channels | ± | ± |  |  | At onboarding, Akka and the Customer agree on operational and engagement-level communication channels for routine collaboration (e.g., shared Slack channels, email distribution lists, regular review cadence). Formal support and incident channels are governed separately by the Customer Support Policy and the Incident Response row. | 
+| Procedures | Incident Response | A | A |  | C | Akka provides 24/7 incident response per the Customer Support Policy. The Customer opens incidents through the Customer Support Portal (support.akka.io), Akka Console (console.akka.io/support), or by email to support@akka.io. Severity classifications, response time SLOs, escalation procedures, and incident communication protocols follow Akka's Customer Support Policy and Incident Management Process. Other shared channels (e.g., Slack) may exist for ongoing engagements but are not a substitute for formal support cases. | Per Customer Support Policy
+| Procedures | Postmortem Delivery | A | A |  |  | Akka delivers post-incident reviews for Severity 1 and 2 incidents within an agreed cadence following resolution. | 
+| Procedures | Maintenance Notifications | A | A |  | C | Akka notifies the Customer in advance of planned maintenance windows that could affect availability, and via release notify emails for runtime/SDK releases. Maintenance windows should be set in advance by the Customer. | Per Customer Support Policy
+| Procedures | Operations Sync | A | A | C | C | Recurring operational review covering system health, maintenance, incidents, and roadmap items relevant to the Customer. | 
+| Procedures | Strategic Steering | A | A | C | C | Periodic alignment session covering usage, capacity, product direction, and Customer priorities. | 
+| Procedures | Executive Partnership Review | A | A | C | C | Executive-level partnership review covering relationship health, escalation status, and strategic items. | 
+| Procedures | BYOK8s Onboarding | ± | ± |  | C | Joint onboarding covering account setup, Region provisioning, connectivity validation, and acceptance criteria. | 
+| Procedures | Customer Portal Access & Training | ± | A | C | C | Customers sign up for Portal access, Akka assigns their Region and walks them through console and CLI usage, and ticketing flow. | 
+| Procedures | Customer User & Team Management | C | C |  | C | The Customer manages its own users, teams, and role assignments within the Akka console. | 
+| Procedures | Customer Offboarding & Data Return | ± | ± |  |  | At end of contract, Akka coordinates region decommission, return or destruction of customer data, and revocation of access per the Data Retention Policy. | Per agreement
+| Procedures | Issue Tracking | A | A | C |  | Akka tracks Customer-raised issues and remediation through to closure with status visibility to the Customer. | 
+| Compliance | Security Questionnaire Response | A | A | C |  | Akka responds to Customer CAIQ/SIG and bespoke security questionnaires drawing on the ISMS control library. | 
+| Compliance | Data Breach Notification | A | A |  | C | Akka notifies the Customer without undue delay where a breach of Akka-held customer data poses risk, including nature, scope, and remediation. | 
+| Compliance | Sanctions Screening | A | A |  | C | Customer organizations are screened against sanctions lists periodically. The Customer is informed if a screening result requires action. | 
+| Compliance | End-of-Life Notification | A | A | C |  | Akka provides advance notice of any planned product or feature EOL with sufficient lead time for migration planning. | 
+| Compliance | Encryption in Transit and at Rest | A | A |  |  | Akka encrypts customer data in transit (TLS) and at rest using cloud provider encryption services. Default keys are Akka-managed. | 
+| Compliance | Cryptographic Key Management | C | C | A |  | Lifecycle, rotation, and access control of cryptographic materials follow the Akka Key Management and Cryptography Policy. Cloud-native KMS handles lifecycle for Akka-managed materials. Customer-managed keys (CMEK, BYO certificates) are managed by the Customer per the same policy. | Per Key Management and Cryptography Policy
+| Compliance | Vulnerability Scanning | A | A |  | C | Akka performs continuous vulnerability scanning of platform components and dependencies; findings are tracked to remediation per the Vulnerability Management Policy. Customers are notified of critical and high severity security patches via security advisory emails and the trust center. Disclosure occurs no later than the date the patch is made available, with coordinated advance notice to affected customers where applicable. | 
+| Compliance | Personnel Security & Background Checks | A | A |  | C | Akka performs background checks on personnel with access to customer environments and provides security awareness training, per the Personnel Security Policy. | Annual access certification
+| Compliance | SOC 2 Type II | A | A |  |  | Akka maintains SOC 2 Type II for the Akka Platform. Report available under NDA via trust.akka.io. SOC 3 is also available as a publicly-shareable companion. | Annual report; trust.akka.io kept current
+| Compliance | Data Residency | A | A |  |  | Customer data is stored within the cloud region(s) configured for the customer's installation. Multi-region installations replicate within customer-selected regions only. Each customer's data is isolated in dedicated database resources; no shared data plane across customers. | 
+| Compliance | Multi-Tenant Data Security | A | A |  |  | Akka is responsible for securing all customer data located within the Federation Plane. | 
+| Compliance | Customer Data Security | C | C |  |  | The Customer is responsible for securing Federation Plane tokens and access to projects. | 
+| Compliance | GDPR Requirements / Data Management | ± | ± |  |  | The Federation Plane doesn't handle any customer data; it processes only minimal PII consisting of customer user and administrator identities, which is handled in accordance with Akka's GDPR-compliant privacy policy. | 
+| Compliance | Subprocessor List | A | A |  |  | Current subprocessor list maintained at trust.akka.io. | trust.akka.io kept current
+| Compliance | Penetration Testing | A | A |  |  | Annual third-party penetration testing conducted as part of SOC 2 audit cycle. Executive summary available under NDA via trust.akka.io. | Annual
+| Compliance | Customer Audit Log Delivery | A | A |  |  | Akka maintains audit logs of control-plane actions (e.g., authentication, project and service lifecycle, IAM and token changes). Logs delivered on request. Recurring delivery cadences can also be arranged. | 
+|===
+
+== Services
+
+[cols="12,18,^3,^3,^3,^3,36,15",options="header"]
+|===
+| Sub-category | Activity | R | A | C | I | Description | Cadence
+
+| Maintenance | Application Code & Dependency Patching / Vulnerability Management | C | C |  |  | The Customer reviews their application code and any libraries or dependencies they introduce for security issues and vulnerabilities. The JVM, container base image, OS, and Akka runtime packaged into the deployed service are patched by Akka (see Akka runtime & operators / Maintenance / Infrastructure patch / Vulnerability management). | 
+| Maintenance | Service Configuration (incl. Secrets) | C | C |  |  | The Customer configures services to enable their functionality, including secrets for accessing other services. | 
+| Maintenance | Integrations Setup (Broker, Object Storage) | C | C |  |  | Where services depend on integrations such as brokers or object storage, the Customer configures these for the Akka Project before service deployment. | 
+| Maintenance | Deployments | C | C |  |  | The Customer owns and manages the lifecycle of Akka SDK apps. | 
+| Maintenance | Source Code Management | C | C |  |  | Source code management for Akka Service implementations is the Customer's responsibility. | 
+| Maintenance | Scaling Limits | C | C |  |  | The Customer controls service instance counts within configured limits. | 
+| Monitoring | Logs from Services Built with Akka SDK | C | C |  |  | Metrics and logs are sent to the Customer's logging platform. Akka filters out logs at the source so they are not sent to Akka's internal observability stack. | 
+| Monitoring | SDK Logs | C | C |  |  | The Customer monitors application logs. | 
+| Security | Security Logs | C | C |  |  | The Customer can configure dashboards over cloud security logs and stream them to a GSOC or observability tool. | 
+| Security | Service ACLs | C | C |  |  | The Customer configures Service ACLs to protect access to non-public service endpoints. | 
+| Permissions | Application IAM | C | C |  |  | Akka SDK supports access scoping through JWTs and JWKS. | 
+|===
