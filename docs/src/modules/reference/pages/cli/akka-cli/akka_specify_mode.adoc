@@ -5,7 +5,9 @@ Show or set the local project mode.
 == Synopsis
 
 [Incubating] Show or set the local project mode.
-When an org policy locks the mode, only the org-allowed mode(s) may be set -- a locked enforced mode cannot be dropped to à-la-carte to bypass the ship gate.
+With no org policy and no project override, the effective mode is a-la-carte -- the ship gate is advisory.
+An org policy may set a different default and lock it;
+when the mode is locked, only the org-allowed mode(s) may be set, so a locked enforced mode cannot be dropped to à-la-carte to bypass the ship gate.
 
 ----
 akka specify mode [enforced|a-la-carte] [flags]
