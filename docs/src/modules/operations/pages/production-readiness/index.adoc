@@ -1,0 +1,59 @@
+= Production readiness
+:page-summary: What production readiness means with Akka, the partnership behind it, and where the detailed responsibility matrix (the Shared Responsibility Model and RACI) is defined.
+:page-when-to-use: Use this when planning a move to production, to agree who owns what and to walk the readiness items with your Akka team.
+:page-related: xref:operations:index.adoc[], xref:concepts:deployment-model.adoc[], xref:operations:operator-best-practices.adoc[]
+:page-persona: operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+== Overview
+
+Production readiness is a partnership with Akka, not something you do alone. Akka provides the platform and years of experience operating distributed systems in production at scale; your team owns a clearly defined set of activities. How much of the running and the reliability each side owns is set out in a Shared Responsibility Model, and shifts with the xref:concepts:deployment-model.adoc[deployment model] you choose.
+
+Akka's team embeds with yours from onboarding through ongoing operations. Getting to production is demanding, and it is where that experience earns its place: the disciplines below are the shape of what it has shown to be necessary, worked through with you rather than discovered under pressure. If you want this experience behind your own path to production, https://akka.io/contact-us[talk to Akka].
+
+[IMPORTANT]
+====
+*Reaching the reliability and availability your deployment is built for is part of this partnership.* It assumes both sides have met their responsibilities in the Shared Responsibility Model, and the readiness items on your side are how those guarantees are met, worked through with your Akka team. Your agreement, and the Federation Plane SLA Policy it references, remain the authoritative statement of what is committed and the conditions attached.
+====
+
+== Production readiness
+
+Production readiness spans a lot, and that breadth is the point: these are the areas that decide whether getting to production, and staying there, is smooth rather than fraught. Take the list as the high-level shape; the full, tailored checklist is the larger piece your Akka team works through with you. This ends up as a version customized to your deployment.
+
+Sizing and capacity::
+Forecast peak load and size compute and persistence to meet it.
+
+Observability::
+Application logs, metrics, and traces flowing to your own tooling, with the monitoring and alerting to act on them, including database and persistence health.
+
+Delivery and rollback::
+A pipeline that ships and rolls back safely, covering configuration and data as well as container images.
+
+Backups and recovery::
+Backups and recovery for your data and cluster state, sized to your recovery objectives.
+
+Multi-region resilience::
+Replication and failover behaviour chosen per service to meet your availability needs.
+
+Certificates::
+Valid TLS end to end: Akka rotates platform-managed certificates, and you manage any you provide.
+
+Ownership::
+A single named owner (an individual or a designated body such as a go-live board) accountable for production readiness, with the authority to declare it or hold the launch.
+
+== How the split shifts by deployment model
+
+Akka behaves identically across xref:concepts:deployment-model.adoc[deployment models]. What changes is how much of the operational surface you run:
+
+* *Dedicated*: Akka hosts and operates the platform and connects to you over a private data link, leaving your team the least to run.
++
+xref:operations:production-readiness/dedicated/shared-responsibility.adoc[Shared Responsibility Model] · xref:operations:production-readiness/dedicated/checklist.adoc[Production Readiness Checklist]
+* *BYOC (Bring Your Own Cloud)*: Akka operates the platform inside your own cloud account. You own the account, networking, and data boundary.
++
+xref:operations:production-readiness/byoc/shared-responsibility.adoc[Shared Responsibility Model] · xref:operations:production-readiness/byoc/checklist.adoc[Production Readiness Checklist]
+* *BYOK8s (Bring Your Own Kubernetes)*: You run Akka on the Kubernetes cluster you operate and own more of the stack, including the cluster, its upgrades, and backups.
++
+xref:operations:production-readiness/byok8s/shared-responsibility.adoc[Shared Responsibility Model] · xref:operations:production-readiness/byok8s/checklist.adoc[Production Readiness Checklist]
+
+The further you move toward BYOK8s, the more of the readiness items fall to your team.
