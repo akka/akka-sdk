@@ -18,6 +18,10 @@ Global / initialize := {
 
 ThisBuild / makeBomIncludeDependencies := true
 
+// hold Jackson at the version akka resolves, against the newer one langchain4j asks for,
+// see Dependencies.jacksonModules
+ThisBuild / dependencyOverrides ++= Dependencies.jacksonModules
+
 lazy val `akka-javasdk-root` = project
   .in(file("."))
   .aggregate(
