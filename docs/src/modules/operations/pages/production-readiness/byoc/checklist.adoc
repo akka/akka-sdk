@@ -208,7 +208,7 @@ Akka instruments the platform with its own observability stack and runs baseline
 
 [NOTE]
 ====
-*Scope scans to what you control.* Scan your application code and the dependencies you introduce. The container base image, JVM, OS, and the Akka runtime (including the dependencies it provides at runtime) are patched by Akka (see the xref:operations:production-readiness/byoc/shared-responsibility.adoc[Shared Responsibility Model]), so findings against those are Akka's to remediate; scope or triage them out so the report reflects what you own.
+*Scope scans to what you control.* Scan your application code and the dependencies you introduce. The container base image, JVM, OS, and the Akka runtime (including the dependencies it provides at runtime) are patched by Akka (see the xref:operations:production-readiness/byoc/shared-responsibility.adoc[Shared Responsibility Model]), so findings against those are Akka's to remediate; scope or triage them out so the report reflects what you own. For how to scope a scan to the dependencies you introduce on an Akka service, see xref:operations:integrating-cicd/scanning-dependencies.adoc[].
 ====
 
 [discrete]
