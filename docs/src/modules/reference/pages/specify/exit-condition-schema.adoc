@@ -25,8 +25,8 @@ Where the condition comes from, which determines whether a developer can change 
 |===
 | Value | Meaning
 
-| `akka-intrinsic` | Guaranteed by the platform; always on, asserted green, never authored by a developer.
-| `recommended-default` | From the default library; on by default, may be struck.
+| `akka-intrinsic` | Guaranteed by the platform. The condition activates directly to `green` with the reason `platform-guaranteed`, is always applicable, and is never authored by a developer. Annotated `[akka]` on the manifest.
+| `recommended-default` | From the default library; on by default, may be marked inapplicable.
 | `corporate` | Inherited from the organization policy; locked according to its governance level.
 | `developer` | Added by the developer for this feature.
 |===
@@ -69,19 +69,32 @@ auditor:                  # the inline introspective check that decides it
 A `developer` condition can be materialized from `/akka:specify` feedback and carry its own inline `auditor`. A non-corporate inline auditor stays `open` until you approve its exact command on first run. See xref:reference:specify/auditors.adoc[Auditors].
 
 `autonomy`::
-How the condition closes: `auto` (the auditor closes it), `human-signoff` (a person closes it), or `attested` (a delegated check, closed by a recorded xref:reference:specify/attestations.adoc[attestation]). An `attested` condition resolves `deferred` until its attestation exists, then `green`.
+How the condition closes: `auto` (the auditor closes it), `human-signoff` (a person closes it), or `attested` (a delegated check, closed by a recorded xref:reference:specify/attestations.adoc[attestation]). An `attested` condition stays `open` with reason `needs-user-action` until its attestation exists, then `green`.
 
 `state`::
-The condition's current status: `green` (passed), `red` (failed, or an unaudited prohibition), `open` (active but not yet resolved — not yet evaluated, or awaiting an approval or sign-off), `deferred` (not verifiable locally — a delegated check before attestation, or a requirement unavailable here), `waived` (unmet but under a time-bound waiver), `asserted` (an `akka-intrinsic` condition, trusted green), or `off` (not applied).
+The condition's current status. One of `open`, `green`, or `red`. See xref:reference:specify/exit-condition-states.adoc[Exit condition states] for the meaning of each and the transitions between them.
+
+`reason`::
+Set only when `state` is `open`. Names why the auditor has not decided the condition. One of `needs-user-action` (a person working on this project can move the condition forward) or `blocked-outside-project` (a required tool is missing, or the policy has no auditor mapped to the condition). See xref:reference:specify/exit-condition-states.adoc[Exit condition states].
+
+`applicable`::
+Whether the condition applies to this project. `true` by default. When `false`, the condition stays visible on the manifest with an `applicable = false` marker and does not count for the ship verdict. Set through `/akka:scope` or by a policy strike on a `recommended-default` condition.
+
+`ship_tier`::
+The ship target the condition is verified for: `author`, `review`, or `release`. Set by the library, the org policy, or (when omitted) defaulted by `/akka:conform` based on kind and autonomy — prohibitions default to `author`, attested conditions default to `release`, everything else defaults to `review`. Individual developers do not set this field; it is a policy-level choice. See xref:reference:specify/exit-condition-states.adoc#ship-tiers[Ship tiers].
 
 `waiver`::
-An optional modifier attached to a still-active condition. It does not disable or remove the condition — the unmet state stays visible — but annotates who waived it, why, and an expiration. On expiry the condition reverts to blocking. Waivers are policy-gated; the organization may forbid them or require approval.
+An optional modifier attached to a still-active condition. It does not change the state — the auditor still runs and the state still shows what it decided — but a waiver permits shipping despite `red` or `open`. Waivers record the accepter, the reason, and an expiration; on expiry the waiver is removed and the condition returns to blocking. Waivers are policy-gated; the organization may forbid them or require approval.
+
+`verified_at`::
+Set when the auditor last returned `green`. Used by `/akka:ship` to detect drift: if any file in the project (outside `.akka/`, `.git/`, build outputs, and paths matched by `.gitignore`) has been modified after `verified_at`, the condition is marked `stale` and the ship refuses until the auditor re-runs. See xref:reference:specify/exit-condition-states.adoc[Exit condition states] for the drift model.
 
 `struck`::
-Whether a `recommended-default` condition has been struck as inapplicable. Strikes are bounded (an organization-locked condition cannot be struck) and recorded in the conformance receipt.
+Whether a `recommended-default` condition has been struck as inapplicable. Strikes are bounded (an organization-locked condition cannot be struck) and recorded in the conformance receipt. A struck condition has `applicable = false`.
 
 == Related
 
+* xref:reference:specify/exit-condition-states.adoc[Exit condition states]
 * xref:sdk:enforced-mode.adoc#exit-conditions[Exit conditions and Definition of Done]
 * xref:reference:specify/default-library.adoc[]
 * xref:reference:specify/policies.adoc[]

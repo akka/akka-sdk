@@ -365,6 +365,7 @@
 **** xref:specify/attestations.adoc[Attestations]
 *** Exit conditions
 **** xref:specify/exit-condition-schema.adoc[Exit condition schema]
+**** xref:specify/exit-condition-states.adoc[Exit condition states]
 **** xref:specify/prohibitions.adoc[Prohibitions]
 **** xref:specify/default-library.adoc[Default exit-condition library]
 **** xref:specify/catalog/index.adoc[Exit condition catalog]

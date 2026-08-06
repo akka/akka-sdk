@@ -34,7 +34,7 @@ The layers roll up in the other direction: an auditor produces a verdict, verdic
 
 Every exit condition resolves to a single boolean `pass` -- there is no "mostly done". A requirement that cannot be expressed as a binary predicate over an observable surface is not yet an exit condition; it is a Definition of Done item still waiting to be made precise.
 
-Every condition also carries a *provenance* that determines whether a developer can change it: `akka-intrinsic` (platform guarantees, always on and asserted), `recommended-default` (from the xref:reference:specify/default-library.adoc[default library], strikable), `corporate` (the organization policy, locked), and `developer` (added for this feature). Done is layered and additive -- the organization defines mandatory controls and developers add to them, tightening but never loosening. See the xref:reference:specify/exit-condition-schema.adoc[exit condition schema] for the full field set.
+Every condition also carries a *provenance* that determines whether a developer can change it: `akka-intrinsic` (platform-guaranteed; the trivial auditor returns `green` immediately, always applicable, annotated `[akka]`), `recommended-default` (from the xref:reference:specify/default-library.adoc[default library], may be marked inapplicable), `corporate` (the organization policy, locked), and `developer` (added for this feature). Done is layered and additive -- the organization defines mandatory controls and developers add to them, tightening but never loosening. See the xref:reference:specify/exit-condition-schema.adoc[exit condition schema] for the full field set.
 
 [#dod-types]
 == Definition-of-Done types
@@ -87,23 +87,24 @@ Enforced mode is two human touchpoints book-ending a silent machine phase -- not
 . *Define* (you). Frame the feature and define done in business terms. The engine infers a full draft of the definition of done from your intent and Akka's fixed surfaces, then asks only about the residue it cannot safely infer -- a threshold, a genuine fork, a type toggle -- each anchored to a proposed default. Inferred conditions are marked and do not become the contract until you confirm them. The organization's mandatory conditions are merged in, locked. Enforced mode will not build while a required decision is open.
 . *Build* (the machine). The engine derives exit conditions, wires auditors, plans, and implements, looping until every locally runnable auditor is green. It stops only for a short, closed list of reasons: a condition it cannot reach after repeated tries, an ambiguity Define did not resolve, or a conflict between your definition and the organization's.
 . *Review* (you). Validate the definition, not the code. A review miss becomes a new condition and loops back to Build. Close any conditions that need your sign-off, then ship.
-. *Ship*. `/akka:ship` runs the in-scope auditors and fires the organization-authored terminal action.
+. *Ship*. `/akka:ship <review|release>` runs the auditors for every applicable exit condition in scope for the target and, on pass, runs the ship steps the organization declared for that target.
 
 === The /akka:specify engine
 
-You drive the whole flow through one re-entrant command. You always run `/akka:specify <input>` -- a spec, a clarification answer, review feedback, or a decision -- and it always ends with a definitive status line and the exact next command. Every call resolves to exactly one of three states:
+You drive the whole flow through one re-entrant command. You always run `/akka:specify <input>` -- a spec, a clarification answer, review feedback, or a decision -- and it always ends with a definitive status line and the exact next command. Every call resolves to exactly one of two states:
 
 [cols="1,3"]
 |===
 | State | Meaning and next step
-| *NEEDS_INPUT* | Your turn -- a clarification, threshold, decision, or review feedback is required. Next: `/akka:specify <your response>`.
-| *WORKING* | The machine's turn -- building autonomously. Next: wait, or `/akka:status`.
-| *READY_TO_SHIP* | The completion policy is satisfied. Next: `/akka:ship`.
+| *READY_TO_SHIP* | Every applicable condition in scope for the ship target is `green` and not stale, or waiver-covered. Next: `/akka:ship <review\|release>`.
+| *NOT_READY* | Something still blocks the ship. Next: whatever the status line names.
 |===
 
-Because every call ends in exactly one of these three states with one explicit next command, the workflow is predictable enough to follow by eye and to parse in CI.
+`NOT_READY` says why, and the reason determines whose turn it is. A condition that is `open` with reason `needs-user-action` is waiting on you, for a clarification, a threshold, a decision, or review feedback. A condition that is `open` with reason `blocked-outside-project` needs a tool installed or a policy changed beyond this project. A condition that is `red`, or `green` but stale, is the machine's to resolve, and the build loop continues autonomously. See xref:reference:specify/exit-condition-states.adoc[Exit condition states].
 
-READY_TO_SHIP does not mean every condition is green. It means the *completion policy* -- itself part of the definition of done, authored by the project owner -- is satisfied: human review after a confidence pass, a percentage-of-conditions threshold, or all-must-pass.
+Because every call ends in one of these two states with one explicit next command, the workflow is predictable enough to follow by eye and to parse in CI.
+
+READY_TO_SHIP does not mean every condition in the manifest is green. It means every condition that is both *applicable* and *in scope for the requested ship target* is green and not stale, or covered by an effective waiver. Conditions struck as inapplicable stay visible on the manifest but do not count. Conditions declared at a tier above the requested target are not evaluated for that ship at all.
 
 [#auditors]
 == Auditors
@@ -121,27 +122,23 @@ An *auditor* is the check bound to an exit condition. The engine resolves each c
 | A condition whose check is `harness:<capability>`, satisfied by a `/harnesses` asset recorded in `.akka/harnesses.lock` and checked for currency against the policy version. Green when the asset is present and enforcing; red when the lock is stale or the asset is missing. See xref:reference:specify/harnesses.adoc[/akka:harnesses].
 
 | *Delegated*
-| A condition with `autonomy: attested`, satisfied by a recorded xref:reference:specify/attestations.adoc[attestation]. It resolves DEFERRED until the attestation exists, then GREEN.
+| A condition with `autonomy: attested`, satisfied by a recorded xref:reference:specify/attestations.adoc[attestation]. It stays `open` with reason `needs-user-action` until the attestation is recorded, then goes `green`.
 |===
 
 The built-in introspective set is small, and there is no large closed catalogue of checks you pick from by id. Beyond the built-ins, auditors are authored per *ecosystem* (inline commands), provisioned as harness assets, or delegated via attestation. Each auditor declares what it needs to run (a git tree, Maven, a live service); the tooling checks availability and resolves the condition accordingly rather than blindly failing. See xref:reference:specify/auditor-kinds.adoc[Auditor kinds] for the full model.
 
-Every condition carries a *status*:
+Every condition carries a *state* and a set of *properties*. See xref:reference:specify/exit-condition-states.adoc[Exit condition states] for the full model. The three states:
 
 [cols="1,3"]
 |===
-| Status | Meaning
+| State | Meaning
 
-| *GREEN* | The auditor ran and the invariant holds.
-| *RED* | The auditor ran and the invariant is violated -- or a prohibition condition has no auditor, which reds rather than passing silently.
-| *OPEN* | Active but not yet resolved: not yet evaluated, awaiting a human sign-off, or a check whose command you have not yet approved.
-| *DEFERRED* | Not verifiable locally -- a delegated (attested) check before its attestation, or a requirement unavailable here (for example, a live-service check before deployment). Carried downstream and recorded in the conformance receipt.
-| *WAIVED* | Unmet, but covered by a time-bound waiver.
-| *ASSERTED* | Guaranteed by the platform (an `akka-intrinsic` condition such as observability, resilience, or scalability); trusted green without running a check.
-| *OFF* | Not applied.
+| *`open`* | The auditor has not decided the condition. It carries a `reason`: `needs-user-action` (a person on this project can move it forward) or `blocked-outside-project` (a required tool is missing, or the policy has no auditor mapped to the condition).
+| *`green`* | The auditor ran and the condition passed. An intrinsic condition goes directly to `green` with reason `platform-guaranteed`.
+| *`red`* | The auditor ran and the condition failed. A prohibition with no auditor is also `red`.
 |===
 
-A deferred condition is not a gap -- it is a check that will run elsewhere. An open condition is unfinished work.
+Alongside the state, three properties describe the condition itself: `provenance` (who guarantees it — `akka-intrinsic`, `recommended-default`, `corporate`, or `developer`), `waiver` (a time-bound record permitting shipping despite `red` or `open`), and `applicable` (whether the condition applies to this project). All three appear as annotations on the manifest and are described in the xref:reference:specify/exit-condition-states.adoc[states] page.
 
 === The two locked gates
 
@@ -155,11 +152,20 @@ New or changed checks are surfaced to you for approval at the exit-condition lev
 [#shipping]
 == Shipping and receipts
 
-`/akka:ship` runs the in-scope auditors and, if they pass, fires the terminal action the organization defined. Akka provides the mechanism; the organization writes what "ship" does -- deploy and activate, push to a repository, open a pull request, publish an artifact, or a sequence of these. There is no fixed menu of ship profiles.
+`/akka:ship <review|release>` runs the auditors for every applicable exit condition in scope for the target and, if they pass, runs the ship steps the organization declared for that target. Akka provides the mechanism; the organization writes what its ship steps do — push a branch, open a pull request, deploy and activate, publish an artifact, or a sequence of these. There is no fixed menu of ship profiles.
 
-One rule holds regardless: *ship fires only when every in-scope condition is green.* What ship targets determines what "done" proves. A deploy-and-activate ship verifies the full definition of done, including live-service conditions. A push-to-repository ship cannot run live-service auditors, so those defer downstream and Akka guarantees only the pre-handoff conditions.
+`/akka:ship` requires an explicit target — `review` or `release` — and refuses when called without one. The target names which set of auditors runs:
 
-When ship completes, Akka writes a *conformance receipt* -- which conditions were green, which auditors ran, which deferred and to whom, and any waivers in effect. The receipt is what makes an AI-built handoff auditable: the downstream owner sees exactly what was verified and what remains. In Enforced mode, a successful ship also offers to shut down the local services the build started, closing the lifecycle that `/akka:setup` opened.
+* *`/akka:ship review`* runs the auditors for every applicable exit condition tagged `author` or `review`, then runs the review ship steps declared in the organization's policy (typically pushing the branch and opening a pull request).
+* *`/akka:ship release`* runs the auditors for every applicable exit condition at any tier, then runs the release ship steps declared in the organization's policy (typically deploying to production).
+
+Author-time is a precondition, not a ship target. Every ship, review or release, requires every applicable author-tier condition to be green or waiver-covered. See xref:reference:specify/exit-condition-states.adoc#ship-tiers[Ship tiers].
+
+The author tier is evaluated first, on its own. In Enforced mode a ship that fails it stops there. The review-tier and release-tier auditors do not run, so you do not wait on a scan whose result cannot change the outcome. The verdict you get back covers the author tier only. The higher tiers were skipped rather than failed, so the output does not report a status for them.
+
+One rule holds regardless of target: *the ship steps run only when every in-scope condition is `green` and not stale, or covered by an effective waiver.*
+
+When ship completes, Akka writes a *conformance receipt* -- which conditions were `green`, which auditors ran, which stayed `open` and why, and any waivers in effect. The receipt is what makes an AI-built handoff auditable: the downstream owner sees exactly what was verified and what remains. In Enforced mode, a successful ship also offers to shut down the local services the build started, closing the lifecycle that `/akka:setup` opened.
 
 [#governance]
 == Enterprise governance
@@ -189,7 +195,7 @@ Every Specify command remains available -- Enforced mode changes the ship gate, 
 | Command | Role
 | xref:reference:specify/specify.adoc[`/akka:specify`] | The re-entrant engine that drives the whole flow.
 | xref:reference:specify/status.adoc[`/akka:status`] | Read-only rollup of the definition of done by business category.
-| xref:reference:specify/ship.adoc[`/akka:ship`] | Fire the organization-authored terminal action, gated on the in-scope conditions.
+| xref:reference:specify/ship.adoc[`/akka:ship`] | Run the auditors for the requested ship target and, on pass, run the organization's ship steps.
 | xref:reference:specify/mode.adoc[`/akka:mode`] | Switch mode within the organization-allowed set.
 | xref:reference:specify/setup.adoc[`/akka:setup`] | Install and repair the local environment and source the governance policy.
 |===

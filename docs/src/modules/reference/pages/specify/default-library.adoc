@@ -9,7 +9,7 @@ The default library is the curated set of exit conditions Akka Specify starts fr
 | Provenance | Behavior
 
 | `akka-intrinsic`
-| Guarantees the Akka platform provides — observability, resilience, scalability. Always on, asserted green, and never authored or disabled by a developer. They document what Akka covers in the rollup ("Resilience: covered by Akka") and lighten how much a developer has to define.
+| Guarantees the Akka platform provides — observability, resilience, scalability. Always applicable and never authored or disabled by a developer. Their trivial auditor returns `green` with reason `platform-guaranteed` on activation; they are annotated `[akka]` in the rollup ("Resilience: covered by Akka") and reduce how much a developer has to define.
 
 | `recommended-default`
 | Best-practice conditions the tooling proposes for a feature. On by default; a developer can strike any that do not apply.
@@ -35,9 +35,9 @@ Every library condition has a stable *id*. That id is the registry key: a policy
 |===
 | Id | Type | Governance level | What it checks
 
-| `AKKA-OBS-TRACES` | Operability | `always-apply` | Distributed tracing and observability, provided by the platform (akka-intrinsic, asserted).
-| `AKKA-RES-RECOVERY` | Reliability | `always-apply` | Supervision and recovery, provided by the platform (akka-intrinsic, asserted).
-| `AKKA-SCALE-SHARDING` | Reliability | `always-apply` | Cluster sharding and scale-out, provided by the platform (akka-intrinsic, asserted).
+| `AKKA-OBS-TRACES` | Operability | `always-apply` | Distributed tracing and observability, provided by the platform (akka-intrinsic, platform-guaranteed).
+| `AKKA-RES-RECOVERY` | Reliability | `always-apply` | Supervision and recovery, provided by the platform (akka-intrinsic, platform-guaranteed).
+| `AKKA-SCALE-SHARDING` | Reliability | `always-apply` | Cluster sharding and scale-out, provided by the platform (akka-intrinsic, platform-guaranteed).
 | `FUNC-TESTS-PASS` | Functional | `on-but-dev-configurable` | The test suite passes (`mvn test`).
 | `DATA-ENTITY-INVARIANTS` | Data Integrity | `on-but-dev-configurable` | Entity invariants hold against a running service.
 | `SEC-AUTHZ-ENFORCED` | Security & Compliance | `on-but-dev-configurable` | Authorization is enforced against a running service.

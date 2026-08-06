@@ -16,7 +16,7 @@ When you give feedback to xref:reference:specify/index.adoc[`/akka:specify`], an
 
 We do not rely on the assistant to clarify every requirement well enough:
 
-* The *falsifiability gate* routes ambiguity to a clarifying question (a `NEEDS_INPUT` state) rather than a guessed check.
+* The *falsifiability gate* routes ambiguity to a clarifying question rather than a guessed check. The condition stays `open` with reason `needs-user-action` until you answer.
 * The xref:reference:specify/adequacy-review.adoc[adversarial review] plus your in-context veto catch a bad capture after the fact.
 * High-stakes conditions (security, data integrity, locked org checks) require your explicit confirmation of the predicate before they lock.
 

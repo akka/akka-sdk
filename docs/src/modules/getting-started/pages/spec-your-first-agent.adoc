@@ -37,49 +37,49 @@ In Enforced mode you drive the whole build through one re-entrant command, `/akk
 |**/akka:specify** greeter agent - _greet each user in a new language every turn, remembering which languages were used per session_
 |===
 
-The engine infers a *definition of done* from your intent and Akka's own surfaces, and shows it grouped by tier -- Product, Project, and Process. Some conditions are asserted by the platform, some are the machine's to build, some defer downstream, and a few need a decision from you. Prohibitions -- the conditions that must never become true -- print in a separate `NEVER` section:
+The engine infers a *definition of done* from your intent and Akka's own surfaces, and shows it grouped by tier -- Product, Project, and Process. Some conditions are guaranteed by the platform, some are the machine's to build, some need a receipt from an external system, and a few need a decision from you. Prohibitions -- the conditions that must never become true -- print in a separate `NEVER` section:
 
 [source]
 ----
-DEFINITION OF DONE — 17 conditions (17 active)    mode: enforced · policy: none (library defaults)
-🔒 locked  ● on ○ off   ✓green ✗red ○open ⟳deferred ~waived   [akka]=intrinsic
+DEFINITION OF DONE — 17 conditions (17 applicable)    mode: enforced · policy: none (library defaults)
+🔒 locked   ✓ green   ✗ red   ○ open   — not applicable   [akka] platform-guaranteed
 ──────────────────────────────────────────────────────────────────────────────
 PRODUCT
-  operability             ●  AKKA-OBS-TRACES            ✓(akka) [akka]  — traces, logs, metrics
-  reliability             ●  AKKA-RES-RECOVERY          ✓(akka) [akka]  — recovers state after failure
-  reliability             ●  AKKA-SCALE-SHARDING        ✓(akka) [akka]  — shards across the cluster
-  operability             ●  OPS-COMPILES               ○               — machine will build
-  functional              ●  FUNC-TESTS-PASS            ○               — machine will build
-  data-integrity          ●  DATA-ENTITY-INVARIANTS     ⟳               — deferred: needs a running service
-  security-compliance     ●  SEC-AUTHZ-ENFORCED         ⟳               — deferred: needs a running service
+  operability             ✓  AKKA-OBS-TRACES            [akka]  green — platform-guaranteed
+  reliability             ✓  AKKA-RES-RECOVERY          [akka]  green — platform-guaranteed
+  reliability             ✓  AKKA-SCALE-SHARDING        [akka]  green — platform-guaranteed
+  operability             ○  OPS-COMPILES                       needs your action — machine will build
+  functional              ○  FUNC-TESTS-PASS                    needs your action — machine will build
+  data-integrity          ○  DATA-ENTITY-INVARIANTS             blocked outside this project — needs a running service
+  security-compliance     ○  SEC-AUTHZ-ENFORCED                 blocked outside this project — needs a running service
 PROJECT
-  pipeline-scanning       ●  PROJ-SCAN-SAST-CLEAN       ○               — sign-off needed
-  code-test-health        ●  PROJ-TEST-COVERAGE         ○               — decision needed: coverage threshold
-  environment-dependencies ● ENV-DEPS-RESOLVE           ○               — machine will build
+  pipeline-scanning       ○  PROJ-SCAN-SAST-CLEAN               needs your action — external SAST run receipt required
+  code-test-health        ○  PROJ-TEST-COVERAGE                 needs your action — decide the coverage threshold
+  environment-dependencies ○ ENV-DEPS-RESOLVE                   needs your action — machine will build
 PROCESS
-  process-integrity       ●  PROC-SOURCE-GROUNDING      ○               — APIs cited, none invented
-  process-integrity       🔒● PROC-AUDITOR-COVERAGE      ○               — every surface needs a check
-  process-integrity       🔒● PROC-ADEQUACY-REVIEWED     ○               — checks need an adequacy review
-  build-efficiency        ●  BUILD-WITHIN-BUDGET        ○               — sign-off needed
+  process-integrity       ○  PROC-SOURCE-GROUNDING              needs your action — APIs cited, none invented
+  process-integrity       🔒○ PROC-AUDITOR-COVERAGE              needs your action — every surface needs a check
+  process-integrity       🔒○ PROC-ADEQUACY-REVIEWED             needs your action — checks need an adequacy review
+  build-efficiency        ○  BUILD-WITHIN-BUDGET                needs your action — sign-off required
 
 NEVER
 PROJECT
-  pipeline-scanning       ●  SEC-SECRETS-NOT-COMMITTED  ✓               — no secret committed
-  repository-hygiene      ●  NEVER-COMMIT-BUILD-OUTPUT  ✓               — no build output tracked
-  environment-dependencies ● NEVER-UNPINNED-DEP         ✓               — lockfile present
+  pipeline-scanning       ✓  SEC-SECRETS-NOT-COMMITTED          green — no secret committed
+  repository-hygiene      ✓  NEVER-COMMIT-BUILD-OUTPUT          green — no build output tracked
+  environment-dependencies ✓ NEVER-UNPINNED-DEP                 green — lockfile present
 ──────────────────────────────────────────────────────────────────────────────
-rollup — product: 5✓ 2○ 0✗   project: 3✓ 3○ 0✗   process: 0✓ 4○ 0✗
+rollup — product: 3✓ 4○ 0✗   project: 3✓ 3○ 0✗   process: 0✓ 4○ 0✗
 ----
 
-The status of each condition is one of `GREEN`, `RED`, `OPEN`, `DEFERRED`, `WAIVED`, `ASSERTED` (Akka-intrinsic, trusted green), or `OFF`. The two locked (🔒) Process-integrity conditions -- `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED` -- are always on and cannot be struck; they make the verification apparatus check itself. See xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done types] for what each tier covers.
+Every condition is in one of three xref:reference:specify/exit-condition-states.adoc[states]: `open`, `green`, or `red`. An `open` condition carries a reason: `needs-user-action` (a person on this project can move it forward) or `blocked-outside-project` (a required tool is missing, or a receipt from an external system is required). The two locked (🔒) process-integrity conditions -- `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED` -- are always on and cannot be struck; they make the verification apparatus check itself. See xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done types] for what each tier covers.
 
-=== Answer the open decisions
+=== Answer the open conditions
 
-Enforced mode reports `NEEDS_INPUT` while any condition is `OPEN`. The engine ends every turn with a definitive verdict and the exact next command, and calls out the conditions that need a decision or a sign-off from you:
+Enforced mode reports `NOT_READY` while any condition is `open`. The engine ends every turn with a definitive verdict and the exact next command, and calls out the conditions that need action from you:
 
 [source]
 ----
-NEEDS_INPUT — a decision to close before I can build:
+NOT_READY — an action to close before I can build:
   • Code & Test Health — coverage threshold?     I suggest 80%
 NEXT → /akka:specify <your answer>
 ----
@@ -97,11 +97,11 @@ The engine records your decisions, locks the definition of done, and starts buil
 
 === Let the build run
 
-The machine derives the exit conditions, wires xref:sdk:enforced-mode.adoc#auditors[auditors], plans, implements, and loops until every locally runnable condition is green. It reports `WORKING` and interrupts only if it cannot reach a condition, hits an unresolved ambiguity, or finds a conflict with the organization's policy.
+The machine derives the exit conditions, wires xref:sdk:enforced-mode.adoc#auditors[auditors], plans, implements, and loops until every locally runnable condition is `green`. It reports `NOT_READY` and interrupts only if it cannot reach a condition, hits an unresolved ambiguity, or finds a conflict with the organization's policy.
 
 [source]
 ----
-WORKING — 17 active conditions
+NOT_READY — 17 applicable conditions
   plan → tasks → implement → verify
   ✓ OPS-COMPILES   ✓ FUNC-TESTS-PASS 6/6   ✓ ENV-DEPS-RESOLVE
 NEXT → wait, or /akka:status
@@ -131,27 +131,27 @@ Adding an auditor recomputes the two locked process-integrity gates. Check them 
 
 [source]
 ----
-WORKING — 18 active conditions
+NOT_READY — 18 applicable conditions
   ✓ PROC-AUDITOR-COVERAGE   every build surface has a covering auditor
   ○ PROC-ADEQUACY-REVIEWED  adversarial review re-running for the new check
 NEXT → wait, or /akka:status
 ----
 
-`PROC-ADEQUACY-REVIEWED` re-runs because the set of checks changed; once the review clears, the gate turns green.
+`PROC-ADEQUACY-REVIEWED` re-runs because the set of checks changed; once the review clears, the gate turns `green`.
 
 === Ship
 
-When the completion policy is met, the engine reports `READY_TO_SHIP`:
+When every applicable condition is `green` and not stale, the engine reports `READY_TO_SHIP`:
 
 [source]
 ----
-READY_TO_SHIP — completion policy met
-  18 conditions · 13 verified · 3 asserted by Akka · 2 deferred → staging
+READY_TO_SHIP — every applicable condition is green
+  18 conditions · 15 auditor-verified · 3 platform-guaranteed
   ✓ PROC-AUDITOR-COVERAGE   ✓ PROC-ADEQUACY-REVIEWED
 NEXT → /akka:ship
 ----
 
-Run `/akka:ship`. It runs the in-scope auditors one last time, fires the terminal action your organization defined, and writes a xref:sdk:enforced-mode.adoc#shipping[conformance receipt] recording what was verified and what deferred downstream.
+Run `/akka:ship release`. It runs the auditors for every applicable exit condition at any tier one last time, then runs the ship steps your organization declared for a release ship, and writes a xref:sdk:enforced-mode.adoc#shipping[conformance receipt] recording what was verified.
 
 [#a-la-carte]
 == Build À la carte
