@@ -856,7 +856,11 @@ private[impl] final class AgentImpl(
             componentId,
             requests,
             res.thinking.toJava,
-            new TokenUsage(res.inputTokenCount, res.outputTokenCount),
+            new TokenUsage(
+              res.inputTokenCount,
+              res.outputTokenCount,
+              res.cacheReadInputTokens,
+              res.cacheWriteInputTokens),
             res.attributes.asJava)
 
         case res: SpiAgent.ToolCallResponse =>
