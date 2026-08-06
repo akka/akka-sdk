@@ -4,11 +4,15 @@ Ship the project when all in-scope exit conditions are satisfied.
 
 == Synopsis
 
-[Incubating] Evaluate exit conditions against the requested ship target and, if the verdict is READY_TO_SHIP, run the org-authored ship steps (from --policy). Refuses to ship otherwise.
+[Incubating] Evaluate exit conditions against the requested ship target and, if the verdict is READY_TO_SHIP, run the org-authored ship steps (from --policy).
+Refuses to ship otherwise.
 
 The tier argument is REQUIRED and must be one of:   review   verify author-time and review-time conditions (open the change for team review)   release  verify author-time, review-time, and release-time conditions (release to production)
 
-Author-time is a precondition, not a ship target -- every ship requires every author-time condition to be green regardless of the requested tier. Author-time conditions are evaluated first, on their own. In enforced mode, a ship that fails them stops there: the review-time and release-time auditors never run. An active waiver satisfies the precondition the same way it satisfies any other condition.
+Author-time is a precondition, not a ship target -- every ship requires every author-time condition to be green regardless of the requested tier.
+Author-time conditions are evaluated first, on their own.
+In enforced mode, a ship that fails them stops there: the review-time and release-time auditors never run.
+An active waiver satisfies the precondition the same way it satisfies any other condition.
 
 Ship steps are shown but NOT executed unless --execute is passed.
 
