@@ -18,7 +18,7 @@ Akka patches the JVM, the container base image, the operating system, and the Ak
 
 A deployed Akka service combines two sources:
 
-. *Your service image* — A small image that holds your application JAR and its direct SDK dependencies. The `mvn install` command builds this image. It copies these libraries to `/opt/local-lib/` in the running container.
+. *Your service image* — A small image that holds your application JAR and its direct SDK dependencies. The `mvn install` command builds this image. It includes these libraries in `/opt/local-lib/` in the built image.
 . *The Akka runtime base image* — The image that actually runs. It provides the JVM, the Akka runtime, and all platform dependencies (for example gRPC, Netty, Jackson, and Logback). Akka builds, scans, and patches this image.
 
 Scan the libraries that you add in step 1. These are the dependencies that you control. If a scan finds a vulnerability, you fix it by updating your `pom.xml`.
