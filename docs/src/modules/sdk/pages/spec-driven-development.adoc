@@ -19,18 +19,18 @@ image::sdd-workflow.png[Spec-driven development workflow: specify, clarify, plan
 
 Akka Specify runs in one of two modes. The mode decides whether your definition of done is a hard gate or an advisory checklist.
 
-* *xref:sdk:enforced-mode.adoc[Enforced mode]* (the default) makes you define "done" -- as machine-checkable exit conditions -- before any code is written, and will not let a feature ship until those conditions are met. You get a cleaner, auditable, repeatable result. In Enforced mode an *enterprise can define exit conditions and definitions of done that Akka enforces* across every project. The cost is more up-front definition and a longer, more thorough build.
-* *xref:sdk:a-la-carte-mode.adoc[À la carte mode]* lets you run the specification commands individually -- specify, clarify, plan, tasks, implement, build, and the rest -- with nothing blocking you. It is faster and lighter; you own the rigor.
+* *xref:sdk:a-la-carte-mode.adoc[À la carte mode]* (the default) lets you run the specification commands individually -- specify, clarify, plan, tasks, implement, build, and the rest -- with nothing blocking you. It is faster and lighter; you own the rigor.
+* *xref:sdk:enforced-mode.adoc[Enforced mode]* makes you define "done" -- as machine-checkable exit conditions -- before any code is written, and will not let a feature ship until those conditions are met. You get a cleaner, auditable, repeatable result. In Enforced mode an *enterprise can define exit conditions and definitions of done that Akka enforces* across every project. The cost is more up-front definition and a longer, more thorough build. Opt in with `/akka:mode enforced`.
 
 [cols="1,2,2",options="header"]
 |===
-| | Enforced (default) | À la carte
+| | À la carte (default) | Enforced
 
-| Definition of done | Required, gated | Optional, advisory
-| Result | Cleaner, auditable, repeatable | Flexible, developer-driven
-| Cost & time | Higher -- more up front, more thorough | Lower -- run only what you need
-| Enterprise governance | Org-defined conditions enforced by Akka | Not enforced
-| Best for | Production systems, teams, regulated work | Prototypes, exploration, experienced solo developers
+| Definition of done | Optional, advisory | Required, gated
+| Result | Flexible, developer-driven | Cleaner, auditable, repeatable
+| Cost & time | Lower -- run only what you need | Higher -- more up front, more thorough
+| Enterprise governance | Not enforced | Org-defined conditions enforced by Akka
+| Best for | Prototypes, exploration, experienced solo developers | Production systems, teams, regulated work
 |===
 
 == Getting started with SDD

@@ -39,15 +39,15 @@ This ensures the Akka CLI is installed, Java and Maven are available, and your A
 
 The Akka Specify plugin runs in one of two modes:
 
-* *Enforced* (the default) makes you define "done" as machine-checkable exit conditions before code is written, and gates shipping until they are met -- a cleaner, auditable result.
-* *À la carte* lets you run the specification commands individually, with nothing blocking you -- faster and lighter.
+* *À la carte* (the default) lets you run the specification commands individually, with nothing blocking you -- faster and lighter.
+* *Enforced* makes you define "done" as machine-checkable exit conditions before code is written, and gates shipping until they are met -- a cleaner, auditable result. Opt in when you want that rigor.
 
-New installs start in *Enforced* mode. Switch at any time:
+New installs start in *À la carte* mode. Switch at any time:
 
 [source]
 ----
-/akka:mode enforced
 /akka:mode a-la-carte
+/akka:mode enforced
 ----
 
 See xref:sdk:spec-driven-development.adoc#choosing-your-mode[Choosing your mode] for the trade-offs. Then build your first agent with the xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent] tutorial, which walks the same build in either mode.
