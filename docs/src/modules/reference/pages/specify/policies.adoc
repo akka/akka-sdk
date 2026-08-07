@@ -51,7 +51,7 @@ Only the two locked levels always win. Where the policy is silent, the platform-
 Alongside conditions and their levels, a policy sets:
 
 * the allowed conformance mode(s) and whether the mode is locked (see xref:reference:specify/mode.adoc[`/akka:mode`]);
-* the *ship definition* — the organization-authored terminal action(s) and the conditions that must be green before ship fires (see xref:sdk:enforced-mode.adoc#shipping[Shipping and receipts]);
+* the *ship steps* — the actions the organization runs on a successful ship and the conditions that must be green before those actions execute (see xref:sdk:enforced-mode.adoc#shipping[Shipping and receipts]);
 * waiver rules — whether waivers are allowed, and whether they require approval;
 * the toolchain pin — the approved Akka CLI, plugin, and SDK versions.
 
@@ -106,7 +106,7 @@ mode:
   allowed: [enforced]
   locked: true                 # developers cannot drop out of Enforced
 
-ship:                          # org-authored terminal action(s)
+ship:                          # org-authored ship steps that run on a successful ship
   steps:
     - name: push-to-governed-repo
       action: "git push origin release"

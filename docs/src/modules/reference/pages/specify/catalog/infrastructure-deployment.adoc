@@ -6,7 +6,7 @@ This type covers the runtime and deployment surface — container and host harde
 
 [NOTE]
 ====
-This is a defined, tiered Definition-of-Done type, but it ships no default-library conditions yet. When you deploy to xref:reference:specify/deploy.adoc[Akka Automated Operations] (AAO), these controls are asserted by the platform, which runs the hardened, benchmarked runtime. Off AAO, the ids below are candidates for inspiration — adopt one by authoring or provisioning its covering auditor.
+This is a defined, tiered Definition-of-Done type, but it ships no default-library conditions yet. When you deploy to xref:reference:specify/deploy.adoc[Akka Automated Operations] (AAO), these controls are guaranteed by the platform, which runs the hardened, benchmarked runtime. Off AAO, the ids below are candidates for inspiration — adopt one by authoring or provisioning its covering auditor.
 ====
 
 == Host and container hardening

@@ -12,6 +12,12 @@ Current versions
 
 == August 2026
 
+* Akka CLI 3.0.70
+- Enhancements to Akka Specify
+    - Exit conditions
+    - Definition of Done
+    - Enforced mode vs. à-la-carte mode
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.6.2[Akka SDK 3.6.2]
 - Dependency updates
 

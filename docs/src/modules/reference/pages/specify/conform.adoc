@@ -17,16 +17,19 @@ Runs the in-scope auditors, prints the definition-of-done manifest, and returns 
 
 == Verdict
 
-`conform` returns one of three verdicts, in this order of precedence:
+`conform` returns one of two verdicts.
 
-* `NEEDS_INPUT` — at least one condition is open: active, not yet evaluated, or its pass is not binary. It needs a sign-off, a clarification, or an attestation before it can resolve.
-* `WORKING` — no condition is open, but at least one is red. A check failed, or a prohibition is unaudited.
-* `READY_TO_SHIP` — every in-scope condition is satisfied: green, platform-asserted, waived, or deferred downstream.
+* `READY_TO_SHIP` — every applicable condition is `green` and not stale, or covered by an effective waiver.
+* `NOT_READY` — any other combination. The manifest lists the conditions blocking the ship, each with its state, its reason (for `open`), and any waiver record.
+
+See xref:reference:specify/exit-condition-states.adoc[Exit condition states] for the state model, the reason codes on `open`, the drift and staleness rule, and how waivers interact with the verdict.
 
 xref:reference:specify/ship.adoc[`/akka:ship`] reads the same verdict: in enforced mode it releases only when the verdict is `READY_TO_SHIP`. An AI assistant obtains the verdict through the `akka_ec_conform` tool.
 
 == See also
 
+* xref:reference:specify/exit-condition-states.adoc[]
+* xref:reference:specify/exit-condition-schema.adoc[]
 * xref:reference:specify/status.adoc[]
 * xref:reference:specify/converge.adoc[]
 * xref:reference:specify/ship.adoc[]
