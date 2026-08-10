@@ -49,9 +49,12 @@ private[impl] case class AgentInvokeReplyOnlyMethodRefImpl[A1, R](componentMetho
   private def toTokenUsage(metadata: Metadata): Agent.TokenUsage = {
     val input = metadata.get(SpiAgent.AgentInputTokensKey).map[Integer](_.toInt).orElse(0)
     val output = metadata.get(SpiAgent.AgentOutputTokensKey).map[Integer](_.toInt).orElse(0)
-    // Absent when running against a runtime older than the one that added these keys.
+    // Absent when running against a runtime older than the one that added these keys. An older
+    // runtime reports no cache activity, so the input count is the effective count.
     val cacheRead = metadata.get(SpiAgent.AgentCacheReadTokensKey).map[Integer](_.toInt).orElse(0)
     val cacheWrite = metadata.get(SpiAgent.AgentCacheWriteTokensKey).map[Integer](_.toInt).orElse(0)
-    new Agent.TokenUsage(input, output, cacheRead, cacheWrite)
+    val effectiveInput =
+      metadata.get(SpiAgent.AgentEffectiveInputTokensKey).map[Integer](_.toInt).orElse(input)
+    new Agent.TokenUsage(input, output, cacheRead, cacheWrite, effectiveInput)
   }
 }

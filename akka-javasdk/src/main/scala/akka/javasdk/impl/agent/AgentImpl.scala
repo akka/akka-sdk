@@ -857,10 +857,11 @@ private[impl] final class AgentImpl(
             requests,
             res.thinking.toJava,
             new TokenUsage(
-              res.inputTokenCount,
-              res.outputTokenCount,
-              res.cacheReadInputTokens,
-              res.cacheWriteInputTokens),
+              res.tokenUsage.inputTokenCount,
+              res.tokenUsage.outputTokenCount,
+              res.tokenUsage.cacheReadInputTokens,
+              res.tokenUsage.cacheWriteInputTokens,
+              res.tokenUsage.effectiveInputTokenCount),
             res.attributes.asJava)
 
         case res: SpiAgent.ToolCallResponse =>
