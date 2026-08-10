@@ -66,9 +66,10 @@ public abstract class Agent implements AgentDelegationWorker {
   /**
    * The number of tokens consumed by a model interaction.
    *
-   * <p>Raw provider counts. Anthropic and Bedrock report the cache counts outside {@code
-   * inputTokens}, OpenAI and Gemini report cache reads within it, so summing them requires knowing
-   * the provider.
+   * <p>{@code inputTokens} and the two cache counts are raw provider numbers, and providers
+   * disagree on how they compose: Anthropic and Bedrock report the cache counts outside {@code
+   * inputTokens}, OpenAI and Gemini report cache reads within it. Use {@code effectiveInputTokens}
+   * rather than adding them up yourself, which only works if you know which provider produced them.
    *
    * @param inputTokens tokens in the request sent to the model
    * @param outputTokens tokens in the response returned by the model
@@ -76,13 +77,19 @@ public abstract class Agent implements AgentDelegationWorker {
    *     the provider reports nothing
    * @param cacheWriteInputTokens prompt tokens written to the provider's prompt cache, or 0 when
    *     the provider reports nothing
+   * @param effectiveInputTokens every prompt token the interaction consumed, counted once, whatever
+   *     the provider
    */
   public record TokenUsage(
-      int inputTokens, int outputTokens, int cacheReadInputTokens, int cacheWriteInputTokens) {
+      int inputTokens,
+      int outputTokens,
+      int cacheReadInputTokens,
+      int cacheWriteInputTokens,
+      int effectiveInputTokens) {
 
     /** A usage with no prompt cache activity. */
     public TokenUsage(int inputTokens, int outputTokens) {
-      this(inputTokens, outputTokens, 0, 0);
+      this(inputTokens, outputTokens, 0, 0, inputTokens);
     }
   }
 
