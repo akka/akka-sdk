@@ -28,6 +28,15 @@ A Consumer Effect can either:
 
 For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
 
+[#consumer-error-handling]
+== Consumer error handling
+
+To signal that a message was not processed successfully, throw an exception from the consumer method instead of returning an Effect.
+
+If a consumer method throws an exception, or an `asyncDone`, `asyncProduce`, or `asyncEffect` Effect completes with a failure, Akka does not advance to the next message. It redelivers the same message and retries until the method processes it without throwing. This applies to every consumer source: Event Sourced Entities, Key Value Entities, Workflows, service-to-service streams, and message broker topics.
+
+Because redelivery retries indefinitely, an exception that a message will always trigger, for example a bug in the handling logic or a message that can never be deserialized correctly, blocks that consumer from making progress until the underlying issue is fixed and a new version of the service is deployed.
+
 [#consume-from-event-sourced-entity]
 == Consume from Event Sourced Entity
 
@@ -45,7 +54,7 @@ include::example$event-sourced-counter-brokers/src/main/java/counter/application
 <5> Return `effect().done()` when processing is completed.
 <6> Return `effect().ignore()` to ignore the event and continue the processing.
 
-If an exception is raised during the event processing. Akka runtime will redelivery the event until the application process it without failures.
+See xref:consuming-producing.adoc#consumer-error-handling[Consumer error handling] for what happens when processing fails.
 
 When deleting Event Sourced Entities, and want to act on it in a consumer, make sure to persist a final event representing
 the deletion before triggering delete.
