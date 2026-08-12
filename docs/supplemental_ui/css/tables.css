@@ -77,9 +77,9 @@
   border-bottom: 1px solid var(--akka-table-rule);
   background: none;
   color: var(--akka-table-label);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   text-align: left;
   vertical-align: baseline;
@@ -116,36 +116,49 @@
    Cell content
    ------------------------------------------------------------------ */
 
-/* Inline code keeps monospace and the identifier colour but loses the filled
-   chip. A description listing nine type names has to read as one sentence. */
+/* Inline code inside a description stays at body colour and loses the filled
+   chip. A single description here names nine types; tinting each one turns the
+   sentence into a row of separate objects. Stripe, Rust, Kubernetes and
+   Tailwind all set inline code in reference prose at body colour for the same
+   reason — hue is reserved for syntax highlighting inside code blocks. */
 .doc .prose-akka table.tableblock td.tableblock code,
 .doc table.tableblock td.tableblock code {
   background: none !important;
   padding: 0 !important;
-  color: var(--akka-table-code) !important;
+  color: inherit !important;
   font-size: 0.875em;
 }
 
-/* A cell holding nothing but an identifier is a token, not prose: hold it on
-   one line so the auto layout gives that column its content width and no more. */
+/* A cell holding nothing but an identifier is a token, not prose. It holds one
+   line, and it is the one place in the table that takes the identifier colour:
+   one per row, where the reader scans for it. */
 .doc table.tableblock td.tableblock > p.tableblock:only-child > code:only-child,
 .doc table.tableblock td.tableblock > p.tableblock:only-child > strong:only-child {
+  display: inline-block;
   white-space: nowrap;
-}
-
-/* Field names are identifiers, so they are set like the inline code they match. */
-.doc table.tableblock td.tableblock > p.tableblock:only-child > strong:only-child {
   font-family: "Roboto Mono", ui-monospace, SFMono-Regular, Consolas, Menlo, monospace;
   font-size: 0.875em;
   font-weight: 500;
-  color: var(--akka-table-code);
+  color: var(--akka-table-code) !important;
 }
 
-/* `string _required_` — the qualifier steps back from the type it modifies. */
+/* Reference pages stack many tables describing one schema. Sizing each column
+   purely to its own content leaves every table on the page with a different
+   left edge for its second column. A floor on the identifier column keeps them
+   aligned; content longer than the floor still widens the column. */
+.doc table.tableblock:not(.matrix) td.tableblock:first-child > p.tableblock:only-child > code:only-child,
+.doc table.tableblock:not(.matrix) td.tableblock:first-child > p.tableblock:only-child > strong:only-child {
+  min-width: 10.5rem;
+}
+
+/* `string _required_` — stacked deliberately under the type it qualifies,
+   rather than left to wrap there by accident. */
 .doc table.tableblock td.tableblock em {
+  display: block;
   color: var(--akka-table-muted);
   font-style: normal;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
 }
 
 /* Quantities compare by digit position, so a right-aligned column (cols="…,>1")
