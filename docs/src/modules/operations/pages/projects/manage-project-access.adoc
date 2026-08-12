@@ -3,21 +3,21 @@ include::ROOT:partial$include.adoc[]
 
 Access to projects is controlled by assigning specific roles to users. The available roles are: *admin*, *developer*, *viewer* and *backoffice*.
 
-[cols="1,1,1,1,1"]
+[cols="1,1,1,1,1", role="matrix"]
 |===
 |Permission:                       |admin |developer |viewer |backoffice
 
-|View project                      |✅     |✅        |✅     |✅
-|Admin project                     |✅     |❌        |❌     |❌
-|View services                     |✅     |✅        |✅     |❌
-|Deploy services                   |✅     |✅        |❌     |❌
-|Update services                   |✅     |✅        |❌     |❌
-|Delete services                   |✅     |✅        |❌     |❌
-|View routes                       |✅     |✅        |✅     |❌
-|Manage routes                     |✅     |✅        |❌     |❌
-|View secrets                      |✅     |✅        |✅     |❌
-|Manage secrets                    |✅     |✅        |❌     |❌
-|Backoffice functions              |✅     |❌        |❌     |✅
+|View project                      |[.yes]#allowed#     |[.yes]#allowed#        |[.yes]#allowed#     |[.yes]#allowed#
+|Admin project                     |[.yes]#allowed#     |[.no]#denied#        |[.no]#denied#     |[.no]#denied#
+|View services                     |[.yes]#allowed#     |[.yes]#allowed#        |[.yes]#allowed#     |[.no]#denied#
+|Deploy services                   |[.yes]#allowed#     |[.yes]#allowed#        |[.no]#denied#     |[.no]#denied#
+|Update services                   |[.yes]#allowed#     |[.yes]#allowed#        |[.no]#denied#     |[.no]#denied#
+|Delete services                   |[.yes]#allowed#     |[.yes]#allowed#        |[.no]#denied#     |[.no]#denied#
+|View routes                       |[.yes]#allowed#     |[.yes]#allowed#        |[.yes]#allowed#     |[.no]#denied#
+|Manage routes                     |[.yes]#allowed#     |[.yes]#allowed#        |[.no]#denied#     |[.no]#denied#
+|View secrets                      |[.yes]#allowed#     |[.yes]#allowed#        |[.yes]#allowed#     |[.no]#denied#
+|Manage secrets                    |[.yes]#allowed#     |[.yes]#allowed#        |[.no]#denied#     |[.no]#denied#
+|Backoffice functions              |[.yes]#allowed#     |[.no]#denied#        |[.no]#denied#     |[.yes]#allowed#
 |===
 
 *Backoffice functions* include the ability to:

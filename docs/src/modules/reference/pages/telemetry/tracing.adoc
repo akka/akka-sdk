@@ -4,6 +4,8 @@ Akka can collect traces for observing the runtime behavior of your services.
 
 These trace spans are available for xref:operations:observability-and-monitoring/observability-exports.adoc[export] to external monitoring systems.
 
+The attribute tables on this page use the OpenTelemetry requirement levels. `Required` means the attribute is always present. `Conditionally required` means the attribute is present when the stated condition holds. `Recommended` means the attribute is present when its value is available. `Opt-in` means the attribute is present only when you enable it explicitly.
+
 
 == HTTP Endpoints
 
@@ -23,27 +25,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -55,7 +57,7 @@ Endpoint attributes::
 
 | `akka.endpoint.method`
 | string
-| Yes
+| Required
 | Name of the endpoint method being invoked.
 
 |===
@@ -121,7 +123,7 @@ OpenTelemetry semantic convention attributes::
 
 | `http.request.method`
 | string
-| Yes
+| Required
 | HTTP request method.
 
 | `http.response.status_code`
@@ -170,27 +172,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -202,7 +204,7 @@ Endpoint attributes::
 
 | `akka.endpoint.method`
 | string
-| Yes
+| Required
 | Name of the endpoint method being invoked.
 
 |===
@@ -283,7 +285,7 @@ OpenTelemetry semantic convention attributes::
 
 | `rpc.method`
 | string
-| Yes
+| Required
 | The gRPC service and method name, e.g. `com.example.MyService/MyMethod`.
 
 | `rpc.response.status_code`
@@ -293,7 +295,7 @@ OpenTelemetry semantic convention attributes::
 
 | `rpc.system.name`
 | enum
-| Yes
+| Required
 | The Remote Procedure Call (RPC) system.
 
 | `server.address`
@@ -322,27 +324,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -413,7 +415,7 @@ OpenTelemetry semantic convention attributes::
 
 | `mcp.method.name`
 | enum
-| Yes
+| Required
 | The name of the request or notification method.
 
 | `mcp.resource.uri`
@@ -447,27 +449,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -494,7 +496,7 @@ OpenTelemetry semantic convention attributes::
 
 | `gen_ai.operation.name`
 | enum
-| Yes
+| Required
 | The name of the operation being performed.
 
 |===
@@ -515,22 +517,22 @@ Agent Content attributes::
 
 | `akka.agent.content.kind`
 | string
-| Yes
+| Required
 | The kind of content being loaded.
 
 | `akka.agent.content.loader.class`
 | string
-| Recommended: if available
+| Recommended
 | The class name of the content loader used.
 
 | `akka.agent.content.size`
 | int
-| Recommended: if available
+| Recommended
 | The size of the loaded content in bytes.
 
 | `akka.agent.content.uri`
 | string
-| Yes
+| Required
 | The URI of the content being loaded.
 
 |===
@@ -542,27 +544,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -583,17 +585,17 @@ Agent Guardrail attributes::
 
 | `akka.agent.guardrail.category`
 | string
-| Yes
+| Required
 | The category of the guardrail being evaluated.
 
 | `akka.agent.guardrail.name`
 | string
-| Yes
+| Required
 | The name of the guardrail being evaluated.
 
 | `akka.agent.guardrail.result`
 | enum
-| Yes
+| Required
 | The result of a guardrail evaluation.
 
 |===
@@ -605,27 +607,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -646,27 +648,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -688,7 +690,7 @@ OpenTelemetry semantic convention attributes::
 
 | `gen_ai.operation.name`
 | enum
-| Yes
+| Required
 | The name of the operation being performed.
 
 | `gen_ai.output.messages`
@@ -703,7 +705,7 @@ OpenTelemetry semantic convention attributes::
 
 | `gen_ai.provider.name`
 | enum
-| Yes
+| Required
 | The Generative AI provider as identified by the client or server instrumentation.
 
 | `gen_ai.request.max_tokens`
@@ -774,27 +776,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -818,7 +820,7 @@ OpenTelemetry semantic convention attributes::
 
 | `gen_ai.operation.name`
 | enum
-| Yes
+| Required
 | The name of the operation being performed.
 
 | `gen_ai.tool.call.id`
@@ -859,27 +861,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -915,27 +917,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -947,12 +949,12 @@ Open Inference attributes::
 
 | `open_inference.session.id`
 | string
-| Recommended: if available
+| Recommended
 | The session identifier for the conversation.
 
 | `open_inference.span.kind`
 | enum
-| Yes
+| Required
 | The kind of span in OpenInference semantic conventions.
 
 |===
@@ -964,7 +966,7 @@ Open Inference Agent attributes::
 
 | `open_inference.agent.name`
 | string
-| Recommended: if available
+| Recommended
 | The name of the agent.
 
 |===
@@ -991,7 +993,7 @@ OpenTelemetry semantic convention attributes::
 
 | `gen_ai.operation.name`
 | enum
-| Yes
+| Required
 | The name of the operation being performed.
 
 |===
@@ -1012,17 +1014,17 @@ Agent Guardrail attributes::
 
 | `akka.agent.guardrail.category`
 | string
-| Yes
+| Required
 | The category of the guardrail being evaluated.
 
 | `akka.agent.guardrail.name`
 | string
-| Yes
+| Required
 | The name of the guardrail being evaluated.
 
 | `akka.agent.guardrail.result`
 | enum
-| Yes
+| Required
 | The result of a guardrail evaluation.
 
 |===
@@ -1034,27 +1036,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1066,12 +1068,12 @@ Open Inference attributes::
 
 | `open_inference.session.id`
 | string
-| Recommended: if available
+| Recommended
 | The session identifier for the conversation.
 
 | `open_inference.span.kind`
 | enum
-| Yes
+| Required
 | The kind of span in OpenInference semantic conventions.
 
 |===
@@ -1083,12 +1085,12 @@ Open Inference Agent Guardrail attributes::
 
 | `open_inference.agent.guardrail.category`
 | string
-| Recommended: if available
+| Recommended
 | The category of the guardrail being evaluated.
 
 | `open_inference.agent.guardrail.name`
 | string
-| Recommended: if available
+| Recommended
 | The name of the guardrail being evaluated.
 
 |===
@@ -1109,27 +1111,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1141,12 +1143,12 @@ Open Inference attributes::
 
 | `open_inference.session.id`
 | string
-| Recommended: if available
+| Recommended
 | The session identifier for the conversation.
 
 | `open_inference.span.kind`
 | enum
-| Yes
+| Required
 | The kind of span in OpenInference semantic conventions.
 
 |===
@@ -1158,22 +1160,22 @@ Open Inference Io attributes::
 
 | `open_inference.input.mime_type`
 | string
-| Recommended: if available
+| Recommended
 | The MIME type of the input.
 
 | `open_inference.input.value`
 | string
-| Recommended: if available
+| Recommended
 | The input value.
 
 | `open_inference.output.mime_type`
 | string
-| Recommended: if available
+| Recommended
 | The MIME type of the output.
 
 | `open_inference.output.value`
 | string
-| Recommended: if available
+| Recommended
 | The output value.
 
 |===
@@ -1185,52 +1187,52 @@ Open Inference Llm attributes::
 
 | `open_inference.llm.input_messages`
 | string
-| Recommended: if available
+| Recommended
 | JSON string of the input messages.
 
 | `open_inference.llm.invocation_parameters`
 | string
-| Recommended: if available
+| Recommended
 | JSON string of the invocation parameters.
 
 | `open_inference.llm.model_name`
 | string
-| Recommended: if available
+| Recommended
 | The name of the LLM model.
 
 | `open_inference.llm.output_messages`
 | string
-| Recommended: if available
+| Recommended
 | JSON string of the output messages.
 
 | `open_inference.llm.provider`
 | string
-| Recommended: if available
+| Recommended
 | The LLM provider name.
 
 | `open_inference.llm.response.finish_reasons`
 | string[]
-| Recommended: if available
+| Recommended
 | The finish reasons from the LLM response.
 
 | `open_inference.llm.system`
 | string
-| Recommended: if available
+| Recommended
 | The LLM system being used.
 
 | `open_inference.llm.token_count.completion`
 | int
-| Recommended: if available
+| Recommended
 | The number of tokens in the completion.
 
 | `open_inference.llm.token_count.prompt`
 | int
-| Recommended: if available
+| Recommended
 | The number of tokens in the prompt.
 
 | `open_inference.llm.token_count.total`
 | int
-| Recommended: if available
+| Recommended
 | The total number of tokens.
 
 |===
@@ -1252,7 +1254,7 @@ OpenTelemetry semantic convention attributes::
 
 | `gen_ai.operation.name`
 | enum
-| Yes
+| Required
 | The name of the operation being performed.
 
 | `gen_ai.output.messages`
@@ -1267,7 +1269,7 @@ OpenTelemetry semantic convention attributes::
 
 | `gen_ai.provider.name`
 | enum
-| Yes
+| Required
 | The Generative AI provider as identified by the client or server instrumentation.
 
 | `gen_ai.request.max_tokens`
@@ -1338,27 +1340,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1370,12 +1372,12 @@ Open Inference attributes::
 
 | `open_inference.session.id`
 | string
-| Recommended: if available
+| Recommended
 | The session identifier for the conversation.
 
 | `open_inference.span.kind`
 | enum
-| Yes
+| Required
 | The kind of span in OpenInference semantic conventions.
 
 |===
@@ -1387,17 +1389,17 @@ Open Inference Tool attributes::
 
 | `open_inference.tool.description`
 | string
-| Recommended: if available
+| Recommended
 | The description of the tool.
 
 | `open_inference.tool.name`
 | string
-| Recommended: if available
+| Recommended
 | The name of the tool.
 
 | `open_inference.tool_call.id`
 | string
-| Recommended: if available
+| Recommended
 | The identifier of the tool call.
 
 |===
@@ -1421,7 +1423,7 @@ OpenTelemetry semantic convention attributes::
 
 | `gen_ai.operation.name`
 | enum
-| Yes
+| Required
 | The name of the operation being performed.
 
 | `gen_ai.tool.call.id`
@@ -1462,27 +1464,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1494,12 +1496,12 @@ Open Inference attributes::
 
 | `open_inference.session.id`
 | string
-| Recommended: if available
+| Recommended
 | The session identifier for the conversation.
 
 | `open_inference.span.kind`
 | enum
-| Yes
+| Required
 | The kind of span in OpenInference semantic conventions.
 
 |===
@@ -1535,27 +1537,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1567,7 +1569,7 @@ Workflow Command attributes::
 
 | `akka.workflow.command.name`
 | string
-| Yes
+| Required
 | The name of the workflow command.
 
 |===
@@ -1579,7 +1581,7 @@ Workflow Span attributes::
 
 | `akka.workflow.id`
 | string
-| Yes
+| Required
 | The workflow ID.
 
 |===
@@ -1627,27 +1629,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1659,7 +1661,7 @@ Workflow Span attributes::
 
 | `akka.workflow.id`
 | string
-| Yes
+| Required
 | The workflow ID.
 
 |===
@@ -1671,17 +1673,17 @@ Workflow Step attributes::
 
 | `akka.workflow.step.attempt`
 | int
-| Yes
+| Required
 | The attempt number for the workflow step.
 
 | `akka.workflow.step.id`
 | int
-| Yes
+| Required
 | The ID of the workflow step.
 
 | `akka.workflow.step.name`
 | string
-| Yes
+| Required
 | The name of the workflow step.
 
 |===
@@ -1722,27 +1724,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1775,27 +1777,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1807,7 +1809,7 @@ Consumer attributes::
 
 | `akka.consumer.source`
 | enum
-| Yes
+| Required
 | The type of source the consumer is consuming from.
 
 |===
@@ -1819,7 +1821,7 @@ View Update attributes::
 
 | `akka.view.table`
 | string
-| Yes
+| Required
 | The view table name.
 
 |===
@@ -1892,27 +1894,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1924,7 +1926,7 @@ Consumer attributes::
 
 | `akka.consumer.source`
 | enum
-| Yes
+| Required
 | The type of source the consumer is consuming from.
 
 |===

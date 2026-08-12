@@ -1,0 +1,240 @@
+/*
+ * Reference table and definition list styling.
+ *
+ * Overrides the bundled Antora theme (akka-theme-ui-010-bundle.zip), which
+ * separates rows four different ways at once: a filled header band, 2px cell
+ * borders, zebra striping, and 1rem of padding. Here a single hairline carries
+ * row separation.
+ *
+ * Equal column widths come from Asciidoctor, not from the theme: it emits a
+ * <colgroup> of explicit percentages for every table. Neutralising those is
+ * what lets a 12-character type column stop claiming a third of the page.
+ *
+ * The theme sets `padding: 1rem !important` on cells, so the padding rules below
+ * must also be !important to take effect.
+ */
+
+:root {
+  /* Brand tokens, per ground. #ffce4a measures ~1.7:1 on white and #d70023
+     measures ~3.7:1 on black, so neither hex is reusable across both. */
+  --akka-table-code: #8a5a00;
+  --akka-table-allow: #3f9c2c;
+  --akka-table-deny: #d70023;
+  --akka-table-rule: rgba(0, 0, 0, 0.16);
+  --akka-table-rule-soft: rgba(0, 0, 0, 0.085);
+  --akka-table-label: #6b6b6b;
+  --akka-table-muted: #6b6b6b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --akka-table-code: #ffce4a;
+    --akka-table-allow: #72d35b;
+    --akka-table-deny: #ff3355;
+    --akka-table-rule: rgba(255, 255, 255, 0.09);
+    --akka-table-rule-soft: rgba(255, 255, 255, 0.055);
+    --akka-table-label: #8a8a8a;
+    --akka-table-muted: #7d7d7d;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Layout
+   ------------------------------------------------------------------ */
+
+.doc .prose-akka table.tableblock,
+.doc table.tableblock {
+  table-layout: auto;
+  border-collapse: collapse;
+  border-radius: 0;
+  border-width: 0;
+  width: 100%;
+}
+
+/* Asciidoctor emits <col style="width: 33.3333%"> for every table, whether or
+   not the page declared cols=. Those percentages are what force a 12-character
+   type column to the same width as a sentence. Add the `fixed-cols` role to a
+   table that genuinely needs author-specified proportions. */
+.doc table.tableblock:not(.fixed-cols) > colgroup > col {
+  width: auto !important;
+}
+
+/* ------------------------------------------------------------------
+   Cells
+   ------------------------------------------------------------------ */
+
+/* The band is painted on thead, so clearing th alone leaves it visible. */
+.doc .prose-akka table.tableblock thead,
+.doc table.tableblock thead {
+  background: none;
+  color: inherit;
+}
+
+.doc .prose-akka table.tableblock th.tableblock,
+.doc table.tableblock th.tableblock {
+  padding: 0 2rem 0.625rem 0 !important;
+  border: 0;
+  border-bottom: 1px solid var(--akka-table-rule);
+  background: none;
+  color: var(--akka-table-label);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  vertical-align: baseline;
+}
+
+.doc .prose-akka table.tableblock td.tableblock,
+.doc table.tableblock td.tableblock {
+  padding: 0.75rem 2rem 0.75rem 0 !important;
+  border: 0;
+  border-bottom: 1px solid var(--akka-table-rule-soft);
+  background: none;
+  vertical-align: baseline;
+  line-height: 1.5;
+}
+
+.doc table.tableblock th.tableblock:last-child,
+.doc table.tableblock td.tableblock:last-child {
+  padding-right: 0 !important;
+}
+
+.doc table.tableblock tbody tr:last-child > td.tableblock {
+  border-bottom: 0;
+}
+
+/* Zebra striping and the row hairline are two mechanisms for one job. */
+.doc .prose-akka table.tableblock tbody tr:nth-child(odd),
+.doc .prose-akka table.tableblock tbody tr:nth-child(even),
+.doc table.tableblock tbody tr:nth-child(odd),
+.doc table.tableblock tbody tr:nth-child(even) {
+  background: none;
+}
+
+/* ------------------------------------------------------------------
+   Cell content
+   ------------------------------------------------------------------ */
+
+/* Inline code keeps monospace and the identifier colour but loses the filled
+   chip. A description listing nine type names has to read as one sentence. */
+.doc .prose-akka table.tableblock td.tableblock code,
+.doc table.tableblock td.tableblock code {
+  background: none !important;
+  padding: 0 !important;
+  color: var(--akka-table-code) !important;
+  font-size: 0.875em;
+}
+
+/* A cell holding nothing but an identifier is a token, not prose: hold it on
+   one line so the auto layout gives that column its content width and no more. */
+.doc table.tableblock td.tableblock > p.tableblock:only-child > code:only-child,
+.doc table.tableblock td.tableblock > p.tableblock:only-child > strong:only-child {
+  white-space: nowrap;
+}
+
+/* Field names are identifiers, so they are set like the inline code they match. */
+.doc table.tableblock td.tableblock > p.tableblock:only-child > strong:only-child {
+  font-family: "Roboto Mono", ui-monospace, SFMono-Regular, Consolas, Menlo, monospace;
+  font-size: 0.875em;
+  font-weight: 500;
+  color: var(--akka-table-code);
+}
+
+/* `string _required_` — the qualifier steps back from the type it modifies. */
+.doc table.tableblock td.tableblock em {
+  color: var(--akka-table-muted);
+  font-style: normal;
+  font-size: 0.8125rem;
+}
+
+/* Quantities compare by digit position, so a right-aligned column (cols="…,>1")
+   gets tabular figures and stays on one line. */
+.doc table.tableblock td.tableblock.halign-right {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------
+   Permission matrices — role x capability
+   ------------------------------------------------------------------ */
+
+/* The one table shape where equal-width columns are correct: every data cell
+   holds a single mark, so the columns should be equal and narrow. */
+.doc table.tableblock.matrix > colgroup > col:not(:first-child) {
+  width: 6rem !important;
+}
+
+.doc table.tableblock.matrix td.tableblock:not(:first-child),
+.doc table.tableblock.matrix th.tableblock:not(:first-child) {
+  text-align: center;
+}
+
+.doc table.tableblock.matrix th.tableblock:not(:first-child) {
+  font-family: "Roboto Mono", ui-monospace, SFMono-Regular, Consolas, Menlo, monospace;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.65rem;
+}
+
+/* Written as [.yes]#allowed# / [.no]#denied# in the source. The word is what a
+   screen reader announces; the dot is what a sighted reader sees. Granted is a
+   filled disc and denied is a hollow ring, so the two states differ in shape as
+   well as in hue — red and green are the most commonly confused pair, and this
+   table is read by engineers. */
+.doc table.tableblock .yes,
+.doc table.tableblock .no {
+  font-size: 0;
+  line-height: 0;
+}
+
+.doc table.tableblock .yes::before,
+.doc table.tableblock .no::before {
+  content: "";
+  display: inline-block;
+  width: 0.6875rem;
+  height: 0.6875rem;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.doc table.tableblock .yes::before {
+  background: var(--akka-table-allow);
+}
+
+.doc table.tableblock .no::before {
+  border: 2px solid var(--akka-table-deny);
+}
+
+/* ------------------------------------------------------------------
+   Definition lists
+   ------------------------------------------------------------------
+
+   There are more definition lists in the docs than tables, and they sit on the
+   same reference pages holding the same kind of content: an identifier and its
+   explanation. They share the table vocabulary so a reader learns it once. */
+
+.doc .dlist dl > dt {
+  font-family: "Roboto Mono", ui-monospace, SFMono-Regular, Consolas, Menlo, monospace;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--akka-table-code);
+  margin-top: 0.875rem;
+}
+
+.doc .dlist dl > dd {
+  margin-top: 0.1875rem;
+  padding-left: 1.25rem;
+  max-width: 80ch;
+}
+
+/* The tabs component is also a <dl>; leave it alone. */
+.doc dl.tabbed > dt,
+.doc dl.tabbed > dd {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  margin-top: initial;
+  padding-left: initial;
+}
