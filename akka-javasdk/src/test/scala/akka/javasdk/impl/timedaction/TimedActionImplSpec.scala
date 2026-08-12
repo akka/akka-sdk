@@ -15,6 +15,7 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.javasdk.annotations.Component
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.TimedActionDescriptorFactory
+import akka.javasdk.impl.UnhandledExceptionReporting
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.timedaction.TimedAction
 import akka.runtime.sdk.spi.BytesPayload
@@ -22,6 +23,7 @@ import akka.runtime.sdk.spi.DeferredRequest
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiTimedAction
+import akka.runtime.sdk.spi.SpiUnhandledException
 import akka.runtime.sdk.spi.TimerClient
 import akka.util.ByteString
 import io.opentelemetry.api.OpenTelemetry
@@ -55,7 +57,10 @@ class TimedActionImplSpec
     override def isTimerActive(name: String): Future[Boolean] = ???
   }
 
-  def create(componentDescriptor: ComponentDescriptor): TimedActionImpl[TestTimedAction] = {
+  def create(
+      componentDescriptor: ComponentDescriptor,
+      unhandledExceptionReporter: () => Option[UnhandledExceptionReporting.Reporter] = () => None)
+      : TimedActionImpl[TestTimedAction] = {
     new TimedActionImpl(
       "dummy-id",
       _ => new TestTimedAction,
@@ -66,7 +71,8 @@ class TimedActionImplSpec
       () => OpenTelemetry.noop().getTracer("test"),
       serializer,
       new RegionInfo(""),
-      componentDescriptor)
+      componentDescriptor,
+      unhandledExceptionReporter)
   }
 
   @Component(id = "dummy-id")
@@ -112,6 +118,35 @@ class TimedActionImplSpec
           }
 
       reply.error.description should startWith("Unexpected error")
+    }
+
+    "report an unhandled exception thrown by the command handler to the unhandled exception reporter" in {
+      val reported = new java.util.concurrent.CompletableFuture[SpiUnhandledException]()
+      val reporter: UnhandledExceptionReporting.Reporter = { spiEx =>
+        reported.complete(spiEx)
+        Future.successful(Done)
+      }
+      val service =
+        create(
+          TimedActionDescriptorFactory.buildDescriptorFor(classOf[TestTimedAction], serializer),
+          () => Some(reporter))
+
+      LoggingTestKit
+        .error("Failure during handling command [MyMethodWithException] from TimedAction component [TestTimedAction]")
+        .expect {
+          service
+            .handleCommand(
+              new SpiTimedAction.Command(
+                "MyMethodWithException",
+                Some(new BytesPayload(ByteString.empty, "")),
+                SpiMetadata.empty))
+            .futureValue
+        }
+
+      val spiException = reported.get(5, java.util.concurrent.TimeUnit.SECONDS)
+      spiException.throwable.getMessage should include("MyMethodWithException")
+      spiException.componentId shouldBe "dummy-id"
+      spiException.componentClassName shouldBe classOf[TestTimedAction].getName
     }
 
   }
