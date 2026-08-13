@@ -57,7 +57,7 @@
         <docker.tag>${project.version}-${build.timestamp}</docker.tag>
 
         <!-- note that this image does never actually run the service in a JVM, it's just a means for distribution -->
-        <docker.base.image>us-docker.pkg.dev/kalix-images/infrastructure/alpine:3.23.3</docker.base.image>
+        <docker.base.image>us-docker.pkg.dev/kalix-images/infrastructure/alpine:3.24.1</docker.base.image>
         <docker.platform>linux/amd64</docker.platform>
 
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
@@ -137,6 +137,8 @@
                                 <build>
                                     <!-- Base Docker image which contains jre-->
                                     <from>${docker.base.image}</from>
+                                    <!-- Run as the Alpine built-in non-root "nobody" user (uid/gid 65534) -->
+                                    <user>65534</user>
                                     <buildOptions>
                                         <platform>${docker.platform}</platform>
                                     </buildOptions>
