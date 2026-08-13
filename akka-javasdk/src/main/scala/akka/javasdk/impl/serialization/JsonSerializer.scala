@@ -187,8 +187,7 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
           migrate(clazz, bytesPayload.bytes, fromVersion, migration)
         } else {
           throw new IllegalStateException(
-            s"Migration version [$supportedForwardVersion] is " +
-            "behind version [$fromVersion] of deserialized type [${expectedType.getName}]")
+            s"Migration version [$supportedForwardVersion] is behind version [$fromVersion] of deserialized type [${expectedType.getTypeName}]")
         }
       } else {
         parseBytes(expectedType, bytesPayload.bytes)
