@@ -1,0 +1,41 @@
+// Shared update instructions for Akka across AI coding harnesses.
+// Included by getting-started and sdk pages so the update steps stay in one place.
+// Renders as tabs (requires the @asciidoctor/tabs extension, enabled in the playbook).
+Update the Akka Specify Plugin through that harness's own plugin mechanism. Select your harness:
+
+[tabs]
+====
+Claude Code::
++
+--
+[source]
+----
+/plugin marketplace update
+/plugin update akka
+----
+--
+
+Gemini CLI::
++
+--
+[source]
+----
+gemini extensions update ai-marketplace
+----
+--
+
+Codex CLI::
++
+--
+[source]
+----
+codex plugin marketplace upgrade ai-marketplace
+----
+--
+
+Cursor, VS Code + Copilot::
++
+--
+Cursor and VS Code + Copilot use the Akka CLI directly over MCP, with no plugin marketplace to update. Update the Akka CLI itself to get the latest version; see xref:operations:cli/installation.adoc[Install the Akka CLI] for the upgrade command on your platform.
+--
+====
