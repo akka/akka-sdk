@@ -676,8 +676,6 @@
                                         <build>
                                             <!-- Base Docker image which contains jre-->
                                             <from>${docker.base.image}</from>
-                                            <!-- Run as the Alpine built-in non-root "nobody" user (uid/gid 65534) -->
-                                            <user>65534</user>
                                             <buildOptions>
                                                 <platform>${docker.platform}</platform>
                                             </buildOptions>
