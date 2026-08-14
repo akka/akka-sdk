@@ -2,6 +2,9 @@
 
 Switch between the Enforced and À la carte conformance modes.
 
+NOTE: This command was added in version `2.8.0` of the xref:reference:specify/index.adoc[Akka Specify Plugin]. If the command is not available
+you have to xref:getting-started:set-up-dev-env.adoc#_update_the_plugin[update to the latest version].
+
 == Usage
 
 [source]
@@ -28,3 +31,4 @@ See xref:sdk:spec-driven-development.adoc#choosing-your-mode[Conformance modes] 
 * xref:sdk:spec-driven-development.adoc#choosing-your-mode[Choosing your mode]
 * xref:reference:specify/policies.adoc[]
 * xref:reference:specify/index.adoc[]
+* xref:sdk:a-la-carte-mode.adoc[]

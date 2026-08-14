@@ -679,6 +679,11 @@ private final class Sdk(
   // guardrail name => component ids
   private var guardrailEnabledForComponent = Map.empty[String, Set[String]]
 
+  // Set once `spiComponents` below is computed (after this scanning loop). Consumers and timed
+  // actions are constructed during the loop but only read this lazily, when handling a message,
+  // by which point the whole SdkRunner constructor - and thus this assignment - has completed.
+  private var unhandledExceptionReporterFn: Option[UnhandledExceptionReporting.Reporter] = None
+
   // Lazy: snapshots the var registries above. Must not be forced before scanning
   // completes; see scanTimeAutonomousAgentInjects for the only scan-time path.
   private lazy val agentCapabilityConverter: CapabilityConverter = {
@@ -886,7 +891,8 @@ private final class Sdk(
             sdkTracerFactory,
             serializer,
             regionInfo,
-            ComponentDescriptor.descriptorFor(timedActionClass, serializer))
+            ComponentDescriptor.descriptorFor(timedActionClass, serializer),
+            () => unhandledExceptionReporterFn)
         timedActionDescriptors :+=
           new TimedActionDescriptor(
             componentId,
@@ -919,7 +925,8 @@ private final class Sdk(
             serializer,
             ComponentDescriptorFactory.findIgnore(consumerClass),
             componentDescriptor,
-            regionInfo)
+            regionInfo,
+            () => unhandledExceptionReporterFn)
         consumerDescriptors :+=
           new ConsumerDescriptor(
             componentId,
@@ -1268,6 +1275,7 @@ private final class Sdk(
             Done
           }(sdkExecutionContext)
       }
+    unhandledExceptionReporterFn = onUnhandledException
 
     val guardrailSetup = new SpiGuardrailSetup(guardrailProvider.configuredGuardrails.map { g =>
       new SpiConfiguredGuardrail(

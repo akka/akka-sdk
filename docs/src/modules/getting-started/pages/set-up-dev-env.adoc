@@ -26,6 +26,12 @@ Install the Akka Specify Plugin in your AI coding assistant. From there the plug
 
 include::ROOT:partial$install-harness-table.adoc[]
 
+=== Update the plugin
+
+Keep the Akka Specify Plugin up to date with the latest commands and fixes.
+
+include::ROOT:partial$update-harness-table.adoc[]
+
 === Configure your environment
 
 [source]
