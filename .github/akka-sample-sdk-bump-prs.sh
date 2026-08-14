@@ -35,7 +35,7 @@ for JOB_ID in $JOB_IDS; do
     # 3. Stream raw logs and grep for the PR link pattern
     # Regex looks specifically for the akka/akka-sdk pull request format
     # echo "repos/$REPO/actions/jobs/$JOB_ID/logs"
-    gh api repos/$REPO/actions/jobs/$JOB_ID/logs 2>/dev/null | \
+    gh api --allow-escape-sequences repos/$REPO/actions/jobs/$JOB_ID/logs 2>/dev/null | \
     grep -oE "https://github.com/.*/pull/[0-9]+" >> $TEMP_FILE
 done
 
