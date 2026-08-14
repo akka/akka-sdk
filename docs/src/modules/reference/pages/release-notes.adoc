@@ -12,6 +12,13 @@ Current versions
 
 == August 2026
 
+* Akka SDK 3.6.3
+- Runtime 1.6.15
+- Alpine base image 3.24.1
+- Improved error message for deserialization failures
+- Unhandled exception reporter covering consumers and timed actions
+
+
 * Akka CLI 3.0.70
 - Enhancements to Akka Specify
     - Exit conditions
