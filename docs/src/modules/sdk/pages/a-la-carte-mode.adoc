@@ -6,7 +6,11 @@
 
 include::ROOT:partial$include.adoc[]
 
-À la carte is the default mode. You drive the spec-driven workflow one command at a time. Nothing blocks you, and `/akka:ship` proceeds whether or not a definition of done is met -- you own the rigor. It is faster and lighter than xref:sdk:enforced-mode.adoc[Enforced mode], which gates each phase on machine-checkable exit conditions. Switch to Enforced with `/akka:mode enforced` when you want that rigor, and back with `/akka:mode a-la-carte`.
+À la carte is the default mode. You drive the spec-driven workflow one command at a time. Nothing blocks you, and `/akka:ship` proceeds whether or not a definition of done is met. You own the rigor.
+
+The exit-condition machinery stays out of your way until you ask for it. A new project starts with the set dormant: no conditions are captured, no auditors are created, and you are not asked to approve anything. Run `/akka:mode a-la-carte --ecs=honor` when you want the checks, and they run as an advisory checklist rather than a gate.
+
+À la carte is faster and lighter than xref:sdk:enforced-mode.adoc[Enforced mode], which gates each phase on machine-checkable exit conditions. Switch to Enforced with `/akka:mode enforced` when you want that rigor, and back with `/akka:mode a-la-carte`.
 
 This page walks the commands in the order you would normally run them. Every command is also documented in the xref:reference:specify/index.adoc[Specify commands reference].
 
@@ -29,7 +33,7 @@ The short description becomes a branch name like `00#-feature-short-description`
 
 This creates a specification in `specs/001-core-users` on the `001-core-users` branch. Resist manually editing the spec -- clarification is the next step. Keep features scoped small enough that you have a clear idea of the acceptance criteria and the generated code is easy to review.
 
-NOTE: Even in À la carte mode, `/akka:specify` captures your definition of done as exit conditions and runs the adversarial adequacy review, exactly as it does in Enforced mode. The difference is only at ship time: the `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED` gates are advisory here. They are computed and reported, but you drive the phases and `/akka:ship` is not blocked when they are red.
+NOTE: In À la carte mode, `/akka:specify` does not create exit conditions or auditors on its own. The exit-condition set is dormant until you ask for it, so the command produces a specification and nothing else. To start capturing your definition of done as exit conditions and running the adversarial adequacy review, run `/akka:mode a-la-carte --ecs=honor`. The checks are advisory even then: the `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED` gates are computed and reported, but you drive the phases and `/akka:ship` is not blocked when they are red.
 
 == Clarify the specification
 
