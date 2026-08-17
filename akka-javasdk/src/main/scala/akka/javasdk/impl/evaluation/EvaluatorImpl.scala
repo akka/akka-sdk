@@ -49,7 +49,7 @@ private[impl] object EvaluatorImpl {
         case _ => Optional.empty()
       }
 
-    override def subject(): Subject = toSdkSubject(spiContext.subject)
+    override def subject(): Subject = SubjectConversions.toSdkSubject(spiContext.subject)
 
     override def evaluationId(): String = spiContext.evaluationId
 
@@ -58,20 +58,6 @@ private[impl] object EvaluatorImpl {
     override def experiment(): Optional[ExperimentContext] =
       spiContext.trigger.experimentMembership.map(toExperimentContext).toJava
   }
-
-  private def toSdkSubject(spiSubject: SpiEvaluator.Subject): Subject =
-    spiSubject match {
-      case i: SpiEvaluator.Interaction =>
-        new Subject.Interaction(i.interactionId, i.agentComponentId.toJava, i.flowId.toJava)
-      case f: SpiEvaluator.Flow =>
-        new Subject.Flow(f.flowId)
-      case s: SpiEvaluator.Session =>
-        new Subject.Session(s.sessionId)
-      case e: SpiEvaluator.EvaluatedEvaluation =>
-        new Subject.EvaluatedEvaluation(e.evaluationId)
-      case x: SpiEvaluator.Experiment =>
-        new Subject.Experiment(x.experimentId)
-    }
 
   private def toExperimentContext(membership: SpiEvaluator.ExperimentMembership): ExperimentContext =
     new ExperimentContext(

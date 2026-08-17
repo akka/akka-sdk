@@ -208,6 +208,47 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
       recordedResult.asInstanceOf[spi.SpiEvaluator.InconclusiveResult].reason shouldBe "no verdict"
     }
 
+    "carry the trigger's experiment membership through to the recorded outcome" in {
+      val recorder = new RecorderProbe
+      val impl = newImpl(recorder)
+      val membership =
+        new SpiEvaluator.ExperimentMembership(
+          "experiment-1",
+          "dataset-1",
+          "item-1",
+          agentRepetition = 2,
+          judgeRepetition = 1)
+      val experimentTrigger = new SpiEvaluator.Trigger(
+        evaluationId,
+        SpiEvaluator.TriggerSource.OnExperimentItem,
+        new SpiEvaluator.Interaction("interaction-1", Some("my-agent"), None),
+        Some(membership))
+      val started = await(impl.handleEvaluationStart(None, experimentTrigger))
+      val startState = started
+        .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
+        .persistence
+        .asInstanceOf[SpiWorkflow.UpdateState]
+        .newState
+      val outcomePayload = serializer.toBytes(Outcome.inconclusive("no verdict"))
+
+      // experiment membership must survive both the intermediate step (fetchTranscript, which
+      // re-persists the envelope) and the built-in record step that rebuilds the trigger from it
+      val fetched = await(impl.invokeStep(Some(startState), stepCommand("fetchTranscript")))
+        .asInstanceOf[SpiWorkflow.StepTransitionalEffect]
+      val fetchedState = fetched.persistence.asInstanceOf[SpiWorkflow.UpdateState].newState
+
+      await(impl.invokeStep(Some(fetchedState), stepCommand(RecordStepName, Some(outcomePayload))))
+
+      val (recordedTrigger, _) = recorder.recorded.value
+      recordedTrigger.experimentMembership shouldBe defined
+      val recordedMembership = recordedTrigger.experimentMembership.value
+      recordedMembership.experimentId shouldBe "experiment-1"
+      recordedMembership.datasetId shouldBe "dataset-1"
+      recordedMembership.datasetItemId shouldBe "item-1"
+      recordedMembership.agentRepetition shouldBe 2
+      recordedMembership.judgeRepetition shouldBe 1
+    }
+
     "record a completed outcome with its evaluations" in {
       val recorder = new RecorderProbe
       val impl = newImpl(recorder)

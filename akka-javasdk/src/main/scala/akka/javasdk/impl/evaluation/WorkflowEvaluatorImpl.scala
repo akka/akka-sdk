@@ -77,34 +77,6 @@ private[javasdk] object WorkflowEvaluatorImpl {
       experimentMembership.map(_.toExperimentContext()).toJava
   }
 
-  private def toSdkSubject(subject: SpiEvaluator.Subject): Subject =
-    subject match {
-      case i: SpiEvaluator.Interaction =>
-        new Subject.Interaction(i.interactionId, i.agentComponentId.toJava, i.flowId.toJava)
-      case f: SpiEvaluator.Flow =>
-        new Subject.Flow(f.flowId)
-      case s: SpiEvaluator.Session =>
-        new Subject.Session(s.sessionId)
-      case e: SpiEvaluator.EvaluatedEvaluation =>
-        new Subject.EvaluatedEvaluation(e.evaluationId)
-      case x: SpiEvaluator.Experiment =>
-        new Subject.Experiment(x.experimentId)
-    }
-
-  private def toSpiSubject(subject: Subject): SpiEvaluator.Subject =
-    subject match {
-      case i: Subject.Interaction =>
-        new SpiEvaluator.Interaction(i.interactionId(), i.agentComponentId().toScala, i.flowId().toScala)
-      case f: Subject.Flow =>
-        new SpiEvaluator.Flow(f.flowId())
-      case s: Subject.Session =>
-        new SpiEvaluator.Session(s.sessionId())
-      case e: Subject.EvaluatedEvaluation =>
-        new SpiEvaluator.EvaluatedEvaluation(e.evaluationId())
-      case x: Subject.Experiment =>
-        new SpiEvaluator.Experiment(x.experimentId())
-    }
-
   private def toProtocolTriggerSource(source: SpiEvaluator.TriggerSource): TriggerSource =
     source match {
       case SpiEvaluator.TriggerSource.Manual                => TriggerSource.MANUAL
@@ -202,7 +174,7 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
       // at-least-once delivery from the trigger projection: ack the duplicate start so it can advance
       Future.successful(new SpiWorkflow.ReadOnlyEffect(ack, SpiMetadata.empty))
     } else {
-      val subject = toSdkSubject(trigger.subject)
+      val subject = SubjectConversions.toSdkSubject(trigger.subject)
       val triggerSource = toProtocolTriggerSource(trigger.source)
       val experimentMembership = toProtocolExperimentMembership(trigger.experimentMembership)
       Future {
@@ -291,7 +263,8 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
     val trigger = new SpiEvaluator.Trigger(
       workflowId,
       toSpiTriggerSource(envelope.triggerSource()),
-      toSpiSubject(envelope.getSubject))
+      SubjectConversions.toSpiSubject(envelope.getSubject),
+      Option(envelope.experimentMembership()).map(toSpiExperimentMembership))
     // recording is idempotent on the evaluation id: this step is retried until it succeeds
     recorder.recordResult(trigger, toSpiResult(outcome)).map { _ =>
       log.debug("Evaluation [{}] finished with [{}]", workflowId, outcome.kind())
@@ -368,6 +341,15 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
         m.datasetItemId,
         m.agentRepetition,
         m.judgeRepetition))
+
+  private def toSpiExperimentMembership(
+      data: WorkflowEvaluatorProtocol.ExperimentMembershipData): SpiEvaluator.ExperimentMembership =
+    new SpiEvaluator.ExperimentMembership(
+      data.experimentId(),
+      data.datasetId(),
+      data.datasetItemId(),
+      data.agentRepetition(),
+      data.judgeRepetition())
 
   private def toSpiTransition(transition: WorkflowEvaluatorEffects.Transition): SpiWorkflow.Transition =
     transition match {
