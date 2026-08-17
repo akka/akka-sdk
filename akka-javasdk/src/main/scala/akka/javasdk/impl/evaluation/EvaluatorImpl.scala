@@ -69,6 +69,18 @@ private[impl] object EvaluatorImpl {
         new Subject.Experiment(x.experimentId)
     }
 
+  /** The `@Evaluates`-declared subject kind (a `Subject` variant class) as its SPI counterpart. */
+  def toSpiSubjectKind(subjectClass: Class[_ <: Subject]): SpiEvaluator.SubjectKind =
+    subjectClass match {
+      case c if c == classOf[Subject.Interaction]         => SpiEvaluator.SubjectKind.Interaction
+      case c if c == classOf[Subject.Flow]                => SpiEvaluator.SubjectKind.Flow
+      case c if c == classOf[Subject.Session]             => SpiEvaluator.SubjectKind.Session
+      case c if c == classOf[Subject.EvaluatedEvaluation] => SpiEvaluator.SubjectKind.EvaluatedEvaluation
+      case c if c == classOf[Subject.Experiment]          => SpiEvaluator.SubjectKind.Experiment
+      case other =>
+        throw new IllegalArgumentException(s"Unknown Subject kind [${other.getName}] declared in @Evaluates")
+    }
+
   private def toSpiEvaluation(evaluation: Evaluation): SpiEvaluator.Evaluation =
     new SpiEvaluator.Evaluation(
       passed = evaluation.passed(),

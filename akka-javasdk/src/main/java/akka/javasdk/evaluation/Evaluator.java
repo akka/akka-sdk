@@ -4,6 +4,7 @@
 
 package akka.javasdk.evaluation;
 
+import akka.javasdk.annotations.Evaluates;
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -17,6 +18,10 @@ import java.util.concurrent.CompletionStage;
  * EvaluationContext} that identifies the interaction to evaluate. The handler returns an {@link
  * Effect} describing the outcome — the recorded evaluations, an inconclusive result, or an
  * asynchronous continuation.
+ *
+ * <p>Annotate the class with {@link Evaluates} to declare the {@link Subject} kinds it can be bound
+ * to; a binding naming a kind it does not declare is rejected at startup. Defaults to {@link
+ * Subject.Interaction} when absent.
  *
  * <p>Blocking calls made from {@link #evaluate(EvaluationContext)} run on virtual threads. For
  * durable multi-step evaluation, delegate to a workflow and return {@link

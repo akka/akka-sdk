@@ -1176,6 +1176,7 @@ private final class Sdk(
         val componentId = Reflect.readComponentId(clz)
         val evaluatorClass = clz.asInstanceOf[Class[Evaluator]]
         val bindings = EvaluatorSettings.agentBindings(applicationConfig, componentId)
+        val subjectKinds = Reflect.readEvaluatorSubjectKinds(clz).map(EvaluatorImpl.toSpiSubjectKind)
 
         val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { factoryContext =>
           val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
@@ -1195,6 +1196,7 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             bindings = bindings,
+            subjectKinds = subjectKinds,
             instanceFactory = instanceFactory,
             provided = isProvided(clz))
 
@@ -1205,6 +1207,7 @@ private final class Sdk(
         serializer.registerTypeHints(stateType)
 
         val workflowEvaluatorBindings = EvaluatorSettings.agentBindings(applicationConfig, componentId)
+        val workflowEvaluatorSubjectKinds = Reflect.readEvaluatorSubjectKinds(clz).map(EvaluatorImpl.toSpiSubjectKind)
 
         workflowEvaluatorDescriptors :+=
           new WorkflowEvaluatorDescriptor(
@@ -1213,6 +1216,7 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             bindings = workflowEvaluatorBindings,
+            subjectKinds = workflowEvaluatorSubjectKinds,
             instanceFactory = { factoryContext =>
               val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
               new WorkflowEvaluatorImpl[Nothing, WorkflowEvaluator[Nothing]](

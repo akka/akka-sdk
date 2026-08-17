@@ -41,6 +41,10 @@ import java.util.Optional;
  *
  * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.Component}.
  *
+ * <p>Annotate the class with {@link akka.javasdk.annotations.Evaluates} to declare the {@link
+ * Subject} kinds it can be bound to; a binding naming a kind it does not declare is rejected at
+ * startup. Defaults to {@link Subject.Interaction} when absent.
+ *
  * @param <S> The type of the state accumulated across the steps of this evaluation.
  */
 public abstract class WorkflowEvaluator<S> {
