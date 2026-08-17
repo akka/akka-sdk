@@ -65,7 +65,7 @@ private[javasdk] final class LedgerClientImpl(spiLedgerClient: SpiLedgerClient, 
  * INTERNAL API
  */
 @InternalApi
-private[ledger] object LedgerClientImpl {
+private[javasdk] object LedgerClientImpl {
 
   def toInteractionRecord(record: SpiLedger.InteractionRecord): InteractionRecord =
     new InteractionRecord(

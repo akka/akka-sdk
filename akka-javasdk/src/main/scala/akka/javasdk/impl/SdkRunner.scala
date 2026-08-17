@@ -61,6 +61,7 @@ import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.evaluation.Evaluator
+import akka.javasdk.evaluation.SubjectClient
 import akka.javasdk.evaluation.WorkflowEvaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
@@ -93,6 +94,7 @@ import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.consumer.MessageContextImpl
 import akka.javasdk.impl.evaluation.EvaluatorImpl
 import akka.javasdk.impl.evaluation.EvaluatorSettings
+import akka.javasdk.impl.evaluation.SubjectClientImpl
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
@@ -491,7 +493,8 @@ private[javasdk] object Sdk {
     classOf[AgentContext],
     classOf[AgentRegistry],
     classOf[ObjectStorageProvider],
-    classOf[LedgerClient])
+    classOf[LedgerClient],
+    classOf[SubjectClient])
 
   // Run a user-supplied callback, logging any failure on the user component's own logger so it reaches the user.
   // Rethrows by default; pass rethrow = false where a failing callback must not abort the surrounding flow.
@@ -655,6 +658,7 @@ private final class Sdk(
     }
 
   private lazy val ledgerClient: LedgerClient = new LedgerClientImpl(spiLedgerClient, sdkExecutionContext)
+  private lazy val subjectClient: SubjectClient = new SubjectClientImpl(spiLedgerClient, sdkExecutionContext)
 
   private def hasComponentId(clz: Class[_]): Boolean = {
     if (clz.hasAnnotation[Component]) {
@@ -1180,7 +1184,8 @@ private final class Sdk(
             // ComponentClient inherits it from the ambient context for judge-call correlation
             () => wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(None, callerSpiffe)),
             evaluatorClass,
-            sdkExecutionContext)
+            sdkExecutionContext,
+            ledgerClient)
         }
 
         evaluatorDescriptors :+=
@@ -1219,7 +1224,8 @@ private final class Sdk(
                     sideEffectingComponentInjects(None, callerSpiffe)),
                 factoryContext.recorder,
                 serializer,
-                sdkExecutionContext)
+                sdkExecutionContext,
+                ledgerClient)
             },
             provided = false)
 
@@ -1266,6 +1272,7 @@ private final class Sdk(
     case s if s == classOf[Sanitizer]        => sanitizer
     case c if c == classOf[ClassifierClient] => classifierClient(telemetryContext)
     case l if l == classOf[LedgerClient]     => ledgerClient
+    case c if c == classOf[SubjectClient]    => subjectClient
     case s if s == classOf[Meter]            => sdkMeter
     case o if o == classOf[ObjectStorageProvider] =>
       objectStorageProvider(telemetryContext)

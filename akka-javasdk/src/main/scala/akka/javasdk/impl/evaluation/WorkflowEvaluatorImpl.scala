@@ -15,6 +15,7 @@ import scala.jdk.OptionConverters._
 import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.evaluation.EvaluationContext
+import akka.javasdk.evaluation.Interaction
 import akka.javasdk.evaluation.Subject
 import akka.javasdk.evaluation.WorkflowEvaluator
 import akka.javasdk.impl.ErrorHandling
@@ -30,6 +31,7 @@ import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.StateEnvelope
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.TriggerSource
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.workflow.WorkflowDescriptor
+import akka.javasdk.ledger.LedgerClient
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiEvaluator
@@ -52,9 +54,19 @@ private[javasdk] object WorkflowEvaluatorImpl {
    */
   val RecordStepName = "_record-evaluation"
 
-  final class EvaluationContextImpl(id: String, evaluationSubject: Subject) extends EvaluationContext {
+  final class EvaluationContextImpl(id: String, evaluationSubject: Subject, ledgerClient: LedgerClient)
+      extends EvaluationContext {
     override def subject(): Subject = evaluationSubject
     override def evaluationId(): String = id
+
+    private lazy val resolvedInteraction: java.util.Optional[Interaction] =
+      evaluationSubject match {
+        case i: Subject.Interaction =>
+          java.util.Optional.of(new InteractionRecordAdapter(ledgerClient.getInteraction(i.interactionId())))
+        case _ => java.util.Optional.empty()
+      }
+
+    override def interaction(): java.util.Optional[Interaction] = resolvedInteraction
   }
 
   private def toSdkSubject(subject: SpiEvaluator.Subject): Subject =
@@ -113,7 +125,8 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
     factory: () => E,
     recorder: SpiEvaluator.EvaluationRecorder,
     serializer: Serializer,
-    sdkExecutionContext: ExecutionContext)
+    sdkExecutionContext: ExecutionContext,
+    ledgerClient: LedgerClient)
     extends SpiWorkflowEvaluator {
 
   import WorkflowEvaluatorImpl._
@@ -181,7 +194,7 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
       val triggerSource = toProtocolTriggerSource(trigger.source)
       Future {
         val evaluator = factory()
-        val context = new EvaluationContextImpl(workflowId, subject)
+        val context = new EvaluationContextImpl(workflowId, subject, ledgerClient)
         evaluator._internalSetup(evaluator.emptyState(), context)
         val effect = evaluator.onEvaluation(context)
         effect match {
@@ -232,7 +245,9 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
       Future {
         val evaluator = factory()
         val subject = envelope.getSubject
-        evaluator._internalSetup(decodeUserState(envelope), new EvaluationContextImpl(workflowId, subject))
+        evaluator._internalSetup(
+          decodeUserState(envelope),
+          new EvaluationContextImpl(workflowId, subject, ledgerClient))
         val effect =
           if (stepMethod.getParameterCount == 1) {
             val input = stepCommand.input match {

@@ -15,6 +15,9 @@ import akka.javasdk.impl.evaluation.WorkflowEvaluatorImpl.RecordStepName
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.Outcome
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.StateEnvelope
 import akka.javasdk.impl.serialization.Serializer
+import akka.javasdk.ledger.EvaluationRecord
+import akka.javasdk.ledger.InteractionRecord
+import akka.javasdk.ledger.LedgerClient
 import akka.runtime.sdk.spi
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiEntity
@@ -39,6 +42,19 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
     }
   }
 
+  // TranscriptQualityEvaluator's steps use a stand-in transcript, not EvaluationContext.interaction(),
+  // so this spec never calls the ledger client.
+  private val unusedLedgerClient: LedgerClient = new LedgerClient {
+    override def getInteraction(interactionId: String): InteractionRecord =
+      throw new UnsupportedOperationException("not used in this spec")
+    override def getInteractionAsync(interactionId: String): java.util.concurrent.CompletionStage[InteractionRecord] =
+      throw new UnsupportedOperationException("not used in this spec")
+    override def getEvaluation(evaluationId: String): EvaluationRecord =
+      throw new UnsupportedOperationException("not used in this spec")
+    override def getEvaluationAsync(evaluationId: String): java.util.concurrent.CompletionStage[EvaluationRecord] =
+      throw new UnsupportedOperationException("not used in this spec")
+  }
+
   private def newImpl(recorder: SpiEvaluator.EvaluationRecorder = new RecorderProbe) =
     new WorkflowEvaluatorImpl[TranscriptQualityEvaluator.State, TranscriptQualityEvaluator](
       evaluationId,
@@ -47,7 +63,8 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
       () => new TranscriptQualityEvaluator,
       recorder,
       serializer,
-      ExecutionContext.global)
+      ExecutionContext.global,
+      unusedLedgerClient)
 
   private def trigger(interactionId: String = "interaction-1") =
     new SpiEvaluator.Trigger(
