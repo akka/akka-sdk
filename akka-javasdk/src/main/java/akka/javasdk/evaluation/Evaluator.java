@@ -7,7 +7,6 @@ package akka.javasdk.evaluation;
 import akka.javasdk.annotations.Evaluates;
 import akka.javasdk.annotations.EvaluatorVersion;
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl;
-import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -67,7 +66,7 @@ public abstract class Evaluator {
    * <p>An Evaluator Effect can either:
    *
    * <ul>
-   *   <li>complete with one or more {@link Evaluation}s (the verdict)
+   *   <li>complete with an {@link Evaluation} (the verdict)
    *   <li>report that the evaluation was inconclusive — it ran but reached no verdict
    *   <li>continue asynchronously from a {@link CompletionStage} of another effect
    * </ul>
@@ -83,19 +82,15 @@ public abstract class Evaluator {
       /**
        * Complete the evaluation with its verdict.
        *
-       * @param evaluation the evaluation outcome
-       * @param more additional evaluation outcomes
-       * @return the complete effect
-       */
-      Effect complete(Evaluation evaluation, Evaluation... more);
-
-      /**
-       * Complete the evaluation with its verdicts.
+       * <p>An evaluator with several criteria combines them itself into one verdict here; record
+       * each criterion as a classification against the evaluation id so a full breakdown survives
+       * one model call, or use a separate evaluator per criterion when they don't combine into one
+       * verdict.
        *
-       * @param evaluations the evaluation outcomes (must not be empty)
+       * @param evaluation the evaluation outcome
        * @return the complete effect
        */
-      Effect complete(List<Evaluation> evaluations);
+      Effect complete(Evaluation evaluation);
 
       /**
        * Report that the evaluation was inconclusive.

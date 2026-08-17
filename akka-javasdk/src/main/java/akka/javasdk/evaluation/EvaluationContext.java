@@ -40,4 +40,13 @@ public interface EvaluationContext {
    * @return the interaction's content, or empty for any other subject kind
    */
   Optional<Interaction> interaction();
+
+  /**
+   * The experiment this evaluation's subject belongs to, present when this evaluation was triggered
+   * as part of a running experiment.
+   *
+   * @return the experiment context, or empty when this evaluation was not triggered by an
+   *     experiment
+   */
+  Optional<ExperimentContext> experiment();
 }

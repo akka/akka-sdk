@@ -6,7 +6,6 @@ package akka.javasdk.testkit.impl
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
 import akka.javasdk.evaluation.Evaluation
@@ -49,8 +48,8 @@ private[testkit] final class EvaluatorResultImpl(effect: EvaluatorEffectImpl.Pri
 
   override def isInconclusive(): Boolean = terminal.isInstanceOf[EvaluatorEffectImpl.InconclusiveEffect]
 
-  override def getEvaluations(): java.util.List[Evaluation] =
-    getEffectOfType(classOf[EvaluatorEffectImpl.CompleteEffect]).evaluations.asJava
+  override def getEvaluation(): Evaluation =
+    getEffectOfType(classOf[EvaluatorEffectImpl.CompleteEffect]).evaluation
 
   override def getInconclusiveReason(): String =
     getEffectOfType(classOf[EvaluatorEffectImpl.InconclusiveEffect]).reason

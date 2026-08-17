@@ -16,6 +16,7 @@ import akka.annotation.InternalApi
 import akka.javasdk.evaluation.Evaluation
 import akka.javasdk.evaluation.EvaluationContext
 import akka.javasdk.evaluation.Evaluator
+import akka.javasdk.evaluation.ExperimentContext
 import akka.javasdk.evaluation.Interaction
 import akka.javasdk.evaluation.Subject
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.AsyncEffect
@@ -53,6 +54,9 @@ private[impl] object EvaluatorImpl {
     override def evaluationId(): String = spiContext.evaluationId
 
     override def interaction(): Optional[Interaction] = resolvedInteraction
+
+    override def experiment(): Optional[ExperimentContext] =
+      spiContext.trigger.experimentMembership.map(toExperimentContext).toJava
   }
 
   private def toSdkSubject(spiSubject: SpiEvaluator.Subject): Subject =
@@ -68,6 +72,15 @@ private[impl] object EvaluatorImpl {
       case x: SpiEvaluator.Experiment =>
         new Subject.Experiment(x.experimentId)
     }
+
+  private def toExperimentContext(membership: SpiEvaluator.ExperimentMembership): ExperimentContext =
+    new ExperimentContext(
+      membership.experimentId,
+      membership.datasetId,
+      membership.datasetItemId,
+      membership.agentRepetition,
+      membership.judgeRepetition,
+      Optional.empty())
 
   /** The `@Evaluates`-declared subject kind (a `Subject` variant class) as its SPI counterpart. */
   def toSpiSubjectKind(subjectClass: Class[_ <: Subject]): SpiEvaluator.SubjectKind =
@@ -125,8 +138,8 @@ private[impl] final class EvaluatorImpl[E <: Evaluator](
 
   private def toSpiEffect(effect: Evaluator.Effect): Future[SpiEvaluator.Effect] =
     effect match {
-      case CompleteEffect(evaluations) =>
-        Future.successful(new SpiEvaluator.CompleteEffect(evaluations.map(toSpiEvaluation)))
+      case CompleteEffect(evaluation) =>
+        Future.successful(new SpiEvaluator.CompleteEffect(toSpiEvaluation(evaluation)))
       case InconclusiveEffect(reason) =>
         Future.successful(new SpiEvaluator.InconclusiveEffect(reason))
       case AsyncEffect(futureEffect) =>

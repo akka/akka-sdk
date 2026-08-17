@@ -57,7 +57,7 @@ public class LedgerEvaluatorTest {
             new Subject.Interaction("interaction-1", Optional.of("math-agent"), Optional.empty()));
 
     assertThat(result.isComplete()).isTrue();
-    var evaluation = result.getEvaluations().get(0);
+    var evaluation = result.getEvaluation();
     assertThat(evaluation.passed()).isTrue();
     assertThat(evaluation.attributes().get("finalText")).isEqualTo("The answer is 4.");
     assertThat(evaluation.attributes().get("transcript")).contains("Response: The answer is 4.");

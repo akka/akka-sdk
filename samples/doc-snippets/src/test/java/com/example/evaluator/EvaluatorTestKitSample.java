@@ -30,8 +30,7 @@ public class EvaluatorTestKitSample {
     );
 
     assertThat(result.isComplete()).isTrue();
-    assertThat(result.getEvaluations()).hasSize(1);
-    assertThat(result.getEvaluations().get(0).passed()).isTrue();
+    assertThat(result.getEvaluation().passed()).isTrue();
     // end::test[]
   }
 

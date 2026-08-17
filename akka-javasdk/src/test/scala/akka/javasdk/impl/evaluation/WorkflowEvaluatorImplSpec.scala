@@ -158,8 +158,7 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
 
       val outcome = serializer.fromBytes(classOf[Outcome], transition.input.get)
       outcome.kind() shouldBe Outcome.Kind.COMPLETED
-      outcome.evaluations().size() shouldBe 1
-      outcome.evaluations().get(0).passed() shouldBe true
+      outcome.evaluation().passed() shouldBe true
     }
 
     "report inconclusive by transitioning to the built-in record step" in {
@@ -231,8 +230,7 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
       val (recordedTrigger, recordedResult) = recorder.recorded.value
       recordedTrigger.id shouldBe evaluationId
       val completed = recordedResult.asInstanceOf[spi.SpiEvaluator.CompletedResult]
-      completed.evaluations should have size 1
-      completed.evaluations.head.passed shouldBe true
+      completed.evaluation.passed shouldBe true
     }
 
     "reject all commands, command handling is built in" in {

@@ -55,8 +55,7 @@ public class AgentAsJudgeEvaluatorTest extends TestKitSupport {
     EvaluatorResult result = testKit.evaluate(agentInteraction(), "eval-1");
 
     assertThat(result.isComplete()).isTrue();
-    assertThat(result.getEvaluations()).hasSize(1);
-    var evaluation = result.getEvaluations().get(0);
+    var evaluation = result.getEvaluation();
     assertThat(evaluation.passed()).isTrue();
     assertThat(evaluation.score().orElseThrow()).isEqualTo(0.87);
     assertThat(evaluation.explanation()).isEqualTo("clear and helpful");
@@ -76,7 +75,7 @@ public class AgentAsJudgeEvaluatorTest extends TestKitSupport {
     EvaluatorResult result = testKit.evaluate(agentInteraction(), "eval-2");
 
     assertThat(result.isComplete()).isTrue();
-    var evaluation = result.getEvaluations().get(0);
+    var evaluation = result.getEvaluation();
     assertThat(evaluation.passed()).isFalse();
     assertThat(evaluation.explanation()).isEqualTo("unhelpful and off-topic");
   }

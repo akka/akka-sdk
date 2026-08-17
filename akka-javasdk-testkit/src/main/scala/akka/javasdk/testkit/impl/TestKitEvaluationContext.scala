@@ -6,6 +6,7 @@ package akka.javasdk.testkit.impl
 
 import akka.annotation.InternalApi
 import akka.javasdk.evaluation.EvaluationContext
+import akka.javasdk.evaluation.ExperimentContext
 import akka.javasdk.evaluation.Interaction
 import akka.javasdk.evaluation.Subject
 import akka.javasdk.impl.evaluation.InteractionRecordAdapter
@@ -34,4 +35,8 @@ private[testkit] final class TestKitEvaluationContext(
         java.util.Optional.of(new InteractionRecordAdapter(ledgerClient.getInteraction(i.interactionId())))
       case _ => java.util.Optional.empty()
     }
+
+  // the testkit has no way to seed a triggering experiment yet, so evaluations it runs are never
+  // treated as belonging to one
+  override def experiment(): java.util.Optional[ExperimentContext] = java.util.Optional.empty()
 }

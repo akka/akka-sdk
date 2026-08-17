@@ -56,7 +56,7 @@ public class InteractionAccessorEvaluatorTest {
         testKit.evaluate(subject, EvaluatorTestKit.DEFAULT_EVALUATION_ID, ledger);
 
     assertThat(result.isComplete()).isTrue();
-    assertThat(result.getEvaluations().get(0).attributes().get("finalText")).isEqualTo("4");
+    assertThat(result.getEvaluation().attributes().get("finalText")).isEqualTo("4");
   }
 
   @Test

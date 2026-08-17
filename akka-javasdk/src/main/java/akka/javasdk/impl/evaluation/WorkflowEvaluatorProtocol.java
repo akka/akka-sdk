@@ -6,8 +6,8 @@ package akka.javasdk.impl.evaluation;
 
 import akka.annotation.InternalApi;
 import akka.javasdk.evaluation.Evaluation;
+import akka.javasdk.evaluation.ExperimentContext;
 import akka.javasdk.evaluation.Subject;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -27,7 +27,9 @@ public final class WorkflowEvaluatorProtocol {
   /** What created the trigger the evaluation was started with. */
   public enum TriggerSource {
     MANUAL,
-    ON_INTERACTION
+    ON_INTERACTION,
+    EXPERIMENT_ITEM,
+    EXPERIMENT_COMPLETED
   }
 
   /** Which {@link Subject} variant a persisted {@link StateEnvelope} carries. */
@@ -39,12 +41,36 @@ public final class WorkflowEvaluatorProtocol {
     EXPERIMENT
   }
 
+  /**
+   * The experiment a persisted envelope's subject belongs to, present when {@link #triggerSource}
+   * is {@link TriggerSource#EXPERIMENT_ITEM}. Mirrors {@link ExperimentContext} minus {@code
+   * expectedOutput}, which is not persisted and re-resolved as empty on every read.
+   */
+  public record ExperimentMembershipData(
+      String experimentId,
+      String datasetId,
+      String datasetItemId,
+      int agentRepetition,
+      int judgeRepetition) {
+
+    public ExperimentContext toExperimentContext() {
+      return new ExperimentContext(
+          experimentId,
+          datasetId,
+          datasetItemId,
+          agentRepetition,
+          judgeRepetition,
+          Optional.empty());
+    }
+  }
+
   public record StateEnvelope(
       TriggerSource triggerSource,
       SubjectKind subjectKind,
       String subjectId,
       String agentComponentId,
       String flowId,
+      ExperimentMembershipData experimentMembership,
       byte[] userState,
       String userStateContentType) {
 
@@ -60,9 +86,15 @@ public final class WorkflowEvaluatorProtocol {
       };
     }
 
+    public Optional<ExperimentContext> getExperimentContext() {
+      return Optional.ofNullable(experimentMembership)
+          .map(ExperimentMembershipData::toExperimentContext);
+    }
+
     public static StateEnvelope of(
         TriggerSource triggerSource,
         Subject subject,
+        ExperimentMembershipData experimentMembership,
         byte[] userState,
         String userStateContentType) {
       return switch (subject) {
@@ -73,6 +105,7 @@ public final class WorkflowEvaluatorProtocol {
                 i.interactionId(),
                 i.agentComponentId().orElse(null),
                 i.flowId().orElse(null),
+                experimentMembership,
                 userState,
                 userStateContentType);
         case Subject.Flow f ->
@@ -82,6 +115,7 @@ public final class WorkflowEvaluatorProtocol {
                 f.flowId(),
                 null,
                 null,
+                experimentMembership,
                 userState,
                 userStateContentType);
         case Subject.Session s ->
@@ -91,6 +125,7 @@ public final class WorkflowEvaluatorProtocol {
                 s.sessionId(),
                 null,
                 null,
+                experimentMembership,
                 userState,
                 userStateContentType);
         case Subject.EvaluatedEvaluation e ->
@@ -100,6 +135,7 @@ public final class WorkflowEvaluatorProtocol {
                 e.evaluationId(),
                 null,
                 null,
+                experimentMembership,
                 userState,
                 userStateContentType);
         case Subject.Experiment x ->
@@ -109,6 +145,7 @@ public final class WorkflowEvaluatorProtocol {
                 x.experimentId(),
                 null,
                 null,
+                experimentMembership,
                 userState,
                 userStateContentType);
       };
@@ -116,7 +153,7 @@ public final class WorkflowEvaluatorProtocol {
   }
 
   /** The terminal outcome of an evaluation, input to the built-in record step. */
-  public record Outcome(Kind kind, List<EvaluationData> evaluations, String reason) {
+  public record Outcome(Kind kind, EvaluationData evaluation, String reason) {
 
     public enum Kind {
       COMPLETED,
@@ -124,17 +161,16 @@ public final class WorkflowEvaluatorProtocol {
       FAILED
     }
 
-    public static Outcome completed(List<Evaluation> evaluations) {
-      return new Outcome(
-          Kind.COMPLETED, evaluations.stream().map(EvaluationData::from).toList(), null);
+    public static Outcome completed(Evaluation evaluation) {
+      return new Outcome(Kind.COMPLETED, EvaluationData.from(evaluation), null);
     }
 
     public static Outcome inconclusive(String reason) {
-      return new Outcome(Kind.INCONCLUSIVE, List.of(), reason);
+      return new Outcome(Kind.INCONCLUSIVE, null, reason);
     }
 
     public static Outcome failed(String reason) {
-      return new Outcome(Kind.FAILED, List.of(), reason);
+      return new Outcome(Kind.FAILED, null, reason);
     }
   }
 

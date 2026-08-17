@@ -15,6 +15,7 @@ import scala.jdk.OptionConverters._
 import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.evaluation.EvaluationContext
+import akka.javasdk.evaluation.ExperimentContext
 import akka.javasdk.evaluation.Interaction
 import akka.javasdk.evaluation.Subject
 import akka.javasdk.evaluation.WorkflowEvaluator
@@ -54,7 +55,11 @@ private[javasdk] object WorkflowEvaluatorImpl {
    */
   val RecordStepName = "_record-evaluation"
 
-  final class EvaluationContextImpl(id: String, evaluationSubject: Subject, ledgerClient: LedgerClient)
+  final class EvaluationContextImpl(
+      id: String,
+      evaluationSubject: Subject,
+      experimentMembership: Option[WorkflowEvaluatorProtocol.ExperimentMembershipData],
+      ledgerClient: LedgerClient)
       extends EvaluationContext {
     override def subject(): Subject = evaluationSubject
     override def evaluationId(): String = id
@@ -67,6 +72,9 @@ private[javasdk] object WorkflowEvaluatorImpl {
       }
 
     override def interaction(): java.util.Optional[Interaction] = resolvedInteraction
+
+    override def experiment(): java.util.Optional[ExperimentContext] =
+      experimentMembership.map(_.toExperimentContext()).toJava
   }
 
   private def toSdkSubject(subject: SpiEvaluator.Subject): Subject =
@@ -99,14 +107,18 @@ private[javasdk] object WorkflowEvaluatorImpl {
 
   private def toProtocolTriggerSource(source: SpiEvaluator.TriggerSource): TriggerSource =
     source match {
-      case SpiEvaluator.TriggerSource.Manual        => TriggerSource.MANUAL
-      case SpiEvaluator.TriggerSource.OnInteraction => TriggerSource.ON_INTERACTION
+      case SpiEvaluator.TriggerSource.Manual                => TriggerSource.MANUAL
+      case SpiEvaluator.TriggerSource.OnInteraction         => TriggerSource.ON_INTERACTION
+      case SpiEvaluator.TriggerSource.OnExperimentItem      => TriggerSource.EXPERIMENT_ITEM
+      case SpiEvaluator.TriggerSource.OnExperimentCompleted => TriggerSource.EXPERIMENT_COMPLETED
     }
 
   private def toSpiTriggerSource(source: TriggerSource): SpiEvaluator.TriggerSource =
     source match {
-      case TriggerSource.MANUAL         => SpiEvaluator.TriggerSource.Manual
-      case TriggerSource.ON_INTERACTION => SpiEvaluator.TriggerSource.OnInteraction
+      case TriggerSource.MANUAL               => SpiEvaluator.TriggerSource.Manual
+      case TriggerSource.ON_INTERACTION       => SpiEvaluator.TriggerSource.OnInteraction
+      case TriggerSource.EXPERIMENT_ITEM      => SpiEvaluator.TriggerSource.OnExperimentItem
+      case TriggerSource.EXPERIMENT_COMPLETED => SpiEvaluator.TriggerSource.OnExperimentCompleted
     }
 }
 
@@ -192,9 +204,10 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
     } else {
       val subject = toSdkSubject(trigger.subject)
       val triggerSource = toProtocolTriggerSource(trigger.source)
+      val experimentMembership = toProtocolExperimentMembership(trigger.experimentMembership)
       Future {
         val evaluator = factory()
-        val context = new EvaluationContextImpl(workflowId, subject, ledgerClient)
+        val context = new EvaluationContextImpl(workflowId, subject, experimentMembership, ledgerClient)
         evaluator._internalSetup(evaluator.emptyState(), context)
         val effect = evaluator.onEvaluation(context)
         effect match {
@@ -206,7 +219,7 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
               case NoPersistence         => None
             }
             new SpiWorkflow.CommandTransitionalEffect(
-              envelopePersistence(triggerSource, subject, newUserState),
+              envelopePersistence(triggerSource, subject, experimentMembership, newUserState),
               toSpiTransition(transition),
               ack,
               SpiMetadata.empty)
@@ -247,7 +260,7 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
         val subject = envelope.getSubject
         evaluator._internalSetup(
           decodeUserState(envelope),
-          new EvaluationContextImpl(workflowId, subject, ledgerClient))
+          new EvaluationContextImpl(workflowId, subject, Option(envelope.experimentMembership()), ledgerClient))
         val effect =
           if (stepMethod.getParameterCount == 1) {
             val input = stepCommand.input match {
@@ -261,7 +274,7 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
         effect match {
           case EffectImpl(persistence, transition) =>
             new SpiWorkflow.StepTransitionalEffect(
-              toSpiPersistence(persistence, envelope.triggerSource(), subject),
+              toSpiPersistence(persistence, envelope.triggerSource(), subject, Option(envelope.experimentMembership())),
               toSpiTransition(transition))
         }
       }
@@ -290,7 +303,7 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
   private def toSpiResult(outcome: Outcome): SpiEvaluator.Result =
     outcome.kind() match {
       case Outcome.Kind.COMPLETED =>
-        new SpiEvaluator.CompletedResult(outcome.evaluations().asScala.toSeq.map(toSpiEvaluation))
+        new SpiEvaluator.CompletedResult(toSpiEvaluation(outcome.evaluation()))
       case Outcome.Kind.INCONCLUSIVE => new SpiEvaluator.InconclusiveResult(outcome.reason())
       case Outcome.Kind.FAILED       => new SpiEvaluator.FailedResult(outcome.reason())
     }
@@ -318,25 +331,43 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
   private def toSpiPersistence(
       persistence: WorkflowEvaluatorEffects.Persistence[Any],
       triggerSource: TriggerSource,
-      subject: Subject): SpiWorkflow.Persistence =
+      subject: Subject,
+      experimentMembership: Option[WorkflowEvaluatorProtocol.ExperimentMembershipData]): SpiWorkflow.Persistence =
     persistence match {
-      case UpdateState(newState) => envelopePersistence(triggerSource, subject, Some(newState))
-      case NoPersistence         => SpiWorkflow.NoPersistence
+      case UpdateState(newState) =>
+        envelopePersistence(triggerSource, subject, experimentMembership, Some(newState))
+      case NoPersistence => SpiWorkflow.NoPersistence
     }
 
   private def envelopePersistence(
       triggerSource: TriggerSource,
       subject: Subject,
+      experimentMembership: Option[WorkflowEvaluatorProtocol.ExperimentMembershipData],
       userState: Option[Any]): SpiWorkflow.UpdateState = {
     val envelope = userState match {
       case Some(state) =>
         val payload = serializer.toBytes(state)
-        StateEnvelope.of(triggerSource, subject, payload.bytes.toArrayUnsafe(), payload.contentType)
+        StateEnvelope.of(
+          triggerSource,
+          subject,
+          experimentMembership.orNull,
+          payload.bytes.toArrayUnsafe(),
+          payload.contentType)
       case None =>
-        StateEnvelope.of(triggerSource, subject, null, null)
+        StateEnvelope.of(triggerSource, subject, experimentMembership.orNull, null, null)
     }
     new SpiWorkflow.UpdateState(serializer.toBytes(envelope))
   }
+
+  private def toProtocolExperimentMembership(membership: Option[SpiEvaluator.ExperimentMembership])
+      : Option[WorkflowEvaluatorProtocol.ExperimentMembershipData] =
+    membership.map(m =>
+      new WorkflowEvaluatorProtocol.ExperimentMembershipData(
+        m.experimentId,
+        m.datasetId,
+        m.datasetItemId,
+        m.agentRepetition,
+        m.judgeRepetition))
 
   private def toSpiTransition(transition: WorkflowEvaluatorEffects.Transition): SpiWorkflow.Transition =
     transition match {
@@ -347,8 +378,8 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
             s"[${declaringClass.getName}], which is not allowed.")
         }
         new SpiWorkflow.StepTransition(stepName, input.map(serializer.toBytes))
-      case CompleteTransition(evaluations) =>
-        new SpiWorkflow.StepTransition(RecordStepName, Some(serializer.toBytes(Outcome.completed(evaluations.asJava))))
+      case CompleteTransition(evaluation) =>
+        new SpiWorkflow.StepTransition(RecordStepName, Some(serializer.toBytes(Outcome.completed(evaluation))))
       case InconclusiveTransition(reason) =>
         new SpiWorkflow.StepTransition(RecordStepName, Some(serializer.toBytes(Outcome.inconclusive(reason))))
     }
