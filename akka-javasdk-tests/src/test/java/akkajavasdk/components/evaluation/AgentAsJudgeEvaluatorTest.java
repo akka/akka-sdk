@@ -13,6 +13,7 @@ import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akkajavasdk.Junit5LogCapturing;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,7 +38,7 @@ public class AgentAsJudgeEvaluatorTest extends TestKitSupport {
   }
 
   private Subject agentInteraction() {
-    return new Subject.AgentInteraction("support-agent", "interaction-1");
+    return new Subject.Interaction("interaction-1", Optional.of("support-agent"), Optional.empty());
   }
 
   @Test

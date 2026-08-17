@@ -26,7 +26,7 @@ public class EvaluatorTestKitSample {
     var testKit = EvaluatorTestKit.of(() -> new InteractionQualityEvaluator(stubLedger));
 
     EvaluatorResult result = testKit.evaluate(
-      new Subject.AgentInteraction("support-agent", "interaction-1")
+      new Subject.Interaction("interaction-1", Optional.of("support-agent"), Optional.empty())
     );
 
     assertThat(result.isComplete()).isTrue();

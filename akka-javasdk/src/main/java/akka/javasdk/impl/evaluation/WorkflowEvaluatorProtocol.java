@@ -9,6 +9,7 @@ import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.Subject;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * INTERNAL API
@@ -29,18 +30,34 @@ public final class WorkflowEvaluatorProtocol {
     ON_INTERACTION
   }
 
+  /** Which {@link Subject} variant a persisted {@link StateEnvelope} carries. */
+  public enum SubjectKind {
+    INTERACTION,
+    FLOW,
+    SESSION,
+    EVALUATED_EVALUATION,
+    EXPERIMENT
+  }
+
   public record StateEnvelope(
       TriggerSource triggerSource,
-      String flowId,
+      SubjectKind subjectKind,
+      String subjectId,
       String agentComponentId,
-      String interactionId,
+      String flowId,
       byte[] userState,
       String userStateContentType) {
 
     public Subject getSubject() {
-      if (flowId != null)
-        return new Subject.FlowInteraction(flowId, agentComponentId, interactionId);
-      else return new Subject.AgentInteraction(agentComponentId, interactionId);
+      return switch (subjectKind) {
+        case INTERACTION ->
+            new Subject.Interaction(
+                subjectId, Optional.ofNullable(agentComponentId), Optional.ofNullable(flowId));
+        case FLOW -> new Subject.Flow(subjectId);
+        case SESSION -> new Subject.Session(subjectId);
+        case EVALUATED_EVALUATION -> new Subject.EvaluatedEvaluation(subjectId);
+        case EXPERIMENT -> new Subject.Experiment(subjectId);
+      };
     }
 
     public static StateEnvelope of(
@@ -49,20 +66,49 @@ public final class WorkflowEvaluatorProtocol {
         byte[] userState,
         String userStateContentType) {
       return switch (subject) {
-        case Subject.FlowInteraction flow ->
+        case Subject.Interaction i ->
             new StateEnvelope(
                 triggerSource,
-                flow.flowId(),
-                flow.agentComponentId(),
-                flow.interactionId(),
+                SubjectKind.INTERACTION,
+                i.interactionId(),
+                i.agentComponentId().orElse(null),
+                i.flowId().orElse(null),
                 userState,
                 userStateContentType);
-        case Subject.AgentInteraction agent ->
+        case Subject.Flow f ->
             new StateEnvelope(
                 triggerSource,
+                SubjectKind.FLOW,
+                f.flowId(),
                 null,
-                agent.agentComponentId(),
-                agent.interactionId(),
+                null,
+                userState,
+                userStateContentType);
+        case Subject.Session s ->
+            new StateEnvelope(
+                triggerSource,
+                SubjectKind.SESSION,
+                s.sessionId(),
+                null,
+                null,
+                userState,
+                userStateContentType);
+        case Subject.EvaluatedEvaluation e ->
+            new StateEnvelope(
+                triggerSource,
+                SubjectKind.EVALUATED_EVALUATION,
+                e.evaluationId(),
+                null,
+                null,
+                userState,
+                userStateContentType);
+        case Subject.Experiment x ->
+            new StateEnvelope(
+                triggerSource,
+                SubjectKind.EXPERIMENT,
+                x.experimentId(),
+                null,
+                null,
                 userState,
                 userStateContentType);
       };

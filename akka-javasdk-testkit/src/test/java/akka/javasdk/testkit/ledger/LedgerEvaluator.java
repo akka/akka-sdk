@@ -7,6 +7,7 @@ package akka.javasdk.testkit.ledger;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
+import akka.javasdk.evaluation.Subject;
 import akka.javasdk.ledger.LedgerClient;
 
 /**
@@ -23,7 +24,8 @@ public class LedgerEvaluator extends Evaluator {
 
   @Override
   public Effect evaluate(EvaluationContext context) {
-    var interaction = ledger.getInteraction(context.subject().interactionId());
+    var subject = (Subject.Interaction) context.subject();
+    var interaction = ledger.getInteraction(subject.interactionId());
     var finalText = interaction.finalResponseText();
     if (finalText.isEmpty()) {
       return effects().complete(Evaluation.failed("agent produced no final response text"));

@@ -53,7 +53,8 @@ public class LedgerEvaluatorTest {
     var testKit = EvaluatorTestKit.of(() -> new LedgerEvaluator(ledger));
 
     EvaluatorResult result =
-        testKit.evaluate(new Subject.AgentInteraction("math-agent", "interaction-1"));
+        testKit.evaluate(
+            new Subject.Interaction("interaction-1", Optional.of("math-agent"), Optional.empty()));
 
     assertThat(result.isComplete()).isTrue();
     var evaluation = result.getEvaluations().get(0);

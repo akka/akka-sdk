@@ -9,6 +9,7 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
+import akka.javasdk.evaluation.Subject;
 import akka.javasdk.ledger.LedgerClient;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,7 +50,8 @@ public class ResponseQualityEvaluator extends Evaluator {
     // recorded before judging, so a test can find the evaluation even when the judge call fails
     evaluationIds.add(context.evaluationId());
 
-    var interaction = ledger.getInteraction(context.subject().interactionId());
+    var subject = (Subject.Interaction) context.subject();
+    var interaction = ledger.getInteraction(subject.interactionId());
 
     // run the judge in its own session, derived from the evaluation id and isolated from the
     // subject's session

@@ -19,10 +19,19 @@ public class SimpleEvaluator extends Evaluator {
   @Override
   public Effect evaluate(EvaluationContext context) {
     Subject subject = context.subject();
+    String interactionId =
+        switch (subject) {
+          case Subject.Interaction i -> i.interactionId();
+          case Subject.Flow f -> f.flowId();
+          case Subject.Session s -> s.sessionId();
+          case Subject.EvaluatedEvaluation e -> e.evaluationId();
+          case Subject.Experiment x -> x.experimentId();
+        };
+    String agentComponentId =
+        subject instanceof Subject.Interaction i ? i.agentComponentId().orElse(null) : null;
 
-    return switch (subject.interactionId()) {
-      case "inconclusive" ->
-          effects().inconclusive("cannot evaluate interaction " + subject.interactionId());
+    return switch (interactionId) {
+      case "inconclusive" -> effects().inconclusive("cannot evaluate interaction " + interactionId);
       case "async" ->
           // delegate asynchronously, resolving to a completed evaluation
           effects()
@@ -35,7 +44,7 @@ public class SimpleEvaluator extends Evaluator {
                   Evaluation.passed("evaluated for " + context.evaluationId())
                       .withScore(0.9)
                       .withLabel("good")
-                      .withAttribute("agent", subject.agentComponentId()));
+                      .withAttribute("agent", agentComponentId));
     };
   }
 }

@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters.JavaDurationOps
-import scala.jdk.OptionConverters.RichOptional
+import scala.jdk.OptionConverters._
 
 import akka.Done
 import akka.annotation.InternalApi
@@ -59,18 +59,30 @@ private[javasdk] object WorkflowEvaluatorImpl {
 
   private def toSdkSubject(subject: SpiEvaluator.Subject): Subject =
     subject match {
-      case flow: SpiEvaluator.FlowInteraction =>
-        new Subject.FlowInteraction(flow.flowId, flow.agentComponentId, flow.interactionId)
-      case agent: SpiEvaluator.AgentInteraction =>
-        new Subject.AgentInteraction(agent.agentComponentId, agent.interactionId)
+      case i: SpiEvaluator.Interaction =>
+        new Subject.Interaction(i.interactionId, i.agentComponentId.toJava, i.flowId.toJava)
+      case f: SpiEvaluator.Flow =>
+        new Subject.Flow(f.flowId)
+      case s: SpiEvaluator.Session =>
+        new Subject.Session(s.sessionId)
+      case e: SpiEvaluator.EvaluatedEvaluation =>
+        new Subject.EvaluatedEvaluation(e.evaluationId)
+      case x: SpiEvaluator.Experiment =>
+        new Subject.Experiment(x.experimentId)
     }
 
   private def toSpiSubject(subject: Subject): SpiEvaluator.Subject =
     subject match {
-      case flow: Subject.FlowInteraction =>
-        new SpiEvaluator.FlowInteraction(flow.flowId(), flow.agentComponentId(), flow.interactionId())
-      case agent: Subject.AgentInteraction =>
-        new SpiEvaluator.AgentInteraction(agent.agentComponentId(), agent.interactionId())
+      case i: Subject.Interaction =>
+        new SpiEvaluator.Interaction(i.interactionId(), i.agentComponentId().toScala, i.flowId().toScala)
+      case f: Subject.Flow =>
+        new SpiEvaluator.Flow(f.flowId())
+      case s: Subject.Session =>
+        new SpiEvaluator.Session(s.sessionId())
+      case e: Subject.EvaluatedEvaluation =>
+        new SpiEvaluator.EvaluatedEvaluation(e.evaluationId())
+      case x: Subject.Experiment =>
+        new SpiEvaluator.Experiment(x.experimentId())
     }
 
   private def toProtocolTriggerSource(source: SpiEvaluator.TriggerSource): TriggerSource =

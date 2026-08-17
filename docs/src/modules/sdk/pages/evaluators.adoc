@@ -33,7 +33,7 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/InteractionQua
 <1> An evaluator is a component and needs a `@Component` id. The id is how the evaluator is referred to in configuration.
 <2> Extend `Evaluator`.
 <3> A `LedgerClient` is injected to fetch the interaction under evaluation.
-<4> `EvaluationContext.subject().interactionId()` identifies the interaction; fetch its record from the ledger.
+<4> `Subject.Interaction.interactionId()` identifies the interaction; fetch its record from the ledger.
 <5> `inconclusive` reports that the evaluator ran but reached no verdict — distinct from a failing verdict.
 <6> `complete` with an `Evaluation` records the verdict.
 <7> An `Evaluation` can carry a score, a label, and arbitrary attributes for downstream analysis.
@@ -41,8 +41,7 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/InteractionQua
 === The evaluation subject
 
 link:{attachmentsdir}/api/akka/javasdk/evaluation/EvaluationContext.html[`EvaluationContext`] exposes the link:{attachmentsdir}/api/akka/javasdk/evaluation/Subject.html[`Subject`] being evaluated and the `evaluationId()` of this evaluation.
-A `Subject` identifies a single interaction by its stable `interactionId()`, together with the `agentComponentId()` that produced it.
-It is one of two kinds: an `AgentInteraction` produced directly by an agent, or a `FlowInteraction` produced by an agent running as part of an autonomous-agent flow (which additionally carries the `flowId`).
+`Subject` is a sealed interface with one variant per kind of thing an evaluator can be bound to: `Interaction` (one agent interaction, on its own or as part of a flow, identified by its stable `interactionId()` together with the `agentComponentId()` that produced it and, when part of a flow, its `flowId()`), `Flow` (a whole flow), `Session` (a whole conversation), `EvaluatedEvaluation` (a previously recorded evaluation), and `Experiment` (a whole, terminated experiment). Today only `Interaction` is fired by the runtime; the other kinds are read directly on `EvaluationContext` or resolved through a subject client.
 
 === Recording the verdict
 

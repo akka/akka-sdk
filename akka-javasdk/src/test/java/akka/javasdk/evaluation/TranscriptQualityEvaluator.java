@@ -35,7 +35,7 @@ public class TranscriptQualityEvaluator
 
   private Effect fetchTranscript() {
     // stand-in for fetching the interaction records of the subject, e.g. via the ledger client
-    var interactionId = evaluationContext().subject().interactionId();
+    var interactionId = ((Subject.Interaction) evaluationContext().subject()).interactionId();
     var transcript =
         interactionId.equals(EMPTY_INTERACTION_ID)
             ? ""
