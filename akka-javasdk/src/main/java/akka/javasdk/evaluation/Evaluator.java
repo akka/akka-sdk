@@ -5,6 +5,7 @@
 package akka.javasdk.evaluation;
 
 import akka.javasdk.annotations.Evaluates;
+import akka.javasdk.annotations.EvaluatorVersion;
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -22,6 +23,10 @@ import java.util.concurrent.CompletionStage;
  * <p>Annotate the class with {@link Evaluates} to declare the {@link Subject} kinds it can be bound
  * to; a binding naming a kind it does not declare is rejected at startup. Defaults to {@link
  * Subject.Interaction} when absent.
+ *
+ * <p>Annotate the class with {@link EvaluatorVersion} when what this evaluator measures, or how,
+ * changes — a different prompt, a different scoring rule, a different model. Defaults to {@code
+ * "1"} when absent.
  *
  * <p>Blocking calls made from {@link #evaluate(EvaluationContext)} run on virtual threads. For
  * durable multi-step evaluation, delegate to a workflow and return {@link

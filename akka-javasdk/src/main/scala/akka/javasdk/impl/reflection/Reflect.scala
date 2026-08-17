@@ -29,6 +29,7 @@ import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.Consume
 import akka.javasdk.annotations.EnableReplicationFilter
 import akka.javasdk.annotations.Evaluates
+import akka.javasdk.annotations.EvaluatorVersion
 import akka.javasdk.annotations.GrpcEndpoint
 import akka.javasdk.annotations.ProtoEventTypes
 import akka.javasdk.annotations.http.HttpEndpoint
@@ -563,6 +564,12 @@ private[impl] object Reflect {
     val ann = clz.getAnnotation(classOf[Evaluates])
     if (ann != null) ann.value().toSet
     else Set(classOf[Subject.Interaction])
+  }
+
+  /** The version an evaluator declares via `@EvaluatorVersion`, or `"1"` when absent. */
+  def readEvaluatorVersion(clz: Class[_]): String = {
+    val ann = clz.getAnnotation(classOf[EvaluatorVersion])
+    if (ann != null) ann.value() else "1"
   }
 
   def readComponentDescription(annotated: AnnotatedElement): Option[String] = {

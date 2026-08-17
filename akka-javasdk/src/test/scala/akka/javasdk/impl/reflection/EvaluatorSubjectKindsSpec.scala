@@ -5,6 +5,7 @@
 package akka.javasdk.impl.reflection
 
 import akka.javasdk.annotations.Evaluates
+import akka.javasdk.annotations.EvaluatorVersion
 import akka.javasdk.evaluation.EvaluationContext
 import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.evaluation.Subject
@@ -19,6 +20,11 @@ class UndeclaredSubjectKindEvaluator extends Evaluator {
 
 @Evaluates(value = Array(classOf[Subject.Flow], classOf[Subject.Session]))
 class FlowAndSessionEvaluator extends Evaluator {
+  override def evaluate(context: EvaluationContext): Evaluator.Effect = null
+}
+
+@EvaluatorVersion("2")
+class VersionedEvaluator extends Evaluator {
   override def evaluate(context: EvaluationContext): Evaluator.Effect = null
 }
 
@@ -46,6 +52,17 @@ class EvaluatorSubjectKindsSpec extends AnyWordSpec with Matchers {
       EvaluatorImpl.toSpiSubjectKind(classOf[Subject.EvaluatedEvaluation]) shouldBe
       SpiEvaluator.SubjectKind.EvaluatedEvaluation
       EvaluatorImpl.toSpiSubjectKind(classOf[Subject.Experiment]) shouldBe SpiEvaluator.SubjectKind.Experiment
+    }
+  }
+
+  "Reflect.readEvaluatorVersion" should {
+
+    "default to \"1\" when no @EvaluatorVersion is present" in {
+      Reflect.readEvaluatorVersion(classOf[UndeclaredSubjectKindEvaluator]) shouldBe "1"
+    }
+
+    "read the declared version from @EvaluatorVersion" in {
+      Reflect.readEvaluatorVersion(classOf[VersionedEvaluator]) shouldBe "2"
     }
   }
 }

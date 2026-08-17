@@ -45,6 +45,9 @@ import java.util.Optional;
  * Subject} kinds it can be bound to; a binding naming a kind it does not declare is rejected at
  * startup. Defaults to {@link Subject.Interaction} when absent.
  *
+ * <p>Annotate the class with {@link akka.javasdk.annotations.EvaluatorVersion} when what this
+ * evaluator measures, or how, changes. Defaults to {@code "1"} when absent.
+ *
  * @param <S> The type of the state accumulated across the steps of this evaluation.
  */
 public abstract class WorkflowEvaluator<S> {

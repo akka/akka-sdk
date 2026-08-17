@@ -1177,6 +1177,7 @@ private final class Sdk(
         val evaluatorClass = clz.asInstanceOf[Class[Evaluator]]
         val bindings = EvaluatorSettings.agentBindings(applicationConfig, componentId)
         val subjectKinds = Reflect.readEvaluatorSubjectKinds(clz).map(EvaluatorImpl.toSpiSubjectKind)
+        val version = Reflect.readEvaluatorVersion(clz)
 
         val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { factoryContext =>
           val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
@@ -1197,6 +1198,7 @@ private final class Sdk(
             description = Reflect.readComponentDescription(clz),
             bindings = bindings,
             subjectKinds = subjectKinds,
+            version = version,
             instanceFactory = instanceFactory,
             provided = isProvided(clz))
 
@@ -1208,6 +1210,7 @@ private final class Sdk(
 
         val workflowEvaluatorBindings = EvaluatorSettings.agentBindings(applicationConfig, componentId)
         val workflowEvaluatorSubjectKinds = Reflect.readEvaluatorSubjectKinds(clz).map(EvaluatorImpl.toSpiSubjectKind)
+        val workflowEvaluatorVersion = Reflect.readEvaluatorVersion(clz)
 
         workflowEvaluatorDescriptors :+=
           new WorkflowEvaluatorDescriptor(
@@ -1217,6 +1220,7 @@ private final class Sdk(
             description = Reflect.readComponentDescription(clz),
             bindings = workflowEvaluatorBindings,
             subjectKinds = workflowEvaluatorSubjectKinds,
+            version = workflowEvaluatorVersion,
             instanceFactory = { factoryContext =>
               val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
               new WorkflowEvaluatorImpl[Nothing, WorkflowEvaluator[Nothing]](
