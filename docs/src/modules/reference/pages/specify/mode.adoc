@@ -17,12 +17,28 @@ you have to xref:getting-started:set-up-dev-env.adoc#_update_the_plugin[update t
 
 Sets the project's conformance mode (recorded in `.akka/exit-conditions.yaml`) or, with no argument, prints the current mode.
 
-The mode controls one thing: whether unmet exit conditions block shipping.
+The mode controls two things: whether Akka Specify creates exit conditions on its own, and whether unmet conditions block shipping.
 
-* *À la carte* (the default) -- `ship` proceeds even when conditions are unmet, recording an explicit override. The conditions are still shown and evaluated; they simply do not block.
-* *Enforced* -- `ship` refuses to release the project until every applicable exit condition is `green` and not stale, or covered by an effective waiver. You use `signoff`, `strike` (to mark inapplicable), and `waive` to resolve each `open` or `red` condition before `ship` will proceed.
+* *À la carte* (the default) -- the exit-condition set is dormant until you ask for it. Only the Akka-intrinsic baseline resolves. No auditors are created and `/akka:specify` captures nothing. Once you ask for conditions, they are evaluated and shown, but `ship` still proceeds when they are unmet, recording an explicit override.
+* *Enforced* -- the full set applies from the start. `ship` refuses to release the project until every applicable exit condition is `green` and not stale, or covered by an effective waiver. You use `signoff`, `strike` (to mark inapplicable), and `waive` to resolve each `open` or `red` condition before `ship` will proceed.
 
-Every Specify command is available in both modes -- the mode changes the ship gate, not the command set. The two locked process-integrity gates, `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED`, apply in both modes; the difference is only that enforced mode blocks ship while either is red, whereas à la carte computes them as advisory. A developer can switch only within the modes the organization allows; if the organization has locked the mode (see xref:reference:specify/policies.adoc[Policies]), the command refuses and says so.
+Use `--exit-conditions=honor` to start using conditions in à la carte mode, or `--exit-conditions=ignore` to set them aside. Setting them aside does not delete anything. The captured conditions stay in `.akka/exit-conditions.yaml` and `--exit-conditions=honor` brings them back.
+
+Every Specify command is available in both modes. The mode changes what the engine does on its own, not the command set. The two locked process-integrity gates, `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED`, apply whenever the exit-condition set is active. Enforced mode blocks ship while either is red, and à la carte computes them as advisory. While the set is dormant they do not resolve at all, because there is nothing yet to have covered or reviewed.
+
+A developer can switch only within the modes the organization allows. If the organization has locked the mode (see xref:reference:specify/policies.adoc[Policies]), the command refuses and says so.
+
+== Switching a project that already has conditions
+
+Switching to à la carte is not a silent change when the project already carries exit conditions and auditors. The command refuses and names the two options, so the choice stays with you:
+
+[source]
+----
+/akka:mode a-la-carte --exit-conditions=honor
+/akka:mode a-la-carte --exit-conditions=ignore
+----
+
+A project with no conditions yet switches without any question.
 
 See xref:sdk:spec-driven-development.adoc#choosing-your-mode[Conformance modes] for more on choosing a mode.
 

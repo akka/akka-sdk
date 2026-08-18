@@ -13,7 +13,7 @@ Generate rendered documentation for the current Akka project and verify it again
 
 `/akka:docs` is primarily an xref:sdk:a-la-carte-mode.adoc[À la carte mode] command. A developer runs it directly when they want to (re)generate the project's rendered documentation and see how the content-governance exit conditions decided.
 
-The same activity also runs in xref:sdk:enforced-mode.adoc[Enforced mode] as part of the engine's autonomous build loop, whenever a content-governance exit condition is `open` and the assistant can act on it. In both modes the command's behavior is identical; only ship-gating differs.
+The same activity also runs in xref:sdk:enforced-mode.adoc[Enforced mode] as part of the engine's autonomous build loop, whenever a content-governance exit condition is `open` and the assistant can act on it. The command's behavior is identical wherever the exit-condition set is active, and only ship-gating differs. While the set is dormant the command still generates the pages, and records no conditions.
 
 == What it produces
 
