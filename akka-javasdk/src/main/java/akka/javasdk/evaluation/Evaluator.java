@@ -4,8 +4,9 @@
 
 package akka.javasdk.evaluation;
 
+import akka.javasdk.annotations.Evaluates;
+import akka.javasdk.annotations.EvaluatorVersion;
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl;
-import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -17,6 +18,14 @@ import java.util.concurrent.CompletionStage;
  * EvaluationContext} that identifies the interaction to evaluate. The handler returns an {@link
  * Effect} describing the outcome — the recorded evaluations, an inconclusive result, or an
  * asynchronous continuation.
+ *
+ * <p>Annotate the class with {@link Evaluates} to declare the {@link Subject} kinds it can be bound
+ * to; a binding naming a kind it does not declare is rejected at startup. Defaults to {@link
+ * Subject.Interaction} when absent.
+ *
+ * <p>Annotate the class with {@link EvaluatorVersion} when what this evaluator measures, or how,
+ * changes — a different prompt, a different scoring rule, a different model. Defaults to {@code
+ * "1"} when absent.
  *
  * <p>Blocking calls made from {@link #evaluate(EvaluationContext)} run on virtual threads. For
  * durable multi-step evaluation, delegate to a workflow and return {@link
@@ -57,7 +66,7 @@ public abstract class Evaluator {
    * <p>An Evaluator Effect can either:
    *
    * <ul>
-   *   <li>complete with one or more {@link Evaluation}s (the verdict)
+   *   <li>complete with an {@link Evaluation} (the verdict)
    *   <li>report that the evaluation was inconclusive — it ran but reached no verdict
    *   <li>continue asynchronously from a {@link CompletionStage} of another effect
    * </ul>
@@ -73,19 +82,15 @@ public abstract class Evaluator {
       /**
        * Complete the evaluation with its verdict.
        *
-       * @param evaluation the evaluation outcome
-       * @param more additional evaluation outcomes
-       * @return the complete effect
-       */
-      Effect complete(Evaluation evaluation, Evaluation... more);
-
-      /**
-       * Complete the evaluation with its verdicts.
+       * <p>An evaluator with several criteria combines them itself into one verdict here; record
+       * each criterion as a classification against the evaluation id so a full breakdown survives
+       * one model call, or use a separate evaluator per criterion when they don't combine into one
+       * verdict.
        *
-       * @param evaluations the evaluation outcomes (must not be empty)
+       * @param evaluation the evaluation outcome
        * @return the complete effect
        */
-      Effect complete(List<Evaluation> evaluations);
+      Effect complete(Evaluation evaluation);
 
       /**
        * Report that the evaluation was inconclusive.

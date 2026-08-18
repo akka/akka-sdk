@@ -15,6 +15,9 @@ import akka.javasdk.impl.evaluation.WorkflowEvaluatorImpl.RecordStepName
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.Outcome
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.StateEnvelope
 import akka.javasdk.impl.serialization.Serializer
+import akka.javasdk.ledger.EvaluationRecord
+import akka.javasdk.ledger.InteractionRecord
+import akka.javasdk.ledger.LedgerClient
 import akka.runtime.sdk.spi
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiEntity
@@ -39,6 +42,19 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
     }
   }
 
+  // TranscriptQualityEvaluator's steps use a stand-in transcript, not EvaluationContext.interaction(),
+  // so this spec never calls the ledger client.
+  private val unusedLedgerClient: LedgerClient = new LedgerClient {
+    override def getInteraction(interactionId: String): InteractionRecord =
+      throw new UnsupportedOperationException("not used in this spec")
+    override def getInteractionAsync(interactionId: String): java.util.concurrent.CompletionStage[InteractionRecord] =
+      throw new UnsupportedOperationException("not used in this spec")
+    override def getEvaluation(evaluationId: String): EvaluationRecord =
+      throw new UnsupportedOperationException("not used in this spec")
+    override def getEvaluationAsync(evaluationId: String): java.util.concurrent.CompletionStage[EvaluationRecord] =
+      throw new UnsupportedOperationException("not used in this spec")
+  }
+
   private def newImpl(recorder: SpiEvaluator.EvaluationRecorder = new RecorderProbe) =
     new WorkflowEvaluatorImpl[TranscriptQualityEvaluator.State, TranscriptQualityEvaluator](
       evaluationId,
@@ -47,13 +63,14 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
       () => new TranscriptQualityEvaluator,
       recorder,
       serializer,
-      ExecutionContext.global)
+      ExecutionContext.global,
+      unusedLedgerClient)
 
   private def trigger(interactionId: String = "interaction-1") =
     new SpiEvaluator.Trigger(
       evaluationId,
       SpiEvaluator.TriggerSource.OnInteraction,
-      new SpiEvaluator.AgentInteraction("my-agent", interactionId))
+      new SpiEvaluator.Subject.Interaction(interactionId, Some("my-agent"), None))
 
   private def stepCommand(stepName: String, input: Option[BytesPayload] = None) =
     new SpiWorkflow.StepCommand(stepName, input, SpiMetadata.empty, null)
@@ -75,7 +92,7 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
 
       val envelope = decodeEnvelope(transitional.persistence)
       envelope.agentComponentId() shouldBe "my-agent"
-      envelope.interactionId() shouldBe "interaction-1"
+      envelope.subjectId() shouldBe "interaction-1"
       envelope.userState() shouldBe null // no state update in onEvaluation, subject still persisted
 
       transitional.transition shouldBe a[SpiWorkflow.StepTransition]
@@ -110,7 +127,7 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
       val stepEffect = result.asInstanceOf[SpiWorkflow.StepTransitionalEffect]
 
       val envelope = decodeEnvelope(stepEffect.persistence)
-      envelope.interactionId() shouldBe "interaction-1"
+      envelope.subjectId() shouldBe "interaction-1"
       envelope.userState() should not be null
 
       val transition = stepEffect.transition.asInstanceOf[SpiWorkflow.StepTransition]
@@ -141,8 +158,7 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
 
       val outcome = serializer.fromBytes(classOf[Outcome], transition.input.get)
       outcome.kind() shouldBe Outcome.Kind.COMPLETED
-      outcome.evaluations().size() shouldBe 1
-      outcome.evaluations().get(0).passed() shouldBe true
+      outcome.evaluation().passed() shouldBe true
     }
 
     "report inconclusive by transitioning to the built-in record step" in {
@@ -187,9 +203,50 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
       val (recordedTrigger, recordedResult) = recorder.recorded.value
       recordedTrigger.id shouldBe evaluationId
       recordedTrigger.source shouldBe SpiEvaluator.TriggerSource.OnInteraction
-      recordedTrigger.subject.asInstanceOf[SpiEvaluator.AgentInteraction].interactionId shouldBe "interaction-1"
+      recordedTrigger.subject.asInstanceOf[SpiEvaluator.Subject.Interaction].interactionId shouldBe "interaction-1"
       recordedResult shouldBe a[spi.SpiEvaluator.InconclusiveResult]
       recordedResult.asInstanceOf[spi.SpiEvaluator.InconclusiveResult].reason shouldBe "no verdict"
+    }
+
+    "carry the trigger's experiment membership through to the recorded outcome" in {
+      val recorder = new RecorderProbe
+      val impl = newImpl(recorder)
+      val membership =
+        new SpiEvaluator.ExperimentContext(
+          "experiment-1",
+          "dataset-1",
+          "item-1",
+          agentRepetition = 2,
+          judgeRepetition = 1)
+      val experimentTrigger = new SpiEvaluator.Trigger(
+        evaluationId,
+        SpiEvaluator.TriggerSource.OnExperimentTrial,
+        new SpiEvaluator.Subject.Interaction("interaction-1", Some("my-agent"), None),
+        Some(membership))
+      val started = await(impl.handleEvaluationStart(None, experimentTrigger))
+      val startState = started
+        .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
+        .persistence
+        .asInstanceOf[SpiWorkflow.UpdateState]
+        .newState
+      val outcomePayload = serializer.toBytes(Outcome.inconclusive("no verdict"))
+
+      // experiment membership must survive both the intermediate step (fetchTranscript, which
+      // re-persists the envelope) and the built-in record step that rebuilds the trigger from it
+      val fetched = await(impl.invokeStep(Some(startState), stepCommand("fetchTranscript")))
+        .asInstanceOf[SpiWorkflow.StepTransitionalEffect]
+      val fetchedState = fetched.persistence.asInstanceOf[SpiWorkflow.UpdateState].newState
+
+      await(impl.invokeStep(Some(fetchedState), stepCommand(RecordStepName, Some(outcomePayload))))
+
+      val (recordedTrigger, _) = recorder.recorded.value
+      recordedTrigger.experimentContext shouldBe defined
+      val recordedMembership = recordedTrigger.experimentContext.value
+      recordedMembership.experimentId shouldBe "experiment-1"
+      recordedMembership.datasetId shouldBe "dataset-1"
+      recordedMembership.datasetItemId shouldBe "item-1"
+      recordedMembership.agentRepetition shouldBe 2
+      recordedMembership.judgeRepetition shouldBe 1
     }
 
     "record a completed outcome with its evaluations" in {
@@ -214,8 +271,7 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
       val (recordedTrigger, recordedResult) = recorder.recorded.value
       recordedTrigger.id shouldBe evaluationId
       val completed = recordedResult.asInstanceOf[spi.SpiEvaluator.CompletedResult]
-      completed.evaluations should have size 1
-      completed.evaluations.head.passed shouldBe true
+      completed.evaluation.passed shouldBe true
     }
 
     "reject all commands, command handling is built in" in {

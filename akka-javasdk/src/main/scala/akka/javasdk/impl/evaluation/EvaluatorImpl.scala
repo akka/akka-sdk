@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.evaluation
 
+import java.util.Optional
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
@@ -14,10 +16,13 @@ import akka.annotation.InternalApi
 import akka.javasdk.evaluation.Evaluation
 import akka.javasdk.evaluation.EvaluationContext
 import akka.javasdk.evaluation.Evaluator
+import akka.javasdk.evaluation.ExperimentContext
+import akka.javasdk.evaluation.Interaction
 import akka.javasdk.evaluation.Subject
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.AsyncEffect
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.CompleteEffect
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.InconclusiveEffect
+import akka.javasdk.ledger.LedgerClient
 import akka.runtime.sdk.spi.SpiEvaluator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -31,21 +36,48 @@ private[impl] object EvaluatorImpl {
   /**
    * INTERNAL API
    *
-   * The SDK [[EvaluationContext]] backed by the SPI [[SpiEvaluator.EvaluationContext]].
+   * The SDK [[EvaluationContext]] backed by the SPI [[SpiEvaluator.EvaluationContext]]. Resolves [[interaction]] on
+   * demand through the ledger client, memoized: an evaluator that reads it more than once triggers only the one fetch.
    */
-  final class EvaluationContextImpl(spiContext: SpiEvaluator.EvaluationContext) extends EvaluationContext {
+  final class EvaluationContextImpl(spiContext: SpiEvaluator.EvaluationContext, ledgerClient: LedgerClient)
+      extends EvaluationContext {
 
-    override def subject(): Subject = toSdkSubject(spiContext.subject)
+    private lazy val resolvedInteraction: Optional[Interaction] =
+      subject() match {
+        case i: Subject.Interaction =>
+          Optional.of(new InteractionRecordAdapter(ledgerClient.getInteraction(i.interactionId())))
+        case _ => Optional.empty()
+      }
+
+    override def subject(): Subject = SubjectConversions.toSdkSubject(spiContext.subject)
 
     override def evaluationId(): String = spiContext.evaluationId
+
+    override def interaction(): Optional[Interaction] = resolvedInteraction
+
+    override def experiment(): Optional[ExperimentContext] =
+      spiContext.trigger.experimentContext.map(toExperimentContext).toJava
   }
 
-  private def toSdkSubject(spiSubject: SpiEvaluator.Subject): Subject =
-    spiSubject match {
-      case flow: SpiEvaluator.FlowInteraction =>
-        new Subject.FlowInteraction(flow.flowId, flow.agentComponentId, flow.interactionId)
-      case agent: SpiEvaluator.AgentInteraction =>
-        new Subject.AgentInteraction(agent.agentComponentId, agent.interactionId)
+  private def toExperimentContext(context: SpiEvaluator.ExperimentContext): ExperimentContext =
+    new ExperimentContext(
+      context.experimentId,
+      context.datasetId,
+      context.datasetItemId,
+      context.agentRepetition,
+      context.judgeRepetition,
+      Optional.empty())
+
+  /** The `@Evaluates`-declared subject kind (a `Subject` variant class) as its SPI counterpart. */
+  def toSpiSubjectKind(subjectClass: Class[_ <: Subject]): SpiEvaluator.SubjectKind =
+    subjectClass match {
+      case c if c == classOf[Subject.Interaction] => SpiEvaluator.SubjectKind.Interaction
+      case c if c == classOf[Subject.Flow]        => SpiEvaluator.SubjectKind.Flow
+      case c if c == classOf[Subject.Session]     => SpiEvaluator.SubjectKind.Session
+      case c if c == classOf[Subject.Evaluation]  => SpiEvaluator.SubjectKind.Evaluation
+      case c if c == classOf[Subject.Experiment]  => SpiEvaluator.SubjectKind.Experiment
+      case other =>
+        throw new IllegalArgumentException(s"Unknown Subject kind [${other.getName}] declared in @Evaluates")
     }
 
   private def toSpiEvaluation(evaluation: Evaluation): SpiEvaluator.Evaluation =
@@ -67,7 +99,8 @@ private[impl] object EvaluatorImpl {
 private[impl] final class EvaluatorImpl[E <: Evaluator](
     factory: () => E,
     evaluatorClass: Class[E],
-    sdkExecutionContext: ExecutionContext)
+    sdkExecutionContext: ExecutionContext,
+    ledgerClient: LedgerClient)
     extends SpiEvaluator {
   import EvaluatorImpl._
 
@@ -75,7 +108,7 @@ private[impl] final class EvaluatorImpl[E <: Evaluator](
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
 
   override def evaluate(spiContext: SpiEvaluator.EvaluationContext): Future[SpiEvaluator.Effect] = {
-    val context = new EvaluationContextImpl(spiContext)
+    val context = new EvaluationContextImpl(spiContext, ledgerClient)
     try {
       val evaluator = factory()
       val effect = evaluator.evaluate(context)
@@ -91,8 +124,8 @@ private[impl] final class EvaluatorImpl[E <: Evaluator](
 
   private def toSpiEffect(effect: Evaluator.Effect): Future[SpiEvaluator.Effect] =
     effect match {
-      case CompleteEffect(evaluations) =>
-        Future.successful(new SpiEvaluator.CompleteEffect(evaluations.map(toSpiEvaluation)))
+      case CompleteEffect(evaluation) =>
+        Future.successful(new SpiEvaluator.CompleteEffect(toSpiEvaluation(evaluation)))
       case InconclusiveEffect(reason) =>
         Future.successful(new SpiEvaluator.InconclusiveEffect(reason))
       case AsyncEffect(futureEffect) =>

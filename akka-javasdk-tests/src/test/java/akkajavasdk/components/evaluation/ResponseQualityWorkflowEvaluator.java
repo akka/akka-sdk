@@ -10,6 +10,7 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
+import akka.javasdk.evaluation.Subject;
 import akka.javasdk.evaluation.WorkflowEvaluator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,10 +61,13 @@ public class ResponseQualityWorkflowEvaluator
   }
 
   private Effect fetchTranscript() {
-    var subject = evaluationContext().subject();
+    var subject = (Subject.Interaction) evaluationContext().subject();
     // a real evaluator would fetch the transcript via the interaction log
     String transcript =
-        "interaction " + subject.interactionId() + " of agent " + subject.agentComponentId();
+        "interaction "
+            + subject.interactionId()
+            + " of agent "
+            + subject.agentComponentId().orElse("");
     return effects()
         .updateState(new State(transcript))
         .transitionTo(ResponseQualityWorkflowEvaluator::judge);

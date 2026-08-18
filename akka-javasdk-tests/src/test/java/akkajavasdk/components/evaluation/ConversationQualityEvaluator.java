@@ -8,6 +8,7 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
+import akka.javasdk.evaluation.Subject;
 
 /**
  * An evaluator that delegates to a judge agent (LLM-as-judge) via the component client, in an
@@ -23,10 +24,13 @@ public class ConversationQualityEvaluator extends Evaluator {
 
   @Override
   public Effect evaluate(EvaluationContext context) {
-    var subject = context.subject();
+    var subject = (Subject.Interaction) context.subject();
     // a real evaluator would fetch the transcript via the interaction log / ledger client
     String transcript =
-        "interaction " + subject.interactionId() + " of agent " + subject.agentComponentId();
+        "interaction "
+            + subject.interactionId()
+            + " of agent "
+            + subject.agentComponentId().orElse("");
 
     // run the judge in its own session, derived from the evaluation id and isolated from the
     // subject's session

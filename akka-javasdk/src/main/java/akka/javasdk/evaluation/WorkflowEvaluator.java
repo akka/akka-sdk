@@ -7,7 +7,6 @@ package akka.javasdk.evaluation;
 import akka.annotation.InternalApi;
 import akka.javasdk.impl.evaluation.WorkflowEvaluatorEffects;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -40,6 +39,13 @@ import java.util.Optional;
  * </ul>
  *
  * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.Component}.
+ *
+ * <p>Annotate the class with {@link akka.javasdk.annotations.Evaluates} to declare the {@link
+ * Subject} kinds it can be bound to; a binding naming a kind it does not declare is rejected at
+ * startup. Defaults to {@link Subject.Interaction} when absent.
+ *
+ * <p>Annotate the class with {@link akka.javasdk.annotations.EvaluatorVersion} when what this
+ * evaluator measures, or how, changes. Defaults to {@code "1"} when absent.
  *
  * @param <S> The type of the state accumulated across the steps of this evaluation.
  */
@@ -131,7 +137,7 @@ public abstract class WorkflowEvaluator<S> {
    * <ul>
    *   <li>update the state of the evaluation
    *   <li>transition to the next step
-   *   <li>complete the evaluation with one or more {@link Evaluation}s (the verdict)
+   *   <li>complete the evaluation with an {@link Evaluation} (the verdict)
    *   <li>report that the evaluation was inconclusive — it ran but reached no verdict
    * </ul>
    *
@@ -178,18 +184,14 @@ public abstract class WorkflowEvaluator<S> {
        * Complete the evaluation with its verdict. The outcome is recorded and the evaluation
        * instance is cleaned up.
        *
-       * @param evaluation the evaluation outcome
-       * @param more additional evaluation outcomes, for composed evaluations
-       */
-      Effect complete(Evaluation evaluation, Evaluation... more);
-
-      /**
-       * Complete the evaluation with its verdicts. The outcome is recorded and the evaluation
-       * instance is cleaned up.
+       * <p>An evaluator with several criteria combines them itself into one verdict here; record
+       * each criterion as a classification against the evaluation id so a full breakdown survives
+       * one model call, or use a separate evaluator per criterion when they don't combine into one
+       * verdict.
        *
-       * @param evaluations the evaluation outcomes (must not be empty)
+       * @param evaluation the evaluation outcome
        */
-      Effect complete(List<Evaluation> evaluations);
+      Effect complete(Evaluation evaluation);
 
       /**
        * Report that the evaluation was inconclusive — it ran but could not reach a verdict, for
@@ -228,17 +230,8 @@ public abstract class WorkflowEvaluator<S> {
        * instance is cleaned up.
        *
        * @param evaluation the evaluation outcome
-       * @param more additional evaluation outcomes, for composed evaluations
        */
-      Effect complete(Evaluation evaluation, Evaluation... more);
-
-      /**
-       * Complete the evaluation with its verdicts. The outcome is recorded and the evaluation
-       * instance is cleaned up.
-       *
-       * @param evaluations the evaluation outcomes (must not be empty)
-       */
-      Effect complete(List<Evaluation> evaluations);
+      Effect complete(Evaluation evaluation);
 
       /**
        * Report that the evaluation was inconclusive — it ran but could not reach a verdict.

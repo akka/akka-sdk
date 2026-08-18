@@ -13,6 +13,7 @@ import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akkajavasdk.Junit5LogCapturing;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,7 +38,7 @@ public class AgentAsJudgeEvaluatorTest extends TestKitSupport {
   }
 
   private Subject agentInteraction() {
-    return new Subject.AgentInteraction("support-agent", "interaction-1");
+    return new Subject.Interaction("interaction-1", Optional.of("support-agent"), Optional.empty());
   }
 
   @Test
@@ -54,8 +55,7 @@ public class AgentAsJudgeEvaluatorTest extends TestKitSupport {
     EvaluatorResult result = testKit.evaluate(agentInteraction(), "eval-1");
 
     assertThat(result.isComplete()).isTrue();
-    assertThat(result.getEvaluations()).hasSize(1);
-    var evaluation = result.getEvaluations().get(0);
+    var evaluation = result.getEvaluation();
     assertThat(evaluation.passed()).isTrue();
     assertThat(evaluation.score().orElseThrow()).isEqualTo(0.87);
     assertThat(evaluation.explanation()).isEqualTo("clear and helpful");
@@ -75,7 +75,7 @@ public class AgentAsJudgeEvaluatorTest extends TestKitSupport {
     EvaluatorResult result = testKit.evaluate(agentInteraction(), "eval-2");
 
     assertThat(result.isComplete()).isTrue();
-    var evaluation = result.getEvaluations().get(0);
+    var evaluation = result.getEvaluation();
     assertThat(evaluation.passed()).isFalse();
     assertThat(evaluation.explanation()).isEqualTo("unhelpful and off-topic");
   }
