@@ -1,7 +1,7 @@
 = Akka Automated Operations technical overview
 :page-summary: A technical overview of Akka Automated Operations (AAO): the two-plane architecture, what Akka automates and provisions, and how a region is installed and operated across Kubernetes on AWS, Azure, and GCP — including the BYOC and BYOK8s models.
 :page-when-to-use: Use this to understand how AAO works end to end and to plan an installation, whether Akka provisions a region in your cloud (BYOC) or you bring your own Kubernetes cluster (BYOK8s).
-:page-related: xref:concepts:deployment-model.adoc[], xref:operations:akka-platform.adoc[], xref:operations:regions/index.adoc[], xref:operations:production-readiness/index.adoc[]
+:page-related: xref:concepts:deployment-model.adoc[], xref:operations:akka-platform.adoc[], xref:operations:regions/index.adoc[]
 :page-persona: operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
@@ -124,7 +124,8 @@ Akka Operators:: Route management, elasticity automation, metadata sync, rolling
 
 == Shared responsibility
 
-System management is shared between you and Akka across provisioning and ongoing operations. The table below is a summary; for the authoritative, row-by-row breakdown with the full Responsible / Accountable / Consulted / Informed split, see the xref:operations:production-readiness/index.adoc[production readiness] section and its xref:operations:production-readiness/byoc/raci.adoc[BYOC RACI].
+System management is shared between you and Akka across provisioning and ongoing operations. The table below summarizes who owns what across the lifecycle.
+// TODO: cross-link to the production-readiness RACI once we're ready to couple these documents.
 
 [cols="1,2,2", options="header"]
 |===
@@ -187,7 +188,7 @@ Eight steps take you from first contact to a region ready for deployments. This 
 . *Provision.* Akka remotely provisions the region and attaches it to a platform organization created for you.
 . *DNS.* Create record sets in your DNS zone mapping to the region's load-balancer IP so users and the Federation Plane can reach it.
 . *Smoke tests.* Akka attaches the region to the Federation Plane and runs smoke tests, so the region can then accept deployments.
-. *Region handover.* Register a user at akka.io with a corporate email; Akka makes them your organization's primary owner, so your team can begin using the region through the console and CLI. A production-labeled region isn't fully handed over until you complete the xref:operations:production-readiness/byoc/checklist.adoc[region-readiness steps] with your Akka Success Team.
+. *Region handover.* Register a user at akka.io with a corporate email; Akka makes them your organization's primary owner, so your team can begin using the region through the console and CLI. A production-labeled region isn't fully handed over until you complete the region-readiness steps with your Akka Success Team.
 
 == The akka-bootstrap utility
 
@@ -354,7 +355,7 @@ AAO can also be installed on a Kubernetes cluster _you provision_, in your cloud
 . *Teleport.* Install the Akka-provided Teleport Helm chart to grant Akka its access. Deploy it promptly, as the join token Akka gives you has a 3-hour TTL.
 . *Installation.* Akka configures the cluster as an application-plane region and sets up internal platform observability. You seed database credentials into the namespaces provided by Akka.
 . *Akka smoke tests.* Akka attaches the region to the Federation Plane and runs smoke tests, so the region can then accept deployments.
-. *Region handover.* Akka concludes smoke tests and assigns the region to your Akka organization on the console. A production-labeled region isn't fully handed over until you complete the xref:operations:production-readiness/byok8s/checklist.adoc[region-readiness steps] with your Akka Success Team.
+. *Region handover.* Akka concludes smoke tests and assigns the region to your Akka organization on the console. A production-labeled region isn't fully handed over until you complete the region-readiness steps with your Akka Success Team.
 
 === Infrastructure requirements
 

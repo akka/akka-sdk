@@ -4,6 +4,8 @@
 *** xref:operations:configuring.adoc[Self-managed operations]
 *** xref:operations:akka-platform.adoc[Akka Automated Operations]
 
+**** xref:operations:technical-overview.adoc[Technical Overview]
+
 **** xref:operations:organizations/index.adoc[]
 ***** xref:operations:organizations/manage-users.adoc[Manage users]
 ***** xref:operations:organizations/regions.adoc[]
@@ -56,7 +58,6 @@
 ***** xref:operations:cli/system-config.adoc[]
 
 *** xref:operations:operator-best-practices.adoc[]
-*** xref:operations:technical-overview.adoc[Technical Overview]
 *** xref:operations:production-readiness/index.adoc[]
 **** Dedicated
 ***** xref:operations:production-readiness/dedicated/shared-responsibility.adoc[]
