@@ -129,3 +129,9 @@
 :url-akka-github: https://github.com/akka
 :url-akka-blog: https://akka.io/blog
 :url-akka-support: https://support.akka.io
+
+// -- akka/platform-api GitHub repo --
+:url-platform-api-repo: https://github.com/akka/platform-api
+:url-platform-api-java-client: https://github.com/akka/platform-api/tree/main/java-client
+:url-platform-api-schemas-federation: https://github.com/akka/platform-api/tree/main/schemas/federation-plane/protobuf
+:url-platform-api-schemas-control-plane: https://github.com/akka/platform-api/blob/main/schemas/control-plane/openapi/api.json

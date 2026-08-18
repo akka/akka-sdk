@@ -49,6 +49,8 @@
 ***** xref:operations:integrating-cicd/github-actions.adoc[]
 ***** xref:operations:integrating-cicd/scanning-dependencies.adoc[]
 
+**** xref:operations:platform-api.adoc[]
+
 **** xref:operations:cli/index.adoc[]
 ***** xref:operations:cli/installation.adoc[]
 ***** xref:operations:cli/using-cli.adoc[]
