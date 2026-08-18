@@ -101,7 +101,7 @@ private[javasdk] object LedgerClientImpl {
       case SpiLedger.EvaluationTrigger.Unspecified           => EvaluationRecord.Trigger.UNSPECIFIED
       case SpiLedger.EvaluationTrigger.Manual                => EvaluationRecord.Trigger.MANUAL
       case SpiLedger.EvaluationTrigger.OnInteraction         => EvaluationRecord.Trigger.ON_INTERACTION
-      case SpiLedger.EvaluationTrigger.OnExperimentItem      => EvaluationRecord.Trigger.EXPERIMENT_ITEM
+      case SpiLedger.EvaluationTrigger.OnExperimentTrial     => EvaluationRecord.Trigger.EXPERIMENT_TRIAL
       case SpiLedger.EvaluationTrigger.OnExperimentCompleted => EvaluationRecord.Trigger.EXPERIMENT_COMPLETED
     }
 

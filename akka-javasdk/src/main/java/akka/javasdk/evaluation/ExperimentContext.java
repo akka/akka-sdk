@@ -7,8 +7,8 @@ package akka.javasdk.evaluation;
 import java.util.Optional;
 
 /**
- * The experiment an evaluation's subject belongs to, present on {@link
- * EvaluationContext#experiment()} when the evaluation was triggered as part of a running
+ * The experiment trial an evaluation's subject came out of — one run of one dataset item — present
+ * on {@link EvaluationContext#experiment()} when the evaluation was triggered as part of a running
  * experiment.
  *
  * @param experimentId the id of the experiment this evaluation belongs to

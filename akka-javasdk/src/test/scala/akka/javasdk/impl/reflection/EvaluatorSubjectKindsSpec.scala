@@ -49,8 +49,8 @@ class EvaluatorSubjectKindsSpec extends AnyWordSpec with Matchers {
       EvaluatorImpl.toSpiSubjectKind(classOf[Subject.Interaction]) shouldBe SpiEvaluator.SubjectKind.Interaction
       EvaluatorImpl.toSpiSubjectKind(classOf[Subject.Flow]) shouldBe SpiEvaluator.SubjectKind.Flow
       EvaluatorImpl.toSpiSubjectKind(classOf[Subject.Session]) shouldBe SpiEvaluator.SubjectKind.Session
-      EvaluatorImpl.toSpiSubjectKind(classOf[Subject.EvaluatedEvaluation]) shouldBe
-      SpiEvaluator.SubjectKind.EvaluatedEvaluation
+      EvaluatorImpl.toSpiSubjectKind(classOf[Subject.Evaluation]) shouldBe
+      SpiEvaluator.SubjectKind.Evaluation
       EvaluatorImpl.toSpiSubjectKind(classOf[Subject.Experiment]) shouldBe SpiEvaluator.SubjectKind.Experiment
     }
   }

@@ -12,7 +12,7 @@ import java.util.Optional;
  * <p>Each variant resolves to different content: an {@link Interaction} resolves to that
  * interaction's content, carried directly on {@link EvaluationContext#interaction()}; a {@link
  * Flow} or {@link Session} resolves to a collection of interactions (and, for a flow, its activity)
- * read through a subject client; an {@link EvaluatedEvaluation} resolves to a previously recorded
+ * read through a subject client; a {@link Subject.Evaluation} resolves to a previously recorded
  * evaluation; an {@link Experiment} resolves to a whole, terminated experiment.
  */
 public sealed interface Subject {
@@ -39,7 +39,7 @@ public sealed interface Subject {
   /**
    * An evaluation that has already been recorded, so an evaluator's output can itself be evaluated.
    */
-  record EvaluatedEvaluation(String evaluationId) implements Subject {}
+  record Evaluation(String evaluationId) implements Subject {}
 
   /** A whole experiment, evaluated once the experiment has terminated. */
   record Experiment(String experimentId) implements Subject {}

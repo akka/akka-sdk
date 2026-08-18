@@ -24,7 +24,7 @@ public class SimpleEvaluator extends Evaluator {
           case Subject.Interaction i -> i.interactionId();
           case Subject.Flow f -> f.flowId();
           case Subject.Session s -> s.sessionId();
-          case Subject.EvaluatedEvaluation e -> e.evaluationId();
+          case Subject.Evaluation e -> e.evaluationId();
           case Subject.Experiment x -> x.experimentId();
         };
     String agentComponentId =

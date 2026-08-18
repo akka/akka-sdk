@@ -56,26 +56,26 @@ private[impl] object EvaluatorImpl {
     override def interaction(): Optional[Interaction] = resolvedInteraction
 
     override def experiment(): Optional[ExperimentContext] =
-      spiContext.trigger.experimentMembership.map(toExperimentContext).toJava
+      spiContext.trigger.experimentContext.map(toExperimentContext).toJava
   }
 
-  private def toExperimentContext(membership: SpiEvaluator.ExperimentMembership): ExperimentContext =
+  private def toExperimentContext(context: SpiEvaluator.ExperimentContext): ExperimentContext =
     new ExperimentContext(
-      membership.experimentId,
-      membership.datasetId,
-      membership.datasetItemId,
-      membership.agentRepetition,
-      membership.judgeRepetition,
+      context.experimentId,
+      context.datasetId,
+      context.datasetItemId,
+      context.agentRepetition,
+      context.judgeRepetition,
       Optional.empty())
 
   /** The `@Evaluates`-declared subject kind (a `Subject` variant class) as its SPI counterpart. */
   def toSpiSubjectKind(subjectClass: Class[_ <: Subject]): SpiEvaluator.SubjectKind =
     subjectClass match {
-      case c if c == classOf[Subject.Interaction]         => SpiEvaluator.SubjectKind.Interaction
-      case c if c == classOf[Subject.Flow]                => SpiEvaluator.SubjectKind.Flow
-      case c if c == classOf[Subject.Session]             => SpiEvaluator.SubjectKind.Session
-      case c if c == classOf[Subject.EvaluatedEvaluation] => SpiEvaluator.SubjectKind.EvaluatedEvaluation
-      case c if c == classOf[Subject.Experiment]          => SpiEvaluator.SubjectKind.Experiment
+      case c if c == classOf[Subject.Interaction] => SpiEvaluator.SubjectKind.Interaction
+      case c if c == classOf[Subject.Flow]        => SpiEvaluator.SubjectKind.Flow
+      case c if c == classOf[Subject.Session]     => SpiEvaluator.SubjectKind.Session
+      case c if c == classOf[Subject.Evaluation]  => SpiEvaluator.SubjectKind.Evaluation
+      case c if c == classOf[Subject.Experiment]  => SpiEvaluator.SubjectKind.Experiment
       case other =>
         throw new IllegalArgumentException(s"Unknown Subject kind [${other.getName}] declared in @Evaluates")
     }

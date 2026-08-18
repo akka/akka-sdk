@@ -21,29 +21,29 @@ private[evaluation] object SubjectConversions {
 
   def toSdkSubject(subject: SpiEvaluator.Subject): Subject =
     subject match {
-      case i: SpiEvaluator.Interaction =>
+      case i: SpiEvaluator.Subject.Interaction =>
         new Subject.Interaction(i.interactionId, i.agentComponentId.toJava, i.flowId.toJava)
-      case f: SpiEvaluator.Flow =>
+      case f: SpiEvaluator.Subject.Flow =>
         new Subject.Flow(f.flowId)
-      case s: SpiEvaluator.Session =>
+      case s: SpiEvaluator.Subject.Session =>
         new Subject.Session(s.sessionId)
-      case e: SpiEvaluator.EvaluatedEvaluation =>
-        new Subject.EvaluatedEvaluation(e.evaluationId)
-      case x: SpiEvaluator.Experiment =>
+      case e: SpiEvaluator.Subject.Evaluation =>
+        new Subject.Evaluation(e.evaluationId)
+      case x: SpiEvaluator.Subject.Experiment =>
         new Subject.Experiment(x.experimentId)
     }
 
   def toSpiSubject(subject: Subject): SpiEvaluator.Subject =
     subject match {
       case i: Subject.Interaction =>
-        new SpiEvaluator.Interaction(i.interactionId(), i.agentComponentId().toScala, i.flowId().toScala)
+        new SpiEvaluator.Subject.Interaction(i.interactionId(), i.agentComponentId().toScala, i.flowId().toScala)
       case f: Subject.Flow =>
-        new SpiEvaluator.Flow(f.flowId())
+        new SpiEvaluator.Subject.Flow(f.flowId())
       case s: Subject.Session =>
-        new SpiEvaluator.Session(s.sessionId())
-      case e: Subject.EvaluatedEvaluation =>
-        new SpiEvaluator.EvaluatedEvaluation(e.evaluationId())
+        new SpiEvaluator.Subject.Session(s.sessionId())
+      case e: Subject.Evaluation =>
+        new SpiEvaluator.Subject.Evaluation(e.evaluationId())
       case x: Subject.Experiment =>
-        new SpiEvaluator.Experiment(x.experimentId())
+        new SpiEvaluator.Subject.Experiment(x.experimentId())
     }
 }

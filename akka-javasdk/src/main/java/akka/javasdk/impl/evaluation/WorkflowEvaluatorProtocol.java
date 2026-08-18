@@ -28,7 +28,7 @@ public final class WorkflowEvaluatorProtocol {
   public enum TriggerSource {
     MANUAL,
     ON_INTERACTION,
-    EXPERIMENT_ITEM,
+    EXPERIMENT_TRIAL,
     EXPERIMENT_COMPLETED
   }
 
@@ -37,16 +37,16 @@ public final class WorkflowEvaluatorProtocol {
     INTERACTION,
     FLOW,
     SESSION,
-    EVALUATED_EVALUATION,
+    EVALUATION,
     EXPERIMENT
   }
 
   /**
-   * The experiment a persisted envelope's subject belongs to, present when {@link #triggerSource}
-   * is {@link TriggerSource#EXPERIMENT_ITEM}. Mirrors {@link ExperimentContext} minus {@code
-   * expectedOutput}, which is not persisted and re-resolved as empty on every read.
+   * The experiment trial a persisted envelope's subject came out of, present when {@link
+   * #triggerSource} is {@link TriggerSource#EXPERIMENT_TRIAL}. Mirrors {@link ExperimentContext}
+   * minus {@code expectedOutput}, which is not persisted and re-resolved as empty on every read.
    */
-  public record ExperimentMembershipData(
+  public record ExperimentContextData(
       String experimentId,
       String datasetId,
       String datasetItemId,
@@ -70,7 +70,7 @@ public final class WorkflowEvaluatorProtocol {
       String subjectId,
       String agentComponentId,
       String flowId,
-      ExperimentMembershipData experimentMembership,
+      ExperimentContextData experimentContext,
       byte[] userState,
       String userStateContentType) {
 
@@ -81,20 +81,19 @@ public final class WorkflowEvaluatorProtocol {
                 subjectId, Optional.ofNullable(agentComponentId), Optional.ofNullable(flowId));
         case FLOW -> new Subject.Flow(subjectId);
         case SESSION -> new Subject.Session(subjectId);
-        case EVALUATED_EVALUATION -> new Subject.EvaluatedEvaluation(subjectId);
+        case EVALUATION -> new Subject.Evaluation(subjectId);
         case EXPERIMENT -> new Subject.Experiment(subjectId);
       };
     }
 
     public Optional<ExperimentContext> getExperimentContext() {
-      return Optional.ofNullable(experimentMembership)
-          .map(ExperimentMembershipData::toExperimentContext);
+      return Optional.ofNullable(experimentContext).map(ExperimentContextData::toExperimentContext);
     }
 
     public static StateEnvelope of(
         TriggerSource triggerSource,
         Subject subject,
-        ExperimentMembershipData experimentMembership,
+        ExperimentContextData experimentContext,
         byte[] userState,
         String userStateContentType) {
       return switch (subject) {
@@ -105,7 +104,7 @@ public final class WorkflowEvaluatorProtocol {
                 i.interactionId(),
                 i.agentComponentId().orElse(null),
                 i.flowId().orElse(null),
-                experimentMembership,
+                experimentContext,
                 userState,
                 userStateContentType);
         case Subject.Flow f ->
@@ -115,7 +114,7 @@ public final class WorkflowEvaluatorProtocol {
                 f.flowId(),
                 null,
                 null,
-                experimentMembership,
+                experimentContext,
                 userState,
                 userStateContentType);
         case Subject.Session s ->
@@ -125,17 +124,17 @@ public final class WorkflowEvaluatorProtocol {
                 s.sessionId(),
                 null,
                 null,
-                experimentMembership,
+                experimentContext,
                 userState,
                 userStateContentType);
-        case Subject.EvaluatedEvaluation e ->
+        case Subject.Evaluation e ->
             new StateEnvelope(
                 triggerSource,
-                SubjectKind.EVALUATED_EVALUATION,
+                SubjectKind.EVALUATION,
                 e.evaluationId(),
                 null,
                 null,
-                experimentMembership,
+                experimentContext,
                 userState,
                 userStateContentType);
         case Subject.Experiment x ->
@@ -145,7 +144,7 @@ public final class WorkflowEvaluatorProtocol {
                 x.experimentId(),
                 null,
                 null,
-                experimentMembership,
+                experimentContext,
                 userState,
                 userStateContentType);
       };

@@ -38,8 +38,8 @@ public record EvaluationRecord(
     MANUAL,
     /** Created automatically from an interaction of a bound agent. */
     ON_INTERACTION,
-    /** The subject is a member of a running experiment, for example a dataset item repetition. */
-    EXPERIMENT_ITEM,
+    /** The subject came out of one trial of a running experiment: one run of one dataset item. */
+    EXPERIMENT_TRIAL,
     /** Created when an experiment as a whole terminates. */
     EXPERIMENT_COMPLETED
   }

@@ -70,7 +70,7 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
     new SpiEvaluator.Trigger(
       evaluationId,
       SpiEvaluator.TriggerSource.OnInteraction,
-      new SpiEvaluator.Interaction(interactionId, Some("my-agent"), None))
+      new SpiEvaluator.Subject.Interaction(interactionId, Some("my-agent"), None))
 
   private def stepCommand(stepName: String, input: Option[BytesPayload] = None) =
     new SpiWorkflow.StepCommand(stepName, input, SpiMetadata.empty, null)
@@ -203,7 +203,7 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
       val (recordedTrigger, recordedResult) = recorder.recorded.value
       recordedTrigger.id shouldBe evaluationId
       recordedTrigger.source shouldBe SpiEvaluator.TriggerSource.OnInteraction
-      recordedTrigger.subject.asInstanceOf[SpiEvaluator.Interaction].interactionId shouldBe "interaction-1"
+      recordedTrigger.subject.asInstanceOf[SpiEvaluator.Subject.Interaction].interactionId shouldBe "interaction-1"
       recordedResult shouldBe a[spi.SpiEvaluator.InconclusiveResult]
       recordedResult.asInstanceOf[spi.SpiEvaluator.InconclusiveResult].reason shouldBe "no verdict"
     }
@@ -212,7 +212,7 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
       val recorder = new RecorderProbe
       val impl = newImpl(recorder)
       val membership =
-        new SpiEvaluator.ExperimentMembership(
+        new SpiEvaluator.ExperimentContext(
           "experiment-1",
           "dataset-1",
           "item-1",
@@ -220,8 +220,8 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
           judgeRepetition = 1)
       val experimentTrigger = new SpiEvaluator.Trigger(
         evaluationId,
-        SpiEvaluator.TriggerSource.OnExperimentItem,
-        new SpiEvaluator.Interaction("interaction-1", Some("my-agent"), None),
+        SpiEvaluator.TriggerSource.OnExperimentTrial,
+        new SpiEvaluator.Subject.Interaction("interaction-1", Some("my-agent"), None),
         Some(membership))
       val started = await(impl.handleEvaluationStart(None, experimentTrigger))
       val startState = started
@@ -240,8 +240,8 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
       await(impl.invokeStep(Some(fetchedState), stepCommand(RecordStepName, Some(outcomePayload))))
 
       val (recordedTrigger, _) = recorder.recorded.value
-      recordedTrigger.experimentMembership shouldBe defined
-      val recordedMembership = recordedTrigger.experimentMembership.value
+      recordedTrigger.experimentContext shouldBe defined
+      val recordedMembership = recordedTrigger.experimentContext.value
       recordedMembership.experimentId shouldBe "experiment-1"
       recordedMembership.datasetId shouldBe "dataset-1"
       recordedMembership.datasetItemId shouldBe "item-1"
