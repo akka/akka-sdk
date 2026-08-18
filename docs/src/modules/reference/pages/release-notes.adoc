@@ -12,6 +12,11 @@ Current versions
 
 == August 2026
 
+* Akka CLI 3,0.71
+- Updates to Akka Specify exit conditions
+- Manage project stores
+- Log level management improvements
+
 * Akka SDK 3.6.3
 - Runtime 1.6.15
 - Alpine base image 3.24.1
