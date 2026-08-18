@@ -137,6 +137,8 @@ The xref:reference:cli/akka-cli/akka_organizations.adoc[akka organization] comma
 * xref:reference:cli/akka-cli/akka_organizations_invitations_create.adoc[akka organizations invitations create]
 * xref:reference:cli/akka-cli/akka_organizations_invitations_list.adoc[akka organizations invitations list]
 * xref:reference:cli/akka-cli/akka_organizations_list.adoc[akka organizations list]
+* xref:reference:cli/akka-cli/akka_organizations_stores.adoc[akka organizations stores]
+* xref:reference:cli/akka-cli/akka_organizations_stores_list.adoc[akka organizations stores list]
 * xref:reference:cli/akka-cli/akka_organizations_users.adoc[akka organizations users]
 * xref:reference:cli/akka-cli/akka_organizations_users_add-binding.adoc[akka organizations users add-binding]
 * xref:reference:cli/akka-cli/akka_organizations_users_delete-binding.adoc[akka organizations users delete-binding]
@@ -285,7 +287,6 @@ See also the xref:reference:cli/akka-cli/akka_projects_regions.adoc#_see_also[ak
 
 The xref:reference:cli/akka-cli/akka_regions.adoc[akka regions] command includes the following options:
 
-* xref:reference:cli/akka-cli/akka_regions_list-stores.adoc[akka regions list-stores]
 * xref:reference:cli/akka-cli/akka_regions_list.adoc[akka regions list]
 
 == Roles
