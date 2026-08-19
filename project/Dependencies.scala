@@ -77,6 +77,22 @@ object Dependencies {
   val typesafeConfig = "com.typesafe" % "config" % "1.4.8"
   val protobufJavaUtil = "com.google.protobuf" % "protobuf-java-util" % GoogleProtobufVersion
 
+  // Version constants that have to track whatever the Akka Runtime resolves, used by
+  // checkRuntimeDependencyAlignment to point at what to edit when a runtime bump leaves us behind.
+  val runtimeAlignedVersions: Map[String, String] = Map(
+    "AkkaVersion" -> AkkaVersion,
+    "AkkaHttpVersion" -> AkkaHttpVersion,
+    "AkkaGrpcVersion" -> AkkaGrpcVersion,
+    "GoogleProtobufVersion" -> GoogleProtobufVersion,
+    "ScalaVersion" -> ScalaVersion,
+    "JacksonVersion" -> JacksonVersion,
+    "JacksonDatabindVersion" -> JacksonDatabindVersion,
+    "JacksonAnnotationsVersion" -> JacksonAnnotationsVersion,
+    "LogbackVersion" -> LogbackVersion,
+    "LogbackContribVersion" -> LogbackContribVersion,
+    "OpenTelemetryVersion" -> OpenTelemetryVersion,
+    "OpenTelemetrySemConv" -> OpenTelemetrySemConv)
+
   private val deps = libraryDependencies
 
   private val sdkDeps = Seq(
