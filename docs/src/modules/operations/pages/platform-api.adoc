@@ -46,7 +46,7 @@ The link:{url-platform-api-java-client}[`java-client`,window="_blank"] module pr
 
 === Configuring the client
 
-==== Refresh token: environment variable
+==== Refresh token: Environment variable
 
 Set `AKKA_TOKEN` before starting your application. Optionally set `AKKA_API_HOST` to override the federation plane host (defaults to `api.kalix.io:443`).
 
@@ -60,11 +60,11 @@ export AKKA_TOKEN=<your-refresh-token>
 AkkaPlatformSdk sdk = AkkaPlatformSdk.create();
 ----
 
-==== Refresh token: automatic fallback to the Akka CLI
+==== Refresh token: Automatic fallback to the Akka CLI
 
 If `AKKA_TOKEN` is not set and the `akka` CLI is installed and logged in, the SDK runs `akka config get refresh-token` (and `akka config get api-server-host` for non-default installations) automatically. No code changes are needed.
 
-==== Refresh token: programmatic
+==== Refresh token: Programmatic
 
 [source, java]
 ----
@@ -80,7 +80,7 @@ AkkaPlatformSdk sdk = AkkaPlatformSdk.create(
     AkkaPlatformSdkConfig.withRefreshToken("your-refresh-token", "api.kalix.io:443"));
 ----
 
-==== OAuth token exchange: environment variables
+==== OAuth token exchange: Environment variables
 
 Set `AKKA_OAUTH_TOKEN` (or `AKKA_OAUTH_TOKEN_FILE` to point to a file containing the token) and `AKKA_OAUTH_TOKEN_AUDIENCE`. When either OAuth variable is present, it takes precedence over `AKKA_TOKEN`. If the audience variable is missing, the SDK throws an exception at startup.
 
@@ -102,7 +102,7 @@ When `AKKA_OAUTH_TOKEN_FILE` is used, the file is re-read on every token exchang
 
 TIP: When xref:services/workload-identity.adoc#authenticating-with-the-akka-platform-api[Akka platform workload identity] is configured for an Akka service, these environment variables are injected automatically into the service at runtime. Calling `AkkaPlatformSdk.create()` with no further configuration is sufficient.
 
-==== OAuth token exchange: programmatic
+==== OAuth token exchange: Programmatic
 
 [source, java]
 ----
@@ -254,11 +254,11 @@ Header:   Authorization: Bearer <access-token>
 
 Each `Project` in the response contains a `regions` list. Each `Region` has:
 
-`endpoint`:: The base URL for control plane REST requests, for example `https://api.gcp-us-east1.akka.io`.
+`endpoint`:: The base URL of the control plane REST requests, for example `https://api.gcp-us-east1.akka.io`.
 `primary`:: `true` for the region that should be used by default.
 `name`:: The fully-qualified resource name, for example `projects/<id>/regions/gcp-us-east1`.
 
-In most cases, use the region where `primary == true`. Use its `endpoint` as the base URL for all control plane REST calls for that project:
+In most cases, use the region where `primary == true`. Use its `endpoint` as the base URL of all control plane REST calls for that project:
 
 ----
 GET https://api.gcp-us-east1.akka.io/apis/kalix.io/v1alpha1/namespaces/<project-id>/kalixservices
