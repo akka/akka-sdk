@@ -124,15 +124,43 @@ public sealed interface SessionMessage {
   /** A tool call requested by the model as part of an {@link AiMessage}. */
   record ToolCallRequest(String id, String name, String arguments) {}
 
-  /** Token usage for a single {@link AiMessage}. */
-  record TokenUsage(int inputTokens, int outputTokens) {
+  /**
+   * Token usage for a single {@link AiMessage}.
+   *
+   * <p>See {@link Agent.TokenUsage} for how the prompt cache counts relate to {@code inputTokens}.
+   */
+  record TokenUsage(
+      int inputTokens,
+      int outputTokens,
+      int cacheReadInputTokens,
+      int cacheWriteInputTokens,
+      int effectiveInputTokens) {
+
     /** No tokens consumed. */
-    public static final TokenUsage EMPTY = new TokenUsage(0, 0);
+    public static final TokenUsage EMPTY = new TokenUsage(0, 0, 0, 0, 0);
+
+    public TokenUsage {
+      // Session memory written before effectiveInputTokens existed deserializes it as 0, which is
+      // never valid for a call that consumed input: the effective count is at least inputTokens.
+      // Those messages predate the cache counts too, so inputTokens is the effective count.
+      if (effectiveInputTokens == 0) {
+        effectiveInputTokens = inputTokens;
+      }
+    }
+
+    /** A usage with no prompt cache activity. */
+    public TokenUsage(int inputTokens, int outputTokens) {
+      this(inputTokens, outputTokens, 0, 0, inputTokens);
+    }
 
     /** The sum of this and another usage. */
     public TokenUsage add(TokenUsage tokenUsage) {
       return new TokenUsage(
-          inputTokens + tokenUsage.inputTokens, outputTokens + tokenUsage.outputTokens);
+          inputTokens + tokenUsage.inputTokens,
+          outputTokens + tokenUsage.outputTokens,
+          cacheReadInputTokens + tokenUsage.cacheReadInputTokens,
+          cacheWriteInputTokens + tokenUsage.cacheWriteInputTokens,
+          effectiveInputTokens + tokenUsage.effectiveInputTokens);
     }
   }
 
