@@ -59,7 +59,7 @@ akka config set project <project name>
 
 NOTE: When using _OpenID Connect_ (OIDC), see xref:reference:security/oidc-setup.adoc#assigning_project_level_roles[OIDC setup].
 
-You can grant a project role to a user in two ways:
+You can grant a project role to a user in two ways, or grant a role directly to a service:
 
 === 1. Invite a user to the project by e-mail
 Invite a user to join the project and assign them a role by using the following command:
@@ -87,6 +87,17 @@ akka roles add-binding --email <email address> --role <role>
 ----
 akka roles add-binding --username <username> --role <role>
 ----
+
+=== 3. Grant a role to a service
+
+A service can also authenticate as itself against the Akka platform API using workload identity, and be granted a role directly:
+
+[source,command window]
+----
+akka roles add-binding --service <service name> --role <role>
+----
+
+For the full walkthrough, including how to configure the service to authenticate, see xref:services/workload-identity.adoc#authenticating-with-the-akka-platform-api[Authenticating with the Akka platform API].
 
 == Deleting a project role bindings
 
@@ -140,4 +151,5 @@ To resend an invitation, first delete the expired invitation and then issue a ne
 == See also
 
 - xref:organizations/manage-users.adoc[]
+- xref:services/workload-identity.adoc[]
 - xref:reference:cli/akka-cli/akka_roles.adoc#_see_also[`akka roles` commands]
