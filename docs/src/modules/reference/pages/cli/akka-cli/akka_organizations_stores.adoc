@@ -1,25 +1,16 @@
-= akka regions list-stores
+= akka organizations stores
 
-List the Postgres store clusters available in each region.
+List the store clusters your organization may pin a project to
 
 == Synopsis
 
-The `akka regions list-stores` command lists the Postgres store clusters configured in each region.
-An assignable store may be passed to `akka project new --store` or set in a project descriptor (when store selection is enabled for your organization);
-otherwise the platform resolves one automatically.
-
-Optional `--organization` limits the listing to a single organization's regions, and `--region` to a single region.
-
-----
-akka regions list-stores [flags]
-----
+The `akka organizations stores` commands show the Postgres store clusters your organization may pin a project to with `akka project new --store`.
+A store is pinned per region, so a store usable by a multi-region project must be declared under the same name in every region that project will run in.
 
 == Options
 
 ----
-  -h, --help                  help for list-stores
-      --organization string   list stores for regions in this organization
-      --region string         only list stores for this region
+  -h, --help   help for stores
 ----
 
 == Options inherited from parent commands
@@ -40,7 +31,8 @@ akka regions list-stores [flags]
 
 == SEE ALSO
 
-* link:akka_regions.html[akka regions]	 - Manage available regions.
+* link:akka_organizations.html[akka organizations]	 - Manage your organizations on Akka
+* link:akka_organizations_stores_list.html[akka organizations stores list]	 - List the store clusters the current (or specified) organization may pin a project to
 
 [discrete]
 

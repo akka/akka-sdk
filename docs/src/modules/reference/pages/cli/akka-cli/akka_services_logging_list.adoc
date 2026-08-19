@@ -5,6 +5,8 @@ List the log levels configuration.
 == Synopsis
 
 List the log levels configuration.
+By default the command runs in the primary region.
+Use --region to select another region, or --all-regions to list the configuration of every region of the project.
 
 ----
 akka services logging list [SERVICE_NAME] [flags]
@@ -15,12 +17,17 @@ akka services logging list [SERVICE_NAME] [flags]
 ----
 
 > akka service logging list my-service
+> akka service logging list my-service --all-regions
 ----
 
 == Options
 
 ----
-  -h, --help   help for list
+      --all-regions      run the command on all regions
+  -h, --help             help for list
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
+      --region string    region to use if project has more than one region
 ----
 
 == Options inherited from parent commands

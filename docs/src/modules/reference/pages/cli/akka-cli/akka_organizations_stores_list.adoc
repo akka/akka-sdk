@@ -1,17 +1,33 @@
-= akka organizations
+= akka organizations stores list
 
-Manage your organizations on Akka
+List the store clusters the current (or specified) organization may pin a project to
 
 == Synopsis
 
-The `akka organizations` commands manage the organizations in your Akka account.
-Organizations are the root of the management hierarchy and serve as a container for all Projects where Services are deployed.
-For more details on organizations, see https://doc.akka.io/operations/organizations/index.html .
+The `akka organizations stores list` command lists the store clusters the current (or specified) organization may pin a project to.
+Only stores the organization may actually pin are listed: a region contributes its stores only where store selection is enabled for the organization.
+
+Use `--region` to consider only the regions a project is intended to run in.
+The ALL REGIONS column reports whether a store is declared in every region considered, which is what makes it safe to pin on a project running in all of them.
+
+When no store is pinned at creation, the platform resolves one independently in each region.
+
+----
+akka organizations stores list [flags]
+----
+
+== Examples
+
+----
+akka organizations stores list --region gcp-us-east1 --region gcp-eu-west1
+----
 
 == Options
 
 ----
-  -h, --help   help for organizations
+  -h, --help                  help for list
+      --organization string   name or ID for organization
+      --region strings        only consider these regions, repeat the flag for more than one (default: every region available to the organization)
 ----
 
 == Options inherited from parent commands
@@ -32,14 +48,7 @@ For more details on organizations, see https://doc.akka.io/operations/organizati
 
 == SEE ALSO
 
-* link:akka.html[akka]	 - Akka control
-* link:akka_organizations_auth.html[akka organizations auth]	 - Manage authentication for your organization on Akka
-* link:akka_organizations_get.html[akka organizations get]	 - Get organization information.
-* link:akka_organizations_identity-providers.html[akka organizations identity-providers]	 - Manage workload identity providers for your organization on Akka
-* link:akka_organizations_invitations.html[akka organizations invitations]	 - Invite new users to the organization with a specific role.
-* link:akka_organizations_list.html[akka organizations list]	 - List all organizations of which the user is a member of.
 * link:akka_organizations_stores.html[akka organizations stores]	 - List the store clusters your organization may pin a project to
-* link:akka_organizations_users.html[akka organizations users]	 - Manage organization users.
 
 [discrete]
 
