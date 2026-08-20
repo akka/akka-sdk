@@ -15,6 +15,15 @@ Claude Code::
 ----
 --
 
+Antigravity (agy) CLI::
++
+--
+[source]
+----
+agy plugin update ai-marketplace
+----
+--
+
 Gemini CLI::
 +
 --
