@@ -6,19 +6,19 @@ Access to an organization is controlled by assigning roles to users. The availab
 
 NOTE: Akka supports access management via Single Sign-on (SSO) through the _OpenID Connect_ standard. For details, check xref:reference:security/oidc-setup.adoc[].
 
-[cols="1,1,1,1,1"]
+[cols="1,1,1,1,1", role="matrix"]
 |===
 |Permission                           |superuser |project-admin |billing-admin| member
 
-|View organization users              |✅         |✅            |✅    |✅    
-|Manage organization users            |✅         |❌            |❌    |❌   
-|Create projects                      |✅         |✅            |❌    |❌
-|Assign regions to projects           |✅         |✅            |❌    |❌
-|View all projects                    |✅         |❌            |❌    |❌
-|Manage project users                 |✅         |❌            |❌    |❌
-|Delete projects                      |✅         |❌            |❌    |❌
-|All other project/service operations |❌         |❌            |❌    |❌
-|View organization billing data       |❌         |❌            |✅    |❌ 
+|View organization users              |[.yes]#allowed#         |[.yes]#allowed#            |[.yes]#allowed#    |[.yes]#allowed#    
+|Manage organization users            |[.yes]#allowed#         |[.no]#denied#            |[.no]#denied#    |[.no]#denied#   
+|Create projects                      |[.yes]#allowed#         |[.yes]#allowed#            |[.no]#denied#    |[.no]#denied#
+|Assign regions to projects           |[.yes]#allowed#         |[.yes]#allowed#            |[.no]#denied#    |[.no]#denied#
+|View all projects                    |[.yes]#allowed#         |[.no]#denied#            |[.no]#denied#    |[.no]#denied#
+|Manage project users                 |[.yes]#allowed#         |[.no]#denied#            |[.no]#denied#    |[.no]#denied#
+|Delete projects                      |[.yes]#allowed#         |[.no]#denied#            |[.no]#denied#    |[.no]#denied#
+|All other project/service operations |[.no]#denied#         |[.no]#denied#            |[.no]#denied#    |[.no]#denied#
+|View organization billing data       |[.no]#denied#         |[.no]#denied#            |[.yes]#allowed#    |[.no]#denied# 
 |===
 
 NOTE: Project-level operations are accessed via project-specific roles. A superuser has a subset of project permissions, including the ability to assign roles (including to themselves). When a user creates a project, they are automatically granted admin access to it. (see xref:operations:projects/manage-project-access.adoc[granting project roles])

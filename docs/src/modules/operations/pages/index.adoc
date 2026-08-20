@@ -9,7 +9,7 @@ Akka offers two distinct operational approaches:
 [discrete]
 == Feature comparison
 
-[cols="2,1,1,1", options="header"]
+[cols="2,1,1,1", options="header", role="matrix"]
 |===
 | Feature
 | Self-managed Operations
@@ -17,139 +17,139 @@ Akka offers two distinct operational approaches:
 | Akka Automated Operations (serverless)
 
 | Akka runtime
-| pass:[✅]
-| pass:[✅]
-| pass:[✅]
+| [.yes]#included#
+| [.yes]#included#
+| [.yes]#included#
 
 | Akka clustering
-| pass:[✅]
-| pass:[✅]
-| pass:[✅]
+| [.yes]#included#
+| [.yes]#included#
+| [.yes]#included#
 
 | Elasticity
-| pass:[✅]
-| pass:[✅]
-| pass:[✅]
+| [.yes]#included#
+| [.yes]#included#
+| [.yes]#included#
 
 | Resilience
-| pass:[✅]
-| pass:[✅]
-| pass:[✅]
+| [.yes]#included#
+| [.yes]#included#
+| [.yes]#included#
 
 | Durable memory
-| pass:[✅]
-| pass:[✅]
-| pass:[✅]
+| [.yes]#included#
+| [.yes]#included#
+| [.yes]#included#
 
 | Akka Orchestration
-| pass:[✅]
-| pass:[✅]
-| pass:[✅]
+| [.yes]#included#
+| [.yes]#included#
+| [.yes]#included#
 
 | Akka Agents
-| pass:[✅]
-| pass:[✅]
-| pass:[✅]
+| [.yes]#included#
+| [.yes]#included#
+| [.yes]#included#
 
 | Akka Memory
-| pass:[✅]
-| pass:[✅]
-| pass:[✅]
+| [.yes]#included#
+| [.yes]#included#
+| [.yes]#included#
 
 | Akka Streaming
-| pass:[✅]
-| pass:[✅]
-| pass:[✅]
+| [.yes]#included#
+| [.yes]#included#
+| [.yes]#included#
 
 | Metrics, logs, and traces
-| pass:[✅]
-| pass:[✅]
-| pass:[✅]
+| [.yes]#included#
+| [.yes]#included#
+| [.yes]#included#
 
 | User management: OpenID Connect (OIDC)
-| pass:[❌]
-| pass:[✅]
-| pass:[✅]
+| [.no]#not included#
+| [.yes]#included#
+| [.yes]#included#
 
 | Deploy: Bare metal
-| pass:[✅]
-| pass:[❌]
-| pass:[❌]
+| [.yes]#included#
+| [.no]#not included#
+| [.no]#not included#
 
 | Deploy: VMs
-| pass:[✅]
-| pass:[❌]
-| pass:[❌]
+| [.yes]#included#
+| [.no]#not included#
+| [.no]#not included#
 
 | Deploy: Edge
-| pass:[✅]
-| pass:[❌]
-| pass:[❌]
+| [.yes]#included#
+| [.no]#not included#
+| [.no]#not included#
 
 | Deploy: Containers
-| pass:[✅]
-| pass:[❌]
-| pass:[❌]
+| [.yes]#included#
+| [.no]#not included#
+| [.no]#not included#
 
 | Deploy: PaaS
-| pass:[✅]
-| pass:[❌]
-| pass:[❌]
+| [.yes]#included#
+| [.no]#not included#
+| [.no]#not included#
 
 | Deploy: Serverless
-| pass:[❌]
-| pass:[❌]
-| pass:[✅]
+| [.no]#not included#
+| [.no]#not included#
+| [.yes]#included#
 
 | Deploy: Your VPC
-| pass:[❌]
-| pass:[✅]
-| pass:[❌]
+| [.no]#not included#
+| [.yes]#included#
+| [.no]#not included#
 
 | Deploy: Your Edge VPC
-| pass:[❌]
-| pass:[✅]
-| pass:[❌]
+| [.no]#not included#
+| [.yes]#included#
+| [.no]#not included#
 
 | Custom network setup
-| pass:[✅]
-| pass:[✅]
-| pass:[❌]
+| [.yes]#included#
+| [.yes]#included#
+| [.no]#not included#
 
 | Auto-elasticity
-| pass:[❌]
-| pass:[✅]
-| pass:[✅]
+| [.no]#not included#
+| [.yes]#included#
+| [.yes]#included#
 
 | Multi-tenant services
-| pass:[❌]
-| pass:[✅]
-| pass:[❌]
+| [.no]#not included#
+| [.yes]#included#
+| [.no]#not included#
 
 | Multi-region operations
-| pass:[❌]
-| pass:[✅]
-| pass:[✅]
+| [.no]#not included#
+| [.yes]#included#
+| [.yes]#included#
 
 | Persistence oversight
-| pass:[❌]
-| pass:[✅]
-| pass:[✅]
+| [.no]#not included#
+| [.yes]#included#
+| [.yes]#included#
 
 | Certificate and key rotation
-| pass:[❌]
-| pass:[✅]
-| pass:[✅]
+| [.no]#not included#
+| [.yes]#included#
+| [.yes]#included#
 
 | Multi-org access controls
-| pass:[❌]
-| pass:[✅]
-| pass:[❌]
+| [.no]#not included#
+| [.yes]#included#
+| [.no]#not included#
 
 | No downtime updates
-| pass:[❌]
-| pass:[✅]
-| pass:[✅]
+| [.no]#not included#
+| [.yes]#included#
+| [.yes]#included#
 |===
 
 [discrete]

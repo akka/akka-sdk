@@ -6,6 +6,8 @@ These metrics are available for xref:operations:observability-and-monitoring/obs
 
 In addition to the Akka-specific metrics listed below, standard JVM runtime metrics (memory, garbage collection, threads, class loading, CPU, etc.) are also collected and exported. These follow the OpenTelemetry semantic conventions for JVM metrics — see https://opentelemetry.io/docs/specs/semconv/runtime/jvm-metrics/[OpenTelemetry JVM metrics] for the full list and attribute definitions.
 
+The attribute tables on this page use the OpenTelemetry requirement levels. `Required` means the attribute is always present. `Conditionally required` means the attribute is present when the stated condition holds. `Recommended` means the attribute is present when its value is available. `Opt-in` means the attribute is present only when you enable it explicitly.
+
 
 == HTTP Endpoints
 
@@ -26,27 +28,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -58,7 +60,7 @@ Endpoint attributes::
 
 | `akka.endpoint.method`
 | string
-| Yes
+| Required
 | Name of the endpoint method being invoked.
 
 |===
@@ -70,7 +72,7 @@ OpenTelemetry semantic convention attributes::
 
 | `http.request.method`
 | string
-| Yes
+| Required
 | HTTP request method.
 
 | `http.route`
@@ -102,27 +104,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -134,7 +136,7 @@ Endpoint attributes::
 
 | `akka.endpoint.method`
 | string
-| Yes
+| Required
 | Name of the endpoint method being invoked.
 
 |===
@@ -146,7 +148,7 @@ OpenTelemetry semantic convention attributes::
 
 | `http.request.method`
 | string
-| Yes
+| Required
 | HTTP request method.
 
 | `http.route`
@@ -178,27 +180,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -210,7 +212,7 @@ Endpoint attributes::
 
 | `akka.endpoint.method`
 | string
-| Yes
+| Required
 | Name of the endpoint method being invoked.
 
 |===
@@ -227,7 +229,7 @@ OpenTelemetry semantic convention attributes::
 
 | `http.request.method`
 | string
-| Yes
+| Required
 | HTTP request method.
 
 | `http.response.status_code`
@@ -264,27 +266,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -296,7 +298,7 @@ Endpoint attributes::
 
 | `akka.endpoint.method`
 | string
-| Yes
+| Required
 | Name of the endpoint method being invoked.
 
 |===
@@ -313,7 +315,7 @@ OpenTelemetry semantic convention attributes::
 
 | `http.request.method`
 | string
-| Yes
+| Required
 | HTTP request method.
 
 | `http.response.status_code`
@@ -353,27 +355,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -385,7 +387,7 @@ Endpoint attributes::
 
 | `akka.endpoint.method`
 | string
-| Yes
+| Required
 | Name of the endpoint method being invoked.
 
 |===
@@ -402,7 +404,7 @@ OpenTelemetry semantic convention attributes::
 
 | `rpc.method`
 | string
-| Yes
+| Required
 | The gRPC service and method name, e.g. `com.example.MyService/MyMethod`.
 
 | `rpc.response.status_code`
@@ -412,7 +414,7 @@ OpenTelemetry semantic convention attributes::
 
 | `rpc.system.name`
 | enum
-| Yes
+| Required
 | The Remote Procedure Call (RPC) system.
 
 | `server.address`
@@ -439,27 +441,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -471,7 +473,7 @@ Endpoint attributes::
 
 | `akka.endpoint.method`
 | string
-| Yes
+| Required
 | Name of the endpoint method being invoked.
 
 |===
@@ -488,7 +490,7 @@ OpenTelemetry semantic convention attributes::
 
 | `rpc.method`
 | string
-| Yes
+| Required
 | The gRPC service and method name, e.g. `com.example.MyService/MyMethod`.
 
 | `rpc.response.status_code`
@@ -498,7 +500,7 @@ OpenTelemetry semantic convention attributes::
 
 | `rpc.system.name`
 | enum
-| Yes
+| Required
 | The Remote Procedure Call (RPC) system.
 
 | `server.address`
@@ -528,27 +530,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -580,7 +582,7 @@ OpenTelemetry semantic convention attributes::
 
 | `mcp.method.name`
 | enum
-| Yes
+| Required
 | The name of the request or notification method.
 
 | `rpc.response.status_code`
@@ -610,27 +612,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -664,22 +666,22 @@ Agent Content attributes::
 
 | `akka.agent.content.kind`
 | string
-| Yes
+| Required
 | The kind of content being loaded.
 
 | `akka.agent.content.loader.class`
 | string
-| Recommended: if available
+| Recommended
 | The class name of the content loader used.
 
 | `akka.agent.content.size`
 | int
-| Recommended: if available
+| Recommended
 | The size of the loaded content in bytes.
 
 | `akka.agent.content.uri`
 | string
-| Yes
+| Required
 | The URI of the content being loaded.
 
 |===
@@ -691,27 +693,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -745,22 +747,22 @@ Agent Content attributes::
 
 | `akka.agent.content.kind`
 | string
-| Yes
+| Required
 | The kind of content being loaded.
 
 | `akka.agent.content.loader.class`
 | string
-| Recommended: if available
+| Recommended
 | The class name of the content loader used.
 
 | `akka.agent.content.size`
 | int
-| Recommended: if available
+| Recommended
 | The size of the loaded content in bytes.
 
 | `akka.agent.content.uri`
 | string
-| Yes
+| Required
 | The URI of the content being loaded.
 
 |===
@@ -772,27 +774,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -814,7 +816,7 @@ Agent Evaluation attributes::
 
 | `akka.agent.evaluation.result`
 | enum
-| Yes
+| Required
 | The result of an agent evaluation.
 
 |===
@@ -826,27 +828,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -868,17 +870,17 @@ Agent Guardrail attributes::
 
 | `akka.agent.guardrail.category`
 | string
-| Yes
+| Required
 | The category of the guardrail being evaluated.
 
 | `akka.agent.guardrail.name`
 | string
-| Yes
+| Required
 | The name of the guardrail being evaluated.
 
 | `akka.agent.guardrail.result`
 | enum
-| Yes
+| Required
 | The result of a guardrail evaluation.
 
 |===
@@ -890,27 +892,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -932,27 +934,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -969,12 +971,12 @@ OpenTelemetry semantic convention attributes::
 
 | `gen_ai.operation.name`
 | enum
-| Yes
+| Required
 | The name of the operation being performed.
 
 | `gen_ai.provider.name`
 | enum
-| Yes
+| Required
 | The Generative AI provider as identified by the client or server instrumentation.
 
 | `gen_ai.request.model`
@@ -1006,27 +1008,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1038,12 +1040,12 @@ OpenTelemetry semantic convention attributes::
 
 | `gen_ai.operation.name`
 | enum
-| Yes
+| Required
 | The name of the operation being performed.
 
 | `gen_ai.provider.name`
 | enum
-| Yes
+| Required
 | The Generative AI provider as identified by the client or server instrumentation.
 
 | `gen_ai.request.model`
@@ -1053,7 +1055,7 @@ OpenTelemetry semantic convention attributes::
 
 | `gen_ai.token.type`
 | enum
-| Yes
+| Required
 | The type of token being counted.
 
 |===
@@ -1078,27 +1080,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1120,27 +1122,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1174,27 +1176,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1206,7 +1208,7 @@ Workflow Command attributes::
 
 | `akka.workflow.command.name`
 | string
-| Yes
+| Required
 | The name of the workflow command.
 
 |===
@@ -1240,27 +1242,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1272,7 +1274,7 @@ Workflow Command attributes::
 
 | `akka.workflow.command.name`
 | string
-| Yes
+| Required
 | The name of the workflow command.
 
 |===
@@ -1306,27 +1308,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1348,27 +1350,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1390,27 +1392,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1422,7 +1424,7 @@ Workflow Persistence attributes::
 
 | `akka.workflow.persistence.type`
 | enum
-| Yes
+| Required
 | The type of workflow persistence operation.
 
 |===
@@ -1444,27 +1446,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1486,27 +1488,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1518,7 +1520,7 @@ Workflow Persistence attributes::
 
 | `akka.workflow.persistence.type`
 | enum
-| Yes
+| Required
 | The type of workflow persistence operation.
 
 |===
@@ -1540,27 +1542,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1594,27 +1596,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1636,27 +1638,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1678,27 +1680,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1710,12 +1712,12 @@ Workflow Step attributes::
 
 | `akka.workflow.step.id`
 | int
-| Yes
+| Required
 | The ID of the workflow step.
 
 | `akka.workflow.step.name`
 | string
-| Yes
+| Required
 | The name of the workflow step.
 
 |===
@@ -1749,27 +1751,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1781,12 +1783,12 @@ Workflow Step attributes::
 
 | `akka.workflow.step.id`
 | int
-| Yes
+| Required
 | The ID of the workflow step.
 
 | `akka.workflow.step.name`
 | string
-| Yes
+| Required
 | The name of the workflow step.
 
 |===
@@ -1820,27 +1822,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1874,27 +1876,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1931,27 +1933,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -1963,7 +1965,7 @@ View Update attributes::
 
 | `akka.view.table`
 | string
-| Yes
+| Required
 | The view table name.
 
 |===
@@ -1997,27 +1999,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2029,7 +2031,7 @@ View Update attributes::
 
 | `akka.view.table`
 | string
-| Yes
+| Required
 | The view table name.
 
 |===
@@ -2051,27 +2053,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2083,7 +2085,7 @@ View Update attributes::
 
 | `akka.view.table`
 | string
-| Yes
+| Required
 | The view table name.
 
 |===
@@ -2105,27 +2107,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2137,7 +2139,7 @@ View Update attributes::
 
 | `akka.view.table`
 | string
-| Yes
+| Required
 | The view table name.
 
 |===
@@ -2159,27 +2161,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2201,27 +2203,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2255,27 +2257,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2297,27 +2299,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2339,27 +2341,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2381,27 +2383,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2413,7 +2415,7 @@ View Update attributes::
 
 | `akka.view.table`
 | string
-| Yes
+| Required
 | The view table name.
 
 |===
@@ -2425,7 +2427,7 @@ View Update Outcome attributes::
 
 | `akka.view.update.outcome`
 | enum
-| Yes
+| Required
 | The outcome of the view update.
 
 |===
@@ -2459,27 +2461,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2491,7 +2493,7 @@ View Update attributes::
 
 | `akka.view.table`
 | string
-| Yes
+| Required
 | The view table name.
 
 |===
@@ -2525,27 +2527,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2557,7 +2559,7 @@ View Update attributes::
 
 | `akka.view.table`
 | string
-| Yes
+| Required
 | The view table name.
 
 |===
@@ -2579,27 +2581,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2611,7 +2613,7 @@ View Update attributes::
 
 | `akka.view.table`
 | string
-| Yes
+| Required
 | The view table name.
 
 |===
@@ -2645,27 +2647,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2677,7 +2679,7 @@ View Update attributes::
 
 | `akka.view.table`
 | string
-| Yes
+| Required
 | The view table name.
 
 |===
@@ -2711,27 +2713,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2753,27 +2755,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2785,7 +2787,7 @@ View Update attributes::
 
 | `akka.view.table`
 | string
-| Yes
+| Required
 | The view table name.
 
 |===
@@ -2807,27 +2809,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2839,7 +2841,7 @@ View Update attributes::
 
 | `akka.view.table`
 | string
-| Yes
+| Required
 | The view table name.
 
 |===
@@ -2864,27 +2866,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
@@ -2896,7 +2898,7 @@ Consumer attributes::
 
 | `akka.consumer.source`
 | enum
-| Yes
+| Required
 | The type of source the consumer is consuming from.
 
 |===
@@ -2955,7 +2957,7 @@ Timer Operation attributes::
 
 | `akka.timer.operation`
 | enum
-| Yes
+| Required
 | The type of timer operation.
 
 |===
@@ -2999,7 +3001,7 @@ Timer Worker attributes::
 
 | `akka.timer.worker_id`
 | string
-| Yes
+| Required
 | Identifier of the timer worker actor (shard).
 
 |===
@@ -3024,27 +3026,27 @@ Component attributes::
 
 | `akka.component.description`
 | string
-| Recommended: if available
+| Recommended
 | User-defined description of the component.
 
 | `akka.component.id`
 | string
-| Yes
+| Required
 | Unique identifier for the component instance.
 
 | `akka.component.implementation.name`
 | string
-| Recommended: if available
+| Recommended
 | Fully qualified class name of the component implementation.
 
 | `akka.component.name`
 | string
-| Recommended: if available
+| Recommended
 | User-defined name of the component.
 
 | `akka.component.type`
 | enum
-| Yes
+| Required
 | The type of Akka component.
 
 |===
