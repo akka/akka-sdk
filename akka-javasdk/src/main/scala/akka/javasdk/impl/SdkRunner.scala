@@ -213,6 +213,7 @@ object SdkRunner {
             selfServiceName = None,
             backoffice = backofficeSettings,
             objectStorageBuckets = objectStorageBuckets,
+            // running locally binds the configured port; only the testkit asks for an assigned one
             ephemeralHttpPort = false))
       } else None
 
