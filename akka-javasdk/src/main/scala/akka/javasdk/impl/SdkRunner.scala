@@ -7,6 +7,7 @@ package akka.javasdk.impl
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.net.InetSocketAddress
 import java.time.Instant
 import java.util
 import java.util.Locale
@@ -396,7 +397,8 @@ class SdkRunner private (
         startContext.sanitizer,
         httpMockLookup,
         grpcMockLookup,
-        startContext.inMemorySpanExporter)
+        startContext.inMemorySpanExporter,
+        startContext.httpEndpointBound)
       Future.successful(app.spiComponents)
     } catch {
       case NonFatal(ex) =>
@@ -447,7 +449,11 @@ private[javasdk] object Sdk {
       overrideModelProvider: OverrideModelProvider,
       serializer: Serializer,
       sanitizer: Sanitizer,
-      inMemorySpanExporter: Option[InMemorySpanExporter])
+      inMemorySpanExporter: Option[InMemorySpanExporter],
+      // Completed by the runtime with the address its HTTP endpoint was bound to, see StartContext. Carried
+      // here for the testkit, which awaits it from the thread that started the testkit. Nothing in the SDK
+      // awaits it, because the runtime binds the endpoint only after preStart has returned.
+      httpEndpointBound: Future[InetSocketAddress])
 
   private val platformManagedDependency = Set[Class[_]](
     classOf[ComponentClient],
@@ -500,7 +506,8 @@ private final class Sdk(
     httpMockLookup: String => Option[
       java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
     grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient],
-    inMemorySpanExporter: Option[InMemorySpanExporter]) {
+    inMemorySpanExporter: Option[InMemorySpanExporter],
+    httpEndpointBound: Future[InetSocketAddress]) {
 
   import Sdk._
 
@@ -1184,7 +1191,8 @@ private final class Sdk(
               overrideModelProvider,
               serializer,
               sanitizer,
-              inMemorySpanExporter))
+              inMemorySpanExporter,
+              httpEndpointBound))
           Future.successful(Done)
         case Some(setup) =>
           if (dependencyProviderOpt.nonEmpty) {
@@ -1222,7 +1230,8 @@ private final class Sdk(
               overrideModelProvider,
               serializer,
               sanitizer,
-              inMemorySpanExporter))
+              inMemorySpanExporter,
+              httpEndpointBound))
           Future.successful(Done)
       }
     }
