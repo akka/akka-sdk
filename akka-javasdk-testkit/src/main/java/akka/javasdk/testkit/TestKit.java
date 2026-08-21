@@ -6,6 +6,7 @@ package akka.javasdk.testkit;
 
 import static akka.javasdk.testkit.TestKit.Settings.EventingSupport.TEST_BROKER;
 
+import akka.actor.ExtendedActorSystem;
 import akka.actor.typed.ActorSystem;
 import akka.grpc.javadsl.AkkaGrpcClient;
 import akka.http.javadsl.Http;
@@ -41,7 +42,6 @@ import akka.javasdk.testkit.impl.SseRouteTesterImpl;
 import akka.javasdk.testkit.impl.WebSocketRouteTesterImpl;
 import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow;
-import akka.pattern.Patterns;
 import akka.runtime.sdk.spi.ComponentClients;
 import akka.runtime.sdk.spi.EventLogClient;
 import akka.runtime.sdk.spi.SpiBackofficeSettings$;
@@ -67,6 +67,7 @@ import akka.stream.SystemMaterializer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -77,21 +78,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import kalix.runtime.AkkaRuntimeMain;
+import kalix.runtime.Serve;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Option;
 import scala.Some;
 import scala.concurrent.duration.FiniteDuration;
+import scala.jdk.javaapi.FutureConverters;
 
 /**
  * Testkit for running services locally.
@@ -268,13 +270,20 @@ public class TestKit {
             new HashMap<>(),
             new HashMap<>(),
             new HashMap<>(),
-            Collections.emptyList());
+            Collections.emptyList(),
+            false);
 
     /** The name of this service when deployed. */
     public final String serviceName;
 
     /** Whether ACL checking is enabled. */
     public final boolean aclEnabled;
+
+    /**
+     * Whether the runtime is asked for a port assigned by the operating system rather than the
+     * configured one. See {@link #withEphemeralPort()}.
+     */
+    public final boolean ephemeralPort;
 
     public final EventingSupport eventingSupport;
 
@@ -342,7 +351,8 @@ public class TestKit {
         Map<String, ModelProvider> modelProvidersByAgentId,
         Map<String, Function<HttpRequest, HttpResponse>> httpMocks,
         Map<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>> grpcMocks,
-        List<ObjectStorageBucketConfig> objectStorageBuckets) {
+        List<ObjectStorageBucketConfig> objectStorageBuckets,
+        boolean ephemeralPort) {
       this.serviceName = serviceName;
       this.aclEnabled = aclEnabled;
       this.eventingSupport = eventingSupport;
@@ -355,6 +365,7 @@ public class TestKit {
       this.httpMocks = httpMocks;
       this.grpcMocks = grpcMocks;
       this.objectStorageBuckets = objectStorageBuckets;
+      this.ephemeralPort = ephemeralPort;
     }
 
     /**
@@ -379,7 +390,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /**
@@ -400,7 +412,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /**
@@ -421,7 +434,46 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
+    }
+
+    /**
+     * Ask the operating system for a free port instead of using the configured {@code
+     * akka.javasdk.testkit.http-port}. Read the assigned port with {@link TestKit#getPort()}.
+     *
+     * <p>Use this when several test classes run in the same JVM: they otherwise take turns on one
+     * configured port, and a class fails to start while the previous runtime still holds it.
+     *
+     * <p>The service is reached on one port, whether the request is HTTP or gRPC, so this is the
+     * port for both.
+     *
+     * <p>The assigned port cannot be named in configuration, because a {@code
+     * ${akka.javasdk.testkit.http-port}} interpolation is resolved when the config is loaded, long
+     * before a port is assigned. Under this setting that key reads {@code 0}, so a client
+     * configured that way fails rather than reaching some other service. The entry the testkit
+     * writes for calling the service under test over gRPC is set from the assigned port and works
+     * either way.
+     *
+     * <p>Setting {@code akka.javasdk.testkit.http-port = 0} does the same thing.
+     *
+     * @return The updated settings.
+     */
+    public Settings withEphemeralPort() {
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing,
+          dependencyProvider,
+          additionalConfig,
+          disabledComponents,
+          overrideDisabledComponents,
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets,
+          true);
     }
 
     /** Mock the incoming messages flow from a KeyValueEntity. */
@@ -440,7 +492,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /** Mock the incoming events flow from an EventSourcedEntity. */
@@ -459,7 +512,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /** Mock the incoming state updates flow from a Workflow. */
@@ -477,7 +531,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /**
@@ -496,7 +551,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /** Mock the incoming events flow from a Topic. */
@@ -513,7 +569,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /** Mock the outgoing events flow for a Topic. */
@@ -530,7 +587,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /**
@@ -550,7 +608,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     public Settings withEventingSupport(EventingSupport eventingSupport) {
@@ -566,7 +625,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /**
@@ -586,7 +646,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /**
@@ -614,7 +675,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /**
@@ -634,7 +696,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /**
@@ -655,7 +718,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /**
@@ -678,7 +742,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /**
@@ -701,7 +766,8 @@ public class TestKit {
           newModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /**
@@ -736,7 +802,8 @@ public class TestKit {
           modelProvidersByAgentId,
           newHttpMocks,
           grpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     /**
@@ -761,7 +828,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           grpcMocks,
-          newBuckets);
+          newBuckets,
+          ephemeralPort);
     }
 
     /**
@@ -803,7 +871,8 @@ public class TestKit {
           modelProvidersByAgentId,
           httpMocks,
           newGrpcMocks,
-          objectStorageBuckets);
+          objectStorageBuckets,
+          ephemeralPort);
     }
 
     @Override
@@ -826,12 +895,25 @@ public class TestKit {
 
   private static final Logger log = LoggerFactory.getLogger(TestKit.class);
 
+  /**
+   * How long to wait for the runtime to report the address it bound. The runtime completes that as
+   * soon as it binds or as soon as it knows it cannot, so this bound only comes into play when the
+   * runtime hangs before getting that far.
+   */
+  private static final Duration RUNTIME_BINDING_TIMEOUT = Duration.ofSeconds(60);
+
+  /**
+   * How long to wait for the runtime to answer the dev mode startup check on the address it bound.
+   */
+  private static final Duration RUNTIME_STARTED_TIMEOUT = Duration.ofSeconds(10);
+
   private final Settings settings;
 
   private EventingTestKit.MessageBuilder messageBuilder;
   private boolean started = false;
   private String runtimeHost;
   private int runtimePort;
+  private boolean ephemeralPort;
   private EventingTestKit eventingTestKit;
   private ActorSystem<?> runtimeActorSystem;
   private ComponentClient componentClient;
@@ -879,7 +961,7 @@ public class TestKit {
   public TestKit start() {
     if (started) throw new IllegalStateException("Testkit already started");
 
-    eventingTestKitPort = availableLocalPort();
+    eventingTestKitPort = availableEventingTestKitPort();
     startRuntime(settings.additionalConfig);
     started = true;
 
@@ -925,6 +1007,12 @@ public class TestKit {
             public Config applicationConfig() {
               var userConfig = config.withFallback(super.applicationConfig());
               runtimePort = userConfig.getInt("akka.javasdk.testkit.http-port");
+              // 0 in configuration asks for the same thing as the setting
+              ephemeralPort = settings.ephemeralPort || runtimePort == 0;
+              // There is no port to point the self client at yet, and 0 is a port no client can
+              // reach, so one built from it fails instead of finding some other service. The real
+              // port is written to this entry once the runtime has bound it.
+              if (ephemeralPort) runtimePort = 0;
 
               if (settings.serviceName.isEmpty())
                 serviceName = userConfig.getString("akka.javasdk.dev-mode.service-name");
@@ -985,7 +1073,8 @@ public class TestKit {
                       new SpiTestSettings(true, true),
                       Some.apply(serviceName),
                       SpiBackofficeSettings$.MODULE$.empty(),
-                      spiObjectStorageBuckets);
+                      spiObjectStorageBuckets,
+                      ephemeralPort);
 
               return s.withDevMode(devModeSettings);
             }
@@ -997,8 +1086,13 @@ public class TestKit {
       runtimeActorSystem = AkkaRuntimeMain.start(Some.apply(runtimeConfig), runner);
       // wait for SDK to get on start callback (or fail starting), we need it to set up the
       // component client
-      final Sdk.StartupContext startupContext =
-          runner.started().toCompletableFuture().get(20, TimeUnit.SECONDS);
+      final Sdk.StartupContext startupContext;
+      try {
+        startupContext = runner.started().toCompletableFuture().get(20, TimeUnit.SECONDS);
+      } catch (TimeoutException e) {
+        throw new IllegalStateException(
+            "Timed out after 20 seconds waiting for the service components to start.", e);
+      }
       final ComponentClients componentClients = startupContext.componentClients();
       serializer = startupContext.serializer();
       dependencyProvider =
@@ -1011,61 +1105,55 @@ public class TestKit {
                   .overrideModelProvider()
                   .setModelProviderForAgent(agentId, modelProvider));
 
-      startEventingTestkit();
-
-      Http http = Http.get(runtimeActorSystem);
-      log.info("Checking runtime status");
-      CompletionStage<String> checkingProxyStatus =
-          Patterns.retry(
-              () ->
-                  http.singleRequest(
-                          HttpRequest.GET(
-                              "http://"
-                                  + runtimeHost
-                                  + ":"
-                                  + runtimePort
-                                  + "/akka/dev-mode/health-check"))
-                      .thenCompose(
-                          response -> {
-                            int responseCode = response.status().intValue();
-                            if (responseCode == 404) {
-                              log.info("Runtime started");
-                              return CompletableFuture.completedStage("Ok");
-                            } else {
-                              log.info(
-                                  "Waiting for runtime, current response code is {}", responseCode);
-                              return CompletableFuture.failedFuture(
-                                  new IllegalStateException("Runtime not started."));
-                            }
-                          })
-                      .exceptionally(
-                          ex -> {
-                            log.error("Failed to connect to runtime:", ex);
-                            throw new IllegalStateException("Runtime not started.", ex);
-                          }),
-              10,
-              Duration.ofSeconds(1),
-              runtimeActorSystem);
-
+      // The runtime completes this with the address it bound, or fails it with the reason it
+      // could not. It can also stay pending, when the runtime hangs before it gets as far as
+      // either, so the wait is bounded. This runs on the thread that called start(), after the
+      // runtime's own startup chain has returned, where awaiting cannot deadlock it.
+      final int configuredPort = runtimePort;
+      log.debug("Waiting for the runtime to bind its HTTP endpoint");
+      final InetSocketAddress boundAddress;
       try {
-        CompletableFuture.anyOf(
-                checkingProxyStatus.toCompletableFuture(),
-                runtimeActorSystem.getWhenTerminated().toCompletableFuture())
-            .get(60, TimeUnit.SECONDS);
+        boundAddress =
+            FutureConverters.asJava(startupContext.httpEndpointBound())
+                .toCompletableFuture()
+                .get(RUNTIME_BINDING_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
       } catch (ExecutionException e) {
-        RuntimeException cause = ErrorHandling.unwrapExecutionException(e);
-        log.error("Failed to connect to Runtime with:", cause);
-        throw cause;
-      } catch (InterruptedException | TimeoutException e) {
-        log.error("Failed to connect to Runtime with:", e);
-        throw new RuntimeException(e);
+        // the runtime's own failure, which already names the interface and the port
+        throw ErrorHandling.unwrapExecutionException(e);
+      } catch (TimeoutException e) {
+        throw new IllegalStateException(
+            "Timed out after "
+                + RUNTIME_BINDING_TIMEOUT.toSeconds()
+                + " seconds waiting for the runtime to bind its HTTP endpoint on port "
+                + configuredPort
+                + ".",
+            e);
       }
+
+      // A configured port is used as configured. An operating system assigned one becomes a real
+      // number only here. Everything that reads runtimePort runs after this.
+      runtimePort = boundAddress.getPort();
+      if (!ephemeralPort && configuredPort != runtimePort)
+        throw new IllegalStateException(
+            "Runtime was configured with port "
+                + configuredPort
+                + " but bound "
+                + boundAddress
+                + ". A configured port is always used as configured, so this should not happen.");
+      log.info("Runtime bound {}", boundAddress);
+
+      confirmRuntimeStarted(boundAddress);
 
       // In case of failed validations in the runtime the ActorSystem will be terminated
       if (runtimeActorSystem.whenTerminated().isCompleted())
-        throw new IllegalStateException("Runtime was terminated.");
+        throw new IllegalStateException(
+            "Runtime bound "
+                + boundAddress
+                + " and was then terminated. The reason is in the runtime log above.");
 
       // once runtime is started
+
+      startEventingTestkit();
 
       // The runtime surfaces the in-memory tracing exporter (when the test tracing setup is active)
       // through the SPI StartupContext, so the testkit reads captured spans without referencing
@@ -1091,11 +1179,82 @@ public class TestKit {
               runtimeActorSystem.executionContext());
       httpClientProvider = startupContext.httpClientProvider();
       grpcClientProvider = startupContext.grpcClientProvider();
+      // The entry written in applicationConfig() above could not carry the port when the configured
+      // port was
+      // 0. gRPC clients are created lazily, so setting it here, before any test can ask for one, is
+      // in time.
+      // Applied unconditionally: with a configured port the value is the same one.
+      grpcClientProvider.overrideClientConfigFor(serviceName, runtimeHost, runtimePort, false);
       timerScheduler = new TimerSchedulerImpl(componentClients.timerClient(), Metadata.EMPTY);
       this.messageBuilder = new EventingTestKit.MessageBuilder(serializer);
 
     } catch (Exception ex) {
       throw new RuntimeException("Error while starting testkit", ex);
+    }
+  }
+
+  /**
+   * Confirms that the runtime this testkit started is the one serving on the address it bound.
+   *
+   * <p>The binding tells us the socket is this runtime's, but not that the endpoint serves
+   * requests. The runtime's dev mode startup check answers affirmatively only when the ActorSystem
+   * uid in the request is its own, so a different runtime on the same address is reported as such
+   * instead of being mistaken for this one. The expected uid is read off the ActorSystem this
+   * testkit started, so nothing has to hand it out.
+   *
+   * <p>This is a startup confirmation only. It says nothing about the health of user components, so
+   * a slow component does not look like a startup failure.
+   */
+  private void confirmRuntimeStarted(InetSocketAddress boundAddress)
+      throws ExecutionException, InterruptedException {
+    long expectedUid = ((ExtendedActorSystem) runtimeActorSystem.classicSystem()).uid();
+    String url =
+        "http://"
+            + boundAddress.getHostString()
+            + ":"
+            + boundAddress.getPort()
+            + Serve.DevModeStartedPath()
+            + "?uid="
+            + expectedUid;
+
+    HttpResponse response;
+    String body;
+    try {
+      response =
+          Http.get(runtimeActorSystem)
+              .singleRequest(HttpRequest.GET(url))
+              .toCompletableFuture()
+              .get(RUNTIME_STARTED_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
+      body =
+          response
+              .entity()
+              .toStrict(
+                  RUNTIME_STARTED_TIMEOUT.toMillis(),
+                  getMaterializer())
+              .toCompletableFuture()
+              .get(RUNTIME_STARTED_TIMEOUT.toSeconds(), TimeUnit.SECONDS)
+              .getData()
+              .utf8String();
+    } catch (TimeoutException e) {
+      throw new IllegalStateException(
+          "Timed out after "
+              + RUNTIME_STARTED_TIMEOUT.toSeconds()
+              + " seconds waiting for the runtime at "
+              + boundAddress
+              + " to answer the startup check.",
+          e);
+    }
+
+    if (response.status().intValue() != 200) {
+      throw new IllegalStateException(
+          "The runtime serving "
+              + boundAddress
+              + " is not the one this testkit started. Expected the runtime with ActorSystem uid ["
+              + expectedUid
+              + "], the startup check answered "
+              + response.status().intValue()
+              + ": "
+              + body);
     }
   }
 
@@ -1110,7 +1269,19 @@ public class TestKit {
     return runtimeHost;
   }
 
-  /** Get the local port where the service is available. */
+  /**
+   * Get the local port where the service is available, for HTTP and gRPC alike.
+   *
+   * <p>This is the port from {@code akka.javasdk.testkit.http-port}, which is used exactly as
+   * configured, unless the operating system was asked to assign one with {@link
+   * Settings#withEphemeralPort()}, in which case this is the assigned port.
+   *
+   * <p>An assigned port cannot be named in configuration: a hand written entry that interpolates
+   * {@code ${akka.javasdk.testkit.http-port}} resolves to {@code 0}, because HOCON resolves it when
+   * the config is loaded, long before a port is assigned. This method is the only way to learn it.
+   * The entry the testkit writes for calling the service under test over gRPC is set from the
+   * assigned port and works either way.
+   */
   public int getPort() {
     if (!started)
       throw new IllegalStateException("Need to start the testkit before accessing the port");
@@ -1485,6 +1656,44 @@ public class TestKit {
     } catch (IOException e) {
       throw new RuntimeException("Couldn't get available local port", e);
     }
+  }
+
+  /**
+   * A band below the range operating systems draw ephemeral ports from: 32768 and up on Linux,
+   * 49152 and up on macOS and Windows.
+   */
+  private static final int EVENTING_PORT_BAND_FIRST = 20000;
+
+  private static final int EVENTING_PORT_BAND_LAST = 32767;
+
+  private static final int EVENTING_PORT_ATTEMPTS = 50;
+
+  /**
+   * The eventing testkit port is chosen when the testkit starts but only bound once the runtime has
+   * booted, and the runtime opens plenty of outbound connections in between. A port from the
+   * ephemeral range can be taken for one of those in that gap, so the port is drawn from a band
+   * below that range instead. This narrows the window rather than closing it: the port is handed to
+   * the runtime through the settings long before anything binds it.
+   */
+  private static int availableEventingTestKitPort() {
+    for (int attempt = 0; attempt < EVENTING_PORT_ATTEMPTS; attempt++) {
+      int port =
+          ThreadLocalRandom.current()
+              .nextInt(EVENTING_PORT_BAND_FIRST, EVENTING_PORT_BAND_LAST + 1);
+      // bound on the wildcard address, the same as the eventing testkit binds it on
+      try (ServerSocket socket = new ServerSocket()) {
+        socket.setReuseAddress(true);
+        socket.bind(new InetSocketAddress(port));
+        return port;
+      } catch (IOException taken) {
+        // try another one
+      }
+    }
+    log.warn(
+        "Found no free port in [{}-{}] for the eventing testkit, asking for any free port instead",
+        EVENTING_PORT_BAND_FIRST,
+        EVENTING_PORT_BAND_LAST);
+    return availableLocalPort();
   }
 
   /**
