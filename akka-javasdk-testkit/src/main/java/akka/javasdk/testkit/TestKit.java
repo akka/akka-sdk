@@ -79,6 +79,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
@@ -960,7 +961,7 @@ public class TestKit {
   public TestKit start() {
     if (started) throw new IllegalStateException("Testkit already started");
 
-    eventingTestKitPort = availableLocalPort();
+    eventingTestKitPort = availableEventingTestKitPort();
     startRuntime(settings.additionalConfig);
     started = true;
 
@@ -1655,6 +1656,44 @@ public class TestKit {
     } catch (IOException e) {
       throw new RuntimeException("Couldn't get available local port", e);
     }
+  }
+
+  /**
+   * A band below the range operating systems draw ephemeral ports from: 32768 and up on Linux,
+   * 49152 and up on macOS and Windows.
+   */
+  private static final int EVENTING_PORT_BAND_FIRST = 20000;
+
+  private static final int EVENTING_PORT_BAND_LAST = 32767;
+
+  private static final int EVENTING_PORT_ATTEMPTS = 50;
+
+  /**
+   * The eventing testkit port is chosen when the testkit starts but only bound once the runtime has
+   * booted, and the runtime opens plenty of outbound connections in between. A port from the
+   * ephemeral range can be taken for one of those in that gap, so the port is drawn from a band
+   * below that range instead. This narrows the window rather than closing it: the port is handed to
+   * the runtime through the settings long before anything binds it.
+   */
+  private static int availableEventingTestKitPort() {
+    for (int attempt = 0; attempt < EVENTING_PORT_ATTEMPTS; attempt++) {
+      int port =
+          ThreadLocalRandom.current()
+              .nextInt(EVENTING_PORT_BAND_FIRST, EVENTING_PORT_BAND_LAST + 1);
+      // bound on the wildcard address, the same as the eventing testkit binds it on
+      try (ServerSocket socket = new ServerSocket()) {
+        socket.setReuseAddress(true);
+        socket.bind(new InetSocketAddress(port));
+        return port;
+      } catch (IOException taken) {
+        // try another one
+      }
+    }
+    log.warn(
+        "Found no free port in [{}-{}] for the eventing testkit, asking for any free port instead",
+        EVENTING_PORT_BAND_FIRST,
+        EVENTING_PORT_BAND_LAST);
+    return availableLocalPort();
   }
 
   /**
