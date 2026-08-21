@@ -12,6 +12,9 @@ Current versions
 
 == August 2026
 
+* Platform update 2026-08-20
+    - Runtime logs with severity `warn` and above are now exported to the log exporters configured for your project, alongside your application logs. Previously, runtime logs were never exported. This gives you visibility into runtime warnings and errors (for example, failures during service startup) in your own logging backend, but may increase the volume of ingested log data. The behavior can be tuned per project with the new `runtimeLogs.minSeverity` setting in the observability descriptor or the `akka project observability config runtime-logs` command; setting it to `none` restores the previous behavior. See xref:operations:observability-and-monitoring/observability-exports.adoc#_exporting_runtime_logs[Exporting runtime logs].
+
 * Akka CLI 3,0.71
 - Updates to Akka Specify exit conditions
 - Manage project stores
