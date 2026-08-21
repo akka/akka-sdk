@@ -6,8 +6,10 @@ package akka.javasdk.testkit;
 
 import static akka.javasdk.testkit.TestKit.Settings.EventingSupport.TEST_BROKER;
 
+import akka.actor.ExtendedActorSystem;
 import akka.actor.typed.ActorSystem;
 import akka.grpc.javadsl.AkkaGrpcClient;
+import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.DependencyProvider;
@@ -83,6 +85,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import kalix.runtime.AkkaRuntimeMain;
+import kalix.runtime.Serve;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -831,6 +834,11 @@ public class TestKit {
    */
   private static final Duration RUNTIME_BINDING_TIMEOUT = Duration.ofSeconds(60);
 
+  /**
+   * How long to wait for the runtime to answer the dev mode startup check on the address it bound.
+   */
+  private static final Duration RUNTIME_STARTED_TIMEOUT = Duration.ofSeconds(10);
+
   private final Settings settings;
 
   private EventingTestKit.MessageBuilder messageBuilder;
@@ -1051,6 +1059,8 @@ public class TestKit {
       }
       log.info("Runtime bound {}", boundAddress);
 
+      confirmRuntimeStarted(boundAddress);
+
       // In case of failed validations in the runtime the ActorSystem will be terminated
       if (runtimeActorSystem.whenTerminated().isCompleted())
         throw new IllegalStateException(
@@ -1089,6 +1099,71 @@ public class TestKit {
 
     } catch (Exception ex) {
       throw new RuntimeException("Error while starting testkit", ex);
+    }
+  }
+
+  /**
+   * Confirms that the runtime this testkit started is the one serving on the address it bound.
+   *
+   * <p>The binding tells us the socket is this runtime's, but not that the endpoint serves
+   * requests. The runtime's dev mode startup check answers affirmatively only when the ActorSystem
+   * uid in the request is its own, so a different runtime on the same address is reported as such
+   * instead of being mistaken for this one. The expected uid is read off the ActorSystem this
+   * testkit started, so nothing has to hand it out.
+   *
+   * <p>This is a startup confirmation only. It says nothing about the health of user components, so
+   * a slow component does not look like a startup failure.
+   */
+  private void confirmRuntimeStarted(InetSocketAddress boundAddress)
+      throws ExecutionException, InterruptedException {
+    long expectedUid = ((ExtendedActorSystem) runtimeActorSystem.classicSystem()).uid();
+    String url =
+        "http://"
+            + boundAddress.getHostString()
+            + ":"
+            + boundAddress.getPort()
+            + Serve.DevModeStartedPath()
+            + "?uid="
+            + expectedUid;
+
+    HttpResponse response;
+    String body;
+    try {
+      response =
+          Http.get(runtimeActorSystem)
+              .singleRequest(HttpRequest.GET(url))
+              .toCompletableFuture()
+              .get(RUNTIME_STARTED_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
+      body =
+          response
+              .entity()
+              .toStrict(
+                  RUNTIME_STARTED_TIMEOUT.toMillis(),
+                  SystemMaterializer.get(runtimeActorSystem).materializer())
+              .toCompletableFuture()
+              .get(RUNTIME_STARTED_TIMEOUT.toSeconds(), TimeUnit.SECONDS)
+              .getData()
+              .utf8String();
+    } catch (TimeoutException e) {
+      throw new IllegalStateException(
+          "Timed out after "
+              + RUNTIME_STARTED_TIMEOUT.toSeconds()
+              + " seconds waiting for the runtime at "
+              + boundAddress
+              + " to answer the startup check.",
+          e);
+    }
+
+    if (response.status().intValue() != 200) {
+      throw new IllegalStateException(
+          "The runtime serving "
+              + boundAddress
+              + " is not the one this testkit started. Expected the runtime with ActorSystem uid ["
+              + expectedUid
+              + "], the startup check answered "
+              + response.status().intValue()
+              + ": "
+              + body);
     }
   }
 
