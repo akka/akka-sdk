@@ -60,18 +60,19 @@ object Dependencies {
   val jacksonParameterNames = "com.fasterxml.jackson.module" % "jackson-module-parameter-names" % JacksonVersion
   val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonVersion
 
-  // Every Jackson module has to be held at the same version. langchain4j asks for a higher databind,
-  // and coursier resolves the highest unless the whole family is pinned together, which leaves
-  // jackson-module-scala refusing to load against a databind from a different minor.
-  val JacksonModules: Seq[ModuleID] = Seq(
-    jacksonAnnotations,
-    jacksonCore,
-    jacksonDatabind,
-    "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % JacksonVersion,
-    jacksonJdk8,
-    jacksonJsr310,
-    jacksonParameterNames,
-    jacksonScala)
+  // TODO advance Jackson to 2.22.x. langchain4j 1.18.x depends on 2.22.1, and coursier resolves the
+  // higher version unless every module is held down together: jackson-module-scala refuses to load
+  // against a databind from a different minor. Held at the version akka resolves until the whole
+  // build, and the runtime, can move.
+  val jacksonModules: Seq[ModuleID] =
+    Seq(
+      jacksonAnnotations,
+      jacksonCore,
+      jacksonDatabind,
+      jacksonJdk8,
+      jacksonJsr310,
+      jacksonParameterNames,
+      jacksonScala)
 
   val langchain4j = "dev.langchain4j" % "langchain4j" % Langchain4jVersion
 

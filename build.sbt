@@ -8,10 +8,6 @@ import Dependencies.GoogleProtobufVersion
 
 import sbt.librarymanagement.{ SemanticSelector, VersionNumber }
 
-// hold Jackson at the version akka resolves, against the newer one langchain4j asks for,
-// see Dependencies.JacksonModules
-ThisBuild / dependencyOverrides ++= Dependencies.JacksonModules
-
 Global / initialize := {
   val _ = (Global / initialize).value
   val specificationVersion = sys.props("java.specification.version")
@@ -19,6 +15,10 @@ Global / initialize := {
   if (!isJdk21orHigher)
     throw new MessageOnlyException(s"JDK 21 or higher is required, found: $specificationVersion")
 }
+
+// hold Jackson at the version akka resolves, against the newer one langchain4j asks for,
+// see Dependencies.jacksonModules
+ThisBuild / dependencyOverrides ++= Dependencies.jacksonModules
 
 lazy val `akka-javasdk-root` = project
   .in(file("."))

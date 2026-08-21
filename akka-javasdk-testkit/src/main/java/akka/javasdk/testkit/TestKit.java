@@ -1074,7 +1074,7 @@ public class TestKit {
                       Some.apply(serviceName),
                       SpiBackofficeSettings$.MODULE$.empty(),
                       spiObjectStorageBuckets,
-                      /* ephemeralHttpPort */ ephemeralPort);
+                      ephemeralPort);
 
               return s.withDevMode(devModeSettings);
             }
@@ -1230,7 +1230,7 @@ public class TestKit {
               .entity()
               .toStrict(
                   RUNTIME_STARTED_TIMEOUT.toMillis(),
-                  SystemMaterializer.get(runtimeActorSystem).materializer())
+                  getMaterializer())
               .toCompletableFuture()
               .get(RUNTIME_STARTED_TIMEOUT.toSeconds(), TimeUnit.SECONDS)
               .getData()
