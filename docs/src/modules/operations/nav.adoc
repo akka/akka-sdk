@@ -4,6 +4,8 @@
 *** xref:operations:configuring.adoc[Self-managed operations]
 *** xref:operations:akka-platform.adoc[Akka Automated Operations]
 
+**** xref:operations:technical-overview.adoc[Technical Overview]
+
 **** xref:operations:organizations/index.adoc[]
 ***** xref:operations:organizations/manage-users.adoc[Manage users]
 ***** xref:operations:organizations/regions.adoc[]
