@@ -16,6 +16,7 @@ An Akka observability descriptor describes how metrics, logs, and traces are exp
 |*traces*         |[]<<ObservabilityTraces>>  |The exporters to use for traces. Overrides the exporters defined in `exporters`, but just for traces.
 |*heapDump*       |<<HeapDump>>               |Heap dump export configuration.
 |*traceSampling*  |<<TraceSampling>>          |Trace sampling configuration. Applies to all trace exporters.
+|*runtimeLogs*    |<<RuntimeLogs>>            |Controls which runtime logs are exported to the configured log exporters. Applies to all log exporters.
 |*logLevel*       |string                     |Log level for the OpenTelemetry collector. Valid values are `debug`, `info`, `warn`, and `error`.
 |===
 
@@ -265,6 +266,17 @@ References to secrets containing AWS credentials for heap dump uploads.
 
 |*awsAccessKeyId*     |<<SecretKeyRef>> |A reference to the secret and key containing the AWS access key ID.
 |*awsSecretAccessKey* |<<SecretKeyRef>> |A reference to the secret and key containing the AWS secret access key.
+|===
+
+=== RuntimeLogs
+
+Controls export of runtime logs to the configured log exporters. Logs produced by your application are always exported, regardless of this setting. See xref:operations:observability-and-monitoring/observability-exports.adoc#_exporting_runtime_logs[Exporting runtime logs] for details.
+
+[cols="1,1,1"]
+|===
+|Field            |Type    |Description
+
+|*minSeverity*    |string  |The minimum severity of runtime logs to export. One of `none`, `error`, `warn`, `info` or `debug`. Runtime logs below this severity are not exported; `none` disables runtime log export entirely. Runtime log records whose severity cannot be determined are always exported unless set to `none`. When unset, the region default applies (`warn` unless configured otherwise).
 |===
 
 === TraceSampling

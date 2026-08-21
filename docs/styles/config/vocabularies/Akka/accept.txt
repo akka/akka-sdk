@@ -140,6 +140,7 @@ materializer
 maxInstances
 migratable
 minInstances
+minSeverity
 mountPath
 multimodal
 Multimodal
@@ -216,6 +217,7 @@ resourceVersion
 [Rr]eusability
 RNGs
 roleArn
+runtimeLogs
 runtimes
 runtime's
 (?i)RPC
