@@ -212,7 +212,9 @@ object SdkRunner {
             testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
             selfServiceName = None,
             backoffice = backofficeSettings,
-            objectStorageBuckets = objectStorageBuckets))
+            objectStorageBuckets = objectStorageBuckets,
+            // running locally binds the configured port; only the testkit asks for an assigned one
+            ephemeralHttpPort = false))
       } else None
 
     val agentInteractionLogEnabled =
