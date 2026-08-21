@@ -8,7 +8,6 @@ import static akka.javasdk.testkit.TestKit.Settings.EventingSupport.TEST_BROKER;
 
 import akka.actor.typed.ActorSystem;
 import akka.grpc.javadsl.AkkaGrpcClient;
-import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.DependencyProvider;
@@ -41,7 +40,6 @@ import akka.javasdk.testkit.impl.SseRouteTesterImpl;
 import akka.javasdk.testkit.impl.WebSocketRouteTesterImpl;
 import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow;
-import akka.pattern.Patterns;
 import akka.runtime.sdk.spi.ComponentClients;
 import akka.runtime.sdk.spi.EventLogClient;
 import akka.runtime.sdk.spi.SpiBackofficeSettings$;
@@ -67,6 +65,7 @@ import akka.stream.SystemMaterializer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -77,8 +76,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -92,6 +89,7 @@ import org.slf4j.LoggerFactory;
 import scala.Option;
 import scala.Some;
 import scala.concurrent.duration.FiniteDuration;
+import scala.jdk.javaapi.FutureConverters;
 
 /**
  * Testkit for running services locally.
@@ -826,6 +824,13 @@ public class TestKit {
 
   private static final Logger log = LoggerFactory.getLogger(TestKit.class);
 
+  /**
+   * How long to wait for the runtime to report the address it bound. The runtime completes that as
+   * soon as it binds or as soon as it knows it cannot, so this bound only comes into play when the
+   * runtime hangs before getting that far.
+   */
+  private static final Duration RUNTIME_BINDING_TIMEOUT = Duration.ofSeconds(60);
+
   private final Settings settings;
 
   private EventingTestKit.MessageBuilder messageBuilder;
@@ -997,8 +1002,13 @@ public class TestKit {
       runtimeActorSystem = AkkaRuntimeMain.start(Some.apply(runtimeConfig), runner);
       // wait for SDK to get on start callback (or fail starting), we need it to set up the
       // component client
-      final Sdk.StartupContext startupContext =
-          runner.started().toCompletableFuture().get(20, TimeUnit.SECONDS);
+      final Sdk.StartupContext startupContext;
+      try {
+        startupContext = runner.started().toCompletableFuture().get(20, TimeUnit.SECONDS);
+      } catch (TimeoutException e) {
+        throw new IllegalStateException(
+            "Timed out after 20 seconds waiting for the service components to start.", e);
+      }
       final ComponentClients componentClients = startupContext.componentClients();
       serializer = startupContext.serializer();
       dependencyProvider =
@@ -1013,57 +1023,40 @@ public class TestKit {
 
       startEventingTestkit();
 
-      Http http = Http.get(runtimeActorSystem);
-      log.info("Checking runtime status");
-      CompletionStage<String> checkingProxyStatus =
-          Patterns.retry(
-              () ->
-                  http.singleRequest(
-                          HttpRequest.GET(
-                              "http://"
-                                  + runtimeHost
-                                  + ":"
-                                  + runtimePort
-                                  + "/akka/dev-mode/health-check"))
-                      .thenCompose(
-                          response -> {
-                            int responseCode = response.status().intValue();
-                            if (responseCode == 404) {
-                              log.info("Runtime started");
-                              return CompletableFuture.completedStage("Ok");
-                            } else {
-                              log.info(
-                                  "Waiting for runtime, current response code is {}", responseCode);
-                              return CompletableFuture.failedFuture(
-                                  new IllegalStateException("Runtime not started."));
-                            }
-                          })
-                      .exceptionally(
-                          ex -> {
-                            log.error("Failed to connect to runtime:", ex);
-                            throw new IllegalStateException("Runtime not started.", ex);
-                          }),
-              10,
-              Duration.ofSeconds(1),
-              runtimeActorSystem);
-
+      // The runtime completes this with the address it bound, or fails it with the reason it could
+      // not.
+      // It can also stay pending, when the runtime hangs before it gets as far as binding, so the
+      // wait is
+      // bounded. This is the test's own thread, after start() returned, so awaiting here cannot
+      // deadlock
+      // the runtime's startup.
+      log.debug("Waiting for the runtime to bind its HTTP endpoint");
+      final InetSocketAddress boundAddress;
       try {
-        CompletableFuture.anyOf(
-                checkingProxyStatus.toCompletableFuture(),
-                runtimeActorSystem.getWhenTerminated().toCompletableFuture())
-            .get(60, TimeUnit.SECONDS);
+        boundAddress =
+            FutureConverters.asJava(startupContext.httpEndpointBound())
+                .toCompletableFuture()
+                .get(RUNTIME_BINDING_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
       } catch (ExecutionException e) {
-        RuntimeException cause = ErrorHandling.unwrapExecutionException(e);
-        log.error("Failed to connect to Runtime with:", cause);
-        throw cause;
-      } catch (InterruptedException | TimeoutException e) {
-        log.error("Failed to connect to Runtime with:", e);
-        throw new RuntimeException(e);
+        // the runtime's own failure, which already names the interface and the port
+        throw ErrorHandling.unwrapExecutionException(e);
+      } catch (TimeoutException e) {
+        throw new IllegalStateException(
+            "Timed out after "
+                + RUNTIME_BINDING_TIMEOUT.toSeconds()
+                + " seconds waiting for the runtime to bind its HTTP endpoint on port "
+                + runtimePort
+                + ".",
+            e);
       }
+      log.info("Runtime bound {}", boundAddress);
 
       // In case of failed validations in the runtime the ActorSystem will be terminated
       if (runtimeActorSystem.whenTerminated().isCompleted())
-        throw new IllegalStateException("Runtime was terminated.");
+        throw new IllegalStateException(
+            "Runtime bound "
+                + boundAddress
+                + " and was then terminated. The reason is in the runtime log above.");
 
       // once runtime is started
 
