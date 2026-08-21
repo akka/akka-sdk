@@ -8,6 +8,10 @@ import Dependencies.GoogleProtobufVersion
 
 import sbt.librarymanagement.{ SemanticSelector, VersionNumber }
 
+// hold Jackson at the version akka resolves, against the newer one langchain4j asks for,
+// see Dependencies.JacksonModules
+ThisBuild / dependencyOverrides ++= Dependencies.JacksonModules
+
 Global / initialize := {
   val _ = (Global / initialize).value
   val specificationVersion = sys.props("java.specification.version")

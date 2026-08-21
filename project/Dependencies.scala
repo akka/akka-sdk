@@ -8,12 +8,12 @@ object Dependencies {
     val ProtocolVersionMinor = 1
   }
 
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.15")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.15-28-e9b89c8e-SNAPSHOT")
 
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
-  val AkkaVersion = "2.10.20"
+  val AkkaVersion = "2.10.21"
   val AkkaHttpVersion = "10.7.4" // Note: should at least the Akka HTTP version required by Akka gRPC
   val AkkaGrpcVersion = akka.grpc.gen.BuildInfo.version
   val GoogleProtobufVersion = akka.grpc.gen.BuildInfo.googleProtobufVersion
@@ -59,6 +59,19 @@ object Dependencies {
   val jacksonJsr310 = "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % JacksonVersion
   val jacksonParameterNames = "com.fasterxml.jackson.module" % "jackson-module-parameter-names" % JacksonVersion
   val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonVersion
+
+  // Every Jackson module has to be held at the same version. langchain4j asks for a higher databind,
+  // and coursier resolves the highest unless the whole family is pinned together, which leaves
+  // jackson-module-scala refusing to load against a databind from a different minor.
+  val JacksonModules: Seq[ModuleID] = Seq(
+    jacksonAnnotations,
+    jacksonCore,
+    jacksonDatabind,
+    "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % JacksonVersion,
+    jacksonJdk8,
+    jacksonJsr310,
+    jacksonParameterNames,
+    jacksonScala)
 
   val langchain4j = "dev.langchain4j" % "langchain4j" % Langchain4jVersion
 
