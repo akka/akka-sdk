@@ -79,7 +79,6 @@ public class TestKitPortTest {
     TestKit testKit = new TestKit(TestKit.Settings.DEFAULT.withEphemeralPort()).start();
     try {
       assertAssignedPort(testKit);
-      System.out.println("Ephemeral testkit port: " + testKit.getPort());
 
       // requests reach the assigned port
       assertThat(statusOf(testKit, "/query/one?a=a&b=1&c=-1")).isEqualTo(200);

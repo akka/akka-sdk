@@ -71,7 +71,6 @@ object Dependencies {
       jacksonAnnotations,
       jacksonCore,
       jacksonDatabind,
-      "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % JacksonVersion,
       jacksonJdk8,
       jacksonJsr310,
       jacksonParameterNames,
