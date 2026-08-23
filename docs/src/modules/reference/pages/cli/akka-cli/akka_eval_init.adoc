@@ -1,0 +1,29 @@
+= akka eval init
+
+Add the eval source root to a project.
+
+== Synopsis
+
+Writes the eval tree — scorers by family, datasets, rubrics, baselines — into an existing project, and configures the Maven profile that compiles it.
+
+Additive: a file already present is left alone.
+`--force` replaces existing files, after backing up what it replaces.
+
+Run the command again to take a newer scaffold; the parts you have written stay yours.
+
+----
+akka eval init [DIRECTORY] [flags]
+----
+
+== Options
+
+----
+      --force           replace files that are already there
+      --from string     a scaffold archive on disk, instead of downloading one
+      --source string   where to download the scaffold from
+  -h, --help            help for init
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_eval.adoc[]

@@ -1,0 +1,64 @@
+= Campaigns and runs
+
+include::ROOT:partial$include.adoc[]
+
+A red-team campaign runs a set of rules against a target under a set of attack styles.
+Every attempt is one scenario, one rule, and one attack style, repeated `repeatsPerAttack` times.
+
+== Declaring a campaign
+
+[source,java,indent=0]
+----
+RedTeamCampaign.named("refund-safety")
+    .withScenarios(ScenarioSource.fromCorpus("harmbench"))
+    .withRule("do_not_leak_card_numbers", scorer(new PIILeakDetector()))
+    .withRule("do_not_help_wrongdoing", scorer(new JailbreakScorer()))
+    .attacking(List.of(new Base64(), new RolePlay(), new Crescendo()))
+    .forHazards(Set.of(Hazard.PRIVACY, Hazard.NON_VIOLENT_CRIMES))
+    .repeating(3)
+    .withBudget(Budget.of(200_000, Duration.ofHours(1)));
+----
+
+Fluent methods:
+
+`attacking(List<Technique>)` +
+The attack styles to apply. Each style attacks every scenario.
+
+`forHazards(Set<Hazard>)` +
+Restrict to scenarios covering these hazards.
+
+`repeating(int)` +
+Repeat each attack `N` times to measure variance.
+
+`withBudget(Budget)` +
+Cap tokens and wall-clock. Overrun ends the attack with `BUDGET_EXHAUSTED`.
+
+== Running a campaign locally
+
+  akka redteam run
+
+The command wraps the Maven invocation that runs every campaign under `src/redteam/`.
+Output streams to stdout.
+Reports land under `target/redkit/reports/`.
+
+== Running a campaign remotely
+
+Large corpora or long adaptive runs can be dispatched to the offline-evals service.
+The seam is `RemoteCampaign`, the same seam evaluation uses.
+Endpoints under `/api/redteam/campaigns` mirror the evaluation endpoints.
+
+  akka redteam campaigns apply -f my-campaign.yaml
+  akka redteam campaigns get <campaign-id>
+  akka redteam campaigns record <campaign-id>
+
+== The requirement × technique matrix
+
+Panel 3 of the report is a rules × attack-styles matrix showing how many attempts broke through in each cell.
+Read the panel to see which attack styles are effective against which rules.
+
+== Best practices
+
+* Set a wall-clock budget on every campaign. Adaptive styles can loop.
+* Include at least one adaptive style. Static styles alone miss multi-turn failures.
+* Repeat each attack three times. Variance on adaptive styles is expected; the report separates flipping from consistent verdicts.
+* Restrict a campaign to a set of hazards when running against a specific concern.

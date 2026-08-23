@@ -1,0 +1,21 @@
+= akka eval campaigns item
+
+One item's run, and what each scorer said about it.
+
+== Synopsis
+
+Prints the transcript and per-scorer verdicts for one scenario.
+
+----
+akka eval campaigns item CAMPAIGN ITEM [flags]
+----
+
+== Options
+
+----
+  -h, --help   help for item
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_eval_campaigns.adoc[]

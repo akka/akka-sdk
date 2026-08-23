@@ -1,0 +1,30 @@
+= akka eval
+
+Datasets, campaigns and the scorers that grade them.
+
+== Synopsis
+
+A campaign is one execution of one dataset version against one target with one set of scorers.
+
+A scorer never turns a failure into a low score.
+It reports inconclusive when it has nothing to read, and neither that nor its own breakage enters a pass rate.
+
+----
+akka eval [command]
+----
+
+== Options
+
+----
+  -h, --help   help for eval
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_eval_init.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_run.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_datasets.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_campaigns.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_scorers.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_rules.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_report.adoc[]

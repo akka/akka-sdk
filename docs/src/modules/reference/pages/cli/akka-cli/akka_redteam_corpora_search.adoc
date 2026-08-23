@@ -1,0 +1,23 @@
+= akka redteam corpora search
+
+Search across every installed corpus.
+
+== Synopsis
+
+Prints matching adversarial prompts across every installed corpus with their source and id.
+
+----
+akka redteam corpora search QUERY [flags]
+----
+
+== Options
+
+----
+      --hazard string   restrict to items covering the named hazard
+      --limit int       print only the first N items
+  -h, --help            help for search
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_redteam_corpora.adoc[]

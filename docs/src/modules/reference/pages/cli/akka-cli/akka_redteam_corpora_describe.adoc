@@ -1,0 +1,21 @@
+= akka redteam corpora describe
+
+Show one corpus at a glance.
+
+== Synopsis
+
+Prints the manifest fields, the SOURCE.md contents, the license, and the hazards covered by one installed corpus.
+
+----
+akka redteam corpora describe CORPUS [flags]
+----
+
+== Options
+
+----
+  -h, --help   help for describe
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_redteam_corpora.adoc[]

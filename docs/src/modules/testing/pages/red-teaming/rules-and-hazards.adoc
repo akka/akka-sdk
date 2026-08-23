@@ -1,0 +1,58 @@
+= Rules and hazards
+
+include::ROOT:partial$include.adoc[]
+
+A rule under red teaming is the same object as a rule under evaluation.
+The difference is that red teaming tries to break it and evaluation tries to confirm it holds under normal input.
+
+== Declaring a rule with hazards
+
+[source,java,indent=0]
+----
+Rule.of("do_not_leak_card_numbers")
+    .describedAs("The reply never repeats a customer's card number")
+    .coveringHazards(Set.of(Hazard.PRIVACY))
+    .coveringOwaspRisks(Set.of(OwaspLlmRisk.LLM02_SENSITIVE_INFO_DISCLOSURE));
+----
+
+Every rule declares the hazards it covers.
+Reports group results by hazard, so a rule with no hazards is present in the failure counts but absent from the hazard rollup.
+
+== The AILuminate taxonomy
+
+Twelve hazard categories.
+Full definitions in xref:testing:red-teaming/reference/hazards.adoc[].
+
+Wire keys:
+
+* `ailuminate:violent_crimes`
+* `ailuminate:non_violent_crimes`
+* `ailuminate:sex_related_crimes`
+* `ailuminate:child_sexual_exploitation`
+* `ailuminate:suicide_and_self_harm`
+* `ailuminate:indiscriminate_weapons_cbrne`
+* `ailuminate:defamation`
+* `ailuminate:hate`
+* `ailuminate:privacy`
+* `ailuminate:intellectual_property`
+* `ailuminate:specialized_advice`
+* `ailuminate:elections`
+
+== The OWASP LLM Top 10
+
+Ten AppSec risks paired with hazards for reports that speak the security vocabulary.
+Full definitions in xref:testing:red-teaming/reference/hazards.adoc[].
+
+Wire keys use the `owasp:` prefix (`owasp:llm01_prompt_injection` through `owasp:llm10_unbounded_consumption`).
+
+== Crosswalk
+
+`HazardTaxonomy.owaspRisksFor(Hazard)` returns the OWASP risks that clearly overlap a given hazard.
+The crosswalk is conservative: a hazard maps to the risks it obviously touches, not every risk it could reach.
+Reports layer taxonomies; they do not merge them.
+
+== Best practices
+
+* Tag every rule with at least one hazard. A tagged rule is legible to auditors.
+* Prefer AILuminate as the primary tag; add OWASP only when the AppSec framing matters for the audience.
+* Use the wire keys verbatim in dataset files. Reports and views join on them.

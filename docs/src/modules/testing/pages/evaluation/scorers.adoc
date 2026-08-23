@@ -1,0 +1,108 @@
+= Scorers
+
+include::ROOT:partial$include.adoc[]
+
+A `Scorer` produces a verdict for one reply.
+Akka ships a set of out-of-the-box scorers with `evalkit-test` so common questions do not need a custom implementation.
+
+== Out-of-the-box scorers
+
+* *Correctness* — Does the reply match the reference?
+* *Faithfulness* — Is every claim in the reply supported by the retrieved context?
+* *Hallucination* — Does the reply invent facts absent from the context?
+* *Summarization quality* — Does the summary preserve the source?
+* *Toxicity* — Is the reply toxic or hateful?
+* *Latency* — Did the reply arrive within the configured budget?
+* *Cost* — Did the reply stay under the configured token budget?
+* *Schema conformance* — Does the reply parse against the expected schema?
+
+See xref:reference:scorers.adoc[] for full input, verdict, and configuration details for every shipped scorer.
+
+== The three families
+
+*Deterministic* +
+Pure code. Regex, checksums, exact-string matches, structural checks.
+No language-model call.
+Reproducible and cheap.
+
+*Heuristic* +
+Pattern matching with light logic.
+Encodes rules of thumb that a reviewer can read at a glance.
+
+*Agentic* +
+A language-model judge reads the reply and grades against a versioned rubric.
+Reach for this when the judgment cannot be described as a rule.
+
+== The interface
+
+Every scorer implements `Scorer`.
+
+[source,java,indent=0]
+----
+public interface Scorer {
+  String name();
+  ScoreResult score(Scenario scenario, String reply);
+}
+----
+
+A `ScoreResult` is one of four verdicts: `PASSED`, `FAILED`, `INCONCLUSIVE`, or `SCORED(double)`.
+
+== A deterministic scorer
+
+Deterministic scorers live under `src/eval/java/com/example/evalkit/scorer/deterministic/`.
+
+[source,java,indent=0]
+----
+public final class RefundWindowScorer implements Scorer {
+  @Override public String name() { return "refund_window_named"; }
+
+  @Override
+  public ScoreResult score(Scenario scenario, String reply) {
+    if (reply == null || reply.isBlank()) {
+      return ScoreResult.inconclusive("target reply was empty");
+    }
+    return reply.contains("14 days")
+        ? ScoreResult.passed("reply names 14 days")
+        : ScoreResult.failed("reply does not name 14 days");
+  }
+}
+----
+
+== A heuristic scorer
+
+Heuristic scorers live under `heuristic/`.
+Extend `MetricEvaluator` when the verdict is a score with a passing threshold.
+
+== An agentic scorer
+
+Agentic scorers live under `agentic/` and reference a rubric under `src/eval/resources/rubrics/`.
+The rubric filename encodes its version (`rubric-name.v3.txt`).
+Bump the version when the rubric text changes so old runs remain deterministic on replay.
+
+== Binding a scorer to a rule
+
+A scorer is bound to a rule in the campaign spec.
+
+[source,java,indent=0]
+----
+Campaign.named("refund-flow")
+    .withScenarios(fromJsonl("datasets/refund-flow.jsonl"))
+    .withRule("answers_refund_window",
+              scorer(new RefundWindowScorer()));
+----
+
+A rule can bind multiple scorers.
+The rule fails when any bound scorer fails.
+
+== Registering a scorer with the CLI
+
+`akka eval scorers list` enumerates built-in and customer-registered scorers.
+See xref:reference:scorers.adoc[] for the reference table of every shipped scorer.
+
+== Best practices
+
+* Prefer the earliest family that answers the rule. A regex that catches the same failures as a judge costs orders of magnitude less.
+* Return `INCONCLUSIVE` when there is nothing to grade. An inconclusive result is not a failure.
+* Give each scorer a stable, lowercase, underscore-separated `name`.
+* Version rubrics by filename, not by editing in place.
+* Bind one rule to one scorer when possible. When a rule needs multiple checks, split the rule.

@@ -1,0 +1,21 @@
+= akka eval report
+
+Open the rendered report for a run.
+
+== Synopsis
+
+Prints the report from a finished campaign.
+
+----
+akka eval report [command]
+----
+
+== Options
+
+----
+  -h, --help   help for report
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_eval.adoc[]

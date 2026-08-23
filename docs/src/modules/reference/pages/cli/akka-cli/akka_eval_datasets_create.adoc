@@ -1,0 +1,23 @@
+= akka eval datasets create
+
+Upload a dataset file and version it.
+
+== Synopsis
+
+Uploads a dataset and imports it. `FILE` is a zip of dataset.json and items.jsonl, or a bare items.jsonl that adds a version to an existing dataset (name it with `--into`).
+
+----
+akka eval datasets create -f FILE [flags]
+----
+
+== Options
+
+----
+  -f, --file string   the dataset to upload
+      --into string   add a version to this existing dataset
+  -h, --help          help for create
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_eval_datasets.adoc[]

@@ -1,0 +1,146 @@
+= Hazard reference
+
+include::ROOT:partial$include.adoc[]
+
+Rules and scenarios carry hazard tags from two taxonomies.
+List them from the CLI with `akka redteam hazards list`.
+
+== AILuminate v1.1
+
+Primary hazard taxonomy.
+
+[cols="2,3,2", options="header"]
+|===
+| Hazard | What it covers | Wire key
+
+| Violent crimes
+| Physical harm to people, including terrorism.
+| `ailuminate:violent_crimes`
+
+| Non-violent crimes
+| Fraud, hacking, defamation of others, cybercrime.
+| `ailuminate:non_violent_crimes`
+
+| Sex-related crimes
+| Sexual assault and human trafficking.
+| `ailuminate:sex_related_crimes`
+
+| Child sexual exploitation
+| Any content sexualizing minors.
+| `ailuminate:child_sexual_exploitation`
+
+| Suicide and self-harm
+| Encouragement or instruction of self-harm.
+| `ailuminate:suicide_and_self_harm`
+
+| Indiscriminate weapons (CBRNE)
+| Chemical, biological, radiological, nuclear, or explosive weapons.
+| `ailuminate:indiscriminate_weapons_cbrne`
+
+| Defamation
+| False statements harming another's reputation.
+| `ailuminate:defamation`
+
+| Hate
+| Content attacking people by protected characteristic.
+| `ailuminate:hate`
+
+| Privacy
+| Personal information, secrets, and system prompts.
+| `ailuminate:privacy`
+
+| Intellectual property
+| Copyright violation and trade-secret disclosure.
+| `ailuminate:intellectual_property`
+
+| Specialized advice
+| Medical, legal, or financial advice that requires a professional.
+| `ailuminate:specialized_advice`
+
+| Elections
+| Election-related misinformation and manipulation.
+| `ailuminate:elections`
+|===
+
+== OWASP LLM Top 10 (2025)
+
+Secondary risk taxonomy.
+
+[cols="2,3,2", options="header"]
+|===
+| Risk | What it covers | Wire key
+
+| LLM01 Prompt Injection
+| Manipulating the model through crafted input.
+| `owasp:llm01_prompt_injection`
+
+| LLM02 Sensitive Info Disclosure
+| Model leaking personal or confidential information.
+| `owasp:llm02_sensitive_info_disclosure`
+
+| LLM03 Supply Chain
+| Compromised training data, models, or components.
+| `owasp:llm03_supply_chain`
+
+| LLM04 Data and Model Poisoning
+| Adversarial manipulation of training data or fine-tuning.
+| `owasp:llm04_data_and_model_poisoning`
+
+| LLM05 Improper Output Handling
+| Downstream systems trusting model output that they should sanitize.
+| `owasp:llm05_improper_output_handling`
+
+| LLM06 Excessive Agency
+| The model taking actions beyond its intended scope.
+| `owasp:llm06_excessive_agency`
+
+| LLM07 System Prompt Leakage
+| Model revealing its own system prompt.
+| `owasp:llm07_system_prompt_leakage`
+
+| LLM08 Vector and Embedding Weaknesses
+| Attacks against retrieval-augmented systems.
+| `owasp:llm08_vector_and_embedding_weaknesses`
+
+| LLM09 Misinformation
+| Confident output of false facts.
+| `owasp:llm09_misinformation`
+
+| LLM10 Unbounded Consumption
+| Resource exhaustion through prompt design.
+| `owasp:llm10_unbounded_consumption`
+|===
+
+== Crosswalk
+
+`HazardTaxonomy.owaspRisksFor(Hazard)` returns the OWASP risks that clearly overlap a given hazard.
+
+[cols="2,3", options="header"]
+|===
+| AILuminate hazard | OWASP LLM risks
+
+| Privacy
+| LLM02 Sensitive Info Disclosure, LLM07 System Prompt Leakage
+
+| Intellectual property
+| LLM02 Sensitive Info Disclosure
+
+| Non-violent crimes
+| LLM01 Prompt Injection, LLM06 Excessive Agency
+
+| Specialized advice
+| LLM09 Misinformation
+
+| Elections
+| LLM09 Misinformation
+
+| Defamation
+| LLM09 Misinformation
+|===
+
+Unlisted hazards have no OWASP crosswalk in the shipped mapping.
+Extend the crosswalk through configuration when a customer taxonomy requires it.
+
+== Related
+
+* xref:testing:red-teaming/rules-and-hazards.adoc[]

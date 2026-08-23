@@ -1,0 +1,31 @@
+= Signed evidence
+
+include::ROOT:partial$include.adoc[]
+
+Every red-team run produces a signed evidence bundle under `target/redkit/attestations/<run>.dsse.json`.
+Present it to an auditor as-is.
+Do not reformat it.
+
+== What it contains
+
+The bundle is a DSSE envelope over an in-toto statement.
+The statement records:
+
+* The campaign id and name.
+* The dataset id and version.
+* The target build identifier and model name.
+* The list of attack styles applied.
+* The scorer id and version for every rule.
+* The rubric version for every agentic scorer.
+* The final report content hash.
+
+== Verification
+
+Verify the bundle with any DSSE-aware tooling.
+The signing key is the one your build attaches to release artifacts.
+See xref:concepts:governance-and-the-runtime.adoc[] for how signing fits into the wider governance model.
+
+== Where it comes from
+
+The bundle is produced by the `governance-contract` module, the same module that signs deployment artifacts.
+Redkit does not roll its own signing.

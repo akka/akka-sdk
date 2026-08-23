@@ -1,0 +1,22 @@
+= akka redteam hazards
+
+The hazard taxonomy and which rules cover which.
+
+== Synopsis
+
+Lists AILuminate hazards and OWASP LLM risks.
+
+----
+akka redteam hazards [command]
+----
+
+== Options
+
+----
+      --taxonomy string   restrict to one taxonomy: ailuminate or owasp
+  -h, --help              help for hazards
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_redteam.adoc[]

@@ -1,0 +1,88 @@
+= Scenarios and rules
+
+include::ROOT:partial$include.adoc[]
+
+A `Scenario` is one test case: an input, an optional expected output, an optional multi-turn precursor, and metadata.
+A `Rule` is a named requirement the target must uphold on the scenarios that reference it.
+
+== Declaring a scenario
+
+Scenarios live under `src/eval/resources/datasets/`.
+
+[source,json]
+----
+{
+  "id": "case-1",
+  "prompt": "What is our refund window?",
+  "expected": "14 days",
+  "rule": "answers_refund_window",
+  "hazards": []
+}
+----
+
+Fields:
+
+`id` +
+Stable identifier. Reports reference scenarios by this id.
+
+`prompt` +
+The input sent to the target.
+
+`expected` +
+Reference answer used by agentic and deterministic scorers.
+
+`rule` +
+The rule this scenario is expected to satisfy.
+
+`hazards` +
+Taxonomy-prefixed hazard keys the rule covers.
+Wire keys use the `ailuminate:` and `owasp:` prefixes.
+
+== Declaring a rule
+
+Rules are declared in a campaign spec.
+
+[source,java,indent=0]
+----
+Rule.of("answers_refund_window")
+    .describedAs("The reply names 14 days as the refund window")
+    .coveringHazards(Set.of(Hazard.PRIVACY));
+----
+
+A rule declares its hazards so reports can group results by harm type.
+A rule with no hazards is still valid; it does not appear in the hazard rollup.
+
+== Multi-turn scenarios
+
+A scenario carries an optional `Precursor` that seeds the conversation before the rule is checked.
+
+[source,json]
+----
+{
+  "id": "case-2",
+  "precursor": [
+    {"role": "user", "content": "I bought a shirt"}
+  ],
+  "prompt": "How long do I have to return it?"
+}
+----
+
+The precursor is played into the target as a conversation opener; the `prompt` is the turn that gets scored.
+
+== Run outcomes
+
+A scenario ends in one of four outcomes:
+
+`Asserted` +
+A deterministic scorer produced a pass or fail.
+
+`Measured` +
+A heuristic scorer produced a score with a passing threshold.
+
+`Scored` +
+An agentic scorer produced a graded verdict.
+
+`Inconclusive` +
+The scorer had nothing to grade or the target did not respond.
+
+See xref:testing:evaluation/scorers.adoc[] for how to bind scorers to rules.

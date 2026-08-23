@@ -1,0 +1,70 @@
+= Campaigns and runs
+
+include::ROOT:partial$include.adoc[]
+
+A `Campaign` bundles scenarios, rules, and scorers into a named unit that can be run repeatedly and compared over time.
+A `Run` is one execution of a campaign against one target build.
+
+== Declaring a campaign
+
+[source,java,indent=0]
+----
+CampaignPlan.named("refund-flow")
+    .withScenarios(ScenarioSource.fromJsonl("datasets/refund-flow.jsonl"))
+    .withRule("answers_refund_window", scorer(new RefundWindowScorer()))
+    .under(Policy.stated("refund-desk-v1"))
+    .repeating(3);
+----
+
+Fluent methods:
+
+`under(Policy)` +
+Names the policy version the campaign runs under.
+Recorded on every result.
+
+`repeating(int)` +
+Runs each scenario `N` times.
+Enables the variance panel and stabilizes graded verdicts.
+
+`withScorers(...)` +
+Attaches scorers that apply to every scenario in the campaign, in addition to any bound directly to a rule.
+
+== Running a campaign locally
+
+  akka eval run
+
+The command wraps the Maven invocation that runs every campaign under `src/eval/`.
+Output streams to stdout.
+Reports land under `target/evalkit/reports/<campaign>.txt`.
+
+== Running a campaign remotely
+
+Large datasets or long-running campaigns can be dispatched to the offline-evals service.
+See xref:testing:evaluation/remote-campaigns.adoc[].
+
+== Lanes
+
+A `Lane` bundles a set of fixtures a scenario needs to run — a session state, a set of tool stubs, a set of headers.
+Assign a scenario to a lane in the dataset and register the lane on the campaign.
+
+[source,json]
+----
+{
+  "id": "case-3",
+  "lane": "authenticated-customer",
+  "prompt": "..."
+}
+----
+
+== Recording
+
+Every reply the target produces is written to the ledger through `RecordedInteractions`.
+The same recording can be replayed later without paying for the target again.
+See xref:testing:evaluation/baselines.adoc[] for how replays gate builds.
+
+== Best practices
+
+* Give each campaign a stable, lowercase, hyphen-separated `name`. The name is the key that reports and baselines join on.
+* Set `repeating(3)` for campaigns that use agentic scorers.
+* Bind a policy version on every campaign so a policy change is visible in the report.
+* Keep the number of scenarios per campaign small enough that a local run completes in a coffee break.

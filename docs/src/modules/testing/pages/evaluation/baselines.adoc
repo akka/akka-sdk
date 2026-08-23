@@ -1,0 +1,44 @@
+= Baselines and regression
+
+include::ROOT:partial$include.adoc[]
+
+A baseline is a saved reference run.
+Comparing a new run against a baseline surfaces regressions before a change ships.
+
+== Where baselines live
+
+`src/eval/resources/baselines/<campaign>-<date>.json`
+
+Commit baselines to source control.
+They are the record against which regressions are measured.
+
+== Comparing to a baseline
+
+  akka eval campaigns compare <run-id> --baseline <baseline-id>
+
+The command prints Panel 8 with per-rule deltas.
+
+== Failing a build on regression
+
+  akka eval campaigns compare <run-id> --baseline <baseline-id> --assert
+
+`--assert` exits non-zero when any rule regresses.
+Use it in CI to gate merges.
+
+The command exits non-zero on three conditions:
+
+* Any rule regresses.
+* The comparison is refused because the two runs cannot be compared (different rubric versions, different scorers).
+* Any scenario is incomparable because one side reached no verdict.
+
+== Updating a baseline
+
+Overwrite the file with the same `<campaign>-<date>.json` name to replace the reference for that campaign.
+Keep older files if you want longitudinal history.
+
+== Best practices
+
+* Update the baseline whenever an intentional behavior change lands.
+* Do not update the baseline on the same commit that changes the target. Land the target change, review the diff panel, then land the baseline change.
+* Fail CI on `--assert` failures. Do not silence the exit code.
+* Keep the baseline file small enough to review in a code review.

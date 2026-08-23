@@ -1,0 +1,23 @@
+= akka redteam corpora items
+
+List adversarial prompts inside one corpus.
+
+== Synopsis
+
+Prints each prompt with its id, the hazards it covers, the rule it targets, and the prompt text.
+
+----
+akka redteam corpora items CORPUS [flags]
+----
+
+== Options
+
+----
+      --hazard string   restrict to items covering the named hazard
+      --limit int       print only the first N items
+  -h, --help            help for items
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_redteam_corpora.adoc[]

@@ -1,0 +1,209 @@
+= Reports
+
+include::ROOT:partial$include.adoc[]
+
+An evaluation run produces one report per campaign.
+A section appears only when the run has something to say about it.
+
+== What the run found
+
+Total attempts, total passes, and the pass rate per rule.
+Read this first to see whether the run met your expectations.
+
+[listing]
+----
+What the run found
+------------------
+
+240 attempts across 4 rules. 217 passed, 18 failed, 5 inconclusive.
+
+  answers_refund_window ......... 58 of 60 passed  (96.7%)
+  cites_policy_source ........... 55 of 60 passed  (91.7%)
+  refuses_out_of_scope .......... 60 of 60 passed  (100%)
+  answers_restocking_fee ........ 44 of 60 passed  (73.3%)
+----
+
+== What failed
+
+Every failing case, listed worst first.
+Each entry names the rule, the scenario id, the scorer that failed it, and the reply that failed.
+Read this to know exactly which cases to fix.
+
+[listing]
+----
+What failed
+-----------
+
+ #1  Rule:      answers_restocking_fee
+     Scenario:  case-034
+     Scorer:    correctness (agentic, jailbreak-judge.v3)
+     Prompt:    "Do you charge a restocking fee on returns?"
+     Expected:  "No"
+     Reply:     "Yes, our restocking fee is 15% of the item price."
+     Why:       the reply contradicts the reference answer.
+
+ #2  Rule:      cites_policy_source
+     Scenario:  case-051
+     Scorer:    faithfulness (agentic, faithfulness.v1)
+     Reply:     "Refunds are always processed within 24 hours."
+     Why:       claim absent from the retrieved context; no source cited.
+
+ (16 more shown in the full report)
+----
+
+== What varied
+
+Cases whose verdict flipped between repeats.
+Only shown when the campaign runs with `repeating(N)` for `N > 1`.
+Flipping is expected on agentic scorers; it is a defect on deterministic ones.
+Read this to know which verdicts you can trust and which need re-running.
+
+[listing]
+----
+What varied
+-----------
+
+11 attempts flipped between repeats.
+
+  Rules with the most flipping:
+    cites_policy_source ....... 6 flipped attempts
+    answers_restocking_fee .... 3 flipped attempts
+
+  Scorers with the most flipping:
+    faithfulness .............. 7 flipped attempts
+    correctness ............... 4 flipped attempts
+
+  Flipping on faithfulness is expected because the judge model
+  varies; treat those 7 verdicts as low confidence and re-run.
+----
+
+== How quality was measured
+
+The scoring method for each rule.
+Names the scorer, the family, and whether a judge was involved.
+Read this to understand what "pass" actually means for each rule.
+
+[listing]
+----
+How quality was measured
+------------------------
+
+ answers_refund_window
+   Method: exact-string match on "14 days" in the reply.
+           Deterministic; no judge involved.
+
+ cites_policy_source
+   Method: faithfulness judge reads the reply and its retrieved
+           context; passes when every factual claim is supported
+           by the context.
+
+ refuses_out_of_scope
+   Method: pattern match on the reply for a refusal phrase.
+           Deterministic; no judge involved.
+
+ answers_restocking_fee
+   Method: correctness judge compares the reply to
+           scenario.expected() and passes when the judge scores
+           it above the threshold.
+----
+
+== How the judge scored
+
+For rules scored by an agentic judge, the judge model, the rubric version, the sample size of the human spot-check, and the agreement rate.
+Read this to know how much to trust the graded verdicts.
+
+[listing]
+----
+How the judge scored
+--------------------
+
+Judge model:            gpt-4o (temperature 0.0)
+Rubrics:                correctness.v2, faithfulness.v1
+Human spot-check:       60 replies re-labeled by a reviewer
+Judge agreement:        56 of 60  (93.3%)
+
+Where the judge disagreed:
+  - 3 replies the judge called correct were subtly wrong
+  - 1 reply the judge called wrong actually restated the source
+
+Treat correctness and faithfulness verdicts as accurate to
+within about 7%.
+----
+
+== What it cannot tell you
+
+Attempts that produced no verdict, and why.
+Timeouts, target errors, replies too short to grade.
+Names which numbers in "What the run found" are affected.
+Read this before treating a pass rate as complete.
+
+[listing]
+----
+What it cannot tell you
+-----------------------
+
+ 3 attempts timed out before the target finished replying.
+ 2 attempts produced replies too short for the judge to score.
+
+Because of these, the results for "cites_policy_source" and
+"answers_restocking_fee" are based on 5 fewer attempts than
+the totals in "What the run found". The percentages there
+account for this.
+----
+
+== What it cost
+
+Token spend split by target and judge; wall-clock elapsed.
+Read this to budget campaigns and to catch runaway costs.
+
+[listing]
+----
+What it cost
+------------
+
+  Target (the system under test) ....  412,301 tokens  ~ $0.82
+  Judge (grading replies) ...........  188,455 tokens  ~ $1.22
+  ---------------------------------------------------------
+  Total .............................  600,756 tokens  ~ $2.04
+
+Wall-clock: 4m 12s. Target calls ran in parallel; judge calls
+ran sequentially per rubric version.
+----
+
+== Baseline comparison
+
+Only shown when the run is compared to a baseline.
+Per-rule deltas with a `BETTER`, `WORSE`, or `~same` tag.
+Read this to catch regressions before shipping.
+See xref:testing:evaluation/baselines.adoc[].
+
+[listing]
+----
+Compared to the last run
+------------------------
+
+Compared against baseline: 2026-08-16 (build 91b0e4c).
+
+                              Last run   This run   Change
+  answers_refund_window       98.3%      96.7%      ~same
+  cites_policy_source         93.3%      91.7%      ~same
+  refuses_out_of_scope        100%       100%       ~same
+  answers_restocking_fee      88.3%      73.3%      WORSE  (-15.0 pts)
+
+Regression: restocking-fee pass rate dropped 15 points. The
+9 new failures all name a 15% fee that is not in the retrieved
+context. Investigate the retrieval index before shipping.
+----
+
+== Reading a report from the CLI
+
+  akka eval report open <run-id>
+
+== Where reports land
+
+Local runs write to `target/evalkit/reports/<campaign>.txt`.
+Remote runs write to the offline-evals service and are fetched by `akka eval campaigns record <id>`.
+
+== Related
+
+* xref:testing:red-teaming/reports.adoc[] for the red-team report.

@@ -1,0 +1,22 @@
+= akka eval campaigns apply
+
+Start a campaign.
+
+== Synopsis
+
+Submits a campaign specification to the service and starts it.
+
+----
+akka eval campaigns apply -f FILE [flags]
+----
+
+== Options
+
+----
+  -f, --file string   the campaign to start
+  -h, --help          help for apply
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_eval_campaigns.adoc[]

@@ -1,0 +1,27 @@
+= akka redteam corpora
+
+Adversarial prompt corpora: what's installed, how to refresh, license attribution.
+
+== Synopsis
+
+Manages the date-versioned adversarial corpora artifact.
+
+----
+akka redteam corpora [command]
+----
+
+== Options
+
+----
+  -h, --help   help for corpora
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_redteam.adoc[]
+* xref:reference:cli/akka-cli/akka_redteam_corpora_list.adoc[]
+* xref:reference:cli/akka-cli/akka_redteam_corpora_pull.adoc[]
+* xref:reference:cli/akka-cli/akka_redteam_corpora_licenses.adoc[]
+* xref:reference:cli/akka-cli/akka_redteam_corpora_describe.adoc[]
+* xref:reference:cli/akka-cli/akka_redteam_corpora_items.adoc[]
+* xref:reference:cli/akka-cli/akka_redteam_corpora_search.adoc[]

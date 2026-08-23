@@ -1,0 +1,21 @@
+= akka eval scorers
+
+What can score an answer, and what each one needs to read.
+
+== Synopsis
+
+Lists the scorers registered with the service.
+
+----
+akka eval scorers [command]
+----
+
+== Options
+
+----
+  -h, --help   help for scorers
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_eval.adoc[]

@@ -1,0 +1,58 @@
+= Red teaming
+
+include::ROOT:partial$include.adoc[]
+
+Red teaming sends adversarial prompts through your service and measures how often the service breaks a stated rule under a set of attack styles.
+Akka Redkit wraps and escalates each prompt through five static and three adaptive attack styles, detects rule violations with scorers keyed to hazard categories, and writes a report grouped by hazard and by attack style.
+
+The pack is called `evalkit-redteam`.
+The customer-facing source root is `src/redteam/`.
+The CLI is `akka redteam`.
+
+== Shared with evaluation
+
+Redkit shares its SPI and runtime with Evalkit.
+A `Rule` written for evaluation is the same rule Redkit tries to break.
+`Scenario`, `Scorer`, `Campaign`, `Run`, `Rubric`, and `Ledger` mean the same thing in both packs.
+
+== The one new noun
+
+`Technique` — an attack style. How a payload is wrapped, escalated, or delivered before it reaches the target. Reports render this as "attack style".
+
+Two shapes:
+
+*Static* +
+A pure function on a prompt. Deterministic, parallelizable, no language-model call.
+
+*Adaptive* +
+A stateful attacker. Chooses each next prompt based on the target's last reply.
+Runs inside a durable driver so a crash mid-attack can resume from the same state.
+
+== Hazard taxonomies
+
+Rules and scenarios carry hazard tags from two taxonomies:
+
+* AILuminate v1.1 — primary, twelve hazard categories.
+* OWASP LLM Top 10 (2025) — secondary, ten AppSec risks.
+
+Wire keys use the taxonomy prefix: `ailuminate:privacy`, `owasp:llm01_prompt_injection`.
+See xref:testing:red-teaming/reference/hazards.adoc[].
+
+== Reports
+
+Each run produces a report whose sections each answer one question about the run: what broke through, which attack styles worked, what varied, how harm was measured, what the run could not tell you, what it cost, how it compares to the last run, and where the quality tests missed the failures.
+Reports never roll findings up into a single aggregate score.
+Every section breaks results out by hazard and by attack style.
+See xref:testing:red-teaming/reports.adoc[].
+
+== Next steps
+
+* xref:testing:red-teaming/getting-started.adoc[]
+* xref:testing:red-teaming/techniques.adoc[]
+* xref:testing:red-teaming/adaptive-attacks.adoc[]
+* xref:testing:red-teaming/corpora.adoc[]
+
+== See also
+
+* xref:testing:evaluation/index.adoc[]
+* xref:sdk:agents/guardrails.adoc[] for the runtime guardrails redkit uses as scorers.

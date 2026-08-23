@@ -1,0 +1,133 @@
+= Getting started with evaluation
+
+include::ROOT:partial$include.adoc[]
+
+Follow these steps to add an evaluation suite to an existing project.
+
+== Step 1. Add the eval pack
+
+Run the init command from the project root.
+
+  akka eval init
+
+The command overlays `src/eval/` onto the project, adds the required dependencies, and configures the Maven profile that compiles the pack.
+Run it once per project.
+
+== Step 2. Adapt your agent to a runner
+
+Create `src/eval/java/com/example/evalkit/runner/MyAgentRunner.java`.
+The runner is the only class that references your service.
+Extend `SystemUnderTest` and forward each scenario prompt through `ComponentClient` to the agent under test.
+
+[source,java]
+----
+package com.example.evalkit.runner;
+
+import io.akka.evalkit.spi.domain.Scenario;
+import io.akka.evalkit.spi.domain.SystemUnderTest;
+import io.akka.evalkit.spi.domain.Transcript;
+import akka.javasdk.client.ComponentClient;
+
+public final class MyAgentRunner implements SystemUnderTest {
+
+  private final ComponentClient componentClient;
+
+  public MyAgentRunner(ComponentClient componentClient) {
+    this.componentClient = componentClient;
+  }
+
+  @Override
+  public Transcript answer(Scenario scenario) {
+    var reply = componentClient
+        .forAgent()
+        .inSession(scenario.id())
+        .method(MyAgent::ask)
+        .invoke(scenario.prompt());
+    return Transcript.of(reply);
+  }
+}
+----
+
+Replace `MyAgent::ask` with the method on your own agent.
+
+== Step 3. Author a dataset
+
+Create `src/eval/resources/datasets/my-first/items.jsonl`.
+Every line is one scenario.
+
+[source,json]
+----
+{"id":"case-1","prompt":"What is our refund window?","expected":"14 days","rule":"answers_refund_window"}
+{"id":"case-2","prompt":"Do you charge restocking fees?","expected":"No","rule":"answers_restocking_fee"}
+----
+
+Create the manifest that names the dataset.
+Save it as `src/eval/resources/datasets/my-first/dataset.json`.
+
+[source,json]
+----
+{
+  "name": "my-first",
+  "description": "First evaluation dataset for the refund agent",
+  "items_file": "items.jsonl"
+}
+----
+
+== Step 4. Declare a campaign
+
+Create `src/eval/java/com/example/evalkit/campaigns/MyFirstCampaign.java`.
+The campaign wires scenarios, rules, and scorers together.
+
+[source,java]
+----
+package com.example.evalkit.campaigns;
+
+import com.example.evalkit.runner.MyAgentRunner;
+import io.akka.evalkit.spi.domain.CampaignPlan;
+import io.akka.evalkit.spi.domain.ScenarioSource;
+import io.akka.evalkit.test.scorer.CorrectnessScorer;
+
+public final class MyFirstCampaign {
+
+  public static CampaignPlan plan(MyAgentRunner runner) {
+    return CampaignPlan.named("refund-flow")
+        .withScenarios(ScenarioSource.fromJsonl("datasets/my-first/items.jsonl"))
+        .withRule("answers_refund_window", new CorrectnessScorer())
+        .withRule("answers_restocking_fee", new CorrectnessScorer())
+        .against(runner);
+  }
+}
+----
+
+== Step 5. Run the campaign
+
+  akka eval run
+
+The command runs every campaign under `src/eval/`.
+Output streams to stdout.
+The rendered report lands under `target/evalkit/reports/`.
+
+== Step 6. Read the report
+
+  akka eval report open <run-id>
+
+Each section of the report answers one question about the run.
+Sections appear only when the run has something to say about them.
+See xref:testing:evaluation/reports.adoc[].
+
+== The seeded examples
+
+`akka eval init` drops a set of seeded examples into the scaffold to show the layout of a runner, a dataset, a scorer, and a campaign.
+They are not part of your suite unless you point them at your service.
+Delete any example you do not want.
+
+* `src/eval/java/com/example/evalkit/runner/AgentRunner.java`
+* `src/eval/java/com/example/evalkit/scorer/deterministic/ExampleScorer.java`
+* `src/eval/resources/datasets/example/`
+* `src/eval/resources/rubrics/example.v1.txt`
+
+== Next steps
+
+* xref:testing:evaluation/scorers.adoc[] to add scorers beyond `CorrectnessScorer`.
+* xref:testing:evaluation/campaigns.adoc[] to structure larger campaigns.
+* xref:testing:evaluation/baselines.adoc[] to gate builds on regression.

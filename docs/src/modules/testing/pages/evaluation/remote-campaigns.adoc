@@ -1,0 +1,51 @@
+= Remote campaigns
+
+include::ROOT:partial$include.adoc[]
+
+Large datasets or long-running campaigns can be dispatched to the offline-evals service instead of running in-process.
+The same `Campaign` runs either way; the report is identical.
+
+== When to reach for a remote run
+
+* Datasets over a few thousand scenarios.
+* Campaigns that take more than a few minutes locally.
+* Campaigns whose cost should be attributed to a shared budget rather than a developer's local model spend.
+* Campaigns that need to run on a schedule.
+
+== How the seam works
+
+`RemoteCampaign` uploads the dataset, submits the campaign spec to the service, and polls for the finished record.
+The service's `ExperimentWorkflow` owns durability, paging, and retries.
+
+The local shell of the campaign is identical whether the run is local or remote.
+Switching between them is a one-line change on the `TargetDispatch` used by the runner.
+
+== Submitting from the CLI
+
+  akka eval campaigns apply -f my-campaign.yaml
+
+The service returns a campaign id; follow progress with:
+
+  akka eval campaigns get <campaign-id>
+
+Fetch the final record:
+
+  akka eval campaigns record <campaign-id>
+
+== Service endpoints
+
+The client speaks these endpoints:
+
+* `POST /api/experiments` — apply.
+* `GET  /api/experiments/pass:[{id}]` — status.
+* `GET  /api/experiments/pass:[{id}]/record` — final record.
+* `GET  /api/experiments/pass:[{id}]/compare/pass:[{baseline}]` — comparison.
+* `POST /api/experiments/pass:[{id}]/replay` — deterministic replay.
+
+The default endpoint is set with `EVAL_URL`.
+
+== Best practices
+
+* Prefer local runs while iterating on scorers and datasets.
+* Use remote runs for scheduled campaigns and for anything larger than a laptop can drive comfortably.
+* Attribute campaign runs to a named budget on the service.

@@ -1,0 +1,21 @@
+= akka eval campaigns get
+
+How far a campaign has got, and what it has found.
+
+== Synopsis
+
+Prints the current campaign state.
+
+----
+akka eval campaigns get ID [flags]
+----
+
+== Options
+
+----
+  -h, --help   help for get
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_eval_campaigns.adoc[]

@@ -1,0 +1,30 @@
+= akka redteam
+
+Adversarial datasets, red-team campaigns, techniques, hazards and corpora.
+
+== Synopsis
+
+Runs the red-team pack against your service. Shares vocabulary and runtime with `akka eval`; adds attack styles, a hazard taxonomy, and adversarial corpora. Never rolls findings up into a single aggregate score.
+
+----
+akka redteam [command]
+----
+
+== Options
+
+----
+  -h, --help   help for redteam
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_redteam_init.adoc[]
+* xref:reference:cli/akka-cli/akka_redteam_run.adoc[]
+* xref:reference:cli/akka-cli/akka_redteam_datasets.adoc[]
+* xref:reference:cli/akka-cli/akka_redteam_campaigns.adoc[]
+* xref:reference:cli/akka-cli/akka_redteam_scorers.adoc[]
+* xref:reference:cli/akka-cli/akka_redteam_rules.adoc[]
+* xref:reference:cli/akka-cli/akka_redteam_techniques.adoc[]
+* xref:reference:cli/akka-cli/akka_redteam_hazards.adoc[]
+* xref:reference:cli/akka-cli/akka_redteam_corpora.adoc[]
+* xref:reference:cli/akka-cli/akka_redteam_report.adoc[]

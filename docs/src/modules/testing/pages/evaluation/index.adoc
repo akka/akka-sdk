@@ -1,0 +1,50 @@
+= Evaluation
+
+include::ROOT:partial$include.adoc[]
+
+Evaluation runs your service against a fixed set of test cases and measures how often each reply matches its expected answer or passes a scorer's grading rubric.
+Akka Evalkit executes those runs, records every interaction, aggregates verdicts into pass rates per rule, and writes a report.
+
+The pack is called `evalkit-test`.
+The customer-facing source root is `src/eval/`.
+The CLI is `akka eval`.
+
+== Vocabulary
+
+`Scenario` +
+An input, an optional expected output, and metadata.
+
+`Rule` +
+A named requirement the service must uphold.
+Every rule declares the hazards it covers.
+
+`Scorer` +
+A function that produces a verdict for one reply.
+Three families ship: deterministic (no language model), heuristic (patterns), and agentic (language-model judge against a rubric).
+
+`Campaign` +
+A named collection of scenarios, rules, and scorers to run together.
+
+`Run` +
+One execution of a campaign against one target build.
+
+`Report` +
+The rendered output of a run.
+
+== Reports
+
+Each run produces a report whose sections each answer one question about the run: what passed, what failed, what varied, how the judge scored, what the run could not tell you, and what it cost.
+See xref:testing:evaluation/reports.adoc[].
+
+== Next steps
+
+* xref:testing:evaluation/getting-started.adoc[]
+* xref:testing:evaluation/scenarios-and-rules.adoc[]
+* xref:testing:evaluation/scorers.adoc[]
+* xref:testing:evaluation/reference/scorers.adoc[]
+
+== See also
+
+* xref:sdk:evaluators.adoc[] for the runtime evaluator component that fires on live traffic.
+* xref:sdk:agents/llm_eval.adoc[] for using a judge model inside an agent's own flow.
+* xref:testing:red-teaming/index.adoc[]

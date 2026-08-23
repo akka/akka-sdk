@@ -1,0 +1,22 @@
+= akka redteam techniques
+
+Attack styles: how a payload is wrapped, escalated or delivered.
+
+== Synopsis
+
+Lists registered attack styles, filterable by kind.
+
+----
+akka redteam techniques [command]
+----
+
+== Options
+
+----
+      --kind string   filter by kind: static or adaptive
+  -h, --help          help for techniques
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_redteam.adoc[]

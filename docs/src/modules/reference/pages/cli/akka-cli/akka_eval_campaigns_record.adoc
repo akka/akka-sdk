@@ -1,0 +1,22 @@
+= akka eval campaigns record
+
+The finished record: the run's report, or the numbers behind it.
+
+== Synopsis
+
+The service composes the report; this prints it as it was written.
+
+----
+akka eval campaigns record ID [flags]
+----
+
+== Options
+
+----
+      --summary   print what the run measured instead of the report
+  -h, --help      help for record
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_eval_campaigns.adoc[]

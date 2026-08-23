@@ -1,0 +1,15 @@
+= Testing
+
+include::ROOT:partial$include.adoc[]
+
+Akka provides four kinds of testing.
+*Unit* verifies that a single component returns the expected effect or state when called in isolation.
+*Integration* verifies that multiple components work together against a real in-process runtime, with external dependencies stubbed at the boundary.
+*Evaluation* runs your service against a fixed set of test cases and measures how often each reply matches its expected answer or passes a scorer's grading rubric.
+*Red teaming* sends adversarial prompts through your service and measures how often the service breaks a stated rule under a set of attack styles.
+
+TestKit covers unit and integration testing.
+Evalkit covers evaluation.
+Redkit covers red teaming.
+All four use the same components, the same test lifecycle, and the same CLI conventions.
+Start with xref:testing:unit.adoc[] to test one component at a time, xref:testing:integration.adoc[] to test the wiring, xref:testing:evaluation/index.adoc[] to check answer quality, and xref:testing:red-teaming/index.adoc[] to check rule enforcement under attack.

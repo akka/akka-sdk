@@ -1,0 +1,25 @@
+= akka redteam corpora pull
+
+Fetch a corpora artifact into the project.
+
+== Synopsis
+
+Downloads the requested date-versioned corpora artifact into `src/redteam/resources/corpora/`. Idempotent.
+
+----
+akka redteam corpora pull [flags]
+----
+
+== Options
+
+----
+      --date string      the corpora artifact date, e.g. 2026-08
+      --enable-wmdp      include the gated WMDP corpus
+      --exclude strings  skip these named corpora
+      --include strings  only pull these named corpora
+  -h, --help             help for pull
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_redteam_corpora.adoc[]

@@ -1,0 +1,127 @@
+= Integration testing
+
+include::ROOT:partial$include.adoc[]
+
+Integration testing in Akka exercises multiple components together against a real in-process runtime.
+External dependencies are stubbed at the boundary.
+A test class extends `TestKitSupport`, opts into the in-process runtime, and drives components through `ComponentClient`.
+
+== The shortest possible integration test
+
+[source,java,indent=0]
+----
+class CheckoutFlowIT extends TestKitSupport {
+
+  @Test
+  void placesAnOrder() {
+    var order = componentClient
+        .forEventSourcedEntity("order-42")
+        .method(OrderEntity::place)
+        .invoke(new PlaceOrder("book-1", 1));
+
+    assertThat(order.total()).isEqualTo(1900);
+  }
+}
+----
+
+== What Akka provides for integration testing
+
+=== In-process runtime
+
+`TestKitSupport` boots a real Akka runtime in-process.
+Component invocation, event journal, view projection, and workflow durability are all real.
+Model calls are stubbed when a `TestModelProvider` is registered.
+Broker consumers are stubbed when the test does not set one up.
+
+=== Component client
+
+`ComponentClient` is the same client the runtime uses in production.
+Invocations go through real serialization and dispatch.
+Use it to call entities, workflows, views, and endpoints.
+
+=== Deterministic model responses
+
+Use `TestModelProvider` to remove non-determinism from agents.
+
+[source,java,indent=0]
+----
+var provider = new TestModelProvider();
+provider.fixedResponse("hello");
+
+provider.whenMessage(m -> m.contains("weather"))
+        .reply("It's sunny.");
+
+provider.whenToolResult(tr -> tr.name().equals("Weather_get"))
+        .thenReply("Reported the weather.");
+----
+
+The tool name the model sees is prefixed with the tool's simple class name.
+
+=== Deterministic broker fixtures
+
+`TestBrokerFixture` provides an in-process broker for consumers and producers.
+Publish messages, drive consumers, and assert on downstream state.
+
+=== Deterministic external services
+
+For a service the target calls over HTTP or gRPC, add a small in-process endpoint that stands in for the real service.
+Wire it in `TestKitSettings.withRemoteService(...)`.
+
+=== Time control
+
+The virtual clock advances on demand.
+Advance it with `advance(Duration)` to drive timers, retries, and workflow steps that wait.
+Do not sleep in tests.
+
+=== Ledger inspection
+
+`LedgerClient` is available in tests.
+Fetch the interaction record an evaluator would fetch and assert on its fields.
+Useful when verifying that an agent recorded what it was expected to.
+
+== Recommended utilities
+
+[cols="1,3", options="header"]
+|===
+| Concern | Utility
+
+| Deterministic model responses
+| `TestModelProvider`
+
+| A real event journal for entities and workflows
+| `TestKitSupport` in-process runtime
+
+| A component invocation with real serialization
+| `ComponentClient` from `TestKitSupport`
+
+| An external HTTP dependency
+| In-process endpoint plus `TestKitSettings.withRemoteService`
+
+| An external broker
+| `TestBrokerFixture`
+
+| Clock control (timers, retries)
+| Virtual clock via `advance(Duration)`
+
+| Ledger read
+| `LedgerClient` injected into the test
+
+| An evaluator wired to a real agent
+| Existing `EvaluatorIntegrationTest` pattern under `akka-javasdk-tests`
+|===
+
+== Best practices
+
+* Isolate persistent state between tests. Use a fresh `TestKitSupport` per class, or reset explicitly.
+* Register a `TestModelProvider` for every agent under test.
+* Stub every external HTTP dependency with an in-process endpoint.
+* Advance the virtual clock explicitly. Do not sleep.
+* Assert on state via `ComponentClient`, not on log output.
+* Prefer one integration test per user-visible outcome, not per code path.
+* Run integration tests under a separate Maven profile when they take longer than a second.
+
+== Related
+
+* xref:testing:unit.adoc[]
+* xref:testing:evaluation/index.adoc[]
+* xref:testing:red-teaming/index.adoc[]

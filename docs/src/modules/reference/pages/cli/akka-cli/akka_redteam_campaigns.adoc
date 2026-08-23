@@ -1,0 +1,21 @@
+= akka redteam campaigns
+
+One dataset version, one target, one set of attack styles.
+
+== Synopsis
+
+Manages red-team campaigns on the service.
+
+----
+akka redteam campaigns [command]
+----
+
+== Options
+
+----
+  -h, --help   help for campaigns
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_redteam.adoc[]

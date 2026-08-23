@@ -1,0 +1,25 @@
+= akka eval datasets
+
+Test cases, versioned at import.
+
+== Synopsis
+
+A dataset is a versioned set of scenarios. Uploads land through the offline-evals service.
+
+----
+akka eval datasets [command]
+----
+
+== Options
+
+----
+  -h, --help   help for datasets
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_eval.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_datasets_create.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_datasets_list.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_datasets_get.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_datasets_items.adoc[]

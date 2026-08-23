@@ -1,0 +1,26 @@
+= akka redteam init
+
+Add the red-team source root to a project.
+
+== Synopsis
+
+Writes the red-team tree — scorers by family, adversarial datasets, rubrics, baselines, custom-technique files, corpora — into an existing project, and configures the Maven profile that compiles it under `-Predteam`.
+
+----
+akka redteam init [DIRECTORY] [flags]
+----
+
+== Options
+
+----
+      --enable-wmdp           do not warn about WMDP
+      --force                 replace files that are already there
+      --from string           a scaffold archive on disk
+      --source string         where to download the scaffold from
+      --with-corpora string   reminder to pull this dated corpora artifact after init
+  -h, --help                  help for init
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_redteam.adoc[]

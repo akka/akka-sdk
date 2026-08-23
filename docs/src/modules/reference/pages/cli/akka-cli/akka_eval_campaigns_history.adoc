@@ -1,0 +1,21 @@
+= akka eval campaigns history
+
+Every run of a recurring campaign, most recent first.
+
+== Synopsis
+
+Prints the run history for a named campaign.
+
+----
+akka eval campaigns history NAME [flags]
+----
+
+== Options
+
+----
+  -h, --help   help for history
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_eval_campaigns.adoc[]

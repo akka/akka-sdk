@@ -1,0 +1,21 @@
+= akka redteam corpora licenses
+
+Aggregated NOTICE across installed corpora.
+
+== Synopsis
+
+Prints one paragraph per corpus with license and source URL.
+
+----
+akka redteam corpora licenses [flags]
+----
+
+== Options
+
+----
+  -h, --help   help for licenses
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_redteam_corpora.adoc[]

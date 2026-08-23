@@ -1,0 +1,28 @@
+= akka eval campaigns
+
+One dataset version, one target, one set of scorers.
+
+== Synopsis
+
+A campaign is one execution of a plan. Aliased to `experiments` for one release cycle.
+
+----
+akka eval campaigns [command]
+----
+
+== Options
+
+----
+  -h, --help   help for campaigns
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_eval.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_campaigns_apply.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_campaigns_get.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_campaigns_record.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_campaigns_item.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_campaigns_compare.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_campaigns_history.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_campaigns_replay.adoc[]

@@ -1,0 +1,22 @@
+= akka eval rules
+
+Rules declared across the project's eval campaigns.
+
+== Synopsis
+
+Lists rules currently declared, optionally filtered by hazard.
+
+----
+akka eval rules [command]
+----
+
+== Options
+
+----
+      --hazard string   restrict to rules covering the named hazard
+  -h, --help            help for rules
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_eval.adoc[]

@@ -1,0 +1,21 @@
+= akka redteam datasets
+
+Adversarial test cases, versioned at import.
+
+== Synopsis
+
+Manages adversarial datasets on the service.
+
+----
+akka redteam datasets [command]
+----
+
+== Options
+
+----
+  -h, --help   help for datasets
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_redteam.adoc[]

@@ -1,0 +1,21 @@
+= akka redteam scorers
+
+What can grade a red-team reply, and what each one needs to read.
+
+== Synopsis
+
+Lists the adversarial scorers registered with the service.
+
+----
+akka redteam scorers [command]
+----
+
+== Options
+
+----
+  -h, --help   help for scorers
+----
+
+== See also
+
+* xref:reference:cli/akka-cli/akka_redteam.adoc[]
