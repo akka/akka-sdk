@@ -47,7 +47,7 @@ public sealed interface Technique permits Technique.Static, Technique.Adaptive {
 
 == A custom static style
 
-Static techniques live under `src/redteam/java/com/example/redkit/technique/`.
+Static techniques live under `src/test/java/com/example/redteam/technique/`.
 
 [source,java,indent=0]
 ----

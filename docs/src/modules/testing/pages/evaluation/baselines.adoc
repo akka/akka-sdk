@@ -3,42 +3,61 @@
 include::ROOT:partial$include.adoc[]
 
 A baseline is a saved reference run.
-Comparing a new run against a baseline surfaces regressions before a change ships.
+A campaign that compares against one surfaces regressions before a change ships.
+
+== What is wired today
+
+The in-memory comparison ships: `akka.evalkit.core.domain.Scoring.compare(List<Grade>, List<Grade>)` compares two grade lists directly.
+That is the only comparison evalkit's own code performs.
+
+Baseline files are a convention today, not an automated pipeline.
+A campaign that wants a comparison loads the baseline itself, runs the current campaign, and calls `Scoring.compare` on both grade lists.
+The automated Panel-8 comparison, `--assert` and rubric-version refusal are on the roadmap; the convention below is the file shape those will read.
 
 == Where baselines live
 
-`src/eval/resources/baselines/<campaign>-<date>.json`
+`src/test/resources/eval/baselines/<campaign-name>.json`
 
 Commit baselines to source control.
-They are the record against which regressions are measured.
+They are the record against which regressions are measured, and the commit is the audit trail for a promotion.
 
-== Comparing to a baseline
+== Convention
 
-  akka eval campaigns compare <run-id> --baseline <baseline-id>
+*One baseline per campaign name.*
+A `nightly-refund-policy.json` file is the baseline for a run named `nightly-refund-policy`.
+A recurring campaign has one file that gets replaced on approval; a one-off exploratory campaign has no baseline at all.
 
-The command prints Panel 8 with per-rule deltas.
+*Never edit a baseline in place.*
+A baseline names the rubric version and the ruleset version it was produced under.
+Editing it silently redefines what a comparison compares to.
+Replace the file whole on approval, and let the commit be the audit trail.
 
-== Failing a build on regression
+*A comparison refuses across version changes.*
+When the automated comparison lands, a current run against a rubric or ruleset newer than the baseline is a version mismatch, not movement in the target.
+Until then, the campaign author checks the versions themselves before calling `Scoring.compare`.
 
-  akka eval campaigns compare <run-id> --baseline <baseline-id> --assert
+== Approving a new baseline
 
-`--assert` exits non-zero when any rule regresses.
-Use it in CI to gate merges.
+Approval is an explicit step outside the campaign.
+A campaign that promoted its own baseline would let a bad run overwrite the thing it was meant to be judged against, which is the opposite of what a baseline is for.
 
-The command exits non-zero on three conditions:
+After a campaign holds against its baseline for long enough to trust the new numbers, the person approving copies the rendered report from `target/evalkit/` into the baselines directory and commits:
 
-* Any rule regresses.
-* The comparison is refused because the two runs cannot be compared (different rubric versions, different scorers).
-* Any scenario is incomparable because one side reached no verdict.
+[listing]
+----
+cp target/evalkit/refund-policy-20260821T0914Z.json \
+   src/test/resources/eval/baselines/nightly-refund-policy.json
+git add src/test/resources/eval/baselines/nightly-refund-policy.json
+git commit -m "baseline: promote refund-policy run 2026-08-21T09:14Z"
+----
 
-== Updating a baseline
-
-Overwrite the file with the same `<campaign>-<date>.json` name to replace the reference for that campaign.
-Keep older files if you want longitudinal history.
+The commit is the audit trail.
+Whoever approves is whoever signed off on the promotion, and `target/test-classes/` — regenerated on every build — is deliberately not where a baseline lives.
 
 == Best practices
 
 * Update the baseline whenever an intentional behavior change lands.
-* Do not update the baseline on the same commit that changes the target. Land the target change, review the diff panel, then land the baseline change.
-* Fail CI on `--assert` failures. Do not silence the exit code.
+* Do not update the baseline on the same commit that changes the target.
+Land the target change, review the report by hand, then land the baseline change.
 * Keep the baseline file small enough to review in a code review.
+A baseline the reviewer cannot read is a baseline the reviewer cannot approve.

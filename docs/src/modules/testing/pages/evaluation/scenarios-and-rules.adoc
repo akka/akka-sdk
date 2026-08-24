@@ -7,7 +7,7 @@ A `Rule` is a named requirement the target must uphold on the scenarios that ref
 
 == Declaring a scenario
 
-Scenarios live under `src/eval/resources/datasets/`.
+Scenarios live under `src/test/resources/eval/datasets/`.
 
 [source,json]
 ----

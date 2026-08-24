@@ -37,7 +37,7 @@ Cap tokens and wall-clock. Overrun ends the attack with `BUDGET_EXHAUSTED`.
 
   akka redteam run
 
-The command wraps the Maven invocation that runs every campaign under `src/redteam/`.
+The command wraps the Maven invocation that runs every campaign under `src/test/java/com/example/redteam/`.
 Output streams to stdout.
 Reports land under `target/redkit/reports/`.
 

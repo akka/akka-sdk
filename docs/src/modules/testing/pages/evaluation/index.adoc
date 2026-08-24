@@ -6,7 +6,7 @@ Evaluation runs your service against a fixed set of test cases and measures how 
 Akka Evalkit executes those runs, records every interaction, aggregates verdicts into pass rates per rule, and writes a report.
 
 The pack is called `evalkit-test`.
-The customer-facing source root is `src/eval/`.
+The customer-facing source root is `src/test/java/com/example/eval/`.
 The CLI is `akka eval`.
 
 == Vocabulary

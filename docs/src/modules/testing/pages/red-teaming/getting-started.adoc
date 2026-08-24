@@ -10,30 +10,30 @@ Run the init command from the project root.
 
   akka redteam init
 
-The command overlays `src/redteam/` onto the project, adds the required dependencies, and configures the Maven profile that compiles the pack.
+The command overlays `src/test/java/com/example/redteam/` onto the project, prints the dependency block to add to the project pom, and gates campaigns with `-Deval=true` so `mvn verify` compiles them without running them.
 Run it once per project.
 
 == Step 2. Pull adversarial corpora
 
   akka redteam corpora pull
 
-The command downloads the latest dated corpora artifact into `src/redteam/resources/corpora/`.
+The command downloads the latest dated corpora artifact into `src/test/resources/redteam/corpora/`.
 Each corpus ships with a `LICENSE` and a `SOURCE.md` file.
 See xref:testing:red-teaming/corpora.adoc[].
 
 == Step 3. Adapt your agent to a runner
 
-Create `src/redteam/java/com/example/redkit/runner/MyAgentRunner.java`.
+Create `src/test/java/com/example/redteam/runner/MyAgentRunner.java`.
 The runner forwards each attack prompt to the agent under test.
-When you already have an evaluation runner under `src/eval/`, reuse it by extracting the adapter to `src/main/java/com/example/agentcontract/` and referencing it from both packs.
+When you already have an evaluation runner under `src/test/java/com/example/eval/`, reuse it by extracting the adapter to `src/main/java/com/example/agentcontract/` and referencing it from both packs.
 
 [source,java]
 ----
 package com.example.redkit.runner;
 
-import io.akka.evalkit.spi.domain.Scenario;
-import io.akka.evalkit.spi.domain.SystemUnderTest;
-import io.akka.evalkit.spi.domain.Transcript;
+import akka.evalkit.core.domain.Scenario;
+import akka.evalkit.core.domain.SystemUnderTest;
+import akka.evalkit.core.domain.Transcript;
 import akka.javasdk.client.ComponentClient;
 
 public final class MyAgentRunner implements SystemUnderTest {
@@ -60,16 +60,16 @@ Replace `MyAgent::ask` with the method on your own agent.
 
 == Step 4. Declare the rules you want to test
 
-Create `src/redteam/java/com/example/redkit/rules/RefundAgentRules.java`.
+Create `src/test/java/com/example/redteam/rules/RefundAgentRules.java`.
 Each rule names the behavior the agent must uphold and the hazards it covers.
 
 [source,java]
 ----
 package com.example.redkit.rules;
 
-import io.akka.evalkit.spi.domain.Rule;
-import io.akka.evalkit.spi.hazard.Hazard;
-import io.akka.evalkit.spi.hazard.OwaspLlmRisk;
+import akka.evalkit.core.domain.Rule;
+import akka.evalkit.spi.hazard.Hazard;
+import akka.evalkit.spi.hazard.OwaspLlmRisk;
 
 import java.util.List;
 import java.util.Set;
@@ -91,7 +91,7 @@ public final class RefundAgentRules {
 
 == Step 5. Declare a campaign
 
-Create `src/redteam/java/com/example/redkit/campaigns/RefundAgentCampaign.java`.
+Create `src/test/java/com/example/redteam/campaigns/RefundAgentCampaign.java`.
 The campaign wires scenarios, rules, scorers, and attack styles together.
 
 [source,java]
@@ -100,13 +100,13 @@ package com.example.redkit.campaigns;
 
 import com.example.redkit.rules.RefundAgentRules;
 import com.example.redkit.runner.MyAgentRunner;
-import io.akka.evalkit.redteam.scorer.JailbreakScorer;
-import io.akka.evalkit.redteam.scorer.PIILeakDetector;
-import io.akka.evalkit.redteam.technique.adaptive.Crescendo;
-import io.akka.evalkit.redteam.technique.staticwrap.Base64;
-import io.akka.evalkit.redteam.technique.staticwrap.RolePlay;
-import io.akka.evalkit.spi.domain.CampaignPlan;
-import io.akka.evalkit.spi.domain.ScenarioSource;
+import akka.evalkit.redteam.scorer.JailbreakScorer;
+import akka.evalkit.redteam.scorer.PIILeakDetector;
+import akka.evalkit.redteam.technique.adaptive.Crescendo;
+import akka.evalkit.redteam.technique.staticwrap.Base64;
+import akka.evalkit.redteam.technique.staticwrap.RolePlay;
+import akka.evalkit.core.domain.CampaignPlan;
+import akka.evalkit.core.domain.ScenarioSource;
 
 import java.time.Duration;
 import java.util.List;
@@ -121,7 +121,7 @@ public final class RefundAgentCampaign {
         .withRule("refuse_to_draft_phishing", new JailbreakScorer())
         .attacking(List.of(new Base64(), new RolePlay(), new Crescendo()))
         .repeating(3)
-        .withBudget(io.akka.evalkit.runtime.adversary.Budget.of(200_000, Duration.ofHours(1)))
+        .withBudget(akka.evalkit.runtime.adversary.Budget.of(200_000, Duration.ofHours(1)))
         .against(runner);
   }
 }
@@ -131,7 +131,7 @@ public final class RefundAgentCampaign {
 
   akka redteam run
 
-The command runs every campaign under `src/redteam/`.
+The command runs every campaign under `src/test/java/com/example/redteam/`.
 Output streams to stdout.
 The rendered report lands under `target/redkit/reports/`.
 
@@ -158,11 +158,11 @@ See xref:testing:red-teaming/attestation.adoc[].
 They are not part of your suite unless you point them at your service.
 Delete any example you do not want.
 
-* `src/redteam/java/com/example/redkit/runner/AgentRunner.java`
-* `src/redteam/java/com/example/redkit/scorer/deterministic/ExampleScorer.java`
-* `src/redteam/java/com/example/redkit/technique/ExampleTechnique.java`
-* `src/redteam/resources/datasets/example/`
-* `src/redteam/resources/rubrics/example.v1.txt`
+* `src/test/java/com/example/redteam/runner/AgentRunner.java`
+* `src/test/java/com/example/redteam/scorer/deterministic/ExampleScorer.java`
+* `src/test/java/com/example/redteam/technique/ExampleTechnique.java`
+* `src/test/resources/redteam/datasets/example/`
+* `src/test/resources/redteam/rubrics/example.v1.txt`
 
 == Next steps
 

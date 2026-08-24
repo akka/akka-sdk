@@ -4,9 +4,11 @@ Add the eval source root to a project.
 
 == Synopsis
 
-Writes the eval tree — scorers by family, datasets, rubrics, baselines — into an existing project, and configures the Maven profile that compiles it.
+Writes the eval tree — scorers by family, datasets, rubrics, baselines — into the
+existing project's `src/test/java`. Nothing edits the pom: campaigns are ordinary JUnit
+tests gated on `-Deval=true`, so `mvn verify` compiles them without running them.
 
-Additive: a file already present is left alone.
+Additive: a file already present is left alone and reported.
 `--force` replaces existing files, after backing up what it replaces.
 
 Run the command again to take a newer scaffold; the parts you have written stay yours.
@@ -18,12 +20,48 @@ akka eval init [DIRECTORY] [flags]
 == Options
 
 ----
-      --force           replace files that are already there
-      --from string     a scaffold archive on disk, instead of downloading one
-      --source string   where to download the scaffold from
-  -h, --help            help for init
+      --force             replace files that are already there
+      --from string       a scaffold archive on disk, instead of downloading one
+      --package string    the Java package to write eval sources under
+                          (defaults to <groupId>.eval read from the pom)
+      --source string     where to download the scaffold from
+  -h, --help              help for init
 ----
+
+== What --package does
+
+The scaffold ships example files under `com.example.eval.*`.
+On unpack, the command rewrites that prefix to the target package so the files land under
+the customer's own package on disk, and the `package` declarations plus javadoc references
+inside each file are rewritten to match.
+
+If `--package` is not given, the target is derived from the pom's `<groupId>` — for a pom
+that declares `<groupId>com.acme.checkout</groupId>` the target is `com.acme.checkout.eval`
+and the files land at `src/test/java/com/acme/checkout/eval/...`.
+A pom that declares no `<groupId>` fails the command with a message asking for `--package`.
+
+== After the command runs
+
+The command prints the dependency block to add to the project's pom (test scope), then the
+command to run a campaign:
+
+----
+add the library to the project's pom (test scope):
+
+  <dependency>
+    <groupId>io.akka</groupId>
+    <artifactId>evalkit</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <scope>test</scope>
+  </dependency>
+
+then run a campaign with `mvn verify -Deval=true`
+----
+
+The pom is not edited automatically — printing what to add is deliberate, so the customer
+decides where in their pom the dependency lands.
 
 == See also
 
 * xref:reference:cli/akka-cli/akka_eval.adoc[]
+* xref:testing:evaluation/getting-started.adoc[]

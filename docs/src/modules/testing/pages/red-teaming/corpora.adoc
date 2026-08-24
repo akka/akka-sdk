@@ -4,7 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 Adversarial prompt corpora ship as a separate date-versioned artifact from the code:
 
-  io.akka.evalkit : evalkit-redteam-corpora : YYYY-MM.N
+  io.akka : evalkit-redteam-corpora : YYYY-MM.N
 
 Corpora refresh on their own cadence.
 The code side of `evalkit-redteam` never pulls a corpus at runtime.
@@ -18,7 +18,7 @@ The code side of `evalkit-redteam` never pulls a corpus at runtime.
 
 The command is idempotent.
 Pulling the same artifact twice is a no-op.
-Pulling a newer artifact preserves baselines under `src/redteam/resources/baselines/`.
+Pulling a newer artifact preserves baselines under `src/test/resources/redteam/baselines/`.
 
 == What ships
 
@@ -97,7 +97,7 @@ Run `akka redteam corpora list` for the authoritative list against the artifact 
 
 == Inspecting a corpus
 
-The pulled artifact ships with every corpus laid out under `src/redteam/resources/corpora/<corpus-name>/` with three files:
+The pulled artifact ships with every corpus laid out under `src/test/resources/redteam/corpora/<corpus-name>/` with three files:
 
 * `manifest.json` — name, description, license, source URL, hazards covered, item count, gated flag.
 * `items.jsonl` — one adversarial prompt per line.

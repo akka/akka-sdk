@@ -6,7 +6,7 @@ Red teaming sends adversarial prompts through your service and measures how ofte
 Akka Redkit wraps and escalates each prompt through five static and three adaptive attack styles, detects rule violations with scorers keyed to hazard categories, and writes a report grouped by hazard and by attack style.
 
 The pack is called `evalkit-redteam`.
-The customer-facing source root is `src/redteam/`.
+The customer-facing source root is `src/test/java/com/example/redteam/`.
 The CLI is `akka redteam`.
 
 == Shared with evaluation

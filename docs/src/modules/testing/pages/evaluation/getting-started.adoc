@@ -10,12 +10,12 @@ Run the init command from the project root.
 
   akka eval init
 
-The command overlays `src/eval/` onto the project, adds the required dependencies, and configures the Maven profile that compiles the pack.
+The command overlays `src/test/java/com/example/eval/` onto the project, prints the dependency block to add to the project pom, and gates campaigns with `-Deval=true` so `mvn verify` compiles them without running them.
 Run it once per project.
 
 == Step 2. Adapt your agent to a runner
 
-Create `src/eval/java/com/example/evalkit/runner/MyAgentRunner.java`.
+Create `src/test/java/com/example/eval/runner/MyAgentRunner.java`.
 The runner is the only class that references your service.
 Extend `SystemUnderTest` and forward each scenario prompt through `ComponentClient` to the agent under test.
 
@@ -23,9 +23,9 @@ Extend `SystemUnderTest` and forward each scenario prompt through `ComponentClie
 ----
 package com.example.evalkit.runner;
 
-import io.akka.evalkit.spi.domain.Scenario;
-import io.akka.evalkit.spi.domain.SystemUnderTest;
-import io.akka.evalkit.spi.domain.Transcript;
+import akka.evalkit.core.domain.Scenario;
+import akka.evalkit.core.domain.SystemUnderTest;
+import akka.evalkit.core.domain.Transcript;
 import akka.javasdk.client.ComponentClient;
 
 public final class MyAgentRunner implements SystemUnderTest {
@@ -52,7 +52,7 @@ Replace `MyAgent::ask` with the method on your own agent.
 
 == Step 3. Author a dataset
 
-Create `src/eval/resources/datasets/my-first/items.jsonl`.
+Create `src/test/resources/eval/datasets/my-first/items.jsonl`.
 Every line is one scenario.
 
 [source,json]
@@ -62,7 +62,7 @@ Every line is one scenario.
 ----
 
 Create the manifest that names the dataset.
-Save it as `src/eval/resources/datasets/my-first/dataset.json`.
+Save it as `src/test/resources/eval/datasets/my-first/dataset.json`.
 
 [source,json]
 ----
@@ -75,7 +75,7 @@ Save it as `src/eval/resources/datasets/my-first/dataset.json`.
 
 == Step 4. Declare a campaign
 
-Create `src/eval/java/com/example/evalkit/campaigns/MyFirstCampaign.java`.
+Create `src/test/java/com/example/eval/campaigns/MyFirstCampaign.java`.
 The campaign wires scenarios, rules, and scorers together.
 
 [source,java]
@@ -83,9 +83,9 @@ The campaign wires scenarios, rules, and scorers together.
 package com.example.evalkit.campaigns;
 
 import com.example.evalkit.runner.MyAgentRunner;
-import io.akka.evalkit.spi.domain.CampaignPlan;
-import io.akka.evalkit.spi.domain.ScenarioSource;
-import io.akka.evalkit.test.scorer.CorrectnessScorer;
+import akka.evalkit.core.domain.CampaignPlan;
+import akka.evalkit.core.domain.ScenarioSource;
+import akka.evalkit.samples.CorrectnessScorer;
 
 public final class MyFirstCampaign {
 
@@ -103,7 +103,7 @@ public final class MyFirstCampaign {
 
   akka eval run
 
-The command runs every campaign under `src/eval/`.
+The command runs every campaign under `src/test/java/com/example/eval/`.
 Output streams to stdout.
 The rendered report lands under `target/evalkit/reports/`.
 
@@ -121,10 +121,10 @@ See xref:testing:evaluation/reports.adoc[].
 They are not part of your suite unless you point them at your service.
 Delete any example you do not want.
 
-* `src/eval/java/com/example/evalkit/runner/AgentRunner.java`
-* `src/eval/java/com/example/evalkit/scorer/deterministic/ExampleScorer.java`
-* `src/eval/resources/datasets/example/`
-* `src/eval/resources/rubrics/example.v1.txt`
+* `src/test/java/com/example/eval/runner/AgentRunner.java`
+* `src/test/java/com/example/eval/scorer/deterministic/ExampleScorer.java`
+* `src/test/resources/eval/datasets/example/`
+* `src/test/resources/eval/rubrics/example.v1.txt`
 
 == Next steps
 

@@ -33,7 +33,7 @@ Attaches scorers that apply to every scenario in the campaign, in addition to an
 
   akka eval run
 
-The command wraps the Maven invocation that runs every campaign under `src/eval/`.
+The command wraps the Maven invocation that runs every campaign under `src/test/java/com/example/eval/`.
 Output streams to stdout.
 Reports land under `target/evalkit/reports/<campaign>.txt`.
 

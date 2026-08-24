@@ -1,0 +1,117 @@
+= Scorer reference
+
+include::ROOT:partial$include.adoc[]
+
+Reference tables for every scorer evalkit ships.
+For the walkthrough of one scorer per family and templates for writing your own, see xref:testing:evaluation/scorers.adoc[].
+
+== Deterministic
+
+[cols="2,3,2"]
+|===
+| Scorer | Reads | Returns
+
+| `ToolPermission`
+| Tool names against an allow list, a deny list, or both. Deny outranks allow on conflict.
+| `Measured` with the share authorised.
+
+| `ToolCorrectness`
+| Tool names against a stated expected list. Order-sensitive when configured.
+| `Measured` with the share matching.
+
+| `ArgumentCorrectness`
+| Each tool call's parsed arguments against a stated expected map.
+| `Measured` with the share of arguments correct.
+|===
+
+== Heuristic
+
+[cols="2,3,2"]
+|===
+| Scorer | Reads | Returns
+
+| `LatencyBudget`
+| `Interaction.latency()` against a stated `Duration`.
+| `Measured`; half at budget, proportional above.
+
+| `TokenBudget`
+| Total input+output tokens against a limit. Runs without measured usage are `Inconclusive`.
+| `Measured` or `Inconclusive`.
+
+| `ModelCallBudget`
+| `Interaction.modelCalls().size()` against a limit.
+| `Measured` or `Inconclusive` when no calls reported.
+
+| `RegexMatch`
+| Reply against a compiled `Pattern`.
+| `Measured` with 1.0 or 0.0.
+
+| `LengthInRange`
+| Reply length against `[min, max]`, characters or words.
+| `Measured` with 1.0 or 0.0.
+
+| `JsonValidity`
+| Whether the reply parses cleanly as JSON.
+| `Measured` with 1.0 or 0.0.
+
+| `ExactMatch`
+| Reply against `scenario.expectedOutcome()`, whitespace-normalised.
+| `Measured` with 1.0 or 0.0.
+
+| `TokenF1`
+| SQuAD-style token-overlap F1 between reply and expected outcome.
+| `Measured` with the F1 in `[0, 1]`.
+
+| `ContextRecall`
+| `Interaction.retrievedContext()` against a customer-supplied ground-truth lookup.
+| `Measured` with the share of relevant passages retrieved.
+
+| `ContextPrecision`
+| Retrieved passages against a customer-supplied ground-truth lookup.
+| `Measured` with the share of retrieved passages that were relevant.
+
+| `ReciprocalRank`
+| `Interaction.retrievedContext()` ordered; ground-truth lookup for the relevance.
+| `Measured` with 1 / rank of the first relevant passage.
+
+| `NormalizedDiscountedCumulativeGain`
+| Retrieved passages ordered against a ground-truth lookup.
+| `Measured` with NDCG@K in `[0, 1]`.
+|===
+
+== Agentic
+
+Every agentic scorer extends `AlignmentMetric`, takes an `Assessor` in the constructor, and ships a `systemPrompt()` in its class.
+
+[cols="2,3,2"]
+|===
+| Scorer | The model judges | Returns
+
+| `TaskCompletion`
+| Whether the reply carried out the task.
+| `Measured` from the assessor's score.
+
+| `PlanQuality`
+| Whether the plan the agent formed would achieve the task.
+| `Measured` from the assessor's score.
+
+| `PlanAdherence`
+| Whether the agent followed the plan it formed.
+| `Measured` from the assessor's score.
+
+| `StepEfficiency`
+| Whether the step sequence was efficient for the task.
+| `Measured` from the assessor's score.
+
+| `TurnFaithfulness`
+| Whether the reply is supported by the retrieved passages.
+| `Measured` from the assessor's score.
+
+| `TurnRelevancy`
+| Whether the reply addresses the question that was asked.
+| `Measured` from the assessor's score.
+
+| `CitationFaithfulness`
+| Whether each citation marker points at a supporting passage.
+| `Measured` from the assessor's score.
+|===
