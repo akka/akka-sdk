@@ -2,13 +2,13 @@
 
 include::ROOT:partial$include.adoc[]
 
-:page-summary: A remote campaign runs on the offline-evals service instead of in the customer's JVM. The campaign plan and the report are identical; the runner is the wire client and the durability lives on the service.
+:page-summary: A remote campaign runs on the offline-evals service instead of the customer's JVM. The plan the customer writes and the report the customer reads back are the same either way; the service does the work.
 :page-when-to-use: Use for datasets over a few thousand scenarios, campaigns that take more than a few minutes, campaigns whose cost belongs to a shared budget, and scheduled runs.
 :page-related: xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/reports.adoc[]
 
 A remote campaign runs on the offline-evals service instead of in the customer's JVM.
 The plan the customer builds is the same plan the runner reads locally; the service owns the durability, the paging, and the retries.
-The report the customer fetches back is byte-identical to the report a local run would produce.
+The report the customer fetches back is the same report a local run would produce.
 
 == When to reach for a remote run
 

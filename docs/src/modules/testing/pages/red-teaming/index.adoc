@@ -9,7 +9,7 @@ include::ROOT:partial$include.adoc[]
 
 Red teaming is how a project probes a service for the things it should refuse.
 A suite runs the target through attacker-shaped prompts drawn from a corpus, wraps or escalates them through attack styles, and asks a scorer whether the target broke through, held, or the evidence was inconclusive.
-The rendered report reads as a set of incidents, grouped by hazard and by attack style, with an attestation the compliance review reads as evidence.
+The rendered report lists each break as its own incident, grouped by hazard and by attack style, with a signed record the compliance review reads as evidence the run happened.
 
 The pack is `evalkit-redteam`.
 The customer-facing source root is `src/test/java/<groupId>.redteam/`, alongside the project's other tests.

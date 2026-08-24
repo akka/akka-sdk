@@ -2,13 +2,25 @@
 
 include::ROOT:partial$include.adoc[]
 
-:page-summary: An evaluation report reads as a set of panels. Each panel answers one question about the run — what passed, what failed, what varied, what the judge scored, what the run could not tell you, what it cost, and how it compares to the baseline.
-:page-when-to-use: Read on every failing case in CI, and on every intentional target change before shipping. Reports are the primary interface between the runner and a reviewer.
+:page-summary: An evaluation report has eight panels in a fixed order. Each panel answers one question about the run — what passed, what failed, what varied between repeats, how quality was measured, how the judge scored, what the run could not tell you, what it cost, and how it compares to the baseline.
+:page-when-to-use: Read on every failing case in CI, and on every intentional target change before shipping. The report is what a reviewer reads to tell whether the run passed.
 :page-related: xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/baselines.adoc[]
 
-An evaluation report is the primary interface between a campaign run and the reviewer who reads it.
-Each panel answers one question about the run, and a panel appears when the run had something to say about it.
-Reports carry the failing cases individually so a reviewer can jump straight to the case that regressed.
+An evaluation report has eight panels in a fixed order.
+A panel appears when the run has something to put in it; a panel that would be empty is left out, and the numbering closes the gap.
+
+The eight panels are:
+
+. **What the run found** — total attempts, total passes, pass rate per rule.
+. **What failed** — every failing case, listed worst first, with the rule, the scenario id, the scorer and the reason.
+. **What varied** — cases whose verdict flipped between repeats (shown when `repeating(N)` for `N > 1` and any case varied).
+. **How quality was measured** — the scoring method for each rule.
+. **How the judge scored** — for agentic scorers: the judge model, the rubric version, the human spot-check sample size, and the agreement rate.
+. **What it cannot tell you** — inconclusive outcomes and why.
+. **What it cost** — token spend split by target and judge, plus wall-clock elapsed.
+. **Baseline comparison** — per-rule deltas versus the baseline (shown when a baseline is passed).
+
+The rest of this page walks each panel with the exact output it prints.
 
 == What the run found
 

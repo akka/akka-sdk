@@ -83,7 +83,9 @@ The test is compiled and JUnit knows it exists; execution needs `-Deval=true`.
 == What a run reports
 
 `mvn verify -Deval=true` runs the campaign.
-The rendered report lands under `target/evalkit/reports/<campaign>.txt` and reads like this:
+The rendered report lands under `target/evalkit/reports/<campaign>.txt`.
+The report has eight panels in a fixed order; a panel appears only when the run has something to put in it.
+An excerpt below shows panels 1, 2, and 7 from a run that had no repeats, no agentic judge, and no baseline set — panels 3, 5, and 8 were left out for that reason.
 
 [listing]
 ----
@@ -104,7 +106,7 @@ What failed
 
  #1  Rule:      answers_restocking_fee
      Scenario:  case-034
-     Scorer:    correctness (agentic, scenario-judge v3)
+     Scorer:    task-completion (agentic, scenario-judge v3)
      Prompt:    "Do you charge a restocking fee on returns?"
      Expected:  "No"
      Reply:     "Yes, our restocking fee is 15% of the item price."
@@ -123,7 +125,7 @@ What it cost
 Wall-clock: 4m 12s.
 ----
 
-For every panel of the report and how the numbers compose, see xref:testing:evaluation/reports.adoc[].
+For all eight panels — including "What varied", "How quality was measured", "How the judge scored", "What it cannot tell you", and the baseline comparison — see xref:testing:evaluation/reports.adoc[].
 
 == Where the parts live
 

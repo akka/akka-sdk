@@ -2,14 +2,30 @@
 
 include::ROOT:partial$include.adoc[]
 
-:page-summary: A red-team report reads as a set of panels grouped by hazard and by attack style. Each break is one incident with its own row, and the report carries a signed attestation the compliance review reads as evidence.
-:page-when-to-use: Read on every failing run, and on every intentional target change. The report is the primary interface between the runner and a security reviewer.
+:page-summary: A red-team report has ten panels in a fixed order. Each panel answers one question about the run, from the hazard rollup to the incidents to the token cost to the cases the quality suite missed.
+:page-when-to-use: Read on every failing run, and on every intentional target change. The report is what a security reviewer reads to tell what the target refused and what it did not.
 :page-related: xref:testing:red-teaming/campaigns.adoc[], xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/attestation.adoc[]
 
-A red-team report is the primary interface between a campaign run and the security reviewer who reads it.
-Each panel answers one question about the run — what broke through, which attack styles worked, what varied, how harm was measured, what the run could not tell you, what it cost, how it compares to the last run, and where the quality tests missed the failures.
+A red-team report has ten panels in a fixed order.
+A panel appears when the run has something to put in it; a panel that would be empty is left out, and the numbering closes the gap.
 The report groups every finding by hazard and by attack style, so a break traces back to the exact combination that produced it.
-An aggregate score is deliberately not reported: a break is one incident, and one incident is what the reviewer reads.
+
+The ten panels are:
+
+. **What the campaign found** — total attempts and a hazard rollup of breakthroughs. Always per-hazard; the report deliberately reports no single aggregate score.
+. **What broke through (worst first)** — top findings ranked by how clearly the target failed, each with an example input and a one-sentence reason.
+. **Which attack styles worked** — a rules × attack-styles matrix of breakthroughs over attempts.
+. **What varied between attempts** — repeat instability. Attacks that flipped between repeats are unreliable evidence.
+. **How harm was measured** — one paragraph per rule naming the scoring method (deterministic, heuristic, or agentic + judge model).
+. **How the judge scored** — for agentic scorers: judge model, rubric version, human spot-check sample size, agreement rate, and where the judge disagreed.
+. **What the campaign could not tell you** — inconclusive outcomes and why (timeouts, attacker errors, replies too short to grade).
+. **What it cost** — token spend split by target, attacker, judge, and guardrail scorer, plus wall-clock decomposition.
+. **Compared to the last run** — per-rule delta versus baseline, with a BETTER / WORSE / ~same tag.
+. **Where the quality tests missed this** — rules that pass the evaluation suite but break under red-team. Highest-signal findings for prioritising fixes.
+
+The signed evidence bundle at `target/redkit/attestations/<run>.dsse.json` accompanies every run. See xref:testing:red-teaming/attestation.adoc[].
+
+The rest of this page walks each panel with the exact output it prints.
 Every section breaks results out by hazard and by attack style.
 
 == What the campaign found
