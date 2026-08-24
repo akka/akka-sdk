@@ -2,225 +2,222 @@
 
 include::ROOT:partial$include.adoc[]
 
-:page-summary: An evaluation report has eight panels in a fixed order. Each panel answers one question about the run — what passed, what failed, what varied between repeats, how quality was measured, how the judge scored, what the run could not tell you, what it cost, and how it compares to the baseline.
+:page-summary: An evaluation report prints between one and seven panels in a fixed order. Each panel answers one question about the run — what passed, what failed, what varied between repeats, how quality was measured, how the judge scored, what the run could not tell you, and what it cost.
 :page-when-to-use: Read on every failing case in CI, and on every intentional target change before shipping. The report is what a reviewer reads to tell whether the run passed.
 :page-related: xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/baselines.adoc[]
 
-An evaluation report has eight panels in a fixed order.
-A panel appears when the run has something to put in it; a panel that would be empty is left out, and the numbering closes the gap.
+`Panels.render()` writes a plain 80-column ASCII report to `target/evalkit/reports/<campaign>.txt`.
+The report prints a header followed by the panels the run has content for, numbered 1 through 7 in the order they appear.
+A panel with nothing to say is left out and the numbering closes the gap; the varied panel appears only when `repeating(N > 1)` produced any varied requirement, the judge panel only when any requirement was judged, the "what it cannot tell you" panel only when anything was undecided or produced no result.
 
-The eight panels are:
+Every example below is the exact byte output the tool produces.
 
-. **What the run found** — total attempts, total passes, pass rate per rule.
-. **What failed** — every failing case, listed worst first, with the rule, the scenario id, the scorer and the reason.
-. **What varied** — cases whose verdict flipped between repeats (shown when `repeating(N)` for `N > 1` and any case varied).
-. **How quality was measured** — the scoring method for each rule.
-. **How the judge scored** — for agentic scorers: the judge model, the rubric version, the human spot-check sample size, and the agreement rate.
-. **What it cannot tell you** — inconclusive outcomes and why.
-. **What it cost** — token spend split by target and judge, plus wall-clock elapsed.
-. **Baseline comparison** — per-rule deltas versus the baseline (shown when a baseline is passed).
+== Header
 
-The rest of this page walks each panel with the exact output it prints.
-
-== What the run found
-
-Total attempts, total passes, and the pass rate per rule.
-Read this first to see whether the run met your expectations.
+Always at the top of the report.
+Carries the run identity, the target build, the ruleset version, the rubric version, the scope and the record path.
 
 [listing]
 ----
-What the run found
-------------------
-
-240 attempts across 4 rules. 217 passed, 18 failed, 5 inconclusive.
-
-  answers_refund_window ......... 58 of 60 passed  (96.7%)
-  cites_policy_source ........... 55 of 60 passed  (91.7%)
-  refuses_out_of_scope .......... 60 of 60 passed  (100%)
-  answers_restocking_fee ........ 44 of 60 passed  (73.3%)
+Refund policy evaluation
+--------------------------------------------------------------------------
+  run      2026-08-11T09:14Z           system   claims-svc 4.2.0
+  rules    refund-desk v3              rubric   scenario-judge v3
+  scope    6 requirements, 6 runs
+  record   target/evalkit/refund-policy.jsonl
+--------------------------------------------------------------------------
 ----
 
-== What failed
+== Panel 1 — What the run found
 
-Every failing case, listed worst first.
-Each entry names the rule, the scenario id, the scorer that failed it, and the reply that failed.
-Read this to know exactly which cases to fix.
+Total requirements, broken down by verdict.
+Always appears.
 
 [listing]
 ----
-What failed
------------
+1  What the run found
+---------------------
 
- #1  Rule:      answers_restocking_fee
-     Scenario:  case-034
-     Scorer:    correctness (agentic, jailbreak-judge.v3)
-     Prompt:    "Do you charge a restocking fee on returns?"
-     Expected:  "No"
-     Reply:     "Yes, our restocking fee is 15% of the item price."
-     Why:       the reply contradicts the reference answer.
+  passed            #############                               2
+  failed            #############                               2
+  undecided         #######                                     1
+  no result         #######                                     1
 
- #2  Rule:      cites_policy_source
-     Scenario:  case-051
-     Scorer:    faithfulness (agentic, faithfulness.v1)
-     Reply:     "Refunds are always processed within 24 hours."
-     Why:       claim absent from the retrieved context; no source cited.
+  In this run, each requirement ran once. Undecided means that a result was in
+  a judge's middle confidence. No result means the run stopped before there
+  was an answer to score.
 
- (16 more shown in the full report)
+  One run cannot tell a requirement the system meets from one it happened to
+  meet. Five runs would show a requirement holds at least 55% of the time,
+  twenty runs at least 86%, fifty at least 94%.
 ----
 
-== What varied
+When `repeating(N > 1)` runs the same requirement N times, the labels read `passed every run` and `failed every run`, and a `varied` row appears above `undecided`.
 
-Cases whose verdict flipped between repeats.
-Only shown when the campaign runs with `repeating(N)` for `N > 1`.
-Flipping is expected on agentic scorers; it is a defect on deterministic ones.
-Read this to know which verdicts you can trust and which need re-running.
+== Panel 2 — What failed
+
+Every failing requirement, listed one per line with the id and the scorer's own reason.
+Appears only when any requirement failed.
 
 [listing]
 ----
-What varied
------------
+2  What failed
+--------------
 
-11 attempts flipped between repeats.
+     refund-14d            expected GenUC-16a, found GenUC-17a
+     tool-scope            tool-permission v1: scored 0.50, needed 1.00
 
-  Rules with the most flipping:
-    cites_policy_source ....... 6 flipped attempts
-    answers_restocking_fee .... 3 flipped attempts
-
-  Scorers with the most flipping:
-    faithfulness .............. 7 flipped attempts
-    correctness ............... 4 flipped attempts
-
-  Flipping on faithfulness is expected because the judge model
-  varies; treat those 7 verdicts as low confidence and re-run.
+  Every requirement that failed, and what the scorer said about it. A scorer
+  that computes a number reports the number it got and the number it needed.
 ----
 
-== How quality was measured
+== Panel 3 — The requirements that gave different answers between runs
 
-The scoring method for each rule.
-Names the scorer, the family, and whether a judge was involved.
-Read this to understand what "pass" actually means for each rule.
+Appears only when `repeating(N > 1)` produced any varied requirement.
+Each varied requirement shows a fixed-width run strip: `+` for a run that passed, `-` for one that failed, in the order they were started.
 
 [listing]
 ----
-How quality was measured
-------------------------
+3  The requirements that gave different answers between runs
+------------------------------------------------------------
 
- answers_refund_window
-   Method: exact-string match on "14 days" in the reply.
-           Deterministic; no judge involved.
+  There was 1 varied requirement.
 
- cites_policy_source
-   Method: faithfulness judge reads the reply and its retrieved
-           context; passes when every factual claim is supported
-           by the context.
+     requirement         + passed   - failed  settled by            runs passed
+     --------------------------------------------------------------------------
+     flaky               + - + - +            specification node         3 of 5
 
- refuses_out_of_scope
-   Method: pattern match on the reply for a refusal phrase.
-           Deterministic; no judge involved.
+  Each mark is one run, in the order they were started.
 
- answers_restocking_fee
-   Method: correctness judge compares the reply to
-           scenario.expected() and passes when the judge scores
-           it above the threshold.
+  A requirement settled by comparison that varies means the system is giving
+  different answers to the same question.
 ----
 
-== How the judge scored
+At larger repeat counts each mark covers several runs (`+` when more than half of them passed) so the column stays the same width from 5 runs to 500.
 
-For rules scored by an agentic judge, the judge model, the rubric version, the sample size of the human spot-check, and the agreement rate.
-Read this to know how much to trust the graded verdicts.
+== Panel 4 — How quality was measured
+
+One row per quality measure the campaign shipped, with a stacked bar of `#`/`x`/`~`/`?` glyphs showing how each measure fared.
 
 [listing]
 ----
-How the judge scored
---------------------
+4  How quality was measured
+---------------------------
 
-Judge model:            gpt-4o (temperature 0.0)
-Rubrics:                correctness.v2, faithfulness.v1
-Human spot-check:       60 replies re-labeled by a reviewer
-Judge agreement:        56 of 60  (93.3%)
+           # passed   x failed   ~ varied   ? unsettled
 
-Where the judge disagreed:
-  - 3 replies the judge called correct were subtly wrong
-  - 1 reply the judge called wrong actually restated the source
+     specification node      #########xxxxxxxxx             2
+     scenario judge          #########?????????????????     3
+     required wording                                       0
+     task completion                                        0
+     tool permission         xxxxxxxxx                      1
+     tool correctness                                       0
+     argument correctness                                   0
+     turn faithfulness                                      0
+     citation faithfulness                                  0
+     turn relevancy                                         0
+     plan quality                                           0
+     plan adherence                                         0
+     step efficiency                                        0
 
-Treat correctness and faithfulness verdicts as accurate to
-within about 7%.
+  Quality measures are specific to the use case being executed. Counts reflect
+  the number of requirements a quality measure checked. Varied means the same
+  requirement got a different verdict on different runs. Unsettled means the
+  judge was undecided or the run produced nothing.
 ----
 
-== What it cannot tell you
+A measure the campaign never touched still prints as a zero row.
+The panel is a full inventory, so nothing gets missed by omission.
 
-Attempts that produced no verdict, and why.
-Timeouts, target errors, replies too short to grade.
-Names which numbers in "What the run found" are affected.
-Read this before treating a pass rate as complete.
+== Panel 5 — How the judge scored
+
+Appears only when any requirement was judged.
+Prints a horizontal bar of `#` glyphs per score from 10 down to 1, grouped into three bands the rubric declares.
 
 [listing]
 ----
-What it cannot tell you
+5  How the judge scored
 -----------------------
 
- 3 attempts timed out before the target finished replying.
- 2 attempts produced replies too short for the judge to score.
+     10                                        0
+      9  ##############################        1
+      8                                        0
+     ..... passed, 8 and above .................... 1
+      7                                        0
+      6                                        0
+      5  ##############################        1
+      4                                        0
+     ..... undecided, 4 to 7 ...................... 1
+      3                                        0
+      2                                        0
+      1                                        0
+     ..... failed, 3 and below .................... 0
 
-Because of these, the results for "cites_policy_source" and
-"answers_restocking_fee" are based on 5 fewer attempts than
-the totals in "What the run found". The percentages there
-account for this.
+  Models scored 3 requirements from 1 to 10, with 10 being very confident.
+
+  The judge agrees with a human reviewer 89-91% of the time on clear-cut
+  replies and 53% of the time on borderline ones.
 ----
 
-== What it cost
+== Panel 6 — What this run cannot tell you
 
-Token spend split by target and judge; wall-clock elapsed.
-Read this to budget campaigns and to catch runaway costs.
+Runs that stopped before the system produced an answer, split by cause.
+Also lists any requirements the coverage declaration excluded from this run.
 
 [listing]
 ----
-What it cost
-------------
+6  What this run cannot tell you
+--------------------------------
 
-  Target (the system under test) ....  412,301 tokens  ~ $0.82
-  Judge (grading replies) ...........  188,455 tokens  ~ $1.22
-  ---------------------------------------------------------
-  Total .............................  600,756 tokens  ~ $2.04
+  These runs stopped before the system produced an answer to score.
 
-Wall-clock: 4m 12s. Target calls ran in parallel; judge calls
-ran sequentially per rubric version.
+     never reached the question                    0
+     no reply within 45 seconds                    1
+     the judge would not score the answer          0
+
+  These requirements were left out of this run.
+
+     booking changes                               14
+
+  This kit can show that the system answered correctly from a stated starting
+  point. It cannot show that a user reaches that point unaided.
 ----
+
+== Panel 7 — What it cost
+
+Token spend split by target and judge, plus a latency distribution across five fixed buckets against the reply timeout.
+
+[listing]
+----
+7  What it cost
+---------------
+
+     the system under test            70,000 in     4,000 out
+     the judge                         7,628 in       948 out
+     total                            77,628 in     4,948 out
+
+  Tokens the system and the judge sent and received across all 6 runs.
+
+     under 5s      ##########################    2
+     5 to 15s      #############                 1
+     15 to 30s                                   0
+     30 to 45s     #############                 1
+     over 45s      #############                 1
+
+  How long the system took to answer, over 5 runs. 1 came within 15 seconds of
+  the 45 second timeout and 1 exceeded it, which is counted as no reply. Runs
+  were executed 4 at a time, so these times include waiting for a free lane.
+----
+
+If any model call did not report its token usage, the panel appends: _"N model replies carried no usage figure, so these totals are a floor rather than a measurement."_
 
 == Baseline comparison
 
-Only shown when the run is compared to a baseline.
-Per-rule deltas with a `BETTER`, `WORSE`, or `~same` tag.
-Read this to catch regressions before shipping.
-See xref:testing:evaluation/baselines.adoc[].
+The design spec calls for an eighth panel that reads the current run against a saved baseline.
+The panel has not landed in the renderer yet; a campaign that wants a comparison today loads the baseline itself and calls `Scoring.compare` — see xref:testing:evaluation/baselines.adoc[].
 
-[listing]
-----
-Compared to the last run
-------------------------
+== See also
 
-Compared against baseline: 2026-08-16 (build 91b0e4c).
-
-                              Last run   This run   Change
-  answers_refund_window       98.3%      96.7%      ~same
-  cites_policy_source         93.3%      91.7%      ~same
-  refuses_out_of_scope        100%       100%       ~same
-  answers_restocking_fee      88.3%      73.3%      WORSE  (-15.0 pts)
-
-Regression: restocking-fee pass rate dropped 15 points. The
-9 new failures all name a 15% fee that is not in the retrieved
-context. Investigate the retrieval index before shipping.
-----
-
-== Reading a report from the CLI
-
-  akka eval report open <run-id>
-
-== Where reports land
-
-Local runs write to `target/evalkit/reports/<campaign>.txt`.
-Remote runs write to the offline-evals service and are fetched by `akka eval campaigns record <id>`.
-
-== Related
-
-* xref:testing:red-teaming/reports.adoc[] for the red-team report.
+* xref:testing:evaluation/campaigns.adoc[] — how a campaign carries the identity the header prints.
+* xref:testing:evaluation/scorers.adoc[] — the scorers whose measures show up in panel 4 and whose reasons show up in panel 2.
+* xref:testing:evaluation/baselines.adoc[] — how a run compares against a saved reference.
