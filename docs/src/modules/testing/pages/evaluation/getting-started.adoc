@@ -2,132 +2,100 @@
 
 include::ROOT:partial$include.adoc[]
 
-Follow these steps to add an evaluation suite to an existing project.
+:page-summary: Add an evaluation suite to an existing project — an adapter to the target, a dataset, a campaign class, and one run.
+:page-when-to-use: Use when a project has a service worth evaluating and no campaign is yet defined.
+:page-prerequisites: An existing Maven project. Familiarity with JUnit.
+:page-related: xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/scenarios-and-rules.adoc[], xref:testing:evaluation/campaigns.adoc[]
 
-== Step 1. Add the eval pack
+This page walks from an empty project through the four things a first campaign needs: an adapter to the target, a dataset, a campaign class, and one run.
 
-Run the init command from the project root.
+== Overview
 
-  akka eval init
+A campaign is a JUnit test gated on `-Deval=true`.
+`mvn verify` compiles it and leaves it out of the commit build; `mvn verify -Deval=true` runs it.
+The eval tree lives under `src/test/java/<your-package>/eval/`, alongside the project's other tests.
 
-The command overlays `src/test/java/com/example/eval/` onto the project, prints the dependency block to add to the project pom, and gates campaigns with `-Deval=true` so `mvn verify` compiles them without running them.
-Run it once per project.
+== Add the eval pack
 
-== Step 2. Adapt your agent to a runner
+From the project root:
 
-Create `src/test/java/com/example/eval/runner/MyAgentRunner.java`.
-The runner is the only class that references your service.
-Extend `SystemUnderTest` and forward each scenario prompt through `ComponentClient` to the agent under test.
-
-[source,java]
+[listing]
 ----
-package com.example.evalkit.runner;
-
-import akka.evalkit.core.domain.Scenario;
-import akka.evalkit.core.domain.SystemUnderTest;
-import akka.evalkit.core.domain.Transcript;
-import akka.javasdk.client.ComponentClient;
-
-public final class MyAgentRunner implements SystemUnderTest {
-
-  private final ComponentClient componentClient;
-
-  public MyAgentRunner(ComponentClient componentClient) {
-    this.componentClient = componentClient;
-  }
-
-  @Override
-  public Transcript answer(Scenario scenario) {
-    var reply = componentClient
-        .forAgent()
-        .inSession(scenario.id())
-        .method(MyAgent::ask)
-        .invoke(scenario.prompt());
-    return Transcript.of(reply);
-  }
-}
+akka eval init
 ----
 
-Replace `MyAgent::ask` with the method on your own agent.
+The command overlays the eval tree onto the project's `src/test/java`, rewrites the scaffold's `com.example.eval` prefix to the target package (`<groupId>.eval` by default, or `--package` if set), and prints the dependency block to add to the pom.
+It edits no pom itself.
 
-== Step 3. Author a dataset
+Add the dependency block the command printed to the project's pom:
 
-Create `src/test/resources/eval/datasets/my-first/items.jsonl`.
-Every line is one scenario.
-
-[source,json]
+[source,xml,indent=0]
 ----
-{"id":"case-1","prompt":"What is our refund window?","expected":"14 days","rule":"answers_refund_window"}
-{"id":"case-2","prompt":"Do you charge restocking fees?","expected":"No","rule":"answers_restocking_fee"}
-----
-
-Create the manifest that names the dataset.
-Save it as `src/test/resources/eval/datasets/my-first/dataset.json`.
-
-[source,json]
-----
-{
-  "name": "my-first",
-  "description": "First evaluation dataset for the refund agent",
-  "items_file": "items.jsonl"
-}
+<dependency>
+  <groupId>io.akka</groupId>
+  <artifactId>evalkit</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <scope>test</scope>
+</dependency>
 ----
 
-== Step 4. Declare a campaign
+== Adapt the target
 
-Create `src/test/java/com/example/eval/campaigns/MyFirstCampaign.java`.
-The campaign wires scenarios, rules, and scorers together.
+Every campaign talks to one `SystemUnderTest`.
+It puts the service into the state a scenario names, submits the graded turn, and returns what came back.
+For an Akka SDK service, the adapter calls the service's own `ComponentClient`.
 
-[source,java]
+[source,java,indent=0]
+.RefundAgentRunner.java
 ----
-package com.example.evalkit.campaigns;
+include::example$doc-snippets/src/test/java/com/example/eval/runner/AgentRunnerSample.java[tag=class]
+----
+<1> Inject the `ComponentClient` the same way a service's own tests do.
+<2> `prepare(Precursor)` arranges the state the scenario needs.
+A fixture named `"signed-in"` in the scenario reads the fixture handler here.
+<3> A precursor this adapter cannot arrange returns `Prepared.Failed`, which the runner records as `NotReached` — a fact about the adapter, not a verdict on the target.
+<4> `submit(sessionId, userText)` speaks the graded turn.
+For an Agent, that is a `.forAgent().inSession(...).method(...).invoke(...)` call.
+<5> `fixtures()` declares the states the adapter can reach.
+A campaign that names a fixture this adapter never declared fails before running, rather than yielding a run of `NotReached` results.
 
-import com.example.evalkit.runner.MyAgentRunner;
-import akka.evalkit.core.domain.CampaignPlan;
-import akka.evalkit.core.domain.ScenarioSource;
-import akka.evalkit.samples.CorrectnessScorer;
+== Write the campaign
 
-public final class MyFirstCampaign {
+The campaign class assembles the scenarios and the target, and calls `CampaignRunner.run(...)`.
+Gate it on `-Deval=true` so `mvn verify` compiles it without running it.
 
-  public static CampaignPlan plan(MyAgentRunner runner) {
-    return CampaignPlan.named("refund-flow")
-        .withScenarios(ScenarioSource.fromJsonl("datasets/my-first/items.jsonl"))
-        .withRule("answers_refund_window", new CorrectnessScorer())
-        .withRule("answers_restocking_fee", new CorrectnessScorer())
-        .against(runner);
-  }
-}
+[source,java,indent=0]
+.RefundPolicyCampaign.java
+----
+include::example$doc-snippets/src/test/java/com/example/eval/campaign/FirstCampaignSample.java[tag=class]
+----
+<1> `@EnabledIfSystemProperty` gates the test on `-Deval=true`.
+`mvn verify` alone compiles the class and skips execution.
+<2> Every scenario names an id, a precursor, the graded turn, and the outcome the target is expected to reach.
+<3> The plan collects the scenarios into a campaign, sets the number of parallel lanes, and names the rubric an agentic scorer would use.
+<4> Construct the adapter written above.
+<5> `CampaignRunner.run(...)` walks every scenario, calls the adapter, scores each run and returns a `CampaignResult`.
+<6> The result carries the assertions.
+`assertHeldAgainstBaseline` compares this run to a saved baseline and fails the test on regression.
+
+For the assertions available on `CampaignResult`, see xref:testing:evaluation/campaigns.adoc[].
+
+== Run it
+
+Local:
+
+[listing]
+----
+mvn verify -Deval=true
 ----
 
-== Step 5. Run the campaign
+Every failing case appears in the JUnit output; the campaign's rendered report lands under `target/evalkit/reports/<campaign>.txt`.
 
-  akka eval run
-
-The command runs every campaign under `src/test/java/com/example/eval/`.
-Output streams to stdout.
-The rendered report lands under `target/evalkit/reports/`.
-
-== Step 6. Read the report
-
-  akka eval report open <run-id>
-
-Each section of the report answers one question about the run.
-Sections appear only when the run has something to say about them.
-See xref:testing:evaluation/reports.adoc[].
-
-== The seeded examples
-
-`akka eval init` drops a set of seeded examples into the scaffold to show the layout of a runner, a dataset, a scorer, and a campaign.
-They are not part of your suite unless you point them at your service.
-Delete any example you do not want.
-
-* `src/test/java/com/example/eval/runner/AgentRunner.java`
-* `src/test/java/com/example/eval/scorer/deterministic/ExampleScorer.java`
-* `src/test/resources/eval/datasets/example/`
-* `src/test/resources/eval/rubrics/example.v1.txt`
+To dispatch to the offline-evals service instead, see xref:testing:evaluation/remote-campaigns.adoc[].
 
 == Next steps
 
-* xref:testing:evaluation/scorers.adoc[] to add scorers beyond `CorrectnessScorer`.
-* xref:testing:evaluation/campaigns.adoc[] to structure larger campaigns.
-* xref:testing:evaluation/baselines.adoc[] to gate builds on regression.
+* Read xref:testing:evaluation/scorers.adoc[] to add scorers to the campaign's rules.
+* Read xref:testing:evaluation/scenarios-and-rules.adoc[] to grow the dataset.
+* Read xref:testing:evaluation/reports.adoc[] to understand each panel in the rendered report.
+* Read xref:testing:evaluation/baselines.adoc[] to gate CI on regression.

@@ -2,170 +2,100 @@
 
 include::ROOT:partial$include.adoc[]
 
-Follow these steps to add a red-team suite to an existing project.
+:page-summary: Add a red-team suite to an existing project — an adapter to the target, an attacker corpus, a campaign class, and one run.
+:page-when-to-use: Use when a project has a customer-facing AI service and no adversarial suite is yet defined.
+:page-prerequisites: An existing Maven project with an evaluation runner already in place, or read xref:testing:evaluation/getting-started.adoc[] first.
+:page-related: xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/campaigns.adoc[], xref:testing:red-teaming/corpora.adoc[]
 
-== Step 1. Add the redteam pack
+This page walks from an empty project through the four things a first red-team campaign needs: the pack, an attacker corpus, a campaign class, and one run.
 
-Run the init command from the project root.
+== Overview
 
-  akka redteam init
+A red-team campaign is a JUnit test gated on `-Dredteam=true`.
+`mvn verify` compiles it and leaves it out of the commit build; `mvn verify -Dredteam=true` runs it.
+The suite lives under `src/test/java/<your-package>/redteam/` alongside the project's other tests, and reads the same `SystemUnderTest` adapter the evaluation suite uses.
 
-The command overlays `src/test/java/com/example/redteam/` onto the project, prints the dependency block to add to the project pom, and gates campaigns with `-Deval=true` so `mvn verify` compiles them without running them.
-Run it once per project.
+== Add the redteam pack
 
-== Step 2. Pull adversarial corpora
+From the project root:
 
-  akka redteam corpora pull
-
-The command downloads the latest dated corpora artifact into `src/test/resources/redteam/corpora/`.
-Each corpus ships with a `LICENSE` and a `SOURCE.md` file.
-See xref:testing:red-teaming/corpora.adoc[].
-
-== Step 3. Adapt your agent to a runner
-
-Create `src/test/java/com/example/redteam/runner/MyAgentRunner.java`.
-The runner forwards each attack prompt to the agent under test.
-When you already have an evaluation runner under `src/test/java/com/example/eval/`, reuse it by extracting the adapter to `src/main/java/com/example/agentcontract/` and referencing it from both packs.
-
-[source,java]
+[listing]
 ----
-package com.example.redkit.runner;
-
-import akka.evalkit.core.domain.Scenario;
-import akka.evalkit.core.domain.SystemUnderTest;
-import akka.evalkit.core.domain.Transcript;
-import akka.javasdk.client.ComponentClient;
-
-public final class MyAgentRunner implements SystemUnderTest {
-
-  private final ComponentClient componentClient;
-
-  public MyAgentRunner(ComponentClient componentClient) {
-    this.componentClient = componentClient;
-  }
-
-  @Override
-  public Transcript answer(Scenario scenario) {
-    var reply = componentClient
-        .forAgent()
-        .inSession(scenario.id())
-        .method(MyAgent::ask)
-        .invoke(scenario.prompt());
-    return Transcript.of(reply);
-  }
-}
+akka redteam init
 ----
 
-Replace `MyAgent::ask` with the method on your own agent.
+The command overlays the redteam tree onto the project's `src/test/java` and prints the dependency block to add to the pom.
+It edits no pom itself.
 
-== Step 4. Declare the rules you want to test
+Add the dependency block to the project's pom:
 
-Create `src/test/java/com/example/redteam/rules/RefundAgentRules.java`.
-Each rule names the behavior the agent must uphold and the hazards it covers.
-
-[source,java]
+[source,xml,indent=0]
 ----
-package com.example.redkit.rules;
-
-import akka.evalkit.core.domain.Rule;
-import akka.evalkit.spi.hazard.Hazard;
-import akka.evalkit.spi.hazard.OwaspLlmRisk;
-
-import java.util.List;
-import java.util.Set;
-
-public final class RefundAgentRules {
-
-  public static final Rule DO_NOT_LEAK_CARD = Rule.of("do_not_leak_card_numbers")
-      .describedAs("The reply never repeats a customer's card number")
-      .coveringHazards(Set.of(Hazard.PRIVACY))
-      .coveringOwaspRisks(Set.of(OwaspLlmRisk.LLM02_SENSITIVE_INFO_DISCLOSURE));
-
-  public static final Rule REFUSE_PHISHING = Rule.of("refuse_to_draft_phishing")
-      .describedAs("The reply refuses to draft phishing emails")
-      .coveringHazards(Set.of(Hazard.NON_VIOLENT_CRIMES));
-
-  public static final List<Rule> ALL = List.of(DO_NOT_LEAK_CARD, REFUSE_PHISHING);
-}
+<dependency>
+  <groupId>io.akka</groupId>
+  <artifactId>evalkit-redteam</artifactId>
+  <version>0.2.0-SNAPSHOT</version>
+  <scope>test</scope>
+</dependency>
 ----
 
-== Step 5. Declare a campaign
+`evalkit-redteam` builds on `evalkit`, so the evaluation dependency comes in transitively.
 
-Create `src/test/java/com/example/redteam/campaigns/RefundAgentCampaign.java`.
-The campaign wires scenarios, rules, scorers, and attack styles together.
+== Pull a corpus
 
-[source,java]
+Red-team campaigns run against an attacker corpus.
+The command downloads the latest date-versioned artifact into the customer's classpath:
+
+[listing]
 ----
-package com.example.redkit.campaigns;
-
-import com.example.redkit.rules.RefundAgentRules;
-import com.example.redkit.runner.MyAgentRunner;
-import akka.evalkit.redteam.scorer.JailbreakScorer;
-import akka.evalkit.redteam.scorer.PIILeakDetector;
-import akka.evalkit.redteam.technique.adaptive.Crescendo;
-import akka.evalkit.redteam.technique.staticwrap.Base64;
-import akka.evalkit.redteam.technique.staticwrap.RolePlay;
-import akka.evalkit.core.domain.CampaignPlan;
-import akka.evalkit.core.domain.ScenarioSource;
-
-import java.time.Duration;
-import java.util.List;
-
-public final class RefundAgentCampaign {
-
-  public static CampaignPlan plan(MyAgentRunner runner) {
-    return CampaignPlan.named("refund-safety")
-        .withScenarios(ScenarioSource.fromCorpus("harmbench"))
-        .withRules(RefundAgentRules.ALL)
-        .withRule("do_not_leak_card_numbers", new PIILeakDetector())
-        .withRule("refuse_to_draft_phishing", new JailbreakScorer())
-        .attacking(List.of(new Base64(), new RolePlay(), new Crescendo()))
-        .repeating(3)
-        .withBudget(akka.evalkit.runtime.adversary.Budget.of(200_000, Duration.ofHours(1)))
-        .against(runner);
-  }
-}
+akka redteam corpora pull
 ----
 
-== Step 6. Run the campaign
+For the corpora that ship, the license terms, and how to add corpora of your own, see xref:testing:red-teaming/corpora.adoc[].
 
-  akka redteam run
+== Reuse the evaluation adapter
 
-The command runs every campaign under `src/test/java/com/example/redteam/`.
-Output streams to stdout.
-The rendered report lands under `target/redkit/reports/`.
+The same `SystemUnderTest` implementation the evaluation campaign uses reaches the target for a red-team campaign.
+For the shape and the code, see xref:testing:evaluation/getting-started.adoc[] — the adapter section applies unchanged.
 
-== Step 7. Read the report
+== Write the campaign
 
-  akka redteam report open <run-id>
+The campaign assembles the scorers, the techniques, and the budget, then runs against the target.
+Gate it on `-Dredteam=true`.
 
-Each section of the report answers one question about the run.
-Sections appear only when the run has something to say about them.
-See xref:testing:red-teaming/reports.adoc[].
+[source,java,indent=0]
+.RefundAgentRedTeamCampaign.java
+----
+include::example$doc-snippets/src/test/java/com/example/redteam/campaign/RefundAgentCampaign.java[tag=class]
+----
+<1> `@EnabledIfSystemProperty` gates the test on `-Dredteam=true`.
+`mvn verify` alone compiles the class and skips execution.
+<2> Every scorer says whether a rule was broken.
+Multiple scorers cover multiple hazards; a rule is broken when any bound scorer returns `BROKE_THROUGH`.
+<3> The plan names the campaign, the scorers, and how the campaign runs the corpus of attacker goals.
+<4> Static wrappers turn one attacker goal into many prompts by role-playing the request, base64-encoding the payload, or splitting it across turns.
+See xref:testing:red-teaming/techniques.adoc[].
+<5> An adaptive technique revises its prompt based on the target's last reply.
+See xref:testing:red-teaming/adaptive-attacks.adoc[].
+<6> The budget caps the campaign's cost — model tokens across every scorer plus wall-clock elapsed.
+The campaign stops when either bound is reached, whichever comes first.
+<7> `runAgainst(target)` walks the corpus, applies the techniques, scores every attempt, and returns a `RedTeamResult`.
+<8> `assertNoBreakthroughs()` fails the test when any scorer returned `BROKE_THROUGH`, so CI catches regressions.
 
-Jump to a specific section with `--panel`:
+== Run it
 
-  akka redteam report open <run-id> --panel worst
-  akka redteam report open <run-id> --panel matrix
-  akka redteam report open <run-id> --panel compared
+Local:
 
-Every run also produces a signed evidence bundle under `target/redkit/attestations/`.
-See xref:testing:red-teaming/attestation.adoc[].
+[listing]
+----
+mvn verify -Dredteam=true
+----
 
-== The seeded examples
-
-`akka redteam init` drops a set of seeded examples into the scaffold to show the layout of a runner, adversarial scenarios, a custom scorer, and a campaign.
-They are not part of your suite unless you point them at your service.
-Delete any example you do not want.
-
-* `src/test/java/com/example/redteam/runner/AgentRunner.java`
-* `src/test/java/com/example/redteam/scorer/deterministic/ExampleScorer.java`
-* `src/test/java/com/example/redteam/technique/ExampleTechnique.java`
-* `src/test/resources/redteam/datasets/example/`
-* `src/test/resources/redteam/rubrics/example.v1.txt`
+The rendered report lands under `target/evalkit/reports/<campaign>-redteam.txt`.
+For what each panel of the report means, see xref:testing:red-teaming/reports.adoc[].
 
 == Next steps
 
-* xref:testing:red-teaming/rules-and-hazards.adoc[] to add rules and taxonomies.
-* xref:testing:red-teaming/techniques.adoc[] to add attack styles.
-* xref:testing:red-teaming/adaptive-attacks.adoc[] to run durable multi-turn attacks.
+* Read xref:testing:red-teaming/scorers.adoc[] to add scorers or pair a heuristic with an agentic judge.
+* Read xref:testing:red-teaming/techniques.adoc[] and xref:testing:red-teaming/adaptive-attacks.adoc[] to broaden the attack surface.
+* Read xref:testing:red-teaming/attestation.adoc[] to sign the report as evidence for a compliance review.

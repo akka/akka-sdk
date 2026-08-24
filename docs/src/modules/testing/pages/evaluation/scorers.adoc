@@ -2,260 +2,161 @@
 
 include::ROOT:partial$include.adoc[]
 
-A scorer turns a recorded run into a verdict for one rule.
-Every scorer implements `akka.evalkit.core.domain.Scorer` — the interface every family flows through — and returns a `RunOutcome` that tells the campaign what to do next.
+:page-summary: Turn a recorded run into a verdict for one rule using a deterministic, heuristic, or agentic scorer.
+:page-when-to-use: Use when a campaign rule needs a specific decision — a tool call was authorised, a budget was met, a claim was supported by a retrieved passage.
+:page-related: xref:testing:evaluation/index.adoc[], xref:testing:evaluation/scenarios-and-rules.adoc[], xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/reports.adoc[], xref:testing:red-teaming/scorers.adoc[]
 
-evalkit ships 22 scorers in three families: 3 deterministic, 12 heuristic, 7 agentic.
-The customer picks which to run, wires the agentic ones with a model, and adds their own for anything specific to the domain.
+A scorer turns one recorded run into a verdict for one rule.
+evalkit ships 22 scorers across three families, and lets the customer add their own.
 
-== The three families
+== Overview
 
-*Deterministic* — comparison against an expectation.
-Zero model calls, zero interpretation.
-A tool call that was on the allow list; a reply that contains a required substring; a tool argument that matched the expected map.
-Two runs on the same recorded interaction decide identically.
+Every scorer implements `akka.evalkit.core.domain.Scorer` and returns a `RunOutcome` — one of `Asserted` (a pass or fail from comparison), `Measured` (a number against a threshold), `Scored` (a graded band from a rubric), `Inconclusive` (the scorer had nothing to read), `NotReached` (the run never happened), or `Failed` (the scorer itself broke).
+A scorer whose evidence runs out returns `Inconclusive`, and the report keeps that case out of the pass rate.
 
-*Heuristic* — computation over the recorded interaction.
-Zero model calls, but a rule of thumb rather than a comparison.
-A budget the latency has to stay under; a regex the reply has to match; a JSON payload that has to parse; overlap between the reply and the expected outcome.
+Three families answer three different kinds of question:
 
-*Agentic* — a language model reads the exchange and returns a verdict.
-Non-zero cost per run, non-deterministic (two runs on the same interaction may disagree at the edges), and the only honest answer for questions like _"is this claim supported by the retrieved passages?"_ where every heuristic misclassifies negation and paraphrase.
+* *Deterministic* reads recorded values against stated expectations.
+* *Heuristic* computes a measurement from the recorded interaction and reads it against a threshold.
+* *Agentic* hands the exchange to a language model and reads back a score with the model's reason.
 
-The three families cascade in cost: deterministic first (free, certain), heuristic second (cheap, ~70% accurate on clear cases), agentic last (expensive, gold standard on the borderline).
+The families run in ascending cost order — deterministic first, heuristic second, agentic last — and each family settles the confident cases so the more expensive tier only reaches the borderline ones.
 
-== The interface
+== A deterministic scorer
 
-Every scorer, in every family:
-
-[source,java,indent=0]
-----
-public interface Scorer {
-  RunOutcome score(Observation observation);
-  default String id() { return getClass().getSimpleName(); }
-}
-----
-
-`RunOutcome` is one of six results: `Asserted` (a pass or fail from comparison), `Measured` (a number against a threshold), `Scored` (a graded band from a rubric), `Inconclusive` (the scorer had nothing to read), `NotReached` (the run never happened), `Failed` (the scorer itself broke).
-A scorer that could not settle a case returns `Inconclusive` — never a made-up number.
-
-== The built-in scorers
-
-The tables below name every scorer evalkit ships out of the box and what each reads.
-The reference table under xref:reference:cli/akka-cli/akka_eval.adoc[] carries the full input, verdict and configuration details.
-
-=== Deterministic (3)
-
-[cols="1,3"]
-|===
-| Scorer | What it reads
-
-| `ToolPermission`
-| Tool names against an allow list, a deny list, or both. A deny outranks an allow on conflict.
-
-| `ToolCorrectness`
-| Tool names against a stated expected list. Order-sensitive when configured.
-
-| `ArgumentCorrectness`
-| Tool argument maps against expected maps. Parses each tool call's JSON arguments.
-|===
-
-=== Heuristic (12)
-
-Budget scorers read fields directly off the recorded interaction:
-
-[cols="1,3"]
-|===
-| Scorer | What it reads
-
-| `LatencyBudget`
-| `Interaction.latency()` against a stated `Duration`. Half at budget, proportional above it.
-
-| `TokenBudget`
-| Total input+output tokens against a limit. A run with no measured usage is `Inconclusive`.
-
-| `ModelCallBudget`
-| `Interaction.modelCalls().size()` against a limit.
-|===
-
-Format scorers read the response text:
-
-[cols="1,3"]
-|===
-| Scorer | What it reads
-
-| `RegexMatch`
-| Reply against a compiled `Pattern`. `matching(regex)` or `notMatching(regex)`.
-
-| `LengthInRange`
-| Reply length against `[min, max]`. `characters(min, max)` or `words(min, max)`.
-
-| `JsonValidity`
-| Whether the reply parses cleanly as JSON, trailing garbage included in the failure.
-|===
-
-Text-overlap scorers compare against `scenario.expectedOutcome()`:
-
-[cols="1,3"]
-|===
-| Scorer | What it reads
-
-| `ExactMatch`
-| Reply against the expected outcome, whitespace-normalised. Case-sensitive by default; `ignoringCase()` for QA.
-
-| `TokenF1`
-| SQuAD-style token overlap F1. Passes the paraphrases exact-match rejects.
-|===
-
-Retrieval-quality scorers read `Interaction.retrievedContext()` against a customer-supplied ground-truth lookup:
-
-[cols="1,3"]
-|===
-| Scorer | What it reads
-
-| `ContextRecall`
-| Share of relevant passages that retrieval returned. Ground truth is a `Function<Observation, List<String>>`.
-
-| `ContextPrecision`
-| Share of retrieved passages that were labelled relevant.
-
-| `ReciprocalRank`
-| 1 / rank of the first relevant passage in retrieval's output.
-
-| `NormalizedDiscountedCumulativeGain`
-| NDCG@K over the retrieved passages. Binary relevance in the first version; graded relevance is a later extension.
-|===
-
-Matching is exact-string equality after trimming.
-A customer whose passages need fuzzy matching wraps their own scorer that pre-processes both sides.
-
-=== Agentic (7)
-
-Every agentic scorer extends `AlignmentMetric` and takes an `Assessor` in its constructor.
-Every one also ships a `systemPrompt()` — the wording is evalkit's problem, the model call is the customer's.
-
-[cols="1,3"]
-|===
-| Scorer | What the model judges
-
-| `TaskCompletion`
-| Whether the reply carried out the task the scenario stated.
-
-| `PlanQuality`
-| Whether the plan the agent formed would achieve the task.
-
-| `PlanAdherence`
-| Whether the agent followed the plan it formed.
-
-| `StepEfficiency`
-| Whether the sequence of model calls and tool calls was efficient for the task.
-
-| `TurnFaithfulness`
-| Whether the reply is supported by the passages retrieval returned.
-
-| `TurnRelevancy`
-| Whether the reply addresses the question that was asked.
-
-| `CitationFaithfulness`
-| Whether each citation marker in the reply points at a passage that supports the claim beside it.
-|===
-
-== Wiring an agentic scorer
-
-The customer supplies the model.
-The scorer ships the system prompt and enforces the JSON verdict shape.
+`ToolPermission` checks that the agent called only tools on an allow list.
+The scorer produces one finding per tool the agent called, then aggregates into a share the report reads as `Measured`.
 
 [source,java,indent=0]
+.ToolPermissionSample.java
 ----
-import akka.evalkit.core.metric.AlignmentMetric;
-import akka.evalkit.core.metric.TurnFaithfulness;
-
-var faithfulnessAssessor = (AlignmentMetric.Assessor) question ->
-    judgeAgent.query(question.task() + "\n\n---\n\n" + question.against())
-              .systemMessage(new TurnFaithfulness(null).systemPrompt())
-              .responseConformsTo(AlignmentMetric.Assessment.class)
-              .invoke();
-
-var faithfulness = new TurnFaithfulness(faithfulnessAssessor);
+include::example$doc-snippets/src/test/java/com/example/eval/scorer/deterministic/ToolPermissionSample.java[tag=scorer]
 ----
+<1> Build the scorer with the tools the scenario allows. An empty list on both sides throws at construction — a scorer that authorises everything reports a check that examined nothing.
+<2> Read the recorded tool calls into per-call findings.
+Each finding names one tool and states whether it was authorised.
+<3> Aggregate the findings into a `RunOutcome.Measured` carrying the share authorised, the threshold, and whether the run passed.
 
-`Assessment` is a two-field record: `score` in `[0, 1]` and `reason` as one sentence.
-The Akka SDK's `.responseConformsTo(Assessment.class)` enforces the JSON shape at the SDK layer — a model that returns something malformed is retried before the assessor sees it.
+Strict mode collapses any non-perfect share to zero, so a single unauthorised call fails the run whatever the rest did:
 
-There is no default agent-backed judge shipped in evalkit.
-The choice of model, provider and cost is the customer's, and the assessor function is what keeps it that way.
+[source,java,indent=0]
+.ToolPermissionSample.java
+----
+include::example$doc-snippets/src/test/java/com/example/eval/scorer/deterministic/ToolPermissionSample.java[tag=strict]
+----
+<1> A single unauthorised call is a policy breach, not a rate.
+<2> Same aggregation, but the outcome now scores 0 when any finding failed.
+
+A deny list can be added alongside the allow list.
+A tool named in both is denied, because the two lists are written by different people at different times and the safe reading of a conflict is the restrictive one:
+
+[source,java,indent=0]
+.ToolPermissionSample.java
+----
+include::example$doc-snippets/src/test/java/com/example/eval/scorer/deterministic/ToolPermissionSample.java[tag=deny]
+----
+<1> `butNot(...)` adds a deny list that outranks the allow list on conflict.
+
+== A heuristic scorer
+
+`LatencyBudget` reads `Interaction.latency()` against a duration the customer states.
+The scoring is proportional past the pass line, so a report can tell a run that squeaked in from one that walked in comfortably.
+
+[source,java,indent=0]
+.LatencyBudgetSample.java
+----
+include::example$doc-snippets/src/test/java/com/example/eval/scorer/heuristic/LatencyBudgetSample.java[tag=scorer]
+----
+<1> `within(Duration)` is the only builder.
+The budget is what the version records — changing it changes what a recorded score under the old value meant.
+<2> `score(Observation)` reads the recorded latency and returns a `Measured` (or `Inconclusive` when the target reported no latency at all).
+
+The `Measured` outcome carries the value and the pass flag.
+A wrapper that reads either into a report row looks like this:
+
+[source,java,indent=0]
+.LatencyBudgetSample.java
+----
+include::example$doc-snippets/src/test/java/com/example/eval/scorer/heuristic/LatencyBudgetSample.java[tag=interpret]
+----
+<1> `Measured` is the shape a heuristic returns.
+<2> `value()` is a share; `passed()` is the boolean the report groups by.
+<3> A run that reported no latency at all is `Inconclusive` — reading zero as "instant" would put a made-up figure in the report.
+
+NOTE: The score halves at the budget rather than stepping.
+A run one millisecond over the line reads as 0.499; a run twice as slow reads as 0.
+The gradient is what the tuning conversations depend on.
+
+== An agentic scorer
+
+`TurnFaithfulness` asks whether a reply is supported by the passages the target retrieved.
+The judgment is a language reading (paraphrase, negation, partial support), so this metric ships as agentic: the customer supplies the model, evalkit supplies the system prompt.
+
+[source,java,indent=0]
+.TurnFaithfulnessSample.java
+----
+include::example$doc-snippets/src/test/java/com/example/eval/scorer/agentic/TurnFaithfulnessSample.java[tag=wiring]
+----
+<1> The `Assessor` is a lambda that hands the question to the customer's Agent.
+The `Question` carries the task and what to read it against.
+<2> `systemPrompt()` on any built-in agentic metric returns the wording the model needs to be told.
+Constructing `new TurnFaithfulness(null)` only to read the prompt is idiomatic here — the prompt is static.
+<3> `.responseConformsTo(Assessment.class)` enforces the JSON shape at the SDK layer.
+A model that returns malformed JSON is retried before the assessor sees it.
+<4> Construct the scorer with the assessor.
+<5> The scorer's `score(Observation)` handles the rest: check that there is anything to ask about, call the assessor, validate the returned score is a share in `[0, 1]`, produce a `Measured`.
+
+Tests use a stub assessor in place of the Agent so the scorer runs without a provider:
+
+[source,java,indent=0]
+.TurnFaithfulnessSample.java
+----
+include::example$doc-snippets/src/test/java/com/example/eval/scorer/agentic/TurnFaithfulnessSample.java[tag=stub-for-tests]
+----
+<1> A test returns an `Assessment` directly.
+The framework treats the two callers the same.
+<2> Same scorer type; the assessor is what differs between test and production.
 
 == Writing your own scorer
 
 Custom scorers land under `src/test/java/<your-package>/eval/scorer/{deterministic,heuristic,agentic}/`.
-See the module's `AUTHORING.md` (also linked from the scaffold README) for the walkthrough of one shipped scorer per family and templates you can copy.
-
-A deterministic example — a scenario naming a required substring:
+The example below is a deterministic scorer for a scenario that requires the reply to name the refund window.
 
 [source,java,indent=0]
+.CustomScorerSample.java
 ----
-public final class RefundWindowScorer implements Scorer {
-  private static final MetricRef REF = new MetricRef("refund_window_named", 1);
-
-  @Override public String id() { return REF.label(); }
-
-  @Override
-  public RunOutcome score(Observation observation) {
-    String reply = observation.interaction().responseText();
-    if (reply == null || reply.isBlank()) {
-      return new RunOutcome.Inconclusive("no reply");
-    }
-    boolean stated = reply.matches("(?i).*\\b30[- ]day\\b.*");
-    return new RunOutcome.Asserted(stated, "30-day refund window",
-        stated ? "found in the reply" : "not stated in the reply");
-  }
-}
+include::example$doc-snippets/src/test/java/com/example/eval/scorer/deterministic/CustomScorerSample.java[tag=class]
 ----
+<1> The `MetricRef` names the scorer and its version.
+The version is what a recorded score is filed under, and it changes whenever a setting change would silently redefine what "the same score" means.
+<2> The scorer's `id()` is what the report row prints and what the CLI matches on `--scorer`.
+<3> Return `Inconclusive` before reaching for `Measured` or `Asserted`.
+A scorer that read an empty reply as failed would report a defect the target never had a chance to make.
+<4> A deterministic scorer reads the reply against a stated expectation.
+The regex is the expectation.
+<5> `Asserted(boolean, claim, reason)` is the deterministic outcome shape.
+`claim` and `reason` land in the report row so a reviewer can tell why the case decided the way it did.
 
-An agentic example — extend `AlignmentMetric`, wire an assessor per the pattern above:
+== The built-in scorers, in one table
 
-[source,java,indent=0]
-----
-public final class Politeness extends AlignmentMetric {
-  public Politeness(Assessor assessor) {
-    super(new MetricRef("politeness", 1), 0.7, assessor);
-  }
+For the reference tables listing every built-in scorer and what each reads, see xref:testing:evaluation/reference/scorers.adoc[].
 
-  @Override
-  protected Optional<Question> ask(Observation observation) {
-    String reply = observation.transcript().systemOutput();
-    return reply.isBlank() ? Optional.empty()
-      : Optional.of(new Question("reply", "a customer-service reply", reply));
-  }
+* 3 deterministic: `ToolPermission`, `ToolCorrectness`, `ArgumentCorrectness`.
+* 12 heuristic across three groups — budget (`LatencyBudget`, `TokenBudget`, `ModelCallBudget`), format (`RegexMatch`, `LengthInRange`, `JsonValidity`), text-overlap (`ExactMatch`, `TokenF1`), retrieval-quality (`ContextRecall`, `ContextPrecision`, `ReciprocalRank`, `NormalizedDiscountedCumulativeGain`).
+* 7 agentic: `TaskCompletion`, `PlanQuality`, `PlanAdherence`, `StepEfficiency`, `TurnFaithfulness`, `TurnRelevancy`, `CitationFaithfulness`.
 
-  @Override protected String absence() { return "no reply to judge for politeness"; }
+== Testing
 
-  @Override
-  public String systemPrompt() {
-    return """
-      You judge how polite a reply is on a scale of 0 (rude) to 1 (courteous).
-      Reply as JSON: {"score": <number in [0,1]>, "reason": "<one sentence>"}.
-      """;
-  }
-}
-----
+Every scorer tests the same way: build an `Observation` you control and read the `RunOutcome` back.
+Deterministic and heuristic scorers reach no model, so they run under `mvn verify` without any provider configured.
+Agentic scorers use a stub `Assessor` returning `Assessment` directly.
 
-Add the class to `AlignmentMetric`'s `permits` clause if you want it to be picked up by the classpath coverage check, or use `non-sealed` in your own intermediate class for an open hierarchy.
+For the testkit shape shared with unit tests, see xref:sdk:testing.adoc[Testing SDK components].
 
-== Best practices
+== See also
 
-* Prefer the earliest family that answers the rule.
-A deterministic check that catches the same failures as an agentic judge costs zero and never disagrees with itself.
-* Return `Inconclusive` when there is nothing to read.
-A scorer that scored an empty reply as failed reports a defect the target never had a chance to make.
-* Change the metric's version when a setting change would silently redefine what a recorded score means — the threshold, the allow list contents, a system prompt's wording.
-Not for a rename that doesn't touch scoring.
-* Ship a system prompt with every agentic scorer.
-The wording is part of the metric's identity; the customer picks the model, but the prompt travels with the version.
-
-== Related
-
-* xref:testing:evaluation/getting-started.adoc[] — a worked example from empty project to first campaign
-* xref:testing:evaluation/scenarios-and-rules.adoc[] — how scenarios and rules bind to scorers
-* xref:testing:evaluation/reports.adoc[] — how verdicts read in the report
-* xref:testing:red-teaming/scorers.adoc[] — adversarial scorers, same three-family model
+* xref:testing:evaluation/getting-started.adoc[] — a worked example from empty project to first campaign.
+* xref:testing:evaluation/scenarios-and-rules.adoc[] — how scenarios and rules bind to scorers.
+* xref:testing:evaluation/campaigns.adoc[] — how a plan of scenarios reaches a target.
+* xref:testing:evaluation/reports.adoc[] — how verdicts read in the report.
+* xref:testing:red-teaming/scorers.adoc[] — adversarial scorers, same three-family model.
