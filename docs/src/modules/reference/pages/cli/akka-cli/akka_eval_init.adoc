@@ -5,11 +5,14 @@ Add the eval source root to a project.
 == Synopsis
 
 Writes the eval tree — scorers by family, datasets, rubrics, baselines — into the
-existing project's `src/test/java`. Nothing edits the pom: campaigns are ordinary JUnit
-tests gated on `-Deval=true`, so `mvn verify` compiles them without running them.
+existing project's `src/test/java` and adds the `evalkit` dependency to the project pom
+at test scope. Campaigns are ordinary JUnit tests gated on `-Deval=true`, so `mvn verify`
+compiles them without running them; `mvn verify -Deval=true` runs them.
 
 Additive: a file already present is left alone and reported.
 `--force` replaces existing files, after backing up what it replaces.
+The dependency edit is idempotent — a pom that already declares the dependency is left
+alone, and a backup is written to `pom.xml.backup` before any change.
 
 Run the command again to take a newer scaffold; the parts you have written stay yours.
 
@@ -40,26 +43,20 @@ that declares `<groupId>com.acme.checkout</groupId>` the target is `com.acme.che
 and the files land at `src/test/java/com/acme/checkout/eval/...`.
 A pom that declares no `<groupId>` fails the command with a message asking for `--package`.
 
-== After the command runs
+== What the command reports
 
-The command prints the dependency block to add to the project's pom (test scope), then the
-command to run a campaign:
-
+[listing]
 ----
-add the library to the project's pom (test scope):
+$ akka eval init
+kept   src/test/java/com/acme/checkout/eval/scorer/deterministic/package-info.java
+added the evalkit dependency to pom.xml (previous kept as pom.xml.backup)
+run a campaign with `mvn verify -Deval=true`
 
-  <dependency>
-    <groupId>io.akka</groupId>
-    <artifactId>evalkit</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
-    <scope>test</scope>
-  </dependency>
-
-then run a campaign with `mvn verify -Deval=true`
+Added the eval source root to . under package com.acme.checkout.eval — 7 file(s) written, 0 kept.
 ----
 
-The pom is not edited automatically — printing what to add is deliberate, so the customer
-decides where in their pom the dependency lands.
+The dependency line reads `already declares the evalkit dependency` on the idempotent
+path — a pom the customer has already run the command against gets no second edit.
 
 == See also
 

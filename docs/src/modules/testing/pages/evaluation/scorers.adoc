@@ -2,12 +2,12 @@
 
 include::ROOT:partial$include.adoc[]
 
-:page-summary: Turn a recorded run into a verdict for one rule using a deterministic, heuristic, or agentic scorer.
+:page-summary: A scorer decides the verdict for one rule from one recorded run. evalkit ships 22 scorers in three families — deterministic, heuristic, and agentic — and the interface is one method the customer implements to write their own.
 :page-when-to-use: Use when a campaign rule needs a specific decision — a tool call was authorised, a budget was met, a claim was supported by a retrieved passage.
 :page-related: xref:testing:evaluation/index.adoc[], xref:testing:evaluation/scenarios-and-rules.adoc[], xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/reports.adoc[], xref:testing:red-teaming/scorers.adoc[]
 
-A scorer turns one recorded run into a verdict for one rule.
-evalkit ships 22 scorers across three families, and lets the customer add their own.
+A scorer decides the verdict for one rule from one recorded run.
+Every scorer implements the same one-method interface, and reports read the verdict alongside the scorer's name so a reviewer knows what decided each case.
 
 == Overview
 

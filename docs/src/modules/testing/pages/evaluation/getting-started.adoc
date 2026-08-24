@@ -2,100 +2,148 @@
 
 include::ROOT:partial$include.adoc[]
 
-:page-summary: Add an evaluation suite to an existing project — an adapter to the target, a dataset, a campaign class, and one run.
-:page-when-to-use: Use when a project has a service worth evaluating and no campaign is yet defined.
+:page-summary: An evaluation suite scores an Akka SDK service against a dataset. It lives under src/test/java, runs as an ordinary JUnit test, and reports pass rates per rule with the failing cases named individually.
+:page-when-to-use: Use when a service is worth measuring — the reply's correctness, the tool usage, the latency budget, the faithfulness of a retrieved answer.
 :page-prerequisites: An existing Maven project. Familiarity with JUnit.
 :page-related: xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/scenarios-and-rules.adoc[], xref:testing:evaluation/campaigns.adoc[]
 
-This page walks from an empty project through the four things a first campaign needs: an adapter to the target, a dataset, a campaign class, and one run.
+An evaluation suite is a set of JUnit tests that run a target service through a dataset of scenarios and score each reply against a rule.
+The suite lives alongside the project's other tests under `src/test/java` and reads the same dependencies at test scope.
+A campaign is one class in the suite, and its outcome is a report the CI job reads for regressions.
 
 == Overview
 
-A campaign is a JUnit test gated on `-Deval=true`.
-`mvn verify` compiles it and leaves it out of the commit build; `mvn verify -Deval=true` runs it.
-The eval tree lives under `src/test/java/<your-package>/eval/`, alongside the project's other tests.
+An evaluation campaign has four parts.
+The **target** is any implementation of `SystemUnderTest` — for a service on the Akka SDK, the implementation calls the service's own `ComponentClient`.
+The **dataset** is a set of `Scenario` records, each naming a precursor state, a graded turn, and the outcome the target is expected to reach.
+The **campaign** is a JUnit test class that assembles the dataset and the target, invokes `CampaignRunner.run(...)`, and asserts against the result.
+The **runner** in `evalkit-core` walks every scenario in parallel lanes, records the interactions, and returns a `CampaignResult` that carries the assertions the campaign uses.
+
+The suite is a test scope dependency, so a customer's production artifact carries no evalkit code.
+Campaigns are gated on `-Deval=true` so `mvn verify` compiles the classes without running them; `mvn verify -Deval=true` runs them.
 
 == Add the eval pack
 
-From the project root:
+`akka eval init` overlays the source tree onto the project, edits the pom to add the `evalkit` dependency at test scope, and reports what it wrote.
 
 [listing]
 ----
-akka eval init
+$ akka eval init
+kept   src/test/java/com/acme/checkout/eval/scorer/deterministic/package-info.java
+added the evalkit dependency to pom.xml (previous kept as pom.xml.backup)
+run a campaign with `mvn verify -Deval=true`
+
+Added the eval source root to . under package com.acme.checkout.eval — 7 file(s) written, 0 kept.
 ----
 
-The command overlays the eval tree onto the project's `src/test/java`, rewrites the scaffold's `com.example.eval` prefix to the target package (`<groupId>.eval` by default, or `--package` if set), and prints the dependency block to add to the pom.
-It edits no pom itself.
+The command is idempotent.
+Running it again on a project that already declares the dependency reports "already declares" rather than editing the pom a second time; a file the customer has since written stays untouched, and the command reports each as `kept`.
 
-Add the dependency block the command printed to the project's pom:
+The eval tree lands under `src/test/java/<groupId>.eval/`, where `<groupId>` comes from the project's pom.
+For the flags that override that (`--package`, `--force`), see xref:reference:cli/akka-cli/akka_eval_init.adoc[].
 
-[source,xml,indent=0]
-----
-<dependency>
-  <groupId>io.akka</groupId>
-  <artifactId>evalkit</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
-  <scope>test</scope>
-</dependency>
-----
-
-== Adapt the target
+== The target adapter
 
 Every campaign talks to one `SystemUnderTest`.
-It puts the service into the state a scenario names, submits the graded turn, and returns what came back.
-For an Akka SDK service, the adapter calls the service's own `ComponentClient`.
+The interface has two responsibilities: put the service into the state the scenario names, then submit the graded turn.
+For an Akka SDK service, the implementation calls the service's own `ComponentClient` — the same client an integration test would use.
 
 [source,java,indent=0]
 .RefundAgentRunner.java
 ----
 include::example$doc-snippets/src/test/java/com/example/eval/runner/AgentRunnerSample.java[tag=class]
 ----
-<1> Inject the `ComponentClient` the same way a service's own tests do.
-<2> `prepare(Precursor)` arranges the state the scenario needs.
+<1> The `ComponentClient` is injected the same way a service's integration tests receive it.
+<2> `prepare(Precursor)` arranges the state a scenario names.
 A fixture named `"signed-in"` in the scenario reads the fixture handler here.
 <3> A precursor this adapter cannot arrange returns `Prepared.Failed`, which the runner records as `NotReached` — a fact about the adapter, not a verdict on the target.
 <4> `submit(sessionId, userText)` speaks the graded turn.
 For an Agent, that is a `.forAgent().inSession(...).method(...).invoke(...)` call.
-<5> `fixtures()` declares the states the adapter can reach.
-A campaign that names a fixture this adapter never declared fails before running, rather than yielding a run of `NotReached` results.
+<5> `fixtures()` declares the states the adapter can reach, so a campaign that names a fixture this adapter never declared is refused before running.
 
-== Write the campaign
+== The campaign class
 
-The campaign class assembles the scenarios and the target, and calls `CampaignRunner.run(...)`.
-Gate it on `-Deval=true` so `mvn verify` compiles it without running it.
+A campaign assembles the scenarios and the target, invokes the runner, and asserts against the result.
+JUnit reads the class the same way it reads any other test.
 
 [source,java,indent=0]
 .RefundPolicyCampaign.java
 ----
 include::example$doc-snippets/src/test/java/com/example/eval/campaign/FirstCampaignSample.java[tag=class]
 ----
-<1> `@EnabledIfSystemProperty` gates the test on `-Deval=true`.
-`mvn verify` alone compiles the class and skips execution.
+<1> The system-property gate keeps campaigns out of `mvn verify`.
+The test is compiled and JUnit knows it exists; execution needs `-Deval=true`.
 <2> Every scenario names an id, a precursor, the graded turn, and the outcome the target is expected to reach.
 <3> The plan collects the scenarios into a campaign, sets the number of parallel lanes, and names the rubric an agentic scorer would use.
-<4> Construct the adapter written above.
-<5> `CampaignRunner.run(...)` walks every scenario, calls the adapter, scores each run and returns a `CampaignResult`.
+<4> The adapter from the previous section.
+<5> `CampaignRunner.run(...)` walks every scenario, calls the adapter, scores each run, and returns a `CampaignResult`.
 <6> The result carries the assertions.
 `assertHeldAgainstBaseline` compares this run to a saved baseline and fails the test on regression.
 
-For the assertions available on `CampaignResult`, see xref:testing:evaluation/campaigns.adoc[].
+== What a run reports
 
-== Run it
-
-Local:
+`mvn verify -Deval=true` runs the campaign.
+The rendered report lands under `target/evalkit/reports/<campaign>.txt` and reads like this:
 
 [listing]
 ----
-mvn verify -Deval=true
+refund-policy · 240 attempts · 4 rules
+
+What the run found
+------------------
+
+217 passed, 18 failed, 5 inconclusive.
+
+  answers_refund_window ......... 58 of 60 passed  (96.7%)
+  cites_policy_source ........... 55 of 60 passed  (91.7%)
+  refuses_out_of_scope .......... 60 of 60 passed  (100%)
+  answers_restocking_fee ........ 44 of 60 passed  (73.3%)
+
+What failed
+-----------
+
+ #1  Rule:      answers_restocking_fee
+     Scenario:  case-034
+     Scorer:    correctness (agentic, scenario-judge v3)
+     Prompt:    "Do you charge a restocking fee on returns?"
+     Expected:  "No"
+     Reply:     "Yes, our restocking fee is 15% of the item price."
+     Why:       the reply contradicts the reference answer.
+
+ (17 more shown in the full report)
+
+What it cost
+------------
+
+  Target ....  412,301 tokens  ~ $0.82
+  Judge .....  188,455 tokens  ~ $1.22
+  ---------------------------------------
+  Total .....  600,756 tokens  ~ $2.04
+
+Wall-clock: 4m 12s.
 ----
 
-Every failing case appears in the JUnit output; the campaign's rendered report lands under `target/evalkit/reports/<campaign>.txt`.
+For every panel of the report and how the numbers compose, see xref:testing:evaluation/reports.adoc[].
 
-To dispatch to the offline-evals service instead, see xref:testing:evaluation/remote-campaigns.adoc[].
+== Where the parts live
 
-== Next steps
+[cols="1,3"]
+|===
+| Path | What lives there
 
-* Read xref:testing:evaluation/scorers.adoc[] to add scorers to the campaign's rules.
-* Read xref:testing:evaluation/scenarios-and-rules.adoc[] to grow the dataset.
-* Read xref:testing:evaluation/reports.adoc[] to understand each panel in the rendered report.
-* Read xref:testing:evaluation/baselines.adoc[] to gate CI on regression.
+| `src/test/java/<pkg>/eval/runner/`     | The `SystemUnderTest` adapter for this project.
+| `src/test/java/<pkg>/eval/scorer/`     | Scorers, grouped by family (see xref:testing:evaluation/scorers.adoc[]).
+| `src/test/java/<pkg>/eval/dataset/`    | `ScenarioSource` implementations and dataset loaders.
+| `src/test/resources/eval/datasets/`    | The scenarios themselves as JSONL.
+| `src/test/resources/eval/rubrics/`     | Agentic-scorer rubrics, versioned by filename.
+| `src/test/resources/eval/baselines/`   | Prior runs the campaign compares against.
+| `target/evalkit/reports/`              | Rendered reports (gitignored).
+|===
+
+== See also
+
+* xref:testing:evaluation/scorers.adoc[] — the three families of scorer and the built-ins.
+* xref:testing:evaluation/scenarios-and-rules.adoc[] — how scenarios and rules bind to scorers.
+* xref:testing:evaluation/campaigns.adoc[] — the assertions available on `CampaignResult`.
+* xref:testing:evaluation/reports.adoc[] — every panel of the rendered report.
+* xref:testing:evaluation/baselines.adoc[] — how to gate CI on regression.
