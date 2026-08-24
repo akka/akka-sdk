@@ -52,11 +52,14 @@ import akka.runtime.sdk.spi.SpiDevObjectStorageGcsBucketConfig;
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsCredentials;
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsNativeCredentials$;
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsServiceAccountKeyCredentials;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3AccessStyle;
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig;
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3Credentials;
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials$;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3PathAccessStyle$;
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials;
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3VirtualHostAccessStyle$;
 import akka.runtime.sdk.spi.SpiEventingSupportSettings;
 import akka.runtime.sdk.spi.SpiMockedEventingSettings;
 import akka.runtime.sdk.spi.SpiSettings;
@@ -1484,7 +1487,21 @@ public class TestKit {
         } else {
           creds = SpiDevObjectStorageS3NativeCredentials$.MODULE$;
         }
-        result.add(new SpiDevObjectStorageS3BucketConfig(s3.name, s3.bucket, s3.region, creds));
+        SpiDevObjectStorageS3AccessStyle accessStyle = null;
+        if (s3.accessStyle.isPresent()) {
+          accessStyle =
+              s3.accessStyle.get() == ObjectStorageBucketConfig.S3AccessStyle.PATH
+                  ? SpiDevObjectStorageS3PathAccessStyle$.MODULE$
+                  : SpiDevObjectStorageS3VirtualHostAccessStyle$.MODULE$;
+        }
+        result.add(
+            new SpiDevObjectStorageS3BucketConfig(
+                s3.name,
+                s3.bucket,
+                s3.region,
+                creds,
+                scala.Option.apply(s3.endpointUrl.orElse(null)),
+                scala.Option.apply(accessStyle)));
       } else if (bucket instanceof ObjectStorageBucketConfig.Impl.Gcs) {
         ObjectStorageBucketConfig.Impl.Gcs gcs = (ObjectStorageBucketConfig.Impl.Gcs) bucket;
         SpiDevObjectStorageGcsCredentials creds;

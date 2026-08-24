@@ -138,10 +138,13 @@ import akka.runtime.sdk.spi.SpiDevObjectStorageFilesystemBucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsBucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsNativeCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsServiceAccountKeyCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3AccessStyle
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3PathAccessStyle
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3VirtualHostAccessStyle
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup
@@ -246,7 +249,18 @@ object SdkRunner {
             new SpiDevObjectStorageFilesystemBucketConfig(name, directory)
           case "s3" =>
             val creds = parseDevS3Credentials(name, c)
-            new SpiDevObjectStorageS3BucketConfig(name, c.getString("bucket"), c.getString("region"), creds)
+            // endpoint-url is the address of an S3-compatible service (e.g. MinIO). Without it the
+            // endpoint comes from the region, which addresses Amazon S3.
+            val endpointUrl = if (c.hasPath("endpoint-url")) Some(c.getString("endpoint-url")) else None
+            val accessStyle =
+              if (c.hasPath("access-style")) Some(parseDevS3AccessStyle(name, c.getString("access-style"))) else None
+            new SpiDevObjectStorageS3BucketConfig(
+              name,
+              c.getString("bucket"),
+              c.getString("region"),
+              creds,
+              endpointUrl,
+              accessStyle)
           case "gcs" =>
             val creds = parseDevGcsCredentials(name, c)
             new SpiDevObjectStorageGcsBucketConfig(name, c.getString("bucket"), creds)
@@ -259,6 +273,15 @@ object SdkRunner {
           s"Expected object in akka.javasdk.dev-mode.object-storage.buckets, got [$other]")
     }
   }
+
+  private def parseDevS3AccessStyle(bucketName: String, accessStyle: String): SpiDevObjectStorageS3AccessStyle =
+    accessStyle match {
+      case "virtual" => SpiDevObjectStorageS3VirtualHostAccessStyle
+      case "path"    => SpiDevObjectStorageS3PathAccessStyle
+      case other =>
+        throw new IllegalArgumentException(
+          s"Unknown S3 access style [$other] for dev bucket [$bucketName]. Valid: virtual, path")
+    }
 
   private def parseDevS3Credentials(bucketName: String, c: com.typesafe.config.Config) = {
     if (!c.hasPath("credentials") || c.getValue("credentials").unwrapped() == "workload-identity")
