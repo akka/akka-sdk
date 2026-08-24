@@ -17,7 +17,7 @@ The CLI is `akka eval`.
 
 == The parts of a campaign
 
-The four vocabularies of an evaluation campaign line up with the four packages a suite is written across.
+Six terms name the pieces a suite is written across.
 
 `Scenario` +
 An input, an optional expected output, an optional multi-turn precursor, and metadata.

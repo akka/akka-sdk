@@ -21,12 +21,12 @@ Red teaming reads the same `SystemUnderTest` adapter an evaluation campaign uses
 A project already running evaluation reaches red teaming by adding the `evalkit-redteam` dependency and a new campaign class; the target adapter carries across unchanged.
 `Rule`, `Scenario`, `Scorer`, `Campaign`, `Run`, `Rubric`, and `Ledger` mean the same thing in both packs.
 
-== The one new noun
+== Techniques
 
-`Technique` is the shape unique to red teaming.
-It names how a payload is wrapped, escalated, or delivered before it reaches the target.
+A technique is how a payload is wrapped, escalated, or delivered before it reaches the target.
+Every attack style implements the `Technique` interface and returns one or more prompts derived from an attacker goal.
 
-Two families of technique ship.
+Two families ship.
 
 `Static` +
 A pure function on a prompt.
