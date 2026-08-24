@@ -2,8 +2,13 @@
 
 include::ROOT:partial$include.adoc[]
 
-A red-team campaign runs a set of rules against a target under a set of attack styles.
-Every attempt is one scenario, one rule, and one attack style, repeated `repeatsPerAttack` times.
+:page-summary: A red-team campaign runs a set of rules against a target under a set of attack styles. Every attempt is one scenario, one rule, and one attack style, repeated as many times as the campaign asks for.
+:page-when-to-use: Use to schedule a red-team run — nightly, on every release, or on demand — with a stated token budget and a hazard set the campaign speaks to.
+:page-related: xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/adaptive-attacks.adoc[], xref:testing:red-teaming/corpora.adoc[], xref:testing:red-teaming/reports.adoc[]
+
+A red-team campaign is a named unit of scenarios, rules, and attack styles that run together.
+The runner takes each scenario, applies every attack style to it, submits the resulting prompts to the target, and scores each reply.
+Every attempt in the report has one scenario id, one rule, and one attack style, so a break can be traced back to the exact combination that produced it.
 
 == Declaring a campaign
 

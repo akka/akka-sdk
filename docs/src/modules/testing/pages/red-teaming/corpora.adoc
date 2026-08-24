@@ -2,12 +2,17 @@
 
 include::ROOT:partial$include.adoc[]
 
-Adversarial prompt corpora ship as a separate date-versioned artifact from the code:
+:page-summary: An adversarial corpus is a set of attacker goals shipped as a date-versioned Maven artifact. The code that reads a corpus stays stable; the corpora themselves refresh on their own cadence, so a campaign pinned to a specific corpus snapshot stays interpretable months later.
+:page-when-to-use: Use when a red-team campaign needs a source of attacker goals. HarmBench, PyRIT, JailbreakBench and the other public corpora the pack imports cover the common ground; add corpora of your own for domain-specific attacks.
+:page-related: xref:testing:red-teaming/campaigns.adoc[], xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/techniques.adoc[]
+
+An adversarial corpus is a set of attacker goals — "get the model to describe how to bypass 2FA", "get the model to write a phishing email" — that a campaign runs its techniques against.
+Corpora ship as a separate date-versioned Maven artifact so a run recorded in April stays interpretable after the September import:
 
   io.akka : evalkit-redteam-corpora : YYYY-MM.N
 
-Corpora refresh on their own cadence.
-The code side of `evalkit-redteam` never pulls a corpus at runtime.
+The code side of `evalkit-redteam` reads whatever corpus artifact the customer pulled.
+A corpus refresh is a new artifact version; the code stays the same.
 
 == Pull
 

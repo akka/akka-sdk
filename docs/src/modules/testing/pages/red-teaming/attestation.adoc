@@ -2,9 +2,13 @@
 
 include::ROOT:partial$include.adoc[]
 
+:page-summary: Every red-team run produces a signed DSSE evidence bundle carrying the campaign spec, the run outcome, the corpus provenance, and the attestation the compliance review reads as proof the run happened.
+:page-when-to-use: Use whenever a compliance review needs proof that the target was tested and what the outcome was. The bundle is the audit trail.
+:page-related: xref:testing:red-teaming/reports.adoc[], xref:testing:red-teaming/campaigns.adoc[]
+
 Every red-team run produces a signed evidence bundle under `target/redkit/attestations/<run>.dsse.json`.
-Present it to an auditor as-is.
-Do not reformat it.
+The bundle is the audit trail — a signed DSSE envelope carrying the campaign spec, the outcome of every attempt, the provenance of every corpus item, and the attestation the compliance review reads as proof the run happened.
+Present it to an auditor as-is; the signature covers the exact bytes.
 
 == What it contains
 

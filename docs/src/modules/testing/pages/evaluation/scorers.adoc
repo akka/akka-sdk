@@ -44,7 +44,8 @@ Strict mode collapses any non-perfect share to zero, so a single unauthorised ca
 ----
 include::example$doc-snippets/src/test/java/com/example/eval/scorer/deterministic/ToolPermissionSample.java[tag=strict]
 ----
-<1> A single unauthorised call is a policy breach, not a rate.
+<1> A single unauthorised call is a policy breach in its own right.
+Strict mode reports the run that way — one failed finding collapses the whole run to zero — where the default aggregation reports a share.
 <2> Same aggregation, but the outcome now scores 0 when any finding failed.
 
 A deny list can be added alongside the allow list.
@@ -148,7 +149,7 @@ For the reference tables listing every built-in scorer and what each reads, see 
 == Testing
 
 Every scorer tests the same way: build an `Observation` you control and read the `RunOutcome` back.
-Deterministic and heuristic scorers reach no model, so they run under `mvn verify` without any provider configured.
+Deterministic and heuristic scorers score off recorded values and computed measurements, so they run under `mvn verify` with the JVM alone.
 Agentic scorers use a stub `Assessor` returning `Assessment` directly.
 
 For the testkit shape shared with unit tests, see xref:sdk:testing.adoc[Testing SDK components].

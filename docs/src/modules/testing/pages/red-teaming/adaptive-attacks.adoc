@@ -2,9 +2,13 @@
 
 include::ROOT:partial$include.adoc[]
 
-Adaptive attacks choose each next prompt based on the target's last reply.
-They run inside `AdversaryDriver`, a turn-by-turn driver that persists its state after every turn.
-A JVM restart mid-attack resumes from the same state and produces the same final outcome.
+:page-summary: An adaptive attack is a stateful attacker that revises each next prompt based on the target's last reply. Runs inside a durable driver, so a mid-attack crash resumes from the same state.
+:page-when-to-use: Use when a target resists the first prompt and the attacker's job is to find a way through. PAIR, Crescendo, and Tree-of-Attacks are the standard techniques the pack ships.
+:page-related: xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/reports.adoc[]
+
+An adaptive attack chooses each next prompt from the target's last reply.
+The attacker is a stateful process — every turn reads the reply, decides how to escalate, and produces the next prompt.
+It runs inside `AdversaryDriver`, a durable driver that persists its state after every turn, so a JVM restart mid-attack resumes from the same state and produces the same final outcome.
 
 == The three built-in styles
 

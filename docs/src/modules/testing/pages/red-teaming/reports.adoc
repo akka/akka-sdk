@@ -2,9 +2,14 @@
 
 include::ROOT:partial$include.adoc[]
 
-A red-team run produces one report per campaign.
-A section appears only when the run has something to say about it.
-Reports never roll findings up into a single aggregate score.
+:page-summary: A red-team report reads as a set of panels grouped by hazard and by attack style. Each break is one incident with its own row, and the report carries a signed attestation the compliance review reads as evidence.
+:page-when-to-use: Read on every failing run, and on every intentional target change. The report is the primary interface between the runner and a security reviewer.
+:page-related: xref:testing:red-teaming/campaigns.adoc[], xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/attestation.adoc[]
+
+A red-team report is the primary interface between a campaign run and the security reviewer who reads it.
+Each panel answers one question about the run — what broke through, which attack styles worked, what varied, how harm was measured, what the run could not tell you, what it cost, how it compares to the last run, and where the quality tests missed the failures.
+The report groups every finding by hazard and by attack style, so a break traces back to the exact combination that produced it.
+An aggregate score is deliberately not reported: a break is one incident, and one incident is what the reviewer reads.
 Every section breaks results out by hazard and by attack style.
 
 == What the campaign found

@@ -2,50 +2,57 @@
 
 include::ROOT:partial$include.adoc[]
 
-A `Campaign` bundles scenarios, rules, and scorers into a named unit that can be run repeatedly and compared over time.
-A `Run` is one execution of a campaign against one target build.
+:page-summary: A campaign is a named bundle of scenarios, rules, and scorers that run together. A run is one execution against one target build. Both are recorded so later runs can compare against them.
+:page-when-to-use: Use when a set of scenarios needs to run repeatedly, when verdicts need to compare across builds, or when a campaign needs to record what it observed for replay.
+:page-related: xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/scenarios-and-rules.adoc[], xref:testing:evaluation/remote-campaigns.adoc[], xref:testing:evaluation/baselines.adoc[], xref:testing:evaluation/reports.adoc[]
 
-== Declaring a campaign
+A campaign is a named bundle of scenarios, rules, and scorers that runs together.
+A run is one execution of a campaign against one target build.
+Every run carries an id, a start timestamp, the policy version it ran under, and a rendered report that later runs compare against.
+
+== The campaign plan
+
+The plan is fluent-built inside a JUnit test class.
+It names the scenarios, binds the rules to their scorers, and states the policy the run belongs to.
 
 [source,java,indent=0]
 ----
-CampaignPlan.named("refund-flow")
-    .withScenarios(ScenarioSource.fromJsonl("datasets/refund-flow.jsonl"))
-    .withRule("answers_refund_window", scorer(new RefundWindowScorer()))
-    .under(Policy.stated("refund-desk-v1"))
-    .repeating(3);
+CampaignPlan.named("refund-flow")                                        // <1>
+    .withScenarios(ScenarioSource.fromJsonl("datasets/refund-flow.jsonl")) // <2>
+    .withRule("answers_refund_window", scorer(new RefundWindowScorer()))   // <3>
+    .under(Policy.stated("refund-desk-v1"))                                // <4>
+    .repeating(3);                                                          // <5>
+----
+<1> The name is the stable key reports and baselines join on.
+Lowercase, hyphen-separated by convention.
+<2> The scenario source loads the dataset from the classpath.
+JSONL is the shipped format; the interface accepts other sources.
+<3> Every rule binds to at least one scorer.
+Bind more than one when the rule needs two decisions; the rule fails when any bound scorer fails.
+<4> `under(Policy)` names the policy version this run belongs to.
+The version appears on every result so a report can group runs by the policy that produced them.
+<5> `repeating(N)` runs each scenario `N` times.
+The report's variance panel reads the repeats and stabilises the verdict for the agentic scorers, whose model calls sample.
+
+== Running a campaign
+
+Local runs are ordinary JUnit tests gated on `-Deval=true`.
+`mvn verify -Deval=true` walks every campaign class under `src/test/java/<pkg>/eval/` and streams the output to stdout.
+Reports land under `target/evalkit/reports/<campaign>.txt`, one per campaign class.
+
+For a shortcut that runs one campaign and opens its report:
+
+[listing]
+----
+akka eval run
 ----
 
-Fluent methods:
-
-`under(Policy)` +
-Names the policy version the campaign runs under.
-Recorded on every result.
-
-`repeating(int)` +
-Runs each scenario `N` times.
-Enables the variance panel and stabilizes graded verdicts.
-
-`withScorers(...)` +
-Attaches scorers that apply to every scenario in the campaign, in addition to any bound directly to a rule.
-
-== Running a campaign locally
-
-  akka eval run
-
-The command wraps the Maven invocation that runs every campaign under `src/test/java/com/example/eval/`.
-Output streams to stdout.
-Reports land under `target/evalkit/reports/<campaign>.txt`.
-
-== Running a campaign remotely
-
-Large datasets or long-running campaigns can be dispatched to the offline-evals service.
-See xref:testing:evaluation/remote-campaigns.adoc[].
+For dispatching a campaign to a running evaluation service instead of running it in-process, see xref:testing:evaluation/remote-campaigns.adoc[].
 
 == Lanes
 
-A `Lane` bundles a set of fixtures a scenario needs to run — a session state, a set of tool stubs, a set of headers.
-Assign a scenario to a lane in the dataset and register the lane on the campaign.
+A lane bundles a set of fixtures a scenario needs to run — a session state, a set of tool stubs, a set of headers.
+Assign a scenario to a lane in the dataset, and the runner reads the lane's fixtures before submitting the graded turn.
 
 [source,json]
 ----
@@ -56,15 +63,47 @@ Assign a scenario to a lane in the dataset and register the lane on the campaign
 }
 ----
 
+A campaign that names a lane the adapter never declared fails before running, rather than yielding a run of `NotReached` results at the end.
+For how the adapter declares its lanes, see xref:testing:evaluation/getting-started.adoc[].
+
 == Recording
 
-Every reply the target produces is written to the ledger through `RecordedInteractions`.
-The same recording can be replayed later without paying for the target again.
-See xref:testing:evaluation/baselines.adoc[] for how replays gate builds.
+Every interaction the target produces is written to a ledger through `RecordedInteractions`.
+A later run reads the recording and scores it again without paying for the target — the same dataset re-scored under a new scorer, or the same target re-scored under a new rubric.
+For how replays gate a CI build, see xref:testing:evaluation/baselines.adoc[].
+
+== Assertions on `CampaignResult`
+
+The result the runner returns carries the assertions the test class uses to fail on regression.
+
+`assertPassRateAtLeast(rule, share)` +
+Fails the test when the rule's pass rate drops below the stated share.
+
+`assertHeldAgainstBaseline(name)` +
+Loads the baseline under that name, compares the current run to it, and fails when a rule regresses.
+Reads the rubric and ruleset versions on both sides and refuses the comparison when either differs.
+
+`assertEveryScenarioSettled()` +
+Fails the test when any scenario ended in `Inconclusive` or `NotReached`.
+Use in campaigns whose scorers should always decide.
+
+`result.report()` +
+Returns the rendered `String` the test can write to disk or print.
 
 == Best practices
 
-* Give each campaign a stable, lowercase, hyphen-separated `name`. The name is the key that reports and baselines join on.
-* Set `repeating(3)` for campaigns that use agentic scorers.
-* Bind a policy version on every campaign so a policy change is visible in the report.
-* Keep the number of scenarios per campaign small enough that a local run completes in a coffee break.
+* Give each campaign a stable, lowercase, hyphen-separated name.
+The name is the key reports, baselines, and CI dashboards join on.
+* Use `repeating(3)` for campaigns that use agentic scorers.
+Model calls sample; three repeats stabilise most verdicts and let the variance panel read the flips.
+* Bind a policy version on every campaign so a policy change reads as a policy change in the report, and not as a target change.
+* Keep the scenario count per campaign small enough that a local run finishes in a coffee break.
+Long-running campaigns belong on the offline-evals service.
+
+== See also
+
+* xref:testing:evaluation/scenarios-and-rules.adoc[] — the shape of a scenario and how rules attach.
+* xref:testing:evaluation/scorers.adoc[] — the scorers each rule can bind.
+* xref:testing:evaluation/reports.adoc[] — the panels of the rendered report.
+* xref:testing:evaluation/baselines.adoc[] — how a baseline gates CI on regression.
+* xref:testing:evaluation/remote-campaigns.adoc[] — dispatching to the offline-evals service.

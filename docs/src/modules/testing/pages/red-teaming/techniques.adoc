@@ -2,8 +2,13 @@
 
 include::ROOT:partial$include.adoc[]
 
-An attack style — a `Technique` in the SPI — is how a payload is wrapped, escalated, or delivered before it reaches the target.
-Two shapes ship.
+:page-summary: An attack style — a Technique in the SPI — is how a payload is wrapped, escalated, or delivered before it reaches the target. Static techniques are pure functions; adaptive techniques are attackers with state.
+:page-when-to-use: Use when a red-team campaign needs to broaden the attack surface — encode the payload, roleplay the request, split it across turns, or escalate on a target that resists the first prompt.
+:page-related: xref:testing:red-teaming/adaptive-attacks.adoc[], xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/campaigns.adoc[]
+
+An attack style is how a payload is wrapped, escalated, or delivered before it reaches the target.
+Every attack style implements `Technique` in the SPI and returns one or more prompts derived from an attacker goal.
+Two shapes ship: static techniques are pure functions the runner can parallelise across the corpus, and adaptive techniques are stateful attackers the runner drives turn-by-turn.
 
 == Two shapes
 

@@ -2,12 +2,18 @@
 
 include::ROOT:partial$include.adoc[]
 
-A `Scenario` is one test case: an input, an optional expected output, an optional multi-turn precursor, and metadata.
-A `Rule` is a named requirement the target must uphold on the scenarios that reference it.
+:page-summary: A scenario is one test case with a stable id; a rule is a named requirement the target upholds across the scenarios that reference it. Reports read verdicts scenario-by-scenario, rule-by-rule.
+:page-when-to-use: Use when a rule needs a stable identity across runs, when a scenario needs a multi-turn precursor, or when the report should group verdicts by hazard.
+:page-related: xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/reports.adoc[]
 
-== Declaring a scenario
+A scenario is one test case the target reads and the runner scores.
+A rule is a named requirement several scenarios share.
+Reports group verdicts by rule, so a change that flips one scenario's verdict reads as movement in the rule it belongs to.
 
-Scenarios live under `src/test/resources/eval/datasets/`.
+== The scenario record
+
+Scenarios live under `src/test/resources/eval/datasets/` as JSONL, one per line.
+Every scenario names an id, a prompt, and the rule it addresses.
 
 [source,json]
 ----
@@ -20,41 +26,17 @@ Scenarios live under `src/test/resources/eval/datasets/`.
 }
 ----
 
-Fields:
-
-`id` +
-Stable identifier. Reports reference scenarios by this id.
-
-`prompt` +
-The input sent to the target.
-
-`expected` +
-Reference answer used by agentic and deterministic scorers.
-
-`rule` +
-The rule this scenario is expected to satisfy.
-
-`hazards` +
-Taxonomy-prefixed hazard keys the rule covers.
-Wire keys use the `ailuminate:` and `owasp:` prefixes.
-
-== Declaring a rule
-
-Rules are declared in a campaign spec.
-
-[source,java,indent=0]
-----
-Rule.of("answers_refund_window")
-    .describedAs("The reply names 14 days as the refund window")
-    .coveringHazards(Set.of(Hazard.PRIVACY));
-----
-
-A rule declares its hazards so reports can group results by harm type.
-A rule with no hazards is still valid; it does not appear in the hazard rollup.
+`id` is the stable identifier reports reference.
+`prompt` is the input sent to the target.
+`expected` is the reference answer scorers read against.
+`rule` is the rule this scenario is expected to satisfy.
+`hazards` carries taxonomy-prefixed hazard keys (`ailuminate:privacy`, `owasp:llm01_prompt_injection`) so reports group verdicts by harm type.
+See xref:testing:red-teaming/reference/hazards.adoc[] for the taxonomies.
 
 == Multi-turn scenarios
 
-A scenario carries an optional `Precursor` that seeds the conversation before the rule is checked.
+A scenario carries an optional `precursor` that seeds the conversation before the rule is checked.
+The precursor plays into the target as a conversation opener; the `prompt` is the turn that gets scored.
 
 [source,json]
 ----
@@ -63,26 +45,55 @@ A scenario carries an optional `Precursor` that seeds the conversation before th
   "precursor": [
     {"role": "user", "content": "I bought a shirt"}
   ],
-  "prompt": "How long do I have to return it?"
+  "prompt": "How long do I have to return it?",
+  "expected": "14 days",
+  "rule": "answers_refund_window"
 }
 ----
 
-The precursor is played into the target as a conversation opener; the `prompt` is the turn that gets scored.
+The runner records both the precursor turns and the graded turn, so a scorer reading tool calls or model calls sees the whole exchange.
 
-== Run outcomes
+== The rule declaration
 
-A scenario ends in one of four outcomes:
+Rules are declared in the campaign class and reference their scorers there.
+Every rule declares the hazards it covers so the report can group results by harm type.
+
+[source,java,indent=0]
+----
+Rule.of("answers_refund_window")
+    .describedAs("The reply names 14 days as the refund window")
+    .coveringHazards(Set.of(Hazard.PRIVACY));
+----
+
+A rule that covers no hazards is still valid.
+The report shows its verdicts under the pass rate, but the rule is left out of the hazard rollup.
+
+== The four run outcomes
+
+Every scenario ends in one of four outcomes.
+Which outcome a scenario carries depends on the scorer that decided it.
 
 `Asserted` +
-A deterministic scorer produced a pass or fail.
+A deterministic scorer produced a pass or fail from comparison.
+The claim and the reason appear on the report row so a reviewer can tell why the case decided the way it did.
 
 `Measured` +
-A heuristic scorer produced a score with a passing threshold.
+A heuristic scorer produced a share against a threshold.
+The value and the pass flag appear on the row.
 
 `Scored` +
 An agentic scorer produced a graded verdict.
+The band and the model's reason appear on the row.
 
 `Inconclusive` +
-The scorer had nothing to grade or the target did not respond.
+The scorer had nothing to read.
+The row appears in the report under the "What it cannot tell you" panel so the reviewer sees the case exists — the pass rate leaves the case out rather than counting it either way.
 
-See xref:testing:evaluation/scorers.adoc[] for how to bind scorers to rules.
+For how each family produces each outcome, see xref:testing:evaluation/scorers.adoc[].
+For how the outcomes read on the rendered report, see xref:testing:evaluation/reports.adoc[].
+
+== See also
+
+* xref:testing:evaluation/scorers.adoc[] — the scorers that produce each outcome.
+* xref:testing:evaluation/campaigns.adoc[] — how rules bind to scenarios inside a campaign.
+* xref:testing:evaluation/reports.adoc[] — how verdicts read on the rendered report.
