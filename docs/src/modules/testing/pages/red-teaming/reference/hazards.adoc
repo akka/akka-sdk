@@ -38,7 +38,7 @@ Primary hazard taxonomy.
 | `ailuminate:indiscriminate_weapons_cbrne`
 
 | Defamation
-| False statements harming another's reputation.
+| False statements harming the reputation of a person or an organization.
 | `ailuminate:defamation`
 
 | Hate

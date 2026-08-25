@@ -79,7 +79,7 @@ It ends the loop as soon as it says yes.
 <5> `AdversaryDriver.runToEnd` drives the attack turn by turn.
 Call `stepOnce` in your own loop instead when the run has to survive a restart.
 <6> The budget caps what one attack costs, in model tokens and in wall-clock time.
-<7> `DriverOutcome` says how the loop ended: the goal was reached, the technique gave up, the turn limit was hit, the budget ran out, or the target errored.
+<7> `DriverOutcome` says how the loop ended: the goal was reached, the technique gave up, the turn limit was hit, the budget ran out, or the target returned an error.
 Only the first is a breakthrough.
 
 == What a run reports
