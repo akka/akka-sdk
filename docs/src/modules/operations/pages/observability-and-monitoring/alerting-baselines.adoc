@@ -8,7 +8,7 @@ TIP: For a full list of available metrics and their attributes, see the xref:ref
 
 == HTTP Endpoints
 
-[cols="2,2,1"]
+[cols="2,2,>1"]
 |===
 | Alert condition | Metric | Suggested threshold
 
@@ -25,7 +25,7 @@ NOTE: For streaming HTTP endpoints, the duration metric measures the full stream
 
 == gRPC Endpoints
 
-[cols="2,2,1"]
+[cols="2,2,>1"]
 |===
 | Alert condition | Metric | Suggested threshold
 
@@ -42,7 +42,7 @@ NOTE: For gRPC streaming calls, the duration metric measures the full stream lif
 
 == Agent components
 
-[cols="2,2,1"]
+[cols="2,2,>1"]
 |===
 | Alert condition | Metric | Suggested threshold
 
@@ -63,7 +63,7 @@ NOTE: For gRPC streaming calls, the duration metric measures the full stream lif
 
 TIP: Event Sourced Entity metrics use `akka.component.type="event-sourced-entity"` to distinguish them from Key Value Entity metrics, which share the same metric names.
 
-[cols="2,2,1"]
+[cols="2,2,>1"]
 |===
 | Alert condition | Metric | Suggested threshold
 
@@ -82,7 +82,7 @@ NOTE: For Event Sourced Entities, occasional spikes in persist or processing tim
 
 TIP: Key Value Entity metrics use `akka.component.type="key-value-entity"` to distinguish them from Event Sourced Entity metrics, which share the same metric names.
 
-[cols="2,2,1"]
+[cols="2,2,>1"]
 |===
 | Alert condition | Metric | Suggested threshold
 
@@ -97,7 +97,7 @@ TIP: Key Value Entity metrics use `akka.component.type="key-value-entity"` to di
 
 == Workflows
 
-[cols="2,2,1"]
+[cols="2,2,>1"]
 |===
 | Alert condition | Metric | Suggested threshold
 
@@ -120,7 +120,7 @@ TIP: Key Value Entity metrics use `akka.component.type="key-value-entity"` to di
 
 == Views
 
-[cols="2,2,1"]
+[cols="2,2,>1"]
 |===
 | Alert condition | Metric | Suggested threshold
 
@@ -135,7 +135,7 @@ TIP: Key Value Entity metrics use `akka.component.type="key-value-entity"` to di
 
 == Consumers
 
-[cols="2,2,1"]
+[cols="2,2,>1"]
 |===
 | Alert condition | Metric | Suggested threshold
 
@@ -156,7 +156,7 @@ TIP: Key Value Entity metrics use `akka.component.type="key-value-entity"` to di
 
 NOTE: These metrics are only applicable to multi-region deployments.
 
-[cols="2,2,1"]
+[cols="2,2,>1"]
 |===
 | Alert condition | Metric | Suggested threshold
 
@@ -167,7 +167,7 @@ NOTE: These metrics are only applicable to multi-region deployments.
 
 == Timers and Timed Actions
 
-[cols="2,2,1"]
+[cols="2,2,>1"]
 |===
 | Alert condition | Metric | Suggested threshold
 
