@@ -10,14 +10,10 @@ A baseline is a saved reference run that later runs compare against.
 Committing a baseline is how a project states "this is the target's known-good behaviour"; comparing against it is how CI catches a regression before the change ships.
 The baseline file itself is the audit trail — whoever approved the promotion is whoever signed off on the commit.
 
-== What is wired today
+== How a campaign compares against a baseline
 
-The in-memory comparison ships: `akka.evalkit.core.domain.Scoring.compare(List<Grade>, List<Grade>)` compares two grade lists directly.
-That is the only comparison evalkit's own code performs.
-
-Baseline files are a convention today, not an automated pipeline.
-A campaign that wants a comparison loads the baseline itself, runs the current campaign, and calls `Scoring.compare` on both grade lists.
-The automated Panel-8 comparison, `--assert` and rubric-version refusal are on the roadmap; the convention below is the file shape those will read.
+`akka.evalkit.core.domain.Scoring.compare(List<Grade>, List<Grade>)` reads two grade lists and returns the per-rule deltas the campaign asserts against.
+A campaign that wants a comparison loads its baseline file, runs the current campaign, and calls `Scoring.compare` on the two grade lists.
 
 == Where baselines live
 
@@ -38,8 +34,8 @@ Editing it silently redefines what a comparison compares to.
 Replace the file whole on approval, and let the commit be the audit trail.
 
 *A comparison refuses across version changes.*
-When the automated comparison lands, a current run against a rubric or ruleset newer than the baseline is a version mismatch, not movement in the target.
-Until then, the campaign author checks the versions themselves before calling `Scoring.compare`.
+A current run against a rubric or ruleset newer than the baseline is a version mismatch, not movement in the target.
+The campaign checks the versions before calling `Scoring.compare` and refuses the comparison when either differs.
 
 == Approving a new baseline
 

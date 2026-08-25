@@ -211,11 +211,6 @@ Token spend split by target and judge, plus a latency distribution across five f
 
 If any model call did not report its token usage, the panel appends: _"N model replies carried no usage figure, so these totals are a floor rather than a measurement."_
 
-== Baseline comparison
-
-The design spec calls for an eighth panel that reads the current run against a saved baseline.
-The panel has not landed in the renderer yet; a campaign that wants a comparison today loads the baseline itself and calls `Scoring.compare` — see xref:testing:evaluation/baselines.adoc[].
-
 == See also
 
 * xref:testing:evaluation/campaigns.adoc[] — how a campaign carries the identity the header prints.
