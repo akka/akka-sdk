@@ -8,9 +8,9 @@ include::ROOT:partial$include.adoc[]
 
 An attack style is how a payload is wrapped, escalated, or delivered before it reaches the target.
 Every attack style implements `Technique` in the SPI and returns one or more prompts derived from an attacker goal.
-Two shapes ship: static techniques are pure functions the runner can parallelise across the corpus, and adaptive techniques are stateful attackers the runner drives turn-by-turn.
+Two kinds ship: static techniques are pure functions the runner can parallelise across the corpus, and adaptive techniques are stateful attackers the runner drives turn-by-turn.
 
-== Two shapes
+== Two kinds
 
 *Static* +
 A pure function on a prompt. Given a payload, produce a rewritten prompt.

@@ -102,7 +102,7 @@ Long-running campaigns belong on the offline-evals service.
 
 == See also
 
-* xref:testing:evaluation/scenarios-and-rules.adoc[] — the shape of a scenario and how rules attach.
+* xref:testing:evaluation/scenarios-and-rules.adoc[] — what a scenario contains and how rules attach.
 * xref:testing:evaluation/scorers.adoc[] — the scorers each rule can bind.
 * xref:testing:evaluation/reports.adoc[] — the panels of the rendered report.
 * xref:testing:evaluation/baselines.adoc[] — how a baseline gates CI on regression.

@@ -44,8 +44,6 @@ See xref:testing:evaluation/reports.adoc[] for every panel and how the numbers c
 
 == How evaluation relates to other components
 
-* An xref:sdk:evaluators.adoc[Evaluator] is the runtime component that fires on live traffic and records interactions to the ledger.
-Evaluation reads what an evaluator recorded and reports on it after the fact.
 * xref:testing:red-teaming/index.adoc[Red teaming] runs the same target through adversarial prompts and reports each break as an incident.
 Red-team scorers use the same three-family taxonomy the evaluation scorers use.
 * An xref:sdk:agents.adoc[Agent] is the service being evaluated.

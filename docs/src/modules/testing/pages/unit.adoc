@@ -76,10 +76,6 @@ Each entry links to the deterministic-testing section on that component's own pa
 | View
 | Feed source events, query the view, assert on rows.
 | xref:sdk:views.adoc[]
-
-| Evaluator
-| `EvaluatorTestKit`. Feed an interaction record, assert on the verdict.
-| xref:sdk:evaluators.adoc[]
 |===
 
 == Best practices

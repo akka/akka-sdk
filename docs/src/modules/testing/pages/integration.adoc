@@ -73,12 +73,6 @@ The virtual clock advances on demand.
 Advance it with `advance(Duration)` to drive timers, retries, and workflow steps that wait.
 Do not sleep in tests.
 
-=== Ledger inspection
-
-`LedgerClient` is available in tests.
-Fetch the interaction record an evaluator would fetch and assert on its fields.
-Useful when verifying that an agent recorded what it was expected to.
-
 == Recommended utilities
 
 [cols="1,3", options="header"]
@@ -102,12 +96,6 @@ Useful when verifying that an agent recorded what it was expected to.
 
 | Clock control (timers, retries)
 | Virtual clock via `advance(Duration)`
-
-| Ledger read
-| `LedgerClient` injected into the test
-
-| An evaluator wired to a real agent
-| Existing `EvaluatorIntegrationTest` pattern under `akka-javasdk-tests`
 |===
 
 == Best practices

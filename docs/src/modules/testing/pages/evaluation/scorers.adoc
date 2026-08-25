@@ -80,7 +80,7 @@ A wrapper that reads either into a report row looks like this:
 ----
 include::example$doc-snippets/src/test/java/com/example/eval/scorer/heuristic/LatencyBudgetSample.java[tag=interpret]
 ----
-<1> `Measured` is the shape a heuristic returns.
+<1> `Measured` is what a heuristic returns.
 <2> `value()` is a share; `passed()` is the boolean the report groups by.
 <3> A run that reported no latency at all is `Inconclusive` — reading zero as "instant" would put a made-up figure in the report.
 
@@ -102,7 +102,7 @@ include::example$doc-snippets/src/test/java/com/example/eval/scorer/agentic/Turn
 The `Question` carries the task and what to read it against.
 <2> `systemPrompt()` on any built-in agentic metric returns the wording the model needs to be told.
 Constructing `new TurnFaithfulness(null)` only to read the prompt is idiomatic here — the prompt is static.
-<3> `.responseConformsTo(Assessment.class)` enforces the JSON shape at the SDK layer.
+<3> `.responseConformsTo(Assessment.class)` makes the SDK check the reply against those fields.
 A model that returns malformed JSON is retried before the assessor sees it.
 <4> Construct the scorer with the assessor.
 <5> The scorer's `score(Observation)` handles the rest: check that there is anything to ask about, call the assessor, validate the returned score is a share in `[0, 1]`, produce a `Measured`.
@@ -135,7 +135,7 @@ The version is what a recorded score is filed under, and it changes whenever a s
 A scorer that read an empty reply as failed would report a defect the target never had a chance to make.
 <4> A deterministic scorer reads the reply against a stated expectation.
 The regex is the expectation.
-<5> `Asserted(boolean, claim, reason)` is the deterministic outcome shape.
+<5> `Asserted(boolean, claim, reason)` is what a deterministic scorer returns.
 `claim` and `reason` land in the report row so a reviewer can tell why the case decided the way it did.
 
 == The built-in scorers, in one table
@@ -152,7 +152,7 @@ Every scorer tests the same way: build an `Observation` you control and read the
 Deterministic and heuristic scorers score off recorded values and computed measurements, so they run under `mvn verify` with the JVM alone.
 Agentic scorers use a stub `Assessor` returning `Assessment` directly.
 
-For the testkit shape shared with unit tests, see xref:sdk:testing.adoc[Testing SDK components].
+Unit tests use the same TestKit setup, described in xref:testing:unit.adoc[].
 
 == See also
 

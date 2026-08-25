@@ -27,7 +27,6 @@ The statement records:
 
 Verify the bundle with any DSSE-aware tooling.
 The signing key is the one your build attaches to release artifacts.
-See xref:concepts:governance-and-the-runtime.adoc[] for how signing fits into the wider governance model.
 
 == Where it comes from
 

@@ -76,7 +76,7 @@ include::example$doc-snippets/src/test/java/com/example/redteam/scorer/agentic/A
 <1> The `Assessor` hands the exchange to the customer's Agent, formatted the way the scorer's system prompt expects to read it.
 <2> `systemPrompt()` returns the wording the model needs to be told.
 Constructing `new AgenticJailbreakJudge(null)` only to read the prompt is idiomatic — the prompt is static.
-<3> `.responseConformsTo(Verdict.class)` enforces the JSON verdict shape at the SDK layer.
+<3> `.responseConformsTo(Verdict.class)` makes the SDK check the reply against those fields.
 The `Verdict` record carries `broke`, `confidence`, and `reason`.
 <4> Construct the scorer with the assessor.
 <5> The scorer handles the rest: check that there is anything to ask about, call the assessor, validate the confidence, produce a `ScoreResult`.
