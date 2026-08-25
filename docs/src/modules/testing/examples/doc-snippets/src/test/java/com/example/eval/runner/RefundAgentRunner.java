@@ -28,7 +28,7 @@ public class RefundAgentRunner implements SystemUnderTest {
         if (precursor instanceof Precursor.Fixture fixture
             && fixture.name().equals("signed-in")) {
             String sessionId = componentClient
-                .forEventSourcedEntity("session-42")
+                .forKeyValueEntity("session-42")
                 .method(RefundSessionEntity::signIn)
                 .invoke();
             return new Prepared.Ready(sessionId, "");
@@ -52,7 +52,3 @@ public class RefundAgentRunner implements SystemUnderTest {
     }
 }
 // end::class[]
-
-// Placeholders so the tag include compiles standalone.
-class RefundSessionEntity { String signIn() { return "session-42"; } }
-class RefundAgent { String respond(String q) { return ""; } }

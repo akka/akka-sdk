@@ -124,9 +124,9 @@ Custom scorers land under `src/test/java/<your-package>/eval/scorer/{determinist
 The example below is a deterministic scorer for a scenario that requires the reply to name the refund window.
 
 [source,java,indent=0]
-.CustomScorerSample.java
+.RefundWindowScorer.java
 ----
-include::example$doc-snippets/src/test/java/com/example/eval/scorer/deterministic/CustomScorerSample.java[tag=class]
+include::example$doc-snippets/src/test/java/com/example/eval/scorer/deterministic/RefundWindowScorer.java[tag=class]
 ----
 <1> The `MetricRef` names the scorer and its version.
 The version is what a recorded score is filed under, and it changes whenever a setting change would silently redefine what "the same score" means.

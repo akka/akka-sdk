@@ -6,6 +6,11 @@ import akka.evalkit.core.domain.RunOutcome;
 import akka.evalkit.core.metric.AlignmentMetric;
 import akka.evalkit.core.metric.TurnFaithfulness;
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.MemoryProvider;
+import akka.javasdk.annotations.Component;
+import akka.javasdk.client.ComponentClient;
+
+import java.util.UUID;
 // end::imports[]
 
 /**
@@ -16,18 +21,38 @@ import akka.javasdk.agent.Agent;
 public class TurnFaithfulnessSample {
 
     // tag::wiring[]
-    public RunOutcome score(Observation observation, Agent judge) {
-        AlignmentMetric.Assessor assessor = question ->
-            judge.query(question.task() + "\n\n---\n\n" + question.against()) // <1>
-                 .systemMessage(new TurnFaithfulness(null).systemPrompt())     // <2>
-                 .responseConformsTo(AlignmentMetric.Assessment.class)         // <3>
-                 .invoke();
+    public RunOutcome score(Observation observation, ComponentClient componentClient) {
+        String prompt = new TurnFaithfulness(null).systemPrompt(); // <1>
+
+        AlignmentMetric.Assessor assessor = question -> componentClient // <2>
+            .forAgent()
+            .inSession(UUID.randomUUID().toString())                    // <3>
+            .method(AlignmentJudge::assess)
+            .invoke(new AlignmentJudge.Request(
+                prompt, question.task() + "\n\n---\n\n" + question.against()));
 
         var scorer = new TurnFaithfulness(assessor); // <4>
 
         return scorer.score(observation); // <5>
     }
     // end::wiring[]
+
+    // tag::judge[]
+    @Component(id = "alignment-judge")
+    public static class AlignmentJudge extends Agent {
+
+        public record Request(String instructions, String material) {}
+
+        public Effect<AlignmentMetric.Assessment> assess(Request request) {
+            return effects()
+                .memory(MemoryProvider.none())         // <1>
+                .systemMessage(request.instructions())  // <2>
+                .userMessage(request.material())
+                .responseConformsTo(AlignmentMetric.Assessment.class) // <3>
+                .thenReply();
+        }
+    }
+    // end::judge[]
 
     // tag::stub-for-tests[]
     public RunOutcome scoreWithStub(Observation observation) {

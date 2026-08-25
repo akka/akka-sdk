@@ -3,9 +3,11 @@ package com.example.eval.campaign;
 // tag::imports[]
 import akka.evalkit.core.application.CampaignRunner;
 import akka.evalkit.core.domain.CampaignPlan;
+import akka.evalkit.core.domain.Grade;
 import akka.evalkit.core.domain.Lanes;
 import akka.evalkit.core.domain.Precursor;
 import akka.evalkit.core.domain.Rubric;
+import akka.evalkit.core.domain.RunOutcome;
 import akka.evalkit.core.domain.Scenario;
 import akka.evalkit.core.domain.SystemUnderTest;
 
@@ -14,6 +16,8 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+
+import static org.assertj.core.api.Assertions.assertThat;
 // end::imports[]
 
 /**
@@ -42,9 +46,12 @@ public class RefundPolicyCampaign {
 
         SystemUnderTest target = new RefundAgentTarget(); // <4>
 
-        var result = CampaignRunner.run(plan, target, /* router */ null); // <5>
+        CampaignRunner.Judge judge = (transcript, rubric) -> // <5>
+            new RunOutcome.Scored(Grade.of(transcript.scenarioName(), rubric, 9, "states 30 days"));
 
-        result.assertHeldAgainstBaseline("nightly-refund-policy"); // <6>
+        var result = CampaignRunner.run(plan, target, judge); // <6>
+
+        assertThat(result.report().passRate()).isGreaterThan(0.9); // <7>
     }
 }
 // end::class[]

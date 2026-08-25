@@ -51,7 +51,7 @@ For an Akka SDK service, the implementation calls the service's own `ComponentCl
 [source,java,indent=0]
 .RefundAgentRunner.java
 ----
-include::example$doc-snippets/src/test/java/com/example/eval/runner/AgentRunnerSample.java[tag=class]
+include::example$doc-snippets/src/test/java/com/example/eval/runner/RefundAgentRunner.java[tag=class]
 ----
 <1> The `ComponentClient` is injected the same way a service's integration tests receive it.
 <2> `prepare(Precursor)` arranges the state a scenario names.
@@ -69,7 +69,7 @@ JUnit reads the class the same way it reads any other test.
 [source,java,indent=0]
 .RefundPolicyCampaign.java
 ----
-include::example$doc-snippets/src/test/java/com/example/eval/campaign/FirstCampaignSample.java[tag=class]
+include::example$doc-snippets/src/test/java/com/example/eval/campaign/RefundPolicyCampaign.java[tag=class]
 ----
 <1> The system-property gate keeps campaigns out of `mvn verify`.
 The test is compiled and JUnit knows it exists; execution needs `-Deval=true`.
