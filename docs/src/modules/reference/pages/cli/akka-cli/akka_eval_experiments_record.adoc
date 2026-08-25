@@ -1,4 +1,4 @@
-= akka eval campaigns record
+= akka eval experiments record
 
 The finished record: the run's report, or the numbers behind it.
 
@@ -7,7 +7,7 @@ The finished record: the run's report, or the numbers behind it.
 The service composes the report; this prints it as it was written.
 
 ----
-akka eval campaigns record ID [flags]
+akka eval experiments record ID [flags]
 ----
 
 == Options
@@ -19,4 +19,4 @@ akka eval campaigns record ID [flags]
 
 == See also
 
-* xref:reference:cli/akka-cli/akka_eval_campaigns.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_experiments.adoc[]

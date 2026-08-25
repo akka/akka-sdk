@@ -1,4 +1,4 @@
-= akka eval campaigns history
+= akka eval experiments history
 
 Every run of a recurring campaign, most recent first.
 
@@ -7,7 +7,7 @@ Every run of a recurring campaign, most recent first.
 Prints the run history for a named campaign.
 
 ----
-akka eval campaigns history NAME [flags]
+akka eval experiments history NAME [flags]
 ----
 
 == Options
@@ -18,4 +18,4 @@ akka eval campaigns history NAME [flags]
 
 == See also
 
-* xref:reference:cli/akka-cli/akka_eval_campaigns.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_experiments.adoc[]

@@ -1,4 +1,4 @@
-= akka eval campaigns item
+= akka eval experiments item
 
 One item's run, and what each scorer said about it.
 
@@ -7,7 +7,7 @@ One item's run, and what each scorer said about it.
 Prints the transcript and per-scorer verdicts for one scenario.
 
 ----
-akka eval campaigns item CAMPAIGN ITEM [flags]
+akka eval experiments item CAMPAIGN ITEM [flags]
 ----
 
 == Options
@@ -18,4 +18,4 @@ akka eval campaigns item CAMPAIGN ITEM [flags]
 
 == See also
 
-* xref:reference:cli/akka-cli/akka_eval_campaigns.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_experiments.adoc[]

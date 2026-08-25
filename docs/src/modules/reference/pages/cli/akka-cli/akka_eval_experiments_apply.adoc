@@ -1,4 +1,4 @@
-= akka eval campaigns apply
+= akka eval experiments apply
 
 Start a campaign.
 
@@ -7,7 +7,7 @@ Start a campaign.
 Submits a campaign specification to the service and starts it.
 
 ----
-akka eval campaigns apply -f FILE [flags]
+akka eval experiments apply -f FILE [flags]
 ----
 
 == Options
@@ -19,4 +19,4 @@ akka eval campaigns apply -f FILE [flags]
 
 == See also
 
-* xref:reference:cli/akka-cli/akka_eval_campaigns.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_experiments.adoc[]

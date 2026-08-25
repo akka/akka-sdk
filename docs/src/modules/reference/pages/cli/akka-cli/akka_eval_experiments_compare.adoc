@@ -1,4 +1,4 @@
-= akka eval campaigns compare
+= akka eval experiments compare
 
 A campaign against a baseline, item by item.
 
@@ -7,7 +7,7 @@ A campaign against a baseline, item by item.
 Reads by default; `--assert` turns it into a claim that fails on regression.
 
 ----
-akka eval campaigns compare ID --baseline ID [flags]
+akka eval experiments compare ID --baseline ID [flags]
 ----
 
 == Options
@@ -20,4 +20,4 @@ akka eval campaigns compare ID --baseline ID [flags]
 
 == See also
 
-* xref:reference:cli/akka-cli/akka_eval_campaigns.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_experiments.adoc[]

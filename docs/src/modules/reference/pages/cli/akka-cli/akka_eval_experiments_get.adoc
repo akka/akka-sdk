@@ -1,4 +1,4 @@
-= akka eval campaigns get
+= akka eval experiments get
 
 How far a campaign has got, and what it has found.
 
@@ -7,7 +7,7 @@ How far a campaign has got, and what it has found.
 Prints the current campaign state.
 
 ----
-akka eval campaigns get ID [flags]
+akka eval experiments get ID [flags]
 ----
 
 == Options
@@ -18,4 +18,4 @@ akka eval campaigns get ID [flags]
 
 == See also
 
-* xref:reference:cli/akka-cli/akka_eval_campaigns.adoc[]
+* xref:reference:cli/akka-cli/akka_eval_experiments.adoc[]
