@@ -157,7 +157,7 @@ Unit tests use the same TestKit setup, described in xref:testing:unit.adoc[].
 == See also
 
 * xref:testing:evaluation/getting-started.adoc[] — a worked example from empty project to first campaign.
-* xref:testing:evaluation/scenarios-and-rules.adoc[] — how scenarios and rules bind to scorers.
+* xref:testing:evaluation/scenarios-and-rules.adoc[] — what a scenario declares, and which scorer settles it.
 * xref:testing:evaluation/campaigns.adoc[] — how a plan of scenarios reaches a target.
 * xref:testing:evaluation/reports.adoc[] — how verdicts read in the report.
 * xref:testing:red-teaming/scorers.adoc[] — adversarial scorers, same three-family model.

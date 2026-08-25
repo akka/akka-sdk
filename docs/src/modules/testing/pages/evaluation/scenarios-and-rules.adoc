@@ -1,99 +1,122 @@
-= Scenarios and rules
+= Scenarios and requirements
 
 include::ROOT:partial$include.adoc[]
 
-:page-summary: A scenario is one test case with a stable id; a rule is a named requirement the target upholds across the scenarios that reference it. Reports read verdicts scenario-by-scenario, rule-by-rule.
-:page-when-to-use: Use when a rule needs a stable identity across runs, when a scenario needs a multi-turn precursor, or when the report should group verdicts by hazard.
+:page-summary: A scenario is one test case with a stable id. Every run of one scenario is gathered into a requirement, and the report reads verdicts requirement by requirement rather than run by run.
+:page-when-to-use: Use when a case needs a stable identity across runs, when a case needs the conversation seeded before the graded turn, or when reading how a repeated scenario reaches one verdict.
 :page-related: xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/reports.adoc[]
 
-A scenario is one test case the target reads and the runner scores.
-A rule is a named requirement several scenarios share.
-Reports group verdicts by rule, so a change that flips one scenario's verdict reads as movement in the rule it belongs to.
+A scenario is one test case the target reads and a scorer settles.
+A requirement is one scenario together with every run of it.
+
+Running a scenario three times produces three runs and one requirement.
+The report reads requirements, so a scenario that passes twice and fails once is one varied
+requirement rather than a mixture of passes and failures.
 
 == The scenario record
 
-Scenarios live under `src/test/resources/eval/datasets/` as JSONL, one per line.
-Every scenario names an id, a prompt, and the rule it addresses.
-
-[source,json]
-----
-{
-  "id": "case-1",
-  "prompt": "What is our refund window?",
-  "expected": "14 days",
-  "rule": "answers_refund_window",
-  "hazards": []
-}
-----
-
-`id` is the stable identifier reports reference.
-`prompt` is the input sent to the target.
-`expected` is the reference answer scorers read against.
-`rule` is the rule this scenario is expected to satisfy.
-`hazards` carries taxonomy-prefixed hazard keys (`ailuminate:privacy`, `owasp:llm01_prompt_injection`) so reports group verdicts by harm type.
-See xref:testing:red-teaming/reference/hazards.adoc[] for the taxonomies.
-
-== Multi-turn scenarios
-
-A scenario carries an optional `precursor` that seeds the conversation before the rule is checked.
-The precursor plays into the target as a conversation opener; the `prompt` is the turn that gets scored.
-
-[source,json]
-----
-{
-  "id": "case-2",
-  "precursor": [
-    {"role": "user", "content": "I bought a shirt"}
-  ],
-  "prompt": "How long do I have to return it?",
-  "expected": "14 days",
-  "rule": "answers_refund_window"
-}
-----
-
-The runner records both the precursor turns and the graded turn, so a scorer reading tool calls or model calls sees the whole exchange.
-
-== The rule declaration
-
-Rules are declared in the campaign class and reference their scorers there.
-Every rule declares the hazards it covers so the report can group results by harm type.
+`Scenario` is a Java record. Build the list in the campaign class; evalkit ships no reader
+for an on-disk format, so where a project keeps its cases is its own choice.
 
 [source,java,indent=0]
 ----
-Rule.of("answers_refund_window")
-    .describedAs("The reply names 14 days as the refund window")
-    .coveringHazards(Set.of(Hazard.PRIVACY));
+new Scenario(
+    "refund-timing",                           // <1>
+    Optional.of("GenUC-16a"),                  // <2>
+    Optional.empty(),                          // <3>
+    List.of("30 days"),                        // <4>
+    new Precursor.None(),                      // <5>
+    "when do I get my refund?",                // <6>
+    "the reply states a 30-day refund window"); // <7>
 ----
+<1> The stable identifier the report references.
+<2> The specification node the answer should come from, when the target tracks one.
+Naming it lets the scenario be settled by comparison instead of by a model: a tick rather
+than a paid, slightly random opinion.
+<3> A `MetricRef` when this scenario should be settled by a named metric.
+<4> Wording the reply must contain.
+Most scenarios require none, and a shorter constructor omits this.
+<5> What has to happen before the graded turn.
+See <<_precursors>>.
+<6> The turn that gets scored.
+<7> What a correct answer does, in a sentence.
+This is what a judge reads the reply against.
 
-A rule that covers no hazards is still valid.
-The report shows its verdicts under the pass rate, but the rule is left out of the hazard rollup.
+Which scorer settles a scenario follows from what it declares.
+`ScorerRouter.byExpectation` sends a named spec node to comparison, required phrases to
+`ContainsAll`, a named metric to that metric, and anything else to the judge.
 
-== The four run outcomes
+[#_precursors]
+== Precursors
 
-Every scenario ends in one of four outcomes.
-Which outcome a scenario carries depends on the scorer that decided it.
+`Precursor` is a sealed interface with four cases.
 
-`Asserted` +
-A deterministic scorer produced a pass or fail from comparison.
-The claim and the reason appear on the report row so a reviewer can tell why the case decided the way it did.
+`None` +
+The graded turn is the first thing said.
 
-`Measured` +
-A heuristic scorer produced a share against a threshold.
-The value and the pass flag appear on the row.
+`Replay(List<String> userTurns)` +
+The listed turns are said first, and the target answers each.
+The conversation is real, so a scenario about the fourth turn is asked at the fourth turn.
 
-`Scored` +
-An agentic scorer produced a graded verdict.
-The band and the model's reason appear on the row.
+`Fixture(String name, Map<String, String> parameters)` +
+The target puts itself into a named state.
+The target declares what it can build in `SystemUnderTest.fixtures()`, and a plan naming
+one it cannot is refused before the campaign runs.
 
-`Inconclusive` +
+`FailingTool(String tool, String message, Precursor then)` +
+A named tool is made to fail, then the wrapped precursor runs.
+Used for scenarios about recovery.
+A target that cannot break the named tool causes the campaign to be refused, because
+answering with a working tool would report the system as recovering from a failure that
+never happened.
+
+Only `Replay` proves the system reached the state under its own power.
+A fixture is a seeded starting point, and the report counts it as one.
+
+== The six run outcomes
+
+Every run ends in one of six outcomes.
+Which one depends on the scorer that settled it.
+
+`Asserted(passed, expected, actual)` +
+A deterministic scorer compared two things.
+Both sides appear on the report row, which is why it can print `expected GenUC-16a, found GenUC-17a`.
+
+`Measured(metricId, metricVersion, value, threshold, passed, note)` +
+A heuristic scorer computed a value against a threshold.
+
+`Scored(Grade)` +
+A judge returned a band against a rubric.
+
+`Inconclusive(reason)` +
 The scorer had nothing to read.
-The row appears in the report under the "What it cannot tell you" panel so the reviewer sees the case exists — the pass rate leaves the case out rather than counting it either way.
+The pass rate leaves the run out rather than counting it either way.
 
-For how each family produces each outcome, see xref:testing:evaluation/scorers.adoc[].
-For how the outcomes read on the rendered report, see xref:testing:evaluation/reports.adoc[].
+`NotReached(cause, reason, precursor)` +
+The run never got to the graded turn: the fixture would not build, or the system said nothing.
+A fact about the harness, not a verdict on the system.
+
+`Failed(reason)` +
+The run itself broke.
+
+The last three are why the outcome type is not a number.
+A `double` has no way to say "this was never asked", and a report that scores absence as
+zero accuses the system of something it was never given the chance to do.
+
+== From runs to a verdict
+
+`RequirementResult` gathers a scenario's runs and answers `verdict()` with one of five
+values: `PASSED`, `FAILED`, `VARIED`, `UNDECIDED`, `NO_RESULT`.
+
+`VARIED` is the one worth repeating for.
+A requirement the system meets eight times in ten still passes five runs about a third of
+the time, and one run cannot tell that apart from a requirement it always meets.
+
+`UNDECIDED` and `NO_RESULT` are kept apart on purpose: a judge that would not commit and a
+run that produced no evidence at all are different facts about a campaign.
 
 == See also
 
 * xref:testing:evaluation/scorers.adoc[] — the scorers that produce each outcome.
-* xref:testing:evaluation/campaigns.adoc[] — how rules bind to scenarios inside a campaign.
+* xref:testing:evaluation/campaigns.adoc[] — how scenarios are bundled into a campaign.
 * xref:testing:evaluation/reports.adoc[] — how verdicts read on the rendered report.

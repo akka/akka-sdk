@@ -12,7 +12,7 @@ The baseline file itself is the audit trail — whoever approved the promotion i
 
 == How a campaign compares against a baseline
 
-`akka.evalkit.core.domain.Scoring.compare(List<Grade>, List<Grade>)` reads two grade lists and returns the per-rule deltas the campaign asserts against.
+`akka.evalkit.core.domain.Scoring.compare(List<Grade>, List<Grade>)` reads two grade lists and returns the per-scenario deltas the campaign asserts against.
 A campaign that wants a comparison loads its baseline file, runs the current campaign, and calls `Scoring.compare` on the two grade lists.
 
 == Where baselines live

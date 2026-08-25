@@ -2,13 +2,13 @@
 
 include::ROOT:partial$include.adoc[]
 
-:page-summary: An evaluation suite runs a service against a dataset of scenarios and records a verdict per rule. Reports carry pass rates, the cases that failed, and the cost of the run — enough for a CI job to gate a merge on regression.
-:page-when-to-use: Use when a service is worth measuring. The reply's correctness, the tool usage, the latency budget, the faithfulness of a retrieved answer — anything a rule can name.
+:page-summary: An evaluation suite runs a service against a set of scenarios and records a verdict for each. Reports carry pass rates, the cases that failed, and the cost of the run — enough for a CI job to gate a merge on regression.
+:page-when-to-use: Use when a service is worth measuring. The reply's correctness, the tool usage, the latency budget, the faithfulness of a retrieved answer.
 :page-related: xref:testing:evaluation/getting-started.adoc[], xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/scenarios-and-rules.adoc[], xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/reports.adoc[], xref:testing:red-teaming/index.adoc[]
 :page-persona: developer
 
 Evaluation is how a project measures a service against a stated expectation.
-A suite runs the service through a fixed dataset, records every interaction, and turns each reply into a verdict for one rule.
+A suite runs the service through a fixed set of scenarios and turns each reply into a verdict.
 The rendered report lists the failing cases one by one, and the CI job fails the build when the pass rate drops or a case that used to pass now fails.
 
 The dependency is `evalkit`.
@@ -18,25 +18,29 @@ The CLI is `akka eval`.
 == The parts of a campaign
 
 `Scenario` +
-An input, an optional expected output, an optional multi-turn precursor, and metadata.
-The scenarios of one campaign live in a JSONL file under `src/test/resources/eval/datasets/`.
-
-`Rule` +
-A named requirement the service upholds under a set of scenarios.
-Every rule names the scenarios it applies to and the scorer that decides its verdict.
+A graded turn, what a correct answer does, an optional specification node or metric, and an
+optional precursor that seeds the conversation first.
+Scenarios are Java records; evalkit ships no reader for an on-disk format.
 
 `Scorer` +
-The function that decides one rule for one scenario.
-Three families ship: deterministic (comparison against a stated expectation), heuristic (computation from the recorded interaction against a threshold), and agentic (a language-model judge configured with a shipped system prompt).
+One method that turns a recorded run into an outcome.
+Three families ship: deterministic (comparison against a stated expectation), heuristic
+(computation from the recorded interaction against a threshold), and agentic (a
+language-model judge configured with a shipped system prompt).
 See xref:testing:evaluation/scorers.adoc[].
 
+`Requirement` +
+One scenario together with every run of it.
+Repeating a campaign produces several runs and one requirement, and the report reads
+requirements so a scenario that passes twice and fails once is one varied requirement.
+
 `Campaign` +
-The JUnit class that assembles scenarios, rules, and scorers into a named unit and runs them through the runner.
+The JUnit class that assembles the scenarios, the target and the scorers into a named unit
+and runs them.
 Gated on `-Deval=true` so `mvn verify` compiles the class without running it.
 
 `Run` +
 One execution of a campaign against one target build.
-Every run has an id, a start timestamp, and a rendered report.
 
 `Report` +
 The output of a run.
