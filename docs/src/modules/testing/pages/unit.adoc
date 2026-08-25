@@ -54,7 +54,7 @@ Each entry links to the deterministic-testing section on that component's own pa
 | xref:sdk:workflows.adoc[]
 
 | Timer
-| Advanceable virtual clock; assert on scheduled firings.
+| A virtual clock the test advances; assert on scheduled firings.
 | xref:sdk:timed-actions.adoc[]
 
 | Consumer

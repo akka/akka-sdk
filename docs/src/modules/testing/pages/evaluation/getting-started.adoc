@@ -17,7 +17,7 @@ An evaluation campaign has four parts.
 The **target** is any implementation of `SystemUnderTest` — for a service on the Akka SDK, the implementation calls the service's own `ComponentClient`.
 The **dataset** is a set of `Scenario` records, each naming a precursor state, a graded turn, and the outcome the target is expected to reach.
 The **campaign** is a JUnit test class that assembles the dataset and the target, invokes `CampaignRunner.run(...)`, and asserts against the result.
-The **runner** in `evalkit-core` walks every scenario in parallel lanes, records the interactions, and returns a `CampaignResult` that carries the assertions the campaign uses.
+The **runner** in `evalkit` walks every scenario in parallel lanes and returns a `CampaignRunner.Result` carrying what each run produced.
 
 The suite is a test scope dependency, so a customer's production artifact carries no evalkit code.
 Campaigns are gated on `-Deval=true` so `mvn verify` compiles the classes without running them; `mvn verify -Deval=true` runs them.
@@ -76,16 +76,18 @@ The test is compiled and JUnit knows it exists; execution needs `-Deval=true`.
 <2> Every scenario names an id, a precursor, the graded turn, and the outcome the target is expected to reach.
 <3> The plan collects the scenarios into a campaign, sets the number of parallel lanes, and names the rubric an agentic scorer would use.
 <4> The adapter from the previous section.
-<5> `CampaignRunner.run(...)` walks every scenario, calls the adapter, scores each run, and returns a `CampaignResult`.
-<6> The result carries the assertions.
-`assertHeldAgainstBaseline` compares this run to a saved baseline and fails the test on regression.
+<5> The judge settles the scenarios that name neither a specification node nor a metric.
+<6> `CampaignRunner.run(...)` walks every scenario, calls the adapter, scores each run, and returns a `CampaignRunner.Result`.
+<7> The result carries no assertions of its own, so the campaign asserts the way any JUnit test does.
 
 == What a run reports
 
 `mvn verify -Deval=true` runs the campaign.
-The rendered report lands under `target/evalkit/reports/<campaign>.txt`.
-The report is plain 80-column ASCII and prints between one and seven panels in a fixed order.
-A panel appears only when the run has something to put in it, and the numbering starts at 1 with no gaps.
+`Panels.render(result.asRecord(plan, reporting))` returns the report as a `String`, and the
+campaign writes it wherever the project keeps them.
+The report is plain 80-column ASCII and prints between four and seven panels in a fixed
+order: four always appear, three only when the run has something to put in them, and the
+numbering starts at 1 with no gaps.
 
 The example below is the report a single-run refund-policy campaign produces (`Panels.render()` output from a six-requirement fixture with two passes, two failures, one undecided, and one no-result):
 
@@ -195,8 +197,9 @@ For every panel and how each column composes, see xref:testing:evaluation/report
 
 | `src/test/java/<pkg>/eval/runner/`     | The `SystemUnderTest` adapter for this project.
 | `src/test/java/<pkg>/eval/scorer/`     | Scorers, grouped by family (see xref:testing:evaluation/scorers.adoc[]).
-| `src/test/java/<pkg>/eval/dataset/`    | `ScenarioSource` implementations and dataset loaders.
-| `src/test/resources/eval/datasets/`    | The scenarios themselves as JSONL.
+| `src/test/java/<pkg>/eval/dataset/`    | The project's `ScenarioSource` implementation and dataset loaders.
+| `src/test/java/<pkg>/eval/reports/`    | Report rendering and where a run writes it.
+| `src/test/resources/eval/datasets/`    | Dataset files the project's own loader reads.
 | `src/test/resources/eval/rubrics/`     | Agentic-scorer rubrics, versioned by filename.
 | `src/test/resources/eval/baselines/`   | Prior runs the campaign compares against.
 | `target/evalkit/reports/`              | Rendered reports (gitignored).
@@ -206,6 +209,6 @@ For every panel and how each column composes, see xref:testing:evaluation/report
 
 * xref:testing:evaluation/scorers.adoc[] — the three families of scorer and the built-ins.
 * xref:testing:evaluation/scenarios-and-rules.adoc[] — what a scenario declares, and which scorer settles it.
-* xref:testing:evaluation/campaigns.adoc[] — the assertions available on `CampaignResult`.
+* xref:testing:evaluation/campaigns.adoc[] — building a plan, and rendering a report from a run.
 * xref:testing:evaluation/reports.adoc[] — every panel of the rendered report.
 * xref:testing:evaluation/baselines.adoc[] — how to gate CI on regression.

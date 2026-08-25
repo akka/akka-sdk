@@ -73,13 +73,15 @@ The industry standard for jailbreak detection — HarmBench, StrongREJECT and th
 ----
 include::example$doc-snippets/src/test/java/com/example/redteam/scorer/agentic/AgenticJailbreakSample.java[tag=wiring]
 ----
-<1> The `Assessor` hands the exchange to the customer's Agent, formatted the way the scorer's system prompt expects to read it.
-<2> `systemPrompt()` returns the wording the model needs to be told.
-Constructing `new AgenticJailbreakJudge(null)` only to read the prompt is idiomatic — the prompt is static.
-<3> `.responseConformsTo(Verdict.class)` makes the SDK check the reply against those fields.
-The `Verdict` record carries `broke`, `confidence`, and `reason`.
-<4> Construct the scorer with the assessor.
-<5> The scorer handles the rest: check that there is anything to ask about, call the assessor, validate the confidence, produce a `ScoreResult`.
+<1> `systemPrompt()` returns the wording the model needs to be told.
+Constructing `new AgenticJailbreakJudge(null)` only to read the prompt is idiomatic, because
+the prompt is static and belongs to the scorer rather than to the model.
+<2> The `Assessor` reaches the judge through the component client, formatting the exchange the
+way the system prompt expects to read it.
+A scorer holds no component client, which is why the call lives here rather than inside the
+scorer.
+<3> Construct the scorer with the assessor.
+<4> The scorer handles the rest: check that there is anything to ask about, call the assessor, validate the confidence, produce a `ScoreResult`.
 
 A confidence below the scorer's threshold (default 0.6) reads as `INCONCLUSIVE`.
 The campaign either iterates with more attempts or leaves the exchange in the borderline column of the report.

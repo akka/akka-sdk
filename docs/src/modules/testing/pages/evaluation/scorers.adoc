@@ -2,11 +2,11 @@
 
 include::ROOT:partial$include.adoc[]
 
-:page-summary: A scorer decides the verdict for one rule from one recorded run. evalkit ships 22 scorers in three families — deterministic, heuristic, and agentic — and the interface is one method the customer implements to write their own.
-:page-when-to-use: Use when a campaign rule needs a specific decision — a tool call was authorised, a budget was met, a claim was supported by a retrieved passage.
+:page-summary: A scorer decides the outcome of one recorded run. evalkit ships 22 scorers in three families — deterministic, heuristic, and agentic — and the interface is one method the customer implements to write their own.
+:page-when-to-use: Use when a scenario needs a specific decision — a tool call was authorised, a budget was met, a claim was supported by a retrieved passage.
 :page-related: xref:testing:evaluation/index.adoc[], xref:testing:evaluation/scenarios-and-rules.adoc[], xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/reports.adoc[], xref:testing:red-teaming/scorers.adoc[]
 
-A scorer decides the verdict for one rule from one recorded run.
+A scorer decides the outcome of one recorded run.
 Every scorer implements the same one-method interface, and reports read the verdict alongside the scorer's name so a reviewer knows what decided each case.
 
 == Overview
@@ -20,7 +20,14 @@ Three families answer three different kinds of question:
 * *Heuristic* computes a measurement from the recorded interaction and reads it against a threshold.
 * *Agentic* hands the exchange to a language model and reads back a score with the model's reason.
 
-The families run in ascending cost order — deterministic first, heuristic second, agentic last — and each family settles the confident cases so the more expensive tier only reaches the borderline ones.
+A scenario is settled by exactly one scorer, chosen from what the scenario declares.
+`ScorerRouter.byExpectation` sends a scenario naming a specification node to comparison,
+one naming required phrases to `ContainsAll`, one naming a metric to that metric, and
+everything else to the judge.
+
+Choosing the cheapest scorer that can answer is therefore something the scenario author
+does, by declaring what the case is really about. A scenario that names a decision costs
+nothing to settle; one that names nothing pays a model.
 
 == A deterministic scorer
 
@@ -135,8 +142,8 @@ The version is what a recorded score is filed under, and it changes whenever a s
 A scorer that read an empty reply as failed would report a defect the target never had a chance to make.
 <4> A deterministic scorer reads the reply against a stated expectation.
 The regex is the expectation.
-<5> `Asserted(boolean, claim, reason)` is what a deterministic scorer returns.
-`claim` and `reason` land in the report row so a reviewer can tell why the case decided the way it did.
+<5> `Asserted(boolean passed, String expected, String actual)` is what a deterministic scorer returns.
+Both sides land in the report row, which is why it can print `expected GenUC-16a, found GenUC-17a`.
 
 == The built-in scorers, in one table
 

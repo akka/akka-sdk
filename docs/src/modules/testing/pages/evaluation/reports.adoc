@@ -2,13 +2,24 @@
 
 include::ROOT:partial$include.adoc[]
 
-:page-summary: An evaluation report prints between one and seven panels in a fixed order. Each panel answers one question about the run — what passed, what failed, what varied between repeats, how quality was measured, how the judge scored, what the run could not tell you, and what it cost.
+:page-summary: An evaluation report prints between four and seven panels in a fixed order. Each panel answers one question about the run — what passed, what failed, what varied between repeats, how quality was measured, how the judge scored, what the run could not tell you, and what it cost.
 :page-when-to-use: Read on every failing case in CI, and on every intentional target change before shipping. The report is what a reviewer reads to tell whether the run passed.
 :page-related: xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/baselines.adoc[]
 
-`Panels.render()` writes a plain 80-column ASCII report to `target/evalkit/reports/<campaign>.txt`.
-The report prints a header followed by the panels the run has content for, numbered 1 through 7 in the order they appear.
-A panel with nothing to say is left out and the numbering closes the gap; the varied panel appears only when `repeating(N > 1)` produced any varied requirement, the judge panel only when any requirement was judged, the "what it cannot tell you" panel only when anything was undecided or produced no result.
+`Panels.render(RunRecord)` returns a plain 80-column ASCII report as a `String`.
+Where it is written is the caller's choice; see xref:testing:evaluation/campaigns.adoc[] for
+turning a run into the record it renders from.
+The report prints a header followed by the panels the run has content for, numbered in the
+order they appear.
+Four always print: what the run found, how quality was measured, what it cannot tell you,
+and what it cost.
+Three are conditional, and a panel with nothing to say is left out with the numbering
+closing the gap: the failed panel when any requirement failed, the varied panel when
+`repeating(N > 1)` produced a varied requirement, and the judge panel when anything was
+judged.
+
+"What it cannot tell you" always prints, including when it has nothing to report. A report
+that silently omitted its own limits would read as a report with none.
 
 Every example below is the exact byte output the tool produces.
 

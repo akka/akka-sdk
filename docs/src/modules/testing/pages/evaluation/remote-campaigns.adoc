@@ -21,32 +21,38 @@ The report the customer fetches back is the same report a local run would produc
 
 `akka.evalkit.client.RemoteCampaign` uploads the dataset, submits the campaign spec to the service, and polls for the finished record.
 The service's `ExperimentWorkflow` owns durability, paging and retries.
-`RemoteCampaign` lives in the `akka.evalkit.client` package alongside `OfflineEvalsClient` — evalkit's crossing point to the running service — and takes an Akka SDK `HttpClientProvider` in its constructor.
+`RemoteCampaign` lives in the `akka.evalkit.client` package alongside `OfflineEvalsClient` — evalkit's crossing point to the running service. `RemoteCampaign.run(httpClients, spec)` takes an Akka SDK `HttpClientProvider` and a `Spec` naming the service, the dataset and the scenarios.
 
-The local shell of the campaign is identical whether the run is local or remote.
-Switching between them is a one-line change on the `TargetDispatch` used by the runner.
+A local run and a remote run are separate entry points, not one switch: `CampaignRunner.run`
+executes in process, and `RemoteCampaign.run` posts an experiment to the service and polls
+for its record.
 
 == Submitting from the CLI
 
-  akka eval campaigns apply -f my-campaign.yaml
+  akka eval experiments apply -f my-experiment.yaml
 
 The service returns a campaign id; follow progress with:
 
-  akka eval campaigns get <campaign-id>
+  akka eval experiments get <experiment-id>
 
 Fetch the final record:
 
-  akka eval campaigns record <campaign-id>
+  akka eval experiments record <experiment-id>
 
 == Service endpoints
 
 The client speaks these endpoints:
 
-* `POST /api/experiments` — apply.
-* `GET  /api/experiments/pass:[{id}]` — status.
-* `GET  /api/experiments/pass:[{id}]/record` — final record.
+* `POST /api/datasets/imports` — upload the dataset.
+* `GET  /api/datasets/imports/pass:[{id}]` — import progress.
+* `POST /api/experiments` — start the experiment.
+* `GET  /api/experiments/pass:[{id}]` — status, including the reasons a refused run gives.
+* `GET  /api/experiments/pass:[{id}]/record` — final record, once one has been written.
 * `GET  /api/experiments/pass:[{id}]/compare/pass:[{baseline}]` — comparison.
-* `POST /api/experiments/pass:[{id}]/replay` — deterministic replay.
+
+The service also serves `GET /api/experiments/pass:[{id}]/items/pass:[{itemId}]`,
+`GET /api/experiments/history/pass:[{name}]`, `GET /api/experiments/evaluators` and
+`GET /api/experiments/models`, which the client does not call.
 
 The default endpoint is set with `EVAL_URL`.
 

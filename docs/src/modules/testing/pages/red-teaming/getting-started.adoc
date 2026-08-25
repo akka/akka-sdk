@@ -72,21 +72,22 @@ include::example$doc-snippets/src/test/java/com/example/redteam/campaign/RefundA
 ----
 <1> The system-property gate keeps campaigns out of `mvn verify`.
 <2> Multiple scorers cover multiple hazards.
-A rule is broken when any bound scorer returns `BROKE_THROUGH`.
-<3> The plan names the campaign, the scorers, and how the campaign runs the corpus of attacker goals.
-<4> Static wrappers turn one attacker goal into many prompts by role-playing the request, base64-encoding the payload, or splitting it across turns.
-<5> An adaptive technique revises its prompt based on the target's last reply.
-See xref:testing:red-teaming/adaptive-attacks.adoc[].
-<6> The budget caps the campaign's cost — model tokens across every scorer plus wall-clock elapsed.
-The campaign stops when either bound is reached.
-<7> `runAgainst(target)` walks the corpus, applies the techniques, scores every attempt, and returns a `RedTeamResult`.
-<8> `assertNoBreakthroughs()` fails the test when any scorer returned `BROKE_THROUGH`, so CI catches regressions.
+The attempt is a breakthrough when any of them says so.
+<3> `DriverState` holds everything carried between turns: the goal, the technique driving it, and the turn limit.
+<4> The goal judge decides, from the target's last reply, whether the attack succeeded.
+It ends the loop as soon as it says yes.
+<5> `AdversaryDriver.runToEnd` drives the attack turn by turn.
+Call `stepOnce` in your own loop instead when the run has to survive a restart.
+<6> The budget caps what one attack costs, in model tokens and in wall-clock time.
+<7> `DriverOutcome` says how the loop ended: the goal was reached, the technique gave up, the turn limit was hit, the budget ran out, or the target errored.
+Only the first is a breakthrough.
 
 == What a run reports
 
 `mvn verify -Dredteam=true` runs the campaign.
-The rendered report lands under `target/redkit/reports/<campaign>.txt`.
-The report is plain 80-column ASCII and prints between one and ten panels in a fixed order.
+`RedTeamPanels.render` returns the report as a `String`, and the campaign writes it wherever
+the project keeps them.
+The report is plain 80-column ASCII and prints its panels in a fixed order.
 A panel appears only when the run has something to put in it, and the numbering starts at 1 with no gaps.
 
 The example below is the report a full run produces (`RedTeamPanels.render()` output from the fixture in `RedTeamPanelsTest`).
