@@ -1,0 +1,16 @@
+= Operators
+:page-summary: Inference operators are Kubernetes operators that run and maintain the infrastructure serving inference requests.
+:page-persona: operator
+
+include::ROOT:partial$include.adoc[]
+
+An inference operator is a Kubernetes operator that runs and maintains the infrastructure serving inference requests. These operators are part of xref:operations:akka-platform.adoc[Akka Automated Operations].
+
+TODO
+
+include::partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:vllm.adoc[vLLM]
+* xref:operations:index.adoc[Operating]

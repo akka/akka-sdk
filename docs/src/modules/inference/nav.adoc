@@ -1,0 +1,9 @@
+// Inference
+* xref:inference:index.adoc[Inference]
+** xref:inference:static-routing.adoc[Static routing]
+** xref:inference:semantic-routing.adoc[Semantic routing]
+*** xref:inference:semantic-routing/defining-use-cases.adoc[Defining use cases]
+*** xref:inference:semantic-routing/routing-use-cases.adoc[Routing use cases]
+** xref:inference:akka-cli.adoc[Akka CLI]
+** xref:inference:vllm.adoc[vLLM]
+** xref:inference:operators.adoc[Operators]

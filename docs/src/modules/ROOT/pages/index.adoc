@@ -77,6 +77,19 @@ Akka is a full-stack platform for agentic AI: developer experience, runtime, and
 [.grid-item]
 --
 [discrete]
+== xref:inference:index.adoc[Inference]
+
+**Run AI models** — routing requests to models and serving them on infrastructure you control.
+
+* xref:inference:static-routing.adoc[Static routing]
+* xref:inference:semantic-routing.adoc[Semantic routing]
+* xref:inference:vllm.adoc[vLLM]
+* xref:inference:operators.adoc[Operators]
+--
+
+[.grid-item]
+--
+[discrete]
 == xref:reference:index.adoc[Reference]
 
 **Look it up** — CLI, APIs, configuration, and release notes.

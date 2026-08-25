@@ -1,0 +1,55 @@
+= Inference
+:page-summary: Inference is the execution of a trained AI model on an input to produce an output.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Inference is the execution of a trained AI model on an input to produce an output. Code performs inference when it sends a prompt to a large language model, requests an embedding, or classifies a piece of text.
+
+Inference can be used by applications to deliver results to customers and it can be used by developers to produce code, agentic or otherwise.
+
+== How an inference call differs from a function call
+
+A function call is deterministic. It receives arguments, runs a fixed sequence of instructions, and returns a value of a declared type. The same arguments produce the same value.
+
+An inference call has the following properties:
+
+* _The result varies_. The same input can produce a different output on the next call.
+_* The result is untyped at the language level_. A model returns text, and the calling code parses and validates it. See xref:sdk:agents/structured.adoc[Structured responses].
+* _Latency can be measured in hundreds of milliseconds to minutes._ Communicating with models is a streaming operation that can take a long time to finish. These long-running streams often present their own infrastructure and development challenges.
+* _Providers bill per token_, so the cost of a call depends on the size of the input, the context, and the output.
+
+These properties determine what the surrounding code has to do. It validates the response before using it. It handles a malformed or failed response as a normal path, described in xref:sdk:agents/failures.adoc[Failure handling]. It sets a timeout and a token budget for each call, and it defines the behavior when a model is unavailable and failover rules when exceptions occur.
+
+These properties apply to any use of a model, whether you're ranking search results or scoring transactions for fraud.
+
+== Inference in agentic systems
+
+An agent uses a model to decide what to do next. Selecting a tool, judging whether a task is complete, and producing an answer are inference calls. See xref:concepts:ai-agents.adoc[AI agents] for the concept and xref:sdk:agents.adoc[Agents] for the component.
+
+One request to an agentic system typically produces multiple inference calls. An agent that plans, calls tools, and checks its own output makes several calls in sequence. Systems that run agents in parallel or pass work between them increase the count further. See xref:sdk:agents/orchestrating.adoc[Multi-agent orchestration]. 
+
+The number of calls per request influences four characteristics of the system:
+
+* _Sequential calls add their latencies_, so response time follows the depth of the call chain.
+* _Cost scales with the number of calls_. A request that expands into twenty model calls costs approximately twenty times a single call.
+* The probability that at least one call in a request fails increases with the number of calls, so _retry and fallback behavior applies to every call_.
+* Agents in the same system share provider rate limits and serving capacity. This catches a lot of people by surprise when defining per-app quotas that can run out of provider quota rapidly.
+
+When other inference calls are used to judge the first inferences, this number can scale out exponentially.
+
+== In this section
+
+* xref:inference:static-routing.adoc[*Static routing*]: Selecting a destination from a rule declared in configuration.
+* xref:inference:semantic-routing.adoc[*Semantic routing*]: Selecting a destination from the meaning of a request.
+* xref:inference:akka-cli.adoc[*Akka CLI*]: Inference commands in the `akka` CLI.
+* xref:inference:vllm.adoc[*vLLM*]: Serving models on infrastructure you control.
+* xref:inference:operators.adoc[*AAO Operators*]: Running and maintaining inference infrastructure.
+
+include::partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:sdk:model-provider-details.adoc[AI model provider configuration]
+* xref:sdk:integrations/ai-and-models.adoc[AI & models]
+* xref:sdk:agents/llm_eval.adoc[LLM evaluation]
