@@ -22,7 +22,7 @@ The **runner** in `evalkit-core` walks every scenario in parallel lanes, records
 The suite is a test scope dependency, so a customer's production artifact carries no evalkit code.
 Campaigns are gated on `-Deval=true` so `mvn verify` compiles the classes without running them; `mvn verify -Deval=true` runs them.
 
-== Add the eval pack
+== Add the dependency
 
 `akka eval init` overlays the source tree onto the project, edits the pom to add the `evalkit` dependency at test scope, and reports what it wrote.
 

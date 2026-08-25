@@ -11,7 +11,7 @@ Evaluation is how a project measures a service against a stated expectation.
 A suite runs the service through a fixed dataset, records every interaction, and turns each reply into a verdict for one rule.
 The rendered report lists the failing cases one by one, and the CI job fails the build when the pass rate drops or a case that used to pass now fails.
 
-The pack is `evalkit`.
+The dependency is `evalkit`.
 The customer-facing source root is `src/test/java/<groupId>.eval/`, alongside the project's other tests.
 The CLI is `akka eval`.
 

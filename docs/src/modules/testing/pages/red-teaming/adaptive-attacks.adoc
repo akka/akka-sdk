@@ -3,7 +3,7 @@
 include::ROOT:partial$include.adoc[]
 
 :page-summary: An adaptive attack is a stateful attacker that revises each next prompt based on the target's last reply. Runs inside a durable driver, so a mid-attack crash resumes from the same state.
-:page-when-to-use: Use when a target resists the first prompt and the attacker's job is to find a way through. PAIR, Crescendo, and Tree-of-Attacks are the standard techniques the pack ships.
+:page-when-to-use: Use when a target resists the first prompt and the attacker's job is to find a way through. PAIR, Crescendo, and Tree-of-Attacks are the standard techniques `evalkit-redteam` ships.
 :page-related: xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/reports.adoc[]
 
 An adaptive attack chooses each next prompt from the target's last reply.

@@ -22,7 +22,7 @@ Red-team suites are gated on `-Dredteam=true`.
 `mvn verify` compiles the classes without running them; `mvn verify -Dredteam=true` runs them.
 The runtime enforces a token and wall-clock budget so a campaign cannot run away with the customer's spend.
 
-== Add the redteam pack
+== Add the dependency
 
 `akka redteam init` overlays the source tree onto the project, edits the pom to add the `evalkit-redteam` dependency at test scope, and reports what it wrote.
 
