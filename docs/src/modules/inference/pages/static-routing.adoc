@@ -18,7 +18,7 @@ A predicate is a boolean expression. If this expression evaluates to true, then 
 <attribute> <condition> <value>
 ```
 
-So an expression might be:
+An expression might be:
 
 ```
 protocol equals anthropic.messages
