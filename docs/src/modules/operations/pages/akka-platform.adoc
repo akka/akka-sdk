@@ -9,7 +9,7 @@ include::ROOT:partial$include.adoc[]
 
 == Overview
 
-Akka Automated Operations (AAO) is the operational backbone of the Akka platform. It manages, monitors, and gathers insights from your deployed Akka services so you can focus on building rather than babysitting infrastructure. For the full architecture and installation reference, see the xref:operations:technical-overview.adoc[AAO Technical Overview], also available as a downloadable PDF.
+Akka Automated Operations (AAO) is the operational backbone of the Akka platform. It manages, monitors, and gathers insights from your deployed Akka services so you can focus on building rather than babysitting infrastructure. For the full architecture and installation reference, see the xref:operations:technical-overview.adoc[AAO Technical Overview].
 
 AAO is built on a Kubernetes-based control plane and application plane purpose-designed for executing Akka services with fully automated operations. It handles elasticity, agility, and resilience out of the box — you deploy your service and AAO takes care of the rest.
 
