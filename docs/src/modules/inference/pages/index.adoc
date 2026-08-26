@@ -40,11 +40,9 @@ When other inference calls are used to judge the first inferences, this number c
 
 == In this section
 
-* xref:inference:static-routing.adoc[*Static routing*]: Selecting a destination from a rule declared in configuration.
-* xref:inference:semantic-routing.adoc[*Semantic routing*]: Selecting a destination from the meaning of a request.
+* xref:inference:routing.adoc[*Routing*]: Deciding which model provider serves a request.
 * xref:inference:akka-cli.adoc[*Akka CLI*]: Inference commands in the `akka` CLI.
 * xref:inference:vllm.adoc[*vLLM*]: Serving models on infrastructure you control.
-* xref:inference:operators.adoc[*AAO Operators*]: Running and maintaining inference infrastructure.
 
 include::partial$aao-inference-notice.adoc[]
 

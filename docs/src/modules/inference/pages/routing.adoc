@@ -1,0 +1,37 @@
+= Routing
+:page-summary: Routing decides which model provider serves a request. 
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+It's fine for samples and demos to have fixed or even configurable URLs and settings for model serving backends.
+However, once we get to production we need performance guarantees, and to dynamically choose model
+providers based on defined rules or semantic meaning.
+
+Akka's **AI Gateway Router** is an add-on service that provides exactly this functionality. It doesn't
+act as a proxy, but rather is _consulted by_ a proxy such as **Agentgateway** or **Envoy AI**. It makes
+routing decisions in a pipeline and supports two different categories of routing.
+
+== How a request reaches a decision
+
+image:routing-pipeline.svg[Traffic flows from agents through a proxy, which calls out to the gateway router, width=740]
+
+Agents send their model requests to a proxy, such as link:{url-agentgateway}[Agentgateway, window="new"]. The proxy calls out to the gateway router over gRPC. The router runs the exchange through a pipeline of two stages, static routing followed by semantic routing, and returns a destination. The proxy forwards the request to the named destination model provider.
+
+An agent does not address the router and does not name a model. Putting the proxy in the request path is what applies routing to every request, so the set of providers behind it can change without a change to agent code.
+
+== The two stages
+
+xref:inference:static-routing.adoc[Static routing] runs first. It matches declared rules against named attributes of the request, such as the protocol, the model asked for, or a header.
+
+xref:inference:semantic-routing.adoc[Semantic routing] runs second. If a static route matched in the previous stage, no semantic routing decision will be made. If the request remains unrouted after
+static routing, the Gateway Router matches the request against use cases discovered from live traffic, using the meaning of the request rather than a declared rule.
+
+Note that this Gateway Router only makes routing decisions about agentic traffic (LLMs, MCP, etc). It is not a general purpose proxy.
+
+include::partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:akka-cli.adoc[Akka CLI]
+* xref:inference:vllm.adoc[vLLM]

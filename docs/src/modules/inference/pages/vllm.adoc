@@ -42,5 +42,4 @@ include::partial$aao-inference-notice.adoc[]
 
 == See also
 
-* xref:inference:operators.adoc[Operators]
 * xref:inference:static-routing.adoc[Static routing]
