@@ -80,6 +80,10 @@ bundles:
 	./docs/bin/bundle.sh --zip "${java_managed_attachments}/choreography-saga-quickstart.zip" samples/choreography-saga-quickstart
 	./docs/bin/bundle.sh --zip "${java_managed_attachments}/workflow-quickstart.zip" samples/transfer-workflow-compensation
 
+whitepapers:
+	cd docs/bin/whitepaper && npm install && npx playwright install chromium
+	node docs/bin/whitepaper/render-pdf.mjs "${TARGET_DIR}" operations/technical-overview.html "${TARGET_DIR}/operations/_attachments/whitepapers/aao-technical-overview.pdf"
+
 done:
 	@echo "Generated docs at ${TARGET_DIR}/index.html"
 

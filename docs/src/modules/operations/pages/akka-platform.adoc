@@ -20,6 +20,12 @@ AAO is built on a Kubernetes-based control plane and application plane purpose-d
 * You need deep observability — logs, metrics, and traces — integrated from day one.
 * You operate under regulatory or data-sovereignty constraints that demand dedicated infrastructure.
 
+== White papers
+
+Akka Automated Operations is documented in downloadable white papers.
+
+* xref:operations:technical-overview.adoc[AAO Technical Overview] — the two-plane architecture, installation, and operations across AWS, Azure, and GCP. Read it online or download it as a PDF.
+
 == Reliability
 
 Reliability is a first-class dimension across every AAO tier. The platform is designed around the principle that failures are inevitable and recovery must be automatic:

@@ -8,6 +8,11 @@ include::ROOT:partial$include.adoc[]
 
 Akka Automated Operations (AAO) is a remotely installed, actively maintained Akka region that runs inside your own cloud account, on Kubernetes across AWS, Azure, or GCP. You keep custodial ownership of the infrastructure; Akka installs, monitors, patches, and scales it, targeting up to six-nines (99.9999%) availability with low latency.
 
+[NOTE]
+====
+This overview is also available as a downloadable link:_attachments/whitepapers/aao-technical-overview.pdf[PDF].
+====
+
 image::concepts:akka-automated-operations.png[Akka Automated Operations]
 
 == Overview
