@@ -15,7 +15,7 @@ A function call is deterministic. It receives arguments, runs a fixed sequence o
 An inference call has the following properties:
 
 * _The result varies_. The same input can produce a different output on the next call.
-_* The result is untyped at the language level_. A model returns text, and the calling code parses and validates it. See xref:sdk:agents/structured.adoc[Structured responses].
+* _The result is untyped at the language level_. A model returns text, and the calling code parses and validates it. See xref:sdk:agents/structured.adoc[Structured responses].
 * _Latency can be measured in hundreds of milliseconds to minutes._ Communicating with models is a streaming operation that can take a long time to finish. These long-running streams often present their own infrastructure and development challenges.
 * _Providers bill per token_, so the cost of a call depends on the size of the input, the context, and the output.
 
