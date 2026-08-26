@@ -38,6 +38,7 @@ asciidoc:
 antora:
   extensions:
   - require: '@antora/lunr-extension'
+  - require: '@sntke/antora-mermaid-extension'
 
 output:
   destinations:
