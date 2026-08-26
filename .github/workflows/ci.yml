@@ -104,6 +104,9 @@ jobs:
         run: |
           sbt --client shutdown
 
+      - name: Artifact BOM validation
+        uses: akka/github-actions-scripts/artifact_bom_validation@main
+
   publish-local:
     name: Build and publish artifacts and plugins locally
     runs-on: Akka-Default
