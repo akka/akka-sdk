@@ -1,0 +1,112 @@
+/* Whitepaper print skin — recreates the AAO "white paper" look over the rendered
+   Antora docs page, applied only when generating the downloadable PDF.
+   Palette/fonts mirror the original Drive whitepaper. */
+:root{
+  --wp-accent:#02a4a7; --wp-accent-bright:#28d7e5;
+  --wp-gold:#f5b60b; --wp-gold-dk:#c99a10; --wp-orange:#ff5400; --wp-red:#d70023;
+  --wp-ink:#1a1a1a; --wp-soft:#2b2b2b; --wp-muted:#5f6b73;
+  --wp-border:#e1e1e1; --wp-border-strong:#c9c9c9; --wp-rule:#adadad;
+  --wp-code-bg:#1a1a1a; --wp-inline-bg:#e5e5e5; --wp-card-bg:#f6f6f6;
+  --wp-sans:'Instrument Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  --wp-mono:'Roboto Mono','SF Mono',Menlo,Consolas,monospace;
+  --wp-grad:linear-gradient(90deg,#ffce4a,#04c4c5 50%,#d70023);
+}
+
+/* ---- strip everything but the article ---- */
+header, .navbar, #topbar-nav, [id*="topbar"], .topbar-nav,
+.nav-container, #navPanel, nav.pagination, aside, .toolbar,
+.toc-menu, .breadcrumbs, .edit-this-page, footer, .feedback,
+.hide-for-print, .doc > .header-title, button, .nav-panel-explore,
+.nav-panel-menu, .page-versions, .banner, .survey{
+  display:none !important;
+}
+
+/* ---- page canvas ---- */
+html,body{background:#fff !important;}
+body{ font-family:var(--wp-sans) !important; color:var(--wp-ink) !important;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.content, .content > *, main.article, main{ display:block !important; }
+article.doc, .doc{
+  color:var(--wp-ink) !important;
+  max-width:none !important; width:100% !important;
+  margin:0 !important; padding:0 !important; min-height:0 !important;
+  grid-column:auto !important; font-size:10.6pt !important; line-height:1.55 !important;
+}
+.doc p{ color:var(--wp-ink) !important; margin:0 0 .7em !important; }
+.doc strong{ color:var(--wp-ink) !important; font-weight:600 !important; }
+.doc a{ color:var(--wp-accent) !important; text-decoration:none !important; }
+
+/* hide the in-article H1 (the cover carries the title instead) + any download button */
+.doc > h1.page, .doc h1.page, .wp-hide{ display:none !important; }
+
+/* ---- cover ---- */
+.wp-cover{ display:block !important; page-break-after:always; padding-top:24pt; }
+.wp-cover .wp-brandbar{ height:5px; background:var(--wp-grad); border-radius:3px; margin-bottom:52pt; }
+.wp-cover .wp-eyebrow{ font-family:var(--wp-mono); font-size:11pt; letter-spacing:3px;
+  text-transform:uppercase; color:var(--wp-accent); margin-bottom:16pt; }
+.wp-cover .wp-title{ font-family:var(--wp-sans); font-weight:500; color:var(--wp-gold);
+  font-size:42pt; line-height:1.05; letter-spacing:-.5px; margin:0 0 18pt; }
+.wp-cover .wp-sub{ font-size:13pt; color:var(--wp-muted); line-height:1.6; max-width:34em; }
+.wp-cover .wp-meta{ margin-top:44pt; font-family:var(--wp-mono); font-size:9.5pt;
+  letter-spacing:1px; color:var(--wp-muted); text-transform:uppercase; }
+
+/* ---- headings ---- */
+.doc h2{ font-family:var(--wp-sans) !important; font-weight:500 !important;
+  font-size:19pt !important; color:var(--wp-ink) !important; letter-spacing:-.2px;
+  margin:26pt 0 12pt !important; padding-bottom:7pt !important;
+  border-bottom:1px solid var(--wp-rule) !important; page-break-after:avoid; }
+.doc h3{ font-family:var(--wp-sans) !important; font-weight:700 !important;
+  font-size:13.5pt !important; color:var(--wp-ink) !important; margin:18pt 0 8pt !important;
+  page-break-after:avoid; }
+.doc h4{ font-family:var(--wp-sans) !important; font-weight:700 !important;
+  font-size:11pt !important; color:var(--wp-ink) !important; margin:13pt 0 6pt !important;
+  page-break-after:avoid; }
+
+/* ---- lists / description lists ---- */
+.doc ul, .doc ol{ margin:0 0 .8em 1.1em !important; }
+.doc li{ margin-bottom:.35em !important; color:var(--wp-ink) !important; }
+.doc .dlist dt{ font-weight:700 !important; color:var(--wp-ink) !important; margin-top:.5em; }
+
+/* ---- inline + block code ---- */
+.doc code, .doc .literal{ font-family:var(--wp-mono) !important; font-size:.86em !important;
+  background:var(--wp-inline-bg) !important; color:var(--wp-ink) !important;
+  padding:1.5px 5px !important; border-radius:4px !important; }
+.doc .listingblock pre, .doc pre{ background:var(--wp-code-bg) !important; color:#f1f1f1 !important;
+  border:none !important; border-radius:6px !important; padding:14pt !important;
+  font-family:var(--wp-mono) !important; font-size:8.9pt !important; line-height:1.6 !important;
+  white-space:pre-wrap !important; page-break-inside:avoid; }
+.doc .listingblock pre code, .doc pre code{ background:none !important; color:#f1f1f1 !important; padding:0 !important; }
+
+/* ---- tables ---- */
+.doc table.tableblock{ width:100% !important; border-collapse:collapse !important;
+  margin:14pt 0 !important; font-size:9.6pt !important; page-break-inside:auto; }
+.doc table.tableblock th{ text-align:left !important; color:var(--wp-ink) !important;
+  font-weight:700 !important; background:var(--wp-card-bg) !important;
+  border-bottom:2px solid var(--wp-gold-dk) !important; padding:8pt 10pt !important; }
+.doc table.tableblock td{ border-bottom:1px solid var(--wp-border-strong) !important;
+  padding:8pt 10pt !important; vertical-align:top !important; color:var(--wp-ink) !important; }
+.doc table.tableblock tr{ page-break-inside:avoid; }
+
+/* ---- admonitions → whitepaper "callout" ---- */
+.doc .admonitionblock{ margin:14pt 0 !important; page-break-inside:avoid; }
+.doc .admonitionblock > table, .doc .admonitionblock td.content{
+  border:none !important; background:var(--wp-inline-bg) !important; }
+.doc .admonitionblock td.content{ border-left:3px solid var(--wp-accent) !important;
+  padding:11pt 14pt !important; border-radius:0 6px 6px 0 !important; }
+.doc .admonitionblock.warning td.content{ border-left-color:var(--wp-gold-dk) !important; }
+.doc .admonitionblock td.icon{ display:none !important; }
+
+/* ---- tabs flattened (script reveals panels + injects labels) ---- */
+.doc .tablist{ display:none !important; }
+.doc .tabpanel{ display:block !important; margin:0 0 6pt !important; }
+.doc .tabpanel[hidden]{ display:block !important; }
+.doc .wp-tab-label{ font-family:var(--wp-mono) !important; font-size:9.5pt !important;
+  letter-spacing:1px; text-transform:uppercase; color:var(--wp-accent) !important;
+  font-weight:700 !important; margin:14pt 0 6pt !important; padding-left:10pt;
+  border-left:3px solid var(--wp-accent) !important; page-break-after:avoid; }
+
+/* hide cookie-consent / overlays that the docs site injects */
+[class*="cookie" i],[id*="cookie" i],[class*="consent" i],[id*="consent" i],
+[class*="osano" i],[id*="osano" i],.cc-window,.cookie-banner,.banner,[role="dialog"]{ display:none !important; }
+
+img,svg,tr{ page-break-inside:avoid; }
