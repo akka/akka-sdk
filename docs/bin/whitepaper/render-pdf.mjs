@@ -25,6 +25,10 @@ await page.goto(pageUrl, { waitUntil: 'networkidle', timeout: 60000 });
 
 // Flatten tabs: reveal every panel and label it with its tab name; build a cover.
 await page.evaluate(({ eyebrow, title, subtitle }) => {
+  // Drop the self-referential "download as PDF" note — pointless inside the PDF itself.
+  document.querySelectorAll('a[href*="aao-technical-overview.pdf"]').forEach(a => {
+    (a.closest('.admonitionblock') || a.closest('.paragraph') || a).remove();
+  });
   document.querySelectorAll('.tabpanel').forEach(panel => {
     panel.removeAttribute('hidden');
     const labId = panel.getAttribute('aria-labelledby');
