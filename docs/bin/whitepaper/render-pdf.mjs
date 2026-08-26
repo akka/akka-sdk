@@ -41,12 +41,21 @@ await page.evaluate(({ eyebrow, title, subtitle }) => {
   if (doc) {
     const cover = document.createElement('div');
     cover.className = 'wp-cover';
-    cover.innerHTML =
-      '<div class="wp-brandbar"></div>' +
-      '<div class="wp-eyebrow">' + eyebrow + '</div>' +
-      '<div class="wp-title">' + title + '</div>' +
-      '<div class="wp-sub">' + subtitle + '</div>' +
-      '<div class="wp-meta">doc.akka.io &middot; Akka</div>';
+    // Build with textContent (never innerHTML) so cover text is treated as
+    // data, not markup — no injection sink even for build-supplied values.
+    const el = (cls, text) => {
+      const d = document.createElement('div');
+      d.className = cls;
+      if (text != null) d.textContent = text;
+      return d;
+    };
+    cover.append(
+      el('wp-brandbar'),
+      el('wp-eyebrow', eyebrow),
+      el('wp-title', title),
+      el('wp-sub', subtitle),
+      el('wp-meta', 'doc.akka.io · Akka'),
+    );
     doc.insertBefore(cover, doc.firstChild);
   }
 }, { eyebrow: EYEBROW, title: TITLE, subtitle: SUBTITLE });
