@@ -1,3 +1,4 @@
+[Aa]utoscales?
 accessor
 Ack
 ACLs
@@ -12,6 +13,11 @@ allowedAlgorithms
 allowMethods
 allowOrigins
 [Aa]ntora
+APIs
+Artifactory
+AZs?
+CIDRs
+DEKs?
 (?i)API
 [Aa]rchitecting
 artifactId
@@ -118,6 +124,7 @@ JUnit
 JVM's
 (?i)JWT
 (?i)JWTs
+KEKs?
 [Kk]afka
 [Kk]alix
 Kerberos
@@ -127,6 +134,7 @@ keySets
 keysets?
 Kolesnikov
 Lagom
+Linkerd
 [Ll]angchain4j
 [Ll]ightbend
 LLM
@@ -148,6 +156,7 @@ mutators
 mvnw
 namespace
 newname
+[Nn]amespaces?
 npx
 npm
 nullable
@@ -171,6 +180,7 @@ passwordKey
 passwordSecret
 pathPrefix
 PDFs
+performant
 plaintext
 platformManaged
 plist
@@ -211,6 +221,7 @@ regionalization
 repartitions
 replayability
 replicatedRead
+repo
 reshard
 resourceVersion
 [Rr]eusability
@@ -240,6 +251,7 @@ sourceType
 [Ss]plunk
 src
 SREs
+[Ss]ubnets?
 stdin
 [Ss]tackdriver
 stigmergy
@@ -290,10 +302,13 @@ valueFrom
 versionHistory
 versionLabel
 VMs
+VNet
 volumeMounts
 [Ww]alkthrough
 winget
 workloadIdentity
+XLarge
+XSmall
 Yugabyte
 Zolotko
 [Zz]sh
