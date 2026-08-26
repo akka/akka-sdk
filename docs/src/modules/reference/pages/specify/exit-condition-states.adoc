@@ -77,7 +77,7 @@ Transitions are triggered by named events. Nothing else moves the state.
 
 Rendered as a state diagram:
 
-[source,mermaid]
+[mermaid]
 ----
 stateDiagram-v2
     [*] --> open: activate
