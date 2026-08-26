@@ -103,6 +103,7 @@ prod: docker-image managed antora-prod done
 
 antora-local:
 	docker run \
+		--user "$$(id -u):$$(id -g)" \
 		-v ${ROOT_DIR}:/antora \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
@@ -111,6 +112,7 @@ antora-local:
 
 antora-prod:
 	docker run \
+		--user "$$(id -u):$$(id -g)" \
 		-v ${ROOT_DIR}:/antora \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
