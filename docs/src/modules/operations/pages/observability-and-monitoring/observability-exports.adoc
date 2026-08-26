@@ -126,6 +126,71 @@ spec:
 
 With this configuration, 2% of the traces are sent while the 98% are filtered. More on how much sampling https://opentelemetry.io/docs/concepts/sampling/#when-to-sample[here, window="new"].
 
+=== Exporting runtime logs
+
+Besides the logs your application produces, the Akka runtime emits its own logs, identified by the `origin: runtime` attribute on the log record. By default, runtime logs with severity `warn` or higher are exported to your configured log exporters, alongside your application logs. Logs produced by your application are always exported in full, regardless of this setting.
+
+To tune which runtime logs are exported, set `runtimeLogs` at the top level of the observability descriptor and xref:_updating_the_observability_configuration[update the observability configuration]:
+
+[source,yaml]
+----
+resource: Observability
+resourceVersion: v2
+spec:
+  exporters:
+    - kalixConsole: {}
+  logs:
+    - otlpHttp:
+        endpointBaseUrl: https://logs.example.com
+  runtimeLogs:
+    minSeverity: info
+----
+
+`minSeverity` accepts the following values:
+
+[cols="1,4"]
+|===
+|Value |Behavior
+
+|`none`
+|No runtime logs are exported.
+
+|`error`
+|Runtime logs with severity `error` or higher are exported.
+
+|`warn`
+|Runtime logs with severity `warn` or higher are exported. This is the default.
+
+|`info`
+|Runtime logs with severity `info` or higher are exported.
+
+|`debug`
+|Runtime logs with severity `debug` or higher are exported.
+|===
+
+Runtime log records whose severity cannot be determined, for example a raw stack trace emitted during service startup, are always exported unless `minSeverity` is set to `none`.
+
+Removing `runtimeLogs` from the descriptor reverts the project to the default for the region it is deployed in.
+
+[NOTE]
+====
+Lowering the minimum severity increases the volume of log data sent to your exporter. If your logging backend bills by ingested volume, prefer `warn` or `error`.
+====
+
+The same setting can be changed without a descriptor, using the `config runtime-logs` command:
+
+[source,command line]
+----
+akka project observability config runtime-logs --min-severity info
+----
+
+To remove the project-level setting and revert to the region default, run:
+
+[source,command line]
+----
+akka project observability config runtime-logs --min-severity default
+----
+
 == Updating the configuration using commands
 
 The Akka observability configuration can also be updated using commands. To view a human-readable summary of the observability configuration, run:

@@ -49,6 +49,16 @@ jobs:
         run: |
           make managed prod
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Render white paper PDFs
+        run: |
+          (cd docs/bin/whitepaper && npm install && npx playwright install --with-deps chromium)
+          node docs/bin/whitepaper/render-pdf.mjs
+
       - name: LLM friendly markdown
         run: |
           sudo ./docs/bin/docs2markdown.sh

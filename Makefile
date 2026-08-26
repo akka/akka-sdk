@@ -80,18 +80,30 @@ bundles:
 	./docs/bin/bundle.sh --zip "${java_managed_attachments}/choreography-saga-quickstart.zip" samples/choreography-saga-quickstart
 	./docs/bin/bundle.sh --zip "${java_managed_attachments}/workflow-quickstart.zip" samples/transfer-workflow-compensation
 
+whitepapers:
+	if ! command -v node >/dev/null 2>&1; then \
+	  echo ">> Skipping white paper PDF: Node.js not found (install Node to render it locally)."; \
+	else \
+	  if [ ! -d docs/bin/whitepaper/node_modules ]; then \
+	    echo ">> Installing white paper render tooling (Playwright + Chromium), first run only..."; \
+	    (cd docs/bin/whitepaper && npm install && npx playwright install chromium); \
+	  fi; \
+	  node docs/bin/whitepaper/render-pdf.mjs "${TARGET_DIR}" operations/technical-overview.html "${TARGET_DIR}/operations/_attachments/whitepapers/aao-technical-overview.pdf"; \
+	fi
+
 done:
 	@echo "Generated docs at ${TARGET_DIR}/index.html"
 
 open:
 	open "${TARGET_DIR}/index.html"
 
-local: docker-image examples antora-local done
+local: docker-image examples antora-local whitepapers done
 
 prod: docker-image managed antora-prod done
 
 antora-local:
 	docker run \
+		--user "$$(id -u):$$(id -g)" \
 		-v ${ROOT_DIR}:/antora \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
@@ -100,6 +112,7 @@ antora-local:
 
 antora-prod:
 	docker run \
+		--user "$$(id -u):$$(id -g)" \
 		-v ${ROOT_DIR}:/antora \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
