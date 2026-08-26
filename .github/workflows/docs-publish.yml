@@ -71,10 +71,23 @@ jobs:
             SHA=$(jq -r '.mergeCommit.oid' <<<"$ROW")
             TITLE=$(jq -r '.title'         <<<"$ROW")
             git fetch --no-tags origin "$SHA"
-            if git cherry-pick -x "$SHA"; then
+            # True merge commits (>1 parent) need `-m 1` to pick the mainline
+            # diff. `rev-list --parents -n 1` prints "<sha> <parent>..."; a
+            # merge commit yields 3+ tokens.
+            PARENTS=$(git rev-list --parents -n 1 "$SHA" | wc -w)
+            if [[ "$PARENTS" -gt 2 ]]; then
+              M_OPT=(-m 1)
+            else
+              M_OPT=()
+            fi
+            if git cherry-pick -x "${M_OPT[@]}" "$SHA"; then
               printf '#%s %s %s\n' "$NUM" "$SHA" "$TITLE" >> picked.txt
             else
-              git cherry-pick --abort
+              # If the pick failed before entering the sequenced state (e.g.
+              # bad args), `--abort` exits non-zero and would kill the step
+              # under `bash -eo pipefail`. Swallow that and hard-reset.
+              git cherry-pick --abort 2>/dev/null || true
+              git reset --hard HEAD
               printf '#%s %s %s\n' "$NUM" "$SHA" "$TITLE" >> skipped.txt
               gh pr comment "$NUM" --body \
                 "Automatic cherry-pick to \`docs-current\` failed for \`$SHA\` (run ${{ github.run_id }}). Skipped — resolve manually or re-label after fixing."
