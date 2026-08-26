@@ -39,6 +39,8 @@ object Dependencies {
   val CommonsIoVersion = "2.11.0"
   val MunitVersion = "0.7.29"
 
+  val AssertJVersion = "3.27.7"
+
   val kalixTestkitProtocol = "io.akka" % "kalix-testkit-protocol" % AkkaRuntimeVersion
   val akkaSdkSpi = "io.akka" %% "akka-sdk-spi" % AkkaRuntimeVersion
 
@@ -120,7 +122,7 @@ object Dependencies {
     akkaDependency("akka-actor-typed") % Provided,
     "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
     junit5 % Test,
-    "org.assertj" % "assertj-core" % "3.24.2" % Test)
+    "org.assertj" % "assertj-core" % AssertJVersion % Test)
 
   val javaSdkTestKit =
     deps ++=
@@ -137,7 +139,7 @@ object Dependencies {
         junit5,
         // convenience-transitive dependencies for user assertions and async interactions
         "org.awaitility" % "awaitility" % "4.2.1",
-        "org.assertj" % "assertj-core" % "3.24.2",
+        "org.assertj" % "assertj-core" % AssertJVersion,
         // for the tests of the testkit itself
         "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
         scalaTest % Test)
@@ -145,7 +147,7 @@ object Dependencies {
   val tests =
     deps ++= Seq(
       // FIXME why doesn't these two come along transitively from the testkit?
-      "org.assertj" % "assertj-core" % "3.24.2" % Test,
+      "org.assertj" % "assertj-core" % AssertJVersion % Test,
       "org.awaitility" % "awaitility" % "4.2.1" % Test,
       AkkaDevRuntime % Test,
       akkaDependency("akka-testkit"),
