@@ -16,6 +16,8 @@ Global / initialize := {
     throw new MessageOnlyException(s"JDK 21 or higher is required, found: $specificationVersion")
 }
 
+ThisBuild / makeBomIncludeDependencies := true
+
 lazy val `akka-javasdk-root` = project
   .in(file("."))
   .aggregate(
@@ -49,7 +51,7 @@ lazy val akkaJavaSdkValidations =
 lazy val akkaJavaSdk =
   Project(id = "akka-javasdk", base = file("akka-javasdk"))
     .dependsOn(akkaJavaSdkValidations)
-    .enablePlugins(BuildInfoPlugin, Publish, AkkaGrpcPlugin)
+    .enablePlugins(BuildInfoPlugin, Publish, AkkaGrpcPlugin, ArtifactBomPlugin)
     .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
     .settings(
       name := "akka-javasdk",
@@ -73,7 +75,7 @@ lazy val akkaJavaSdk =
 lazy val akkaJavaSdkTestKit =
   Project(id = "akka-javasdk-testkit", base = file("akka-javasdk-testkit"))
     .dependsOn(akkaJavaSdk)
-    .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish)
+    .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish, ArtifactBomPlugin)
     .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
     .settings(
       name := "akka-javasdk-testkit",
