@@ -1,0 +1,121 @@
+name: Publish docs (cherry-pick batch)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: List what would be picked, don't push or open a PR
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  batch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout docs-current
+        uses: actions/checkout@v6
+        with:
+          ref: docs-current
+          fetch-depth: 0
+          # NOTE: with GITHUB_TOKEN, the batch PR won't trigger downstream
+          # workflows. Swap in a PAT/App token if you want CI on it.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Collect candidate PRs
+        id: candidates
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr list \
+            --state merged \
+            --search 'label:docs-publish -label:docs-published' \
+            --json number,title,mergeCommit,mergedAt \
+            --limit 100 \
+            | jq 'sort_by(.mergedAt)' > candidates.json
+          COUNT=$(jq 'length' candidates.json)
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "Found $COUNT candidate PR(s):"
+          jq -r '.[] | "  #\(.number) \(.mergedAt) — \(.title)"' candidates.json
+
+      - name: Nothing to do
+        if: steps.candidates.outputs.count == '0'
+        run: echo "No PRs to cherry-pick. Exiting."
+
+      - name: Create batch branch
+        if: steps.candidates.outputs.count != '0'
+        id: branch
+        run: |
+          BRANCH="docs-publish/batch-${{ github.run_id }}"
+          git switch -c "$BRANCH"
+          echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Cherry-pick each candidate
+        if: steps.candidates.outputs.count != '0'
+        id: pick
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          : > picked.txt
+          : > skipped.txt
+          jq -c '.[]' candidates.json | while read -r ROW; do
+            NUM=$(jq -r '.number'          <<<"$ROW")
+            SHA=$(jq -r '.mergeCommit.oid' <<<"$ROW")
+            TITLE=$(jq -r '.title'         <<<"$ROW")
+            git fetch --no-tags origin "$SHA"
+            if git cherry-pick -x "$SHA"; then
+              printf '#%s %s %s\n' "$NUM" "$SHA" "$TITLE" >> picked.txt
+            else
+              git cherry-pick --abort
+              printf '#%s %s %s\n' "$NUM" "$SHA" "$TITLE" >> skipped.txt
+              gh pr comment "$NUM" --body \
+                "Automatic cherry-pick to \`docs-current\` failed for \`$SHA\` (run ${{ github.run_id }}). Skipped — resolve manually or re-label after fixing."
+            fi
+          done
+          echo "picked=$(wc  -l < picked.txt  | tr -d ' ')" >> "$GITHUB_OUTPUT"
+          echo "skipped=$(wc -l < skipped.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+
+      - name: Dry-run report
+        if: inputs.dry_run && steps.candidates.outputs.count != '0'
+        run: |
+          echo "=== Would cherry-pick ==="; cat picked.txt  || true
+          echo "=== Would skip (conflict) ==="; cat skipped.txt || true
+
+      - name: Push branch and open batch PR
+        if: ${{ !inputs.dry_run && steps.pick.outputs.picked != '0' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push -u origin "${{ steps.branch.outputs.name }}"
+          {
+            echo "Cherry-picks the following merged PRs onto \`docs-current\`:"
+            echo
+            sed 's/^/- /' picked.txt
+            if [[ -s skipped.txt ]]; then
+              echo
+              echo "Skipped (cherry-pick conflict — see comments on each source PR):"
+              sed 's/^/- /' skipped.txt
+            fi
+          } > body.md
+          gh pr create \
+            --base docs-current \
+            --head "${{ steps.branch.outputs.name }}" \
+            --title "docs: publish batch ${{ github.run_id }}" \
+            --body-file body.md
+
+      - name: Label source PRs as docs-published
+        if: ${{ !inputs.dry_run && steps.pick.outputs.picked != '0' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          awk '{sub(/^#/,"",$1); print $1}' picked.txt | while read -r NUM; do
+            gh pr edit "$NUM" --add-label docs-published
+          done
