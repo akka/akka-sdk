@@ -1,0 +1,184 @@
+= Manage network policies
+include::ROOT:partial$include.adoc[]
+
+A network policy controls, at the network level, what ingress and egress traffic is allowed to and from the services in an Akka project. Every project has exactly one network policy, named `default`. It cannot be created or deleted, only configured, using the `akka projects network-policy` command (alias `akka projects netpol`).
+
+Traffic between services in the same project, and traffic required by Akka platform infrastructure, is always allowed regardless of this configuration. A network policy only needs to be configured when a service in your project needs to talk to, or be talked to by, something outside the project: a service in another project, or a destination or source reachable by IP address, such as a database or third party API.
+
+[IMPORTANT]
+====
+**Network policies do not override ACLs.** A network policy controls connectivity at the network layer: whether a peer can open a connection to a service at all. xref:sdk:access-control.adoc[Access Control Lists (ACLs)] control, once a connection is allowed, which principals can invoke which service methods. Both must permit a request for it to succeed — opening up a network policy does not grant any access that an ACL still denies.
+
+**Ingress rules only apply to Akka's private network.** They match traffic from a service in another project, or from a CIDR range reachable within that network. They have no effect on traffic reaching your services through a route exposed to the internet — that traffic is always allowed at the network level, and access to it is controlled instead by xref:services/invoke-service.adoc[routes] and by ACLs using the internet principal.
+====
+
+== Viewing the network policy
+
+To see the current network policy configuration for your project:
+
+[source, command line]
+----
+akka projects network-policy get
+----
+
+If no rules have been configured, the output looks like this:
+
+[source, text]
+----
+Akka Network Policy Configuration
+=================================
+
+Ingress Rules: (none)
+
+Egress Rules: (none)
+----
+
+With this default configuration, no traffic beyond same-project and infrastructure traffic is allowed in or out. Once rules have been added, they are listed with a 1-based index that you use to refer to them when removing a rule:
+
+[source, text]
+----
+Akka Network Policy Configuration
+=================================
+
+Ingress Rules:
+  [1]
+    Ports:
+      akka-service/TCP
+    From:
+      Service: order-service (project: 3f29b6d8-9c34-4a1a-8f77-2b6e9d9a5b21)
+
+Egress Rules:
+  [1]
+    Ports:
+      443/TCP
+    To:
+      CIDR: 0.0.0.0/0
+----
+
+If your project spans multiple regions, `akka projects network-policy get` shows the primary region's configuration by default. Pass `--region` to view a specific region, or `--all-regions` to view every region. See xref:regions/setup.adoc#multi-region-resources[Managing resources in a multi region project] for background on how resources like this one are synced across regions.
+
+== Adding rules
+
+Rules are added one at a time with `akka projects network-policy add ingress-rule` and `akka projects network-policy add egress-rule`. Each command accepts repeatable `--port` flags and a repeatable peer flag (`--from` for ingress, `--to` for egress). Within a single rule, ports are combined with a logical OR, and peers are combined with a logical OR; a rule matches traffic that satisfies both a port and a peer. A rule with no ports allows all ports, and a rule with no peers allows all sources or destinations. If neither is given, the rule allows all traffic from all sources (ingress) or to all destinations (egress).
+
+=== Port syntax
+
+The `--port` flag accepts:
+
+[cols="1,2"]
+|===
+|Syntax          |Meaning
+
+|`N`             |A numeric port, for example `8080`.
+|`N/PROTO`       |A numeric port with an explicit protocol (`TCP`, `UDP`, or `SCTP`), for example `8080/UDP`. Defaults to `TCP` if omitted.
+|`N-M`           |A numeric port range, for example `8080-8090`.
+|`N-M/PROTO`     |A numeric port range with an explicit protocol.
+|`akka-service`  |Traffic on the internal port Akka services receive their traffic on.
+|===
+
+=== Peer syntax
+
+The `--from` and `--to` flags accept:
+
+[cols="1,2"]
+|===
+|Syntax                     |Meaning
+
+|`service:NAME`             |A service in the local project.
+|`service:NAME@PROJECT_ID`  |A service in another project.
+|`project:PROJECT_ID`       |All services in another project.
+|`cidr:CIDR[,EXCEPT...]`    |An IP block, optionally excluding one or more sub-blocks.
+|===
+
+=== Examples
+
+Allow another project's `order-service` to call your services over the internal Akka service port:
+
+[source, command line]
+----
+akka projects network-policy add ingress-rule \
+  --port akka-service \
+  --from service:order-service@3f29b6d8-9c34-4a1a-8f77-2b6e9d9a5b21
+----
+
+Allow ingress from an internal CIDR range, excluding a sub-block:
+
+[source, command line]
+----
+akka projects network-policy add ingress-rule \
+  --from cidr:10.20.0.0/16,10.20.30.0/24
+----
+
+Allow your services to make outbound HTTPS calls to any destination:
+
+[source, command line]
+----
+akka projects network-policy add egress-rule --port 443
+----
+
+Allow your services to reach a Postgres database owned by another project on the standard port:
+
+[source, command line]
+----
+akka projects network-policy add egress-rule \
+  --port 5432 \
+  --to service:shared-database@91f0c1a4-6b3f-4e2a-9d2e-9a7d5f6c0b12
+----
+
+A rule can combine multiple ports and multiple peers by repeating the flags:
+
+[source, command line]
+----
+akka projects network-policy add egress-rule \
+  --port 80 --port 443 \
+  --to cidr:0.0.0.0/0
+----
+
+== Removing rules
+
+Rules are removed by their 1-based index, as shown by `akka projects network-policy get`:
+
+[source, command line]
+----
+akka projects network-policy remove ingress-rule 1
+akka projects network-policy remove egress-rule 2
+----
+
+== Working with a network policy descriptor
+
+For more complex configurations, or to keep your network policy in version control, you can work with it as a YAML descriptor. This is checked into source control the same way as other Akka descriptors — see xref:reference:descriptors/network-policy-descriptor.adoc[] for the complete field reference.
+
+Export the current configuration:
+
+[source, command line]
+----
+akka projects network-policy export -f network-policy.yaml
+----
+
+Edit and re-apply it:
+
+[source, command line]
+----
+akka projects network-policy apply -f network-policy.yaml
+----
+
+Or edit it directly in your configured editor, applying it on save:
+
+[source, command line]
+----
+akka projects network-policy edit
+----
+
+A network policy document can also be included as one of the documents in a multi-resource xref:reference:descriptors/project-descriptor.adoc[project descriptor], applied with `akka projects apply`.
+
+[NOTE]
+====
+Changes to the network policy do not take effect for already-running service instances until they are restarted.
+====
+
+== See also
+
+* xref:reference:descriptors/network-policy-descriptor.adoc[Network Policy Descriptor reference]
+* xref:sdk:access-control.adoc[Access Control Lists (ACLs)]
+* xref:services/invoke-service.adoc[Invoking Akka services]
+* xref:regions/setup.adoc#multi-region-resources[Managing resources in a multi region project]

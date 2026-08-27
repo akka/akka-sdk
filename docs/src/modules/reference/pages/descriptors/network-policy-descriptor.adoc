@@ -1,0 +1,137 @@
+= Network Policy Descriptor reference
+include::ROOT:partial$include.adoc[]
+
+[#network-policy]
+== Akka Network Policy descriptor
+
+An Akka network policy descriptor describes, at the network level, what ingress and egress traffic is allowed to and from the services in an Akka project. It is used by the `akka projects network-policy apply` command, described in xref:operations:projects/network-policies.adoc[Managing network policies].
+
+Every project has exactly one network policy, named `default`. It cannot be created or deleted, only configured. Traffic between services in the same project, and traffic required by Akka platform infrastructure, is always allowed regardless of this configuration.
+
+[IMPORTANT]
+====
+Network policies do not override xref:sdk:access-control.adoc[Access Control Lists (ACLs)]. A network policy controls connectivity at the network layer: whether a peer can open a connection to a service at all. An ACL controls, once a connection is allowed, which principals can invoke which service methods. Both must permit a request for it to succeed.
+
+Ingress rules also only match traffic arriving over Akka's private network, for example from a service in another project, or from a CIDR range reachable within that network. They have no effect on traffic reaching your services through a route exposed to the internet. That traffic is always allowed at the network level, and access to it is controlled instead by xref:operations:services/invoke-service.adoc[routes] and by ACLs using the internet principal.
+====
+
+[cols="1,1,1"]
+|===
+|Field     |Type                            |Description
+
+|*ingress* |[]<<NetworkPolicyIngressRule>>  |Rules describing additional traffic allowed into the services in the project. If empty, no additional ingress traffic is allowed beyond same-project and infrastructure traffic.
+|*egress*  |[]<<NetworkPolicyEgressRule>>   |Rules describing additional traffic allowed out of the services in the project. If empty, no additional egress traffic is allowed beyond same-project and infrastructure traffic.
+|===
+
+=== NetworkPolicyIngressRule
+
+Describes a set of traffic that is allowed into the services in the project. Incoming traffic must match both `ports` and `from` for the rule to apply.
+
+[cols="1,1,1"]
+|===
+|Field    |Type                     |Description
+
+|*ports*  |[]<<NetworkPolicyPort>>  |The ports this rule allows traffic on. Items are combined with a logical OR. If empty or omitted, the rule matches all ports.
+|*from*   |[]<<NetworkPolicyPeer>>  |The sources this rule allows traffic from. Items are combined with a logical OR. If empty or omitted, the rule matches all sources.
+|===
+
+=== NetworkPolicyEgressRule
+
+Describes a set of traffic that is allowed out of the services in the project. Outgoing traffic must match both `ports` and `to` for the rule to apply.
+
+[cols="1,1,1"]
+|===
+|Field    |Type                     |Description
+
+|*ports*  |[]<<NetworkPolicyPort>>  |The destination ports this rule allows traffic on. Items are combined with a logical OR. If empty or omitted, the rule matches all ports.
+|*to*     |[]<<NetworkPolicyPeer>>  |The destinations this rule allows traffic to. Items are combined with a logical OR. If empty or omitted, the rule matches all destinations.
+|===
+
+=== NetworkPolicyPort
+
+A port to match traffic on.
+
+[cols="1,1,1"]
+|===
+|Field       |Type    |Description
+
+|*protocol*  |string  |The protocol to match: `TCP`, `UDP`, or `SCTP`. Defaults to `TCP`.
+|*port*      |string  |The port to match, either a number (for example `8080`) or `akka-service`, which matches traffic on the internal port Akka services receive their traffic on. If omitted, the rule matches all ports.
+|*endPort*   |int     |Together with `port`, defines an inclusive range of ports to match, for example `port: 8080` and `endPort: 8090` matches ports 8080 through 8090. Can only be set when `port` is a number, and must be greater than or equal to `port`.
+|===
+
+=== NetworkPolicyPeer
+
+Describes a peer to allow traffic to or from. Specify either `service` and/or `projectId`, or `ipBlock`, but not both.
+
+[cols="1,1,1"]
+|===
+|Field        |Type                  |Description
+
+|*service*    |string                |The name of a service to match. If `projectId` is not set, matches a service with this name in the local project.
+|*projectId*  |string                |The ID of a project to match. If `service` is not set, matches all services in that project.
+|*ipBlock*    |<<NetworkPolicyIPBlock>> |An IP block to match. Cannot be combined with `service` or `projectId`.
+|===
+
+To match a service in another project, set both `service` and `projectId`. To match all services in another project, set only `projectId`.
+
+=== NetworkPolicyIPBlock
+
+A CIDR block to allow traffic to or from.
+
+[cols="1,1,1"]
+|===
+|Field     |Type                |Description
+
+|*cidr*    |string _required_   |A CIDR range, for example `192.168.1.0/24` or `2001:db8::/64`.
+|*except*  |[]string            |CIDR ranges to exclude from `cidr`. Each must be a sub-range of `cidr`.
+|===
+
+[#example]
+== Complete descriptor example
+
+[source,yaml]
+----
+resource: NetworkPolicy
+resourceVersion: v1
+spec:
+  ingress:
+    - ports:
+        - port: akka-service
+      from:
+        - service: order-service
+          projectId: 3f29b6d8-9c34-4a1a-8f77-2b6e9d9a5b21
+    - from:
+        - ipBlock:
+            cidr: 10.20.0.0/16
+            except:
+              - 10.20.30.0/24
+  egress:
+    - ports:
+        - port: 443
+      to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+    - ports:
+        - port: 5432
+      to:
+        - service: shared-database
+          projectId: 91f0c1a4-6b3f-4e2a-9d2e-9a7d5f6c0b12
+----
+
+This example allows two ingress rules: traffic on the internal Akka service port from a service named `order-service` in another project, and traffic from any port in the `10.20.0.0/16` CIDR range except `10.20.30.0/24`. It also allows two egress rules: HTTPS traffic (port 443) to anywhere, and PostgreSQL traffic (port 5432) to a service named `shared-database` in another project.
+
+Note that this descriptor has no `metadata`, since a project's network policy is a singleton resource; it is always named `default` and does not need to be identified by name.
+
+== Using the network policy descriptor
+
+The network policy descriptor is a single-document YAML file, unlike the xref:reference:descriptors/project-descriptor.adoc[project descriptor], which can bundle multiple resources. It can be exported from and applied to a project using the `akka projects network-policy export` and `akka projects network-policy apply` commands, or edited in place with `akka projects network-policy edit`. It can also be included as one document within a multi-document xref:reference:descriptors/project-descriptor.adoc[project descriptor] applied with `akka project apply`, using `resource: NetworkPolicy`.
+
+For a walkthrough of managing network policies with the CLI, see xref:operations:projects/network-policies.adoc[Managing network policies].
+
+== Related documentation
+
+* xref:operations:projects/network-policies.adoc[Managing network policies]
+* xref:sdk:access-control.adoc[Access Control Lists (ACLs)]
+* xref:reference:descriptors/project-descriptor.adoc[Project Descriptor reference]
+* xref:reference:cli/akka-cli/akka_projects.adoc[`akka projects` CLI commands]
