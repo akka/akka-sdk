@@ -10,7 +10,6 @@ import java.net.URI
 
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
-import scala.util.Using
 
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -114,9 +113,16 @@ private[javasdk] object ComponentLocator {
           }
 
         case "jar" =>
-          // Inside a JAR file
+          // Inside a JAR file. When useCaches is true (the default), getJarFile() returns the
+          // JVM-wide instance owned by JarURLConnection's JarFileFactory, shared by every reader
+          // of that jar in the process - it must not be closed here, or every other reader
+          // breaks concurrently (e.g. akka.util.ManifestInfo, which re-reads every classpath
+          // jar's manifest on each ActorSystem start). With caching off, getJarFile() instead
+          // opens a fresh JarFile that only we hold, so closing it is our responsibility - not
+          // closing it there would leak a file handle every call.
           val jarConnection = metaInfUrl.openConnection().asInstanceOf[JarURLConnection]
-          Using(jarConnection.getJarFile) { jarFile =>
+          val jarFile = jarConnection.getJarFile
+          try {
             val entries = jarFile.entries().asScala
             entries
               .filter(e =>
@@ -126,8 +132,8 @@ private[javasdk] object ComponentLocator {
                 logger.debug("Found descriptor file in JAR: [{}]", url)
                 descriptorUrls += url
               }
-          }.recover { case ex =>
-            logger.warn("Failed to read JAR file for META-INF scanning: [{}]", ex.getMessage)
+          } finally {
+            if (!jarConnection.getUseCaches) jarFile.close()
           }
 
         case protocol =>

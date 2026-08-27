@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl
 
+import java.net.JarURLConnection
+
 import scala.jdk.CollectionConverters._
 
 import akka.javasdk.impl.ComponentLocator._
@@ -233,6 +235,35 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
       val result = ComponentLocator.mergeDescriptorConfigs(Seq(config1, config2))
 
       result.hasPath(DescriptorServiceSetupEntryPath) shouldBe false
+    }
+  }
+
+  "ComponentLocator.findAllDescriptorFiles" should {
+
+    // Regression test for a shared-JarFile-cache bug: getJarFile() on a JarURLConnection
+    // returns the JVM-wide cached instance (JarFileFactory) when useCaches is true (the
+    // default), so it's shared by every reader of that jar in the process - including
+    // another caller that already holds a reference to it, e.g. akka.util.ManifestInfo,
+    // which reads every classpath jar's manifest on each ActorSystem start. A naive
+    // `Using(jarConnection.getJarFile) { ... }` closes that shared instance, breaking
+    // anyone else still holding it - reproduced deterministically below without relying
+    // on thread-scheduling luck: grab a JarFile handle up front (standing in for a
+    // concurrent holder), run the scan, then confirm the handle obtained beforehand is
+    // still usable afterwards.
+    "not break a JarFile handle obtained by another caller before the scan runs" in {
+      val classLoader = getClass.getClassLoader
+      val jarMetaInfUrl = classLoader.getResources("META-INF/").asScala.find(_.getProtocol == "jar").getOrElse {
+        fail("test classpath has no jar-protocol META-INF resource to exercise the cache with")
+      }
+
+      // Stand-in for a concurrent reader (e.g. ManifestInfo) that already obtained the
+      // cached JarFile before ComponentLocator's scan runs.
+      val priorHandle = jarMetaInfUrl.openConnection().asInstanceOf[JarURLConnection].getJarFile
+
+      ComponentLocator.findAllDescriptorFiles(classLoader)
+
+      // Must not throw java.lang.IllegalStateException: zip file closed.
+      priorHandle.entries().asScala.size should be > 0
     }
   }
 
