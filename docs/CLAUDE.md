@@ -92,19 +92,34 @@ For anything the template does not cover, match the structure and voice of the n
 
 ## Page metadata
 
-Every page declares `:page-*:` attributes after the `include::ROOT:partial$include.adoc[]` line.
-They feed the Antora UI and the llms.txt generator:
+Every page declares `:page-*:` attributes in the document header. They feed the Antora UI and the
+llms.txt generator:
 
 ```asciidoc
+= Agents
 :page-component-type: agent
 :page-summary: An Agent interacts with an AI model to perform a specific task, maintaining session memory and supporting multi-agent collaboration.
 :page-when-to-use: LLM-backed tasks, conversational AI, multi-agent orchestration
 :page-related: sdk:workflows.adoc, sdk:event-sourced-entities.adoc, concepts:ai-agents.adoc
 :page-prerequisites: Java 21, Akka SDK basics
 :page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
 ```
 
+The header is everything between the `= Title` line and the first blank line. `:page-*:` attributes
+must sit inside it — directly under the title, with no blank line before them and before the
+`include::ROOT:partial$include.adoc[]` directive. Attributes placed after a blank line are
+body-level and Antora will silently ignore them (no build error, just no `page.attributes.*` in the
+UI templates).
+
 The `:page-summary:` says what the page's subject does, not why it is good.
+
+Set `:page-banner:` to render a feature-set banner above the page body. Supported values are
+`inference`, `governance`, and `evaluations`, each rendering "Feature set: <Name> — contact our
+support for access." The `evaluations` variant also warns that the functionality and APIs may
+change between releases without notice. The banner values are defined in
+`supplemental_ui/partials/page-banner.hbs`; extend that partial to add new values.
 
 ## SDD-first, manual fallback
 
