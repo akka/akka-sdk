@@ -39,8 +39,7 @@ Added the eval source root to . under package com.acme.checkout.eval — 7 file(
 The command is idempotent.
 Running it again on a project that already declares the dependency reports "already declares" rather than editing the pom a second time; a file the customer has since written stays untouched, and the command reports each as `kept`.
 
-The eval tree lands under `src/test/java/<groupId>.eval/`, where `<groupId>` comes from the project's pom.
-For the flags that override that (`--package`, `--force`), see xref:reference:cli/akka-cli/akka_eval_init.adoc[].
+The eval tree lands under `src/test/java/<groupId>.eval/`, where `<groupId>` comes from the project's `pom.xml`.
 
 == The target adapter
 
