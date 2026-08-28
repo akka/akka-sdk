@@ -1,0 +1,26 @@
+{{#if page.attributes.get-started}}
+<article class="doc px-8 w-full col-span-full pt-28 mb-8">
+    {{#with page.title}}
+    <header class="prose-akka">
+        <h1 class="page">{{{this}}}</h1>
+    </header>
+    {{/with}}
+    {{> page-banner}}
+    {{> get-started}}
+    <footer class="border-t border-t-akka-gray-300 mt-12">
+    {{> pagination}}
+    </footer>
+</article>
+{{else}}
+<article class="doc prose-akka z-10 px-8 col-span-full xl:col-span-9 pt-28 mb-8 min-h-[calc(100vh)] max-w-[840px]">
+    {{#with page.title}}
+        <h1 class="page">{{{this}}}</h1>
+    {{/with}}
+    {{> supergroups}}
+    {{> page-banner}}
+    {{{page.contents}}}
+    <footer class="border-t border-t-akka-gray-300 mt-12">
+        {{> pagination}}
+    </footer>
+</article>
+{{/if}}
