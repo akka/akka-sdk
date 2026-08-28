@@ -1,10 +1,10 @@
 = Scenarios and requirements
-
-include::ROOT:partial$include.adoc[]
-
 :page-summary: A scenario is one test case with a stable id. Every run of one scenario is gathered into a requirement, and the report reads verdicts requirement by requirement rather than run by run.
 :page-when-to-use: Use when a case needs a stable identity across runs, when a case needs the conversation seeded before the graded turn, or when reading how a repeated scenario reaches one verdict.
 :page-related: xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/reports.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
 
 A scenario is one test case the target reads and a scorer settles.
 A requirement is one scenario together with every run of it.

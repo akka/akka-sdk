@@ -1,11 +1,11 @@
 = Evaluation
-
-include::ROOT:partial$include.adoc[]
-
 :page-summary: An evaluation suite runs a service against a set of scenarios and records a verdict for each. Reports carry pass rates, the cases that failed, and the cost of the run — enough for a CI job to gate a merge on regression.
 :page-when-to-use: Use when a service is worth measuring. The reply's correctness, the tool usage, the latency budget, the faithfulness of a retrieved answer.
 :page-related: xref:testing:evaluation/getting-started.adoc[], xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/scenarios-and-rules.adoc[], xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/reports.adoc[], xref:testing:red-teaming/index.adoc[]
 :page-persona: developer
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
 
 Evaluation is how a project measures a service against a stated expectation.
 A suite runs the service through a fixed set of scenarios and turns each reply into a verdict.

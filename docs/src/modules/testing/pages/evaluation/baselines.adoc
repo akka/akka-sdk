@@ -1,10 +1,10 @@
 = Baselines and regression
-
-include::ROOT:partial$include.adoc[]
-
 :page-summary: A baseline is a saved reference run the current run compares against. Comparisons surface regressions before a change ships, and the baseline file itself is the audit trail for who approved which run.
 :page-when-to-use: Use when a campaign runs on a schedule or in CI, and its purpose is to catch regressions between the intended-good target and the target on this build.
 :page-related: xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/reports.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
 
 A baseline is a saved reference run that later runs compare against.
 Committing a baseline is how a project states "this is the target's known-good behaviour"; comparing against it is how CI catches a regression before the change ships.

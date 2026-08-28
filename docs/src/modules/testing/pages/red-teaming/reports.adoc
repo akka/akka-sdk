@@ -1,10 +1,10 @@
 = Reports
-
-include::ROOT:partial$include.adoc[]
-
 :page-summary: A red-team report prints between one and ten panels in a fixed order. Each panel answers one question about the run, from the hazard rollup to the incidents to the token cost to the cases the quality suite missed.
 :page-when-to-use: Read on every failing run, and on every intentional target change. The report is what a security reviewer reads to tell what the target refused and what it did not.
 :page-related: xref:testing:red-teaming/campaigns.adoc[], xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/attestation.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
 
 `RedTeamPanels.render()` writes a plain 80-column ASCII report to `target/redkit/reports/<campaign>.txt`.
 The report prints a header, then up to ten panels in a fixed order, then a footer that points at the signed evidence bundle and the transcripts directory.

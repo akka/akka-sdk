@@ -1,10 +1,10 @@
 = Rules and hazards
-
-include::ROOT:partial$include.adoc[]
-
 :page-summary: A red-team rule is the same object as an evaluation rule. Hazards are the taxonomy the report groups by, drawn from AILuminate v1.1 as the primary and OWASP LLM Top 10 as the secondary.
 :page-when-to-use: Use when a project needs to name what the target must refuse, and to group the outcomes by the hazard the rule speaks to.
 :page-related: xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/reports.adoc[], xref:testing:red-teaming/reference/hazards.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
 
 A rule under red teaming is the same object as a rule under evaluation.
 An evaluation campaign runs the rule under normal input to confirm it holds; a red-team campaign runs the rule under adversarial input to see whether it breaks.

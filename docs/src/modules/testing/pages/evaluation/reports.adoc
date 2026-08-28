@@ -1,10 +1,10 @@
 = Reports
-
-include::ROOT:partial$include.adoc[]
-
 :page-summary: An evaluation report prints between four and seven panels in a fixed order. Each panel answers one question about the run — what passed, what failed, what varied between repeats, how quality was measured, how the judge scored, what the run could not tell you, and what it cost.
 :page-when-to-use: Read on every failing case in CI, and on every intentional target change before shipping. The report is what a reviewer reads to tell whether the run passed.
 :page-related: xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/baselines.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
 
 `Panels.render(RunRecord)` returns a plain 80-column ASCII report as a `String`.
 Where it is written is the caller's choice; see xref:testing:evaluation/campaigns.adoc[] for

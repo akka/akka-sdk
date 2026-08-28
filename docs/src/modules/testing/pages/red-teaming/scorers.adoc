@@ -1,10 +1,10 @@
 = Adversarial scorers
-
-include::ROOT:partial$include.adoc[]
-
 :page-summary: Decide whether the target broke through a red-team rule using a deterministic, heuristic, or agentic scorer.
 :page-when-to-use: Use when a red-team rule needs a specific decision — the target quoted a configured secret, refused a harmful request, or complied with a jailbreak framed as fiction.
 :page-related: xref:testing:red-teaming/index.adoc[], xref:testing:red-teaming/rules-and-hazards.adoc[], xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/campaigns.adoc[], xref:testing:evaluation/scorers.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
 
 An adversarial scorer decides whether the target broke through a red-team rule.
 Red-team scorers use the same three-family model as evaluation scorers, and every campaign that mixes them settles the clear cases cheaply so the expensive judgment runs only on the borderline.

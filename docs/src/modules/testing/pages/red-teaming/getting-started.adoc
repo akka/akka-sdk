@@ -1,11 +1,11 @@
 = Getting started with red teaming
-
-include::ROOT:partial$include.adoc[]
-
 :page-summary: A red-team suite probes an AI service for the things it should refuse — jailbreaks, prompt injections, secret leaks, PII disclosure. It lives beside the evaluation suite, runs the same target adapter, and reports each break as its own incident.
 :page-when-to-use: Use when a service is exposed to attacker input — a customer-facing chat agent, a RAG system reading untrusted passages, an agent whose tools reach sensitive state.
 :page-prerequisites: An existing Maven project. An evaluation runner already in place (see xref:testing:evaluation/getting-started.adoc[]) is the fastest starting point but not required.
 :page-related: xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/adaptive-attacks.adoc[], xref:testing:red-teaming/corpora.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
 
 A red-team campaign runs a service through prompts written to attack it and asks a scorer whether the target broke through, held, or the evidence was inconclusive.
 Each break is one incident with its own row in the report, so security review reads a red-team run the way it reads a penetration test — case by case, not as a rate.

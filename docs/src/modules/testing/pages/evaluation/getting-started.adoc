@@ -1,11 +1,11 @@
 = Getting started with evaluation
-
-include::ROOT:partial$include.adoc[]
-
 :page-summary: An evaluation suite scores an Akka SDK service against a dataset. It lives under src/test/java, runs as an ordinary JUnit test, and reports a pass rate with the failing cases named individually.
 :page-when-to-use: Use when a service is worth measuring — the reply's correctness, the tool usage, the latency budget, the faithfulness of a retrieved answer.
 :page-prerequisites: An existing Maven project. Familiarity with JUnit.
 :page-related: xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/scenarios-and-rules.adoc[], xref:testing:evaluation/campaigns.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
 
 An evaluation suite is a set of JUnit tests that run a target service through a set of scenarios and score each reply against what the scenario expects.
 The suite lives alongside the project's other tests under `src/test/java` and reads the same dependencies at test scope.

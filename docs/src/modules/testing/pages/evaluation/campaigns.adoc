@@ -1,10 +1,10 @@
 = Campaigns and runs
-
-include::ROOT:partial$include.adoc[]
-
 :page-summary: A campaign is a named set of scenarios that run together against one target. A run is one execution of it, and what the run produced is what a report is rendered from.
 :page-when-to-use: Use when a set of scenarios needs to run repeatedly, when verdicts need to compare across builds, or when recorded interactions are scored again without calling the target.
 :page-related: xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/scenarios-and-rules.adoc[], xref:testing:evaluation/remote-campaigns.adoc[], xref:testing:evaluation/baselines.adoc[], xref:testing:evaluation/reports.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
 
 A campaign is a named set of scenarios that runs together against one target.
 A run is one execution of it.

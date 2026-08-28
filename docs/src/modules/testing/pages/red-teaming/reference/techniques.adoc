@@ -1,4 +1,5 @@
 = Attack style reference
+:page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
