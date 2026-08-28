@@ -465,3 +465,12 @@ gradle
 inspectable
 reimplementing
 unreviewed
+Agentgateway
+curations
+GPUs
+repoint
+undeploy
+unforgeable
+unioned
+untyped
+unrouted

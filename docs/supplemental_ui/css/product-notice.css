@@ -1,0 +1,11 @@
+/*! AAO Inference admonition.
+    A standard NOTE, so the box, padding, type and floating label chip all come
+    from the theme unchanged. The only override is the chip colour: violet
+    instead of the Akka yellow that NOTE and CAUTION share, so a product label
+    does not read as a caution. The chip text comes from the block's caption
+    attribute via the theme's `content: attr(title)` rule. */
+
+.doc .admonitionblock.aao-inference td.icon i.icon-note {
+  background-color: #b9a3f0;
+  color: #000;
+}

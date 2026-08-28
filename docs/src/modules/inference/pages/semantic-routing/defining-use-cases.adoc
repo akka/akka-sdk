@@ -1,0 +1,97 @@
+= Defining use cases
+:page-summary: A use case is a class of request that the semantic router recognizes and maps to a backend.
+:page-persona: builder-developer, builder-ai-ml
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+A use case is a class of request that the semantic router recognizes. The router
+compares the identified use case from the request against its list of known use cases and routes accordingly, as covered in xref:inference:semantic-routing/routing-use-cases.adoc[Routing use cases].
+
+Before any of this routing can take place, the use cases need to be clearly defined.
+
+== Learning use case clusters
+Each time a request is seen by the semantic router, it identifies in which use case that request belongs. It does this by creating an link:{url-ext-embeddings-video}[embedding, window="new"] from the request and comparing that embedding against the _link:{url-ext-kmeans-centroids}[centers, window="new"]_ of previously discovered use cases. Note that no LLM is used to detect clusters, it's all just vector math and so incurs no token cost.
+
+If a request is seen that identifies its own new use case (it is far away from any of the existing _centers_ of use case groups), then the use case boundaries are re-evaluated. To keep clustering fast and efficient, the gateway router doesn't assign or infer labels for use cases. Humans look at the _link:{url-ext-affinity-propagation-exemplars}[exemplars, window="new"]_ of a given use case and use those to decide on labels.
+
+== Example use cases for an online store
+
+Take a look at the following list of representative prompt inputs from users of an online store application. The store has five identified use cases and the router matches each incoming request to only one of them.
+
+[cols="3,1", options="header"]
+|===
+| Prompt
+| Use case
+
+| "Add two of the blue running shoes in size 10 to my basket."
+| Cart
+
+| "Take the phone charger back out of what I am buying."
+| Cart
+
+| "How much does everything I have picked out come to?"
+| Cart
+
+| "What did I buy in March?"
+| Orders
+
+| "Cancel the order I placed yesterday morning."
+| Orders
+
+| "I need to return the jacket from order 4471."
+| Orders
+
+| "I was charged twice and nobody has answered my email."
+| Customer service
+
+| "This is the third time an item has arrived damaged."
+| Customer service
+
+| "I want to speak to a person about my account being locked."
+| Customer service
+
+| "Does this jacket run small?"
+| Product query
+
+| "What is the difference between the Pro model and the Max model?"
+| Product query
+
+| "Will this mount fit a 2019 frame?"
+| Product query
+
+| "Where is my package?"
+| Shipping check
+
+| "Will this arrive before Friday?"
+| Shipping check
+
+| "Tracking says delivered but nothing came."
+| Shipping check
+|===
+
+The match is on meaning, so requests that share no keywords can still reach the same use case. "What did I buy in March?" and "Cancel the order I placed yesterday morning." have no words in common, yet both map to the `orders` use case. Remember that this label is only useful for humans. The router doesn't know what "orders" means beyond it being a label humans have supplied to one of its identified use case clusters.
+
+If a request can potentially belong to multiple categories (_"Will this arrive before Friday and are there any more in stock?"_), then you'll want to make use of an xref:sdk:autonomous-agents.adoc[autonomous] or orchestrator agent to answer those as two separate questions from different models.
+
+== Use cases vs tools
+At first glance, tools and use cases might seem similar since both require some kind of meaning to be derived from the incoming request. Use cases are a much broader scope than tools, and a tool can be used within multiple use cases.
+
+Consider the **shipping check** use case. Given the exemplars in this use case, you might expect the following tools to be used:
+
+* `calendar` - Figure out what "Friday" means
+* `track-package` - Figure out when a shipped package is due to arrive
+* `shipping-events` - Diagnostic list of events in the package's shipping lifetime.
+
+Here `track-package` and `shipping-events` are _tools_ that clearly belong within the use case of **shipping check**. However, the `calendar` tool is far more general purpose and the majority of prompts in many use cases are likely to use this tool (_"I last complained about my order on Monday"_).
+
+Prompts, use cases, and tools all exist at different levels of the hierarchy. Exemplar prompts are individual requests, a use case is the cluster they fall into, and a tool is a capability that one or more prompts within use cases draw on.
+
+image:use-cases-and-tools.svg[Exemplar prompts cluster into use cases, and use cases draw on tools, width=740]
+
+include::partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:semantic-routing.adoc[Semantic routing]
+* xref:inference:static-routing.adoc[Static routing]
