@@ -1,6 +1,7 @@
 = Routing use cases
 :page-summary: Directing the requests matched to a use case to the backend that serves them.
 :page-persona: builder-developer, builder-ai-ml
+:page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 

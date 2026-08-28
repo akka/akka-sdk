@@ -1,6 +1,7 @@
 = Defining use cases
 :page-summary: A use case is a class of request that the semantic router recognizes and maps to a backend.
 :page-persona: builder-developer, builder-ai-ml
+:page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 

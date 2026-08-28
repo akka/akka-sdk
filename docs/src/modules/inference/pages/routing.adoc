@@ -1,6 +1,7 @@
 = Routing
 :page-summary: Routing decides which model provider serves a request. 
 :page-persona: builder-developer, builder-ai-ml
+:page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 

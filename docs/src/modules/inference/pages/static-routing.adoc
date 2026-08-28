@@ -1,6 +1,7 @@
 = Static routing
 :page-summary: Static routing selects the destination for a request by matching declared predicates against named attributes of that request.
 :page-persona: builder-developer, builder-ai-ml
+:page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 

@@ -1,6 +1,7 @@
 = Akka CLI
 :page-summary: The inference commands in the akka CLI.
 :page-persona: builder-developer, operator
+:page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 

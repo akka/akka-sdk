@@ -1,6 +1,7 @@
 = Inference
 :page-summary: Inference is the execution of a trained AI model on an input to produce an output.
 :page-persona: builder-developer, builder-ai-ml
+:page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 

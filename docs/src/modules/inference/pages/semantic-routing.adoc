@@ -1,6 +1,7 @@
 = Semantic routing
 :page-summary: Semantic routing selects the destination for a request based on the meaning of its content.
 :page-persona: builder-developer, builder-ai-ml
+:page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 

@@ -1,6 +1,7 @@
 = vLLM
 :page-summary: vLLM is an open source serving engine for large language models that runs on infrastructure you control.
 :page-persona: builder-ai-ml, operator
+:page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 
