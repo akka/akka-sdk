@@ -1,4 +1,5 @@
 = Regions
+:page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 
