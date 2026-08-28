@@ -1,5 +1,4 @@
 = Unit testing
-:page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
@@ -32,7 +31,7 @@ Each entry links to the deterministic-testing section on that component's own pa
 
 [cols="1,3,1", options="header"]
 |===
-| Component | What the TestKit gives you | Doc
+| Component | What the TestKit gives you | Documentation
 
 | Agent
 | `TestModelProvider` for deterministic model replies; `whenMessage` and `whenToolResult` shaping.
@@ -44,11 +43,11 @@ Each entry links to the deterministic-testing section on that component's own pa
 
 | Event Sourced Entity
 | `EventSourcedTestKit`. Apply commands, assert on emitted events and next state.
-| xref:sdk:event-sourced-entities.adoc[]
+| xref:sdk:event-sourced-entities.adoc#_testing_the_entity[]
 
 | Key Value Entity
 | `KeyValueEntityTestKit`. Apply commands, assert on state transitions.
-| xref:sdk:key-value-entities.adoc[]
+| xref:sdk:key-value-entities.adoc#_testing_the_entity[]
 
 | Workflow
 | `WorkflowTestKit`. Drive step by step, assert on deterministic step results.
