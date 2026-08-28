@@ -1,6 +1,8 @@
 // global attributes
 
 :sample-base-url: https://github.com/akka/akka-sdk/blob/main/samples
+// Parent command for the inference/optimize CLI surface. Change here if the noun moves.
+:cli-optimize: akka optimize
 // Docker Registry HTTP API Version
 :docker_registry_http_api_version: v1
 

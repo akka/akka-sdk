@@ -1,0 +1,10 @@
+// Spacer. The floating label chip sits half outside the box top, so the theme's
+// admonition margin leaves it crowding the content above. This is {nbsp} rather
+// than {empty} because an empty paragraph has no line box: its height is zero and
+// its margins collapse with its neighbours, so it adds no space at all.
+{nbsp}
+
+[NOTE.aao-inference, caption="Inference"]
+====
+The features described in this section are an add-on to Akka Automated Operations. They are not included in the base product.
+====

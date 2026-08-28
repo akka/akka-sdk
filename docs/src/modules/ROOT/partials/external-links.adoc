@@ -124,6 +124,21 @@
 :url-ext-reactive-principles: https://www.reactiveprinciples.org
 :url-ext-akkademy: https://akkademy.akka.io
 
+// -- external / machine learning --
+:url-ext-embeddings-video: https://www.youtube.com/watch?v=xJ2Jcncu4bc
+:url-ext-kmeans-centroids: https://scikit-learn.org/stable/modules/clustering.html#k-means
+:url-ext-affinity-propagation-exemplars: https://scikit-learn.org/stable/modules/clustering.html#affinity-propagation
+
+// -- vllm --
+:url-vllm: https://docs.vllm.ai/en/latest/
+
+// -- envoy ai gateway --
+:url-envoy-ai-gateway: https://aigateway.envoyproxy.io/
+
+// -- agentgateway --
+:url-agentgateway: https://agentgateway.dev/
+:url-agentgateway-backends: https://agentgateway.dev/docs/standalone/main/configuration/backends/
+
 // -- community --
 :url-akka-discord: https://discord.com/invite/QZc652rgtf
 :url-akka-github: https://github.com/akka
