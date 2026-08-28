@@ -8,6 +8,7 @@ Descriptors support structured configuration across multiple Akka regions and Ak
 and may even be used to create a new project.
 * The xref:descriptors/service-descriptor.adoc[Service descriptor] defines the configuration for a service resource.
 * The xref:descriptors/route-descriptor.adoc[Route descriptor] describes the way ingress traffic is routed to your Akka services.
+* The xref:descriptors/network-policy-descriptor.adoc[Network policy descriptor] describes what ingress and egress traffic is allowed to and from the services in an Akka project, at the network level.
 * Through the xref:descriptors/external-secret-descriptor.adoc[External secret descriptor] an Akka service is configured
 to source secrets from an external secret manager.
 * The xref:descriptors/observability-descriptor.adoc[Observability descriptor] describes how metrics, logs,

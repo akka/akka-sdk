@@ -24,6 +24,7 @@
 ****** xref:operations:projects/broker-azure-eventhubs.adoc[Azure Event Hubs]
 ***** xref:operations:projects/secrets.adoc[]
 ***** xref:operations:projects/external-secrets.adoc[]
+***** xref:operations:projects/network-policies.adoc[]
 
 **** xref:operations:services/index.adoc[]
 ***** xref:operations:services/deploy-service.adoc[]
