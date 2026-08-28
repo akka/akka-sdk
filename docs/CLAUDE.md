@@ -116,9 +116,10 @@ UI templates).
 The `:page-summary:` says what the page's subject does, not why it is good.
 
 Set `:page-banner:` to render a feature-set banner above the page body. Supported values are
-`inference` and `governance`, each rendering "Feature set: <Name> — contact our support for access."
-The banner values are defined in `supplemental_ui/partials/page-banner.hbs`; extend that partial to
-add new values.
+`inference`, `governance`, and `evaluations`, each rendering "Feature set: <Name> — contact our
+support for access." The `evaluations` variant also warns that the functionality and APIs may
+change between releases without notice. The banner values are defined in
+`supplemental_ui/partials/page-banner.hbs`; extend that partial to add new values.
 
 ## SDD-first, manual fallback
 
