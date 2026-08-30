@@ -198,7 +198,7 @@ A probe receives the capabilities it declared, already resolved, and the element
 }
 ----
 
-A probe uses the capabilities it is given rather than discovering its own. A probe that finds a base URL for itself will find a different one than the engine recorded, and the record is what a requirement cites.
+A probe uses the capabilities it is given rather than discovering its own. A probe that finds its own base URL will find a different one than the engine recorded, and the record is what a requirement cites.
 
 `elements` is the enumerated interface, so a probe examining the surface works from the same list every other probe does.
 

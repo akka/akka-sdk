@@ -15,7 +15,7 @@ That changes what the Akka Specify Plugin has to do. In ordinary xref:sdk:spec-d
 
 An authored specification cannot be factually wrong. You decided it. A requirement may turn out to be unwise or may go unmet, and both of those are visible.
 
-A derived specification can be wrong. It is a claim about somebody else's system, and a claim can misread what it describes. That is a second failure mode, and it is invisible to every check that compares a build against its specification: the build can satisfy every requirement while the requirements misdescribe the original.
+A derived specification can be wrong. It is a claim about a system somebody else built, and a claim can misread what it describes. That is a second failure mode, and it is invisible to every check that compares a build against its specification: the build can satisfy every requirement while the requirements describe the original incorrectly.
 
 Porting onto Akka has one advantage that ordinary development does not. The original is running, so correctness is decidable. Two systems either return the same answer or they do not.
 
@@ -38,7 +38,7 @@ Porting onto Akka has one advantage that ordinary development does not. The orig
 | Rewrites each parity auditor so its reference is a recorded value rather than the live original.
 
 | xref:reference:specify/ship.adoc[/akka:ship]
-| Releases, once every condition is green and unstale.
+| Releases, once every condition is green and none has gone stale.
 |===
 
 xref:reference:specify/clarify.adoc[/akka:clarify] has no part in a port, and enforced mode refuses it. Discovery writes the specification, and it settles its own open questions by running further experiments against the original rather than by asking you.
