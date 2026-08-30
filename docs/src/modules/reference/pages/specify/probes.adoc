@@ -39,6 +39,19 @@ Asking for a probe by name does not make it available. A probe that was asked fo
 | `coverage` | which of the original's own tests touch each interface element | `source` | —
 |===
 
+`reachability` drives the system through its own tests and reads the coverage its
+own toolchain reports, so the clone is never instrumented. It recognises Go from
+`go.mod`, Python from `pyproject.toml` or a test configuration, JavaScript and
+TypeScript from `package.json`, and Java from `pom.xml`. A system written in more
+than one language is measured once per language and the results are reported
+separately.
+
+Measuring a language requires its coverage tool to be installed and its
+dependencies present. Where either is missing, the language is reported with the
+reason it could not be measured. A language that was recognised and produced no
+measurement reads exactly like a language whose every statement ran, so the
+reason is recorded rather than the absence.
+
 === Behaviour
 
 [cols="1,2,1,1",options="header"]
