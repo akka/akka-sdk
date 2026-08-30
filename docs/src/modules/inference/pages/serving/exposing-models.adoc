@@ -40,14 +40,15 @@ akka models routes get models
 Name:           models
 Host:           models.acme.example
 Ready:          True
-Message:        1 model(s) on models.acme.example
+Message:        2 model(s) on models.acme.example
 Endpoint:       https://models.acme.example/v1
 Own listener:   models
 Auth:           api-key
-Accepts:        docs
+Accepts:        docs, agent
 
 DEPLOYMENT      SERVES   STATE
 docs            docs     Serving
+agent           agent    Serving
 ----
 
 `Accepts` is the list of names clients may send as `model`. `Endpoint` is the base URL to give an OpenAI client. The endpoint is HTTPS with a real certificate, so no client needs special configuration.

@@ -165,11 +165,11 @@ akka routing-classifiers history ID
 [#use-cases]
 == Semantic routing
 
-The commands in this section govern the use-cases a semantic router recognizes and what serves each one. See xref:inference:routing/request-meaning.adoc[Routing on request meaning] for how the routing itself works.
+The commands in this section govern the use cases a semantic router recognizes and what serves each one. See xref:inference:routing/request-meaning.adoc[Routing on request meaning] for how the routing itself works.
 
 === Use cases
 
-`akka use-cases` covers the use-cases discovered in traffic and the decisions taken about them.
+`akka use-cases` covers the use cases discovered in traffic and the decisions taken about them.
 
 [cols="2,3", options="header"]
 |===
@@ -177,10 +177,10 @@ The commands in this section govern the use-cases a semantic router recognizes a
 | Description
 
 | `akka use-cases list`
-| The discovered use-cases.
+| The discovered use cases.
 
 | `akka use-cases get NAME`
-| One use-case.
+| One use case.
 
 | `akka use-cases funnel`
 | Counts at each observe-to-route stage.
@@ -189,16 +189,16 @@ The commands in this section govern the use-cases a semantic router recognizes a
 | Why the rest are not eligible, and what unblocks them.
 
 | `akka use-cases resolve NAME --action ACTION`
-| Resolve the safety decision on a use-case.
+| Resolve the safety decision on a use case.
 
 | `akka use-cases actions NAME`
-| What may be decided about this use-case.
+| What may be decided about this use case.
 |===
 
 [#working-set-and-manifests]
 ==== The working set and its manifests
 
-Discovery runs against live traffic. The working set is what has been discovered so far, and a manifest fixes that set so it can enforce routing. See xref:inference:routing/defining-use-cases.adoc[Defining use cases] for what a use-case is and how one is discovered.
+Discovery runs against live traffic. The working set is what has been discovered so far, and a manifest fixes that set so it can enforce routing. See xref:inference:routing/defining-use-cases.adoc[Defining use cases] for what a use case is and how one is discovered.
 
 [cols="2,3", options="header"]
 |===
@@ -209,13 +209,13 @@ Discovery runs against live traffic. The working set is what has been discovered
 | The working set, and whether it can be frozen.
 
 | `akka use-cases working-set`
-| The use-cases currently being discovered in traffic.
+| The use cases currently being discovered in traffic.
 
 | `akka use-cases exemplars list ID\|LABEL`
-| One use-case and the requests nearest its centre.
+| One use case and the requests nearest its centre.
 
 | `akka use-cases label ID LABEL`
-| Name a use-case in the working set.
+| Name a use case in the working set.
 
 | `akka use-cases freeze --as TAG --backend LABEL=BACKEND`
 | Fix the working set as a manifest.
@@ -241,7 +241,7 @@ Discovery runs against live traffic. The working set is what has been discovered
 
 === Routing policies
 
-`akka routing-policies` states what serves a use-case, and in what share. The aliases `routing-policy`, `policies`, and `policy` are accepted.
+`akka routing-policies` states what serves a use case, and in what share. The aliases `routing-policy`, `policies`, and `policy` are accepted.
 
 [cols="2,3", options="header"]
 |===

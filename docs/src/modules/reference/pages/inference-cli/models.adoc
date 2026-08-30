@@ -163,7 +163,7 @@ Deleting a route does not revoke the keys issued against it. Rebuild the route u
 [#governance]
 == Model governance
 
-The same `akka models` noun records which models an organization sanctions and the conditions attached to them. A model you run and a model you permit are one resource, so the governance verbs act on the names that <<deployments>> lists.
+The same `akka models` noun records which models an organization sanctions and the conditions attached to them. What a model is and what is running are the same resource seen twice, so there is no separate registry listing: `list` and `get`, described in <<deployments>>, read that resource, and the verbs below act on the same names.
 
 [cols="2,3", options="header"]
 |===
@@ -213,7 +213,6 @@ The same `akka models` noun records which models an organization sanctions and t
 ====
 
 The singular alias `model` is accepted.
-
 
 include::inference:partial$aao-inference-notice.adoc[]
 

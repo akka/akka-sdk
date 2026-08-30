@@ -1,4 +1,4 @@
-= Routing ruleset reference
+= Routing Ruleset reference
 :page-summary: A routing ruleset is the JSON document that declares the rules the gateway router matches against request attributes, and the destinations those rules may emit.
 :page-persona: builder-developer, builder-ai-ml
 :page-banner: inference
