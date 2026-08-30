@@ -196,7 +196,7 @@ The commands in this section govern the use cases a semantic router recognizes a
 |===
 
 [#working-set-and-manifests]
-==== The working set and its manifests
+=== The working set and its manifests
 
 Discovery runs against live traffic. The working set is what has been discovered so far, and a manifest fixes that set so it can enforce routing. See xref:inference:routing/defining-use-cases.adoc[Defining use cases] for what a use case is and how one is discovered.
 
@@ -212,7 +212,7 @@ Discovery runs against live traffic. The working set is what has been discovered
 | The use cases currently being discovered in traffic.
 
 | `akka use-cases exemplars list ID\|LABEL`
-| One use case and the requests nearest its centre.
+| One use case and the requests nearest its center.
 
 | `akka use-cases label ID LABEL`
 | Name a use case in the working set.

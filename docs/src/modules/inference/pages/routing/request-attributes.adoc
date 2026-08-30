@@ -177,6 +177,7 @@ Then write a rule that defers to it:
 [source,json]
 ----
 {
+  "id": "tenant-commit-routing",
   "priority": 100,
   "match": {
     "all": [

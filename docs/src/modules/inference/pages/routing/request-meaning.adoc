@@ -54,7 +54,7 @@ akka use-cases non-admission
 
 === 2. Label what was discovered
 
-The router does not name the clusters it finds. Read the requests nearest the centre of a cluster and decide what to call it:
+The router does not name the clusters it finds. Read the requests nearest the center of a cluster and decide what to call it:
 
 [source, shell]
 ----

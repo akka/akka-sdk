@@ -220,6 +220,7 @@ A single rule is written with the same `match` and `outcome` shape, without the 
 [source,json]
 ----
 {
+  "id": "tenant-commit-routing",
   "priority": 100,
   "match": {
     "all": [

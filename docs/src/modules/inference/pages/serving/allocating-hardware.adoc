@@ -19,10 +19,10 @@ akka models accelerators list
 [source, shell]
 ----
 NAME       DEVICE   TENANCY     CARDS/REPLICA   MEMORY/MODEL   IN USE   CAN PLACE   READY
-standard   l4       Dedicated   1               23034Mi        1        0           True
+standard   l4       Dedicated   1               23034Mi        0        1           True
 ----
 
-`CAN PLACE` is the column that answers whether another model will fit. `READY` only says the accelerator itself is healthy.
+`CAN PLACE` is the column that answers whether another model will fit. This accelerator holds the region's one card and has not been deployed to yet, so it has a slot free. `READY` only says the accelerator itself is healthy.
 
 To read the same information for one accelerator as a single line:
 
