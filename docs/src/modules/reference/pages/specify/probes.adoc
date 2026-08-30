@@ -221,10 +221,20 @@ A probe claims the rung it actually reached. One that read source reports `inspe
 
 [source,bash]
 ----
-akka specify probe test tenancy --target http://127.0.0.1:8399
+akka specify probes test tenancy --source ./clone --target http://127.0.0.1:8399
 ----
 
-Runs the probe, prints the request it received and its raw output, and validates the answer against the envelope above.
+Runs the probe, prints the request it received and its raw output, and reports the finding the engine would record. A probe whose capabilities this environment does not offer says so rather than running.
+
+=== Seeing and running them
+
+[source,bash]
+----
+akka specify probes list --source ./clone --target http://127.0.0.1:8399 --study=run
+akka specify probes run  --source ./clone --target http://127.0.0.1:8399 --study=run --probe=+clock
+----
+
+`list` reports the capabilities this environment offers, then the catalogue with defaults marked and each unavailable probe named with what it lacks. `run` executes the selection and writes `.akka/discovery/`.
 
 == See also
 

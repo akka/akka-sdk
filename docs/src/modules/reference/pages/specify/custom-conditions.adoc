@@ -124,19 +124,14 @@ An auditor that writes nothing to standard output and exits `0` is read as `gree
 
 [source,bash]
 ----
-akka specify auditor test CORP-LICENCE-SCAN
+akka specify auditor-test CORP-LICENCE-SCAN
 ----
 
 Runs the auditor against the current project and prints the request it received, its raw output, and the verdict the engine would record.
 
-[source,bash]
-----
-akka specify extension verify
-----
+Before distributing an auditor, exercise it against the cases that break implementations: a requirement declared and not met, a dependency that refuses connections, a malformed request, a timeout, and output that is not JSON.
 
-Runs every declared auditor and probe against fixtures the Plugin ships, and checks the cases that break implementations: a requirement declared and not met, a dependency that refuses connections, a malformed request, a timeout, and output that is not JSON.
-
-Run this before distributing an auditor. An auditor that reports `red` when its target was merely unreachable passes an ordinary test and fails this one.
+An auditor reporting `red` when its target was merely unreachable passes an ordinary test. It blocks a ship for a reason that has nothing to do with the project.
 
 == Distribution
 

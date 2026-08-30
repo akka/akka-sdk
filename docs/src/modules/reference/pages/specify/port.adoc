@@ -179,6 +179,9 @@ A port that carries no additional obligations omits the flag.
 
 == Discovery
 
+Discovery runs through `akka specify probes run`, which resolves what the environment offers, executes the selected probes, and writes `.akka/discovery/`. See xref:reference:specify/probes.adoc[Discovery probes].
+
+
 Enumeration produces the interface list without depending on anyone's recollection of the system.
 
 [source]
