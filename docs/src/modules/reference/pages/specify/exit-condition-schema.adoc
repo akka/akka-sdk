@@ -29,6 +29,7 @@ Where the condition comes from, which determines whether a developer can change 
 | `recommended-default` | From the default library; on by default, may be marked inapplicable.
 | `corporate` | Inherited from the organization policy; locked according to its governance level.
 | `developer` | Added by the developer for this feature.
+| `generated` | Written by a tool rather than a person, such as xref:reference:specify/port.adoc[/akka:port] deriving conditions from a system it studied. Held in its own set, so a tool that rewrites its own conditions never reaches one you wrote.
 |===
 
 `governance_level`::

@@ -6,7 +6,7 @@ Every auditor is one of three xref:reference:specify/auditor-kinds.adoc[kinds] â
 
 == Built-in and inline auditors
 
-Akka's built-in auditors are introspective: they inspect the working tree and read a tool's exit code. `maven-compile` and `maven-test` for Java/Akka, `git-clean` and `git-secrets` over the git tree, `no-build-output` and `deps-pinned` for repository hygiene, `content-vale` over `docs/`, `ci-green` for prior CI runs, `file-adr` for a recorded decision. A condition binds one by naming its id in the `check` field.
+Akka's built-in auditors are introspective: they inspect the working tree and read a tool's exit code. `maven-compile` and `maven-test` for Java/Akka, `git-clean` and `git-secrets` over the git tree, `no-build-output` and `deps-pinned` for repository hygiene, `content-vale` over `docs/`, `ci-green` for prior CI runs, `file-adr` for a recorded decision, `spec-schema` and `rule-evidence` over the specification. A condition binds one by naming its id in the `check` field.
 
 Where a project introduces an ecosystem the built-ins do not cover, it authors an *inline* introspective auditor: a command plus the surface it applies to, written under the condition's `auditor` field.
 
@@ -50,6 +50,8 @@ Two Process-integrity conditions are always on and cannot be struck. They make t
 A detected surface that genuinely needs no check (a demos or scripts folder) can be marked intentionally unaudited, with a recorded reason; the coverage gate then skips it. This is the escape hatch for the "every surface is material" rule.
 
 == Related
+
+* xref:reference:specify/custom-conditions.adoc[Custom exit conditions and auditors]
 
 * xref:reference:specify/requirement-analysis.adoc[Requirement analysis] â€” how a requirement becomes an exit condition and an auditor
 * xref:reference:specify/exit-condition-schema.adoc[Exit condition schema]

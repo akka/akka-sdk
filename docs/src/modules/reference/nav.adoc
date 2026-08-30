@@ -347,6 +347,7 @@
 **** xref:specify/issues.adoc[/akka:issues]
 **** xref:specify/mode.adoc[/akka:mode]
 **** xref:specify/plan.adoc[/akka:plan]
+**** xref:specify/port.adoc[/akka:port]
 **** xref:specify/reliability.adoc[/akka:reliability]
 **** xref:specify/review.adoc[/akka:review]
 **** xref:specify/setup.adoc[/akka:setup]
@@ -360,6 +361,8 @@
 **** xref:specify/coverage-gate.adoc[The coverage gate]
 **** xref:specify/adequacy-review.adoc[The adequacy review]
 **** xref:specify/requirement-analysis.adoc[Requirement analysis]
+**** xref:specify/probes.adoc[Discovery probes]
+**** xref:specify/custom-conditions.adoc[Custom exit conditions and auditors]
 *** Project surface
 **** xref:specify/project-surface.adoc[Project surface coverage]
 **** xref:specify/content-governance.adoc[Content governance]
@@ -367,6 +370,7 @@
 *** Exit conditions
 **** xref:specify/exit-condition-schema.adoc[Exit condition schema]
 **** xref:specify/exit-condition-states.adoc[Exit condition states]
+**** xref:specify/spec-conformance.adoc[Specification conformance]
 **** xref:specify/prohibitions.adoc[Prohibitions]
 **** xref:specify/default-library.adoc[Default exit-condition library]
 **** xref:specify/catalog/index.adoc[Exit condition catalog]

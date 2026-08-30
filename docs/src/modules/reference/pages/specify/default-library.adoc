@@ -51,12 +51,15 @@ Every library condition has a stable *id*. That id is the registry key: a policy
 | `NEVER-COMMIT-BUILD-OUTPUT` | Repository Hygiene | `on-but-dev-configurable` | *Prohibition.* No build output (`target`, `dist`, `node_modules`, `build`) is tracked.
 | `PROJ-TEST-COVERAGE` | Code & Test Health | `on-but-dev-configurable` | Line/branch coverage at or above a threshold.
 | `PROJ-ADR-RECORDED` | Documentation & Training | `on-but-dev-configurable` | Architecture decision records are present (human sign-off).
+| `PROJ-SPEC-SCHEMA` | Documentation & Training | `on-but-dev-configurable` | The specification is well-formed and every requirement traces to a test.
 | `ENV-SETUP-CURRENT` | Environment & Dependencies | `on-but-dev-configurable` | The project's environment setup is current.
 | `ENV-DEPS-RESOLVE` | Environment & Dependencies | `on-but-dev-configurable` | Declared dependencies resolve (`mvn dependency:resolve`).
 | `NEVER-UNPINNED-DEP` | Environment & Dependencies | `on-but-dev-configurable` | *Prohibition.* No dependency is unpinned; a lockfile or `go.sum` is present.
 | `CONTENT-LANGUAGE` | Content & Brand Governance | `off-but-dev-configurable` | *Prohibition, off by default.* Prose passes the content class's Vale configuration (`content-vale`).
 | `CONTENT-TONE` | Content & Brand Governance | `off-but-dev-configurable` | *Off by default.* Prose passes an attested tone judge (delegated).
 | `PROC-SOURCE-GROUNDING` | Process Integrity | `on-but-dev-configurable` | API usage is cited to official documentation; invented APIs are caught under coverage.
+| `PROC-RULE-EVIDENCE` | Process Integrity | `on-but-dev-configurable` | Every requirement not chosen by you records how it was established.
+| `PROJ-PROVENANCE-DECLARED` | Documentation & Training | `off-but-dev-configurable` | Every requirement declares where it came from.
 | `PROC-AUDITOR-COVERAGE` | Process Integrity | `always-apply` | Every material build surface has a covering auditor (the coverage gate).
 | `PROC-ADEQUACY-REVIEWED` | Process Integrity | `always-apply` | A fresh adequacy review covers every active auditor.
 | `BUILD-WITHIN-BUDGET` | Build Efficiency | `on-but-dev-configurable` | The build stays within its time budget (human sign-off).
@@ -64,7 +67,7 @@ Every library condition has a stable *id*. That id is the registry key: a policy
 
 [NOTE]
 ====
-Four library conditions are *prohibitions* — a prohibition must never become true, and an unaudited prohibition is red rather than open: `SEC-SECRETS-NOT-COMMITTED`, `NEVER-COMMIT-BUILD-OUTPUT`, `NEVER-UNPINNED-DEP`, and `CONTENT-LANGUAGE`. The two Content & Brand Governance conditions (`CONTENT-LANGUAGE` and `CONTENT-TONE`) are the only library conditions *off by default*; opt in per project, or promote them in a policy.
+Four library conditions are *prohibitions* — a prohibition must never become true, and an unaudited prohibition is red rather than open: `SEC-SECRETS-NOT-COMMITTED`, `NEVER-COMMIT-BUILD-OUTPUT`, `NEVER-UNPINNED-DEP`, and `CONTENT-LANGUAGE`. Three library conditions are *off by default*: the two Content & Brand Governance conditions (`CONTENT-LANGUAGE` and `CONTENT-TONE`), and `PROJ-PROVENANCE-DECLARED`. Opt in per project, or promote them in a policy.
 ====
 
 Some conditions are UI-only and apply only when a feature has a user interface; for a headless Akka service they are struck as a group. The catalog of further candidates to consider is in the xref:reference:specify/catalog/index.adoc[exit condition catalog].

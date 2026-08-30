@@ -1,0 +1,98 @@
+= Specification conformance
+
+Two exit conditions check the specification itself. `PROJ-SPEC-SCHEMA` requires that *the specification is well-formed and every requirement traces to a test.* `PROC-RULE-EVIDENCE` requires that *every requirement not chosen by you records how it was established.*
+
+Every other condition checks the build, the repository, or the process. These two check the document those conditions are derived from.
+
+Both read `specs/*/spec.md` and need nothing from the environment, so they run in any project.
+
+== A well-formed specification
+
+The xref:reference:specify/specify.adoc[/akka:specify] template numbers each functional requirement `FR-001` and each success criterion `SC-001`. `PROJ-SPEC-SCHEMA` holds those identifiers to four rules.
+
+[cols="1,3",options="header"]
+|===
+| Rule | Why
+
+| Each identifier is used once | A duplicate identifier makes a requirement impossible to point at, sign off, or trace
+| Every requirement appears in the Traceability table | A requirement outside the table is a promise nothing checks
+| Every table row names a source and a test | A row with an empty test column records the intention to verify rather than the verification
+| Every table row names a real requirement | A row for an identifier that no longer exists describes a promise that was withdrawn
+|===
+
+An obligation stated without an identifier reds the condition. The parser recognises an obligation by the keywords `MUST`, `SHALL`, `SHOULD`, and `MAY`, so ordinary prose in the requirements section is left alone.
+
+== Unresolved questions
+
+`/akka:specify` marks a question it cannot settle with `[NEEDS CLARIFICATION: the question]`, and permits at most three. `PROJ-SPEC-SCHEMA` reds while any marker survives.
+
+Run xref:reference:specify/clarify.adoc[/akka:clarify] to settle them. Each answer removes its marker and adds the traceability row for the requirement it produced.
+
+== Where a requirement came from
+
+A requirement you chose needs no further account of itself. A requirement imposed from outside, or read off a system that already exists, is a claim about the world, and a claim can be wrong. `PROC-RULE-EVIDENCE` separates the two.
+
+Annotate a requirement in parentheses after its identifier:
+
+[source,markdown]
+----
+- **FR-008** (constrained, documented): System MUST retain audit records for seven years
+- **FR-009** (observed, exercised): System MUST return 409 when an order is submitted twice
+----
+
+The first value records where the obligation came from.
+
+[cols="1,3",options="header"]
+|===
+| Provenance | Meaning
+
+| `decided` | Your choice. No evidence is required.
+| `constrained` | Imposed by a platform, a protocol, or a regulation.
+| `observed` | Read off a system that already exists.
+|===
+
+The second value records how the claim was established, weakest first.
+
+[cols="1,3",options="header"]
+|===
+| Evidence | Meaning
+
+| `inspected` | Inferred by reading the source
+| `documented` | Stated by a manual or a specification
+| `exercised` | Called it and observed the result
+|===
+
+Where a xref:reference:specify/probes.adoc[discovery probe] established the requirement, the evidence names it:
+
+[source,markdown]
+----
+- **FR-058** (observed, exercised: sequence): three soft bounces within 24
+  hours mark the subscriber as unconfirmed
+----
+
+Naming the probe is what makes the claim checkable. `PROC-RULE-EVIDENCE` reads `.akka/discovery/run.json` and reds when a requirement names a probe that did not run. A project with no discovery record is unaffected.
+
+A requirement carrying no annotation is read as `decided`. A specification written before these conditions existed therefore stays GREEN, and a project whose requirements are genuinely all decisions never sees the condition speak.
+
+`PROC-RULE-EVIDENCE` reds when a `constrained` or `observed` requirement records no evidence.
+
+== Requiring every requirement to declare itself
+
+Reading an unannotated requirement as `decided` leaves one thing unsaid. A requirement with no annotation is either a decision somebody made or an assumption about a system nobody checked, and the document does not distinguish them.
+
+`PROJ-PROVENANCE-DECLARED` closes that. It reds when any requirement carries no provenance at all, whatever the value would have been.
+
+The condition ships `off-but-dev-configurable`, because turning it on is a statement about your specification rather than a rule every project should meet. Opt in per project once your requirements carry their annotations, or promote it in a xref:reference:specify/policies.adoc[policy] to hold every project in the organization to it.
+
+A port opts in as a matter of course. Every requirement in a ported specification was read off a system that already exists, so a requirement that declares nothing is an assumption that nobody has been asked to confirm.
+
+== When the specification is absent
+
+A project with no `specs/` directory resolves both conditions OPEN rather than RED. A specification that has not been written yet is a different state from one that is malformed, and OPEN is the state a sign-off closes.
+
+== Related
+
+* xref:reference:specify/specify.adoc[/akka:specify]
+* xref:reference:specify/clarify.adoc[/akka:clarify]
+* xref:reference:specify/default-library.adoc[Default exit-condition library]
+* xref:reference:specify/exit-condition-states.adoc[Exit condition states]

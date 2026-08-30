@@ -29,6 +29,7 @@ The commands are used from within an AI coding assistant (such as Claude Code) a
 |xref:specify/conform.adoc[`/akka:conform`]           | Run the auditors and return the definition-of-done verdict
 |xref:specify/ship.adoc[`/akka:ship`]                 | Run the auditors for the requested ship target and, on pass, run the organization's ship steps
 |xref:specify/mode.adoc[`/akka:mode`]                 | Switch between Enforced and À la carte modes
+|xref:specify/port.adoc[`/akka:port`]                 | Derive a specification from a system that already exists and hold a rebuild to it
 |xref:specify/docs.adoc[`/akka:docs`]                 | Generate rendered project documentation into `docs/`
 |====
 
@@ -40,6 +41,9 @@ The commands are used from within an AI coding assistant (such as Claude Code) a
 * xref:reference:specify/default-library.adoc[Default exit-condition library] — the built-in conditions and their ids.
 * xref:reference:specify/requirement-analysis.adoc[Requirement analysis] — how feedback becomes a checkable exit condition.
 * xref:reference:specify/auditors.adoc[Auditors] — how a check is authored and bound to a condition.
+* xref:reference:specify/custom-conditions.adoc[Custom conditions and auditors] — the contract an auditor of your own is written against.
+* xref:reference:specify/probes.adoc[Discovery probes] — what each probe establishes, and what it needs in order to run.
+* xref:reference:specify/spec-conformance.adoc[Specification conformance] — the conditions that check a specification accounts for itself.
 * xref:reference:specify/auditor-kinds.adoc[Auditor kinds] — introspective, provisioned, and delegated checks.
 * xref:reference:specify/project-surface.adoc[Project surface coverage] — the code, harness, and doc surfaces a build must account for.
 * xref:reference:specify/coverage-gate.adoc[The coverage gate] — `PROC-AUDITOR-COVERAGE` over every surface.

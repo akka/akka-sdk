@@ -1,0 +1,269 @@
+= Custom exit conditions and auditors
+
+An organization writes its own exit conditions in `policy.yaml`, and implements them as commands in any language. This page covers declaring a condition, writing the auditor that answers it, testing it locally, and distributing it.
+
+== Declaring a condition
+
+Two forms. Reference one the library already ships and set the level it applies at:
+
+[source,yaml]
+----
+exit_conditions:
+  - ref: OPS-COMPILES
+    level: ALWAYS-APPLY
+----
+
+Or supply the whole condition, with the command that answers it:
+
+[source,yaml]
+----
+exit_conditions:
+  - id: CORP-LICENCE-SCAN
+    tier: project
+    dod_type: pipeline-scanning
+    level: ALWAYS-APPLY
+    invariant: "no dependency carries a licence outside the approved set"
+    signal: scan
+    probe: "licence scanner over the resolved dependency set"
+    pass: "disallowed_licences == 0"
+    autonomy: auto
+    auditor:
+      run: ["corp-licence-scan"]
+      applies_to:
+        requirement: maven
+        module: services/billing
+      params:
+        allowed: ["Apache-2.0", "MIT", "BSD-3-Clause"]
+      timeout: 120s
+----
+
+`params` reaches the auditor untouched. Tuning what a condition permits is a policy change rather than a new binary.
+
+`applies_to.requirement` gates whether the auditor runs at all. A condition requiring `maven` in a project with no `pom.xml` resolves `OPEN` with the reason `blocked-outside-project`, and never runs.
+
+See xref:reference:specify/exit-condition-schema.adoc[Exit condition schema] for every field, and xref:reference:specify/policies.adoc[Policies] for how a policy reaches a project.
+
+== The command contract
+
+An auditor is a command. Its request arrives as JSON on standard input and its answer leaves as JSON on standard output, so it can be written in any language and exercised with a pipe:
+
+[source,bash]
+----
+echo '{"kind":"auditor","version":1,...}' | ./corp-licence-scan
+----
+
+Nothing is read from the environment, no flag carries meaning, and the working directory is set without being load-bearing. Standard error is captured and shown to a developer, and is never parsed.
+
+=== The request
+
+[source,json]
+----
+{
+  "kind": "auditor",
+  "version": 1,
+  "project": {
+    "root": "/home/dev/billing",
+    "module": "services/billing"
+  },
+  "condition": {
+    "id": "CORP-LICENCE-SCAN",
+    "invariant": "no dependency carries a licence outside the approved set",
+    "pass": "disallowed_licences == 0",
+    "params": { "allowed": ["Apache-2.0", "MIT", "BSD-3-Clause"] }
+  }
+}
+----
+
+=== The answer
+
+[source,json]
+----
+{
+  "version": 1,
+  "status": "red",
+  "reason": "3 dependencies carry GPL-3.0",
+  "detail": { "offenders": ["libfoo@2.1", "libbar@0.9", "libbaz@1.4"] }
+}
+----
+
+`status` is `green`, `red`, or `open`. `reason` is one line and is the only prose the engine reads. `detail` is opaque, and is stored beside the result for anyone who wants it.
+
+An auditor that cannot reach what it needs says so:
+
+[source,json]
+----
+{ "version": 1, "status": "open", "reason": "the licence service is unreachable" }
+----
+
+`open` and `red` are different answers. `red` states that the project violates the condition. `open` states that the auditor could not establish anything. An auditor that reports `red` when its dependency was unavailable blocks a ship for a reason that has nothing to do with the project.
+
+== A worked example
+
+The Plugin ships two auditors as examples, both driven by its own tests so they cannot drift from the contract. Neither is written in the language the Plugin is.
+
+`examples/extensions/licence-scan.py` answers the condition declared above. It reads the request, takes the approved set from `params`, checks a dependency list, and answers with one of the three statuses:
+
+[source,python]
+----
+def answer(status, reason, **detail):
+    out = {"version": VERSION, "status": status, "reason": reason}
+    if detail:
+        out["detail"] = detail
+    json.dump(out, sys.stdout)
+    sys.exit(0)          # the auditor ran; the verdict is in the answer
+
+request = json.load(sys.stdin)
+allowed = set(request["condition"]["params"]["allowed"])
+
+try:
+    lines = open(os.path.join(request["project"]["root"], "licences.txt")).read().splitlines()
+except OSError as exc:
+    answer("open", f"could not read the dependency list: {exc.strerror}")
+
+offenders = [f"{n} ({lic})" for n, lic in (l.split() for l in lines if l) if lic not in allowed]
+if offenders:
+    answer("red",
+       f"{len(offenders)} dependenc{'y' if len(offenders) == 1 else 'ies'} "
+       f"carr{'ies' if len(offenders) == 1 else 'y'} an unapproved licence",
+       offenders=offenders)
+answer("green", f"{len(lines)} dependencies, all approved")
+----
+
+The missing-file branch is the point. An auditor that cannot read what it needs has established nothing, and answers `open`.
+
+Run it by hand, since a request is only text on standard input:
+
+[source,bash]
+----
+cat > licences.txt <<'EOF'
+libfoo Apache-2.0
+libbaz GPL-3.0
+EOF
+
+echo '{"kind":"auditor","version":1,"project":{"root":"."},
+       "condition":{"params":{"allowed":["Apache-2.0","MIT"]}}}' \
+  | python examples/extensions/licence-scan.py
+----
+
+[source,json]
+----
+{"version": 1, "status": "red", "reason": "1 dependency carries an unapproved licence",
+ "detail": {"offenders": ["libbaz (GPL-3.0)"]}}
+----
+
+`examples/extensions/file-present.sh` is the same contract in POSIX shell, and shows how little an auditor has to do:
+
+[source,sh]
+----
+request=$(cat)
+root=$(printf '%s' "$request" | sed -n 's/.*"root"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+
+if [ -d "$root/docs/adr" ]; then
+  printf '{"version":1,"status":"green","reason":"docs/adr is present"}'
+else
+  printf '{"version":1,"status":"red","reason":"no docs/adr directory"}'
+fi
+exit 0
+----
+
+== Exit status
+
+Exit status reports whether the auditor ran. The verdict is in the answer.
+
+Where the auditor wrote an answer, the answer decides the condition and the exit status is not consulted. Where it wrote none, the exit status decides:
+
+[cols="1,2,2",options="header"]
+|===
+| How it ended | What that says | The condition resolves
+
+| Exited `0` | The auditor ran and found nothing to report | `GREEN`
+| Started, exited non-zero | The auditor ran and the check failed | `RED`, with the first line of standard error
+| Never started | The command is missing or is not executable | `OPEN`, with the reason it could not start
+| Timed out | The engine stopped it | `OPEN`, reason `timed out after <duration>`
+|===
+
+The last two rows are the ones worth reading twice. An auditor that never started established nothing about the project, so the condition is open rather than failed. An auditor that ran and exited non-zero is the reading auditors had before this contract existed, and it continues to work.
+
+A crashed auditor and a violated condition are different things. A violation is a finding about the project; a crash is the absence of a finding. That is why an auditor answering the contract should answer `open` rather than exit non-zero when it cannot establish anything: exiting non-zero without an answer is read as the check failing.
+
+== Versioning
+
+`version` appears in both directions. The engine sends the highest version it speaks. An auditor answering with a lower version is served that version's contract; one answering with a higher version is refused rather than guessed at.
+
+== Testing locally
+
+Run the auditor against the current project and see what the engine would make of it:
+
+[source,bash]
+----
+akka specify auditor-test CORP-LICENCE-SCAN
+----
+
+That prints the request the auditor received, its raw output, and the verdict the engine would record.
+
+`auditor-test` answers whether the auditor works on the case you had in mind. `extension verify` answers whether it holds up on the cases you did not:
+
+[source,bash]
+----
+akka specify extension verify --params '{"allowed":["Apache-2.0","MIT"]}'   -- python examples/extensions/licence-scan.py
+----
+
+[source]
+----
+  ✓ completes          answered in 148ms
+  ✓ answers            wrote an answer this contract recognises
+  ✓ exit-status        exited zero, reporting that it ran
+  ✓ malformed-request  answered open, establishing nothing
+  ✓ empty-request      answered open, establishing nothing
+  ✓ future-version     answered open, establishing nothing
+  ✓ repeatable         the same request answered red twice
+  ✓ reads-the-request  answered a request naming a different project differently
+
+Speaks the contract.
+----
+
+Three of those requests are ones no auditor can answer: a body that is not JSON, an empty body, and a request declaring a contract version this build does not speak. Each must be answered `open`. An auditor that answers `red` has stated something about a project it was never told about, and an auditor that exits non-zero without answering is read by the engine as the condition failing, which reaches the developer as a blocked ship with a reason that has nothing to do with their code.
+
+Pass `--condition` to verify the auditor a declared condition already names, rather than a command you type out:
+
+[source,bash]
+----
+akka specify extension verify --condition CORP-LICENCE-SCAN
+----
+
+Add `--kind probe` to hold a discovery probe to the same contract. A probe declines differently, because a probe that fails is recorded as having failed, and the requirement on it is that it reports no findings about a request it could not read.
+
+The command exits non-zero when a rule the engine relies on is broken, so it can stand in a build.
+
+== Distribution
+
+An organization distributes an auditor by declaring it in the governance policy the Plugin already fetches. Set `governance-policy-url` in the CLI system configuration, and every project downloads that policy and resolves the conditions in it. An auditor declared there arrives with the condition it answers.
+
+[source,yaml]
+----
+exit_conditions:
+  - id: CORP-LICENCE-SCAN
+    tier: project
+    invariant: "no dependency carries a licence outside the approved set"
+    auditor:
+      run: ["corp-licence-scan"]
+      applies_to: { requirement: maven }
+      timeout: 120s
+      params:
+        allowed: ["Apache-2.0", "MIT", "BSD-3-Clause"]
+----
+
+The policy carries the declaration; it does not carry the command. Install that separately, the way the rest of your build tooling is installed. A bare name in `run` is found on `PATH`. A name containing a separator is resolved against the project root, or against the module named by `applies_to`, which is how an auditor checked into the repository alongside the code it examines is reached.
+
+== Trust and approval
+
+Where an auditor comes from decides how far it is trusted, and that is unchanged by this contract. An auditor declared in an organization's `policy.yaml` runs without a separate approval. One authored in a project or by an assistant runs only after its exact command is approved, and is reviewed adversarially for adequacy.
+
+See xref:reference:specify/auditors.adoc[Auditors] for the trust model, and xref:reference:specify/adequacy-review.adoc[The adequacy review].
+
+== Related
+
+* xref:reference:specify/auditors.adoc[Auditors]
+* xref:reference:specify/auditor-kinds.adoc[Auditor kinds]
+* xref:reference:specify/exit-condition-schema.adoc[Exit condition schema]
+* xref:reference:specify/policies.adoc[Policies]

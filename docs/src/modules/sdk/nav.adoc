@@ -3,6 +3,7 @@
 *** xref:sdk:spec-driven-development.adoc[]
 *** xref:sdk:enforced-mode.adoc[]
 *** xref:sdk:a-la-carte-mode.adoc[]
+*** xref:sdk:porting-legacy-systems.adoc[]
 *** xref:sdk:ai-coding-assistant.adoc[]
 ** xref:sdk:components/index.adoc[]
 *** xref:sdk:agents.adoc[Agents]
