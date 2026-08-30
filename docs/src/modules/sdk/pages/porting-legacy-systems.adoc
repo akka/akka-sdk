@@ -28,11 +28,11 @@ Porting onto Akka has one advantage that ordinary development does not. The orig
 | xref:reference:specify/port.adoc[/akka:port]
 | Studies the original, enumerates its interface, observes what each element does, writes the specification, and generates the exit conditions that hold the rebuild to it. Sets the project to enforced mode and hands off.
 
-| xref:reference:specify/implement.adoc[/akka:implement], xref:reference:specify/build.adoc[/akka:build], xref:reference:specify/conform.adoc[/akka:conform]
-| Build the rebuild. In enforced mode the engine sequences these, so the port proceeds without you.
+| xref:reference:specify/specify.adoc[/akka:specify]
+| The engine. Under enforcement it carries out planning, implementation, building, and conformance itself rather than recommending each in turn, so the port proceeds without you.
 
 | xref:reference:specify/status.adoc[/akka:status]
-| Reports progress, and raises the prompt to graduate once every parity condition is green.
+| Reports progress. The prompt to graduate is raised by the run that evaluates the auditors, because a status read resolves the set without running them.
 
 | `/akka:port finalize`
 | Rewrites each parity auditor so its reference is a recorded value rather than the live original.
@@ -41,7 +41,7 @@ Porting onto Akka has one advantage that ordinary development does not. The orig
 | Releases, once every condition is green and unstale.
 |===
 
-xref:reference:specify/specify.adoc[/akka:specify] and xref:reference:specify/clarify.adoc[/akka:clarify] have no part in a port. Discovery writes the specification, and it settles its own open questions by running further experiments against the original.
+xref:reference:specify/clarify.adoc[/akka:clarify] has no part in a port, and enforced mode refuses it. Discovery writes the specification, and it settles its own open questions by running further experiments against the original rather than by asking you.
 
 == How the original becomes a specification
 

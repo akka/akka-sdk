@@ -26,7 +26,7 @@ exit_conditions:
     signal: scan
     probe: "licence scanner over the resolved dependency set"
     pass: "disallowed_licences == 0"
-    autonomy: auto-close
+    autonomy: auto
     auditor:
       run: ["corp-licence-scan"]
       applies_to:
@@ -122,7 +122,10 @@ except OSError as exc:
 
 offenders = [f"{n} ({lic})" for n, lic in (l.split() for l in lines if l) if lic not in allowed]
 if offenders:
-    answer("red", f"{len(offenders)} carry an unapproved licence", offenders=offenders)
+    answer("red",
+       f"{len(offenders)} dependenc{'y' if len(offenders) == 1 else 'ies'} "
+       f"carr{'ies' if len(offenders) == 1 else 'y'} an unapproved licence",
+       offenders=offenders)
 answer("green", f"{len(lines)} dependencies, all approved")
 ----
 
@@ -132,8 +135,14 @@ Run it by hand, since a request is only text on standard input:
 
 [source,bash]
 ----
+cat > licences.txt <<'EOF'
+libfoo Apache-2.0
+libbaz GPL-3.0
+EOF
+
 echo '{"kind":"auditor","version":1,"project":{"root":"."},
-       "condition":{"params":{"allowed":["Apache-2.0","MIT"]}}}'   | python examples/extensions/licence-scan.py
+       "condition":{"params":{"allowed":["Apache-2.0","MIT"]}}}' \
+  | python examples/extensions/licence-scan.py
 ----
 
 [source,json]
@@ -196,7 +205,7 @@ That prints the request the auditor received, its raw output, and the verdict th
 
 [source,bash]
 ----
-akka specify extension verify -- python examples/extensions/licence-scan.py   --params '{"allowed":["Apache-2.0","MIT"]}'
+akka specify extension verify --params '{"allowed":["Apache-2.0","MIT"]}'   -- python examples/extensions/licence-scan.py
 ----
 
 [source]

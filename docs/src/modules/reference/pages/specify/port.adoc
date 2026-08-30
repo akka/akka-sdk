@@ -59,6 +59,14 @@ run at every condition, so the question is put once, here, while you are present
 
 › 2
 
+  This run will write one check per requirement and run them against your
+  rebuild. Approve them as they are written?
+
+  Declining is fine. The checks are still written, and each waits for its own
+  approval before it can go green.
+
+› yes
+
   Which probes should run? Defaults for `run` are marked ●.
 
     Interface and reachability
@@ -91,14 +99,6 @@ run at every condition, so the question is put once, here, while you are present
       +clock +concurrency -appearance
 
 › +concurrency
-
-  This run will write one check per requirement and run them against your
-  rebuild. Approve them as they are written?
-
-  Declining is fine. The checks are still written, and each waits for its own
-  approval before it can go green.
-
-› yes
 
   Porting knadh/listmonk
 
@@ -140,7 +140,7 @@ Selects how deeply the original is examined. Each level costs more than the one 
 | Keeping the original running alongside the rebuild until the port completes.
 |===
 
-The default is `read`. A requirement derived by reading source is weaker evidence than one derived by calling an endpoint and recording the answer, so a port studied at `read` produces a specification whose claims are all at the weakest rung. xref:reference:specify/spec-conformance.adoc[`PROC-RULE-EVIDENCE`] reports that in every status output.
+The default is `read`. A requirement derived by reading source is weaker evidence than one derived by calling an endpoint and recording the answer, so a port studied at `read` produces a specification whose claims are all at the weakest rung. Each requirement records the rung it earned, and xref:reference:specify/spec-conformance.adoc[`PROC-RULE-EVIDENCE`] checks that every one of them accounts for its evidence.
 
 === --probe
 
@@ -267,7 +267,7 @@ Every element carries a disposition. An element the command could not describe i
   Progress updates follow. Nothing needs you until one says otherwise.
 ----
 
-The project is now in enforced mode, where the engine sequences the work, so no next command is named. Running one of the sequenced steps yourself is refused with an explanation and the remedy. See xref:reference:specify/mode.adoc[/akka:mode].
+The project is now in enforced mode, where the engine sequences the work. `/akka:specify` is that engine, and it is one of the five commands enforcement permits: under enforcement it carries the sequence out rather than recommending a following command. Running one of the sequenced steps yourself is refused with an explanation and the remedy. See xref:reference:specify/mode.adoc[/akka:mode].
 
 Each parity condition carries an auditor the port wrote, and a command nobody has seen does not run until it is approved. Approving them one at a time would stop the run at each condition, so the consent is taken at invocation and covers the set. Declining is a legitimate answer: the conditions are still written, and each waits for its own approval before it can go green.
 
