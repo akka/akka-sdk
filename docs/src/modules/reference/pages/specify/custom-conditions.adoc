@@ -97,6 +97,66 @@ An auditor that cannot reach what it needs says so:
 
 `open` and `red` are different answers. `red` states that the project violates the condition. `open` states that the auditor could not establish anything. An auditor that reports `red` when its dependency was unavailable blocks a ship for a reason that has nothing to do with the project.
 
+== A worked example
+
+The Plugin ships two auditors as examples, both driven by its own tests so they cannot drift from the contract. Neither is written in the language the Plugin is.
+
+`examples/extensions/licence-scan.py` answers the condition declared above. It reads the request, takes the approved set from `params`, checks a dependency list, and answers with one of the three statuses:
+
+[source,python]
+----
+def answer(status, reason, **detail):
+    out = {"version": VERSION, "status": status, "reason": reason}
+    if detail:
+        out["detail"] = detail
+    json.dump(out, sys.stdout)
+    sys.exit(0)          # the auditor ran; the verdict is in the answer
+
+request = json.load(sys.stdin)
+allowed = set(request["condition"]["params"]["allowed"])
+
+try:
+    lines = open(os.path.join(request["project"]["root"], "licences.txt")).read().splitlines()
+except OSError as exc:
+    answer("open", f"could not read the dependency list: {exc.strerror}")
+
+offenders = [f"{n} ({lic})" for n, lic in (l.split() for l in lines if l) if lic not in allowed]
+if offenders:
+    answer("red", f"{len(offenders)} carry an unapproved licence", offenders=offenders)
+answer("green", f"{len(lines)} dependencies, all approved")
+----
+
+The missing-file branch is the point. An auditor that cannot read what it needs has established nothing, and answers `open`.
+
+Run it by hand, since a request is only text on standard input:
+
+[source,bash]
+----
+echo '{"kind":"auditor","version":1,"project":{"root":"."},
+       "condition":{"params":{"allowed":["Apache-2.0","MIT"]}}}'   | python examples/extensions/licence-scan.py
+----
+
+[source,json]
+----
+{"version": 1, "status": "red", "reason": "1 dependency carries an unapproved licence",
+ "detail": {"offenders": ["libbaz (GPL-3.0)"]}}
+----
+
+`examples/extensions/file-present.sh` is the same contract in POSIX shell, and shows how little an auditor has to do:
+
+[source,sh]
+----
+request=$(cat)
+root=$(printf '%s' "$request" | sed -n 's/.*"root"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+
+if [ -d "$root/docs/adr" ]; then
+  printf '{"version":1,"status":"green","reason":"docs/adr is present"}'
+else
+  printf '{"version":1,"status":"red","reason":"no docs/adr directory"}'
+fi
+exit 0
+----
+
 == Exit status
 
 Exit status reports whether the auditor ran. The verdict is in the answer.
@@ -133,18 +193,23 @@ An auditor reporting `red` when its target was merely unreachable passes an ordi
 
 == Distribution
 
-An extension bundle is a directory holding a manifest and the commands it names:
+An organization distributes an auditor by declaring it in the governance policy the Plugin already fetches. Set `governance-policy-url` in the CLI system configuration, and every project downloads that policy and resolves the conditions in it. An auditor declared there arrives with the condition it answers.
 
 [source,yaml]
 ----
-auditors:
+exit_conditions:
   - id: CORP-LICENCE-SCAN
-    run: ["corp-licence-scan"]
-    applies_to: { requirement: maven }
-    timeout: 120s
+    tier: project
+    invariant: "no dependency carries a licence outside the approved set"
+    auditor:
+      run: ["corp-licence-scan"]
+      applies_to: { requirement: maven }
+      timeout: 120s
+      params:
+        allowed: ["Apache-2.0", "MIT", "BSD-3-Clause"]
 ----
 
-The bundle is fetched from an `extensions-url` in the CLI's system config to `.akka/extensions/`, the same mechanism that delivers a governance policy. Commands resolve from the bundle first and from `PATH` second, so an organization that installs its tools separately can.
+The policy carries the declaration; it does not carry the command. Install that separately, the way the rest of your build tooling is installed. A bare name in `run` is found on `PATH`. A name containing a separator is resolved against the project root, or against the module named by `applies_to`, which is how an auditor checked into the repository alongside the code it examines is reached.
 
 == Trust and approval
 
