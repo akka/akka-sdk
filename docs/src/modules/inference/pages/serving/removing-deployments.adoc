@@ -1,0 +1,59 @@
+= Removing deployments
+:page-summary: Deleting a descriptor's resources tears them down in the order that keeps a hostname from pointing at a model on its way out.
+:page-persona: builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+Tearing down what a descriptor created releases the hardware it held. Deletion runs in the reverse of apply order, so no hostname is left pointing at a model that has already gone.
+
+== Saving what is running first
+
+Export writes everything running back out as a descriptor, routes included:
+
+[source, shell]
+----
+akka models export > snapshot.yaml
+----
+
+This is the way to capture a deployment that was built with direct commands rather than from a file. The result is ready to version control, with one exception: strip any token out of it first, for the reason given in xref:inference:serving/deploying-models.adoc#_supplying_a_token_for_gated_weights[Supplying a token for gated weights].
+
+Export masks secret values with `NOT EXPORTED`. Applying an exported file unedited fails validation rather than overwriting a live secret with the mask. Replace the value, or delete the secret document and create the secret ahead of time.
+
+== Removing what a descriptor names
+
+[source, shell]
+----
+akka models delete -f models.yaml
+----
+
+Routes are removed first, then deployments, then the resources they depended on.
+
+Cached weights survive by default, so the next apply does not download them again. To remove the cache as well:
+
+[source, shell]
+----
+akka models delete -f models.yaml --include-cache
+----
+
+== Removing a single deployment
+
+[source, shell]
+----
+akka models delete docs
+----
+
+This deletes one deployment by name, without a descriptor. The accelerator it ran on stays, and its capacity becomes available to another model. See xref:inference:serving/allocating-hardware.adoc#_releasing_capacity[Releasing capacity] to remove the accelerator too.
+
+[WARNING]
+====
+API keys survive teardown. Deleting a route does not revoke the keys issued against it, and rebuilding the route under the same name makes every key ever issued to it work again. Remove keys explicitly with `akka models routes keys remove`, described in xref:inference:serving/issuing-api-keys.adoc[Issuing API keys].
+====
+
+include::partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:serving/issuing-api-keys.adoc[Issuing API keys]
+* xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
+* xref:reference:cli/inference/akka-models.adoc#deployments[`akka models delete` command reference]

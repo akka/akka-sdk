@@ -1,0 +1,171 @@
+= akka models
+:page-summary: The complete command reference for serving models, covering deployments, devices, accelerators, routes, and API keys.
+:page-persona: builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+The `akka models` commands deploy models to an inference cluster and expose them on a hostname. See xref:inference:serving/index.adoc[Serving models] for the tasks these commands support, and xref:reference:descriptors/model-descriptor.adoc[Model descriptor] for the file they apply.
+
+Every command on this page is a subcommand of [.cli-prefix-source]`{cli-models}`. Commands are written without that prefix throughout. The copy button on each example copies the command with the prefix included.
+
+Every command supports `--help`. Most support `-o json` for output consumed by another program. `validate` and `export` accept the flag and ignore it, and always print their usual format.
+
+[#deployments]
+== Model deployments
+
+A deployment is one serving engine running one model on an accelerator.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `list`
+| Every deployment, with the model it serves, its KV token budget, its concurrency estimate, and whether it is ready.
+
+| `get NAME`
+| One deployment. When a model is not ready, this prints the reason in plain text.
+
+| `get NAME --wait`
+| Wait for a deployment to become ready. The first deployment downloads the weights, so this takes several minutes.
+
+| `validate -f FILE`
+| Check a descriptor offline. Reports every problem in the file at once and deploys nothing.
+
+| `apply -f FILE`
+| Create or update everything the descriptor names. Safe to repeat: it updates what changed and leaves the rest alone.
+
+| `apply -f FILE --dry-run`
+| Run the checks that need the cluster, without persisting anything.
+
+| `delete -f FILE`
+| Remove what the descriptor names, routes first. Cached weights survive.
+
+| `delete -f FILE --include-cache`
+| Remove what the descriptor names and the cached weights with it.
+
+| `delete NAME`
+| Delete a single deployment by name, without a descriptor.
+
+| `export`
+| Write everything running back out as a descriptor, routes included. Secret values are masked with `NOT EXPORTED`.
+|===
+
+`list` reports `MAX CONC`, the number of concurrent requests the KV cache comfortably holds at the configured context length. It is a sizing estimate rather than a limit, and nothing enforces it.
+
+[#proxy]
+== Proxying to a deployment
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `proxy NAME`
+| Open a local tunnel to one deployment on `localhost:8080`, bypassing the route and its API keys.
+|===
+
+The tunnel reaches one model, so the `model` field of a request body is echoed back rather than used to choose between models.
+
+[#devices]
+== Devices
+
+A device is a kind of GPU the platform has in a region. Devices are inventory and cannot be created from a descriptor or from the CLI.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `devices list`
+| Every kind of GPU available in the region, with its memory, architecture, and how many cards are free.
+
+| `devices get NAME`
+| The individual cards behind one device name, and what is running on each.
+|===
+
+[#accelerators]
+== Accelerators
+
+An accelerator claims a slice of the device inventory. A deployment is placed on an accelerator, never on a device.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `accelerators list`
+| Every accelerator, its device, its tenancy, and its free slots.
+
+| `accelerators get NAME`
+| One accelerator, stating the hardware, the tenancy, and the free slots in one line.
+
+| `accelerators create NAME --device DEVICE`
+| Create an accelerator with dedicated tenancy.
+
+| `accelerators create NAME --device DEVICE --tenancy Shared --max-models N`
+| Create an accelerator that splits one device between `N` models.
+
+| `accelerators delete NAME`
+| Remove an accelerator, releasing the capacity it held.
+|===
+
+[WARNING]
+====
+`accelerators create` does not check for free hardware. Run it against a fully allocated card and it succeeds, reporting `READY True` with `CAN PLACE 0`: an accelerator that looks healthy and can never place a model. Check `CAN PLACE`, not `READY`, before deploying against a new accelerator.
+====
+
+An accelerator is immutable once it exists. Applying a descriptor leaves an existing accelerator alone rather than reshaping it.
+
+[#routes]
+== Routes
+
+A route gives a set of deployments one hostname. Clients choose between the models on it with the `model` field of the request body.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `routes list`
+| Every hostname, the models on it, and whether it requires a key.
+
+| `routes get NAME`
+| One route: its endpoint, the model names it accepts, the state of each deployment, and why a route is not ready.
+|===
+
+`routes get` reports `Accepts`, the list of names clients may send as `model`. Adapter names appear there alongside the base name of the deployment that serves them.
+
+[#keys]
+== API keys
+
+A route refuses every request until a key authorizes it. Keys are issued per client.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `routes keys add ROUTE CLIENT`
+| Issue a key for one client. The value is shown once and cannot be read back.
+
+| `routes keys list ROUTE`
+| Which clients hold a key. Never the keys themselves.
+
+| `routes keys remove ROUTE CLIENT`
+| Revoke one client's key.
+|===
+
+[WARNING]
+====
+Deleting a route does not revoke the keys issued against it. Rebuild the route under the same name and every key ever issued to it works again. A key is only gone once `routes keys remove` has removed it.
+====
+
+include::inference:partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:serving/index.adoc[Serving models]
+* xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
+* xref:reference:cli/inference/akka-optimize.adoc[`akka optimize` command reference]

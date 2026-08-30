@@ -1,0 +1,107 @@
+= Allocating hardware to models
+:page-summary: An accelerator claims a slice of the device inventory, and a model deployment is placed on an accelerator rather than on a device.
+:page-persona: builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+An accelerator claims a slice of the device inventory described in xref:inference:serving/reviewing-hardware.adoc[Reviewing available hardware]. A model deployment is placed on an accelerator, never on a device, so an accelerator has to exist before a model can run.
+
+An accelerator states which device it claims and whether one model gets the card to itself.
+
+== Reviewing the accelerators you have
+
+[source, shell]
+----
+akka models accelerators list
+----
+
+[source, shell]
+----
+NAME       DEVICE   TENANCY     CARDS/REPLICA   MEMORY/MODEL   IN USE   CAN PLACE   READY
+standard   l4       Dedicated   1               23034Mi        1        0           True
+----
+
+`CAN PLACE` is the column that answers whether another model will fit. `READY` only says the accelerator itself is healthy.
+
+To read the same information for one accelerator as a single line:
+
+[source, shell]
+----
+akka models accelerators get standard
+----
+
+[WARNING]
+====
+Creating an accelerator does not check that the hardware behind it is free. An accelerator created against a fully allocated card reports `READY True` and `CAN PLACE 0`: it looks healthy and can never place a model. Check `CAN PLACE` before deploying against a new accelerator.
+====
+
+== Choosing a tenancy
+
+Tenancy decides whether a model gets whole cards or shares one.
+
+[cols="1,3", options="header"]
+|===
+| Tenancy
+| Behavior
+
+| `dedicated`
+| Each model gets whole devices. This is the default.
+
+| `shared`
+| Several models split the memory of one device.
+|===
+
+Dedicated tenancy is the choice for a model that has to hold its latency under load, because nothing else competes for the card's memory. Set `devicesPerReplica` above 1 to give one replica several cards. That requires a node holding that many cards, and the deployment's parallelism factors have to multiply to exactly that number.
+
+Shared tenancy fits several small models onto one card. Every model on a shared accelerator has to state `engine.memoryPercent`, because a model that does not declare its share is sized against the whole card and runs out of memory once the weights finish downloading. A shared accelerator splits a single device, so it cannot set `devicesPerReplica` above 1.
+
+== Creating an accelerator
+
+Declare the accelerator in the model descriptor when you want it version controlled alongside the models that use it:
+
+[source, yaml]
+----
+resource: Accelerator
+resourceVersion: v1
+metadata:
+  name: l4-dedicated
+spec:
+  device: l4
+  tenancy: dedicated
+----
+
+Applying the descriptor creates it. See xref:reference:descriptors/model-descriptor.adoc#accelerator[Accelerator] for every field.
+
+To create one directly instead:
+
+[source, shell]
+----
+akka models accelerators create fast --device l4
+----
+
+To split one card between two models:
+
+[source, shell]
+----
+akka models accelerators create small --device l4 --tenancy Shared --max-models 2
+----
+
+An accelerator is immutable once it exists. Re-applying a descriptor leaves an existing accelerator alone rather than reshaping it, so changing a tenancy means deleting the accelerator and creating it again.
+
+== Releasing capacity
+
+[source, shell]
+----
+akka models accelerators delete fast
+----
+
+Deleting an accelerator releases the capacity it held. Delete the deployments placed on it first, otherwise they have nowhere to run.
+
+include::partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:serving/deploying-models.adoc[Deploying models]
+* xref:reference:descriptors/model-descriptor.adoc#accelerator[Accelerator descriptor reference]
+* xref:reference:cli/inference/akka-models.adoc#accelerators[`akka models accelerators` command reference]

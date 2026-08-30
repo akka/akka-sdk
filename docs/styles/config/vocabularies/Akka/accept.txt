@@ -474,3 +474,9 @@ unforgeable
 unioned
 untyped
 unrouted
+Gemma
+LoRA
+Ministral
+Mistral
+quantization
+tokenizer

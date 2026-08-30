@@ -1,0 +1,86 @@
+= Exposing models on a hostname
+:page-summary: An inference route gives a set of model deployments one hostname, and clients choose between them with the model field of the request.
+:page-persona: builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+An inference route gives a set of model deployments one hostname. The unit is the hostname, not the deployment: one host serves many models, and clients choose between them with the `model` field of the request body. A single base URL therefore covers everything you run.
+
+== Declaring a route
+
+[source, yaml]
+----
+resource: InferenceRoute
+resourceVersion: v1
+metadata:
+  name: models
+spec:
+  host: models.acme.example
+  models:
+    - name: docs
+    - name: agent
+----
+
+Each entry names a `ModelDeployment`. The names clients may send are the deployments' own served names, adapters included, so one entry can expose several names.
+
+Served names do not have to be globally unique. Two projects may both serve a model called `agent`, because their hostnames differ.
+
+See xref:reference:descriptors/model-descriptor.adoc#inferenceroute[InferenceRoute] for every field.
+
+== Reading a route
+
+[source, shell]
+----
+akka models routes get models
+----
+
+[source, shell]
+----
+Name:           models
+Host:           models.acme.example
+Ready:          True
+Message:        1 model(s) on models.acme.example
+Endpoint:       https://models.acme.example/v1
+Own listener:   models
+Auth:           api-key
+Accepts:        docs
+
+DEPLOYMENT      SERVES   STATE
+docs            docs     Serving
+----
+
+`Accepts` is the list of names clients may send as `model`. `Endpoint` is the base URL to give an OpenAI client. The endpoint is HTTPS with a real certificate, so no client needs special configuration.
+
+To see every hostname, the models on each, and whether each requires a key:
+
+[source, shell]
+----
+akka models routes list
+----
+
+== Changing which models a hostname serves
+
+Add a model to the route in the descriptor and apply the file again to expose it. Remove it and apply again to withdraw it. Exposure resolves continuously rather than only at apply time, so a route applied before its models still works once those models arrive.
+
+== When a route is not ready
+
+`akka models routes get NAME` prints the reason. Two are common.
+
+A route naming a hostname your project does not own applies successfully and then sits at `Ready: False` with `host "…" is not configured on project`. The file is not at fault. Registering a hostname is a separate step, with DNS verified and a certificate issued, and the route starts serving as soon as it names a hostname you own.
+
+`no exposed model resolves` means the route names a deployment that is not deployed. Check that the names in `spec.models` match your deployments.
+
+A hostname the platform generated needs nothing further. A hostname you supplied carries its own certificate and gets its own listener, and certificate provisioning takes a minute or two after the first apply.
+
+== Next steps
+
+The hostname refuses every request until a key authorizes it. See xref:inference:serving/issuing-api-keys.adoc[Issuing API keys].
+
+include::partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:serving/calling-a-model.adoc[Calling a deployed model]
+* xref:reference:descriptors/model-descriptor.adoc#inferenceroute[InferenceRoute descriptor reference]
+* xref:reference:cli/inference/akka-models.adoc#routes[`akka models routes` command reference]

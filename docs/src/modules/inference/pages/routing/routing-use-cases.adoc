@@ -1,0 +1,69 @@
+= Routing use cases
+:page-summary: A manifest fixes the discovered use cases and maps each to the backend that serves it, which is what turns discovery into enforced routing.
+:page-persona: builder-developer, builder-ai-ml
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+Routing connects a use case to the backend that serves it. After the semantic router matches a request to a use case, as described in xref:inference:routing/defining-use-cases.adoc[Defining use cases], the routing rules for that use case decide which model provider receives the request.
+
+== Working sets and manifests
+
+The gateway router observes incoming traffic continuously, produces embeddings, and groups requests into discovered use cases. This set of use cases and their rankings keeps changing as traffic arrives, and it is called the _working set_.
+
+The router reports which use cases are stable and which are still moving. Once every use case above the relevance threshold carries a label, you take a snapshot of the working set and give each use case a backend name.
+
+That snapshot is a _use case manifest_. It is immutable, versioned, and provenance-verifiable. The backend names an operator supplies correspond to the gateway proxy configuration, so the manifest is a route table keyed on the meaning of a request.
+
+Only one manifest enforces routing at a time.
+
+== Inspecting a manifest
+
+To list every manifest and whether it is able to enforce:
+
+[source, shell, subs="attributes+"]
+----
+{cli-optimize} use-cases manifests list
+----
+
+To read one as it was frozen:
+
+[source, shell, subs="attributes+"]
+----
+{cli-optimize} use-cases manifests get 2026-08
+----
+
+A manifest is fixed and the working set is not, so the two separate over time. To see how far apart they have moved:
+
+[source, shell, subs="attributes+"]
+----
+{cli-optimize} use-cases manifests diff 2026-08
+----
+
+A large difference means traffic has changed shape since the manifest was frozen, and that some current traffic is being routed by a table that no longer describes it.
+
+== Replacing the live manifest
+
+Deploying a manifest makes it the routing policy and displaces the one before it:
+
+[source, shell, subs="attributes+"]
+----
+{cli-optimize} use-cases manifests deploy 2026-09
+----
+
+To withdraw a manifest from use:
+
+[source, shell, subs="attributes+"]
+----
+{cli-optimize} use-cases manifests delete 2026-08
+----
+
+xref:inference:routing/request-meaning.adoc#_getting_from_traffic_to_a_routing_policy[Getting from traffic to a routing policy] covers the steps that produce a manifest, and xref:inference:routing/request-meaning.adoc#_shifting_traffic_gradually[Shifting traffic gradually] covers moving a use case onto a new backend without replacing the manifest.
+
+include::partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:routing/request-meaning.adoc[Routing on request meaning]
+* xref:inference:routing/request-attributes.adoc[Routing on request attributes]
+* xref:reference:cli/inference/akka-optimize.adoc#working-set-and-manifests[`akka optimize use-cases manifests` command reference]

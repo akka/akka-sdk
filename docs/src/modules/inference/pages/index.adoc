@@ -22,13 +22,13 @@ An inference call has the following properties:
 
 These properties determine what the surrounding code has to do. It validates the response before using it. It handles a malformed or failed response as a normal path, described in xref:sdk:agents/failures.adoc[Failure handling]. It sets a timeout and a token budget for each call, and it defines the behavior when a model is unavailable and failover rules when exceptions occur.
 
-These properties apply to any use of a model, whether you're ranking search results or scoring transactions for fraud.
+These properties apply to any use of a model, whether the model ranks search results or scores transactions for fraud.
 
 == Inference in agentic systems
 
 An agent uses a model to decide what to do next. Selecting a tool, judging whether a task is complete, and producing an answer are inference calls. See xref:concepts:ai-agents.adoc[AI agents] for the concept and xref:sdk:agents.adoc[Agents] for the component.
 
-One request to an agentic system typically produces multiple inference calls. An agent that plans, calls tools, and checks its own output makes several calls in sequence. Systems that run agents in parallel or pass work between them increase the count further. See xref:sdk:agents/orchestrating.adoc[Multi-agent orchestration]. 
+One request to an agentic system typically produces multiple inference calls. An agent that plans, calls tools, and checks its own output makes several calls in sequence. Systems that run agents in parallel or pass work between them increase the count further. See xref:sdk:agents/orchestrating.adoc[Multi-agent orchestration].
 
 The number of calls per request influences four characteristics of the system:
 
@@ -41,14 +41,15 @@ When other inference calls are used to judge the first inferences, this number c
 
 == In this section
 
-* xref:inference:routing.adoc[*Routing*]: Deciding which model provider serves a request.
-* xref:inference:akka-cli.adoc[*Akka CLI*]: Inference commands in the `akka` CLI.
-* xref:inference:vllm.adoc[*vLLM*]: Serving models on infrastructure you control.
+* xref:inference:serving/index.adoc[*Serving models*]: Running a model on hardware in your project and exposing it on a hostname clients can call.
+* xref:inference:routing/index.adoc[*Routing requests to models*]: Deciding which model provider serves a request.
 
 include::partial$aao-inference-notice.adoc[]
 
 == See also
 
+* xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
+* xref:reference:cli/inference/index.adoc[Inference CLI commands]
 * xref:sdk:model-provider-details.adoc[AI model provider configuration]
 * xref:sdk:integrations/ai-and-models.adoc[AI & models]
 * xref:sdk:agents/llm_eval.adoc[LLM evaluation]

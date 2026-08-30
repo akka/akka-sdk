@@ -1,0 +1,201 @@
+= Deploying models
+:page-summary: A model deployment is one serving engine running one model on an accelerator, declared in a descriptor and created by applying it.
+:page-persona: builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+A model deployment is one serving engine running one model on an accelerator. You declare the deployment in a model descriptor and apply the file, which downloads the weights and starts the engine.
+
+== Declaring a deployment
+
+A deployment names the checkpoint to serve, the accelerator to run it on, and the name clients use to ask for it:
+
+[source, yaml]
+----
+resource: ModelDeployment
+resourceVersion: v1
+metadata:
+  name: docs
+spec:
+  model: mistralai/Ministral-3-3B-Instruct-2512
+  servedModelName: docs
+  replicas: 1
+  placement:
+    accelerator: l4-dedicated
+  engine:
+    maxModelLen: 8192
+    memoryPercent: 90
+----
+
+`placement.accelerator` is required. There is no path that lets the scheduler choose the hardware, because the card a model lands on decides how the model performs, and a deployment placed on whatever happens to be free changes latency without anyone asking for it.
+
+`servedModelName` defaults to `metadata.name`. It is the name clients send in the `model` field of a request, described in xref:inference:serving/calling-a-model.adoc[Calling a deployed model].
+
+See xref:reference:descriptors/model-descriptor.adoc#modeldeployment[ModelDeployment] for every field.
+
+=== Tuning the engine
+
+The `engine` block decides how the model is served:
+
+[cols="1,3", options="header"]
+|===
+| Field
+| What it does
+
+| `maxModelLen`
+| Context length the model is served at, prompt and output combined. Larger values consume more GPU memory and lower the concurrency the card sustains.
+
+| `memoryPercent`
+| Share of the card's memory the engine may use, from 1 to 100. Required on a shared accelerator.
+
+| `quantization`
+| Numeric format for the weights: `none`, `fp8`, `awq`, `gptq`, or `bitsandbytes`.
+
+| `textOnly`
+| Drops the vision tower from a multimodal checkpoint and returns its memory to the KV cache. The engine then rejects images entirely, so set it only for a multimodal checkpoint you use for text.
+
+| `checkpointFormat`
+| Weight format of the checkpoint being loaded, `auto` or `mistral`.
+
+| `toolCalling`
+| Enables OpenAI-style tool calling.
+|===
+
+Always set `maxModelLen`. Some checkpoints declare a default of 262144, and the engine sizes a KV cache for whatever the checkpoint declares.
+
+`checkpointFormat` is never inferred from the model name. A checkpoint published in Mistral's native format needs `checkpointFormat: mistral`. Without it, the checkpoint is read along the standard path and its files are parsed incorrectly.
+
+=== Enabling tool calling
+
+[source, yaml]
+----
+engine:
+  maxModelLen: 8192
+  memoryPercent: 90
+  checkpointFormat: mistral
+  toolCalling:
+    enabled: true
+    parser: mistral
+----
+
+Both sub-keys are required. `enabled` without `parser`, or `parser` without `enabled`, fails validation. Omit the block and the model serves normally but ignores the `tools` field in requests.
+
+The parser has to match the model family. Valid names come from the serving engine the platform pins rather than from the CLI, so the value is only checked for shape. Common values are `pythonic`, `mistral`, and `hermes`. Choose it deliberately: nothing verifies that a parser matches the model, and the wrong one starts healthy and returns tool calls as ordinary prose.
+
+=== Supplying a token for gated weights
+
+Checkpoints behind an account need a token, declared as a secret and referenced by the deployment:
+
+[source, yaml]
+----
+resource: Secret
+resourceVersion: v1
+metadata:
+  name: hf-token
+spec:
+  type: generic
+  data:
+    token: hf_xxxxxxxxxxxxxxxxxxxx
+---
+resource: ModelDeployment
+resourceVersion: v1
+metadata:
+  name: docs
+spec:
+  model: mistralai/Ministral-3-3B-Instruct-2512
+  placement:
+    accelerator: l4-dedicated
+  source:
+    huggingFaceTokenSecret: hf-token/token
+    cache:
+      enabled: true
+      size: 100Gi
+----
+
+[CAUTION]
+====
+The token goes into the file literally. A descriptor does not interpolate environment variables, so a value written as `+${HF_TOKEN}+` is passed through as that exact string and the download fails with an authentication error.
+
+Your working copy of the descriptor therefore holds a live credential. Do not commit it. To keep the descriptor in version control, commit a copy with the token replaced by a placeholder.
+====
+
+Enabling the cache persists the weights and the compiled artifacts across restarts. Without it, every restart pays the download and compilation cost again.
+
+== Validating before you apply
+
+Validation is offline and reports every problem in the file at once. Nothing is deployed:
+
+[source, shell]
+----
+akka models validate -f models.yaml
+----
+
+Some rules can only be checked against the cluster, such as whether a served name collides with a deployment that is already running. To run those without persisting anything:
+
+[source, shell]
+----
+akka models apply -f models.yaml --dry-run
+----
+
+== Applying the descriptor
+
+[source, shell]
+----
+akka models apply -f models.yaml
+----
+
+Applying again is safe. It updates what changed and leaves the rest alone. Apply also provisions the TLS certificate for any hostname the file names, which takes a minute or two the first time.
+
+== Waiting for a model to become ready
+
+[source, shell]
+----
+akka models get docs --wait
+----
+
+The first deployment downloads the weights, so expect several minutes. If a model stays unready, the same command without `--wait` prints the reason in plain text.
+
+Once every model is running:
+
+[source, shell]
+----
+akka models list
+----
+
+[source, shell]
+----
+NAME   MODEL                                    SERVES   KV TOKENS   MAX CONC   DEVICE      READY
+docs   mistralai/Ministral-3-3B-Instruct-2512   docs     143472      17.51      NVIDIA L4   True
+----
+
+[NOTE]
+====
+`MAX CONC` is a sizing estimate, not a limit. It is the number of concurrent requests the KV cache comfortably holds at the configured context length, which makes it useful for capacity planning. Nothing enforces it. The model accepts more concurrent requests than this number and answers them, trading latency for throughput as the queue grows.
+====
+
+== Serving several names from one deployment
+
+A LoRA adapter is served from the base model and addressed as its own model name, so one deployment can answer to several names:
+
+[source, yaml]
+----
+spec:
+  adapters:
+    - name: docs-support
+      path: s3://acme-adapters/support/
+----
+
+Each adapter name has to be unique and must not collide with `servedModelName`. Adapter names appear alongside the base name wherever served names are listed, including on the route described in xref:inference:serving/exposing-models.adoc[Exposing models on a hostname].
+
+== Next steps
+
+A deployed model is not yet reachable from outside the cluster. See xref:inference:serving/exposing-models.adoc[Exposing models on a hostname].
+
+include::partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:serving/allocating-hardware.adoc[Allocating hardware to models]
+* xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
+* xref:reference:cli/inference/akka-models.adoc[`akka models` command reference]

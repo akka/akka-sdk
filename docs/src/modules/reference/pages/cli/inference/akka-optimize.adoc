@@ -1,19 +1,22 @@
-= Akka CLI
-:page-summary: The inference commands in the akka CLI.
+= akka optimize
+:page-summary: The complete command reference for routing, model governance, budget, training, and evaluation.
 :page-persona: builder-developer, operator
 :page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 
-The `akka` CLI includes commands for working with inference.
+The `akka optimize` commands govern how requests reach a model provider and what an organization sanctions, spends, trains, and evaluates. See xref:inference:routing/index.adoc[Routing requests to models] for the tasks the routing commands support.
+
+Commands that deploy and serve a model are a separate family. See xref:reference:cli/inference/akka-models.adoc[`akka models`].
 
 Every command on this page is a subcommand of [.cli-prefix-source]`{cli-optimize}`. Commands are written without that prefix throughout. The copy button on each example copies the command with the prefix included.
 
 Documents sent with `-f FILE` are JSON. Passing `-f -` reads the document from standard input instead.
 
+[#rulesets]
 == Static routing rulesets
 
-A ruleset holds the attribute-matching rules that choose a destination for a request. See xref:inference:static-routing.adoc[Static routing] for the predicates and attributes a rule can use.
+A ruleset holds the attribute-matching rules that choose a destination for a request. See xref:reference:descriptors/routing-ruleset.adoc[Routing ruleset] for the predicates and attributes a rule can use.
 
 The singular forms `ruleset` and `rule` are accepted as aliases.
 
@@ -163,9 +166,15 @@ To list the registration, retirement, and reinstatement of a classifier, with wh
 routing-classifiers history ID
 ----
 
+[#model-registry]
 == Model registry
 
 `models` is the registry of models an organization sanctions for use. The alias `model` is accepted.
+
+[NOTE]
+====
+`{cli-optimize} models` and `{cli-models}` are different command families. This one records which models an organization permits and the conditions attached to them. `{cli-models}`, documented in xref:reference:cli/inference/akka-models.adoc[`akka models`], runs a model on hardware. `{cli-optimize} models list` and `{cli-models} list` therefore report different things.
+====
 
 [cols="2,3", options="header"]
 |===
@@ -215,54 +224,14 @@ routing-classifiers history ID
 | What may be decided about this model, and how guarded each choice is.
 |===
 
-=== Cluster deployments and capacity
+=== Deploying a registered model
 
-What a model is and what is running are the same resource seen twice, so the cluster verbs hang under `deployments` rather than taking the registry's own verbs.
+Registering a model and running one are different actions on different resources. The commands that deploy a model to an inference cluster, carve the hardware it runs on, and expose it on a hostname belong to the `akka models` family. See xref:reference:cli/inference/akka-models.adoc[`akka models`].
 
-[cols="2,3", options="header"]
-|===
-| Command
-| Description
-
-| `models deployments list`
-| Models running on an inference cluster.
-
-| `models deployments get NAME`
-| Show one deployment.
-
-| `models deployments apply -f FILE`
-| Deploy a model from a descriptor.
-
-| `models deployments validate -f FILE`
-| Check a descriptor without deploying it.
-
-| `models deployments delete [NAME]`
-| Delete model deployments from a cluster.
-
-| `models deployments export`
-| Export descriptor-managed resources as a model descriptor.
-
-| `models deployments proxy`
-| Proxy to a deployed model.
-
-| `models accelerators`
-| Carve GPU hardware into capacity models can be deployed on.
-
-| `models devices list`
-| List the kinds of GPU available in a region.
-
-| `models devices get NAME`
-| Show every card of one kind, and what is running on it.
-
-| `models routes`
-| Show which models are reachable on which hostnames.
-|===
-
-A deployment is one model serving on a cluster, selected with `--kube-context`.
-
+[#use-cases]
 == Semantic routing
 
-The commands in this section govern the use-cases a semantic router recognizes and what serves each one. See xref:inference:semantic-routing.adoc[Semantic routing] for how the routing itself works.
+The commands in this section govern the use-cases a semantic router recognizes and what serves each one. See xref:inference:routing/request-meaning.adoc[Routing on request meaning] for how the routing itself works.
 
 === Use cases
 
@@ -295,7 +264,7 @@ The commands in this section govern the use-cases a semantic router recognizes a
 [#working-set-and-manifests]
 ==== The working set and its manifests
 
-Discovery runs against live traffic. The working set is what has been discovered so far, and a manifest fixes that set so it can enforce routing. See xref:inference:semantic-routing/defining-use-cases.adoc[Defining use cases] for what a use-case is and how one is discovered.
+Discovery runs against live traffic. The working set is what has been discovered so far, and a manifest fixes that set so it can enforce routing. See xref:inference:routing/defining-use-cases.adoc[Defining use cases] for what a use-case is and how one is discovered.
 
 [cols="2,3", options="header"]
 |===
@@ -643,10 +612,11 @@ Captures recorded in production are stored in a location the CLI cannot reach in
 | Which services are answering, and at what address.
 |===
 
-include::partial$aao-inference-notice.adoc[]
+include::inference:partial$aao-inference-notice.adoc[]
 
 == See also
 
-* xref:inference:static-routing.adoc[Static routing]
+* xref:inference:routing/request-attributes.adoc[Routing on request attributes]
+* xref:reference:descriptors/routing-ruleset.adoc[Routing ruleset reference]
+* xref:reference:cli/inference/akka-models.adoc[`akka models` command reference]
 * xref:reference:cli/akka-cli/index.adoc[CLI commands]
-* xref:operations:cli/index.adoc[Akka CLI]
