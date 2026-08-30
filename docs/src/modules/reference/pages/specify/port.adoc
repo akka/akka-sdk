@@ -18,17 +18,22 @@ The system argument accepts a repository reference, a URL, or the address of a r
 
 == When flags are omitted
 
-Every question is asked before the work starts, and none afterwards. A fully specified invocation runs unattended. A bare one asks for what is missing, then runs unattended.
+Every question is asked before the work starts, and none afterwards. A fully specified invocation asks only for the consent below; a bare one asks for what is missing. Either way the run proceeds unattended once the questions are answered.
 
 [cols="1,2",options="header"]
 |===
 | Given | Behaviour
 
-| Nothing | Ask for the system, the study level, then the probes
-| The system only | Ask for the study level, then the probes
-| The system and `--study` | Ask for the probes
-| The system, `--study`, and `--probe` | Run
+| Nothing | Ask for the system, the study level, the consent, then the probes
+| The system only | Ask for the study level, the consent, then the probes
+| The system and `--study` | Ask for the consent, then the probes
+| The system, `--study`, and `--probe` | Ask for the consent, then run
 |===
+
+The consent is always asked, because it cannot be given on a command line. Each
+parity condition carries an auditor the port wrote, and a command nobody has seen
+does not run until it is approved. Approving them one at a time would stop the
+run at every condition, so the question is put once, here, while you are present.
 
 
 [source]
@@ -66,6 +71,7 @@ Every question is asked before the work starts, and none afterwards. A fully spe
       ● ordering       behaviour when events arrive out of order
         concurrency    behaviour under two conflicting writes at once
       ● distribution   behaviour across the range of an input
+        clock          behaviour that changes with time alone
 
     Confidence
       ● mutation       whether the checker fails when the answer is wrong
@@ -77,7 +83,6 @@ Every question is asked before the work starts, and none afterwards. A fully spe
 
     Unavailable for this system
       ✗ reachability   needs toolchain
-      ✗ clock          needs clock
       ✗ adverse        needs deps
       ✗ answers        needs rebuild
       ✗ stream-cut     needs rebuild
@@ -86,6 +91,14 @@ Every question is asked before the work starts, and none afterwards. A fully spe
       +clock +concurrency -appearance
 
 › +concurrency
+
+  This run will write one check per requirement and run them against your
+  rebuild. Approve them as they are written?
+
+  Declining is fine. The checks are still written, and each waits for its own
+  approval before it can go green.
+
+› yes
 
   Porting knadh/listmonk
 
@@ -243,7 +256,7 @@ Every element carries a disposition. An element the command could not describe i
 [source]
 ----
   Authored 132 parity conditions.
-  Added 6 project defaults, and turned on PROJ-PROVENANCE-DECLARED.
+  Added 9 project defaults, and turned on PROJ-PROVENANCE-DECLARED.
 
   Their auditors are approved to run, on the consent you gave at invocation.
 

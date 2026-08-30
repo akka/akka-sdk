@@ -123,7 +123,7 @@ This makes the evidence claim checkable rather than asserted. xref:reference:spe
 
 A probe that recognises an ecosystem and then reads nothing from it reports a *gap* rather than an empty result. An empty result and a complete one are otherwise indistinguishable, so a system whose ecosystem is recognised and whose route count is zero is treated as a framework the probe cannot read.
 
-A gap is reported per ecosystem, in the run record and in the picker.
+A gap is reported per ecosystem, in the result the probe writes under `.akka/discovery/`.
 
 === Kinds of gap
 
