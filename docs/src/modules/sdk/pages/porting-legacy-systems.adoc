@@ -75,7 +75,7 @@ The `--study` flag selects the depth, and the choice sets an upper bound on the 
 
 Parity conditions verify that the rebuild behaves as the original behaved. They say nothing about obligations the original never carried.
 
-A team rebuilding a system frequently intends to add something at the same time: a compliance framework, a load target, a data residency requirement. Declare those with `--also` at invocation, and they become ordinary exit conditions alongside the parity ones. A port with no additional obligations omits the flag.
+A team rebuilding a system frequently intends to add something at the same time: a compliance framework, a load target, a data residency requirement. Those are ordinary exit conditions, and the project carries them alongside the parity ones. A parity condition says the rebuild behaves as the original behaved, and says nothing about anything else the rebuild must satisfy.
 
 == What the port leaves behind
 

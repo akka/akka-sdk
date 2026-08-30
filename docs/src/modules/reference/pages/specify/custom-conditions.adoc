@@ -161,18 +161,21 @@ exit 0
 
 Exit status reports whether the auditor ran. The verdict is in the answer.
 
+Where the auditor wrote an answer, the answer decides the condition and the exit status is not consulted. Where it wrote none, the exit status decides:
+
 [cols="1,2,2",options="header"]
 |===
-| Exit | Meaning | The condition resolves
+| How it ended | What that says | The condition resolves
 
-| `0` | The auditor ran | as the answer says
-| non-zero | The auditor itself failed | `OPEN`, reason `blocked-outside-project`
-| timeout | The engine stopped it | `OPEN`, reason `blocked-outside-project`
+| Exited `0` | The auditor ran and found nothing to report | `GREEN`
+| Started, exited non-zero | The auditor ran and the check failed | `RED`, with the first line of standard error
+| Never started | The command is missing or is not executable | `OPEN`, with the reason it could not start
+| Timed out | The engine stopped it | `OPEN`, reason `timed out after <duration>`
 |===
 
-A crashed auditor and a violated condition are different things. A violation is a finding about the project; a crash is the absence of a finding.
+The last two rows are the ones worth reading twice. An auditor that never started established nothing about the project, so the condition is open rather than failed. An auditor that ran and exited non-zero is the reading auditors had before this contract existed, and it continues to work.
 
-An auditor that writes nothing to standard output and exits `0` is read as `green`, and one that writes nothing and exits non-zero as `red`. That is the behaviour of an auditor written before this contract existed, and it continues to work.
+A crashed auditor and a violated condition are different things. A violation is a finding about the project; a crash is the absence of a finding. That is why an auditor answering the contract should answer `open` rather than exit non-zero when it cannot establish anything: exiting non-zero without an answer is read as the check failing.
 
 == Versioning
 

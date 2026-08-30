@@ -29,6 +29,7 @@ Asking for a probe by name does not make it available. A probe that was asked fo
 == The catalogue
 
 `Default at` names the study levels where a probe runs without being asked for. See xref:reference:specify/port.adoc[/akka:port] for `--study` and `--probe`.
+
 === Interface and reachability
 
 [cols="1,2,1,1",options="header"]

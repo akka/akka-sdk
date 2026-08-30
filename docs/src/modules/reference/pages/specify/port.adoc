@@ -10,7 +10,7 @@ The command runs at two moments. The first invocation studies the original and h
 ----
 /akka:port knadh/listmonk
 /akka:port knadh/listmonk --study=run
-/akka:port knadh/listmonk --study=diff --also=soc2,load:1000rps
+/akka:port knadh/listmonk --study=diff
 /akka:port finalize
 ----
 
@@ -30,7 +30,6 @@ Every question is asked before the work starts, and none afterwards. A fully spe
 | The system, `--study`, and `--probe` | Run
 |===
 
-`--also` is never prompted for. Its absence is a legitimate answer.
 
 [source]
 ----
@@ -68,10 +67,6 @@ Every question is asked before the work starts, and none afterwards. A fully spe
         concurrency    behaviour under two conflicting writes at once
       ● distribution   behaviour across the range of an input
 
-    Comparison
-      ● answers        what both systems return for the same question
-        stream-cut     divergence through a live proxy
-
     Confidence
       ● mutation       whether the checker fails when the answer is wrong
         determinism    whether the same input twice produces the same answer
@@ -84,6 +79,8 @@ Every question is asked before the work starts, and none afterwards. A fully spe
       ✗ reachability   needs toolchain
       ✗ clock          needs clock
       ✗ adverse        needs deps
+      ✗ answers        needs rebuild
+      ✗ stream-cut     needs rebuild
 
     Enter to accept the defaults, or name the changes:
       +clock +concurrency -appearance
@@ -93,9 +90,8 @@ Every question is asked before the work starts, and none afterwards. A fully spe
   Porting knadh/listmonk
 
     study      run
-    probes     answers, appearance, concurrency, distribution, mutation,
+    probes     appearance, concurrency, distribution, mutation,
                ordering, sequence, surface, timing
-    also       nothing
 
   This runs unattended for several hours. You will not be asked anything
   else. Equivalent invocation:
@@ -144,29 +140,11 @@ Selects which discovery probes run. Each `--study` level carries a default set, 
 
 A probe that cannot reach the system is reported as unavailable with the capability it lacks. Asking for one by name does not make it available, and it is still reported rather than accepted quietly. See xref:reference:specify/probes.adoc[Discovery probes] for the catalogue.
 
-=== --also
-
-Declares obligations the original never carried. Parity conditions verify that the rebuild behaves as the original behaved, and they say nothing about anything else the rebuild must satisfy.
-
-[cols="1,3",options="header"]
-|===
-| Form | Meaning
-
-| A framework name, such as `soc2`
-| Adds the conditions the organization's policy associates with that framework. See xref:reference:specify/policies.adoc[Policies].
-| A target, such as `load:1000rps`
-| Adds a Product-tier condition holding the rebuild to that figure.
-| Several, comma separated
-| `--also=soc2,load:1000rps`
-|===
-
-A port that carries no additional obligations omits the flag.
-
 == Invocation
 
 [source]
 ----
-› /akka:port knadh/listmonk --study=run --also=soc2
+› /akka:port knadh/listmonk --study=run
 
   Reading knadh/listmonk…
 
@@ -265,17 +243,20 @@ Every element carries a disposition. An element the command could not describe i
 [source]
 ----
   Authored 132 parity conditions.
-  Added 6 project defaults and 4 from --also=soc2.
+  Added 6 project defaults, and turned on PROJ-PROVENANCE-DECLARED.
 
-  Mode set to enforced.
+  Their auditors are approved to run, on the consent you gave at invocation.
+
+  Mode set to enforced. The engine now sequences the work.
 
     142 conditions · 0 green · 142 open
-    Next: /akka:implement
 
   Progress updates follow. Nothing needs you until one says otherwise.
 ----
 
-The project is now in enforced mode, where the engine sequences the work. Running one of the sequenced steps yourself is refused with an explanation and the remedy. See xref:reference:specify/mode.adoc[/akka:mode].
+The project is now in enforced mode, where the engine sequences the work, so no next command is named. Running one of the sequenced steps yourself is refused with an explanation and the remedy. See xref:reference:specify/mode.adoc[/akka:mode].
+
+Each parity condition carries an auditor the port wrote, and a command nobody has seen does not run until it is approved. Approving them one at a time would stop the run at each condition, so the consent is taken at invocation and covers the set. Declining is a legitimate answer: the conditions are still written, and each waits for its own approval before it can go green.
 
 == While it runs
 
@@ -350,12 +331,14 @@ The prompt is raised by the progress update and by xref:reference:specify/status
                             delivery timing and cannot be recorded. The
                             reason is kept in the project.
 
-  142 conditions still run. None requires listmonk to exist.
+  141 conditions still run. None requires listmonk to exist.
 
   This is now an ordinary Akka Specify Plugin project.
 ----
 
 Each condition keeps its identifier, its invariant, and its pass predicate. Only the auditor changes.
+
+Underneath, the command reads the derived set with `akka specify conditions list --json`, rewrites each auditor, and writes the result back with `akka specify conditions graduate`. A condition left out of that file is retired, and `graduate` names it, so a check that goes leaves an account of itself in the project.
 
 [cols="1,3",options="header"]
 |===
@@ -368,7 +351,7 @@ Each condition keeps its identifier, its invariant, and its pass predicate. Only
 
 A condition that can only be expressed as a live comparison, and whose subject cannot be recorded, is retired. The reason is kept in the project.
 
-Graduation rewrites only conditions whose provenance is `generated`, so it never reaches a condition you wrote. Conditions added by `--also` are untouched, because they never referenced the original. See xref:reference:specify/exit-condition-schema.adoc[Exit condition schema].
+Graduation rewrites only conditions whose provenance is `generated`, so it never reaches a condition you wrote. See xref:reference:specify/exit-condition-schema.adoc[Exit condition schema].
 
 == What is enforced
 
