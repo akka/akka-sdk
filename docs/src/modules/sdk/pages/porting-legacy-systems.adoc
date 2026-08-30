@@ -62,7 +62,7 @@ The `--study` flag selects the depth, and the choice sets an upper bound on the 
 | Level | What it means for the specification
 
 | `read`
-| Requirements are inferred from source. Every claim sits at the weakest rung, and xref:reference:specify/spec-conformance.adoc[`PROC-RULE-EVIDENCE`] reports that in every status output.
+| Requirements are inferred from source. Every claim sits at the weakest rung, and each requirement records which rung it earned so xref:reference:specify/spec-conformance.adoc[`PROC-RULE-EVIDENCE`] can check that it accounts for its evidence.
 | `run`
 | The original is started and exercised, so requirements record observed behaviour.
 | `diff`
