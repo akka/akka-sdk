@@ -7,8 +7,6 @@ include::ROOT:partial$include.adoc[]
 
 The `akka models` commands deploy models to an inference cluster, expose them on a hostname, and record what an organization sanctions. See xref:inference:serving/index.adoc[Serving models] for the tasks these commands support, and xref:reference:descriptors/model-descriptor.adoc[Model descriptor] for the file they apply.
 
-Every command on this page is a subcommand of [.cli-prefix-source]`{cli-models}`. Commands are written without that prefix throughout. The copy button on each example copies the command with the prefix included.
-
 Every command supports `--help`. Most support `-o json` for output consumed by another program. `validate` and `export` accept the flag and ignore it, and always print their usual format.
 
 [#deployments]
@@ -21,34 +19,34 @@ A deployment is one serving engine running one model on an accelerator.
 | Command
 | Description
 
-| `list`
+| `akka models list`
 | Every deployment, with the model it serves, its KV token budget, its concurrency estimate, and whether it is ready.
 
-| `get NAME`
+| `akka models get NAME`
 | One deployment. When a model is not ready, this prints the reason in plain text.
 
-| `get NAME --wait`
+| `akka models get NAME --wait`
 | Wait for a deployment to become ready. The first deployment downloads the weights, so this takes several minutes.
 
-| `validate -f FILE`
+| `akka models validate -f FILE`
 | Check a descriptor offline. Reports every problem in the file at once and deploys nothing.
 
-| `apply -f FILE`
+| `akka models apply -f FILE`
 | Create or update everything the descriptor names. Safe to repeat: it updates what changed and leaves the rest alone.
 
-| `apply -f FILE --dry-run`
+| `akka models apply -f FILE --dry-run`
 | Run the checks that need the cluster, without persisting anything.
 
-| `delete -f FILE`
+| `akka models delete -f FILE`
 | Remove what the descriptor names, routes first. Cached weights survive.
 
-| `delete -f FILE --include-cache`
+| `akka models delete -f FILE --include-cache`
 | Remove what the descriptor names and the cached weights with it.
 
-| `delete NAME`
+| `akka models delete NAME`
 | Delete a single deployment by name, without a descriptor.
 
-| `export`
+| `akka models export`
 | Write everything running back out as a descriptor, routes included. Secret values are masked with `NOT EXPORTED`.
 |===
 
@@ -62,7 +60,7 @@ A deployment is one serving engine running one model on an accelerator.
 | Command
 | Description
 
-| `proxy NAME`
+| `akka models proxy NAME`
 | Open a local tunnel to one deployment on `localhost:8080`, bypassing the route and its API keys.
 |===
 
@@ -78,10 +76,10 @@ A device is a kind of GPU the platform has in a region. Devices are inventory an
 | Command
 | Description
 
-| `devices list`
+| `akka models devices list`
 | Every kind of GPU available in the region, with its memory, architecture, and how many cards are free.
 
-| `devices get NAME`
+| `akka models devices get NAME`
 | The individual cards behind one device name, and what is running on each.
 |===
 
@@ -95,19 +93,19 @@ An accelerator claims a slice of the device inventory. A deployment is placed on
 | Command
 | Description
 
-| `accelerators list`
+| `akka models accelerators list`
 | Every accelerator, its device, its tenancy, and its free slots.
 
-| `accelerators get NAME`
+| `akka models accelerators get NAME`
 | One accelerator, stating the hardware, the tenancy, and the free slots in one line.
 
-| `accelerators create NAME --device DEVICE`
+| `akka models accelerators create NAME --device DEVICE`
 | Create an accelerator with dedicated tenancy.
 
-| `accelerators create NAME --device DEVICE --tenancy Shared --max-models N`
+| `akka models accelerators create NAME --device DEVICE --tenancy Shared --max-models N`
 | Create an accelerator that splits one device between `N` models.
 
-| `accelerators delete NAME`
+| `akka models accelerators delete NAME`
 | Remove an accelerator, releasing the capacity it held.
 |===
 
@@ -128,10 +126,10 @@ A route gives a set of deployments one hostname. Clients choose between the mode
 | Command
 | Description
 
-| `routes list`
+| `akka models routes list`
 | Every hostname, the models on it, and whether it requires a key.
 
-| `routes get NAME`
+| `akka models routes get NAME`
 | One route: its endpoint, the model names it accepts, the state of each deployment, and why a route is not ready.
 |===
 
@@ -147,13 +145,13 @@ A route refuses every request until a key authorizes it. Keys are issued per cli
 | Command
 | Description
 
-| `routes keys add ROUTE CLIENT`
+| `akka models routes keys add ROUTE CLIENT`
 | Issue a key for one client. The value is shown once and cannot be read back.
 
-| `routes keys list ROUTE`
+| `akka models routes keys list ROUTE`
 | Which clients hold a key. Never the keys themselves.
 
-| `routes keys remove ROUTE CLIENT`
+| `akka models routes keys remove ROUTE CLIENT`
 | Revoke one client's key.
 |===
 
@@ -165,47 +163,47 @@ Deleting a route does not revoke the keys issued against it. Rebuild the route u
 [#governance]
 == Model governance
 
-The same `{cli-models}` noun records which models an organization sanctions and the conditions attached to them. A model you run and a model you permit are one resource, so the governance verbs act on the names that <<deployments>> lists.
+The same `akka models` noun records which models an organization sanctions and the conditions attached to them. A model you run and a model you permit are one resource, so the governance verbs act on the names that <<deployments>> lists.
 
 [cols="2,3", options="header"]
 |===
 | Command
 | Description
 
-| `apply NAME -f FILE`
+| `akka models apply NAME -f FILE`
 | Register a model or update its metadata.
 
-| `promote NAME`
+| `akka models promote NAME`
 | Promote a candidate to active.
 
-| `deprecate NAME`
+| `akka models deprecate NAME`
 | Discourage new use of a model.
 
-| `retire NAME`
+| `akka models retire NAME`
 | End the sanction to use a model.
 
-| `resolve NAME --action ACTION`
+| `akka models resolve NAME --action ACTION`
 | Resolve a decision on the model that owns it.
 
-| `signoff NAME --condition C`
+| `akka models signoff NAME --condition C`
 | Record human sign-off closing a risk condition.
 
-| `waive NAME --condition C`
+| `akka models waive NAME --condition C`
 | Record a time-bound waiver on an open condition.
 
-| `strike NAME --condition C`
+| `akka models strike NAME --condition C`
 | Turn off a condition that does not apply.
 
-| `conditions list NAME`
+| `akka models conditions list NAME`
 | Every condition on a model and its state.
 
-| `attestations list NAME`
+| `akka models attestations list NAME`
 | Every attestation recorded against a model.
 
-| `attestations create NAME -f FILE`
+| `akka models attestations create NAME -f FILE`
 | Record an externally-run evaluation or report.
 
-| `actions list NAME`
+| `akka models actions list NAME`
 | What may be decided about this model, and how guarded each choice is.
 |===
 
@@ -223,5 +221,5 @@ include::inference:partial$aao-inference-notice.adoc[]
 
 * xref:inference:serving/index.adoc[Serving models]
 * xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
-* xref:reference:cli/inference/routing.adoc[Routing commands]
-* xref:reference:cli/inference/optimization.adoc[Cost, training, and evaluation commands]
+* xref:reference:inference-cli/routing.adoc[Routing commands]
+* xref:reference:inference-cli/cost-training-and-evaluation.adoc[Cost, training, and evaluation commands]

@@ -213,4 +213,4 @@ include::partial$aao-inference-notice.adoc[]
 
 * xref:inference:routing/request-meaning.adoc[Routing on request meaning]
 * xref:reference:descriptors/routing-ruleset.adoc[Routing ruleset reference]
-* xref:reference:cli/inference/routing.adoc#rulesets[`akka rulesets` command reference]
+* xref:reference:inference-cli/routing.adoc#rulesets[`akka rulesets` command reference]

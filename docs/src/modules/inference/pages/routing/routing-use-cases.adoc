@@ -66,4 +66,4 @@ include::partial$aao-inference-notice.adoc[]
 
 * xref:inference:routing/request-meaning.adoc[Routing on request meaning]
 * xref:inference:routing/request-attributes.adoc[Routing on request attributes]
-* xref:reference:cli/inference/routing.adoc#working-set-and-manifests[`akka use-cases manifests` command reference]
+* xref:reference:inference-cli/routing.adoc#working-set-and-manifests[`akka use-cases manifests` command reference]

@@ -16,6 +16,6 @@ Technical reference material for various aspects of Akka.
 - xref:glossary.adoc[]
 - xref:api-docs.adoc[]
 - xref:cli/akka-cli/index.adoc[]
-- xref:cli/inference/index.adoc[Inference CLI commands]
+- xref:inference-cli/index.adoc[Inference CLI commands]
 - xref:descriptors/model-descriptor.adoc[]
 - xref:descriptors/routing-ruleset.adoc[]

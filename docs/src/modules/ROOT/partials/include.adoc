@@ -1,8 +1,6 @@
 // global attributes
 
 :sample-base-url: https://github.com/akka/akka-sdk/blob/main/samples
-// Parent command for the model serving CLI surface. Change here if the noun moves.
-:cli-models: akka models
 // Docker Registry HTTP API Version
 :docker_registry_http_api_version: v1
 

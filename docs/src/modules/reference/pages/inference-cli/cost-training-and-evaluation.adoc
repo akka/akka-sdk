@@ -289,10 +289,8 @@ Captures recorded in production are stored in a location the CLI cannot reach in
 
 include::inference:partial$aao-inference-notice.adoc[]
 
-include::inference:partial$aao-inference-notice.adoc[]
-
 == See also
 
-* xref:reference:cli/inference/models.adoc[Model commands]
-* xref:reference:cli/inference/routing.adoc[Routing commands]
+* xref:reference:inference-cli/models.adoc[Model commands]
+* xref:reference:inference-cli/routing.adoc[Routing commands]
 * xref:sdk:agents/llm_eval.adoc[Evaluating model responses]

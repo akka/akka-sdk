@@ -129,6 +129,6 @@ include::partial$aao-inference-notice.adoc[]
 
 * xref:inference:routing/defining-use-cases.adoc[Defining use cases]
 * xref:inference:routing/routing-use-cases.adoc[Routing use cases]
-* xref:reference:cli/inference/routing.adoc#use-cases[`akka use-cases` command reference]
+* xref:reference:inference-cli/routing.adoc#use-cases[`akka use-cases` command reference]
 * link:{url-agentgateway}[Agentgateway (CNCF), window="new"]
 * link:{url-envoy-ai-gateway}[Envoy AI Gateway (CNCF), window="new"]

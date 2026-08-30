@@ -403,5 +403,5 @@ include::inference:partial$aao-inference-notice.adoc[]
 == See also
 
 * xref:inference:serving/index.adoc[Serving models]
-* xref:reference:cli/inference/models.adoc[Model commands]
+* xref:reference:inference-cli/models.adoc[Model commands]
 * xref:reference:descriptors/index.adoc[Descriptors]

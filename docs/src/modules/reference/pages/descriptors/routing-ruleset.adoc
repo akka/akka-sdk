@@ -157,7 +157,7 @@ A `byClassifier` outcome hands the decision to a model. This is the one case whe
 |`none` decides on every turn. `conversation` lets the first turn of a conversation decide and later turns reuse that decision. Omitting the field reads as `none`. Only a deferral can carry affinity.
 |===
 
-Classifiers are registered separately from rulesets, and registration is immutable. See xref:reference:cli/inference/routing.adoc#routing-classifiers[`akka routing-classifiers`] for the commands that manage them.
+Classifiers are registered separately from rulesets, and registration is immutable. See xref:reference:inference-cli/routing.adoc#routing-classifiers[`akka routing-classifiers`] for the commands that manage them.
 
 [#ruleset-document]
 == Ruleset documents
@@ -246,5 +246,5 @@ include::inference:partial$aao-inference-notice.adoc[]
 == See also
 
 * xref:inference:routing/request-attributes.adoc[Routing on request attributes]
-* xref:reference:cli/inference/routing.adoc#rulesets[`akka rulesets` command reference]
+* xref:reference:inference-cli/routing.adoc#rulesets[`akka rulesets` command reference]
 * xref:reference:descriptors/index.adoc[Descriptors]

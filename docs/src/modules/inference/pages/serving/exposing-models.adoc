@@ -83,4 +83,4 @@ include::partial$aao-inference-notice.adoc[]
 
 * xref:inference:serving/calling-a-model.adoc[Calling a deployed model]
 * xref:reference:descriptors/model-descriptor.adoc#inferenceroute[InferenceRoute descriptor reference]
-* xref:reference:cli/inference/models.adoc#routes[`akka models routes` command reference]
+* xref:reference:inference-cli/models.adoc#routes[`akka models routes` command reference]

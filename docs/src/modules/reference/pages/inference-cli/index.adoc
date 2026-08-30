@@ -12,13 +12,13 @@ Inference commands are top-level `akka` commands. They act on different resource
 | Page
 | Covers
 
-| xref:reference:cli/inference/models.adoc[Model commands]
+| xref:reference:inference-cli/models.adoc[Model commands]
 | `akka models`: deployments, the devices and accelerators they run on, the hostnames that expose them, the API keys that authorize requests, and the governance record.
 
-| xref:reference:cli/inference/routing.adoc[Routing commands]
+| xref:reference:inference-cli/routing.adoc[Routing commands]
 | `akka rulesets`, `akka routing-classifiers`, `akka use-cases`, and `akka routing-policies`: choosing which provider serves a request.
 
-| xref:reference:cli/inference/optimization.adoc[Cost, training, and evaluation commands]
+| xref:reference:inference-cli/cost-training-and-evaluation.adoc[Cost, training, and evaluation commands]
 | `akka budget`, `akka training-runs`, `akka eval`, and the rest of what an organization spends and scores.
 |===
 

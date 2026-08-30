@@ -53,5 +53,5 @@ include::partial$aao-inference-notice.adoc[]
 == See also
 
 * xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
-* xref:reference:cli/inference/models.adoc[Model commands]
+* xref:reference:inference-cli/models.adoc[Model commands]
 * xref:sdk:model-provider-details.adoc[AI model provider configuration]
