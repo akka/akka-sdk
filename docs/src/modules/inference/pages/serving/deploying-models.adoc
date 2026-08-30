@@ -198,4 +198,4 @@ include::partial$aao-inference-notice.adoc[]
 
 * xref:inference:serving/allocating-hardware.adoc[Allocating hardware to models]
 * xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
-* xref:reference:cli/inference/akka-models.adoc[`akka models` command reference]
+* xref:reference:cli/inference/models.adoc[Model commands]

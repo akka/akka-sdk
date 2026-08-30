@@ -403,5 +403,5 @@ include::inference:partial$aao-inference-notice.adoc[]
 == See also
 
 * xref:inference:serving/index.adoc[Serving models]
-* xref:reference:cli/inference/akka-models.adoc[`akka models` command reference]
+* xref:reference:cli/inference/models.adoc[Model commands]
 * xref:reference:descriptors/index.adoc[Descriptors]

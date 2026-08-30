@@ -1,0 +1,298 @@
+= Cost, training, and evaluation commands
+:page-summary: The complete command reference for spend, incidents, pricing, model training, dataset curation, and evaluation.
+:page-persona: builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+These commands cover what an organization spends on inference and how models are trained and scored.
+
+Documents sent with `-f FILE` are JSON. Passing `-f -` reads the document from standard input instead.
+
+== Budget
+
+`akka budget` covers spend, savings, caps and ceilings. The alias `budgets` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka budget get`
+| Spend, projection, savings and unit cost.
+
+| `akka budget apply -f FILE`
+| Set caps, ceilings and counterfactual pins.
+
+| `akka budget resolve AGENT --action ACTION`
+| Resolve a spend decision.
+
+| `akka budget list`
+| Anomalies, blocked requests and scrub failures.
+|===
+
+== Incidents
+
+`akka incidents` is the incident feed, unioned from its sources. The alias `incident` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka incidents list`
+| The incident feed.
+|===
+
+== Pricing catalog
+
+`akka pricing-catalog` holds per-token model prices, versioned. The aliases `pricing-catalogs`, `catalog`, and `catalogs` are accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka pricing-catalog get`
+| A published catalog version.
+
+| `akka pricing-catalog apply -f FILE`
+| Publish a new catalog version.
+
+| `akka pricing-catalog versions list`
+| Every published version.
+|===
+
+== Training runs
+
+`akka training-runs` manages training runs. The aliases `training-run`, `runs`, and `run` are accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka training-runs apply -f PLAN`
+| Submit a training run.
+
+| `akka training-runs list`
+| List runs, in flight and finished.
+
+| `akka training-runs get RUN`
+| Show one run.
+
+| `akka training-runs wait RUN`
+| Wait for a run to finish.
+
+| `akka training-runs cancel RUN`
+| Cancel a run and free its GPUs.
+|===
+
+== Training pipelines
+
+`akka training-pipelines` manages multi-stage training pipelines. The aliases `training-pipeline`, `pipelines`, and `pipeline` are accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka training-pipelines apply -f PLAN`
+| Submit a pipeline.
+
+| `akka training-pipelines list`
+| List pipelines and the stage each is on.
+
+| `akka training-pipelines get PIPELINE`
+| Show a pipeline, stage by stage.
+
+| `akka training-pipelines wait PIPELINE`
+| Wait for every stage to finish.
+
+| `akka training-pipelines cancel PIPELINE`
+| Cancel a pipeline and its running stage.
+|===
+
+== Trained models
+
+`akka trained-models` manages the models training produced. The alias `trained-model` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka trained-models list`
+| List models and what they scored.
+
+| `akka trained-models get MODEL`
+| Show one model's lineage, cost, and score.
+|===
+
+== Training evaluations
+
+`akka training-evaluations` manages evaluations of trained models. The alias `training-evaluation` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka training-evaluations apply --model MODEL --dataset HASH`
+| Score a trained model against a dataset.
+
+| `akka training-evaluations list`
+| List evaluations and what they scored.
+
+| `akka training-evaluations get EVALUATION`
+| Show what an evaluation scored and where it got to.
+
+| `akka training-evaluations report EVALUATION`
+| Show how a model scored, field by field.
+
+| `akka training-evaluations predictions EVALUATION`
+| Show what the model answered, example by example.
+
+| `akka training-evaluations wait EVALUATION`
+| Follow an evaluation until it finishes.
+
+| `akka training-evaluations cancel EVALUATION`
+| Stop an evaluation and release what it holds.
+|===
+
+== Training datasets
+
+`akka datasets` manages training datasets. The alias `dataset` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka datasets create -f FILE`
+| Register chat-format JSONL examples. The alias `register` is accepted.
+
+| `akka datasets list`
+| List registered datasets, newest first.
+
+| `akka datasets get HASH`
+| Show what a dataset holds.
+
+| `akka datasets name NAME DATASET`
+| Point a name at a registered dataset.
+
+| `akka datasets images push PATH...`
+| Upload images, skipping the ones already registered.
+|===
+
+== Sessions and curations
+
+A session is a raw conversation corpus. A curation judges raw sessions into a training dataset.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka sessions create -f CORPUS --source SOURCE`
+| Upload a raw conversation corpus.
+
+| `akka curations apply -f FILE`
+| Start a curation run.
+
+| `akka curations wait CURATION`
+| Wait for a curation to finish.
+
+| `akka curations get ID`
+| Phase, counts, mean score and resulting dataset.
+|===
+
+== Evaluation
+
+`akka eval` covers datasets, experiments and the evaluators that score them.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka eval datasets create -f FILE`
+| Upload a dataset file and version it.
+
+| `akka eval datasets list`
+| Datasets that have been imported, most recently imported first.
+
+| `akka eval datasets get ID`
+| One dataset: what it holds, what scores it, and every version it has had.
+
+| `akka eval datasets items ID --version V`
+| The items in one version of a dataset.
+
+| `akka eval imports get ID`
+| How far an import has got.
+
+| `akka eval experiments apply -f FILE`
+| Start an experiment.
+
+| `akka eval experiments get ID`
+| How far an experiment has got, and what it has found.
+
+| `akka eval experiments record ID`
+| The finished record: the run's report, or the numbers behind it.
+
+| `akka eval experiments item EXPERIMENT ITEM`
+| One item's run, and what each evaluator said about it.
+
+| `akka eval experiments compare ID --baseline ID`
+| An experiment against a baseline, item by item.
+
+| `akka eval experiments history NAME`
+| Every run of a recurring experiment, most recent first.
+
+| `akka eval evaluators list`
+| Registered evaluators, their kind and their version.
+|===
+
+== Captures
+
+`akka captures` reads recorded interaction artifacts off a filesystem. The alias `capture` is accepted.
+
+These commands serve debugging and diagnostics. They read artifacts from a directory on disk, which is where a capture written during local development or a support investigation lands.
+
+[NOTE]
+====
+Captures recorded in production are stored in a location the CLI cannot reach in this version. The commands below read a filesystem directory only.
+====
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka captures list DIRECTORY`
+| Every artifact in a directory, newest first.
+
+| `akka captures show ARTIFACT`
+| One artifact, read forward.
+|===
+
+== Service status
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka status`
+| Which services are answering, and at what address.
+|===
+
+include::inference:partial$aao-inference-notice.adoc[]
+
+include::inference:partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:reference:cli/inference/models.adoc[Model commands]
+* xref:reference:cli/inference/routing.adoc[Routing commands]
+* xref:sdk:agents/llm_eval.adoc[Evaluating model responses]

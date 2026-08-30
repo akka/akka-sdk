@@ -75,4 +75,4 @@ include::partial$aao-inference-notice.adoc[]
 
 * xref:inference:serving/calling-a-model.adoc[Calling a deployed model]
 * xref:inference:serving/exposing-models.adoc[Exposing models on a hostname]
-* xref:reference:cli/inference/akka-models.adoc#keys[`akka models routes keys` command reference]
+* xref:reference:cli/inference/models.adoc#keys[`akka models routes keys` command reference]

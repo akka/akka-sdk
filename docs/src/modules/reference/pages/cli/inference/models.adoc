@@ -1,11 +1,11 @@
-= akka models
-:page-summary: The complete command reference for serving models, covering deployments, devices, accelerators, routes, and API keys.
+= Model commands
+:page-summary: The complete command reference for the akka models noun, covering deployments, devices, accelerators, routes, API keys, and governance.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 
-The `akka models` commands deploy models to an inference cluster and expose them on a hostname. See xref:inference:serving/index.adoc[Serving models] for the tasks these commands support, and xref:reference:descriptors/model-descriptor.adoc[Model descriptor] for the file they apply.
+The `akka models` commands deploy models to an inference cluster, expose them on a hostname, and record what an organization sanctions. See xref:inference:serving/index.adoc[Serving models] for the tasks these commands support, and xref:reference:descriptors/model-descriptor.adoc[Model descriptor] for the file they apply.
 
 Every command on this page is a subcommand of [.cli-prefix-source]`{cli-models}`. Commands are written without that prefix throughout. The copy button on each example copies the command with the prefix included.
 
@@ -162,10 +162,66 @@ A route refuses every request until a key authorizes it. Keys are issued per cli
 Deleting a route does not revoke the keys issued against it. Rebuild the route under the same name and every key ever issued to it works again. A key is only gone once `routes keys remove` has removed it.
 ====
 
+[#governance]
+== Model governance
+
+The same `{cli-models}` noun records which models an organization sanctions and the conditions attached to them. A model you run and a model you permit are one resource, so the governance verbs act on the names that <<deployments>> lists.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `apply NAME -f FILE`
+| Register a model or update its metadata.
+
+| `promote NAME`
+| Promote a candidate to active.
+
+| `deprecate NAME`
+| Discourage new use of a model.
+
+| `retire NAME`
+| End the sanction to use a model.
+
+| `resolve NAME --action ACTION`
+| Resolve a decision on the model that owns it.
+
+| `signoff NAME --condition C`
+| Record human sign-off closing a risk condition.
+
+| `waive NAME --condition C`
+| Record a time-bound waiver on an open condition.
+
+| `strike NAME --condition C`
+| Turn off a condition that does not apply.
+
+| `conditions list NAME`
+| Every condition on a model and its state.
+
+| `attestations list NAME`
+| Every attestation recorded against a model.
+
+| `attestations create NAME -f FILE`
+| Record an externally-run evaluation or report.
+
+| `actions list NAME`
+| What may be decided about this model, and how guarded each choice is.
+|===
+
+[NOTE]
+====
+`apply` takes two forms, told apart by whether a name precedes the file. `apply -f FILE` applies a descriptor and creates or updates everything it declares. `apply NAME -f FILE` registers metadata against one named model.
+====
+
+The singular alias `model` is accepted.
+
+
 include::inference:partial$aao-inference-notice.adoc[]
 
 == See also
 
 * xref:inference:serving/index.adoc[Serving models]
 * xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
-* xref:reference:cli/inference/akka-optimize.adoc[`akka optimize` command reference]
+* xref:reference:cli/inference/routing.adoc[Routing commands]
+* xref:reference:cli/inference/optimization.adoc[Cost, training, and evaluation commands]

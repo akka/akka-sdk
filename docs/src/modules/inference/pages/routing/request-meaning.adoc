@@ -35,35 +35,35 @@ Discovery runs continuously against live traffic. Turning what it finds into enf
 
 The working set is what has been discovered so far, and it keeps changing as traffic arrives.
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} use-cases working-set
+akka use-cases working-set
 ----
 
 To see whether the working set is stable enough to fix, and what is holding it back:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} use-cases status
+akka use-cases status
 ----
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} use-cases non-admission
+akka use-cases non-admission
 ----
 
 === 2. Label what was discovered
 
 The router does not name the clusters it finds. Read the requests nearest the centre of a cluster and decide what to call it:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} use-cases exemplars list 7
+akka use-cases exemplars list 7
 ----
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} use-cases label 7 orders
+akka use-cases label 7 orders
 ----
 
 See xref:inference:routing/defining-use-cases.adoc[Defining use cases] for what a use case is and how one is discovered.
@@ -72,25 +72,25 @@ See xref:inference:routing/defining-use-cases.adoc[Defining use cases] for what 
 
 Once every use case above the relevance threshold has a label, fix the set and give each label a backend:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} use-cases freeze --as 2026-08 --backend orders=frontier --backend cart=finetune
+akka use-cases freeze --as 2026-08 --backend orders=frontier --backend cart=finetune
 ----
 
 A manifest is immutable, versioned, and provenance-verifiable. To compare one against the working set as it now stands:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} use-cases manifests diff 2026-08
+akka use-cases manifests diff 2026-08
 ----
 
 === 4. Deploy the manifest
 
 Only one manifest is live at a time:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} use-cases manifests deploy 2026-08
+akka use-cases manifests deploy 2026-08
 ----
 
 See xref:inference:routing/routing-use-cases.adoc[Routing use cases] for what a manifest holds and how a use case reaches a backend.
@@ -99,28 +99,28 @@ See xref:inference:routing/routing-use-cases.adoc[Routing use cases] for what a 
 
 A routing policy states what serves a use case and in what share. To send a copy of the traffic to a second model without using its answers, or to move a fraction of real traffic onto it:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} routing-policies route finetune --usecase orders --shadow 10
+akka routing-policies route finetune --usecase orders --shadow 10
 ----
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} routing-policies route finetune --usecase orders --canary 5
+akka routing-policies route finetune --usecase orders --canary 5
 ----
 
 Setting a dial to `0` removes it. To return to the previous published policy:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} routing-policies rollback orders
+akka routing-policies rollback orders
 ----
 
 To refuse any routing change to a use case until the refusal is lifted:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} routing-policies veto orders
+akka routing-policies veto orders
 ----
 
 include::partial$aao-inference-notice.adoc[]
@@ -129,6 +129,6 @@ include::partial$aao-inference-notice.adoc[]
 
 * xref:inference:routing/defining-use-cases.adoc[Defining use cases]
 * xref:inference:routing/routing-use-cases.adoc[Routing use cases]
-* xref:reference:cli/inference/akka-optimize.adoc#use-cases[`akka optimize use-cases` command reference]
+* xref:reference:cli/inference/routing.adoc#use-cases[`akka use-cases` command reference]
 * link:{url-agentgateway}[Agentgateway (CNCF), window="new"]
 * link:{url-envoy-ai-gateway}[Envoy AI Gateway (CNCF), window="new"]

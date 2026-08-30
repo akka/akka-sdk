@@ -1,0 +1,274 @@
+= Routing commands
+:page-summary: The complete command reference for attribute routing, classifiers, discovered use cases, and routing policies.
+:page-persona: builder-developer, builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+These commands govern how the gateway router chooses a model provider for a request. See xref:inference:routing/index.adoc[Routing requests to models] for the tasks they support.
+
+Documents sent with `-f FILE` are JSON. Passing `-f -` reads the document from standard input instead.
+
+[#rulesets]
+== Static routing rulesets
+
+A ruleset holds the attribute-matching rules that choose a destination for a request. See xref:reference:descriptors/routing-ruleset.adoc[Routing ruleset] for the predicates and attributes a rule can use.
+
+The singular forms `ruleset` and `rule` are accepted as aliases.
+
+=== Listing and reading rulesets
+
+To list every ruleset with its revision and priority:
+
+[source, shell]
+----
+akka rulesets list
+----
+
+To print the current document for one ruleset:
+
+[source, shell]
+----
+akka rulesets get NAME
+----
+
+To read a past revision instead of the current one:
+
+[source, shell]
+----
+akka rulesets get NAME --revision 3
+----
+
+=== Applying and deleting rulesets
+
+To create or replace a ruleset in full:
+
+[source, shell]
+----
+akka rulesets apply NAME -f ruleset.json
+----
+
+To write only while the ruleset is still at a known revision, pass `--if-revision`. The write fails if another author has changed the ruleset in the meantime:
+
+[source, shell]
+----
+akka rulesets apply NAME -f ruleset.json --if-revision 3
+----
+
+To retire a ruleset:
+
+[source, shell]
+----
+akka rulesets delete NAME
+----
+
+The record of a retired ruleset survives its deletion.
+
+=== Editing a single rule
+
+To add or replace one rule without sending the rest of the ruleset:
+
+[source, shell]
+----
+akka rulesets rules apply RULESET RULE -f rule.json
+----
+
+To remove one rule:
+
+[source, shell]
+----
+akka rulesets rules delete RULESET RULE
+----
+
+=== Testing a ruleset
+
+To see what a ruleset would decide for a sample request, with no traffic involved:
+
+[source, shell]
+----
+akka rulesets test NAME -f request.json
+----
+
+=== Execution order and history
+
+Rulesets are evaluated in priority order. To read the order set for a ruleset:
+
+[source, shell]
+----
+akka rulesets priority NAME
+----
+
+To change it:
+
+[source, shell]
+----
+akka rulesets priority NAME --set 10
+----
+
+To list every change made to a ruleset, with its revision and who made it:
+
+[source, shell]
+----
+akka rulesets history NAME
+----
+
+[#routing-classifiers]
+== Routing classifiers
+
+A classifier is a named pointer to a model provider that a rule can select. Registration is immutable, so a retrained model is registered under a new id. The forms `routing-classifier`, `classifiers`, and `classifier` are accepted as aliases.
+
+=== Listing and reading classifiers
+
+To list what is registered, with retired entries omitted:
+
+[source, shell]
+----
+akka routing-classifiers list
+----
+
+To print one classifier as it is stored:
+
+[source, shell]
+----
+akka routing-classifiers get ID
+----
+
+=== Registering and retiring classifiers
+
+To register a classifier:
+
+[source, shell]
+----
+akka routing-classifiers apply ID -f classifier.json
+----
+
+Registration is immutable. Sending the same document again under the same id succeeds, and reinstates the entry if it had been retired. Sending a different document under an existing id is refused. A retrained model is registered under a new id.
+
+To retire a classifier:
+
+[source, shell]
+----
+akka routing-classifiers delete ID
+----
+
+Retirement is unconditional. Nothing checks whether a rule still names the classifier, so repoint any rule that selects it before retiring it. The command asks for confirmation first.
+
+=== Reading classifier history
+
+To list the registration, retirement, and reinstatement of a classifier, with who made each change and when:
+
+[source, shell]
+----
+akka routing-classifiers history ID
+----
+
+[#use-cases]
+== Semantic routing
+
+The commands in this section govern the use-cases a semantic router recognizes and what serves each one. See xref:inference:routing/request-meaning.adoc[Routing on request meaning] for how the routing itself works.
+
+=== Use cases
+
+`akka use-cases` covers the use-cases discovered in traffic and the decisions taken about them.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka use-cases list`
+| The discovered use-cases.
+
+| `akka use-cases get NAME`
+| One use-case.
+
+| `akka use-cases funnel`
+| Counts at each observe-to-route stage.
+
+| `akka use-cases non-admission`
+| Why the rest are not eligible, and what unblocks them.
+
+| `akka use-cases resolve NAME --action ACTION`
+| Resolve the safety decision on a use-case.
+
+| `akka use-cases actions NAME`
+| What may be decided about this use-case.
+|===
+
+[#working-set-and-manifests]
+==== The working set and its manifests
+
+Discovery runs against live traffic. The working set is what has been discovered so far, and a manifest fixes that set so it can enforce routing. See xref:inference:routing/defining-use-cases.adoc[Defining use cases] for what a use-case is and how one is discovered.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka use-cases status`
+| The working set, and whether it can be frozen.
+
+| `akka use-cases working-set`
+| The use-cases currently being discovered in traffic.
+
+| `akka use-cases exemplars list ID\|LABEL`
+| One use-case and the requests nearest its centre.
+
+| `akka use-cases label ID LABEL`
+| Name a use-case in the working set.
+
+| `akka use-cases freeze --as TAG --backend LABEL=BACKEND`
+| Fix the working set as a manifest.
+
+| `akka use-cases manifests list`
+| Every manifest, and whether it can enforce.
+
+| `akka use-cases manifests get TAG\|MANIFEST`
+| One manifest as it was frozen.
+
+| `akka use-cases manifests diff TAG`
+| A manifest against the working set as it stands now.
+
+| `akka use-cases manifests deploy TAG`
+| Make a manifest the live routing policy.
+
+| `akka use-cases manifests delete TAG`
+| Tombstone a manifest.
+
+| `akka use-cases captures get ID`
+| One captured exchange in full.
+|===
+
+=== Routing policies
+
+`akka routing-policies` states what serves a use-case, and in what share. The aliases `routing-policy`, `policies`, and `policy` are accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka routing-policies get USECASE`
+| The current policy and its history.
+
+| `akka routing-policies apply USECASE -f FILE`
+| Publish a policy version.
+
+| `akka routing-policies rollback USECASE`
+| Republish a previous version.
+
+| `akka routing-policies veto USECASE`
+| Refuse routing changes until lifted.
+
+| `akka routing-policies route MODEL --usecase X [--shadow N] [--canary N]`
+| Set the shadow and canary dials. `0` removes a dial.
+|===
+
+include::inference:partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:routing/request-attributes.adoc[Routing on request attributes]
+* xref:inference:routing/request-meaning.adoc[Routing on request meaning]
+* xref:reference:descriptors/routing-ruleset.adoc[Routing ruleset reference]
+* xref:reference:cli/inference/models.adoc[Model commands]

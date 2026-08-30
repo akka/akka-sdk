@@ -118,7 +118,9 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Glossary](https://doc.akka.io/reference/glossary.html.md): Terms including AI, governance, and distributed systems terminology
 - [Service configuration](https://doc.akka.io/reference/config/reference.html.md): Full HOCON configuration reference
 - [CLI command reference](https://doc.akka.io/reference/cli/akka-cli/index.html): All Akka CLI commands
-- [Inference CLI commands](https://doc.akka.io/reference/cli/inference/index.html): The akka models and akka optimize command families
+- [Model commands](https://doc.akka.io/reference/cli/inference/models.html): akka models — deployments, hardware, routes, keys, and governance
+- [Routing commands](https://doc.akka.io/reference/cli/inference/routing.html): akka rulesets, routing-classifiers, use-cases, and routing-policies
+- [Cost, training, and evaluation commands](https://doc.akka.io/reference/cli/inference/optimization.html): akka budget, training-runs, eval, and related commands
 - [Model descriptor](https://doc.akka.io/reference/descriptors/model-descriptor.html.md): Every field of the YAML that declares models, accelerators, secrets, and routes
 - [Routing ruleset](https://doc.akka.io/reference/descriptors/routing-ruleset.html.md): Predicates, attributes, match blocks, and outcomes for attribute routing
 - [Release notes](https://doc.akka.io/reference/release-notes.html.md): Latest updates and changes

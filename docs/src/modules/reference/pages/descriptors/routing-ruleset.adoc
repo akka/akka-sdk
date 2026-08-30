@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-A routing ruleset is the JSON document applied by `akka optimize rulesets apply`. It declares the closed set of destinations the ruleset may emit, the destination for unclaimed traffic, the headers the gateway reports its decision in, and the rules themselves. See xref:inference:routing/request-attributes.adoc[Routing on request attributes] for the tasks these documents support.
+A routing ruleset is the JSON document applied by `akka rulesets apply`. It declares the closed set of destinations the ruleset may emit, the destination for unclaimed traffic, the headers the gateway reports its decision in, and the rules themselves. See xref:inference:routing/request-attributes.adoc[Routing on request attributes] for the tasks these documents support.
 
 A ruleset is a logical grouping of named rules. The ruleset is the unit of enforcement, not the individual rule. The evidence log emitted by the gateway records which rules were evaluated and their results, and rules cannot be enforced on requests outside a ruleset.
 
@@ -157,7 +157,7 @@ A `byClassifier` outcome hands the decision to a model. This is the one case whe
 |`none` decides on every turn. `conversation` lets the first turn of a conversation decide and later turns reuse that decision. Omitting the field reads as `none`. Only a deferral can carry affinity.
 |===
 
-Classifiers are registered separately from rulesets, and registration is immutable. See xref:reference:cli/inference/akka-optimize.adoc#routing-classifiers[`akka optimize routing-classifiers`] for the commands that manage them.
+Classifiers are registered separately from rulesets, and registration is immutable. See xref:reference:cli/inference/routing.adoc#routing-classifiers[`akka routing-classifiers`] for the commands that manage them.
 
 [#ruleset-document]
 == Ruleset documents
@@ -246,5 +246,5 @@ include::inference:partial$aao-inference-notice.adoc[]
 == See also
 
 * xref:inference:routing/request-attributes.adoc[Routing on request attributes]
-* xref:reference:cli/inference/akka-optimize.adoc#rulesets[`akka optimize rulesets` command reference]
+* xref:reference:cli/inference/routing.adoc#rulesets[`akka rulesets` command reference]
 * xref:reference:descriptors/index.adoc[Descriptors]

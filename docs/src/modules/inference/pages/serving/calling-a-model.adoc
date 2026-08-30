@@ -85,4 +85,4 @@ include::partial$aao-inference-notice.adoc[]
 
 * xref:inference:routing/index.adoc[Routing requests to models]
 * xref:sdk:agents.adoc[Agents]
-* xref:reference:cli/inference/akka-models.adoc#proxy[`akka models proxy` command reference]
+* xref:reference:cli/inference/models.adoc#proxy[`akka models proxy` command reference]

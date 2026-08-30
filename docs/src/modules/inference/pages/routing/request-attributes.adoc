@@ -76,39 +76,39 @@ Every outcome, including the default, has to name a declared destination. See xr
 
 == Applying a ruleset
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} rulesets apply commit-routing -f ruleset.json
+akka rulesets apply commit-routing -f ruleset.json
 ----
 
 To write only while the ruleset is still at the revision you read, so the write fails if another author changed it in the meantime:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} rulesets apply commit-routing -f ruleset.json --if-revision 3
+akka rulesets apply commit-routing -f ruleset.json --if-revision 3
 ----
 
 To read what is currently applied:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} rulesets get commit-routing
+akka rulesets get commit-routing
 ----
 
 To list every ruleset with its revision and priority:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} rulesets list
+akka rulesets list
 ----
 
 == Testing a ruleset before it sees traffic
 
 To see what a ruleset decides for a sample request, with no traffic involved:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} rulesets test commit-routing -f request.json
+akka rulesets test commit-routing -f request.json
 ----
 
 Run this after every change. A rule that matches nothing is not an error, and the ruleset applies successfully either way.
@@ -117,16 +117,16 @@ Run this after every change. A rule that matches nothing is not an error, and th
 
 To add or replace a single rule without sending the rest of the ruleset:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} rulesets rules apply commit-routing commit-message -f rule.json
+akka rulesets rules apply commit-routing commit-message -f rule.json
 ----
 
 To remove one:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} rulesets rules delete commit-routing commit-message
+akka rulesets rules delete commit-routing commit-message
 ----
 
 == Setting the order rules are evaluated in
@@ -135,30 +135,30 @@ Rules are evaluated by `priority`, lower first, with `id` breaking ties. The ord
 
 Rulesets are evaluated in priority order too. That priority is set through the CLI rather than in the document, so reordering rulesets does not read as a change of policy:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} rulesets priority commit-routing --set 10
+akka rulesets priority commit-routing --set 10
 ----
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} rulesets priority commit-routing
+akka rulesets priority commit-routing
 ----
 
 == Reading what changed
 
 To list every change made to a ruleset, with its revision and who made it:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} rulesets history commit-routing
+akka rulesets history commit-routing
 ----
 
 Retiring a ruleset does not remove that record:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} rulesets delete commit-routing
+akka rulesets delete commit-routing
 ----
 
 == Deferring a decision to a classifier
@@ -167,9 +167,9 @@ A `byClassifier` outcome hands the decision to a model. This is the one case whe
 
 Register the classifier first. Registration is immutable, so a retrained model is registered under a new id:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} routing-classifiers apply commit-router-v4 -f classifier.json
+akka routing-classifiers apply commit-router-v4 -f classifier.json
 ----
 
 Then write a rule that defers to it:
@@ -202,9 +202,9 @@ The two sides of `destinations` come from different places. `slm` and `big` are 
 
 Retiring a classifier is unconditional. Nothing checks whether a rule still names it, so change any rule that selects it first:
 
-[source, shell, subs="attributes+"]
+[source, shell]
 ----
-{cli-optimize} routing-classifiers delete commit-router-v4
+akka routing-classifiers delete commit-router-v4
 ----
 
 include::partial$aao-inference-notice.adoc[]
@@ -213,4 +213,4 @@ include::partial$aao-inference-notice.adoc[]
 
 * xref:inference:routing/request-meaning.adoc[Routing on request meaning]
 * xref:reference:descriptors/routing-ruleset.adoc[Routing ruleset reference]
-* xref:reference:cli/inference/akka-optimize.adoc#rulesets[`akka optimize rulesets` command reference]
+* xref:reference:cli/inference/routing.adoc#rulesets[`akka rulesets` command reference]

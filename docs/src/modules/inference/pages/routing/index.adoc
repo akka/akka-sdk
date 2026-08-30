@@ -36,5 +36,5 @@ include::partial$aao-inference-notice.adoc[]
 == See also
 
 * xref:inference:serving/index.adoc[Serving models]
-* xref:reference:cli/inference/akka-optimize.adoc[`akka optimize` command reference]
+* xref:reference:cli/inference/routing.adoc[Routing commands]
 * xref:sdk:model-provider-details.adoc[AI model provider configuration]

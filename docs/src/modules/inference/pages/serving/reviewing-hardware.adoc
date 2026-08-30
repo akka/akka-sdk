@@ -72,4 +72,4 @@ include::partial$aao-inference-notice.adoc[]
 == See also
 
 * xref:inference:serving/allocating-hardware.adoc[Allocating hardware to models]
-* xref:reference:cli/inference/akka-models.adoc#devices[`akka models devices` command reference]
+* xref:reference:cli/inference/models.adoc#devices[`akka models devices` command reference]

@@ -56,4 +56,4 @@ include::partial$aao-inference-notice.adoc[]
 
 * xref:inference:serving/issuing-api-keys.adoc[Issuing API keys]
 * xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
-* xref:reference:cli/inference/akka-models.adoc#deployments[`akka models delete` command reference]
+* xref:reference:cli/inference/models.adoc#deployments[`akka models delete` command reference]
