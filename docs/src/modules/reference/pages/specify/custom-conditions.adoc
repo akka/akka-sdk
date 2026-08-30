@@ -2,8 +2,6 @@
 
 An organization writes its own exit conditions in `policy.yaml`, and implements them as commands in any language. This page covers declaring a condition, writing the auditor that answers it, testing it locally, and distributing it.
 
-The command contract described here is shared with xref:reference:specify/probes.adoc[discovery probes]. An auditor and a probe are asked different questions and answer with different shapes, over the same interface.
-
 == Declaring a condition
 
 Two forms. Reference one the library already ships and set the level it applies at:
@@ -160,4 +158,3 @@ See xref:reference:specify/auditors.adoc[Auditors] for the trust model, and xref
 * xref:reference:specify/auditor-kinds.adoc[Auditor kinds]
 * xref:reference:specify/exit-condition-schema.adoc[Exit condition schema]
 * xref:reference:specify/policies.adoc[Policies]
-* xref:reference:specify/probes.adoc[Discovery probes]
