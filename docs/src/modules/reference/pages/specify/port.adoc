@@ -1,0 +1,381 @@
+= /akka:port
+
+Build a specification from a system that already exists, generate the exit conditions that hold a rebuild to that system's behaviour, and hand the result to the xref:reference:specify/index.adoc[Akka Specify Plugin] as an ordinary project.
+
+The command runs at two moments. The first invocation studies the original and hands off. `/akka:port finalize` runs after the rebuild matches it. Between them the port proceeds without you, because every decision you make is made at invocation.
+
+== Usage
+
+[source]
+----
+/akka:port knadh/listmonk
+/akka:port knadh/listmonk --study=run
+/akka:port knadh/listmonk --study=diff --also=soc2,load:1000rps
+/akka:port finalize
+----
+
+The system argument accepts a repository reference, a URL, or the address of a running instance.
+
+== When flags are omitted
+
+Every question is asked before the work starts, and none afterwards. A fully specified invocation runs unattended. A bare one asks for what is missing, then runs unattended.
+
+[cols="1,2",options="header"]
+|===
+| Given | Behaviour
+
+| Nothing | Ask for the system, the study level, then the probes
+| The system only | Ask for the study level, then the probes
+| The system and `--study` | Ask for the probes
+| The system, `--study`, and `--probe` | Run
+|===
+
+`--also` is never prompted for. Its absence is a legitimate answer.
+
+[source]
+----
+› /akka:port
+
+  What are you porting?
+  A repository reference, a URL, or the address of a running instance.
+
+› knadh/listmonk
+
+  Reading knadh/listmonk…
+
+  Go · Echo · PostgreSQL · Redis
+  AGPL-3.0, © the knadh/listmonk authors
+
+  How deeply should this system be studied?
+
+    [1] read    Static analysis only. Nothing is executed.          ~5 min
+    [2] run     The original is started and exercised.             ~40 min
+    [3] diff    Adds a proxy comparing both systems throughout.
+                                                          ~40 min, continuous
+
+› 2
+
+  Which probes should run? Defaults for `run` are marked ●.
+
+    Interface and reachability
+      ● surface        the routes, configuration keys, scheduled jobs, and
+                       tables the system exposes
+        coverage       which of the original's own tests touch each element
+
+    Behaviour
+      ● sequence       behaviour across a sequence of calls rather than one
+      ● ordering       behaviour when events arrive out of order
+        concurrency    behaviour under two conflicting writes at once
+      ● distribution   behaviour across the range of an input
+
+    Comparison
+      ● answers        what both systems return for the same question
+        stream-cut     divergence through a live proxy
+
+    Confidence
+      ● mutation       whether the checker fails when the answer is wrong
+        determinism    whether the same input twice produces the same answer
+
+    Interface appearance and performance
+      ● appearance     the rendered surface, captured and compared
+      ● timing         a measured figure, with its own noise floor
+
+    Unavailable for this system
+      ✗ reachability   needs toolchain
+      ✗ clock          needs clock
+      ✗ adverse        needs deps
+
+    Enter to accept the defaults, or name the changes:
+      +clock +concurrency -appearance
+
+› +concurrency
+
+  Porting knadh/listmonk
+
+    study      run
+    probes     answers, appearance, concurrency, distribution, mutation,
+               ordering, sequence, surface, timing
+    also       nothing
+
+  This runs unattended for several hours. You will not be asked anything
+  else. Equivalent invocation:
+
+    /akka:port knadh/listmonk --study=run --probe=+concurrency
+
+  Begin? [Y/n]
+›
+----
+
+The equivalent invocation is printed because it is what a second person runs to reproduce the port.
+
+== Flags
+
+=== --study
+
+Selects how deeply the original is examined. Each level costs more than the one before it, and the level you choose sets an upper bound on the evidence any requirement may claim.
+
+[cols="1,2,2",options="header"]
+|===
+| Level | What it does | What it requires of you
+
+| `read`
+| Static analysis of the source. Route declarations, configuration schemas, job registrations, and migrations are read to produce the interface list.
+| Nothing. The original is never executed.
+
+| `run`
+| Starts the original and exercises it, so behaviour is observed rather than inferred.
+| Executing software you may not control, on hardware you do.
+
+| `diff`
+| Adds a comparison proxy that answers each request from both systems for the duration of the rebuild, reporting divergence as it appears.
+| Keeping the original running alongside the rebuild until the port completes.
+|===
+
+The default is `read`. A requirement derived by reading source is weaker evidence than one derived by calling an endpoint and recording the answer, so a port studied at `read` produces a specification whose claims are all at the weakest rung. xref:reference:specify/spec-conformance.adoc[`PROC-RULE-EVIDENCE`] reports that in every status output.
+
+=== --probe
+
+Selects which discovery probes run. Each `--study` level carries a default set, and `--probe` states the changes against it. A bare name is an addition, so `clock` and `+clock` mean the same thing.
+
+[source]
+----
+--probe=+clock,+concurrency,-appearance
+----
+
+A probe that cannot reach the system is reported as unavailable with the capability it lacks. Asking for one by name does not make it available, and it is still reported rather than accepted quietly. See xref:reference:specify/probes.adoc[Discovery probes] for the catalogue.
+
+=== --also
+
+Declares obligations the original never carried. Parity conditions verify that the rebuild behaves as the original behaved, and they say nothing about anything else the rebuild must satisfy.
+
+[cols="1,3",options="header"]
+|===
+| Form | Meaning
+
+| A framework name, such as `soc2`
+| Adds the conditions the organization's policy associates with that framework. See xref:reference:specify/policies.adoc[Policies].
+| A target, such as `load:1000rps`
+| Adds a Product-tier condition holding the rebuild to that figure.
+| Several, comma separated
+| `--also=soc2,load:1000rps`
+|===
+
+A port that carries no additional obligations omits the flag.
+
+== Invocation
+
+[source]
+----
+› /akka:port knadh/listmonk --study=run --also=soc2
+
+  Reading knadh/listmonk…
+
+  Go · Echo · PostgreSQL · Redis
+  AGPL-3.0, © the knadh/listmonk authors
+
+  Studying at level `run`. The original will be started on this machine and
+  exercised. Its evidence ceiling is `exercised`.
+----
+
+== Discovery
+
+Enumeration produces the interface list without depending on anyone's recollection of the system.
+
+[source]
+----
+  Enumerating the interface…
+
+    94  HTTP routes
+    41  configuration keys
+     4  scheduled jobs
+    18  database tables
+   ───
+   157  interface elements
+
+  Observing behaviour…      [########################] 157/157
+
+  Grounding
+    exercised   121   called and observed
+    documented   24   stated by the project's own documentation
+    inspected    12   inferred by reading the source
+----
+
+Where an observation is ambiguous, discovery designs a further experiment and observes again. Where that loop exhausts itself, it records an assumption and continues.
+
+[source]
+----
+  Resolving ambiguity…
+
+    FR-058  bounce processing when a mailbox reports a soft failure
+            5 further experiments · resolved: three soft bounces within
+            24 hours mark the subscriber as unconfirmed
+
+    FR-103  whether deleting a list cascades to its campaigns
+            4 further experiments · unresolved
+
+            Assumed: deletion is refused while campaigns reference the list.
+            The schema declares the foreign key without a cascade, and no
+            observation contradicted it. Evidence recorded as `inspected`.
+
+  0 unresolved questions · 1 assumption recorded
+----
+
+An assumption stays visible in every status report until someone strengthens it or accepts it.
+
+== The specification
+
+[source]
+----
+  Wrote specs/001-listmonk/spec.md
+
+    132 requirements     FR-001 … FR-132, annotated `observed`
+     11 success criteria
+    143 traceability rows
+
+  PROJ-SPEC-SCHEMA  green
+  PROC-RULE-EVIDENCE  green · 12 requirements at `inspected`
+----
+
+The specification is written in the standard template. Every requirement carries an identifier, appears in the traceability table with a source and a test, and records how it was established. No `[NEEDS CLARIFICATION]` marker survives into the specification, so the handoff never waits on a person. See xref:reference:specify/spec-conformance.adoc[Specification conformance].
+
+== Interface disposition
+
+[source]
+----
+  157 interface elements · 151 covered by a requirement · 6 dropped
+
+  Dropped, with reasons:
+
+    /api/import/upload           no observation succeeded; the endpoint
+    /api/import/status           requires a multipart upload the harness
+    /api/import/log              could not construct
+
+    /api/maintenance/analytics   requires an administrative session the
+    /api/maintenance/set-tags    harness could not establish
+    /api/maintenance/subscribers
+----
+
+Every element carries a disposition. An element the command could not describe is dropped, and the reason is recorded as a divergence that stays with the project. This list is the first thing worth reading when the port completes.
+
+== Handoff
+
+[source]
+----
+  Authored 132 parity conditions.
+  Added 6 project defaults and 4 from --also=soc2.
+
+  Mode set to enforced.
+
+    142 conditions · 0 green · 142 open
+    Next: /akka:implement
+
+  Progress updates follow. Nothing needs you until one says otherwise.
+----
+
+The project is now in enforced mode, where the engine sequences the work. Running one of the sequenced steps yourself is refused with an explanation and the remedy. See xref:reference:specify/mode.adoc[/akka:mode].
+
+== While it runs
+
+You are free to work on other projects. An update appears in this terminal when a condition changes state, and at least every thirty minutes regardless, so a stalled port stays visible.
+
+[source]
+----
+  listmonk · 1h 47m · step: implement
+
+    conditions      61 of 142 green
+    since 11:15     +14 green · 0 red
+    working on      FR-044 … FR-058, bounce processing
+
+  Nothing needs you.
+----
+
+An update names anything waiting on a person.
+
+[source]
+----
+  listmonk · 5h 02m · step: implement
+
+    conditions      118 of 142 green
+    since 14:30     +1 green · 2 red
+    working on      FR-103, list deletion
+
+  Needs you: FR-103 rests on an assumption that three attempts have now
+  contradicted. Campaigns referencing a deleted list are archived rather
+  than blocking the delete. Confirm the correction, or run the original
+  and settle it.
+----
+
+An update with nothing to report still appears.
+
+[source]
+----
+  listmonk · 5h 32m · step: implement
+
+    conditions      118 of 142 green
+    since 15:02     no change
+    working on      FR-103, list deletion
+
+  Nothing needs you.
+----
+
+== Completion
+
+[source]
+----
+  listmonk · 8h 14m · step: conform
+
+    conditions      142 of 142 green
+
+  These auditors compare the rebuild against a running listmonk. If that
+  system is decommissioned, 132 of them stop working.
+
+  Run /akka:port finalize.
+----
+
+The prompt is raised by the progress update and by xref:reference:specify/status.adoc[/akka:status].
+
+== Graduation
+
+[source]
+----
+› /akka:port finalize
+
+   124  recorded fixtures   responses captured during the port
+     5  replayed tables     bounce thresholds, campaign scheduling, retries
+     2  absolute budgets    "as fast as listmonk" became a measured figure
+     1  retired             FR-089 required a live comparison against SMTP
+                            delivery timing and cannot be recorded. The
+                            reason is kept in the project.
+
+  142 conditions still run. None requires listmonk to exist.
+
+  This is now an ordinary Akka Specify Plugin project.
+----
+
+Each condition keeps its identifier, its invariant, and its pass predicate. Only the auditor changes.
+
+[cols="1,3",options="header"]
+|===
+| Graduates to | For a condition that compared
+
+| A recorded fixture | Two responses. The auditor compares one response against a stored value.
+| A replayed table | Two decisions across a sweep of inputs, such as scheduling or expiry. The auditor replays the recorded inputs and expected outputs.
+| An absolute budget | Two timings. The comparison is replaced by the figure the original achieved.
+|===
+
+A condition that can only be expressed as a live comparison, and whose subject cannot be recorded, is retired. The reason is kept in the project.
+
+Graduation rewrites only conditions whose provenance is `generated`, so it never reaches a condition you wrote. Conditions added by `--also` are untouched, because they never referenced the original. See xref:reference:specify/exit-condition-schema.adoc[Exit condition schema].
+
+== What is enforced
+
+The discovery level is recorded when it is chosen, and it caps the evidence any requirement may claim. Every requirement carries an identifier, a traceability row naming a source and a test, and a record of how it was established. No specification reaches handoff while an unresolved clarification marker survives. Every enumerated interface element carries a disposition before handoff.
+
+== See also
+
+* xref:sdk:porting-legacy-systems.adoc[Porting legacy systems]
+* xref:reference:specify/spec-conformance.adoc[Specification conformance]
+* xref:reference:specify/mode.adoc[/akka:mode]
+* xref:reference:specify/exit-condition-schema.adoc[Exit condition schema]
+* xref:reference:specify/policies.adoc[Policies]
+* xref:reference:specify/index.adoc[]

@@ -1,0 +1,101 @@
+= Porting legacy systems
+:page-summary: Rebuild a system that already exists onto Akka, with the original as the reference. Discovery derives the specification by running the system; generated exit conditions hold the rebuild to it; graduation converts those conditions into regression tests once the original is retired.
+:page-when-to-use: Use when the behaviour you must reproduce is defined by software that is already running, rather than by a requirement someone can write down.
+:page-related: xref:sdk:spec-driven-development.adoc[], xref:sdk:enforced-mode.adoc[], xref:reference:specify/port.adoc[]
+:page-prerequisites: Akka CLI installed, a supported AI coding assistant, and access to the system being replaced
+:page-persona: Developer, Tech Lead, Architect
+
+include::ROOT:partial$include.adoc[]
+
+A port begins with a system that works and no specification of what it does. The behaviour you have to reproduce is whatever the running software does, including the parts nobody documented and the parts nobody remembers.
+
+That changes what the Akka Specify Plugin has to do. In ordinary xref:sdk:spec-driven-development.adoc[spec-driven development] you state what you want and the Plugin holds the build to it. In a port, the statement of what you want has to be derived from the original first, and then the rebuild has to be held to the original as well as to the specification.
+
+== Why a port is a different problem
+
+An authored specification cannot be factually wrong. You decided it. A requirement may turn out to be unwise or may go unmet, and both of those are visible.
+
+A derived specification can be wrong. It is a claim about somebody else's system, and a claim can misread what it describes. That is a second failure mode, and it is invisible to every check that compares a build against its specification: the build can satisfy every requirement while the requirements misdescribe the original.
+
+Porting onto Akka has one advantage that ordinary development does not. The original is running, so correctness is decidable. Two systems either return the same answer or they do not.
+
+== The workflow
+
+[cols="1,3",options="header"]
+|===
+| Command | What it contributes
+
+| xref:reference:specify/port.adoc[/akka:port]
+| Studies the original, enumerates its interface, observes what each element does, writes the specification, and generates the exit conditions that hold the rebuild to it. Sets the project to enforced mode and hands off.
+
+| xref:reference:specify/implement.adoc[/akka:implement], xref:reference:specify/build.adoc[/akka:build], xref:reference:specify/conform.adoc[/akka:conform]
+| Build the rebuild. In enforced mode the engine sequences these, so the port proceeds without you.
+
+| xref:reference:specify/status.adoc[/akka:status]
+| Reports progress, and raises the prompt to graduate once every parity condition is green.
+
+| `/akka:port finalize`
+| Rewrites each parity auditor so its reference is a recorded value rather than the live original.
+
+| xref:reference:specify/ship.adoc[/akka:ship]
+| Releases, once every condition is green and unstale.
+|===
+
+xref:reference:specify/specify.adoc[/akka:specify] and xref:reference:specify/clarify.adoc[/akka:clarify] have no part in a port. Discovery writes the specification, and it settles its own open questions by running further experiments against the original.
+
+== How the original becomes a specification
+
+Discovery runs in two passes.
+
+The first pass enumerates the interface by reading route declarations, configuration schemas, job registrations, and migrations. The result is a list of every element the system exposes, produced without depending on anyone's recollection.
+
+The second pass observes what each element does. Where an observation is ambiguous, discovery designs a further experiment and observes again. Where that loop exhausts itself, it records an assumption, writes the requirement, and sets its evidence to the weakest rung so the assumption stays visible.
+
+Every enumerated element then carries a disposition. It is covered by a requirement, or it is dropped with a reason that is recorded as a divergence. An element the port could not describe is named rather than passed over, so a capability that was missed reads differently from one that was deliberately excluded.
+
+== How deeply to study the original
+
+The `--study` flag selects the depth, and the choice sets an upper bound on the evidence any requirement may claim.
+
+[cols="1,3",options="header"]
+|===
+| Level | What it means for the specification
+
+| `read`
+| Requirements are inferred from source. Every claim sits at the weakest rung, and xref:reference:specify/spec-conformance.adoc[`PROC-RULE-EVIDENCE`] reports that in every status output.
+| `run`
+| The original is started and exercised, so requirements record observed behaviour.
+| `diff`
+| A comparison proxy answers each request from both systems for the duration of the rebuild, and divergence is reported as it appears.
+|===
+
+`run` and `diff` execute software you may not control on hardware you do. That is a decision about your environment as much as about the port.
+
+== Parity is not the whole definition of done
+
+Parity conditions verify that the rebuild behaves as the original behaved. They say nothing about obligations the original never carried.
+
+A team rebuilding a system frequently intends to add something at the same time: a compliance framework, a load target, a data residency requirement. Declare those with `--also` at invocation, and they become ordinary exit conditions alongside the parity ones. A port with no additional obligations omits the flag.
+
+== What the port leaves behind
+
+Parity conditions compare the rebuild against a running original, so they stop working when the original is decommissioned. `/akka:port finalize` prevents that.
+
+During the port each parity auditor called both systems and compared the answers, which means it captured what the original answered. Graduation points each auditor at that captured value. A condition that compared two responses compares one response against a stored fixture. A condition that compared decisions across a sweep of inputs replays a recorded table. A condition that compared timings becomes a budget set to the figure the original achieved.
+
+The identifier, the invariant, and the pass predicate are unchanged. Only the auditor changes.
+
+What remains is an ordinary Akka Specify Plugin project, carrying a specification whose every requirement traces to a test, and a suite of regression tests whose expected values were taken from a system that was already correct.
+
+== Limits
+
+A condition that can only be expressed as a live comparison, and whose subject cannot be recorded, is retired at graduation rather than rewritten. The reason is kept in the project.
+
+Enumeration is mechanical, so it finds what the original declares. Behaviour that no route, configuration key, job, or table announces is found by observation or not at all, and the divergence list is where that shows up.
+
+== See also
+
+* xref:reference:specify/port.adoc[/akka:port]
+* xref:reference:specify/spec-conformance.adoc[Specification conformance]
+* xref:sdk:enforced-mode.adoc[]
+* xref:sdk:spec-driven-development.adoc[]

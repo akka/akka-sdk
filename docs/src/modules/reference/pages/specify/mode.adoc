@@ -26,9 +26,44 @@ The mode controls two things: whether Akka Specify creates exit conditions on it
 
 Use `--exit-conditions=honor` to start using conditions in à la carte mode, or `--exit-conditions=ignore` to set them aside. Setting them aside does not delete anything. The captured conditions stay in `.akka/exit-conditions.yaml` and `--exit-conditions=honor` brings them back.
 
-Every Specify command is available in both modes. The mode changes what the engine does on its own, not the command set. The two locked process-integrity gates, `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED`, apply whenever the exit-condition set is active. Enforced mode blocks ship while either is red, and à la carte computes them as advisory. While the set is dormant they do not resolve at all, because there is nothing yet to have covered or reviewed.
+The mode also decides which commands you may run. See <<_commands_available_in_each_mode>>.
+
+The two locked process-integrity gates, `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED`, apply whenever the exit-condition set is active. Enforced mode blocks ship while either is red, and à la carte computes them as advisory. While the set is dormant they do not resolve at all, because there is nothing yet to have covered or reviewed.
 
 A developer can switch only within the modes the organization allows. If the organization has locked the mode (see xref:reference:specify/policies.adoc[Policies]), the command refuses and says so.
+
+== Commands available in each mode
+
+À la carte places no restriction on any command. You choose which step to run and when.
+
+Enforced mode gives the sequence to the engine. It decides when to plan, break work into tasks, implement, build, review, and conform, and in what order. Running one of those steps by hand is choosing the sequence, so enforced mode rejects it.
+
+Five commands stay available, because each one is a place where you state intent or take responsibility for a result:
+
+[cols="1,3",options="header"]
+|===
+| Command | Why it stays available
+
+| `/akka:mode` | Leaving enforcement stays possible, so a project is never trapped in it
+| `/akka:specify` | State what is to be built
+| `/akka:port` | State what is to be built, by naming a system to match
+| `/akka:ship` | Take responsibility for a release
+| `/akka:status` | Report the current state. It changes nothing.
+|===
+
+Any other command is refused, and the message names the remedy:
+
+[source]
+----
+/akka:implement
+
+This project is in enforced mode, where the engine runs implement as part of
+the sequence it controls. To run it yourself, switch with
+`/akka:mode a-la-carte`. The project keeps its exit conditions, and you can
+return to enforced mode afterwards.
+----
+
+Switching to à la carte to run one step by hand loses no work. The project keeps every exit condition it has captured, and switching back to enforced mode restores the gate.
 
 == Switching a project that already has conditions
 

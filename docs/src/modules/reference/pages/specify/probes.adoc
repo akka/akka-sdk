@@ -1,0 +1,233 @@
+= Discovery probes
+
+A probe answers one question about a system xref:reference:specify/port.adoc[/akka:port] is deriving a specification from. It is not a test. A test asserts an expectation, and a probe discovers what the expectation should be.
+
+What a specification can honestly claim depends on how the system was examined, so the probe that established a requirement is recorded alongside it. A requirement claiming it was established by running something can then be checked against what actually ran.
+
+== Capabilities
+
+A probe declares what it needs of the environment, and `/akka:port` resolves those against the system in front of it.
+
+[cols="1,3",options="header"]
+|===
+| Capability | Meaning
+
+| `source` | The original's source is readable
+| `execute` | The original can be started on this machine
+| `http` | The original exposes an HTTP surface that can be driven
+| `clock` | The original's clock can be controlled
+| `deps` | The original's dependencies can be withdrawn one at a time
+| `toolchain` | The original's build toolchain is installed
+| `browser` | A browser can drive the interface
+|===
+
+A probe whose capabilities are unmet is reported as unavailable with the reason. It is never skipped silently, because a specification missing a probe's findings reads exactly like one where the probe ran and found nothing.
+
+Asking for a probe by name does not make it available. A probe that was asked for and withheld is still reported, since the caller expected a finding they are not going to get.
+
+== The catalogue
+
+`Default at` names the study levels where a probe runs without being asked for. See xref:reference:specify/port.adoc[/akka:port] for `--study` and `--probe`.
+=== Interface and reachability
+
+[cols="1,2,1,1",options="header"]
+|===
+| Probe | Answers | Needs | Default at
+
+| `surface` | the routes, configuration keys, scheduled jobs, and tables the system exposes | `source` | read, run, diff
+| `reachability` | which statements execute when the system is driven the way it drives itself | `source`, `toolchain` | run, diff
+| `coverage` | which of the original's own tests touch each interface element | `source` | —
+|===
+
+=== Behaviour
+
+[cols="1,2,1,1",options="header"]
+|===
+| Probe | Answers | Needs | Default at
+
+| `sequence` | behaviour across a sequence of calls rather than one call | `execute`, `http` | run, diff
+| `ordering` | behaviour when events arrive out of order | `execute`, `http` | run, diff
+| `clock` | behaviour that changes with time alone: expiry, scheduling, caching | `execute`, `http` | —
+| `concurrency` | behaviour under two conflicting writes at once | `execute`, `http` | —
+| `distribution` | behaviour across the range of an input rather than one value | `execute`, `http` | run, diff
+| `adverse` | behaviour when a dependency is withdrawn | `execute`, `deps` | —
+|===
+
+=== Comparison
+
+[cols="1,2,1,1",options="header"]
+|===
+| Probe | Answers | Needs | Default at
+
+| `answers` | what both systems return for the same question | `execute`, `http` | run, diff
+| `stream-cut` | divergence between the two systems through a live proxy | `execute`, `http` | diff
+|===
+
+=== Confidence
+
+[cols="1,2,1,1",options="header"]
+|===
+| Probe | Answers | Needs | Default at
+
+| `mutation` | whether the checker fails when the answer is wrong | — | run, diff
+| `determinism` | whether the same input twice produces the same answer | `execute`, `http` | —
+|===
+
+=== Interface appearance and performance
+
+[cols="1,2,1,1",options="header"]
+|===
+| Probe | Answers | Needs | Default at
+
+| `appearance` | the rendered surface, captured and compared | `execute`, `browser` | run, diff
+| `timing` | a measured figure, with the harness's own noise floor beside it | `execute`, `http` | run, diff
+|===
+
+== The record
+
+A discovery run writes `.akka/discovery/run.json`, naming the system, the study level, the probes that ran, and the probes that were withheld with the capabilities they lacked.
+
+A requirement then names the probe that established it:
+
+[source,markdown]
+----
+- **FR-058** (observed, exercised: sequence): three soft bounces within 24
+  hours mark the subscriber as unconfirmed
+----
+
+This makes the evidence claim checkable rather than asserted. xref:reference:specify/spec-conformance.adoc[`PROC-RULE-EVIDENCE`] reads the record and reds when a requirement names a probe that did not run. A project with no discovery record is unaffected, since a requirement in a project that was never derived from another system has no probe to name.
+
+== Gaps
+
+A probe that recognises an ecosystem and then reads nothing from it reports a *gap* rather than an empty result. An empty result and a complete one are otherwise indistinguishable, so a system whose ecosystem is recognised and whose route count is zero is treated as a framework the probe cannot read.
+
+A gap is reported per ecosystem, in the run record and in the picker.
+
+=== Kinds of gap
+
+[cols="1,2,2",options="header"]
+|===
+| Kind | What it looks like | How it is closed
+
+| Undeclared convention
+| The framework routes by file path, directory layout, or naming rather than by a declaration in the source. The probe reads declarations and finds none.
+| Add the convention to the probe's extractors for that ecosystem. A path derived from a filename is as good a route as one read from a decorator.
+
+| Unrecognised framework
+| The ecosystem is right and the framework is one the probe has no patterns for.
+| Add its patterns. The route, configuration, and table extractors are per-framework, and a new one is a small addition rather than a change to the probe.
+
+| Generated surface
+| Routes are registered at run time from data, so nothing in the source names them.
+| Raise the study level. A generated surface is visible to a probe that starts the system and reads what it registered, and invisible to one that only reads source.
+
+| Out of reach
+| The surface exists behind authentication, a build step, or an ecosystem whose toolchain is absent.
+| Supply the missing capability, or accept the gap and record it. A gap that is understood is a different thing from one nobody noticed.
+|===
+
+=== Working with a gap
+
+A gap does not stop a port. It bounds what the port can claim.
+
+The elements a probe could not read are not enumerated, so they are not offered for disposition, and a requirement covering them is written from observation alone. Where the gap is closed later, re-running discovery enumerates them and the specification is checked against the fuller list.
+
+== Authoring a probe
+
+A probe is a command. It shares its interface with an auditor: the request arrives as JSON on standard input, the answer leaves as JSON on standard output, and exit status reports whether the probe ran rather than what it found. See xref:reference:specify/custom-conditions.adoc[Custom exit conditions and auditors] for the parts that are common — exit status, versioning, distribution, and trust.
+
+What follows is what differs for a probe.
+
+=== Declaring one
+
+[source,yaml]
+----
+probes:
+  - name: tenancy
+    group: Behaviour
+    answers: "behaviour when two tenants share a record"
+    needs: [execute, http]
+    default_at: [run, diff]
+    run: ["corp-tenancy-probe"]
+    timeout: 300s
+----
+
+`answers` is read by the person choosing in the picker, so it says what the probe establishes rather than how it works. `needs` and `default_at` place it in the same resolution as every built-in probe: it is offered where its capabilities are met, reported as unavailable where they are not, and runs without being asked for at the levels named.
+
+=== The request
+
+A probe receives the capabilities it declared, already resolved, and the elements the surface probe enumerated.
+
+[source,json]
+----
+{
+  "kind": "probe",
+  "version": 1,
+  "project": { "root": "/home/dev/billing" },
+  "probe": { "name": "tenancy", "study": "run" },
+  "capabilities": {
+    "http":   { "base_url": "http://127.0.0.1:8399" },
+    "source": { "root": "/home/dev/clones/listmonk" }
+  },
+  "elements": [
+    { "kind": "route", "name": "/api/subscribers/{}" },
+    { "kind": "route", "name": "/api/lists" }
+  ]
+}
+----
+
+A probe uses the capabilities it is given rather than discovering its own. A probe that finds a base URL for itself will find a different one than the engine recorded, and the record is what a requirement cites.
+
+`elements` is the enumerated interface, so a probe examining the surface works from the same list every other probe does.
+
+=== The answer
+
+[source,json]
+----
+{
+  "version": 1,
+  "probe": "tenancy",
+  "examined": 42,
+  "findings": [
+    {
+      "element": "/api/subscribers/{}",
+      "says": "a subscriber from one tenant is readable by another",
+      "evidence": "exercised"
+    }
+  ],
+  "detail": { }
+}
+----
+
+`findings` is what a specification may cite. Each names the element it concerns, states in one line what was established, and records the evidence rung it earned.
+
+`examined` is how many elements the probe looked at. It is what separates a probe that found nothing from a probe that looked at nothing, and it is recorded whether or not there were findings.
+
+`detail` is the probe's own shape, and the engine does not read it.
+
+=== Evidence a probe earns
+
+The `evidence` value on a finding is what a requirement carries when it cites the probe:
+
+[source,markdown]
+----
+- **FR-058** (observed, exercised: tenancy): a subscriber from one tenant is
+  readable by another
+----
+
+A probe claims the rung it actually reached. One that read source reports `inspected`, and one that called the system and observed the result reports `exercised`. xref:reference:specify/spec-conformance.adoc[`PROC-RULE-EVIDENCE`] checks the citation against the run record, so a requirement naming a probe that did not run is a finding.
+
+=== Testing one
+
+[source,bash]
+----
+akka specify probe test tenancy --target http://127.0.0.1:8399
+----
+
+Runs the probe, prints the request it received and its raw output, and validates the answer against the envelope above.
+
+== See also
+
+* xref:reference:specify/port.adoc[/akka:port]
+* xref:reference:specify/spec-conformance.adoc[Specification conformance]
+* xref:sdk:porting-legacy-systems.adoc[Porting legacy systems]

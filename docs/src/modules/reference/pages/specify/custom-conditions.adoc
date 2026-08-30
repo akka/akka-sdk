@@ -1,0 +1,168 @@
+= Custom exit conditions and auditors
+
+An organization writes its own exit conditions in `policy.yaml`, and implements them as commands in any language. This page covers declaring a condition, writing the auditor that answers it, testing it locally, and distributing it.
+
+The command contract described here is shared with xref:reference:specify/probes.adoc[discovery probes]. An auditor and a probe are asked different questions and answer with different shapes, over the same interface.
+
+== Declaring a condition
+
+Two forms. Reference one the library already ships and set the level it applies at:
+
+[source,yaml]
+----
+exit_conditions:
+  - ref: OPS-COMPILES
+    level: ALWAYS-APPLY
+----
+
+Or supply the whole condition, with the command that answers it:
+
+[source,yaml]
+----
+exit_conditions:
+  - id: CORP-LICENCE-SCAN
+    tier: project
+    dod_type: pipeline-scanning
+    level: ALWAYS-APPLY
+    invariant: "no dependency carries a licence outside the approved set"
+    signal: scan
+    probe: "licence scanner over the resolved dependency set"
+    pass: "disallowed_licences == 0"
+    autonomy: auto-close
+    auditor:
+      run: ["corp-licence-scan"]
+      applies_to:
+        requirement: maven
+        module: services/billing
+      params:
+        allowed: ["Apache-2.0", "MIT", "BSD-3-Clause"]
+      timeout: 120s
+----
+
+`params` reaches the auditor untouched. Tuning what a condition permits is a policy change rather than a new binary.
+
+`applies_to.requirement` gates whether the auditor runs at all. A condition requiring `maven` in a project with no `pom.xml` resolves `OPEN` with the reason `blocked-outside-project`, and never runs.
+
+See xref:reference:specify/exit-condition-schema.adoc[Exit condition schema] for every field, and xref:reference:specify/policies.adoc[Policies] for how a policy reaches a project.
+
+== The command contract
+
+An auditor is a command. Its request arrives as JSON on standard input and its answer leaves as JSON on standard output, so it can be written in any language and exercised with a pipe:
+
+[source,bash]
+----
+echo '{"kind":"auditor","version":1,...}' | ./corp-licence-scan
+----
+
+Nothing is read from the environment, no flag carries meaning, and the working directory is set without being load-bearing. Standard error is captured and shown to a developer, and is never parsed.
+
+=== The request
+
+[source,json]
+----
+{
+  "kind": "auditor",
+  "version": 1,
+  "project": {
+    "root": "/home/dev/billing",
+    "module": "services/billing"
+  },
+  "condition": {
+    "id": "CORP-LICENCE-SCAN",
+    "invariant": "no dependency carries a licence outside the approved set",
+    "pass": "disallowed_licences == 0",
+    "params": { "allowed": ["Apache-2.0", "MIT", "BSD-3-Clause"] }
+  }
+}
+----
+
+=== The answer
+
+[source,json]
+----
+{
+  "version": 1,
+  "status": "red",
+  "reason": "3 dependencies carry GPL-3.0",
+  "detail": { "offenders": ["libfoo@2.1", "libbar@0.9", "libbaz@1.4"] }
+}
+----
+
+`status` is `green`, `red`, or `open`. `reason` is one line and is the only prose the engine reads. `detail` is opaque, and is stored beside the result for anyone who wants it.
+
+An auditor that cannot reach what it needs says so:
+
+[source,json]
+----
+{ "version": 1, "status": "open", "reason": "the licence service is unreachable" }
+----
+
+`open` and `red` are different answers. `red` states that the project violates the condition. `open` states that the auditor could not establish anything. An auditor that reports `red` when its dependency was unavailable blocks a ship for a reason that has nothing to do with the project.
+
+== Exit status
+
+Exit status reports whether the auditor ran. The verdict is in the answer.
+
+[cols="1,2,2",options="header"]
+|===
+| Exit | Meaning | The condition resolves
+
+| `0` | The auditor ran | as the answer says
+| non-zero | The auditor itself failed | `OPEN`, reason `blocked-outside-project`
+| timeout | The engine stopped it | `OPEN`, reason `blocked-outside-project`
+|===
+
+A crashed auditor and a violated condition are different things. A violation is a finding about the project; a crash is the absence of a finding.
+
+An auditor that writes nothing to standard output and exits `0` is read as `green`, and one that writes nothing and exits non-zero as `red`. That is the behaviour of an auditor written before this contract existed, and it continues to work.
+
+== Versioning
+
+`version` appears in both directions. The engine sends the highest version it speaks. An auditor answering with a lower version is served that version's contract; one answering with a higher version is refused rather than guessed at.
+
+== Testing locally
+
+[source,bash]
+----
+akka specify auditor test CORP-LICENCE-SCAN
+----
+
+Runs the auditor against the current project and prints the request it received, its raw output, and the verdict the engine would record.
+
+[source,bash]
+----
+akka specify extension verify
+----
+
+Runs every declared auditor and probe against fixtures the Plugin ships, and checks the cases that break implementations: a requirement declared and not met, a dependency that refuses connections, a malformed request, a timeout, and output that is not JSON.
+
+Run this before distributing an auditor. An auditor that reports `red` when its target was merely unreachable passes an ordinary test and fails this one.
+
+== Distribution
+
+An extension bundle is a directory holding a manifest and the commands it names:
+
+[source,yaml]
+----
+auditors:
+  - id: CORP-LICENCE-SCAN
+    run: ["corp-licence-scan"]
+    applies_to: { requirement: maven }
+    timeout: 120s
+----
+
+The bundle is fetched from an `extensions-url` in the CLI's system config to `.akka/extensions/`, the same mechanism that delivers a governance policy. Commands resolve from the bundle first and from `PATH` second, so an organization that installs its tools separately can.
+
+== Trust and approval
+
+Where an auditor comes from decides how far it is trusted, and that is unchanged by this contract. An auditor declared in an organization's `policy.yaml` runs without a separate approval. One authored in a project or by an assistant runs only after its exact command is approved, and is reviewed adversarially for adequacy.
+
+See xref:reference:specify/auditors.adoc[Auditors] for the trust model, and xref:reference:specify/adequacy-review.adoc[The adequacy review].
+
+== Related
+
+* xref:reference:specify/auditors.adoc[Auditors]
+* xref:reference:specify/auditor-kinds.adoc[Auditor kinds]
+* xref:reference:specify/exit-condition-schema.adoc[Exit condition schema]
+* xref:reference:specify/policies.adoc[Policies]
+* xref:reference:specify/probes.adoc[Discovery probes]
