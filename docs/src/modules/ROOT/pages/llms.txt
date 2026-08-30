@@ -96,11 +96,31 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [CLI installation](https://doc.akka.io/operations/cli/installation.html.md): Install the Akka CLI
 - [CI/CD integration](https://doc.akka.io/operations/integrating-cicd/index.html.md): GitHub Actions and other CI/CD tools
 
+## Inference
+
+- [Inference](https://doc.akka.io/inference/index.html.md): Running AI models, and how an inference call differs from a function call
+- [Serving models](https://doc.akka.io/inference/serving/index.html.md): Running a model on hardware in your project and exposing it on a hostname
+- [Reviewing available hardware](https://doc.akka.io/inference/serving/reviewing-hardware.html.md): The GPU devices a region has, and how many cards are free
+- [Allocating hardware to models](https://doc.akka.io/inference/serving/allocating-hardware.html.md): Claiming device capacity with accelerators, dedicated or shared
+- [Deploying models](https://doc.akka.io/inference/serving/deploying-models.html.md): Declaring a deployment, tuning the engine, and applying the descriptor
+- [Exposing models on a hostname](https://doc.akka.io/inference/serving/exposing-models.html.md): Inference routes, and choosing between models with the model field
+- [Issuing API keys](https://doc.akka.io/inference/serving/issuing-api-keys.html.md): Per-client keys on a route, and rotating them without a cutover
+- [Calling a deployed model](https://doc.akka.io/inference/serving/calling-a-model.html.md): The OpenAI-compatible endpoint, tool calling, and the local proxy
+- [Removing deployments](https://doc.akka.io/inference/serving/removing-deployments.html.md): Exporting what is running, and tearing it down in dependency order
+- [Routing requests to models](https://doc.akka.io/inference/routing/index.html.md): The AI Gateway Router pipeline and its two stages
+- [Routing on request attributes](https://doc.akka.io/inference/routing/request-attributes.html.md): Matching declared rules against protocol, model, headers, and prompt text
+- [Routing on request meaning](https://doc.akka.io/inference/routing/request-meaning.html.md): Matching a request against use cases discovered in live traffic
+- [Defining use cases](https://doc.akka.io/inference/routing/defining-use-cases.html.md): How the router clusters requests into use cases, and how those differ from tools
+- [Routing use cases](https://doc.akka.io/inference/routing/routing-use-cases.html.md): Working sets, manifests, and connecting a use case to a backend
+
 ## Reference
 
 - [Glossary](https://doc.akka.io/reference/glossary.html.md): Terms including AI, governance, and distributed systems terminology
 - [Service configuration](https://doc.akka.io/reference/config/reference.html.md): Full HOCON configuration reference
 - [CLI command reference](https://doc.akka.io/reference/cli/akka-cli/index.html): All Akka CLI commands
+- [Inference CLI commands](https://doc.akka.io/reference/cli/inference/index.html): The akka models and akka optimize command families
+- [Model descriptor](https://doc.akka.io/reference/descriptors/model-descriptor.html.md): Every field of the YAML that declares models, accelerators, secrets, and routes
+- [Routing ruleset](https://doc.akka.io/reference/descriptors/routing-ruleset.html.md): Predicates, attributes, match blocks, and outcomes for attribute routing
 - [Release notes](https://doc.akka.io/reference/release-notes.html.md): Latest updates and changes
 - [Model provider details](https://doc.akka.io/sdk/model-provider-details.html.md): Anthropic, OpenAI, Google, AWS Bedrock, Ollama, and more
 - [Guardrails](https://doc.akka.io/sdk/agents/guardrails.html.md): Runtime policy enforcement
