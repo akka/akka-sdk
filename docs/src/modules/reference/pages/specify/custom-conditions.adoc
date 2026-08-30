@@ -180,16 +180,48 @@ An auditor that writes nothing to standard output and exits `0` is read as `gree
 
 == Testing locally
 
+Run the auditor against the current project and see what the engine would make of it:
+
 [source,bash]
 ----
 akka specify auditor-test CORP-LICENCE-SCAN
 ----
 
-Runs the auditor against the current project and prints the request it received, its raw output, and the verdict the engine would record.
+That prints the request the auditor received, its raw output, and the verdict the engine would record.
 
-Before distributing an auditor, exercise it against the cases that break implementations: a requirement declared and not met, a dependency that refuses connections, a malformed request, a timeout, and output that is not JSON.
+`auditor-test` answers whether the auditor works on the case you had in mind. `extension verify` answers whether it holds up on the cases you did not:
 
-An auditor reporting `red` when its target was merely unreachable passes an ordinary test. It blocks a ship for a reason that has nothing to do with the project.
+[source,bash]
+----
+akka specify extension verify -- python examples/extensions/licence-scan.py   --params '{"allowed":["Apache-2.0","MIT"]}'
+----
+
+[source]
+----
+  ✓ completes          answered in 148ms
+  ✓ answers            wrote an answer this contract recognises
+  ✓ exit-status        exited zero, reporting that it ran
+  ✓ malformed-request  answered open, establishing nothing
+  ✓ empty-request      answered open, establishing nothing
+  ✓ future-version     answered open, establishing nothing
+  ✓ repeatable         the same request answered red twice
+  ✓ reads-the-request  answered a request naming a different project differently
+
+Speaks the contract.
+----
+
+Three of those requests are ones no auditor can answer: a body that is not JSON, an empty body, and a request declaring a contract version this build does not speak. Each must be answered `open`. An auditor that answers `red` has stated something about a project it was never told about, and an auditor that exits non-zero without answering is read by the engine as the condition failing, which reaches the developer as a blocked ship with a reason that has nothing to do with their code.
+
+Pass `--condition` to verify the auditor a declared condition already names, rather than a command you type out:
+
+[source,bash]
+----
+akka specify extension verify --condition CORP-LICENCE-SCAN
+----
+
+Add `--kind probe` to hold a discovery probe to the same contract. A probe declines differently, because a probe that fails is recorded as having failed, and the requirement on it is that it reports no findings about a request it could not read.
+
+The command exits non-zero when a rule the engine relies on is broken, so it can stand in a build.
 
 == Distribution
 

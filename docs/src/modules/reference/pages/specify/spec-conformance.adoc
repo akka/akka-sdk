@@ -76,6 +76,16 @@ A requirement carrying no annotation is read as `decided`. A specification writt
 
 `PROC-RULE-EVIDENCE` reds when a `constrained` or `observed` requirement records no evidence.
 
+== Requiring every requirement to declare itself
+
+Reading an unannotated requirement as `decided` leaves one thing unsaid. A requirement with no annotation is either a decision somebody made or an assumption about a system nobody checked, and the document does not distinguish them.
+
+`PROJ-PROVENANCE-DECLARED` closes that. It reds when any requirement carries no provenance at all, whatever the value would have been.
+
+The condition ships `off-but-dev-configurable`, because turning it on is a statement about your specification rather than a rule every project should meet. Opt in per project once your requirements carry their annotations, or promote it in a xref:reference:specify/policies.adoc[policy] to hold every project in the organization to it.
+
+A port opts in as a matter of course. Every requirement in a ported specification was read off a system that already exists, so a requirement that declares nothing is an assumption that nobody has been asked to confirm.
+
 == When the specification is absent
 
 A project with no `specs/` directory resolves both conditions OPEN rather than RED. A specification that has not been written yet is a different state from one that is malformed, and OPEN is the state a sign-off closes.
