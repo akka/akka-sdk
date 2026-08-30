@@ -227,8 +227,12 @@ An assumption stays visible in every status report until someone strengthens it 
     143 traceability rows
 
   PROJ-SPEC-SCHEMA  green
-  PROC-RULE-EVIDENCE  green · 143 requirements account for their evidence
+  PROC-RULE-EVIDENCE  green · 143 requirement(s) account for their evidence
 ----
+
+Both conditions count success criteria as requirements, which is why the last
+line reads 143 rather than 132: the eleven success criteria carry provenance and
+traceability on the same terms as the functional requirements.
 
 The specification is written in the standard template. Every requirement carries an identifier, appears in the traceability table with a source and a test, and records how it was established. No `[NEEDS CLARIFICATION]` marker survives into the specification, so the handoff never waits on a person. See xref:reference:specify/spec-conformance.adoc[Specification conformance].
 
