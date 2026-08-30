@@ -19,6 +19,7 @@ A probe declares what it needs of the environment, and `/akka:port` resolves tho
 | `deps` | The original's dependencies can be withdrawn one at a time
 | `toolchain` | The original's build toolchain is installed
 | `browser` | A browser can drive the interface
+| `rebuild` | A running instance of the rebuild exists to compare against
 |===
 
 A probe whose capabilities are unmet is reported as unavailable with the reason. It is never skipped silently, because a specification missing a probe's findings reads exactly like one where the probe ran and found nothing.
@@ -72,9 +73,16 @@ reason is recorded rather than the absence.
 |===
 | Probe | Answers | Needs | Default at
 
-| `answers` | what both systems return for the same question | `execute`, `http` | run, diff
-| `stream-cut` | divergence between the two systems through a live proxy | `execute`, `http` | diff
+| `answers` | what both systems return for the same question | `execute`, `http`, `rebuild` | run, diff
+| `stream-cut` | divergence between the two systems through a live proxy | `execute`, `http`, `rebuild` | diff
 |===
+
+The comparison probes need two systems. During a discovery of the original there
+is usually one, so they are withheld until `--rebuild` names a running instance
+of the rebuild. A probe that could not have produced anything is reported as
+unavailable with the capability it lacks, rather than selected and then counted
+among the probes that failed.
+
 
 === Confidence
 
