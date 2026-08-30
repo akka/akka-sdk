@@ -62,7 +62,7 @@ Applying a descriptor writes resources in dependency order, so nothing refers to
 
 Routes come last because a route names deployments. A route applied before its models still works, because exposure resolves continuously rather than only at apply time.
 
-Apply is authoritative for what it names. An existing resource has its spec set from the descriptor. Labels and annotations added by other tools are preserved, and the descriptor's values win where both set the same key.
+Apply is authoritative for what it names. An existing resource has its spec set from the descriptor. Labels and annotations added by other tools are preserved, and the values in the descriptor win where both set the same key.
 
 Two resources are never mutated once they exist:
 

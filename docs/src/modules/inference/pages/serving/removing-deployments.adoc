@@ -1,5 +1,5 @@
 = Removing deployments
-:page-summary: Deleting a descriptor's resources tears them down in the order that keeps a hostname from pointing at a model on its way out.
+:page-summary: Deleting the resources a descriptor names tears them down in the order that keeps a hostname from pointing at a model on its way out.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
 
