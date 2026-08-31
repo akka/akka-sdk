@@ -1,10 +1,10 @@
 # Writing Akka SDK documentation
 
-Guidance for writing and editing the pages under `docs/src`. Merged from the writing standards in
-[docs-overhaul-spec.md](docs-overhaul-spec.md) (the docs-overhaul project plan, which takes
-precedence where the two met) and field experience writing the governance and autonomous-agents
-pages. The spec holds the migration plan: positioning, target structure, page audit, and the
-llms.txt generator design. This file holds the ongoing standards.
+> Keep this file in step with [docs/AGENTS.md](AGENTS.md) and the root [AGENTS.md](../AGENTS.md) / [CLAUDE.md](../CLAUDE.md).
+
+Standards for writing and editing pages under `docs/src`. The migration plan (positioning, target
+structure, page audit, llms.txt generator) lives in [docs-overhaul-spec.md](docs-overhaul-spec.md);
+the spec takes precedence where the two overlap.
 
 ## Audience: people and AI agents
 
@@ -21,9 +21,9 @@ self-contained style serves both audiences, so you do not write differently for 
   survive extraction. Name the thing: "the `OrderEntity` class defined in
   xref:sdk:event-sourced-entities.adoc#modeling-state[Modeling State]".
 - Headings serve as an API for the page: an agent reading only the heading tree should understand
-  the page's structure and jump to the right section.
-
-Do not stuff keywords or over-explain for the machine; that hurts both audiences.
+  the page's structure and jump to the right section. Make headings self-descriptive without page
+  context — "Compensating failed workflow steps", not "Compensation" — because headings are
+  extracted into search results and agent indexes.
 
 ## Voice and tone
 
@@ -85,9 +85,6 @@ Component and feature pages follow the template from the overhaul spec:
 - **Testing** and **See Also** — required on every component and feature page. Keep "See Also" to
   pages that are actually relevant.
 
-Headings below H1 must be self-descriptive without page context — "Compensating failed workflow
-steps", not "Compensation" — because headings are extracted into search results and agent indexes.
-
 For anything the template does not cover, match the structure and voice of the neighbouring pages.
 
 ## Page metadata
@@ -107,11 +104,9 @@ llms.txt generator:
 include::ROOT:partial$include.adoc[]
 ```
 
-The header is everything between the `= Title` line and the first blank line. `:page-*:` attributes
-must sit inside it — directly under the title, with no blank line before them and before the
-`include::ROOT:partial$include.adoc[]` directive. Attributes placed after a blank line are
-body-level and Antora will silently ignore them (no build error, just no `page.attributes.*` in the
-UI templates).
+Put `:page-*:` attributes directly under the title, before any blank line and before the
+`include::ROOT:partial$include.adoc[]` directive. Antora silently ignores attributes placed after a
+blank line (no build error, just missing `page.attributes.*` in the UI templates).
 
 The `:page-summary:` says what the page's subject does, not why it is good.
 
@@ -148,9 +143,6 @@ is the primary path and the Akka CLI (`akka specify init`) is the fallback, also
 
 ## Keep docs in step with the code
 
-Docs drift when an API changes and the prose or examples don't follow. Don't build machinery to
-track drift — build so it surfaces itself:
-
 - Compiled snippets are the main defence. When an API changes, the snippet stops compiling and the
   build forces the fix. This is a big part of why examples belong in snippets, not inline.
 - Prose has no compiler, so keep it greppable: one term for one thing. When you change an API in the
@@ -159,8 +151,6 @@ track drift — build so it surfaces itself:
 - Treat a visit to any page as a chance to reconcile it against the current code, not just to make
   the one edit you came for. If you find drift you can't fix now, flag it rather than leave it
   silently wrong.
-- Don't keep a separate "docs status" changelog. It rots faster than the docs. The build plus
-  reconcile-on-touch is enough.
 
 ### Check the API docs too
 
@@ -204,9 +194,6 @@ with `// tag::bar[]` / `// end::bar[]` around the region in `Foo.java`.
   `sbt <project>/Test/compile`. Never commit the snapshot version.
 - Run `docs/bin/verify-include-paths.sh` to check the display label and the include path agree.
 
-> The overhaul spec also asks for a one-line comment at the top of each tagged region stating what
-> it demonstrates. Existing snippets do not do this; the status quo stands pending team discussion.
-
 ## Content deduplication
 
 - Use Antora partials for content that appears on multiple pages (`sdk/partials/entity-sharding.adoc`
@@ -228,15 +215,12 @@ See the link:{url-blog-agents}[Akka Agents deep-dive, window="new"] for architec
 
 ## Preview locally
 
-Prerequisites (Docker) and the full build process are in `docs/README.md`. In short, from the repo
-root:
+Full build process and prerequisites are in `docs/README.md`. From the repo root, `make managed
+local` builds the full site with working API links; `make local` skips the javadoc for a fast
+content-only preview (API links and `{akka-javasdk-version}` won't resolve). Both write to
+`target/site/`; open with `make open`.
 
-- Full site, with working API links: `make managed local`. `managed` also builds the javadoc, so it
-  is slower.
-- Quick content preview: `make local`. Skips the javadoc and version attributes, so API links and
-  `{akka-javasdk-version}` won't resolve, but the prose, structure, and snippet includes render.
-
-Both write to `target/site/`; open `target/site/index.html` (or `make open`).
+Gotchas:
 
 - If the javadoc step fails with "illegal inheritance from sealed trait", that is stale incremental
   build state — run `sbt akka-javasdk/clean akka-javasdk-testkit/clean` and retry.
@@ -244,20 +228,3 @@ Both write to `target/site/`; open `target/site/index.html` (or `make open`).
 
 After a non-trivial docs change, build the preview and offer to open it for the user, so they can
 sanity-check the rendered pages.
-
-## Checklist
-
-1. Page follows the structure template: noun-form H1, extractable first-sentence definition,
-   Overview, Testing, See Also; headings self-descriptive; section names match sibling pages.
-2. `:page-*:` metadata attributes are present and the `:page-summary:` says what it does, not why
-   it is good.
-3. Lead with what it is and the smallest working example; put configuration and edge cases after.
-4. SDD content first where the page has an SDD path; manual approach in a `[TIP.manual]` admonition.
-5. Every code block is a tagged include from a compiled source — never inline code — explained
-   with numbered callouts.
-6. Cross-link with `xref:`; external URLs only via the link registry; keep "See also" relevant.
-7. Re-read the diff for contractions, idioms, and the LLM tells above before committing.
-8. Build a local preview (see [Preview locally](#preview-locally)) and offer to open it for the user.
-9. Reconcile the page against the type's javadoc/scaladoc, and confirm the code has adequate API
-   docs (public types, methods, and `package-info`).
-10. Keep glossary entries alphabetical and their terms consistent with the code.
