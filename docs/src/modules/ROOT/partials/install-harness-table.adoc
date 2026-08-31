@@ -23,12 +23,13 @@ git clone https://github.com/akka/ai-marketplace.git
 ----
 --
 
-Gemini CLI::
+Antigravity (agy) CLI::
 +
+`agy` (Antigravity CLI) has officially replaced Google's Gemini CLI.
 --
 [source]
 ----
-gemini extensions install https://github.com/akka/ai-marketplace
+agy plugin install https://github.com/akka/ai-marketplace
 ----
 --
 
