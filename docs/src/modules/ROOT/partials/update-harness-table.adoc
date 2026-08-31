@@ -24,15 +24,6 @@ agy plugin update ai-marketplace
 ----
 --
 
-Gemini CLI::
-+
---
-[source]
-----
-gemini extensions update ai-marketplace
-----
---
-
 Codex CLI::
 +
 --

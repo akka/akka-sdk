@@ -120,12 +120,6 @@ It is important that you include the Akka documentation as context by enabling `
 
 Make sure that you download the latest documentation regularly to make use of documentation improvements and new features.
 
-=== Notes about Gemini CLI
-
-For Gemini CLI you can use `akka code init` and select Claude as coding assistant. Then rename the file `CLAUDE.md` to `GEMINI.md`.
-
-If Gemini CLI does not make use of the documentation in `akka-context` directory it can be because it is listed in `.gitignore`. Then you have to remove `akka-context` from `.gitignore`.
-
 === Notes about OpenAI Codex
 
 If Codex does not make use of the documentation in `akka-context` directory it can be because it is listed in `.gitignore`. Then you have to remove `akka-context` from `.gitignore`.
