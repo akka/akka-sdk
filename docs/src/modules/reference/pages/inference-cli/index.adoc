@@ -1,0 +1,42 @@
+= Inference CLI commands
+:page-summary: The akka CLI commands that serve models and govern how requests reach a model provider.
+:page-persona: builder-developer, builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+Inference commands are top-level `akka` commands. They act on different resources and are documented on three pages.
+
+[cols="1,3", options="header"]
+|===
+| Page
+| Covers
+
+| xref:reference:inference-cli/models.adoc[Model commands]
+| `akka models`: deployments, the devices and accelerators they run on, the hostnames that expose them, the API keys that authorize requests, and the governance record.
+
+| xref:reference:inference-cli/routing.adoc[Routing commands]
+| `akka rulesets`, `akka routing-classifiers`, `akka use-cases`, and `akka routing-policies`: choosing which provider serves a request.
+
+| xref:reference:inference-cli/cost-training-and-evaluation.adoc[Cost, training, and evaluation commands]
+| `akka budget`, `akka training-runs`, `akka eval`, and the rest of what an organization spends and scores.
+|===
+
+Every command takes `--help`, and most take `-o json`.
+
+Files passed with `-f FILE` are YAML for `akka models` and JSON elsewhere. Passing `-f -` reads the document from standard input.
+
+== Where each task is described
+
+The command pages state what each command does. The Inference section states when to run it.
+
+* xref:inference:serving/index.adoc[Serving models] walks from an unallocated GPU to a model answering requests.
+* xref:inference:routing/index.adoc[Routing requests to models] covers routing on declared rules and on the meaning of a request.
+
+include::inference:partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
+* xref:reference:descriptors/routing-ruleset.adoc[Routing ruleset]
+* xref:reference:cli/akka-cli/index.adoc[CLI commands]

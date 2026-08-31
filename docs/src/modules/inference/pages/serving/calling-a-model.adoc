@@ -1,0 +1,88 @@
+= Calling a deployed model
+:page-summary: A deployed model answers on an OpenAI-compatible endpoint, so existing clients work once the base URL and the API key are set.
+:page-persona: builder-developer, builder-ai-ml
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+A deployed model answers on an OpenAI-compatible endpoint. Existing SDKs, notebooks, and evaluation harnesses work unmodified once the base URL and the API key are set, and this is also the endpoint to give a benchmark.
+
+Set the endpoint from xref:inference:serving/exposing-models.adoc[Exposing models on a hostname] and the key from xref:inference:serving/issuing-api-keys.adoc[Issuing API keys]:
+
+[source, shell]
+----
+export AKKA_MODEL_BASE_URL=https://models.acme.example/v1
+export AKKA_MODEL_API_KEY=<the key you issued>
+----
+
+== Listing the models a hostname serves
+
+[source, shell]
+----
+curl $AKKA_MODEL_BASE_URL/models -H "Authorization: Bearer $AKKA_MODEL_API_KEY"
+----
+
+== Sending a request
+
+Send the served name in the `model` field:
+
+[source, shell]
+----
+curl $AKKA_MODEL_BASE_URL/chat/completions \
+  -H "Authorization: Bearer $AKKA_MODEL_API_KEY" -H 'content-type: application/json' \
+  -d '{"model":"docs","messages":[{"role":"user","content":"Hello"}]}'
+----
+
+The `model` field is how one hostname serves many models. Send any name the route accepts and the request reaches that model. Nothing else about the request changes.
+
+An OpenAI client needs the same two values:
+
+[source, python]
+----
+client = OpenAI(base_url="https://models.acme.example/v1", api_key=...)
+client.chat.completions.create(model="docs", ...)
+client.chat.completions.create(model="agent", ...)
+----
+
+A `404` from an endpoint that is otherwise ready means the name in `model` is not one the route accepts. `akka models routes get NAME` lists the accepted names.
+
+== Calling tools
+
+With `toolCalling` enabled on the deployment, the `tools` and `tool_choice` fields behave as they do against OpenAI. See xref:inference:serving/deploying-models.adoc#_enabling_tool_calling[Enabling tool calling] for the descriptor fields, and note that a parser that does not match the model returns tool calls as ordinary prose rather than failing.
+
+== Calling a model without a hostname
+
+The CLI can tunnel directly to a deployment. This bypasses the route, which makes it the quickest way to establish whether a model itself is answering:
+
+[source, shell]
+----
+akka models proxy docs &
+----
+
+[source, shell]
+----
+curl localhost:8080/v1/chat/completions -H 'content-type: application/json' \
+  -d '{"model":"docs","messages":[{"role":"user","content":"say ok"}],"max_tokens":5}'
+----
+
+[source, json]
+----
+{"id":"chatcmpl-b5c4083eb2f6252f","object":"chat.completion","model":"docs",
+ "choices":[{"index":0,"message":{"role":"assistant","content":"Got it!"},
+ "finish_reason":"length"}],
+ "usage":{"prompt_tokens":5,"total_tokens":10,"completion_tokens":5}}
+----
+
+The tunnel reaches one model, so `model` in the body is echoed back rather than used to choose. Only a route uses that field to select between models.
+
+== Calling a served model from an Akka service
+
+An Akka agent reaches this endpoint the same way it reaches any OpenAI-compatible provider, by configuring the base URL and the API key. See xref:sdk:model-provider-details.adoc[AI model provider configuration].
+
+include::partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:routing/index.adoc[Routing requests to models]
+* xref:sdk:agents.adoc[Agents]
+* xref:reference:inference-cli/models.adoc#proxy[`akka models proxy` command reference]

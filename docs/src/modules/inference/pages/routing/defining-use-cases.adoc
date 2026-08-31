@@ -6,14 +6,14 @@
 include::ROOT:partial$include.adoc[]
 
 A use case is a class of request that the semantic router recognizes. The router
-compares the identified use case from the request against its list of known use cases and routes accordingly, as covered in xref:inference:semantic-routing/routing-use-cases.adoc[Routing use cases].
+compares the identified use case from the request against its list of known use cases and routes accordingly, as covered in xref:inference:routing/routing-use-cases.adoc[Routing use cases].
 
 Before any of this routing can take place, the use cases need to be clearly defined.
 
 == Learning use case clusters
-Each time a request is seen by the semantic router, it identifies in which use case that request belongs. It does this by creating an link:{url-ext-embeddings-video}[embedding, window="new"] from the request and comparing that embedding against the _link:{url-ext-kmeans-centroids}[centers, window="new"]_ of previously discovered use cases. Note that no LLM is used to detect clusters, it's all just vector math and so incurs no token cost.
+Each time a request is seen by the semantic router, it identifies in which use case that request belongs. It does this by creating an link:{url-ext-embeddings-video}[embedding, window="new"] from the request and comparing that embedding against the _link:{url-ext-kmeans-centroids}[centers, window="new"]_ of previously discovered use cases. No LLM is used to detect clusters. The comparison is vector arithmetic, so it incurs no token cost.
 
-If a request is seen that identifies its own new use case (it is far away from any of the existing _centers_ of use case groups), then the use case boundaries are re-evaluated. To keep clustering fast and efficient, the gateway router doesn't assign or infer labels for use cases. Humans look at the _link:{url-ext-affinity-propagation-exemplars}[exemplars, window="new"]_ of a given use case and use those to decide on labels.
+If a request is seen that identifies its own new use case (it is far away from any of the existing _centers_ of use case groups), then the use case boundaries are re-evaluated. To keep clustering fast, the gateway router does not assign or infer labels for use cases. Humans look at the _link:{url-ext-affinity-propagation-exemplars}[exemplars, window="new"]_ of a given use case and use those to decide on labels.
 
 == Example use cases for an online store
 
@@ -70,9 +70,9 @@ Take a look at the following list of representative prompt inputs from users of 
 | Shipping check
 |===
 
-The match is on meaning, so requests that share no keywords can still reach the same use case. "What did I buy in March?" and "Cancel the order I placed yesterday morning." have no words in common, yet both map to the `orders` use case. Remember that this label is only useful for humans. The router doesn't know what "orders" means beyond it being a label humans have supplied to one of its identified use case clusters.
+The match is on meaning, so requests that share no keywords can still reach the same use case. "What did I buy in March?" and "Cancel the order I placed yesterday morning." have no words in common, yet both map to the `orders` use case. Remember that this label is only useful for humans. The router does not know what "orders" means beyond it being a label humans have supplied to one of its identified use case clusters.
 
-If a request can potentially belong to multiple categories (_"Will this arrive before Friday and are there any more in stock?"_), then you'll want to make use of an xref:sdk:autonomous-agents.adoc[autonomous] or orchestrator agent to answer those as two separate questions from different models.
+If a request can potentially belong to multiple categories (_"Will this arrive before Friday and are there any more in stock?"_), use an xref:sdk:autonomous-agents.adoc[autonomous] or orchestrator agent to answer them as two separate questions against different models.
 
 == Use cases vs tools
 At first glance, tools and use cases might seem similar since both require some kind of meaning to be derived from the incoming request. Use cases are a much broader scope than tools, and a tool can be used within multiple use cases.
@@ -93,5 +93,5 @@ include::partial$aao-inference-notice.adoc[]
 
 == See also
 
-* xref:inference:semantic-routing.adoc[Semantic routing]
-* xref:inference:static-routing.adoc[Static routing]
+* xref:inference:routing/request-meaning.adoc[Routing on request meaning]
+* xref:inference:routing/request-attributes.adoc[Routing on request attributes]
