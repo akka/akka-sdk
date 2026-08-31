@@ -204,6 +204,7 @@ The xref:reference:cli/akka-cli/akka_projects.adoc[akka projects] command includ
 * xref:reference:cli/akka-cli/akka_projects_observability_add_traces_otlp.adoc[akka projects observability add traces otlp]
 * xref:reference:cli/akka-cli/akka_projects_observability_apply.adoc[akka projects observability apply]
 * xref:reference:cli/akka-cli/akka_projects_observability_config.adoc[akka projects observability config]
+* xref:reference:cli/akka-cli/akka_projects_observability_config_runtime-logs.adoc[akka projects observability config runtime-logs]
 * xref:reference:cli/akka-cli/akka_projects_observability_config_traces.adoc[akka projects observability config traces]
 * xref:reference:cli/akka-cli/akka_projects_observability_edit.adoc[akka projects observability edit]
 * xref:reference:cli/akka-cli/akka_projects_observability_export.adoc[akka projects observability export]
