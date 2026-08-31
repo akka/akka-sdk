@@ -1,0 +1,251 @@
+= Routing Ruleset reference
+:page-summary: A routing ruleset is the JSON document that declares the rules the gateway router matches against request attributes, and the destinations those rules may emit.
+:page-persona: builder-developer, builder-ai-ml
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+A routing ruleset is the JSON document applied by `akka rulesets apply`. It declares the closed set of destinations the ruleset may emit, the destination for unclaimed traffic, the headers the gateway reports its decision in, and the rules themselves. See xref:inference:routing/request-attributes.adoc[Routing on request attributes] for the tasks these documents support.
+
+A ruleset is a logical grouping of named rules. The ruleset is the unit of enforcement, not the individual rule. The evidence log emitted by the gateway records which rules were evaluated and their results, and rules cannot be enforced on requests outside a ruleset.
+
+Documents sent with `-f FILE` are JSON. Passing `-f -` reads the document from standard input.
+
+[#predicates]
+== Predicates
+
+A predicate is a boolean expression. The rule is enforced when the expression evaluates to true. An expression takes the form `<attribute> <condition> <value>`, for example `protocol equals anthropic.messages`.
+
+Six predicates are available, and the set is closed.
+
+[cols="1,1,2"]
+|===
+|Predicate |JSON value |Matches when
+
+|*equals*   |string           |The attribute equals the string.
+|*prefix*   |string           |The attribute starts with the string.
+|*suffix*   |string           |The attribute ends with the string.
+|*contains* |string           |The attribute contains the string.
+|*in*       |array of strings |The attribute equals one of the strings in the array.
+|*exists*   |boolean          |The attribute is present. Use `false` to match when it is absent.
+|===
+
+String comparisons are case sensitive. `equals`, `prefix`, `suffix`, `contains`, and `in` all compare exactly as written, so a rule testing `subject` against `GPT-4` does not match a request carrying `gpt-4`.
+
+Attribute names are matched literally too. Header names are lower-cased when the attribute is populated, so a rule has to name one in lower case. `header.x-tenant` matches, and `header.X-Tenant` never does.
+
+There is no regular expression predicate. Predicates are evaluated against prompt text and metadata that a caller can influence, and a regular expression failure would be a way to deny service to the gateway.
+
+The `exists` predicate separates an absent attribute from an empty one. A request carrying `x-tenant:` with no value has the attribute present and empty. A request with no such header does not have the attribute at all.
+
+[#attributes]
+== Attributes
+
+The attributes available to a rule are protocol agnostic, so one rule applies to every protocol the gateway accepts without naming which one, unless the rule is itself a predicate on `protocol`.
+
+[cols="1,2"]
+|===
+|Attribute |Value
+
+|*protocol*
+|The shape of the request, either `openai.chat` or `anthropic.messages`. Known once the headers arrive.
+
+|*operation*
+|What is being asked for, such as `chat.completions`. Known once the headers arrive. See <<operation-values>> for how the value is formed.
+
+|*subject*
+|The model or tool being asked for. Read from the body.
+
+|*text.prompt*
+|The system message and all message content, concatenated. Read from the body.
+
+|*text.lastUserMessage*
+|The most recent user turn. Read from the body.
+
+|*conversation*
+|The conversation the request belongs to. Absent when the caller opted out of being recognized across turns.
+
+|*conversation.source*
+|Which part of the request supplied the conversation identity.
+
+|*header.<name>*
+|A request header, with the name lower-cased. HTTP/2 pseudo-headers are excluded, so `header.:path` never resolves.
+|===
+
+[#operation-values]
+=== Operation values
+
+The value of `operation` is derived from the protocol and the HTTP method, so it is not a fixed list. Each protocol contributes a base name. A request that uses any method other than `POST` prefixes that base name with the lower-cased method.
+
+[cols="1,1,2"]
+|===
+|Protocol |Method |Value
+
+|`openai.chat`         |`POST`             |`chat.completions`
+|`openai.chat`         |Any other method   |The method, lower-cased, then `.chat.completions`. A `GET` produces `get.chat.completions`.
+|`anthropic.messages`  |`POST`             |`messages`
+|`anthropic.messages`  |Any other method   |The method, lower-cased, then `.messages`. A `GET` produces `get.messages`.
+|===
+
+A request that arrives without a method is treated as a `POST`. The table covers the protocols the gateway accepts today, and a new protocol adds a base name to it.
+
+[#match-blocks]
+== Match blocks
+
+A rule's `match` is a block. A block takes one of four forms, and exactly one form may be present in any one block.
+
+[cols="1,2"]
+|===
+|Form |Meaning
+
+|*all*       |Every block in the list must hold.
+|*any*       |At least one block in the list must hold.
+|*not*       |Inverts the single block it wraps.
+|*attribute* |A condition. Names an attribute and states exactly one predicate against it.
+|===
+
+A condition is written flat. The attribute name and the predicate sit side by side in the same object:
+
+[source,json]
+----
+{ "attribute": "text.prompt", "contains": "task:commit" }
+----
+
+Boolean structure is stated rather than inferred from field order, so a rule's meaning does not depend on how it was written down. Nesting depth is bounded, and a block that states no conditions is rejected. Traffic that no rule claims falls through to the ruleset default destination.
+
+[#outcomes]
+== Outcomes
+
+A rule states what it decides when it matches. Exactly one outcome form is present.
+
+[cols="1,2"]
+|===
+|Outcome |Decision
+
+|*toDestination*
+|Send matching traffic to a destination the ruleset declares.
+
+|*byClassifier*
+|Defer the decision to a named classifier and map the classifier's answers onto destinations.
+
+|*deny*
+|Refuse the exchange. Matching traffic never reaches a backend. `status` is bounded to 4xx and `body` is operator text. Nothing derived from the request is interpolated into the body.
+|===
+
+[#byclassifier]
+=== byClassifier
+
+A `byClassifier` outcome hands the decision to a model. This is the one case where attribute routing consults an LLM.
+
+[cols="1,2"]
+|===
+|Field |Value
+
+|*classifier*
+|The id of a registered classifier.
+
+|*input*
+|The attribute whose value is sent to the classifier, such as `text.lastUserMessage`.
+
+|*destinations*
+|A map from the classifier's own answers to destination labels. The keys belong to the classifier and are not validated. Every value must be declared by the ruleset.
+
+|*onFailure*
+|`default` sends the request to the ruleset default destination when the classifier produces no usable answer.
+
+|*affinity*
+|`none` decides on every turn. `conversation` lets the first turn of a conversation decide and later turns reuse that decision. Omitting the field reads as `none`. Only a deferral can carry affinity.
+|===
+
+Classifiers are registered separately from rulesets, and registration is immutable. See xref:reference:inference-cli/routing.adoc#routing-classifiers[`akka routing-classifiers`] for the commands that manage them.
+
+[#ruleset-document]
+== Ruleset documents
+
+[cols="1,2"]
+|===
+|Field |Value
+
+|*defaultDestination*
+|The destination for traffic that no rule claims. Must be one of the declared destinations.
+
+|*outputHeader*
+|The header the gateway reports the chosen destination label in.
+
+|*reasonHeader*
+|The header the gateway reports the reason for the decision in.
+
+|*destinations*
+|The closed set of labels this ruleset may emit, each with a description. Every outcome, including the default, must name one of these.
+
+|*rules*
+|The rules. Each carries an `id`, a `priority`, a `match`, and an `outcome`.
+|===
+
+Rules are evaluated by `priority`, lower first, with `id` breaking ties. The ordering is total, so the order a client reads is the order any later evaluation uses.
+
+A ruleset's `name`, `revision`, and `retired` state are assigned by the service, and a submitted document cannot express them. The ruleset's own priority is set through the CLI rather than through the document, so a reorder does not read as a policy change.
+
+=== A ruleset that routes to a fixed destination
+
+[source,json]
+----
+{
+  "defaultDestination": "frontier",
+  "outputHeader": "x-optimize-route",
+  "reasonHeader": "x-optimize-reason",
+  "destinations": [
+    { "label": "finetune", "description": "the fine-tuned model" },
+    { "label": "frontier", "description": "the frontier model" }
+  ],
+  "rules": [
+    {
+      "id": "commit-message",
+      "priority": 100,
+      "match": {
+        "any": [
+          { "attribute": "text.prompt", "contains": "task:commit" }
+        ]
+      },
+      "outcome": { "toDestination": "finetune" }
+    }
+  ]
+}
+----
+
+=== A rule that defers to a classifier
+
+A single rule is written with the same `match` and `outcome` shape, without the surrounding document:
+
+[source,json]
+----
+{
+  "id": "tenant-commit-routing",
+  "priority": 100,
+  "match": {
+    "all": [
+      { "attribute": "protocol", "equals": "openai.chat" },
+      { "attribute": "header.x-tenant", "exists": true }
+    ]
+  },
+  "outcome": {
+    "byClassifier": {
+      "classifier": "commit-router-v4",
+      "input": "text.lastUserMessage",
+      "destinations": { "slm": "finetune", "big": "frontier" },
+      "onFailure": "default",
+      "affinity": "conversation"
+    }
+  }
+}
+----
+
+The two sides of the `destinations` map come from different places. `slm` and `big` are answers the classifier itself returns, and they belong to the classifier's own vocabulary. `finetune` and `frontier` name backends registered with the gateway proxy, and each one has to be declared in the `destinations` list of the ruleset this rule belongs to.
+
+include::inference:partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:routing/request-attributes.adoc[Routing on request attributes]
+* xref:reference:inference-cli/routing.adoc#rulesets[`akka rulesets` command reference]
+* xref:reference:descriptors/index.adoc[Descriptors]

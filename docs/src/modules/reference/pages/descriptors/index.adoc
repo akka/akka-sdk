@@ -12,3 +12,7 @@ and may even be used to create a new project.
 to source secrets from an external secret manager.
 * The xref:descriptors/observability-descriptor.adoc[Observability descriptor] describes how metrics, logs,
 and traces are exported to third party services.
+* The xref:descriptors/model-descriptor.adoc[Model descriptor] declares the models an inference cluster serves,
+the hardware they run on, and the hostnames that expose them.
+* The xref:descriptors/routing-ruleset.adoc[Routing ruleset] declares the rules the gateway router matches
+against request attributes to choose a model provider.

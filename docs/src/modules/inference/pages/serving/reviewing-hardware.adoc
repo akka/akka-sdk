@@ -1,0 +1,75 @@
+= Reviewing available hardware
+:page-summary: A device is a kind of GPU the platform has in a region. Listing devices shows what a model can be deployed on and how much of it is free.
+:page-persona: builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+A device is a kind of GPU the platform has in a region. Devices are inventory rather than something you create, so the first question before deploying a model is which devices exist and how many cards of each are unused.
+
+== Listing the devices in a region
+
+[source, shell]
+----
+akka models devices list
+----
+
+The output names each kind of card, its memory, and how much of it is free:
+
+[source, shell]
+----
+NAME   PRODUCT     MEMORY    ARCHITECTURE   FP8   TOTAL   FREE   MAX/NODE
+l4     NVIDIA L4   23034Mi   Ada Lovelace   yes   1       1      1
+----
+
+[cols="1,3", options="header"]
+|===
+| Column
+| Value
+
+| `NAME`
+| The device name. This is the value a descriptor gives as `spec.device`.
+
+| `PRODUCT`
+| The card the name refers to.
+
+| `MEMORY`
+| Memory on one card. A model has to fit inside this, at the context length you configure.
+
+| `ARCHITECTURE`
+| The GPU architecture, which determines the numeric formats the card supports.
+
+| `FP8`
+| Whether the card supports 8-bit floating point. `fp8` quantization requires it.
+
+| `TOTAL`
+| Cards of this kind in the region.
+
+| `FREE`
+| Cards not currently claimed by an accelerator.
+
+| `MAX/NODE`
+| The most cards of this kind on any single node. A deployment that splits one model across several cards has to fit inside one node, so this is the ceiling on `devicesPerReplica`.
+|===
+
+== Inspecting one kind of device
+
+To see the individual cards behind a device name and what is running on each:
+
+[source, shell]
+----
+akka models devices get l4
+----
+
+Use this when a card appears free in the list but a deployment will not place on it, because it shows the workload holding each card.
+
+== From devices to deployable capacity
+
+A deployment is not placed on a device directly. It is placed on an accelerator, which is a claim on a slice of this inventory. See xref:inference:serving/allocating-hardware.adoc[Allocating hardware to models].
+
+include::partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:serving/allocating-hardware.adoc[Allocating hardware to models]
+* xref:reference:inference-cli/models.adoc#devices[`akka models devices` command reference]

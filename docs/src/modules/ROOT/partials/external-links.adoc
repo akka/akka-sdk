@@ -129,9 +129,6 @@
 :url-ext-kmeans-centroids: https://scikit-learn.org/stable/modules/clustering.html#k-means
 :url-ext-affinity-propagation-exemplars: https://scikit-learn.org/stable/modules/clustering.html#affinity-propagation
 
-// -- vllm --
-:url-vllm: https://docs.vllm.ai/en/latest/
-
 // -- envoy ai gateway --
 :url-envoy-ai-gateway: https://aigateway.envoyproxy.io/
 
