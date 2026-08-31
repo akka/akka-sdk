@@ -31,6 +31,7 @@ The `akka project observability config` command manages the observability config
 == SEE ALSO
 
 * link:akka_projects_observability.html[akka projects observability]	 - Manage the observability settings for your Akka project.
+* link:akka_projects_observability_config_runtime-logs.html[akka projects observability config runtime-logs]	 - Configure the export of runtime logs for your Akka project.
 * link:akka_projects_observability_config_traces.html[akka projects observability config traces]	 - Configure traces sampling for your Akka project.
 
 [discrete]

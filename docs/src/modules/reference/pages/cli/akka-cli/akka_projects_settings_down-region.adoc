@@ -14,6 +14,7 @@ akka projects settings down-region REGION [NEW_PRIMARY_REGION] [flags]
 == Options
 
 ----
+      --force            allow downing a region that is not in the project's region list
   -h, --help             help for down-region
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
       --project string   project to use if not using the default configured project
