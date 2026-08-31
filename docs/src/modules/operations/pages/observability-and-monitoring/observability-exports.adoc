@@ -409,7 +409,7 @@ Google Cloud is supported for exporting logs, metrics, and traces. The primary p
 
 To create such a service account and key using the `gcloud` command, assuming you are logged in and have a Google project configured:
 
-. Create a service account. In this example, we will call it `akka-exporter`.
+. Create a service account. This example uses the name `akka-exporter`.
 +
 [source,shellscript]
 ----
@@ -426,7 +426,7 @@ gcloud projects add-iam-policy-binding <gcp-project-id> \
     --member "serviceAccount:akka-exporter@<gcp-project-id>.iam.gserviceaccount.com" \
     --role "roles/logging.logWriter"
 ----
-. Generate a key file for your service account, we will place it into a file called `key.json`.
+. Generate a key file for your service account and save it as `key.json`.
 +
 [source,shellscript]
 ----
