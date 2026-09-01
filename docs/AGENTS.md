@@ -226,3 +226,17 @@ Gotchas:
 
 After a non-trivial docs change, build the preview and offer to open it for the user, so they can
 sanity-check the rendered pages.
+
+## Lint with Vale
+
+CI runs Vale over `docs/src` on every PR that touches docs. Run the same checks locally before
+sending a PR:
+
+```bash
+make vale                                                # error level, matches CI
+docs/bin/vale.sh --warning                               # also show warnings while drafting
+docs/bin/vale.sh docs/src/modules/sdk/pages/agents.adoc  # lint one file
+```
+
+When a legitimate term trips a spelling alert, add it to
+`docs/styles/config/vocabularies/Akka/accept.txt` and re-sort with `docs/bin/sort-vale-vocab.sh`.
