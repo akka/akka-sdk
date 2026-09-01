@@ -17,7 +17,7 @@ Some key benefits of using an AI coding assistant:
 * **Debugging:** Get assistance in identifying and resolving issues.
 * **Test generation:** Rapidly generate tests to ensure code correctness.
 
-In summary, we will look at the following:
+In summary, this page covers:
 
 . Akka documentation in LLM-friendly format
 . Configure your AI assistant (Cursor, Qodo, etc.) to use this documentation
@@ -126,7 +126,7 @@ If Codex does not make use of the documentation in `akka-context` directory it c
 
 == Verify that it works
 
-To verify that the assistant now knows about Akka, we can ask the question again:
+To verify that the assistant now knows about Akka, ask the question again:
 
 [source]
 ----

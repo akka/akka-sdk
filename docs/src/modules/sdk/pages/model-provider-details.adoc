@@ -702,7 +702,7 @@ include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=agent
 
 The `model-provider` property points to the name of another configuration section, in this case `akka.javasdk.agent.openai`. That configuration section contains the actual configuration for the model provider, according to the properties described in below xref:#_reference_configurations[].
 
-Another example where we have selected `anthropic` with `claude-sonnet-4` as the default model provider:
+Another example, with `anthropic` and `claude-sonnet-4` selected as the default model provider:
 
 [source,json,indent=0]
 .src/main/resources/application.conf
