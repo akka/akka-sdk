@@ -130,5 +130,8 @@ validate-links:
 verify-internal-refs:
 	ruby docs/bin/verify-internal-refs.rb
 
+vale:
+	docs/bin/vale.sh
+
 deploy: clean managed
 	bin/deploy.sh --module java --upstream ${upstream} --branch ${branch} ${sources}
