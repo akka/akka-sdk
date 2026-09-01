@@ -97,7 +97,7 @@ include::sdk:example$doc-snippets/standalone/namespace.yml[]
 
 . rbac.yml
 +
-For Akka Cluster bootstrap and rolling updates we need to define role based access control.
+Akka Cluster bootstrap and rolling updates require role-based access control.
 +
 [source,yaml]
 ----
@@ -236,7 +236,7 @@ You find more configuration options in reference documentation:
 
 === More advanced configuration
 
-There are many things that can be configured to control the Akka runtime behavior. Please https://akka.io/contact-us[ask support, window="new"].  and we will guide you to the right way to adjust the configuration for what you need.
+There are many things that can be configured to control the Akka runtime behavior. https://akka.io/contact-us[Contact support, window="new"] for guidance on adjusting the configuration.
 
 A few examples of things that can be configured:
 
