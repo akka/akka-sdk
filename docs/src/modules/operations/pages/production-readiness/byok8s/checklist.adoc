@@ -108,7 +108,7 @@ Akka reviews your application's high-level architecture and design so we underst
 * [ ] VPC CIDR has scale-out headroom; security groups and NACLs reviewed
 * [ ] Container registry in or near the prod region
 * [ ] Persistence sized; auto-scaling ceilings set
-* [ ] Per-service instance types chosen for each workload (defaults reviewed; pinned where a service needs a specific shape)
+* [ ] Per-service xref:operations:services/instance-sizing.adoc[instance types] chosen for each workload (defaults reviewed; pinned where a service needs a specific shape)
 * [ ] Database layout planned per project (a dedicated database per project where isolation or independent scaling is needed, versus a shared database) and sized accordingly
 * [ ] Region optimization / environment sizing reviewed with Akka, so the region and per-service configuration is right-sized for the workload before go-live
 

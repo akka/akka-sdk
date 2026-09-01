@@ -22,7 +22,7 @@ Akka's team embeds with yours from onboarding through ongoing operations. Gettin
 Production readiness spans a lot, and that breadth is the point: these are the areas that decide whether getting to production, and staying there, is smooth rather than fraught. Take the list as the high-level shape; the full, tailored checklist is the larger piece your Akka team works through with you. This ends up as a version customized to your deployment.
 
 Sizing and capacity::
-Forecast peak load and size compute and persistence to meet it.
+Forecast peak load and size compute and persistence to meet it, including xref:operations:services/instance-sizing.adoc[per-service instance sizing].
 
 Observability::
 Application logs, metrics, and traces flowing to your own tooling, with the monitoring and alerting to act on them, including database and persistence health.
