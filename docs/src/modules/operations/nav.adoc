@@ -61,6 +61,7 @@
 
 *** xref:operations:operator-best-practices.adoc[]
 *** xref:operations:production-readiness/index.adoc[]
+**** xref:operations:production-readiness/choosing-your-environment.adoc[]
 **** Dedicated
 ***** xref:operations:production-readiness/dedicated/shared-responsibility.adoc[]
 ***** xref:operations:production-readiness/dedicated/raci.adoc[]

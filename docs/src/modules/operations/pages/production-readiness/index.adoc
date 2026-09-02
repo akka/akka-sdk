@@ -21,6 +21,8 @@ Akka's team embeds with yours from onboarding through ongoing operations. Gettin
 
 Production readiness spans a lot, and that breadth is the point: these are the areas that decide whether getting to production, and staying there, is smooth rather than fraught. Take the list as the high-level shape; the full, tailored checklist is the larger piece your Akka team works through with you. This ends up as a version customized to your deployment.
 
+Three of these areas — sizing, multi-region resilience, and data sovereignty — are also independent decisions you make when setting up an environment; see xref:operations:production-readiness/choosing-your-environment.adoc[] for how to weigh them for your workload.
+
 Sizing and capacity::
 Forecast peak load and size compute and persistence to meet it.
 
@@ -35,6 +37,9 @@ Backups and recovery for your data and cluster state, sized to your recovery obj
 
 Multi-region resilience::
 Replication and failover behaviour chosen per service to meet your availability needs.
+
+Data sovereignty::
+Choosing regions so your data stays inside the legal jurisdiction it must remain in.
 
 Certificates::
 Valid TLS end to end: Akka rotates platform-managed certificates, and you manage any you provide.
