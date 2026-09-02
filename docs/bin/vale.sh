@@ -14,7 +14,7 @@
 set -euo pipefail
 
 # Version pinned in .github/workflows/documentation.yml
-VALE_REQUIRED_VERSION="3.7.1"
+VALE_REQUIRED_VERSION="3.19.0"
 
 # Resolve repo root from this script's location so the script works no matter
 # where the user invokes it from.
