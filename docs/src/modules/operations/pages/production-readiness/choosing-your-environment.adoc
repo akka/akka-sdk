@@ -1,5 +1,5 @@
 = Choosing your environment
-:page-summary: How to size an Akka environment, how much availability to build in, and where your data is allowed to live — three independent decisions you make when setting it up.
+:page-summary: How to size an Akka environment, how much availability to build in, and where your data is allowed to live, three independent decisions you make when setting it up.
 :page-when-to-use: Use this before or during onboarding, to decide what your workload actually needs rather than defaulting to the most expensive option.
 :page-related: xref:operations:production-readiness/index.adoc[], xref:concepts:multi-region.adoc[], xref:operations:regions/setup.adoc[], xref:operations:technical-overview.adoc[]
 :page-persona: operator-platform, operator-sre
@@ -10,7 +10,7 @@ Setting up an Akka environment means making three independent decisions: how you
 
 == Sizing your environment
 
-Every environment has a fixed platform layer — orchestration, gateways, security, observability — that runs regardless of what you deploy, plus a variable service layer that scales with what you run. Platform cost does not drop as you remove services; it is the minimum cost of the environment itself. Low utilization during normal operation is expected: an environment is sized for spikes and failures, not for continuous high load.
+Every environment has a fixed platform layer (orchestration, gateways, security, observability) that runs regardless of what you deploy, plus a variable service layer that scales with what you run. Platform cost does not drop as you remove services; it is the minimum cost of the environment itself. Low utilization during normal operation is expected: an environment is sized for spikes and failures, not for continuous high load.
 
 Akka provisions a new environment from one of four starting shapes:
 
@@ -40,7 +40,7 @@ Whether this matters depends on your workload. If you can tolerate an occasional
 
 == Data sovereignty and region choice
 
-Every region is also a legal jurisdiction: your data stays inside the region you choose, and that region's laws apply — an Ireland region means EU law. This holds whether or not you ever add a second region, and becomes an active decision the moment you do. If you must stay under one regulatory regime, choose a second region inside it, such as Ireland plus Frankfurt for EU-only, not Ireland plus Virginia.
+Every region is also a legal jurisdiction: your data stays inside the region you choose, and that region's laws apply. An Ireland region means EU law. This holds whether or not you ever add a second region, and becomes an active decision the moment you do. If you must stay under one regulatory regime, choose a second region inside it, such as Ireland plus Frankfurt for EU-only, not Ireland plus Virginia.
 
 AWS, Google, and Microsoft act as sub-processors, running the underlying data centers and enforcing the region boundary. Akka does not move your data outside the region you select.
 
