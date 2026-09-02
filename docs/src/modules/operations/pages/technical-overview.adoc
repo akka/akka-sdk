@@ -181,7 +181,7 @@ System management is shared between you and Akka across provisioning and ongoing
 |===
 
 [#byoc-installation]
-== Installation (BYOC)
+== Bring Your Own Cloud (BYOC)
 
 This is the *BYOC* path, where Akka provisions and operates a region inside your own cloud account. Bringing your own cluster instead? See <<byok8s,Bring Your Own Kubernetes (BYOK8s)>>.
 
@@ -346,7 +346,7 @@ Bootstrap is driven by the `modules/google` Terraform module in the `akka-bootst
 [#byok8s]
 == Bring Your Own Kubernetes (BYOK8s)
 
-AAO can also be installed on a Kubernetes cluster _you provision_, in your cloud or your own data center. You build the infrastructure to Akka's specification and install Teleport to grant access; Akka then configures the cluster as an application-plane region, runs smoke tests, and hands the region over. Want Akka to provision against your existing cloud infrastructure instead? See <<byoc-installation,Installation (BYOC)>>.
+AAO can also be installed on a Kubernetes cluster _you provision_, in your cloud or your own data center. You build the infrastructure to Akka's specification and install Teleport to grant access; Akka then configures the cluster as an application-plane region, runs smoke tests, and hands the region over. Want Akka to provision against your existing cloud infrastructure instead? See <<byoc-installation,Bring Your Own Cloud (BYOC)>>.
 
 [WARNING]
 ====
