@@ -244,6 +244,7 @@ checkRuntimeDependencyAlignment := RuntimeDependencyCheck.check(
   (akkaJavaSdk / libraryDependencies).value ++ (akkaJavaSdkTestKit / libraryDependencies).value,
   (akkaJavaSdk / scalaVersion).value,
   (akkaJavaSdk / scalaBinaryVersion).value,
+  (LocalRootProject / baseDirectory).value,
   streams.value.log)
 
 addCommandAlias("formatAll", "scalafmtAll; javafmtAll")

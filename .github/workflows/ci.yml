@@ -100,37 +100,12 @@ jobs:
           sbt --client "additionalValidation" || \
             { echo "[error] Additional validation failed."; false; }
 
-      - name: Detect Akka Runtime version change
-        id: runtime-version
-        run: |
-          runtime_version() {
-            git show "$1:project/Dependencies.scala" 2>/dev/null \
-              | sed -n 's/.*"akka-runtime\.version", "\([^"]*\)".*/\1/p'
-          }
-          if [ -n "${{ github.base_ref }}" ]; then
-            git fetch --depth=1 origin "${{ github.base_ref }}" || true
-            previous=$(runtime_version FETCH_HEAD)
-          else
-            git fetch --deepen=1 || true
-            previous=$(runtime_version HEAD^)
-          fi
-          current=$(runtime_version HEAD)
-          # unknown previous version (shallow history, moved file) errs towards running the check
-          if [ "$current" != "$previous" ]; then
-            echo "Akka Runtime version changed: ${previous:-unknown} -> ${current}"
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "Akka Runtime version unchanged (${current}), skipping dependency alignment check"
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Check dependency alignment with the Akka Runtime
-        if: steps.runtime-version.outputs.changed == 'true'
         run: |
           sbt --client "checkRuntimeDependencyAlignment" || \
             {
-              echo "[error] Direct dependencies are not aligned with the versions the Akka Runtime resolves."
-              echo "[error] Update project/Dependencies.scala, or run 'sbt checkRuntimeDependencyAlignment' locally to reproduce."
+              echo "[error] Direct dependencies are not aligned with the versions the Akka Runtime provides."
+              echo "[error] Run 'sbt checkRuntimeDependencyAlignment' locally to reproduce, the failure lists what to update."
               false
             }
 
