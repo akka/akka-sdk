@@ -211,7 +211,8 @@ object SdkRunner {
             testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
             selfServiceName = None,
             backoffice = backofficeSettings,
-            objectStorageBuckets = objectStorageBuckets))
+            objectStorageBuckets = objectStorageBuckets,
+            ephemeralHttpPort = false))
       } else None
 
     val agentInteractionLogEnabled =

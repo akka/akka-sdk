@@ -18,6 +18,10 @@ Global / initialize := {
 
 ThisBuild / makeBomIncludeDependencies := true
 
+// hold Jackson at the version akka resolves, against the newer one langchain4j asks for,
+// see Dependencies.jacksonModules
+ThisBuild / dependencyOverrides ++= Dependencies.jacksonModules
+
 lazy val `akka-javasdk-root` = project
   .in(file("."))
   .aggregate(
@@ -177,7 +181,14 @@ lazy val akkaJavaSdkParent =
         // completely replace with our pom.xml
         val pom = scala.xml.XML.loadFile(baseDirectory.value / "pom.xml")
         // but use the current version
-        updatePomVersion(pom, version.value, AkkaRuntimeVersion, AkkaGrpcVersion, GoogleProtobufVersion)
+        updatePomVersion(
+          pom,
+          version.value,
+          AkkaRuntimeVersion,
+          AkkaGrpcVersion,
+          GoogleProtobufVersion,
+          Dependencies.JacksonVersion,
+          Dependencies.JacksonAnnotationsVersion)
       })
 
 def updatePomVersion(
@@ -185,7 +196,9 @@ def updatePomVersion(
     v: String,
     runtimeVersion: String,
     akkaGrpcVersion: String,
-    googleProtobufVersion: String): Elem = {
+    googleProtobufVersion: String,
+    jacksonVersion: String,
+    jacksonAnnotationsVersion: String): Elem = {
   def updateElements(seq: Seq[Node]): Seq[Node] = {
     seq.map {
       case version @ <version>{_}</version> =>
@@ -201,6 +214,10 @@ def updatePomVersion(
               <akka.grpc.version>{akkaGrpcVersion}</akka.grpc.version>
             case <protobuf-java.version>{_}</protobuf-java.version> =>
               <protobuf-java.version>{googleProtobufVersion}</protobuf-java.version>
+            case <jackson.version>{_}</jackson.version> =>
+              <jackson.version>{jacksonVersion}</jackson.version>
+            case <jackson-annotations.version>{_}</jackson-annotations.version> =>
+              <jackson-annotations.version>{jacksonAnnotationsVersion}</jackson-annotations.version>
             case other =>
               other
           }

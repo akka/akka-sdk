@@ -8,13 +8,13 @@ object Dependencies {
     val ProtocolVersionMinor = 1
   }
 
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.15")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.16")
 
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
-  val AkkaVersion = "2.10.20"
-  val AkkaHttpVersion = "10.7.4" // Note: should at least the Akka HTTP version required by Akka gRPC
+  val AkkaVersion = "2.10.21"
+  val AkkaHttpVersion = "10.7.5" // Note: should at least the Akka HTTP version required by Akka gRPC
   val AkkaGrpcVersion = akka.grpc.gen.BuildInfo.version
   val GoogleProtobufVersion = akka.grpc.gen.BuildInfo.googleProtobufVersion
 
@@ -27,8 +27,8 @@ object Dependencies {
   val JacksonVersion = "2.21.5"
   val JacksonDatabindVersion = JacksonVersion
   val JacksonAnnotationsVersion = "2.21"
-  val Langchain4jVersion = "1.15.0"
-  val LogbackVersion = "1.5.38"
+  val Langchain4jVersion = "1.18.1"
+  val LogbackVersion = "1.6.3"
   val LogbackContribVersion = "0.1.5"
   val JUnitVersion = "4.13.2"
   val JUnitInterfaceVersion = "0.11"
@@ -61,6 +61,20 @@ object Dependencies {
   val jacksonJsr310 = "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % JacksonVersion
   val jacksonParameterNames = "com.fasterxml.jackson.module" % "jackson-module-parameter-names" % JacksonVersion
   val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonVersion
+
+  // TODO advance Jackson to 2.22.x. langchain4j 1.18.x depends on 2.22.1, and coursier resolves the
+  // higher version unless every module is held down together: jackson-module-scala refuses to load
+  // against a databind from a different minor. Held at the version akka resolves until the whole
+  // build, and the runtime, can move.
+  val jacksonModules: Seq[ModuleID] =
+    Seq(
+      jacksonAnnotations,
+      jacksonCore,
+      jacksonDatabind,
+      jacksonJdk8,
+      jacksonJsr310,
+      jacksonParameterNames,
+      jacksonScala)
 
   val langchain4j = "dev.langchain4j" % "langchain4j" % Langchain4jVersion
 
