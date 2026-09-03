@@ -9,8 +9,8 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
-
 import java.util.UUID;
+
 // end::imports[]
 
 /**
@@ -19,48 +19,55 @@ import java.util.UUID;
  */
 public class TurnFaithfulnessSample {
 
-    // tag::wiring[]
-    public EvaluationResult score(EvalContext evalContext, ComponentClient componentClient) {
-        String prompt = new TurnFaithfulness(null).systemPrompt(); // <1>
+  // tag::wiring[]
+  public EvaluationResult score(EvalContext evalContext, ComponentClient componentClient) {
+    String prompt = new TurnFaithfulness(null).systemPrompt(); // <1>
 
-        AlignmentMetric.Assessor assessor = question -> componentClient // <2>
-            .forAgent()
-            .inSession(UUID.randomUUID().toString())                    // <3>
-            .method(AlignmentJudge::assess)
-            .invoke(new AlignmentJudge.Request(
-                prompt, question.task() + "\n\n---\n\n" + question.against()));
+    AlignmentMetric.Assessor assessor = question ->
+      componentClient // <2>
+        .forAgent()
+        .inSession(UUID.randomUUID().toString()) // <3>
+        .method(AlignmentJudge::assess)
+        .invoke(
+          new AlignmentJudge.Request(
+            prompt,
+            question.task() + "\n\n---\n\n" + question.against()
+          )
+        );
 
-        var evaluator = new TurnFaithfulness(assessor); // <4>
+    var evaluator = new TurnFaithfulness(assessor); // <4>
 
-        return evaluator.evaluate(evalContext.asContext()); // <5>
+    return evaluator.evaluate(evalContext.asContext()); // <5>
+  }
+
+  // end::wiring[]
+
+  // tag::judge[]
+  @Component(id = "alignment-judge")
+  public static class AlignmentJudge extends Agent {
+
+    public record Request(String instructions, String material) {}
+
+    public Effect<AlignmentMetric.Assessment> assess(Request request) {
+      return effects()
+        .memory(MemoryProvider.none()) // <1>
+        .systemMessage(request.instructions()) // <2>
+        .userMessage(request.material())
+        .responseConformsTo(AlignmentMetric.Assessment.class) // <3>
+        .thenReply();
     }
-    // end::wiring[]
+  }
 
-    // tag::judge[]
-    @Component(id = "alignment-judge")
-    public static class AlignmentJudge extends Agent {
+  // end::judge[]
 
-        public record Request(String instructions, String material) {}
+  // tag::stub-for-tests[]
+  public EvaluationResult scoreWithStub(EvalContext evalContext) {
+    AlignmentMetric.Assessor stub = question ->
+      new AlignmentMetric.Assessment(0.9, "the reply cited the passage verbatim"); // <1>
 
-        public Effect<AlignmentMetric.Assessment> assess(Request request) {
-            return effects()
-                .memory(MemoryProvider.none())         // <1>
-                .systemMessage(request.instructions())  // <2>
-                .userMessage(request.material())
-                .responseConformsTo(AlignmentMetric.Assessment.class) // <3>
-                .thenReply();
-        }
-    }
-    // end::judge[]
+    var evaluator = new TurnFaithfulness(stub); // <2>
 
-    // tag::stub-for-tests[]
-    public EvaluationResult scoreWithStub(EvalContext evalContext) {
-        AlignmentMetric.Assessor stub = question ->
-            new AlignmentMetric.Assessment(0.9, "the reply cited the passage verbatim"); // <1>
-
-        var evaluator = new TurnFaithfulness(stub); // <2>
-
-        return evaluator.evaluate(evalContext.asContext());
-    }
-    // end::stub-for-tests[]
+    return evaluator.evaluate(evalContext.asContext());
+  }
+  // end::stub-for-tests[]
 }

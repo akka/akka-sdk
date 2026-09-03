@@ -3,8 +3,8 @@ package com.example.eval.evaluator.deterministic;
 // tag::imports[]
 import akka.evalkit.core.metric.Finding;
 import akka.evalkit.core.metric.ToolPermission;
-
 import java.util.List;
+
 // end::imports[]
 
 /**
@@ -13,31 +13,31 @@ import java.util.List;
  */
 public class ToolPermissionSample {
 
-    // tag::evaluator[]
-    public double score(List<String> toolsCalled) {
-        var evaluator = ToolPermission.allowing("search_kb", "get_order"); // <1>
+  // tag::evaluator[]
+  public double score(List<String> toolsCalled) {
+    var evaluator = ToolPermission.allowing("search_kb", "get_order"); // <1>
 
-        List<Finding> findings = evaluator.judge(toolsCalled); // <2>
+    List<Finding> findings = evaluator.judge(toolsCalled); // <2>
 
-        return evaluator.aggregate(findings); // <3>
-    }
-    // end::evaluator[]
+    return evaluator.aggregate(findings); // <3>
+  }
 
-    // tag::strict[]
-    public double scoreStrict(List<String> toolsCalled) {
-        var evaluator = ToolPermission.allowing("search_kb", "get_order")
-            .strict(); // <1>
+  // end::evaluator[]
 
-        return evaluator.aggregate(evaluator.judge(toolsCalled)); // <2>
-    }
-    // end::strict[]
+  // tag::strict[]
+  public double scoreStrict(List<String> toolsCalled) {
+    var evaluator = ToolPermission.allowing("search_kb", "get_order").strict(); // <1>
 
-    // tag::deny[]
-    public double scoreWithDenyList(List<String> toolsCalled) {
-        var evaluator = ToolPermission.allowing("search_kb", "get_order")
-            .butNot("delete_order"); // <1>
+    return evaluator.aggregate(evaluator.judge(toolsCalled)); // <2>
+  }
 
-        return evaluator.aggregate(evaluator.judge(toolsCalled));
-    }
-    // end::deny[]
+  // end::strict[]
+
+  // tag::deny[]
+  public double scoreWithDenyList(List<String> toolsCalled) {
+    var evaluator = ToolPermission.allowing("search_kb", "get_order").butNot("delete_order"); // <1>
+
+    return evaluator.aggregate(evaluator.judge(toolsCalled));
+  }
+  // end::deny[]
 }

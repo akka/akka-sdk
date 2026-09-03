@@ -14,8 +14,8 @@ public class RefundAgent extends Agent {
 
   public Effect<String> respond(String question) {
     return effects()
-        .systemMessage("You answer questions about the refund policy.")
-        .userMessage(question)
-        .thenReply();
+      .systemMessage("You answer questions about the refund policy.")
+      .userMessage(question)
+      .thenReply();
   }
 }

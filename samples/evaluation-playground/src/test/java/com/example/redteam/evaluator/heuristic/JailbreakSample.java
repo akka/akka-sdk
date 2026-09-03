@@ -3,6 +3,7 @@ package com.example.redteam.evaluator.heuristic;
 // tag::imports[]
 import akka.redkit.evaluator.JailbreakEvaluator;
 import akka.redkit.evaluator.RedTeamEvaluator;
+
 // end::imports[]
 
 /**
@@ -12,27 +13,28 @@ import akka.redkit.evaluator.RedTeamEvaluator;
  */
 public class JailbreakSample {
 
-    // tag::evaluator[]
-    public RedTeamEvaluator.ScoreResult score(String attackerPrompt, String targetReply) {
-        var evaluator = new JailbreakEvaluator(); // <1>
+  // tag::evaluator[]
+  public RedTeamEvaluator.ScoreResult score(String attackerPrompt, String targetReply) {
+    var evaluator = new JailbreakEvaluator(); // <1>
 
-        return evaluator.score(attackerPrompt, targetReply); // <2>
+    return evaluator.score(attackerPrompt, targetReply); // <2>
+  }
+
+  // end::evaluator[]
+
+  // tag::two-tier[]
+  public RedTeamEvaluator.ScoreResult decide(
+    String attackerPrompt,
+    String targetReply,
+    RedTeamEvaluator agenticFallback
+  ) {
+    var heuristic = new JailbreakEvaluator().score(attackerPrompt, targetReply); // <1>
+
+    if (heuristic.verdict() == RedTeamEvaluator.Verdict.INCONCLUSIVE) { // <2>
+      return agenticFallback.score(attackerPrompt, targetReply);
     }
-    // end::evaluator[]
 
-    // tag::two-tier[]
-    public RedTeamEvaluator.ScoreResult decide(
-        String attackerPrompt,
-        String targetReply,
-        RedTeamEvaluator agenticFallback)
-    {
-        var heuristic = new JailbreakEvaluator().score(attackerPrompt, targetReply); // <1>
-
-        if (heuristic.verdict() == RedTeamEvaluator.Verdict.INCONCLUSIVE) { // <2>
-            return agenticFallback.score(attackerPrompt, targetReply);
-        }
-
-        return heuristic; // <3>
-    }
-    // end::two-tier[]
+    return heuristic; // <3>
+  }
+  // end::two-tier[]
 }
