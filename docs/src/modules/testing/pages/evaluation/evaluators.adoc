@@ -13,7 +13,13 @@ Reports read the verdict alongside the evaluator's name so a reviewer knows what
 == Overview
 
 Every evaluator implements `akka.eval.contract.evaluation.Evaluator` and returns an `EvaluationResult`.
-Each result carries an `EvaluationOutcome`: `VERDICT` (a pass or fail with an optional score), `UNDECIDED` (the evaluator looked and declined to call it), `INCONCLUSIVE` (the evaluator had nothing to read), or `FAILED` (the evaluator itself broke).
+Each result carries an `EvaluationOutcome`:
+
+* `VERDICT` (a pass or fail with an optional score),
+* `UNDECIDED` (the evaluator looked and declined to call it),
+* `INCONCLUSIVE` (the evaluator had nothing to read), or
+* `FAILED` (the evaluator itself broke).
+
 An evaluator whose evidence runs out returns `EvaluationResult.inconclusive(...)`, and the report keeps that case out of the pass rate.
 
 Three families answer three different kinds of question:
@@ -161,7 +167,11 @@ The explanation lands in the report row.
 For the reference tables listing every built-in evaluator and what each reads, see xref:reference:evaluations/evaluators.adoc[].
 
 * 3 deterministic: `ToolPermission`, `ToolCorrectness`, `ArgumentCorrectness`.
-* 12 heuristic across three groups. Budget (`LatencyBudget`, `TokenBudget`, `ModelCallBudget`), format (`RegexMatch`, `LengthInRange`, `JsonValidity`), text-overlap (`ExactMatch`, `TokenF1`), retrieval-quality (`ContextRecall`, `ContextPrecision`, `ReciprocalRank`, `NormalizedDiscountedCumulativeGain`).
+* 12 heuristic across groups:
+** budget (`LatencyBudget`, `TokenBudget`, `ModelCallBudget`),
+** format (`RegexMatch`, `LengthInRange`, `JsonValidity`),
+** text-overlap (`ExactMatch`, `TokenF1`),
+** retrieval-quality (`ContextRecall`, `ContextPrecision`, `ReciprocalRank`, `NormalizedDiscountedCumulativeGain`).
 * 7 agentic: `TaskCompletion`, `PlanQuality`, `PlanAdherence`, `StepEfficiency`, `TurnFaithfulness`, `TurnRelevancy`, `CitationFaithfulness`.
 
 == Testing

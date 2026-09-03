@@ -23,15 +23,15 @@ The target adapter carries across unchanged.
 A technique is how a payload is wrapped, escalated, or delivered before it reaches the target.
 Every attack style implements the `Technique` interface and returns one or more prompts derived from an attacker goal.
 
-Two families ship.
+Two families ship:
 
-`Static` +
+* `Static` +
 A pure function on a prompt.
 The Base64 encoder, the role-play wrapper, the payload splitter across turns.
 Reproducible across runs.
 The same goal produces the same prompt every time.
 
-`Adaptive` +
+* `Adaptive` +
 An attacker with state.
 Each next prompt reads the target's last reply and revises the attack.
 Runs inside a durable driver so a mid-attack crash resumes from the same state.

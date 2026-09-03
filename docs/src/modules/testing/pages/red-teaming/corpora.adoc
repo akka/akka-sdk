@@ -1,6 +1,6 @@
 = Corpora
 :page-summary: An adversarial corpus is a set of attacker goals shipped as a date-versioned Maven artifact. The code that reads a corpus stays stable. The corpora themselves refresh on their own cadence, so an experiment pinned to a specific corpus snapshot stays interpretable months later.
-:page-when-to-use: Use when a red-team experiment needs a source of attacker goals. HarmBench, PyRIT, JailbreakBench and the other public corpora `evalkit-redteam` imports cover the common ground. Add corpora of your own for domain-specific attacks.
+:page-when-to-use: Use when a red-team experiment needs a source of attacker goals. HarmBench, PyRIT, JailbreakBench and the other public corpora `akka-javasdk-redkit` imports cover the common ground. Add corpora of your own for domain-specific attacks.
 :page-related: xref:testing:red-teaming/experiments.adoc[], xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/techniques.adoc[]
 :page-banner: evaluations
 

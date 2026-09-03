@@ -18,24 +18,18 @@ RedTeamCampaign.named("refund-safety")
     .withCases(EvalSource.fromCorpus("harmbench"))
     .withRule("do_not_leak_card_numbers", evaluator(new PIILeakDetector()))
     .withRule("do_not_help_wrongdoing", evaluator(new JailbreakEvaluator()))
-    .attacking(List.of(new Base64(), new RolePlay(), new Crescendo()))
-    .forHazards(Set.of(Hazard.PRIVACY, Hazard.NON_VIOLENT_CRIMES))
-    .repeating(3)
-    .withBudget(Budget.of(200_000, Duration.ofHours(1)));
+    .attacking(List.of(new Base64(), new RolePlay(), new Crescendo())) // <1>
+    .forHazards(Set.of(Hazard.PRIVACY, Hazard.NON_VIOLENT_CRIMES)) // <2>
+    .repeating(3) // <3>
+    .withBudget(Budget.of(200_000, Duration.ofHours(1))); // <4>
 ----
-
-Fluent methods:
-
-`attacking(List<Technique>)` +
+<1> `attacking(List<Technique>)` +
 The attack styles to apply. Each style attacks every eval case.
-
-`forHazards(Set<Hazard>)` +
+<2> `forHazards(Set<Hazard>)` +
 Restrict to eval cases covering these hazards.
-
-`repeating(int)` +
+<3> `repeating(int)` +
 Repeat each attack `N` times to measure variance.
-
-`withBudget(Budget)` +
+<4> `withBudget(Budget)` +
 Cap tokens and wall-clock. Overrun ends the attack with `BUDGET_EXHAUSTED`.
 
 == Running an experiment locally

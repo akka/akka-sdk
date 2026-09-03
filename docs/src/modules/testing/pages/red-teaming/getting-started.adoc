@@ -28,19 +28,35 @@ The runtime enforces a token and wall-clock budget so an experiment cannot run a
 
 == Add the dependency
 
-`akka redteam init` overlays the source tree onto the project, edits the pom to add the `evalkit-redteam` dependency at test scope, and reports what it wrote.
+`akka redteam init` overlays the source tree onto the project, edits the pom to add the `akka-javasdk-redkit` dependency at test scope, and reports what it wrote.
 
 [listing]
 ----
 $ akka redteam init
-added the evalkit-redteam dependency to pom.xml (previous kept as pom.xml.backup)
+added the akka-javasdk-redkit dependency to pom.xml (previous kept as pom.xml.backup)
 run an experiment with `mvn verify -Dredteam=true`
 
 Added the redteam source root to . under package com.acme.checkout.redteam — 9 file(s) written, 0 kept.
 ----
 
-`evalkit-redteam` depends on `evalkit`, so the evaluation dependency comes in transitively.
+`akka-javasdk-redkit` depends on `evalkit`, so the evaluation dependency comes in transitively.
 A project with a red-team suite has both trees at test scope.
+
+TIP::
++
+--
+Alternatively: Add the EvalKit to in the `dependencies` section in your Akka SDK project's Maven `pom.xml` file. +
+```xml
+  <dependencies>
+    <dependency>
+      <groupId>io.akka</groupId>
+      <artifactId>akka-javasdk-redkit</artifactId>
+      <version>${redkit.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+```
+--
 
 == The attacker corpus
 

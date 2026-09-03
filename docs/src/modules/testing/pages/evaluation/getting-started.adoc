@@ -30,19 +30,6 @@ Experiments are gated on `-Deval=true` so `mvn verify` compiles the classes with
 
 `akka eval init` overlays the source tree onto the project, edits the pom to add the `evalkit` dependency at test scope, and reports what it wrote.
 
-
-In your Akka SDK project's Maven `pom.xml` file. Add the EvalKit to in the `dependencies` section:
-```xml
-  <depedencies>
-    <dependency>
-      <groupId>io.akka</groupId>
-      <artifactId>akka-javasdk-evalkit</artifactId>
-      <version>${evalkit.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-```
-
 [listing]
 ----
 $ akka eval init
@@ -58,6 +45,22 @@ Running it again on a project that already declares the dependency reports "alre
 A file the customer has since written stays untouched, and the command reports each as `kept`.
 
 The eval tree lands under `src/test/java/<groupId>.eval/`, where `<groupId>` comes from the project's `pom.xml`.
+
+TIP::
++
+--
+Alternatively: Add the EvalKit to in the `dependencies` section in your Akka SDK project's Maven `pom.xml` file. +
+```xml
+  <dependencies>
+    <dependency>
+      <groupId>io.akka</groupId>
+      <artifactId>akka-javasdk-evalkit</artifactId>
+      <version>${evalkit.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+```
+--
 
 == The target adapter
 

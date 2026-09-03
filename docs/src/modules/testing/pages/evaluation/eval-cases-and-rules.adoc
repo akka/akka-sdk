@@ -48,21 +48,21 @@ Which evaluator settles an eval case follows from what it declares.
 [#_eval_setups]
 == Eval setups
 
-`EvalSetup` is a sealed interface with four cases.
+`EvalSetup` is a sealed interface with four cases:
 
-`None` +
+* `None` +
 The graded turn is the first thing said.
 
-`Replay(List<String> userTurns)` +
+* `Replay(List<String> userTurns)` +
 The listed turns are said first, and the target answers each.
 The conversation is real, so a case about the fourth turn is asked at the fourth turn.
 
-`Fixture(String name, Map<String, String> parameters)` +
+* `Fixture(String name, Map<String, String> parameters)` +
 The target puts itself into a named state.
 The target declares what it can build in `SystemUnderTest.fixtures()`.
 An experiment setup naming one it cannot is refused before the experiment runs.
 
-`FailingTool(String tool, String message, EvalSetup then)` +
+* `FailingTool(String tool, String message, EvalSetup then)` +
 A named tool is made to fail, then the wrapped eval setup runs.
 Used for cases about recovery.
 A target that cannot break the named tool causes the experiment to be refused.
@@ -77,24 +77,24 @@ A fixture is a seeded starting point, and the report counts it as one.
 Every attempt produces an `EvaluationResult` carrying one of four `EvaluationOutcome` values.
 Which one an evaluator returns depends on what it read.
 
-`VERDICT` +
+* `VERDICT` +
 The evaluator called the attempt.
 Constructed with `EvaluationResult.passed(...)`, `.failed(...)`, or `.scored(...)`.
 A deterministic evaluator reports what it compared.
 A heuristic evaluator carries a score in `[0, 1]` and the threshold it had to clear.
 A judge carries a score and its reason.
 
-`UNDECIDED` +
+* `UNDECIDED` +
 The evaluator read the answer and would not commit.
 Carries the score it declined at.
 Constructed with `EvaluationResult.undecided(...)`.
 
-`INCONCLUSIVE` +
+* `INCONCLUSIVE` +
 The evaluator had nothing to read.
 The pass rate leaves the attempt out rather than counting it either way.
 Constructed with `EvaluationResult.inconclusive(...)`.
 
-`FAILED` +
+* `FAILED` +
 The evaluator itself broke.
 Constructed with `EvaluationResult.broke(...)`.
 
@@ -107,12 +107,12 @@ A report that scored absence as zero would accuse the system of something it was
 `EvalCaseResults` gathers an eval case's attempts and answers `verdict()` with one of five
 values: `PASSED`, `FAILED`, `VARIED`, `UNDECIDED`, `NO_RESULT`.
 
-`VARIED` is the one worth repeating for.
+* `VARIED` is the one worth repeating for. +
 An eval case the system meets eight times in ten still passes five attempts about a third of
 the time.
 One attempt cannot tell that apart from a case it always meets.
 
-`UNDECIDED` and `NO_RESULT` are kept apart on purpose.
+* `UNDECIDED` and `NO_RESULT` are kept apart on purpose. +
 A judge that would not commit and an attempt that produced no evidence at all are different facts about an experiment.
 
 == See also

@@ -12,11 +12,11 @@ Two kinds ship. Static techniques are pure functions the runner can parallelise 
 
 == Two kinds
 
-*Static* +
+* *Static* +
 A pure function on a prompt. Given a payload, produce a rewritten prompt.
 Deterministic, cheap, parallelizable. No language-model call. No per-turn state.
 
-*Adaptive* +
+* *Adaptive* +
 A stateful attacker. Chooses each next prompt based on the target's last reply.
 Runs inside `AdversaryDriver` so a crash mid-attack can resume from the same state.
 See xref:testing:red-teaming/adaptive-attacks.adoc[].
