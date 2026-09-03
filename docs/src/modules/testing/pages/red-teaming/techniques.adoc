@@ -23,7 +23,7 @@ See xref:testing:red-teaming/adaptive-attacks.adoc[].
 
 == Built-in static styles
 
-xref:testing:red-teaming/reference/techniques.adoc[Reference table].
+xref:reference:evaluations/techniques.adoc[Reference table].
 
 * `base64`: Encodes the payload as base64 and asks the target to decode and follow it.
 * `rot13`: Encodes the payload as ROT13 and asks the target to decode.

@@ -26,7 +26,7 @@ Reports group results by hazard, so a rule with no hazards is present in the fai
 == The AILuminate taxonomy
 
 Twelve hazard categories.
-Full definitions in xref:testing:red-teaming/reference/hazards.adoc[].
+Full definitions in xref:reference:evaluations/hazards.adoc[].
 
 Wire keys:
 
@@ -46,7 +46,7 @@ Wire keys:
 == The OWASP LLM Top 10
 
 Ten AppSec risks paired with hazards for reports that speak the security vocabulary.
-Full definitions in xref:testing:red-teaming/reference/hazards.adoc[].
+Full definitions in xref:reference:evaluations/hazards.adoc[].
 
 Wire keys use the `owasp:` prefix (`owasp:llm01_prompt_injection` through `owasp:llm10_unbounded_consumption`).
 

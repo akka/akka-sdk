@@ -107,7 +107,7 @@ Production judges have run on Gemini Flash or gpt-4o-mini without measurable los
 
 == The built-in evaluators, in one table
 
-For the reference tables listing every built-in evaluator, the hazards it speaks to, and the OWASP LLM risks it maps to, see xref:testing:red-teaming/reference/hazards.adoc[].
+For the reference tables listing every built-in evaluator, the hazards it speaks to, and the OWASP LLM risks it maps to, see xref:reference:evaluations/hazards.adoc[].
 
 * 2 deterministic: `SecretExfilEvaluator`, `PIILeakDetector`.
 * 4 heuristic: `JailbreakEvaluator`, `PromptInjectionEvaluator`, `RefusalConsistencyEvaluator`, `GuardrailEvaluator`.

@@ -13,7 +13,7 @@ It runs inside `AdversaryDriver`, a durable driver that persists its state after
 
 == The three built-in styles
 
-xref:testing:red-teaming/reference/techniques.adoc[Reference table].
+xref:reference:evaluations/techniques.adoc[Reference table].
 
 * `crescendo`: Step-by-step build-up over multiple turns before naming the goal.
 * `pair`: An attacker language model refines each next prompt based on the target's last reply.

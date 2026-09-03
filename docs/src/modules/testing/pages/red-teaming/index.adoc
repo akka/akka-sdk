@@ -45,7 +45,7 @@ Rules and eval cases carry hazard tags from two taxonomies.
 *AILuminate v1.1* is the primary. Twelve hazard categories the report groups by.
 *OWASP LLM Top 10 (2025)* is the secondary. Ten application-security risks a security review already knows.
 Wire keys use the taxonomy prefix: `ailuminate:privacy`, `owasp:llm01_prompt_injection`.
-For the full lists and how each evaluator maps to them, see xref:testing:red-teaming/reference/hazards.adoc[].
+For the full lists and how each evaluator maps to them, see xref:reference:evaluations/hazards.adoc[].
 
 == How red teaming relates to other components
 
