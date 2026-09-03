@@ -1,7 +1,7 @@
 package com.example.eval.evaluator.deterministic;
 
 // tag::imports[]
-import akka.evalkit.core.domain.RunOutcome;
+import akka.evalkit.core.metric.Finding;
 import akka.evalkit.core.metric.ToolPermission;
 
 import java.util.List;
@@ -14,30 +14,30 @@ import java.util.List;
 public class ToolPermissionSample {
 
     // tag::evaluator[]
-    public RunOutcome score(List<String> toolsCalled) {
+    public double score(List<String> toolsCalled) {
         var evaluator = ToolPermission.allowing("search_kb", "get_order"); // <1>
 
-        var findings = evaluator.judge(toolsCalled); // <2>
+        List<Finding> findings = evaluator.judge(toolsCalled); // <2>
 
-        return evaluator.outcome(findings); // <3>
+        return evaluator.aggregate(findings); // <3>
     }
     // end::evaluator[]
 
     // tag::strict[]
-    public RunOutcome scoreStrict(List<String> toolsCalled) {
+    public double scoreStrict(List<String> toolsCalled) {
         var evaluator = ToolPermission.allowing("search_kb", "get_order")
             .strict(); // <1>
 
-        return evaluator.outcome(evaluator.judge(toolsCalled)); // <2>
+        return evaluator.aggregate(evaluator.judge(toolsCalled)); // <2>
     }
     // end::strict[]
 
     // tag::deny[]
-    public RunOutcome scoreWithDenyList(List<String> toolsCalled) {
+    public double scoreWithDenyList(List<String> toolsCalled) {
         var evaluator = ToolPermission.allowing("search_kb", "get_order")
             .butNot("delete_order"); // <1>
 
-        return evaluator.outcome(evaluator.judge(toolsCalled));
+        return evaluator.aggregate(evaluator.judge(toolsCalled));
     }
     // end::deny[]
 }

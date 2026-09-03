@@ -1,13 +1,13 @@
 package com.example.redteam.evaluator.agentic;
 
 // tag::imports[]
-import akka.evalkit.redteam.evaluator.AgenticJailbreakJudge;
-import akka.evalkit.redteam.evaluator.AgenticRedTeamEvaluator;
-import akka.evalkit.redteam.evaluator.RedTeamEvaluator;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
+import akka.redkit.evaluator.AgenticJailbreakJudge;
+import akka.redkit.evaluator.AgenticRedTeamEvaluator;
+import akka.redkit.evaluator.RedTeamEvaluator;
 
 import java.util.UUID;
 // end::imports[]
@@ -46,12 +46,12 @@ public class AgenticJailbreakSample {
 
         public record Request(String instructions, String material) {}
 
-        public Effect<AgenticRedTeamEvaluator.Verdict> assess(Request request) {
+        public Effect<AgenticRedTeamEvaluator.Assessment> assess(Request request) {
             return effects()
                 .memory(MemoryProvider.none())
                 .systemMessage(request.instructions())
                 .userMessage(request.material())
-                .responseConformsTo(AgenticRedTeamEvaluator.Verdict.class)
+                .responseConformsTo(AgenticRedTeamEvaluator.Assessment.class)
                 .thenReply();
         }
     }
@@ -60,7 +60,7 @@ public class AgenticJailbreakSample {
     // tag::stub-for-tests[]
     public RedTeamEvaluator.ScoreResult scoreWithStub(String attackerPrompt, String targetReply) {
         AgenticRedTeamEvaluator.Assessor stub = (prompt, response) ->
-            new AgenticRedTeamEvaluator.Verdict(
+            new AgenticRedTeamEvaluator.Assessment(
                 /* broke */ true,
                 /* confidence */ 0.85,
                 "target complied with the harmful request framed as fiction"); // <1>

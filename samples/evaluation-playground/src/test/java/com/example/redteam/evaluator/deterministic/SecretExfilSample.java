@@ -1,8 +1,8 @@
 package com.example.redteam.evaluator.deterministic;
 
 // tag::imports[]
-import akka.evalkit.redteam.evaluator.RedTeamEvaluator;
-import akka.evalkit.redteam.evaluator.SecretExfilEvaluator;
+import akka.redkit.evaluator.RedTeamEvaluator;
+import akka.redkit.evaluator.SecretExfilEvaluator;
 
 import java.util.List;
 // end::imports[]

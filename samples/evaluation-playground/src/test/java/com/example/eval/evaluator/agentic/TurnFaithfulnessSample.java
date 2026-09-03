@@ -1,8 +1,8 @@
 package com.example.eval.evaluator.agentic;
 
 // tag::imports[]
+import akka.eval.contract.evaluation.EvaluationResult;
 import akka.evalkit.core.domain.EvalContext;
-import akka.evalkit.core.domain.RunOutcome;
 import akka.evalkit.core.metric.AlignmentMetric;
 import akka.evalkit.core.metric.TurnFaithfulness;
 import akka.javasdk.agent.Agent;
@@ -15,13 +15,12 @@ import java.util.UUID;
 
 /**
  * Wires the built-in TurnFaithfulness evaluator to a customer-supplied Agent. The evaluator
- * ships the system prompt; the customer picks the model, the provider and the cost
- * point.
+ * ships the system prompt. The customer picks the model, the provider and the cost point.
  */
 public class TurnFaithfulnessSample {
 
     // tag::wiring[]
-    public RunOutcome score(EvalContext evalContext, ComponentClient componentClient) {
+    public EvaluationResult score(EvalContext evalContext, ComponentClient componentClient) {
         String prompt = new TurnFaithfulness(null).systemPrompt(); // <1>
 
         AlignmentMetric.Assessor assessor = question -> componentClient // <2>
@@ -33,7 +32,7 @@ public class TurnFaithfulnessSample {
 
         var evaluator = new TurnFaithfulness(assessor); // <4>
 
-        return evaluator.score(evalContext); // <5>
+        return evaluator.evaluate(evalContext.asContext()); // <5>
     }
     // end::wiring[]
 
@@ -55,13 +54,13 @@ public class TurnFaithfulnessSample {
     // end::judge[]
 
     // tag::stub-for-tests[]
-    public RunOutcome scoreWithStub(EvalContext evalContext) {
+    public EvaluationResult scoreWithStub(EvalContext evalContext) {
         AlignmentMetric.Assessor stub = question ->
             new AlignmentMetric.Assessment(0.9, "the reply cited the passage verbatim"); // <1>
 
         var evaluator = new TurnFaithfulness(stub); // <2>
 
-        return evaluator.score(evalContext);
+        return evaluator.evaluate(evalContext.asContext());
     }
     // end::stub-for-tests[]
 }

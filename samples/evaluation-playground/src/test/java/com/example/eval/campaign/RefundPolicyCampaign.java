@@ -1,17 +1,19 @@
 package com.example.eval.campaign;
 
 // tag::imports[]
+import akka.eval.contract.evaluation.EvaluationResult;
+import akka.eval.contract.evaluation.EvaluatorKind;
+import akka.eval.contract.evaluation.Rubric;
 import akka.evalkit.core.application.ExperimentRunner;
 import akka.evalkit.core.domain.EvalCase;
 import akka.evalkit.core.domain.EvalSetup;
 import akka.evalkit.core.domain.ExperimentSetup;
-import akka.evalkit.core.domain.Grade;
 import akka.evalkit.core.domain.Lanes;
-import akka.evalkit.core.domain.Rubric;
-import akka.evalkit.core.domain.RunOutcome;
+import akka.evalkit.core.domain.Rubrics;
 import akka.evalkit.core.domain.SystemUnderTest;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -38,16 +40,18 @@ public class RefundPolicyCampaign {
                 "when do I get my refund?",
                 "the reply states a 30-day refund window"));
 
+        Rubric rubric = Rubrics.load("case-judge", 3);
         var setup = new ExperimentSetup( // <3>
             "refund-policy",
             cases,
             Lanes.of(2),
-            Rubric.load("case-judge", 3));
+            rubric);
 
         SystemUnderTest target = new RefundAgentTarget(); // <4>
 
-        ExperimentRunner.Judge judge = (transcript, rubric) -> // <5>
-            new RunOutcome.Scored(Grade.of(transcript.caseName(), rubric, 9, "states 30 days"));
+        ExperimentRunner.Judge judge = (transcript, r) -> // <5>
+            EvaluationResult.scored("case-judge", "3", EvaluatorKind.JUDGE, 0.9, true,
+                "states 30 days");
 
         var result = ExperimentRunner.run(setup, target, judge); // <6>
 
@@ -58,6 +62,10 @@ public class RefundPolicyCampaign {
 
 class RefundAgentTarget implements SystemUnderTest {
     @Override public Prepared prepare(EvalSetup evalSetup) { return new Prepared.Ready("s", ""); }
-    @Override public Reply submit(String sessionId, String userText) { return Reply.of("the refund window is 30 days"); }
-    @Override public java.util.Map<String, String> fixtures() { return java.util.Map.of("signed-in", "signed in"); }
+    @Override public Reply submit(String sessionId, String userText) {
+        return Reply.of("the refund window is 30 days");
+    }
+    @Override public Map<String, String> fixtures() {
+        return Map.of("signed-in", "signed in");
+    }
 }

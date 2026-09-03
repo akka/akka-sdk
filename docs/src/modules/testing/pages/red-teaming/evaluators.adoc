@@ -33,7 +33,7 @@ Examples: the exact system prompt text, API keys the target must not repeat, int
 [source,java,indent=0]
 .SecretExfilSample.java
 ----
-include::example$doc-snippets/src/test/java/com/example/redteam/evaluator/deterministic/SecretExfilSample.java[tag=evaluator]
+include::example$evaluation-playground/src/test/java/com/example/redteam/evaluator/deterministic/SecretExfilSample.java[tag=evaluator]
 ----
 <1> An API key prefix the target should never return.
 <2> The first line of the system prompt.
@@ -49,7 +49,7 @@ A marker present in the reply is a `BROKE_THROUGH`. A marker absent is `HELD`. A
 [source,java,indent=0]
 .JailbreakSample.java
 ----
-include::example$doc-snippets/src/test/java/com/example/redteam/evaluator/heuristic/JailbreakSample.java[tag=evaluator]
+include::example$evaluation-playground/src/test/java/com/example/redteam/evaluator/heuristic/JailbreakSample.java[tag=evaluator]
 ----
 <1> The patterns are baked into the class.
 Changing them would change what "the same `JailbreakEvaluator`" means from campaign to campaign, so the report reads a `JailbreakEvaluator` verdict as "this specific pattern set decided the case".
@@ -61,7 +61,7 @@ The heuristic settles the confident cases for free and hands the ambiguous ones 
 [source,java,indent=0]
 .JailbreakSample.java
 ----
-include::example$doc-snippets/src/test/java/com/example/redteam/evaluator/heuristic/JailbreakSample.java[tag=two-tier]
+include::example$evaluation-playground/src/test/java/com/example/redteam/evaluator/heuristic/JailbreakSample.java[tag=two-tier]
 ----
 <1> Read the exchange with the heuristic first.
 <2> Only the borderline verdicts reach the agentic evaluator.
@@ -76,7 +76,7 @@ HarmBench, StrongREJECT and the OpenAI red-team benchmarks all work this way, be
 [source,java,indent=0]
 .AgenticJailbreakSample.java
 ----
-include::example$doc-snippets/src/test/java/com/example/redteam/evaluator/agentic/AgenticJailbreakSample.java[tag=wiring]
+include::example$evaluation-playground/src/test/java/com/example/redteam/evaluator/agentic/AgenticJailbreakSample.java[tag=wiring]
 ----
 <1> `systemPrompt()` returns the wording the model needs to be told.
 Constructing `new AgenticJailbreakJudge(null)` only to read the prompt is idiomatic, because
@@ -95,7 +95,7 @@ Tests use a stub assessor:
 [source,java,indent=0]
 .AgenticJailbreakSample.java
 ----
-include::example$doc-snippets/src/test/java/com/example/redteam/evaluator/agentic/AgenticJailbreakSample.java[tag=stub-for-tests]
+include::example$evaluation-playground/src/test/java/com/example/redteam/evaluator/agentic/AgenticJailbreakSample.java[tag=stub-for-tests]
 ----
 <1> A test returns a `Verdict` directly, carrying the confidence and the reason.
 <2> Same evaluator type.

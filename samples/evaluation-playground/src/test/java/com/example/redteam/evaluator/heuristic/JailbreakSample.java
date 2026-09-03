@@ -1,8 +1,8 @@
 package com.example.redteam.evaluator.heuristic;
 
 // tag::imports[]
-import akka.evalkit.redteam.evaluator.JailbreakEvaluator;
-import akka.evalkit.redteam.evaluator.RedTeamEvaluator;
+import akka.redkit.evaluator.JailbreakEvaluator;
+import akka.redkit.evaluator.RedTeamEvaluator;
 // end::imports[]
 
 /**

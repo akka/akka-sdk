@@ -6,7 +6,6 @@ import akka.evalkit.core.domain.SystemUnderTest;
 import akka.javasdk.client.ComponentClient;
 
 import java.util.Map;
-import java.util.Optional;
 // end::imports[]
 
 /**
@@ -24,8 +23,8 @@ public class RefundAgentRunner implements SystemUnderTest {
     }
 
     @Override
-    public Prepared prepare(EvalSetup evalSetup) { // <2>
-        if (evalSetup instanceof EvalSetup.Fixture fixture
+    public Prepared prepare(EvalSetup setup) { // <2>
+        if (setup instanceof EvalSetup.Fixture fixture
             && fixture.name().equals("signed-in")) {
             String sessionId = componentClient
                 .forKeyValueEntity("session-42")
@@ -33,7 +32,7 @@ public class RefundAgentRunner implements SystemUnderTest {
                 .invoke();
             return new Prepared.Ready(sessionId, "");
         }
-        return new Prepared.Failed(evalSetup.describe() + " cannot be arranged"); // <3>
+        return new Prepared.Failed(setup + " cannot be arranged"); // <3>
     }
 
     @Override

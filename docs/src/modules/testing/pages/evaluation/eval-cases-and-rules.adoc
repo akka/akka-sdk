@@ -72,35 +72,35 @@ never happened.
 Only `Replay` proves the system reached the state under its own power.
 A fixture is a seeded starting point, and the report counts it as one.
 
-== The six run outcomes
+== The four evaluation outcomes
 
-Every attempt ends in one of six outcomes.
-Which one depends on the evaluator that settled it.
+Every attempt produces an `EvaluationResult` carrying one of four `EvaluationOutcome` values.
+Which one an evaluator returns depends on what it read.
 
-`Asserted(passed, expected, actual)` +
-A deterministic evaluator compared two things.
-Both sides appear on the report row, so it can print `expected GenUC-16a, found GenUC-17a`.
+`VERDICT` +
+The evaluator called the attempt.
+Constructed with `EvaluationResult.passed(...)`, `.failed(...)`, or `.scored(...)`.
+A deterministic evaluator reports what it compared.
+A heuristic evaluator carries a score in `[0, 1]` and the threshold it had to clear.
+A judge carries a score and its reason.
 
-`Measured(metricId, metricVersion, value, threshold, passed, note)` +
-A heuristic evaluator computed a value against a threshold.
+`UNDECIDED` +
+The evaluator read the answer and would not commit.
+Carries the score it declined at.
+Constructed with `EvaluationResult.undecided(...)`.
 
-`Scored(Grade)` +
-A judge returned a grade against a rubric.
-
-`Inconclusive(reason)` +
+`INCONCLUSIVE` +
 The evaluator had nothing to read.
 The pass rate leaves the attempt out rather than counting it either way.
+Constructed with `EvaluationResult.inconclusive(...)`.
 
-`NotReached(cause, reason, evalSetup)` +
-The attempt never got to the graded turn: the fixture would not build, or the system said nothing.
-A fact about the harness, not a verdict on the system.
+`FAILED` +
+The evaluator itself broke.
+Constructed with `EvaluationResult.broke(...)`.
 
-`Failed(reason)` +
-The attempt itself broke.
-
-The last three are why the outcome type is not a number.
-A `double` has no way to say "this was never asked".
-A report that scores absence as zero accuses the system of something it was never given the chance to do.
+An attempt that never reached the graded turn (the fixture would not build, or the system said nothing) carries a `Failure.NOT_REACHED` on the run rather than a result, since there is nothing to evaluate.
+That is a fact about the harness, not a verdict on the system.
+A report that scored absence as zero would accuse the system of something it was never given the chance to do.
 
 == From attempts to a verdict
 
