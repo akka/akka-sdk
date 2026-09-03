@@ -158,7 +158,7 @@ The explanation lands in the report row.
 
 == The built-in evaluators, in one table
 
-For the reference tables listing every built-in evaluator and what each reads, see xref:testing:evaluation/reference/evaluators.adoc[].
+For the reference tables listing every built-in evaluator and what each reads, see xref:reference:evaluators.adoc[].
 
 * 3 deterministic: `ToolPermission`, `ToolCorrectness`, `ArgumentCorrectness`.
 * 12 heuristic across three groups. Budget (`LatencyBudget`, `TokenBudget`, `ModelCallBudget`), format (`RegexMatch`, `LengthInRange`, `JsonValidity`), text-overlap (`ExactMatch`, `TokenF1`), retrieval-quality (`ContextRecall`, `ContextPrecision`, `ReciprocalRank`, `NormalizedDiscountedCumulativeGain`).
@@ -179,3 +179,4 @@ Unit tests use the same TestKit setup, described in xref:testing:unit.adoc[].
 * xref:testing:evaluation/campaigns.adoc[]. How a set of eval cases reaches a target.
 * xref:testing:evaluation/reports.adoc[]. How verdicts read in the report.
 * xref:testing:red-teaming/evaluators.adoc[]. Adversarial evaluators, same three-family model.
+* xref:reference:evaluators.adoc[]

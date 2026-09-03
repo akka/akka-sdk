@@ -57,3 +57,4 @@ A test adapter, `SystemUnderTest`, puts the Agent in front of the runner.
 * xref:testing:evaluation/evaluators.adoc[]. The three families, the built-ins, and how to add your own.
 * xref:testing:evaluation/reports.adoc[]. Every panel of the rendered report.
 * xref:testing:red-teaming/index.adoc[]. Adversarial suite that reuses the same target adapter.
+* xref:reference:evaluators.adoc[]
