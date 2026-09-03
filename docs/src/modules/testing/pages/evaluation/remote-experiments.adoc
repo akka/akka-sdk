@@ -1,0 +1,65 @@
+= Remote experiments
+:page-summary: A remote experiment runs on the offline-evals service instead of the customer's JVM. The setup the customer writes and the report the customer reads back are the same either way. The service does the work.
+:page-when-to-use: Use for datasets over a few thousand eval cases, experiments that take more than a few minutes, experiments whose cost belongs to a shared budget, and scheduled runs.
+:page-related: xref:testing:evaluation/experiments.adoc[], xref:testing:evaluation/reports.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
+
+A remote experiment runs on the offline-evals service instead of in the customer's JVM.
+The experiment setup the customer builds is the same setup the runner reads locally.
+The service owns the durability, the paging, and the retries.
+The report the customer fetches back is the same report a local run would produce.
+
+== When to use a remote run
+
+* Datasets over a few thousand eval cases.
+* Experiments that take more than a few minutes locally.
+* Experiments whose cost should be attributed to a shared budget rather than a developer's local model spend.
+* Experiments that need to run on a schedule.
+
+== How it works
+
+`akka.evalkit.client.RemoteCampaign` uploads the dataset, submits the experiment spec to the service, and polls for the finished record.
+The service's `ExperimentWorkflow` owns durability, paging and retries.
+`RemoteCampaign` lives in the `akka.evalkit.client` package alongside `OfflineEvalsClient`, evalkit's crossing point to the running service.
+`RemoteCampaign.run(httpClients, spec)` takes an Akka SDK `HttpClientProvider` and a `Spec` naming the service, the dataset and the eval cases.
+
+A local run and a remote run are separate entry points, not one switch.
+`ExperimentRunner.run` executes in process.
+`RemoteCampaign.run` posts an experiment to the service and polls for its record.
+
+== Submitting from the CLI
+
+  akka eval experiments apply -f my-experiment.yaml
+
+The service returns an experiment id. Follow progress with:
+
+  akka eval experiments get <experiment-id>
+
+Fetch the final record:
+
+  akka eval experiments record <experiment-id>
+
+== Service endpoints
+
+The client speaks these endpoints:
+
+* `POST /api/datasets/imports`. Upload the dataset.
+* `GET  /api/datasets/imports/pass:[{id}]`. Import progress.
+* `POST /api/experiments`. Start the experiment.
+* `GET  /api/experiments/pass:[{id}]`. Status, including the reasons a refused run gives.
+* `GET  /api/experiments/pass:[{id}]/record`. Final record, once one has been written.
+* `GET  /api/experiments/pass:[{id}]/compare/pass:[{baseline}]`. Comparison.
+
+The service also serves `GET /api/experiments/pass:[{id}]/items/pass:[{itemId}]`,
+`GET /api/experiments/history/pass:[{name}]`, `GET /api/experiments/evaluators` and
+`GET /api/experiments/models`, which the client does not call.
+
+The default endpoint is set with `EVAL_URL`.
+
+== Best practices
+
+* Prefer local runs while iterating on evaluators and datasets.
+* Use remote runs for scheduled experiments and for anything larger than a laptop can drive comfortably.
+* Attribute experiment runs to a named budget on the service.

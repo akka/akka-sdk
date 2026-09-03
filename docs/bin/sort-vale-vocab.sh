@@ -2,7 +2,7 @@
 
 # Sort docs/styles/config/vocabularies/Akka/accept.txt (and reject.txt) into a
 # stable case-insensitive order, treating Vale regex constructs as if they were
-# the plain word.
+# the plain word. Also removes duplicate lines.
 #
 # The sort key for each line is derived by:
 #   [Aa]kka          -> akka        (character class collapsed to lowercase letter)
@@ -69,6 +69,8 @@ def sort_key(line: str) -> tuple:
     return (key.lower(), line)
 
 lines.sort(key=sort_key)
+# Remove duplicate lines, keeping the first occurrence.
+lines = list(dict.fromkeys(lines))
 sys.stdout.write("\n".join(lines) + "\n")
 PY
 )"
@@ -76,7 +78,7 @@ PY
   # Command substitution strips trailing newlines; restore one.
   if [[ $CHECK -eq 1 ]]; then
     if ! diff -u "$file" <(printf '%s\n' "$sorted") >/dev/null; then
-      echo "sort-vale-vocab: $file is not sorted. Run: docs/bin/sort-vale-vocab.sh" >&2
+      echo "sort-vale-vocab: $file is not sorted or has duplicates. Run: docs/bin/sort-vale-vocab.sh" >&2
       diff -u "$file" <(printf '%s\n' "$sorted") >&2 || true
       exit 1
     fi

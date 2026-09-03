@@ -11,10 +11,12 @@ Agentgateway
 Agrona
 agy
 AI's
+AILuminate
 Aiven
 [Aa]kka
 Akkademy
 allowedAlgorithms
+allowlist
 allowlisting
 [Aa]llowlists?
 allowMethods
@@ -71,6 +73,7 @@ cidr
 CIDRs
 classname
 classpath
+cleartext
 CLI's
 clientCertificate
 clientId
@@ -99,6 +102,7 @@ Cursor
 cutover
 CVE's
 CVEs
+cybercrime
 Datadog
 DBs
 decisioning
@@ -124,9 +128,11 @@ dialogs
 dismissable
 Dmitry
 DNS
+dns
 docreview
 docstring
 Docstrings
+docstrings
 Doctolib
 downscaling
 DSRs
@@ -140,6 +146,8 @@ enums?
 env
 etcd
 eval
+[Ee]valkit
+[Ee]valuator's
 eventhubs
 evolvability
 exfiltration
@@ -154,12 +162,14 @@ fetchable
 filePermission
 Fitbit
 focusable
+Garak
 gcp
 gcpKey
 Gemini
 Gemma
 getOptional
 [Gg]itHub
+gitignored
 gitlink
 googleCloud
 GPUs
@@ -232,6 +242,7 @@ lastUserMessage
 Linkerd
 Linode
 Liveness
+liveness
 Llaama
 LLM
 LLMs
@@ -243,6 +254,7 @@ lockfiles
 logLevel
 lookups
 LoRA
+Luhn
 Manulife
 Mastercard
 matchers
@@ -261,6 +273,7 @@ minSeverity
 misconfigurations
 misconfigured
 Mistral
+mitigations
 mojibake
 mountPath
 Multimodal
@@ -291,6 +304,7 @@ Opsgenie
 otlpHttp
 outputHeader
 PagerDuty
+parallelizable
 parameterization
 parameterless
 parseable
@@ -301,6 +315,7 @@ passwordHashes
 passwordKey
 passwordSecret
 pathPrefix
+payload_splitting
 PDFs
 peerreview
 performant
@@ -319,6 +334,8 @@ preconfigured
 prefetching
 prepended
 prepending
+Prepends
+prepends
 principalSet
 projectId
 [Pp]rometheus
@@ -343,11 +360,14 @@ rebalance
 rebalances
 rebalancing
 Rebase
+rebase
 rebased
 recompiles
 recoverability
 recurse
 redeliveries
+Redkit
+redkit
 Redpanda
 reflows
 refreshInterval
@@ -371,11 +391,17 @@ retryable
 [Rr]eusability
 RNGs
 roleArn
+roleplay
 Rollout
+rollout
 rollup
 (?i)RPC
+ruleset
 [Rr]ulesets?
+runbook
+Runbooks
 [Rr]unbooks?
+runbooks
 runtime's
 runtimeLogs
 runtimes
@@ -396,6 +422,7 @@ serviceAccountSecret
 serviceConfig
 Sev
 severities
+sexualizing
 [Ss]harded
 [Ss]harding
 SHAs
@@ -415,6 +442,7 @@ SREs
 SSLConfig
 [Ss]tackdriver
 stdin
+stdout
 stigmergy
 [Ss]treamable
 strikable
@@ -426,6 +454,8 @@ subpage
 [Ss]ubprocessors?
 subquery
 substream
+Substring
+substring
 [Ss]ubtasks?
 subtree
 Swiggy
@@ -452,7 +482,9 @@ tokenizer
 [Tt]okenizes
 tokenSecret
 toolCalling
+Toolchain
 [Tt]oolchain
+toolchain
 [Tt]oolsets?
 touchpoints
 traceSampling
@@ -516,4 +548,5 @@ XLarge
 XSmall
 Yugabyte
 Zolotko
+Zou
 [Zz]sh

@@ -1,0 +1,227 @@
+= Reports
+:page-summary: An evaluation report prints between four and seven panels in a fixed order. Each panel answers one question about the run. What passed, what failed, what varied between repeats, how quality was measured, how the judge scored, what the run could not tell you, and what it cost.
+:page-when-to-use: Read on every failing case in CI, and on every intentional target change before shipping. The report is what a reviewer reads to tell whether the run passed.
+:page-related: xref:testing:evaluation/experiments.adoc[], xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/baselines.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
+
+`Panels.render(RunRecord)` returns a plain 80-column ASCII report as a `String`.
+Where it is written is the caller's choice.
+See xref:testing:evaluation/experiments.adoc[] for turning a run into the record it renders from.
+The report prints a header followed by the panels the run has content for, numbered in the
+order they appear.
+Four always print: what the run found, how quality was measured, what it cannot tell you,
+and what it cost.
+Three are conditional.
+A panel with nothing to say is left out with the numbering closing the gap: the failed panel when any eval case failed, the varied panel when `repeating(N > 1)` produced a varied verdict, and the judge panel when anything was judged.
+
+"What it cannot tell you" always prints, including when it has nothing to report. A report
+that silently omitted its own limits would read as a report with none.
+
+Every example below is the exact byte output the tool produces.
+
+== Header
+
+Always at the top of the report.
+Carries the run identity, the target build, the ruleset version, the rubric version, the scope and the record path.
+
+[listing]
+----
+Refund policy evaluation
+--------------------------------------------------------------------------
+  run      2026-08-11T09:14Z           system   claims-svc 4.2.0
+  rules    refund-desk v3              rubric   case-judge v3
+  scope    6 cases, 6 attempts
+  record   target/evalkit/refund-policy.jsonl
+--------------------------------------------------------------------------
+----
+
+== Panel 1: What the run found
+
+Total cases, broken down by verdict.
+Always appears.
+
+[listing]
+----
+1  What the run found
+---------------------
+
+  passed            #############                               2
+  failed            #############                               2
+  undecided         #######                                     1
+  no result         #######                                     1
+
+  In this run, each case ran once. Undecided means that a result was in
+  a judge's middle confidence. No result means the run stopped before there
+  was an answer to score.
+
+  One attempt cannot tell a case the system meets from one it happened to
+  meet. Five attempts would show a case holds at least 55% of the time,
+  twenty attempts at least 86%, fifty at least 94%.
+----
+
+When `repeating(N > 1)` runs the same case N times, the labels read `passed every attempt` and `failed every attempt`, and a `varied` row appears above `undecided`.
+
+== Panel 2: What failed
+
+Every failing case, listed one per line with the id and the evaluator's own reason.
+Appears only when any case failed.
+
+[listing]
+----
+2  What failed
+--------------
+
+     refund-14d            expected GenUC-16a, found GenUC-17a
+     tool-scope            tool-permission v1: scored 0.50, needed 1.00
+
+  Every case that failed, and what the evaluator said about it. An evaluator
+  that computes a number reports the number it got and the number it needed.
+----
+
+== Panel 3: The cases that gave different answers between attempts
+
+Appears only when `repeating(N > 1)` produced any varied verdict.
+Each varied case shows a fixed-width attempt strip: `+` for an attempt that passed, `-` for one that failed, in the order they were started.
+
+[listing]
+----
+3  The cases that gave different answers between attempts
+---------------------------------------------------------
+
+  There was 1 varied case.
+
+     case                + passed   - failed  settled by            attempts passed
+     ------------------------------------------------------------------------------
+     flaky               + - + - +            specification node          3 of 5
+
+  Each mark is one attempt, in the order they were started.
+
+  A case settled by comparison that varies means the system is giving
+  different answers to the same question.
+----
+
+At larger repeat counts each mark covers several attempts (`+` when more than half of them passed) so the column stays the same width from 5 attempts to 500.
+
+== Panel 4: How quality was measured
+
+One row per quality measure the experiment shipped, with a stacked bar of `#`/`x`/`~`/`?` glyphs showing how each measure fared.
+
+[listing]
+----
+4  How quality was measured
+---------------------------
+
+           # passed   x failed   ~ varied   ? unsettled
+
+     specification node      #########xxxxxxxxx             2
+     case judge              #########?????????????????     3
+     required wording                                       0
+     task completion                                        0
+     tool permission         xxxxxxxxx                      1
+     tool correctness                                       0
+     argument correctness                                   0
+     turn faithfulness                                      0
+     citation faithfulness                                  0
+     turn relevancy                                         0
+     plan quality                                           0
+     plan adherence                                         0
+     step efficiency                                        0
+
+  Quality measures are specific to the use case being executed. Counts reflect
+  the number of cases a quality measure checked. Varied means the same
+  case got a different verdict on different attempts. Unsettled means the
+  judge was undecided or the attempt produced nothing.
+----
+
+A measure the experiment never touched still prints as a zero row.
+The panel is a full inventory, so nothing gets missed by omission.
+
+== Panel 5: How the judge scored
+
+Appears only when any case was judged.
+Prints a horizontal bar of `#` glyphs per score from 10 down to 1, grouped into three bands the rubric declares.
+
+[listing]
+----
+5  How the judge scored
+-----------------------
+
+     10                                        0
+      9  ##############################        1
+      8                                        0
+     ..... passed, 8 and above .................... 1
+      7                                        0
+      6                                        0
+      5  ##############################        1
+      4                                        0
+     ..... undecided, 4 to 7 ...................... 1
+      3                                        0
+      2                                        0
+      1                                        0
+     ..... failed, 3 and below .................... 0
+
+  Models scored 3 cases from 1 to 10, with 10 being very confident.
+
+  The judge agrees with a human reviewer 89-91% of the time on clear-cut
+  replies and 53% of the time on borderline ones.
+----
+
+== Panel 6: What this run cannot tell you
+
+Attempts that stopped before the system produced an answer, split by cause.
+Also lists any cases the coverage declaration excluded from this run.
+
+[listing]
+----
+6  What this run cannot tell you
+--------------------------------
+
+  These attempts stopped before the system produced an answer to score.
+
+     never reached the question                    0
+     no reply within 45 seconds                    1
+     the judge would not score the answer          0
+
+  These cases were left out of this run.
+
+     booking changes                               14
+
+  This kit can show that the system answered correctly from a stated starting
+  point. It cannot show that a user reaches that point unaided.
+----
+
+== Panel 7: What it cost
+
+Token spend split by target and judge, plus a latency distribution across five fixed buckets against the reply timeout.
+
+[listing]
+----
+7  What it cost
+---------------
+
+     the system under test            70,000 in     4,000 out
+     the judge                         7,628 in       948 out
+     total                            77,628 in     4,948 out
+
+  Tokens the system and the judge sent and received across all 6 attempts.
+
+     under 5s      ##########################    2
+     5 to 15s      #############                 1
+     15 to 30s                                   0
+     30 to 45s     #############                 1
+     over 45s      #############                 1
+
+  How long the system took to answer, over 5 attempts. 1 came within 15 seconds of
+  the 45 second timeout and 1 exceeded it, which is counted as no reply. Attempts
+  were executed 4 at a time, so these times include waiting for a free lane.
+----
+
+If any model call did not report its token usage, the panel appends: _"N model replies carried no usage figure, so these totals are a floor rather than a measurement."_
+
+== See also
+
+* xref:testing:evaluation/experiments.adoc[]. How an experiment carries the identity the header prints.
+* xref:testing:evaluation/evaluators.adoc[]. The evaluators whose measures show up in panel 4 and whose reasons show up in panel 2.
+* xref:testing:evaluation/baselines.adoc[]. How a run compares against a saved reference.

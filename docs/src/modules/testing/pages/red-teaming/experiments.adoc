@@ -1,0 +1,63 @@
+= Experiments and runs
+:page-summary: A red-team experiment runs a set of rules against a target under a set of attack styles. Every attempt is one eval case, one rule, and one attack style, repeated as many times as the experiment asks for.
+:page-when-to-use: Use to schedule a red-team run (nightly, on every release, or on demand) with a stated token budget and a hazard set the experiment speaks to.
+:page-related: xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/adaptive-attacks.adoc[], xref:testing:red-teaming/corpora.adoc[], xref:testing:red-teaming/reports.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
+
+A red-team experiment is a named unit of eval cases, rules, and attack styles that run together.
+The runner takes each eval case, applies every attack style to it, submits the resulting prompts to the target, and scores each reply.
+Every attempt in the report has one case id, one rule, and one attack style, so a break can be traced back to the exact combination that produced it.
+
+== Declaring an experiment
+
+[source,java,indent=0]
+----
+RedTeamCampaign.named("refund-safety")
+    .withCases(EvalSource.fromCorpus("harmbench"))
+    .withRule("do_not_leak_card_numbers", evaluator(new PIILeakDetector()))
+    .withRule("do_not_help_wrongdoing", evaluator(new JailbreakEvaluator()))
+    .attacking(List.of(new Base64(), new RolePlay(), new Crescendo())) // <1>
+    .forHazards(Set.of(Hazard.PRIVACY, Hazard.NON_VIOLENT_CRIMES)) // <2>
+    .repeating(3) // <3>
+    .withBudget(Budget.of(200_000, Duration.ofHours(1))); // <4>
+----
+<1> `attacking(List<Technique>)` +
+The attack styles to apply. Each style attacks every eval case.
+<2> `forHazards(Set<Hazard>)` +
+Restrict to eval cases covering these hazards.
+<3> `repeating(int)` +
+Repeat each attack `N` times to measure variance.
+<4> `withBudget(Budget)` +
+Cap tokens and wall-clock. Overrun ends the attack with `BUDGET_EXHAUSTED`.
+
+== Running an experiment locally
+
+  akka redteam run
+
+The command wraps the Maven invocation that runs every experiment under `src/test/java/com/example/redteam/`.
+Output streams to stdout.
+Reports land under `target/redkit/reports/`.
+
+== Running an experiment remotely
+
+Large corpora or long adaptive runs can be dispatched to the offline-evals service.
+The seam is `RemoteCampaign`, the same seam evaluation uses.
+Endpoints under `/api/redteam/experiments` mirror the evaluation endpoints.
+
+  akka redteam experiments apply -f my-experiment.yaml
+  akka redteam experiments get <experiment-id>
+  akka redteam experiments record <experiment-id>
+
+== The rules × technique matrix
+
+Panel 3 of the report is a rules × attack-styles matrix showing how many attempts broke through in each cell.
+Read the panel to see which attack styles are effective against which rules.
+
+== Best practices
+
+* Set a wall-clock budget on every experiment. Adaptive styles can loop.
+* Include at least one adaptive style. Static styles alone miss multi-turn failures.
+* Repeat each attack three times. Variance on adaptive styles is expected. The report separates flipping from consistent verdicts.
+* Restrict an experiment to a set of hazards when running against a specific concern.

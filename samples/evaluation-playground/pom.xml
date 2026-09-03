@@ -14,7 +14,22 @@
 
   <name>evaluation-playground</name>
 
+  <properties>
+    <evalkit.version>0.1.0</evalkit.version>
+  </properties>
+
   <dependencies>
-    <!-- Your dependencies go here -->
+    <dependency>
+      <groupId>io.akka</groupId>
+      <artifactId>akka-javasdk-evalkit</artifactId>
+      <version>${evalkit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.akka</groupId>
+      <artifactId>akka-javasdk-redkit</artifactId>
+      <version>${evalkit.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
