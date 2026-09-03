@@ -3,6 +3,7 @@
 ** xref:testing:integration.adoc[Integration]
 ** xref:testing:evaluation/index.adoc[Evaluation]
 *** xref:testing:evaluation/getting-started.adoc[Getting started]
+*** xref:testing:evaluation/concepts.adoc[Concepts and vocabulary]
 *** xref:testing:evaluation/eval-cases-and-rules.adoc[Eval cases and rules]
 *** xref:testing:evaluation/evaluators.adoc[Evaluators]
 *** xref:testing:evaluation/campaigns.adoc[Campaigns and runs]
