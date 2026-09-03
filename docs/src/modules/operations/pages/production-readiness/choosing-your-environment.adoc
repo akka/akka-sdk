@@ -40,9 +40,9 @@ Whether this matters depends on your workload. If you can tolerate an occasional
 
 == Data sovereignty and region choice
 
-Every region is also a legal jurisdiction: your data stays inside the region you choose, and that region's laws apply. An Ireland region means EU law. This holds whether or not you ever add a second region, and becomes an active decision the moment you do. If you must stay under one regulatory regime, choose a second region inside it, such as Ireland plus Frankfurt for EU-only, not Ireland plus Virginia.
+Every region is also a legal jurisdiction: your application data (what your services store) stays inside the regions you explicitly select for it, and those regions' laws apply. An Ireland region means EU law. This holds whether you use one region or several: adding a second region under multi-region replication puts your data in both regions you selected, never in one you did not choose. If you must stay under a single regulatory regime, choose a second region inside it, such as Ireland plus Frankfurt for EU-only, not Ireland plus Virginia.
 
-AWS, Google, and Microsoft act as sub-processors, running the underlying data centers and enforcing the region boundary. Akka does not move your data outside the region you select.
+AWS, Google, and Microsoft act as sub-processors, running the underlying data centers and enforcing each region's boundary. Akka does not move your data into a region you have not selected. This applies to your application data specifically; see xref:operations:technical-overview.adoc[] for how it relates to the separate, globally-run Federation Plane.
 
 == Deciding what matters for your workload
 
