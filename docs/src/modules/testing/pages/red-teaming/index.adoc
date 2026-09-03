@@ -13,10 +13,10 @@ The rendered report lists each break as its own incident, grouped by hazard and 
 
 == Shared with evaluation
 
-Red teaming reads the same `SystemUnderTest` adapter an evaluation campaign uses.
-A project already running evaluation adds red teaming by adding the `evalkit-redteam` dependency and a new campaign class.
+Red teaming reads the same `SystemUnderTest` adapter an evaluation experiment uses.
+A project already running evaluation adds red teaming by adding the `evalkit-redteam` dependency and a new experiment class.
 The target adapter carries across unchanged.
-`Rule`, `EvalCase`, `Evaluator`, `Campaign`, `Run`, `Rubric`, and `Ledger` mean the same thing in both.
+`Rule`, `EvalCase`, `Evaluator`, `Experiment`, `Run`, `Rubric`, and `Ledger` mean the same thing in both.
 
 == Techniques
 
@@ -55,11 +55,11 @@ Both read the same target adapter.
 * xref:sdk:agents/guardrails.adoc[Guardrails] are the runtime component that refuses at request time.
 Red-team evaluators are the test-time component that finds the cases where a guardrail was bypassed.
 * An xref:sdk:agents.adoc[Agent] is the service under test.
-The adapter puts the Agent in front of the runner the same way an evaluation campaign does.
+The adapter puts the Agent in front of the runner the same way an evaluation experiment does.
 
 == See also
 
-* xref:testing:red-teaming/getting-started.adoc[]. From an empty project through the first red-team campaign.
+* xref:testing:red-teaming/getting-started.adoc[]. From an empty project through the first red-team experiment.
 * xref:testing:red-teaming/evaluators.adoc[]. The three families, the built-ins, and how to add your own.
 * xref:testing:red-teaming/reports.adoc[]. Every panel of the rendered report and the attestation bundle.
 * xref:testing:evaluation/index.adoc[]. The evaluation suite that reads the same target adapter.

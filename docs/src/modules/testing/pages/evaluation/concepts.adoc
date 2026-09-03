@@ -1,6 +1,6 @@
 = Concepts and vocabulary
 :page-summary: How the pieces of an evaluation suite fit together. The customer writes cases and a target adapter, an experiment setup collects them, the runner walks the cases, and evaluators produce one result per attempt.
-:page-related: xref:testing:evaluation/eval-cases-and-rules.adoc[], xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/campaigns.adoc[]
+:page-related: xref:testing:evaluation/eval-cases-and-rules.adoc[], xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/experiments.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
@@ -22,8 +22,8 @@ A named set of eval cases plus the rubric, lanes, policy, and repeat count. What
 `ExperimentRunner`::
 Walks the setup, calls the adapter, hands each attempt to an evaluator, and returns one `EvalCaseResults` per case plus an `ExperimentReport` counting the whole run.
 
-Campaign::
-The JUnit test class that assembles the pieces above and calls `ExperimentRunner.run(...)`. Not an SDK class. A naming convention for the `*Campaign.java` files. Gated on `-Deval=true`.
+Experiment class::
+Your JUnit test class that assembles the pieces above and calls `ExperimentRunner.run(...)`. A convention, not an SDK type. Named `*Experiment.java` by convention, gated on `-Deval=true`.
 
 == How the pieces fit together
 
@@ -124,8 +124,8 @@ A case that passes eight times in ten still passes five attempts about a third o
 | `ExperimentReport`     | Counts, pass rate, trustworthiness flags.
 | `EvalCaseResults`      | One case together with every attempt of it.
 | Attempt                | One check of one case. A case checked three times produces three attempts.
-| Campaign               | Your JUnit test class. Convention, not an SDK type.
-| `RemoteCampaign`       | Wire client for dispatching a run to the offline-evals service.
+| Experiment class       | Your JUnit test class. Convention, not an SDK type.
+| `RemoteCampaign`       | Wire client for dispatching a run to the offline-evals service. (SDK class name kept from nexus 0.1.0.)
 | `Policy`               | The rules the system was given while the run happened.
 | `Lanes`                | Parallel-worker count for the runner.
 |===
@@ -135,5 +135,5 @@ A case that passes eight times in ten still passes five attempts about a third o
 * xref:testing:evaluation/getting-started.adoc[]. Walks the concepts end-to-end.
 * xref:testing:evaluation/eval-cases-and-rules.adoc[]. What an eval case declares in full.
 * xref:testing:evaluation/evaluators.adoc[]. The three families and how to add your own.
-* xref:testing:evaluation/campaigns.adoc[]. Building an experiment setup and running it.
+* xref:testing:evaluation/experiments.adoc[]. Building an experiment setup and running it.
 * xref:testing:evaluation/reports.adoc[]. Every panel of the rendered report.

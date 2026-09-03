@@ -1,12 +1,12 @@
-= Remote campaigns
-:page-summary: A remote campaign runs on the offline-evals service instead of the customer's JVM. The setup the customer writes and the report the customer reads back are the same either way. The service does the work.
-:page-when-to-use: Use for datasets over a few thousand eval cases, campaigns that take more than a few minutes, campaigns whose cost belongs to a shared budget, and scheduled runs.
-:page-related: xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/reports.adoc[]
+= Remote experiments
+:page-summary: A remote experiment runs on the offline-evals service instead of the customer's JVM. The setup the customer writes and the report the customer reads back are the same either way. The service does the work.
+:page-when-to-use: Use for datasets over a few thousand eval cases, experiments that take more than a few minutes, experiments whose cost belongs to a shared budget, and scheduled runs.
+:page-related: xref:testing:evaluation/experiments.adoc[], xref:testing:evaluation/reports.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
-A remote campaign runs on the offline-evals service instead of in the customer's JVM.
+A remote experiment runs on the offline-evals service instead of in the customer's JVM.
 The experiment setup the customer builds is the same setup the runner reads locally.
 The service owns the durability, the paging, and the retries.
 The report the customer fetches back is the same report a local run would produce.
@@ -14,13 +14,13 @@ The report the customer fetches back is the same report a local run would produc
 == When to use a remote run
 
 * Datasets over a few thousand eval cases.
-* Campaigns that take more than a few minutes locally.
-* Campaigns whose cost should be attributed to a shared budget rather than a developer's local model spend.
-* Campaigns that need to run on a schedule.
+* Experiments that take more than a few minutes locally.
+* Experiments whose cost should be attributed to a shared budget rather than a developer's local model spend.
+* Experiments that need to run on a schedule.
 
 == How it works
 
-`akka.evalkit.client.RemoteCampaign` uploads the dataset, submits the campaign spec to the service, and polls for the finished record.
+`akka.evalkit.client.RemoteCampaign` uploads the dataset, submits the experiment spec to the service, and polls for the finished record.
 The service's `ExperimentWorkflow` owns durability, paging and retries.
 `RemoteCampaign` lives in the `akka.evalkit.client` package alongside `OfflineEvalsClient`, evalkit's crossing point to the running service.
 `RemoteCampaign.run(httpClients, spec)` takes an Akka SDK `HttpClientProvider` and a `Spec` naming the service, the dataset and the eval cases.
@@ -61,5 +61,5 @@ The default endpoint is set with `EVAL_URL`.
 == Best practices
 
 * Prefer local runs while iterating on evaluators and datasets.
-* Use remote runs for scheduled campaigns and for anything larger than a laptop can drive comfortably.
-* Attribute campaign runs to a named budget on the service.
+* Use remote runs for scheduled experiments and for anything larger than a laptop can drive comfortably.
+* Attribute experiment runs to a named budget on the service.

@@ -1,7 +1,7 @@
 = Evaluators
 :page-summary: An evaluator decides the outcome of one recorded attempt. evalkit ships 22 evaluators in three families (deterministic, heuristic, agentic). The interface is one method the customer implements to write their own.
 :page-when-to-use: Use when an eval case needs a specific decision. A tool call was authorised, a budget was met, a claim was supported by a retrieved passage.
-:page-related: xref:testing:evaluation/index.adoc[], xref:testing:evaluation/eval-cases-and-rules.adoc[], xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/reports.adoc[], xref:testing:red-teaming/evaluators.adoc[]
+:page-related: xref:testing:evaluation/index.adoc[], xref:testing:evaluation/eval-cases-and-rules.adoc[], xref:testing:evaluation/experiments.adoc[], xref:testing:evaluation/reports.adoc[], xref:testing:red-teaming/evaluators.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
@@ -174,9 +174,9 @@ Unit tests use the same TestKit setup, described in xref:testing:unit.adoc[].
 
 == See also
 
-* xref:testing:evaluation/getting-started.adoc[]. A worked example from empty project to first campaign.
+* xref:testing:evaluation/getting-started.adoc[]. A worked example from empty project to first experiment.
 * xref:testing:evaluation/eval-cases-and-rules.adoc[]. What an eval case declares, and which evaluator settles it.
-* xref:testing:evaluation/campaigns.adoc[]. How a set of eval cases reaches a target.
+* xref:testing:evaluation/experiments.adoc[]. How a set of eval cases reaches a target.
 * xref:testing:evaluation/reports.adoc[]. How verdicts read in the report.
 * xref:testing:red-teaming/evaluators.adoc[]. Adversarial evaluators, same three-family model.
 * xref:reference:evaluations/evaluators.adoc[]

@@ -1,7 +1,7 @@
 = Baselines and regression
 :page-summary: A baseline is a saved reference run the current run compares against. Comparisons surface regressions before a change ships, and the baseline file itself is the audit trail for who approved which run.
-:page-when-to-use: Use when a campaign runs on a schedule or in CI, and its purpose is to catch regressions between the intended-good target and the target on this build.
-:page-related: xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/reports.adoc[]
+:page-when-to-use: Use when an experiment runs on a schedule or in CI, and its purpose is to catch regressions between the intended-good target and the target on this build.
+:page-related: xref:testing:evaluation/experiments.adoc[], xref:testing:evaluation/reports.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
@@ -12,26 +12,26 @@ Comparing against it is how CI catches a regression before the change ships.
 The baseline file itself is the audit trail.
 Whoever approved the promotion is whoever signed off on the commit.
 
-== How a campaign compares against a baseline
+== How an experiment compares against a baseline
 
 `akka.evalkit.core.domain.Scoring.compare(ExperimentReport, ExperimentReport)` reads two
-reports and returns the per-case deltas the campaign asserts against.
-A campaign that wants a comparison loads its baseline file, runs the current campaign, and
+reports and returns the per-case deltas the experiment asserts against.
+An experiment that wants a comparison loads its baseline file, runs the current experiment, and
 calls `Scoring.compare` on the two reports.
 
 == Where baselines live
 
-`src/test/resources/eval/baselines/<campaign-name>.json`
+`src/test/resources/eval/baselines/<experiment-name>.json`
 
 Commit baselines to source control.
 They are the record against which regressions are measured, and the commit is the audit trail for a promotion.
 
 == Convention
 
-*One baseline per campaign name.*
+*One baseline per experiment name.*
 A `nightly-refund-policy.json` file is the baseline for a run named `nightly-refund-policy`.
-A recurring campaign has one file that gets replaced on approval.
-A one-off exploratory campaign has no baseline at all.
+A recurring experiment has one file that gets replaced on approval.
+A one-off exploratory experiment has no baseline at all.
 
 *Never edit a baseline in place.*
 A baseline names the rubric version and the ruleset version it was produced under.
@@ -40,15 +40,15 @@ Replace the file whole on approval, and let the commit be the audit trail.
 
 *A comparison refuses across version changes.*
 A current run against a rubric or ruleset newer than the baseline is a version mismatch, not movement in the target.
-The campaign checks the versions before calling `Scoring.compare` and refuses the comparison when either differs.
+The experiment checks the versions before calling `Scoring.compare` and refuses the comparison when either differs.
 
 == Approving a new baseline
 
-Approval is an explicit step outside the campaign.
-A campaign that promoted its own baseline would let a bad run overwrite the reference it was meant to be judged against.
+Approval is an explicit step outside the experiment.
+An experiment that promoted its own baseline would let a bad run overwrite the reference it was meant to be judged against.
 That is the opposite of what a baseline is for.
 
-After a campaign holds against its baseline for long enough to trust the new numbers, the person approving copies the rendered report from `target/evalkit/` into the baselines directory and commits:
+After an experiment holds against its baseline for long enough to trust the new numbers, the person approving copies the rendered report from `target/evalkit/` into the baselines directory and commits:
 
 [listing]
 ----

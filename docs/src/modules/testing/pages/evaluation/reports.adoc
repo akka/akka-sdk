@@ -1,14 +1,14 @@
 = Reports
 :page-summary: An evaluation report prints between four and seven panels in a fixed order. Each panel answers one question about the run. What passed, what failed, what varied between repeats, how quality was measured, how the judge scored, what the run could not tell you, and what it cost.
 :page-when-to-use: Read on every failing case in CI, and on every intentional target change before shipping. The report is what a reviewer reads to tell whether the run passed.
-:page-related: xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/baselines.adoc[]
+:page-related: xref:testing:evaluation/experiments.adoc[], xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/baselines.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
 `Panels.render(RunRecord)` returns a plain 80-column ASCII report as a `String`.
 Where it is written is the caller's choice.
-See xref:testing:evaluation/campaigns.adoc[] for turning a run into the record it renders from.
+See xref:testing:evaluation/experiments.adoc[] for turning a run into the record it renders from.
 The report prints a header followed by the panels the run has content for, numbered in the
 order they appear.
 Four always print: what the run found, how quality was measured, what it cannot tell you,
@@ -106,7 +106,7 @@ At larger repeat counts each mark covers several attempts (`+` when more than ha
 
 == Panel 4: How quality was measured
 
-One row per quality measure the campaign shipped, with a stacked bar of `#`/`x`/`~`/`?` glyphs showing how each measure fared.
+One row per quality measure the experiment shipped, with a stacked bar of `#`/`x`/`~`/`?` glyphs showing how each measure fared.
 
 [listing]
 ----
@@ -135,7 +135,7 @@ One row per quality measure the campaign shipped, with a stacked bar of `#`/`x`/
   judge was undecided or the attempt produced nothing.
 ----
 
-A measure the campaign never touched still prints as a zero row.
+A measure the experiment never touched still prints as a zero row.
 The panel is a full inventory, so nothing gets missed by omission.
 
 == Panel 5: How the judge scored
@@ -222,6 +222,6 @@ If any model call did not report its token usage, the panel appends: _"N model r
 
 == See also
 
-* xref:testing:evaluation/campaigns.adoc[]. How a campaign carries the identity the header prints.
+* xref:testing:evaluation/experiments.adoc[]. How an experiment carries the identity the header prints.
 * xref:testing:evaluation/evaluators.adoc[]. The evaluators whose measures show up in panel 4 and whose reasons show up in panel 2.
 * xref:testing:evaluation/baselines.adoc[]. How a run compares against a saved reference.

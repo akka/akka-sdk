@@ -1,14 +1,14 @@
 = Signed evidence
-:page-summary: Every red-team run produces a signed DSSE evidence bundle carrying the campaign spec, the run outcome, the corpus provenance, and the attestation the compliance review reads as proof the run happened.
+:page-summary: Every red-team run produces a signed DSSE evidence bundle carrying the experiment spec, the run outcome, the corpus provenance, and the attestation the compliance review reads as proof the run happened.
 :page-when-to-use: Use whenever a compliance review needs proof that the target was tested and what the outcome was. The bundle is the audit trail.
-:page-related: xref:testing:red-teaming/reports.adoc[], xref:testing:red-teaming/campaigns.adoc[]
+:page-related: xref:testing:red-teaming/reports.adoc[], xref:testing:red-teaming/experiments.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
 Every red-team run produces a signed evidence bundle under `target/redkit/attestations/<run>.dsse.json`.
 The bundle is the audit trail.
-A signed DSSE envelope carries the campaign spec, the outcome of every attempt, the provenance of every corpus item, and the attestation the compliance review reads as proof the run happened.
+A signed DSSE envelope carries the experiment spec, the outcome of every attempt, the provenance of every corpus item, and the attestation the compliance review reads as proof the run happened.
 Present it to an auditor as-is. The signature covers the exact bytes.
 
 == What it contains
@@ -16,7 +16,7 @@ Present it to an auditor as-is. The signature covers the exact bytes.
 The bundle is a DSSE envelope over an in-toto statement.
 The statement records:
 
-* The campaign id and name.
+* The experiment id and name.
 * The dataset id and version.
 * The target build identifier and model name.
 * The list of attack styles applied.

@@ -1,12 +1,12 @@
 = Corpora
-:page-summary: An adversarial corpus is a set of attacker goals shipped as a date-versioned Maven artifact. The code that reads a corpus stays stable. The corpora themselves refresh on their own cadence, so a campaign pinned to a specific corpus snapshot stays interpretable months later.
-:page-when-to-use: Use when a red-team campaign needs a source of attacker goals. HarmBench, PyRIT, JailbreakBench and the other public corpora `evalkit-redteam` imports cover the common ground. Add corpora of your own for domain-specific attacks.
-:page-related: xref:testing:red-teaming/campaigns.adoc[], xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/techniques.adoc[]
+:page-summary: An adversarial corpus is a set of attacker goals shipped as a date-versioned Maven artifact. The code that reads a corpus stays stable. The corpora themselves refresh on their own cadence, so an experiment pinned to a specific corpus snapshot stays interpretable months later.
+:page-when-to-use: Use when a red-team experiment needs a source of attacker goals. HarmBench, PyRIT, JailbreakBench and the other public corpora `evalkit-redteam` imports cover the common ground. Add corpora of your own for domain-specific attacks.
+:page-related: xref:testing:red-teaming/experiments.adoc[], xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/techniques.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
-An adversarial corpus is a set of attacker goals ("get the model to describe how to bypass 2FA", "get the model to write a phishing email") that a campaign runs its techniques against.
+An adversarial corpus is a set of attacker goals ("get the model to describe how to bypass 2FA", "get the model to write a phishing email") that an experiment runs its techniques against.
 Corpora ship as a separate date-versioned Maven artifact so a run recorded in April stays interpretable after the September import:
 
   io.akka : evalkit-redteam-corpora : YYYY-MM.N

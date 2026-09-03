@@ -1,12 +1,12 @@
 = Reports
 :page-summary: A red-team report prints between one and ten panels in a fixed order. Each panel answers one question about the run, from the hazard rollup to the incidents to the token cost to the cases the quality suite missed.
 :page-when-to-use: Read on every failing run, and on every intentional target change. The report is what a security reviewer reads to tell what the target refused and what it did not.
-:page-related: xref:testing:red-teaming/campaigns.adoc[], xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/attestation.adoc[]
+:page-related: xref:testing:red-teaming/experiments.adoc[], xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/attestation.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
-`RedTeamPanels.render()` writes a plain 80-column ASCII report to `target/redkit/reports/<campaign>.txt`.
+`RedTeamPanels.render()` writes a plain 80-column ASCII report to `target/redkit/reports/<experiment>.txt`.
 The report prints a header, then up to ten panels in a fixed order, then a footer that points at the signed evidence bundle and the transcripts directory.
 A panel with nothing to say is left out and the numbering closes the gap.
 
@@ -14,13 +14,13 @@ Every example below is the exact byte output the tool produces on the fixture in
 
 == Header and footer
 
-The report opens with an `=` framed block naming the campaign, the run identity, the target build, and the attempt count.
+The report opens with an `=` framed block naming the experiment, the run identity, the target build, and the attempt count.
 It closes with a matching block pointing at the signed evidence bundle and the full transcripts.
 
 [listing]
 ----
 ================================================================================
-Red-team campaign: refund-agent-safety
+Red-team experiment: refund-agent-safety
 Run:      2026-08-23  09:07:12   (1h 33m 51s)
 Target:   refund-agent   (build a7c31f2, gpt-4o-mini via router)
 Attempts: 12,480 prompts across 8 rules, 6 attack styles, 3 repeats each
@@ -35,14 +35,14 @@ Full transcripts:       target/redkit/transcripts/
 ================================================================================
 ----
 
-== Panel 1: What the campaign found
+== Panel 1: What the experiment found
 
-Total breakthroughs across the campaign, then a rollup by the kind of harm the attack was trying to cause.
+Total breakthroughs across the experiment, then a rollup by the kind of harm the attack was trying to cause.
 Always appears when there is at least one attempt.
 
 [listing]
 ----
-1. What the campaign found
+1. What the experiment found
 --------------------------
 
 The system broke a rule on 140 out of 12,480 attempts (1.1%).
@@ -169,14 +169,14 @@ Where the judge disagreed:
   - 3 replies the judge called safe contained subtle helpful content
 ----
 
-== Panel 7: What the campaign could not tell you
+== Panel 7: What the experiment could not tell you
 
 Attempts that produced no clear verdict, and why.
 Timeouts, attacker errors, replies too short to grade: each counted separately.
 
 [listing]
 ----
-7. What the campaign could not tell you
+7. What the experiment could not tell you
 ---------------------------------------
 
 Attempts that produced no clear verdict, and why.
@@ -201,7 +201,7 @@ Token spend split by target, attacker, judge, and guardrail evaluator, plus a wa
 8. What it cost
 ---------------
 
-Token spend for this campaign (input + output):
+Token spend for this experiment (input + output):
 
   Target (the system under test)       8,412,301 tokens  ~ $18.42
   Attacker (adaptive attack styles)    3,201,880 tokens  ~ $7.05
@@ -237,7 +237,7 @@ driving the regression is "hidden instructions" (47 of 60 attempts, up
 from 12 of 60 last week).
 
 Recommend: block or escape the <ignore-previous> pattern before it reaches
-           the model, and re-run this campaign.
+           the model, and re-run this experiment.
 ----
 
 == Panel 10: Where the quality tests missed this
@@ -268,6 +268,6 @@ catch these regressions at PR time instead of nightly.
 
 == See also
 
-* xref:testing:red-teaming/campaigns.adoc[]. How the campaign carries the identity the header prints.
+* xref:testing:red-teaming/experiments.adoc[]. How the experiment carries the identity the header prints.
 * xref:testing:red-teaming/evaluators.adoc[]. The evaluators whose verdicts show up in panels 1, 2, 3.
 * xref:testing:red-teaming/attestation.adoc[]. The signed evidence bundle the footer points at.

@@ -1,12 +1,12 @@
-= Campaigns and runs
-:page-summary: A campaign is a named set of eval cases that run together against one target. A run is one execution of it, and what the run produced is what a report is rendered from.
+= Experiments and runs
+:page-summary: An experiment is a named set of eval cases that run together against one target. A run is one execution of it, and what the run produced is what a report is rendered from.
 :page-when-to-use: Use when a set of eval cases needs to run repeatedly, when verdicts need to compare across builds, or when recorded interactions are scored again without calling the target.
-:page-related: xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/eval-cases-and-rules.adoc[], xref:testing:evaluation/remote-campaigns.adoc[], xref:testing:evaluation/baselines.adoc[], xref:testing:evaluation/reports.adoc[]
+:page-related: xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/eval-cases-and-rules.adoc[], xref:testing:evaluation/remote-experiments.adoc[], xref:testing:evaluation/baselines.adoc[], xref:testing:evaluation/reports.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
-A campaign is a named set of eval cases that runs together against one target.
+An experiment is a named set of eval cases that runs together against one target.
 A run is one execution of it.
 Each eval case becomes one `EvalCaseResults` in the result, carrying every attempt of that
 case.
@@ -45,12 +45,12 @@ the time.
 
 A setup is checked before it runs. `setup.check(target)` returns `Check.Ready` or
 `Check.Refused` carrying the reasons.
-A campaign naming a fixture the target cannot build is refused in seconds rather than yielding one `NotReached` per case at the end of a long run.
+An experiment naming a fixture the target cannot build is refused in seconds rather than yielding one `NotReached` per case at the end of a long run.
 
-== Running a campaign
+== Running an experiment
 
 Local runs are ordinary JUnit tests gated on `-Deval=true`.
-`mvn verify -Deval=true` walks every campaign class under `src/test/java/<pkg>/eval/`.
+`mvn verify -Deval=true` walks every experiment class under `src/test/java/<pkg>/eval/`.
 
 [source,java,indent=0]
 ----
@@ -74,7 +74,7 @@ Files.writeString(Path.of("target/evalkit/refund-flow.txt"), Panels.render(recor
 
 Where the report is written is the caller's choice. Nothing writes one on its own.
 
-For dispatching a campaign to a running evaluation service instead of running it in-process, see xref:testing:evaluation/remote-campaigns.adoc[].
+For dispatching an experiment to a running evaluation service instead of running it in-process, see xref:testing:evaluation/remote-experiments.adoc[].
 
 == Lanes
 
@@ -107,7 +107,7 @@ An experiment setup naming a fixture the target never declared is refused by
 `FileLedger` reads and writes interaction records in a directory. `FileLedger.save` writes
 one. `RecordedInteractions` is a target that reads them back and calls nothing.
 
-A campaign over `RecordedInteractions` scores runs evalkit did not execute.
+An experiment over `RecordedInteractions` scores runs evalkit did not execute.
 A dataset scored in CI and traffic scored in production reach the same report through the same
 metrics. The same recording can be scored again under a new evaluator or a new rubric
 without paying the target twice.
@@ -117,7 +117,7 @@ A project that wants a recording writes one.
 
 == Failing a build on the result
 
-`ExperimentRunner.Result` carries no assertions. A campaign is a JUnit test, so it asserts
+`ExperimentRunner.Result` carries no assertions. An experiment is a JUnit test, so it asserts
 with whatever the project already uses.
 
 [source,java,indent=0]
@@ -134,13 +134,13 @@ For comparing a run against an earlier one, see xref:testing:evaluation/baseline
 
 == Best practices
 
-* Give each campaign a stable, lowercase, hyphen-separated name.
+* Give each experiment a stable, lowercase, hyphen-separated name.
 The name is the key reports, baselines, and CI dashboards join on.
-* Use `repeating(3)` for campaigns that use agentic evaluators.
+* Use `repeating(3)` for experiments that use agentic evaluators.
 Model calls sample. Three repeats stabilise most verdicts and let the variance panel read the flips.
-* State a policy on every campaign with `under(...)`, so a policy change reads as a policy change in the report and not as a target change.
-* Keep the eval case count per campaign small enough that a local run finishes quickly.
-Long-running campaigns belong on the offline-evals service.
+* State a policy on every experiment with `under(...)`, so a policy change reads as a policy change in the report and not as a target change.
+* Keep the eval case count per experiment small enough that a local run finishes quickly.
+Long-running experiments belong on the offline-evals service.
 
 == See also
 
@@ -148,4 +148,4 @@ Long-running campaigns belong on the offline-evals service.
 * xref:testing:evaluation/evaluators.adoc[]. The three evaluator families and what each settles.
 * xref:testing:evaluation/reports.adoc[]. The panels of the rendered report.
 * xref:testing:evaluation/baselines.adoc[]. How a baseline gates CI on regression.
-* xref:testing:evaluation/remote-campaigns.adoc[]. Dispatching to the offline-evals service.
+* xref:testing:evaluation/remote-experiments.adoc[]. Dispatching to the offline-evals service.

@@ -1,7 +1,7 @@
 = Attack styles
 :page-summary: An attack style (a Technique in the SPI) is how a payload is wrapped, escalated, or delivered before it reaches the target. Static techniques are pure functions. Adaptive techniques are attackers with state.
-:page-when-to-use: Use when a red-team campaign needs to broaden the attack surface. Encode the payload, roleplay the request, split it across turns, or escalate on a target that resists the first prompt.
-:page-related: xref:testing:red-teaming/adaptive-attacks.adoc[], xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/campaigns.adoc[]
+:page-when-to-use: Use when a red-team experiment needs to broaden the attack surface. Encode the payload, roleplay the request, split it across turns, or escalate on a target that resists the first prompt.
+:page-related: xref:testing:red-teaming/adaptive-attacks.adoc[], xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/experiments.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]

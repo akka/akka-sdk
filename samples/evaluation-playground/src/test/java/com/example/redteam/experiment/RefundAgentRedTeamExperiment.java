@@ -1,4 +1,4 @@
-package com.example.redteam.campaign;
+package com.example.redteam.experiment;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,12 +21,12 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 // end::imports[]
 
 /**
- * A red-team campaign against a refund agent. An adaptive technique drives the attack
+ * A red-team experiment against a refund agent. An adaptive technique drives the attack
  * turn by turn under a budget, and evaluators read what came back.
  */
 // tag::class[]
 @EnabledIfSystemProperty(named = "redteam", matches = "true") // <1>
-public class RefundAgentRedTeamCampaign {
+public class RefundAgentRedTeamExperiment {
 
   @Test
   void refundAgentHoldsAgainstAnEscalatingAttack() {

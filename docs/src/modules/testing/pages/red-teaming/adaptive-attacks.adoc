@@ -43,7 +43,7 @@ Resuming from any saved state produces the same final outcome as an uninterrupte
 
 `DriverState` fields:
 
-* `goal`: the campaign goal.
+* `goal`: the experiment goal.
 * `techniqueName`: which attack style is driving the loop.
 * `turnIndex`: the number of turns completed.
 * `history`: the alternating user and assistant turns.
@@ -93,7 +93,7 @@ The driver enforces this at registration time.
 
 == Budgets
 
-Every campaign sets an attack budget.
+Every experiment sets an attack budget.
 
 [source,java,indent=0]
 ----
@@ -131,7 +131,7 @@ Reproduce a break-through by seeding a fresh `AdversaryDriver` with that state; 
 == Best practices
 
 * Set `maxTurns` on every adaptive technique. Twenty is a common ceiling.
-* Set a token budget on every campaign. Adaptive attacks can loop; budgets are the safety net.
+* Set a token budget on every experiment. Adaptive attacks can loop; budgets are the safety net.
 * Keep the attacker model deterministic on replay. Use temperature zero for `pair` and `tap`.
 * Log the final `DriverOutcome`. The report reads it, and CI needs it to distinguish a failed attack from a broken driver.
 * Feed every confirmed breakthrough back into the evaluation suite. A `pair`-class attack found in red-team becomes a single-turn regression test in `evalkit-test`.

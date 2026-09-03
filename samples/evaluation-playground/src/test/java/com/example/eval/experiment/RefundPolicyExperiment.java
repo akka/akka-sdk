@@ -1,4 +1,4 @@
-package com.example.eval.campaign;
+package com.example.eval.experiment;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,12 +22,12 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 // end::imports[]
 
 /**
- * The whole first-campaign shape in one place. A campaign is a JUnit test gated on
+ * The whole first-experiment shape in one place. An experiment is a JUnit test gated on
  * -Deval=true so `mvn verify` compiles it without running it.
  */
 // tag::class[]
 @EnabledIfSystemProperty(named = "eval", matches = "true") // <1>
-public class RefundPolicyCampaign {
+public class RefundPolicyExperiment {
 
   @Test
   void refundPolicyHoldsUp() {

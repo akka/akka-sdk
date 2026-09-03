@@ -1,7 +1,7 @@
 = Eval cases and rules
 :page-summary: An eval case is one test case with a stable id. Every attempt against one case is gathered into an EvalCaseResults record, and the report reads verdicts case by case rather than attempt by attempt.
 :page-when-to-use: Use when a case needs a stable identity across runs, when a case needs the conversation seeded before the graded turn, or when reading how a repeated case reaches one verdict.
-:page-related: xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/reports.adoc[]
+:page-related: xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/experiments.adoc[], xref:testing:evaluation/reports.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
@@ -15,7 +15,7 @@ A case that passes twice and fails once is one varied verdict rather than a mixt
 
 == The EvalCase record
 
-`EvalCase` is a Java record. Build the list in the campaign class.
+`EvalCase` is a Java record. Build the list in the experiment class.
 evalkit ships no reader for an on-disk format, so where a project keeps its cases is its own choice.
 
 [source,java,indent=0]
@@ -60,12 +60,12 @@ The conversation is real, so a case about the fourth turn is asked at the fourth
 `Fixture(String name, Map<String, String> parameters)` +
 The target puts itself into a named state.
 The target declares what it can build in `SystemUnderTest.fixtures()`.
-An experiment setup naming one it cannot is refused before the campaign runs.
+An experiment setup naming one it cannot is refused before the experiment runs.
 
 `FailingTool(String tool, String message, EvalSetup then)` +
 A named tool is made to fail, then the wrapped eval setup runs.
 Used for cases about recovery.
-A target that cannot break the named tool causes the campaign to be refused.
+A target that cannot break the named tool causes the experiment to be refused.
 Answering with a working tool would report the system as recovering from a failure that
 never happened.
 
@@ -113,10 +113,10 @@ the time.
 One attempt cannot tell that apart from a case it always meets.
 
 `UNDECIDED` and `NO_RESULT` are kept apart on purpose.
-A judge that would not commit and an attempt that produced no evidence at all are different facts about a campaign.
+A judge that would not commit and an attempt that produced no evidence at all are different facts about an experiment.
 
 == See also
 
 * xref:testing:evaluation/evaluators.adoc[]. The evaluators that produce each outcome.
-* xref:testing:evaluation/campaigns.adoc[]. How eval cases are bundled into a campaign.
+* xref:testing:evaluation/experiments.adoc[]. How eval cases are bundled into an experiment.
 * xref:testing:evaluation/reports.adoc[]. How verdicts read on the rendered report.
