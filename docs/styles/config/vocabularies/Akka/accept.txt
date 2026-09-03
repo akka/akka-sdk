@@ -11,6 +11,7 @@ Agentgateway
 Agrona
 agy
 AI's
+AILuminate
 Aiven
 [Aa]kka
 allowedAlgorithms
@@ -63,6 +64,7 @@ cidr
 CIDRs
 classname
 classpath
+cleartext
 CLI's
 clientCertificate
 clientId
@@ -89,6 +91,7 @@ curations
 Cursor
 cutover
 CVEs
+cybercrime
 Datadog
 DBs
 decisioning
@@ -129,6 +132,8 @@ enum
 env
 etcd
 eval
+[Ee]valkit
+[Ee]valuator's
 eventhubs
 evolvability
 exfiltration
@@ -141,12 +146,14 @@ fanout
 fetchable
 Fitbit
 focusable
+Garak
 gcp
 gcpKey
 Gemini
 Gemma
 getOptional
 [Gg]itHub
+gitignored
 gitlink
 googleCloud
 GPUs
@@ -226,6 +233,7 @@ lockfiles
 logLevel
 lookups
 LoRA
+Luhn
 Manulife
 Mastercard
 matchers
@@ -242,6 +250,7 @@ minInstances
 Ministral
 minSeverity
 Mistral
+mitigations
 mojibake
 mountPath
 Multimodal
@@ -272,6 +281,7 @@ Opsgenie
 (?i)OTLP
 outputHeader
 PagerDuty
+parallelizable
 parameterization
 parameterless
 parseable
@@ -282,6 +292,7 @@ passwordHashes
 passwordKey
 passwordSecret
 pathPrefix
+payload_splitting
 PDFs
 peerreview
 performant
@@ -300,6 +311,8 @@ preconfigured
 prefetching
 prepended
 prepending
+Prepends
+prepends
 principalSet
 projectId
 [Pp]rometheus
@@ -329,6 +342,8 @@ recompiles
 recoverability
 recurse
 redeliveries
+Redkit
+redkit
 Redpanda
 reflows
 refreshInterval
@@ -353,11 +368,12 @@ retryable
 [Rr]eusability
 RNGs
 roleArn
+roleplay
 Rollout
 rollout
 rollup
 (?i)RPC
-ruleset
+[Rr]ulesets?
 runbook
 Runbooks
 [Rr]unbooks?
@@ -382,6 +398,7 @@ serverless
 serviceAccountSecret
 Sev
 severities
+sexualizing
 [Ss]harded
 [Ss]harding
 SHAs
@@ -399,6 +416,7 @@ src
 SREs
 [Ss]tackdriver
 stdin
+stdout
 stigmergy
 [Ss]treamable
 strikable
@@ -410,6 +428,8 @@ subpage
 [Ss]ubprocessors?
 subquery
 substream
+Substring
+substring
 [Ss]ubtasks?
 subtree
 Swiggy
@@ -434,7 +454,7 @@ tokenizer
 [Tt]okenizes
 tokenSecret
 toolCalling
-Toolchain
+[Tt]oolchain
 toolchain
 [Tt]oolsets?
 touchpoints
@@ -496,4 +516,5 @@ XLarge
 XSmall
 Yugabyte
 Zolotko
+Zou
 [Zz]sh

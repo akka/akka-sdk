@@ -1,0 +1,94 @@
+= Unit testing
+
+include::ROOT:partial$include.adoc[]
+
+Unit testing in Akka exercises one component at a time.
+Every component ships with a matching TestKit.
+The pattern is the same for every component: create the TestKit, invoke the component, assert on the emitted effect or resulting state.
+
+== The shortest possible unit test
+
+[source,java,indent=0]
+----
+class CounterTest {
+
+  @Test
+  void incrementsFromZero() {
+    var testKit = EventSourcedTestKit.of(Counter::new);
+
+    var result = testKit.method(Counter::increment).invoke();
+
+    assertThat(result.getReply()).isEqualTo(1);
+    assertThat(testKit.getState()).isEqualTo(1);
+  }
+}
+----
+
+== TestKit by component
+
+The table lists every component and the TestKit facility to use.
+Each entry links to the deterministic-testing section on that component's own page.
+
+[cols="1,3,1", options="header"]
+|===
+| Component | What the TestKit gives you | Documentation
+
+| Agent
+| `TestModelProvider` for deterministic model replies; `whenMessage` and `whenToolResult` shaping.
+| xref:sdk:agents/testing.adoc[]
+
+| Autonomous agent
+| `TestKitSupport` with autonomous-agent bootstrap and controllable task lifecycle.
+| xref:sdk:autonomous-agents/testing.adoc[]
+
+| Event Sourced Entity
+| `EventSourcedTestKit`. Apply commands, assert on emitted events and next state.
+| xref:sdk:event-sourced-entities.adoc#_testing_the_entity[]
+
+| Key Value Entity
+| `KeyValueEntityTestKit`. Apply commands, assert on state transitions.
+| xref:sdk:key-value-entities.adoc#_testing_the_entity[]
+
+| Workflow
+| `WorkflowTestKit`. Drive step by step, assert on deterministic step results.
+| xref:sdk:workflows.adoc[]
+
+| Timer
+| A virtual clock the test advances; assert on scheduled firings.
+| xref:sdk:timed-actions.adoc[]
+
+| Consumer
+| Feed events through the consumer; assert on side-effects.
+| xref:sdk:consuming-producing.adoc[]
+
+| HTTP endpoint
+| Deployable in-process runtime; call over HTTP with the injected client.
+| xref:sdk:http-endpoints.adoc[]
+
+| gRPC endpoint
+| Deployable in-process runtime; call over gRPC with the injected client.
+| xref:sdk:grpc-endpoints.adoc[]
+
+| MCP endpoint
+| Deployable in-process runtime; call over MCP with the injected client.
+| xref:sdk:mcp-endpoints.adoc[]
+
+| View
+| Feed source events, query the view, assert on rows.
+| xref:sdk:views.adoc[]
+|===
+
+== Best practices
+
+* Extend `TestKitSupport` once per test class.
+* Register a `TestModelProvider` for every agent under test.
+* Assert on effects and state, not on log output.
+* Reset the TestKit between tests when the component holds durable state.
+* Keep unit tests under 100 ms. Move anything longer to integration.
+* Use a separate `TestModelProvider` instance per agent when multiple agents share a test.
+
+== Related
+
+* xref:testing:integration.adoc[]
+* xref:testing:evaluation/index.adoc[]
+* xref:testing:red-teaming/index.adoc[]

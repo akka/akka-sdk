@@ -1,0 +1,8 @@
+= Evaluations reference pages
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
+
+* xref:evaluations/evaluators.adoc[]
+* xref:evaluations/hazards.adoc[]
+* xref:evaluations/techniques.adoc[]
