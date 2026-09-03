@@ -1,5 +1,5 @@
 = Reports
-:page-summary: An evaluation report prints between four and seven panels in a fixed order. Each panel answers one question about the run — what passed, what failed, what varied between repeats, how quality was measured, how the judge scored, what the run could not tell you, and what it cost.
+:page-summary: An evaluation report prints between four and seven panels in a fixed order. Each panel answers one question about the run. What passed, what failed, what varied between repeats, how quality was measured, how the judge scored, what the run could not tell you, and what it cost.
 :page-when-to-use: Read on every failing case in CI, and on every intentional target change before shipping. The report is what a reviewer reads to tell whether the run passed.
 :page-related: xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/baselines.adoc[]
 :page-banner: evaluations
@@ -7,16 +7,14 @@
 include::ROOT:partial$include.adoc[]
 
 `Panels.render(RunRecord)` returns a plain 80-column ASCII report as a `String`.
-Where it is written is the caller's choice; see xref:testing:evaluation/campaigns.adoc[] for
-turning a run into the record it renders from.
+Where it is written is the caller's choice.
+See xref:testing:evaluation/campaigns.adoc[] for turning a run into the record it renders from.
 The report prints a header followed by the panels the run has content for, numbered in the
 order they appear.
 Four always print: what the run found, how quality was measured, what it cannot tell you,
 and what it cost.
-Three are conditional, and a panel with nothing to say is left out with the numbering
-closing the gap: the failed panel when any eval case failed, the varied panel when
-`repeating(N > 1)` produced a varied verdict, and the judge panel when anything was
-judged.
+Three are conditional.
+A panel with nothing to say is left out with the numbering closing the gap: the failed panel when any eval case failed, the varied panel when `repeating(N > 1)` produced a varied verdict, and the judge panel when anything was judged.
 
 "What it cannot tell you" always prints, including when it has nothing to report. A report
 that silently omitted its own limits would read as a report with none.
@@ -39,7 +37,7 @@ Refund policy evaluation
 --------------------------------------------------------------------------
 ----
 
-== Panel 1 — What the run found
+== Panel 1: What the run found
 
 Total cases, broken down by verdict.
 Always appears.
@@ -65,7 +63,7 @@ Always appears.
 
 When `repeating(N > 1)` runs the same case N times, the labels read `passed every attempt` and `failed every attempt`, and a `varied` row appears above `undecided`.
 
-== Panel 2 — What failed
+== Panel 2: What failed
 
 Every failing case, listed one per line with the id and the evaluator's own reason.
 Appears only when any case failed.
@@ -82,7 +80,7 @@ Appears only when any case failed.
   that computes a number reports the number it got and the number it needed.
 ----
 
-== Panel 3 — The cases that gave different answers between attempts
+== Panel 3: The cases that gave different answers between attempts
 
 Appears only when `repeating(N > 1)` produced any varied verdict.
 Each varied case shows a fixed-width attempt strip: `+` for an attempt that passed, `-` for one that failed, in the order they were started.
@@ -106,7 +104,7 @@ Each varied case shows a fixed-width attempt strip: `+` for an attempt that pass
 
 At larger repeat counts each mark covers several attempts (`+` when more than half of them passed) so the column stays the same width from 5 attempts to 500.
 
-== Panel 4 — How quality was measured
+== Panel 4: How quality was measured
 
 One row per quality measure the campaign shipped, with a stacked bar of `#`/`x`/`~`/`?` glyphs showing how each measure fared.
 
@@ -140,7 +138,7 @@ One row per quality measure the campaign shipped, with a stacked bar of `#`/`x`/
 A measure the campaign never touched still prints as a zero row.
 The panel is a full inventory, so nothing gets missed by omission.
 
-== Panel 5 — How the judge scored
+== Panel 5: How the judge scored
 
 Appears only when any case was judged.
 Prints a horizontal bar of `#` glyphs per score from 10 down to 1, grouped into three bands the rubric declares.
@@ -170,7 +168,7 @@ Prints a horizontal bar of `#` glyphs per score from 10 down to 1, grouped into 
   replies and 53% of the time on borderline ones.
 ----
 
-== Panel 6 — What this run cannot tell you
+== Panel 6: What this run cannot tell you
 
 Attempts that stopped before the system produced an answer, split by cause.
 Also lists any cases the coverage declaration excluded from this run.
@@ -194,7 +192,7 @@ Also lists any cases the coverage declaration excluded from this run.
   point. It cannot show that a user reaches that point unaided.
 ----
 
-== Panel 7 — What it cost
+== Panel 7: What it cost
 
 Token spend split by target and judge, plus a latency distribution across five fixed buckets against the reply timeout.
 
@@ -224,6 +222,6 @@ If any model call did not report its token usage, the panel appends: _"N model r
 
 == See also
 
-* xref:testing:evaluation/campaigns.adoc[] — how a campaign carries the identity the header prints.
-* xref:testing:evaluation/evaluators.adoc[] — the evaluators whose measures show up in panel 4 and whose reasons show up in panel 2.
-* xref:testing:evaluation/baselines.adoc[] — how a run compares against a saved reference.
+* xref:testing:evaluation/campaigns.adoc[]. How a campaign carries the identity the header prints.
+* xref:testing:evaluation/evaluators.adoc[]. The evaluators whose measures show up in panel 4 and whose reasons show up in panel 2.
+* xref:testing:evaluation/baselines.adoc[]. How a run compares against a saved reference.

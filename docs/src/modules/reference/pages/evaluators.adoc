@@ -213,5 +213,5 @@ Adapts LlamaGuard, PromptGuard, and any custom `TextGuardrail`.
 
 == Related
 
-* xref:testing:evaluation/evaluators.adoc[] — writing custom evaluation evaluators.
-* xref:testing:red-teaming/evaluators.adoc[] — writing custom adversarial evaluators.
+* xref:testing:evaluation/evaluators.adoc[]. Writing custom evaluation evaluators.
+* xref:testing:red-teaming/evaluators.adoc[]. Writing custom adversarial evaluators.

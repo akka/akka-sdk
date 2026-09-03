@@ -9,7 +9,8 @@ include::ROOT:partial$include.adoc[]
 A campaign is a named set of eval cases that runs together against one target.
 A run is one execution of it.
 Each eval case becomes one `EvalCaseResults` in the result, carrying every attempt of that
-case, and the report is rendered from those results rather than stored beside them.
+case.
+The report is rendered from those results rather than stored beside them.
 
 == The experiment setup
 
@@ -29,8 +30,8 @@ var setup = new ExperimentSetup(
 <1> The name is the stable key reports and baselines join on.
 Lowercase, hyphen-separated by convention.
 <2> A `List<EvalCase>`.
-Read them from wherever the project keeps them; `EvalSource` is the interface for
-paging a large set, and a project supplies its own implementation.
+Read them from wherever the project keeps them.
+`EvalSource` is the interface for paging a large set, and a project supplies its own implementation.
 <3> How many cases run at once. See <<_lanes>>.
 <4> The rubric the judge scores against, loaded from
 `eval/rubrics/case-judge-v3.txt` on the classpath.
@@ -38,14 +39,13 @@ paging a large set, and a project supplies its own implementation.
 Two runs under different rules are not comparable, and a reader cannot see that from the
 numbers.
 <6> `repeating(N)` runs each eval case `N` times.
-One attempt cannot tell a case the system meets from one it happened to meet: a
-case the system handles eight times in ten still passes five attempts about a third of
+One attempt cannot tell a case the system meets from one it happened to meet.
+A case the system handles eight times in ten still passes five attempts about a third of
 the time.
 
 A setup is checked before it runs. `setup.check(target)` returns `Check.Ready` or
-`Check.Refused` carrying the reasons, so a campaign naming a fixture the target cannot
-build is refused in seconds rather than yielding one `NotReached` per case at the end
-of a long run.
+`Check.Refused` carrying the reasons.
+A campaign naming a fixture the target cannot build is refused in seconds rather than yielding one `NotReached` per case at the end of a long run.
 
 == Running a campaign
 
@@ -62,7 +62,7 @@ var result = ExperimentRunner.run(setup, target, judge);
 `cases()`, and anything the run needs to say in `notes()`.
 
 To render the report, turn the result into the record a report is made from and print it.
-The run counts the cases, the policy, the lane count and the system's own spend;
+The run counts the cases, the policy, the lane count and the system's own spend.
 `Reporting` carries what the run cannot know about itself, such as what it is called and
 how far the judge can be relied on.
 
@@ -79,13 +79,15 @@ For dispatching a campaign to a running evaluation service instead of running it
 == Lanes
 
 A lane is a worker. `Lanes.of(4)` runs four eval cases at once, over a shared queue rather
-than a fixed split: transcripts vary from a couple of messages to eighty, and an unlucky
+than a fixed split.
+Transcripts vary from a couple of messages to eighty, and an unlucky
 partition leaves one worker running long after the rest are idle.
 
 The configured number is not the interesting one. Akka will run thousands of these without
-noticing; the model provider will not. `result.utilisation()` reports what the run actually
-sustained against what was asked for, which is what separates "we asked for 64" from "we
-sustained 9 because we were being throttled".
+noticing.
+The model provider will not. `result.utilisation()` reports what the run actually
+sustained against what was asked for.
+That separates "we asked for 64" from "we sustained 9 because we were being throttled".
 
 The ceiling is 512, and it is not an Akka limit. A number that high against a rate-limited
 provider produces a queue of failing calls rather than throughput.
@@ -94,8 +96,8 @@ provider produces a queue of failing calls rather than throughput.
 
 An eval case names the state it needs through its `EvalSetup`: `None`, a `Replay` of earlier
 turns, a `Fixture` the target builds, or a `FailingTool`. The target declares what it can
-build in `SystemUnderTest.fixtures()`, with a one-line description of each, because only
-the code that builds "authenticated with a claim open" knows what that contains.
+build in `SystemUnderTest.fixtures()`, with a one-line description of each.
+Only the code that builds "authenticated with a claim open" knows what that contains.
 
 An experiment setup naming a fixture the target never declared is refused by
 `setup.check(target)` before anything runs.
@@ -103,15 +105,15 @@ An experiment setup naming a fixture the target never declared is refused by
 == Recording and re-scoring
 
 `FileLedger` reads and writes interaction records in a directory. `FileLedger.save` writes
-one; `RecordedInteractions` is a target that reads them back and calls nothing.
+one. `RecordedInteractions` is a target that reads them back and calls nothing.
 
-A campaign over `RecordedInteractions` scores runs evalkit did not execute, so a dataset
-scored in CI and traffic scored in production reach the same report through the same
+A campaign over `RecordedInteractions` scores runs evalkit did not execute.
+A dataset scored in CI and traffic scored in production reach the same report through the same
 metrics. The same recording can be scored again under a new evaluator or a new rubric
 without paying the target twice.
 
-Nothing is recorded automatically. `ExperimentRunner` does not touch a ledger; a project
-that wants a recording writes one.
+Nothing is recorded automatically. `ExperimentRunner` does not touch a ledger.
+A project that wants a recording writes one.
 
 == Failing a build on the result
 
@@ -124,7 +126,7 @@ assertThat(result.report().passRate()).isGreaterThan(0.9);
 ----
 
 `ExperimentReport` counts passed, review and failed attempts and answers `passRate()`.
-It also says when it will not stand behind a figure: `provesAnyReachability()` is false
+It also says when it will not stand behind a figure. `provesAnyReachability()` is false
 when every attempt started from a seeded state, and `isTrustworthy()` is false when too
 little was measured to read a rate from.
 
@@ -135,15 +137,15 @@ For comparing a run against an earlier one, see xref:testing:evaluation/baseline
 * Give each campaign a stable, lowercase, hyphen-separated name.
 The name is the key reports, baselines, and CI dashboards join on.
 * Use `repeating(3)` for campaigns that use agentic evaluators.
-Model calls sample; three repeats stabilise most verdicts and let the variance panel read the flips.
+Model calls sample. Three repeats stabilise most verdicts and let the variance panel read the flips.
 * State a policy on every campaign with `under(...)`, so a policy change reads as a policy change in the report and not as a target change.
-* Keep the eval case count per campaign small enough that a local run finishes in a coffee break.
+* Keep the eval case count per campaign small enough that a local run finishes quickly.
 Long-running campaigns belong on the offline-evals service.
 
 == See also
 
-* xref:testing:evaluation/eval-cases-and-rules.adoc[] — what an eval case contains and how its attempts become one verdict.
-* xref:testing:evaluation/evaluators.adoc[] — the three evaluator families and what each settles.
-* xref:testing:evaluation/reports.adoc[] — the panels of the rendered report.
-* xref:testing:evaluation/baselines.adoc[] — how a baseline gates CI on regression.
-* xref:testing:evaluation/remote-campaigns.adoc[] — dispatching to the offline-evals service.
+* xref:testing:evaluation/eval-cases-and-rules.adoc[]. What an eval case contains and how its attempts become one verdict.
+* xref:testing:evaluation/evaluators.adoc[]. The three evaluator families and what each settles.
+* xref:testing:evaluation/reports.adoc[]. The panels of the rendered report.
+* xref:testing:evaluation/baselines.adoc[]. How a baseline gates CI on regression.
+* xref:testing:evaluation/remote-campaigns.adoc[]. Dispatching to the offline-evals service.

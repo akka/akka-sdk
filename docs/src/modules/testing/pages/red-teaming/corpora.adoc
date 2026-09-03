@@ -1,12 +1,12 @@
 = Corpora
-:page-summary: An adversarial corpus is a set of attacker goals shipped as a date-versioned Maven artifact. The code that reads a corpus stays stable; the corpora themselves refresh on their own cadence, so a campaign pinned to a specific corpus snapshot stays interpretable months later.
-:page-when-to-use: Use when a red-team campaign needs a source of attacker goals. HarmBench, PyRIT, JailbreakBench and the other public corpora `evalkit-redteam` imports cover the common ground; add corpora of your own for domain-specific attacks.
+:page-summary: An adversarial corpus is a set of attacker goals shipped as a date-versioned Maven artifact. The code that reads a corpus stays stable. The corpora themselves refresh on their own cadence, so a campaign pinned to a specific corpus snapshot stays interpretable months later.
+:page-when-to-use: Use when a red-team campaign needs a source of attacker goals. HarmBench, PyRIT, JailbreakBench and the other public corpora `evalkit-redteam` imports cover the common ground. Add corpora of your own for domain-specific attacks.
 :page-related: xref:testing:red-teaming/campaigns.adoc[], xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/techniques.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
-An adversarial corpus is a set of attacker goals — "get the model to describe how to bypass 2FA", "get the model to write a phishing email" — that a campaign runs its techniques against.
+An adversarial corpus is a set of attacker goals ("get the model to describe how to bypass 2FA", "get the model to write a phishing email") that a campaign runs its techniques against.
 Corpora ship as a separate date-versioned Maven artifact so a run recorded in April stays interpretable after the September import:
 
   io.akka : evalkit-redteam-corpora : YYYY-MM.N
@@ -104,9 +104,9 @@ Run `akka redteam corpora list` for the authoritative list against the artifact 
 
 The pulled artifact ships with every corpus laid out under `src/test/resources/redteam/corpora/<corpus-name>/` with three files:
 
-* `manifest.json` — name, description, license, source URL, hazards covered, item count, gated flag.
-* `items.jsonl` — one adversarial prompt per line.
-* `SOURCE.md` — human-readable summary of what the corpus contains and how it was compiled.
+* `manifest.json`: name, description, license, source URL, hazards covered, item count, gated flag.
+* `items.jsonl`: one adversarial prompt per line.
+* `SOURCE.md`: human-readable summary of what the corpus contains and how it was compiled.
 
 Read the summary and manifest at a glance:
 
@@ -140,10 +140,10 @@ Include it in the compliance review pack.
 
 Every eval case imported from a corpus carries provenance metadata:
 
-* `sourceCorpus` — the corpus name.
-* `sourceId` — the id within that corpus.
-* `license` — the SPDX identifier.
-* `importedAt` — the import timestamp.
+* `sourceCorpus`: the corpus name.
+* `sourceId`: the id within that corpus.
+* `license`: the SPDX identifier.
+* `importedAt`: the import timestamp.
 
 Reports show a failing attack's source corpus and id in Panel 2.
 

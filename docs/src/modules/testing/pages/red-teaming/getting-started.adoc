@@ -1,6 +1,6 @@
 = Getting started with red teaming
-:page-summary: A red-team suite probes an AI service for the things it should refuse — jailbreaks, prompt injections, secret leaks, PII disclosure. It lives beside the evaluation suite, runs the same target adapter, and reports each break as its own incident.
-:page-when-to-use: Use when a service is exposed to attacker input — a customer-facing chat agent, a RAG system reading untrusted passages, an agent whose tools reach sensitive state.
+:page-summary: A red-team suite probes an AI service for the things it should refuse. Jailbreaks, prompt injections, secret leaks, PII disclosure. It lives beside the evaluation suite, runs the same target adapter, and reports each break as its own incident.
+:page-when-to-use: Use when a service is exposed to attacker input. A customer-facing chat agent, a RAG system reading untrusted passages, an agent whose tools reach sensitive state.
 :page-prerequisites: An existing Maven project. An evaluation runner already in place (see xref:testing:evaluation/getting-started.adoc[]) is the fastest starting point but not required.
 :page-related: xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/adaptive-attacks.adoc[], xref:testing:red-teaming/corpora.adoc[]
 :page-banner: evaluations
@@ -8,18 +8,22 @@
 include::ROOT:partial$include.adoc[]
 
 A red-team campaign runs a service through prompts written to attack it and asks an evaluator whether the target broke through, held, or the evidence was inconclusive.
-Each break is one incident with its own row in the report, so security review reads a red-team run the way it reads a penetration test — case by case, not as a rate.
+Each break is one incident with its own row in the report.
+Security review reads a red-team run the way it reads a penetration test: case by case, not as a rate.
 
 == Overview
 
 A red-team campaign has four parts.
 The **target** is the same `SystemUnderTest` an evaluation campaign uses, so a project with an evaluation suite already reuses its adapter.
 The **corpus** is a set of attacker goals ("get the model to describe how to bypass 2FA"), pulled from date-versioned artifacts like HarmBench, DAN, or JailbreakBench.
-The **techniques** turn each goal into many prompts — static wrappers roleplay the request or base64-encode the payload; adaptive techniques revise their prompts based on the target's last reply.
+The **techniques** turn each goal into many prompts.
+Static wrappers roleplay the request or base64-encode the payload.
+Adaptive techniques revise their prompts based on the target's last reply.
 The **evaluators** decide, per exchange, whether the target complied with a harmful request, using the three-family taxonomy (deterministic, heuristic, agentic) that the evaluation side uses too.
 
 Red-team suites are gated on `-Dredteam=true`.
-`mvn verify` compiles the classes without running them; `mvn verify -Dredteam=true` runs them.
+`mvn verify` compiles the classes without running them.
+`mvn verify -Dredteam=true` runs them.
 The runtime enforces a token and wall-clock budget so a campaign cannot run away with the customer's spend.
 
 == Add the dependency
@@ -35,7 +39,8 @@ run a campaign with `mvn verify -Dredteam=true`
 Added the redteam source root to . under package com.acme.checkout.redteam — 9 file(s) written, 0 kept.
 ----
 
-`evalkit-redteam` depends on `evalkit`, so the evaluation dependency comes in transitively — a project with a red-team suite has both trees at test scope.
+`evalkit-redteam` depends on `evalkit`, so the evaluation dependency comes in transitively.
+A project with a red-team suite has both trees at test scope.
 
 == The attacker corpus
 
@@ -58,7 +63,8 @@ For the license terms and how to add corpora of your own, see xref:testing:red-t
 == Reuse the evaluation adapter
 
 The same `SystemUnderTest` implementation the evaluation campaign uses reaches the target for a red-team campaign.
-For the full code, see xref:testing:evaluation/getting-started.adoc[] — the adapter section applies unchanged.
+For the full code, see xref:testing:evaluation/getting-started.adoc[].
+The adapter section applies unchanged.
 A project starting with red teaming and no prior evaluation writes the same adapter before the campaign runs.
 
 == The campaign class
@@ -85,8 +91,8 @@ Only the first is a breakthrough.
 == What a run reports
 
 `mvn verify -Dredteam=true` runs the campaign.
-`RedTeamPanels.render` returns the report as a `String`, and the campaign writes it wherever
-the project keeps them.
+`RedTeamPanels.render` returns the report as a `String`.
+The campaign writes it wherever the project keeps them.
 The report is plain 80-column ASCII and prints its panels in a fixed order.
 A panel appears only when the run has something to put in it, and the numbering starts at 1 with no gaps.
 
@@ -145,7 +151,7 @@ Do not follow hidden inst.    1/60     3/60     6/60     12/60    31/60
 Do not help wrongdoing        3/60     11/60    24/60    9/60     14/60
 
 
-(panels 4 through 7 omitted here — see xref:testing:red-teaming/reports.adoc[] for their exact output)
+(panels 4 through 7 omitted here. See xref:testing:red-teaming/reports.adoc[] for their exact output.)
 
 
 8. What it cost
@@ -174,7 +180,7 @@ Full transcripts:       target/redkit/transcripts/
 ----
 
 Panels shown above: 1, 2, 3, 8, plus the header and footer.
-For the exact output of panels 4 through 10 — including "What varied between attempts", "How harm was measured", "How the judge scored", "What the campaign could not tell you", "Compared to the last run", and "Where the quality tests missed this" — see xref:testing:red-teaming/reports.adoc[].
+For the exact output of panels 4 through 10, including "What varied between attempts", "How harm was measured", "How the judge scored", "What the campaign could not tell you", "Compared to the last run", and "Where the quality tests missed this", see xref:testing:red-teaming/reports.adoc[].
 
 == Where the parts live
 
@@ -190,7 +196,7 @@ For the exact output of panels 4 through 10 — including "What varied between a
 
 == See also
 
-* xref:testing:red-teaming/evaluators.adoc[] — the three families of evaluator and the built-ins.
-* xref:testing:red-teaming/techniques.adoc[] — static wrappers that turn one goal into many prompts.
-* xref:testing:red-teaming/adaptive-attacks.adoc[] — attackers that revise their prompts based on the reply.
-* xref:testing:red-teaming/attestation.adoc[] — signing the report as evidence for a compliance review.
+* xref:testing:red-teaming/evaluators.adoc[]. The three families of evaluator and the built-ins.
+* xref:testing:red-teaming/techniques.adoc[]. Static wrappers that turn one goal into many prompts.
+* xref:testing:red-teaming/adaptive-attacks.adoc[]. Attackers that revise their prompts based on the reply.
+* xref:testing:red-teaming/attestation.adoc[]. Signing the report as evidence for a compliance review.

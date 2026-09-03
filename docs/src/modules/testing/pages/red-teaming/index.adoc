@@ -1,5 +1,5 @@
 = Red teaming
-:page-summary: A red-team suite probes an AI service for the things it should refuse — jailbreaks, prompt injections, secret leaks, PII disclosure. It reads the same target adapter the evaluation suite uses, and reports each break as its own incident.
+:page-summary: A red-team suite probes an AI service for the things it should refuse. Jailbreaks, prompt injections, secret leaks, PII disclosure. It reads the same target adapter the evaluation suite uses, and reports each break as its own incident.
 :page-when-to-use: Use when a service is exposed to attacker input. A customer-facing chat agent, a RAG system reading untrusted passages, an agent whose tools reach sensitive state.
 :page-related: xref:testing:red-teaming/getting-started.adoc[], xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/adaptive-attacks.adoc[], xref:testing:red-teaming/corpora.adoc[], xref:testing:evaluation/index.adoc[]
 :page-persona: developer
@@ -14,7 +14,8 @@ The rendered report lists each break as its own incident, grouped by hazard and 
 == Shared with evaluation
 
 Red teaming reads the same `SystemUnderTest` adapter an evaluation campaign uses.
-A project already running evaluation reaches red teaming by adding the `evalkit-redteam` dependency and a new campaign class; the target adapter carries across unchanged.
+A project already running evaluation adds red teaming by adding the `evalkit-redteam` dependency and a new campaign class.
+The target adapter carries across unchanged.
 `Rule`, `EvalCase`, `Evaluator`, `Campaign`, `Run`, `Rubric`, and `Ledger` mean the same thing in both.
 
 == Techniques
@@ -27,7 +28,8 @@ Two families ship.
 `Static` +
 A pure function on a prompt.
 The Base64 encoder, the role-play wrapper, the payload splitter across turns.
-Reproducible across runs; the same goal produces the same prompt every time.
+Reproducible across runs.
+The same goal produces the same prompt every time.
 
 `Adaptive` +
 An attacker with state.
@@ -40,8 +42,8 @@ For every technique `evalkit-redteam` ships and the design of the driver, see xr
 
 Rules and eval cases carry hazard tags from two taxonomies.
 
-*AILuminate v1.1* is the primary — twelve hazard categories the report groups by.
-*OWASP LLM Top 10 (2025)* is the secondary — ten application-security risks a security review already knows.
+*AILuminate v1.1* is the primary. Twelve hazard categories the report groups by.
+*OWASP LLM Top 10 (2025)* is the secondary. Ten application-security risks a security review already knows.
 Wire keys use the taxonomy prefix: `ailuminate:privacy`, `owasp:llm01_prompt_injection`.
 For the full lists and how each evaluator maps to them, see xref:testing:red-teaming/reference/hazards.adoc[].
 
@@ -57,7 +59,7 @@ The adapter puts the Agent in front of the runner the same way an evaluation cam
 
 == See also
 
-* xref:testing:red-teaming/getting-started.adoc[] — from an empty project through the first red-team campaign.
-* xref:testing:red-teaming/evaluators.adoc[] — the three families, the built-ins, and how to add your own.
-* xref:testing:red-teaming/reports.adoc[] — every panel of the rendered report and the attestation bundle.
-* xref:testing:evaluation/index.adoc[] — the evaluation suite that reads the same target adapter.
+* xref:testing:red-teaming/getting-started.adoc[]. From an empty project through the first red-team campaign.
+* xref:testing:red-teaming/evaluators.adoc[]. The three families, the built-ins, and how to add your own.
+* xref:testing:red-teaming/reports.adoc[]. Every panel of the rendered report and the attestation bundle.
+* xref:testing:evaluation/index.adoc[]. The evaluation suite that reads the same target adapter.

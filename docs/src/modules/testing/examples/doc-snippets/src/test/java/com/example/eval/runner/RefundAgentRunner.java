@@ -11,7 +11,7 @@ import java.util.Optional;
 
 /**
  * Reaches the customer's Akka SDK service by its ComponentClient. The adapter is one
- * interface — put the service in the state an eval case names, submit the graded turn,
+ * interface. Put the service in the state an eval case names, submit the graded turn,
  * return what came back.
  */
 // tag::class[]

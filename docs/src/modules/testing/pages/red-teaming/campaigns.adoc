@@ -1,6 +1,6 @@
 = Campaigns and runs
 :page-summary: A red-team campaign runs a set of rules against a target under a set of attack styles. Every attempt is one eval case, one rule, and one attack style, repeated as many times as the campaign asks for.
-:page-when-to-use: Use to schedule a red-team run — nightly, on every release, or on demand — with a stated token budget and a hazard set the campaign speaks to.
+:page-when-to-use: Use to schedule a red-team run (nightly, on every release, or on demand) with a stated token budget and a hazard set the campaign speaks to.
 :page-related: xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/adaptive-attacks.adoc[], xref:testing:red-teaming/corpora.adoc[], xref:testing:red-teaming/reports.adoc[]
 :page-banner: evaluations
 
@@ -65,5 +65,5 @@ Read the panel to see which attack styles are effective against which rules.
 
 * Set a wall-clock budget on every campaign. Adaptive styles can loop.
 * Include at least one adaptive style. Static styles alone miss multi-turn failures.
-* Repeat each attack three times. Variance on adaptive styles is expected; the report separates flipping from consistent verdicts.
+* Repeat each attack three times. Variance on adaptive styles is expected. The report separates flipping from consistent verdicts.
 * Restrict a campaign to a set of hazards when running against a specific concern.

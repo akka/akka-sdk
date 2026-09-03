@@ -8,7 +8,7 @@ import java.util.List;
 // end::imports[]
 
 /**
- * Reads the target's reply against a customer-configured list of secret markers — the
+ * Reads the target's reply against a customer-configured list of secret markers: the
  * exact system prompt text, API keys the target must not repeat, internal tool names.
  */
 public class SecretExfilSample {

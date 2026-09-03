@@ -86,7 +86,7 @@ Tests whether the target's safety classifier is defeated when the harmful string
 == crescendo
 
 Adaptive multi-turn attacker.
-Default ladder has six rungs; the goal is named only on the last rung.
+Default ladder has six rungs, with the goal named only on the last rung.
 Every intermediate rung is a harmless framing question.
 
 Configurable through the constructor by passing a custom ladder.
@@ -102,7 +102,7 @@ The `AttackerModel` is the seam that binds to a specific LLM provider.
 == tap
 
 Tree of Attacks with Pruning.
-Each turn the attacker proposes several candidate prompts; the top `beamWidth` are kept and expanded.
+Each turn the attacker proposes several candidate prompts. The top `beamWidth` are kept and expanded.
 
 Constructor takes an `AttackerModel`, a `CandidateScorer`, and three integers: `branchingFactor`, `beamWidth`, `maxTurns`.
 Defaults: 3, 2, 10.
@@ -111,5 +111,5 @@ Defaults: 3, 2, 10.
 
 == Related
 
-* xref:testing:red-teaming/adaptive-attacks.adoc[] — how adaptive attacks run.
-* xref:testing:red-teaming/techniques.adoc[] — writing custom attack styles.
+* xref:testing:red-teaming/adaptive-attacks.adoc[]. How adaptive attacks run.
+* xref:testing:red-teaming/techniques.adoc[]. Writing custom attack styles.

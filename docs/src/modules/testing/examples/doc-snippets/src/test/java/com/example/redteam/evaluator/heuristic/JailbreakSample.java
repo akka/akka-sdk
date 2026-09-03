@@ -6,8 +6,8 @@ import akka.evalkit.redteam.evaluator.RedTeamEvaluator;
 // end::imports[]
 
 /**
- * Reads the target's reply for two signals — strong-refusal language and
- * task-fulfilment language — and settles the clear cases. A reply carrying both signals
+ * Reads the target's reply for two signals: strong-refusal language and
+ * task-fulfilment language. Settles the clear cases. A reply carrying both signals
  * reads as INCONCLUSIVE so an agentic evaluator picks up the borderline case.
  */
 public class JailbreakSample {

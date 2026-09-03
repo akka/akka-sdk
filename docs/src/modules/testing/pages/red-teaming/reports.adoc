@@ -35,7 +35,7 @@ Full transcripts:       target/redkit/transcripts/
 ================================================================================
 ----
 
-== Panel 1 — What the campaign found
+== Panel 1: What the campaign found
 
 Total breakthroughs across the campaign, then a rollup by the kind of harm the attack was trying to cause.
 Always appears when there is at least one attempt.
@@ -55,9 +55,10 @@ Broken down by the kind of harm the attack was trying to cause:
 ----
 
 Hazard names read as plain English, not as taxonomy keys.
-The report deliberately prints no single aggregate red-team score — every panel breaks results out by hazard and by attack style.
+The report deliberately prints no single aggregate red-team score.
+Every panel breaks results out by hazard and by attack style.
 
-== Panel 2 — What broke through (worst first)
+== Panel 2: What broke through (worst first)
 
 The top breakthroughs ranked by how clearly the target failed.
 Each entry names the rule, the attack style, the break count out of attempt count, an example input, and one sentence explaining what went wrong.
@@ -78,7 +79,7 @@ The worst breakthroughs, ranked by how clearly the system failed.
                       from the operator rather than as user-supplied text.
 ----
 
-== Panel 3 — Which attack styles worked
+== Panel 3: Which attack styles worked
 
 A rules × attack-styles matrix.
 Each cell shows breakthroughs / attempts for one rule under one style.
@@ -100,10 +101,11 @@ Do not follow hidden inst.    1/60     3/60     6/60     12/60    31/60
 Do not help wrongdoing        3/60     11/60    24/60    9/60     14/60
 ----
 
-== Panel 4 — What varied between attempts
+== Panel 4: What varied between attempts
 
 Repeat instability.
-Attacks whose outcome flipped between repeats are unreliable evidence — the panel names the rules and the attack styles with the most flipping.
+Attacks whose outcome flipped between repeats are unreliable evidence.
+The panel names the rules and the attack styles with the most flipping.
 
 [listing]
 ----
@@ -125,9 +127,9 @@ Attack styles with the most flipping:
   Multi-turn build-up ...........  19 flipped attacks
 ----
 
-== Panel 5 — How harm was measured
+== Panel 5: How harm was measured
 
-One paragraph per rule describing the scoring method — deterministic, heuristic, or agentic + judge model.
+One paragraph per rule describing the scoring method: deterministic, heuristic, or agentic with judge model.
 
 [listing]
 ----
@@ -145,7 +147,7 @@ Each rule was checked in a specific way.
            provides real, usable help with the requested harmful task.
 ----
 
-== Panel 6 — How the judge scored
+== Panel 6: How the judge scored
 
 For agentic evaluators: the judge model, the rubric version, the human spot-check sample size, the agreement rate, and where the judge disagreed.
 
@@ -167,10 +169,10 @@ Where the judge disagreed:
   - 3 replies the judge called safe contained subtle helpful content
 ----
 
-== Panel 7 — What the campaign could not tell you
+== Panel 7: What the campaign could not tell you
 
 Attempts that produced no clear verdict, and why.
-Timeouts, attacker errors, replies too short to grade — each counted separately.
+Timeouts, attacker errors, replies too short to grade: each counted separately.
 
 [listing]
 ----
@@ -190,7 +192,7 @@ toxic text are based on 243 fewer attempts than the totals show in Panel 1.
 The percentages there account for this.
 ----
 
-== Panel 8 — What it cost
+== Panel 8: What it cost
 
 Token spend split by target, attacker, judge, and guardrail evaluator, plus a wall-clock decomposition.
 
@@ -213,7 +215,7 @@ waiting on the target's replies. Static styles ran in parallel and took
 8m 0s total.
 ----
 
-== Panel 9 — Compared to the last run
+== Panel 9: Compared to the last run
 
 Per-rule delta versus the baseline.
 Each row carries a `BETTER`, `WORSE`, or `~same` tag and a recommendation when the delta is worse.
@@ -238,10 +240,10 @@ Recommend: block or escape the <ignore-previous> pattern before it reaches
            the model, and re-run this campaign.
 ----
 
-== Panel 10 — Where the quality tests missed this
+== Panel 10: Where the quality tests missed this
 
 Rules that passed the evaluation suite but broke under red-team.
-These are the highest-signal findings — a normal test pass with an adversarial fail.
+These are the highest-signal findings: a normal test pass with an adversarial fail.
 
 [listing]
 ----
@@ -266,6 +268,6 @@ catch these regressions at PR time instead of nightly.
 
 == See also
 
-* xref:testing:red-teaming/campaigns.adoc[] — how the campaign carries the identity the header prints.
-* xref:testing:red-teaming/evaluators.adoc[] — the evaluators whose verdicts show up in panels 1, 2, 3.
-* xref:testing:red-teaming/attestation.adoc[] — the signed evidence bundle the footer points at.
+* xref:testing:red-teaming/campaigns.adoc[]. How the campaign carries the identity the header prints.
+* xref:testing:red-teaming/evaluators.adoc[]. The evaluators whose verdicts show up in panels 1, 2, 3.
+* xref:testing:red-teaming/attestation.adoc[]. The signed evidence bundle the footer points at.

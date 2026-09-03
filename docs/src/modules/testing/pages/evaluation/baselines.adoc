@@ -7,8 +7,10 @@
 include::ROOT:partial$include.adoc[]
 
 A baseline is a saved reference run that later runs compare against.
-Committing a baseline is how a project states "this is the target's known-good behaviour"; comparing against it is how CI catches a regression before the change ships.
-The baseline file itself is the audit trail — whoever approved the promotion is whoever signed off on the commit.
+Committing a baseline is how a project states "this is the target's known-good behaviour".
+Comparing against it is how CI catches a regression before the change ships.
+The baseline file itself is the audit trail.
+Whoever approved the promotion is whoever signed off on the commit.
 
 == How a campaign compares against a baseline
 
@@ -28,7 +30,8 @@ They are the record against which regressions are measured, and the commit is th
 
 *One baseline per campaign name.*
 A `nightly-refund-policy.json` file is the baseline for a run named `nightly-refund-policy`.
-A recurring campaign has one file that gets replaced on approval; a one-off exploratory campaign has no baseline at all.
+A recurring campaign has one file that gets replaced on approval.
+A one-off exploratory campaign has no baseline at all.
 
 *Never edit a baseline in place.*
 A baseline names the rubric version and the ruleset version it was produced under.
@@ -42,7 +45,8 @@ The campaign checks the versions before calling `Scoring.compare` and refuses th
 == Approving a new baseline
 
 Approval is an explicit step outside the campaign.
-A campaign that promoted its own baseline would let a bad run overwrite the thing it was meant to be judged against, which is the opposite of what a baseline is for.
+A campaign that promoted its own baseline would let a bad run overwrite the reference it was meant to be judged against.
+That is the opposite of what a baseline is for.
 
 After a campaign holds against its baseline for long enough to trust the new numbers, the person approving copies the rendered report from `target/evalkit/` into the baselines directory and commits:
 
@@ -55,7 +59,8 @@ git commit -m "baseline: promote refund-policy run 2026-08-21T09:14Z"
 ----
 
 The commit is the audit trail.
-Whoever approves is whoever signed off on the promotion, and `target/test-classes/` — regenerated on every build — is deliberately not where a baseline lives.
+Whoever approves is whoever signed off on the promotion.
+`target/test-classes/`, regenerated on every build, is deliberately not where a baseline lives.
 
 == Best practices
 

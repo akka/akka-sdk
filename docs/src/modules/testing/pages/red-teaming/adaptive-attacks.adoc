@@ -7,16 +7,17 @@
 include::ROOT:partial$include.adoc[]
 
 An adaptive attack chooses each next prompt from the target's last reply.
-The attacker is a stateful process — every turn reads the reply, decides how to escalate, and produces the next prompt.
+The attacker is a stateful process.
+Every turn reads the reply, decides how to escalate, and produces the next prompt.
 It runs inside `AdversaryDriver`, a durable driver that persists its state after every turn, so a JVM restart mid-attack resumes from the same state and produces the same final outcome.
 
 == The three built-in styles
 
 xref:testing:red-teaming/reference/techniques.adoc[Reference table].
 
-* `crescendo` — Step-by-step build-up over multiple turns before naming the goal.
-* `pair` — An attacker language model refines each next prompt based on the target's last reply.
-* `tap` — Tree search with pruning across attacker-proposed candidate prompts.
+* `crescendo`: Step-by-step build-up over multiple turns before naming the goal.
+* `pair`: An attacker language model refines each next prompt based on the target's last reply.
+* `tap`: Tree search with pruning across attacker-proposed candidate prompts.
 
 == The base class
 
@@ -42,14 +43,14 @@ Resuming from any saved state produces the same final outcome as an uninterrupte
 
 `DriverState` fields:
 
-* `goal` — the campaign goal.
-* `techniqueName` — which attack style is driving the loop.
-* `turnIndex` — the number of turns completed.
-* `history` — the alternating user and assistant turns.
-* `tokensSpentByAttacker` — token spend attributed to the attacker.
-* `tokensSpentByTarget` — token spend attributed to the target.
-* `wallMillisElapsed` — wall-clock time so far.
-* `outcome` — set once the loop terminates.
+* `goal`: the campaign goal.
+* `techniqueName`: which attack style is driving the loop.
+* `turnIndex`: the number of turns completed.
+* `history`: the alternating user and assistant turns.
+* `tokensSpentByAttacker`: token spend attributed to the attacker.
+* `tokensSpentByTarget`: token spend attributed to the target.
+* `wallMillisElapsed`: wall-clock time so far.
+* `outcome`: set once the loop terminates.
 
 == Termination
 

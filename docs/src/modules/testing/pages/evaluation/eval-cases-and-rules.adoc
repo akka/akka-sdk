@@ -10,13 +10,13 @@ An eval case is one test case the target reads and an evaluator settles.
 `EvalCaseResults` is one eval case together with every attempt against it.
 
 Running an eval case three times produces three attempts and one `EvalCaseResults`.
-The report reads results case by case, so a case that passes twice and fails once is one
-varied verdict rather than a mixture of passes and failures.
+The report reads results case by case.
+A case that passes twice and fails once is one varied verdict rather than a mixture of passes and failures.
 
 == The EvalCase record
 
-`EvalCase` is a Java record. Build the list in the campaign class; evalkit ships no reader
-for an on-disk format, so where a project keeps its cases is its own choice.
+`EvalCase` is a Java record. Build the list in the campaign class.
+evalkit ships no reader for an on-disk format, so where a project keeps its cases is its own choice.
 
 [source,java,indent=0]
 ----
@@ -31,8 +31,7 @@ new EvalCase(
 ----
 <1> The stable identifier the report references.
 <2> The specification node the answer should come from, when the target tracks one.
-Naming it lets the case be settled by comparison instead of by a model: a tick rather
-than a paid, slightly random opinion.
+Naming it lets the case be settled by comparison instead of by a model, avoiding a paid model call for a case with one right answer.
 <3> A `MetricRef` when this case should be settled by a named metric.
 <4> Wording the reply must contain.
 Most cases require none, and a shorter constructor omits this.
@@ -60,14 +59,14 @@ The conversation is real, so a case about the fourth turn is asked at the fourth
 
 `Fixture(String name, Map<String, String> parameters)` +
 The target puts itself into a named state.
-The target declares what it can build in `SystemUnderTest.fixtures()`, and an experiment
-setup naming one it cannot is refused before the campaign runs.
+The target declares what it can build in `SystemUnderTest.fixtures()`.
+An experiment setup naming one it cannot is refused before the campaign runs.
 
 `FailingTool(String tool, String message, EvalSetup then)` +
 A named tool is made to fail, then the wrapped eval setup runs.
 Used for cases about recovery.
-A target that cannot break the named tool causes the campaign to be refused, because
-answering with a working tool would report the system as recovering from a failure that
+A target that cannot break the named tool causes the campaign to be refused.
+Answering with a working tool would report the system as recovering from a failure that
 never happened.
 
 Only `Replay` proves the system reached the state under its own power.
@@ -80,7 +79,7 @@ Which one depends on the evaluator that settled it.
 
 `Asserted(passed, expected, actual)` +
 A deterministic evaluator compared two things.
-Both sides appear on the report row, which is why it can print `expected GenUC-16a, found GenUC-17a`.
+Both sides appear on the report row, so it can print `expected GenUC-16a, found GenUC-17a`.
 
 `Measured(metricId, metricVersion, value, threshold, passed, note)` +
 A heuristic evaluator computed a value against a threshold.
@@ -100,8 +99,8 @@ A fact about the harness, not a verdict on the system.
 The attempt itself broke.
 
 The last three are why the outcome type is not a number.
-A `double` has no way to say "this was never asked", and a report that scores absence as
-zero accuses the system of something it was never given the chance to do.
+A `double` has no way to say "this was never asked".
+A report that scores absence as zero accuses the system of something it was never given the chance to do.
 
 == From attempts to a verdict
 
@@ -110,13 +109,14 @@ values: `PASSED`, `FAILED`, `VARIED`, `UNDECIDED`, `NO_RESULT`.
 
 `VARIED` is the one worth repeating for.
 An eval case the system meets eight times in ten still passes five attempts about a third of
-the time, and one attempt cannot tell that apart from a case it always meets.
+the time.
+One attempt cannot tell that apart from a case it always meets.
 
-`UNDECIDED` and `NO_RESULT` are kept apart on purpose: a judge that would not commit and an
-attempt that produced no evidence at all are different facts about a campaign.
+`UNDECIDED` and `NO_RESULT` are kept apart on purpose.
+A judge that would not commit and an attempt that produced no evidence at all are different facts about a campaign.
 
 == See also
 
-* xref:testing:evaluation/evaluators.adoc[] — the evaluators that produce each outcome.
-* xref:testing:evaluation/campaigns.adoc[] — how eval cases are bundled into a campaign.
-* xref:testing:evaluation/reports.adoc[] — how verdicts read on the rendered report.
+* xref:testing:evaluation/evaluators.adoc[]. The evaluators that produce each outcome.
+* xref:testing:evaluation/campaigns.adoc[]. How eval cases are bundled into a campaign.
+* xref:testing:evaluation/reports.adoc[]. How verdicts read on the rendered report.

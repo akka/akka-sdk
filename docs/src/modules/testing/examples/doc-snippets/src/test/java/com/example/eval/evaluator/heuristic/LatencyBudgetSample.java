@@ -10,8 +10,8 @@ import java.time.Duration;
 
 /**
  * Reads Interaction.latency() against a stated duration budget. The scoring is
- * proportional past the pass line, so a report can tell a run that squeaked in from one
- * that walked in comfortably.
+ * proportional past the pass line, so a report can distinguish a run at the edge of the
+ * budget from one well under it.
  */
 public class LatencyBudgetSample {
 

@@ -1,6 +1,6 @@
 = Getting started with evaluation
 :page-summary: An evaluation suite scores an Akka SDK service against a dataset. It lives under src/test/java, runs as an ordinary JUnit test, and reports a pass rate with the failing cases named individually.
-:page-when-to-use: Use when a service is worth measuring — the reply's correctness, the tool usage, the latency budget, the faithfulness of a retrieved answer.
+:page-when-to-use: Use when a service is worth measuring. The reply's correctness, the tool usage, the latency budget, the faithfulness of a retrieved answer.
 :page-prerequisites: An existing Maven project. Familiarity with JUnit.
 :page-related: xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/eval-cases-and-rules.adoc[], xref:testing:evaluation/campaigns.adoc[]
 :page-banner: evaluations
@@ -9,18 +9,22 @@ include::ROOT:partial$include.adoc[]
 
 An evaluation suite is a set of JUnit tests that run a target service through a set of eval cases and score each reply against what the case expects.
 The suite lives alongside the project's other tests under `src/test/java` and reads the same dependencies at test scope.
-A campaign is one class in the suite, and its outcome is a report the CI job reads for regressions.
+A campaign is one class in the suite.
+Its outcome is a report the CI job reads for regressions.
 
 == Overview
 
 An evaluation campaign has four parts.
-The **target** is any implementation of `SystemUnderTest` — for a service on the Akka SDK, the implementation calls the service's own `ComponentClient`.
-The **dataset** is a set of `EvalCase` records, each naming an eval setup, a graded turn, and the outcome the target is expected to reach.
+The **target** is any implementation of `SystemUnderTest`.
+For a service on the Akka SDK, the implementation calls the service's own `ComponentClient`.
+The **dataset** is a set of `EvalCase` records.
+Each names an eval setup, a graded turn, and the outcome the target is expected to reach.
 The **campaign** is a JUnit test class that assembles the dataset and the target, invokes `ExperimentRunner.run(...)`, and asserts against the result.
 The **runner** in `evalkit` walks every eval case in parallel lanes and returns an `ExperimentRunner.Result` carrying what each attempt produced.
 
 The suite is a test scope dependency, so a customer's production artifact carries no evalkit code.
-Campaigns are gated on `-Deval=true` so `mvn verify` compiles the classes without running them; `mvn verify -Deval=true` runs them.
+Campaigns are gated on `-Deval=true` so `mvn verify` compiles the classes without running them.
+`mvn verify -Deval=true` runs them.
 
 == Add the dependency
 
@@ -37,15 +41,18 @@ Added the eval source root to . under package com.acme.checkout.eval — 7 file(
 ----
 
 The command is idempotent.
-Running it again on a project that already declares the dependency reports "already declares" rather than editing the pom a second time; a file the customer has since written stays untouched, and the command reports each as `kept`.
+Running it again on a project that already declares the dependency reports "already declares" rather than editing the pom a second time.
+A file the customer has since written stays untouched, and the command reports each as `kept`.
 
 The eval tree lands under `src/test/java/<groupId>.eval/`, where `<groupId>` comes from the project's `pom.xml`.
 
 == The target adapter
 
 Every campaign talks to one `SystemUnderTest`.
-The interface has two responsibilities: put the service into the state the eval case names, then submit the graded turn.
-For an Akka SDK service, the implementation calls the service's own `ComponentClient` — the same client an integration test would use.
+The interface has two responsibilities.
+Put the service into the state the eval case names, then submit the graded turn.
+For an Akka SDK service, the implementation calls the service's own `ComponentClient`.
+That is the same client an integration test would use.
 
 [source,java,indent=0]
 .RefundAgentRunner.java
@@ -55,10 +62,12 @@ include::example$doc-snippets/src/test/java/com/example/eval/runner/RefundAgentR
 <1> The `ComponentClient` is injected the same way a service's integration tests receive it.
 <2> `prepare(EvalSetup)` arranges the state an eval case names.
 A fixture named `"signed-in"` in the eval case reads the fixture handler here.
-<3> An eval setup this adapter cannot arrange returns `Prepared.Failed`, which the runner records as `NotReached` — a fact about the adapter, not a verdict on the target.
+<3> An eval setup this adapter cannot arrange returns `Prepared.Failed`.
+The runner records this as `NotReached`, a fact about the adapter, not a verdict on the target.
 <4> `submit(sessionId, userText)` speaks the graded turn.
 For an Agent, that is a `.forAgent().inSession(...).method(...).invoke(...)` call.
-<5> `fixtures()` declares the states the adapter can reach, so a campaign that names a fixture this adapter never declared is refused before running.
+<5> `fixtures()` declares the states the adapter can reach.
+A campaign that names a fixture this adapter never declared is refused before running.
 
 == The campaign class
 
@@ -71,7 +80,8 @@ JUnit reads the class the same way it reads any other test.
 include::example$doc-snippets/src/test/java/com/example/eval/campaign/RefundPolicyCampaign.java[tag=class]
 ----
 <1> The system-property gate keeps campaigns out of `mvn verify`.
-The test is compiled and JUnit knows it exists; execution needs `-Deval=true`.
+The test is compiled and JUnit knows it exists.
+Execution needs `-Deval=true`.
 <2> Every eval case names an id, an eval setup, the graded turn, and the outcome the target is expected to reach.
 <3> The experiment setup collects the cases, sets the number of parallel lanes, and names the rubric an agentic evaluator would use.
 <4> The adapter from the previous section.
@@ -82,11 +92,13 @@ The test is compiled and JUnit knows it exists; execution needs `-Deval=true`.
 == What a run reports
 
 `mvn verify -Deval=true` runs the campaign.
-`Panels.render(result.asRecord(setup, reporting))` returns the report as a `String`, and the
-campaign writes it wherever the project keeps them.
+`Panels.render(result.asRecord(setup, reporting))` returns the report as a `String`.
+The campaign writes it wherever the project keeps them.
 The report is plain 80-column ASCII and prints between four and seven panels in a fixed
-order: four always appear, three only when the run has something to put in them, and the
-numbering starts at 1 with no gaps.
+order.
+Four always appear.
+Three only when the run has something to put in them.
+The numbering starts at 1 with no gaps.
 
 The example below is the report a single-run refund-policy campaign produces (`Panels.render()` output from a six-case fixture with two passes, two failures, one undecided, and one no-result):
 
@@ -206,8 +218,8 @@ For every panel and how each column composes, see xref:testing:evaluation/report
 
 == See also
 
-* xref:testing:evaluation/evaluators.adoc[] — the three families of evaluator and the built-ins.
-* xref:testing:evaluation/eval-cases-and-rules.adoc[] — what an eval case declares, and which evaluator settles it.
-* xref:testing:evaluation/campaigns.adoc[] — building an experiment setup, and rendering a report from a run.
-* xref:testing:evaluation/reports.adoc[] — every panel of the rendered report.
-* xref:testing:evaluation/baselines.adoc[] — how to gate CI on regression.
+* xref:testing:evaluation/evaluators.adoc[]. The three families of evaluator and the built-ins.
+* xref:testing:evaluation/eval-cases-and-rules.adoc[]. What an eval case declares, and which evaluator settles it.
+* xref:testing:evaluation/campaigns.adoc[]. Building an experiment setup, and rendering a report from a run.
+* xref:testing:evaluation/reports.adoc[]. Every panel of the rendered report.
+* xref:testing:evaluation/baselines.adoc[]. How to gate CI on regression.

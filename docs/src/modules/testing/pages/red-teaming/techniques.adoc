@@ -1,6 +1,6 @@
 = Attack styles
-:page-summary: An attack style — a Technique in the SPI — is how a payload is wrapped, escalated, or delivered before it reaches the target. Static techniques are pure functions; adaptive techniques are attackers with state.
-:page-when-to-use: Use when a red-team campaign needs to broaden the attack surface — encode the payload, roleplay the request, split it across turns, or escalate on a target that resists the first prompt.
+:page-summary: An attack style (a Technique in the SPI) is how a payload is wrapped, escalated, or delivered before it reaches the target. Static techniques are pure functions. Adaptive techniques are attackers with state.
+:page-when-to-use: Use when a red-team campaign needs to broaden the attack surface. Encode the payload, roleplay the request, split it across turns, or escalate on a target that resists the first prompt.
 :page-related: xref:testing:red-teaming/adaptive-attacks.adoc[], xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/campaigns.adoc[]
 :page-banner: evaluations
 
@@ -8,7 +8,7 @@ include::ROOT:partial$include.adoc[]
 
 An attack style is how a payload is wrapped, escalated, or delivered before it reaches the target.
 Every attack style implements `Technique` in the SPI and returns one or more prompts derived from an attacker goal.
-Two kinds ship: static techniques are pure functions the runner can parallelise across the corpus, and adaptive techniques are stateful attackers the runner drives turn-by-turn.
+Two kinds ship. Static techniques are pure functions the runner can parallelise across the corpus. Adaptive techniques are stateful attackers the runner drives turn-by-turn.
 
 == Two kinds
 
@@ -25,11 +25,11 @@ See xref:testing:red-teaming/adaptive-attacks.adoc[].
 
 xref:testing:red-teaming/reference/techniques.adoc[Reference table].
 
-* `base64` — Encodes the payload as base64 and asks the target to decode and follow it.
-* `rot13` — Encodes the payload as ROT13 and asks the target to decode.
-* `multilingual` — Asks the target to translate the request into another language and answer in that language.
-* `roleplay` — Wraps the payload in a role-play frame.
-* `payload_splitting` — Splits the payload across named variables the target must join.
+* `base64`: Encodes the payload as base64 and asks the target to decode and follow it.
+* `rot13`: Encodes the payload as ROT13 and asks the target to decode.
+* `multilingual`: Asks the target to translate the request into another language and answer in that language.
+* `roleplay`: Wraps the payload in a role-play frame.
+* `payload_splitting`: Splits the payload across named variables the target must join.
 
 == The interface
 

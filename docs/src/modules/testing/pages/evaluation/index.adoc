@@ -1,5 +1,5 @@
 = Evaluation
-:page-summary: An evaluation suite runs a service against a set of eval cases and records a verdict for each. Reports carry pass rates, the cases that failed, and the cost of the run — enough for a CI job to gate a merge on regression.
+:page-summary: An evaluation suite runs a service against a set of eval cases and records a verdict for each. Reports carry pass rates, the cases that failed, and the cost of the run. A CI job can gate a merge on regression.
 :page-when-to-use: Use when a service is worth measuring. The reply's correctness, the tool usage, the latency budget, the faithfulness of a retrieved answer.
 :page-related: xref:testing:evaluation/getting-started.adoc[], xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/eval-cases-and-rules.adoc[], xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/reports.adoc[], xref:testing:red-teaming/index.adoc[]
 :page-persona: developer
@@ -9,14 +9,15 @@ include::ROOT:partial$include.adoc[]
 
 Evaluation is how a project measures a service against a stated expectation.
 A suite runs the service through a fixed set of eval cases and turns each reply into a verdict.
-The rendered report lists the failing cases one by one, and the CI job fails the build when the pass rate drops or a case that used to pass now fails.
+The rendered report lists the failing cases one by one.
+The CI job fails the build when the pass rate drops or a case that used to pass now fails.
 
 == The parts of a campaign
 
 `EvalCase` +
 A graded turn, what a correct answer does, an optional specification node or metric, and an
 optional eval setup that seeds the conversation first.
-Eval cases are Java records; evalkit ships no reader for an on-disk format.
+Eval cases are Java records. evalkit ships no reader for an on-disk format.
 
 `Evaluator` +
 One method that turns a recorded run into an outcome.
@@ -27,9 +28,9 @@ See xref:testing:evaluation/evaluators.adoc[].
 
 `EvalCaseResults` +
 One eval case together with every attempt made against it.
-Repeating a campaign produces several attempts and one `EvalCaseResults`, and the report
-reads results case by case so an eval case that passed twice and failed once is one varied
-verdict.
+Repeating a campaign produces several attempts and one `EvalCaseResults`.
+The report reads results case by case.
+An eval case that passed twice and failed once is one varied verdict.
 
 `Campaign` +
 The JUnit class that assembles the eval cases, the target and the evaluators into a named
@@ -48,11 +49,11 @@ See xref:testing:evaluation/reports.adoc[] for every panel and how the numbers c
 * xref:testing:red-teaming/index.adoc[Red teaming] runs the same target through adversarial prompts and reports each break as an incident.
 Red-team evaluators use the same three-family taxonomy the evaluation evaluators use.
 * An xref:sdk:agents.adoc[Agent] is the service being evaluated.
-A test adapter — `SystemUnderTest` — puts the Agent in front of the runner.
+A test adapter, `SystemUnderTest`, puts the Agent in front of the runner.
 
 == See also
 
-* xref:testing:evaluation/getting-started.adoc[] — from an empty project through the first campaign.
-* xref:testing:evaluation/evaluators.adoc[] — the three families, the built-ins, and how to add your own.
-* xref:testing:evaluation/reports.adoc[] — every panel of the rendered report.
-* xref:testing:red-teaming/index.adoc[] — adversarial suite that reuses the same target adapter.
+* xref:testing:evaluation/getting-started.adoc[]. From an empty project through the first campaign.
+* xref:testing:evaluation/evaluators.adoc[]. The three families, the built-ins, and how to add your own.
+* xref:testing:evaluation/reports.adoc[]. Every panel of the rendered report.
+* xref:testing:red-teaming/index.adoc[]. Adversarial suite that reuses the same target adapter.
