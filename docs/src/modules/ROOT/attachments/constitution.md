@@ -1,5 +1,8 @@
 <!--
 Sync Impact Report
+- Version change: 1.0.0 → 1.1.0
+- Amended principles:
+  - II. Design Principles: added "Right component for the job"
 - Version change: 0.0.0 (template) → 1.0.0
 - Added principles:
   - I. Akka SDK First
@@ -45,6 +48,12 @@ components and guide architectural decisions.
   concerns, enabling isolated testing and reuse.
 - **API isolation**: Endpoints MUST define their own request/response
   types rather than exposing domain internals.
+- **Right component for the job**: Component selection MUST follow the
+  decision guide in `akka-context/concepts/component-selection.html.md`.
+  The implementation plan MUST record, for each domain concept, the
+  chosen component and why the nearest alternative was rejected (Key
+  Value vs Event Sourced Entity, Workflow vs Consumer, View vs direct
+  entity read, component vs plain class).
 - **Single responsibility**: Each component MUST have a clear, focused
   purpose. Prefer multiple small components over monolithic ones.
 - **Descriptive naming**: Names MUST be domain-aligned and descriptive.
@@ -97,4 +106,4 @@ principles. It governs how specifications and plans are structured.
   increment (MAJOR for principle removal/redefinition, MINOR for new
   principles, PATCH for clarifications) and rationale.
 
-**Version**: 1.0.0 | **Ratified**: 2026-03-05 | **Last Amended**: 2026-03-05
+**Version**: 1.1.0 | **Ratified**: 2026-03-05 | **Last Amended**: 2026-09-03

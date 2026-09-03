@@ -104,6 +104,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 
 - [AI Agents](https://doc.akka.io/concepts/ai-agents.html.md): Foundational concepts for building AI agents in Akka
 - [Architecture model](https://doc.akka.io/concepts/architecture-model.html.md): How an Akka project is structured across api, application, and domain layers
+- [Component selection](https://doc.akka.io/concepts/component-selection.html.md): Decision guide for picking between components, when not to use each, and boundary rules
 - [Distributed systems](https://doc.akka.io/concepts/distributed-systems.html.md): Resilience, elasticity, and responsiveness
 - [Multi-region operations](https://doc.akka.io/concepts/multi-region.html.md): Active-active HA/DR across regions
 - [Declarative effects](https://doc.akka.io/concepts/declarative-effects.html.md): Composable, testable side effects

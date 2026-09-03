@@ -4,6 +4,7 @@
 *** Foundations
 **** xref:concepts:distributed-systems.adoc[]
 **** xref:concepts:architecture-model.adoc[]
+**** xref:concepts:component-selection.adoc[]
 **** xref:concepts:deployment-model.adoc[]
 *** State and execution
 **** xref:concepts:state-model.adoc[]

@@ -3,6 +3,8 @@ include::ROOT:partial$include.adoc[]
 
 Akka components form the backbone of the xref:concepts:architecture-model.adoc#_application[application layer], bridging your domain model with the Akka runtime. They provide specialized ways to handle state, events, and interactions, enabling you to build scalable, event-driven applications while focusing on business logic.
 
+To decide which component fits a given need, and when not to use one, see xref:concepts:component-selection.adoc[Component selection].
+
 The following components are available:
 
 xref:sdk:agents.adoc[image:ROOT:agent.png[width=40] Agents]

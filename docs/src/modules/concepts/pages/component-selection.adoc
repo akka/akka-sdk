@@ -1,0 +1,219 @@
+= Component selection
+:page-summary: A decision guide for picking between Akka components: when to use each one, when not to, and what to use instead.
+:page-when-to-use: When you are mapping a feature or domain concept to Akka components and need to decide between entities, views, workflows, consumers, agents, timers, and endpoints, or whether a component is needed at all.
+:page-related: xref:concepts:architecture-model.adoc[], xref:concepts:state-model.adoc[], xref:sdk:dev-best-practices.adoc[]
+:page-persona: Architect, Tech Lead, Senior Developer
+
+include::ROOT:partial$include.adoc[]
+
+== Overview
+
+Component selection is the decision of which Akka component implements each part of a feature, and whether a part needs a component at all. The component pages describe how each component works; this page describes how to choose between them. Most design mistakes in Akka services are not misuse of a component's API but use of the wrong component: a workflow that should have been a consumer, a key value entity where the business needed a ledger, a view that only ever serves lookups by id.
+
+Read this page before deciding the component mapping for a new feature. Each section gives the default choice, the signals that should change it, and the signs that you chose wrong.
+
+== Start from the need
+
+[cols="2,1,2", options="header"]
+|===
+| You need | Use | Do not use
+
+| State per identifiable thing, changed by commands, where the business cares about what happened over time (ledger, audit, history, downstream reactions)
+| xref:sdk:event-sourced-entities.adoc[Event Sourced Entity]
+| A Key Value Entity with a manually maintained history list
+
+| State per identifiable thing where only the latest value matters (profile, settings, document)
+| xref:sdk:key-value-entities.adoc[Key Value Entity]
+| An Event Sourced Entity if no one will ever consume the events or need the history
+
+| To find things by anything other than their id, or to list and aggregate across entities
+| xref:sdk:views.adoc[View]
+| A View for lookups by entity id; call the entity directly
+
+| A multi-step process with retries, compensation, timeouts, or a visible status
+| xref:sdk:workflows.adoc[Workflow]
+| A chain of consumers where nobody owns the outcome
+
+| To react to a fact that already happened (propagate, project, trigger a side effect)
+| xref:sdk:consuming-producing.adoc[Consumer]
+| Side effects inside an entity command handler
+
+| One LLM request-response, with tools and session memory
+| xref:sdk:agents.adoc[Agent]
+| A Workflow wrapping a single agent call
+
+| Durable model-driven work where the model decides the next step, or multi-agent coordination
+| xref:sdk:autonomous-agents.adoc[Autonomous Agent]
+| A Workflow trying to encode a dynamic investigation as fixed steps
+
+| To run something once later, or on a schedule
+| xref:sdk:timed-actions.adoc[Timed Action]
+| A Workflow that exists only to wait and call one method
+
+| To expose an API to browsers or external clients, serve a UI, or push updates (SSE, WebSocket)
+| xref:sdk:http-endpoints.adoc[HTTP Endpoint]
+| A gRPC endpoint for a browser-facing API
+
+| A typed, high-performance service-to-service contract with schema evolution
+| xref:sdk:grpc-endpoints.adoc[gRPC Endpoint]
+| Hand-rolled JSON contracts between your own services when a proto contract would serve better
+
+| To expose tools, resources, or prompts to LLM clients
+| xref:sdk:mcp-endpoints.adoc[MCP Endpoint]
+| An MCP endpoint for human or programmatic clients; that is what HTTP and gRPC endpoints are for
+
+| Validation, calculation, transformation: logic with no state of its own
+| A plain Java class in the `domain` package
+| Any component at all
+|===
+
+The sections below explain the decisions where two components are close alternatives.
+
+== Key Value Entity or Event Sourced Entity
+
+Both are entities: durable state per id, single writer, strong consistency per instance. The difference is what is persisted. An Event Sourced Entity persists the facts (events) and derives state from them. A Key Value Entity persists only the latest state.
+
+Start from the events. If the specification talks about things that happen (order placed, funds withdrawn, item shipped) and other parts of the system, or the business, care about those happenings, use an Event Sourced Entity.
+
+Use an *Event Sourced Entity* when any of these hold:
+
+* The business needs a record of what happened: a ledger, an audit trail, compliance, dispute resolution. A wallet or account without a transaction history is usually a requirements bug, not a simplification.
+* Other components or services must react to the individual changes. Events carry intent (`ItemAdded`, `PaymentDeclined`); a state update only says "it is different now".
+* You expect more than one read model. Several views can each project the same events differently.
+* You may need to add projections later over data that already exists. Events keep the full history to rebuild from; a Key Value Entity's past states are gone.
+
+Use a *Key Value Entity* when all of these hold:
+
+* Only the current value matters. Nobody asks "how did it get this way".
+* Reactions to changes, if any, only need the new state. Consumers and views can subscribe to Key Value Entity state changes, but they receive the whole state, not what changed or why.
+* The state is a natural document: user preferences, a device registration, a session, a draft.
+
+Signs you chose wrong:
+
+* A Key Value Entity whose state contains a growing `List<HistoryEntry>`: that is event sourcing implemented by hand, without replay, projections, or size control. Use an Event Sourced Entity.
+* An Event Sourced Entity with one `StateChanged` event that carries the whole new state: that is a Key Value Entity written as an Event Sourced Entity. Either model real domain events or switch.
+
+== View, or query the entity directly
+
+If you have the entity id, do not create a View. Call the entity with the xref:sdk:component-and-service-calls.adoc[ComponentClient] and return its state from a read command handler. That read is strongly consistent and needs no extra component.
+
+Use a *View* only when you need to:
+
+* find entities by an attribute other than their id (all users in a region, orders by customer),
+* list, sort, paginate, or aggregate across many entity instances, or
+* combine data from several entity types or from a topic into one queryable shape.
+
+Views are eventually consistent: they update after the entity persists, not in the same transaction. Never read your own write through a View in the same request that made the write. If an endpoint writes to an entity and must return the result, return it from the entity command's reply.
+
+Signs you chose wrong:
+
+* A View whose only query is `WHERE id = :id`.
+* An endpoint that writes to an entity, then immediately queries a View for what it just wrote, and "sometimes returns stale data".
+* One View per endpoint method. Views are read models for access patterns, not per-request adapters.
+
+== Workflow orchestration or Consumer choreography
+
+Both implement long-running business processes across components and services. The xref:sdk:dev-best-practices.adoc#saga-patterns[saga patterns] section describes the two shapes. The choice in practice:
+
+Use a *Workflow* when the process is itself a domain concept: it has a name ("funds transfer", "onboarding"), a status someone can ask for, an owner, and an end. Workflows give you per-step retries, timeouts, compensation on failure, durable progress, and one place to inspect when the process is stuck.
+
+Use *Consumers* (choreography) when the "process" is really independent reactions to facts: the email service sends a welcome mail when a user registers, the search index updates when a product changes. No step needs to know about the others, there is nothing to compensate, and no one asks "how far along is it".
+
+Guidelines:
+
+* If you find yourself asking "what is the status of X" and X is not an entity, X is probably a workflow.
+* If removing one of the reactions would not break the others, they are reactions: use consumers. If the steps only make sense together and failures must undo earlier steps, that is orchestration: use a workflow.
+* A workflow with a single step that calls one component is not a process. Use a consumer, or call the component directly.
+* A chain of consumers where each one exists only to trigger the next is an implicit workflow: its state machine is spread across several components and it has no compensation path. Replace the chain with a workflow.
+* The two combine: a workflow orchestrates the main flow, and consumers handle independent side effects triggered by the events the flow produces.
+
+A Consumer can start a workflow. The common shape: an entity persists an event, a consumer reacts and calls the workflow's start command via the `ComponentClient`. Use the entity id (or a value derived from it) as the workflow id to get idempotent starts under redelivery.
+
+== Consumer, or a direct call
+
+Inside one request, when the caller needs the result to proceed, make a direct synchronous call with the `ComponentClient`. Do not introduce a topic or consumer between two components just to "decouple" a call whose result the caller must have anyway.
+
+Move work to a *Consumer* when it is a reaction to a persisted fact rather than part of the command:
+
+* Side effects never belong in entity command handlers or in `.thenReply()`. The entity's responsibility ends when the event is persisted; a consumer reacts to the event and performs the side effect with at-least-once delivery. This keeps the side effect out of the write path and retries it independently of the original request.
+* Fan-out: several independent reactions to the same event should be several consumers, not additional calls in the command handler.
+
+The consequence of choosing the consumer path: delivery is at-least-once, so the reaction must be idempotent. See xref:sdk:dev-best-practices.adoc#message-deduplication[message deduplication].
+
+== Timed Action or Workflow timer
+
+Use a *Timed Action* for a scheduled call: expire a reservation in 30 minutes, retry a cleanup nightly. It is stateless and lightweight, and the timer survives restarts. Keep the payload a reference (an entity id, under 1 KB), and let the called component decide whether the action is still relevant.
+
+Use a *Workflow* when the delay is a step inside a process: waiting for a payment confirmation with a deadline, pausing until an external system calls back. A workflow can pause and resume, keeps the surrounding state, and handles the timeout through its recovery and compensation strategy.
+
+Do not build a workflow whose only content is "wait, then call one method"; that is a Timed Action. Do not chain timed actions to simulate a multi-step process; that is a workflow.
+
+== Agent, Autonomous Agent, or a Workflow around agents
+
+This decision is covered in depth in xref:sdk:agents.adoc[Agents] ("When to use" and "When not to use"), xref:sdk:autonomous-agents.adoc[Autonomous Agents] ("When to use an Autonomous Agent"), and xref:sdk:agents/orchestrating.adoc[Orchestrating agents]. The short form:
+
+* A fixed sequence of steps, each with at most one model call: request-based *Agents*, orchestrated by a *Workflow* if there is more than one step.
+* The model decides what to consult or do next, or agents must coordinate (delegation, handoff, teams): *Autonomous Agent*.
+* No language understanding or generation involved: no agent at all. Entities, workflows, and plain code do not need a model to move data around.
+
+== HTTP, gRPC, or MCP endpoint
+
+Endpoints are the API layer; pick by who calls you:
+
+* Browsers, external partners, webhooks, server-sent events, WebSockets, or a served UI: *HTTP Endpoint*. See xref:sdk:web-applications.adoc[] for when to serve the front-end from the service versus hosting it separately.
+* Your own services or other teams' services, with a typed contract that evolves: *gRPC Endpoint* is the better service-to-service default; HTTP is fine when the consumers prefer REST.
+* LLM clients that discover and call tools: *MCP Endpoint*. It is for models, not people; do not route human or programmatic API traffic through it, and do not expose MCP tools that merely duplicate your HTTP API unless agents actually need them.
+
+One service can expose several endpoint types over the same application layer. The endpoint should stay thin either way: request and response types of its own, `ComponentClient` calls inward, no business logic.
+
+== The boundary with the outside world
+
+=== Durable or in memory
+
+Not every value needs a component. Persist state in an entity or workflow when it:
+
+* must survive a restart, a redeploy, or relocation of the service instance,
+* is a business fact someone could ask about later, or that another component reacts to,
+* must be written exactly once and audited, or
+* accumulates across requests (a cart, a counter, a session with memory).
+
+Compute in memory, per request, when the value is derivable from its inputs: transformations of a query result, formatting, totals over data you just read, request validation. An endpoint method doing pure computation on the data it fetched is correct design, not a missing component.
+
+Three corollaries:
+
+* Endpoints are stateless; a new instance serves each request. Never cache business state in endpoint fields.
+* Entities are already your in-memory cache: active entities are held in memory by the runtime and the state is durable. Do not add Redis or a caching layer in front of your own entities.
+* Large binaries (images, PDFs, exports) go in object storage via `ObjectStorageProvider`, with the reference in entity state. See xref:sdk:integrations/object-storage.adoc[] and the size limits in xref:sdk:dev-best-practices.adoc[Design considerations].
+
+=== In-process or over the network
+
+Within one service, always use the `ComponentClient`. Never call your own service's HTTP endpoints from inside the service; that turns an in-process call into a network round trip through the API layer, loses type safety, and applies your own ACLs to yourself.
+
+Between Akka services in the same project, prefer, in order:
+
+1. *Service-to-service eventing* when the consumer reacts to facts and eventual consistency is acceptable. It is brokerless and survives the producer being down.
+2. *HTTP or gRPC with the service name* via `HttpClientProvider` or `GrpcClientProvider` when the caller needs an answer now. Akka routes, encrypts, and authenticates the call.
+
+Do not split components into separate services to make them "independent" when they change together and call each other synchronously; that adds network failure modes without adding autonomy. Split along bounded contexts, per xref:sdk:dev-best-practices.adoc[Design considerations]. Inside one service, component-to-component calls stay in process; across services they are remote calls, with the latency and failure modes of the network.
+
+=== Not everything is a component
+
+Reserve components for what needs their guarantees: durable identity-keyed state (entities), durable processes (workflows), subscriptions (consumers), schedules (timed actions), model interactions (agents), or an API surface (endpoints).
+
+Everything else is plain Java:
+
+* Business rules, calculations, and validation: records and classes in the `domain` package, unit-testable without the runtime.
+* Stateless helpers and clients for third-party APIs: plain classes, constructor-injected into the components that use them.
+* Agent tools: ordinary methods and classes; a tool class is not a component (though entities, views, and workflows can also serve as tools).
+
+If a candidate "component" has no state to persist, nothing to subscribe to, no schedule, and no API to expose, it is a class.
+
+=== Calling third-party services
+
+Where an outbound call to a non-Akka system belongs depends on who needs it and what must happen when it fails:
+
+* In an *endpoint* when the caller is waiting and a failure should just fail the request.
+* In a *workflow step* when the call is part of a durable process and needs retries, timeouts, or compensation. This is the default for calls that must not be lost.
+* In a *consumer* when the call propagates a fact outward (sync to a CRM, notify an external system). At-least-once delivery applies, so make it idempotent or deduplicate.
+* As an *agent tool* when the model decides whether to call it.
+* Never inside an entity command or event handler. Entities must not perform blocking I/O; persist the event and let a consumer or workflow make the external call.
