@@ -83,6 +83,8 @@
         <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
 
         <protobuf-java.version>REPLACED_BY_BUILD</protobuf-java.version>
+        <jackson.version>REPLACED_BY_BUILD</jackson.version>
+        <jackson-annotations.version>REPLACED_BY_BUILD</jackson-annotations.version>
     </properties>
 
     <build>
@@ -755,6 +757,45 @@
                 <groupId>io.akka</groupId>
                 <artifactId>akka-runtime-dev_2.13</artifactId>
                 <version>${akka-runtime.version}</version>
+            </dependency>
+            <!-- The runtime provides Jackson, and its version takes precedence on the deployed
+                 classpath. Hold the whole module family at that version so that a transitive
+                 dependency, such as a langchain4j model provider, cannot pull a service onto a
+                 newer Jackson than the runtime can load. -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson-annotations.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-parameter-names</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-scala_2.13</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
