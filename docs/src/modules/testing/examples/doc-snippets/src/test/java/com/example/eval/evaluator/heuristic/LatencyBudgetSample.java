@@ -1,7 +1,7 @@
-package com.example.eval.scorer.heuristic;
+package com.example.eval.evaluator.heuristic;
 
 // tag::imports[]
-import akka.evalkit.core.domain.Observation;
+import akka.evalkit.core.domain.EvalContext;
 import akka.evalkit.core.domain.RunOutcome;
 import akka.evalkit.core.metric.LatencyBudget;
 
@@ -15,13 +15,13 @@ import java.time.Duration;
  */
 public class LatencyBudgetSample {
 
-    // tag::scorer[]
-    public RunOutcome score(Observation observation) {
-        var scorer = LatencyBudget.within(Duration.ofSeconds(2)); // <1>
+    // tag::evaluator[]
+    public RunOutcome score(EvalContext evalContext) {
+        var evaluator = LatencyBudget.within(Duration.ofSeconds(2)); // <1>
 
-        return scorer.score(observation); // <2>
+        return evaluator.score(evalContext); // <2>
     }
-    // end::scorer[]
+    // end::evaluator[]
 
     // tag::interpret[]
     public String describe(RunOutcome outcome) {

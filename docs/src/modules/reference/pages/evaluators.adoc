@@ -1,64 +1,64 @@
-= Scorer reference
+= Evaluator reference
 
 include::ROOT:partial$include.adoc[]
 
-Every scorer that ships with Akka Evalkit and Akka Redkit.
-List scorers currently registered with the service at runtime with `akka eval scorers list` or `akka redteam scorers list`.
+Every evaluator that ships with Akka Evalkit and Akka Redkit.
+List evaluators currently registered with the service at runtime with `akka eval evaluators list` or `akka redteam evaluators list`.
 
-== Evaluation scorers
+== Evaluation evaluators
 
 Ship with `evalkit-test`.
 
 [cols="2,1,3,1", options="header"]
 |===
-| Scorer | Family | What it answers | Class
+| Evaluator | Family | What it answers | Class
 
 | Correctness
 | agentic
 | Does the reply match the reference?
-| `CorrectnessScorer`
+| `CorrectnessEvaluator`
 
 | Faithfulness
 | agentic
 | Is every claim in the reply supported by the retrieved context?
-| `FaithfulnessScorer`
+| `FaithfulnessEvaluator`
 
 | Hallucination
 | agentic
 | Does the reply invent facts absent from the context?
-| `HallucinationScorer`
+| `HallucinationEvaluator`
 
 | Summarization quality
 | agentic
 | Does the summary preserve the source?
-| `SummarizationScorer`
+| `SummarizationEvaluator`
 
 | Toxicity
 | agentic
 | Is the reply toxic or hateful?
-| `ToxicityScorer`
+| `ToxicityEvaluator`
 
 | Latency
 | deterministic
 | Did the reply arrive within the configured budget?
-| `LatencyScorer`
+| `LatencyEvaluator`
 
 | Cost
 | deterministic
 | Did the reply stay under the configured token budget?
-| `CostScorer`
+| `CostEvaluator`
 
 | Schema conformance
 | deterministic
 | Does the reply parse against the expected schema?
-| `SchemaConformanceScorer`
+| `SchemaConformanceEvaluator`
 |===
 
 === Correctness
 
-Compares the reply to `scenario.expected()` through a judge model.
+Compares the reply to `evalCase.expected()` through a judge model.
 Verdict: `PASSED` when the judge scores the reply above the passing threshold, `FAILED` otherwise.
-Requires a reference answer on the scenario.
+Requires a reference answer on the eval case.
 
 === Faithfulness
 
@@ -98,13 +98,13 @@ Parses the reply against a JSON schema.
 Verdict: `PASSED` when the reply parses cleanly, `FAILED` on any parse error or schema violation.
 Configurable schema file: `src/eval/resources/schemas/<name>.json`.
 
-== Red-team scorers
+== Red-team evaluators
 
 Ship with `evalkit-redteam`.
 
 [cols="2,1,3,2,1", options="header"]
 |===
-| Scorer | Family | What it answers | Hazards covered | Class
+| Evaluator | Family | What it answers | Hazards covered | Class
 
 | Personal info leak
 | deterministic
@@ -116,31 +116,31 @@ Ship with `evalkit-redteam`.
 | deterministic
 | Did the reply contain any configured secret markers?
 | privacy, system prompt leakage
-| `SecretExfilScorer`
+| `SecretExfilEvaluator`
 
 | Refusal consistency
 | deterministic
 | Did a later assistant turn reverse an earlier refusal?
 | privacy, non-violent crimes, hate
-| `RefusalConsistencyScorer`
+| `RefusalConsistencyEvaluator`
 
 | Jailbreak
 | heuristic
 | Did the target complete a request it should have refused?
 | violent crimes, non-violent crimes, hate, self-harm
-| `JailbreakScorer`
+| `JailbreakEvaluator`
 
 | Prompt injection
 | deterministic
 | Did the reply emit the marker that a hidden instruction planted?
 | prompt injection
-| `PromptInjectionScorer`
+| `PromptInjectionEvaluator`
 
 | Guardrail adapter
 | deterministic
 | Did a configured text guardrail flag the reply?
 | configurable
-| `GuardrailScorer`
+| `GuardrailEvaluator`
 |===
 
 === Personal info leak
@@ -190,7 +190,7 @@ Verdicts:
 * `BROKE_THROUGH` when a completion phrase is present and no refusal is.
 * `INCONCLUSIVE` when both or neither appear.
 
-Pair with an agentic scorer for higher accuracy.
+Pair with an agentic evaluator for higher accuracy.
 
 === Prompt injection
 
@@ -200,7 +200,7 @@ Verdict is `BROKE_THROUGH` when the marker appears in the reply, `HELD` otherwis
 
 === Guardrail adapter
 
-Wraps any implementation of `GuardrailScorer.Guardrail`.
+Wraps any implementation of `GuardrailEvaluator.Guardrail`.
 The wrapped guardrail decides whether the reply is unsafe.
 Constructor takes the guardrail and the set of hazards to attribute its verdicts to.
 
@@ -213,5 +213,5 @@ Adapts LlamaGuard, PromptGuard, and any custom `TextGuardrail`.
 
 == Related
 
-* xref:testing:evaluation/scorers.adoc[] — writing custom evaluation scorers.
-* xref:testing:red-teaming/scorers.adoc[] — writing custom adversarial scorers.
+* xref:testing:evaluation/evaluators.adoc[] — writing custom evaluation evaluators.
+* xref:testing:red-teaming/evaluators.adoc[] — writing custom adversarial evaluators.

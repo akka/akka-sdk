@@ -1,14 +1,14 @@
 package com.example.eval.campaign;
 
 // tag::imports[]
-import akka.evalkit.core.application.CampaignRunner;
-import akka.evalkit.core.domain.CampaignPlan;
+import akka.evalkit.core.application.ExperimentRunner;
+import akka.evalkit.core.domain.EvalCase;
+import akka.evalkit.core.domain.EvalSetup;
+import akka.evalkit.core.domain.ExperimentSetup;
 import akka.evalkit.core.domain.Grade;
 import akka.evalkit.core.domain.Lanes;
-import akka.evalkit.core.domain.Precursor;
 import akka.evalkit.core.domain.Rubric;
 import akka.evalkit.core.domain.RunOutcome;
-import akka.evalkit.core.domain.Scenario;
 import akka.evalkit.core.domain.SystemUnderTest;
 
 import java.util.List;
@@ -30,26 +30,26 @@ public class RefundPolicyCampaign {
 
     @Test
     void refundPolicyHoldsUp() {
-        var scenarios = List.of( // <2>
-            new Scenario(
+        var cases = List.of( // <2>
+            new EvalCase(
                 "refund-timing",
                 Optional.empty(),
-                Precursor.Fixture.named("signed-in"),
+                EvalSetup.Fixture.named("signed-in"),
                 "when do I get my refund?",
                 "the reply states a 30-day refund window"));
 
-        var plan = new CampaignPlan( // <3>
+        var setup = new ExperimentSetup( // <3>
             "refund-policy",
-            scenarios,
+            cases,
             Lanes.of(2),
-            Rubric.load("scenario-judge", 3));
+            Rubric.load("case-judge", 3));
 
         SystemUnderTest target = new RefundAgentTarget(); // <4>
 
-        CampaignRunner.Judge judge = (transcript, rubric) -> // <5>
-            new RunOutcome.Scored(Grade.of(transcript.scenarioName(), rubric, 9, "states 30 days"));
+        ExperimentRunner.Judge judge = (transcript, rubric) -> // <5>
+            new RunOutcome.Scored(Grade.of(transcript.caseName(), rubric, 9, "states 30 days"));
 
-        var result = CampaignRunner.run(plan, target, judge); // <6>
+        var result = ExperimentRunner.run(setup, target, judge); // <6>
 
         assertThat(result.report().passRate()).isGreaterThan(0.9); // <7>
     }
@@ -57,7 +57,7 @@ public class RefundPolicyCampaign {
 // end::class[]
 
 class RefundAgentTarget implements SystemUnderTest {
-    @Override public Prepared prepare(Precursor precursor) { return new Prepared.Ready("s", ""); }
+    @Override public Prepared prepare(EvalSetup evalSetup) { return new Prepared.Ready("s", ""); }
     @Override public Reply submit(String sessionId, String userText) { return Reply.of("the refund window is 30 days"); }
     @Override public java.util.Map<String, String> fixtures() { return java.util.Map.of("signed-in", "signed in"); }
 }

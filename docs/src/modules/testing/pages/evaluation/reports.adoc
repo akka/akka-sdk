@@ -1,7 +1,7 @@
 = Reports
 :page-summary: An evaluation report prints between four and seven panels in a fixed order. Each panel answers one question about the run — what passed, what failed, what varied between repeats, how quality was measured, how the judge scored, what the run could not tell you, and what it cost.
 :page-when-to-use: Read on every failing case in CI, and on every intentional target change before shipping. The report is what a reviewer reads to tell whether the run passed.
-:page-related: xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/baselines.adoc[]
+:page-related: xref:testing:evaluation/campaigns.adoc[], xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/baselines.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
@@ -14,8 +14,8 @@ order they appear.
 Four always print: what the run found, how quality was measured, what it cannot tell you,
 and what it cost.
 Three are conditional, and a panel with nothing to say is left out with the numbering
-closing the gap: the failed panel when any requirement failed, the varied panel when
-`repeating(N > 1)` produced a varied requirement, and the judge panel when anything was
+closing the gap: the failed panel when any eval case failed, the varied panel when
+`repeating(N > 1)` produced a varied verdict, and the judge panel when anything was
 judged.
 
 "What it cannot tell you" always prints, including when it has nothing to report. A report
@@ -33,15 +33,15 @@ Carries the run identity, the target build, the ruleset version, the rubric vers
 Refund policy evaluation
 --------------------------------------------------------------------------
   run      2026-08-11T09:14Z           system   claims-svc 4.2.0
-  rules    refund-desk v3              rubric   scenario-judge v3
-  scope    6 requirements, 6 runs
+  rules    refund-desk v3              rubric   case-judge v3
+  scope    6 cases, 6 attempts
   record   target/evalkit/refund-policy.jsonl
 --------------------------------------------------------------------------
 ----
 
 == Panel 1 — What the run found
 
-Total requirements, broken down by verdict.
+Total cases, broken down by verdict.
 Always appears.
 
 [listing]
@@ -54,21 +54,21 @@ Always appears.
   undecided         #######                                     1
   no result         #######                                     1
 
-  In this run, each requirement ran once. Undecided means that a result was in
+  In this run, each case ran once. Undecided means that a result was in
   a judge's middle confidence. No result means the run stopped before there
   was an answer to score.
 
-  One run cannot tell a requirement the system meets from one it happened to
-  meet. Five runs would show a requirement holds at least 55% of the time,
-  twenty runs at least 86%, fifty at least 94%.
+  One attempt cannot tell a case the system meets from one it happened to
+  meet. Five attempts would show a case holds at least 55% of the time,
+  twenty attempts at least 86%, fifty at least 94%.
 ----
 
-When `repeating(N > 1)` runs the same requirement N times, the labels read `passed every run` and `failed every run`, and a `varied` row appears above `undecided`.
+When `repeating(N > 1)` runs the same case N times, the labels read `passed every attempt` and `failed every attempt`, and a `varied` row appears above `undecided`.
 
 == Panel 2 — What failed
 
-Every failing requirement, listed one per line with the id and the scorer's own reason.
-Appears only when any requirement failed.
+Every failing case, listed one per line with the id and the evaluator's own reason.
+Appears only when any case failed.
 
 [listing]
 ----
@@ -78,33 +78,33 @@ Appears only when any requirement failed.
      refund-14d            expected GenUC-16a, found GenUC-17a
      tool-scope            tool-permission v1: scored 0.50, needed 1.00
 
-  Every requirement that failed, and what the scorer said about it. A scorer
+  Every case that failed, and what the evaluator said about it. An evaluator
   that computes a number reports the number it got and the number it needed.
 ----
 
-== Panel 3 — The requirements that gave different answers between runs
+== Panel 3 — The cases that gave different answers between attempts
 
-Appears only when `repeating(N > 1)` produced any varied requirement.
-Each varied requirement shows a fixed-width run strip: `+` for a run that passed, `-` for one that failed, in the order they were started.
+Appears only when `repeating(N > 1)` produced any varied verdict.
+Each varied case shows a fixed-width attempt strip: `+` for an attempt that passed, `-` for one that failed, in the order they were started.
 
 [listing]
 ----
-3  The requirements that gave different answers between runs
-------------------------------------------------------------
+3  The cases that gave different answers between attempts
+---------------------------------------------------------
 
-  There was 1 varied requirement.
+  There was 1 varied case.
 
-     requirement         + passed   - failed  settled by            runs passed
-     --------------------------------------------------------------------------
-     flaky               + - + - +            specification node         3 of 5
+     case                + passed   - failed  settled by            attempts passed
+     ------------------------------------------------------------------------------
+     flaky               + - + - +            specification node          3 of 5
 
-  Each mark is one run, in the order they were started.
+  Each mark is one attempt, in the order they were started.
 
-  A requirement settled by comparison that varies means the system is giving
+  A case settled by comparison that varies means the system is giving
   different answers to the same question.
 ----
 
-At larger repeat counts each mark covers several runs (`+` when more than half of them passed) so the column stays the same width from 5 runs to 500.
+At larger repeat counts each mark covers several attempts (`+` when more than half of them passed) so the column stays the same width from 5 attempts to 500.
 
 == Panel 4 — How quality was measured
 
@@ -118,7 +118,7 @@ One row per quality measure the campaign shipped, with a stacked bar of `#`/`x`/
            # passed   x failed   ~ varied   ? unsettled
 
      specification node      #########xxxxxxxxx             2
-     scenario judge          #########?????????????????     3
+     case judge              #########?????????????????     3
      required wording                                       0
      task completion                                        0
      tool permission         xxxxxxxxx                      1
@@ -132,9 +132,9 @@ One row per quality measure the campaign shipped, with a stacked bar of `#`/`x`/
      step efficiency                                        0
 
   Quality measures are specific to the use case being executed. Counts reflect
-  the number of requirements a quality measure checked. Varied means the same
-  requirement got a different verdict on different runs. Unsettled means the
-  judge was undecided or the run produced nothing.
+  the number of cases a quality measure checked. Varied means the same
+  case got a different verdict on different attempts. Unsettled means the
+  judge was undecided or the attempt produced nothing.
 ----
 
 A measure the campaign never touched still prints as a zero row.
@@ -142,7 +142,7 @@ The panel is a full inventory, so nothing gets missed by omission.
 
 == Panel 5 — How the judge scored
 
-Appears only when any requirement was judged.
+Appears only when any case was judged.
 Prints a horizontal bar of `#` glyphs per score from 10 down to 1, grouped into three bands the rubric declares.
 
 [listing]
@@ -164,7 +164,7 @@ Prints a horizontal bar of `#` glyphs per score from 10 down to 1, grouped into 
       1                                        0
      ..... failed, 3 and below .................... 0
 
-  Models scored 3 requirements from 1 to 10, with 10 being very confident.
+  Models scored 3 cases from 1 to 10, with 10 being very confident.
 
   The judge agrees with a human reviewer 89-91% of the time on clear-cut
   replies and 53% of the time on borderline ones.
@@ -172,21 +172,21 @@ Prints a horizontal bar of `#` glyphs per score from 10 down to 1, grouped into 
 
 == Panel 6 — What this run cannot tell you
 
-Runs that stopped before the system produced an answer, split by cause.
-Also lists any requirements the coverage declaration excluded from this run.
+Attempts that stopped before the system produced an answer, split by cause.
+Also lists any cases the coverage declaration excluded from this run.
 
 [listing]
 ----
 6  What this run cannot tell you
 --------------------------------
 
-  These runs stopped before the system produced an answer to score.
+  These attempts stopped before the system produced an answer to score.
 
      never reached the question                    0
      no reply within 45 seconds                    1
      the judge would not score the answer          0
 
-  These requirements were left out of this run.
+  These cases were left out of this run.
 
      booking changes                               14
 
@@ -207,7 +207,7 @@ Token spend split by target and judge, plus a latency distribution across five f
      the judge                         7,628 in       948 out
      total                            77,628 in     4,948 out
 
-  Tokens the system and the judge sent and received across all 6 runs.
+  Tokens the system and the judge sent and received across all 6 attempts.
 
      under 5s      ##########################    2
      5 to 15s      #############                 1
@@ -215,8 +215,8 @@ Token spend split by target and judge, plus a latency distribution across five f
      30 to 45s     #############                 1
      over 45s      #############                 1
 
-  How long the system took to answer, over 5 runs. 1 came within 15 seconds of
-  the 45 second timeout and 1 exceeded it, which is counted as no reply. Runs
+  How long the system took to answer, over 5 attempts. 1 came within 15 seconds of
+  the 45 second timeout and 1 exceeded it, which is counted as no reply. Attempts
   were executed 4 at a time, so these times include waiting for a free lane.
 ----
 
@@ -225,5 +225,5 @@ If any model call did not report its token usage, the panel appends: _"N model r
 == See also
 
 * xref:testing:evaluation/campaigns.adoc[] — how a campaign carries the identity the header prints.
-* xref:testing:evaluation/scorers.adoc[] — the scorers whose measures show up in panel 4 and whose reasons show up in panel 2.
+* xref:testing:evaluation/evaluators.adoc[] — the evaluators whose measures show up in panel 4 and whose reasons show up in panel 2.
 * xref:testing:evaluation/baselines.adoc[] — how a run compares against a saved reference.

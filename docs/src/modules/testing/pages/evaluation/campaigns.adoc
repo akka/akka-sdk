@@ -1,50 +1,50 @@
 = Campaigns and runs
-:page-summary: A campaign is a named set of scenarios that run together against one target. A run is one execution of it, and what the run produced is what a report is rendered from.
-:page-when-to-use: Use when a set of scenarios needs to run repeatedly, when verdicts need to compare across builds, or when recorded interactions are scored again without calling the target.
-:page-related: xref:testing:evaluation/scorers.adoc[], xref:testing:evaluation/scenarios-and-rules.adoc[], xref:testing:evaluation/remote-campaigns.adoc[], xref:testing:evaluation/baselines.adoc[], xref:testing:evaluation/reports.adoc[]
+:page-summary: A campaign is a named set of eval cases that run together against one target. A run is one execution of it, and what the run produced is what a report is rendered from.
+:page-when-to-use: Use when a set of eval cases needs to run repeatedly, when verdicts need to compare across builds, or when recorded interactions are scored again without calling the target.
+:page-related: xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/eval-cases-and-rules.adoc[], xref:testing:evaluation/remote-campaigns.adoc[], xref:testing:evaluation/baselines.adoc[], xref:testing:evaluation/reports.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
-A campaign is a named set of scenarios that runs together against one target.
+A campaign is a named set of eval cases that runs together against one target.
 A run is one execution of it.
-Each scenario becomes one requirement in the result, carrying every run of that scenario,
-and the report is rendered from those requirements rather than stored beside them.
+Each eval case becomes one `EvalCaseResults` in the result, carrying every attempt of that
+case, and the report is rendered from those results rather than stored beside them.
 
-== The campaign plan
+== The experiment setup
 
-`CampaignPlan` is a record. Build it with its constructor, then two methods return a plan
-with one thing changed.
+`ExperimentSetup` is a record. Build it with its constructor, then two methods return a
+setup with one thing changed.
 
 [source,java,indent=0]
 ----
-var plan = new CampaignPlan(
+var setup = new ExperimentSetup(
         "refund-flow",                          // <1>
-        scenarios,                              // <2>
+        cases,                                  // <2>
         Lanes.of(4),                            // <3>
-        Rubric.load("scenario-judge", 3))       // <4>
+        Rubric.load("case-judge", 3))           // <4>
     .under(Policy.load("refund-desk", 1))       // <5>
     .repeating(3);                              // <6>
 ----
 <1> The name is the stable key reports and baselines join on.
 Lowercase, hyphen-separated by convention.
-<2> A `List<Scenario>`.
-Read them from wherever the project keeps them; `ScenarioSource` is the interface for
+<2> A `List<EvalCase>`.
+Read them from wherever the project keeps them; `EvalSource` is the interface for
 paging a large set, and a project supplies its own implementation.
-<3> How many scenarios run at once. See <<_lanes>>.
+<3> How many cases run at once. See <<_lanes>>.
 <4> The rubric the judge scores against, loaded from
-`eval/rubrics/scenario-judge-v3.txt` on the classpath.
+`eval/rubrics/case-judge-v3.txt` on the classpath.
 <5> `under(Policy)` records the rules the system was given.
 Two runs under different rules are not comparable, and a reader cannot see that from the
 numbers.
-<6> `repeating(N)` runs each scenario `N` times.
-One run cannot tell a requirement the system meets from one it happened to meet: a
-requirement the system handles eight times in ten still passes five runs about a third of
+<6> `repeating(N)` runs each eval case `N` times.
+One attempt cannot tell a case the system meets from one it happened to meet: a
+case the system handles eight times in ten still passes five attempts about a third of
 the time.
 
-A plan is checked before it runs. `plan.check(target)` returns `Check.Ready` or
+A setup is checked before it runs. `setup.check(target)` returns `Check.Ready` or
 `Check.Refused` carrying the reasons, so a campaign naming a fixture the target cannot
-build is refused in seconds rather than yielding one `NotReached` per scenario at the end
+build is refused in seconds rather than yielding one `NotReached` per case at the end
 of a long run.
 
 == Running a campaign
@@ -54,21 +54,21 @@ Local runs are ordinary JUnit tests gated on `-Deval=true`.
 
 [source,java,indent=0]
 ----
-var result = CampaignRunner.run(plan, target, judge);
+var result = ExperimentRunner.run(setup, target, judge);
 ----
 
-`CampaignRunner.Result` carries the counts in `report()`, what the lanes sustained in
-`utilisation()`, one row per run in `completed()`, those rows grouped by scenario in
-`requirements()`, and anything the run needs to say in `notes()`.
+`ExperimentRunner.Result` carries the counts in `report()`, what the lanes sustained in
+`utilisation()`, one row per attempt in `completed()`, those rows grouped by eval case in
+`cases()`, and anything the run needs to say in `notes()`.
 
 To render the report, turn the result into the record a report is made from and print it.
-The run counts the requirements, the policy, the lane count and the system's own spend;
+The run counts the cases, the policy, the lane count and the system's own spend;
 `Reporting` carries what the run cannot know about itself, such as what it is called and
 how far the judge can be relied on.
 
 [source,java,indent=0]
 ----
-var record = result.asRecord(plan, reporting);
+var record = result.asRecord(setup, reporting);
 Files.writeString(Path.of("target/evalkit/refund-flow.txt"), Panels.render(record));
 ----
 
@@ -78,7 +78,7 @@ For dispatching a campaign to a running evaluation service instead of running it
 
 == Lanes
 
-A lane is a worker. `Lanes.of(4)` runs four scenarios at once, over a shared queue rather
+A lane is a worker. `Lanes.of(4)` runs four eval cases at once, over a shared queue rather
 than a fixed split: transcripts vary from a couple of messages to eighty, and an unlucky
 partition leaves one worker running long after the rest are idle.
 
@@ -92,13 +92,13 @@ provider produces a queue of failing calls rather than throughput.
 
 == Fixtures
 
-A scenario names the state it needs through its `Precursor`: `None`, a `Replay` of earlier
+An eval case names the state it needs through its `EvalSetup`: `None`, a `Replay` of earlier
 turns, a `Fixture` the target builds, or a `FailingTool`. The target declares what it can
 build in `SystemUnderTest.fixtures()`, with a one-line description of each, because only
 the code that builds "authenticated with a claim open" knows what that contains.
 
-A plan naming a fixture the target never declared is refused by `plan.check(target)` before
-anything runs.
+An experiment setup naming a fixture the target never declared is refused by
+`setup.check(target)` before anything runs.
 
 == Recording and re-scoring
 
@@ -107,15 +107,15 @@ one; `RecordedInteractions` is a target that reads them back and calls nothing.
 
 A campaign over `RecordedInteractions` scores runs evalkit did not execute, so a dataset
 scored in CI and traffic scored in production reach the same report through the same
-metrics. The same recording can be scored again under a new scorer or a new rubric without
-paying the target twice.
+metrics. The same recording can be scored again under a new evaluator or a new rubric
+without paying the target twice.
 
-Nothing is recorded automatically. `CampaignRunner` does not touch a ledger; a project that
-wants a recording writes one.
+Nothing is recorded automatically. `ExperimentRunner` does not touch a ledger; a project
+that wants a recording writes one.
 
 == Failing a build on the result
 
-`CampaignRunner.Result` carries no assertions. A campaign is a JUnit test, so it asserts
+`ExperimentRunner.Result` carries no assertions. A campaign is a JUnit test, so it asserts
 with whatever the project already uses.
 
 [source,java,indent=0]
@@ -123,10 +123,10 @@ with whatever the project already uses.
 assertThat(result.report().passRate()).isGreaterThan(0.9);
 ----
 
-`CampaignReport` counts passed, review and failed runs and answers `passRate()`.
+`ExperimentReport` counts passed, review and failed attempts and answers `passRate()`.
 It also says when it will not stand behind a figure: `provesAnyReachability()` is false
-when every run started from a seeded state, and `isTrustworthy()` is false when too little
-was measured to read a rate from.
+when every attempt started from a seeded state, and `isTrustworthy()` is false when too
+little was measured to read a rate from.
 
 For comparing a run against an earlier one, see xref:testing:evaluation/baselines.adoc[].
 
@@ -134,16 +134,16 @@ For comparing a run against an earlier one, see xref:testing:evaluation/baseline
 
 * Give each campaign a stable, lowercase, hyphen-separated name.
 The name is the key reports, baselines, and CI dashboards join on.
-* Use `repeating(3)` for campaigns that use agentic scorers.
+* Use `repeating(3)` for campaigns that use agentic evaluators.
 Model calls sample; three repeats stabilise most verdicts and let the variance panel read the flips.
 * State a policy on every campaign with `under(...)`, so a policy change reads as a policy change in the report and not as a target change.
-* Keep the scenario count per campaign small enough that a local run finishes in a coffee break.
+* Keep the eval case count per campaign small enough that a local run finishes in a coffee break.
 Long-running campaigns belong on the offline-evals service.
 
 == See also
 
-* xref:testing:evaluation/scenarios-and-rules.adoc[] — what a scenario contains and how its runs become one verdict.
-* xref:testing:evaluation/scorers.adoc[] — the three scorer families and what each settles.
+* xref:testing:evaluation/eval-cases-and-rules.adoc[] — what an eval case contains and how its attempts become one verdict.
+* xref:testing:evaluation/evaluators.adoc[] — the three evaluator families and what each settles.
 * xref:testing:evaluation/reports.adoc[] — the panels of the rendered report.
 * xref:testing:evaluation/baselines.adoc[] — how a baseline gates CI on regression.
 * xref:testing:evaluation/remote-campaigns.adoc[] — dispatching to the offline-evals service.

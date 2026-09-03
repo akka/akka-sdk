@@ -4,9 +4,9 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 
 /**
- * Stands in for the project's own component, so the campaign has a state to arrange.
+ * Stands in for the project's own component, so the experiment has a state to arrange.
  *
- * <p>A scenario's precursor names a state; something in the service has to be able to put
+ * <p>An eval case's eval setup names a state; something in the service has to be able to put
  * it there. What that is belongs to the project, and the adapter only has to reach it.
  */
 @Component(id = "refund-session")

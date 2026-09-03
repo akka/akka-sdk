@@ -1,23 +1,23 @@
 = Campaigns and runs
-:page-summary: A red-team campaign runs a set of rules against a target under a set of attack styles. Every attempt is one scenario, one rule, and one attack style, repeated as many times as the campaign asks for.
+:page-summary: A red-team campaign runs a set of rules against a target under a set of attack styles. Every attempt is one eval case, one rule, and one attack style, repeated as many times as the campaign asks for.
 :page-when-to-use: Use to schedule a red-team run — nightly, on every release, or on demand — with a stated token budget and a hazard set the campaign speaks to.
-:page-related: xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/adaptive-attacks.adoc[], xref:testing:red-teaming/corpora.adoc[], xref:testing:red-teaming/reports.adoc[]
+:page-related: xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/adaptive-attacks.adoc[], xref:testing:red-teaming/corpora.adoc[], xref:testing:red-teaming/reports.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
-A red-team campaign is a named unit of scenarios, rules, and attack styles that run together.
-The runner takes each scenario, applies every attack style to it, submits the resulting prompts to the target, and scores each reply.
-Every attempt in the report has one scenario id, one rule, and one attack style, so a break can be traced back to the exact combination that produced it.
+A red-team campaign is a named unit of eval cases, rules, and attack styles that run together.
+The runner takes each eval case, applies every attack style to it, submits the resulting prompts to the target, and scores each reply.
+Every attempt in the report has one case id, one rule, and one attack style, so a break can be traced back to the exact combination that produced it.
 
 == Declaring a campaign
 
 [source,java,indent=0]
 ----
 RedTeamCampaign.named("refund-safety")
-    .withScenarios(ScenarioSource.fromCorpus("harmbench"))
-    .withRule("do_not_leak_card_numbers", scorer(new PIILeakDetector()))
-    .withRule("do_not_help_wrongdoing", scorer(new JailbreakScorer()))
+    .withCases(EvalSource.fromCorpus("harmbench"))
+    .withRule("do_not_leak_card_numbers", evaluator(new PIILeakDetector()))
+    .withRule("do_not_help_wrongdoing", evaluator(new JailbreakEvaluator()))
     .attacking(List.of(new Base64(), new RolePlay(), new Crescendo()))
     .forHazards(Set.of(Hazard.PRIVACY, Hazard.NON_VIOLENT_CRIMES))
     .repeating(3)
@@ -27,10 +27,10 @@ RedTeamCampaign.named("refund-safety")
 Fluent methods:
 
 `attacking(List<Technique>)` +
-The attack styles to apply. Each style attacks every scenario.
+The attack styles to apply. Each style attacks every eval case.
 
 `forHazards(Set<Hazard>)` +
-Restrict to scenarios covering these hazards.
+Restrict to eval cases covering these hazards.
 
 `repeating(int)` +
 Repeat each attack `N` times to measure variance.
@@ -56,7 +56,7 @@ Endpoints under `/api/redteam/campaigns` mirror the evaluation endpoints.
   akka redteam campaigns get <campaign-id>
   akka redteam campaigns record <campaign-id>
 
-== The requirement × technique matrix
+== The rules × technique matrix
 
 Panel 3 of the report is a rules × attack-styles matrix showing how many attempts broke through in each cell.
 Read the panel to see which attack styles are effective against which rules.

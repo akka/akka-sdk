@@ -19,8 +19,8 @@ The statement records:
 * The dataset id and version.
 * The target build identifier and model name.
 * The list of attack styles applied.
-* The scorer id and version for every rule.
-* The rubric version for every agentic scorer.
+* The evaluator id and version for every rule.
+* The rubric version for every agentic evaluator.
 * The final report content hash.
 
 == Verification

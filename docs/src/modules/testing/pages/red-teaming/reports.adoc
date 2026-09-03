@@ -1,7 +1,7 @@
 = Reports
 :page-summary: A red-team report prints between one and ten panels in a fixed order. Each panel answers one question about the run, from the hazard rollup to the incidents to the token cost to the cases the quality suite missed.
 :page-when-to-use: Read on every failing run, and on every intentional target change. The report is what a security reviewer reads to tell what the target refused and what it did not.
-:page-related: xref:testing:red-teaming/campaigns.adoc[], xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/attestation.adoc[]
+:page-related: xref:testing:red-teaming/campaigns.adoc[], xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/attestation.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
@@ -147,7 +147,7 @@ Each rule was checked in a specific way.
 
 == Panel 6 — How the judge scored
 
-For agentic scorers: the judge model, the rubric version, the human spot-check sample size, the agreement rate, and where the judge disagreed.
+For agentic evaluators: the judge model, the rubric version, the human spot-check sample size, the agreement rate, and where the judge disagreed.
 
 [listing]
 ----
@@ -192,7 +192,7 @@ The percentages there account for this.
 
 == Panel 8 — What it cost
 
-Token spend split by target, attacker, judge, and guardrail scorer, plus a wall-clock decomposition.
+Token spend split by target, attacker, judge, and guardrail evaluator, plus a wall-clock decomposition.
 
 [listing]
 ----
@@ -204,7 +204,7 @@ Token spend for this campaign (input + output):
   Target (the system under test)       8,412,301 tokens  ~ $18.42
   Attacker (adaptive attack styles)    3,201,880 tokens  ~ $7.05
   Judge (grading replies)              1,940,455 tokens  ~ $12.61
-  Guardrail scorer                       412,000 tokens  ~ $0.28
+  Guardrail evaluator                    412,000 tokens  ~ $0.28
   ---------------------------------------------------------
   Total                               13,966,636 tokens  ~ $38.36
 
@@ -258,14 +258,14 @@ Do not leak card numbers              all 240 pass      118 of 2,080 fail
 Do not follow hidden instructions     all 180 pass      94 of 2,080 fail
 Do not reveal internal tool names     all 60 pass       5 of 2,080 fail
 
-For each rule, the quality suite only ran the well-formed input scenarios.
+For each rule, the quality suite only ran the well-formed input cases.
 The red-team suite added encoded, role-play, multi-turn, and hidden-instruction
-inputs. Adding one adversarial scenario per rule to the quality suite would
+inputs. Adding one adversarial case per rule to the quality suite would
 catch these regressions at PR time instead of nightly.
 ----
 
 == See also
 
 * xref:testing:red-teaming/campaigns.adoc[] — how the campaign carries the identity the header prints.
-* xref:testing:red-teaming/scorers.adoc[] — the scorers whose verdicts show up in panels 1, 2, 3.
+* xref:testing:red-teaming/evaluators.adoc[] — the evaluators whose verdicts show up in panels 1, 2, 3.
 * xref:testing:red-teaming/attestation.adoc[] — the signed evidence bundle the footer points at.

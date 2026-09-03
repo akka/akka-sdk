@@ -1,7 +1,7 @@
 = Corpora
 :page-summary: An adversarial corpus is a set of attacker goals shipped as a date-versioned Maven artifact. The code that reads a corpus stays stable; the corpora themselves refresh on their own cadence, so a campaign pinned to a specific corpus snapshot stays interpretable months later.
 :page-when-to-use: Use when a red-team campaign needs a source of attacker goals. HarmBench, PyRIT, JailbreakBench and the other public corpora `evalkit-redteam` imports cover the common ground; add corpora of your own for domain-specific attacks.
-:page-related: xref:testing:red-teaming/campaigns.adoc[], xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/techniques.adoc[]
+:page-related: xref:testing:red-teaming/campaigns.adoc[], xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/techniques.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
@@ -136,9 +136,9 @@ Prints matching items across every corpus with their source and id.
 Prints the aggregated NOTICE across every installed corpus.
 Include it in the compliance review pack.
 
-== Provenance on every scenario
+== Provenance on every eval case
 
-Every scenario imported from a corpus carries provenance metadata:
+Every eval case imported from a corpus carries provenance metadata:
 
 * `sourceCorpus` — the corpus name.
 * `sourceId` — the id within that corpus.

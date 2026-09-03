@@ -1,16 +1,16 @@
-= Scorer reference
+= Evaluator reference
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
-Reference tables for every scorer evalkit ships.
-For the walkthrough of one scorer per family and templates for writing your own, see xref:testing:evaluation/scorers.adoc[].
+Reference tables for every evaluator evalkit ships.
+For the walkthrough of one evaluator per family and templates for writing your own, see xref:testing:evaluation/evaluators.adoc[].
 
 == Deterministic
 
 [cols="2,3,2"]
 |===
-| Scorer | Reads | Returns
+| Evaluator | Reads | Returns
 
 | `ToolPermission`
 | Tool names against an allow list, a deny list, or both. Deny outranks allow on conflict.
@@ -29,14 +29,14 @@ For the walkthrough of one scorer per family and templates for writing your own,
 
 [cols="2,3,2"]
 |===
-| Scorer | Reads | Returns
+| Evaluator | Reads | Returns
 
 | `LatencyBudget`
 | `Interaction.latency()` against a stated `Duration`.
 | `Measured`; half at budget, proportional above.
 
 | `TokenBudget`
-| Total input+output tokens against a limit. Runs without measured usage are `Inconclusive`.
+| Total input+output tokens against a limit. Attempts without measured usage are `Inconclusive`.
 | `Measured` or `Inconclusive`.
 
 | `ModelCallBudget`
@@ -56,7 +56,7 @@ For the walkthrough of one scorer per family and templates for writing your own,
 | `Measured` with 1.0 or 0.0.
 
 | `ExactMatch`
-| Reply against `scenario.expectedOutcome()`, whitespace-normalised.
+| Reply against `evalCase.expectedOutcome()`, whitespace-normalised.
 | `Measured` with 1.0 or 0.0.
 
 | `TokenF1`
@@ -82,11 +82,11 @@ For the walkthrough of one scorer per family and templates for writing your own,
 
 == Agentic
 
-Every agentic scorer extends `AlignmentMetric`, takes an `Assessor` in the constructor, and ships a `systemPrompt()` in its class.
+Every agentic evaluator extends `AlignmentMetric`, takes an `Assessor` in the constructor, and ships a `systemPrompt()` in its class.
 
 [cols="2,3,2"]
 |===
-| Scorer | The model judges | Returns
+| Evaluator | The model judges | Returns
 
 | `TaskCompletion`
 | Whether the reply carried out the task.

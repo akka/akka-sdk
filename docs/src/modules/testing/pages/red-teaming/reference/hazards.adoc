@@ -3,7 +3,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Rules and scenarios carry hazard tags from two taxonomies.
+Rules and eval cases carry hazard tags from two taxonomies.
 List them from the CLI with `akka redteam hazards list`.
 
 == AILuminate v1.1

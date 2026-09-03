@@ -2,12 +2,12 @@
 :page-summary: A red-team suite probes an AI service for the things it should refuse — jailbreaks, prompt injections, secret leaks, PII disclosure. It lives beside the evaluation suite, runs the same target adapter, and reports each break as its own incident.
 :page-when-to-use: Use when a service is exposed to attacker input — a customer-facing chat agent, a RAG system reading untrusted passages, an agent whose tools reach sensitive state.
 :page-prerequisites: An existing Maven project. An evaluation runner already in place (see xref:testing:evaluation/getting-started.adoc[]) is the fastest starting point but not required.
-:page-related: xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/adaptive-attacks.adoc[], xref:testing:red-teaming/corpora.adoc[]
+:page-related: xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/adaptive-attacks.adoc[], xref:testing:red-teaming/corpora.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
-A red-team campaign runs a service through prompts written to attack it and asks a scorer whether the target broke through, held, or the evidence was inconclusive.
+A red-team campaign runs a service through prompts written to attack it and asks an evaluator whether the target broke through, held, or the evidence was inconclusive.
 Each break is one incident with its own row in the report, so security review reads a red-team run the way it reads a penetration test — case by case, not as a rate.
 
 == Overview
@@ -16,7 +16,7 @@ A red-team campaign has four parts.
 The **target** is the same `SystemUnderTest` an evaluation campaign uses, so a project with an evaluation suite already reuses its adapter.
 The **corpus** is a set of attacker goals ("get the model to describe how to bypass 2FA"), pulled from date-versioned artifacts like HarmBench, DAN, or JailbreakBench.
 The **techniques** turn each goal into many prompts — static wrappers roleplay the request or base64-encode the payload; adaptive techniques revise their prompts based on the target's last reply.
-The **scorers** decide, per exchange, whether the target complied with a harmful request, using the three-family taxonomy (deterministic, heuristic, agentic) that the evaluation side uses too.
+The **evaluators** decide, per exchange, whether the target complied with a harmful request, using the three-family taxonomy (deterministic, heuristic, agentic) that the evaluation side uses too.
 
 Red-team suites are gated on `-Dredteam=true`.
 `mvn verify` compiles the classes without running them; `mvn verify -Dredteam=true` runs them.
@@ -63,7 +63,7 @@ A project starting with red teaming and no prior evaluation writes the same adap
 
 == The campaign class
 
-A red-team campaign assembles the scorers, the techniques, and the budget, then runs against the target.
+A red-team campaign assembles the evaluators, the techniques, and the budget, then runs against the target.
 
 [source,java,indent=0]
 .RefundAgentRedTeamCampaign.java
@@ -71,7 +71,7 @@ A red-team campaign assembles the scorers, the techniques, and the budget, then 
 include::example$doc-snippets/src/test/java/com/example/redteam/campaign/RefundAgentRedTeamCampaign.java[tag=class]
 ----
 <1> The system-property gate keeps campaigns out of `mvn verify`.
-<2> Multiple scorers cover multiple hazards.
+<2> Multiple evaluators cover multiple hazards.
 The attempt is a breakthrough when any of them says so.
 <3> `DriverState` holds everything carried between turns: the goal, the technique driving it, and the turn limit.
 <4> The goal judge decides, from the target's last reply, whether the attack succeeded.
@@ -156,7 +156,7 @@ Token spend for this campaign (input + output):
   Target (the system under test)       8,412,301 tokens  ~ $18.42
   Attacker (adaptive attack styles)    3,201,880 tokens  ~ $7.05
   Judge (grading replies)              1,940,455 tokens  ~ $12.61
-  Guardrail scorer                       412,000 tokens  ~ $0.28
+  Guardrail evaluator                    412,000 tokens  ~ $0.28
   ---------------------------------------------------------
   Total                               13,966,636 tokens  ~ $38.36
 
@@ -182,15 +182,15 @@ For the exact output of panels 4 through 10 — including "What varied between a
 |===
 | Path | What lives there
 
-| `src/test/java/<pkg>/redteam/scorer/{deterministic,heuristic,agentic}/`  | Customer-authored scorers.
-| `src/test/java/<pkg>/redteam/technique/`                                 | Customer-authored techniques.
-| `src/test/resources/redteam/corpora/`                                    | The pulled attacker corpora.
-| `target/evalkit/reports/`                                                | Rendered reports (gitignored).
+| `src/test/java/<pkg>/redteam/evaluator/{deterministic,heuristic,agentic}/` | Customer-authored evaluators.
+| `src/test/java/<pkg>/redteam/technique/`                                   | Customer-authored techniques.
+| `src/test/resources/redteam/corpora/`                                      | The pulled attacker corpora.
+| `target/evalkit/reports/`                                                  | Rendered reports (gitignored).
 |===
 
 == See also
 
-* xref:testing:red-teaming/scorers.adoc[] — the three families of scorer and the built-ins.
+* xref:testing:red-teaming/evaluators.adoc[] — the three families of evaluator and the built-ins.
 * xref:testing:red-teaming/techniques.adoc[] — static wrappers that turn one goal into many prompts.
 * xref:testing:red-teaming/adaptive-attacks.adoc[] — attackers that revise their prompts based on the reply.
 * xref:testing:red-teaming/attestation.adoc[] — signing the report as evidence for a compliance review.

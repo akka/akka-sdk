@@ -1,7 +1,7 @@
-package com.example.eval.scorer.agentic;
+package com.example.eval.evaluator.agentic;
 
 // tag::imports[]
-import akka.evalkit.core.domain.Observation;
+import akka.evalkit.core.domain.EvalContext;
 import akka.evalkit.core.domain.RunOutcome;
 import akka.evalkit.core.metric.AlignmentMetric;
 import akka.evalkit.core.metric.TurnFaithfulness;
@@ -14,14 +14,14 @@ import java.util.UUID;
 // end::imports[]
 
 /**
- * Wires the built-in TurnFaithfulness scorer to a customer-supplied Agent. The scorer
+ * Wires the built-in TurnFaithfulness evaluator to a customer-supplied Agent. The evaluator
  * ships the system prompt; the customer picks the model, the provider and the cost
  * point.
  */
 public class TurnFaithfulnessSample {
 
     // tag::wiring[]
-    public RunOutcome score(Observation observation, ComponentClient componentClient) {
+    public RunOutcome score(EvalContext evalContext, ComponentClient componentClient) {
         String prompt = new TurnFaithfulness(null).systemPrompt(); // <1>
 
         AlignmentMetric.Assessor assessor = question -> componentClient // <2>
@@ -31,9 +31,9 @@ public class TurnFaithfulnessSample {
             .invoke(new AlignmentJudge.Request(
                 prompt, question.task() + "\n\n---\n\n" + question.against()));
 
-        var scorer = new TurnFaithfulness(assessor); // <4>
+        var evaluator = new TurnFaithfulness(assessor); // <4>
 
-        return scorer.score(observation); // <5>
+        return evaluator.score(evalContext); // <5>
     }
     // end::wiring[]
 
@@ -55,13 +55,13 @@ public class TurnFaithfulnessSample {
     // end::judge[]
 
     // tag::stub-for-tests[]
-    public RunOutcome scoreWithStub(Observation observation) {
+    public RunOutcome scoreWithStub(EvalContext evalContext) {
         AlignmentMetric.Assessor stub = question ->
             new AlignmentMetric.Assessment(0.9, "the reply cited the passage verbatim"); // <1>
 
-        var scorer = new TurnFaithfulness(stub); // <2>
+        var evaluator = new TurnFaithfulness(stub); // <2>
 
-        return scorer.score(observation);
+        return evaluator.score(evalContext);
     }
     // end::stub-for-tests[]
 }

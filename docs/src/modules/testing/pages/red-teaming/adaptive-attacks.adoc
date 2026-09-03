@@ -1,7 +1,7 @@
 = Adaptive attacks
 :page-summary: An adaptive attack is a stateful attacker that revises each next prompt based on the target's last reply. Runs inside a durable driver, so a mid-attack crash resumes from the same state.
 :page-when-to-use: Use when a target resists the first prompt and the attacker's job is to find a way through. PAIR, Crescendo, and Tree-of-Attacks are the standard techniques `evalkit-redteam` ships.
-:page-related: xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/scorers.adoc[], xref:testing:red-teaming/reports.adoc[]
+:page-related: xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/reports.adoc[]
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
@@ -121,7 +121,7 @@ Reject when the semantic distance between the current turn and the goal falls be
 
 Score refusal consistency at inference time.
 A refusal issued on turn 3 that is contradicted on turn 7 is a `pair`-class breakthrough in progress.
-The same `RefusalConsistencyScorer` redkit uses in tests can run as a guardrail in production; see xref:sdk:agents/guardrails.adoc[].
+The same `RefusalConsistencyEvaluator` redkit uses in tests can run as a guardrail in production; see xref:sdk:agents/guardrails.adoc[].
 
 Log the last state the driver saw when a rule broke.
 The `DriverState` at the moment of `BROKE_THROUGH` names the technique, the turn count, the tokens spent, and the exact prompt that succeeded.

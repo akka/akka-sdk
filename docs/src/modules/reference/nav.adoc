@@ -14,7 +14,7 @@
 *** xref:inference-cli/models.adoc[Model commands]
 *** xref:inference-cli/routing.adoc[Routing commands]
 *** xref:inference-cli/cost-training-and-evaluation.adoc[Cost, training, and evaluation commands]
-** xref:reference:scorers.adoc[Scorer reference]
+** xref:reference:evaluators.adoc[Evaluator reference]
 ** xref:cli/akka-cli/index.adoc[CLI commands]
 *** xref:cli/akka-cli/akka.adoc[]
 *** xref:cli/akka-cli/akka_auth.adoc[]

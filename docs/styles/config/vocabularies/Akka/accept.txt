@@ -146,6 +146,8 @@ enums?
 env
 etcd
 eval
+[Ee]valkit
+[Ee]valuator's
 eventhubs
 evolvability
 exfiltration
