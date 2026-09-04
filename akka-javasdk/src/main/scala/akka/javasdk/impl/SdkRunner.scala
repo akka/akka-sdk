@@ -180,6 +180,7 @@ object SdkRunner {
 
   val FutureDone: Future[Done] = Future.successful(Done)
 
+  @nowarn("msg=deprecated")
   def extractSpiSettings(applicationConf: Config): SpiSettings = {
     val eventSourcedEntitySnapshotEvery = applicationConf.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
     val cleanupDeletedEntityAfter =
