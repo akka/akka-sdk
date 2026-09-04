@@ -1,8 +1,8 @@
 // Template for a per-release Akka Runtime release notes page.
 //
 // Copy to docs/src/modules/reference/pages/release-notes/runtime/<version>.adoc, fill it in, and
-// add a row to release-notes/runtime/index.adoc. Keep the section order below. Omit a section when
-// it has no entries; do not write "None".
+// add a bullet linking to it from the current month's section on release-notes.adoc. Keep the
+// section order below. Omit a section when it has no entries; do not write "None".
 //
 // Source material: `git log v<previous>..v<version>` in the akka-runtime repository, plus the pull
 // request bodies for anything whose user-visible effect is not obvious from the commit subject.
@@ -13,15 +13,15 @@
 // - Prefix each entry with the area it affects: Views, Agents, Workflows, Entity deletion, Eventing.
 // - Leave out changes with no user-visible effect: build changes, formatting, internal refactoring,
 //   and back office endpoints used only by Akka Platform operations tooling.
-// - A runtime change that the Akka SDK does not expose yet goes in its own section, so the page
-//   stays accurate about what a service can actually use.
+// - Leave out a runtime change that the Akka SDK does not expose yet. It belongs in the SDK release
+//   notes as a new feature once the SDK API for it ships.
 
 = Akka Runtime <version>
 :page-summary: <one sentence naming the main changes, not why they are good>
 
 include::ROOT:partial$include.adoc[]
 
-Released <YYYY-MM-DD>. Included in Akka SDK <version>. The previous runtime release is <version>.
+Released <YYYY-MM-DD>.
 
 == Changes to existing behavior
 
@@ -35,20 +35,11 @@ Review these before you deploy a service on this runtime version.
 
 == New features
 
-// Capabilities a service can use through the Akka SDK release named above.
+// Capabilities a service can use once it is on an Akka SDK release that exposes them.
 
 * ...
 
 == Bug fixes
-
-* ...
-
-== Runtime capabilities not yet exposed by the Akka SDK
-
-// Runtime changes with no SDK API in the paired SDK release. Name the SDK type that would carry it
-// so the gap is greppable when the SDK catches up.
-
-These changes are in the runtime but have no Akka SDK API in <version>.
 
 * ...
 

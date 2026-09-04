@@ -3,7 +3,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Released 2026-09-02. Included in Akka SDK 3.6.4. The previous runtime release is 1.6.15.
+Released 2026-09-02.
 
 == Changes to existing behavior
 
@@ -21,13 +21,6 @@ Review these before you deploy a service on this runtime version.
 * Agents: a `null` value no longer causes a `NullPointerException` in the sanitizer.
 * Agents: a name collision between an MCP tool and a built-in tool no longer hangs tool discovery. The loop that renamed the tool never terminated and exhausted the heap. A colliding name now gets the lowest free numeric suffix, so the same set of tools produces the same names on every turn. Two MCP endpoints that expose the same tool name are also disambiguated.
 * Entity deletion: `TraceableAny` payloads are handled when entity data is deleted, and the Postgres delete store matches its rows more strictly.
-
-== Runtime capabilities not yet exposed by the Akka SDK
-
-These changes are in the runtime but have no Akka SDK API in 3.6.4.
-
-* The Bedrock prompt cache point can be placed after the most recent user message, so the cached prefix advances as a tool-calling conversation grows. `ModelProvider.BedrockPromptCachePlacement` offers `AFTER_SYSTEM`, `AFTER_USER_MESSAGE`, and `AFTER_TOOLS` only.
-* The runtime HTTP port can be assigned by the operating system, and the bound port is reported back to the SDK. This allows several runtimes to start in the same JVM without a port clash.
 
 == Security updates
 

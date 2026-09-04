@@ -444,6 +444,5 @@
 ** xref:security/oidc-setup.adoc[OpenID connect]
 ** xref:migration-guide.adoc[Migration guide]
 ** xref:release-notes.adoc[Release notes]
-*** xref:release-notes/runtime/index.adoc[Akka Runtime release notes]
 ** xref:security-announcements/index.adoc[Security announcements]
 ** xref:support.adoc[Support resources]
