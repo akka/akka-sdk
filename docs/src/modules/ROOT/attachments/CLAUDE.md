@@ -41,7 +41,11 @@ For first-time or complex components:
 2. Extract code examples, verify imports/patterns
 3. Brief note: "📚 Reviewed {doc}"
 
+When the task requires deciding which components to use (new feature, new service), also read the "Choosing a component" section in `akka-context/sdk/components/index.html.md` first.
+
 ### Step 1: Design & Planning
+
+Choose each component per the decision guide (`sdk/components/index.html.md`, "Choosing a component") and state the reason next to it, including why the nearest alternative was not chosen.
 
 Present concise design:
 ```markdown

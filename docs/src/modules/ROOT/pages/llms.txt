@@ -44,7 +44,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 
 ## SDK Components
 
-- [Components overview](https://doc.akka.io/sdk/components/index.html.md): Introduction to Akka's core building blocks and their usage
+- [Components overview](https://doc.akka.io/sdk/components/index.html.md): Akka's core building blocks, with a decision guide for choosing between them and when not to use each
 - [Agents](https://doc.akka.io/sdk/agents.html.md): AI model-backed components with session memory and multi-agent collaboration
 - [Autonomous Agents](https://doc.akka.io/sdk/autonomous-agents.html.md): Durable model-driven processes with typed tasks and multi-agent coordination
 - [Workflows](https://doc.akka.io/sdk/workflows.html.md): Long-running, multi-step business processes with compensation

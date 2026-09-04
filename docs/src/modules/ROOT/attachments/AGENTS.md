@@ -66,6 +66,7 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/streaming.html.md` - Stream processing and Akka Streams
 
 **Guides and reference:**
+- `akka-context/sdk/components/index.html.md` - Component list plus the decision guide ("Choosing a component"): decision matrix, when NOT to use each, boundary rules
 - `akka-context/getting-started/planner-agent/dynamic-team.html.md` - Dynamic agent planning and orchestration
 - `akka-context/reference/views/**` - Detailed reference docs of views
 - `akka-context/reference/config/reference.html.md` - Full configuration reference
@@ -74,6 +75,7 @@ Access these documentation files for detailed patterns:
 ### When to Read Documentation
 
 **MANDATORY - Always read documentation BEFORE coding for:**
+- **Component mapping for a new feature** - ALWAYS read `sdk/components/index.html.md` ("Choosing a component") before deciding which components a feature needs (which entity type, workflow vs consumer, whether a view is needed at all)
 - **Workflows** - ALWAYS read `workflows.html.md` first time in session (complex patterns, compensation, recovery)
 - **Agents** - ALWAYS read `agents.html.md` first time in session (LLM integration, tools, streaming)
 - **Autonomous Agents** - ALWAYS read `autonomous-agents.html.md` first time in session (durable execution, tasks, multi-agent coordination)
@@ -87,6 +89,31 @@ Access these documentation files for detailed patterns:
 - Patterns matching quick reference below
 
 ## Component Architecture
+
+### Choosing the Right Component
+
+Decide the component mapping BEFORE writing code. The full rubrics with reasoning are in `akka-context/sdk/components/index.html.md` ("Choosing a component"). The short form:
+
+| Need | Component | Avoid when |
+|---|---|---|
+| State per id; history, audit, or downstream reactions matter | Event Sourced Entity | Nobody consumes events and no history needed → Key Value Entity |
+| State per id; only the latest value matters | Key Value Entity | State grows a history list → Event Sourced Entity |
+| Query by non-id attributes; lists, aggregation, pagination | View | Lookup is by entity id → read the entity directly |
+| Multi-step process with retries, compensation, or a status | Workflow | Single step or independent reactions → Consumer or direct call |
+| React to persisted events (side effects, propagation, projection) | Consumer | Caller needs the result now → direct ComponentClient call |
+| One LLM request-response with tools/memory | Agent (Workflow-orchestrated if fixed multi-step) | Model decides next step or agents coordinate → Autonomous Agent |
+| Durable model-driven work; multi-agent coordination | Autonomous Agent | Fixed steps, one model call each → Workflow + Agents |
+| Run something later or on a schedule | Timed Action | The delay is a step in a process → Workflow pause/timer |
+| API for browsers/external clients; SSE/WebSocket; serve a UI | HTTP Endpoint | Typed service-to-service contract → gRPC Endpoint |
+| Typed service-to-service contract with schema evolution | gRPC Endpoint | Browser-facing consumers → HTTP Endpoint |
+| Expose tools/resources/prompts to LLM clients | MCP Endpoint | Human or programmatic clients → HTTP/gRPC Endpoint |
+| Pure logic: validation, calculation, transformation | Plain class in `domain` | Never a component; no state, no subscription, no schedule, no API |
+
+Boundary rules:
+- Persist in an entity/workflow only what must survive restarts, be audited, or drive reactions. Values derivable from their inputs are computed per request, in memory. Endpoints are stateless; never cache business state in endpoint fields.
+- Entities are your cache: do not add Redis or a caching layer in front of them. Large binaries go to object storage; keep the reference in state.
+- Within a service, always `ComponentClient`. NEVER call your own service's HTTP endpoints from inside the service. Across services: service-to-service eventing for reactions, `HttpClientProvider`/`GrpcClientProvider` with the service name for synchronous calls.
+- Side effects belong in Consumers reacting to events, never in entity command handlers. External blocking calls never run in entities; put them in a workflow step (durable, retried), a consumer (reactive, idempotent), an endpoint (request-scoped), or an agent tool.
 
 ### Component Types & Key Characteristics
 
@@ -822,6 +849,14 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 ## Self-Review Checklist
 
 Before presenting code, verify:
+
+**Component choice**
+- [ ] Component mapping follows `sdk/components/index.html.md` ("Choosing a component"); each component needs its guarantees (durable state, subscription, schedule, process, API surface)
+- [ ] No Key Value Entity with a hand-maintained history list (use Event Sourced); no Event Sourced Entity with a single whole-state `StateChanged` event (use Key Value)
+- [ ] No View whose only query is by entity id; no read-your-own-write through a View in the same request
+- [ ] No single-step Workflow (use a Consumer or direct call); no consumer chain that hides a multi-step process (use a Workflow)
+- [ ] Side effects live in Consumers, not in entity command handlers or `.thenReply()`
+- [ ] Nothing is a component that could be a plain domain class
 
 **Imports**
 - [ ] Using `akka.*` not `io.akka.*`
