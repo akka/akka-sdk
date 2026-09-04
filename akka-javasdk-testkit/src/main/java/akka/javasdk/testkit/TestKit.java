@@ -1189,6 +1189,18 @@ public class TestKit {
       this.messageBuilder = new EventingTestKit.MessageBuilder(serializer);
 
     } catch (Exception ex) {
+      // The runtime may already be up and holding the port. Nothing will call stop(), because
+      // start() never returns, so every later testkit in this JVM would fail to bind.
+      if (runtimeActorSystem != null) {
+        try {
+          akka.testkit.javadsl.TestKit.shutdownActorSystem(
+              runtimeActorSystem.classicSystem(),
+              FiniteDuration.create(10, TimeUnit.SECONDS),
+              true);
+        } catch (Exception shutdownFailure) {
+          ex.addSuppressed(shutdownFailure);
+        }
+      }
       throw new RuntimeException("Error while starting testkit", ex);
     }
   }
@@ -1228,6 +1240,7 @@ public class TestKit {
       body =
           response
               .entity()
+              // not getMaterializer(), which requires the testkit to have finished starting
               .toStrict(
                   RUNTIME_STARTED_TIMEOUT.toMillis(),
                   SystemMaterializer.get(runtimeActorSystem).materializer())
