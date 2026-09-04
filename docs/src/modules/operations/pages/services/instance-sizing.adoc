@@ -1,0 +1,87 @@
+= Instance sizing
+include::ROOT:partial$include.adoc[]
+
+Instance sizing is the CPU and memory allocated to each running instance of an Akka service container, chosen from a fixed catalog of named instance types.
+
+Each instance type is named `g<generation>.<shape>.<size>`, for example `g1.general.small` or `g1.memory.large`. The shape hints at the workload it suits:
+
+* `general` — a balanced CPU-to-memory ratio, the right default for most services.
+* `memory` — extra memory relative to CPU, for services with large in-memory entity state or high concurrent load.
+* `compute` — extra CPU relative to memory, for services doing heavier per-request processing with modest state.
+
+Within a shape, `size` scales from `x-small` up to `large`.
+
+== The instance type catalog
+
+include::partial$instance-types-table.adoc[]
+
+Every project has a platform default, applied to any service that does not request a specific instance type.
+
+== Viewing what your project may use
+
+An organization can restrict which instance types its projects are allowed to deploy with, and set its own default in place of the platform default. Both are scoped: they can apply to an entire organization, or be narrowed to a region, a project, or a single service.
+
+See what your project is allowed to use, and which type applies as the default, with:
+
+[source, command line]
+----
+akka projects instance-types list
+----
+
+Narrow the resolution to a specific region or service:
+
+[source, command line]
+----
+akka projects instance-types list --region us-east-1 --service shopping-cart
+----
+
+The output always marks which instance type is the default for the scope you queried.
+
+== Setting a service's instance type
+
+If you do not set an instance type, a service runs on its project's default. To pin a service to a specific instance type instead, set it at deploy time:
+
+[source, command line]
+----
+akka service deploy shopping-cart shopping-cart:1.0 --instance-type g1.memory.small
+----
+
+The requested type must be one your organization allows; otherwise the deployment is rejected.
+
+The same setting is available in a xref:reference:descriptors/service-descriptor.adoc[service descriptor], under `resources.instanceType`:
+
+[source, yaml]
+----
+name: shopping-cart
+service:
+  image: my-registry/shopping-cart:1.0
+  resources:
+    instanceType: g1.memory.small
+    runtime:
+      mode: embedded
+----
+
+Apply the descriptor with `akka service apply -f shopping-cart.yaml`, as described in xref:operations:services/deploy-service.adoc#apply[using service descriptors].
+
+A change to a service's instance type takes effect on its next deployment. Instances already running keep their current size until they are replaced by a rolling update.
+
+== Requesting a change to your allowlist or default
+
+Changing which instance types a project, region, or service is allowed to use, or changing the scoped default, is not currently self-service. Contact the link:{url-akka-support}[Akka Support Portal, window="new"] and specify:
+
+* The organization, project, region, or service the change applies to.
+* The instance type or types you need allowed.
+* Whether it should also become the default for that scope.
+
+== Cost implications
+
+A larger instance type increases the CPU and memory reserved for every running instance of that service, and that cost multiplies across however many instances autoscaling keeps running at peak. Choosing `g1.memory.large` for a service that also scales to a high `--max-instances` compounds both factors.
+
+Size services individually rather than raising a project's default: give the services that need more headroom a larger instance type, and leave the rest on the default. Sizing choices are part of the cost forecast you agree with your Akka team during xref:operations:production-readiness/index.adoc[production readiness].
+
+== Related documentation
+
+- xref:reference:cli/akka-cli/akka_projects_instance-types_list.adoc[`akka projects instance-types list` CLI reference]
+- xref:reference:cli/akka-cli/akka_services_deploy.adoc[`akka service deploy` CLI reference]
+- xref:reference:descriptors/service-descriptor.adoc[Service descriptor reference]
+- xref:operations:production-readiness/index.adoc[Production readiness]

@@ -215,9 +215,7 @@ The configuration for the resources used by an Akka Service.
 |Field          |Type                        |Description
 
 |*instanceType* |string
-a|The type of instance to use. Supported values are:
-
-* `small` - A small instance.
+a|The instance type to run the service on, for example `g1.memory.small`. Must be one of the types your organization allows. If unset, the organization or platform default applies. See xref:operations:services/instance-sizing.adoc[] for the current catalog and how to change it.
 |*autoscaling*  |<<ServiceAutoscaling>> |The autoscaling configuration for a service. Autoscaling is only supported for non-trial projects.
 |*runtime*    |<<Runtime>> |The runtime configuration for the service.
 |===
