@@ -13,7 +13,7 @@ and follow the instructions.
 The documentation is automatically published with regular releases.
 
 To publish documentation of certain merged Pull Requests:
-1. mark the PRs that should be published with the `docs-publish` label,
+1. mark the [merged documentation PRs](https://github.com/akka/akka-sdk/pulls?q=is%3Apr+is%3Amerged+label%3Adocumentation+-label%3Adocs-published) that should be published with the `docs-publish` label,
 2. check all desired PRs are on [the list](https://github.com/akka/akka-sdk/pulls?q=is%3Apr+is%3Aclosed+label%3Adocs-publish+-label%3Adocs-published),
 3. trigger the [Publish docs (cherry-pick batch)](https://github.com/akka/akka-sdk/actions/workflows/docs-publish.yml) workflow,
 4. review the PR it creates and **merge** it (do *not* squash — squashing drops the `cherry picked from` trailers) to the [docs-current branch](https://github.com/akka/akka-sdk/tree/docs-current),
