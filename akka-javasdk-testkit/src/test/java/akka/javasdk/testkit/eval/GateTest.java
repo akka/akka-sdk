@@ -26,7 +26,7 @@ class GateTest {
   }
 
   private ExperimentRunner.EvalReport run(Gate gate, List<EvalCase> cases) {
-    return ExperimentRunner.cases(cases).target(target).gate(gate).run();
+    return ExperimentRunner.forTarget(target).cases(cases).gate(gate).run();
   }
 
   @Test
@@ -83,8 +83,9 @@ class GateTest {
     var cases = List.of(expectingAnswer("c1", "c1"), expectingAnswer("c2", "c2"));
 
     var report =
-        ExperimentRunner.cases(cases)
+        new ExperimentRunner()
             .target(throwing)
+            .cases(cases)
             .gate(Gate.passRateAtLeast(0.5).and(Gate.noTargetFailures()))
             .run();
 
@@ -95,7 +96,8 @@ class GateTest {
 
   @Test
   void aRunWithNoGatePassesWhenEveryCaseDoes() {
-    var report = ExperimentRunner.cases(List.of(expectingAnswer("c1", "c1"))).target(target).run();
+    var report =
+        ExperimentRunner.forTarget(target).cases(List.of(expectingAnswer("c1", "c1"))).run();
 
     assertThat(report.passed()).isTrue();
     assertThat(report.render()).contains("1/1 cases passed (100%)");

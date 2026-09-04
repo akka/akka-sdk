@@ -9,8 +9,8 @@ import java.util.List;
 /**
  * The runner's interface to the thing under test: one turn in, one {@link Outcome} out.
  *
- * <p>{@link AgentTarget} is the implementation behind {@link ExperimentRunner#forAgent}. The
- * runner's own tests supply a lambda to run without a runtime.
+ * <p>{@link AgentTarget} is the implementation behind {@link ExperimentRunner#agent}. The runner's
+ * own tests supply a lambda to run without a runtime.
  *
  * <p>A turn either answers with the reply and the tool calls, or fails with a reason and the tool
  * calls made before the failure. A target that throws is treated as failed with no tool calls.

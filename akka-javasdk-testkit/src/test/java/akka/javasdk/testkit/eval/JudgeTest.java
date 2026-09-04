@@ -133,7 +133,7 @@ class JudgeTest {
                 "bare", "why?", Expectations.expect().satisfies(judge.mustSatisfy(CRITERION))));
 
     var report =
-        ExperimentRunner.cases(cases)
+        new ExperimentRunner()
             .target(
                 turn ->
                     EvalTarget.Outcome.answered(
@@ -141,14 +141,16 @@ class JudgeTest {
                             turn.caseId().equals("explained")
                                 ? "because it was overdue"
                                 : "12.50")))
+            .cases(cases)
             .gate(Gate.evaluatorRateAtLeast(Evaluators.JUDGE, 0.5))
             .run();
 
     assertThat(report.passed()).isTrue();
     assertThat(report.render()).contains("judge 1/2");
     assertThat(
-            ExperimentRunner.cases(cases)
+            new ExperimentRunner()
                 .target(turn -> EvalTarget.Outcome.answered(Interaction.of("12.50")))
+                .cases(cases)
                 .gate(Gate.evaluatorRateAtLeast(Evaluators.JUDGE, 0.5))
                 .run()
                 .passed())

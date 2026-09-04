@@ -31,87 +31,82 @@ import java.util.function.Function;
  *   <li>{@link #run}: all cases, judged by a {@link Gate} over the aggregated results. For a real
  *       model.
  * </ul>
- *
- * <pre>{@code
- * ExperimentRunner.forAgent(testKit, SupportAgent::ask).runSingle(evalCase);
- *
- * ExperimentRunner.cases(cases)
- *     .agent(testKit, SupportAgent::ask)
- *     .gate(Gate.passRateAtLeast(0.9))
- *     .run();
- * }</pre>
  */
 public final class ExperimentRunner {
 
+  private final TestKit testKit;
   private final List<EvalCase> cases;
   private final EvalTarget target;
   private final List<Evaluator> evaluators;
   private final Gate gate;
 
+  /**
+   * @param testKit the running TestKit the agent is called through
+   */
+  public ExperimentRunner(TestKit testKit) {
+    this(requireTestKit(testKit), List.of(), null, List.of(), null);
+  }
+
+  // For the runner's own tests: no TestKit, the target is set with target(…).
+  ExperimentRunner() {
+    this(null, List.of(), null, List.of(), null);
+  }
+
   private ExperimentRunner(
-      List<EvalCase> cases, EvalTarget target, List<Evaluator> evaluators, Gate gate) {
+      TestKit testKit,
+      List<EvalCase> cases,
+      EvalTarget target,
+      List<Evaluator> evaluators,
+      Gate gate) {
+    this.testKit = testKit;
     this.cases = cases;
     this.target = target;
     this.evaluators = evaluators;
     this.gate = gate;
   }
 
-  /** The batch entry point. Set the agent with {@link #agent} and the gate with {@link #gate}. */
-  public static ExperimentRunner cases(List<EvalCase> cases) {
-    if (cases == null) throw new IllegalArgumentException("cases required");
-    return new ExperimentRunner(List.copyOf(cases), null, List.of(), null);
+  private static TestKit requireTestKit(TestKit testKit) {
+    if (testKit == null) throw new IllegalArgumentException("testKit required");
+    return testKit;
   }
 
   /**
-   * The entry point for {@link #runSingle}. The command handler takes the case's message as a
-   * String. A String reply is used as is, any other reply is rendered as JSON.
+   * The agent under test. The command handler takes the case's message as a String. A String reply
+   * is used as is, any other reply is rendered as JSON.
    *
-   * @param testKit the running TestKit
    * @param method the agent's command handler, for example {@code SupportAgent::ask}
    */
-  public static <A extends Agent, R> ExperimentRunner forAgent(
-      TestKit testKit, Function2<A, String, Agent.Effect<R>> method) {
-    return forAgent(testKit, method, Function.identity(), AgentTarget::asText);
+  public <A extends Agent, R> ExperimentRunner agent(Function2<A, String, Agent.Effect<R>> method) {
+    return agent(method, Function.identity(), AgentTarget::asText);
   }
 
   /**
-   * The entry point for {@link #runSingle} with a command handler that has its own command and
-   * reply types.
+   * The agent under test, with a command handler that has its own command and reply types.
    *
    * @param command builds the command from the case's message
    * @param replyText renders the reply as the text the expectations read
    */
-  public static <A extends Agent, C, R> ExperimentRunner forAgent(
-      TestKit testKit,
-      Function2<A, C, Agent.Effect<R>> method,
-      Function<String, C> command,
-      Function<R, String> replyText) {
-    return forTarget(new AgentTarget<>(testKit, method, command, replyText));
-  }
-
-  /** The agent the batch calls. See {@link #forAgent(TestKit, Function2)}. */
-  public <A extends Agent, R> ExperimentRunner agent(
-      TestKit testKit, Function2<A, String, Agent.Effect<R>> method) {
-    return agent(testKit, method, Function.identity(), AgentTarget::asText);
-  }
-
-  /** The agent the batch calls. See {@link #forAgent(TestKit, Function2, Function, Function)}. */
   public <A extends Agent, C, R> ExperimentRunner agent(
-      TestKit testKit,
       Function2<A, C, Agent.Effect<R>> method,
       Function<String, C> command,
       Function<R, String> replyText) {
+    if (testKit == null) throw new IllegalStateException("no TestKit to call the agent through");
     return target(new AgentTarget<>(testKit, method, command, replyText));
   }
 
+  /** The cases {@link #run} walks. */
+  public ExperimentRunner cases(List<EvalCase> cases) {
+    if (cases == null) throw new IllegalArgumentException("cases required");
+    return new ExperimentRunner(testKit, List.copyOf(cases), target, evaluators, gate);
+  }
+
   static ExperimentRunner forTarget(EvalTarget target) {
-    if (target == null) throw new IllegalArgumentException("target required");
-    return new ExperimentRunner(List.of(), target, List.of(), null);
+    return new ExperimentRunner().target(target);
   }
 
   ExperimentRunner target(EvalTarget target) {
     if (target == null) throw new IllegalArgumentException("target required");
-    return new ExperimentRunner(cases, target, evaluators, gate);
+    return new ExperimentRunner(testKit, cases, target, evaluators, gate);
   }
 
   /** An evaluator that runs on every case, in addition to the case's expectations. */
@@ -119,17 +114,17 @@ public final class ExperimentRunner {
     if (evaluator == null) throw new IllegalArgumentException("evaluator required");
     var next = new ArrayList<>(evaluators);
     next.add(evaluator);
-    return new ExperimentRunner(cases, target, List.copyOf(next), gate);
+    return new ExperimentRunner(testKit, cases, target, List.copyOf(next), gate);
   }
 
   /** The gate {@link #run} checks. Without a gate the report passes. */
   public ExperimentRunner gate(Gate gate) {
-    return new ExperimentRunner(cases, target, evaluators, gate);
+    return new ExperimentRunner(testKit, cases, target, evaluators, gate);
   }
 
   /** Runs all cases and checks the gate. Does not throw on a failed gate; assert on the report. */
   public EvalReport run() {
-    if (cases.isEmpty()) throw new IllegalStateException("no cases to run");
+    if (cases.isEmpty()) throw new IllegalStateException("no cases to run: call cases(…) first");
     var results = cases.stream().map(this::evaluate).toList();
     return new Report(results, gate == null ? Gate.Verdict.pass("no gate") : gate.check(results));
   }

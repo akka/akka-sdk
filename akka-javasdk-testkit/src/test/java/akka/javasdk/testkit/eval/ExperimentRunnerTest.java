@@ -258,11 +258,7 @@ class ExperimentRunnerTest {
   @Test
   void theReportSumsWhatTheRunSpentOverTheCasesWithEvidence() {
     var report =
-        ExperimentRunner.cases(
-                List.of(
-                    EvalCase.of("quick", "q", Expectations.none()),
-                    EvalCase.of("slow", "q", Expectations.none()),
-                    EvalCase.of("untraced", "q", Expectations.none())))
+        new ExperimentRunner()
             .target(
                 turn ->
                     switch (turn.caseId()) {
@@ -270,6 +266,11 @@ class ExperimentRunnerTest {
                       case "slow" -> tracedThat("done", 3, 200, Duration.ofMillis(900)).call(turn);
                       default -> targetThat("done").call(turn);
                     })
+            .cases(
+                List.of(
+                    EvalCase.of("quick", "q", Expectations.none()),
+                    EvalCase.of("slow", "q", Expectations.none()),
+                    EvalCase.of("untraced", "q", Expectations.none())))
             .run();
 
     assertThat(report.render())
@@ -281,8 +282,9 @@ class ExperimentRunnerTest {
   @Test
   void theReportHasNoSpendLineWithoutEvidence() {
     var report =
-        ExperimentRunner.cases(List.of(EvalCase.of("c", "q", Expectations.none())))
+        new ExperimentRunner()
             .target(targetThat("done"))
+            .cases(List.of(EvalCase.of("c", "q", Expectations.none())))
             .run();
 
     assertThat(report.render()).doesNotContain("spend:");
@@ -374,14 +376,15 @@ class ExperimentRunnerTest {
                 : EvalResult.pass("no-apology");
 
     var report =
-        ExperimentRunner.cases(
-                List.of(
-                    EvalCase.of("polite", "a question", Expectations.none()),
-                    EvalCase.of("apologetic", "another question", Expectations.none())))
+        new ExperimentRunner()
             .target(
                 turn ->
                     EvalTarget.Outcome.answered(
                         Interaction.of(turn.caseId().equals("apologetic") ? "sorry" : "sure")))
+            .cases(
+                List.of(
+                    EvalCase.of("polite", "a question", Expectations.none()),
+                    EvalCase.of("apologetic", "another question", Expectations.none())))
             .evaluator(noApology)
             .run();
 
@@ -409,12 +412,15 @@ class ExperimentRunnerTest {
 
   @Test
   void aRunNeedsAnAgentAndAtLeastOneCase() {
-    assertThatThrownBy(() -> ExperimentRunner.cases(List.of()).target(targetThat("x")).run())
+    assertThatThrownBy(() -> ExperimentRunner.forTarget(targetThat("x")).cases(List.of()).run())
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("no cases");
 
     assertThatThrownBy(
-            () -> ExperimentRunner.cases(List.of(EvalCase.of("c", "q", Expectations.none()))).run())
+            () ->
+                new ExperimentRunner()
+                    .cases(List.of(EvalCase.of("c", "q", Expectations.none())))
+                    .run())
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("no agent");
   }
