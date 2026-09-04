@@ -14,27 +14,23 @@ import java.util.OptionalLong;
 import java.util.Set;
 
 /**
- * What a case asserts, as data.
+ * What a case asserts.
  *
- * <p>Each declared expectation activates one built-in evaluator over the case's evidence (the reply
- * text and the drained tool calls). An expectation reads only what it names and abstains on what it
- * cannot reach — "the tool was never called" fails {@link #tools}, not {@link #toolArgument}.
+ * <p>Each declaration activates one built-in evaluator over the reply text and the traced tool
+ * calls. An evaluator reads only what it names and abstains when that evidence is absent: a tool
+ * that was never called fails {@link #tools}, not {@link #toolArgument}.
  *
- * <p>This class only carries the declarations; {@link ExperimentRunner} reads them through the
- * accessors. Immutable: every method returns a new instance.
+ * <p>Immutable: every method returns a new instance.
  */
 public final class Expectations {
 
-  /** One declared argument expectation: the named call must carry this value. */
+  /** The named tool must be called with this argument value. */
   public record ToolArgument(String tool, String argument, Object value) {}
 
-  /** One declared result expectation: what the named call returned must contain this text. */
+  /** The result of the named tool must contain this text. */
   public record ToolResult(String tool, String needle) {}
 
-  /**
-   * The ceilings a turn is held to. Each is read against the evidence the trace carried and
-   * abstains when the trace did not carry that figure.
-   */
+  /** The limits a turn is held to. Each abstains when the trace does not carry that figure. */
   public record Budgets(
       OptionalInt toolCalls,
       OptionalInt modelCalls,
@@ -96,12 +92,12 @@ public final class Expectations {
           List.of(),
           Budgets.NONE);
 
-  /** The entry point: no expectations yet. */
+  /** The starting point for declarations. */
   public static Expectations expect() {
     return EMPTY;
   }
 
-  /** A case with nothing to assert, useful only as a placeholder while authoring. */
+  /** Nothing to assert. */
   public static Expectations none() {
     return EMPTY;
   }
@@ -136,7 +132,7 @@ public final class Expectations {
         budgets);
   }
 
-  /** The named call must carry this argument with this value. */
+  /** The named tool must be called with this argument value. */
   public Expectations toolArgument(String tool, String argument, Object value) {
     var next = new ArrayList<>(toolArguments);
     next.add(new ToolArgument(tool, argument, value));
@@ -152,10 +148,7 @@ public final class Expectations {
         budgets);
   }
 
-  /**
-   * What the named call returned must contain this text, case-insensitively. Abstains over evidence
-   * that carries no results.
-   */
+  /** The result of the named tool must contain this text, case-insensitively. */
   public Expectations toolResult(String tool, String needle) {
     var next = new ArrayList<>(toolResults);
     next.add(new ToolResult(tool, needle));
@@ -195,7 +188,7 @@ public final class Expectations {
             budgets.toolCalls(), budgets.modelCalls(), OptionalLong.of(tokens), budgets.latency()));
   }
 
-  /** The turn must be answered within this time, measured on the agent's command. */
+  /** The agent command must complete within this time. */
   public Expectations latencyAtMost(Duration latency) {
     if (latency == null || latency.isNegative() || latency.isZero())
       throw new IllegalArgumentException("a latency budget is positive");
@@ -264,11 +257,8 @@ public final class Expectations {
   }
 
   /**
-   * Anything the built-ins cannot express, as code over the same evidence.
-   *
-   * <p>This is also where a model judge lands: {@link Judge#mustSatisfy} produces one of these from
-   * a criterion written in words. The seam holds no model, so the provider and the bill stay the
-   * consumer's.
+   * A custom check over the same evidence. {@link Judge#mustSatisfy} produces one from a criterion
+   * written in words.
    */
   public Expectations satisfies(Evaluator evaluator) {
     var next = new ArrayList<>(evaluators);

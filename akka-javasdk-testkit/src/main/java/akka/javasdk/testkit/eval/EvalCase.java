@@ -5,16 +5,13 @@
 package akka.javasdk.testkit.eval;
 
 /**
- * One evaluation case: a stimulus, the world it assumes, and what to assert.
+ * One evaluation case.
  *
- * <p>The runner cannot tell a curated case from a replayed one; both arrive as this type.
- *
- * @param id stable, unique within the suite; names the case in the report
- * @param userMessage the graded turn's input
- * @param setup primes the world before the turn: preload recording stubs, seed entities. Plain
- *     code, so it can close over whatever the test class holds. {@link #NO_SETUP} for a case that
- *     assumes nothing
- * @param expectations what the reply and the recorded tool calls are held against
+ * @param id unique within the suite; names the case in the report
+ * @param userMessage the message sent to the agent
+ * @param setup runs before the agent is called, for example to prime stubs or seed entities. {@link
+ *     #NO_SETUP} when the case needs none
+ * @param expectations what the reply and the tool calls are checked against
  */
 public record EvalCase(String id, String userMessage, Runnable setup, Expectations expectations) {
 
@@ -28,7 +25,7 @@ public record EvalCase(String id, String userMessage, Runnable setup, Expectatio
     expectations = expectations == null ? Expectations.none() : expectations;
   }
 
-  /** A case that starts from nothing. */
+  /** A case with no setup. */
   public static EvalCase of(String id, String userMessage, Expectations expectations) {
     return new EvalCase(id, userMessage, NO_SETUP, expectations);
   }

@@ -7,16 +7,13 @@ package akka.javasdk.testkit.eval;
 import java.util.List;
 
 /**
- * The runner's seam to the thing under test: one graded turn in, one {@link Outcome} out.
+ * The runner's interface to the thing under test: one turn in, one {@link Outcome} out.
  *
- * <p>Not part of the API. A consumer names an agent through {@link ExperimentRunner#forAgent}, and
- * {@link AgentTarget} is the implementation behind it. The runner's own tests supply a lambda here
- * to run without a runtime.
+ * <p>{@link AgentTarget} is the implementation behind {@link ExperimentRunner#forAgent}. The
+ * runner's own tests supply a lambda to run without a runtime.
  *
- * <p>A turn either {@link Outcome.Answered answers} with the reply and the tool calls, or {@link
- * Outcome.Failed fails} with the reason and whatever tool calls happened before it. The runner
- * records a failed turn as a failed case, not as a wrong answer, and the report separates the two.
- * A target that throws instead is treated as failed with no evidence.
+ * <p>A turn either answers with the reply and the tool calls, or fails with a reason and the tool
+ * calls made before the failure. A target that throws is treated as failed with no tool calls.
  */
 @FunctionalInterface
 interface EvalTarget {
@@ -25,14 +22,14 @@ interface EvalTarget {
 
   /**
    * @param sessionId fresh per case, so one case cannot read another's session memory
-   * @param caseId which case is being asked, for a target that logs or routes by it
+   * @param caseId the case being run, for a target that logs or routes by it
    */
   record Turn(String sessionId, String caseId, String userMessage) {}
 
-  /** What one turn came to. */
+  /** The result of one turn. */
   sealed interface Outcome {
 
-    /** The tool calls seen either way, so a failed turn still shows what the agent did. */
+    /** The tool calls made, also for a failed turn. */
     List<ToolCall> toolCalls();
 
     static Outcome answered(Interaction interaction) {

@@ -8,16 +8,16 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * One round trip to the model while answering a turn, as evidence.
+ * One model call made while answering a turn.
  *
- * @param model the model asked, as named in the request
- * @param provider the provider it was asked through
- * @param finishReasons why the model stopped, as the provider reports it; a tool round says so here
- * @param inputTokens tokens sent, as the provider reports them, zero when it reports none
- * @param outputTokens tokens received, likewise
- * @param duration how long the round trip took
+ * @param model the model name, as sent in the request
+ * @param provider the provider name
+ * @param finishReasons why the model stopped, as the provider reports it
+ * @param inputTokens tokens sent, as the provider reports them; zero when it reports none
+ * @param outputTokens tokens received; zero when the provider reports none
+ * @param duration the duration of the call
  * @param inputMessages the messages sent, as the runtime renders them; empty when not recorded
- * @param outputMessages the messages received, likewise
+ * @param outputMessages the messages received; empty when not recorded
  */
 public record ModelCall(
     String model,

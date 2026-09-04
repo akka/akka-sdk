@@ -204,7 +204,7 @@
             <dependency>
                 <groupId>io.akka</groupId>
                 <artifactId>akka-sdk-spi_2.13</artifactId>
-                <version>1.6.16</version>
+                <version>1.6.16-0-c005f66b-dev-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
@@ -532,7 +532,7 @@
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-sdk-spi_2.13</artifactId>
-            <version>1.6.16</version>
+            <version>1.6.16-0-c005f66b-dev-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>

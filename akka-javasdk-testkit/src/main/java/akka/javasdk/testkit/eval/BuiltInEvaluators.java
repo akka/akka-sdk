@@ -15,11 +15,10 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 /**
- * The evaluators a case's {@link Expectations} activate. One per declaration kind, so a {@link
- * Gate} can hold a single kind to a rate across the run.
+ * The evaluators a case's {@link Expectations} activate, one per declaration kind.
  *
- * <p>Each reads only the evidence it names and abstains when that evidence is absent, which is what
- * keeps one missing tool call from failing every check at once.
+ * <p>Each reads only the evidence it names and abstains when that evidence is absent, so one
+ * missing tool call does not fail every check.
  */
 final class BuiltInEvaluators {
 
@@ -70,7 +69,7 @@ final class BuiltInEvaluators {
     };
   }
 
-  /** Greedy: the expected names must appear in order, other calls between them allowed. */
+  /** The expected names must appear in order. Other calls in between are allowed. */
   private static boolean isSubsequence(List<String> expected, List<ToolCall> calls) {
     int next = 0;
     for (var call : calls) {
@@ -113,13 +112,13 @@ final class BuiltInEvaluators {
     };
   }
 
-  /** JSON carries a number as whatever fits it, so compare rendered values as well. */
+  /** A JSON number may deserialize to another numeric type, so compare rendered values as well. */
   private static boolean sameValue(Object expected, Object actual) {
     return Objects.equals(expected, actual)
         || (actual != null && String.valueOf(expected).equals(String.valueOf(actual)));
   }
 
-  /** Abstains when the tool was never called or the evidence carries no results at all. */
+  /** Abstains when the tool was never called or no result was recorded. */
   private static Evaluator toolResults(Expectations expectations) {
     return (evalCase, reply, calls) -> {
       var failures = new ArrayList<String>();
@@ -173,7 +172,7 @@ final class BuiltInEvaluators {
                 "made " + calls.size() + " tool calls, allowed " + limit + ": " + orderOf(calls));
   }
 
-  /** Abstains when the trace carried no model calls, which is no evidence rather than zero. */
+  /** Abstains when the trace carried no model calls. */
   private static Evaluator modelCallBudget(int limit) {
     return (evalCase, reply, calls) -> {
       var made = reply.modelCalls().size();
@@ -187,7 +186,7 @@ final class BuiltInEvaluators {
     };
   }
 
-  /** Abstains when no model call reported tokens, as a scripted model does not. */
+  /** Abstains when no model call reported tokens, as with a mocked model. */
   private static Evaluator tokenBudget(long limit) {
     return (evalCase, reply, calls) -> {
       var used = reply.totalTokens();

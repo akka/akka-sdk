@@ -9,43 +9,36 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * A model asked whether a reply meets a criterion, as a {@link Evaluator}.
- *
- * <p>For the expectations the built-ins cannot state: that an answer explains itself, keeps the
- * customer's tone, or refuses what it should refuse. A criterion is written in words, the judge
- * returns a score and a reason, and a threshold turns that into a finding.
+ * A model that scores a reply against a criterion written in words. {@link #mustSatisfy} and {@link
+ * #scoringAtLeast} turn the score into an {@link Evaluator}.
  *
  * <pre>{@code
+ * var judge = Judge.agent(testKit);
+ *
  * Expectations.expect()
  *     .tools("getCustomer")
  *     .satisfies(judge.mustSatisfy("the reply states the customer's tier and invents nothing"));
  * }</pre>
  *
- * <p>This interface holds no model and no provider. {@link #agent} is the one implementation
- * shipped: it puts the question to the {@link JudgeAgent}, whose model is the consumer's. A test
- * returns a {@link Verdict} directly, or mocks that agent's model, which is what keeps a suite that
- * uses a judge runnable with no provider.
+ * <p>{@link #agent} asks a model through {@link JudgeAgent}, which uses the model provider of the
+ * test configuration. A test can also return a {@link Verdict} directly, or mock that agent's
+ * model.
  *
- * <p>A judged case is scored on an opinion, so it does not reproduce the way the built-ins do. Two
- * runs of the same reply can land either side of a threshold. Judge what has no right answer to
- * compare against, gate a batch on the rate rather than asserting per case, and keep the
- * deterministic checks for everything else.
+ * <p>A judged score can differ between runs of the same reply. Use a judge for criteria that have
+ * no exact answer to compare against, and gate a batch on the rate instead of asserting per case.
  */
 @FunctionalInterface
 public interface Judge {
 
   Verdict assess(Question question);
 
-  /** The judge that asks a model through {@link JudgeAgent}, using the TestKit's client. */
+  /** A judge that asks a model through {@link JudgeAgent}, using the TestKit component client. */
   static AgentJudge agent(akka.javasdk.testkit.TestKit testKit) {
     if (testKit == null) throw new IllegalArgumentException("testKit required");
     return AgentJudge.backedBy(testKit.getComponentClient());
   }
 
-  /**
-   * What the judge is asked. The criterion is the consumer's sentence; the rest is the evidence the
-   * case produced.
-   */
+  /** What the judge is asked: the criterion and the evidence the case produced. */
   record Question(String criterion, String userMessage, String reply, List<ToolCall> toolCalls) {
 
     public Question {
@@ -56,19 +49,17 @@ public interface Judge {
       toolCalls = toolCalls == null ? List.of() : List.copyOf(toolCalls);
     }
 
-    /**
-     * The tools called while answering, in order, for a criterion about how the reply was reached.
-     */
+    /** The names of the tools called, in order. */
     public List<String> toolNames() {
       return toolCalls.stream().map(ToolCall::name).toList();
     }
   }
 
   /**
-   * What the judge said.
+   * The judge's answer.
    *
-   * @param score between 0 and 1. Anything else, {@code NaN} included, is read as "the judge did
-   *     not answer" and abstains rather than failing the case
+   * @param score between 0 and 1. Any other value, {@code NaN} included, makes the evaluator
+   *     abstain
    * @param reason one line, printed under a failed case
    */
   record Verdict(double score, String reason) {
@@ -82,7 +73,10 @@ public interface Judge {
     }
   }
 
-  /** The criterion has to score at least this. */
+  /**
+   * The criterion must score at least this. Abstains when there is no reply, when the judge throws,
+   * or when the score is not between 0 and 1.
+   */
   default Evaluator scoringAtLeast(String criterion, double threshold) {
     return (evalCase, reply, toolCalls) -> {
       if (reply.text().isBlank()) {
@@ -114,7 +108,7 @@ public interface Judge {
     };
   }
 
-  /** The criterion at the middle of the scale, which is where a judged check starts. */
+  /** The criterion must score at least 0.5. */
   default Evaluator mustSatisfy(String criterion) {
     return scoringAtLeast(criterion, 0.5);
   }

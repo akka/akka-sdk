@@ -19,20 +19,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * The evidence of a turn, read from the trace the runtime records for an agent call.
+ * Reads the evidence of a turn from the trace the runtime records for an agent call.
  *
- * <p>Under the agent's command span the runtime opens one span per tool call, with the tool's name,
- * arguments, result and error status; one per model call, with the messages both ways, the finish
- * reason and the token counts; and one per guardrail evaluation, with its verdict. Under the
- * TestKit every trace carries those payloads and every span stays in memory, so a target can call
- * the agent through the component client and then read back what happened, including the calls made
- * before a failure.
- *
- * <p>The agent's command span names the session it ran in, which is how this reader finds the
- * trace: the runner hands each case a fresh session id, so a session is one case's evidence.
- *
- * <p>{@link ExperimentRunner#forAgent} reads through this on every case. Any integration test can
- * as well:
+ * <p>Under the agent command span the runtime records one span per tool call, per model call and
+ * per guardrail evaluation. With the TestKit these spans stay in memory. The command span carries
+ * the session id, which is how the turn is found.
  *
  * <pre>{@code
  * var traced = TracedTurns.from(testKit.getInMemorySpanExporter());
@@ -41,8 +32,7 @@ import java.util.stream.Stream;
  * turn.modelCalls();
  * }</pre>
  *
- * <p>Tool names are reported without the agent prefix the model sees, matching what {@link
- * ToolCall} documents.
+ * <p>Tool names are reported without the agent class prefix, see {@link ToolCall}.
  */
 public final class TracedTurns {
 
@@ -91,22 +81,22 @@ public final class TracedTurns {
     this.timeout = timeout;
   }
 
-  /** Over the TestKit's exporter, waiting a few seconds for the trace to be exported. */
+  /** Reads from the given exporter, waiting up to 5 seconds for the trace. */
   public static TracedTurns from(InMemorySpanExporter exporter) {
     if (exporter == null) throw new IllegalArgumentException("exporter required");
     return new TracedTurns(exporter, Duration.ofSeconds(5));
   }
 
+  /** The same reader with another timeout. */
   public TracedTurns waitingUpTo(Duration timeout) {
     return new TracedTurns(exporter, timeout);
   }
 
   /**
-   * What the agent commands that ran in this session did, in order. Waits for the first command
-   * span, which the runtime exports once the call has been answered, so every span under it is
-   * there by then.
+   * The evidence of every agent command that ran in this session, in order. Waits until the first
+   * command span is exported.
    *
-   * @throws IllegalStateException when no agent command in that session shows up in time
+   * @throws IllegalStateException when no command span for the session appears within the timeout
    */
   public TracedTurn forSession(String sessionId) {
     awaitCommand(sessionId);
@@ -201,8 +191,8 @@ public final class TracedTurns {
   }
 
   /**
-   * The text of the last message the model wrote, out of the messages the runtime rendered for the
-   * span: a JSON array of messages, each with parts, of which the text parts count.
+   * The text parts of the last message in the rendered output messages, a JSON array of messages
+   * with parts.
    */
   static String finalText(String outputMessages) {
     if (outputMessages == null || outputMessages.isBlank()) return "";
@@ -219,12 +209,9 @@ public final class TracedTurns {
     }
   }
 
-  /**
-   * An agent-local tool is registered as {@code <AgentClass>_<method>}; drop the class. The span
-   * names the implementing class, possibly qualified; without it, a leading capitalised segment
-   * before an underscore is taken as the class, which a method name or an MCP tool name never
-   * starts with.
-   */
+  // An agent-local tool is registered as <AgentClass>_<method>. The span names the implementing
+  // class, possibly qualified. Without it, a leading capitalised segment before an underscore is
+  // taken as the class. A method name or an MCP tool name does not start that way.
   private static String unprefixed(String toolName, String implementation) {
     if (toolName == null) return "?";
     if (implementation != null) {

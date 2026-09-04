@@ -7,11 +7,9 @@ package akka.javasdk.testkit.eval;
 import java.util.List;
 
 /**
- * A custom check over one case's evidence. The extension seam of {@link Expectations}.
+ * A custom check over one case's evidence, added through {@link Expectations#satisfies}.
  *
- * <p>Reads only what happened — the reply and the recorded tool calls — never the service. A
- * judge-backed evaluator lives here too: the consumer wraps its own judge agent and maps the
- * verdict to a finding.
+ * <p>An evaluator reads only the interaction and the tool calls. It never calls the service.
  */
 @FunctionalInterface
 public interface Evaluator {
@@ -19,8 +17,8 @@ public interface Evaluator {
   EvalResult evaluate(EvalCase evalCase, Interaction interaction, List<ToolCall> toolCalls);
 
   /**
-   * @param evaluator which check produced this, named in the report
-   * @param detail why, written for the person reading a failed run
+   * @param evaluator the name of the check that produced this, printed in the report
+   * @param detail the reason, printed under a failed case
    */
   record EvalResult(String evaluator, Verdict verdict, String detail) {
 

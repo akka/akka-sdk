@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-/** What a batch run has to clear, over cases whose outcome is arranged by the target. */
+/** Gates over case results arranged by a scripted target. */
 class GateTest {
 
-  /** Answers with the case id, and calls getCustomer with it, so a case can be made to fail. */
+  /** Answers with the case id and calls getCustomer with it, so a case can be made to fail. */
   private final EvalTarget target =
       turn ->
           EvalTarget.Outcome.answered(

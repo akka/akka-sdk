@@ -12,9 +12,8 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * The target behind {@link ExperimentRunner#forAgent}: calls the agent's command handler through
- * the TestKit's component client, in the turn's session, and reads the tool calls back from the
- * trace the runtime recorded for that session.
+ * Calls the agent's command handler through the TestKit component client in the turn's session, and
+ * reads the tool calls from the trace recorded for that session.
  *
  * @param <A> the agent
  * @param <C> the command handler's parameter type
@@ -44,7 +43,7 @@ final class AgentTarget<A extends Agent, C, R> implements EvalTarget {
     this.traced = TracedTurns.from(testKit.getInMemorySpanExporter());
   }
 
-  /** A reply is read as itself when it is text, and as its JSON otherwise. */
+  /** A String reply is used as is. Any other reply is rendered as JSON. */
   static <R> String asText(R reply) {
     if (reply == null) return "";
     if (reply instanceof String text) return text;
@@ -69,7 +68,7 @@ final class AgentTarget<A extends Agent, C, R> implements EvalTarget {
         new Interaction(replyText.apply(reply), traced.forSession(turn.sessionId())));
   }
 
-  /** After a failure the trace may hold nothing for the session; the failure is the finding. */
+  // After a failure the trace may hold nothing for the session.
   private List<ToolCall> toolCallsOrNone(Turn turn) {
     try {
       return traced.forSession(turn.sessionId()).toolCalls();

@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
-/** What the model is asked, pinned without a provider. */
+/** The material sent to the model, checked without a provider. */
 class AgentJudgeTest {
 
   @Test

@@ -8,14 +8,13 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * Everything the runtime traced under an agent's command: the evidence of one turn before it is
- * paired with the reply.
+ * Everything the runtime traced under one agent command.
  *
  * @param toolCalls in call order
- * @param modelCalls in call order; the last one produced the final text
+ * @param modelCalls in call order
  * @param guardrails every guardrail evaluation, in order
- * @param duration from the command's start to its end
- * @param finalModelText what the model wrote in its last call, before the agent mapped it into a
+ * @param duration from the start of the command to its end
+ * @param finalModelText the text of the last model response, before the agent mapped it into the
  *     reply; empty when the trace did not carry the messages
  */
 public record TracedTurn(

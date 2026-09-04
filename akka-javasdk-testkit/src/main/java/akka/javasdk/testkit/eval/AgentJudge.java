@@ -13,20 +13,11 @@ import java.util.UUID;
 /**
  * A {@link Judge} that asks a model through {@link JudgeAgent}.
  *
- * <p>The rubric is this kit's, read from {@code eval/judge-prompt.txt} on the classpath; the
- * criterion is the consumer's. A consumer with a rubric of their own hands it to {@link
- * #withPrompt}, keeping the reply contract the prompt states, since the verdict is read back as
- * JSON with a score and a reason.
+ * <p>The system message is read from {@code eval/judge-prompt.txt} on the classpath. A custom
+ * prompt passed to {@link #withPrompt} must ask for the same reply format: a JSON object with a
+ * {@code score} between 0 and 1 and a {@code reason}.
  *
- * <pre>{@code
- * var judge = Judge.agent(testKit);
- *
- * Expectations.expect()
- *     .tools("getCustomer")
- *     .satisfies(judge.mustSatisfy("the reply states the customer's tier and invents nothing"));
- * }</pre>
- *
- * <p>Every question goes to the agent in a session of its own.
+ * <p>Each question runs in a new session.
  */
 public final class AgentJudge implements Judge {
 
@@ -42,12 +33,12 @@ public final class AgentJudge implements Judge {
     this.prompt = prompt;
   }
 
-  /** The judge with this kit's rubric. */
+  /** A judge with the default prompt. */
   public static AgentJudge backedBy(ComponentClient componentClient) {
     return new AgentJudge(componentClient, defaultPrompt());
   }
 
-  /** The same judge with another rubric as the system message. */
+  /** The same judge with another system message. */
   public AgentJudge withPrompt(String prompt) {
     return new AgentJudge(componentClient, prompt);
   }
@@ -65,7 +56,7 @@ public final class AgentJudge implements Judge {
         .invoke(new JudgeAgent.Request(prompt, material(question)));
   }
 
-  /** The evidence, labelled, so the model reads the reply apart from what produced it. */
+  /** The criterion and the evidence as text, in labelled sections. */
   static String material(Question question) {
     var material = new StringBuilder();
     material.append("Criterion:\n").append(question.criterion());

@@ -8,17 +8,16 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * What one graded turn produced: the agent's reply as text, and what the runtime traced while
- * producing it. This is what an {@link Evaluator} reads and what a {@link
- * ExperimentRunner.CaseResult} carries.
+ * What one turn produced: the agent's reply as text and what the runtime traced while producing it.
+ * This is what an {@link Evaluator} reads.
  *
- * @param text the agent's reply, after any mapping the handler applied
+ * @param text the agent's reply
  * @param toolCalls in call order
  * @param modelCalls in call order
  * @param guardrails every guardrail evaluation, in order
- * @param latency from the agent's command start to its end
- * @param finalModelText what the model wrote last, before the agent mapped it; the same as {@code
- *     text} for a plain text handler, and empty when the trace did not carry it
+ * @param latency from the start of the agent command to its end
+ * @param finalModelText the text of the last model response, before the agent mapped it into the
+ *     reply; empty when the trace did not carry it
  */
 public record Interaction(
     String text,
@@ -37,12 +36,12 @@ public record Interaction(
     finalModelText = finalModelText == null ? "" : finalModelText;
   }
 
-  /** A reply with tool calls and nothing else traced. */
+  /** A reply with tool calls only. */
   public Interaction(String text, List<ToolCall> toolCalls) {
     this(text, toolCalls, List.of(), List.of(), Duration.ZERO, "");
   }
 
-  /** A reply with what the trace held. */
+  /** A reply with the traced evidence. */
   public Interaction(String text, TracedTurn traced) {
     this(
         text,

@@ -8,16 +8,14 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * One tool invocation, as evidence: the name the model asked for, the arguments the runtime
- * deserialized for it, and, when the evidence source carries them, what came back.
+ * One tool call: the name, the deserialized arguments and, when recorded, the result or the error.
  *
- * <p>Names are the plain method names, without the class prefix the model sees ({@code
- * SupportAgent_getCustomer}); expectations and recordings use the same convention so the two
- * compare.
+ * <p>Names are the plain method names, without the agent class prefix the model sees ({@code
+ * SupportAgent_getCustomer}). Expectations and recordings use the same names.
  *
- * @param arguments by parameter name; values are what arrived, after deserialization
- * @param result the tool's result as the model saw it, when the source records results
- * @param error the failure message when the tool threw instead of answering
+ * @param arguments by parameter name
+ * @param result the tool's result as the model saw it, when recorded
+ * @param error the failure message when the tool threw
  */
 public record ToolCall(
     String name, Map<String, Object> arguments, Optional<String> result, Optional<String> error) {
@@ -29,7 +27,7 @@ public record ToolCall(
     error = error == null ? Optional.empty() : error;
   }
 
-  /** A call with no record of what it returned. */
+  /** A call with no recorded result. */
   public ToolCall(String name, Map<String, Object> arguments) {
     this(name, arguments, Optional.empty(), Optional.empty());
   }

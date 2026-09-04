@@ -12,15 +12,14 @@ import java.util.Locale;
 import java.util.function.Function;
 
 /**
- * What a batch run must clear to pass, over the aggregated findings.
+ * What a batch run must satisfy, checked over all case results.
  *
- * <p>Exists because a real model is stochastic: one wrong case in thirty is variance, not a
- * regression, and per-case assertions would turn it into a flaky build. The gate asserts on rates
- * instead. For the deterministic mode (mocked model), skip the gate and run per case.
+ * <p>A real model is not deterministic, so a batch asserts on rates rather than on every case. With
+ * a mocked model skip the gate and use {@link ExperimentRunner#runSingle}.
  */
 public final class Gate {
 
-  /** Whether the run cleared the gate, and what to print when it did not. */
+  /** Whether the run passed the gate, and the detail to print. */
   record Verdict(boolean passed, String detail) {
 
     static Verdict pass(String detail) {
@@ -55,7 +54,10 @@ public final class Gate {
         });
   }
 
-  /** One evaluator's own pass rate must be at least this, e.g. tool-arguments at 0.95. */
+  /**
+   * The pass rate of one evaluator, over the cases where it did not abstain, must be at least this.
+   * Fails when the evaluator judged no case. Evaluator names are in {@link Evaluators}.
+   */
   public static Gate evaluatorRateAtLeast(String evaluator, double rate) {
     if (evaluator == null || evaluator.isBlank())
       throw new IllegalArgumentException("evaluator name required");
@@ -85,7 +87,7 @@ public final class Gate {
         });
   }
 
-  /** No case may end in a target failure (thrown, never answered). */
+  /** No case may fail in its setup or in the agent call. */
   public static Gate noTargetFailures() {
     return new Gate(
         results -> {

@@ -13,13 +13,10 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-/**
- * The runner over a target that needs no runtime: what a case's expectations are held against, and
- * what a failed case says.
- */
+/** The runner over a scripted target that needs no runtime. */
 class ExperimentRunnerTest {
 
-  /** Answers with the text it is given, with the tool calls it is given as its evidence. */
+  /** Answers with the given text and tool calls. */
   private static EvalTarget targetThat(String answer, ToolCall... calls) {
     return turn -> EvalTarget.Outcome.answered(new Interaction(answer, List.of(calls)));
   }
@@ -168,7 +165,7 @@ class ExperimentRunnerTest {
     assertThat(run.finding(Evaluators.TOOL_RESULTS).detail()).contains("no recorded result");
   }
 
-  /** A target whose evidence carries model calls, tokens and timing, as a traced one does. */
+  /** A target whose evidence carries model calls, tokens and timing. */
   private static EvalTarget tracedThat(
       String answer, int modelCalls, long tokensPerCall, Duration took) {
     var calls =

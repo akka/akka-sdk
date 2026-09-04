@@ -9,26 +9,22 @@ import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.annotations.Component;
 
 /**
- * The agent behind {@link Judge#agent}: puts one question to a model and reads back a {@link
+ * The agent behind {@link Judge#agent}: asks the model one question and reads back a {@link
  * Judge.Verdict}.
  *
- * <p>Names no model, so it resolves {@code akka.javasdk.agent.model-provider} from the consumer's
- * own config; the model, the provider and the cost stay theirs. A suite that wants no provider
- * registers a {@code TestModelProvider} for this class, the same way it mocks the agent under test.
+ * <p>Uses the model provider configured in {@code akka.javasdk.agent.model-provider}. To run
+ * without a provider, register a {@code TestModelProvider} for this class as for any other agent.
  *
- * <p>Memory is off. Each judgement stands alone: a judge that remembered its last answers would
- * drift toward them, and two runs in a different order would then disagree for reasons that have
- * nothing to do with the agent being judged.
+ * <p>Memory is disabled, so each judgement stands alone.
  *
- * <p>This component is on the consumer's test classpath, so it registers when their TestKit boots
- * and is absent from their deployed service.
+ * <p>The component is registered when the TestKit starts. It is not part of the deployed service.
  */
 @Component(id = "eval-judge")
 public class JudgeAgent extends Agent {
 
   /**
-   * @param instructions the rubric: what to decide and the shape to answer in
-   * @param material the evidence being judged, rendered as text
+   * @param instructions the system message: what to decide and the reply format
+   * @param material the criterion and the evidence, as text
    */
   public record Request(String instructions, String material) {}
 

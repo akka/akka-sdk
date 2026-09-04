@@ -17,9 +17,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Turns recorded production interactions into runnable cases.
+ * Turns recorded production interactions into cases.
  *
- * <p>One JSON object per line:
+ * <p>The input is JSONL, one interaction per line:
  *
  * <pre>{@code
  * { "id": "c1",
@@ -33,43 +33,37 @@ import java.util.Map;
  *   "latencyMs": 1400 }
  * }</pre>
  *
- * <p>The spend figures are optional. When a line carries them they become budgets on the case: the
- * model call count as recorded, and tokens and latency with a slack factor, since a real model does
- * not spend the same twice. A line without them gets no budget.
+ * <p>The case sends the recorded input, primes each bound stub with the recorded tool results, and
+ * expects the recorded tools, their order and their arguments. These expectations describe what
+ * production did. They are a baseline, not a statement of correctness.
  *
- * <p>For each recorded interaction: the stimulus is the recorded input; the world is a generated
- * setup that primes each bound stub with the tool results the recording carries; the expectations
- * are the recorded tool sequence and arguments — a <b>baseline</b> ("behaves like production did"),
- * not ground truth. A case worth asserting correctness on is promoted into the curated set after
- * review.
- *
- * <p>Argument drift: the stubs are primed by the arguments production saw. A call with other
- * arguments finds no canned result, gets a realistic tool error back, and stands in the evidence —
- * where the derived expectations fail it, which is the finding.
+ * <p>{@code modelCalls}, {@code tokens} and {@code latencyMs} are optional. When present they
+ * become budgets on the case: the model call count as recorded, tokens and latency multiplied by a
+ * slack factor. {@code tokens} is either a total or an object with {@code input} and {@code
+ * output}.
  */
 public final class EvalCaseParser {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  /** Half again what production spent, for tokens and latency. */
+  /** Token and latency budgets are 1.5 times the recorded figures. */
   public static final double DEFAULT_SLACK = 1.5;
 
   private EvalCaseParser() {}
 
   /**
-   * Reads canonical interaction JSONL, one case per recorded interaction.
+   * Reads the JSONL file with {@link #DEFAULT_SLACK}.
    *
-   * <p>Refused at load time, with every problem and its line number: a line that does not parse, a
-   * line with no {@code input}, and an interaction naming a tool with no binding.
+   * @throws IllegalArgumentException listing every line that does not parse, has no {@code input},
+   *     or names a tool without a binding
    */
   public static List<EvalCase> parse(Path canonicalJsonl, ToolBindings bindings) {
     return parse(canonicalJsonl, bindings, DEFAULT_SLACK);
   }
 
   /**
-   * As {@link #parse(Path, ToolBindings)}, with the slack the token and latency budgets allow over
-   * what was recorded: {@code 1.5} holds a case to one and a half times production's spend, {@code
-   * 1.0} to exactly it.
+   * Reads the JSONL file. {@code slack} multiplies the recorded token and latency figures to give
+   * the budgets. {@code 1.0} holds a case to exactly what was recorded.
    */
   public static List<EvalCase> parse(Path canonicalJsonl, ToolBindings bindings, double slack) {
     if (slack < 1.0) throw new IllegalArgumentException("slack is at least 1.0, was " + slack);
@@ -121,7 +115,7 @@ public final class EvalCaseParser {
     return new EvalCase(id, input, setup, withBudgets(baseline(recorded), interaction, slack));
   }
 
-  /** The recorded spend, as ceilings. Refuses a figure that is not a count. */
+  /** Turns the recorded spend into budgets. */
   private static Expectations withBudgets(
       Expectations baseline, JsonNode interaction, double slack) {
     var expectations = baseline;
@@ -163,7 +157,7 @@ public final class EvalCaseParser {
     return MAPPER.convertValue(argumentsNode, Map.class);
   }
 
-  /** What production did, declared as expectations. A baseline, not ground truth. */
+  /** The recorded tools, their order and their arguments, as expectations. */
   private static Expectations baseline(List<ToolBindings.RecordedCall> recorded) {
     var expectations = Expectations.expect();
     if (recorded.isEmpty()) return expectations;

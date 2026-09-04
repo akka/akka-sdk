@@ -19,20 +19,17 @@ import java.util.UUID;
 import java.util.function.Function;
 
 /**
- * The runner: cases in, report out. Sequential, in-process, nothing persisted — surefire is the
- * driver and a crashed run is re-run.
+ * Runs cases against an agent and collects the findings. Sequential and in-process, nothing is
+ * persisted.
  *
- * <p>Per case: run {@code setup}, call the agent in a fresh session, read the tool calls the
- * runtime traced for that session, evaluate the expectations over the reply and those calls,
- * collect the findings.
- *
- * <p>Two execution shapes for two test modes:
+ * <p>Per case: run the setup, call the agent in a fresh session, read the evidence the runtime
+ * traced for that session, and evaluate the expectations over it.
  *
  * <ul>
- *   <li>{@link #runSingle} — one case, strict. For a {@code @ParameterizedTest} over a mocked
- *       model, where every case must pass deterministically.
- *   <li>{@link #run} — all cases, aggregated, judged by the {@link Gate}. For the real-model
- *       quality suite, one {@code @Test}, tagged and environment-gated.
+ *   <li>{@link #runSingle}: one case, which must pass. For a parameterized test with a mocked
+ *       model.
+ *   <li>{@link #run}: all cases, judged by a {@link Gate} over the aggregated results. For a real
+ *       model.
  * </ul>
  *
  * <pre>{@code
@@ -59,20 +56,18 @@ public final class ExperimentRunner {
     this.gate = gate;
   }
 
-  /** The batch entry: these cases, then a gate over what they did. */
+  /** The batch entry point. Set the agent with {@link #agent} and the gate with {@link #gate}. */
   public static ExperimentRunner cases(List<EvalCase> cases) {
     if (cases == null) throw new IllegalArgumentException("cases required");
     return new ExperimentRunner(List.copyOf(cases), null, List.of(), null);
   }
 
   /**
-   * The per-case entry: the agent to call, no case list, because {@link #runSingle} is handed the
-   * case. The command handler takes the case's message and replies with text or with a value that
-   * is rendered as JSON for the expectations to read.
+   * The entry point for {@link #runSingle}. The command handler takes the case's message as a
+   * String. A String reply is used as is, any other reply is rendered as JSON.
    *
-   * @param testKit the running TestKit; the runner calls through its component client and reads the
-   *     traces it keeps
-   * @param method the agent's command handler, as {@code SupportAgent::ask}
+   * @param testKit the running TestKit
+   * @param method the agent's command handler, for example {@code SupportAgent::ask}
    */
   public static <A extends Agent, R> ExperimentRunner forAgent(
       TestKit testKit, Function2<A, String, Agent.Effect<R>> method) {
@@ -80,10 +75,11 @@ public final class ExperimentRunner {
   }
 
   /**
-   * The per-case entry for a command handler with its own command and reply types.
+   * The entry point for {@link #runSingle} with a command handler that has its own command and
+   * reply types.
    *
-   * @param command builds the handler's command from the case's message
-   * @param replyText renders the handler's reply as the text the expectations read
+   * @param command builds the command from the case's message
+   * @param replyText renders the reply as the text the expectations read
    */
   public static <A extends Agent, C, R> ExperimentRunner forAgent(
       TestKit testKit,
@@ -93,13 +89,13 @@ public final class ExperimentRunner {
     return forTarget(new AgentTarget<>(testKit, method, command, replyText));
   }
 
-  /** The agent the batch calls; see {@link #forAgent(TestKit, Function2)}. */
+  /** The agent the batch calls. See {@link #forAgent(TestKit, Function2)}. */
   public <A extends Agent, R> ExperimentRunner agent(
       TestKit testKit, Function2<A, String, Agent.Effect<R>> method) {
     return agent(testKit, method, Function.identity(), AgentTarget::asText);
   }
 
-  /** The agent the batch calls; see {@link #forAgent(TestKit, Function2, Function, Function)}. */
+  /** The agent the batch calls. See {@link #forAgent(TestKit, Function2, Function, Function)}. */
   public <A extends Agent, C, R> ExperimentRunner agent(
       TestKit testKit,
       Function2<A, C, Agent.Effect<R>> method,
@@ -118,7 +114,7 @@ public final class ExperimentRunner {
     return new ExperimentRunner(cases, target, evaluators, gate);
   }
 
-  /** Runs on every case, in addition to what each case's expectations activate. */
+  /** An evaluator that runs on every case, in addition to the case's expectations. */
   public ExperimentRunner evaluator(Evaluator evaluator) {
     if (evaluator == null) throw new IllegalArgumentException("evaluator required");
     var next = new ArrayList<>(evaluators);
@@ -126,18 +122,19 @@ public final class ExperimentRunner {
     return new ExperimentRunner(cases, target, List.copyOf(next), gate);
   }
 
+  /** The gate {@link #run} checks. Without a gate the report passes. */
   public ExperimentRunner gate(Gate gate) {
     return new ExperimentRunner(cases, target, evaluators, gate);
   }
 
-  /** All cases, then the gate. Never throws on a failed gate; the test asserts. */
+  /** Runs all cases and checks the gate. Does not throw on a failed gate; assert on the report. */
   public EvalReport run() {
     if (cases.isEmpty()) throw new IllegalStateException("no cases to run");
     var results = cases.stream().map(this::evaluate).toList();
     return new Report(results, gate == null ? Gate.Verdict.pass("no gate") : gate.check(results));
   }
 
-  /** One case, no gate. The result says pass or fail; the test asserts per case. */
+  /** Runs one case without a gate. Assert on the result. */
   public CaseResult runSingle(EvalCase evalCase) {
     if (evalCase == null) throw new IllegalArgumentException("case required");
     return evaluate(evalCase);
@@ -191,12 +188,12 @@ public final class ExperimentRunner {
   /** One case's evidence and findings. */
   public record CaseResult(String caseId, Interaction interaction, List<EvalResult> evalResults) {
 
-    /** No failed finding, and the target answered. */
+    /** No failed finding. A setup or agent failure is a failed finding. */
     public boolean passed() {
       return evalResults.stream().noneMatch(f -> f.verdict() == EvalResult.Verdict.FAIL);
     }
 
-    /** The case's findings and evidence, written for a failed test's output. */
+    /** The evidence and the findings as text, for a failed test's output. */
     public String describe() {
       var text = new StringBuilder();
       text.append("case ").append(caseId).append(passed() ? " passed" : " FAILED").append('\n');
@@ -262,16 +259,18 @@ public final class ExperimentRunner {
     }
   }
 
-  /** The batch outcome: per-case results, rates, and the gate's verdict. */
+  /** The batch outcome: per-case results and the gate's verdict. */
   public interface EvalReport {
 
+    /** Whether the gate passed. */
     boolean passed();
 
+    /** The share of cases with no failed finding. */
     double passRate();
 
     List<CaseResult> cases();
 
-    /** The whole run as text — rates per evaluator, failed cases with their evidence. */
+    /** The run as text: the gate verdict, rates per evaluator, and failed cases with evidence. */
     String render();
   }
 
@@ -313,10 +312,7 @@ public final class ExperimentRunner {
       return text.toString();
     }
 
-    /**
-     * What the run cost, summed over the cases whose evidence carried model calls, with the slowest
-     * case named. Absent when no case did, as with a target that runs no runtime.
-     */
+    /** Model calls, tokens and latency summed over the cases with model calls in the evidence. */
     private Optional<String> spend() {
       var traced = cases.stream().filter(c -> !c.interaction().modelCalls().isEmpty()).toList();
       if (traced.isEmpty()) return Optional.empty();
@@ -341,7 +337,7 @@ public final class ExperimentRunner {
               cases.size()));
     }
 
-    /** Per evaluator, over the cases where it did not abstain. */
+    /** Pass counts per evaluator, over the cases where it did not abstain. */
     private Map<String, Rate> rates() {
       var rates = new LinkedHashMap<String, Rate>();
       for (var result : cases) {

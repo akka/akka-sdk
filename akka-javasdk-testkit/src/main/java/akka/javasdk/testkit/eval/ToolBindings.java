@@ -10,11 +10,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The one place the service's structure is named: which injected stub serves which tool.
+ * Which injected stub serves which tool, for cases derived from recordings.
  *
- * <p>A recorded interaction says a tool named {@code getLoan} returned something; it cannot know
- * that in this test {@code getLoan} is served by the loans stub. This map carries that knowledge,
- * once per service, a handful of lines:
+ * <p>A recorded interaction names a tool and its result. The binding loads that result into the
+ * stub that serves the tool in the test:
  *
  * <pre>{@code
  * var bindings = ToolBindings.builder()
@@ -23,8 +22,7 @@ import java.util.Set;
  *     .build();
  * }</pre>
  *
- * <p>Loading a capture that names a tool with no binding fails at load time, before any model call
- * is paid for.
+ * <p>{@link EvalCaseParser} rejects a recording that names a tool without a binding.
  */
 public final class ToolBindings {
 
@@ -36,10 +34,7 @@ public final class ToolBindings {
     this.byTool = Map.copyOf(byTool);
   }
 
-  /**
-   * One recorded tool invocation, as a loader receives it: the arguments the tool was called with
-   * and the result it returned, still as the JSON the capture recorded.
-   */
+  /** One recorded tool call: the arguments and the result as recorded JSON. */
   public record RecordedCall(String tool, Map<String, Object> arguments, String resultJson) {
 
     public RecordedCall {
@@ -48,12 +43,12 @@ public final class ToolBindings {
       resultJson = resultJson == null ? "null" : resultJson;
     }
 
-    /** The recorded value of one argument, or null if the call did not carry it. */
+    /** The recorded value of one argument, or null when the call did not carry it. */
     public Object argument(String name) {
       return arguments.get(name);
     }
 
-    /** The recorded result, read into the stub's return type. */
+    /** The recorded result, read into the given type. */
     public <T> T resultAs(Class<T> type) {
       try {
         return MAPPER.readValue(resultJson, type);
@@ -70,7 +65,7 @@ public final class ToolBindings {
     }
   }
 
-  /** Loads the recorded result of one call into its stub, so replaying the call finds it. */
+  /** Loads the recorded result of one call into its stub. */
   @FunctionalInterface
   public interface ResultLoader {
     void load(RecordedCall call);
@@ -88,7 +83,11 @@ public final class ToolBindings {
     return byTool.keySet();
   }
 
-  /** The loader for a tool, or a refusal naming the tool and what is bound. */
+  /**
+   * The loader for a tool.
+   *
+   * @throws IllegalArgumentException when the tool has no binding
+   */
   public ResultLoader loaderFor(String tool) {
     var loader = byTool.get(tool);
     if (loader == null) {
