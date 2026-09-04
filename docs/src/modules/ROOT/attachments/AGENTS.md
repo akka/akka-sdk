@@ -66,7 +66,7 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/streaming.html.md` - Stream processing and Akka Streams
 
 **Guides and reference:**
-- `akka-context/concepts/component-selection.html.md` - Choosing between components: decision matrix, when NOT to use each, boundary rules
+- `akka-context/sdk/components/index.html.md` - Component list plus the decision guide ("Choosing a component"): decision matrix, when NOT to use each, boundary rules
 - `akka-context/getting-started/planner-agent/dynamic-team.html.md` - Dynamic agent planning and orchestration
 - `akka-context/reference/views/**` - Detailed reference docs of views
 - `akka-context/reference/config/reference.html.md` - Full configuration reference
@@ -75,7 +75,7 @@ Access these documentation files for detailed patterns:
 ### When to Read Documentation
 
 **MANDATORY - Always read documentation BEFORE coding for:**
-- **Component mapping for a new feature** - ALWAYS read `component-selection.html.md` before deciding which components a feature needs (which entity type, workflow vs consumer, whether a view is needed at all)
+- **Component mapping for a new feature** - ALWAYS read `sdk/components/index.html.md` ("Choosing a component") before deciding which components a feature needs (which entity type, workflow vs consumer, whether a view is needed at all)
 - **Workflows** - ALWAYS read `workflows.html.md` first time in session (complex patterns, compensation, recovery)
 - **Agents** - ALWAYS read `agents.html.md` first time in session (LLM integration, tools, streaming)
 - **Autonomous Agents** - ALWAYS read `autonomous-agents.html.md` first time in session (durable execution, tasks, multi-agent coordination)
@@ -92,7 +92,7 @@ Access these documentation files for detailed patterns:
 
 ### Choosing the Right Component
 
-Decide the component mapping BEFORE writing code. The full rubrics with reasoning are in `akka-context/concepts/component-selection.html.md`. The short form:
+Decide the component mapping BEFORE writing code. The full rubrics with reasoning are in `akka-context/sdk/components/index.html.md` ("Choosing a component"). The short form:
 
 | Need | Component | Avoid when |
 |---|---|---|
@@ -851,7 +851,7 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 Before presenting code, verify:
 
 **Component choice**
-- [ ] Component mapping follows `component-selection.html.md`; each component needs its guarantees (durable state, subscription, schedule, process, API surface)
+- [ ] Component mapping follows `sdk/components/index.html.md` ("Choosing a component"); each component needs its guarantees (durable state, subscription, schedule, process, API surface)
 - [ ] No Key Value Entity with a hand-maintained history list (use Event Sourced); no Event Sourced Entity with a single whole-state `StateChanged` event (use Key Value)
 - [ ] No View whose only query is by entity id; no read-your-own-write through a View in the same request
 - [ ] No single-step Workflow (use a Consumer or direct call); no consumer chain that hides a multi-step process (use a Workflow)

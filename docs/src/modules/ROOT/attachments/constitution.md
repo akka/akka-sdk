@@ -49,7 +49,8 @@ components and guide architectural decisions.
 - **API isolation**: Endpoints MUST define their own request/response
   types rather than exposing domain internals.
 - **Right component for the job**: Component selection MUST follow the
-  decision guide in `akka-context/concepts/component-selection.html.md`.
+  decision guide in `akka-context/sdk/components/index.html.md`
+  ("Choosing a component").
   The implementation plan MUST record, for each domain concept, the
   chosen component and why the nearest alternative was rejected (Key
   Value vs Event Sourced Entity, Workflow vs Consumer, View vs direct
