@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.testkit.eval;
+package akka.javasdk.testkit;
 
 /**
  * One guardrail evaluation during a turn.

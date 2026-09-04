@@ -7,7 +7,9 @@ package akka.javasdk.testkit.eval;
 import akka.japi.function.Function2;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.Agent;
+import akka.javasdk.testkit.TelemetryReader;
 import akka.javasdk.testkit.TestKit;
+import akka.javasdk.testkit.ToolCall;
 import java.util.List;
 import java.util.function.Function;
 
@@ -25,7 +27,7 @@ final class AgentTarget<A extends Agent, C, R> implements EvalTarget {
   private final Function2<A, C, Agent.Effect<R>> method;
   private final Function<String, C> command;
   private final Function<R, String> replyText;
-  private final TracedTurns traced;
+  private final TelemetryReader telemetry;
 
   AgentTarget(
       TestKit testKit,
@@ -40,7 +42,7 @@ final class AgentTarget<A extends Agent, C, R> implements EvalTarget {
     this.method = method;
     this.command = command;
     this.replyText = replyText;
-    this.traced = TracedTurns.from(testKit.getInMemorySpanExporter());
+    this.telemetry = new TelemetryReader(testKit.getInMemorySpanExporter());
   }
 
   /** A String reply is used as is. Any other reply is rendered as JSON. */
@@ -65,13 +67,13 @@ final class AgentTarget<A extends Agent, C, R> implements EvalTarget {
       return Outcome.failed(e, toolCallsOrNone(turn));
     }
     return Outcome.answered(
-        new Interaction(replyText.apply(reply), traced.forSession(turn.sessionId())));
+        new Interaction(replyText.apply(reply), telemetry.getAgentTrace(turn.sessionId())));
   }
 
   // After a failure the trace may hold nothing for the session.
   private List<ToolCall> toolCallsOrNone(Turn turn) {
     try {
-      return traced.forSession(turn.sessionId()).toolCalls();
+      return telemetry.getAgentTrace(turn.sessionId()).toolCalls();
     } catch (RuntimeException e) {
       return List.of();
     }

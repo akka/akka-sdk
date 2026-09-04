@@ -4,6 +4,10 @@
 
 package akka.javasdk.testkit.eval;
 
+import akka.javasdk.testkit.AgentTrace;
+import akka.javasdk.testkit.GuardrailResult;
+import akka.javasdk.testkit.ModelCall;
+import akka.javasdk.testkit.ToolCall;
 import java.time.Duration;
 import java.util.List;
 
@@ -42,14 +46,14 @@ public record Interaction(
   }
 
   /** A reply with the traced evidence. */
-  public Interaction(String text, TracedTurn traced) {
+  public Interaction(String text, AgentTrace trace) {
     this(
         text,
-        traced.toolCalls(),
-        traced.modelCalls(),
-        traced.guardrails(),
-        traced.duration(),
-        traced.finalModelText());
+        trace.toolCalls(),
+        trace.modelCalls(),
+        trace.guardrails(),
+        trace.duration(),
+        trace.finalModelText());
   }
 
   public static Interaction of(String text) {

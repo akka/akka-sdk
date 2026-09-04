@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.testkit.eval;
+package akka.javasdk.testkit;
 
 import java.util.Map;
 import java.util.Optional;
@@ -11,7 +11,7 @@ import java.util.Optional;
  * One tool call: the name, the deserialized arguments and, when recorded, the result or the error.
  *
  * <p>Names are the plain method names, without the agent class prefix the model sees ({@code
- * SupportAgent_getCustomer}). Expectations and recordings use the same names.
+ * SupportAgent_getCustomer}).
  *
  * @param arguments by parameter name
  * @param result the tool's result as the model saw it, when recorded

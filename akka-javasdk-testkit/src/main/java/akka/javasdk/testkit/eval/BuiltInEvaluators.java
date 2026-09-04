@@ -4,6 +4,7 @@
 
 package akka.javasdk.testkit.eval;
 
+import akka.javasdk.testkit.ToolCall;
 import akka.javasdk.testkit.eval.Evaluator.EvalResult;
 import java.time.Duration;
 import java.util.ArrayList;

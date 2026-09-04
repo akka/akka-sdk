@@ -9,12 +9,12 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.5.38</version>
+                <version>1.6.3</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
-                <version>1.5.38</version>
+                <version>1.6.3</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback.contrib</groupId>
@@ -194,12 +194,12 @@
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j</artifactId>
-                <version>1.15.0</version>
+                <version>1.18.1</version>
             </dependency>
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-core</artifactId>
-                <version>1.15.0</version>
+                <version>1.18.1</version>
             </dependency>
             <dependency>
                 <groupId>io.akka</groupId>
@@ -337,12 +337,12 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.5.38</version>
+            <version>1.6.3</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
-            <version>1.5.38</version>
+            <version>1.6.3</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback.contrib</groupId>
@@ -522,12 +522,12 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
-            <version>1.15.0</version>
+            <version>1.18.1</version>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-core</artifactId>
-            <version>1.15.0</version>
+            <version>1.18.1</version>
         </dependency>
         <dependency>
             <groupId>io.akka</groupId>

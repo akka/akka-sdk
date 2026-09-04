@@ -6,6 +6,7 @@ package akka.javasdk.testkit.eval;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.javasdk.testkit.ToolCall;
 import akka.javasdk.testkit.eval.Evaluator.EvalResult;
 import java.util.List;
 import java.util.Map;

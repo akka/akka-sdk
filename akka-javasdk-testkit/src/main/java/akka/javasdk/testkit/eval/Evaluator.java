@@ -4,6 +4,7 @@
 
 package akka.javasdk.testkit.eval;
 
+import akka.javasdk.testkit.ToolCall;
 import java.util.List;
 
 /**

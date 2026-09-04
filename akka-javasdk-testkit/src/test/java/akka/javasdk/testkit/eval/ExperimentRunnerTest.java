@@ -7,6 +7,8 @@ package akka.javasdk.testkit.eval;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import akka.javasdk.testkit.ModelCall;
+import akka.javasdk.testkit.ToolCall;
 import akka.javasdk.testkit.eval.Evaluator.EvalResult;
 import java.time.Duration;
 import java.util.List;
