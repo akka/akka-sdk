@@ -13,13 +13,17 @@ import sbt.Test
 object SamplesCompilationProject {
 
   private val LangChain4JVersion = "1.1.0"
+  private val EvalkitVersion = "0.1.0"
   private val additionalDeps = Map(
     "doc-snippets" -> Seq("com.google.api.grpc" % "proto-google-common-protos" % "2.61.3" % "protobuf"),
     "spring-dependency-injection" -> Seq("org.springframework" % "spring-context" % "6.2.8"),
     "ask-akka-agent" -> Seq(
       "dev.langchain4j" % "langchain4j-open-ai" % LangChain4JVersion,
       "dev.langchain4j" % "langchain4j" % LangChain4JVersion,
-      "dev.langchain4j" % "langchain4j-mongodb-atlas" % "1.1.0-beta7"))
+      "dev.langchain4j" % "langchain4j-mongodb-atlas" % "1.1.0-beta7"),
+    "evaluation-playground" -> Seq(
+      "io.akka" % "akka-javasdk-evalkit" % EvalkitVersion % Test,
+      "io.akka" % "akka-javasdk-redkit" % EvalkitVersion % Test))
 
   def compilationProject(configureFunc: Project => Project): CompositeProject = {
     val pathToSample = "samples"

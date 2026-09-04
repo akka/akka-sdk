@@ -35,36 +35,46 @@ A GitHub Action is used to run Vale in the CI/CD pipeline:
 
 ## How to use locally (macOS)
 
-1. Install Vale:
+Run the helper script from the repository root:
 
-   ```bash
-   brew install vale
-   ```
+```bash
+docs/bin/vale.sh
+```
 
-2. Install Asciidoctor (required for processing .adoc files):
-
-   ```bash
-   gem install asciidoctor
-   ```
-
-3. Run Vale in the docs directory:
-
-   ```bash
-   (cd docs && vale src)
-   ```
+The script installs Vale and Asciidoctor via Homebrew if they are missing, then runs Vale against `docs/src` with the same configuration as CI (`docs/.vale.ini`, error alert level).
 
 ### Advanced local usage for writing improvement
 
 When writing new sections of documentation, it may be useful to run Vale to see linting alerts at `warning` or `suggestion` level. These commands will provide feedback, helping you improve your writing before committing changes.
 
 ```bash
-(cd docs && vale --minAlertLevel warning src)
+docs/bin/vale.sh --warning
 ```
 
 or
 
 ```bash
-(cd docs && vale --minAlertLevel suggestion src)
+docs/bin/vale.sh --suggestion
+```
+
+To lint a single file:
+
+```bash
+docs/bin/vale.sh docs/src/modules/sdk/pages/agents.adoc
+```
+
+### Manual installation
+
+If you prefer not to use the script, install the dependencies yourself:
+
+```bash
+brew install vale asciidoctor
+```
+
+Then run:
+
+```bash
+vale --config=docs/.vale.ini docs/src
 ```
 
 ## Best practices

@@ -1,0 +1,23 @@
+{{#if page.attributes.banner}}
+    {{#if (eq page.attributes.banner 'inference')}}
+        <div class="page-banner bg-akka-gray-100 text-akka-black p-4 mb-6 text-base flex items-center gap-3">
+            <span class="font-bold">Feature set: Inference</span>
+            <span>Contact <a href="https://akka.io/contact" class="text-akka-blue-dkr underline">our support</a> for access.<br/>
+            <i>This functionality evolves quickly, the behavior and APIs might change between releases without further notice.</i></span>
+        </div>
+    {{/if}}
+    {{#if (eq page.attributes.banner 'governance')}}
+        <div class="page-banner bg-akka-gray-100 text-akka-black p-4 mb-6 text-base flex items-center gap-3">
+            <span class="font-bold">Feature set: Governance</span>
+            <span>Contact <a href="https://akka.io/contact" class="text-akka-blue-dkr underline">our support</a> for access.<br/>
+            <i>This functionality evolves quickly, the behavior and APIs might change between releases without further notice.</i></span>
+        </div>
+    {{/if}}
+    {{#if (eq page.attributes.banner 'evaluations')}}
+        <div class="page-banner bg-akka-gray-100 text-akka-black p-4 mb-6 text-base flex items-center gap-3">
+            <span class="font-bold">Feature set: Evaluations</span>
+            <span>Contact <a href="https://akka.io/contact" class="text-akka-blue-dkr underline">our support</a> for access.<br/>
+            <i>This functionality evolves quickly, the behavior and APIs might change between releases without further notice.</i></span>
+        </div>
+    {{/if}}
+{{/if}}

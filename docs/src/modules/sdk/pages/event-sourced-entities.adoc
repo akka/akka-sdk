@@ -23,7 +23,7 @@ In contrast with typical create, read, update (CRUD) systems, event sourcing all
 
 include::partial$entity-sharding.adoc[]
 
-xref:reference:glossary.adoc#event_sourced_entity[Event Sourced Entities] persist changes as events and snapshots. Akka needs to serialize that data to send it to the underlying data store. However, we recommend that you do not persist your service's public API messages. Persisting private API messages may introduce some overhead when converting from a public message to an internal one but it allows the logic of the service public interface to evolve independently of the data storage format, which should be private.
+xref:reference:glossary.adoc#event_sourced_entity[Event Sourced Entities] persist changes as events and snapshots. Akka needs to serialize that data to send it to the underlying data store. As a recommendation, do not persist your service's public API messages. Persisting private API messages may introduce some overhead when converting from a public message to an internal one but it allows the logic of the service public interface to evolve independently of the data storage format, which should be private.
 
 The steps necessary to implement an Event Sourced Entity include:
 
@@ -34,7 +34,7 @@ The following sections walk through these steps using a shopping cart service as
 
 == Modeling the entity
 
-Through our "Shopping Cart" Event Sourced Entity we expect to manage our cart, adding and removing items as we please. Being event-sourced means it will represent changes to state as a series of domain events. Have a look at what kind of model we expect to store and the events our entity might generate.
+This example uses a "Shopping Cart" Event Sourced Entity to manage a cart, adding and removing items. Being event-sourced, the entity represents changes to state as a series of domain events. The following shows the model to store and the events the entity generates.
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
@@ -44,9 +44,9 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/Shop
 <1> Our `ShoppingCart` is fairly simple, being composed only by a `cartId` and a list of line items.
 <2> A `LineItem` represents a single product and the quantity we intend to buy.
 
-NOTE: Above we are taking advantage of the Java `record` to reduce the amount of boilerplate code, but you can use regular classes so long as they can be serialized to JSON (e.g. using Jackson annotations).
+NOTE: The above uses the Java `record` to reduce boilerplate code, but regular classes work too as long as they can be serialized to JSON (e.g. using Jackson annotations).
 
-Another fundamental aspect of our entity will be its domain events. For now, we will have 3 different events `ItemAdded`, `ItemRemoved` and `CheckedOut`, defined as below:
+Another fundamental aspect of the entity is its domain events. For now, define three events — `ItemAdded`, `ItemRemoved`, and `CheckedOut` — as shown below:
 
 [source,java,indent=0]
 .src/main/java/shoppingcart/domain/ShoppingCartEvent.java
@@ -78,7 +78,7 @@ For additional details, refer to xref:concepts:declarative-effects.adoc[Declarat
 
 == Implementing behavior
 
-Now that we have our Entity state defined along with its events, the remaining steps can be summarized as follows:
+With the Entity state defined along with its events, the remaining steps are:
 
 - declare your entity and pick a component id (it needs to be unique as it will be used for sharding purposes);
 - implement how each command is handled and which event(s) it generates;
@@ -99,7 +99,7 @@ NOTE: The `@Component` value `shopping-cart` is common for all instances of this
 
 === Updating state
 
-Having created the basis of our entity, we will now define how each command is handled. In the example below, we define a method that will add a new line item to a given shopping cart. It returns an `Effect` to persist an event and then sends a reply once the event is stored successfully. The state is updated by the event handler.
+With the basis of the entity created, define how each command is handled. The example below defines a method that adds a new line item to a given shopping cart. It returns an `Effect` to persist an event and then sends a reply once the event is stored successfully. The state is updated by the event handler.
 
 IMPORTANT: The **only** way for a command handler to modify the Entity's state is by persisting an event. Any modifications made directly to the state (or instance variables) from the command handler are not persisted. When the Entity is passivated and reloaded, those modifications will not be present.
 
@@ -109,7 +109,7 @@ IMPORTANT: The **only** way for a command handler to modify the Entity's state i
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=addItem]
 ----
 <1> The validation ensures the quantity of items added is greater than zero and it fails for calls with illegal values by returning an `Effect` with `effects().error`.
-<2> From the current incoming `LineItem` we create a new `ItemAdded` event representing the change of the cart.
+<2> From the current incoming `LineItem`, create a new `ItemAdded` event representing the change of the cart.
 <3> We store the event by returning an `Effect` with `effects().persist`.
 <4> The acknowledgment that the command was successfully processed is only sent if the event was successfully stored and applied, otherwise there will be an error reply. The lambda parameter `newState` gives us access to the new state returned by applying such event.
 <5> Event handler returns the updated state after applying the event - the logic for updating the state is defined inside the `ShoppingCart` domain model.
@@ -121,7 +121,7 @@ As mentioned above, the business logic for updating the state was placed on the 
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=addItem]
 ----
-<1> For an existing item, we will make sure to sum the existing quantity with the incoming one.
+<1> For an existing item, sum the existing quantity with the incoming one.
 <2> Returns an updated list of items without the existing item.
 <3> Adds the updated item to the shopping cart.
 <4> Returns a new instance of the shopping cart with the updated line items.
@@ -129,15 +129,15 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/Shop
 
 === Retrieving state
 
-To have access to the current state of the entity we can use `currentState()` as you have probably noticed from the examples above. However, what if this is the first command we are receiving for this entity? The following example shows the implementation of the read-only command handler `getCart`:
+To access the current state of the entity, use `currentState()` as shown in the examples above. However, what if this is the first command received for this entity? The following example shows the implementation of the read-only command handler `getCart`:
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=getCart]
 ----
-<1> Stores the `entityId` on an internal attribute so we can use it later.
-<2> Provides initial state - we recommend always overriding `emptyState()` to return a sensible default. If not overridden, `currentState()` will return `null` until the first event is persisted, which requires null checks in all command and event handlers.
+<1> Stores the `entityId` on an internal attribute for later use.
+<2> Provides initial state — always override `emptyState()` to return a sensible default. If not overridden, `currentState()` will return `null` until the first event is persisted, which requires null checks in all command and event handlers.
 <3> Returns the current state as reply for the request.
 
 IMPORTANT: We are returning the internal state directly back to the requester. In the endpoint, it is usually best to convert this internal domain model into a public model so the internal representation is free to evolve without breaking clients code.
@@ -294,7 +294,7 @@ NOTE: The `EventSourcedTestKit` is stateful, and it holds the state of a single 
 
 *EventSourcedResult*
 
-Calling a command handler through the TestKit gives us back an link:{attachmentsdir}/testkit/akka/javasdk/testkit/EventSourcedResult.html[`EventSourcedResult`, window="new"]. This class has methods that we can use to assert the handling of the command, such as:
+Calling a command handler through the TestKit returns a link:{attachmentsdir}/testkit/akka/javasdk/testkit/EventSourcedResult.html[`EventSourcedResult`, window="new"]. This class has methods to assert the handling of the command, such as:
 
 * `getReply()` - the response from the command handler if there was one, if not an, exception is thrown, failing the test.
 * `getAllEvents()` - all the events persisted by handling the command.

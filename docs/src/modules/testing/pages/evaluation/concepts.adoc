@@ -1,0 +1,139 @@
+= Concepts and vocabulary
+:page-summary: How the pieces of an evaluation suite fit together. The customer writes cases and a target adapter, an experiment setup collects them, the runner walks the cases, and evaluators produce one result per attempt.
+:page-related: xref:testing:evaluation/eval-cases-and-rules.adoc[], xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/experiments.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
+
+Six terms do most of the work.
+
+`EvalCase`::
+One thing to test. A graded turn, what a correct answer does, an optional expectation (specification node, required phrases, or metric), and the state the system should be in before the turn.
+
+`SystemUnderTest`::
+The service being evaluated. Two methods: `prepare(EvalSetup)` puts it into the state a case names; `submit(sessionId, userText)` speaks the graded turn.
+
+`Evaluator`::
+A check over one recorded attempt. Reads an `EvaluationContext` and returns an `EvaluationResult`. Three families ship: deterministic, heuristic, agentic.
+
+`ExperimentSetup`::
+A named set of eval cases plus the rubric, lanes, policy, and repeat count. What to run.
+
+`ExperimentRunner`::
+Walks the setup, calls the adapter, hands each attempt to an evaluator, and returns one `EvalCaseResults` per case plus an `ExperimentReport` counting the whole run.
+
+Experiment class::
+Your JUnit test class that assembles the pieces above and calls `ExperimentRunner.run(...)`. A convention, not an SDK type. Named `*Experiment.java` by convention, gated on `-Deval=true`.
+
+== How the pieces fit together
+
+[mermaid]
+----
+%%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 45}}}%%
+flowchart TB
+    Case[EvalCase]
+    Adapter[SystemUnderTest]
+    Setup[ExperimentSetup]
+    Runner[ExperimentRunner]
+    Ctx[EvalContext]
+    Eval[Evaluator]
+    Result[EvaluationResult]
+    Results[EvalCaseResults]
+    Report[ExperimentReport]
+
+    Case --> Setup
+    Setup --> Runner
+    Adapter --> Runner
+    Runner --> Ctx
+    Ctx --> Eval
+    Eval --> Result
+    Result --> Results
+    Results --> Report
+
+    classDef authoring fill:#e3f2fd,stroke:#1976d2,color:#0d47a1
+    classDef running   fill:#f3e5f5,stroke:#7b1fa2,color:#4a148c
+    classDef results   fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    class Case,Adapter,Setup authoring
+    class Runner,Ctx,Eval running
+    class Result,Results,Report results
+----
+
+Blue is what you implement.
+Purple is the runner's work.
+Green is what a report is rendered from.
+
+== Authoring: What to implement
+
+An eval case names the state, the turn, and the correct answer.
+It is a Java record and lives in your suite. evalkit ships no on-disk format.
+An eval setup (`None`, `Replay`, `Fixture`, `FailingTool`) says how the system reaches the state before the graded turn.
+A `SystemUnderTest` implementation reaches the service over its `ComponentClient` for an Akka SDK service, or over HTTP for a service in another runtime.
+
+An experiment setup collects the cases, the parallel lane count, the rubric a judge would score against, and the policy the run happened under.
+Two runs under different rules are not comparable, and the policy is what makes that visible.
+
+== Running: What the runner produces
+
+The runner walks the cases in parallel lanes.
+For each attempt it builds an `EvalContext` from what the adapter recorded (the interaction, the input, and what was expected), calls `context.asContext()` to hand a shared `EvaluationContext` to the right evaluator, and records the returned `EvaluationResult`.
+
+Which evaluator settles a case follows from what the case declares.
+`EvaluatorRouter.byExpectation` sends a case naming a specification node to comparison, a case naming required phrases to `ContainsAll`, a case naming a metric to that metric, and everything else to the judge.
+
+== Reading results
+
+Every attempt returns an `EvaluationResult` carrying one `EvaluationOutcome`:
+
+`VERDICT`::
+The evaluator called it. Passed or failed, with an optional score.
+
+`UNDECIDED`::
+The evaluator read the answer and declined to call it. Carries the score it declined at.
+
+`INCONCLUSIVE`::
+Nothing to read. Not a statement about the target.
+
+`FAILED`::
+The evaluator itself broke.
+
+Attempts group into `EvalCaseResults`, one per case.
+`EvalCaseResults.verdict()` collapses the attempts into one of five values the report reads by: `PASSED`, `FAILED`, `VARIED`, `UNDECIDED`, `NO_RESULT`.
+`VARIED` is the reason to repeat.
+A case that passes eight times in ten still passes five attempts about a third of the time, and one attempt cannot tell that apart from a case that always passes.
+
+`ExperimentReport` counts what happened across all attempts and answers `passRate()`.
+
+== Vocabulary at a glance
+
+[cols="1,3", options="header"]
+|===
+| Term | What it is
+
+| `EvalCase`             | One thing to test. Java record.
+| `EvalSetup`            | How the system reaches the state before the graded turn.
+| `SystemUnderTest`      | Your adapter to the service.
+| `EvalContext`          | Everything an evaluator reads about one attempt.
+| `Evaluator`            | The check. Returns an `EvaluationResult`.
+| `EvaluationResult`     | The outcome of one evaluation.
+| `EvaluationOutcome`    | Enum: `VERDICT`, `UNDECIDED`, `INCONCLUSIVE`, `FAILED`.
+| `Grade`                | A judge's 1-to-10 helper, and the parse that reads it.
+| `Rubric`               | Versioned prompt a judge measures against.
+| Judge                  | A model asked to score what has no right answer to compare against.
+| `ExperimentSetup`      | Named cases + rubric + lanes + policy + repeats.
+| `ExperimentRunner`     | Walks the setup, produces `EvalCaseResults` and an `ExperimentReport`.
+| `ExperimentReport`     | Counts, pass rate, trustworthiness flags.
+| `EvalCaseResults`      | One case together with every attempt of it.
+| Attempt                | One check of one case. A case checked three times produces three attempts.
+| Experiment class       | Your JUnit test class. Convention, not an SDK type.
+| `RemoteCampaign`       | Wire client for dispatching a run to the offline-evals service. (SDK class name kept from nexus 0.1.0.)
+| `Policy`               | The rules the system was given while the run happened.
+| `Lanes`                | Parallel-worker count for the runner.
+|===
+
+== See also
+
+* xref:testing:evaluation/getting-started.adoc[]. Walks the concepts end-to-end.
+* xref:testing:evaluation/eval-cases-and-rules.adoc[]. What an eval case declares in full.
+* xref:testing:evaluation/evaluators.adoc[]. The three families and how to add your own.
+* xref:testing:evaluation/experiments.adoc[]. Building an experiment setup and running it.
+* xref:testing:evaluation/reports.adoc[]. Every panel of the rendered report.
