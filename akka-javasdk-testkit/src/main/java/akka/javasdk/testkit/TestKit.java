@@ -1228,9 +1228,7 @@ public class TestKit {
       body =
           response
               .entity()
-              .toStrict(
-                  RUNTIME_STARTED_TIMEOUT.toMillis(),
-                  getMaterializer())
+              .toStrict(RUNTIME_STARTED_TIMEOUT.toMillis(), getMaterializer())
               .toCompletableFuture()
               .get(RUNTIME_STARTED_TIMEOUT.toSeconds(), TimeUnit.SECONDS)
               .getData()
