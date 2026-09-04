@@ -10,6 +10,10 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== September 2026
+
+* xref:release-notes/runtime/1.6.16.adoc[Akka Runtime 1.6.16]
+- View and agent fixes, a log severity change for view update failures, and dependency updates for reported vulnerabilities
 
 == August 2026
 
