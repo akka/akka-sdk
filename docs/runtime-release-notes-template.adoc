@@ -28,7 +28,8 @@ Released <YYYY-MM-DD>.
 
 // Everything that changes what a service does: bug fixes, features that are available directly without SDK changes (uncommon),
 // performance improvements, together in one list. Lead with anything a reader should potentially review for already deployed services
-// whch are getting this runtime version (log severity, defaults, timeouts, retry behavior, which callbacks are invoked).
+// which are getting this runtime version (log severity, defaults, timeouts, retry behavior, which callbacks are invoked).
+// Keep the description short, describe the user surfacing consequence and do not include implementation details of the runtime.
 
 * ...
 
