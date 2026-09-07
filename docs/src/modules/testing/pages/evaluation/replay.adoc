@@ -87,7 +87,7 @@ They are a baseline, not a statement of correctness.
 * `Evaluators.toolArgument`: one per recorded argument, which must arrive with its recorded value.
 
 The recorded `output` is not checked, because a reply worded differently is not a regression.
-To score the reply, add a judge or a custom evaluator to each parsed case with `withEvaluators(...)`.
+To score the reply, add a judge or a custom evaluator to every parsed case with `evaluator(...)` on the runner, or to one case with `withEvaluators(...)`.
 
 == Budgets from the recorded spend
 

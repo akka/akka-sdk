@@ -83,7 +83,7 @@ It does not abort the batch.
 | A custom check over the reply and the tool calls. See xref:testing:evaluation/eval-cases.adoc#custom-evaluators[Custom evaluators].
 
 | `ExperimentRunner`
-| Builds the experiment step by step: the cases, the agent, the gate, then the run. See xref:testing:evaluation/experiments.adoc[].
+| Builds the experiment step by step: the cases, the agent, the gate, then the run. See xref:testing:evaluation/getting-started.adoc#first-case[The first case].
 
 | `Gate`
 | What the batch must satisfy over all case results. Without a gate every case must pass. See xref:testing:evaluation/experiments.adoc[].

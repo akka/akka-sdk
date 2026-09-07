@@ -166,7 +166,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
     var report = new ExperimentRunner(testKit).cases(refund).agent(OrderAgent::ask).run();
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();
-    assertThat(report.cases().getFirst().describe()).contains("judge:"); // <3>
+    assertThat(report.results().getFirst().describe()).contains("judge:"); // <3>
   }
 
   // end::judge[]
@@ -174,15 +174,14 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   // tag::judged-batch[]
   @Test
   public void repliesStayFactual() {
-    var judge = Judge.agent(testKit); // <1>
-    var factual = judge.scoringAtLeast("the reply states only what the tools returned", 0.7); // <2>
-
-    var cases = curated().stream().map(evalCase -> evalCase.withEvaluators(factual)).toList();
+    var judge = Judge.agent(testKit);
+    var factual = judge.scoringAtLeast("the reply states only what the tools returned", 0.7); // <1>
 
     var report = new ExperimentRunner(testKit)
-      .cases(cases)
+      .cases(curated())
+      .evaluator(factual)
       .agent(OrderAgent::ask)
-      .gate(Gate.evaluatorRateAtLeast(Evaluators.JUDGE, 0.8)) // <3>
+      .gate(Gate.evaluatorRateAtLeast(Evaluators.JUDGE, 0.8)) // <2>
       .run();
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();
@@ -190,30 +189,6 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
 
   // end::judged-batch[]
 
-  // tag::scripted-judge[]
-  @Test
-  public void aJudgeCanBeAnyFunction() {
-    Judge shortReply = question -> // <1>
-      Judge.Verdict.of(
-        question.reply().length() <= 200 ? 1.0 : 0.0,
-        "the reply has " + question.reply().length() + " characters"
-      );
-
-    var status = new EvalCase(
-      "short-status",
-      "Where is order o_42?",
-      () -> orders.addOrder(new Order("o_42", "shipped", 2599)),
-      shortReply.mustSatisfy("the reply is short") // <2>
-    );
-
-    var report = new ExperimentRunner(testKit).cases(status).agent(OrderAgent::ask).run();
-
-    assertThat(report.passed()).withFailMessage(report::render).isTrue();
-  }
-
-  // end::scripted-judge[]
-
-  // tag::failed-report[]
   @Test
   public void aFailedCaseShowsWhatTheAgentDid() {
     var wrongOrder = new EvalCase(
@@ -232,7 +207,6 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
       .contains("expected o_43");
   }
 
-  // end::failed-report[]
 
   // tag::target-failure[]
   @Test
@@ -246,7 +220,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
     var report = new ExperimentRunner(testKit).cases(unknown).agent(OrderAgent::ask).run();
 
     assertThat(report.passed()).isFalse();
-    var result = report.cases().getFirst();
+    var result = report.results().getFirst();
     assertThat(result.describe()).contains("FAIL " + Evaluators.TARGET); // <1>
     assertThat(result.interaction().toolCalls().getFirst().error()).isPresent(); // <2>
   }

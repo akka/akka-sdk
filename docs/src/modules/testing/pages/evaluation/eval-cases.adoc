@@ -149,6 +149,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 ----
 <1> The evaluator carries what it needs to know about the case.
 
+[#abstaining]
 == Abstaining when the evidence is absent
 
 An evaluator reads only what it names and abstains when that evidence is absent.

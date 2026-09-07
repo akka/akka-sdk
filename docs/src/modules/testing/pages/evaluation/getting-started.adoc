@@ -55,6 +55,7 @@ Under test, a stub takes the place of the real order system.
 The sample's `StubOrderService` keeps a map of orders that a case fills before the agent is called, and throws for an unknown order id the way the real client would.
 The test registers the stub through a test specific `DependencyProvider`, as described in xref:sdk:setup-and-dependency-injection.adoc#_custom_dependency_injection_in_tests[Custom dependency injection in tests].
 
+[#test-class]
 == The test class
 
 The evaluation is a `TestKitSupport` test.
@@ -80,6 +81,7 @@ mvn verify -Deval=true
 `@EnabledIfSystemProperty` is one way to keep an expensive test out of the regular build.
 A JUnit `@Tag` with a Failsafe `groups` filter, a Maven profile, or a class name the plugin does not select work as well.
 
+[#first-case]
 == The first case
 
 An `EvalCase` describes one turn with the agent.
@@ -96,7 +98,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 <3> The setup runs before the agent is called. Here it adds the order the question is about to the stub.
 <4> The evaluators. The agent must call `getOrder` with the order id from the question, must not issue a refund, and the reply must carry the order's status.
 
-An `ExperimentRunner` bound to the running TestKit takes the case, the agent's command handler, and runs.
+An experiment is a set of cases bound to an agent and a gate, run once for one report.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
@@ -128,7 +130,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 ----
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=batch]
 ----
-<1> At least nine cases in ten must pass.
+<1> At least 90% of the cases must pass.
 <2> Every declared tool argument must arrive as declared, in every case that declares one. A wrong argument is a defect even when the reply reads well.
 <3> No case may fail in its setup or in the agent call. An unavailable model fails the gate rather than lowering the pass rate.
 

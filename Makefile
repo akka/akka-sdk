@@ -71,6 +71,8 @@ examples: prepare
 	rsync -a akka-javasdk/src/main/resources "${java_managed_examples}/akka-javasdk/src/main/"
 	mkdir -p "${java_managed_examples}/akka-javasdk/src/main/java/akka/javasdk/agent/"
 	rsync -a akka-javasdk/src/main/java/akka/javasdk/agent/evaluator "${java_managed_examples}/akka-javasdk/src/main/java/akka/javasdk/agent/"
+	mkdir -p "${java_managed_examples}/akka-javasdk-testkit/src/main/java/akka/javasdk/testkit/"
+	rsync -a akka-javasdk-testkit/src/main/java/akka/javasdk/testkit/eval "${java_managed_examples}/akka-javasdk-testkit/src/main/java/akka/javasdk/testkit/"
 	# Remove prettier-ignore comments from copied examples
 	docs/bin/remove-prettier-ignore.sh "${java_managed_examples}"
 

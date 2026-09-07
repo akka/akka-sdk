@@ -265,13 +265,14 @@ public final class ExperimentRunner {
     /** The share of cases with no failed finding. */
     double passRate();
 
-    List<CaseResult> cases();
+    /** One result per case, in the order the cases were given. */
+    List<CaseResult> results();
 
     /** The run as text: the gate verdict, rates per evaluator, and failed cases with evidence. */
     String render();
   }
 
-  private record Report(List<CaseResult> cases, Gate.Verdict verdict) implements EvalReport {
+  private record Report(List<CaseResult> results, Gate.Verdict verdict) implements EvalReport {
 
     @Override
     public boolean passed() {
@@ -280,20 +281,20 @@ public final class ExperimentRunner {
 
     @Override
     public double passRate() {
-      if (cases.isEmpty()) return 0;
-      return (double) cases.stream().filter(CaseResult::passed).count() / cases.size();
+      if (results.isEmpty()) return 0;
+      return (double) results.stream().filter(CaseResult::passed).count() / results.size();
     }
 
     @Override
     public String render() {
-      var passedCases = cases.stream().filter(CaseResult::passed).count();
+      var passedCases = results.stream().filter(CaseResult::passed).count();
       var text = new StringBuilder();
       text.append(
           String.format(
               Locale.ROOT,
               "%d/%d cases passed (%.0f%%)%n",
               passedCases,
-              cases.size(),
+              results.size(),
               passRate() * 100));
       text.append("gate: ")
           .append(verdict.passed() ? "passed" : "FAILED")
@@ -303,7 +304,7 @@ public final class ExperimentRunner {
           .forEach(
               (evaluator, rate) -> text.append("  ").append(rate.render(evaluator)).append('\n'));
       spend().ifPresent(line -> text.append(line).append('\n'));
-      cases.stream()
+      results.stream()
           .filter(result -> !result.passed())
           .forEach(result -> text.append(result.describe()));
       return text.toString();
@@ -311,7 +312,7 @@ public final class ExperimentRunner {
 
     /** Model calls, tokens and latency summed over the cases with model calls in the evidence. */
     private Optional<String> spend() {
-      var traced = cases.stream().filter(c -> !c.interaction().modelCalls().isEmpty()).toList();
+      var traced = results.stream().filter(c -> !c.interaction().modelCalls().isEmpty()).toList();
       if (traced.isEmpty()) return Optional.empty();
       var modelCalls = traced.stream().mapToInt(c -> c.interaction().modelCalls().size()).sum();
       var tokensIn = traced.stream().mapToLong(c -> c.interaction().inputTokens()).sum();
@@ -331,13 +332,13 @@ public final class ExperimentRunner {
               slowest.caseId(),
               slowest.interaction().latency().toMillis(),
               traced.size(),
-              cases.size()));
+              results.size()));
     }
 
     /** Pass counts per evaluator, over the cases where it did not abstain. */
     private Map<String, Rate> rates() {
       var rates = new LinkedHashMap<String, Rate>();
-      for (var result : cases) {
+      for (var result : results) {
         for (var finding : result.evalResults()) {
           rates.computeIfAbsent(finding.evaluator(), name -> new Rate()).count(finding.verdict());
         }

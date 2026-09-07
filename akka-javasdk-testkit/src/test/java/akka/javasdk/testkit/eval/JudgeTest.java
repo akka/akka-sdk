@@ -29,7 +29,7 @@ class JudgeTest {
   private static ExperimentRunner.CaseResult single(EvalTarget target, EvalCase evalCase) {
     return ExperimentRunner.against(new ExperimentRunner().cases(evalCase), target)
         .run()
-        .cases()
+        .results()
         .getFirst();
   }
 

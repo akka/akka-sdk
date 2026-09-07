@@ -1,59 +1,13 @@
-= Experiments, gates and reports
-:page-summary: ExperimentRunner builds an experiment in steps, cases, evaluators, agent, gate, and runs it; the EvalReport carries the gate verdict, the pass rate and the evidence of every case.
-:page-when-to-use: Running cases as a batch, choosing the gate for a mocked or a real model, and reading a report.
+= Gates and reports
+:page-summary: A Gate is what a batch must satisfy over all case results; the EvalReport carries the gate verdict, the pass rate and the evidence of every case.
+:page-when-to-use: Choosing the gate for a mocked or a real model, and reading a report.
 :page-related: testing:evaluation/getting-started.adoc, testing:evaluation/eval-cases.adoc, testing:evaluation/judges.adoc
 :page-persona: builder-developer, builder-ai-ml
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
-An experiment is a set of cases bound to an agent and a gate, run once for one report.
-
-== Building an experiment step by step
-
-link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/ExperimentRunner.html[ExperimentRunner] is created for the running TestKit.
-It builds an experiment in a fixed order, and each step offers only what comes next, so an experiment without cases or without an agent does not compile.
-
-[cols="1,1,3"]
-|===
-| Step | Returns | Methods
-
-| `new ExperimentRunner(testKit)`
-| `ExperimentRunner`
-| `cases(first, more...)` or `cases(list)`. An empty list is rejected.
-
-| `cases(...)`
-| `ExperimentCases`
-| `evaluator(evaluator)` adds an evaluator that runs on every case. `agent(...)` names the agent under test.
-
-| `agent(...)`
-| `Experiment`
-| `gate(gate)` sets the gate. `run()` runs the cases and returns the report.
-|===
-
-Every method returns a new instance, so a partial experiment can be shared between tests.
-
-[source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
-----
-include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=batch]
-----
-<1> The gate. Without one, every case must pass.
-<2> The share of cases with no failed finding.
-
-The runner runs the cases one after the other in the calling thread.
-Each case is called in a fresh session.
-Nothing is persisted between runs.
-
-[#naming-the-agent]
-== Naming the agent
-
-`agent(method)` takes the agent's command handler, for example `OrderAgent::ask`.
-The handler takes the case's user message as a `String`.
-A `String` reply is used as it is; any other reply type is rendered as JSON, and that JSON is the text the evaluators read.
-
-`agent(method, command, replyText)` is for a handler with its own types.
-`command` builds the command from the user message and `replyText` renders the reply as the text the evaluators read.
+A gate is what a batch of cases must satisfy over all case results, and the report is what a run returns.
 
 [#gates]
 == Gates
@@ -80,9 +34,6 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is wha
 | Both gates hold. The verdict lists both details.
 |===
 
-With a mocked model leave the gate out: the run is deterministic and every case must pass.
-With a real model gate on rates, and add `noTargetFailures` so that an unavailable model or a broken stub fails the run for the right reason.
-
 A failed gate does not throw.
 Assert on the report, and use the rendered report as the failure message.
 
@@ -101,8 +52,8 @@ Assert on the report, and use the rendered report as the failure message.
 | `passRate()`
 | The share of cases with no failed finding.
 
-| `cases()`
-| One `CaseResult` per case, in the order the cases were given.
+| `results()`
+| One `CaseResult` per case, in the order the cases were given: the case id, the `Interaction` and the findings. `describe()` renders one case as in the report.
 
 | `render()`
 | The report as text.
@@ -135,24 +86,15 @@ Line by line:
 
 == Reading a failed case
 
-`CaseResult` carries the case id, the `Interaction` and the findings.
-`passed()` is true when no finding failed.
-`describe()` renders the evidence and the findings, and the rendered report includes it for every failed case.
-
-[source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
-----
-include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=failed-report]
-----
-
-The report of this run:
+The rendered report ends with every failed case and its evidence.
+The report below is from a case that asks where order o_42 is, with an evaluator that expects `getOrder` to be called with `o_43`:
 
 [listing]
 ----
 0/1 cases passed (0%)
 gate: FAILED — failed cases [wrong-order]
   tool-arguments 0/1
-spend: 2 model calls, 0 tokens in, 0 out, 6 ms in total, slowest wrong-order at 6 ms, over 1/1 cases with evidence
+spend: 2 model calls, 123 tokens in, 321 out, 6 ms in total, slowest wrong-order at 6 ms, over 1/1 cases with evidence
 case wrong-order FAILED
   reply: Order o_42 is shipped.
   tools: getOrder{orderId=o_42}
@@ -163,59 +105,6 @@ case wrong-order FAILED
 A failed case prints the reply, the tool calls with their arguments, the model spend, and every finding with its detail.
 When the agent mapped the model's text into the reply, a `model text:` line shows the model's own text as well.
 The reply is cut to one line of at most 200 characters.
-
-== Setup and agent failures
-
-A case whose setup throws is failed under the `setup` evaluator, and the agent is not called.
-A case whose agent call throws is failed under the `target` evaluator.
-The case keeps the tool calls the trace recorded before the failure, including the error the tool raised.
-
-[source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
-----
-include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=target-failure]
-----
-<1> The one finding on the case is the `target` failure.
-<2> The trace still carries the call, with the error the tool raised.
-
-[listing]
-----
-0/1 cases passed (0%)
-gate: FAILED — failed cases [unknown-order]
-  target 0/1
-case unknown-order FAILED
-  reply:
-  tools: getOrder{orderId=o_404} (failed: no order o_404)
-  FAIL target: CorrelatedRuntimeException: [b0ef3134-9c70-4070-96f0-a33ddf41d885] no order o_404
-----
-
-Neither failure aborts the batch.
-`Gate.noTargetFailures()` turns them into a failed gate.
-
-== Running a quality batch on demand
-
-A batch against a real model costs money and time, and its result varies.
-Keep it out of the regular build:
-
-* Make the test class conditional. The sample uses JUnit's `@EnabledIfSystemProperty(named = "eval", matches = "true")`, so a plain `mvn verify` skips it. A JUnit `@Tag` with a Failsafe `groups` filter or a Maven profile serve the same purpose.
-* Leave `withModelProvider` out of its TestKit settings, so the agent and the judge use the model configured in `application.conf`.
-* Run it with the property set and the model's API key in the environment.
-
-[source,bash]
-----
-mvn verify -Deval=true
-----
-
-[source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
-----
-include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=batch]
-----
-<1> A pass rate, because a real model does not answer the same way twice.
-<2> Tool arguments are held to a rate of one: whenever a case declares one, it must arrive as declared.
-<3> An unavailable model fails the gate rather than lowering the pass rate.
-
-== See also
 
 * xref:testing:evaluation/getting-started.adoc[]
 * xref:testing:evaluation/judges.adoc[]

@@ -40,7 +40,7 @@ class ExperimentRunnerTest {
 
   /** Runs one case and reads its result out of the report. */
   private static ExperimentRunner.CaseResult single(EvalTarget target, EvalCase evalCase) {
-    return experiment(target, evalCase).run().cases().getFirst();
+    return experiment(target, evalCase).run().results().getFirst();
   }
 
   /** Reads one evaluator's finding out of a result. */

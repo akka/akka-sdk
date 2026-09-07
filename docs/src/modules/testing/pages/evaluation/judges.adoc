@@ -12,7 +12,7 @@ A judge is a model that scores a reply against a criterion written in words.
 == What a judge decides
 
 The built-in evaluators compare the reply and the tool calls against exact values.
-Some criteria have no exact value: the reply apologises, the reply states only what the tools returned, the reply is complete.
+Some criteria have no exact value.
 A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Judge.html[Judge] scores such a criterion between 0 and 1, and the score becomes a finding on the case under the `judge` evaluator.
 
 A judged score can differ between runs of the same reply.
@@ -24,16 +24,30 @@ Gate a batch on the rate the judge passed rather than asserting on one judged ca
 `JudgeAgent` is an agent with the component id `eval-judge`.
 The TestKit registers it when it starts; it is not part of the deployed service.
 
-The judge agent uses the model provider configured in `akka.javasdk.agent.model-provider`.
-To mock it, register a `TestModelProvider` for `JudgeAgent.class` in the TestKit settings, as for any other agent.
-Each question runs in a new session with memory disabled, so one judgement does not influence the next.
+Unless the TestKit settings register a model provider for `JudgeAgent.class`, the judge asks the model configured in `akka.javasdk.agent.model-provider`.
+
+To mock the judge, register a `TestModelProvider` with `TestKit.Settings.withModelProvider(JudgeAgent.class, provider)`, as for any other agent.
+The mocked reply must be the JSON object the judge reads: `{"score": 1.0, "reason": "mocked"}`.
+
+Each judge question runs in a new session with memory disabled, so one judgement does not influence the next.
 
 == Stating the criterion
+
+A criterion is one sentence that states what a good reply does, for example "the reply states only what the tools returned".
+The judge scores the reply against it and returns the score with a one-sentence reason.
 
 `mustSatisfy(criterion)` and `scoringAtLeast(criterion, threshold)` turn the judge into an `Evaluator`, given to a case next to the built-in evaluators.
 
 * `mustSatisfy` passes at a score of at least 0.5.
 * `scoringAtLeast` passes at the given threshold.
+
+The judge holds no criterion of its own, so one judge serves any number of them.
+Each criterion gets one score and one reason.
+A criterion that combines several properties, such as an apology, an amount and a length, still gets one score, and the reason does not say which property failed.
+State one property per criterion, so that a failed finding points at the property that failed.
+
+A criterion a program can decide, such as the length of the reply, belongs in a xref:testing:evaluation/eval-cases.adoc#custom-evaluators[custom evaluator], not in a judge.
+`Judge` is a functional interface, so a test can return a fixed `Verdict` to run judged cases without a model.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
@@ -42,12 +56,39 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 ----
 <1> A judge bound to the running TestKit. It asks the model configured in `application.conf`.
 <2> The criterion, in words. The finding is reported under the `judge` evaluator.
-<3> A judged finding prints the criterion, the score, the threshold and the judge's reason, for example `PASS judge: the reply apologises and states the refunded amount: scored 0.90, needed 0.50 — apologises and names 49.99`.
+<3> The case description contains the judged finding as one line. The line starts with the verdict and the evaluator name, then the criterion, the score, the threshold, and the reason the model gave:
++
+[listing]
+----
+PASS judge: the reply apologises and states the refunded amount: scored 0.90, needed 0.50 — apologises and refunds 49.99
+----
 
 == What the judge sees
 
 The judge receives a `Judge.Question`: the criterion, the user message, the reply, and the tool calls with their arguments, results and errors.
+
 `AgentJudge` renders the question as labelled sections and sends it as the user message.
+For the judged refund case above the user message is:
+
+[listing]
+----
+Criterion:
+the reply apologises and states the refunded amount
+
+The user asked:
+Order o_9 arrived broken. I want my money back.
+
+The agent replied:
+I am sorry the order arrived broken. I have refunded 49.99 to your card.
+
+Tools called, in order:
+- getOrder {orderId=o_9} -> {"id":"o_9","status":"delivered","totalCents":4999}
+- issueRefund {orderId=o_9, amountCents=4999} -> {"orderId":"o_9","amountCents":4999,"reference":"ref_1"}
+----
+
+A tool call that failed shows `-> failed:` and the error instead of a result.
+A case that called no tool has no `Tools called` section.
+
 The system message is the prompt below, read from `eval/judge-prompt.txt` on the classpath.
 
 [listing]
@@ -63,32 +104,19 @@ criterion it satisfies.
 Reply as JSON: {"score": <number between 0 and 1>, "reason": "<one sentence>"}
 ----
 
-`withPrompt(prompt)` returns a judge with another system message.
+`withPrompt(prompt)` returns a judge with another system message; `prompt()` returns the system message a judge sends.
 A custom prompt must ask for the same reply format: a JSON object with a `score` between 0 and 1 and a `reason`.
 
 == When the judge abstains
 
 The `judge` evaluator abstains, and the case is not failed, when:
 
-* the reply is empty, so there is nothing to judge;
+* the reply is empty or blank, so there is nothing to judge;
 * the judge throws, for example because the model is unavailable;
 * the score is not between 0 and 1.
 
-The abstention carries the reason and appears in the report.
-
-== A judge without a model
-
-`Judge` is a functional interface.
-Any function from a `Question` to a `Verdict` is a judge.
-Use one for a criterion a program can decide, or to test the suite itself without a model.
-
-[source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
-----
-include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=scripted-judge]
-----
-<1> The judge reads the question and returns a `Verdict` with a score and a reason.
-<2> The same `mustSatisfy` as for a model judge.
+The abstention carries the reason and appears in the report as `ABSTAIN judge:` followed by the criterion and the reason.
+xref:testing:evaluation/eval-cases.adoc#abstaining[Abstaining when the evidence is absent] describes how the report and the gates count abstentions.
 
 [#gating-a-judged-batch]
 == Gating a judged batch
@@ -101,11 +129,11 @@ With a real model, hold a batch to the rate the judge passed.
 ----
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=judged-batch]
 ----
-<1> The judge asks the model configured in `application.conf`.
-<2> One evaluator, added to every curated case.
-<3> At least eight judged cases in ten must pass. The other evaluators of each case still apply.
+<1> One evaluator with a threshold of 0.7. `evaluator(factual)` on the runner adds it to every case of the experiment, next to the evaluators each case declares.
+<2> At least 80% of the judged cases must pass. The other evaluators of each case still apply.
 
 == See also
 
 * xref:testing:evaluation/eval-cases.adoc#custom-evaluators[Custom evaluators]
+* xref:testing:evaluation/experiments.adoc#gates[Gates]
 * xref:sdk:agents/llm_eval.adoc[] describes evaluator agents that run inside a deployed service.
