@@ -2,7 +2,7 @@
 :page-summary: A first evaluation: an agent with two tools, a test class that mocks the model and the tool's backend, one case, then a gated batch.
 :page-when-to-use: Writing the first evaluation of an agent.
 :page-prerequisites: A Maven project on the Akka SDK with an agent. Familiarity with JUnit and with `TestKitSupport`.
-:page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/experiments.adoc, sdk:agents/testing.adoc
+:page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/gates-and-reports.adoc, sdk:agents/testing.adoc
 :page-persona: builder-developer, builder-ai-ml
 :page-banner: evaluations
 
@@ -156,7 +156,7 @@ spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-sta
 The second line is the gate's verdict, with the detail of each of the three gates.
 The indented lines are the pass counts per evaluator, over the cases that activated it.
 The last line sums what the run spent.
-xref:testing:evaluation/experiments.adoc#reading-the-report[Reading the report] explains every line.
+xref:testing:evaluation/gates-and-reports.adoc#reading-the-report[Reading the report] explains every line.
 
 == Next steps
 

@@ -21,7 +21,7 @@ link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/EvalCase.html[EvalCase] 
 | Names the case in the report. Unique within the suite.
 
 | `userMessage`
-| The message the agent receives. The runner turns it into the command with the mapping given to `agent(...)`, see xref:testing:evaluation/experiments.adoc#naming-the-agent[Naming the agent].
+| The message the agent receives. The runner turns it into the command with the mapping given to `agent(...)`, see xref:testing:evaluation/getting-started.adoc#first-case[The first case].
 
 | `setup`
 | A `Runnable` that runs before the agent is called. Use it to prime the stubs the agent's tools call, or to seed entities through the component client. `EvalCase.NO_SETUP` when the case needs none. `EvalCase.of(id, userMessage, evaluators...)` creates a case without a setup.

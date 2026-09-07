@@ -1,7 +1,7 @@
 = Model judges
 :page-summary: A Judge scores a reply against a criterion written in words; Judge.agent asks a model through the TestKit, and the score becomes a pass, a fail or an abstention on the case.
 :page-when-to-use: Criteria the built-in evaluators cannot state, such as tone, completeness or faithfulness to the tool results.
-:page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/experiments.adoc
+:page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/gates-and-reports.adoc
 :page-persona: builder-developer, builder-ai-ml
 :page-banner: evaluations
 
@@ -135,5 +135,5 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 == See also
 
 * xref:testing:evaluation/eval-cases.adoc#custom-evaluators[Custom evaluators]
-* xref:testing:evaluation/experiments.adoc#gates[Gates]
+* xref:testing:evaluation/gates-and-reports.adoc#gates[Gates]
 * xref:sdk:agents/llm_eval.adoc[] describes evaluator agents that run inside a deployed service.

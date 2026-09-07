@@ -1,7 +1,7 @@
 = Replaying recorded interactions
 :page-summary: EvalCaseParser turns recorded production interactions in JSONL into cases that prime the stubs with the recorded tool results and expect the recorded tool calls and spend.
 :page-when-to-use: Holding an agent to what production did, as a baseline before a prompt, model or tool change.
-:page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/experiments.adoc
+:page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/gates-and-reports.adoc
 :page-persona: builder-developer, builder-ai-ml
 :page-banner: evaluations
 
@@ -121,4 +121,4 @@ The five `tool-arguments` findings come from five recorded arguments over three 
 == See also
 
 * xref:testing:evaluation/eval-cases.adoc[]
-* xref:testing:evaluation/experiments.adoc[]
+* xref:testing:evaluation/gates-and-reports.adoc[]

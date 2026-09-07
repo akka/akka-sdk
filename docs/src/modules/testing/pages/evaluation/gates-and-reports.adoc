@@ -1,4 +1,5 @@
 = Gates and reports
+:page-aliases: testing:evaluation/experiments.adoc
 :page-summary: A Gate is what a batch must satisfy over all case results; the EvalReport carries the gate verdict, the pass rate and the evidence of every case.
 :page-when-to-use: Choosing the gate for a mocked or a real model, and reading a report.
 :page-related: testing:evaluation/getting-started.adoc, testing:evaluation/eval-cases.adoc, testing:evaluation/judges.adoc
@@ -73,7 +74,7 @@ gate: passed — pass rate 1.00 over 3 cases, required 0.90; tool-arguments rate
   answer-matches 1/1
   tool-call-budget 1/1
   model-call-budget 1/1
-spend: 6 model calls, 0 tokens in, 0 out, 26 ms in total, slowest greeting at 10 ms, over 3/3 cases with evidence
+spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status at 489 ms, over 3/3 cases with evidence
 ----
 
 Line by line:
@@ -98,13 +99,15 @@ spend: 2 model calls, 123 tokens in, 321 out, 6 ms in total, slowest wrong-order
 case wrong-order FAILED
   reply: Order o_42 is shipped.
   tools: getOrder{orderId=o_42}
-  model: 2 calls, 0 tokens in, 0 out, 6 ms
+  model: 2 calls, 123 tokens in, 321 out, 6 ms
   FAIL tool-arguments: getOrder(orderId) expected o_43, was [o_42]
 ----
 
 A failed case prints the reply, the tool calls with their arguments, the model spend, and every finding with its detail.
 When the agent mapped the model's text into the reply, a `model text:` line shows the model's own text as well.
 The reply is cut to one line of at most 200 characters.
+
+== See also
 
 * xref:testing:evaluation/getting-started.adoc[]
 * xref:testing:evaluation/judges.adoc[]

@@ -4,6 +4,6 @@
 ** xref:testing:evaluation/index.adoc[Evaluation]
 *** xref:testing:evaluation/getting-started.adoc[Getting started]
 *** xref:testing:evaluation/eval-cases.adoc[Eval cases and evaluators]
+*** xref:testing:evaluation/gates-and-reports.adoc[Gates and reports]
 *** xref:testing:evaluation/judges.adoc[Model judges]
-*** xref:testing:evaluation/experiments.adoc[Gates and reports]
 *** xref:testing:evaluation/replay.adoc[Replaying recorded interactions]

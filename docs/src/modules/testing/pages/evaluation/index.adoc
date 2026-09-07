@@ -1,7 +1,7 @@
 = Evaluation
 :page-summary: Evaluation runs an agent through a set of eval cases inside a TestKit test and checks each reply and the tool calls the runtime traced with built-in evaluators, a model judge and a gate.
 :page-when-to-use: Checking an agent's tool use and replies with a mocked model in every build, measuring reply quality against a real model on demand, and holding an agent to what production recorded.
-:page-related: testing:evaluation/getting-started.adoc, testing:evaluation/experiments.adoc, testing:integration.adoc, sdk:agents/testing.adoc
+:page-related: testing:evaluation/getting-started.adoc, testing:evaluation/gates-and-reports.adoc, testing:integration.adoc, sdk:agents/testing.adoc
 :page-persona: builder-developer, builder-ai-ml
 :page-banner: evaluations
 
@@ -76,9 +76,6 @@ It does not abort the batch.
 | `Evaluators`
 | The built-in evaluators: tool calls, order and arguments, reply text, and budgets. See xref:testing:evaluation/eval-cases.adoc[].
 
-| `Judge`
-| A model that scores the reply against a criterion written in words. See xref:testing:evaluation/judges.adoc[].
-
 | `Evaluator`
 | A custom check over the reply and the tool calls. See xref:testing:evaluation/eval-cases.adoc#custom-evaluators[Custom evaluators].
 
@@ -86,10 +83,13 @@ It does not abort the batch.
 | Builds the experiment step by step: the cases, the agent, the gate, then the run. See xref:testing:evaluation/getting-started.adoc#first-case[The first case].
 
 | `Gate`
-| What the batch must satisfy over all case results. Without a gate every case must pass. See xref:testing:evaluation/experiments.adoc[].
+| What the batch must satisfy over all case results. Without a gate every case must pass. See xref:testing:evaluation/gates-and-reports.adoc[].
 
 | `EvalReport`
-| The outcome: whether the gate passed, the pass rate, every case result, and the report as text. See xref:testing:evaluation/experiments.adoc[].
+| The outcome: whether the gate passed, the pass rate, every case result, and the report as text. See xref:testing:evaluation/gates-and-reports.adoc[].
+
+| `Judge`
+| A model that scores the reply against a criterion written in words. See xref:testing:evaluation/judges.adoc[].
 
 | `EvalCaseParser`, `ToolBindings`
 | Cases derived from recorded interactions. See xref:testing:evaluation/replay.adoc[].
