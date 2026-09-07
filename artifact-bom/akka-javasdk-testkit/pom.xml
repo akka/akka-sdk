@@ -1333,7 +1333,7 @@
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
-                <version>2.13.18</version>
+                <version>3.9.0</version>
             </dependency>
             <dependency>
                 <groupId>org.scala-lang.modules</groupId>
@@ -2835,7 +2835,7 @@
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <version>2.13.18</version>
+            <version>3.9.0</version>
         </dependency>
         <dependency>
             <groupId>org.scala-lang.modules</groupId>
