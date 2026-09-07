@@ -161,10 +161,16 @@ public final class ExperimentRunner {
           var interaction = answered.interaction();
           var findings = new ArrayList<EvalResult>();
           for (var evaluator : evalCase.evaluators()) {
-            findings.add(evaluator.evaluate(evalCase, interaction, interaction.toolCalls()));
+            findings.add(
+                EvalResult.of(
+                    evaluator.name(),
+                    evaluator.evaluate(evalCase, interaction, interaction.toolCalls())));
           }
           for (var evaluator : evaluators) {
-            findings.add(evaluator.evaluate(evalCase, interaction, interaction.toolCalls()));
+            findings.add(
+                EvalResult.of(
+                    evaluator.name(),
+                    evaluator.evaluate(evalCase, interaction, interaction.toolCalls())));
           }
           yield new CaseResult(evalCase.id(), interaction, List.copyOf(findings));
         }

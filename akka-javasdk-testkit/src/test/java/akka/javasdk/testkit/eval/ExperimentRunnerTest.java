@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import akka.javasdk.testkit.ModelCall;
 import akka.javasdk.testkit.ToolCall;
 import akka.javasdk.testkit.eval.Evaluator.EvalResult;
+import akka.javasdk.testkit.eval.Evaluator.Finding;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -368,10 +369,19 @@ class ExperimentRunnerTest {
   @Test
   void aRunLevelEvaluatorRunsOnEveryCase() {
     Evaluator noApology =
-        (evalCase, reply, calls) ->
-            reply.text().contains("sorry")
-                ? EvalResult.fail("no-apology", "the reply apologises")
-                : EvalResult.pass("no-apology");
+        new Evaluator() {
+          @Override
+          public String name() {
+            return "no-apology";
+          }
+
+          @Override
+          public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+            return reply.text().contains("sorry")
+                ? Finding.fail("the reply apologises")
+                : Finding.pass();
+          }
+        };
 
     EvalTarget target =
         turn ->

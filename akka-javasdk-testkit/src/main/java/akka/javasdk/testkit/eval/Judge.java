@@ -5,9 +5,7 @@
 package akka.javasdk.testkit.eval;
 
 import akka.javasdk.testkit.ToolCall;
-import akka.javasdk.testkit.eval.Evaluator.EvalResult;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * A model that scores a reply against a criterion written in words. {@link #mustSatisfy} and {@link
@@ -81,34 +79,9 @@ public interface Judge {
    * or when the score is not between 0 and 1.
    */
   default Evaluator scoringAtLeast(String criterion, double threshold) {
-    return (evalCase, reply, toolCalls) -> {
-      if (reply.text().isBlank()) {
-        return EvalResult.abstain(Evaluators.JUDGE, criterion + ": there is no reply to judge");
-      }
-      Verdict verdict;
-      try {
-        verdict = assess(new Question(criterion, evalCase.userMessage(), reply.text(), toolCalls));
-      } catch (RuntimeException e) {
-        return EvalResult.abstain(
-            Evaluators.JUDGE, criterion + ": the judge failed: " + e.getMessage());
-      }
-      var score = verdict.score();
-      if (Double.isNaN(score) || score < 0 || score > 1) {
-        return EvalResult.abstain(
-            Evaluators.JUDGE, criterion + ": the judge scored " + score + ", which is not a share");
-      }
-      var detail =
-          String.format(
-              Locale.ROOT,
-              "%s: scored %.2f, needed %.2f%s",
-              criterion,
-              score,
-              threshold,
-              verdict.reason().isEmpty() ? "" : " — " + verdict.reason());
-      return score >= threshold
-          ? new EvalResult(Evaluators.JUDGE, EvalResult.Verdict.PASS, detail)
-          : EvalResult.fail(Evaluators.JUDGE, detail);
-    };
+    if (criterion == null || criterion.isBlank())
+      throw new IllegalArgumentException("criterion required");
+    return new JudgeEvaluator(this, criterion, threshold);
   }
 
   /** The criterion must score at least 0.5. */

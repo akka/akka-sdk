@@ -127,7 +127,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 [#custom-evaluators]
 == Custom evaluators
 
-A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator]: one method that receives the case and everything the runtime traced for the turn.
+A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator]: `name()` returns the name its findings are reported under, and `evaluate(...)` receives the case and everything the runtime traced for the turn and returns a `Finding`: a pass, a fail with a reason, or an abstention.
 
 Below is an example of a tool call evaluator that checks that the amount the agent passed to `issueRefund` does not exceed the total of the order.
 
@@ -136,7 +136,7 @@ Below is an example of a tool call evaluator that checks that the amount the age
 ----
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/RefundWithinTotal.java[tag=class]
 ----
-<1> The name the report prints and a gate can rate.
+<1> The name the report prints the findings under, and a gate can rate.
 <2> No refund call means nothing to check. Abstain rather than fail; the `tools` evaluator on the case reports the missing call.
 <3> Tool arguments arrive as the runtime decoded them from the model's JSON: a number is a `Number`, an object is a `Map`.
 

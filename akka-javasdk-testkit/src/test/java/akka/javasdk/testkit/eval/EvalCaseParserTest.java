@@ -182,7 +182,7 @@ class EvalCaseParserTest {
     var byName = new LinkedHashMap<String, Verdict>();
     for (var evaluator : evalCase.evaluators()) {
       var finding = evaluator.evaluate(evalCase, interaction, interaction.toolCalls());
-      byName.put(finding.evaluator(), finding.verdict());
+      byName.put(evaluator.name(), finding.verdict());
     }
     return byName;
   }

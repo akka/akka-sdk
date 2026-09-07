@@ -51,7 +51,7 @@ public final class StubOrderService implements OrderService {
     return refund;
   }
 
-    // tag::loaders[]
+  // tag::loaders[]
   /** Adds the order a recorded getOrder call returned. */
   public void loadOrder(ToolBindings.RecordedCall call) {
     addOrder(call.resultAs(Order.class));
@@ -62,4 +62,4 @@ public final class StubOrderService implements OrderService {
     addRefund(call.resultAs(Refund.class));
   }
   // end::loaders[]
-  }
+}

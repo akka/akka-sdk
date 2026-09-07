@@ -159,7 +159,8 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
       "judged-refund",
       "Order o_9 arrived broken. I want my money back.",
       () -> orders.addOrder(new Order("o_9", "delivered", 4999)),
-      Evaluators.tools("issueRefund"), judge.mustSatisfy("the reply apologises and states the refunded amount") // <2>
+      Evaluators.tools("issueRefund"),
+      judge.mustSatisfy("the reply apologises and states the refunded amount") // <2>
     );
 
     var report = new ExperimentRunner(testKit).cases(refund).agent(OrderAgent::ask).run();

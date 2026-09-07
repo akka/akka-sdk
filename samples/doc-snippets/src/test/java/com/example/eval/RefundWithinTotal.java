@@ -10,8 +10,6 @@ import java.util.List;
 /** The refund the agent issued must not exceed the order's total. */
 public final class RefundWithinTotal implements Evaluator {
 
-  private static final String NAME = "refund-within-total"; // <1>
-
   private final int totalCents;
 
   public RefundWithinTotal(int totalCents) {
@@ -19,15 +17,27 @@ public final class RefundWithinTotal implements Evaluator {
   }
 
   @Override
-  public EvalResult evaluate(EvalCase evalCase, Interaction interaction, List<ToolCall> toolCalls) {
-    var refund = toolCalls.stream().filter(call -> call.name().equals("issueRefund")).findFirst();
+  public String name() {
+    return "refund-within-total"; // <1>
+  }
+
+  @Override
+  public Finding evaluate(
+    EvalCase evalCase,
+    Interaction interaction,
+    List<ToolCall> toolCalls
+  ) {
+    var refund = toolCalls
+      .stream()
+      .filter(call -> call.name().equals("issueRefund"))
+      .findFirst();
     if (refund.isEmpty()) {
-      return EvalResult.abstain(NAME, "no refund was issued"); // <2>
+      return Finding.abstain("no refund was issued"); // <2>
     }
     var amount = ((Number) refund.get().arguments().get("amountCents")).intValue(); // <3>
     return amount <= totalCents
-      ? EvalResult.pass(NAME)
-      : EvalResult.fail(NAME, "refunded " + amount + " cents of a " + totalCents + " cent order");
+      ? Finding.pass()
+      : Finding.fail("refunded " + amount + " cents of a " + totalCents + " cent order");
   }
 }
 // end::class[]

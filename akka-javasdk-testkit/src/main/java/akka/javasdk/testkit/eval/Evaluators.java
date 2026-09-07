@@ -5,7 +5,6 @@
 package akka.javasdk.testkit.eval;
 
 import akka.javasdk.testkit.ToolCall;
-import akka.javasdk.testkit.eval.Evaluator.EvalResult;
 import java.time.Duration;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -75,15 +74,7 @@ public final class Evaluators {
 
   /** These tools must be called, in any order. Other calls are allowed. */
   public static Evaluator tools(String... names) {
-    var expected = toolNames(names);
-    return (evalCase, reply, calls) -> {
-      var called = names(calls);
-      var missing = expected.stream().filter(t -> !called.contains(t)).toList();
-      return missing.isEmpty()
-          ? EvalResult.pass(TOOLS)
-          : EvalResult.fail(
-              TOOLS, "never called " + missing + "; called " + calledOrNothing(called));
-    };
+    return new Tools(toolNames(names));
   }
 
   /**
@@ -91,18 +82,7 @@ public final class Evaluators {
    * Abstains when one of them was never called.
    */
   public static Evaluator toolOrder(String... names) {
-    var expected = List.copyOf(toolNames(names));
-    return (evalCase, reply, calls) -> {
-      var called = names(calls);
-      var missing = expected.stream().filter(t -> !called.contains(t)).toList();
-      if (!missing.isEmpty()) {
-        return EvalResult.abstain(TOOL_ORDER, "never called " + missing);
-      }
-      return isSubsequence(expected, calls)
-          ? EvalResult.pass(TOOL_ORDER)
-          : EvalResult.fail(
-              TOOL_ORDER, "expected " + expected + " in that order; called " + orderOf(calls));
-    };
+    return new ToolOrder(List.copyOf(toolNames(names)));
   }
 
   /**
@@ -112,24 +92,7 @@ public final class Evaluators {
   public static Evaluator toolArgument(String tool, String argument, Object value) {
     requireName(tool, "tool");
     requireName(argument, "argument");
-    return (evalCase, reply, calls) -> {
-      var toTheTool = calls.stream().filter(c -> c.name().equals(tool)).toList();
-      if (toTheTool.isEmpty()) {
-        return EvalResult.abstain(TOOL_ARGUMENTS, tool + " was never called");
-      }
-      var carried = toTheTool.stream().anyMatch(c -> sameValue(value, c.arguments().get(argument)));
-      return carried
-          ? EvalResult.pass(TOOL_ARGUMENTS)
-          : EvalResult.fail(
-              TOOL_ARGUMENTS,
-              tool
-                  + "("
-                  + argument
-                  + ") expected "
-                  + value
-                  + ", was "
-                  + toTheTool.stream().map(c -> c.arguments().get(argument)).toList());
-    };
+    return new ToolArgument(tool, argument, value);
   }
 
   /**
@@ -139,44 +102,18 @@ public final class Evaluators {
   public static Evaluator toolResult(String tool, String needle) {
     requireName(tool, "tool");
     if (needle == null || needle.isEmpty()) throw new IllegalArgumentException("needle required");
-    var lowerNeedle = needle.toLowerCase(Locale.ROOT);
-    return (evalCase, reply, calls) -> {
-      var results =
-          calls.stream()
-              .filter(c -> c.name().equals(tool))
-              .flatMap(c -> c.result().stream())
-              .toList();
-      if (results.isEmpty()) {
-        return EvalResult.abstain(TOOL_RESULTS, tool + " has no recorded result");
-      }
-      return results.stream().anyMatch(r -> r.toLowerCase(Locale.ROOT).contains(lowerNeedle))
-          ? EvalResult.pass(TOOL_RESULTS)
-          : EvalResult.fail(
-              TOOL_RESULTS, tool + " result expected to carry " + needle + ", was " + results);
-    };
+    return new ToolResult(tool, needle);
   }
 
   /** None of these tools may be called. */
   public static Evaluator forbiddenTools(String... names) {
-    var forbidden = toolNames(names);
-    return (evalCase, reply, calls) -> {
-      var called = names(calls);
-      var violated = forbidden.stream().filter(called::contains).toList();
-      return violated.isEmpty()
-          ? EvalResult.pass(FORBIDDEN_TOOLS)
-          : EvalResult.fail(FORBIDDEN_TOOLS, "called " + violated);
-    };
+    return new ForbiddenTools(toolNames(names));
   }
 
   /** The agent may make at most this many tool calls while answering. */
   public static Evaluator toolCallsAtMost(int calls) {
     if (calls < 0) throw new IllegalArgumentException("a budget is not negative");
-    return (evalCase, reply, made) ->
-        made.size() <= calls
-            ? EvalResult.pass(TOOL_CALL_BUDGET)
-            : EvalResult.fail(
-                TOOL_CALL_BUDGET,
-                "made " + made.size() + " tool calls, allowed " + calls + ": " + orderOf(made));
+    return new ToolCallBudget(calls);
   }
 
   /**
@@ -185,15 +122,7 @@ public final class Evaluators {
    */
   public static Evaluator modelCallsAtMost(int calls) {
     if (calls < 1) throw new IllegalArgumentException("an answer takes at least one model call");
-    return (evalCase, reply, toolCalls) -> {
-      var made = reply.modelCalls().size();
-      if (made == 0) {
-        return EvalResult.abstain(MODEL_CALL_BUDGET, "no model calls in the evidence");
-      }
-      return made <= calls
-          ? EvalResult.pass(MODEL_CALL_BUDGET)
-          : EvalResult.fail(MODEL_CALL_BUDGET, "made " + made + " model calls, allowed " + calls);
-    };
+    return new ModelCallBudget(calls);
   }
 
   /**
@@ -202,24 +131,7 @@ public final class Evaluators {
    */
   public static Evaluator tokensAtMost(long tokens) {
     if (tokens < 1) throw new IllegalArgumentException("a token budget is positive");
-    return (evalCase, reply, calls) -> {
-      var used = reply.totalTokens();
-      if (used == 0) {
-        return EvalResult.abstain(TOKEN_BUDGET, "no token counts in the evidence");
-      }
-      return used <= tokens
-          ? EvalResult.pass(TOKEN_BUDGET)
-          : EvalResult.fail(
-              TOKEN_BUDGET,
-              "used "
-                  + used
-                  + " tokens ("
-                  + reply.inputTokens()
-                  + " in, "
-                  + reply.outputTokens()
-                  + " out), allowed "
-                  + tokens);
-    };
+    return new TokenBudget(tokens);
   }
 
   /**
@@ -228,50 +140,249 @@ public final class Evaluators {
   public static Evaluator latencyAtMost(Duration latency) {
     if (latency == null || latency.isNegative() || latency.isZero())
       throw new IllegalArgumentException("a latency budget is positive");
-    return (evalCase, reply, calls) -> {
-      var took = reply.latency();
-      if (took.isZero()) {
-        return EvalResult.abstain(LATENCY_BUDGET, "no timing in the evidence");
-      }
-      return took.compareTo(latency) <= 0
-          ? EvalResult.pass(LATENCY_BUDGET)
-          : EvalResult.fail(
-              LATENCY_BUDGET,
-              "took " + took.toMillis() + " ms, allowed " + latency.toMillis() + " ms");
-    };
+    return new LatencyBudget(latency);
   }
 
   /** The reply must contain every needle, case-insensitively. */
   public static Evaluator answerContains(String... needles) {
     if (needles == null || needles.length == 0)
       throw new IllegalArgumentException("at least one needle required");
-    var expected = List.of(needles);
-    return (evalCase, reply, calls) -> {
-      var text = reply.text().toLowerCase(Locale.ROOT);
-      var missing =
-          expected.stream()
-              .filter(needle -> !text.contains(needle.toLowerCase(Locale.ROOT)))
-              .toList();
-      return missing.isEmpty()
-          ? EvalResult.pass(ANSWER_CONTAINS)
-          : EvalResult.fail(ANSWER_CONTAINS, "reply does not carry " + missing);
-    };
+    return new AnswerContains(List.of(needles));
   }
 
   /** The reply must match the regular expression, anywhere in it. Anchor it for a full match. */
   public static Evaluator answerMatches(String regex) {
     if (regex == null) throw new IllegalArgumentException("regex required");
-    Pattern pattern;
-    try {
-      pattern = Pattern.compile(regex, Pattern.DOTALL);
-    } catch (PatternSyntaxException e) {
-      return (evalCase, reply, calls) ->
-          EvalResult.fail(ANSWER_MATCHES, "not a regular expression: " + regex);
+    return new AnswerMatches(regex);
+  }
+
+  private record Tools(Set<String> expected) implements Evaluator {
+    @Override
+    public String name() {
+      return TOOLS;
     }
-    return (evalCase, reply, calls) ->
-        pattern.matcher(reply.text()).find()
-            ? EvalResult.pass(ANSWER_MATCHES)
-            : EvalResult.fail(ANSWER_MATCHES, "reply does not match /" + regex + "/");
+
+    @Override
+    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+      var called = names(calls);
+      var missing = expected.stream().filter(t -> !called.contains(t)).toList();
+      return missing.isEmpty()
+          ? Finding.pass()
+          : Finding.fail("never called " + missing + "; called " + calledOrNothing(called));
+    }
+  }
+
+  private record ToolOrder(List<String> expected) implements Evaluator {
+    @Override
+    public String name() {
+      return TOOL_ORDER;
+    }
+
+    @Override
+    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+      var called = names(calls);
+      var missing = expected.stream().filter(t -> !called.contains(t)).toList();
+      if (!missing.isEmpty()) {
+        return Finding.abstain("never called " + missing);
+      }
+      return isSubsequence(expected, calls)
+          ? Finding.pass()
+          : Finding.fail("expected " + expected + " in that order; called " + orderOf(calls));
+    }
+
+    /** The expected names must appear in order. Other calls in between are allowed. */
+    private static boolean isSubsequence(List<String> expected, List<ToolCall> calls) {
+      int next = 0;
+      for (var call : calls) {
+        if (next < expected.size() && call.name().equals(expected.get(next))) next++;
+      }
+      return next == expected.size();
+    }
+  }
+
+  private record ToolArgument(String tool, String argument, Object value) implements Evaluator {
+    @Override
+    public String name() {
+      return TOOL_ARGUMENTS;
+    }
+
+    @Override
+    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+      var toTheTool = calls.stream().filter(c -> c.name().equals(tool)).toList();
+      if (toTheTool.isEmpty()) {
+        return Finding.abstain(tool + " was never called");
+      }
+      var carried = toTheTool.stream().anyMatch(c -> sameValue(value, c.arguments().get(argument)));
+      return carried
+          ? Finding.pass()
+          : Finding.fail(
+              tool
+                  + "("
+                  + argument
+                  + ") expected "
+                  + value
+                  + ", was "
+                  + toTheTool.stream().map(c -> c.arguments().get(argument)).toList());
+    }
+
+    /**
+     * A JSON number may deserialize to another numeric type, so compare rendered values as well.
+     */
+    private static boolean sameValue(Object expected, Object actual) {
+      return Objects.equals(expected, actual)
+          || (actual != null && String.valueOf(expected).equals(String.valueOf(actual)));
+    }
+  }
+
+  private record ToolResult(String tool, String needle) implements Evaluator {
+    @Override
+    public String name() {
+      return TOOL_RESULTS;
+    }
+
+    @Override
+    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+      var results =
+          calls.stream()
+              .filter(c -> c.name().equals(tool))
+              .flatMap(c -> c.result().stream())
+              .toList();
+      if (results.isEmpty()) {
+        return Finding.abstain(tool + " has no recorded result");
+      }
+      var lowerNeedle = needle.toLowerCase(Locale.ROOT);
+      return results.stream().anyMatch(r -> r.toLowerCase(Locale.ROOT).contains(lowerNeedle))
+          ? Finding.pass()
+          : Finding.fail(tool + " result expected to carry " + needle + ", was " + results);
+    }
+  }
+
+  private record ForbiddenTools(Set<String> forbidden) implements Evaluator {
+    @Override
+    public String name() {
+      return FORBIDDEN_TOOLS;
+    }
+
+    @Override
+    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+      var called = names(calls);
+      var violated = forbidden.stream().filter(called::contains).toList();
+      return violated.isEmpty() ? Finding.pass() : Finding.fail("called " + violated);
+    }
+  }
+
+  private record ToolCallBudget(int limit) implements Evaluator {
+    @Override
+    public String name() {
+      return TOOL_CALL_BUDGET;
+    }
+
+    @Override
+    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+      return calls.size() <= limit
+          ? Finding.pass()
+          : Finding.fail(
+              "made " + calls.size() + " tool calls, allowed " + limit + ": " + orderOf(calls));
+    }
+  }
+
+  private record ModelCallBudget(int limit) implements Evaluator {
+    @Override
+    public String name() {
+      return MODEL_CALL_BUDGET;
+    }
+
+    @Override
+    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+      var made = reply.modelCalls().size();
+      if (made == 0) {
+        return Finding.abstain("no model calls in the evidence");
+      }
+      return made <= limit
+          ? Finding.pass()
+          : Finding.fail("made " + made + " model calls, allowed " + limit);
+    }
+  }
+
+  private record TokenBudget(long limit) implements Evaluator {
+    @Override
+    public String name() {
+      return TOKEN_BUDGET;
+    }
+
+    @Override
+    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+      var used = reply.totalTokens();
+      if (used == 0) {
+        return Finding.abstain("no token counts in the evidence");
+      }
+      return used <= limit
+          ? Finding.pass()
+          : Finding.fail(
+              "used "
+                  + used
+                  + " tokens ("
+                  + reply.inputTokens()
+                  + " in, "
+                  + reply.outputTokens()
+                  + " out), allowed "
+                  + limit);
+    }
+  }
+
+  private record LatencyBudget(Duration limit) implements Evaluator {
+    @Override
+    public String name() {
+      return LATENCY_BUDGET;
+    }
+
+    @Override
+    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+      var took = reply.latency();
+      if (took.isZero()) {
+        return Finding.abstain("no timing in the evidence");
+      }
+      return took.compareTo(limit) <= 0
+          ? Finding.pass()
+          : Finding.fail("took " + took.toMillis() + " ms, allowed " + limit.toMillis() + " ms");
+    }
+  }
+
+  private record AnswerContains(List<String> needles) implements Evaluator {
+    @Override
+    public String name() {
+      return ANSWER_CONTAINS;
+    }
+
+    @Override
+    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+      var text = reply.text().toLowerCase(Locale.ROOT);
+      var missing =
+          needles.stream()
+              .filter(needle -> !text.contains(needle.toLowerCase(Locale.ROOT)))
+              .toList();
+      return missing.isEmpty() ? Finding.pass() : Finding.fail("reply does not carry " + missing);
+    }
+  }
+
+  private record AnswerMatches(String regex) implements Evaluator {
+    @Override
+    public String name() {
+      return ANSWER_MATCHES;
+    }
+
+    @Override
+    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+      Pattern pattern;
+      try {
+        pattern = Pattern.compile(regex, Pattern.DOTALL);
+      } catch (PatternSyntaxException e) {
+        return Finding.fail("not a regular expression: " + regex);
+      }
+      return pattern.matcher(reply.text()).find()
+          ? Finding.pass()
+          : Finding.fail("reply does not match /" + regex + "/");
+    }
   }
 
   private static Set<String> toolNames(String... names) {
@@ -287,21 +398,6 @@ public final class Evaluators {
 
   private static void requireName(String name, String what) {
     if (name == null || name.isBlank()) throw new IllegalArgumentException(what + " name required");
-  }
-
-  /** The expected names must appear in order. Other calls in between are allowed. */
-  private static boolean isSubsequence(List<String> expected, List<ToolCall> calls) {
-    int next = 0;
-    for (var call : calls) {
-      if (next < expected.size() && call.name().equals(expected.get(next))) next++;
-    }
-    return next == expected.size();
-  }
-
-  /** A JSON number may deserialize to another numeric type, so compare rendered values as well. */
-  private static boolean sameValue(Object expected, Object actual) {
-    return Objects.equals(expected, actual)
-        || (actual != null && String.valueOf(expected).equals(String.valueOf(actual)));
   }
 
   private static LinkedHashSet<String> names(List<ToolCall> calls) {
