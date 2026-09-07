@@ -6,7 +6,7 @@ include::ROOT:partial$include.adoc[]
 
 Akka components form the backbone of the xref:concepts:architecture-model.adoc#_application[application layer], bridging your domain model with the Akka runtime. They provide specialized ways to handle state, events, and interactions, enabling you to build scalable, event-driven applications while focusing on business logic.
 
-To decide which component fits a given need, and when not to use one, see <<choosing-a-component>> below.
+To decide which component fits a given need, and when not to use one, see <<choosing-a-component-type>> below.
 
 The following components are available:
 
@@ -30,8 +30,8 @@ xref:sdk:timed-actions.adoc[image:ROOT:timer.png[width=40] Timed Actions]
 
 xref:sdk:consuming-producing.adoc[image:ROOT:consumer.png[width=40] Consumers]
 
-[#choosing-a-component]
-== Choosing a component
+[#choosing-a-component-type]
+== Choosing a component type
 
 Component selection is the decision of which Akka component implements each part of a feature, and whether a part needs a component at all. The component pages describe how each component works; this section describes how to choose between them. Most design mistakes in Akka services are not misuse of a component's API but use of the wrong component: a workflow that should have been a consumer, a key value entity where the business needed a ledger, a view that only ever serves lookups by id.
 
@@ -138,19 +138,26 @@ Signs you chose wrong:
 
 === Workflow orchestration or Consumer choreography
 
-Both implement long-running business processes across components and services. The xref:sdk:dev-best-practices.adoc#saga-patterns[saga patterns] section describes the two shapes. The choice in practice:
+Both implement long-running business processes across components and services. The xref:sdk:dev-best-practices.adoc#saga-patterns[saga patterns] section describes the two shapes.
 
-Use a *Workflow* when the process is itself a domain concept: it has a name ("funds transfer", "onboarding"), a status someone can ask for, an owner, and an end. Workflows give you per-step retries, timeouts, compensation on failure, durable progress, and one place to inspect when the process is stuck.
+Use a *Workflow* when any of these hold:
 
-Use *Consumers* (choreography) when the "process" is really independent reactions to facts: the email service sends a welcome mail when a user registers, the search index updates when a product changes. No step needs to know about the others, there is nothing to compensate, and no one asks "how far along is it".
+* The process is itself a domain concept: it has a name ("funds transfer", "onboarding"), an owner, and an end.
+* Someone asks "what is the status of X" and X is not an entity.
+* The steps only make sense together, and failures must undo earlier steps. Workflows give you per-step retries, timeouts, compensation on failure, durable progress, and one place to inspect when the process is stuck.
 
-Guidelines:
+Use *Consumers* (choreography) when all of these hold:
 
-* If you find yourself asking "what is the status of X" and X is not an entity, X is probably a workflow.
-* If removing one of the reactions would not break the others, they are reactions: use consumers. If the steps only make sense together and failures must undo earlier steps, that is orchestration: use a workflow.
-* A workflow with a single step that calls one component is not a process. Use a consumer, or call the component directly.
-* A chain of consumers where each one exists only to trigger the next is an implicit workflow: its state machine is spread across several components and it has no compensation path. Replace the chain with a workflow.
-* The two combine: a workflow orchestrates the main flow, and consumers handle independent side effects triggered by the events the flow produces.
+* The "process" is really independent reactions to facts: the email service sends a welcome mail when a user registers, the search index updates when a product changes.
+* Removing one reaction would not break the others.
+* There is nothing to compensate, and no one asks "how far along is it".
+
+Signs you chose wrong:
+
+* A workflow with a single step that calls one component: that is not a process. Use a consumer, or call the component directly.
+* A chain of consumers where each one exists only to trigger the next: that is an implicit workflow, with its state machine spread across several components and no compensation path. Replace the chain with a workflow.
+
+The two combine: a workflow orchestrates the main flow, and consumers handle independent side effects triggered by the events the flow produces.
 
 A Consumer can start a workflow. The common shape: an entity persists an event, a consumer reacts and calls the workflow's start command via the `ComponentClient`. Use the entity id (or a value derived from it) as the workflow id to get idempotent starts under redelivery.
 
