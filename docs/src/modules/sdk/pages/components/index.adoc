@@ -35,7 +35,7 @@ xref:sdk:consuming-producing.adoc[image:ROOT:consumer.png[width=40] Consumers]
 
 Component selection is the decision of which Akka component implements each part of a feature, and whether a part needs a component at all. The component pages describe how each component works; this section describes how to choose between them. Most design mistakes in Akka services are not misuse of a component's API but use of the wrong component: a workflow that should have been a consumer, a key value entity where the business needed a ledger, a view that only ever serves lookups by id.
 
-Decide the component mapping before writing code. Each section gives the default choice, the signals that should change it, and the signs that you chose wrong.
+Decide the component mapping before writing code. Each section gives the default choice, the signals that should change it, and the signs that you chose wrong. The decision helpers carry stable identifiers (CS1 to CS11) so that plans, reviews, and checklists can reference them.
 
 === Start from the need
 
@@ -94,7 +94,8 @@ Decide the component mapping before writing code. Each section gives the default
 
 The sections below explain the decisions where two components are close alternatives.
 
-=== Key Value Entity or Event Sourced Entity
+[#cs1-entity-type]
+=== CS1. Key Value Entity or Event Sourced Entity
 
 Both are entities: durable state accessible per id, single writer, strong consistency per instance. The difference is what is persisted. An Event Sourced Entity persists the facts (events) and derives state from them. A Key Value Entity persists only the latest state.
 
@@ -118,7 +119,8 @@ Signs you chose wrong:
 * A Key Value Entity whose state contains a growing `List<HistoryEntry>`: that is event sourcing implemented by hand, without replay, projections, or size control. Use an Event Sourced Entity.
 * An Event Sourced Entity with one `StateChanged` event that carries the whole new state: that is a Key Value Entity written as an Event Sourced Entity. Either model real domain events or switch.
 
-=== View, or query the entity directly
+[#cs2-view-or-entity-read]
+=== CS2. View, or query the entity directly
 
 If the entity is referenced by its id, do not create a View. Call the entity with the xref:sdk:component-and-service-calls.adoc[ComponentClient] and return its state from a read command handler. That read is strongly consistent and needs no extra component.
 
@@ -136,7 +138,8 @@ Signs you chose wrong:
 * An endpoint that writes to an entity, then immediately queries a View for what it just wrote, and "sometimes returns stale data".
 * One View per endpoint method. Views are read models for access patterns, not per-request adapters.
 
-=== Workflow orchestration or Consumer choreography
+[#cs3-workflow-or-choreography]
+=== CS3. Workflow orchestration or Consumer choreography
 
 Both implement long-running business processes across components and services. The xref:sdk:dev-best-practices.adoc#saga-patterns[saga patterns] section describes the two shapes.
 
@@ -161,7 +164,8 @@ The two combine: a workflow orchestrates the main flow, and consumers handle ind
 
 A Consumer can start a workflow. The common shape: an entity persists an event, a consumer reacts and calls the workflow's start command via the `ComponentClient`. Use the entity id (or a value derived from it) as the workflow id to get idempotent starts under redelivery.
 
-=== Consumer, or a direct call
+[#cs4-consumer-or-direct-call]
+=== CS4. Consumer, or a direct call
 
 Inside one request, when the caller needs the result to proceed, make a direct synchronous call with the `ComponentClient`. Do not introduce a topic or consumer between two components just to "decouple" a call whose result the caller must have anyway.
 
@@ -172,7 +176,8 @@ Move work to a *Consumer* when it is a reaction to a persisted fact rather than 
 
 The consequence of choosing the consumer path: delivery is at-least-once, so the reaction must be idempotent. See xref:sdk:dev-best-practices.adoc#message-deduplication[message deduplication].
 
-=== Timed Action or Workflow timer
+[#cs5-timed-action-or-workflow-timer]
+=== CS5. Timed Action or Workflow timer
 
 Use a *Timed Action* for a scheduled call: expire a reservation in 30 minutes, retry a cleanup nightly. It is stateless and lightweight, and the timer survives restarts. Pass only an id in the payload: parameters are limited to 1 KB, and data captured at scheduling time may be stale when the timer fires. Let the called component check its current state and reply without changes when the action no longer applies, so stale or duplicate firings are harmless.
 
@@ -180,7 +185,8 @@ Use a *Workflow* when the delay is a step inside a process: waiting for a paymen
 
 Do not build a workflow whose only content is "wait, then call one method"; that is a Timed Action. Do not chain timed actions to simulate a multi-step process; that is a workflow.
 
-=== Agent, Autonomous Agent, or a Workflow around agents
+[#cs6-agent-kind]
+=== CS6. Agent, Autonomous Agent, or a Workflow around agents
 
 This decision is covered in depth in xref:sdk:agents.adoc[Agents] ("When to use" and "When not to use"), xref:sdk:autonomous-agents.adoc[Autonomous Agents] ("When to use an Autonomous Agent"), and xref:sdk:agents/orchestrating.adoc[Orchestrating agents]. The short form:
 
@@ -188,7 +194,8 @@ This decision is covered in depth in xref:sdk:agents.adoc[Agents] ("When to use"
 * The model decides what to consult or do next, or agents must coordinate (delegation, handoff, teams): *Autonomous Agent*.
 * No language understanding or generation involved: no agent at all. Entities, workflows, and plain code do not need a model to move data around.
 
-=== HTTP, gRPC, or MCP endpoint
+[#cs7-endpoint-type]
+=== CS7. HTTP, gRPC, or MCP endpoint
 
 Endpoints are the API layer; pick by who calls you:
 
@@ -200,7 +207,8 @@ One service can expose several endpoint types over the same application layer. T
 
 == The boundary with the outside world
 
-=== Durable or in-memory
+[#cs8-durable-or-in-memory]
+=== CS8. Durable or in-memory
 
 Not every value needs a component. Persist state in an entity or workflow when it:
 
@@ -217,7 +225,8 @@ Three corollaries:
 * Entities are already your in-memory cache: active entities are held in memory by the runtime and the state is durable. Do not add Redis or a caching layer in front of your own entities.
 * Large binaries (images, PDFs, exports) go in object storage via `ObjectStorageProvider`, with the reference in entity state. See xref:sdk:integrations/object-storage.adoc[] and the size limits in xref:sdk:dev-best-practices.adoc[Design considerations].
 
-=== In-process or over-the-network
+[#cs9-in-process-or-network]
+=== CS9. In-process or over-the-network
 
 Within one service, always use the `ComponentClient`. Never call your own service's HTTP endpoints from inside the service; that turns an in-process call into a network round trip through the API layer, loses type safety, and applies your own ACLs to yourself.
 
@@ -228,7 +237,8 @@ Between Akka services in the same project, prefer, in order:
 
 Do not split components into separate services to make them "independent" when they change together and call each other synchronously; that adds network failure modes without adding autonomy. Split along bounded contexts, per xref:sdk:dev-best-practices.adoc[Design considerations]. Inside one service, component-to-component calls stay in process; across services they are remote calls, with the latency and failure modes of the network.
 
-=== Not everything is a component
+[#cs10-component-or-plain-class]
+=== CS10. Not everything is a component
 
 Reserve components for what needs their guarantees: durable identity-keyed state (entities), durable processes (workflows), subscriptions (consumers), schedules (timed actions), model interactions (agents), or an API surface (endpoints).
 
@@ -240,7 +250,8 @@ Everything else is plain Java:
 
 If a candidate "component" has no state to persist, nothing to subscribe to, no schedule, and no API to expose, it is a class.
 
-=== Calling third-party services
+[#cs11-third-party-calls]
+=== CS11. Calling third-party services
 
 Where an outbound call to a non-Akka system belongs depends on who needs it and what must happen when it fails:
 
