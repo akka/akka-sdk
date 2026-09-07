@@ -5,7 +5,7 @@ addSbtPlugin("com.github.sbt" % "sbt-java-formatter" % "0.10.0")
 // sbt-java-formatter 0.10.0 pulls in version that does not work with Java 25
 libraryDependencies += "com.google.googlejavaformat" % "google-java-format" % "1.32.0"
 
-addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.6")
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.6.2")
 addSbtPlugin("com.github.sbt" % "sbt-header" % "5.11.0")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.13.1")
 addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.11.2")

@@ -79,7 +79,7 @@ private[impl] object ConsumerDescriptorFactory extends ComponentDescriptorFactor
 
     val allInvokers = methods ++ handleDeletesMethods
 
-    //Empty command/method name, because it is not used in the consumer, we just need the invokers
+    // Empty command/method name, because it is not used in the consumer, we just need the invokers
     ComponentDescriptor(allInvokers)
   }
 }

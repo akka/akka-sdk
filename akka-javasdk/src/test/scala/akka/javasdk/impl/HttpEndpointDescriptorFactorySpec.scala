@@ -241,7 +241,7 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       caught.getMessage should include("Invalid HTTP status code: 123123")
     }
 
-    //Utility to compare StaticClaim to avoid creating `equals` in the original.
+    // Utility to compare StaticClaim to avoid creating `equals` in the original.
     implicit class ClaimValuesWrapper(staticClaim: StaticClaim) {
       override def equals(obj: Any): Boolean = obj match {
         case sc: StaticClaim if sc.name == staticClaim.name =>

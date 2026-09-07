@@ -57,13 +57,13 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
     "generate mapping for a Consumer with a subscription to a topic (type level) combined" in {
       val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToTopicTypeLevelCombined], new Serializer)
       desc.methodInvokers should have size 3
-      //TODO not sure why we need to support `json.akka.io/string` and `json.akka.io/java.lang.String`
+      // TODO not sure why we need to support `json.akka.io/string` and `json.akka.io/java.lang.String`
       desc.methodInvokers.view.mapValues(_.method.getName).toMap should
       contain only ("json.akka.io/akka.javasdk.testmodels.Message" -> "messageOne", "json.akka.io/string" -> "messageTwo", "json.akka.io/java.lang.String" -> "messageTwo")
     }
 
     "generate mapping for a Consumer with a VE subscription and publication to a topic" ignore {
-      //TODO cover this with Spi tests
+      // TODO cover this with Spi tests
     }
 
     "generate mapping for a Consumer subscribing to raw bytes from a topic" in {
@@ -72,15 +72,15 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
     }
 
     "generate mapping for a Consumer with a ES subscription and publication to a topic" ignore {
-      //TODO cover this with Spi tests
+      // TODO cover this with Spi tests
     }
 
     "generate mapping for a Consumer with a Topic subscription and publication to a topic" ignore {
-      //TODO cover this with Spi tests
+      // TODO cover this with Spi tests
     }
 
     "generate mapping for a Consumer with a Stream subscription and publication to a topic" ignore {
-      //TODO cover this with Spi tests
+      // TODO cover this with Spi tests
     }
 
     "generate mappings for service to service publishing " in {
