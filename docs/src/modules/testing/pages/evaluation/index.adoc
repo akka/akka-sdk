@@ -1,60 +1,105 @@
 = Evaluation
-:page-summary: An evaluation suite runs a service against a set of eval cases and records a verdict for each. Reports carry pass rates, the cases that failed, and the cost of the run. A CI job can gate a merge on regression.
-:page-when-to-use: Use when a service is worth measuring. The reply's correctness, the tool usage, the latency budget, the faithfulness of a retrieved answer.
-:page-related: xref:testing:evaluation/getting-started.adoc[], xref:testing:evaluation/concepts.adoc[], xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/eval-cases-and-rules.adoc[], xref:testing:evaluation/experiments.adoc[], xref:testing:evaluation/reports.adoc[], xref:testing:red-teaming/index.adoc[]
-:page-persona: developer
+:page-summary: Evaluation runs an agent through a set of eval cases inside a TestKit test and checks each reply and the tool calls the runtime traced against expectations, a model judge and a gate.
+:page-when-to-use: Checking an agent's tool use and replies with a mocked model in every build, measuring reply quality against a real model on demand, and holding an agent to what production recorded.
+:page-related: testing:evaluation/getting-started.adoc, testing:evaluation/experiments.adoc, testing:integration.adoc, sdk:agents/testing.adoc
+:page-persona: builder-developer, builder-ai-ml
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
-Evaluation is how a project measures a service against a stated expectation.
-A suite runs the service through a fixed set of eval cases and turns each reply into a verdict.
-The rendered report lists the failing cases one by one.
-The CI job fails the build when the pass rate drops or a case that used to pass now fails.
+Evaluation runs an agent through a set of eval cases and checks each reply, and the tool calls behind it, against stated expectations.
 
-== The parts of an experiment
+== Overview
 
-`EvalCase` +
-A graded turn, what a correct answer does, an optional specification node or metric, and an
-optional eval setup that seeds the conversation first.
-Eval cases are Java records. evalkit ships no reader for an on-disk format.
+evalkit is the evaluation part of the Akka TestKit: the `akka.javasdk.testkit.eval` package in the `akka-javasdk-testkit` artifact.
+An evaluation is a JUnit test that extends `TestKitSupport`.
+The agent runs in the in-process runtime with its tools, session memory and guardrails.
+The runtime traces every model call and tool call, and the evaluation reads that trace as evidence.
+Nothing is persisted and nothing leaves the test JVM.
 
-`Evaluator` +
-One method that turns a recorded run into an outcome.
-Three families ship: deterministic (comparison against a stated expectation), heuristic
-(computation from the recorded interaction against a threshold), and agentic (a
-language-model judge configured with a shipped system prompt).
-See xref:testing:evaluation/evaluators.adoc[].
+Use evaluation for three purposes.
 
-`EvalCaseResults` +
-One eval case together with every attempt made against it.
-Repeating an experiment produces several attempts and one `EvalCaseResults`.
-The report reads results case by case.
-An eval case that passed twice and failed once is one varied verdict.
+Wiring, in every build::
+Mock the model with `TestModelProvider` and assert that the agent calls the right tools with the right arguments, and turns the tool results into the reply.
+Every case must pass.
 
-`Experiment` +
-The JUnit class that assembles the eval cases, the target and the evaluators into a named
-unit and runs them.
-Gated on `-Deval=true` so `mvn verify` compiles the class without running it.
+Quality, on demand::
+Run the same cases against a real model.
+Replies vary between runs, so a gate holds the batch to a pass rate rather than every case to a pass.
+A model judge scores criteria that the built-in expectations cannot state, such as tone.
 
-`Run` +
-One execution of an experiment against one target build.
+Baseline, from recordings::
+Turn recorded production interactions into cases with `EvalCaseParser`.
+A replayed case expects the tools, the order and the arguments production used, and holds the agent to the recorded spend.
 
-`Report` +
-The output of a run.
-See xref:testing:evaluation/reports.adoc[] for every panel and how the numbers compose.
+Evaluation is not the place for the following.
 
-== How evaluation relates to other components
+* The effect one command produces. Use xref:testing:unit.adoc[] and the agent's `TestKit`.
+* An endpoint's HTTP contract, or the wiring between components without an agent. Use xref:testing:integration.adoc[].
 
-* xref:testing:red-teaming/index.adoc[Red teaming] runs the same target through adversarial prompts and reports each break as an incident.
-Red-team evaluators use the same three-family taxonomy the evaluation evaluators use.
-* An xref:sdk:agents.adoc[Agent] is the service being evaluated.
-A test adapter, `SystemUnderTest`, puts the Agent in front of the runner.
+== How a case runs
+
+`ExperimentRunner` runs the cases one after the other, in the calling thread.
+
+. The case's setup runs. It primes the stubs the agent's tools call.
+. The runner calls the agent's command handler through the TestKit component client, in a fresh session, with the case's user message.
+. The runner reads the trace the runtime wrote for that session through `TelemetryReader`: the tool calls with their arguments, results and errors, the model calls with their token counts, the guardrail evaluations and the latency.
+. Every evaluator the case activated reads the reply and the trace and reports a finding: pass, fail, or abstain when the evidence it needs is absent.
+. The gate checks the aggregated results and the report is returned.
+
+[mermaid]
+----
+flowchart LR
+    Case[EvalCase] --> Runner[ExperimentRunner]
+    Runner -->|command, fresh session| Agent[Agent in the TestKit runtime]
+    Agent -->|reply| Runner
+    Agent -.->|trace| Telemetry[TelemetryReader]
+    Telemetry --> Runner
+    Runner --> Evaluators[Built-in evaluators, judges, custom evaluators]
+    Evaluators --> Findings[Findings per case]
+    Findings --> Gate
+    Gate --> Report[EvalReport]
+----
+
+A case that fails in its setup, or whose agent call throws, is reported as a failed case under the `setup` or `target` evaluator.
+It does not abort the batch.
+
+== The parts of an evaluation
+
+[cols="1,3"]
+|===
+| Type | Role
+
+| `EvalCase`
+| One case: an id, the user message, a setup that runs before the call, and the expectations. See xref:testing:evaluation/eval-cases.adoc[].
+
+| `Expectations`
+| What the case asserts. Each declaration activates one built-in evaluator. See xref:testing:evaluation/eval-cases.adoc[].
+
+| `Judge`
+| A model that scores the reply against a criterion written in words. See xref:testing:evaluation/judges.adoc[].
+
+| `Evaluator`
+| A custom check over the reply and the tool calls. See xref:testing:evaluation/custom-evaluators.adoc[].
+
+| `ExperimentRunner`
+| Builds the experiment step by step: the cases, the agent, the gate, then the run. See xref:testing:evaluation/experiments.adoc[].
+
+| `Gate`
+| What the batch must satisfy over all case results. Without a gate every case must pass. See xref:testing:evaluation/experiments.adoc[].
+
+| `EvalReport`
+| The outcome: whether the gate passed, the pass rate, every case result, and the report as text. See xref:testing:evaluation/experiments.adoc[].
+
+| `EvalCaseParser`, `ToolBindings`
+| Cases derived from recorded interactions. See xref:testing:evaluation/replay.adoc[].
+|===
+
+All types are in the `akka.javasdk.testkit.eval` package.
+The API documentation is at link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/package-summary.html[akka.javasdk.testkit.eval].
 
 == See also
 
-* xref:testing:evaluation/getting-started.adoc[]. From an empty project through the first experiment.
-* xref:testing:evaluation/evaluators.adoc[]. The three families, the built-ins, and how to add your own.
-* xref:testing:evaluation/reports.adoc[]. Every panel of the rendered report.
-* xref:testing:red-teaming/index.adoc[]. Adversarial suite that reuses the same target adapter.
-* xref:reference:evaluations/evaluators.adoc[]
+* xref:testing:evaluation/getting-started.adoc[]
+* xref:sdk:agents/testing.adoc[]
+* xref:sdk:agents/llm_eval.adoc[]

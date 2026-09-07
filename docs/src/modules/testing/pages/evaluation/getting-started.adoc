@@ -1,241 +1,164 @@
 = Getting started with evaluation
-:page-summary: An evaluation suite scores an Akka SDK service against a dataset. It lives under src/test/java, runs as an ordinary JUnit test, and reports a pass rate with the failing cases named individually.
-:page-when-to-use: Use when a service is worth measuring. The reply's correctness, the tool usage, the latency budget, the faithfulness of a retrieved answer.
-:page-prerequisites: An existing Maven project. Familiarity with JUnit.
-:page-related: xref:testing:evaluation/evaluators.adoc[], xref:testing:evaluation/eval-cases-and-rules.adoc[], xref:testing:evaluation/experiments.adoc[]
+:page-summary: A first evaluation: an agent with two tools, a test class that mocks the model and the tool's backend, one case, then a gated batch.
+:page-when-to-use: Writing the first evaluation of an agent.
+:page-prerequisites: A Maven project on the Akka SDK with an agent. Familiarity with JUnit and with `TestKitSupport`.
+:page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/experiments.adoc, sdk:agents/testing.adoc
+:page-persona: builder-developer, builder-ai-ml
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
-An evaluation suite is a set of JUnit tests that run a target service through a set of eval cases and score each reply against what the case expects.
-The suite lives alongside the project's other tests under `src/test/java` and reads the same dependencies at test scope.
-An experiment is one class in the suite.
-Its outcome is a report the CI job reads for regressions.
+== Why an agent needs evaluation tests
 
-== Overview
+A unit test asserts that a call returns one expected value.
+An agent does not fit that shape.
+The model decides which tools to call, with which arguments, and how to word the reply, and a real model might not make the same decisions twice.
+Asserting on the exact reply fails on a harmless rewording and passes on a reply that sounds right but invents an order.
 
-An evaluation experiment has four parts.
-The **target** is any implementation of `SystemUnderTest`.
-For a service on the Akka SDK, the implementation calls the service's own `ComponentClient`.
-The **dataset** is a set of `EvalCase` records.
-Each names an eval setup, a graded turn, and the outcome the target is expected to reach.
-The **experiment** is a JUnit test class that assembles the dataset and the target, invokes `ExperimentRunner.run(...)`, and asserts against the result.
-The **runner** in `evalkit` walks every eval case in parallel lanes and returns an `ExperimentRunner.Result` carrying what each attempt produced.
+An evaluation test asserts on what matters instead.
+It sends the agent a fixed set of messages, the eval cases, and checks each turn against expectations: which tools were called, in which order, with which arguments, what the reply must contain, and what a turn may cost.
+Criteria that have no exact answer, such as tone, go to a model judge that scores the reply.
+Because a real model varies, an evaluation counts findings over the whole set and holds it to a rate, rather than holding every case to a pass.
 
-The suite is a test scope dependency, so a customer's production artifact carries no evalkit code.
-Experiments are gated on `-Deval=true` so `mvn verify` compiles the classes without running them.
-`mvn verify -Deval=true` runs them.
+The evaluation kit is a set of utilities for testing Akka agents with an ordinary JUnit test.
 
-== Add the dependency
+* The agent runs in the TestKit runtime with its tools, session memory and guardrails, not in a harness that imitates them.
+* The evidence is the trace the runtime records for the turn. The test does not instrument the agent.
+* With the model mocked by `TestModelProvider`, the same cases are deterministic and run in every build. Without the mock, they run against the real model on demand, with a gate on rates.
+* Cases can be written in Java or derived from recorded production interactions.
 
-`akka eval init` overlays the source tree onto the project, edits the pom to add the `evalkit` dependency at test scope, and reports what it wrote.
+This page builds an evaluation for a support agent of an online shop, from the agent to a gated batch.
+The complete code is in the link:{sample-base-url}/doc-snippets/src/test/java/com/example/eval[doc-snippets sample, window="new"].
+
+== The agent under evaluation
+
+The `OrderAgent` answers questions about orders.
+It has two tools: one looks an order up, the other issues a refund.
+Both delegate to an `OrderService`, which the agent receives through its constructor.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/eval/OrderAgent.java[OrderAgent.java]
+----
+include::sdk:example$doc-snippets/src/main/java/com/example/eval/OrderAgent.java[tag=class]
+----
+<1> The order system is injected. Production provides a client for the real system through a `DependencyProvider`; the evaluation provides a stub.
+<2> The command handler the evaluation calls. It takes the case's user message as a `String` and replies with a `String`.
+<3> The tools. The model sees them as `OrderAgent_getOrder` and `OrderAgent_issueRefund`. Expectations use the plain method names.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/eval/OrderService.java[OrderService.java]
+----
+include::sdk:example$doc-snippets/src/main/java/com/example/eval/OrderService.java[tag=class]
+----
+
+Under test, a stub takes the place of the real order system.
+The sample's `StubOrderService` keeps a map of orders that a case fills before the agent is called, and throws for an unknown order id the way the real client would.
+The test registers the stub through a test specific `DependencyProvider`, as described in xref:sdk:setup-and-dependency-injection.adoc#_custom_dependency_injection_in_tests[Custom dependency injection in tests].
+
+== The test class
+
+The evaluation is a `TestKitSupport` test.
+It registers the stub as the agent's `OrderService` and leaves the model as configured in `application.conf`, so the agent answers with the model it uses in production.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=class]
+----
+<1> The class runs only when the build sets the `eval` system property. Without it JUnit skips the class.
+<2> The stub the agent's tools call.
+<3> The `DependencyProvider` that serves the stub. It replaces the one the service's `ServiceSetup` creates.
+<4> The stub is emptied after each test, so a case adds only what it needs.
+
+Run it with the property set and the model's API key in the environment:
+
+[source,bash]
+----
+mvn verify -Deval=true
+----
+
+`@EnabledIfSystemProperty` is one way to keep an expensive test out of the regular build.
+A JUnit `@Tag` with a Failsafe `groups` filter, a Maven profile, or a class name the plugin does not select work as well.
+
+== The first case
+
+An `EvalCase` describes one turn with the agent.
+It carries the message the agent receives, what the agent is expected to do with it, and a setup that prepares the stub before the turn.
+The first case asks where an order is and expects the agent to look the order up without refunding it.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=status-case]
+----
+<1> The id names the case in the report.
+<2> The message the agent receives.
+<3> The setup runs before the agent is called. Here it adds the order the question is about to the stub.
+<4> The expectations. The agent must call `getOrder` with the order id from the question, must not issue a refund, and the reply must carry the order's status.
+
+An `ExperimentRunner` bound to the running TestKit takes the case, the agent's command handler, and runs.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=first-case]
+----
+<1> The cases. One, several, or a list.
+<2> The agent's command handler. The runner calls it through the component client in a fresh session per case.
+<3> Runs the cases and returns an `EvalReport`.
+<4> Without a gate the report passes only when every case passes. The rendered report is the failure message, so a failed case prints its evidence.
+
+A single case against a real model is a smoke test.
+The model may word the reply differently on another run, or call a tool it did not call before, and the case fails on that run.
+The next step holds a set of cases to a rate instead.
+
+== A batch behind a gate
+
+Several cases run as one batch.
+A `Gate` decides what the batch must satisfy over all case results.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=curated]
+----
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=batch]
+----
+<1> At least nine cases in ten must pass.
+<2> Every declared tool argument must arrive as declared, in every case that declares one. A wrong argument is a defect even when the reply reads well.
+<3> No case may fail in its setup or in the agent call. An unavailable model fails the gate rather than lowering the pass rate.
+
+The gates are combined with `and`, so all three must hold.
+
+A rendered report of this batch:
 
 [listing]
 ----
-$ akka eval init
-kept   src/test/java/com/acme/checkout/eval/evaluator/deterministic/package-info.java
-added the evalkit dependency to pom.xml (previous kept as pom.xml.backup)
-run an experiment with `mvn verify -Deval=true`
-
-Added the eval source root to . under package com.acme.checkout.eval — 7 file(s) written, 0 kept.
+3/3 cases passed (100%)
+gate: passed — pass rate 1.00 over 3 cases, required 0.90; no target failures
+  tools 1/1
+  tool-arguments 2/2
+  forbidden-tools 2/2
+  answer-contains 2/2
+  tool-order 1/1
+  tool-call-budget 1/1
+  model-call-budget 1/1
+  answer-matches 1/1
+spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status at 489 ms, over 3/3 cases with evidence
 ----
 
-The command is idempotent.
-Running it again on a project that already declares the dependency reports "already declares" rather than editing the pom a second time.
-A file the customer has since written stays untouched, and the command reports each as `kept`.
+The second line is the gate's verdict.
+The indented lines are the pass counts per evaluator, over the cases that activated it.
+The last line sums what the run spent.
+This report comes from a run with the model replaced by a `TestModelProvider`, see <<mocking-the-model>>, which is why it reports no tokens.
+xref:testing:evaluation/experiments.adoc#reading-the-report[Reading the report] explains every line.
 
-The eval tree lands under `src/test/java/<groupId>.eval/`, where `<groupId>` comes from the project's `pom.xml`.
+== Next steps
 
-TIP::
-+
---
-Alternatively: Add the EvalKit to in the `dependencies` section in your Akka SDK project's Maven `pom.xml` file. +
-```xml
-  <dependencies>
-    <dependency>
-      <groupId>io.akka</groupId>
-      <artifactId>akka-javasdk-evalkit</artifactId>
-      <version>${evalkit.version}</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
-```
---
-
-== The target adapter
-
-Every experiment talks to one `SystemUnderTest`.
-The interface has two responsibilities.
-Put the service into the state the eval case names, then submit the graded turn.
-For an Akka SDK service, the implementation calls the service's own `ComponentClient`.
-That is the same client an integration test would use.
-
-[source,java,indent=0]
-.RefundAgentRunner.java
-----
-include::example$evaluation-playground/src/test/java/com/example/eval/runner/RefundAgentRunner.java[tag=class]
-----
-<1> The `ComponentClient` is injected the same way a service's integration tests receive it.
-<2> `prepare(EvalSetup)` arranges the state an eval case names.
-A fixture named `"signed-in"` in the eval case reads the fixture handler here.
-<3> An eval setup this adapter cannot arrange returns `Prepared.Failed`.
-The runner records this as `NotReached`, a fact about the adapter, not a verdict on the target.
-<4> `submit(sessionId, userText)` speaks the graded turn.
-For an Agent, that is a `.forAgent().inSession(...).method(...).invoke(...)` call.
-<5> `fixtures()` declares the states the adapter can reach.
-An experiment that names a fixture this adapter never declared is refused before running.
-
-== The experiment class
-
-An experiment assembles the eval cases and the target, invokes the runner, and asserts against the result.
-JUnit reads the class the same way it reads any other test.
-
-[source,java,indent=0]
-.RefundPolicyExperiment.java
-----
-include::example$evaluation-playground/src/test/java/com/example/eval/experiment/RefundPolicyExperiment.java[tag=class]
-----
-<1> The system-property gate keeps experiments out of `mvn verify`.
-The test is compiled and JUnit knows it exists.
-Execution needs `-Deval=true`.
-<2> Every eval case names an id, an eval setup, the graded turn, and the outcome the target is expected to reach.
-<3> The experiment setup collects the cases, sets the number of parallel lanes, and names the rubric an agentic evaluator would use.
-<4> The adapter from the previous section.
-<5> The judge settles the eval cases that name neither a specification node nor a metric.
-<6> `ExperimentRunner.run(...)` walks every case, calls the adapter, scores each attempt, and returns an `ExperimentRunner.Result`.
-<7> The result carries no assertions of its own, so the experiment asserts the way any JUnit test does.
-
-== What a run reports
-
-`mvn verify -Deval=true` runs the experiment.
-`Panels.render(result.asRecord(setup, reporting))` returns the report as a `String`.
-The experiment writes it wherever the project keeps them.
-The report is plain 80-column ASCII and prints between four and seven panels in a fixed
-order.
-Four always appear.
-Three only when the run has something to put in them.
-The numbering starts at 1 with no gaps.
-
-The example below is the report a single-run refund-policy experiment produces (`Panels.render()` output from a six-case fixture with two passes, two failures, one undecided, and one no-result):
-
-[listing]
-----
-Refund policy evaluation
---------------------------------------------------------------------------
-  run      2026-08-11T09:14Z           system   claims-svc 4.2.0
-  rules    refund-desk v3              rubric   case-judge v3
-  scope    6 cases, 6 attempts
-  record   target/evalkit/refund-policy.jsonl
---------------------------------------------------------------------------
-
-1  What the run found
----------------------
-
-  passed            #############                               2
-  failed            #############                               2
-  undecided         #######                                     1
-  no result         #######                                     1
-
-  In this run, each case ran once. Undecided means that a result was in
-  a judge's middle confidence. No result means the run stopped before there
-  was an answer to score.
-
-  One attempt cannot tell a case the system meets from one it happened to
-  meet. Five attempts would show a case holds at least 55% of the time,
-  twenty attempts at least 86%, fifty at least 94%.
-
-2  What failed
---------------
-
-     refund-14d            expected GenUC-16a, found GenUC-17a
-     tool-scope            tool-permission v1: scored 0.50, needed 1.00
-
-  Every case that failed, and what the evaluator said about it. An evaluator
-  that computes a number reports the number it got and the number it needed.
-
-3  How quality was measured
----------------------------
-
-           # passed   x failed   ~ varied   ? unsettled
-
-     specification node      #########xxxxxxxxx             2
-     case judge              #########?????????????????     3
-     tool permission         xxxxxxxxx                      1
-     ...
-     (rows for every measure the run touched, plus zeros for those it did not)
-
-4  How the judge scored
------------------------
-
-     10                                        0
-      9  ##############################        1
-      8                                        0
-     ..... passed, 8 and above .................... 1
-      7                                        0
-      6                                        0
-      5  ##############################        1
-      4                                        0
-     ..... undecided, 4 to 7 ...................... 1
-      3                                        0
-      2                                        0
-      1                                        0
-     ..... failed, 3 and below .................... 0
-
-  Models scored 3 cases from 1 to 10, with 10 being very confident.
-
-5  What this run cannot tell you
---------------------------------
-
-  These attempts stopped before the system produced an answer to score.
-
-     never reached the question                    0
-     no reply within 45 seconds                    1
-     the judge would not score the answer          0
-
-6  What it cost
----------------
-
-     the system under test            70,000 in     4,000 out
-     the judge                         7,628 in       948 out
-     total                            77,628 in     4,948 out
-
-  Tokens the system and the judge sent and received across all 6 attempts.
-
-     under 5s      ##########################    2
-     5 to 15s      #############                 1
-     15 to 30s                                   0
-     30 to 45s     #############                 1
-     over 45s      #############                 1
-
-  How long the system took to answer, over 5 attempts.
-----
-
-Panels shown here: 1, 2, 3, 4, 5, 6.
-A run with `repeating(N > 1)` and any varied verdict inserts panel 3 as "The cases that gave different answers between attempts", and everything after it renumbers.
-A run without any judged case leaves out "How the judge scored".
-
-For every panel and how each column composes, see xref:testing:evaluation/reports.adoc[].
-
-== Where the parts live
-
-[cols="1,3"]
-|===
-| Path | What lives there
-
-| `src/test/java/<pkg>/eval/runner/`     | The `SystemUnderTest` adapter for this project.
-| `src/test/java/<pkg>/eval/evaluator/`  | Evaluators, grouped by family (see xref:testing:evaluation/evaluators.adoc[]).
-| `src/test/java/<pkg>/eval/dataset/`    | The project's `EvalSource` implementation and dataset loaders.
-| `src/test/java/<pkg>/eval/reports/`    | Report rendering and where a run writes it.
-| `src/test/resources/eval/datasets/`    | Dataset files the project's own loader reads.
-| `src/test/resources/eval/rubrics/`     | Agentic-evaluator rubrics, versioned by filename.
-| `src/test/resources/eval/baselines/`   | Prior runs the experiment compares against.
-| `target/evalkit/reports/`              | Rendered reports (gitignored).
-|===
-
-== See also
-
-* xref:testing:evaluation/evaluators.adoc[]. The three families of evaluator and the built-ins.
-* xref:testing:evaluation/eval-cases-and-rules.adoc[]. What an eval case declares, and which evaluator settles it.
-* xref:testing:evaluation/experiments.adoc[]. Building an experiment setup, and rendering a report from a run.
-* xref:testing:evaluation/reports.adoc[]. Every panel of the rendered report.
-* xref:testing:evaluation/baselines.adoc[]. How to gate CI on regression.
+* xref:testing:evaluation/eval-cases.adoc[] lists every expectation and when it abstains.
+* xref:testing:evaluation/judges.adoc[] scores criteria that have no exact answer.
+* xref:testing:evaluation/replay.adoc[] turns recorded production traffic into cases.

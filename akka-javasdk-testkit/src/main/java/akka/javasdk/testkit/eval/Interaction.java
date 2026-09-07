@@ -56,18 +56,22 @@ public record Interaction(
         trace.finalModelText());
   }
 
+  /** A reply with no evidence. */
   public static Interaction of(String text) {
     return new Interaction(text, List.of());
   }
 
+  /** Input tokens summed over the model calls. */
   public long inputTokens() {
     return modelCalls.stream().mapToLong(ModelCall::inputTokens).sum();
   }
 
+  /** Output tokens summed over the model calls. */
   public long outputTokens() {
     return modelCalls.stream().mapToLong(ModelCall::outputTokens).sum();
   }
 
+  /** Input and output tokens together. */
   public long totalTokens() {
     return inputTokens() + outputTokens();
   }

@@ -1,0 +1,165 @@
+= Eval cases and expectations
+:page-summary: An EvalCase carries the user message, a setup and the expectations; each expectation activates one built-in evaluator over the reply and the traced tool calls.
+:page-when-to-use: Writing cases by hand and choosing what each one asserts.
+:page-related: testing:evaluation/getting-started.adoc, testing:evaluation/custom-evaluators.adoc, testing:evaluation/replay.adoc
+:page-persona: builder-developer, builder-ai-ml
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
+
+An eval case is one turn with the agent and the checks its reply and tool calls must pass.
+
+== The parts of an eval case
+
+link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/EvalCase.html[EvalCase] is a record with four parts.
+
+[cols="1,3"]
+|===
+| Part | Meaning
+
+| `id`
+| Names the case in the report. Unique within the suite.
+
+| `userMessage`
+| The message the agent receives. The runner turns it into the command with the mapping given to `agent(...)`, see xref:testing:evaluation/experiments.adoc#naming-the-agent[Naming the agent].
+
+| `setup`
+| A `Runnable` that runs before the agent is called. Use it to prime the stubs the agent's tools call, or to seed entities through the component client. `EvalCase.NO_SETUP` when the case needs none. `EvalCase.of(id, userMessage, expectations)` creates a case without a setup.
+
+| `expectations`
+| What the case asserts. `Expectations.none()` when the case only collects evidence.
+|===
+
+A case that throws in its setup is reported as failed under the `setup` evaluator.
+The agent is not called.
+
+Each case runs in a fresh session, so no case can read the session memory of an earlier case.
+
+== A case with tool, argument and reply expectations
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=refund-case]
+----
+<1> `getOrder` must be called before `issueRefund`. Other calls may come between.
+<2> `issueRefund` must receive `amountCents` as `4999`. Numbers compare by value, so an `int` matches a recorded `long`.
+<3> The reply must match the regular expression somewhere. Anchor it for a full match.
+<4> Budgets. At most two tool calls and three model calls for this turn.
+
+A case that must not touch a tool:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=greeting-case]
+----
+<1> `EvalCase.of` builds a case without a setup.
+
+== Expectations
+
+link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Expectations.html[Expectations] is immutable.
+Start from `Expectations.expect()` and add declarations.
+Each declaration activates one built-in evaluator, named in the report as shown.
+
+=== Expectations on tool calls
+
+[cols="2,1,3"]
+|===
+| Declaration | Evaluator | Passes when
+
+| `tools(names...)`
+| `tools`
+| Every named tool was called, in any order. Other calls are allowed.
+
+| `toolOrder(names...)`
+| `tool-order`
+| The named tools were called in this relative order. Calls to other tools may come between. Abstains when one of the named tools was never called.
+
+| `toolArgument(tool, argument, value)`
+| `tool-arguments`
+| Every call to the tool carried the argument with this value. Abstains when the tool was never called.
+
+| `toolResult(tool, needle)`
+| `tool-results`
+| The result of the tool contains the text, case-insensitively. Abstains when the tool was never called or the trace carries no result for it.
+
+| `forbiddenTools(names...)`
+| `forbidden-tools`
+| None of the named tools was called.
+|===
+
+Tool names are the plain method names, for example `getOrder`.
+The model sees an agent-local tool as `OrderAgent_getOrder`, and the trace reader removes that prefix.
+
+=== Expectations on the reply
+
+[cols="2,1,3"]
+|===
+| Declaration | Evaluator | Passes when
+
+| `answerContains(needles...)`
+| `answer-contains`
+| The reply contains every needle, case-insensitively.
+
+| `answerMatches(regex)`
+| `answer-matches`
+| The reply matches the regular expression anywhere. Anchor the expression for a full match. A pattern that does not compile fails the case.
+
+| `satisfies(evaluator)`
+| The evaluator's own name
+| A custom evaluator passes. `Judge.mustSatisfy` produces one from a criterion written in words. See xref:testing:evaluation/judges.adoc[] and xref:testing:evaluation/custom-evaluators.adoc[].
+|===
+
+=== Budgets
+
+A budget holds the turn to a limit.
+Each abstains when the trace does not carry the figure it needs.
+A `TestModelProvider` reports no tokens, so a token budget abstains under a mocked model and applies under a real one.
+
+[cols="2,1,3"]
+|===
+| Declaration | Evaluator | Passes when
+
+| `toolCallsAtMost(calls)`
+| `tool-call-budget`
+| The agent made at most this many tool calls.
+
+| `modelCallsAtMost(calls)`
+| `model-call-budget`
+| The agent made at most this many model calls. An answer takes at least one.
+
+| `tokensAtMost(tokens)`
+| `token-budget`
+| Input and output tokens together stay within the limit. Abstains when the model reported no tokens.
+
+| `latencyAtMost(duration)`
+| `latency-budget`
+| The agent command completed within the duration. Abstains when the trace carries no timing.
+|===
+
+== Abstaining when the evidence is absent
+
+An evaluator reads only what it names and abstains when that evidence is absent.
+A tool that was never called fails `tools` and makes `tool-order` and `tool-arguments` abstain, so one missing call is reported once.
+An abstention is neither a pass nor a fail.
+A case with abstentions and no failed finding passes.
+The report counts abstentions per evaluator, and `Gate.evaluatorRateAtLeast` rates an evaluator over the cases where it did not abstain.
+
+== Evaluator names in reports and gates
+
+The constants in link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluators.html[Evaluators] are the names the built-in evaluators report under.
+Use them with `Gate.evaluatorRateAtLeast`, for example `Evaluators.TOOL_ARGUMENTS`.
+
+Two names are reported by the runner rather than by an expectation.
+
+`target`::
+The agent call failed. The finding carries the exception, and the case keeps the tool calls the trace recorded before the failure.
+
+`setup`::
+The case's setup threw. The agent was never called.
+
+== See also
+
+* xref:testing:evaluation/experiments.adoc[]
+* xref:testing:evaluation/replay.adoc[] derives cases with these expectations from recordings.

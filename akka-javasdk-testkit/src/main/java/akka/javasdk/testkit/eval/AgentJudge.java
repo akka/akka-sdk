@@ -43,6 +43,7 @@ public final class AgentJudge implements Judge {
     return new AgentJudge(componentClient, prompt);
   }
 
+  /** The system message this judge sends. */
   public String prompt() {
     return prompt;
   }

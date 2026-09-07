@@ -71,14 +71,17 @@ public final class ToolBindings {
     void load(RecordedCall call);
   }
 
+  /** Starts a set of bindings. */
   public static Builder builder() {
     return new Builder();
   }
 
+  /** Whether the tool has a binding. */
   public boolean binds(String tool) {
     return byTool.containsKey(tool);
   }
 
+  /** The bound tool names. */
   public Set<String> toolNames() {
     return byTool.keySet();
   }
@@ -102,6 +105,11 @@ public final class ToolBindings {
 
     private Builder() {}
 
+    /**
+     * Binds a tool to the loader that primes its stub.
+     *
+     * @throws IllegalArgumentException when the tool is already bound
+     */
     public Builder bind(String toolName, ResultLoader loader) {
       if (toolName == null || toolName.isBlank())
         throw new IllegalArgumentException("tool name required");
@@ -112,6 +120,7 @@ public final class ToolBindings {
       return this;
     }
 
+    /** The bindings declared so far. */
     public ToolBindings build() {
       return new ToolBindings(byTool);
     }

@@ -275,40 +275,47 @@ public final class Expectations {
         budgets);
   }
 
-  // What the runner reads.
-
+  /** The tools declared with {@link #tools}. */
   public Set<String> expectedTools() {
     return expectedTools;
   }
 
+  /** The order declared with {@link #toolOrder}. */
   public List<String> expectedOrder() {
     return expectedOrder;
   }
 
+  /** The arguments declared with {@link #toolArgument}. */
   public List<ToolArgument> toolArguments() {
     return toolArguments;
   }
 
+  /** The results declared with {@link #toolResult}. */
   public List<ToolResult> toolResults() {
     return toolResults;
   }
 
+  /** The tools declared with {@link #forbiddenTools}. */
   public Set<String> forbidden() {
     return forbiddenTools;
   }
 
+  /** The needles declared with {@link #answerContains}. */
   public List<String> answerNeedles() {
     return answerNeedles;
   }
 
+  /** The pattern declared with {@link #answerMatches}. */
   public Optional<String> answerRegex() {
     return answerRegex;
   }
 
+  /** The evaluators added with {@link #satisfies}. */
   public List<Evaluator> evaluators() {
     return evaluators;
   }
 
+  /** The budgets declared with the {@code ...AtMost} methods. */
   public Budgets budgets() {
     return budgets;
   }
