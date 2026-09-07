@@ -8,13 +8,13 @@ Released 2026-09-09.
 
 == Changes
 
-* Views: a query field path that passes through two levels of repeated message resolves to the correct field. Such a path resolved to the wrong field before.
-* Views: a `BigDecimal` column is read back from a historical view. The value was stored but not mapped on read, so it was missing from the query result.
-* Agents: the configured `response-timeout` is applied for OpenAI-based model providers. Langchain4j overwrote the value with its own default, so those providers timed out after 60 seconds regardless of the configured value.
+* Views: a query field path that passes through two levels of repeated message resolves to the correct field.
+* Views: a `BigDecimal` column is now correctly read back from a historical view.
+* Agents: the configured `response-timeout` is applied for OpenAI-based model providers.
 * Agents: a structured response from a Vertex AI model is parsed into the response type.
 * Agents: a `null` value no longer causes a `NullPointerException` in the sanitizer.
-* Agents: a name collision between an MCP tool and a built-in tool no longer hangs tool discovery. The loop that renamed the tool never terminated and exhausted the heap. A colliding name now gets the lowest free numeric suffix, so the same set of tools produces the same names on every turn. Two MCP endpoints that expose the same tool name are also disambiguated.
-* Entity deletion: `TraceableAny` payloads are handled when entity data is deleted, and the Postgres delete store matches its rows more strictly.
+* Agents: a name collision between an MCP tool and a built-in tool no longer hangs tool discovery
+* Entity deletion: a case where tracing data caused problem with deletes was fixed
 
 == Noteworthy dependency updates
 
