@@ -22,7 +22,7 @@ object Dependencies {
   val ScalaVersion = "2.13.18"
   val CrossScalaVersions = Seq(ScalaVersion)
 
-  val ScalaTestVersion = "3.2.14"
+  val ScalaTestVersion = "3.2.20"
   // https://github.com/akka/akka/blob/main/project/Dependencies.scala#L31
   val JacksonVersion = "2.21.5"
   val JacksonDatabindVersion = JacksonVersion
