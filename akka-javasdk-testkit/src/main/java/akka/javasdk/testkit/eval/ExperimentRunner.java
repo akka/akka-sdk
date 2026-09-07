@@ -25,155 +25,151 @@ import java.util.function.Function;
  * <p>Per case: run the setup, call the agent in a fresh session, read the evidence the runtime
  * traced for that session, and evaluate the expectations over it.
  *
- * <ul>
- *   <li>{@link #runSingle}: one case, which must pass. For a parameterized test with a mocked
- *       model.
- *   <li>{@link #run}: all cases, judged by a {@link Gate} over the aggregated results. For a real
- *       model.
- * </ul>
+ * <p>An experiment is built in steps, each step offering only what comes next: the cases and
+ * optional evaluators, the agent, an optional {@link Gate}, then {@link Experiment#run}. Without a
+ * gate every case must pass, which suits a mocked model. With a real model gate on rates instead.
+ *
+ * <pre>{@code
+ * var runner = new ExperimentRunner(testKit);
+ *
+ * var report = runner.cases(cases).agent(SupportAgent::ask).gate(Gate.passRateAtLeast(0.9)).run();
+ * assertThat(report.passed()).withFailMessage(report::render).isTrue();
+ * }</pre>
  */
 public final class ExperimentRunner {
 
   private final TestKit testKit;
-  private final List<EvalCase> cases;
-  private final EvalTarget target;
-  private final List<Evaluator> evaluators;
-  private final Gate gate;
 
   /**
    * @param testKit the running TestKit the agent is called through
    */
   public ExperimentRunner(TestKit testKit) {
-    this(requireTestKit(testKit), List.of(), null, List.of(), null);
-  }
-
-  // For the runner's own tests: no TestKit, the target is set with target(…).
-  ExperimentRunner() {
-    this(null, List.of(), null, List.of(), null);
-  }
-
-  private ExperimentRunner(
-      TestKit testKit,
-      List<EvalCase> cases,
-      EvalTarget target,
-      List<Evaluator> evaluators,
-      Gate gate) {
-    this.testKit = testKit;
-    this.cases = cases;
-    this.target = target;
-    this.evaluators = evaluators;
-    this.gate = gate;
-  }
-
-  private static TestKit requireTestKit(TestKit testKit) {
     if (testKit == null) throw new IllegalArgumentException("testKit required");
-    return testKit;
+    this.testKit = testKit;
+  }
+
+  // For the runner's own tests: no TestKit, the cases are bound to a target with against(…).
+  ExperimentRunner() {
+    this.testKit = null;
   }
 
   /**
-   * The agent under test. The command handler takes the case's message as a String. A String reply
-   * is used as is, any other reply is rendered as JSON.
+   * The cases the experiment runs.
    *
-   * @param method the agent's command handler, for example {@code SupportAgent::ask}
+   * @param first the first case
+   * @param more further cases
    */
-  public <A extends Agent, R> ExperimentRunner agent(Function2<A, String, Agent.Effect<R>> method) {
-    return agent(method, Function.identity(), AgentTarget::asText);
+  public ExperimentCases cases(EvalCase first, EvalCase... more) {
+    var all = new ArrayList<EvalCase>();
+    all.add(first);
+    all.addAll(List.of(more));
+    return cases(all);
   }
 
   /**
-   * The agent under test, with a command handler that has its own command and reply types.
+   * The cases the experiment runs.
    *
-   * @param command builds the command from the case's message
-   * @param replyText renders the reply as the text the expectations read
+   * @param cases at least one case
    */
-  public <A extends Agent, C, R> ExperimentRunner agent(
-      Function2<A, C, Agent.Effect<R>> method,
-      Function<String, C> command,
-      Function<R, String> replyText) {
-    if (testKit == null) throw new IllegalStateException("no TestKit to call the agent through");
-    return target(new AgentTarget<>(testKit, method, command, replyText));
+  public ExperimentCases cases(List<EvalCase> cases) {
+    if (cases == null || cases.isEmpty()) {
+      throw new IllegalArgumentException("at least one case required");
+    }
+    if (cases.stream().anyMatch(c -> c == null)) {
+      throw new IllegalArgumentException("case required");
+    }
+    return new Cases(testKit, List.copyOf(cases), List.of());
   }
 
-  /** The cases {@link #run} walks. */
-  public ExperimentRunner cases(List<EvalCase> cases) {
-    if (cases == null) throw new IllegalArgumentException("cases required");
-    return new ExperimentRunner(testKit, List.copyOf(cases), target, evaluators, gate);
+  // For the runner's own tests: the cases run against a scripted target instead of an agent.
+  static Experiment against(ExperimentCases cases, EvalTarget target) {
+    return ((Cases) cases).target(target);
   }
 
-  static ExperimentRunner forTarget(EvalTarget target) {
-    return new ExperimentRunner().target(target);
-  }
+  private record Cases(TestKit testKit, List<EvalCase> cases, List<Evaluator> evaluators)
+      implements ExperimentCases {
 
-  ExperimentRunner target(EvalTarget target) {
-    if (target == null) throw new IllegalArgumentException("target required");
-    return new ExperimentRunner(testKit, cases, target, evaluators, gate);
-  }
-
-  /** An evaluator that runs on every case, in addition to the case's expectations. */
-  public ExperimentRunner evaluator(Evaluator evaluator) {
-    if (evaluator == null) throw new IllegalArgumentException("evaluator required");
-    var next = new ArrayList<>(evaluators);
-    next.add(evaluator);
-    return new ExperimentRunner(testKit, cases, target, List.copyOf(next), gate);
-  }
-
-  /** The gate {@link #run} checks. Without a gate the report passes. */
-  public ExperimentRunner gate(Gate gate) {
-    return new ExperimentRunner(testKit, cases, target, evaluators, gate);
-  }
-
-  /** Runs all cases and checks the gate. Does not throw on a failed gate; assert on the report. */
-  public EvalReport run() {
-    if (cases.isEmpty()) throw new IllegalStateException("no cases to run: call cases(…) first");
-    var results = cases.stream().map(this::evaluate).toList();
-    return new Report(results, gate == null ? Gate.Verdict.pass("no gate") : gate.check(results));
-  }
-
-  /** Runs one case without a gate. Assert on the result. */
-  public CaseResult runSingle(EvalCase evalCase) {
-    if (evalCase == null) throw new IllegalArgumentException("case required");
-    return evaluate(evalCase);
-  }
-
-  private CaseResult evaluate(EvalCase evalCase) {
-    if (target == null) throw new IllegalStateException("no agent: call agent(…) first");
-
-    try {
-      evalCase.setup().run();
-    } catch (RuntimeException e) {
-      return new CaseResult(
-          evalCase.id(),
-          Interaction.of(""),
-          List.of(EvalResult.fail(Evaluators.SETUP, describe(e))));
+    @Override
+    public ExperimentCases evaluator(Evaluator evaluator) {
+      if (evaluator == null) throw new IllegalArgumentException("evaluator required");
+      var next = new ArrayList<>(evaluators);
+      next.add(evaluator);
+      return new Cases(testKit, cases, List.copyOf(next));
     }
 
-    var turn =
-        new EvalTarget.Turn(UUID.randomUUID().toString(), evalCase.id(), evalCase.userMessage());
-    EvalTarget.Outcome outcome;
-    try {
-      outcome = target.call(turn);
-    } catch (RuntimeException e) {
-      outcome = EvalTarget.Outcome.failed(e, List.of());
+    @Override
+    public <A extends Agent, R> Experiment agent(Function2<A, String, Agent.Effect<R>> method) {
+      return agent(method, Function.identity(), AgentTarget::asText);
     }
 
-    return switch (outcome) {
-      case EvalTarget.Outcome.Failed failed ->
-          new CaseResult(
-              evalCase.id(),
-              new Interaction("", failed.toolCalls()),
-              List.of(EvalResult.fail(Evaluators.TARGET, failed.reason())));
-      case EvalTarget.Outcome.Answered answered -> {
-        var interaction = answered.interaction();
-        var findings = new ArrayList<EvalResult>();
-        for (var evaluator : BuiltInEvaluators.activatedBy(evalCase.expectations())) {
-          findings.add(evaluator.evaluate(evalCase, interaction, interaction.toolCalls()));
-        }
-        for (var evaluator : evaluators) {
-          findings.add(evaluator.evaluate(evalCase, interaction, interaction.toolCalls()));
-        }
-        yield new CaseResult(evalCase.id(), interaction, List.copyOf(findings));
+    @Override
+    public <A extends Agent, C, R> Experiment agent(
+        Function2<A, C, Agent.Effect<R>> method,
+        Function<String, C> command,
+        Function<R, String> replyText) {
+      return target(new AgentTarget<>(testKit, method, command, replyText));
+    }
+
+    private Experiment target(EvalTarget target) {
+      if (target == null) throw new IllegalArgumentException("target required");
+      return new Ready(cases, evaluators, target, Gate.allCasesPass());
+    }
+  }
+
+  private record Ready(
+      List<EvalCase> cases, List<Evaluator> evaluators, EvalTarget target, Gate gate)
+      implements Experiment {
+
+    @Override
+    public Experiment gate(Gate gate) {
+      if (gate == null) throw new IllegalArgumentException("gate required");
+      return new Ready(cases, evaluators, target, gate);
+    }
+
+    @Override
+    public EvalReport run() {
+      var results = cases.stream().map(this::evaluate).toList();
+      return new Report(results, gate.check(results));
+    }
+
+    private CaseResult evaluate(EvalCase evalCase) {
+      try {
+        evalCase.setup().run();
+      } catch (RuntimeException e) {
+        return new CaseResult(
+            evalCase.id(),
+            Interaction.of(""),
+            List.of(EvalResult.fail(Evaluators.SETUP, describe(e))));
       }
-    };
+
+      var turn =
+          new EvalTarget.Turn(UUID.randomUUID().toString(), evalCase.id(), evalCase.userMessage());
+      EvalTarget.Outcome outcome;
+      try {
+        outcome = target.call(turn);
+      } catch (RuntimeException e) {
+        outcome = EvalTarget.Outcome.failed(e, List.of());
+      }
+
+      return switch (outcome) {
+        case EvalTarget.Outcome.Failed failed ->
+            new CaseResult(
+                evalCase.id(),
+                new Interaction("", failed.toolCalls()),
+                List.of(EvalResult.fail(Evaluators.TARGET, failed.reason())));
+        case EvalTarget.Outcome.Answered answered -> {
+          var interaction = answered.interaction();
+          var findings = new ArrayList<EvalResult>();
+          for (var evaluator : BuiltInEvaluators.activatedBy(evalCase.expectations())) {
+            findings.add(evaluator.evaluate(evalCase, interaction, interaction.toolCalls()));
+          }
+          for (var evaluator : evaluators) {
+            findings.add(evaluator.evaluate(evalCase, interaction, interaction.toolCalls()));
+          }
+          yield new CaseResult(evalCase.id(), interaction, List.copyOf(findings));
+        }
+      };
+    }
   }
 
   private static String describe(RuntimeException e) {

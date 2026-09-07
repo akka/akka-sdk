@@ -29,7 +29,17 @@ class ExperimentRunnerTest {
 
   private CaseResultOf run(EvalTarget target, Expectations expectations) {
     var evalCase = EvalCase.of("c", "a question", expectations);
-    return new CaseResultOf(ExperimentRunner.forTarget(target).runSingle(evalCase));
+    return new CaseResultOf(single(target, evalCase));
+  }
+
+  /** The cases against a scripted target, ready to run. */
+  private static Experiment experiment(EvalTarget target, EvalCase... cases) {
+    return ExperimentRunner.against(new ExperimentRunner().cases(List.of(cases)), target);
+  }
+
+  /** Runs one case and reads its result out of the report. */
+  private static ExperimentRunner.CaseResult single(EvalTarget target, EvalCase evalCase) {
+    return experiment(target, evalCase).run().cases().getFirst();
   }
 
   /** Reads one evaluator's finding out of a result. */
@@ -145,8 +155,7 @@ class ExperimentRunnerTest {
         };
 
     var result =
-        ExperimentRunner.forTarget(throwing)
-            .runSingle(EvalCase.of("c", "a question", Expectations.expect().answerContains("x")));
+        single(throwing, EvalCase.of("c", "a question", Expectations.expect().answerContains("x")));
 
     assertThat(result.passed()).isFalse();
     assertThat(result.evalResults()).hasSize(1);
@@ -259,20 +268,20 @@ class ExperimentRunnerTest {
 
   @Test
   void theReportSumsWhatTheRunSpentOverTheCasesWithEvidence() {
+    EvalTarget target =
+        turn ->
+            switch (turn.caseId()) {
+              case "quick" -> tracedThat("done", 1, 100, Duration.ofMillis(40)).call(turn);
+              case "slow" -> tracedThat("done", 3, 200, Duration.ofMillis(900)).call(turn);
+              default -> targetThat("done").call(turn);
+            };
+
     var report =
-        new ExperimentRunner()
-            .target(
-                turn ->
-                    switch (turn.caseId()) {
-                      case "quick" -> tracedThat("done", 1, 100, Duration.ofMillis(40)).call(turn);
-                      case "slow" -> tracedThat("done", 3, 200, Duration.ofMillis(900)).call(turn);
-                      default -> targetThat("done").call(turn);
-                    })
-            .cases(
-                List.of(
-                    EvalCase.of("quick", "q", Expectations.none()),
-                    EvalCase.of("slow", "q", Expectations.none()),
-                    EvalCase.of("untraced", "q", Expectations.none())))
+        experiment(
+                target,
+                EvalCase.of("quick", "q", Expectations.none()),
+                EvalCase.of("slow", "q", Expectations.none()),
+                EvalCase.of("untraced", "q", Expectations.none()))
             .run();
 
     assertThat(report.render())
@@ -283,11 +292,7 @@ class ExperimentRunnerTest {
 
   @Test
   void theReportHasNoSpendLineWithoutEvidence() {
-    var report =
-        new ExperimentRunner()
-            .target(targetThat("done"))
-            .cases(List.of(EvalCase.of("c", "q", Expectations.none())))
-            .run();
+    var report = experiment(targetThat("done"), EvalCase.of("c", "q", Expectations.none())).run();
 
     assertThat(report.render()).doesNotContain("spend:");
   }
@@ -306,8 +311,7 @@ class ExperimentRunnerTest {
                     "```json\n{\"tier\":\"gold\"}\n```"));
 
     var result =
-        ExperimentRunner.forTarget(mapped)
-            .runSingle(EvalCase.of("c", "q", Expectations.expect().answerContains("silver")));
+        single(mapped, EvalCase.of("c", "q", Expectations.expect().answerContains("silver")));
 
     assertThat(result.describe())
         .contains("reply: {\"tier\":\"gold\"}")
@@ -335,8 +339,7 @@ class ExperimentRunnerTest {
     EvalTarget failing = turn -> EvalTarget.Outcome.failed("no customer cust_404", List.of(seen));
 
     var result =
-        ExperimentRunner.forTarget(failing)
-            .runSingle(EvalCase.of("c", "a question", Expectations.expect().tools("getCustomer")));
+        single(failing, EvalCase.of("c", "a question", Expectations.expect().tools("getCustomer")));
 
     assertThat(result.passed()).isFalse();
     assertThat(result.evalResults())
@@ -358,7 +361,7 @@ class ExperimentRunnerTest {
             },
             Expectations.expect().tools("getCustomer"));
 
-    var result = ExperimentRunner.forTarget(target).runSingle(evalCase);
+    var result = single(target, evalCase);
 
     assertThat(result.evalResults())
         .singleElement()
@@ -377,17 +380,19 @@ class ExperimentRunnerTest {
                 ? EvalResult.fail("no-apology", "the reply apologises")
                 : EvalResult.pass("no-apology");
 
+    EvalTarget target =
+        turn ->
+            EvalTarget.Outcome.answered(
+                Interaction.of(turn.caseId().equals("apologetic") ? "sorry" : "sure"));
+
     var report =
-        new ExperimentRunner()
-            .target(
-                turn ->
-                    EvalTarget.Outcome.answered(
-                        Interaction.of(turn.caseId().equals("apologetic") ? "sorry" : "sure")))
-            .cases(
-                List.of(
-                    EvalCase.of("polite", "a question", Expectations.none()),
-                    EvalCase.of("apologetic", "another question", Expectations.none())))
-            .evaluator(noApology)
+        ExperimentRunner.against(
+                new ExperimentRunner()
+                    .cases(
+                        EvalCase.of("polite", "a question", Expectations.none()),
+                        EvalCase.of("apologetic", "another question", Expectations.none()))
+                    .evaluator(noApology),
+                target)
             .run();
 
     assertThat(report.passRate()).isEqualTo(0.5);
@@ -402,29 +407,34 @@ class ExperimentRunnerTest {
                 new Interaction("done", List.of(call("getCustomer", "customerId", "cust_1"))));
 
     var result =
-        ExperimentRunner.forTarget(withEvidence)
-            .runSingle(
-                EvalCase.of(
-                    "c",
-                    "a question",
-                    Expectations.expect().toolArgument("getCustomer", "customerId", "cust_1")));
+        single(
+            withEvidence,
+            EvalCase.of(
+                "c",
+                "a question",
+                Expectations.expect().toolArgument("getCustomer", "customerId", "cust_1")));
 
     assertThat(result.passed()).isTrue();
   }
 
   @Test
-  void aRunNeedsAnAgentAndAtLeastOneCase() {
-    assertThatThrownBy(() -> ExperimentRunner.forTarget(targetThat("x")).cases(List.of()).run())
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("no cases");
+  void anExperimentNeedsAtLeastOneCase() {
+    assertThatThrownBy(() -> new ExperimentRunner().cases(List.of()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("at least one case");
+  }
 
-    assertThatThrownBy(
-            () ->
-                new ExperimentRunner()
-                    .cases(List.of(EvalCase.of("c", "q", Expectations.none())))
-                    .run())
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("no agent");
+  @Test
+  void aRunWithoutAGateFailsWhenACaseDoes() {
+    var report =
+        experiment(
+                targetThat("no"),
+                EvalCase.of("ok", "q", Expectations.expect().answerContains("no")),
+                EvalCase.of("bad", "q", Expectations.expect().answerContains("yes")))
+            .run();
+
+    assertThat(report.passed()).isFalse();
+    assertThat(report.render()).contains("gate: FAILED").contains("failed cases [bad]");
   }
 
   @Test

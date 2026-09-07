@@ -94,6 +94,11 @@ public class SupportAgentEvalTest extends TestKitSupport {
     experimentRunner = new ExperimentRunner(testKit);
   }
 
+  /** One case with the mocked model. There is no gate, so the case itself must pass. */
+  private ExperimentRunner.CaseResult runOne(EvalCase evalCase) {
+    return experimentRunner.cases(evalCase).agent(SupportAgent::ask).run().cases().getFirst();
+  }
+
   @BeforeEach
   public void mockTheModel() {
     supportModel.reset();
@@ -190,7 +195,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
                 .toolResult("getCustomer", "Ada Lovelace")
                 .toolResult("getCustomer", "\"tier\":\"gold\""));
 
-    var result = experimentRunner.agent(SupportAgent::ask).runSingle(lookup);
+    var result = runOne(lookup);
 
     assertThat(result.passed()).withFailMessage(result::describe).isTrue();
     assertThat(result.interaction().toolCalls()).hasSize(1);
@@ -210,7 +215,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
             },
             Expectations.expect().toolOrder("getCustomer", "openTickets"));
 
-    var result = experimentRunner.agent(SupportAgent::ask).runSingle(tickets);
+    var result = runOne(tickets);
 
     assertThat(result.passed()).withFailMessage(result::describe).isTrue();
     var interaction = result.interaction();
@@ -243,7 +248,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
                 .tokensAtMost(1_000)
                 .latencyAtMost(ofSeconds(30)));
 
-    var result = experimentRunner.agent(SupportAgent::ask).runSingle(tickets);
+    var result = runOne(tickets);
 
     // Three model calls against a budget of two is the one failure; the test model reports no
     // tokens, so that budget abstains rather than passing on nothing.
@@ -264,7 +269,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
             crm::reset,
             Expectations.expect().tools("getCustomer"));
 
-    var result = experimentRunner.agent(SupportAgent::ask).runSingle(unknown);
+    var result = runOne(unknown);
 
     // The tool threw, so the agent call failed and the target reported it.
     assertThat(result.passed()).isFalse();
@@ -361,7 +366,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
                     judge.mustSatisfy(
                         "the reply states the customer's name and tier and invents nothing")));
 
-    var result = experimentRunner.agent(SupportAgent::ask).runSingle(evalCase);
+    var result = runOne(evalCase);
 
     assertThat(result.passed()).withFailMessage(result::describe).isTrue();
     assertThat(result.describe()).contains("PASS judge").contains("scored 0.90, needed 0.50");
@@ -374,17 +379,15 @@ public class SupportAgentEvalTest extends TestKitSupport {
     var judge = Judge.agent(testKit);
 
     var result =
-        experimentRunner
-            .agent(SupportAgent::ask)
-            .runSingle(
-                new EvalCase(
-                    "unjudgeable",
-                    "Who is cust_1?",
-                    () -> {
-                      crm.reset();
-                      crm.prime(new Customer("cust_1", "Ada Lovelace", "gold"));
-                    },
-                    Expectations.expect().satisfies(judge.mustSatisfy("the reply is helpful"))));
+        runOne(
+            new EvalCase(
+                "unjudgeable",
+                "Who is cust_1?",
+                () -> {
+                  crm.reset();
+                  crm.prime(new Customer("cust_1", "Ada Lovelace", "gold"));
+                },
+                Expectations.expect().satisfies(judge.mustSatisfy("the reply is helpful"))));
 
     assertThat(result.passed()).isTrue();
     assertThat(result.describe()).contains("ABSTAIN judge");
@@ -402,7 +405,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
             },
             Expectations.expect().toolArgument("getCustomer", "customerId", "cust_2"));
 
-    var result = experimentRunner.agent(SupportAgent::ask).runSingle(wrongExpectation);
+    var result = runOne(wrongExpectation);
 
     assertThat(result.passed()).isFalse();
     assertThat(result.describe())

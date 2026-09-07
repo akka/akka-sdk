@@ -15,7 +15,7 @@ import java.util.function.Function;
  * What a batch run must satisfy, checked over all case results.
  *
  * <p>A real model is not deterministic, so a batch asserts on rates rather than on every case. With
- * a mocked model skip the gate and use {@link ExperimentRunner#runSingle}.
+ * a mocked model leave the gate out: without one every case must pass.
  */
 public final class Gate {
 
@@ -35,6 +35,17 @@ public final class Gate {
 
   private Gate(Function<List<CaseResult>, Verdict> condition) {
     this.condition = condition;
+  }
+
+  /** Every case must pass. The gate in force when none is given. */
+  public static Gate allCasesPass() {
+    return new Gate(
+        results -> {
+          var failed = results.stream().filter(r -> !r.passed()).map(CaseResult::caseId).toList();
+          return failed.isEmpty()
+              ? Verdict.pass("all " + results.size() + " cases passed")
+              : Verdict.fail("failed cases " + failed);
+        });
   }
 
   /** The share of cases with no failed finding must be at least this. */

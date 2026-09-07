@@ -10,8 +10,8 @@
  * recorded behaviour as a baseline.
  *
  * <p>{@link akka.javasdk.testkit.eval.ExperimentRunner} calls the agent in a fresh session per
- * case. Run one case at a time with a mocked model, or a whole batch judged by a {@link
- * akka.javasdk.testkit.eval.Gate} with a real model. Tool and model evidence is read from the
+ * case. Without a {@link akka.javasdk.testkit.eval.Gate} every case must pass, which suits a mocked
+ * model. With a real model gate the batch on rates. Tool and model evidence is read from the
  * runtime trace through {@link akka.javasdk.testkit.TelemetryReader}.
  *
  * <p>Criteria the built-in expectations cannot express, such as tone or completeness, go to a model
