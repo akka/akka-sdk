@@ -52,6 +52,16 @@ public final class EvalCaseParser {
   private EvalCaseParser() {}
 
   /**
+   * Reads a JSONL file whose interactions name no tools, with {@link #DEFAULT_SLACK}.
+   *
+   * @throws IllegalArgumentException listing every line that does not parse, has no {@code input},
+   *     or names a tool
+   */
+  public static List<EvalCase> parse(Path canonicalJsonl) {
+    return parse(canonicalJsonl, ToolBindings.builder().build(), DEFAULT_SLACK);
+  }
+
+  /**
    * Reads the JSONL file with {@link #DEFAULT_SLACK}.
    *
    * @throws IllegalArgumentException listing every line that does not parse, has no {@code input},

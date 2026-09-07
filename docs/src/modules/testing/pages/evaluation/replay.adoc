@@ -1,5 +1,5 @@
 = Replaying recorded interactions
-:page-summary: EvalCaseParser turns recorded production interactions in JSONL into cases that prime the stubs with the recorded tool results and expect the recorded tool calls and spend.
+:page-summary: EvalCaseParser turns recorded production interactions in JSONL into cases that load the recorded tool results into the stubs and expect the recorded tool calls and spend.
 :page-when-to-use: Holding an agent to what production did, as a baseline before a prompt, model or tool change.
 :page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/gates-and-reports.adoc
 :page-persona: builder-developer, builder-ai-ml
@@ -9,19 +9,28 @@ include::ROOT:partial$include.adoc[]
 
 A replayed case sends a recorded user message and expects the agent to use its tools the way production did.
 
-== What a recording is
-
 link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/EvalCaseParser.html[EvalCaseParser] reads a JSONL file: one JSON object per line, one interaction per object.
+Each object becomes one `EvalCase`.
+What the case checks depends on which fields the recording carries.
+This page adds the fields one group at a time: the message and the reply, then the tool calls, then the spend.
+
+== The message and the reply
+
+The smallest recording carries the user message and the reply production gave.
 
 [source,json]
-.{sample-base-url}/doc-snippets/src/test/resources/eval/captures.jsonl[captures.jsonl]
+.{sample-base-url}/doc-snippets/src/test/resources/eval/replies.jsonl[replies.jsonl], one line formatted
 ----
-include::sdk:example$doc-snippets/src/test/resources/eval/captures.jsonl[lines=1..2]
+{
+  "id": "prod-3",
+  "input": "hi, anyone there?",
+  "output": "Please give me your order number and I will look it up."
+}
 ----
 
 [cols="1,1,3"]
 |===
-| Field | Required | Meaning
+| Field | Required | Becomes
 
 | `id`
 | no
@@ -29,35 +38,64 @@ include::sdk:example$doc-snippets/src/test/resources/eval/captures.jsonl[lines=1
 
 | `input`
 | yes
-| The user message.
-
-| `toolCalls`
-| no
-| The tool calls production made, in order. Each has a `name`, `arguments` as an object, and the `result` as recorded JSON.
+| The user message the runner sends to the agent.
 
 | `output`
 | no
-| The reply production gave. Kept for the reader; the parser does not check it.
-
-| `modelCalls`
-| no
-| How many model calls the turn took.
-
-| `tokens`
-| no
-| Either a total, or an object with `input` and `output`.
-
-| `latencyMs`
-| no
-| How long the turn took, in milliseconds.
+| Nothing. The reply is kept for the reader; the parser does not check it, because a reply worded differently is not a regression.
 |===
 
+A case made from these fields alone has no evaluators.
+It runs, collects the reply and the trace, and appears in the report, but nothing can fail.
+The evaluators come from you: give an evaluator to the runner with `evaluator(...)` to run it on every parsed case, or to one case with `withEvaluators(...)`.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=replay-replies]
+----
+<1> `parse(path)` reads a file whose recordings name no tools. A recording that names a tool needs bindings, explained in the next section.
+<2> A built-in evaluator on every parsed case. No replayed turn may issue a refund.
+<3> A xref:testing:evaluation/judges.adoc[judge] scores every reply against one criterion.
+
 The file is read once, and every line that does not parse, has no `input`, or names a tool without a binding is listed with its line number in one `IllegalArgumentException`.
+With `parse(path)`, every tool counts as unbound.
 
-== Binding recorded tool results to stubs
+== The tool calls
 
-A recorded tool call carries the result production saw.
-A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/ToolBindings.html[ToolBindings] maps each tool name to a loader that primes the stub serving that tool with the recorded result.
+A recording of a turn that used tools carries each call: the tool name, the arguments the agent passed, and the result production saw.
+
+[source,json]
+.{sample-base-url}/doc-snippets/src/test/resources/eval/captures.jsonl[captures.jsonl], one line formatted
+----
+{
+  "id": "prod-2",
+  "input": "Order o_9 arrived broken, please refund it.",
+  "toolCalls": [
+    {
+      "name": "getOrder",
+      "arguments": { "orderId": "o_9" },
+      "result": { "id": "o_9", "status": "delivered", "totalCents": 4999 }
+    },
+    {
+      "name": "issueRefund",
+      "arguments": { "orderId": "o_9", "amountCents": 4999 },
+      "result": { "orderId": "o_9", "amountCents": 4999, "reference": "rf_1" }
+    }
+  ],
+  "output": "I am sorry about the damage. I have refunded 49.99 to your card, reference rf_1."
+}
+----
+
+`toolCalls` lists the calls in the order production made them.
+Each call has a `name`, `arguments` as an object, and the `result` as recorded JSON.
+An empty array records a turn without tool calls.
+
+=== Tool bindings
+
+In the test, a stub serves each tool.
+For the agent to see what production saw, the stub must return the recorded result.
+A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/ToolBindings.html[ToolBindings] maps each tool name to a loader that puts the recorded result into the stub serving that tool.
 The parser rejects a recording that names a tool without a binding, so a new tool in production cannot be replayed by accident against a stub that does not know it.
 
 [source,java,indent=0]
@@ -77,30 +115,71 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 <2> The cases. Each case's setup runs the loaders for its recorded calls before the agent is called.
 <3> The replayed batch runs like a curated one, with a gate for a real model.
 
-== What a replayed case asserts
+=== What the tool calls assert
 
-The evaluators of a replayed case describe what production did.
+The recorded tool calls become evaluators on the case.
+They describe what production did.
 They are a baseline, not a statement of correctness.
 
 * `Evaluators.tools`: every recorded tool is called.
 * `Evaluators.toolOrder`: in the recorded relative order.
 * `Evaluators.toolArgument`: one per recorded argument, which must arrive with its recorded value.
 
-The recorded `output` is not checked, because a reply worded differently is not a regression.
-To score the reply, add a judge or a custom evaluator to every parsed case with `evaluator(...)` on the runner, or to one case with `withEvaluators(...)`.
+For the recording above the case gets `tools("getOrder", "issueRefund")`, `toolOrder("getOrder", "issueRefund")`, and three `toolArgument` evaluators: `orderId` on `getOrder`, and `orderId` and `amountCents` on `issueRefund`.
 
-== Budgets from the recorded spend
+== The spend
 
-When a recording carries `modelCalls`, `tokens` or `latencyMs`, the case is held to that spend.
+A recording can carry what the turn cost in production.
 
-* The model call count becomes `modelCallsAtMost` as recorded.
-* Tokens and latency become `tokensAtMost` and `latencyAtMost` multiplied by a slack factor.
+[source,json]
+.{sample-base-url}/doc-snippets/src/test/resources/eval/captures.jsonl[captures.jsonl], one line formatted
+----
+{
+  "id": "prod-4",
+  "input": "Has order o_17 been delivered yet?",
+  "toolCalls": [
+    {
+      "name": "getOrder",
+      "arguments": { "orderId": "o_17" },
+      "result": { "id": "o_17", "status": "delivered", "totalCents": 1250 }
+    }
+  ],
+  "output": "Order o_17 has been delivered.",
+  "modelCalls": 2,
+  "tokens": { "input": 380, "output": 30 },
+  "latencyMs": 1500
+}
+----
+
+All three fields are optional, and each must be a positive count.
+
+* `modelCalls`: how many model calls the turn took.
+* `tokens`: either a total, or an object with `input` and `output`.
+* `latencyMs`: how long the turn took, in milliseconds.
+
+=== What the spend asserts
+
+Each field present becomes a budget evaluator on the case.
+
+* `modelCalls` becomes `modelCallsAtMost`, as recorded.
+* `tokens` becomes `tokensAtMost`, the recorded total multiplied by a slack factor.
+* `latencyMs` becomes `latencyAtMost`, the recorded latency multiplied by the same factor.
 
 `EvalCaseParser.parse(path, bindings)` uses `EvalCaseParser.DEFAULT_SLACK`, which is 1.5.
 `parse(path, bindings, slack)` sets another factor; `1.0` holds a case to exactly what was recorded, and a factor below `1.0` is rejected.
 Under a `TestModelProvider` the token budget abstains, because a mocked model reports no tokens.
 
-The report of the replayed batch above, under the mocked model:
+== The replayed batch
+
+The file the tool call examples on this page replay, one interaction per line:
+
+[source,json]
+.{sample-base-url}/doc-snippets/src/test/resources/eval/captures.jsonl[captures.jsonl]
+----
+include::sdk:example$doc-snippets/src/test/resources/eval/captures.jsonl[]
+----
+
+Its report under the mocked model:
 
 [listing]
 ----
@@ -115,8 +194,8 @@ gate: passed — pass rate 1.00 over 5 cases, required 0.90
 spend: 9 model calls, 0 tokens in, 0 out, 30 ms in total, slowest prod-2 at 7 ms, over 5/5 cases with evidence
 ----
 
-Two recordings carried spend figures, so two cases had budgets, and their token budgets abstained.
-The five `tool-arguments` findings come from five recorded arguments over three cases.
+Three recordings name tools, so three cases have `tools` and `tool-order` findings, and their five recorded arguments give five `tool-arguments` findings.
+Two recordings carry spend figures, so two cases have budgets, and their token budgets abstained.
 
 == See also
 

@@ -227,6 +227,35 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
 
   // end::target-failure[]
 
+  // tag::replay-replies[]
+  @Test
+  public void recordedRepliesStayOnTopic() {
+    var replayed = EvalCaseParser.parse(recording("/eval/replies.jsonl")); // <1>
+    var judge = Judge.agent(testKit);
+    var onTopic = judge.scoringAtLeast(
+      "the reply asks for an order number or closes the conversation",
+      0.7
+    );
+
+    var report = new ExperimentRunner(testKit)
+      .cases(replayed)
+      .evaluator(Evaluators.forbiddenTools("issueRefund")) // <2>
+      .evaluator(onTopic) // <3>
+      .agent(OrderAgent::ask)
+      .run();
+
+    assertThat(report.passed()).withFailMessage(report::render).isTrue();
+  }
+
+  private static Path recording(String resource) {
+    try {
+      return Path.of(OrderAgentQualityIntegrationTest.class.getResource(resource).toURI());
+    } catch (URISyntaxException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+  // end::replay-replies[]
+
   // tag::replay[]
   @Test
   public void replayedTrafficStillHolds() {
@@ -234,7 +263,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
       .bind("getOrder", orders::loadOrder)
       .bind("issueRefund", orders::loadRefund)
       .build();
-    var replayed = EvalCaseParser.parse(captures(), bindings); // <2>
+    var replayed = EvalCaseParser.parse(recording("/eval/captures.jsonl"), bindings); // <2>
 
     var report = new ExperimentRunner(testKit)
       .cases(replayed)
@@ -243,16 +272,6 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
       .run();
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();
-  }
-
-  private static Path captures() {
-    try {
-      return Path.of(
-        OrderAgentQualityIntegrationTest.class.getResource("/eval/captures.jsonl").toURI()
-      );
-    } catch (URISyntaxException e) {
-      throw new IllegalStateException(e);
-    }
   }
   // end::replay[]
 }

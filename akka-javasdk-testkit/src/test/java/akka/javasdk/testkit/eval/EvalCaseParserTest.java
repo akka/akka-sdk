@@ -154,6 +154,33 @@ class EvalCaseParserTest {
   }
 
   @Test
+  void parsesWithoutBindingsWhenNoToolIsNamed(@TempDir Path dir) throws IOException {
+    var file =
+        Files.writeString(
+            dir.resolve("replies.jsonl"),
+            "{\"id\":\"greeting\",\"input\":\"hi\",\"output\":\"Hello.\"}\n"
+                + "{\"input\":\"thanks\",\"toolCalls\":[]}\n");
+
+    var cases = EvalCaseParser.parse(file);
+
+    assertThat(cases).hasSize(2);
+    assertThat(cases.get(0).id()).isEqualTo("greeting");
+    assertThat(cases.get(0).userMessage()).isEqualTo("hi");
+    assertThat(cases.get(0).evaluators()).isEmpty();
+    assertThat(cases.get(1).id()).isEqualTo("replay-2");
+  }
+
+  @Test
+  void refusesAToolWhenParsedWithoutBindings(@TempDir Path dir) throws IOException {
+    var file = Files.writeString(dir.resolve("captures.jsonl"), CAPTURE);
+
+    assertThatThrownBy(() -> EvalCaseParser.parse(file))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("line 1")
+        .hasMessageContaining("no binding for tool getCustomer");
+  }
+
+  @Test
   void reportsEveryProblemWithItsLineNumber(@TempDir Path dir) throws IOException {
     var file = Files.writeString(dir.resolve("captures.jsonl"), "not json\n\n{\"id\":\"x\"}\n");
 
