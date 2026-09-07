@@ -139,7 +139,7 @@ public final class ExperimentRunner {
         return new CaseResult(
             evalCase.id(),
             Interaction.of(""),
-            List.of(EvalResult.fail(Evaluators.SETUP, describe(e))));
+            List.of(EvalResult.fail(describe(e)).attributedTo(Evaluators.SETUP)));
       }
 
       var turn =
@@ -156,21 +156,21 @@ public final class ExperimentRunner {
             new CaseResult(
                 evalCase.id(),
                 new Interaction("", failed.toolCalls()),
-                List.of(EvalResult.fail(Evaluators.TARGET, failed.reason())));
+                List.of(EvalResult.fail(failed.reason()).attributedTo(Evaluators.TARGET)));
         case EvalTarget.Outcome.Answered answered -> {
           var interaction = answered.interaction();
           var findings = new ArrayList<EvalResult>();
           for (var evaluator : evalCase.evaluators()) {
             findings.add(
-                EvalResult.of(
-                    evaluator.name(),
-                    evaluator.evaluate(evalCase, interaction, interaction.toolCalls())));
+                evaluator
+                    .evaluate(evalCase, interaction, interaction.toolCalls())
+                    .attributedTo(evaluator.name()));
           }
           for (var evaluator : evaluators) {
             findings.add(
-                EvalResult.of(
-                    evaluator.name(),
-                    evaluator.evaluate(evalCase, interaction, interaction.toolCalls())));
+                evaluator
+                    .evaluate(evalCase, interaction, interaction.toolCalls())
+                    .attributedTo(evaluator.name()));
           }
           yield new CaseResult(evalCase.id(), interaction, List.copyOf(findings));
         }

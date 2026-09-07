@@ -10,7 +10,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import akka.javasdk.testkit.ModelCall;
 import akka.javasdk.testkit.ToolCall;
 import akka.javasdk.testkit.eval.Evaluator.EvalResult;
-import akka.javasdk.testkit.eval.Evaluator.Finding;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -376,10 +375,10 @@ class ExperimentRunnerTest {
           }
 
           @Override
-          public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+          public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
             return reply.text().contains("sorry")
-                ? Finding.fail("the reply apologises")
-                : Finding.pass();
+                ? EvalResult.fail("the reply apologises")
+                : EvalResult.pass();
           }
         };
 

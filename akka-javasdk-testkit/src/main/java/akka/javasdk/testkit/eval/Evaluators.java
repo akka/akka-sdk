@@ -163,12 +163,12 @@ public final class Evaluators {
     }
 
     @Override
-    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
       var called = names(calls);
       var missing = expected.stream().filter(t -> !called.contains(t)).toList();
       return missing.isEmpty()
-          ? Finding.pass()
-          : Finding.fail("never called " + missing + "; called " + calledOrNothing(called));
+          ? EvalResult.pass()
+          : EvalResult.fail("never called " + missing + "; called " + calledOrNothing(called));
     }
   }
 
@@ -179,15 +179,15 @@ public final class Evaluators {
     }
 
     @Override
-    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
       var called = names(calls);
       var missing = expected.stream().filter(t -> !called.contains(t)).toList();
       if (!missing.isEmpty()) {
-        return Finding.abstain("never called " + missing);
+        return EvalResult.abstain("never called " + missing);
       }
       return isSubsequence(expected, calls)
-          ? Finding.pass()
-          : Finding.fail("expected " + expected + " in that order; called " + orderOf(calls));
+          ? EvalResult.pass()
+          : EvalResult.fail("expected " + expected + " in that order; called " + orderOf(calls));
     }
 
     /** The expected names must appear in order. Other calls in between are allowed. */
@@ -207,15 +207,15 @@ public final class Evaluators {
     }
 
     @Override
-    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
       var toTheTool = calls.stream().filter(c -> c.name().equals(tool)).toList();
       if (toTheTool.isEmpty()) {
-        return Finding.abstain(tool + " was never called");
+        return EvalResult.abstain(tool + " was never called");
       }
       var carried = toTheTool.stream().anyMatch(c -> sameValue(value, c.arguments().get(argument)));
       return carried
-          ? Finding.pass()
-          : Finding.fail(
+          ? EvalResult.pass()
+          : EvalResult.fail(
               tool
                   + "("
                   + argument
@@ -241,19 +241,19 @@ public final class Evaluators {
     }
 
     @Override
-    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
       var results =
           calls.stream()
               .filter(c -> c.name().equals(tool))
               .flatMap(c -> c.result().stream())
               .toList();
       if (results.isEmpty()) {
-        return Finding.abstain(tool + " has no recorded result");
+        return EvalResult.abstain(tool + " has no recorded result");
       }
       var lowerNeedle = needle.toLowerCase(Locale.ROOT);
       return results.stream().anyMatch(r -> r.toLowerCase(Locale.ROOT).contains(lowerNeedle))
-          ? Finding.pass()
-          : Finding.fail(tool + " result expected to carry " + needle + ", was " + results);
+          ? EvalResult.pass()
+          : EvalResult.fail(tool + " result expected to carry " + needle + ", was " + results);
     }
   }
 
@@ -264,10 +264,10 @@ public final class Evaluators {
     }
 
     @Override
-    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
       var called = names(calls);
       var violated = forbidden.stream().filter(called::contains).toList();
-      return violated.isEmpty() ? Finding.pass() : Finding.fail("called " + violated);
+      return violated.isEmpty() ? EvalResult.pass() : EvalResult.fail("called " + violated);
     }
   }
 
@@ -278,10 +278,10 @@ public final class Evaluators {
     }
 
     @Override
-    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
       return calls.size() <= limit
-          ? Finding.pass()
-          : Finding.fail(
+          ? EvalResult.pass()
+          : EvalResult.fail(
               "made " + calls.size() + " tool calls, allowed " + limit + ": " + orderOf(calls));
     }
   }
@@ -293,14 +293,14 @@ public final class Evaluators {
     }
 
     @Override
-    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
       var made = reply.modelCalls().size();
       if (made == 0) {
-        return Finding.abstain("no model calls in the evidence");
+        return EvalResult.abstain("no model calls in the evidence");
       }
       return made <= limit
-          ? Finding.pass()
-          : Finding.fail("made " + made + " model calls, allowed " + limit);
+          ? EvalResult.pass()
+          : EvalResult.fail("made " + made + " model calls, allowed " + limit);
     }
   }
 
@@ -311,14 +311,14 @@ public final class Evaluators {
     }
 
     @Override
-    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
       var used = reply.totalTokens();
       if (used == 0) {
-        return Finding.abstain("no token counts in the evidence");
+        return EvalResult.abstain("no token counts in the evidence");
       }
       return used <= limit
-          ? Finding.pass()
-          : Finding.fail(
+          ? EvalResult.pass()
+          : EvalResult.fail(
               "used "
                   + used
                   + " tokens ("
@@ -337,14 +337,14 @@ public final class Evaluators {
     }
 
     @Override
-    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
       var took = reply.latency();
       if (took.isZero()) {
-        return Finding.abstain("no timing in the evidence");
+        return EvalResult.abstain("no timing in the evidence");
       }
       return took.compareTo(limit) <= 0
-          ? Finding.pass()
-          : Finding.fail("took " + took.toMillis() + " ms, allowed " + limit.toMillis() + " ms");
+          ? EvalResult.pass()
+          : EvalResult.fail("took " + took.toMillis() + " ms, allowed " + limit.toMillis() + " ms");
     }
   }
 
@@ -355,13 +355,15 @@ public final class Evaluators {
     }
 
     @Override
-    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
       var text = reply.text().toLowerCase(Locale.ROOT);
       var missing =
           needles.stream()
               .filter(needle -> !text.contains(needle.toLowerCase(Locale.ROOT)))
               .toList();
-      return missing.isEmpty() ? Finding.pass() : Finding.fail("reply does not carry " + missing);
+      return missing.isEmpty()
+          ? EvalResult.pass()
+          : EvalResult.fail("reply does not carry " + missing);
     }
   }
 
@@ -372,16 +374,16 @@ public final class Evaluators {
     }
 
     @Override
-    public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
       Pattern pattern;
       try {
         pattern = Pattern.compile(regex, Pattern.DOTALL);
       } catch (PatternSyntaxException e) {
-        return Finding.fail("not a regular expression: " + regex);
+        return EvalResult.fail("not a regular expression: " + regex);
       }
       return pattern.matcher(reply.text()).find()
-          ? Finding.pass()
-          : Finding.fail("reply does not match /" + regex + "/");
+          ? EvalResult.pass()
+          : EvalResult.fail("reply does not match /" + regex + "/");
     }
   }
 

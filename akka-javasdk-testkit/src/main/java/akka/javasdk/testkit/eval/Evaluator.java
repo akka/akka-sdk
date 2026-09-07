@@ -17,50 +17,19 @@ import java.util.List;
 public interface Evaluator {
 
   /**
-   * The name the report prints this evaluator's findings under, and what {@link
+   * The name the report prints this evaluator's results under, and what {@link
    * Gate#evaluatorRateAtLeast} refers to.
    */
   String name();
 
   /** Checks one turn. Abstain when the evidence this check needs is absent. */
-  Finding evaluate(EvalCase evalCase, Interaction interaction, List<ToolCall> toolCalls);
+  EvalResult evaluate(EvalCase evalCase, Interaction interaction, List<ToolCall> toolCalls);
 
   /**
-   * What an evaluator found on one turn.
+   * What an evaluator found on one turn. This is what a {@link ExperimentRunner.CaseResult} holds.
    *
-   * @param detail the reason, printed under a failed case
-   */
-  record Finding(EvalResult.Verdict verdict, String detail) {
-
-    public Finding {
-      if (verdict == null) throw new IllegalArgumentException("verdict required");
-      detail = detail == null ? "" : detail;
-    }
-
-    public static Finding pass() {
-      return new Finding(EvalResult.Verdict.PASS, "");
-    }
-
-    /** A pass with something to print, such as a score. */
-    public static Finding pass(String detail) {
-      return new Finding(EvalResult.Verdict.PASS, detail);
-    }
-
-    public static Finding fail(String detail) {
-      return new Finding(EvalResult.Verdict.FAIL, detail);
-    }
-
-    /** The evidence this check needs is absent; neither a pass nor a fail. */
-    public static Finding abstain(String detail) {
-      return new Finding(EvalResult.Verdict.ABSTAIN, detail);
-    }
-  }
-
-  /**
-   * A finding attributed to the evaluator that produced it. This is what a {@link
-   * ExperimentRunner.CaseResult} holds.
-   *
-   * @param evaluator the name of the check that produced this, printed in the report
+   * @param evaluator the name of the check that produced this, printed in the report. The runner
+   *     fills it in from {@link Evaluator#name}, so an evaluator leaves it empty.
    * @param detail the reason, printed under a failed case
    */
   record EvalResult(String evaluator, Verdict verdict, String detail) {
@@ -72,20 +41,33 @@ public interface Evaluator {
       ABSTAIN
     }
 
-    public static EvalResult of(String evaluator, Finding finding) {
-      return new EvalResult(evaluator, finding.verdict(), finding.detail());
+    public EvalResult {
+      if (verdict == null) throw new IllegalArgumentException("verdict required");
+      evaluator = evaluator == null ? "" : evaluator;
+      detail = detail == null ? "" : detail;
     }
 
-    public static EvalResult pass(String evaluator) {
-      return new EvalResult(evaluator, Verdict.PASS, "");
+    public static EvalResult pass() {
+      return new EvalResult("", Verdict.PASS, "");
     }
 
-    public static EvalResult fail(String evaluator, String detail) {
-      return new EvalResult(evaluator, Verdict.FAIL, detail);
+    /** A pass with something to print, such as a score. */
+    public static EvalResult pass(String detail) {
+      return new EvalResult("", Verdict.PASS, detail);
     }
 
-    public static EvalResult abstain(String evaluator, String detail) {
-      return new EvalResult(evaluator, Verdict.ABSTAIN, detail);
+    public static EvalResult fail(String detail) {
+      return new EvalResult("", Verdict.FAIL, detail);
+    }
+
+    /** The evidence this check needs is absent; neither a pass nor a fail. */
+    public static EvalResult abstain(String detail) {
+      return new EvalResult("", Verdict.ABSTAIN, detail);
+    }
+
+    /** The same result, attributed to the named evaluator. */
+    EvalResult attributedTo(String evaluator) {
+      return new EvalResult(evaluator, verdict, detail);
     }
   }
 }

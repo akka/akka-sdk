@@ -127,7 +127,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 [#custom-evaluators]
 == Custom evaluators
 
-A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator]: `name()` returns the name its findings are reported under, and `evaluate(...)` receives the case and everything the runtime traced for the turn and returns a `Finding`: a pass, a fail with a reason, or an abstention.
+A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator]: `name()` returns the name its results are reported under, and `evaluate(...)` receives the case and everything the runtime traced for the turn and returns an `EvalResult`: a pass, a fail with a reason, or an abstention.
 
 Below is an example of a tool call evaluator that checks that the amount the agent passed to `issueRefund` does not exceed the total of the order.
 

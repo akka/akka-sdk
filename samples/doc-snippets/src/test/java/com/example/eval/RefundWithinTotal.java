@@ -22,7 +22,7 @@ public final class RefundWithinTotal implements Evaluator {
   }
 
   @Override
-  public Finding evaluate(
+  public EvalResult evaluate(
     EvalCase evalCase,
     Interaction interaction,
     List<ToolCall> toolCalls
@@ -32,12 +32,12 @@ public final class RefundWithinTotal implements Evaluator {
       .filter(call -> call.name().equals("issueRefund"))
       .findFirst();
     if (refund.isEmpty()) {
-      return Finding.abstain("no refund was issued"); // <2>
+      return EvalResult.abstain("no refund was issued"); // <2>
     }
     var amount = ((Number) refund.get().arguments().get("amountCents")).intValue(); // <3>
     return amount <= totalCents
-      ? Finding.pass()
-      : Finding.fail("refunded " + amount + " cents of a " + totalCents + " cent order");
+      ? EvalResult.pass()
+      : EvalResult.fail("refunded " + amount + " cents of a " + totalCents + " cent order");
   }
 }
 // end::class[]

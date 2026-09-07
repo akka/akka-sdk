@@ -20,9 +20,9 @@ record JudgeEvaluator(Judge judge, String criterion, double threshold) implement
   }
 
   @Override
-  public Finding evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> toolCalls) {
+  public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> toolCalls) {
     if (reply.text().isBlank()) {
-      return Finding.abstain(criterion + ": there is no reply to judge");
+      return EvalResult.abstain(criterion + ": there is no reply to judge");
     }
     Judge.Verdict verdict;
     try {
@@ -30,11 +30,12 @@ record JudgeEvaluator(Judge judge, String criterion, double threshold) implement
           judge.assess(
               new Judge.Question(criterion, evalCase.userMessage(), reply.text(), toolCalls));
     } catch (RuntimeException e) {
-      return Finding.abstain(criterion + ": the judge failed: " + e.getMessage());
+      return EvalResult.abstain(criterion + ": the judge failed: " + e.getMessage());
     }
     var score = verdict.score();
     if (Double.isNaN(score) || score < 0 || score > 1) {
-      return Finding.abstain(criterion + ": the judge scored " + score + ", which is not a share");
+      return EvalResult.abstain(
+          criterion + ": the judge scored " + score + ", which is not a share");
     }
     var detail =
         String.format(
@@ -44,6 +45,6 @@ record JudgeEvaluator(Judge judge, String criterion, double threshold) implement
             score,
             threshold,
             verdict.reason().isEmpty() ? "" : " — " + verdict.reason());
-    return score >= threshold ? Finding.pass(detail) : Finding.fail(detail);
+    return score >= threshold ? EvalResult.pass(detail) : EvalResult.fail(detail);
   }
 }
