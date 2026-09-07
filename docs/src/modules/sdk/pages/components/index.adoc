@@ -35,7 +35,6 @@ xref:sdk:consuming-producing.adoc[image:ROOT:consumer.png[width=40] Consumers]
 
 Component selection is the decision of which Akka component implements each part of a feature, and whether a part needs a component at all. The component pages describe how each component works; this section describes how to choose between them. Most design mistakes in Akka services are not misuse of a component's API but use of the wrong component: a workflow that should have been a consumer, a key value entity where the business needed a ledger, a view that only ever serves lookups by id.
 
-Decide the component mapping before writing code. Each section gives the default choice, the signals that should change it, and the signs that you chose wrong. Each decision helper has a stable anchor (`cs1-entity-type` through `cs11-third-party-calls`) so that plans, reviews, and checklists can reference it.
 
 === Start from the need
 
