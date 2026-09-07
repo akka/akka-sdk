@@ -50,11 +50,12 @@ Nothing is persisted between runs.
 
 `agent(method)` takes the agent's command handler, for example `OrderAgent::ask`.
 The handler takes the case's user message as a `String`.
-A `String` reply is used as it is; any other reply type is rendered as JSON, and that JSON is the text the expectations read.
+A `String` reply is used as it is; any other reply type is rendered as JSON, and that JSON is the text the evaluators read.
 
 `agent(method, command, replyText)` is for a handler with its own types.
-`command` builds the command from the user message and `replyText` renders the reply as the text the expectations read.
+`command` builds the command from the user message and `replyText` renders the reply as the text the evaluators read.
 
+[#gates]
 == Gates
 
 A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is what the batch must satisfy over all case results.
@@ -112,16 +113,16 @@ A rendered report of a passing batch:
 [listing]
 ----
 3/3 cases passed (100%)
-gate: passed — pass rate 1.00 over 3 cases, required 0.90; no target failures
+gate: passed — pass rate 1.00 over 3 cases, required 0.90; tool-arguments rate 1.00 over 2 judged cases, required 1.00; no target failures
   tools 1/1
   tool-arguments 2/2
   forbidden-tools 2/2
   answer-contains 2/2
   tool-order 1/1
+  answer-matches 1/1
   tool-call-budget 1/1
   model-call-budget 1/1
-  answer-matches 1/1
-spend: 6 model calls, 0 tokens in, 0 out, 550 ms in total, slowest order-status at 489 ms, over 3/3 cases with evidence
+spend: 6 model calls, 0 tokens in, 0 out, 26 ms in total, slowest greeting at 10 ms, over 3/3 cases with evidence
 ----
 
 Line by line:

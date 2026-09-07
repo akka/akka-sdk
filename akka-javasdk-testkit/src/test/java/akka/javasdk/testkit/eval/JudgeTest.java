@@ -16,13 +16,13 @@ class JudgeTest {
 
   private static final String CRITERION = "the reply explains why the fee was charged";
 
-  private ExperimentRunner.CaseResult judged(Judge judge, String reply, Expectations expectations) {
+  private ExperimentRunner.CaseResult judged(Judge judge, String reply, Evaluator... evaluators) {
     EvalTarget target =
         turn ->
             EvalTarget.Outcome.answered(
                 new Interaction(
                     reply, List.of(new ToolCall("getLoan", Map.of("loanId", "loan_5001")))));
-    return single(target, EvalCase.of("c", "Why was I charged a late fee?", expectations));
+    return single(target, EvalCase.of("c", "Why was I charged a late fee?", evaluators));
   }
 
   /** Runs one case against a scripted target and reads its result out of the report. */
@@ -48,7 +48,7 @@ class JudgeTest {
         judged(
             judge,
             "The fee was charged because the payment was 12 days overdue.",
-            Expectations.expect().satisfies(judge.scoringAtLeast(CRITERION, 0.7)));
+            judge.scoringAtLeast(CRITERION, 0.7));
 
     assertThat(result.passed()).isTrue();
     assertThat(findingOf(result).detail())
@@ -59,11 +59,7 @@ class JudgeTest {
   void aScoreUnderTheThresholdFailsTheCase() {
     Judge judge = question -> Judge.Verdict.of(0.3, "it states the fee without a reason");
 
-    var result =
-        judged(
-            judge,
-            "You were charged 12.50.",
-            Expectations.expect().satisfies(judge.mustSatisfy(CRITERION)));
+    var result = judged(judge, "You were charged 12.50.", judge.mustSatisfy(CRITERION));
 
     assertThat(result.passed()).isFalse();
     assertThat(findingOf(result).detail()).contains("scored 0.30, needed 0.50");
@@ -78,7 +74,7 @@ class JudgeTest {
           return Judge.Verdict.of(1, "");
         };
 
-    judged(judge, "an answer", Expectations.expect().satisfies(judge.mustSatisfy(CRITERION)));
+    judged(judge, "an answer", judge.mustSatisfy(CRITERION));
 
     assertThat(asked[0].criterion()).isEqualTo(CRITERION);
     assertThat(asked[0].userMessage()).isEqualTo("Why was I charged a late fee?");
@@ -90,8 +86,7 @@ class JudgeTest {
   void aScoreOffTheScaleAbstainsRatherThanFailingTheCase() {
     Judge judge = question -> Judge.Verdict.of(7, "seven out of ten");
 
-    var result =
-        judged(judge, "an answer", Expectations.expect().satisfies(judge.mustSatisfy(CRITERION)));
+    var result = judged(judge, "an answer", judge.mustSatisfy(CRITERION));
 
     assertThat(findingOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
     assertThat(result.passed()).isTrue();
@@ -104,8 +99,7 @@ class JudgeTest {
           throw new IllegalStateException("the judge's provider is not configured");
         };
 
-    var result =
-        judged(judge, "an answer", Expectations.expect().satisfies(judge.mustSatisfy(CRITERION)));
+    var result = judged(judge, "an answer", judge.mustSatisfy(CRITERION));
 
     assertThat(findingOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
     assertThat(findingOf(result).detail()).contains("provider is not configured");
@@ -121,8 +115,7 @@ class JudgeTest {
     var result =
         single(
             turn -> EvalTarget.Outcome.answered(Interaction.of("")),
-            EvalCase.of(
-                "c", "a question", Expectations.expect().satisfies(judge.mustSatisfy(CRITERION))));
+            EvalCase.of("c", "a question", judge.mustSatisfy(CRITERION)));
 
     assertThat(findingOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
   }
@@ -133,10 +126,8 @@ class JudgeTest {
         question -> Judge.Verdict.of(question.reply().contains("because") ? 0.9 : 0.2, "");
     var cases =
         List.of(
-            EvalCase.of(
-                "explained", "why?", Expectations.expect().satisfies(judge.mustSatisfy(CRITERION))),
-            EvalCase.of(
-                "bare", "why?", Expectations.expect().satisfies(judge.mustSatisfy(CRITERION))));
+            EvalCase.of("explained", "why?", judge.mustSatisfy(CRITERION)),
+            EvalCase.of("bare", "why?", judge.mustSatisfy(CRITERION)));
 
     EvalTarget explaining =
         turn ->

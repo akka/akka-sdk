@@ -8,10 +8,13 @@ import akka.javasdk.testkit.ToolCall;
 import java.util.List;
 
 /**
- * A custom check over one case's evidence, added through {@link Expectations#satisfies}.
+ * One check over one case's evidence. The built-ins are in {@link Evaluators}; a custom one is a
+ * lambda given to an {@link EvalCase}, or to {@link ExperimentCases#evaluator} to run on every
+ * case.
  *
  * <p>An evaluator reads only the interaction and the tool calls. It never calls the service.
  */
+// tag::interface[]
 @FunctionalInterface
 public interface Evaluator {
 
@@ -43,3 +46,4 @@ public interface Evaluator {
     }
   }
 }
+// end::interface[]

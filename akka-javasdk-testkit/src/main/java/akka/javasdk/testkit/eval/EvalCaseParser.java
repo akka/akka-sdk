@@ -34,7 +34,7 @@ import java.util.Map;
  * }</pre>
  *
  * <p>The case sends the recorded input, primes each bound stub with the recorded tool results, and
- * expects the recorded tools, their order and their arguments. These expectations describe what
+ * expects the recorded tools, their order and their arguments. These evaluators describe what
  * production did. They are a baseline, not a statement of correctness.
  *
  * <p>{@code modelCalls}, {@code tokens} and {@code latencyMs} are optional. When present they
@@ -112,18 +112,19 @@ public final class EvalCaseParser {
     }
 
     Runnable setup = () -> recorded.forEach(call -> bindings.loaderFor(call.tool()).load(call));
-    return new EvalCase(id, input, setup, withBudgets(baseline(recorded), interaction, slack));
+    var evaluators = baseline(recorded);
+    evaluators.addAll(budgets(interaction, slack));
+    return new EvalCase(id, input, setup, evaluators);
   }
 
   /** Turns the recorded spend into budgets. */
-  private static Expectations withBudgets(
-      Expectations baseline, JsonNode interaction, double slack) {
-    var expectations = baseline;
+  private static List<Evaluator> budgets(JsonNode interaction, double slack) {
+    var evaluators = new ArrayList<Evaluator>();
     var modelCalls = interaction.path("modelCalls");
     if (!modelCalls.isMissingNode()) {
       if (!modelCalls.canConvertToInt() || modelCalls.asInt() < 1)
         throw new IllegalArgumentException("modelCalls is not a positive count: " + modelCalls);
-      expectations = expectations.modelCallsAtMost(modelCalls.asInt());
+      evaluators.add(Evaluators.modelCallsAtMost(modelCalls.asInt()));
     }
     var tokens = interaction.path("tokens");
     if (!tokens.isMissingNode()) {
@@ -138,16 +139,16 @@ public final class EvalCaseParser {
       }
       if (total < 1)
         throw new IllegalArgumentException("tokens is not a positive count: " + tokens);
-      expectations = expectations.tokensAtMost((long) Math.ceil(total * slack));
+      evaluators.add(Evaluators.tokensAtMost((long) Math.ceil(total * slack)));
     }
     var latency = interaction.path("latencyMs");
     if (!latency.isMissingNode()) {
       if (!latency.canConvertToLong() || latency.asLong() < 1)
         throw new IllegalArgumentException("latencyMs is not a positive count: " + latency);
-      expectations =
-          expectations.latencyAtMost(Duration.ofMillis((long) Math.ceil(latency.asLong() * slack)));
+      evaluators.add(
+          Evaluators.latencyAtMost(Duration.ofMillis((long) Math.ceil(latency.asLong() * slack))));
     }
-    return expectations;
+    return evaluators;
   }
 
   @SuppressWarnings("unchecked")
@@ -157,10 +158,10 @@ public final class EvalCaseParser {
     return MAPPER.convertValue(argumentsNode, Map.class);
   }
 
-  /** The recorded tools, their order and their arguments, as expectations. */
-  private static Expectations baseline(List<ToolBindings.RecordedCall> recorded) {
-    var expectations = Expectations.expect();
-    if (recorded.isEmpty()) return expectations;
+  /** The recorded tools, their order and their arguments, as evaluators. */
+  private static List<Evaluator> baseline(List<ToolBindings.RecordedCall> recorded) {
+    var evaluators = new ArrayList<Evaluator>();
+    if (recorded.isEmpty()) return evaluators;
 
     var names = new LinkedHashSet<String>();
     var order = new ArrayList<String>();
@@ -168,14 +169,14 @@ public final class EvalCaseParser {
       names.add(call.tool());
       order.add(call.tool());
     }
-    expectations =
-        expectations.tools(names.toArray(String[]::new)).toolOrder(order.toArray(String[]::new));
+    evaluators.add(Evaluators.tools(names.toArray(String[]::new)));
+    evaluators.add(Evaluators.toolOrder(order.toArray(String[]::new)));
     for (var call : recorded) {
       for (var argument : call.arguments().entrySet()) {
-        expectations =
-            expectations.toolArgument(call.tool(), argument.getKey(), argument.getValue());
+        evaluators.add(
+            Evaluators.toolArgument(call.tool(), argument.getKey(), argument.getValue()));
       }
     }
-    return expectations;
+    return evaluators;
   }
 }

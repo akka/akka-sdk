@@ -23,7 +23,7 @@ class GateTest {
                   List.of(new ToolCall("getCustomer", Map.of("customerId", turn.caseId())))));
 
   private static EvalCase expectingAnswer(String id, String expected) {
-    return EvalCase.of(id, "a question", Expectations.expect().answerContains(expected));
+    return EvalCase.of(id, "a question", Evaluators.answerContains(expected));
   }
 
   private ExperimentRunner.EvalReport run(Gate gate, List<EvalCase> cases) {
@@ -47,13 +47,9 @@ class GateTest {
   void anEvaluatorIsRatedOverTheCasesThatDidNotAbstain() {
     var cases =
         List.of(
-            EvalCase.of(
-                "c1", "q", Expectations.expect().toolArgument("getCustomer", "customerId", "c1")),
-            EvalCase.of(
-                "c2",
-                "q",
-                Expectations.expect().toolArgument("getCustomer", "customerId", "wrong")),
-            EvalCase.of("c3", "q", Expectations.expect().toolArgument("neverCalled", "id", "x")));
+            EvalCase.of("c1", "q", Evaluators.toolArgument("getCustomer", "customerId", "c1")),
+            EvalCase.of("c2", "q", Evaluators.toolArgument("getCustomer", "customerId", "wrong")),
+            EvalCase.of("c3", "q", Evaluators.toolArgument("neverCalled", "id", "x")));
 
     var report = run(Gate.evaluatorRateAtLeast(Evaluators.TOOL_ARGUMENTS, 0.5), cases);
 

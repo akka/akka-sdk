@@ -6,12 +6,17 @@ package akka.javasdk.testkit.eval;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.entry;
 
+import akka.javasdk.testkit.ModelCall;
+import akka.javasdk.testkit.ToolCall;
+import akka.javasdk.testkit.eval.Evaluator.EvalResult.Verdict;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -49,14 +54,25 @@ class EvalCaseParserTest {
     cases.get(0).setup().run();
     assertThat(canned).containsEntry("cust_1", new Customer("cust_1", "Ada Lovelace"));
 
-    var baseline = cases.get(0).expectations();
-    assertThat(baseline.expectedTools()).containsExactly("getCustomer");
-    assertThat(baseline.expectedOrder()).containsExactly("getCustomer");
-    assertThat(baseline.toolArguments())
-        .containsExactly(new Expectations.ToolArgument("getCustomer", "customerId", "cust_1"));
+    // The baseline: the recorded tool, its order and its argument, as three evaluators.
+    var asRecorded =
+        new Interaction(
+            "done", List.of(new ToolCall("getCustomer", Map.of("customerId", "cust_1"))));
+    assertThat(verdicts(cases.get(0), asRecorded))
+        .containsExactly(
+            entry(Evaluators.TOOLS, Verdict.PASS),
+            entry(Evaluators.TOOL_ORDER, Verdict.PASS),
+            entry(Evaluators.TOOL_ARGUMENTS, Verdict.PASS));
+    var otherCustomer =
+        new Interaction(
+            "done", List.of(new ToolCall("getCustomer", Map.of("customerId", "cust_2"))));
+    assertThat(verdicts(cases.get(0), otherCustomer))
+        .containsEntry(Evaluators.TOOL_ARGUMENTS, Verdict.FAIL);
+    assertThat(verdicts(cases.get(0), Interaction.of("done")))
+        .containsEntry(Evaluators.TOOLS, Verdict.FAIL);
 
     cases.get(1).setup().run();
-    assertThat(cases.get(1).expectations().expectedTools()).isEmpty();
+    assertThat(cases.get(1).evaluators()).isEmpty();
   }
 
   @Test
@@ -73,21 +89,36 @@ class EvalCaseParserTest {
 
     var cases = EvalCaseParser.parse(file, ToolBindings.builder().build());
 
-    var spent = cases.get(0).expectations().budgets();
-    assertThat(spent.modelCalls()).hasValue(2);
-    assertThat(spent.tokens()).hasValue(165);
-    assertThat(spent.latency()).contains(Duration.ofMillis(1500));
+    // c1: the model call count as recorded, tokens and latency with 1.5 slack.
+    var spent = cases.get(0);
+    assertThat(verdicts(spent, traced(2, 165, Duration.ofMillis(1500))))
+        .containsExactly(
+            entry(Evaluators.MODEL_CALL_BUDGET, Verdict.PASS),
+            entry(Evaluators.TOKEN_BUDGET, Verdict.PASS),
+            entry(Evaluators.LATENCY_BUDGET, Verdict.PASS));
+    assertThat(verdicts(spent, traced(3, 166, Duration.ofMillis(1501))))
+        .containsExactly(
+            entry(Evaluators.MODEL_CALL_BUDGET, Verdict.FAIL),
+            entry(Evaluators.TOKEN_BUDGET, Verdict.FAIL),
+            entry(Evaluators.LATENCY_BUDGET, Verdict.FAIL));
 
-    var tokensOnly = cases.get(1).expectations().budgets();
-    assertThat(tokensOnly.modelCalls()).isEmpty();
-    assertThat(tokensOnly.tokens()).hasValue(450);
-    assertThat(tokensOnly.latency()).isEmpty();
+    // c2: tokens only.
+    var tokensOnly = cases.get(1);
+    assertThat(verdicts(tokensOnly, traced(1, 450, Duration.ofMillis(1))))
+        .containsExactly(entry(Evaluators.TOKEN_BUDGET, Verdict.PASS));
+    assertThat(verdicts(tokensOnly, traced(1, 451, Duration.ofMillis(1))))
+        .containsExactly(entry(Evaluators.TOKEN_BUDGET, Verdict.FAIL));
 
-    assertThat(cases.get(2).expectations().budgets().any()).isFalse();
+    assertThat(cases.get(2).evaluators()).isEmpty();
 
-    var exact = EvalCaseParser.parse(file, ToolBindings.builder().build(), 1.0);
-    assertThat(exact.get(0).expectations().budgets().tokens()).hasValue(110);
-    assertThat(exact.get(0).expectations().budgets().latency()).contains(Duration.ofMillis(1000));
+    // Slack 1.0 holds a case to exactly what was recorded.
+    var exact = EvalCaseParser.parse(file, ToolBindings.builder().build(), 1.0).get(0);
+    assertThat(verdicts(exact, traced(2, 110, Duration.ofMillis(1000))))
+        .containsEntry(Evaluators.TOKEN_BUDGET, Verdict.PASS)
+        .containsEntry(Evaluators.LATENCY_BUDGET, Verdict.PASS);
+    assertThat(verdicts(exact, traced(2, 111, Duration.ofMillis(1001))))
+        .containsEntry(Evaluators.TOKEN_BUDGET, Verdict.FAIL)
+        .containsEntry(Evaluators.LATENCY_BUDGET, Verdict.FAIL);
   }
 
   @Test
@@ -144,5 +175,34 @@ class EvalCaseParserTest {
     assertThatThrownBy(() -> call.resultAs(List.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("getCustomer");
+  }
+
+  /** The verdict of each of the case's evaluators over the evidence, in evaluator order. */
+  private static Map<String, Verdict> verdicts(EvalCase evalCase, Interaction interaction) {
+    var byName = new LinkedHashMap<String, Verdict>();
+    for (var evaluator : evalCase.evaluators()) {
+      var finding = evaluator.evaluate(evalCase, interaction, interaction.toolCalls());
+      byName.put(finding.evaluator(), finding.verdict());
+    }
+    return byName;
+  }
+
+  /** Evidence with model calls, the given total tokens and the given latency. */
+  private static Interaction traced(int modelCalls, long tokens, Duration latency) {
+    var calls =
+        java.util.stream.IntStream.range(0, modelCalls)
+            .mapToObj(
+                i ->
+                    new ModelCall(
+                        "test",
+                        "custom",
+                        List.of("STOP"),
+                        i == 0 ? tokens : 0,
+                        0,
+                        Duration.ofMillis(1),
+                        "",
+                        ""))
+            .toList();
+    return new Interaction("done", List.of(), calls, List.of(), latency, "done");
   }
 }

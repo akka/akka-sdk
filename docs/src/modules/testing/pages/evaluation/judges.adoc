@@ -1,7 +1,7 @@
 = Model judges
 :page-summary: A Judge scores a reply against a criterion written in words; Judge.agent asks a model through the TestKit, and the score becomes a pass, a fail or an abstention on the case.
-:page-when-to-use: Criteria the built-in expectations cannot state, such as tone, completeness or faithfulness to the tool results.
-:page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/custom-evaluators.adoc, testing:evaluation/experiments.adoc
+:page-when-to-use: Criteria the built-in evaluators cannot state, such as tone, completeness or faithfulness to the tool results.
+:page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/experiments.adoc
 :page-persona: builder-developer, builder-ai-ml
 :page-banner: evaluations
 
@@ -11,7 +11,7 @@ A judge is a model that scores a reply against a criterion written in words.
 
 == What a judge decides
 
-The built-in expectations compare the reply and the tool calls against exact values.
+The built-in evaluators compare the reply and the tool calls against exact values.
 Some criteria have no exact value: the reply apologises, the reply states only what the tools returned, the reply is complete.
 A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Judge.html[Judge] scores such a criterion between 0 and 1, and the score becomes a finding on the case under the `judge` evaluator.
 
@@ -30,7 +30,7 @@ Each question runs in a new session with memory disabled, so one judgement does 
 
 == Stating the criterion
 
-`mustSatisfy(criterion)` and `scoringAtLeast(criterion, threshold)` turn the judge into an `Evaluator` for `Expectations.satisfies`.
+`mustSatisfy(criterion)` and `scoringAtLeast(criterion, threshold)` turn the judge into an `Evaluator`, given to a case next to the built-in evaluators.
 
 * `mustSatisfy` passes at a score of at least 0.5.
 * `scoringAtLeast` passes at the given threshold.
@@ -103,9 +103,9 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 ----
 <1> The judge asks the model configured in `application.conf`.
 <2> One evaluator, added to every curated case.
-<3> At least eight judged cases in ten must pass. The other expectations of each case still apply.
+<3> At least eight judged cases in ten must pass. The other evaluators of each case still apply.
 
 == See also
 
-* xref:testing:evaluation/custom-evaluators.adoc[]
+* xref:testing:evaluation/eval-cases.adoc#custom-evaluators[Custom evaluators]
 * xref:sdk:agents/llm_eval.adoc[] describes evaluator agents that run inside a deployed service.

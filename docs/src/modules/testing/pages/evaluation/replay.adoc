@@ -37,7 +37,7 @@ include::sdk:example$doc-snippets/src/test/resources/eval/captures.jsonl[lines=1
 
 | `output`
 | no
-| The reply production gave. Kept for the reader; the parser does not turn it into an expectation.
+| The reply production gave. Kept for the reader; the parser does not check it.
 
 | `modelCalls`
 | no
@@ -79,15 +79,15 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 
 == What a replayed case asserts
 
-The expectations of a replayed case describe what production did.
+The evaluators of a replayed case describe what production did.
 They are a baseline, not a statement of correctness.
 
-* `tools`: every recorded tool is called.
-* `toolOrder`: in the recorded relative order.
-* `toolArgument`: every recorded argument arrives with its recorded value.
+* `Evaluators.tools`: every recorded tool is called.
+* `Evaluators.toolOrder`: in the recorded relative order.
+* `Evaluators.toolArgument`: one per recorded argument, which must arrive with its recorded value.
 
-The recorded `output` is not an expectation, because a reply worded differently is not a regression.
-To score the reply, add a judge or a custom evaluator to the parsed cases by building a new `EvalCase` from each with `expectations().satisfies(...)`.
+The recorded `output` is not checked, because a reply worded differently is not a regression.
+To score the reply, add a judge or a custom evaluator to each parsed case with `withEvaluators(...)`.
 
 == Budgets from the recorded spend
 
@@ -108,14 +108,15 @@ The report of the replayed batch above, under the mocked model:
 gate: passed — pass rate 1.00 over 5 cases, required 0.90
   tools 3/3
   tool-order 3/3
-  tool-arguments 3/3
+  tool-arguments 5/5
   model-call-budget 2/2
   token-budget 0/0 (2 abstained)
   latency-budget 2/2
-spend: 9 model calls, 0 tokens in, 0 out, 27 ms in total, slowest prod-2 at 7 ms, over 5/5 cases with evidence
+spend: 9 model calls, 0 tokens in, 0 out, 30 ms in total, slowest prod-2 at 7 ms, over 5/5 cases with evidence
 ----
 
 Two recordings carried spend figures, so two cases had budgets, and their token budgets abstained.
+The five `tool-arguments` findings come from five recorded arguments over three cases.
 
 == See also
 

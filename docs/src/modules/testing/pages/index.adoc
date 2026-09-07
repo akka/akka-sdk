@@ -6,6 +6,6 @@ Akka provides three kinds of testing.
 
 * *Unit testing* verifies that a single component returns the expected effect or state when called in isolation.
 * *Integration testing* verifies that multiple components work together against a real in-process runtime, with external dependencies stubbed at the boundary.
-* *Evaluation* runs an agent through a fixed set of eval cases inside a TestKit test and checks each reply and the tool calls the runtime traced against expectations, a model judge and a gate.
+* *Evaluation* runs an agent through a fixed set of eval cases inside a TestKit test and checks each reply and the tool calls the runtime traced with built-in evaluators, a model judge and a gate.
 
 Start with xref:testing:unit.adoc[] to test one component at a time, xref:testing:integration.adoc[] to test the wiring, and xref:testing:evaluation/index.adoc[] to check an agent's tool use and answers.

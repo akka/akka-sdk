@@ -17,7 +17,6 @@ import akka.javasdk.testkit.TestModelProvider.ToolInvocationRequest;
 import akka.javasdk.testkit.eval.EvalCase;
 import akka.javasdk.testkit.eval.EvalCaseParser;
 import akka.javasdk.testkit.eval.Evaluators;
-import akka.javasdk.testkit.eval.Expectations;
 import akka.javasdk.testkit.eval.ExperimentRunner;
 import akka.javasdk.testkit.eval.Gate;
 import akka.javasdk.testkit.eval.Judge;
@@ -153,11 +152,10 @@ public class SupportAgentEvalTest extends TestKitSupport {
               crm.reset();
               crm.prime(new Customer("cust_1", "Ada Lovelace", "gold"));
             },
-            Expectations.expect()
-                .tools("getCustomer")
-                .toolArgument("getCustomer", "customerId", "cust_1")
-                .forbiddenTools("openTickets")
-                .answerContains("Ada Lovelace")),
+            Evaluators.tools("getCustomer"),
+            Evaluators.toolArgument("getCustomer", "customerId", "cust_1"),
+            Evaluators.forbiddenTools("openTickets"),
+            Evaluators.answerContains("Ada Lovelace")),
         new EvalCase(
             "open-tickets",
             "What is cust_7 waiting on? List their open tickets.",
@@ -166,18 +164,16 @@ public class SupportAgentEvalTest extends TestKitSupport {
               crm.prime(new Customer("cust_7", "Grace Hopper", "silver"));
               crm.primeTickets("cust_7", new Ticket("t_9", "card declined at checkout", "open"));
             },
-            Expectations.expect()
-                .tools("getCustomer", "openTickets")
-                .toolOrder("getCustomer", "openTickets")
-                .toolArgument("openTickets", "customerId", "cust_7")
-                .answerContains("card declined")),
+            Evaluators.tools("getCustomer", "openTickets"),
+            Evaluators.toolOrder("getCustomer", "openTickets"),
+            Evaluators.toolArgument("openTickets", "customerId", "cust_7"),
+            Evaluators.answerContains("card declined")),
         new EvalCase(
             "no-tools-for-smalltalk",
             "hi there!",
             crm::reset,
-            Expectations.expect()
-                .forbiddenTools("getCustomer", "openTickets")
-                .answerContains("customer id")));
+            Evaluators.forbiddenTools("getCustomer", "openTickets"),
+            Evaluators.answerContains("customer id")));
   }
 
   @Test
@@ -190,10 +186,9 @@ public class SupportAgentEvalTest extends TestKitSupport {
               crm.reset();
               crm.prime(new Customer("cust_1", "Ada Lovelace", "gold"));
             },
-            Expectations.expect()
-                .toolArgument("getCustomer", "customerId", "cust_1")
-                .toolResult("getCustomer", "Ada Lovelace")
-                .toolResult("getCustomer", "\"tier\":\"gold\""));
+            Evaluators.toolArgument("getCustomer", "customerId", "cust_1"),
+            Evaluators.toolResult("getCustomer", "Ada Lovelace"),
+            Evaluators.toolResult("getCustomer", "\"tier\":\"gold\""));
 
     var result = runOne(lookup);
 
@@ -213,7 +208,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
               crm.prime(new Customer("cust_7", "Grace Hopper", "silver"));
               crm.primeTickets("cust_7", new Ticket("t_9", "card declined at checkout", "open"));
             },
-            Expectations.expect().toolOrder("getCustomer", "openTickets"));
+            Evaluators.toolOrder("getCustomer", "openTickets"));
 
     var result = runOne(tickets);
 
@@ -242,11 +237,10 @@ public class SupportAgentEvalTest extends TestKitSupport {
               crm.prime(new Customer("cust_7", "Grace Hopper", "silver"));
               crm.primeTickets("cust_7", new Ticket("t_9", "card declined at checkout", "open"));
             },
-            Expectations.expect()
-                .toolCallsAtMost(2)
-                .modelCallsAtMost(2)
-                .tokensAtMost(1_000)
-                .latencyAtMost(ofSeconds(30)));
+            Evaluators.toolCallsAtMost(2),
+            Evaluators.modelCallsAtMost(2),
+            Evaluators.tokensAtMost(1_000),
+            Evaluators.latencyAtMost(ofSeconds(30)));
 
     var result = runOne(tickets);
 
@@ -264,10 +258,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
   public void traceKeepsTheFailedToolCall() {
     var unknown =
         new EvalCase(
-            "unknown-customer",
-            "Who is cust_404?",
-            crm::reset,
-            Expectations.expect().tools("getCustomer"));
+            "unknown-customer", "Who is cust_404?", crm::reset, Evaluators.tools("getCustomer"));
 
     var result = runOne(unknown);
 
@@ -360,11 +351,8 @@ public class SupportAgentEvalTest extends TestKitSupport {
               crm.reset();
               crm.prime(new Customer("cust_1", "Ada Lovelace", "gold"));
             },
-            Expectations.expect()
-                .tools("getCustomer")
-                .satisfies(
-                    judge.mustSatisfy(
-                        "the reply states the customer's name and tier and invents nothing")));
+            Evaluators.tools("getCustomer"),
+            judge.mustSatisfy("the reply states the customer's name and tier and invents nothing"));
 
     var result = runOne(evalCase);
 
@@ -387,7 +375,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
                   crm.reset();
                   crm.prime(new Customer("cust_1", "Ada Lovelace", "gold"));
                 },
-                Expectations.expect().satisfies(judge.mustSatisfy("the reply is helpful"))));
+                judge.mustSatisfy("the reply is helpful")));
 
     assertThat(result.passed()).isTrue();
     assertThat(result.describe()).contains("ABSTAIN judge");
@@ -403,7 +391,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
               crm.reset();
               crm.prime(new Customer("cust_1", "Ada Lovelace", "gold"));
             },
-            Expectations.expect().toolArgument("getCustomer", "customerId", "cust_2"));
+            Evaluators.toolArgument("getCustomer", "customerId", "cust_2"));
 
     var result = runOne(wrongExpectation);
 

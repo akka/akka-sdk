@@ -63,11 +63,10 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Testing overview](https://doc.akka.io/testing/index.html.md): Three kinds of testing — unit, integration, evaluation
 - [Unit testing](https://doc.akka.io/testing/unit.html.md): Exercise one component at a time with per-component TestKits
 - [Integration testing](https://doc.akka.io/testing/integration.html.md): Exercise multiple components together against an in-process runtime
-- [Evaluation](https://doc.akka.io/testing/evaluation/index.html.md): Run an agent through eval cases in a TestKit test and check replies and traced tool calls against expectations, a judge and a gate
+- [Evaluation](https://doc.akka.io/testing/evaluation/index.html.md): Run an agent through eval cases in a TestKit test and check replies and traced tool calls with built-in evaluators, a judge and a gate
 - [Evaluation getting started](https://doc.akka.io/testing/evaluation/getting-started.html.md): An agent with two tools, a test class with a mocked model, one case, then a gated batch
-- [Eval cases and expectations](https://doc.akka.io/testing/evaluation/eval-cases.html.md): EvalCase parts and every Expectations method with its evaluator and abstain rule
+- [Eval cases and evaluators](https://doc.akka.io/testing/evaluation/eval-cases.html.md): EvalCase parts and every built-in evaluator with its report name and abstain rule
 - [Model judges](https://doc.akka.io/testing/evaluation/judges.html.md): Judge.agent, mustSatisfy and scoringAtLeast, the judge prompt, gating on the judge rate
-- [Custom evaluators](https://doc.akka.io/testing/evaluation/custom-evaluators.html.md): The Evaluator interface, the Interaction evidence, per-case and run-level evaluators
 - [Experiments, gates and reports](https://doc.akka.io/testing/evaluation/experiments.html.md): The staged ExperimentRunner, Gate factories, reading an EvalReport
 - [Replaying recorded interactions](https://doc.akka.io/testing/evaluation/replay.html.md): EvalCaseParser, the JSONL format, ToolBindings and budgets from recorded spend
 

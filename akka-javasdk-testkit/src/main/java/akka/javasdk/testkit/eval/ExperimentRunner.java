@@ -160,7 +160,7 @@ public final class ExperimentRunner {
         case EvalTarget.Outcome.Answered answered -> {
           var interaction = answered.interaction();
           var findings = new ArrayList<EvalResult>();
-          for (var evaluator : BuiltInEvaluators.activatedBy(evalCase.expectations())) {
+          for (var evaluator : evalCase.evaluators()) {
             findings.add(evaluator.evaluate(evalCase, interaction, interaction.toolCalls()));
           }
           for (var evaluator : evaluators) {

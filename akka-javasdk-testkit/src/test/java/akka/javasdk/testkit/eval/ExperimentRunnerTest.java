@@ -27,8 +27,8 @@ class ExperimentRunnerTest {
     return new ToolCall(name, Map.of(argument, value));
   }
 
-  private CaseResultOf run(EvalTarget target, Expectations expectations) {
-    var evalCase = EvalCase.of("c", "a question", expectations);
+  private CaseResultOf run(EvalTarget target, Evaluator... evaluators) {
+    var evalCase = EvalCase.of("c", "a question", evaluators);
     return new CaseResultOf(single(target, evalCase));
   }
 
@@ -60,12 +60,11 @@ class ExperimentRunnerTest {
     var run =
         run(
             target,
-            Expectations.expect()
-                .tools("getCustomer")
-                .toolArgument("getCustomer", "customerId", "cust_1")
-                .forbiddenTools("openTickets")
-                .answerContains("ada lovelace")
-                .answerMatches("gold"));
+            Evaluators.tools("getCustomer"),
+            Evaluators.toolArgument("getCustomer", "customerId", "cust_1"),
+            Evaluators.forbiddenTools("openTickets"),
+            Evaluators.answerContains("ada lovelace"),
+            Evaluators.answerMatches("gold"));
 
     assertThat(run.result().passed()).isTrue();
     assertThat(run.result().evalResults())
@@ -79,10 +78,9 @@ class ExperimentRunnerTest {
     var run =
         run(
             targetThat("I do not know."),
-            Expectations.expect()
-                .tools("getCustomer")
-                .toolOrder("getCustomer")
-                .toolArgument("getCustomer", "customerId", "cust_1"));
+            Evaluators.tools("getCustomer"),
+            Evaluators.toolOrder("getCustomer"),
+            Evaluators.toolArgument("getCustomer", "customerId", "cust_1"));
 
     assertThat(run.finding(Evaluators.TOOLS).verdict()).isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(run.finding(Evaluators.TOOLS).detail()).contains("no tools");
@@ -101,13 +99,13 @@ class ExperimentRunnerTest {
                 ToolCall.of("getCustomer"),
                 ToolCall.of("somethingElse"),
                 ToolCall.of("openTickets")),
-            Expectations.expect().toolOrder("getCustomer", "openTickets"));
+            Evaluators.toolOrder("getCustomer", "openTickets"));
     assertThat(inOrder.finding(Evaluators.TOOL_ORDER).verdict()).isEqualTo(EvalResult.Verdict.PASS);
 
     var reversed =
         run(
             targetThat("done", ToolCall.of("openTickets"), ToolCall.of("getCustomer")),
-            Expectations.expect().toolOrder("getCustomer", "openTickets"));
+            Evaluators.toolOrder("getCustomer", "openTickets"));
     assertThat(reversed.finding(Evaluators.TOOL_ORDER).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(reversed.finding(Evaluators.TOOL_ORDER).detail())
@@ -119,7 +117,7 @@ class ExperimentRunnerTest {
     var run =
         run(
             targetThat("done", call("getCustomer", "customerId", "cust_2")),
-            Expectations.expect().toolArgument("getCustomer", "customerId", "cust_1"));
+            Evaluators.toolArgument("getCustomer", "customerId", "cust_1"));
 
     assertThat(run.finding(Evaluators.TOOL_ARGUMENTS).detail())
         .contains("expected cust_1")
@@ -131,7 +129,7 @@ class ExperimentRunnerTest {
     var run =
         run(
             targetThat("done", call("charge", "amount", 12L)),
-            Expectations.expect().toolArgument("charge", "amount", 12));
+            Evaluators.toolArgument("charge", "amount", 12));
 
     assertThat(run.finding(Evaluators.TOOL_ARGUMENTS).verdict()).isEqualTo(EvalResult.Verdict.PASS);
   }
@@ -141,7 +139,8 @@ class ExperimentRunnerTest {
     var run =
         run(
             targetThat("Ada Lovelace", ToolCall.of("openTickets")),
-            Expectations.expect().answerContains("Ada").forbiddenTools("openTickets"));
+            Evaluators.answerContains("Ada"),
+            Evaluators.forbiddenTools("openTickets"));
 
     assertThat(run.result().passed()).isFalse();
     assertThat(run.finding(Evaluators.FORBIDDEN_TOOLS).detail()).contains("openTickets");
@@ -154,8 +153,7 @@ class ExperimentRunnerTest {
           throw new IllegalStateException("model unavailable");
         };
 
-    var result =
-        single(throwing, EvalCase.of("c", "a question", Expectations.expect().answerContains("x")));
+    var result = single(throwing, EvalCase.of("c", "a question", Evaluators.answerContains("x")));
 
     assertThat(result.passed()).isFalse();
     assertThat(result.evalResults()).hasSize(1);
@@ -168,7 +166,7 @@ class ExperimentRunnerTest {
     var run =
         run(
             targetThat("Ada Lovelace", call("getCustomer", "customerId", "cust_1")),
-            Expectations.expect().toolResult("getCustomer", "Ada Lovelace"));
+            Evaluators.toolResult("getCustomer", "Ada Lovelace"));
 
     assertThat(run.result().passed()).isTrue();
     assertThat(run.finding(Evaluators.TOOL_RESULTS).verdict())
@@ -195,11 +193,11 @@ class ExperimentRunnerTest {
   void aToolCallBudgetCountsEveryCall() {
     var twoCalls = targetThat("done", ToolCall.of("getCustomer"), ToolCall.of("getCustomer"));
 
-    var within = run(twoCalls, Expectations.expect().toolCallsAtMost(2));
+    var within = run(twoCalls, Evaluators.toolCallsAtMost(2));
     assertThat(within.finding(Evaluators.TOOL_CALL_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.PASS);
 
-    var over = run(twoCalls, Expectations.expect().toolCallsAtMost(1));
+    var over = run(twoCalls, Evaluators.toolCallsAtMost(1));
     assertThat(over.finding(Evaluators.TOOL_CALL_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(over.finding(Evaluators.TOOL_CALL_BUDGET).detail())
@@ -210,17 +208,17 @@ class ExperimentRunnerTest {
   void aModelCallBudgetReadsTheTracedCallsAndAbstainsWithoutThem() {
     var threeCalls = tracedThat("done", 3, 100, Duration.ofMillis(40));
 
-    var within = run(threeCalls, Expectations.expect().modelCallsAtMost(3));
+    var within = run(threeCalls, Evaluators.modelCallsAtMost(3));
     assertThat(within.finding(Evaluators.MODEL_CALL_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.PASS);
 
-    var over = run(threeCalls, Expectations.expect().modelCallsAtMost(2));
+    var over = run(threeCalls, Evaluators.modelCallsAtMost(2));
     assertThat(over.finding(Evaluators.MODEL_CALL_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(over.finding(Evaluators.MODEL_CALL_BUDGET).detail())
         .contains("made 3 model calls, allowed 2");
 
-    var untraced = run(targetThat("done"), Expectations.expect().modelCallsAtMost(1));
+    var untraced = run(targetThat("done"), Evaluators.modelCallsAtMost(1));
     assertThat(untraced.finding(Evaluators.MODEL_CALL_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.ABSTAIN);
     assertThat(untraced.result().passed()).isTrue();
@@ -230,18 +228,16 @@ class ExperimentRunnerTest {
   void aTokenBudgetSumsInputAndOutputAndAbstainsWhenNoneWereReported() {
     var threeHundred = tracedThat("done", 3, 100, Duration.ofMillis(40));
 
-    var within = run(threeHundred, Expectations.expect().tokensAtMost(300));
+    var within = run(threeHundred, Evaluators.tokensAtMost(300));
     assertThat(within.finding(Evaluators.TOKEN_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.PASS);
 
-    var over = run(threeHundred, Expectations.expect().tokensAtMost(299));
+    var over = run(threeHundred, Evaluators.tokensAtMost(299));
     assertThat(over.finding(Evaluators.TOKEN_BUDGET).verdict()).isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(over.finding(Evaluators.TOKEN_BUDGET).detail()).contains("used 300 tokens");
 
     var unreported =
-        run(
-            tracedThat("done", 2, 0, Duration.ofMillis(40)),
-            Expectations.expect().tokensAtMost(10));
+        run(tracedThat("done", 2, 0, Duration.ofMillis(40)), Evaluators.tokensAtMost(10));
     assertThat(unreported.finding(Evaluators.TOKEN_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.ABSTAIN);
   }
@@ -250,18 +246,17 @@ class ExperimentRunnerTest {
   void aLatencyBudgetReadsTheCommandsDurationAndAbstainsWithoutTiming() {
     var forty = tracedThat("done", 1, 10, Duration.ofMillis(40));
 
-    var within = run(forty, Expectations.expect().latencyAtMost(Duration.ofMillis(40)));
+    var within = run(forty, Evaluators.latencyAtMost(Duration.ofMillis(40)));
     assertThat(within.finding(Evaluators.LATENCY_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.PASS);
 
-    var over = run(forty, Expectations.expect().latencyAtMost(Duration.ofMillis(39)));
+    var over = run(forty, Evaluators.latencyAtMost(Duration.ofMillis(39)));
     assertThat(over.finding(Evaluators.LATENCY_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(over.finding(Evaluators.LATENCY_BUDGET).detail())
         .contains("took 40 ms, allowed 39 ms");
 
-    var untimed =
-        run(targetThat("done"), Expectations.expect().latencyAtMost(Duration.ofSeconds(1)));
+    var untimed = run(targetThat("done"), Evaluators.latencyAtMost(Duration.ofSeconds(1)));
     assertThat(untimed.finding(Evaluators.LATENCY_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.ABSTAIN);
   }
@@ -279,9 +274,9 @@ class ExperimentRunnerTest {
     var report =
         experiment(
                 target,
-                EvalCase.of("quick", "q", Expectations.none()),
-                EvalCase.of("slow", "q", Expectations.none()),
-                EvalCase.of("untraced", "q", Expectations.none()))
+                EvalCase.of("quick", "q"),
+                EvalCase.of("slow", "q"),
+                EvalCase.of("untraced", "q"))
             .run();
 
     assertThat(report.render())
@@ -292,7 +287,7 @@ class ExperimentRunnerTest {
 
   @Test
   void theReportHasNoSpendLineWithoutEvidence() {
-    var report = experiment(targetThat("done"), EvalCase.of("c", "q", Expectations.none())).run();
+    var report = experiment(targetThat("done"), EvalCase.of("c", "q")).run();
 
     assertThat(report.render()).doesNotContain("spend:");
   }
@@ -310,26 +305,25 @@ class ExperimentRunnerTest {
                     Duration.ofMillis(5),
                     "```json\n{\"tier\":\"gold\"}\n```"));
 
-    var result =
-        single(mapped, EvalCase.of("c", "q", Expectations.expect().answerContains("silver")));
+    var result = single(mapped, EvalCase.of("c", "q", Evaluators.answerContains("silver")));
 
     assertThat(result.describe())
         .contains("reply: {\"tier\":\"gold\"}")
         .contains("model text: ```json {\"tier\":\"gold\"} ```");
 
-    var same = run(targetThat("plain"), Expectations.expect().answerContains("other"));
+    var same = run(targetThat("plain"), Evaluators.answerContains("other"));
     assertThat(same.result().describe()).doesNotContain("model text:");
   }
 
   @Test
   void aBudgetRefusesAValueThatCannotBeMet() {
-    assertThatThrownBy(() -> Expectations.expect().modelCallsAtMost(0))
+    assertThatThrownBy(() -> Evaluators.modelCallsAtMost(0))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> Expectations.expect().tokensAtMost(0))
+    assertThatThrownBy(() -> Evaluators.tokensAtMost(0))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> Expectations.expect().latencyAtMost(Duration.ZERO))
+    assertThatThrownBy(() -> Evaluators.latencyAtMost(Duration.ZERO))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> Expectations.expect().toolCallsAtMost(-1))
+    assertThatThrownBy(() -> Evaluators.toolCallsAtMost(-1))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -338,8 +332,7 @@ class ExperimentRunnerTest {
     var seen = call("getCustomer", "customerId", "cust_404");
     EvalTarget failing = turn -> EvalTarget.Outcome.failed("no customer cust_404", List.of(seen));
 
-    var result =
-        single(failing, EvalCase.of("c", "a question", Expectations.expect().tools("getCustomer")));
+    var result = single(failing, EvalCase.of("c", "a question", Evaluators.tools("getCustomer")));
 
     assertThat(result.passed()).isFalse();
     assertThat(result.evalResults())
@@ -359,7 +352,7 @@ class ExperimentRunnerTest {
             () -> {
               throw new IllegalStateException("fixture missing");
             },
-            Expectations.expect().tools("getCustomer"));
+            Evaluators.tools("getCustomer"));
 
     var result = single(target, evalCase);
 
@@ -389,8 +382,8 @@ class ExperimentRunnerTest {
         ExperimentRunner.against(
                 new ExperimentRunner()
                     .cases(
-                        EvalCase.of("polite", "a question", Expectations.none()),
-                        EvalCase.of("apologetic", "another question", Expectations.none()))
+                        EvalCase.of("polite", "a question"),
+                        EvalCase.of("apologetic", "another question"))
                     .evaluator(noApology),
                 target)
             .run();
@@ -410,9 +403,7 @@ class ExperimentRunnerTest {
         single(
             withEvidence,
             EvalCase.of(
-                "c",
-                "a question",
-                Expectations.expect().toolArgument("getCustomer", "customerId", "cust_1")));
+                "c", "a question", Evaluators.toolArgument("getCustomer", "customerId", "cust_1")));
 
     assertThat(result.passed()).isTrue();
   }
@@ -429,8 +420,8 @@ class ExperimentRunnerTest {
     var report =
         experiment(
                 targetThat("no"),
-                EvalCase.of("ok", "q", Expectations.expect().answerContains("no")),
-                EvalCase.of("bad", "q", Expectations.expect().answerContains("yes")))
+                EvalCase.of("ok", "q", Evaluators.answerContains("no")),
+                EvalCase.of("bad", "q", Evaluators.answerContains("yes")))
             .run();
 
     assertThat(report.passed()).isFalse();
@@ -442,7 +433,7 @@ class ExperimentRunnerTest {
     var run =
         run(
             targetThat("I could not find them.", call("getCustomer", "customerId", "cust_9")),
-            Expectations.expect().answerContains("Ada Lovelace"));
+            Evaluators.answerContains("Ada Lovelace"));
 
     assertThat(run.result().describe())
         .contains("case c FAILED")

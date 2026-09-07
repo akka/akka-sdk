@@ -16,9 +16,11 @@ import java.util.Locale;
  * <pre>{@code
  * var judge = Judge.agent(testKit);
  *
- * Expectations.expect()
- *     .tools("getCustomer")
- *     .satisfies(judge.mustSatisfy("the reply states the customer's tier and invents nothing"));
+ * EvalCase.of(
+ *     "tier",
+ *     "Which tier is cust_1 on?",
+ *     Evaluators.tools("getCustomer"),
+ *     judge.mustSatisfy("the reply states the customer's tier and invents nothing"));
  * }</pre>
  *
  * <p>{@link #agent} asks a model through {@link JudgeAgent}, which uses the model provider of the
