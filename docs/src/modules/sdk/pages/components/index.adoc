@@ -96,7 +96,7 @@ The sections below explain the decisions where two components are close alternat
 
 === Key Value Entity or Event Sourced Entity
 
-Both are entities: durable state per id, single writer, strong consistency per instance. The difference is what is persisted. An Event Sourced Entity persists the facts (events) and derives state from them. A Key Value Entity persists only the latest state.
+Both are entities: durable state accessible per id, single writer, strong consistency per instance. The difference is what is persisted. An Event Sourced Entity persists the facts (events) and derives state from them. A Key Value Entity persists only the latest state.
 
 Start from the events. If the specification talks about things that happen (order placed, funds withdrawn, item shipped) and other parts of the system, or the business, care about those happenings, use an Event Sourced Entity.
 
@@ -120,7 +120,7 @@ Signs you chose wrong:
 
 === View, or query the entity directly
 
-If you have the entity id, do not create a View. Call the entity with the xref:sdk:component-and-service-calls.adoc[ComponentClient] and return its state from a read command handler. That read is strongly consistent and needs no extra component.
+If the entity is referenced by its id, do not create a View. Call the entity with the xref:sdk:component-and-service-calls.adoc[ComponentClient] and return its state from a read command handler. That read is strongly consistent and needs no extra component.
 
 Use a *View* only when you need to:
 
@@ -167,7 +167,7 @@ The consequence of choosing the consumer path: delivery is at-least-once, so the
 
 === Timed Action or Workflow timer
 
-Use a *Timed Action* for a scheduled call: expire a reservation in 30 minutes, retry a cleanup nightly. It is stateless and lightweight, and the timer survives restarts. Keep the payload a reference (an entity id, under 1 KB), and let the called component decide whether the action is still relevant.
+Use a *Timed Action* for a scheduled call: expire a reservation in 30 minutes, retry a cleanup nightly. It is stateless and lightweight, and the timer survives restarts. Pass only an id in the payload: parameters are limited to 1 KB, and data captured at scheduling time may be stale when the timer fires. Let the called component check its current state and reply without changes when the action no longer applies, so stale or duplicate firings are harmless.
 
 Use a *Workflow* when the delay is a step inside a process: waiting for a payment confirmation with a deadline, pausing until an external system calls back. A workflow can pause and resume, keeps the surrounding state, and handles the timeout through its recovery and compensation strategy.
 
@@ -193,7 +193,7 @@ One service can expose several endpoint types over the same application layer. T
 
 == The boundary with the outside world
 
-=== Durable or in memory
+=== Durable or in-memory
 
 Not every value needs a component. Persist state in an entity or workflow when it:
 
@@ -210,7 +210,7 @@ Three corollaries:
 * Entities are already your in-memory cache: active entities are held in memory by the runtime and the state is durable. Do not add Redis or a caching layer in front of your own entities.
 * Large binaries (images, PDFs, exports) go in object storage via `ObjectStorageProvider`, with the reference in entity state. See xref:sdk:integrations/object-storage.adoc[] and the size limits in xref:sdk:dev-best-practices.adoc[Design considerations].
 
-=== In-process or over the network
+=== In-process or over-the-network
 
 Within one service, always use the `ComponentClient`. Never call your own service's HTTP endpoints from inside the service; that turns an in-process call into a network round trip through the API layer, loses type safety, and applies your own ACLs to yourself.
 
