@@ -27,12 +27,15 @@ public class OrderAgent extends Agent {
     return effects().systemMessage(SYSTEM_MESSAGE).userMessage(question).thenReply();
   }
 
-  @FunctionTool(description = "Look up an order by its id, for example o_42.")
+  @FunctionTool(name = "getOrder", description = "Look up an order by its id, for example o_42.")
   Order getOrder(String orderId) { // <3>
     return orders.getOrder(orderId);
   }
 
-  @FunctionTool(description = "Refund an amount in cents to the customer of an order.")
+  @FunctionTool(
+    name = "issueRefund",
+    description = "Refund an amount in cents to the customer of an order."
+  )
   Refund issueRefund(String orderId, int amountCents) {
     return orders.issueRefund(orderId, amountCents);
   }

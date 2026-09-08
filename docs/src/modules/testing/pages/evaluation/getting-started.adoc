@@ -42,7 +42,7 @@ include::sdk:example$doc-snippets/src/main/java/com/example/eval/OrderAgent.java
 ----
 <1> The order system is injected. Production provides a client for the real system through a `DependencyProvider`; the evaluation provides a stub.
 <2> The command handler the evaluation calls. It takes the case's user message as a `String` and replies with a `String`.
-<3> The tools. Evaluators refer to them by the plain method names.
+<3> The tools. Each tool sets an explicit `name`. Evaluators and recordings refer to tools by that name.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/eval/OrderService.java[OrderService.java]
