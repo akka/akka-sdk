@@ -276,6 +276,8 @@ Here is an example JSON export:
 
 == Running exports
 
+WARNING: Pause the source service before running an export. If the source keeps producing events during the export, events written to a journal partition after the export cursor has already read past that partition are missing from the export, with no warning at export time. The exported data is then inconsistent between the journal and snapshots. If it is later imported into a service, this can lead to problems such as a workflow appearing paused in the console while endpoint calls reject state transitions because the snapshot says it is already completed.
+
 The `akka service data export` command can be used to run an export. For example:
 
 [source,bash]
