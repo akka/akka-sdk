@@ -51,10 +51,10 @@ components and guide architectural decisions.
 - **Right component for the job**: Component selection MUST follow the
   decision guide in `akka-context/sdk/components/index.html.md`
   ("Choosing a component type").
-  The implementation plan MUST record, for each domain concept, the
-  chosen component and why the nearest alternative was rejected (Key
-  Value vs Event Sourced Entity, Workflow vs Consumer, View vs direct
-  entity read, component vs plain class).
+  The implementation plan MUST record the chosen component for each
+  domain concept and, for close-call decisions (Key Value vs Event
+  Sourced Entity, Workflow vs Consumer, View vs direct entity read,
+  component vs plain class), why the alternative was rejected.
 - **Single responsibility**: Each component MUST have a clear, focused
   purpose. Prefer multiple small components over monolithic ones.
 - **Descriptive naming**: Names MUST be domain-aligned and descriptive.

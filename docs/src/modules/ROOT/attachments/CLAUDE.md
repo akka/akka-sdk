@@ -45,7 +45,7 @@ When the task requires deciding which components to use (new feature, new servic
 
 ### Step 1: Design & Planning
 
-Choose each component per the decision guide (`sdk/components/index.html.md`, "Choosing a component type") and state the reason next to it, including why the nearest alternative was not chosen.
+Choose each component per the decision guide (`sdk/components/index.html.md`, "Choosing a component type") and state the reason next to it; for close-call decisions, note why the alternative was not chosen.
 
 Present concise design:
 ```markdown
