@@ -95,7 +95,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
   /** One case with the mocked model. There is no gate, so the case itself must pass. */
   private ExperimentRunner.CaseResult runOne(EvalCase evalCase) {
-    return experimentRunner.cases(evalCase).agent(SupportAgent::ask).run().cases().getFirst();
+    return experimentRunner.cases(evalCase).agent(SupportAgent::ask).run().results().getFirst();
   }
 
   @BeforeEach
