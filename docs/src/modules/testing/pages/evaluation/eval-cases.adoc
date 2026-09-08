@@ -21,7 +21,7 @@ link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/EvalCase.html[EvalCase] 
 | Names the case in the report. Unique within the suite.
 
 | `userMessage`
-| The message the agent receives. The runner turns it into the command with the mapping given to `agent(...)`, see xref:testing:evaluation/getting-started.adoc#first-case[The first case].
+| The message the agent receives. The runner turns it into the command with the mapping given to `agent(...)`, see xref:testing:evaluation/getting-started.adoc#first-case[Writing the first case].
 
 | `setup`
 | A `Runnable` that runs before the agent is called. Use it to load answers into the stubs the agent's tools call, or to seed entities through the component client. `EvalCase.NO_SETUP` when the case needs none. `EvalCase.of(id, userMessage, evaluators...)` creates a case without a setup.
@@ -78,7 +78,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 | A call to the tool carried the argument with this value. Abstains when the tool was never called.
 
 | `tool-results`
-| `Evaluators.toolResult(tool, needle)`
+| `Evaluators.toolResult(tool, text)`
 | The result of the tool contains the text, case-insensitively. Abstains when the tool was never called or the trace carries no result for it.
 
 | `forbidden-tools`
@@ -93,8 +93,8 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 | Evaluator | Created with | Passes when
 
 | `answer-contains`
-| `Evaluators.answerContains(needles...)`
-| The reply contains every needle, case-insensitively.
+| `Evaluators.answerContains(texts...)`
+| The reply contains every given text, case-insensitively.
 
 | `answer-matches`
 | `Evaluators.answerMatches(regex)`
@@ -125,11 +125,11 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 |===
 
 [#custom-evaluators]
-== Custom evaluators
+== Custom evaluator
 
 A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator]: `name()` returns the name its results are reported under, and `evaluate(...)` receives the case and the `Interaction`, the reply and everything the runtime traced for the turn, and returns an `EvalResult`: a pass, a fail with a reason, or an abstention.
 
-Below is an example of a tool call evaluator that checks that the amount the agent passed to `issueRefund` does not exceed the total of the order.
+`RefundWithinTotal` is an evaluator that checks that the amount the agent passed to `issueRefund` does not exceed the total of the order.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/eval/RefundWithinTotal.java[RefundWithinTotal.java]

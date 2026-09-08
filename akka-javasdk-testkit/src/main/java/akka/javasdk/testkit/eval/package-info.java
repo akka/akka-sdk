@@ -8,7 +8,7 @@
  * Java, or derived from recorded production interactions by {@link
  * akka.javasdk.testkit.eval.EvalCaseParser}. A derived case loads the recorded tool results into
  * the test's stubs through {@link akka.javasdk.testkit.eval.ToolBindings} and expects the recorded
- * behaviour as a baseline.
+ * behavior as a baseline.
  *
  * <p>{@link akka.javasdk.testkit.eval.ExperimentRunner} calls the agent in a fresh session per
  * case. Without a {@link akka.javasdk.testkit.eval.Gate} every case must pass, which suits a mocked

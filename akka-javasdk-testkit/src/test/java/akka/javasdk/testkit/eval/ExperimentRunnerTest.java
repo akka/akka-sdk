@@ -381,7 +381,7 @@ class ExperimentRunnerTest {
           @Override
           public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
             return interaction.reply().contains("sorry")
-                ? EvalResult.fail("the reply apologises")
+                ? EvalResult.fail("the reply apologizes")
                 : EvalResult.pass();
           }
         };

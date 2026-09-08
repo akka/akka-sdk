@@ -19,13 +19,9 @@ This page adds the fields one group at a time: the message and the reply, then t
 The smallest recording carries the user message and the reply production gave.
 
 [source,json]
-.{sample-base-url}/doc-snippets/src/test/resources/eval/replies.jsonl[replies.jsonl], one line formatted
+.{sample-base-url}/doc-snippets/src/test/resources/eval/replies.jsonl[replies.jsonl], line 1
 ----
-{
-  "id": "prod-3",
-  "input": "hi, anyone there?",
-  "output": "Please give me your order number and I will look it up."
-}
+include::sdk:example$doc-snippets/src/test/resources/eval/replies.jsonl[lines=1]
 ----
 
 [cols="1,1,3"]
@@ -47,14 +43,14 @@ The smallest recording carries the user message and the reply production gave.
 
 A case made from these fields alone has no evaluators.
 It runs, collects the reply and the trace, and appears in the report, but nothing can fail.
-The evaluators come from you: give an evaluator to the runner with `evaluator(...)` to run it on every parsed case, or to one case with `withEvaluators(...)`.
+Add the evaluators yourself: give an evaluator to the runner with `evaluator(...)` to run it on every parsed case, or to one case with `withEvaluators(...)`.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
 ----
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=replay-replies]
 ----
-<1> `parse(path)` reads a file whose recordings name no tools. A recording that names a tool needs bindings, explained in the next section.
+<1> `parse(path)` reads a file whose recordings name no tools. A recording that names a tool needs bindings, see <<tool-bindings>>.
 <2> A built-in evaluator on every parsed case. No replayed turn may issue a refund.
 <3> A xref:testing:evaluation/judges.adoc[judge] scores every reply against one criterion.
 
@@ -66,32 +62,17 @@ With `parse(path)`, every tool counts as unbound.
 A recording of a turn that used tools carries each call: the tool name, the arguments the agent passed, and the result production saw.
 
 [source,json]
-.{sample-base-url}/doc-snippets/src/test/resources/eval/captures.jsonl[captures.jsonl], one line formatted
+.{sample-base-url}/doc-snippets/src/test/resources/eval/captures.jsonl[captures.jsonl], line 2
 ----
-{
-  "id": "prod-2",
-  "input": "Order o_9 arrived broken, please refund it.",
-  "toolCalls": [
-    {
-      "name": "getOrder",
-      "arguments": { "orderId": "o_9" },
-      "result": { "id": "o_9", "status": "delivered", "totalCents": 4999 }
-    },
-    {
-      "name": "issueRefund",
-      "arguments": { "orderId": "o_9", "amountCents": 4999 },
-      "result": { "orderId": "o_9", "amountCents": 4999, "reference": "rf_1" }
-    }
-  ],
-  "output": "I am sorry about the damage. I have refunded 49.99 to your card, reference rf_1."
-}
+include::sdk:example$doc-snippets/src/test/resources/eval/captures.jsonl[lines=2]
 ----
 
 `toolCalls` lists the calls in the order production made them.
 Each call has a `name`, `arguments` as an object, and the `result` as recorded JSON.
 An empty array records a turn without tool calls.
 
-=== Tool bindings
+[#tool-bindings]
+=== Binding tools to stubs
 
 In the test, a stub serves each tool.
 For the agent to see what production saw, the stub must return the recorded result.
@@ -125,30 +106,16 @@ They are a baseline, not a statement of correctness.
 * `Evaluators.toolOrder`: in the recorded relative order.
 * `Evaluators.toolArgument`: one per recorded argument, which must arrive with its recorded value.
 
-For the recording above the case gets `tools("getOrder", "issueRefund")`, `toolOrder("getOrder", "issueRefund")`, and three `toolArgument` evaluators: `orderId` on `getOrder`, and `orderId` and `amountCents` on `issueRefund`.
+For the recording of `prod-2` the case gets `tools("getOrder", "issueRefund")`, `toolOrder("getOrder", "issueRefund")`, and three `toolArgument` evaluators: `orderId` on `getOrder`, and `orderId` and `amountCents` on `issueRefund`.
 
 == The spend
 
 A recording can carry what the turn cost in production.
 
 [source,json]
-.{sample-base-url}/doc-snippets/src/test/resources/eval/captures.jsonl[captures.jsonl], one line formatted
+.{sample-base-url}/doc-snippets/src/test/resources/eval/captures.jsonl[captures.jsonl], line 4
 ----
-{
-  "id": "prod-4",
-  "input": "Has order o_17 been delivered yet?",
-  "toolCalls": [
-    {
-      "name": "getOrder",
-      "arguments": { "orderId": "o_17" },
-      "result": { "id": "o_17", "status": "delivered", "totalCents": 1250 }
-    }
-  ],
-  "output": "Order o_17 has been delivered.",
-  "modelCalls": 2,
-  "tokens": { "input": 380, "output": 30 },
-  "latencyMs": 1500
-}
+include::sdk:example$doc-snippets/src/test/resources/eval/captures.jsonl[lines=4]
 ----
 
 All three fields are optional, and each must be a positive count.
@@ -171,7 +138,7 @@ Under a `TestModelProvider` the token budget abstains, because a mocked model re
 
 == The replayed batch
 
-The file the tool call examples on this page replay, one interaction per line:
+The complete file, one interaction per line:
 
 [source,json]
 .{sample-base-url}/doc-snippets/src/test/resources/eval/captures.jsonl[captures.jsonl]

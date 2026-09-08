@@ -11,7 +11,7 @@ Evaluation runs an agent through a set of eval cases and checks each reply, and 
 
 == Overview
 
-evalkit is the evaluation part of the Akka TestKit: the `akka.javasdk.testkit.eval` package in the `akka-javasdk-testkit` artifact.
+Evaluation is part of the Akka TestKit: the `akka.javasdk.testkit.eval` package in the `akka-javasdk-testkit` artifact.
 An evaluation is a JUnit test that extends `TestKitSupport`.
 The agent runs in the in-process runtime with its tools, session memory and guardrails.
 The runtime traces every model call and tool call, and the evaluation reads that trace as evidence.
@@ -19,18 +19,9 @@ Nothing is persisted and nothing leaves the test JVM.
 
 Use evaluation for three purposes.
 
-Wiring, in every build::
-Mock the model with `TestModelProvider` and assert that the agent calls the right tools with the right arguments, and turns the tool results into the reply.
-Every case must pass.
-
-Quality, on demand::
-Run the same cases against a real model.
-Replies vary between runs, so a gate holds the batch to a pass rate rather than every case to a pass.
-A model judge scores criteria that the built-in evaluators cannot state, such as tone.
-
-Baseline, from recordings::
-Turn recorded production interactions into cases with `EvalCaseParser`.
-A replayed case expects the tools, the order and the arguments production used, and holds the agent to the recorded spend.
+* In every build, with the model mocked by `TestModelProvider`, assert that the agent calls the right tools with the right arguments and turns the tool results into the reply. Every case must pass.
+* On demand, run the same cases against a real model. Replies vary between runs, so a gate holds the batch to a pass rate rather than every case to a pass. A model judge scores criteria that the built-in evaluators cannot state, such as tone.
+* Turn recorded production interactions into cases with `EvalCaseParser`. A replayed case expects the tools, the order and the arguments production used, and holds the agent to the recorded spend.
 
 Evaluation is not the place for the following.
 
@@ -77,10 +68,10 @@ It does not abort the batch.
 | The built-in evaluators: tool calls, order and arguments, reply text, and budgets. See xref:testing:evaluation/eval-cases.adoc[].
 
 | `Evaluator`
-| A custom check over the reply and the tool calls. See xref:testing:evaluation/eval-cases.adoc#custom-evaluators[Custom evaluators].
+| A custom check over the reply and the tool calls. See xref:testing:evaluation/eval-cases.adoc#custom-evaluators[Writing a custom evaluator].
 
 | `ExperimentRunner`
-| Builds the experiment step by step: the cases, the agent, the gate, then the run. See xref:testing:evaluation/getting-started.adoc#first-case[The first case].
+| Builds the experiment step by step: the cases, the agent, the gate, then the run. See xref:testing:evaluation/getting-started.adoc#first-case[Writing the first case].
 
 | `Gate`
 | What the batch must satisfy over all case results. Without a gate every case must pass. See xref:testing:evaluation/gates-and-reports.adoc[].
@@ -89,7 +80,7 @@ It does not abort the batch.
 | The outcome: whether the gate passed, the pass rate, every case result, and the report as text. See xref:testing:evaluation/gates-and-reports.adoc[].
 
 | `Judge`
-| A model that scores the reply against a criterion written in words. See xref:testing:evaluation/judges.adoc[].
+| A model that scores the reply against a criterion stated as a sentence. See xref:testing:evaluation/judges.adoc[].
 
 | `EvalCaseParser`, `ToolBindings`
 | Cases derived from recorded interactions. See xref:testing:evaluation/replay.adoc[].

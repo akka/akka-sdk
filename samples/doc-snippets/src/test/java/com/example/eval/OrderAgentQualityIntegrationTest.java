@@ -152,7 +152,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
 
   // tag::judge[]
   @Test
-  public void theReplyApologisesAndStatesTheAmount() {
+  public void theReplyApologizesAndStatesTheAmount() {
     var judge = Judge.agent(testKit); // <1>
 
     var refund = new EvalCase(
@@ -160,7 +160,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
       "Order o_9 arrived broken. I want my money back.",
       () -> orders.addOrder(new Order("o_9", "delivered", 4999)),
       Evaluators.tools("issueRefund"),
-      judge.mustSatisfy("the reply apologises and states the refunded amount") // <2>
+      judge.mustSatisfy("the reply apologizes and states the refunded amount") // <2>
     );
 
     var report = new ExperimentRunner(testKit).cases(refund).agent(OrderAgent::ask).run();

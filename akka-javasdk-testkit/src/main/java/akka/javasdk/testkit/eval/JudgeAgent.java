@@ -18,7 +18,7 @@ import akka.javasdk.annotations.Component;
  * settings takes precedence over both, so to run without a provider register a {@code
  * TestModelProvider} for this class as for any other agent.
  *
- * <p>Memory is disabled, so each judgement stands alone.
+ * <p>Memory is disabled, so each judgment stands alone.
  *
  * <p>The component is registered when the TestKit starts. It is not part of the deployed service.
  */

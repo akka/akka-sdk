@@ -11,23 +11,22 @@ include::ROOT:partial$include.adoc[]
 == Why an agent needs evaluation tests
 
 A unit test asserts that a call returns one expected value.
-An agent does not fit that shape.
+An agent's reply cannot be asserted that way.
 The model decides which tools to call, with which arguments, and how to word the reply, and a real model might not make the same decisions twice.
 Asserting on the exact reply fails on a harmless rewording and passes on a reply that sounds right but invents an order.
 
-An evaluation test asserts on what matters instead.
-It sends the agent a fixed set of messages, the eval cases, and checks each turn with evaluators: which tools were called, in which order, with which arguments, what the reply must contain, and what a turn may cost.
+An evaluation test sends the agent a fixed set of messages, the eval cases, and checks each turn with evaluators: which tools were called, in which order, with which arguments, what the reply must contain, and what a turn may cost.
 Criteria that have no exact answer, such as tone, go to a model judge that scores the reply.
 Because a real model varies, an evaluation counts results over the whole set and holds it to a rate, rather than holding every case to a pass.
 
-The evaluation kit is a set of utilities for testing Akka agents with an ordinary JUnit test.
+The EvalKit is a set of utilities in the Akka TestKit for testing agents with an ordinary JUnit test.
 
-* The agent runs in the TestKit runtime with its tools, session memory and guardrails, not in a harness that imitates them.
+* The agent runs in the TestKit runtime with its tools, session memory and guardrails.
 * The evidence is the trace the runtime records for the turn. The test does not instrument the agent.
 * With the model mocked by `TestModelProvider`, the same cases are deterministic and run in every build. Without the mock, they run against the real model on demand, with a gate on rates.
 * Cases can be written in Java or derived from recorded production interactions.
 
-This page builds an evaluation for a support agent of an online shop, from the agent to a gated batch.
+This page builds an evaluation for the order agent of an online shop, from the agent to a gated batch.
 The complete code is in the link:{sample-base-url}/doc-snippets/src/test/java/com/example/eval[doc-snippets sample, window="new"].
 
 == The agent under evaluation
@@ -110,7 +109,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 <3> Runs the cases and returns an `EvalReport`.
 <4> Without a gate the report passes only when every case passes. The rendered report is the failure message, so a failed case prints its evidence.
 
-A single case against a real model is a smoke test.
+A single case against a real model is not a reliable check.
 The model may word the reply differently on another run, or call a tool it did not call before, and the case fails on that run.
 The next step holds a set of cases to a rate instead.
 
@@ -158,7 +157,7 @@ The indented lines are the pass counts per evaluator, over the cases that activa
 The last line sums what the run spent.
 xref:testing:evaluation/gates-and-reports.adoc#reading-the-report[Reading the report] explains every line.
 
-== Next steps
+== See also
 
 * xref:testing:evaluation/eval-cases.adoc[] lists every built-in evaluator and when it abstains.
 * xref:testing:evaluation/judges.adoc[] scores criteria that have no exact answer.

@@ -316,7 +316,7 @@ public class TelemetryReader {
   }
 
   // A function tool is registered as <ToolClass>_<method>. The span names the implementing class,
-  // possibly qualified. Without it, a leading capitalised segment before an underscore is taken as
+  // possibly qualified. Without it, a leading capitalized segment before an underscore is taken as
   // the class. An MCP tool is named by its server, so its name is kept as is.
   static String toolName(String toolName, String implementation, boolean mcp) {
     if (toolName == null) return "?";

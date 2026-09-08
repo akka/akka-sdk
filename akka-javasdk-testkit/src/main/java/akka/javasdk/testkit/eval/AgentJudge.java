@@ -27,6 +27,7 @@ import java.util.function.Function;
 public final class AgentJudge implements Judge {
 
   /** The system message a judge sends unless {@link #withSystemMessage} replaces it. */
+  // tag::system-message[]
   public static final String DEFAULT_SYSTEM_MESSAGE =
       """
       You judge whether an agent's reply meets a stated criterion.
@@ -39,6 +40,8 @@ public final class AgentJudge implements Judge {
 
       Reply as JSON: {"score": <number between 0 and 1>, "reason": "<one sentence>"}
       """;
+
+  // end::system-message[]
 
   private final ComponentClient componentClient;
   private final String systemMessage;
@@ -109,7 +112,7 @@ public final class AgentJudge implements Judge {
         .invoke(new JudgeAgent.Request(systemMessage, userMessage.apply(input), modelConfigPath));
   }
 
-  /** The criterion and the evidence as text, in labelled sections. */
+  /** The criterion and the evidence as text, in labeled sections. */
   public static String defaultUserMessage(Input input) {
     var text = new StringBuilder();
     text.append("Criterion:\n").append(input.criterion());

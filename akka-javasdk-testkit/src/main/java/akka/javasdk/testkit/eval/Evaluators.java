@@ -56,7 +56,7 @@ public final class Evaluators {
   /** {@link #forbiddenTools}: none of the named tools was called. */
   public static final String FORBIDDEN_TOOLS = "forbidden-tools";
 
-  /** {@link #answerContains}: the reply carries every needle. */
+  /** {@link #answerContains}: the reply carries every given text. */
   public static final String ANSWER_CONTAINS = "answer-contains";
 
   /** {@link #answerMatches}: the reply matches the pattern. */
@@ -100,10 +100,10 @@ public final class Evaluators {
    * The result of the named tool must contain this text, case-insensitively. Abstains when the tool
    * was never called or the trace carries no result for it.
    */
-  public static Evaluator toolResult(String tool, String needle) {
+  public static Evaluator toolResult(String tool, String text) {
     requireName(tool, "tool");
-    if (needle == null || needle.isEmpty()) throw new IllegalArgumentException("needle required");
-    return new ToolResult(tool, needle);
+    if (text == null || text.isEmpty()) throw new IllegalArgumentException("text required");
+    return new ToolResult(tool, text);
   }
 
   /** None of these tools may be called. */
@@ -144,11 +144,11 @@ public final class Evaluators {
     return new LatencyBudget(latency);
   }
 
-  /** The reply must contain every needle, case-insensitively. */
-  public static Evaluator answerContains(String... needles) {
-    if (needles == null || needles.length == 0)
-      throw new IllegalArgumentException("at least one needle required");
-    return new AnswerContains(List.of(needles));
+  /** The reply must contain every given text, case-insensitively. */
+  public static Evaluator answerContains(String... texts) {
+    if (texts == null || texts.length == 0)
+      throw new IllegalArgumentException("at least one text required");
+    return new AnswerContains(List.of(texts));
   }
 
   /** The reply must match the regular expression, anywhere in it. Anchor it for a full match. */
@@ -244,7 +244,7 @@ public final class Evaluators {
     }
   }
 
-  private record ToolResult(String tool, String needle) implements Evaluator {
+  private record ToolResult(String tool, String text) implements Evaluator {
     @Override
     public String name() {
       return TOOL_RESULTS;
@@ -261,10 +261,10 @@ public final class Evaluators {
       if (results.isEmpty()) {
         return EvalResult.abstain(tool + " has no recorded result");
       }
-      var lowerNeedle = needle.toLowerCase(Locale.ROOT);
-      return results.stream().anyMatch(r -> r.toLowerCase(Locale.ROOT).contains(lowerNeedle))
+      var lowerText = text.toLowerCase(Locale.ROOT);
+      return results.stream().anyMatch(r -> r.toLowerCase(Locale.ROOT).contains(lowerText))
           ? EvalResult.pass()
-          : EvalResult.fail(tool + " result expected to carry " + needle + ", was " + results);
+          : EvalResult.fail(tool + " result expected to carry " + text + ", was " + results);
     }
   }
 
@@ -361,7 +361,7 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerContains(List<String> needles) implements Evaluator {
+  private record AnswerContains(List<String> texts) implements Evaluator {
     @Override
     public String name() {
       return ANSWER_CONTAINS;
@@ -371,8 +371,8 @@ public final class Evaluators {
     public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
       var text = interaction.reply().toLowerCase(Locale.ROOT);
       var missing =
-          needles.stream()
-              .filter(needle -> !text.contains(needle.toLowerCase(Locale.ROOT)))
+          texts.stream()
+              .filter(expected -> !text.contains(expected.toLowerCase(Locale.ROOT)))
               .toList();
       return missing.isEmpty()
           ? EvalResult.pass()

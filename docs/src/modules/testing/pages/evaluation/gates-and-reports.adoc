@@ -20,7 +20,7 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is wha
 | Gate | Passes when
 
 | `Gate.allCasesPass()`
-| No case has a failed result. This is the gate in force when none is given.
+| No case has a failed result. This is the gate that applies when none is given.
 
 | `Gate.passRateAtLeast(rate)`
 | The share of cases with no failed result is at least the rate.
@@ -83,12 +83,13 @@ Line by line:
 . The gate's verdict and its detail. A combined gate lists the detail of each part.
 . One line per evaluator: the cases it passed over the cases it judged. An evaluator that abstained on some cases shows the count in brackets, for example `token-budget 0/0 (2 abstained)`.
 . The spend: model calls, tokens and latency summed over the cases whose trace carried model calls, and the slowest case. The line is absent when no case carried model calls.
-. After these lines, every failed case with its evidence, as described next.
+. After these lines, every failed case with its evidence, see <<reading-a-failed-case>>.
 
+[#reading-a-failed-case]
 == Reading a failed case
 
 The rendered report ends with every failed case and its evidence.
-The report below is from a case that asks where order o_42 is, with an evaluator that expects `getOrder` to be called with `o_43`:
+This report is from a case that asks where order o_42 is, with an evaluator that expects `getOrder` to be called with `o_43`:
 
 [listing]
 ----

@@ -8,8 +8,8 @@ import akka.javasdk.testkit.ToolCall;
 import java.util.List;
 
 /**
- * A model that scores a reply against a criterion written in words. {@link #mustSatisfy} and {@link
- * #scoringAtLeast} turn the score into an {@link Evaluator}.
+ * A model that scores a reply against a criterion given as a sentence. {@link #mustSatisfy} and
+ * {@link #scoringAtLeast} turn the score into an {@link Evaluator}.
  *
  * <pre>{@code
  * var judge = Judge.agent(testKit);

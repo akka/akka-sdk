@@ -37,7 +37,7 @@ public final class Gate {
     this.condition = condition;
   }
 
-  /** Every case must pass. The gate in force when none is given. */
+  /** Every case must pass. The gate that applies when none is given. */
   public static Gate allCasesPass() {
     return new Gate(
         results -> {

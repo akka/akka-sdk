@@ -335,7 +335,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
   @Test
   public void judgedAgainstACriterion() {
-    // evalkit's judge agent, with its model mocked the same way the support agent's is.
+    // The testkit's judge agent, with its model mocked the same way the support agent's is.
     judgeModel
         .whenUserMessage(message -> message.content().contains("Ada Lovelace"))
         .reply(
