@@ -4,15 +4,12 @@
 
 package akka.javasdk.testkit.eval;
 
-import akka.javasdk.testkit.ToolCall;
-import java.util.List;
-
 /**
  * One check over one case's evidence. The built-ins are in {@link Evaluators}; a custom one
  * implements this interface. Give it to an {@link EvalCase}, or to {@link
  * ExperimentCases#evaluator} to run on every case.
  *
- * <p>An evaluator reads only the interaction and the tool calls. It never calls the service.
+ * <p>An evaluator reads only the interaction. It never calls the service.
  */
 public interface Evaluator {
 
@@ -23,7 +20,7 @@ public interface Evaluator {
   String name();
 
   /** Checks one turn. Abstain when the evidence this check needs is absent. */
-  EvalResult evaluate(EvalCase evalCase, Interaction interaction, List<ToolCall> toolCalls);
+  EvalResult evaluate(EvalCase evalCase, Interaction interaction);
 
   /**
    * What an evaluator found on one turn. This is what a {@link ExperimentRunner.CaseResult} holds.
@@ -42,9 +39,9 @@ public interface Evaluator {
     }
 
     public EvalResult {
+      if (evaluator == null) throw new IllegalArgumentException("evaluator required");
       if (verdict == null) throw new IllegalArgumentException("verdict required");
-      evaluator = evaluator == null ? "" : evaluator;
-      detail = detail == null ? "" : detail;
+      if (detail == null) throw new IllegalArgumentException("detail required");
     }
 
     public static EvalResult pass() {

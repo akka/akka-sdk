@@ -163,7 +163,8 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      var calls = interaction.toolCalls();
       var called = names(calls);
       var missing = expected.stream().filter(t -> !called.contains(t)).toList();
       return missing.isEmpty()
@@ -179,7 +180,8 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      var calls = interaction.toolCalls();
       var called = names(calls);
       var missing = expected.stream().filter(t -> !called.contains(t)).toList();
       if (!missing.isEmpty()) {
@@ -207,7 +209,8 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      var calls = interaction.toolCalls();
       var toTheTool = calls.stream().filter(c -> c.name().equals(tool)).toList();
       if (toTheTool.isEmpty()) {
         return EvalResult.abstain(tool + " was never called");
@@ -241,7 +244,8 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      var calls = interaction.toolCalls();
       var results =
           calls.stream()
               .filter(c -> c.name().equals(tool))
@@ -264,7 +268,8 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      var calls = interaction.toolCalls();
       var called = names(calls);
       var violated = forbidden.stream().filter(called::contains).toList();
       return violated.isEmpty() ? EvalResult.pass() : EvalResult.fail("called " + violated);
@@ -278,7 +283,8 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      var calls = interaction.toolCalls();
       return calls.size() <= limit
           ? EvalResult.pass()
           : EvalResult.fail(
@@ -293,8 +299,8 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
-      var made = reply.modelCalls().size();
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      var made = interaction.modelCalls().size();
       if (made == 0) {
         return EvalResult.abstain("no model calls in the evidence");
       }
@@ -311,8 +317,8 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
-      var used = reply.totalTokens();
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      var used = interaction.totalTokens();
       if (used == 0) {
         return EvalResult.abstain("no token counts in the evidence");
       }
@@ -322,9 +328,9 @@ public final class Evaluators {
               "used "
                   + used
                   + " tokens ("
-                  + reply.inputTokens()
+                  + interaction.inputTokens()
                   + " in, "
-                  + reply.outputTokens()
+                  + interaction.outputTokens()
                   + " out), allowed "
                   + limit);
     }
@@ -337,8 +343,8 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
-      var took = reply.latency();
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      var took = interaction.latency();
       if (took.isZero()) {
         return EvalResult.abstain("no timing in the evidence");
       }
@@ -355,8 +361,8 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
-      var text = reply.text().toLowerCase(Locale.ROOT);
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      var text = interaction.reply().toLowerCase(Locale.ROOT);
       var missing =
           needles.stream()
               .filter(needle -> !text.contains(needle.toLowerCase(Locale.ROOT)))
@@ -374,14 +380,14 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> calls) {
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
       Pattern pattern;
       try {
         pattern = Pattern.compile(regex, Pattern.DOTALL);
       } catch (PatternSyntaxException e) {
         return EvalResult.fail("not a regular expression: " + regex);
       }
-      return pattern.matcher(reply.text()).find()
+      return pattern.matcher(interaction.reply()).find()
           ? EvalResult.pass()
           : EvalResult.fail("reply does not match /" + regex + "/");
     }

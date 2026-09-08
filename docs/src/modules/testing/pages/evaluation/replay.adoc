@@ -194,7 +194,7 @@ gate: passed — pass rate 1.00 over 5 cases, required 0.90
 spend: 9 model calls, 0 tokens in, 0 out, 30 ms in total, slowest prod-2 at 7 ms, over 5/5 cases with evidence
 ----
 
-Three recordings name tools, so three cases have `tools` and `tool-order` findings, and their five recorded arguments give five `tool-arguments` findings.
+Three recordings name tools, so three cases have `tools` and `tool-order` results, and their five recorded arguments give five `tool-arguments` results.
 Two recordings carry spend figures, so two cases have budgets, and their token budgets abstained.
 
 == See also

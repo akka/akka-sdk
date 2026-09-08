@@ -18,7 +18,7 @@ Asserting on the exact reply fails on a harmless rewording and passes on a reply
 An evaluation test asserts on what matters instead.
 It sends the agent a fixed set of messages, the eval cases, and checks each turn with evaluators: which tools were called, in which order, with which arguments, what the reply must contain, and what a turn may cost.
 Criteria that have no exact answer, such as tone, go to a model judge that scores the reply.
-Because a real model varies, an evaluation counts findings over the whole set and holds it to a rate, rather than holding every case to a pass.
+Because a real model varies, an evaluation counts results over the whole set and holds it to a rate, rather than holding every case to a pass.
 
 The evaluation kit is a set of utilities for testing Akka agents with an ordinary JUnit test.
 

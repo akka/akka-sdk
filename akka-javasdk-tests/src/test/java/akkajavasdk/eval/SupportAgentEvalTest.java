@@ -150,7 +150,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
             "Is cust_1 still one of our customers, and under what name?",
             () -> {
               crm.reset();
-              crm.prime(new Customer("cust_1", "Ada Lovelace", "gold"));
+              crm.add(new Customer("cust_1", "Ada Lovelace", "gold"));
             },
             Evaluators.tools("getCustomer"),
             Evaluators.toolArgument("getCustomer", "customerId", "cust_1"),
@@ -161,8 +161,8 @@ public class SupportAgentEvalTest extends TestKitSupport {
             "What is cust_7 waiting on? List their open tickets.",
             () -> {
               crm.reset();
-              crm.prime(new Customer("cust_7", "Grace Hopper", "silver"));
-              crm.primeTickets("cust_7", new Ticket("t_9", "card declined at checkout", "open"));
+              crm.add(new Customer("cust_7", "Grace Hopper", "silver"));
+              crm.addTickets("cust_7", new Ticket("t_9", "card declined at checkout", "open"));
             },
             Evaluators.tools("getCustomer", "openTickets"),
             Evaluators.toolOrder("getCustomer", "openTickets"),
@@ -184,7 +184,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
             "Who is cust_1?",
             () -> {
               crm.reset();
-              crm.prime(new Customer("cust_1", "Ada Lovelace", "gold"));
+              crm.add(new Customer("cust_1", "Ada Lovelace", "gold"));
             },
             Evaluators.toolArgument("getCustomer", "customerId", "cust_1"),
             Evaluators.toolResult("getCustomer", "Ada Lovelace"),
@@ -205,8 +205,8 @@ public class SupportAgentEvalTest extends TestKitSupport {
             "What is cust_7 waiting on? List their open tickets.",
             () -> {
               crm.reset();
-              crm.prime(new Customer("cust_7", "Grace Hopper", "silver"));
-              crm.primeTickets("cust_7", new Ticket("t_9", "card declined at checkout", "open"));
+              crm.add(new Customer("cust_7", "Grace Hopper", "silver"));
+              crm.addTickets("cust_7", new Ticket("t_9", "card declined at checkout", "open"));
             },
             Evaluators.toolOrder("getCustomer", "openTickets"));
 
@@ -220,7 +220,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
     assertThat(interaction.modelCalls().getLast().finishReasons()).contains("STOP");
     assertThat(interaction.modelCalls()).allSatisfy(call -> assertThat(call.model()).isNotEmpty());
     assertThat(interaction.latency()).isPositive();
-    assertThat(interaction.finalModelText()).isEqualTo(interaction.text());
+    assertThat(interaction.finalModelText()).isEqualTo(interaction.reply());
     assertThat(interaction.guardrails()).isEmpty();
     assertThat(interaction.blocked()).isFalse();
     assertThat(result.describe()).contains("model: 3 calls");
@@ -234,8 +234,8 @@ public class SupportAgentEvalTest extends TestKitSupport {
             "What is cust_7 waiting on? List their open tickets.",
             () -> {
               crm.reset();
-              crm.prime(new Customer("cust_7", "Grace Hopper", "silver"));
-              crm.primeTickets("cust_7", new Ticket("t_9", "card declined at checkout", "open"));
+              crm.add(new Customer("cust_7", "Grace Hopper", "silver"));
+              crm.addTickets("cust_7", new Ticket("t_9", "card declined at checkout", "open"));
             },
             Evaluators.toolCallsAtMost(2),
             Evaluators.modelCallsAtMost(2),
@@ -349,7 +349,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
             "Who is cust_1?",
             () -> {
               crm.reset();
-              crm.prime(new Customer("cust_1", "Ada Lovelace", "gold"));
+              crm.add(new Customer("cust_1", "Ada Lovelace", "gold"));
             },
             Evaluators.tools("getCustomer"),
             judge.mustSatisfy("the reply states the customer's name and tier and invents nothing"));
@@ -373,7 +373,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
                 "Who is cust_1?",
                 () -> {
                   crm.reset();
-                  crm.prime(new Customer("cust_1", "Ada Lovelace", "gold"));
+                  crm.add(new Customer("cust_1", "Ada Lovelace", "gold"));
                 },
                 judge.mustSatisfy("the reply is helpful")));
 
@@ -389,7 +389,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
             "Who is cust_1?",
             () -> {
               crm.reset();
-              crm.prime(new Customer("cust_1", "Ada Lovelace", "gold"));
+              crm.add(new Customer("cust_1", "Ada Lovelace", "gold"));
             },
             Evaluators.toolArgument("getCustomer", "customerId", "cust_2"));
 
@@ -403,9 +403,8 @@ public class SupportAgentEvalTest extends TestKitSupport {
   }
 
   /**
-   * The mocked dependency: canned answers, nothing written down. A curated case primes it with
-   * plain Java; a replayed case primes it through {@link ToolBindings} with what production
-   * recorded.
+   * The mocked dependency: canned answers, nothing written down. A curated case fills it with plain
+   * Java; a replayed case fills it through {@link ToolBindings} with what production recorded.
    */
   static final class CannedCrmClient implements CrmClient {
 
@@ -429,12 +428,12 @@ public class SupportAgentEvalTest extends TestKitSupport {
       tickets.clear();
     }
 
-    void prime(Customer... primed) {
-      for (var customer : primed) customers.put(customer.id(), customer);
+    void add(Customer... canned) {
+      for (var customer : canned) customers.put(customer.id(), customer);
     }
 
-    void primeTickets(String customerId, Ticket... primed) {
-      tickets.put(customerId, List.of(primed));
+    void addTickets(String customerId, Ticket... canned) {
+      tickets.put(customerId, List.of(canned));
     }
 
     /** {@link ToolBindings.ResultLoader} for getCustomer. */

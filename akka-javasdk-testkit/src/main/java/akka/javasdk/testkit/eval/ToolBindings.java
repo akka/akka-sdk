@@ -17,8 +17,7 @@ import java.util.Set;
  *
  * <pre>{@code
  * var bindings = ToolBindings.builder()
- *     .bind("getCustomer", call ->
- *         crm.prime((String) call.argument("customerId"), call.resultAs(Customer.class)))
+ *     .bind("getCustomer", call -> crm.add(call.resultAs(Customer.class)))
  *     .build();
  * }</pre>
  *
@@ -39,8 +38,9 @@ public final class ToolBindings {
 
     public RecordedCall {
       if (tool == null || tool.isBlank()) throw new IllegalArgumentException("tool required");
-      arguments = arguments == null ? Map.of() : Map.copyOf(arguments);
-      resultJson = resultJson == null ? "null" : resultJson;
+      if (arguments == null) throw new IllegalArgumentException("arguments required");
+      if (resultJson == null) throw new IllegalArgumentException("resultJson required");
+      arguments = Map.copyOf(arguments);
     }
 
     /** The recorded value of one argument, or null when the call did not carry it. */
@@ -106,7 +106,7 @@ public final class ToolBindings {
     private Builder() {}
 
     /**
-     * Binds a tool to the loader that primes its stub.
+     * Binds a tool to the loader that stores its recorded result in the stub.
      *
      * @throws IllegalArgumentException when the tool is already bound
      */

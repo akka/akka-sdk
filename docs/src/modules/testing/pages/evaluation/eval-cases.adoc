@@ -24,7 +24,7 @@ link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/EvalCase.html[EvalCase] 
 | The message the agent receives. The runner turns it into the command with the mapping given to `agent(...)`, see xref:testing:evaluation/getting-started.adoc#first-case[The first case].
 
 | `setup`
-| A `Runnable` that runs before the agent is called. Use it to prime the stubs the agent's tools call, or to seed entities through the component client. `EvalCase.NO_SETUP` when the case needs none. `EvalCase.of(id, userMessage, evaluators...)` creates a case without a setup.
+| A `Runnable` that runs before the agent is called. Use it to load answers into the stubs the agent's tools call, or to seed entities through the component client. `EvalCase.NO_SETUP` when the case needs none. `EvalCase.of(id, userMessage, evaluators...)` creates a case without a setup.
 
 | `evaluators`
 | The checks the turn must pass, as a list or as trailing arguments. Empty when the case only collects evidence. `withEvaluators(...)` returns the same case with more evaluators.
@@ -38,7 +38,7 @@ Each case runs in a fresh session, so no case can read the session memory of an 
 == Evaluators
 
 An link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator] is one check over the reply and the traced tool calls of a turn.
-It reports a finding: pass, fail, or abstain when the evidence it needs is absent.
+It reports a result: pass, fail, or abstain when the evidence it needs is absent.
 A case carries any number of evaluators, and they are all of the same type:
 
 * the built-in evaluators, created through the factories in link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluators.html[Evaluators];
@@ -127,7 +127,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 [#custom-evaluators]
 == Custom evaluators
 
-A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator]: `name()` returns the name its results are reported under, and `evaluate(...)` receives the case and everything the runtime traced for the turn and returns an `EvalResult`: a pass, a fail with a reason, or an abstention.
+A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator]: `name()` returns the name its results are reported under, and `evaluate(...)` receives the case and the `Interaction`, the reply and everything the runtime traced for the turn, and returns an `EvalResult`: a pass, a fail with a reason, or an abstention.
 
 Below is an example of a tool call evaluator that checks that the amount the agent passed to `issueRefund` does not exceed the total of the order.
 
@@ -136,7 +136,7 @@ Below is an example of a tool call evaluator that checks that the amount the age
 ----
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/RefundWithinTotal.java[tag=class]
 ----
-<1> The name the report prints the findings under, and a gate can rate.
+<1> The name the report prints the results under, and a gate can rate.
 <2> No refund call means nothing to check. Abstain rather than fail; the `tools` evaluator on the case reports the missing call.
 <3> Tool arguments arrive as the runtime decoded them from the model's JSON: a number is a `Number`, an object is a `Map`.
 
@@ -155,8 +155,8 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 An evaluator reads only what it names and abstains when that evidence is absent.
 A tool that was never called fails `tools` and makes `tool-order` and `tool-arguments` abstain, so one missing call is reported once.
 An abstention is neither a pass nor a fail.
-A case with abstentions and no failed finding passes.
-The report counts abstentions per evaluator name, and `Gate.evaluatorRateAtLeast` rates evaluators over the findings that did not abstain.
+A case with abstentions and no failed result passes.
+The report counts abstentions per evaluator name, and `Gate.evaluatorRateAtLeast` rates evaluators over the results that did not abstain.
 
 == See also
 

@@ -41,10 +41,10 @@ Evaluation is not the place for the following.
 
 `ExperimentRunner` runs the cases one after the other, in the calling thread.
 
-. The case's setup runs. It primes the stubs the agent's tools call.
+. The case's setup runs. It loads canned answers into the stubs the agent's tools call.
 . The runner calls the agent's command handler through the TestKit component client, in a fresh session, with the case's user message.
 . The runner reads the trace the runtime wrote for that session through `TelemetryReader`: the tool calls with their arguments, results and errors, the model calls with their token counts, the guardrail evaluations and the latency.
-. Every evaluator of the case reads the reply and the trace and reports a finding: pass, fail, or abstain when the evidence it needs is absent.
+. Every evaluator of the case reads the reply and the trace and reports a result: pass, fail, or abstain when the evidence it needs is absent.
 . The gate checks the aggregated results and the report is returned.
 
 [mermaid]
@@ -56,8 +56,8 @@ flowchart LR
     Agent -.->|trace| Telemetry[TelemetryReader]
     Telemetry --> Runner
     Runner --> Evaluators[Built-in evaluators, judges, custom evaluators]
-    Evaluators --> Findings[Findings per case]
-    Findings --> Gate
+    Evaluators --> Results[Results per case]
+    Results --> Gate
     Gate --> Report[EvalReport]
 ----
 

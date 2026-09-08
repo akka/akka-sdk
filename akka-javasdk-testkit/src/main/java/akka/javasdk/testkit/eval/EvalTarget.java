@@ -59,8 +59,9 @@ interface EvalTarget {
 
     record Failed(String reason, List<ToolCall> toolCalls) implements Outcome {
       public Failed {
-        reason = reason == null ? "" : reason;
-        toolCalls = toolCalls == null ? List.of() : List.copyOf(toolCalls);
+        if (reason == null) throw new IllegalArgumentException("reason required");
+        if (toolCalls == null) throw new IllegalArgumentException("toolCalls required");
+        toolCalls = List.copyOf(toolCalls);
       }
     }
   }

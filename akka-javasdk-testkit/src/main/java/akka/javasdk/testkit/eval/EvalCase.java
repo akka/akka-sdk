@@ -13,8 +13,8 @@ import java.util.List;
  *
  * @param id unique within the suite; names the case in the report
  * @param userMessage the message sent to the agent
- * @param setup runs before the agent is called, for example to prime stubs or seed entities. {@link
- *     #NO_SETUP} when the case needs none
+ * @param setup runs before the agent is called, for example to load canned answers into stubs or to
+ *     seed entities. {@link #NO_SETUP} when the case needs none
  * @param evaluators the checks over the reply and the tool calls: built-ins from {@link
  *     Evaluators}, a {@link Judge} criterion, or a custom {@link Evaluator}. Empty when the case
  *     only collects evidence
@@ -27,15 +27,16 @@ public record EvalCase(String id, String userMessage, Runnable setup, List<Evalu
     if (id == null || id.isBlank()) throw new IllegalArgumentException("case id required");
     if (userMessage == null || userMessage.isBlank())
       throw new IllegalArgumentException("userMessage required");
-    setup = setup == null ? NO_SETUP : setup;
-    evaluators = evaluators == null ? List.of() : List.copyOf(evaluators);
+    if (setup == null) throw new IllegalArgumentException("setup required, or NO_SETUP");
+    if (evaluators == null) throw new IllegalArgumentException("evaluators required");
     if (evaluators.stream().anyMatch(e -> e == null))
       throw new IllegalArgumentException("evaluator required");
+    evaluators = List.copyOf(evaluators);
   }
 
   /** A case with a setup and evaluators. */
   public EvalCase(String id, String userMessage, Runnable setup, Evaluator... evaluators) {
-    this(id, userMessage, setup, evaluators == null ? List.of() : List.of(evaluators));
+    this(id, userMessage, setup, List.of(evaluators));
   }
 
   /** A case with no setup. */

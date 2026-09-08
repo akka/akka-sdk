@@ -15,7 +15,7 @@ import java.util.List;
  * What one turn produced: the agent's reply as text and what the runtime traced while producing it.
  * This is what an {@link Evaluator} reads.
  *
- * @param text the agent's reply
+ * @param reply the agent's reply
  * @param toolCalls in call order
  * @param modelCalls in call order
  * @param guardrails every guardrail evaluation, in order
@@ -24,7 +24,7 @@ import java.util.List;
  *     reply; empty when the trace did not carry it
  */
 public record Interaction(
-    String text,
+    String reply,
     List<ToolCall> toolCalls,
     List<ModelCall> modelCalls,
     List<GuardrailResult> guardrails,
@@ -32,33 +32,41 @@ public record Interaction(
     String finalModelText) {
 
   public Interaction {
-    text = text == null ? "" : text;
-    toolCalls = toolCalls == null ? List.of() : List.copyOf(toolCalls);
-    modelCalls = modelCalls == null ? List.of() : List.copyOf(modelCalls);
-    guardrails = guardrails == null ? List.of() : List.copyOf(guardrails);
-    latency = latency == null ? Duration.ZERO : latency;
-    finalModelText = finalModelText == null ? "" : finalModelText;
+    if (reply == null) throw new IllegalArgumentException("reply required");
+    if (toolCalls == null) throw new IllegalArgumentException("toolCalls required");
+    if (modelCalls == null) throw new IllegalArgumentException("modelCalls required");
+    if (guardrails == null) throw new IllegalArgumentException("guardrails required");
+    if (latency == null) throw new IllegalArgumentException("latency required");
+    if (finalModelText == null) throw new IllegalArgumentException("finalModelText required");
+    toolCalls = List.copyOf(toolCalls);
+    modelCalls = List.copyOf(modelCalls);
+    guardrails = List.copyOf(guardrails);
   }
 
   /** A reply with tool calls only. */
-  public Interaction(String text, List<ToolCall> toolCalls) {
-    this(text, toolCalls, List.of(), List.of(), Duration.ZERO, "");
+  public Interaction(String reply, List<ToolCall> toolCalls) {
+    this(reply, toolCalls, List.of(), List.of(), Duration.ZERO, "");
   }
 
   /** A reply with the traced evidence. */
-  public Interaction(String text, AgentTrace trace) {
+  public Interaction(String reply, AgentTrace trace) {
     this(
-        text,
-        trace.toolCalls(),
+        reply,
+        required(trace).toolCalls(),
         trace.modelCalls(),
         trace.guardrails(),
         trace.duration(),
         trace.finalModelText());
   }
 
+  private static AgentTrace required(AgentTrace trace) {
+    if (trace == null) throw new IllegalArgumentException("trace required");
+    return trace;
+  }
+
   /** A reply with no evidence. */
-  public static Interaction of(String text) {
-    return new Interaction(text, List.of());
+  public static Interaction of(String reply) {
+    return new Interaction(reply, List.of());
   }
 
   /** Input tokens summed over the model calls. */

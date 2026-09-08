@@ -19,7 +19,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 /**
- * Runs cases against an agent and collects the findings. Sequential and in-process, nothing is
+ * Runs cases against an agent and collects the results. Sequential and in-process, nothing is
  * persisted.
  *
  * <p>Per case: run the setup, call the agent in a fresh session, read the evidence the runtime
@@ -159,20 +159,14 @@ public final class ExperimentRunner {
                 List.of(EvalResult.fail(failed.reason()).attributedTo(Evaluators.TARGET)));
         case EvalTarget.Outcome.Answered answered -> {
           var interaction = answered.interaction();
-          var findings = new ArrayList<EvalResult>();
+          var results = new ArrayList<EvalResult>();
           for (var evaluator : evalCase.evaluators()) {
-            findings.add(
-                evaluator
-                    .evaluate(evalCase, interaction, interaction.toolCalls())
-                    .attributedTo(evaluator.name()));
+            results.add(evaluator.evaluate(evalCase, interaction).attributedTo(evaluator.name()));
           }
           for (var evaluator : evaluators) {
-            findings.add(
-                evaluator
-                    .evaluate(evalCase, interaction, interaction.toolCalls())
-                    .attributedTo(evaluator.name()));
+            results.add(evaluator.evaluate(evalCase, interaction).attributedTo(evaluator.name()));
           }
-          yield new CaseResult(evalCase.id(), interaction, List.copyOf(findings));
+          yield new CaseResult(evalCase.id(), interaction, List.copyOf(results));
         }
       };
     }
@@ -182,21 +176,21 @@ public final class ExperimentRunner {
     return e.getClass().getSimpleName() + (e.getMessage() == null ? "" : ": " + e.getMessage());
   }
 
-  /** One case's evidence and findings. */
+  /** One case's evidence and results. */
   public record CaseResult(String caseId, Interaction interaction, List<EvalResult> evalResults) {
 
-    /** No failed finding. A setup or agent failure is a failed finding. */
+    /** No failed result. A setup or agent failure is a failed result. */
     public boolean passed() {
       return evalResults.stream().noneMatch(f -> f.verdict() == EvalResult.Verdict.FAIL);
     }
 
-    /** The evidence and the findings as text, for a failed test's output. */
+    /** The evidence and the results as text, for a failed test's output. */
     public String describe() {
       var text = new StringBuilder();
       text.append("case ").append(caseId).append(passed() ? " passed" : " FAILED").append('\n');
-      text.append("  reply: ").append(oneLine(interaction.text())).append('\n');
+      text.append("  reply: ").append(oneLine(interaction.reply())).append('\n');
       if (!interaction.finalModelText().isEmpty()
-          && !interaction.finalModelText().equals(interaction.text())) {
+          && !interaction.finalModelText().equals(interaction.reply())) {
         text.append("  model text: ").append(oneLine(interaction.finalModelText())).append('\n');
       }
       text.append("  tools: ").append(toolEvidence()).append('\n');
@@ -207,14 +201,14 @@ public final class ExperimentRunner {
         text.append("  guardrails: ").append(guardrailEvidence()).append('\n');
       }
       if (evalResults.isEmpty()) {
-        text.append("  findings: none declared\n");
+        text.append("  results: none declared\n");
       }
-      for (var finding : evalResults) {
+      for (var evalResult : evalResults) {
         text.append("  ")
-            .append(finding.verdict())
+            .append(evalResult.verdict())
             .append(' ')
-            .append(finding.evaluator())
-            .append(finding.detail().isEmpty() ? "" : ": " + finding.detail())
+            .append(evalResult.evaluator())
+            .append(evalResult.detail().isEmpty() ? "" : ": " + evalResult.detail())
             .append('\n');
       }
       return text.toString();
@@ -262,7 +256,7 @@ public final class ExperimentRunner {
     /** Whether the gate passed. */
     boolean passed();
 
-    /** The share of cases with no failed finding. */
+    /** The share of cases with no failed result. */
     double passRate();
 
     /** One result per case, in the order the cases were given. */
@@ -339,8 +333,10 @@ public final class ExperimentRunner {
     private Map<String, Rate> rates() {
       var rates = new LinkedHashMap<String, Rate>();
       for (var result : results) {
-        for (var finding : result.evalResults()) {
-          rates.computeIfAbsent(finding.evaluator(), name -> new Rate()).count(finding.verdict());
+        for (var evalResult : result.evalResults()) {
+          rates
+              .computeIfAbsent(evalResult.evaluator(), name -> new Rate())
+              .count(evalResult.verdict());
         }
       }
       return rates;

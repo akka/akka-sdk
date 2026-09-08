@@ -6,9 +6,9 @@
  * prepares the mocked tools, and the evaluators the reply and the tool calls are checked with. The
  * built-in evaluators are in {@link akka.javasdk.testkit.eval.Evaluators}. Cases are written in
  * Java, or derived from recorded production interactions by {@link
- * akka.javasdk.testkit.eval.EvalCaseParser}. A derived case primes the test's stubs with the
- * recorded tool results through {@link akka.javasdk.testkit.eval.ToolBindings} and expects the
- * recorded behaviour as a baseline.
+ * akka.javasdk.testkit.eval.EvalCaseParser}. A derived case loads the recorded tool results into
+ * the test's stubs through {@link akka.javasdk.testkit.eval.ToolBindings} and expects the recorded
+ * behaviour as a baseline.
  *
  * <p>{@link akka.javasdk.testkit.eval.ExperimentRunner} calls the agent in a fresh session per
  * case. Without a {@link akka.javasdk.testkit.eval.Gate} every case must pass, which suits a mocked

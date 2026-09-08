@@ -33,9 +33,9 @@ class JudgeTest {
         .getFirst();
   }
 
-  private EvalResult findingOf(ExperimentRunner.CaseResult result) {
+  private EvalResult resultOf(ExperimentRunner.CaseResult result) {
     return result.evalResults().stream()
-        .filter(finding -> finding.evaluator().equals(Evaluators.JUDGE))
+        .filter(evalResult -> evalResult.evaluator().equals(Evaluators.JUDGE))
         .findFirst()
         .orElseThrow();
   }
@@ -51,7 +51,7 @@ class JudgeTest {
             judge.scoringAtLeast(CRITERION, 0.7));
 
     assertThat(result.passed()).isTrue();
-    assertThat(findingOf(result).detail())
+    assertThat(resultOf(result).detail())
         .isEqualTo(CRITERION + ": scored 0.80, needed 0.70 — it names the overdue payment");
   }
 
@@ -62,7 +62,7 @@ class JudgeTest {
     var result = judged(judge, "You were charged 12.50.", judge.mustSatisfy(CRITERION));
 
     assertThat(result.passed()).isFalse();
-    assertThat(findingOf(result).detail()).contains("scored 0.30, needed 0.50");
+    assertThat(resultOf(result).detail()).contains("scored 0.30, needed 0.50");
   }
 
   @Test
@@ -88,7 +88,7 @@ class JudgeTest {
 
     var result = judged(judge, "an answer", judge.mustSatisfy(CRITERION));
 
-    assertThat(findingOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
+    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
     assertThat(result.passed()).isTrue();
   }
 
@@ -101,8 +101,8 @@ class JudgeTest {
 
     var result = judged(judge, "an answer", judge.mustSatisfy(CRITERION));
 
-    assertThat(findingOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
-    assertThat(findingOf(result).detail()).contains("provider is not configured");
+    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
+    assertThat(resultOf(result).detail()).contains("provider is not configured");
   }
 
   @Test
@@ -117,7 +117,7 @@ class JudgeTest {
             turn -> EvalTarget.Outcome.answered(Interaction.of("")),
             EvalCase.of("c", "a question", judge.mustSatisfy(CRITERION)));
 
-    assertThat(findingOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
+    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
   }
 
   @Test

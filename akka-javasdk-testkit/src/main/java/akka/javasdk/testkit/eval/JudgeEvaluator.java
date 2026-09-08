@@ -4,8 +4,6 @@
 
 package akka.javasdk.testkit.eval;
 
-import akka.javasdk.testkit.ToolCall;
-import java.util.List;
 import java.util.Locale;
 
 /**
@@ -20,15 +18,16 @@ record JudgeEvaluator(Judge judge, String criterion, double threshold) implement
   }
 
   @Override
-  public EvalResult evaluate(EvalCase evalCase, Interaction reply, List<ToolCall> toolCalls) {
-    if (reply.text().isBlank()) {
+  public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+    if (interaction.reply().isBlank()) {
       return EvalResult.abstain(criterion + ": there is no reply to judge");
     }
     Judge.Verdict verdict;
     try {
       verdict =
           judge.assess(
-              new Judge.Question(criterion, evalCase.userMessage(), reply.text(), toolCalls));
+              new Judge.Question(
+                  criterion, evalCase.userMessage(), interaction.reply(), interaction.toolCalls()));
     } catch (RuntimeException e) {
       return EvalResult.abstain(criterion + ": the judge failed: " + e.getMessage());
     }

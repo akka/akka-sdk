@@ -33,7 +33,7 @@ import java.util.Map;
  *   "latencyMs": 1400 }
  * }</pre>
  *
- * <p>The case sends the recorded input, primes each bound stub with the recorded tool results, and
+ * <p>The case sends the recorded input, loads the recorded tool results into each bound stub, and
  * expects the recorded tools, their order and their arguments. These evaluators describe what
  * production did. They are a baseline, not a statement of correctness.
  *

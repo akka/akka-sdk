@@ -13,7 +13,7 @@ A judge is a model that scores a reply against a criterion written in words.
 
 The built-in evaluators compare the reply and the tool calls against exact values.
 Some criteria have no exact value.
-A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Judge.html[Judge] scores such a criterion between 0 and 1, and the score becomes a finding on the case under the `judge` evaluator.
+A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Judge.html[Judge] scores such a criterion between 0 and 1, and the score becomes a result on the case under the `judge` evaluator.
 
 A judged score can differ between runs of the same reply.
 Gate a batch on the rate the judge passed rather than asserting on one judged case, see <<gating-a-judged-batch>>.
@@ -44,7 +44,7 @@ The judge scores the reply against it and returns the score with a one-sentence 
 The judge holds no criterion of its own, so one judge serves any number of them.
 Each criterion gets one score and one reason.
 A criterion that combines several properties, such as an apology, an amount and a length, still gets one score, and the reason does not say which property failed.
-State one property per criterion, so that a failed finding points at the property that failed.
+State one property per criterion, so that a failed result points at the property that failed.
 
 A criterion a program can decide, such as the length of the reply, belongs in a xref:testing:evaluation/eval-cases.adoc#custom-evaluators[custom evaluator], not in a judge.
 `Judge` is a functional interface, so a test can return a fixed `Verdict` to run judged cases without a model.
@@ -55,8 +55,8 @@ A criterion a program can decide, such as the length of the reply, belongs in a 
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=judge]
 ----
 <1> A judge bound to the running TestKit. It asks the model configured in `application.conf`.
-<2> The criterion, in words. The finding is reported under the `judge` evaluator.
-<3> The case description contains the judged finding as one line. The line starts with the verdict and the evaluator name, then the criterion, the score, the threshold, and the reason the model gave:
+<2> The criterion, in words. The result is reported under the `judge` evaluator.
+<3> The case description contains the judged result as one line. The line starts with the verdict and the evaluator name, then the criterion, the score, the threshold, and the reason the model gave:
 +
 [listing]
 ----

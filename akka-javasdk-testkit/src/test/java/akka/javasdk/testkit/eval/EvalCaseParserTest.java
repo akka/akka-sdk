@@ -36,7 +36,7 @@ class EvalCaseParserTest {
       """;
 
   @Test
-  void primesTheBoundStubWithTheRecordedResult(@TempDir Path dir) throws IOException {
+  void loadsTheRecordedResultIntoTheBoundStub(@TempDir Path dir) throws IOException {
     var file = Files.writeString(dir.resolve("captures.jsonl"), CAPTURE);
     var canned = new HashMap<String, Customer>();
     var bindings =
@@ -208,8 +208,8 @@ class EvalCaseParserTest {
   private static Map<String, Verdict> verdicts(EvalCase evalCase, Interaction interaction) {
     var byName = new LinkedHashMap<String, Verdict>();
     for (var evaluator : evalCase.evaluators()) {
-      var finding = evaluator.evaluate(evalCase, interaction, interaction.toolCalls());
-      byName.put(evaluator.name(), finding.verdict());
+      var result = evaluator.evaluate(evalCase, interaction);
+      byName.put(evaluator.name(), result.verdict());
     }
     return byName;
   }

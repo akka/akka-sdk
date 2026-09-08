@@ -48,7 +48,7 @@ public final class Gate {
         });
   }
 
-  /** The share of cases with no failed finding must be at least this. */
+  /** The share of cases with no failed result must be at least this. */
   public static Gate passRateAtLeast(double rate) {
     return new Gate(
         results -> {
@@ -74,25 +74,25 @@ public final class Gate {
       throw new IllegalArgumentException("evaluator name required");
     return new Gate(
         results -> {
-          var findings =
+          var evalResults =
               results.stream()
                   .flatMap(result -> result.evalResults().stream())
-                  .filter(finding -> finding.evaluator().equals(evaluator))
-                  .filter(finding -> finding.verdict() != EvalResult.Verdict.ABSTAIN)
+                  .filter(evalResult -> evalResult.evaluator().equals(evaluator))
+                  .filter(evalResult -> evalResult.verdict() != EvalResult.Verdict.ABSTAIN)
                   .toList();
-          if (findings.isEmpty()) {
+          if (evalResults.isEmpty()) {
             return Verdict.fail(evaluator + " judged no case, so its rate cannot be read");
           }
           var passed =
-              findings.stream().filter(f -> f.verdict() == EvalResult.Verdict.PASS).count();
-          var actual = (double) passed / findings.size();
+              evalResults.stream().filter(f -> f.verdict() == EvalResult.Verdict.PASS).count();
+          var actual = (double) passed / evalResults.size();
           var summary =
               String.format(
                   Locale.ROOT,
                   "%s rate %.2f over %d judged cases, required %.2f",
                   evaluator,
                   actual,
-                  findings.size(),
+                  evalResults.size(),
                   rate);
           return actual >= rate ? Verdict.pass(summary) : Verdict.fail(summary);
         });
@@ -108,10 +108,10 @@ public final class Gate {
                       result ->
                           result.evalResults().stream()
                               .anyMatch(
-                                  finding ->
-                                      finding.verdict() == EvalResult.Verdict.FAIL
-                                          && (finding.evaluator().equals(Evaluators.TARGET)
-                                              || finding.evaluator().equals(Evaluators.SETUP))))
+                                  evalResult ->
+                                      evalResult.verdict() == EvalResult.Verdict.FAIL
+                                          && (evalResult.evaluator().equals(Evaluators.TARGET)
+                                              || evalResult.evaluator().equals(Evaluators.SETUP))))
                   .map(CaseResult::caseId)
                   .toList();
           return failed.isEmpty()

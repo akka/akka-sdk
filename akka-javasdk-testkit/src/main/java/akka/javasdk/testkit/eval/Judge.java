@@ -45,9 +45,10 @@ public interface Judge {
     public Question {
       if (criterion == null || criterion.isBlank())
         throw new IllegalArgumentException("criterion required");
-      userMessage = userMessage == null ? "" : userMessage;
-      reply = reply == null ? "" : reply;
-      toolCalls = toolCalls == null ? List.of() : List.copyOf(toolCalls);
+      if (userMessage == null) throw new IllegalArgumentException("userMessage required");
+      if (reply == null) throw new IllegalArgumentException("reply required");
+      if (toolCalls == null) throw new IllegalArgumentException("toolCalls required");
+      toolCalls = List.copyOf(toolCalls);
     }
 
     /** The names of the tools called, in order. */
@@ -61,11 +62,12 @@ public interface Judge {
    *
    * @param score between 0 and 1. Any other value, {@code NaN} included, makes the evaluator
    *     abstain
-   * @param reason one line, printed under a failed case
+   * @param reason one line, printed under a failed case. Empty when the model gave none
    */
   record Verdict(double score, String reason) {
 
     public Verdict {
+      // The model's JSON reply is read into this record, and a model may leave the reason out.
       reason = reason == null ? "" : reason;
     }
 
