@@ -47,6 +47,8 @@ public class TelemetryReader {
   private static final AttributeKey<String> SESSION_ID =
       AttributeKey.stringKey("gen_ai.conversation.id");
   private static final AttributeKey<String> TOOL_NAME = AttributeKey.stringKey("gen_ai.tool.name");
+  private static final AttributeKey<String> MCP_ENDPOINT =
+      AttributeKey.stringKey("akka.agent.mcp.endpoint");
   private static final AttributeKey<String> TOOL_ARGUMENTS =
       AttributeKey.stringKey("gen_ai.tool.call.arguments");
   private static final AttributeKey<String> TOOL_RESULT =
@@ -253,7 +255,11 @@ public class TelemetryReader {
 
   private static ToolCall toToolCall(SpanData span) {
     var attributes = span.getAttributes();
-    var name = unprefixed(attributes.get(TOOL_NAME), attributes.get(IMPLEMENTATION));
+    var name =
+        toolName(
+            attributes.get(TOOL_NAME),
+            attributes.get(IMPLEMENTATION),
+            attributes.get(MCP_ENDPOINT) != null);
     var error =
         span.getStatus().getStatusCode() == StatusCode.ERROR
             ? Optional.of(span.getStatus().getDescription())
@@ -309,11 +315,12 @@ public class TelemetryReader {
     }
   }
 
-  // An agent-local tool is registered as <AgentClass>_<method>. The span names the implementing
-  // class, possibly qualified. Without it, a leading capitalised segment before an underscore is
-  // taken as the class. A method name or an MCP tool name does not start that way.
-  private static String unprefixed(String toolName, String implementation) {
+  // A function tool is registered as <ToolClass>_<method>. The span names the implementing class,
+  // possibly qualified. Without it, a leading capitalised segment before an underscore is taken as
+  // the class. An MCP tool is named by its server, so its name is kept as is.
+  static String toolName(String toolName, String implementation, boolean mcp) {
     if (toolName == null) return "?";
+    if (mcp) return toolName;
     if (implementation != null) {
       var simple = implementation.substring(implementation.lastIndexOf('.') + 1);
       if (toolName.startsWith(simple + "_")) return toolName.substring(simple.length() + 1);

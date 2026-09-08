@@ -232,4 +232,28 @@ class EvalCaseParserTest {
             .toList();
     return new Interaction("done", List.of(), calls, List.of(), latency, "done");
   }
+
+  @Test
+  void aRecordedNullArgumentIsPartOfTheBaseline(@TempDir Path dir) throws IOException {
+    var file =
+        Files.writeString(
+            dir.resolve("captures.jsonl"),
+            "{\"id\":\"c1\",\"input\":\"refund o_9\",\"toolCalls\":[{\"name\":\"issueRefund\","
+                + "\"arguments\":{\"orderId\":\"o_9\",\"note\":null},\"result\":true}]}\n");
+    var bindings = ToolBindings.builder().bind("issueRefund", call -> {}).build();
+
+    var evalCase = EvalCaseParser.parse(file, bindings).getFirst();
+
+    var arguments = new HashMap<String, Object>();
+    arguments.put("orderId", "o_9");
+    arguments.put("note", null);
+    var asRecorded = new Interaction("done", List.of(new ToolCall("issueRefund", arguments)));
+    assertThat(verdicts(evalCase, asRecorded).values()).containsOnly(Verdict.PASS);
+
+    var withANote =
+        new Interaction(
+            "done", List.of(new ToolCall("issueRefund", Map.of("orderId", "o_9", "note", "x"))));
+    assertThat(verdicts(evalCase, withANote))
+        .containsEntry(Evaluators.TOOL_ARGUMENTS, Verdict.FAIL);
+  }
 }

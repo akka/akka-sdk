@@ -5,6 +5,7 @@
 package akka.javasdk.testkit.eval;
 
 import akka.javasdk.testkit.ToolCall;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -228,12 +229,18 @@ public final class Evaluators {
                   + toTheTool.stream().map(c -> c.arguments().get(argument)).toList());
     }
 
-    /**
-     * A JSON number may deserialize to another numeric type, so compare rendered values as well.
-     */
+    // A JSON number may deserialize to another numeric type, so numbers compare by value. Any
+    // other type must match exactly: a string where a number was recorded is a regression.
     private static boolean sameValue(Object expected, Object actual) {
-      return Objects.equals(expected, actual)
-          || (actual != null && String.valueOf(expected).equals(String.valueOf(actual)));
+      if (Objects.equals(expected, actual)) return true;
+      if (expected instanceof Number a && actual instanceof Number b) {
+        try {
+          return new BigDecimal(a.toString()).compareTo(new BigDecimal(b.toString())) == 0;
+        } catch (NumberFormatException e) {
+          return false; // NaN or infinity
+        }
+      }
+      return false;
     }
   }
 

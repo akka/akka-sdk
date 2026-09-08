@@ -31,6 +31,9 @@ record JudgeEvaluator(Judge judge, String criterion, double threshold) implement
     } catch (RuntimeException e) {
       return EvalResult.abstain(criterion + ": the judge failed: " + e.getMessage());
     }
+    if (verdict == null) {
+      return EvalResult.abstain(criterion + ": the judge gave no verdict");
+    }
     var score = verdict.score();
     if (Double.isNaN(score) || score < 0 || score > 1) {
       return EvalResult.abstain(

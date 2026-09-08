@@ -4,6 +4,8 @@
 
 package akka.javasdk.testkit;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -13,7 +15,7 @@ import java.util.Optional;
  * <p>Names are the plain method names, without the agent class prefix the model sees ({@code
  * SupportAgent_getCustomer}).
  *
- * @param arguments by parameter name
+ * @param arguments by parameter name. A value is null when the model sent null
  * @param result the tool's result as the model saw it, when recorded
  * @param error the failure message when the tool threw
  */
@@ -22,7 +24,9 @@ public record ToolCall(
 
   public ToolCall {
     if (name == null || name.isBlank()) throw new IllegalArgumentException("tool name required");
-    arguments = arguments == null ? Map.of() : Map.copyOf(arguments);
+    // Not Map.copyOf: a model may send null for an argument.
+    arguments =
+        arguments == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(arguments));
     result = result == null ? Optional.empty() : result;
     error = error == null ? Optional.empty() : error;
   }

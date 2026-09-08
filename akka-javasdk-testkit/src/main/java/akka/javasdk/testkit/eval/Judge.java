@@ -77,8 +77,8 @@ public interface Judge {
   }
 
   /**
-   * The criterion must score at least this. Abstains when there is no reply, when the judge throws,
-   * or when the score is not between 0 and 1.
+   * The criterion must score at least this. Abstains when there is no reply, when the judge throws
+   * or gives no verdict, or when the score is not between 0 and 1.
    */
   default Evaluator scoringAtLeast(String criterion, double threshold) {
     if (criterion == null || criterion.isBlank())

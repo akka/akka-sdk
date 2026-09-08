@@ -148,4 +148,15 @@ class JudgeTest {
                 .passed())
         .isFalse();
   }
+
+  @Test
+  void aJudgeThatGivesNoVerdictAbstains() {
+    Judge judge = input -> null;
+
+    var result = judged(judge, "an answer", judge.mustSatisfy(CRITERION));
+
+    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
+    assertThat(resultOf(result).detail()).contains("no verdict");
+    assertThat(result.passed()).isTrue();
+  }
 }

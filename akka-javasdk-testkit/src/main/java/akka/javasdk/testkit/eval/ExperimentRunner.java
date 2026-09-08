@@ -161,14 +161,30 @@ public final class ExperimentRunner {
           var interaction = answered.interaction();
           var results = new ArrayList<EvalResult>();
           for (var evaluator : evalCase.evaluators()) {
-            results.add(evaluator.evaluate(evalCase, interaction).attributedTo(evaluator.name()));
+            results.add(evaluate(evaluator, evalCase, interaction));
           }
           for (var evaluator : evaluators) {
-            results.add(evaluator.evaluate(evalCase, interaction).attributedTo(evaluator.name()));
+            results.add(evaluate(evaluator, evalCase, interaction));
           }
           yield new CaseResult(evalCase.id(), interaction, List.copyOf(results));
         }
       };
+    }
+
+    // An evaluator that throws or returns nothing fails its own result, the other evaluators
+    // still report.
+    private static EvalResult evaluate(
+        Evaluator evaluator, EvalCase evalCase, Interaction interaction) {
+      EvalResult result;
+      try {
+        result = evaluator.evaluate(evalCase, interaction);
+      } catch (RuntimeException e) {
+        return EvalResult.fail("the evaluator threw " + describe(e)).attributedTo(evaluator.name());
+      }
+      if (result == null) {
+        return EvalResult.fail("the evaluator returned no result").attributedTo(evaluator.name());
+      }
+      return result.attributedTo(evaluator.name());
     }
   }
 

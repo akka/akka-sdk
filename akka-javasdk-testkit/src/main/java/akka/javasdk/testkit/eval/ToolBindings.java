@@ -5,6 +5,7 @@
 package akka.javasdk.testkit.eval;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +41,8 @@ public final class ToolBindings {
       if (tool == null || tool.isBlank()) throw new IllegalArgumentException("tool required");
       if (arguments == null) throw new IllegalArgumentException("arguments required");
       if (resultJson == null) throw new IllegalArgumentException("resultJson required");
-      arguments = Map.copyOf(arguments);
+      // Not Map.copyOf: a recording may carry null for an argument.
+      arguments = Collections.unmodifiableMap(new LinkedHashMap<>(arguments));
     }
 
     /** The recorded value of one argument, or null when the call did not carry it. */

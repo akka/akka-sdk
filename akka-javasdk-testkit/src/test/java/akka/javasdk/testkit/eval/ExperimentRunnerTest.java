@@ -454,4 +454,85 @@ class ExperimentRunnerTest {
         .contains("getCustomer{customerId=cust_9}")
         .contains("FAIL answer-contains");
   }
+
+  @Test
+  void aThrowingEvaluatorFailsItsOwnResultAndTheOthersStillReport() {
+    Evaluator throwing =
+        new Evaluator() {
+          @Override
+          public String name() {
+            return "refund-within-total";
+          }
+
+          @Override
+          public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+            throw new NullPointerException("amountCents is missing");
+          }
+        };
+
+    var run = run(targetThat("done"), throwing, Evaluators.answerContains("done"));
+
+    assertThat(run.result().passed()).isFalse();
+    assertThat(run.evalResult("refund-within-total").verdict()).isEqualTo(EvalResult.Verdict.FAIL);
+    assertThat(run.evalResult("refund-within-total").detail())
+        .contains("NullPointerException")
+        .contains("amountCents is missing");
+    assertThat(run.evalResult(Evaluators.ANSWER_CONTAINS).verdict())
+        .isEqualTo(EvalResult.Verdict.PASS);
+  }
+
+  @Test
+  void anEvaluatorThatReturnsNothingFailsItsOwnResult() {
+    Evaluator silent =
+        new Evaluator() {
+          @Override
+          public String name() {
+            return "silent";
+          }
+
+          @Override
+          public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+            return null;
+          }
+        };
+
+    var run = run(targetThat("done"), silent);
+
+    assertThat(run.evalResult("silent").verdict()).isEqualTo(EvalResult.Verdict.FAIL);
+    assertThat(run.evalResult("silent").detail()).contains("no result");
+  }
+
+  @Test
+  void aRecordedNumberDoesNotMatchTheSameDigitsAsAString() {
+    var asString =
+        run(
+            targetThat("done", call("issueRefund", "amountCents", "4999")),
+            Evaluators.toolArgument("issueRefund", "amountCents", 4999));
+    assertThat(asString.evalResult(Evaluators.TOOL_ARGUMENTS).verdict())
+        .isEqualTo(EvalResult.Verdict.FAIL);
+
+    var asDecimal =
+        run(
+            targetThat("done", call("issueRefund", "amountCents", 4999.0)),
+            Evaluators.toolArgument("issueRefund", "amountCents", 4999));
+    assertThat(asDecimal.evalResult(Evaluators.TOOL_ARGUMENTS).verdict())
+        .isEqualTo(EvalResult.Verdict.PASS);
+  }
+
+  @Test
+  void aNullArgumentIsEvidenceAndMatchesOnlyNull() {
+    var arguments = new java.util.HashMap<String, Object>();
+    arguments.put("orderId", "o_9");
+    arguments.put("note", null);
+    var target = targetThat("done", new ToolCall("issueRefund", arguments));
+
+    var isNull = run(target, Evaluators.toolArgument("issueRefund", "note", null));
+    assertThat(isNull.evalResult(Evaluators.TOOL_ARGUMENTS).verdict())
+        .isEqualTo(EvalResult.Verdict.PASS);
+
+    var literal = run(target, Evaluators.toolArgument("issueRefund", "note", "null"));
+    assertThat(literal.evalResult(Evaluators.TOOL_ARGUMENTS).verdict())
+        .isEqualTo(EvalResult.Verdict.FAIL);
+    assertThat(literal.result().describe()).contains("note=null");
+  }
 }
