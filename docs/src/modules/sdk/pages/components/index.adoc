@@ -74,11 +74,11 @@ Component selection is the decision of which Akka component implements each part
 | xref:sdk:timed-actions.adoc[Timed Action]
 | A Workflow that exists only to wait and call one method
 
-| To expose an API to browsers or external clients, serve a UI, or push updates (SSE, WebSocket)
+| To expose an API to browsers, serve a UI, or push updates (SSE, WebSocket)
 | xref:sdk:http-endpoints.adoc[HTTP Endpoint]
 | A gRPC endpoint for a browser-facing API
 
-| A typed, high-performance service-to-service contract with schema evolution
+| A typed, high-performance contract for services and other non-browser clients, with schema evolution
 | xref:sdk:grpc-endpoints.adoc[gRPC Endpoint]
 | Hand-rolled JSON contracts between your own services when a proto contract would serve better
 
@@ -126,7 +126,8 @@ If the entity is referenced by its id, do not create a View. Call the entity wit
 Use a *View* only when you need to:
 
 * find entities by an attribute other than their id (all users in a region, orders by customer),
-* list, sort, paginate, or aggregate across many entity instances, or
+* list, sort, paginate, or aggregate across many entity instances,
+* access the history of an Event Sourced Entity: project its events into queryable rows (a transaction history, an audit trail), or
 * combine data from several entity types or from a topic into one queryable shape.
 
 Views are eventually consistent: they update after the entity persists, not in the same transaction. Never read your own write through a View in the same request that made the write. If an endpoint writes to an entity and must return the result, return it from the entity command's reply.
@@ -198,9 +199,9 @@ This decision is covered in depth in xref:sdk:agents.adoc[Agents] ("When to use"
 
 Endpoints are the API layer; pick by who calls you:
 
-* Browsers, external partners, webhooks, server-sent events, WebSockets, or a served UI: *HTTP Endpoint*. See xref:sdk:web-applications.adoc[] for when to serve the front-end from the service versus hosting it separately.
-* Your own services or other teams' services, with a typed contract that evolves: *gRPC Endpoint* is the better service-to-service default; HTTP is fine when the consumers prefer REST.
-* LLM clients that discover and call tools: *MCP Endpoint*. It is for models, not people; do not route human or programmatic API traffic through it, and do not expose MCP tools that merely duplicate your HTTP API unless agents actually need them.
+* Browsers, webhooks, server-sent events, WebSockets, or a served UI: *HTTP Endpoint*. See xref:sdk:web-applications.adoc[] for when to serve the front-end from the service versus hosting it separately.
+* Everything that is not a browser: *gRPC Endpoint* is the default, for your own services, other teams' services, and external clients alike. The explicit protocol definition and schema evolution benefit any non-browser consumer; use HTTP when the consumer can only work with REST and JSON.
+* LLM clients that discover and call tools: *MCP Endpoint*. It serves agents in other services and external MCP clients; an agent in the same service uses regular function tools instead. It is for models, not people; do not route human or programmatic API traffic through it, and do not expose MCP tools that merely duplicate your HTTP API unless agents actually need them.
 
 One service can expose several endpoint types over the same application layer. The endpoint should stay thin either way: request and response types of its own, `ComponentClient` calls inward, no business logic.
 
@@ -213,7 +214,8 @@ Not every value needs a component. Persist state in an entity or workflow when i
 
 * must survive a restart, a redeploy, or relocation of the service instance,
 * is a business fact someone could ask about later, or that another component reacts to,
-* must be written exactly once and audited, or
+* must be written exactly once and audited,
+* must be computed once and then reused across requests and service instances (a JVM-local cache is per instance and gone after a restart), or
 * accumulates across requests (a cart, a counter, a session with memory).
 
 Compute in memory, per request, when the value is derivable from its inputs: transformations of a query result, formatting, totals over data you just read, request validation. An endpoint method doing pure computation on the data it fetched is correct design, not a missing component.
@@ -227,14 +229,15 @@ Three corollaries:
 [#cs9-in-process-or-network]
 === In-process or over-the-network
 
-Within one service, always use the `ComponentClient`. Never call your own service's HTTP endpoints from inside the service; that turns an in-process call into a network round trip through the API layer, loses type safety, and applies your own ACLs to yourself.
+Within one service, always use the `ComponentClient`. Never call your own service's HTTP endpoints from inside the service; that routes the call through the API layer, loses type safety, and applies your own ACLs to yourself.
 
 Between Akka services in the same project, prefer, in order:
 
 1. *Service-to-service eventing* when the consumer reacts to facts and eventual consistency is acceptable. It is brokerless and survives the producer being down.
-2. *HTTP or gRPC with the service name* via `HttpClientProvider` or `GrpcClientProvider` when the caller needs an answer now. Akka routes, encrypts, and authenticates the call.
+2. *gRPC with the service name* via `GrpcClientProvider` when the caller needs an answer now. The explicit protocol definition carries the contract between the services, and Akka routes, encrypts, and authenticates the call.
+3. *HTTP with the service name* via `HttpClientProvider` when a proto contract is not practical. The same routing, encryption, and authentication apply.
 
-Do not split components into separate services to make them "independent" when they change together and call each other synchronously; that adds network failure modes without adding autonomy. Split along bounded contexts, per xref:sdk:dev-best-practices.adoc[Design considerations]. Inside one service, component-to-component calls stay in process; across services they are remote calls, with the latency and failure modes of the network.
+Do not split components into separate services to make them "independent" when they change together and call each other synchronously; that adds network failure modes without adding autonomy. Split along bounded contexts, per xref:sdk:dev-best-practices.adoc[Design considerations]. Component-to-component calls within a service are often remote calls between service instances too, but the runtime routes, serializes, and secures them for you; a cross-service call adds a second API surface, separate ACLs, and an independently deployed service to coordinate with.
 
 [#cs10-component-or-plain-class]
 === Not everything is a component

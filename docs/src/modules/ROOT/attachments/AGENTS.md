@@ -104,9 +104,9 @@ Decide the component mapping BEFORE writing code. The full rubrics with reasonin
 | One LLM request-response with tools/memory | Agent (Workflow-orchestrated if fixed multi-step) | Model decides next step or agents coordinate → Autonomous Agent |
 | Durable model-driven work; multi-agent coordination | Autonomous Agent | Fixed steps, one model call each → Workflow + Agents |
 | Run something later or on a schedule | Timed Action | The delay is a step in a process → Workflow pause/timer |
-| API for browsers/external clients; SSE/WebSocket; serve a UI | HTTP Endpoint | Typed service-to-service contract → gRPC Endpoint |
-| Typed service-to-service contract with schema evolution | gRPC Endpoint | Browser-facing consumers → HTTP Endpoint |
-| Expose tools/resources/prompts to LLM clients | MCP Endpoint | Human or programmatic clients → HTTP/gRPC Endpoint |
+| API for browsers; SSE/WebSocket; serve a UI | HTTP Endpoint | Non-browser clients → gRPC Endpoint |
+| Typed contract for services and other non-browser clients | gRPC Endpoint | Browser-facing consumers → HTTP Endpoint |
+| Expose tools/resources/prompts to LLM clients in other services | MCP Endpoint | Agents in the same service → function tools; human or programmatic clients → HTTP/gRPC Endpoint |
 | Pure logic: validation, calculation, transformation | Plain class in `domain` | Never a component; no state, no subscription, no schedule, no API |
 
 Boundary rules:
