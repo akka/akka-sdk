@@ -11,7 +11,7 @@ addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.13.1")
 addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.12.1")
 addSbtPlugin("net.aichler" % "sbt-jupiter-interface" % "0.11.0")
 addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.3")
-addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings" % "3.0.2")
+addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings" % "3.0.3")
 addDependencyTreePlugin
 
 addSbtPlugin("io.akka.sbt" % "sbt-artifact-bom" % "0.3.0")
