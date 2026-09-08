@@ -361,6 +361,34 @@ public class SupportAgentEvalTest extends TestKitSupport {
   }
 
   @Test
+  public void aJudgeRendersTheInputAsToldAndKeepsItsModelUnderTheTestKitOverride() {
+    // The rendering reaches the judge model as the user message. The model provider registered
+    // for JudgeAgent in the TestKit settings answers whatever path withModel names.
+    judgeModel
+        .whenUserMessage(message -> message.content().startsWith("Kryterium:"))
+        .reply(JsonSupport.encodeToString(new Judge.Verdict(1, "spelnia")));
+    var judge =
+        Judge.agent(testKit)
+            .withUserMessage(
+                input -> "Kryterium:\n" + input.criterion() + "\n\nOdpowiedz:\n" + input.reply())
+            .withModel("eval.judge-model");
+
+    var result =
+        runOne(
+            new EvalCase(
+                "judged-in-polish",
+                "Who is cust_1?",
+                () -> {
+                  crm.reset();
+                  crm.add(new Customer("cust_1", "Ada Lovelace", "gold"));
+                },
+                judge.mustSatisfy("odpowiedz podaje nazwisko klienta")));
+
+    assertThat(result.passed()).withFailMessage(result::describe).isTrue();
+    assertThat(result.describe()).contains("PASS judge").contains("spelnia");
+  }
+
+  @Test
   public void aJudgeThatWillNotScoreAbstainsInsteadOfFailingTheCase() {
     judgeModel.fixedResponse(
         JsonSupport.encodeToString(new Judge.Verdict(-1, "I cannot judge this")));

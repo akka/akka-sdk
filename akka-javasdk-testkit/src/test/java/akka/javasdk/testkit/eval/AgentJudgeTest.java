@@ -12,14 +12,14 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
-/** The material sent to the model, checked without a provider. */
+/** The user message sent to the model, checked without a provider. */
 class AgentJudgeTest {
 
   @Test
-  void theMaterialLabelsTheCriterionAndTheEvidence() {
-    var material =
-        AgentJudge.material(
-            new Judge.Question(
+  void theUserMessageLabelsTheCriterionAndTheEvidence() {
+    var userMessage =
+        AgentJudge.defaultUserMessage(
+            new Judge.Input(
                 "the reply states the customer's tier",
                 "Who is cust_1?",
                 "Ada Lovelace is a gold customer.",
@@ -30,7 +30,7 @@ class AgentJudgeTest {
                         Optional.of("{\"tier\":\"gold\"}"),
                         Optional.empty()))));
 
-    assertThat(material)
+    assertThat(userMessage)
         .contains("Criterion:\nthe reply states the customer's tier")
         .contains("The user asked:\nWho is cust_1?")
         .contains("The agent replied:\nAda Lovelace is a gold customer.")
@@ -40,9 +40,9 @@ class AgentJudgeTest {
 
   @Test
   void aFailedToolCallIsShownAsSuch() {
-    var material =
-        AgentJudge.material(
-            new Judge.Question(
+    var userMessage =
+        AgentJudge.defaultUserMessage(
+            new Judge.Input(
                 "the reply admits the lookup failed",
                 "Who is cust_404?",
                 "I could not find that customer.",
@@ -53,21 +53,22 @@ class AgentJudgeTest {
                         Optional.empty(),
                         Optional.of("no customer cust_404")))));
 
-    assertThat(material)
+    assertThat(userMessage)
         .contains("- getCustomer {customerId=cust_404} -> failed: no customer cust_404");
   }
 
   @Test
   void aCaseThatCalledNothingIsJudgedOnTheReplyAlone() {
-    var material =
-        AgentJudge.material(new Judge.Question("the reply is polite", "hi", "Hello!", List.of()));
+    var userMessage =
+        AgentJudge.defaultUserMessage(
+            new Judge.Input("the reply is polite", "hi", "Hello!", List.of()));
 
-    assertThat(material).doesNotContain("Tools called");
+    assertThat(userMessage).doesNotContain("Tools called");
   }
 
   @Test
-  void theShippedPromptStatesTheContractTheVerdictIsReadUnder() {
-    assertThat(AgentJudge.defaultPrompt())
+  void theDefaultSystemMessageStatesTheContractTheVerdictIsReadUnder() {
+    assertThat(AgentJudge.DEFAULT_SYSTEM_MESSAGE)
         .contains("between 0")
         .contains("\"score\"")
         .contains("\"reason\"");

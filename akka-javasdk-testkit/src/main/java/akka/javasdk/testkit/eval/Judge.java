@@ -31,7 +31,7 @@ import java.util.List;
 @FunctionalInterface
 public interface Judge {
 
-  Verdict assess(Question question);
+  Verdict assess(Input input);
 
   /** A judge that asks a model through {@link JudgeAgent}, using the TestKit component client. */
   static AgentJudge agent(akka.javasdk.testkit.TestKit testKit) {
@@ -39,10 +39,10 @@ public interface Judge {
     return AgentJudge.backedBy(testKit.getComponentClient());
   }
 
-  /** What the judge is asked: the criterion and the evidence the case produced. */
-  record Question(String criterion, String userMessage, String reply, List<ToolCall> toolCalls) {
+  /** What the judge is given: the criterion and the evidence the case produced. */
+  record Input(String criterion, String userMessage, String reply, List<ToolCall> toolCalls) {
 
-    public Question {
+    public Input {
       if (criterion == null || criterion.isBlank())
         throw new IllegalArgumentException("criterion required");
       if (userMessage == null) throw new IllegalArgumentException("userMessage required");

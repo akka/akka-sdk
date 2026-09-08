@@ -42,7 +42,7 @@ class JudgeTest {
 
   @Test
   void aScoreOverTheThresholdPassesAndCarriesTheJudgesReason() {
-    Judge judge = question -> Judge.Verdict.of(0.8, "it names the overdue payment");
+    Judge judge = input -> Judge.Verdict.of(0.8, "it names the overdue payment");
 
     var result =
         judged(
@@ -57,7 +57,7 @@ class JudgeTest {
 
   @Test
   void aScoreUnderTheThresholdFailsTheCase() {
-    Judge judge = question -> Judge.Verdict.of(0.3, "it states the fee without a reason");
+    Judge judge = input -> Judge.Verdict.of(0.3, "it states the fee without a reason");
 
     var result = judged(judge, "You were charged 12.50.", judge.mustSatisfy(CRITERION));
 
@@ -67,10 +67,10 @@ class JudgeTest {
 
   @Test
   void theJudgeIsAskedAboutTheCaseAndWhatItCalled() {
-    var asked = new Judge.Question[1];
+    var asked = new Judge.Input[1];
     Judge judge =
-        question -> {
-          asked[0] = question;
+        input -> {
+          asked[0] = input;
           return Judge.Verdict.of(1, "");
         };
 
@@ -84,7 +84,7 @@ class JudgeTest {
 
   @Test
   void aScoreOffTheScaleAbstainsRatherThanFailingTheCase() {
-    Judge judge = question -> Judge.Verdict.of(7, "seven out of ten");
+    Judge judge = input -> Judge.Verdict.of(7, "seven out of ten");
 
     var result = judged(judge, "an answer", judge.mustSatisfy(CRITERION));
 
@@ -95,7 +95,7 @@ class JudgeTest {
   @Test
   void aJudgeThatThrowsAbstainsAndSaysSo() {
     Judge judge =
-        question -> {
+        input -> {
           throw new IllegalStateException("the judge's provider is not configured");
         };
 
@@ -108,7 +108,7 @@ class JudgeTest {
   @Test
   void aRunWithNoReplyIsNotSentToTheJudge() {
     Judge judge =
-        question -> {
+        input -> {
           throw new AssertionError("the judge was asked about an empty reply");
         };
 
@@ -122,8 +122,7 @@ class JudgeTest {
 
   @Test
   void aBatchIsGatedOnTheRateTheJudgePassed() {
-    Judge judge =
-        question -> Judge.Verdict.of(question.reply().contains("because") ? 0.9 : 0.2, "");
+    Judge judge = input -> Judge.Verdict.of(input.reply().contains("because") ? 0.9 : 0.2, "");
     var cases =
         List.of(
             EvalCase.of("explained", "why?", judge.mustSatisfy(CRITERION)),

@@ -24,12 +24,19 @@ Gate a batch on the rate the judge passed rather than asserting on one judged ca
 `JudgeAgent` is an agent with the component id `eval-judge`.
 The TestKit registers it when it starts; it is not part of the deployed service.
 
-Unless the TestKit settings register a model provider for `JudgeAgent.class`, the judge asks the model configured in `akka.javasdk.agent.model-provider`.
+The judge asks the model configured in `akka.javasdk.agent.model-provider`, or define define it with `withModel` method:
+
+[source,java]
+----
+var judge = Judge.agent(testKit).withModel("eval.judge-model");
+----
+
+A model provider registered for `JudgeAgent.class` in the TestKit settings takes precedence over both. `TestKit.Settings.withModelProvider(JudgeAgent.class, provider)` accepts any `ModelProvider`, so it is another way to give the judge its own model.
 
 To mock the judge, register a `TestModelProvider` with `TestKit.Settings.withModelProvider(JudgeAgent.class, provider)`, as for any other agent.
 The mocked reply must be the JSON object the judge reads: `{"score": 1.0, "reason": "mocked"}`.
 
-Each judge question runs in a new session with memory disabled, so one judgement does not influence the next.
+Each assessment runs in a new session with memory disabled, so one judgement does not influence the next.
 
 == Stating the criterion
 
@@ -65,10 +72,10 @@ PASS judge: the reply apologises and states the refunded amount: scored 0.90, ne
 
 == What the judge sees
 
-The judge receives a `Judge.Question`: the criterion, the user message, the reply, and the tool calls with their arguments, results and errors.
+The judge receives a `Judge.Input`: the criterion, the user message, the reply, and the tool calls with their arguments, results and errors.
 
-`AgentJudge` renders the question as labelled sections and sends it as the user message.
-For the judged refund case above the user message is:
+`AgentJudge` renders the input as labelled sections and sends it as the user message.
+For the judged refund case above the default user message is:
 
 [listing]
 ----
@@ -89,7 +96,7 @@ Tools called, in order:
 A tool call that failed shows `-> failed:` and the error instead of a result.
 A case that called no tool has no `Tools called` section.
 
-The system message is the prompt below, read from `eval/judge-prompt.txt` on the classpath.
+The system message is `AgentJudge.DEFAULT_SYSTEM_MESSAGE`:
 
 [listing]
 ----
@@ -104,8 +111,12 @@ criterion it satisfies.
 Reply as JSON: {"score": <number between 0 and 1>, "reason": "<one sentence>"}
 ----
 
-`withPrompt(prompt)` returns a judge with another system message; `prompt()` returns the system message a judge sends.
-A custom prompt must ask for the same reply format: a JSON object with a `score` between 0 and 1 and a `reason`.
+`withSystemMessage(text)` returns a judge with another system message; `systemMessage()` returns the system message a judge sends.
+A custom system message must ask for the same reply format: a JSON object with a `score` between 0 and 1 and a `reason`.
+
+`withUserMessage(function)` returns a judge that renders the `Judge.Input` into the user message with the given function, for example to label the sections in the language of the cases.
+`AgentJudge.defaultUserMessage(input)` is the default rendering shown above.
+A custom rendering must carry what the system message asks the model to judge.
 
 == When the judge abstains
 
