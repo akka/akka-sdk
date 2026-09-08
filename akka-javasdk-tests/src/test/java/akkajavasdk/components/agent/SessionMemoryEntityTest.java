@@ -5,9 +5,11 @@
 package akkajavasdk.components.agent;
 
 import static akka.Done.done;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.Done;
+import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.agent.MemoryFilter;
 import akka.javasdk.agent.MessageContent;
@@ -92,6 +94,24 @@ public class SessionMemoryEntityTest {
     var resultAiMessage = ((AiMessage) historyResult.getReply().messages().getLast());
     assertThat(resultAiMessage.attributes().isEmpty()).isTrue();
     assertThat(resultAiMessage.thinking().isEmpty()).isTrue();
+  }
+
+  @Test
+  public void shouldReadTokenUsageWrittenBeforeTheEffectiveInputCountExisted() {
+    var legacy =
+        JsonSupport.decodeJson(
+            TokenUsage.class, "{\"inputTokens\":100,\"outputTokens\":20}".getBytes(UTF_8));
+
+    assertThat(legacy.effectiveInputTokens()).isEqualTo(100);
+    assertThat(legacy.cacheReadInputTokens()).isZero();
+  }
+
+  @Test
+  public void shouldSumTheEffectiveInputCount() {
+    var first = new TokenUsage(100, 20, 11, 22, 133);
+    var second = new TokenUsage(200, 30, 5, 0, 205);
+
+    assertThat(first.add(second)).isEqualTo(new TokenUsage(300, 50, 16, 22, 338));
   }
 
   @Test
