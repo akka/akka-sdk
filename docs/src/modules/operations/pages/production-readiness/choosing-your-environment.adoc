@@ -1,7 +1,7 @@
 = Choosing your environment
 :page-summary: How to size an Akka environment, how much availability to build in, and where your data is allowed to live, three independent decisions you make when setting it up.
 :page-when-to-use: Use this before or during onboarding, to decide what your workload actually needs rather than defaulting to the most expensive option.
-:page-related: xref:operations:production-readiness/index.adoc[], xref:concepts:multi-region.adoc[], xref:operations:regions/setup.adoc[], xref:operations:technical-overview.adoc[]
+:page-related: xref:operations:production-readiness/index.adoc[], xref:operations:services/instance-sizing.adoc[], xref:concepts:multi-region.adoc[], xref:operations:regions/setup.adoc[], xref:operations:technical-overview.adoc[]
 :page-persona: operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
@@ -24,7 +24,7 @@ Akka provisions a new environment from one of four starting shapes:
 | Minimal | Lowest | 1 active (of 3) | 1 | Spot | Throwaway dev and test
 |===
 
-These are starting points your Akka account team selects and tunes with you, not settings you configure yourself. Service instance count, CPU, and memory, along with other individual settings, are tuned once workload details are known; see xref:operations:technical-overview.adoc[] for the per-service defaults Akka applies within an environment.
+These are starting points your Akka account team selects and tunes with you, not settings you configure yourself. This covers the platform infrastructure only. Sizing an individual service, its instance type, instance count, and autoscaling, is a separate, self-service setting; see xref:operations:services/instance-sizing.adoc[].
 
 == Choosing your availability level
 
@@ -56,6 +56,7 @@ Discuss your workload with your Akka account team, or contact mailto:security@ak
 == Related documentation
 
 - xref:operations:production-readiness/index.adoc[Production readiness]
+- xref:operations:services/instance-sizing.adoc[Instance sizing]
 - xref:concepts:multi-region.adoc[Multi-region operations]
 - xref:operations:regions/setup.adoc[Multi-region setup]
 - xref:operations:technical-overview.adoc[AAO technical overview]
