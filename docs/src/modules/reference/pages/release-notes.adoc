@@ -10,6 +10,10 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== September 2026
+
+* xref:release-notes/runtime/1.6.16.adoc[Akka Runtime 1.6.16]
+- View and agent fixes, a log severity change for view update failures, and dependency updates for reported vulnerabilities
 
 == August 2026
 
@@ -117,7 +121,7 @@ Multi-agent coordination capabilities are built in. An agent can delegate subtas
 == April 2026
 * Akka CLI 3.0.60
 - Fixed an issue with multi-regional project descriptors
-- JWKS configuraiton support
+- JWKS configuration support
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.18[Akka SDK 3.5.18]
 - Automatic expiry for entities

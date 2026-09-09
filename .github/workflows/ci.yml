@@ -100,6 +100,15 @@ jobs:
           sbt --client "additionalValidation" || \
             { echo "[error] Additional validation failed."; false; }
 
+      - name: Check dependency alignment with the Akka Runtime
+        run: |
+          sbt --client "checkRuntimeDependencyAlignment" || \
+            {
+              echo "[error] Direct dependencies are not aligned with the versions the Akka Runtime provides."
+              echo "[error] Run 'sbt checkRuntimeDependencyAlignment' locally to reproduce, the failure lists what to update."
+              false
+            }
+
       - name: sbt shutdown
         run: |
           sbt --client shutdown

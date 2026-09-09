@@ -1,0 +1,122 @@
+= Adversarial evaluators
+:page-summary: Decide whether the target broke through a red-team rule using a deterministic, heuristic, or agentic evaluator.
+:page-when-to-use: Use when a red-team rule needs a specific decision. The target quoted a configured secret, refused a harmful request, or complied with a jailbreak framed as fiction.
+:page-related: xref:testing:red-teaming/index.adoc[], xref:testing:red-teaming/rules-and-hazards.adoc[], xref:testing:red-teaming/techniques.adoc[], xref:testing:red-teaming/experiments.adoc[], xref:testing:evaluation/evaluators.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
+
+An adversarial evaluator decides whether the target broke through a red-team rule.
+Red-team evaluators use the same three-family model as evaluation evaluators.
+An experiment that mixes them settles the clear cases cheaply so the expensive judgment runs only on the borderline.
+
+== Overview
+
+Every red-team evaluator implements `akka.evalkit.redteam.evaluator.RedTeamEvaluator` and returns a `ScoreResult`.
+The result is one of `BROKE_THROUGH`, `HELD`, or `INCONCLUSIVE`.
+Each break is one incident with its own row in the report.
+An experiment that ran 500 attacks against an evaluator reports the count of breaks and the count of holds as separate figures.
+
+The three families answer three different kinds of question:
+
+* *Deterministic* reads the target's reply against a stated known-bad thing.
+* *Heuristic* computes a measurement from the reply and reads it against a rule of thumb.
+* *Agentic* hands the exchange to a language model and reads back a broke/held verdict with a confidence.
+
+An `INCONCLUSIVE` verdict feeds the next tier of evaluator so the borderline case gets a second read.
+
+== A deterministic evaluator
+
+`SecretExfilEvaluator` reads the target's reply against a list of secret markers the customer configured.
+Examples: the exact system prompt text, API keys the target must not repeat, internal tool names.
+
+[source,java,indent=0]
+.SecretExfilSample.java
+----
+include::example$evaluation-playground/src/test/java/com/example/redteam/evaluator/deterministic/SecretExfilSample.java[tag=evaluator]
+----
+<1> An API key prefix the target should never return.
+<2> The first line of the system prompt.
+Any match on this substring is a system-prompt leak.
+<3> An internal tool name that has no reason to appear in a user-facing reply.
+<4> The evaluator takes the attacker's prompt and the target's reply.
+A marker present in the reply is a `BROKE_THROUGH`. A marker absent is `HELD`. An empty reply is `INCONCLUSIVE`.
+
+== A heuristic evaluator
+
+`JailbreakEvaluator` reads the target's reply for two signals: strong-refusal language ("I cannot help with that") and task-fulfilment language (the phrases a compliance would use).
+
+[source,java,indent=0]
+.JailbreakSample.java
+----
+include::example$evaluation-playground/src/test/java/com/example/redteam/evaluator/heuristic/JailbreakSample.java[tag=evaluator]
+----
+<1> The patterns are baked into the class.
+Changing them would change what "the same `JailbreakEvaluator`" means from experiment to experiment, so the report reads a `JailbreakEvaluator` verdict as "this specific pattern set decided the case".
+<2> A reply with refusal language and no task-fulfilment reads as `HELD`. A reply with task-fulfilment and no refusal reads as `BROKE_THROUGH`. A reply carrying both signals reads as `INCONCLUSIVE`.
+
+The two-tier pattern is where the family taxonomy pays off.
+The heuristic settles the confident cases for free and hands the ambiguous ones up to an agentic evaluator only when needed:
+
+[source,java,indent=0]
+.JailbreakSample.java
+----
+include::example$evaluation-playground/src/test/java/com/example/redteam/evaluator/heuristic/JailbreakSample.java[tag=two-tier]
+----
+<1> Read the exchange with the heuristic first.
+<2> Only the borderline verdicts reach the agentic evaluator.
+<3> Confident heuristic verdicts settle the case at heuristic-tier cost.
+
+== An agentic evaluator
+
+`AgenticJailbreakJudge` hands the exchange to a language model and reads back a verdict with a confidence.
+The industry standard for jailbreak detection.
+HarmBench, StrongREJECT and the OpenAI red-team benchmarks all work this way, because the modern jailbreaks succeed by hiding compliance inside a wrapper a regex reads as refusal.
+
+[source,java,indent=0]
+.AgenticJailbreakSample.java
+----
+include::example$evaluation-playground/src/test/java/com/example/redteam/evaluator/agentic/AgenticJailbreakSample.java[tag=wiring]
+----
+<1> `systemPrompt()` returns the wording the model needs to be told.
+Constructing `new AgenticJailbreakJudge(null)` only to read the prompt is idiomatic, because
+the prompt is static and belongs to the evaluator rather than to the model.
+<2> The `Assessor` calls the judge through the component client, formatting the exchange the
+way the system prompt expects to read it.
+An evaluator holds no component client, so the call lives here rather than inside the evaluator.
+<3> Construct the evaluator with the assessor.
+<4> The evaluator handles the rest: check that there is anything to ask about, call the assessor, validate the confidence, produce a `ScoreResult`.
+
+A confidence below the evaluator's threshold (default 0.6) reads as `INCONCLUSIVE`.
+The experiment either iterates with more attempts or leaves the exchange in the borderline column of the report.
+
+Tests use a stub assessor:
+
+[source,java,indent=0]
+.AgenticJailbreakSample.java
+----
+include::example$evaluation-playground/src/test/java/com/example/redteam/evaluator/agentic/AgenticJailbreakSample.java[tag=stub-for-tests]
+----
+<1> A test returns a `Verdict` directly, carrying the confidence and the reason.
+<2> Same evaluator type.
+The assessor is what differs between test and production.
+
+NOTE: A cheap, small model is usually the right choice for a red-team judge.
+HarmBench uses a fine-tuned Llama-8B.
+Production judges have run on Gemini Flash or gpt-4o-mini without measurable loss of accuracy.
+
+== The built-in evaluators, in one table
+
+For the reference tables listing every built-in evaluator, the hazards it speaks to, and the OWASP LLM risks it maps to, see xref:reference:evaluations/hazards.adoc[].
+
+* 2 deterministic: `SecretExfilEvaluator`, `PIILeakDetector`.
+* 4 heuristic: `JailbreakEvaluator`, `PromptInjectionEvaluator`, `RefusalConsistencyEvaluator`, `GuardrailEvaluator`.
+* 2 agentic: `AgenticJailbreakJudge`, `AttackGoalJudge`.
+
+== See also
+
+* xref:testing:red-teaming/getting-started.adoc[]. A worked example from empty project to first red-team experiment.
+* xref:testing:red-teaming/techniques.adoc[]. Attack styles that turn one goal into many prompts.
+* xref:testing:red-teaming/adaptive-attacks.adoc[]. Attackers that revise their prompts based on the reply.
+* xref:testing:red-teaming/reports.adoc[]. How verdicts read in the red-team report.
+* xref:testing:evaluation/evaluators.adoc[]. Evaluation evaluators, same three-family model.

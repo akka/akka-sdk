@@ -4,7 +4,8 @@
 
 A shared formatting setup is configured for Java samples.
 
-Formatting is handled by the [prettier-maven-plugin](https://github.com/HubSpot/prettier-maven-plugin), defined in the parent `pom.xml`. It is applied using the Maven profile `formatting`.
+Formatting is handled by the [prettier-maven-plugin](https://github.com/HubSpot/prettier-maven-plugin), defined in the parent `pom.xml`. 
+It is applied using the Maven profile `formatting` with the command line `mvn -Pformatting prettier:write`.
 
 CI checks that all code is correctly formatted. If not, the build will fail.
 

@@ -1,0 +1,71 @@
+= Baselines and regression
+:page-summary: A baseline is a saved reference run the current run compares against. Comparisons surface regressions before a change ships, and the baseline file itself is the audit trail for who approved which run.
+:page-when-to-use: Use when an experiment runs on a schedule or in CI, and its purpose is to catch regressions between the intended-good target and the target on this build.
+:page-related: xref:testing:evaluation/experiments.adoc[], xref:testing:evaluation/reports.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
+
+A baseline is a saved reference run that later runs compare against.
+Committing a baseline is how a project states "this is the target's known-good behaviour".
+Comparing against it is how CI catches a regression before the change ships.
+The baseline file itself is the audit trail.
+Whoever approved the promotion is whoever signed off on the commit.
+
+== How an experiment compares against a baseline
+
+`akka.evalkit.core.domain.Scoring.compare(ExperimentReport, ExperimentReport)` reads two
+reports and returns the per-case deltas the experiment asserts against.
+An experiment that wants a comparison loads its baseline file, runs the current experiment, and
+calls `Scoring.compare` on the two reports.
+
+== Where baselines live
+
+`src/test/resources/eval/baselines/<experiment-name>.json`
+
+Commit baselines to source control.
+They are the record against which regressions are measured, and the commit is the audit trail for a promotion.
+
+== Convention
+
+*One baseline per experiment name.*
+A `nightly-refund-policy.json` file is the baseline for a run named `nightly-refund-policy`.
+A recurring experiment has one file that gets replaced on approval.
+A one-off exploratory experiment has no baseline at all.
+
+*Never edit a baseline in place.*
+A baseline names the rubric version and the ruleset version it was produced under.
+Editing it silently redefines what a comparison compares to.
+Replace the file whole on approval, and let the commit be the audit trail.
+
+*A comparison refuses across version changes.*
+A current run against a rubric or ruleset newer than the baseline is a version mismatch, not movement in the target.
+The experiment checks the versions before calling `Scoring.compare` and refuses the comparison when either differs.
+
+== Approving a new baseline
+
+Approval is an explicit step outside the experiment.
+An experiment that promoted its own baseline would let a bad run overwrite the reference it was meant to be judged against.
+That is the opposite of what a baseline is for.
+
+After an experiment holds against its baseline for long enough to trust the new numbers, the person approving copies the rendered report from `target/evalkit/` into the baselines directory and commits:
+
+[listing]
+----
+cp target/evalkit/refund-policy-20260821T0914Z.json \
+   src/test/resources/eval/baselines/nightly-refund-policy.json
+git add src/test/resources/eval/baselines/nightly-refund-policy.json
+git commit -m "baseline: promote refund-policy run 2026-08-21T09:14Z"
+----
+
+The commit is the audit trail.
+Whoever approves is whoever signed off on the promotion.
+`target/test-classes/`, regenerated on every build, is deliberately not where a baseline lives.
+
+== Best practices
+
+* Update the baseline whenever an intentional behavior change lands.
+* Do not update the baseline on the same commit that changes the target.
+Land the target change, review the report by hand, then land the baseline change.
+* Keep the baseline file small enough to review in a code review.
+A baseline the reviewer cannot read is a baseline the reviewer cannot approve.

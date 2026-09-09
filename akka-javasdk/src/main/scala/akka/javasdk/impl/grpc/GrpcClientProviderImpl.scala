@@ -29,6 +29,7 @@ import akka.javasdk.impl.grpc.GrpcClientProviderImpl.AuthHeaders
 import akka.runtime.sdk.spi.SpiBackofficeServiceSettings
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigUtil
 import io.grpc.CallCredentials
 import io.grpc.Metadata
 import io.grpc.Status
@@ -102,7 +103,28 @@ private[akka] final class GrpcClientProviderImpl(
 
   private val clients = new ConcurrentHashMap[ClientKey, AkkaGrpcClient]()
 
-  private val clientConfig = userServiceConfig.getConfig("akka.javasdk.grpc.client")
+  // A var because of overrideClientConfigFor, which is the only thing that ever replaces it.
+  @volatile private var clientConfig = userServiceConfig.getConfig("akka.javasdk.grpc.client")
+
+  /**
+   * INTERNAL API: Override the host, port and use-tls of the `akka.javasdk.grpc.client` entry for one service.
+   *
+   * For the testkit, which points a client back at the service under test but only learns the port once the runtime has
+   * bound it. Clients are created lazily, so an entry set before the first lookup for that service is the one used.
+   */
+  @InternalApi
+  private[akka] def overrideClientConfigFor(serviceName: String, host: String, port: Int, useTls: Boolean): Unit = {
+    val quotedServiceName = ConfigUtil.quoteString(serviceName)
+    val quotedHost = ConfigUtil.quoteString(host)
+    val entry = ConfigFactory.parseString(s"""
+        $quotedServiceName {
+          host = $quotedHost
+          port = $port
+          use-tls = $useTls
+        }
+        """)
+    clientConfig = entry.withFallback(clientConfig)
+  }
 
   CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceStop, "stop-grpc-clients")(() =>
     Future

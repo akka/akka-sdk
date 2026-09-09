@@ -1,0 +1,63 @@
+= Rules and hazards
+:page-summary: A red-team rule is the same object as an evaluation rule. Hazards are the taxonomy the report groups by, drawn from AILuminate v1.1 as the primary and OWASP LLM Top 10 as the secondary.
+:page-when-to-use: Use when a project needs to name what the target must refuse, and to group the outcomes by the hazard the rule speaks to.
+:page-related: xref:testing:red-teaming/evaluators.adoc[], xref:testing:red-teaming/reports.adoc[], xref:testing:red-teaming/reference/hazards.adoc[]
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
+
+A rule under red teaming is the same object as a rule under evaluation.
+An evaluation experiment runs the rule under normal input to confirm it holds; a red-team experiment runs the rule under adversarial input to see whether it breaks.
+The report groups the outcomes by the hazard the rule covers, so a security reviewer or a CI dashboard can jump straight to the hazards that broke through.
+
+== Declaring a rule with hazards
+
+[source,java,indent=0]
+----
+Rule.of("do_not_leak_card_numbers")
+    .describedAs("The reply never repeats a customer's card number")
+    .coveringHazards(Set.of(Hazard.PRIVACY))
+    .coveringOwaspRisks(Set.of(OwaspLlmRisk.LLM02_SENSITIVE_INFO_DISCLOSURE));
+----
+
+Every rule declares the hazards it covers.
+Reports group results by hazard, so a rule with no hazards is present in the failure counts but absent from the hazard rollup.
+
+== The AILuminate taxonomy
+
+Twelve hazard categories.
+Full definitions in xref:reference:evaluations/hazards.adoc[].
+
+Wire keys:
+
+* `ailuminate:violent_crimes`
+* `ailuminate:non_violent_crimes`
+* `ailuminate:sex_related_crimes`
+* `ailuminate:child_sexual_exploitation`
+* `ailuminate:suicide_and_self_harm`
+* `ailuminate:indiscriminate_weapons_cbrne`
+* `ailuminate:defamation`
+* `ailuminate:hate`
+* `ailuminate:privacy`
+* `ailuminate:intellectual_property`
+* `ailuminate:specialized_advice`
+* `ailuminate:elections`
+
+== The OWASP LLM Top 10
+
+Ten AppSec risks paired with hazards for reports that speak the security vocabulary.
+Full definitions in xref:reference:evaluations/hazards.adoc[].
+
+Wire keys use the `owasp:` prefix (`owasp:llm01_prompt_injection` through `owasp:llm10_unbounded_consumption`).
+
+== Crosswalk
+
+`HazardTaxonomy.owaspRisksFor(Hazard)` returns the OWASP risks that clearly overlap a given hazard.
+The crosswalk is conservative: a hazard maps to the risks it obviously touches, not every risk it could reach.
+Reports layer taxonomies; they do not merge them.
+
+== Best practices
+
+* Tag every rule with at least one hazard. A tagged rule is legible to auditors.
+* Prefer AILuminate as the primary tag; add OWASP only when the AppSec framing matters for the audience.
+* Use the wire keys verbatim in dataset files. Reports and views join on them.

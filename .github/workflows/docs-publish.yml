@@ -108,6 +108,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git push -u origin "${{ steps.branch.outputs.name }}"
+          TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M')
           {
             echo "Cherry-picks the following merged PRs onto \`docs-current\`:"
             echo
@@ -117,11 +118,13 @@ jobs:
               echo "Skipped (cherry-pick conflict — see comments on each source PR):"
               sed 's/^/- /' skipped.txt
             fi
+            echo
+            echo "MERGE, do not squash."
           } > body.md
           gh pr create \
             --base docs-current \
             --head "${{ steps.branch.outputs.name }}" \
-            --title "docs: publish batch ${{ github.run_id }}" \
+            --title "docs: publish batch $TIMESTAMP" \
             --body-file body.md
 
       - name: Label source PRs as docs-published

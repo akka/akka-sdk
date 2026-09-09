@@ -1,0 +1,115 @@
+= Attack style reference
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
+
+Attack styles that ship with `evalkit-redteam`.
+List built-in and customer-registered styles at runtime with `akka redteam techniques list`.
+
+[cols="2,1,3,1", options="header"]
+|===
+| Name | Kind | What it does | Class
+
+| base64
+| static
+| Encodes the payload as base64 and asks the target to decode and follow it.
+| `Base64`
+
+| rot13
+| static
+| Encodes the payload as ROT13 and asks the target to decode and follow it.
+| `Rot13`
+
+| multilingual
+| static
+| Asks the target to translate the request into another language and answer in that language.
+| `Multilingual`
+
+| roleplay
+| static
+| Wraps the payload in a role-play frame.
+| `RolePlay`
+
+| payload_splitting
+| static
+| Splits the payload into named pieces the target must join before acting.
+| `PayloadSplitting`
+
+| crescendo
+| adaptive
+| Step-by-step build-up over multiple turns before naming the goal.
+| `Crescendo`
+
+| pair
+| adaptive
+| An attacker language model refines each next prompt based on the target's last reply.
+| `PAIR`
+
+| tap
+| adaptive
+| Tree search with pruning across attacker-proposed candidate prompts.
+| `TreeOfAttacks`
+|===
+
+== base64
+
+Wraps the payload with an instruction telling the target that the text is base64-encoded.
+The rewritten prompt contains the frame text and the base64 body.
+The original payload never appears in cleartext.
+
+== rot13
+
+Behaves the same as `base64` but uses ROT13 encoding.
+Weaker than base64 as a wrap but effective against models that skip safety review on text that does not look like natural language.
+
+== multilingual
+
+Prepends a language-switch instruction.
+Default target language is Swahili.
+Configurable through the constructor.
+
+Tests whether the target's safety training generalizes across languages.
+
+== roleplay
+
+Wraps the payload in a role-play frame.
+The default role is "security trainer writing an example of what an attacker would say."
+Configurable through a `PayloadTemplate` and a role label.
+
+== payload_splitting
+
+Splits the payload in the middle and asks the target to concatenate two named variables before responding.
+The full payload never appears literally in the input.
+
+Tests whether the target's safety classifier is defeated when the harmful string never appears as one string.
+
+== crescendo
+
+Adaptive multi-turn attacker.
+Default ladder has six rungs, with the goal named only on the last rung.
+Every intermediate rung is a harmless framing question.
+
+Configurable through the constructor by passing a custom ladder.
+
+== pair
+
+Adaptive multi-turn attacker driven by a language model.
+The attacker reads the target's last reply and refines the next prompt.
+
+Constructor takes an `AttackerModel` and an optional `maxTurns` (default 20).
+The `AttackerModel` is the seam that binds to a specific LLM provider.
+
+== tap
+
+Tree of Attacks with Pruning.
+Each turn the attacker proposes several candidate prompts. The top `beamWidth` are kept and expanded.
+
+Constructor takes an `AttackerModel`, a `CandidateScorer`, and three integers: `branchingFactor`, `beamWidth`, `maxTurns`.
+Defaults: 3, 2, 10.
+
+`beamWidth` must be at most `branchingFactor`.
+
+== Related
+
+* xref:testing:red-teaming/adaptive-attacks.adoc[]. How adaptive attacks run.
+* xref:testing:red-teaming/techniques.adoc[]. Writing custom attack styles.

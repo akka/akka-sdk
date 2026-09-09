@@ -30,7 +30,7 @@ import io.grpc.Status
 private[akka] object EventSourcedResultImpl {
 
   def checkIfDeleted[E](effect: EventSourcedEntity.Effect[_], deleted: Boolean): Boolean = {
-    if (deleted) { //deleted takes precedence
+    if (deleted) { // deleted takes precedence
       true
     } else {
       effect match {

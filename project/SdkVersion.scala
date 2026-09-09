@@ -1,5 +1,3 @@
-import com.github.sbt.git.GitPlugin
-import com.github.sbt.git.SbtGit.GitKeys.useConsoleForROGit
 import sbt.Keys._
 import sbt._
 import sbtdynver.DynVerPlugin
@@ -9,14 +7,12 @@ import sbtdynver.DynVerPlugin
  */
 object SdkVersion extends AutoPlugin {
 
-  override def requires = DynVerPlugin && GitPlugin
+  override def requires = DynVerPlugin
   override def trigger = allRequirements
 
   import DynVerPlugin.autoImport._
 
-  override def buildSettings = versionSettings ++ Seq(
-    // JGit cannot read the `.git` file that marks a git worktree, so shell out to git instead
-    useConsoleForROGit := (baseDirectory.value / ".git").isFile)
+  override def buildSettings = versionSettings
 
   // project settings, as versions can be different for different projects (sonatype snapshots)
   override def projectSettings = versionSettings

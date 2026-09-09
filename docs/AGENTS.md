@@ -25,18 +25,17 @@ self-contained style serves both audiences, so you do not write differently for 
 
 ## Voice and tone
 
+- Simple language. Short sentences. No contractions. No em-dash.
 - Second person only. The reader is "you"; Akka is "Akka", never "we".
 - Imperative for instructions ("Annotate the class with `@Component`."), declarative for facts
   ("Events are delivered at least once.").
 - Medium formality: technical and precise, not academic. No contractions in body text. No humor,
   colloquialisms, or filler.
-- Short sentences. Break compound-complex sentences into two. Lead with the action or fact, not
-  the condition. Prefer several short sentences over one long sentence stitched together with
-  em-dashes.
+- No mannered prose and metaphors. E.g. use "this point still matters" instead of "this point earns its keep".
 - Define jargon on first use. Every domain term (passivation, sharding, Effects, CloudEvents) is
   defined or linked to the glossary on the page where it first appears.
 - Say what a thing is and how to use it. Do not sell it. No marketing or spin — drop "seamless",
-  "powerful", "robust", "simply", and value claims. Describe behaviour and trade-offs instead.
+  "powerful", "robust", "simply", "reach for", "spin up", "under the hood", "point it at", "load-bearing", and value claims. Describe behaviour and trade-offs instead.
 - Positioning content (the three barriers and three dimensions, differentiator claims, competitive
   comparisons) belongs on the Why Akka / What is Akka / Who Uses Akka pages and the llms.txt
   preamble, per the overhaul spec. Component and reference pages stay at behaviour level and link
