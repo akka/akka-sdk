@@ -6,6 +6,16 @@ package akka.javasdk.testkit.eval;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.client.AgentClient;
+import akka.javasdk.client.AutonomousAgentClient;
+import akka.javasdk.client.ComponentClient;
+import akka.javasdk.client.EventSourcedEntityClient;
+import akka.javasdk.client.KeyValueEntityClient;
+import akka.javasdk.client.TaskClient;
+import akka.javasdk.client.TimedActionClient;
+import akka.javasdk.client.ViewClient;
+import akka.javasdk.client.WorkflowClient;
 import akka.javasdk.testkit.ToolCall;
 import akka.javasdk.testkit.eval.Evaluator.EvalResult;
 import java.util.List;
@@ -158,5 +168,61 @@ class JudgeTest {
     assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
     assertThat(resultOf(result).detail()).contains("no verdict");
     assertThat(result.passed()).isTrue();
+  }
+
+  @Test
+  void aCustomSystemMessageStillAsksForTheReplyFormat() {
+    var judge =
+        AgentJudge.backedBy(new NoComponentClient())
+            .withSystemMessage("Judge the reply in French.\n");
+
+    assertThat(judge.systemMessage())
+        .startsWith("Judge the reply in French.")
+        .endsWith(AgentJudge.REPLY_FORMAT);
+    assertThat(AgentJudge.DEFAULT_SYSTEM_MESSAGE).doesNotContain("Reply as JSON");
+  }
+
+  /** The judge under test never calls the model. */
+  private static final class NoComponentClient implements ComponentClient {
+    @Override
+    public TimedActionClient forTimedAction() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public KeyValueEntityClient forKeyValueEntity(String keyValueEntityId) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public EventSourcedEntityClient forEventSourcedEntity(String eventSourcedEntityId) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public WorkflowClient forWorkflow(String workflowId) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ViewClient forView() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AgentClient forAgent() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TaskClient forTask(String taskId) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T extends AutonomousAgent> AutonomousAgentClient forAutonomousAgent(
+        Class<T> agentClass, String agentId) {
+      throw new UnsupportedOperationException();
+    }
   }
 }

@@ -54,20 +54,19 @@ final class AgentTarget<A extends Agent, C, R> implements EvalTarget {
 
   @Override
   public Outcome call(Turn turn) {
-    R reply;
     try {
-      reply =
+      R reply =
           testKit
               .getComponentClient()
               .forAgent()
               .inSession(turn.sessionId())
               .method(method)
               .invoke(command.apply(turn.userMessage()));
+      return Outcome.answered(
+          new Interaction(replyText.apply(reply), telemetry.getAgentTrace(turn.sessionId())));
     } catch (RuntimeException e) {
       return Outcome.failed(e, toolCallsOrNone(turn));
     }
-    return Outcome.answered(
-        new Interaction(replyText.apply(reply), telemetry.getAgentTrace(turn.sessionId())));
   }
 
   // After a failure the trace may hold nothing for the session.

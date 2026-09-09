@@ -11,9 +11,9 @@ import java.util.function.Function;
 /**
  * A {@link Judge} that asks a model through {@link JudgeAgent}.
  *
- * <p>The system message is {@link #DEFAULT_SYSTEM_MESSAGE}. A custom one passed to {@link
- * #withSystemMessage} must ask for the same reply format: a JSON object with a {@code score}
- * between 0 and 1 and a {@code reason}.
+ * <p>The system message is {@link #DEFAULT_SYSTEM_MESSAGE}, or the one passed to {@link
+ * #withSystemMessage}. The judge appends {@link #REPLY_FORMAT} to either, so the model always
+ * replies with a JSON object with a {@code score} between 0 and 1 and a {@code reason}.
  *
  * <p>The user message is the {@link Input} rendered as text by {@link #defaultUserMessage}. {@link
  * #withUserMessage} replaces that rendering, for example to write the sections in another language.
@@ -26,7 +26,10 @@ import java.util.function.Function;
  */
 public final class AgentJudge implements Judge {
 
-  /** The system message a judge sends unless {@link #withSystemMessage} replaces it. */
+  /**
+   * The system message a judge sends unless {@link #withSystemMessage} replaces it, before {@link
+   * #REPLY_FORMAT}.
+   */
   // tag::system-message[]
   public static final String DEFAULT_SYSTEM_MESSAGE =
       """
@@ -37,11 +40,15 @@ public final class AgentJudge implements Judge {
       criterion, between 0 (does not meet it) and 1 (fully meets it). Judge the criterion you
       were given and nothing else: a reply you would have worded differently still meets a
       criterion it satisfies.
-
-      Reply as JSON: {"score": <number between 0 and 1>, "reason": "<one sentence>"}
       """;
 
   // end::system-message[]
+
+  /** Appended to every system message: the reply format the verdict is read from. */
+  public static final String REPLY_FORMAT =
+      """
+      Reply as JSON: {"score": <number between 0 and 1>, "reason": "<one sentence>"}
+      """;
 
   private final ComponentClient componentClient;
   private final String systemMessage;
@@ -65,12 +72,12 @@ public final class AgentJudge implements Judge {
   }
 
   /** A judge with the default system message, the default user message and the default model. */
-  public static AgentJudge backedBy(ComponentClient componentClient) {
+  static AgentJudge backedBy(ComponentClient componentClient) {
     return new AgentJudge(
         componentClient, DEFAULT_SYSTEM_MESSAGE, AgentJudge::defaultUserMessage, "");
   }
 
-  /** The same judge with another system message. */
+  /** The same judge with another system message. {@link #REPLY_FORMAT} is appended to it. */
   public AgentJudge withSystemMessage(String systemMessage) {
     return new AgentJudge(componentClient, systemMessage, userMessage, modelConfigPath);
   }
@@ -93,9 +100,9 @@ public final class AgentJudge implements Judge {
     return new AgentJudge(componentClient, systemMessage, userMessage, modelConfigPath);
   }
 
-  /** The system message this judge sends. */
+  /** The system message this judge sends, with {@link #REPLY_FORMAT} appended. */
   public String systemMessage() {
-    return systemMessage;
+    return systemMessage.stripTrailing() + "\n\n" + REPLY_FORMAT;
   }
 
   /** The configuration path of the model this judge asks; empty for the default model. */
@@ -109,7 +116,7 @@ public final class AgentJudge implements Judge {
         .forAgent()
         .inSession(UUID.randomUUID().toString())
         .method(JudgeAgent::assess)
-        .invoke(new JudgeAgent.Request(systemMessage, userMessage.apply(input), modelConfigPath));
+        .invoke(new JudgeAgent.Request(systemMessage(), userMessage.apply(input), modelConfigPath));
   }
 
   /** The criterion and the evidence as text, in labeled sections. */

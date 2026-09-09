@@ -105,8 +105,10 @@ The system message is `AgentJudge.DEFAULT_SYSTEM_MESSAGE`:
 include::sdk:example$akka-javasdk-testkit/src/main/java/akka/javasdk/testkit/eval/AgentJudge.java[tag=system-message]
 ----
 
-`withSystemMessage(text)` returns a judge with another system message; `systemMessage()` returns the system message a judge sends.
-A custom system message must ask for the same reply format: a JSON object with a `score` between 0 and 1 and a `reason`.
+
+`withSystemMessage(text)` returns a judge with another system message. The reply format is appended to that message too, so a custom message does not need to ask for it.
+`systemMessage()` returns the system message a judge sends, with the reply format appended.
+The judge appends `AgentJudge.REPLY_FORMAT` to the system message, which asks for the reply as a JSON object with a `score` between 0 and 1 and a `reason`.
 
 `withUserMessage(function)` returns a judge that renders the `Judge.Input` into the user message with the given function, for example to label the sections in the language of the cases.
 `AgentJudge.defaultUserMessage(input)` is the default rendering in <<what-the-judge-sees>>.
