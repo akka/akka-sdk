@@ -111,7 +111,11 @@ public class AkkaRuntimeDependencyRule extends AbstractEnforcerRule {
 
       String runtimeVersion = runtimeDeps.get(key);
       if (runtimeVersion != null) {
-        String resolvedVersion = artifact.getVersion();
+        // getBaseVersion() keeps a snapshot as "1.2.3-SNAPSHOT"; getVersion() would give the
+        // timestamped form ("1.2.3-20260909.132344-1") for a snapshot resolved from a remote
+        // repository, which does not match how the manifest records it.
+        String resolvedVersion =
+            artifact.getBaseVersion() != null ? artifact.getBaseVersion() : artifact.getVersion();
         VersionComparator.ConflictResult result =
             VersionComparator.check(resolvedVersion, runtimeVersion, strictness);
 
