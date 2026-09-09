@@ -158,6 +158,6 @@ xref:testing:evaluation/gates-and-reports.adoc#reading-the-report[Reading the re
 
 == See also
 
-* xref:testing:evaluation/eval-cases.adoc[] lists every built-in evaluator and when it abstains.
+* xref:testing:evaluation/eval-cases.adoc[] lists every built-in evaluator and when it is inconclusive.
 * xref:testing:evaluation/judges.adoc[] scores criteria that have no exact answer.
 * xref:testing:evaluation/replay.adoc[] turns recorded production traffic into cases.

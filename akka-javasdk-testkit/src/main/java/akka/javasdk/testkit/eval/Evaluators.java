@@ -19,9 +19,10 @@ import java.util.regex.PatternSyntaxException;
  * The built-in evaluators, and the names every evaluator reports under.
  *
  * <p>Each factory returns an {@link Evaluator} for one check over the reply and the traced tool
- * calls. An evaluator reads only the evidence it names and abstains when that evidence is absent: a
- * tool that was never called fails {@link #tools}, and {@link #toolArgument} abstains. Give the
- * evaluators to an {@link EvalCase}, next to a {@link Judge} or a custom evaluator.
+ * calls. An evaluator reads only the evidence it names and is inconclusive when that evidence is
+ * absent: a tool that was never called fails {@link #tools}, and {@link #toolArgument} is
+ * inconclusive. Give the evaluators to an {@link EvalCase}, next to a {@link Judge} or a custom
+ * evaluator.
  *
  * <p>The name constants are what the report prints and what {@link Gate#evaluatorRateAtLeast}
  * refers to. {@link #TARGET} and {@link #SETUP} are reported by the runner when a case did not
@@ -86,15 +87,15 @@ public final class Evaluators {
 
   /**
    * These tools must be called in this relative order. Calls to other tools may come between.
-   * Abstains when one of them was never called.
+   * Inconclusive when one of them was never called.
    */
   public static Evaluator toolOrder(String... names) {
     return new ToolOrder(List.copyOf(toolNames(names)));
   }
 
   /**
-   * The named tool must be called with this argument value. Numbers compare by value. Abstains when
-   * the tool was never called.
+   * The named tool must be called with this argument value. Numbers compare by value. Inconclusive
+   * when the tool was never called.
    */
   public static Evaluator toolArgument(String tool, String argument, Object value) {
     requireName(tool, "tool");
@@ -103,8 +104,8 @@ public final class Evaluators {
   }
 
   /**
-   * The result of the named tool must contain this text, case-insensitively. Abstains when the tool
-   * was never called or the trace carries no result for it.
+   * The result of the named tool must contain this text, case-insensitively. Inconclusive when the
+   * tool was never called or the trace carries no result for it.
    */
   public static Evaluator toolResult(String tool, String text) {
     requireName(tool, "tool");
@@ -124,7 +125,7 @@ public final class Evaluators {
   }
 
   /**
-   * The agent may make at most this many model calls while answering. Abstains when the trace
+   * The agent may make at most this many model calls while answering. Inconclusive when the trace
    * carried no model calls.
    */
   public static Evaluator modelCallsAtMost(int calls) {
@@ -133,8 +134,8 @@ public final class Evaluators {
   }
 
   /**
-   * The turn may use at most this many tokens, input and output together. Abstains when no model
-   * call reported tokens, as with a mocked model.
+   * The turn may use at most this many tokens, input and output together. Inconclusive when no
+   * model call reported tokens, as with a mocked model.
    */
   public static Evaluator tokensAtMost(long tokens) {
     if (tokens < 1) throw new IllegalArgumentException("a token budget is positive");
@@ -142,7 +143,8 @@ public final class Evaluators {
   }
 
   /**
-   * The agent command must complete within this time. Abstains when the trace carries no timing.
+   * The agent command must complete within this time. Inconclusive when the trace carries no
+   * timing.
    */
   public static Evaluator latencyAtMost(Duration latency) {
     if (latency == null || latency.isNegative() || latency.isZero())
@@ -208,7 +210,7 @@ public final class Evaluators {
       var called = names(calls);
       var missing = expected.stream().filter(t -> !called.contains(t)).toList();
       if (!missing.isEmpty()) {
-        return EvalResult.abstain("never called " + missing);
+        return EvalResult.inconclusive("never called " + missing);
       }
       return isSubsequence(expected, calls)
           ? EvalResult.pass()
@@ -236,7 +238,7 @@ public final class Evaluators {
       var calls = interaction.toolCalls();
       var toTheTool = calls.stream().filter(c -> c.name().equals(tool)).toList();
       if (toTheTool.isEmpty()) {
-        return EvalResult.abstain(tool + " was never called");
+        return EvalResult.inconclusive(tool + " was never called");
       }
       var carried = toTheTool.stream().anyMatch(c -> sameValue(value, c.arguments().get(argument)));
       return carried
@@ -281,7 +283,7 @@ public final class Evaluators {
               .flatMap(c -> c.result().stream())
               .toList();
       if (results.isEmpty()) {
-        return EvalResult.abstain(tool + " has no recorded result");
+        return EvalResult.inconclusive(tool + " has no recorded result");
       }
       var lowerText = text.toLowerCase(Locale.ROOT);
       return results.stream().anyMatch(r -> r.toLowerCase(Locale.ROOT).contains(lowerText))
@@ -331,7 +333,7 @@ public final class Evaluators {
     public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
       var made = interaction.modelCalls().size();
       if (made == 0) {
-        return EvalResult.abstain("no model calls in the evidence");
+        return EvalResult.inconclusive("no model calls in the evidence");
       }
       return made <= limit
           ? EvalResult.pass()
@@ -349,7 +351,7 @@ public final class Evaluators {
     public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
       var used = interaction.totalTokens();
       if (used == 0) {
-        return EvalResult.abstain("no token counts in the evidence");
+        return EvalResult.inconclusive("no token counts in the evidence");
       }
       return used <= limit
           ? EvalResult.pass()
@@ -375,7 +377,7 @@ public final class Evaluators {
     public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
       var took = interaction.latency();
       if (took.isZero()) {
-        return EvalResult.abstain("no timing in the evidence");
+        return EvalResult.inconclusive("no timing in the evidence");
       }
       return took.compareTo(limit) <= 0
           ? EvalResult.pass()

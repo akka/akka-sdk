@@ -213,7 +213,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
   }
 
   @Test
-  public void budgetsReadTheTraceAndTokensAbstainUnderAScriptedModel() {
+  public void budgetsReadTheTraceAndTokensAreInconclusiveUnderAScriptedModel() {
     var tickets =
         EvalCase.of(
             "open-tickets-budget",
@@ -226,12 +226,12 @@ public class SupportAgentEvalTest extends TestKitSupport {
     var result = runOne(tickets);
 
     // Three model calls against a budget of two is the one failure; the test model reports no
-    // tokens, so that budget abstains rather than passing on nothing.
+    // tokens, so that budget is inconclusive rather than passing on nothing.
     assertThat(result.passed()).isFalse();
     assertThat(result.describe())
         .contains("PASS tool-call-budget")
         .contains("FAIL model-call-budget: made 3 model calls, allowed 2")
-        .contains("ABSTAIN token-budget")
+        .contains("INCONCLUSIVE token-budget")
         .contains("PASS latency-budget");
   }
 
@@ -278,8 +278,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
   @Test
   public void replayBaseline() {
     // The captures carry production's spend too, so each case is held to its model call count
-    // and to its recorded latency times the tolerance; the token budget abstains under the
-    // scripted model.
+    // and to its recorded latency times the tolerance; the token budget is inconclusive under the scripted model.
     var replayed = EvalCaseParser.parse(captures());
     var bindings =
         ToolBindings.builder()
@@ -299,7 +298,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
     assertThat(report.render())
         .contains("model-call-budget 3/3")
         .contains("latency-budget 3/3")
-        .contains("token-budget 0/0 (3 abstained)")
+        .contains("token-budget 0/0 (3 inconclusive)")
         .contains("spend: ")
         .contains("over 6/6 cases with evidence");
   }
@@ -364,7 +363,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
   }
 
   @Test
-  public void aJudgeThatWillNotScoreAbstainsInsteadOfFailingTheCase() {
+  public void aJudgeThatWillNotScoreIsInconclusiveInsteadOfFailingTheCase() {
     judgeModel.fixedResponse(
         JsonSupport.encodeToString(new Judge.Verdict(-1, "I cannot judge this")));
     var judge = Judge.modelBased(testKit);
@@ -375,7 +374,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
                 "unjudgeable", "Who is cust_1?", judge.mustSatisfy("the reply is helpful")));
 
     assertThat(result.passed()).isTrue();
-    assertThat(result.describe()).contains("ABSTAIN judge");
+    assertThat(result.describe()).contains("INCONCLUSIVE judge");
   }
 
   @Test

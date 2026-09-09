@@ -27,7 +27,7 @@ public final class RefundWithinTotal implements Evaluator {
       .filter(call -> call.name().equals("issueRefund"))
       .findFirst();
     if (refund.isEmpty()) {
-      return EvalResult.abstain("no refund was issued"); // <2>
+      return EvalResult.inconclusive("no refund was issued"); // <2>
     }
     var amount = ((Number) refund.get().arguments().get("amountCents")).intValue(); // <3>
     return amount <= totalCents

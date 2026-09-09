@@ -66,7 +66,7 @@ public final class Gate {
   }
 
   /**
-   * The pass rate of one evaluator, over the cases where it did not abstain, must be at least this.
+   * The pass rate of one evaluator, over the cases where it was conclusive, must be at least this.
    * Fails when the evaluator judged no case. Evaluator names are in {@link Evaluators}.
    */
   public static Gate evaluatorRateAtLeast(String evaluator, double rate) {
@@ -78,7 +78,7 @@ public final class Gate {
               results.stream()
                   .flatMap(result -> result.evalResults().stream())
                   .filter(evalResult -> evalResult.evaluator().equals(evaluator))
-                  .filter(evalResult -> evalResult.verdict() != EvalResult.Verdict.ABSTAIN)
+                  .filter(evalResult -> evalResult.verdict() != EvalResult.Verdict.INCONCLUSIVE)
                   .toList();
           if (evalResults.isEmpty()) {
             return Verdict.fail(evaluator + " judged no case, so its rate cannot be read");

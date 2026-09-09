@@ -75,7 +75,7 @@ class ExperimentRunnerTest {
   }
 
   @Test
-  void aMissingToolFailsToolsAndOnlyAbstainsTheChecksThatNeededIt() {
+  void aMissingToolFailsToolsAndOnlyLeavesTheChecksThatNeededItInconclusive() {
     var run =
         run(
             targetThat("I do not know."),
@@ -86,9 +86,9 @@ class ExperimentRunnerTest {
     assertThat(run.evalResult(Evaluators.TOOLS).verdict()).isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(run.evalResult(Evaluators.TOOLS).detail()).contains("no tools");
     assertThat(run.evalResult(Evaluators.TOOL_ORDER).verdict())
-        .isEqualTo(EvalResult.Verdict.ABSTAIN);
+        .isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
     assertThat(run.evalResult(Evaluators.TOOL_ARGUMENTS).verdict())
-        .isEqualTo(EvalResult.Verdict.ABSTAIN);
+        .isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
     assertThat(run.result().passed()).isFalse();
   }
 
@@ -166,7 +166,7 @@ class ExperimentRunnerTest {
   }
 
   @Test
-  void aToolResultExpectationAbstainsWhereTheEvidenceCarriesNoResults() {
+  void aToolResultExpectationIsInconclusiveWhereTheEvidenceCarriesNoResults() {
     var run =
         run(
             targetThat("Ada Lovelace", call("getCustomer", "customerId", "cust_1")),
@@ -174,7 +174,7 @@ class ExperimentRunnerTest {
 
     assertThat(run.result().passed()).isTrue();
     assertThat(run.evalResult(Evaluators.TOOL_RESULTS).verdict())
-        .isEqualTo(EvalResult.Verdict.ABSTAIN);
+        .isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
     assertThat(run.evalResult(Evaluators.TOOL_RESULTS).detail()).contains("no recorded result");
   }
 
@@ -209,7 +209,7 @@ class ExperimentRunnerTest {
   }
 
   @Test
-  void aModelCallBudgetReadsTheTracedCallsAndAbstainsWithoutThem() {
+  void aModelCallBudgetReadsTheTracedCallsAndIsInconclusiveWithoutThem() {
     var threeCalls = tracedThat("done", 3, 100, Duration.ofMillis(40));
 
     var within = run(threeCalls, Evaluators.modelCallsAtMost(3));
@@ -224,12 +224,12 @@ class ExperimentRunnerTest {
 
     var untraced = run(targetThat("done"), Evaluators.modelCallsAtMost(1));
     assertThat(untraced.evalResult(Evaluators.MODEL_CALL_BUDGET).verdict())
-        .isEqualTo(EvalResult.Verdict.ABSTAIN);
+        .isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
     assertThat(untraced.result().passed()).isTrue();
   }
 
   @Test
-  void aTokenBudgetSumsInputAndOutputAndAbstainsWhenNoneWereReported() {
+  void aTokenBudgetSumsInputAndOutputAndIsInconclusiveWhenNoneWereReported() {
     var threeHundred = tracedThat("done", 3, 100, Duration.ofMillis(40));
 
     var within = run(threeHundred, Evaluators.tokensAtMost(300));
@@ -244,11 +244,11 @@ class ExperimentRunnerTest {
     var unreported =
         run(tracedThat("done", 2, 0, Duration.ofMillis(40)), Evaluators.tokensAtMost(10));
     assertThat(unreported.evalResult(Evaluators.TOKEN_BUDGET).verdict())
-        .isEqualTo(EvalResult.Verdict.ABSTAIN);
+        .isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
   }
 
   @Test
-  void aLatencyBudgetReadsTheCommandsDurationAndAbstainsWithoutTiming() {
+  void aLatencyBudgetReadsTheCommandsDurationAndIsInconclusiveWithoutTiming() {
     var forty = tracedThat("done", 1, 10, Duration.ofMillis(40));
 
     var within = run(forty, Evaluators.latencyAtMost(Duration.ofMillis(40)));
@@ -263,7 +263,7 @@ class ExperimentRunnerTest {
 
     var untimed = run(targetThat("done"), Evaluators.latencyAtMost(Duration.ofSeconds(1)));
     assertThat(untimed.evalResult(Evaluators.LATENCY_BUDGET).verdict())
-        .isEqualTo(EvalResult.Verdict.ABSTAIN);
+        .isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
   }
 
   @Test

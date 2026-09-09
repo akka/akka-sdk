@@ -98,17 +98,17 @@ class JudgeTest {
   }
 
   @Test
-  void aScoreOffTheScaleAbstainsRatherThanFailingTheCase() {
+  void aScoreOffTheScaleIsInconclusiveRatherThanFailingTheCase() {
     Judge judge = (criterion, interaction) -> Judge.Verdict.of(7, "seven out of ten");
 
     var result = judged(judge, "an answer", judge.mustSatisfy(CRITERION));
 
-    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
+    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
     assertThat(result.passed()).isTrue();
   }
 
   @Test
-  void aJudgeThatThrowsAbstainsAndSaysSo() {
+  void aJudgeThatThrowsIsInconclusiveAndSaysSo() {
     Judge judge =
         (criterion, interaction) -> {
           throw new IllegalStateException("the judge's provider is not configured");
@@ -116,7 +116,7 @@ class JudgeTest {
 
     var result = judged(judge, "an answer", judge.mustSatisfy(CRITERION));
 
-    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
+    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
     assertThat(resultOf(result).detail()).contains("provider is not configured");
   }
 
@@ -132,7 +132,7 @@ class JudgeTest {
             turn -> EvalTarget.Outcome.answered(Interaction.of(turn.userMessage(), "")),
             EvalCase.of("c", "a question", judge.mustSatisfy(CRITERION)));
 
-    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
+    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
   }
 
   @Test
@@ -169,12 +169,12 @@ class JudgeTest {
   }
 
   @Test
-  void aJudgeThatGivesNoVerdictAbstains() {
+  void aJudgeThatGivesNoVerdictIsInconclusive() {
     Judge judge = (criterion, interaction) -> null;
 
     var result = judged(judge, "an answer", judge.mustSatisfy(CRITERION));
 
-    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
+    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
     assertThat(resultOf(result).detail()).contains("no verdict");
     assertThat(result.passed()).isTrue();
   }
