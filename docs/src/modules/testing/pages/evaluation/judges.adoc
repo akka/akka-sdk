@@ -1,0 +1,147 @@
+= Model judges
+:page-summary: A Judge scores a reply against a criterion in plain language; Judge.modelBased asks a model through the TestKit, and the score becomes a pass, a fail or an abstention on the case.
+:page-when-to-use: Criteria the built-in evaluators cannot state, such as tone, completeness or faithfulness to the tool results.
+:page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/gates-and-reports.adoc
+:page-persona: builder-developer, builder-ai-ml
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
+
+A judge decides how well a reply meets a criterion stated as a sentence.
+
+== What a judge decides
+
+The built-in evaluators compare the reply and the tool calls against exact values.
+Some criteria have no exact value.
+A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Judge.html[Judge] scores such a criterion between 0 and 1, and the score becomes a result on the case under the `judge` evaluator.
+
+A judged score can differ between runs of the same reply.
+Gate a batch on the rate the judge passed rather than asserting on one judged case, see <<gating-a-judged-batch>>.
+
+== Asking a model through the TestKit
+
+`Judge.modelBased(testKit)` returns a link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/ModelBasedJudge.html[ModelBasedJudge] that asks a model through link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/JudgeAgent.html[JudgeAgent].
+The verdict is one model call. It is not deterministic and consumes tokens.
+`JudgeAgent` is an agent with the component id `eval-judge`.
+The TestKit registers it when it starts; it is not part of the deployed service.
+
+The judge asks the model configured in `akka.javasdk.agent.model-provider`, or the one named with `withModel`:
+
+[source,java]
+----
+var judge = Judge.modelBased(testKit).withModel("eval.judge-model");
+----
+
+A model provider registered for `JudgeAgent.class` in the TestKit settings takes precedence over both. `TestKit.Settings.withModelProvider(JudgeAgent.class, provider)` accepts any `ModelProvider`, so it is another way to give the judge its own model.
+
+To mock the judge, register a `TestModelProvider` with `TestKit.Settings.withModelProvider(JudgeAgent.class, provider)`, as for any other agent.
+The mocked reply must be the JSON object the judge reads: `{"score": 1.0, "reason": "mocked"}`.
+
+Each verdict is decided in a new session with memory disabled, so one verdict does not influence the next.
+
+[#stating-the-criterion]
+== Stating the criterion
+
+A criterion is one sentence that states what a good reply does, for example "the reply states only what the tools returned".
+The judge scores the reply against it and returns the score with a one-sentence reason.
+
+`mustSatisfy(criterion)` and `scoringAtLeast(criterion, threshold)` turn the judge into an `Evaluator`, given to a case next to the built-in evaluators.
+
+* `mustSatisfy` passes at a score of at least 0.5.
+* `scoringAtLeast` passes at the given threshold.
+
+The judge holds no criterion of its own, so one judge serves any number of them.
+Each criterion gets one score and one reason.
+A criterion that combines several properties, such as an apology, an amount and a length, still gets one score, and the reason does not say which property failed.
+State one property per criterion, so that a failed result names the property that failed.
+
+A criterion a program can decide, such as the length of the reply, belongs in a xref:testing:evaluation/eval-cases.adoc#custom-evaluators[custom evaluator], not in a judge.
+`Judge` has one method, `decide(criterion, interaction)`, so a test can implement it as a lambda that returns a fixed `Verdict` to run judged cases without a model.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=judge]
+----
+<1> A judge bound to the running TestKit. It asks the model configured in `application.conf`.
+<2> The criterion, in words. The result is reported under the `judge` evaluator.
+<3> The case description contains the judged result as one line. The line starts with the verdict and the evaluator name, then the criterion, the score, the threshold, and the reason the model gave:
++
+[listing]
+----
+PASS judge: the reply apologizes and states the refunded amount: scored 0.90, needed 0.50 — apologizes and refunds 49.99
+----
+
+[#what-the-judge-sees]
+== What the judge sees
+
+The judge receives the criterion and the `Interaction`: the user message, the reply, and the tool calls with their arguments, results and errors.
+
+`ModelBasedJudge` renders them as labeled sections and sends the text as the user message.
+For the judged refund case in <<stating-the-criterion>> the default user message is:
+
+[listing]
+----
+Criterion:
+the reply apologizes and states the refunded amount
+
+The user asked:
+Order o_9 arrived broken. I want my money back.
+
+The agent replied:
+I am sorry the order arrived broken. I have refunded 49.99 to your card.
+
+Tools called, in order:
+- getOrder {orderId=o_9} -> {"id":"o_9","status":"delivered","totalCents":4999}
+- issueRefund {orderId=o_9, amountCents=4999} -> {"orderId":"o_9","amountCents":4999,"reference":"ref_1"}
+----
+
+A tool call that failed shows `-> failed:` and the error instead of a result.
+A case that called no tool has no `Tools called` section.
+
+The system message is `ModelBasedJudge.DEFAULT_SYSTEM_MESSAGE`:
+
+[source,java,indent=0]
+----
+include::sdk:example$akka-javasdk-testkit/src/main/java/akka/javasdk/testkit/eval/ModelBasedJudge.java[tag=system-message]
+----
+
+The judge appends `ModelBasedJudge.REPLY_FORMAT` to the system message, which asks for the reply as a JSON object with a `score` between 0 and 1 and a `reason`.
+
+`withSystemMessage(text)` returns a judge with another system message. The reply format is appended to that message too, so a custom message does not need to ask for it.
+`systemMessage()` returns the system message a judge sends, with the reply format appended.
+
+`withUserMessage(function)` returns a judge that renders the criterion and the `Interaction` into the user message with the given function, for example to label the sections in the language of the cases.
+`ModelBasedJudge.defaultUserMessage(criterion, interaction)` is the default rendering in <<what-the-judge-sees>>.
+A custom rendering must carry what the system message asks the model to judge.
+
+== When the judge abstains
+
+The `judge` evaluator abstains, and the case is not failed, when:
+
+* the reply is empty or blank, so there is nothing to judge;
+* the judge throws, for example because the model is unavailable;
+* the score is not between 0 and 1.
+
+The abstention carries the reason and appears in the report as `ABSTAIN judge:` followed by the criterion and the reason.
+xref:testing:evaluation/eval-cases.adoc#abstaining[Abstaining when the evidence is absent] describes how the report and the gates count abstentions.
+
+[#gating-a-judged-batch]
+== Gating a judged batch
+
+With a real model, hold a batch to the rate the judge passed.
+`Gate.evaluatorRateAtLeast(Evaluators.JUDGE, rate)` rates the `judge` evaluator over the cases where it did not abstain, and fails when it judged no case.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=judged-batch]
+----
+<1> One evaluator with a threshold of 0.7. `evaluator(factual)` on the runner adds it to every case of the experiment, next to the evaluators each case declares.
+<2> At least 80% of the judged cases must pass. The other evaluators of each case still apply.
+
+== See also
+
+* xref:testing:evaluation/eval-cases.adoc#custom-evaluators[Writing a custom evaluator]
+* xref:testing:evaluation/gates-and-reports.adoc#gates[Choosing a gate]
+* xref:sdk:agents/llm_eval.adoc[] describes evaluator agents that run inside a deployed service.

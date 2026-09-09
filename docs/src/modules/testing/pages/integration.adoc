@@ -112,4 +112,3 @@ Do not sleep in tests.
 
 * xref:testing:unit.adoc[]
 * xref:testing:evaluation/index.adoc[]
-* xref:testing:red-teaming/index.adoc[]

@@ -1,0 +1,115 @@
+= Gates and reports
+:page-aliases: testing:evaluation/experiments.adoc
+:page-summary: A Gate is what a batch must satisfy over all case results; the EvalReport carries the gate verdict, the pass rate and the evidence of every case.
+:page-when-to-use: Choosing the gate for a mocked or a real model, and reading a report.
+:page-related: testing:evaluation/getting-started.adoc, testing:evaluation/eval-cases.adoc, testing:evaluation/judges.adoc
+:page-persona: builder-developer, builder-ai-ml
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
+
+A gate is what a batch of cases must satisfy over all case results, and the report is what a run returns.
+
+[#gates]
+== Gates
+
+A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is what the batch must satisfy over all case results.
+
+[cols="2,3"]
+|===
+| Gate | Passes when
+
+| `Gate.allCasesPass()`
+| No case has a failed result. This is the gate that applies when none is given.
+
+| `Gate.passRateAtLeast(rate)`
+| The share of cases with no failed result is at least the rate.
+
+| `Gate.evaluatorRateAtLeast(evaluator, rate)`
+| One evaluator's pass rate, over the cases where it did not abstain, is at least the rate. Fails when the evaluator judged no case. Evaluator names are in `Evaluators`, or the name a custom evaluator reports under.
+
+| `Gate.noTargetFailures()`
+| No case failed while loading its recorded calls or in the agent call.
+
+| `gate.and(other)`
+| Both gates hold. The verdict lists both details.
+|===
+
+A failed gate does not throw.
+Assert on the report, and use the rendered report as the failure message.
+
+[#reading-the-report]
+== Reading the report
+
+`run()` returns an link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/ExperimentRunner.EvalReport.html[EvalReport].
+
+[cols="1,3"]
+|===
+| Accessor | Content
+
+| `passed()`
+| Whether the gate passed.
+
+| `passRate()`
+| The share of cases with no failed result.
+
+| `results()`
+| One `CaseResult` per case, in the order the cases were given: the case id, the `Interaction` and the results. `describe()` renders one case as in the report.
+
+| `render()`
+| The report as text.
+|===
+
+A rendered report of a passing batch:
+
+[listing]
+----
+3/3 cases passed (100%)
+gate: passed — pass rate 1.00 over 3 cases, required 0.90; tool-arguments rate 1.00 over 2 judged cases, required 1.00; no target failures
+  tools 1/1
+  tool-arguments 2/2
+  forbidden-tools 2/2
+  answer-contains 2/2
+  tool-order 1/1
+  answer-matches 1/1
+  tool-call-budget 1/1
+  model-call-budget 1/1
+spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status at 489 ms, over 3/3 cases with evidence
+----
+
+Line by line:
+
+. The cases with no failed result, and the pass rate.
+. The gate's verdict and its detail. A combined gate lists the detail of each part.
+. One line per evaluator: the cases it passed over the cases it judged. An evaluator that abstained on some cases shows the count in brackets, for example `token-budget 0/0 (2 abstained)`.
+. The spend: model calls, tokens and latency summed over the cases whose trace carried model calls, and the slowest case. The line is absent when no case carried model calls.
+. After these lines, every failed case with its evidence, see <<reading-a-failed-case>>.
+
+[#reading-a-failed-case]
+== Reading a failed case
+
+The rendered report ends with every failed case and its evidence.
+This report is from a case that asks where order o_42 is, with an evaluator that expects `getOrder` to be called with `o_43`:
+
+[listing]
+----
+0/1 cases passed (0%)
+gate: FAILED — failed cases [wrong-order]
+  tool-arguments 0/1
+spend: 2 model calls, 123 tokens in, 321 out, 6 ms in total, slowest wrong-order at 6 ms, over 1/1 cases with evidence
+case wrong-order FAILED
+  reply: Order o_42 is shipped.
+  tools: getOrder{orderId=o_42}
+  model: 2 calls, 123 tokens in, 321 out, 6 ms
+  FAIL tool-arguments: getOrder(orderId) expected o_43, was [o_42]
+----
+
+A failed case prints the reply, the tool calls with their arguments, the model spend, and every result with its detail.
+When the agent mapped the model's text into the reply, a `model text:` line shows the model's own text as well.
+The reply is cut to one line of at most 200 characters.
+
+== See also
+
+* xref:testing:evaluation/getting-started.adoc[]
+* xref:testing:evaluation/judges.adoc[]
+* xref:testing:evaluation/replay.adoc[]

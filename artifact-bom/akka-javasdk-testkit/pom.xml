@@ -295,7 +295,7 @@
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
-                <version>2.2.224</version>
+                <version>2.4.240</version>
             </dependency>
             <dependency>
                 <groupId>com.hierynomus</groupId>
@@ -725,17 +725,17 @@
             <dependency>
                 <groupId>io.akka</groupId>
                 <artifactId>akka-runtime-core_2.13</artifactId>
-                <version>1.6.16</version>
+                <version>1.6.16-8-5f6024e9-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.akka</groupId>
                 <artifactId>akka-runtime-dev_2.13</artifactId>
-                <version>1.6.16</version>
+                <version>1.6.16-8-5f6024e9-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.akka</groupId>
                 <artifactId>akka-sdk-spi_2.13</artifactId>
-                <version>1.6.16</version>
+                <version>1.6.16-8-5f6024e9-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
@@ -1118,7 +1118,7 @@
             <dependency>
                 <groupId>io.r2dbc</groupId>
                 <artifactId>r2dbc-h2</artifactId>
-                <version>1.0.0.RELEASE</version>
+                <version>1.1.0.RELEASE</version>
             </dependency>
             <dependency>
                 <groupId>io.r2dbc</groupId>
@@ -1353,7 +1353,7 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jcl-over-slf4j</artifactId>
-                <version>2.0.17</version>
+                <version>2.0.18</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -1797,7 +1797,7 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>2.2.224</version>
+            <version>2.4.240</version>
         </dependency>
         <dependency>
             <groupId>com.hierynomus</groupId>
@@ -2227,17 +2227,17 @@
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-runtime-core_2.13</artifactId>
-            <version>1.6.16</version>
+            <version>1.6.16-8-5f6024e9-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-runtime-dev_2.13</artifactId>
-            <version>1.6.16</version>
+            <version>1.6.16-8-5f6024e9-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-sdk-spi_2.13</artifactId>
-            <version>1.6.16</version>
+            <version>1.6.16-8-5f6024e9-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
@@ -2620,7 +2620,7 @@
         <dependency>
             <groupId>io.r2dbc</groupId>
             <artifactId>r2dbc-h2</artifactId>
-            <version>1.0.0.RELEASE</version>
+            <version>1.1.0.RELEASE</version>
         </dependency>
         <dependency>
             <groupId>io.r2dbc</groupId>
@@ -2855,7 +2855,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
-            <version>2.0.17</version>
+            <version>2.0.18</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
