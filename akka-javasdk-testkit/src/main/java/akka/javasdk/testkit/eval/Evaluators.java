@@ -62,6 +62,12 @@ public final class Evaluators {
   /** {@link #answerMatches}: the reply matches the pattern. */
   public static final String ANSWER_MATCHES = "answer-matches";
 
+  /** {@link #answerLacks}: the reply carries none of the given texts. */
+  public static final String ANSWER_LACKS = "answer-lacks";
+
+  /** {@link #answerDoesNotMatch}: the reply does not match the pattern. */
+  public static final String ANSWER_DOES_NOT_MATCH = "answer-does-not-match";
+
   /** {@link Judge}: a model scored the reply against a criterion. */
   public static final String JUDGE = "judge";
 
@@ -155,6 +161,22 @@ public final class Evaluators {
   public static Evaluator answerMatches(String regex) {
     if (regex == null) throw new IllegalArgumentException("regex required");
     return new AnswerMatches(regex);
+  }
+
+  /** The reply must not contain any of the given texts, case-insensitively. */
+  public static Evaluator answerLacks(String... texts) {
+    if (texts == null || texts.length == 0)
+      throw new IllegalArgumentException("at least one text required");
+    for (var text : texts) {
+      if (text == null || text.isBlank()) throw new IllegalArgumentException("text required");
+    }
+    return new AnswerLacks(List.of(texts));
+  }
+
+  /** The reply must not match the regular expression anywhere in it. */
+  public static Evaluator answerDoesNotMatch(String regex) {
+    if (regex == null) throw new IllegalArgumentException("regex required");
+    return new AnswerDoesNotMatch(regex);
   }
 
   private record Tools(Set<String> expected) implements Evaluator {
@@ -397,6 +419,44 @@ public final class Evaluators {
       return pattern.matcher(interaction.reply()).find()
           ? EvalResult.pass()
           : EvalResult.fail("reply does not match /" + regex + "/");
+    }
+  }
+
+  private record AnswerLacks(List<String> texts) implements Evaluator {
+    @Override
+    public String name() {
+      return ANSWER_LACKS;
+    }
+
+    @Override
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      var text = interaction.reply().toLowerCase(Locale.ROOT);
+      var found =
+          texts.stream()
+              .filter(forbidden -> text.contains(forbidden.toLowerCase(Locale.ROOT)))
+              .toList();
+      return found.isEmpty() ? EvalResult.pass() : EvalResult.fail("reply carries " + found);
+    }
+  }
+
+  private record AnswerDoesNotMatch(String regex) implements Evaluator {
+    @Override
+    public String name() {
+      return ANSWER_DOES_NOT_MATCH;
+    }
+
+    @Override
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      Pattern pattern;
+      try {
+        pattern = Pattern.compile(regex, Pattern.DOTALL);
+      } catch (PatternSyntaxException e) {
+        return EvalResult.fail("not a regular expression: " + regex);
+      }
+      var matcher = pattern.matcher(interaction.reply());
+      return matcher.find()
+          ? EvalResult.fail("reply matches /" + regex + "/ at \"" + matcher.group() + "\"")
+          : EvalResult.pass();
     }
   }
 
