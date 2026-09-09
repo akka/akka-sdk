@@ -22,6 +22,12 @@ public interface ExperimentCases {
   ExperimentCases evaluator(Evaluator evaluator);
 
   /**
+   * The stubs the recorded tool calls are loaded into. Needed when a case carries recorded calls,
+   * such as one from {@link EvalCaseParser}. Every tool a case names must be bound.
+   */
+  ExperimentCases bindings(ToolBindings bindings);
+
+  /**
    * The agent under test. The command handler takes the case's message as a String. A String reply
    * is used as is, any other reply is rendered as JSON.
    *

@@ -32,7 +32,7 @@ Evaluation is not the place for the following.
 
 `ExperimentRunner` runs the cases one after the other, in the calling thread.
 
-. The case's setup runs. It loads canned answers into the stubs the agent's tools call.
+. The case's recorded tool calls, if any, are loaded into the stubs through the runner's `ToolBindings`.
 . The runner calls the agent's command handler through the TestKit component client, in a fresh session, with the case's user message.
 . The runner reads the trace the runtime wrote for that session through `TelemetryReader`: the tool calls with their arguments, results and errors, the model calls with their token counts, the guardrail evaluations and the latency.
 . Every evaluator of the case reads the reply and the trace and reports a result: pass, fail, or abstain when the evidence it needs is absent.
@@ -52,7 +52,7 @@ flowchart LR
     Gate --> Report[EvalReport]
 ----
 
-A case that fails in its setup, or whose agent call throws, is reported as a failed case under the `setup` or `target` evaluator.
+A case that fails while loading its recorded calls, or whose agent call throws, is reported as a failed case under the `setup` or `target` evaluator.
 It does not abort the batch.
 
 == The parts of an evaluation
@@ -62,7 +62,7 @@ It does not abort the batch.
 | Type | Role
 
 | `EvalCase`
-| One case: an id, the user message, a setup that runs before the call, and the evaluators. See xref:testing:evaluation/eval-cases.adoc[].
+| One case: an id, the user message, the recorded tool calls, and the evaluators. See xref:testing:evaluation/eval-cases.adoc[].
 
 | `Evaluators`
 | The built-in evaluators: tool calls, order and arguments, reply text, and budgets. See xref:testing:evaluation/eval-cases.adoc[].
@@ -71,7 +71,7 @@ It does not abort the batch.
 | A custom check over the reply and the tool calls. See xref:testing:evaluation/eval-cases.adoc#custom-evaluators[Writing a custom evaluator].
 
 | `ExperimentRunner`
-| Builds the experiment step by step: the cases, the agent, the gate, then the run. See xref:testing:evaluation/getting-started.adoc#first-case[Writing the first case].
+| Builds the experiment step by step: the cases with their evaluators and tool bindings, the agent, the gate, then the run. See xref:testing:evaluation/getting-started.adoc#first-case[Writing the first case].
 
 | `Gate`
 | What the batch must satisfy over all case results. Without a gate every case must pass. See xref:testing:evaluation/gates-and-reports.adoc[].
@@ -82,8 +82,8 @@ It does not abort the batch.
 | `Judge`
 | A model that scores the reply against a criterion stated as a sentence. See xref:testing:evaluation/judges.adoc[].
 
-| `EvalCaseParser`, `ToolBindings`
-| Cases derived from recorded interactions. See xref:testing:evaluation/replay.adoc[].
+| `EvalCaseParser`, `RecordedCall`, `ToolBindings`
+| Cases derived from recorded interactions, and the stubs their recorded results are loaded into. See xref:testing:evaluation/replay.adoc[].
 |===
 
 All types are in the `akka.javasdk.testkit.eval` package.

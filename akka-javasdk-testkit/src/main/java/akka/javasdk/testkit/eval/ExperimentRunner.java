@@ -17,17 +17,21 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Runs cases against an agent and collects the results. Sequential and in-process, nothing is
  * persisted.
  *
- * <p>Per case: run the setup, call the agent in a fresh session, read the evidence the runtime
- * traced for that session, and evaluate the expectations over it.
+ * <p>Per case: load the recorded tool calls, if any, into the bound stubs, call the agent in a
+ * fresh session, read the evidence the runtime traced for that session, and evaluate the
+ * expectations over it. The stubs a hand written case needs are prepared before the run, in the
+ * test.
  *
- * <p>An experiment is built in steps, each step offering only what comes next: the cases and
- * optional evaluators, the agent, an optional {@link Gate}, then {@link Experiment#run}. Without a
- * gate every case must pass, which suits a mocked model. With a real model gate on rates instead.
+ * <p>An experiment is built in steps, each step offering only what comes next: the cases with
+ * optional evaluators and {@link ToolBindings}, the agent, an optional {@link Gate}, then {@link
+ * Experiment#run}. Without a gate every case must pass, which suits a mocked model. With a real
+ * model gate on rates instead.
  *
  * <pre>{@code
  * var runner = new ExperimentRunner(testKit);
@@ -78,7 +82,7 @@ public final class ExperimentRunner {
     if (cases.stream().anyMatch(c -> c == null)) {
       throw new IllegalArgumentException("case required");
     }
-    return new Cases(testKit, List.copyOf(cases), List.of());
+    return new Cases(testKit, List.copyOf(cases), List.of(), ToolBindings.none());
   }
 
   // For the runner's own tests: the cases run against a scripted target instead of an agent.
@@ -86,7 +90,8 @@ public final class ExperimentRunner {
     return ((Cases) cases).target(target);
   }
 
-  private record Cases(TestKit testKit, List<EvalCase> cases, List<Evaluator> evaluators)
+  private record Cases(
+      TestKit testKit, List<EvalCase> cases, List<Evaluator> evaluators, ToolBindings bindings)
       implements ExperimentCases {
 
     @Override
@@ -94,7 +99,13 @@ public final class ExperimentRunner {
       if (evaluator == null) throw new IllegalArgumentException("evaluator required");
       var next = new ArrayList<>(evaluators);
       next.add(evaluator);
-      return new Cases(testKit, cases, List.copyOf(next));
+      return new Cases(testKit, cases, List.copyOf(next), bindings);
+    }
+
+    @Override
+    public ExperimentCases bindings(ToolBindings bindings) {
+      if (bindings == null) throw new IllegalArgumentException("bindings required");
+      return new Cases(testKit, cases, evaluators, bindings);
     }
 
     @Override
@@ -112,18 +123,54 @@ public final class ExperimentRunner {
 
     private Experiment target(EvalTarget target) {
       if (target == null) throw new IllegalArgumentException("target required");
-      return new Ready(cases, evaluators, target, Gate.allCasesPass());
+      requireBindingsForRecordedTools();
+      return new Ready(cases, evaluators, bindings, target, Gate.allCasesPass());
+    }
+
+    // Before the first agent call, so a new tool in production cannot be replayed by accident
+    // against a stub that does not know it.
+    private void requireBindingsForRecordedTools() {
+      var casesByUnboundTool = new LinkedHashMap<String, List<String>>();
+      for (var evalCase : cases) {
+        for (var call : evalCase.recordedCalls()) {
+          if (!bindings.binds(call.tool())) {
+            casesByUnboundTool
+                .computeIfAbsent(call.tool(), t -> new ArrayList<>())
+                .add(evalCase.id());
+          }
+        }
+      }
+      if (casesByUnboundTool.isEmpty()) return;
+      var missing =
+          casesByUnboundTool.entrySet().stream()
+              .map(
+                  e ->
+                      e.getKey()
+                          + (e.getValue().size() == 1 ? " (case " : " (cases ")
+                          + String.join(", ", e.getValue())
+                          + ")")
+              .collect(Collectors.joining(", "));
+      throw new IllegalArgumentException(
+          "no binding for recorded tool "
+              + missing
+              + "; bound: "
+              + bindings.toolNames()
+              + ". Bind each tool a recording names with bindings(ToolBindings)");
     }
   }
 
   private record Ready(
-      List<EvalCase> cases, List<Evaluator> evaluators, EvalTarget target, Gate gate)
+      List<EvalCase> cases,
+      List<Evaluator> evaluators,
+      ToolBindings bindings,
+      EvalTarget target,
+      Gate gate)
       implements Experiment {
 
     @Override
     public Experiment gate(Gate gate) {
       if (gate == null) throw new IllegalArgumentException("gate required");
-      return new Ready(cases, evaluators, target, gate);
+      return new Ready(cases, evaluators, bindings, target, gate);
     }
 
     @Override
@@ -134,7 +181,7 @@ public final class ExperimentRunner {
 
     private CaseResult evaluate(EvalCase evalCase) {
       try {
-        evalCase.setup().run();
+        bindings.load(evalCase.recordedCalls());
       } catch (RuntimeException e) {
         return new CaseResult(
             evalCase.id(),
@@ -195,7 +242,7 @@ public final class ExperimentRunner {
   /** One case's evidence and results. */
   public record CaseResult(String caseId, Interaction interaction, List<EvalResult> evalResults) {
 
-    /** No failed result. A setup or agent failure is a failed result. */
+    /** No failed result. A failed load of the recorded calls or a failed agent call is one. */
     public boolean passed() {
       return evalResults.stream().noneMatch(f -> f.verdict() == EvalResult.Verdict.FAIL);
     }

@@ -21,6 +21,7 @@ import akka.javasdk.testkit.eval.ExperimentRunner;
 import akka.javasdk.testkit.eval.Gate;
 import akka.javasdk.testkit.eval.Judge;
 import akka.javasdk.testkit.eval.JudgeAgent;
+import akka.javasdk.testkit.eval.RecordedCall;
 import akka.javasdk.testkit.eval.ToolBindings;
 import akkajavasdk.components.agent.eval.CrmClient;
 import akkajavasdk.components.agent.eval.Customer;
@@ -41,9 +42,9 @@ import org.junit.jupiter.api.Test;
  * How a consumer's eval suite reads, against a service that is really running.
  *
  * <p>The world under test is one mocked dependency: {@link CannedCrmClient} takes the place of the
- * {@link CrmClient} the {@link SupportAgent} would call in production, so a case can decide what
- * the CRM knows. It records nothing: the runner calls the agent and reads the tool evidence from
- * the trace the runtime wrote for the call.
+ * {@link CrmClient} the {@link SupportAgent} would call in production, so the test decides what the
+ * CRM knows before the cases run. It records nothing: the runner calls the agent and reads the tool
+ * evidence from the trace the runtime wrote for the call.
  *
  * <p>The model is mocked too, by a {@link TestModelProvider} that behaves like a competent one: it
  * looks a customer up when the question names one, reads their tickets when the question asks for
@@ -91,6 +92,15 @@ public class SupportAgentEvalTest extends TestKitSupport {
   @BeforeEach
   public void createTheRunner() {
     experimentRunner = new ExperimentRunner(testKit);
+  }
+
+  /** What the CRM knows. Every case reads these records, keyed by customer id. */
+  @BeforeEach
+  public void fillTheCrm() {
+    crm.reset();
+    crm.add(new Customer("cust_1", "Ada Lovelace", "gold"));
+    crm.add(new Customer("cust_7", "Grace Hopper", "silver"));
+    crm.addTickets("cust_7", new Ticket("t_9", "card declined at checkout", "open"));
   }
 
   /** One case with the mocked model. There is no gate, so the case itself must pass. */
@@ -145,33 +155,23 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
   Stream<EvalCase> curatedCases() {
     return Stream.of(
-        new EvalCase(
+        EvalCase.of(
             "customer-lookup",
             "Is cust_1 still one of our customers, and under what name?",
-            () -> {
-              crm.reset();
-              crm.add(new Customer("cust_1", "Ada Lovelace", "gold"));
-            },
             Evaluators.tools("getCustomer"),
             Evaluators.toolArgument("getCustomer", "customerId", "cust_1"),
             Evaluators.forbiddenTools("openTickets"),
             Evaluators.answerContains("Ada Lovelace")),
-        new EvalCase(
+        EvalCase.of(
             "open-tickets",
             "What is cust_7 waiting on? List their open tickets.",
-            () -> {
-              crm.reset();
-              crm.add(new Customer("cust_7", "Grace Hopper", "silver"));
-              crm.addTickets("cust_7", new Ticket("t_9", "card declined at checkout", "open"));
-            },
             Evaluators.tools("getCustomer", "openTickets"),
             Evaluators.toolOrder("getCustomer", "openTickets"),
             Evaluators.toolArgument("openTickets", "customerId", "cust_7"),
             Evaluators.answerContains("card declined")),
-        new EvalCase(
+        EvalCase.of(
             "no-tools-for-smalltalk",
             "hi there!",
-            crm::reset,
             Evaluators.forbiddenTools("getCustomer", "openTickets"),
             Evaluators.answerContains("customer id")));
   }
@@ -179,13 +179,9 @@ public class SupportAgentEvalTest extends TestKitSupport {
   @Test
   public void traceCarriesWhatTheToolReturned() {
     var lookup =
-        new EvalCase(
+        EvalCase.of(
             "customer-lookup-result",
             "Who is cust_1?",
-            () -> {
-              crm.reset();
-              crm.add(new Customer("cust_1", "Ada Lovelace", "gold"));
-            },
             Evaluators.toolArgument("getCustomer", "customerId", "cust_1"),
             Evaluators.toolResult("getCustomer", "Ada Lovelace"),
             Evaluators.toolResult("getCustomer", "\"tier\":\"gold\""));
@@ -200,14 +196,9 @@ public class SupportAgentEvalTest extends TestKitSupport {
   @Test
   public void traceCarriesTheModelCallsAndTheLatency() {
     var tickets =
-        new EvalCase(
+        EvalCase.of(
             "open-tickets-evidence",
             "What is cust_7 waiting on? List their open tickets.",
-            () -> {
-              crm.reset();
-              crm.add(new Customer("cust_7", "Grace Hopper", "silver"));
-              crm.addTickets("cust_7", new Ticket("t_9", "card declined at checkout", "open"));
-            },
             Evaluators.toolOrder("getCustomer", "openTickets"));
 
     var result = runOne(tickets);
@@ -229,14 +220,9 @@ public class SupportAgentEvalTest extends TestKitSupport {
   @Test
   public void budgetsReadTheTraceAndTokensAbstainUnderAScriptedModel() {
     var tickets =
-        new EvalCase(
+        EvalCase.of(
             "open-tickets-budget",
             "What is cust_7 waiting on? List their open tickets.",
-            () -> {
-              crm.reset();
-              crm.add(new Customer("cust_7", "Grace Hopper", "silver"));
-              crm.addTickets("cust_7", new Ticket("t_9", "card declined at checkout", "open"));
-            },
             Evaluators.toolCallsAtMost(2),
             Evaluators.modelCallsAtMost(2),
             Evaluators.tokensAtMost(1_000),
@@ -257,8 +243,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
   @Test
   public void traceKeepsTheFailedToolCall() {
     var unknown =
-        new EvalCase(
-            "unknown-customer", "Who is cust_404?", crm::reset, Evaluators.tools("getCustomer"));
+        EvalCase.of("unknown-customer", "Who is cust_404?", Evaluators.tools("getCustomer"));
 
     var result = runOne(unknown);
 
@@ -297,18 +282,19 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
   @Test
   public void replayBaseline() {
+    // The captures carry production's spend too, so each case is held to its model call count
+    // and to its latency with slack; the token budget abstains under the scripted model.
+    var replayed = EvalCaseParser.parse(captures());
     var bindings =
         ToolBindings.builder()
             .bind("getCustomer", crm::loadCustomer)
             .bind("openTickets", crm::loadTickets)
             .build();
-    // The captures carry production's spend too, so each case is held to its model call count
-    // and to its latency with slack; the token budget abstains under the scripted model.
-    var replayed = EvalCaseParser.parse(captures(), bindings);
 
     var report =
         experimentRunner
             .cases(replayed)
+            .bindings(bindings)
             .agent(SupportAgent::ask)
             .gate(Gate.passRateAtLeast(0.85))
             .run();
@@ -344,13 +330,9 @@ public class SupportAgentEvalTest extends TestKitSupport {
     var judge = Judge.agent(testKit);
 
     var evalCase =
-        new EvalCase(
+        EvalCase.of(
             "judged-lookup",
             "Who is cust_1?",
-            () -> {
-              crm.reset();
-              crm.add(new Customer("cust_1", "Ada Lovelace", "gold"));
-            },
             Evaluators.tools("getCustomer"),
             judge.mustSatisfy("the reply states the customer's name and tier and invents nothing"));
 
@@ -375,13 +357,9 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
     var result =
         runOne(
-            new EvalCase(
+            EvalCase.of(
                 "judged-in-polish",
                 "Who is cust_1?",
-                () -> {
-                  crm.reset();
-                  crm.add(new Customer("cust_1", "Ada Lovelace", "gold"));
-                },
                 judge.mustSatisfy("odpowiedz podaje nazwisko klienta")));
 
     assertThat(result.passed()).withFailMessage(result::describe).isTrue();
@@ -396,14 +374,8 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
     var result =
         runOne(
-            new EvalCase(
-                "unjudgeable",
-                "Who is cust_1?",
-                () -> {
-                  crm.reset();
-                  crm.add(new Customer("cust_1", "Ada Lovelace", "gold"));
-                },
-                judge.mustSatisfy("the reply is helpful")));
+            EvalCase.of(
+                "unjudgeable", "Who is cust_1?", judge.mustSatisfy("the reply is helpful")));
 
     assertThat(result.passed()).isTrue();
     assertThat(result.describe()).contains("ABSTAIN judge");
@@ -412,13 +384,9 @@ public class SupportAgentEvalTest extends TestKitSupport {
   @Test
   public void reportsWhatTheAgentDidWhenACaseFails() {
     var wrongExpectation =
-        new EvalCase(
+        EvalCase.of(
             "wrong-customer",
             "Who is cust_1?",
-            () -> {
-              crm.reset();
-              crm.add(new Customer("cust_1", "Ada Lovelace", "gold"));
-            },
             Evaluators.toolArgument("getCustomer", "customerId", "cust_2"));
 
     var result = runOne(wrongExpectation);
@@ -431,8 +399,9 @@ public class SupportAgentEvalTest extends TestKitSupport {
   }
 
   /**
-   * The mocked dependency: canned answers, nothing written down. A curated case fills it with plain
-   * Java; a replayed case fills it through {@link ToolBindings} with what production recorded.
+   * The mocked dependency: canned answers, nothing written down. The test fills it with plain Java
+   * before the run; a replayed case fills it through {@link ToolBindings} with what production
+   * recorded.
    */
   static final class CannedCrmClient implements CrmClient {
 
@@ -465,14 +434,14 @@ public class SupportAgentEvalTest extends TestKitSupport {
     }
 
     /** {@link ToolBindings.ResultLoader} for getCustomer. */
-    void loadCustomer(ToolBindings.RecordedCall call) {
+    void loadCustomer(RecordedCall call) {
       customers.put((String) call.argument("customerId"), call.resultAs(Customer.class));
     }
 
     /**
      * {@link ToolBindings.ResultLoader} for openTickets; the recorded result is an array of them.
      */
-    void loadTickets(ToolBindings.RecordedCall call) {
+    void loadTickets(RecordedCall call) {
       tickets.put((String) call.argument("customerId"), List.of(call.resultAs(Ticket[].class)));
     }
   }

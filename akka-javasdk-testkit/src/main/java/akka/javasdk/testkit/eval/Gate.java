@@ -98,7 +98,7 @@ public final class Gate {
         });
   }
 
-  /** No case may fail in its setup or in the agent call. */
+  /** No case may fail while its recorded calls are loaded or in the agent call. */
   public static Gate noTargetFailures() {
     return new Gate(
         results -> {

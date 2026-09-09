@@ -1,5 +1,5 @@
 = Eval cases and evaluators
-:page-summary: An EvalCase carries the user message, a setup and its evaluators; the built-in evaluators check the tool calls, the reply and the spend of a turn, and abstain when their evidence is absent.
+:page-summary: An EvalCase carries the user message and its evaluators; the built-in evaluators check the tool calls, the reply and the spend of a turn, and abstain when their evidence is absent.
 :page-when-to-use: Writing cases by hand and choosing what each one checks.
 :page-related: testing:evaluation/getting-started.adoc, testing:evaluation/judges.adoc, testing:evaluation/replay.adoc
 :page-persona: builder-developer, builder-ai-ml
@@ -23,17 +23,24 @@ link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/EvalCase.html[EvalCase] 
 | `userMessage`
 | The message the agent receives. The runner turns it into the command with the mapping given to `agent(...)`, see xref:testing:evaluation/getting-started.adoc#first-case[Writing the first case].
 
-| `setup`
-| A `Runnable` that runs before the agent is called. Use it to load answers into the stubs the agent's tools call, or to seed entities through the component client. `EvalCase.NO_SETUP` when the case needs none. `EvalCase.of(id, userMessage, evaluators...)` creates a case without a setup.
+| `recordedCalls`
+| The tool calls a recording carried, as data. The runner loads their results into the stubs through the `ToolBindings` given to it, see xref:testing:evaluation/replay.adoc#tool-bindings[Binding tools to stubs]. Empty for a case written by hand. `EvalCase.of(id, userMessage, evaluators...)` creates such a case.
 
 | `evaluators`
 | The checks the turn must pass, as a list or as trailing arguments. Empty when the case only collects evidence. `withEvaluators(...)` returns the same case with more evaluators.
 |===
 
-A case that throws in its setup is reported as failed under the `setup` evaluator.
+A case that throws while its recorded calls are loaded is reported as failed under the `setup` evaluator.
 The agent is not called.
 
 Each case runs in a fresh session, so no case can read the session memory of an earlier case.
+
+== Preparing the stubs
+
+The stubs the agent's tools call are prepared before the experiment runs, in the test, for example in a JUnit `@BeforeEach`.
+Every case of a run reads the same stubs, so a stub holds the answers of all cases at once and keys them by the tool's arguments: an order by its id, the routes by their destination.
+State that lives in the runtime, such as an entity a tool reads, is seeded the same way, through the component client before the run.
+A replayed case is the exception: its recorded results are loaded per case, see xref:testing:evaluation/replay.adoc#tool-bindings[Binding tools to stubs].
 
 == Evaluators
 

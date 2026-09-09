@@ -347,25 +347,101 @@ class ExperimentRunnerTest {
   }
 
   @Test
-  void aThrownSetupIsReportedBeforeTheTurnIsTaken() {
-    var target = targetThat("never asked");
+  void recordedCallsAreLoadedIntoTheBoundStubsBeforeTheTurn() {
+    var stub = new java.util.LinkedHashMap<String, String>();
+    var order = new java.util.ArrayList<String>();
+    var bindings =
+        ToolBindings.builder()
+            .bind(
+                "getCustomer",
+                call -> {
+                  stub.put((String) call.argument("customerId"), call.resultAs(String.class));
+                  order.add("load " + call.tool());
+                })
+            .build();
     var evalCase =
         new EvalCase(
             "c",
             "a question",
-            () -> {
-              throw new IllegalStateException("fixture missing");
-            },
-            Evaluators.tools("getCustomer"));
+            List.of(new RecordedCall("getCustomer", Map.of("customerId", "cust_1"), "\"Ada\"")),
+            List.of(Evaluators.answerContains("Ada")));
+    EvalTarget target =
+        turn -> {
+          order.add("turn");
+          return EvalTarget.Outcome.answered(Interaction.of("Hello " + stub.get("cust_1")));
+        };
 
-    var result = single(target, evalCase);
+    var result =
+        ExperimentRunner.against(new ExperimentRunner().cases(evalCase).bindings(bindings), target)
+            .run()
+            .results()
+            .getFirst();
+
+    assertThat(result.passed()).withFailMessage(result::describe).isTrue();
+    assertThat(order).containsExactly("load getCustomer", "turn");
+  }
+
+  @Test
+  void aRecordedToolWithoutABindingIsRefusedBeforeAnyCaseRuns() {
+    var calls = new java.util.ArrayList<String>();
+    EvalTarget target =
+        turn -> {
+          calls.add(turn.caseId());
+          return EvalTarget.Outcome.answered(Interaction.of("done"));
+        };
+    var lookup =
+        new EvalCase(
+            "lookup",
+            "who is cust_1?",
+            List.of(new RecordedCall("getCustomer", Map.of(), "{}")),
+            List.of());
+    var tickets =
+        new EvalCase(
+            "tickets",
+            "what is open?",
+            List.of(
+                new RecordedCall("getCustomer", Map.of(), "{}"),
+                new RecordedCall("openTickets", Map.of(), "[]")),
+            List.of());
+    var cases = new ExperimentRunner().cases(lookup, tickets);
+
+    assertThatThrownBy(() -> ExperimentRunner.against(cases, target))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("getCustomer (cases lookup, tickets)")
+        .hasMessageContaining("openTickets (case tickets)")
+        .hasMessageContaining("bindings(ToolBindings)");
+    var partial = cases.bindings(ToolBindings.builder().bind("getCustomer", call -> {}).build());
+    assertThatThrownBy(() -> ExperimentRunner.against(partial, target))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("openTickets (case tickets)")
+        .hasMessageContaining("bound: [getCustomer]");
+    assertThat(calls).isEmpty();
+  }
+
+  @Test
+  void aLoaderThatThrowsFailsTheCaseUnderSetup() {
+    var target = targetThat("never asked");
+    var bindings =
+        ToolBindings.builder().bind("getCustomer", call -> call.resultAs(Duration.class)).build();
+    var evalCase =
+        new EvalCase(
+            "c",
+            "a question",
+            List.of(new RecordedCall("getCustomer", Map.of(), "{\"id\":\"cust_1\"}")),
+            List.of(Evaluators.tools("getCustomer")));
+
+    var result =
+        ExperimentRunner.against(new ExperimentRunner().cases(evalCase).bindings(bindings), target)
+            .run()
+            .results()
+            .getFirst();
 
     assertThat(result.evalResults())
         .singleElement()
         .satisfies(
             evalResult -> {
               assertThat(evalResult.evaluator()).isEqualTo(Evaluators.SETUP);
-              assertThat(evalResult.detail()).contains("fixture missing");
+              assertThat(evalResult.detail()).contains("recorded result of getCustomer");
             });
   }
 

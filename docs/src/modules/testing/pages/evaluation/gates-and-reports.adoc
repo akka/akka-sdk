@@ -29,7 +29,7 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is wha
 | One evaluator's pass rate, over the cases where it did not abstain, is at least the rate. Fails when the evaluator judged no case. Evaluator names are in `Evaluators`, or the name a custom evaluator reports under.
 
 | `Gate.noTargetFailures()`
-| No case failed in its setup or in the agent call.
+| No case failed while loading its recorded calls or in the agent call.
 
 | `gate.and(other)`
 | Both gates hold. The verdict lists both details.

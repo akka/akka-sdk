@@ -1,5 +1,6 @@
 package com.example.eval;
 
+import akka.javasdk.testkit.eval.RecordedCall;
 import akka.javasdk.testkit.eval.ToolBindings;
 import java.util.List;
 import java.util.Map;
@@ -53,12 +54,12 @@ public final class StubOrderService implements OrderService {
 
   // tag::loaders[]
   /** Adds the order a recorded getOrder call returned. */
-  public void loadOrder(ToolBindings.RecordedCall call) {
+  public void loadOrder(RecordedCall call) {
     addOrder(call.resultAs(Order.class));
   }
 
   /** Adds the refund a recorded issueRefund call returned. */
-  public void loadRefund(ToolBindings.RecordedCall call) {
+  public void loadRefund(RecordedCall call) {
     addRefund(call.resultAs(Refund.class));
   }
   // end::loaders[]

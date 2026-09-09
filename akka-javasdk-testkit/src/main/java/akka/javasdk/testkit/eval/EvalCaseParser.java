@@ -33,9 +33,10 @@ import java.util.Map;
  *   "latencyMs": 1400 }
  * }</pre>
  *
- * <p>The case sends the recorded input, loads the recorded tool results into each bound stub, and
- * expects the recorded tools, their order and their arguments. These evaluators describe what
- * production did. They are a baseline, not a statement of correctness.
+ * <p>The case sends the recorded input, carries the recorded tool calls for the runner to load into
+ * the stubs through its {@link ToolBindings}, and expects the recorded tools, their order and their
+ * arguments. These evaluators describe what production did. They are a baseline, not a statement of
+ * correctness.
  *
  * <p>{@code modelCalls}, {@code tokens} and {@code latencyMs} are optional. When present they
  * become budgets on the case: the model call count as recorded, tokens and latency multiplied by a
@@ -52,30 +53,20 @@ public final class EvalCaseParser {
   private EvalCaseParser() {}
 
   /**
-   * Reads a JSONL file whose interactions name no tools, with {@link #DEFAULT_SLACK}.
-   *
-   * @throws IllegalArgumentException listing every line that does not parse, has no {@code input},
-   *     or names a tool
-   */
-  public static List<EvalCase> parse(Path canonicalJsonl) {
-    return parse(canonicalJsonl, ToolBindings.builder().build(), DEFAULT_SLACK);
-  }
-
-  /**
    * Reads the JSONL file with {@link #DEFAULT_SLACK}.
    *
    * @throws IllegalArgumentException listing every line that does not parse, has no {@code input},
-   *     or names a tool without a binding
+   *     or names a tool call without a name
    */
-  public static List<EvalCase> parse(Path canonicalJsonl, ToolBindings bindings) {
-    return parse(canonicalJsonl, bindings, DEFAULT_SLACK);
+  public static List<EvalCase> parse(Path canonicalJsonl) {
+    return parse(canonicalJsonl, DEFAULT_SLACK);
   }
 
   /**
    * Reads the JSONL file. {@code slack} multiplies the recorded token and latency figures to give
    * the budgets. {@code 1.0} holds a case to exactly what was recorded.
    */
-  public static List<EvalCase> parse(Path canonicalJsonl, ToolBindings bindings, double slack) {
+  public static List<EvalCase> parse(Path canonicalJsonl, double slack) {
     if (slack < 1.0) throw new IllegalArgumentException("slack is at least 1.0, was " + slack);
     List<String> lines;
     try {
@@ -91,7 +82,7 @@ public final class EvalCaseParser {
       if (line.isBlank()) continue;
       var lineNumber = i + 1;
       try {
-        cases.add(readCase(MAPPER.readTree(line), lineNumber, bindings, slack));
+        cases.add(readCase(MAPPER.readTree(line), lineNumber, slack));
       } catch (IllegalArgumentException | IOException e) {
         problems.add("line " + lineNumber + ": " + e.getMessage());
       }
@@ -103,28 +94,21 @@ public final class EvalCaseParser {
     return List.copyOf(cases);
   }
 
-  private static EvalCase readCase(
-      JsonNode interaction, int lineNumber, ToolBindings bindings, double slack) {
+  private static EvalCase readCase(JsonNode interaction, int lineNumber, double slack) {
     var input = interaction.path("input").asText("");
     if (input.isBlank()) throw new IllegalArgumentException("no input");
     var id = interaction.path("id").asText("replay-" + lineNumber);
 
-    var recorded = new ArrayList<ToolBindings.RecordedCall>();
+    var recorded = new ArrayList<RecordedCall>();
     for (var call : interaction.path("toolCalls")) {
       var tool = call.path("name").asText("");
       if (tool.isBlank()) throw new IllegalArgumentException("tool call with no name");
-      if (!bindings.binds(tool)) {
-        throw new IllegalArgumentException(
-            "no binding for tool " + tool + "; bound: " + bindings.toolNames());
-      }
-      recorded.add(
-          new ToolBindings.RecordedCall(tool, arguments(call), call.path("result").toString()));
+      recorded.add(new RecordedCall(tool, arguments(call), call.path("result").toString()));
     }
 
-    Runnable setup = () -> recorded.forEach(call -> bindings.loaderFor(call.tool()).load(call));
     var evaluators = baseline(recorded);
     evaluators.addAll(budgets(interaction, slack));
-    return new EvalCase(id, input, setup, evaluators);
+    return new EvalCase(id, input, recorded, evaluators);
   }
 
   /** Turns the recorded spend into budgets. */
@@ -169,7 +153,7 @@ public final class EvalCaseParser {
   }
 
   /** The recorded tools, their order and their arguments, as evaluators. */
-  private static List<Evaluator> baseline(List<ToolBindings.RecordedCall> recorded) {
+  private static List<Evaluator> baseline(List<RecordedCall> recorded) {
     var evaluators = new ArrayList<Evaluator>();
     if (recorded.isEmpty()) return evaluators;
 

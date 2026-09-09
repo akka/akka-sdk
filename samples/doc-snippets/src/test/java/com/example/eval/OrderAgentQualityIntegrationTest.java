@@ -17,7 +17,7 @@ import akka.javasdk.testkit.eval.ToolBindings;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.List;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
@@ -47,20 +47,21 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
     };
   }
 
-  @AfterEach
-  public void reset() {
+  @BeforeEach
+  public void theOrders() {
     orders.reset(); // <4>
+    orders.addOrder(new Order("o_42", "shipped", 2599));
+    orders.addOrder(new Order("o_9", "delivered", 4999));
   }
 
   // end::class[]
 
   // tag::status-case[]
   private EvalCase orderStatus() {
-    return new EvalCase(
+    return EvalCase.of(
       "order-status", // <1>
       "Where is order o_42?", // <2>
-      () -> orders.addOrder(new Order("o_42", "shipped", 2599)), // <3>
-      Evaluators.tools("getOrder"), // <4>
+      Evaluators.tools("getOrder"), // <3>
       Evaluators.toolArgument("getOrder", "orderId", "o_42"),
       Evaluators.forbiddenTools("issueRefund"),
       Evaluators.answerContains("shipped")
@@ -70,10 +71,9 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   // end::status-case[]
   // tag::refund-case[]
   private EvalCase fullRefund() {
-    return new EvalCase(
+    return EvalCase.of(
       "full-refund",
       "Order o_9 arrived broken. I want my money back.",
-      () -> orders.addOrder(new Order("o_9", "delivered", 4999)),
       Evaluators.toolOrder("getOrder", "issueRefund"), // <1>
       Evaluators.toolArgument("issueRefund", "amountCents", 4999), // <2>
       Evaluators.answerMatches("refund(ed)?.*49\\.99"), // <3>
@@ -133,14 +133,11 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   // tag::case-evaluator[]
   @Test
   public void aRefundNeverExceedsTheOrderTotal() {
-    var order = new Order("o_9", "delivered", 4999);
-
-    var refund = new EvalCase(
+    var refund = EvalCase.of(
       "refund-within-total",
       "Order o_9 arrived broken. I want my money back.",
-      () -> orders.addOrder(order),
       Evaluators.tools("issueRefund"),
-      new RefundWithinTotal(order.totalCents()) // <1>
+      new RefundWithinTotal(orders.getOrder("o_9").totalCents()) // <1>
     );
 
     var report = new ExperimentRunner(testKit).cases(refund).agent(OrderAgent::ask).run();
@@ -155,10 +152,9 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   public void theReplyApologizesAndStatesTheAmount() {
     var judge = Judge.agent(testKit); // <1>
 
-    var refund = new EvalCase(
+    var refund = EvalCase.of(
       "judged-refund",
       "Order o_9 arrived broken. I want my money back.",
-      () -> orders.addOrder(new Order("o_9", "delivered", 4999)),
       Evaluators.tools("issueRefund"),
       judge.mustSatisfy("the reply apologizes and states the refunded amount") // <2>
     );
@@ -191,10 +187,9 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
 
   @Test
   public void aFailedCaseShowsWhatTheAgentDid() {
-    var wrongOrder = new EvalCase(
+    var wrongOrder = EvalCase.of(
       "wrong-order",
       "Where is order o_42?",
-      () -> orders.addOrder(new Order("o_42", "shipped", 2599)),
       Evaluators.toolArgument("getOrder", "orderId", "o_43")
     );
 
@@ -206,7 +201,6 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
       .contains("getOrder{orderId=o_42}")
       .contains("expected o_43");
   }
-
 
   // tag::target-failure[]
   @Test
@@ -254,21 +248,23 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
       throw new IllegalStateException(e);
     }
   }
+
   // end::replay-replies[]
 
   // tag::replay[]
   @Test
   public void replayedTrafficStillHolds() {
-    var bindings = ToolBindings.builder() // <1>
+    var replayed = EvalCaseParser.parse(recording("/eval/captures.jsonl")); // <1>
+    var bindings = ToolBindings.builder() // <2>
       .bind("getOrder", orders::loadOrder)
       .bind("issueRefund", orders::loadRefund)
       .build();
-    var replayed = EvalCaseParser.parse(recording("/eval/captures.jsonl"), bindings); // <2>
 
     var report = new ExperimentRunner(testKit)
       .cases(replayed)
+      .bindings(bindings) // <3>
       .agent(OrderAgent::ask)
-      .gate(Gate.passRateAtLeast(0.9)) // <3>
+      .gate(Gate.passRateAtLeast(0.9)) // <4>
       .run();
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();

@@ -68,7 +68,7 @@ public final class Evaluators {
   /** The agent call failed. */
   public static final String TARGET = "target";
 
-  /** The case's setup threw, so the agent was never called. */
+  /** Loading the case's recorded calls into the stubs threw, so the agent was never called. */
   public static final String SETUP = "setup";
 
   private Evaluators() {}

@@ -36,23 +36,23 @@ class EvalCaseParserTest {
       """;
 
   @Test
-  void loadsTheRecordedResultIntoTheBoundStub(@TempDir Path dir) throws IOException {
+  void carriesTheRecordedCallsAndExpectsThemAsTheBaseline(@TempDir Path dir) throws IOException {
     var file = Files.writeString(dir.resolve("captures.jsonl"), CAPTURE);
-    var canned = new HashMap<String, Customer>();
-    var bindings =
-        ToolBindings.builder()
-            .bind(
-                "getCustomer",
-                call ->
-                    canned.put((String) call.argument("customerId"), call.resultAs(Customer.class)))
-            .build();
 
-    var cases = EvalCaseParser.parse(file, bindings);
+    var cases = EvalCaseParser.parse(file);
 
     assertThat(cases).extracting(EvalCase::id).containsExactly("c1", "c2");
 
-    cases.get(0).setup().run();
-    assertThat(canned).containsEntry("cust_1", new Customer("cust_1", "Ada Lovelace"));
+    // The recorded call as data, for the runner to load through the bindings it is given.
+    assertThat(cases.get(0).recordedCalls())
+        .singleElement()
+        .satisfies(
+            call -> {
+              assertThat(call.tool()).isEqualTo("getCustomer");
+              assertThat(call.argument("customerId")).isEqualTo("cust_1");
+              assertThat(call.resultAs(Customer.class))
+                  .isEqualTo(new Customer("cust_1", "Ada Lovelace"));
+            });
 
     // The baseline: the recorded tool, its order and its argument, as three evaluators.
     var asRecorded =
@@ -71,7 +71,7 @@ class EvalCaseParserTest {
     assertThat(verdicts(cases.get(0), Interaction.of("done")))
         .containsEntry(Evaluators.TOOLS, Verdict.FAIL);
 
-    cases.get(1).setup().run();
+    assertThat(cases.get(1).recordedCalls()).isEmpty();
     assertThat(cases.get(1).evaluators()).isEmpty();
   }
 
@@ -87,7 +87,7 @@ class EvalCaseParserTest {
             {"id":"c3","input":"hi","toolCalls":[]}
             """);
 
-    var cases = EvalCaseParser.parse(file, ToolBindings.builder().build());
+    var cases = EvalCaseParser.parse(file);
 
     // c1: the model call count as recorded, tokens and latency with 1.5 slack.
     var spent = cases.get(0);
@@ -112,7 +112,7 @@ class EvalCaseParserTest {
     assertThat(cases.get(2).evaluators()).isEmpty();
 
     // Slack 1.0 holds a case to exactly what was recorded.
-    var exact = EvalCaseParser.parse(file, ToolBindings.builder().build(), 1.0).get(0);
+    var exact = EvalCaseParser.parse(file, 1.0).get(0);
     assertThat(verdicts(exact, traced(2, 110, Duration.ofMillis(1000))))
         .containsEntry(Evaluators.TOKEN_BUDGET, Verdict.PASS)
         .containsEntry(Evaluators.LATENCY_BUDGET, Verdict.PASS);
@@ -132,29 +132,18 @@ class EvalCaseParserTest {
             {"id":"c3","input":"hi","toolCalls":[],"latencyMs":-5}
             """);
 
-    assertThatThrownBy(() -> EvalCaseParser.parse(file, ToolBindings.builder().build()))
+    assertThatThrownBy(() -> EvalCaseParser.parse(file))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("line 1: modelCalls")
         .hasMessageContaining("line 2: tokens")
         .hasMessageContaining("line 3: latencyMs");
-    assertThatThrownBy(() -> EvalCaseParser.parse(file, ToolBindings.builder().build(), 0.5))
+    assertThatThrownBy(() -> EvalCaseParser.parse(file, 0.5))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("slack");
   }
 
   @Test
-  void refusesAnUnboundToolAtLoadTimeNamingTheLine(@TempDir Path dir) throws IOException {
-    var file = Files.writeString(dir.resolve("captures.jsonl"), CAPTURE);
-    var bindings = ToolBindings.builder().bind("somethingElse", call -> {}).build();
-
-    assertThatThrownBy(() -> EvalCaseParser.parse(file, bindings))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("line 1")
-        .hasMessageContaining("no binding for tool getCustomer");
-  }
-
-  @Test
-  void parsesWithoutBindingsWhenNoToolIsNamed(@TempDir Path dir) throws IOException {
+  void parsesARecordingWithoutToolCalls(@TempDir Path dir) throws IOException {
     var file =
         Files.writeString(
             dir.resolve("replies.jsonl"),
@@ -171,29 +160,23 @@ class EvalCaseParserTest {
   }
 
   @Test
-  void refusesAToolWhenParsedWithoutBindings(@TempDir Path dir) throws IOException {
-    var file = Files.writeString(dir.resolve("captures.jsonl"), CAPTURE);
+  void reportsEveryProblemWithItsLineNumber(@TempDir Path dir) throws IOException {
+    var file =
+        Files.writeString(
+            dir.resolve("captures.jsonl"),
+            "not json\n\n{\"id\":\"x\"}\n{\"input\":\"hi\",\"toolCalls\":[{\"result\":1}]}\n");
 
     assertThatThrownBy(() -> EvalCaseParser.parse(file))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("line 1")
-        .hasMessageContaining("no binding for tool getCustomer");
-  }
-
-  @Test
-  void reportsEveryProblemWithItsLineNumber(@TempDir Path dir) throws IOException {
-    var file = Files.writeString(dir.resolve("captures.jsonl"), "not json\n\n{\"id\":\"x\"}\n");
-
-    assertThatThrownBy(() -> EvalCaseParser.parse(file, ToolBindings.builder().build()))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("line 1")
-        .hasMessageContaining("line 3: no input");
+        .hasMessageContaining("line 3: no input")
+        .hasMessageContaining("line 4: tool call with no name");
   }
 
   @Test
   void recordedCallReadsResultIntoTheStubsType() {
     var call =
-        new ToolBindings.RecordedCall(
+        new RecordedCall(
             "getCustomer",
             Map.of("customerId", "cust_1"),
             "{\"id\":\"cust_1\",\"name\":\"Ada Lovelace\"}");
@@ -240,9 +223,8 @@ class EvalCaseParserTest {
             dir.resolve("captures.jsonl"),
             "{\"id\":\"c1\",\"input\":\"refund o_9\",\"toolCalls\":[{\"name\":\"issueRefund\","
                 + "\"arguments\":{\"orderId\":\"o_9\",\"note\":null},\"result\":true}]}\n");
-    var bindings = ToolBindings.builder().bind("issueRefund", call -> {}).build();
 
-    var evalCase = EvalCaseParser.parse(file, bindings).getFirst();
+    var evalCase = EvalCaseParser.parse(file).getFirst();
 
     var arguments = new HashMap<String, Object>();
     arguments.put("orderId", "o_9");

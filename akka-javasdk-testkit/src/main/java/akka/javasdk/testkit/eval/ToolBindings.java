@@ -4,8 +4,6 @@
 
 package akka.javasdk.testkit.eval;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -13,58 +11,27 @@ import java.util.Set;
 /**
  * Which injected stub serves which tool, for cases derived from recordings.
  *
- * <p>A recorded interaction names a tool and its result. The binding loads that result into the
- * stub that serves the tool in the test:
+ * <p>A recorded case carries each tool call production made, with its result. The binding loads
+ * that result into the stub that serves the tool in the test:
  *
  * <pre>{@code
  * var bindings = ToolBindings.builder()
  *     .bind("getCustomer", call -> crm.add(call.resultAs(Customer.class)))
  *     .build();
+ *
+ * runner.cases(replayed).bindings(bindings).agent(SupportAgent::ask).run();
  * }</pre>
  *
- * <p>{@link EvalCaseParser} rejects a recording that names a tool without a binding.
+ * <p>{@link ExperimentRunner} refuses to run a case that names a tool without a binding.
  */
 public final class ToolBindings {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final ToolBindings NONE = new ToolBindings(Map.of());
 
   private final Map<String, ResultLoader> byTool;
 
   private ToolBindings(Map<String, ResultLoader> byTool) {
     this.byTool = Map.copyOf(byTool);
-  }
-
-  /** One recorded tool call: the arguments and the result as recorded JSON. */
-  public record RecordedCall(String tool, Map<String, Object> arguments, String resultJson) {
-
-    public RecordedCall {
-      if (tool == null || tool.isBlank()) throw new IllegalArgumentException("tool required");
-      if (arguments == null) throw new IllegalArgumentException("arguments required");
-      if (resultJson == null) throw new IllegalArgumentException("resultJson required");
-      // Not Map.copyOf: a recording may carry null for an argument.
-      arguments = Collections.unmodifiableMap(new LinkedHashMap<>(arguments));
-    }
-
-    /** The recorded value of one argument, or null when the call did not carry it. */
-    public Object argument(String name) {
-      return arguments.get(name);
-    }
-
-    /** The recorded result, read into the given type. */
-    public <T> T resultAs(Class<T> type) {
-      try {
-        return MAPPER.readValue(resultJson, type);
-      } catch (Exception e) {
-        throw new IllegalArgumentException(
-            "recorded result of "
-                + tool
-                + " does not read as "
-                + type.getSimpleName()
-                + ": "
-                + resultJson,
-            e);
-      }
-    }
   }
 
   /** Loads the recorded result of one call into its stub. */
@@ -76,6 +43,11 @@ public final class ToolBindings {
   /** Starts a set of bindings. */
   public static Builder builder() {
     return new Builder();
+  }
+
+  /** No bindings. */
+  public static ToolBindings none() {
+    return NONE;
   }
 
   /** Whether the tool has a binding. */
@@ -99,6 +71,13 @@ public final class ToolBindings {
       throw new IllegalArgumentException("no binding for tool " + tool + "; bound: " + toolNames());
     }
     return loader;
+  }
+
+  /** Loads each recorded call into the stub bound to its tool, in recorded order. */
+  public void load(Iterable<RecordedCall> calls) {
+    for (var call : calls) {
+      loaderFor(call.tool()).load(call);
+    }
   }
 
   public static final class Builder {

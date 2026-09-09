@@ -1,5 +1,5 @@
 = Replaying recorded interactions
-:page-summary: EvalCaseParser turns recorded production interactions in JSONL into cases that load the recorded tool results into the stubs and expect the recorded tool calls and spend.
+:page-summary: EvalCaseParser turns recorded production interactions in JSONL into cases that carry the recorded tool calls and expect the recorded tool calls and spend; the runner loads the recorded results into the stubs through ToolBindings.
 :page-when-to-use: Holding an agent to what production did, as a baseline before a prompt, model or tool change.
 :page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/gates-and-reports.adoc
 :page-persona: builder-developer, builder-ai-ml
@@ -50,12 +50,11 @@ Add the evaluators yourself: give an evaluator to the runner with `evaluator(...
 ----
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=replay-replies]
 ----
-<1> `parse(path)` reads a file whose recordings name no tools. A recording that names a tool needs bindings, see <<tool-bindings>>.
+<1> `parse(path)` reads the file. These recordings name no tools, so the cases need no bindings.
 <2> A built-in evaluator on every parsed case. No replayed turn may issue a refund.
 <3> A xref:testing:evaluation/judges.adoc[judge] scores every reply against one criterion.
 
-The file is read once, and every line that does not parse, has no `input`, or names a tool without a binding is listed with its line number in one `IllegalArgumentException`.
-With `parse(path)`, every tool counts as unbound.
+The file is read once, and every line that does not parse or has no `input` is listed with its line number in one `IllegalArgumentException`.
 
 == The tool calls
 
@@ -70,6 +69,8 @@ include::sdk:example$doc-snippets/src/test/resources/eval/captures.jsonl[lines=2
 `toolCalls` lists the calls in the order production made them.
 Each call has a `name`, `arguments` as an object, and the `result` as recorded JSON.
 An empty array records a turn without tool calls.
+The parser keeps each call on the case as a `RecordedCall`, in `EvalCase.recordedCalls()`.
+The parser does not touch the stubs; the runner does, through the bindings described next.
 
 [#tool-bindings]
 === Binding tools to stubs
@@ -77,7 +78,12 @@ An empty array records a turn without tool calls.
 In the test, a stub serves each tool.
 For the agent to see what production saw, the stub must return the recorded result.
 A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/ToolBindings.html[ToolBindings] maps each tool name to a loader that puts the recorded result into the stub serving that tool.
-The parser rejects a recording that names a tool without a binding, so a new tool in production cannot be replayed by accident against a stub that does not know it.
+Give the bindings to the runner with `bindings(...)`.
+Before each case the runner loads the case's recorded calls through them, in recorded order, then calls the agent.
+A loader that throws fails the case under the `setup` evaluator.
+
+The runner refuses to start when a case names a tool without a binding.
+The error lists each unbound tool with the cases that name it, so a new tool in production cannot be replayed by accident against a stub that does not know it.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/eval/StubOrderService.java[StubOrderService.java]
@@ -92,9 +98,10 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/StubOrderServic
 ----
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=replay]
 ----
-<1> One binding per tool the recordings name.
-<2> The cases. Each case's setup runs the loaders for its recorded calls before the agent is called.
-<3> The replayed batch runs like a curated one, with a gate for a real model.
+<1> The cases, with their recorded calls as data.
+<2> One binding per tool the recordings name.
+<3> The runner loads each case's recorded calls through the bindings before the agent is called.
+<4> The replayed batch runs like a curated one, with a gate for a real model.
 
 === What the tool calls assert
 
@@ -132,8 +139,8 @@ Each field present becomes a budget evaluator on the case.
 * `tokens` becomes `tokensAtMost`, the recorded total multiplied by a slack factor.
 * `latencyMs` becomes `latencyAtMost`, the recorded latency multiplied by the same factor.
 
-`EvalCaseParser.parse(path, bindings)` uses `EvalCaseParser.DEFAULT_SLACK`, which is 1.5.
-`parse(path, bindings, slack)` sets another factor; `1.0` holds a case to exactly what was recorded, and a factor below `1.0` is rejected.
+`EvalCaseParser.parse(path)` uses `EvalCaseParser.DEFAULT_SLACK`, which is 1.5.
+`parse(path, slack)` sets another factor; `1.0` holds a case to exactly what was recorded, and a factor below `1.0` is rejected.
 Under a `TestModelProvider` the token budget abstains, because a mocked model reports no tokens.
 
 == The replayed batch

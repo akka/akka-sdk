@@ -51,7 +51,7 @@ include::sdk:example$doc-snippets/src/main/java/com/example/eval/OrderService.ja
 ----
 
 Under test, a stub takes the place of the real order system.
-The sample's `StubOrderService` keeps a map of orders that a case fills before the agent is called, and throws for an unknown order id the way the real client would.
+The sample's `StubOrderService` keeps a map of orders that the test fills before the cases run, and throws for an unknown order id the way the real client would.
 The test registers the stub through a test specific `DependencyProvider`, as described in xref:sdk:setup-and-dependency-injection.adoc#_custom_dependency_injection_in_tests[Custom dependency injection in tests].
 
 [#test-class]
@@ -68,7 +68,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 <1> The class runs only when the build sets the `eval` system property. Without it JUnit skips the class.
 <2> The stub the agent's tools call.
 <3> The `DependencyProvider` that serves the stub. It replaces the one the service's `ServiceSetup` creates.
-<4> The stub is emptied after each test, so a case adds only what it needs.
+<4> The orders the cases ask about. The stub is refilled before each test, so every test starts from the same orders.
 
 Run it with the property set and the model's API key in the environment:
 
@@ -84,7 +84,7 @@ A JUnit `@Tag` with a Failsafe `groups` filter, a Maven profile, or a class name
 == The first case
 
 An `EvalCase` describes one turn with the agent.
-It carries the message the agent receives, the evaluators that check what the agent did with it, and a setup that prepares the stub before the turn.
+It carries the message the agent receives and the evaluators that check what the agent did with it.
 The first case asks where an order is and expects the agent to look the order up without refunding it.
 
 [source,java,indent=0]
@@ -94,8 +94,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 ----
 <1> The id names the case in the report.
 <2> The message the agent receives.
-<3> The setup runs before the agent is called. Here it adds the order the question is about to the stub.
-<4> The evaluators. The agent must call `getOrder` with the order id from the question, must not issue a refund, and the reply must carry the order's status.
+<3> The evaluators. The agent must call `getOrder` with the order id from the question, must not issue a refund, and the reply must carry the order's status.
 
 An experiment is a set of cases bound to an agent and a gate, run once for one report.
 
@@ -131,7 +130,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 ----
 <1> At least 90% of the cases must pass.
 <2> Every declared tool argument must arrive as declared, in every case that declares one. A wrong argument is a defect even when the reply reads well.
-<3> No case may fail in its setup or in the agent call. An unavailable model fails the gate rather than lowering the pass rate.
+<3> No case may fail in the agent call. An unavailable model fails the gate rather than lowering the pass rate.
 
 The gates are combined with `and`, so all three must hold.
 
