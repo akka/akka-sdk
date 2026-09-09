@@ -10,7 +10,7 @@ import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.annotations.Component;
 
 /**
- * The agent behind {@link Judge#agent}: sends the model one assessment and reads back a {@link
+ * The agent behind {@link Judge#modelBased}: sends the model one request and reads back a {@link
  * Judge.Verdict}.
  *
  * <p>Uses the model provider configured in {@code akka.javasdk.agent.model-provider}, or the one at
@@ -33,7 +33,7 @@ public class JudgeAgent extends Agent {
    */
   public record Request(String systemMessage, String userMessage, String modelConfigPath) {}
 
-  public Effect<Judge.Verdict> assess(Request request) {
+  public Effect<Judge.Verdict> decide(Request request) {
     if (request == null
         || request.systemMessage() == null
         || request.userMessage() == null

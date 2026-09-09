@@ -4,15 +4,12 @@
 
 package akka.javasdk.testkit.eval;
 
-import akka.javasdk.testkit.ToolCall;
-import java.util.List;
-
 /**
- * A model that scores a reply against a criterion given as a sentence. {@link #mustSatisfy} and
- * {@link #scoringAtLeast} turn the score into an {@link Evaluator}.
+ * Decides how well a reply meets a criterion given as a sentence. {@link #mustSatisfy} and {@link
+ * #scoringAtLeast} turn the score into an {@link Evaluator}.
  *
  * <pre>{@code
- * var judge = Judge.agent(testKit);
+ * var judge = Judge.modelBased(testKit);
  *
  * EvalCase.of(
  *     "tier",
@@ -21,40 +18,25 @@ import java.util.List;
  *     judge.mustSatisfy("the reply states the customer's tier and invents nothing"));
  * }</pre>
  *
- * <p>{@link #agent} asks a model through {@link JudgeAgent}, which uses the model provider of the
- * test configuration. A test can also return a {@link Verdict} directly, or mock that agent's
+ * <p>{@link #modelBased} asks a model through {@link JudgeAgent}, which uses the model provider of
+ * the test configuration. A test can also return a {@link Verdict} directly, or mock that agent's
  * model.
  *
  * <p>A judged score can differ between runs of the same reply. Use a judge for criteria that have
  * no exact answer to compare against, and gate a batch on the rate instead of asserting per case.
  */
-@FunctionalInterface
 public interface Judge {
 
-  Verdict assess(Input input);
+  /**
+   * @param criterion what a good reply does, as one sentence
+   * @param interaction the user message, the reply and the evidence the case produced
+   */
+  Verdict decide(String criterion, Interaction interaction);
 
   /** A judge that asks a model through {@link JudgeAgent}, using the TestKit component client. */
-  static AgentJudge agent(akka.javasdk.testkit.TestKit testKit) {
+  static ModelBasedJudge modelBased(akka.javasdk.testkit.TestKit testKit) {
     if (testKit == null) throw new IllegalArgumentException("testKit required");
-    return AgentJudge.backedBy(testKit.getComponentClient());
-  }
-
-  /** What the judge is given: the criterion and the evidence the case produced. */
-  record Input(String criterion, String userMessage, String reply, List<ToolCall> toolCalls) {
-
-    public Input {
-      if (criterion == null || criterion.isBlank())
-        throw new IllegalArgumentException("criterion required");
-      if (userMessage == null) throw new IllegalArgumentException("userMessage required");
-      if (reply == null) throw new IllegalArgumentException("reply required");
-      if (toolCalls == null) throw new IllegalArgumentException("toolCalls required");
-      toolCalls = List.copyOf(toolCalls);
-    }
-
-    /** The names of the tools called, in order. */
-    public List<String> toolNames() {
-      return toolCalls.stream().map(ToolCall::name).toList();
-    }
+    return ModelBasedJudge.backedBy(testKit.getComponentClient());
   }
 
   /**

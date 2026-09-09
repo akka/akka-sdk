@@ -6,25 +6,27 @@ package akka.javasdk.testkit.eval;
 
 import akka.javasdk.client.ComponentClient;
 import java.util.UUID;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 /**
- * A {@link Judge} that asks a model through {@link JudgeAgent}.
+ * A {@link Judge} that asks a model through {@link JudgeAgent}. The verdict is one model call, not
+ * deterministic, and consumes tokens.
  *
  * <p>The system message is {@link #DEFAULT_SYSTEM_MESSAGE}, or the one passed to {@link
  * #withSystemMessage}. The judge appends {@link #REPLY_FORMAT} to either, so the model always
  * replies with a JSON object with a {@code score} between 0 and 1 and a {@code reason}.
  *
- * <p>The user message is the {@link Input} rendered as text by {@link #defaultUserMessage}. {@link
- * #withUserMessage} replaces that rendering, for example to write the sections in another language.
+ * <p>The user message is the criterion and the {@link Interaction} rendered as text by {@link
+ * #defaultUserMessage}. {@link #withUserMessage} replaces that rendering, for example to write the
+ * sections in another language.
  *
  * <p>The model is the one configured in {@code akka.javasdk.agent.model-provider}. {@link
  * #withModel} names another configuration path. A provider registered for {@link JudgeAgent} in the
  * TestKit settings takes precedence over both.
  *
- * <p>Each assessment runs in a new session.
+ * <p>Each verdict is decided in a new session.
  */
-public final class AgentJudge implements Judge {
+public final class ModelBasedJudge implements Judge {
 
   /**
    * The system message a judge sends unless {@link #withSystemMessage} replaces it, before {@link
@@ -52,13 +54,13 @@ public final class AgentJudge implements Judge {
 
   private final ComponentClient componentClient;
   private final String systemMessage;
-  private final Function<Input, String> userMessage;
+  private final BiFunction<String, Interaction, String> userMessage;
   private final String modelConfigPath;
 
-  AgentJudge(
+  ModelBasedJudge(
       ComponentClient componentClient,
       String systemMessage,
-      Function<Input, String> userMessage,
+      BiFunction<String, Interaction, String> userMessage,
       String modelConfigPath) {
     if (componentClient == null) throw new IllegalArgumentException("componentClient required");
     if (systemMessage == null || systemMessage.isBlank())
@@ -72,32 +74,32 @@ public final class AgentJudge implements Judge {
   }
 
   /** A judge with the default system message, the default user message and the default model. */
-  static AgentJudge backedBy(ComponentClient componentClient) {
-    return new AgentJudge(
-        componentClient, DEFAULT_SYSTEM_MESSAGE, AgentJudge::defaultUserMessage, "");
+  static ModelBasedJudge backedBy(ComponentClient componentClient) {
+    return new ModelBasedJudge(
+        componentClient, DEFAULT_SYSTEM_MESSAGE, ModelBasedJudge::defaultUserMessage, "");
   }
 
   /** The same judge with another system message. {@link #REPLY_FORMAT} is appended to it. */
-  public AgentJudge withSystemMessage(String systemMessage) {
-    return new AgentJudge(componentClient, systemMessage, userMessage, modelConfigPath);
+  public ModelBasedJudge withSystemMessage(String systemMessage) {
+    return new ModelBasedJudge(componentClient, systemMessage, userMessage, modelConfigPath);
   }
 
   /**
-   * The same judge with another rendering of the input into the user message. The rendering must
-   * carry what the system message asks the model to judge.
+   * The same judge with another rendering of the criterion and the interaction into the user
+   * message. The rendering must carry what the system message asks the model to judge.
    */
-  public AgentJudge withUserMessage(Function<Input, String> userMessage) {
-    return new AgentJudge(componentClient, systemMessage, userMessage, modelConfigPath);
+  public ModelBasedJudge withUserMessage(BiFunction<String, Interaction, String> userMessage) {
+    return new ModelBasedJudge(componentClient, systemMessage, userMessage, modelConfigPath);
   }
 
   /**
    * The same judge asking the model configured at this path, for example {@code
    * "eval.judge-model"}, in the same form as {@code akka.javasdk.agent.model-provider}.
    */
-  public AgentJudge withModel(String modelConfigPath) {
+  public ModelBasedJudge withModel(String modelConfigPath) {
     if (modelConfigPath == null || modelConfigPath.isBlank())
       throw new IllegalArgumentException("modelConfigPath required");
-    return new AgentJudge(componentClient, systemMessage, userMessage, modelConfigPath);
+    return new ModelBasedJudge(componentClient, systemMessage, userMessage, modelConfigPath);
   }
 
   /** The system message this judge sends, with {@link #REPLY_FORMAT} appended. */
@@ -111,23 +113,25 @@ public final class AgentJudge implements Judge {
   }
 
   @Override
-  public Verdict assess(Input input) {
+  public Verdict decide(String criterion, Interaction interaction) {
     return componentClient
         .forAgent()
         .inSession(UUID.randomUUID().toString())
-        .method(JudgeAgent::assess)
-        .invoke(new JudgeAgent.Request(systemMessage(), userMessage.apply(input), modelConfigPath));
+        .method(JudgeAgent::decide)
+        .invoke(
+            new JudgeAgent.Request(
+                systemMessage(), userMessage.apply(criterion, interaction), modelConfigPath));
   }
 
-  /** The criterion and the evidence as text, in labeled sections. */
-  public static String defaultUserMessage(Input input) {
+  /** The criterion and the interaction as text, in labeled sections. */
+  public static String defaultUserMessage(String criterion, Interaction interaction) {
     var text = new StringBuilder();
-    text.append("Criterion:\n").append(input.criterion());
-    text.append("\n\nThe user asked:\n").append(input.userMessage());
-    text.append("\n\nThe agent replied:\n").append(input.reply());
-    if (!input.toolCalls().isEmpty()) {
+    text.append("Criterion:\n").append(criterion);
+    text.append("\n\nThe user asked:\n").append(interaction.userMessage());
+    text.append("\n\nThe agent replied:\n").append(interaction.reply());
+    if (!interaction.toolCalls().isEmpty()) {
       text.append("\n\nTools called, in order:");
-      for (var call : input.toolCalls()) {
+      for (var call : interaction.toolCalls()) {
         text.append("\n- ").append(call.name()).append(' ').append(call.arguments());
         call.result().ifPresent(result -> text.append(" -> ").append(result));
         call.error().ifPresent(error -> text.append(" -> failed: ").append(error));

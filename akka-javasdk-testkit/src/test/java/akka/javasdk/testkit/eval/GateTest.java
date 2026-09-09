@@ -19,6 +19,7 @@ class GateTest {
       turn ->
           EvalTarget.Outcome.answered(
               new Interaction(
+                  turn.userMessage(),
                   turn.caseId(),
                   List.of(new ToolCall("getCustomer", Map.of("customerId", turn.caseId())))));
 
@@ -75,7 +76,7 @@ class GateTest {
     EvalTarget throwing =
         turn -> {
           if (turn.caseId().equals("c2")) throw new IllegalStateException("model unavailable");
-          return EvalTarget.Outcome.answered(Interaction.of(turn.caseId()));
+          return EvalTarget.Outcome.answered(Interaction.of(turn.userMessage(), turn.caseId()));
         };
     var cases = List.of(expectingAnswer("c1", "c1"), expectingAnswer("c2", "c2"));
 

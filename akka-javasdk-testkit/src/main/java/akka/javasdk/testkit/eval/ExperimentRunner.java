@@ -185,7 +185,7 @@ public final class ExperimentRunner {
       } catch (RuntimeException e) {
         return new CaseResult(
             evalCase.id(),
-            Interaction.of(""),
+            Interaction.of(evalCase.userMessage(), ""),
             List.of(EvalResult.fail(describe(e)).attributedTo(Evaluators.SETUP)));
       }
 
@@ -202,7 +202,7 @@ public final class ExperimentRunner {
         case EvalTarget.Outcome.Failed failed ->
             new CaseResult(
                 evalCase.id(),
-                new Interaction("", failed.toolCalls()),
+                new Interaction(evalCase.userMessage(), "", failed.toolCalls()),
                 List.of(EvalResult.fail(failed.reason()).attributedTo(Evaluators.TARGET)));
         case EvalTarget.Outcome.Answered answered -> {
           var interaction = answered.interaction();

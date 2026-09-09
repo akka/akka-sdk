@@ -24,10 +24,7 @@ record JudgeEvaluator(Judge judge, String criterion, double threshold) implement
     }
     Judge.Verdict verdict;
     try {
-      verdict =
-          judge.assess(
-              new Judge.Input(
-                  criterion, evalCase.userMessage(), interaction.reply(), interaction.toolCalls()));
+      verdict = judge.decide(criterion, interaction);
     } catch (RuntimeException e) {
       return EvalResult.abstain(criterion + ": the judge failed: " + e.getMessage());
     }

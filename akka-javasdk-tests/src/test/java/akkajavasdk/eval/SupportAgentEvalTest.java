@@ -327,7 +327,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
         .reply(
             JsonSupport.encodeToString(
                 new Judge.Verdict(0.9, "it names the customer and their tier")));
-    var judge = Judge.agent(testKit);
+    var judge = Judge.modelBased(testKit);
 
     var evalCase =
         EvalCase.of(
@@ -350,9 +350,10 @@ public class SupportAgentEvalTest extends TestKitSupport {
         .whenUserMessage(message -> message.content().startsWith("Kryterium:"))
         .reply(JsonSupport.encodeToString(new Judge.Verdict(1, "spelnia")));
     var judge =
-        Judge.agent(testKit)
+        Judge.modelBased(testKit)
             .withUserMessage(
-                input -> "Kryterium:\n" + input.criterion() + "\n\nOdpowiedz:\n" + input.reply())
+                (criterion, interaction) ->
+                    "Kryterium:\n" + criterion + "\n\nOdpowiedz:\n" + interaction.reply())
             .withModel("eval.judge-model");
 
     var result =
@@ -370,7 +371,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
   public void aJudgeThatWillNotScoreAbstainsInsteadOfFailingTheCase() {
     judgeModel.fixedResponse(
         JsonSupport.encodeToString(new Judge.Verdict(-1, "I cannot judge this")));
-    var judge = Judge.agent(testKit);
+    var judge = Judge.modelBased(testKit);
 
     var result =
         runOne(

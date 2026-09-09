@@ -20,7 +20,8 @@ class ExperimentRunnerTest {
 
   /** Answers with the given text and tool calls. */
   private static EvalTarget targetThat(String answer, ToolCall... calls) {
-    return turn -> EvalTarget.Outcome.answered(new Interaction(answer, List.of(calls)));
+    return turn ->
+        EvalTarget.Outcome.answered(new Interaction(turn.userMessage(), answer, List.of(calls)));
   }
 
   private static ToolCall call(String name, String argument, Object value) {
@@ -189,7 +190,7 @@ class ExperimentRunnerTest {
             .toList();
     return turn ->
         EvalTarget.Outcome.answered(
-            new Interaction(answer, List.of(), calls, List.of(), took, answer));
+            new Interaction(turn.userMessage(), answer, List.of(), calls, List.of(), took, answer));
   }
 
   @Test
@@ -302,6 +303,7 @@ class ExperimentRunnerTest {
         turn ->
             EvalTarget.Outcome.answered(
                 new Interaction(
+                    turn.userMessage(),
                     "{\"tier\":\"gold\"}",
                     List.of(),
                     List.of(),
@@ -368,7 +370,8 @@ class ExperimentRunnerTest {
     EvalTarget target =
         turn -> {
           order.add("turn");
-          return EvalTarget.Outcome.answered(Interaction.of("Hello " + stub.get("cust_1")));
+          return EvalTarget.Outcome.answered(
+              Interaction.of(turn.userMessage(), "Hello " + stub.get("cust_1")));
         };
 
     var result =
@@ -387,7 +390,7 @@ class ExperimentRunnerTest {
     EvalTarget target =
         turn -> {
           calls.add(turn.caseId());
-          return EvalTarget.Outcome.answered(Interaction.of("done"));
+          return EvalTarget.Outcome.answered(Interaction.of(turn.userMessage(), "done"));
         };
     var lookup =
         new EvalCase(
@@ -465,7 +468,8 @@ class ExperimentRunnerTest {
     EvalTarget target =
         turn ->
             EvalTarget.Outcome.answered(
-                Interaction.of(turn.caseId().equals("apologetic") ? "sorry" : "sure"));
+                Interaction.of(
+                    turn.userMessage(), turn.caseId().equals("apologetic") ? "sorry" : "sure"));
 
     var report =
         ExperimentRunner.against(
@@ -486,7 +490,10 @@ class ExperimentRunnerTest {
     EvalTarget withEvidence =
         turn ->
             EvalTarget.Outcome.answered(
-                new Interaction("done", List.of(call("getCustomer", "customerId", "cust_1"))));
+                new Interaction(
+                    turn.userMessage(),
+                    "done",
+                    List.of(call("getCustomer", "customerId", "cust_1"))));
 
     var result =
         single(

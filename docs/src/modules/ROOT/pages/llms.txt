@@ -66,7 +66,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Evaluation](https://doc.akka.io/testing/evaluation/index.html.md): Run an agent through eval cases in a TestKit test and check replies and traced tool calls with built-in evaluators, a judge and a gate
 - [Evaluation getting started](https://doc.akka.io/testing/evaluation/getting-started.html.md): An agent with two tools, a test class with a mocked model, one case, then a gated batch
 - [Eval cases and evaluators](https://doc.akka.io/testing/evaluation/eval-cases.html.md): EvalCase parts and every built-in evaluator with its report name and abstain rule
-- [Model judges](https://doc.akka.io/testing/evaluation/judges.html.md): Judge.agent, mustSatisfy and scoringAtLeast, the judge prompt, gating on the judge rate
+- [Model judges](https://doc.akka.io/testing/evaluation/judges.html.md): Judge.modelBased, mustSatisfy and scoringAtLeast, the judge prompt, gating on the judge rate
 - [Gates and reports](https://doc.akka.io/testing/evaluation/gates-and-reports.html.md): Gate factories, reading an EvalReport and a failed case
 - [Replaying recorded interactions](https://doc.akka.io/testing/evaluation/replay.html.md): EvalCaseParser, the JSONL format, ToolBindings and budgets from recorded spend
 

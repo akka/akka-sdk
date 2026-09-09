@@ -150,7 +150,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   // tag::judge[]
   @Test
   public void theReplyApologizesAndStatesTheAmount() {
-    var judge = Judge.agent(testKit); // <1>
+    var judge = Judge.modelBased(testKit); // <1>
 
     var refund = EvalCase.of(
       "judged-refund",
@@ -170,7 +170,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   // tag::judged-batch[]
   @Test
   public void repliesStayFactual() {
-    var judge = Judge.agent(testKit);
+    var judge = Judge.modelBased(testKit);
     var factual = judge.scoringAtLeast("the reply states only what the tools returned", 0.7); // <1>
 
     var report = new ExperimentRunner(testKit)
@@ -225,7 +225,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   @Test
   public void recordedRepliesStayOnTopic() {
     var replayed = EvalCaseParser.parse(recording("/eval/replies.jsonl")); // <1>
-    var judge = Judge.agent(testKit);
+    var judge = Judge.modelBased(testKit);
     var onTopic = judge.scoringAtLeast(
       "the reply asks for an order number or closes the conversation",
       0.7

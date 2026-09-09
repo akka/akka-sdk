@@ -31,7 +31,9 @@ class JudgeTest {
         turn ->
             EvalTarget.Outcome.answered(
                 new Interaction(
-                    reply, List.of(new ToolCall("getLoan", Map.of("loanId", "loan_5001")))));
+                    turn.userMessage(),
+                    reply,
+                    List.of(new ToolCall("getLoan", Map.of("loanId", "loan_5001")))));
     return single(target, EvalCase.of("c", "Why was I charged a late fee?", evaluators));
   }
 
@@ -52,7 +54,7 @@ class JudgeTest {
 
   @Test
   void aScoreOverTheThresholdPassesAndCarriesTheJudgesReason() {
-    Judge judge = input -> Judge.Verdict.of(0.8, "it names the overdue payment");
+    Judge judge = (criterion, interaction) -> Judge.Verdict.of(0.8, "it names the overdue payment");
 
     var result =
         judged(
@@ -67,7 +69,8 @@ class JudgeTest {
 
   @Test
   void aScoreUnderTheThresholdFailsTheCase() {
-    Judge judge = input -> Judge.Verdict.of(0.3, "it states the fee without a reason");
+    Judge judge =
+        (criterion, interaction) -> Judge.Verdict.of(0.3, "it states the fee without a reason");
 
     var result = judged(judge, "You were charged 12.50.", judge.mustSatisfy(CRITERION));
 
@@ -77,24 +80,26 @@ class JudgeTest {
 
   @Test
   void theJudgeIsAskedAboutTheCaseAndWhatItCalled() {
-    var asked = new Judge.Input[1];
+    var askedCriterion = new String[1];
+    var asked = new Interaction[1];
     Judge judge =
-        input -> {
-          asked[0] = input;
+        (criterion, interaction) -> {
+          askedCriterion[0] = criterion;
+          asked[0] = interaction;
           return Judge.Verdict.of(1, "");
         };
 
     judged(judge, "an answer", judge.mustSatisfy(CRITERION));
 
-    assertThat(asked[0].criterion()).isEqualTo(CRITERION);
+    assertThat(askedCriterion[0]).isEqualTo(CRITERION);
     assertThat(asked[0].userMessage()).isEqualTo("Why was I charged a late fee?");
     assertThat(asked[0].reply()).isEqualTo("an answer");
-    assertThat(asked[0].toolNames()).containsExactly("getLoan");
+    assertThat(asked[0].toolCalls()).extracting(ToolCall::name).containsExactly("getLoan");
   }
 
   @Test
   void aScoreOffTheScaleAbstainsRatherThanFailingTheCase() {
-    Judge judge = input -> Judge.Verdict.of(7, "seven out of ten");
+    Judge judge = (criterion, interaction) -> Judge.Verdict.of(7, "seven out of ten");
 
     var result = judged(judge, "an answer", judge.mustSatisfy(CRITERION));
 
@@ -105,7 +110,7 @@ class JudgeTest {
   @Test
   void aJudgeThatThrowsAbstainsAndSaysSo() {
     Judge judge =
-        input -> {
+        (criterion, interaction) -> {
           throw new IllegalStateException("the judge's provider is not configured");
         };
 
@@ -118,13 +123,13 @@ class JudgeTest {
   @Test
   void aRunWithNoReplyIsNotSentToTheJudge() {
     Judge judge =
-        input -> {
+        (criterion, interaction) -> {
           throw new AssertionError("the judge was asked about an empty reply");
         };
 
     var result =
         single(
-            turn -> EvalTarget.Outcome.answered(Interaction.of("")),
+            turn -> EvalTarget.Outcome.answered(Interaction.of(turn.userMessage(), "")),
             EvalCase.of("c", "a question", judge.mustSatisfy(CRITERION)));
 
     assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.ABSTAIN);
@@ -132,7 +137,9 @@ class JudgeTest {
 
   @Test
   void aBatchIsGatedOnTheRateTheJudgePassed() {
-    Judge judge = input -> Judge.Verdict.of(input.reply().contains("because") ? 0.9 : 0.2, "");
+    Judge judge =
+        (criterion, interaction) ->
+            Judge.Verdict.of(interaction.reply().contains("because") ? 0.9 : 0.2, "");
     var cases =
         List.of(
             EvalCase.of("explained", "why?", judge.mustSatisfy(CRITERION)),
@@ -142,6 +149,7 @@ class JudgeTest {
         turn ->
             EvalTarget.Outcome.answered(
                 Interaction.of(
+                    turn.userMessage(),
                     turn.caseId().equals("explained") ? "because it was overdue" : "12.50"));
     var report =
         ExperimentRunner.against(new ExperimentRunner().cases(cases), explaining)
@@ -150,7 +158,8 @@ class JudgeTest {
 
     assertThat(report.passed()).isTrue();
     assertThat(report.render()).contains("judge 1/2");
-    EvalTarget bare = turn -> EvalTarget.Outcome.answered(Interaction.of("12.50"));
+    EvalTarget bare =
+        turn -> EvalTarget.Outcome.answered(Interaction.of(turn.userMessage(), "12.50"));
     assertThat(
             ExperimentRunner.against(new ExperimentRunner().cases(cases), bare)
                 .gate(Gate.evaluatorRateAtLeast(Evaluators.JUDGE, 0.5))
@@ -161,7 +170,7 @@ class JudgeTest {
 
   @Test
   void aJudgeThatGivesNoVerdictAbstains() {
-    Judge judge = input -> null;
+    Judge judge = (criterion, interaction) -> null;
 
     var result = judged(judge, "an answer", judge.mustSatisfy(CRITERION));
 
@@ -173,13 +182,13 @@ class JudgeTest {
   @Test
   void aCustomSystemMessageStillAsksForTheReplyFormat() {
     var judge =
-        AgentJudge.backedBy(new NoComponentClient())
+        ModelBasedJudge.backedBy(new NoComponentClient())
             .withSystemMessage("Judge the reply in French.\n");
 
     assertThat(judge.systemMessage())
         .startsWith("Judge the reply in French.")
-        .endsWith(AgentJudge.REPLY_FORMAT);
-    assertThat(AgentJudge.DEFAULT_SYSTEM_MESSAGE).doesNotContain("Reply as JSON");
+        .endsWith(ModelBasedJudge.REPLY_FORMAT);
+    assertThat(ModelBasedJudge.DEFAULT_SYSTEM_MESSAGE).doesNotContain("Reply as JSON");
   }
 
   /** The judge under test never calls the model. */

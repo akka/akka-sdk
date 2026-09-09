@@ -12,9 +12,10 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * What one turn produced: the agent's reply as text and what the runtime traced while producing it.
- * This is what an {@link Evaluator} reads.
+ * One turn: the user message, the agent's reply as text and what the runtime traced while producing
+ * it. This is what an {@link Evaluator} and a {@link Judge} read.
  *
+ * @param userMessage what the user sent
  * @param reply the agent's reply
  * @param toolCalls in call order
  * @param modelCalls in call order
@@ -24,6 +25,7 @@ import java.util.List;
  *     reply; empty when the trace did not carry it
  */
 public record Interaction(
+    String userMessage,
     String reply,
     List<ToolCall> toolCalls,
     List<ModelCall> modelCalls,
@@ -32,6 +34,7 @@ public record Interaction(
     String finalModelText) {
 
   public Interaction {
+    if (userMessage == null) throw new IllegalArgumentException("userMessage required");
     if (reply == null) throw new IllegalArgumentException("reply required");
     if (toolCalls == null) throw new IllegalArgumentException("toolCalls required");
     if (modelCalls == null) throw new IllegalArgumentException("modelCalls required");
@@ -44,13 +47,14 @@ public record Interaction(
   }
 
   /** A reply with tool calls only. */
-  public Interaction(String reply, List<ToolCall> toolCalls) {
-    this(reply, toolCalls, List.of(), List.of(), Duration.ZERO, "");
+  public Interaction(String userMessage, String reply, List<ToolCall> toolCalls) {
+    this(userMessage, reply, toolCalls, List.of(), List.of(), Duration.ZERO, "");
   }
 
   /** A reply with the traced evidence. */
-  public Interaction(String reply, AgentTrace trace) {
+  public Interaction(String userMessage, String reply, AgentTrace trace) {
     this(
+        userMessage,
         reply,
         required(trace).toolCalls(),
         trace.modelCalls(),
@@ -65,8 +69,8 @@ public record Interaction(
   }
 
   /** A reply with no evidence. */
-  public static Interaction of(String reply) {
-    return new Interaction(reply, List.of());
+  public static Interaction of(String userMessage, String reply) {
+    return new Interaction(userMessage, reply, List.of());
   }
 
   /** Input tokens summed over the model calls. */

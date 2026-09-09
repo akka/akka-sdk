@@ -57,7 +57,7 @@ class EvalCaseParserTest {
     // The baseline: the recorded tool, its order and its argument, as three evaluators.
     var asRecorded =
         new Interaction(
-            "done", List.of(new ToolCall("getCustomer", Map.of("customerId", "cust_1"))));
+            "q", "done", List.of(new ToolCall("getCustomer", Map.of("customerId", "cust_1"))));
     assertThat(verdicts(cases.get(0), asRecorded))
         .containsExactly(
             entry(Evaluators.TOOLS, Verdict.PASS),
@@ -65,10 +65,10 @@ class EvalCaseParserTest {
             entry(Evaluators.TOOL_ARGUMENTS, Verdict.PASS));
     var otherCustomer =
         new Interaction(
-            "done", List.of(new ToolCall("getCustomer", Map.of("customerId", "cust_2"))));
+            "q", "done", List.of(new ToolCall("getCustomer", Map.of("customerId", "cust_2"))));
     assertThat(verdicts(cases.get(0), otherCustomer))
         .containsEntry(Evaluators.TOOL_ARGUMENTS, Verdict.FAIL);
-    assertThat(verdicts(cases.get(0), Interaction.of("done")))
+    assertThat(verdicts(cases.get(0), Interaction.of("q", "done")))
         .containsEntry(Evaluators.TOOLS, Verdict.FAIL);
 
     assertThat(cases.get(1).recordedCalls()).isEmpty();
@@ -213,7 +213,7 @@ class EvalCaseParserTest {
                         "",
                         ""))
             .toList();
-    return new Interaction("done", List.of(), calls, List.of(), latency, "done");
+    return new Interaction("q", "done", List.of(), calls, List.of(), latency, "done");
   }
 
   @Test
@@ -229,12 +229,14 @@ class EvalCaseParserTest {
     var arguments = new HashMap<String, Object>();
     arguments.put("orderId", "o_9");
     arguments.put("note", null);
-    var asRecorded = new Interaction("done", List.of(new ToolCall("issueRefund", arguments)));
+    var asRecorded = new Interaction("q", "done", List.of(new ToolCall("issueRefund", arguments)));
     assertThat(verdicts(evalCase, asRecorded).values()).containsOnly(Verdict.PASS);
 
     var withANote =
         new Interaction(
-            "done", List.of(new ToolCall("issueRefund", Map.of("orderId", "o_9", "note", "x"))));
+            "q",
+            "done",
+            List.of(new ToolCall("issueRefund", Map.of("orderId", "o_9", "note", "x"))));
     assertThat(verdicts(evalCase, withANote))
         .containsEntry(Evaluators.TOOL_ARGUMENTS, Verdict.FAIL);
   }

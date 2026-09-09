@@ -63,7 +63,10 @@ final class AgentTarget<A extends Agent, C, R> implements EvalTarget {
               .method(method)
               .invoke(command.apply(turn.userMessage()));
       return Outcome.answered(
-          new Interaction(replyText.apply(reply), telemetry.getAgentTrace(turn.sessionId())));
+          new Interaction(
+              turn.userMessage(),
+              replyText.apply(reply),
+              telemetry.getAgentTrace(turn.sessionId())));
     } catch (RuntimeException e) {
       return Outcome.failed(e, toolCallsOrNone(turn));
     }

@@ -1,5 +1,5 @@
 = Model judges
-:page-summary: A Judge scores a reply against a criterion in plain language; Judge.agent asks a model through the TestKit, and the score becomes a pass, a fail or an abstention on the case.
+:page-summary: A Judge scores a reply against a criterion in plain language; Judge.modelBased asks a model through the TestKit, and the score becomes a pass, a fail or an abstention on the case.
 :page-when-to-use: Criteria the built-in evaluators cannot state, such as tone, completeness or faithfulness to the tool results.
 :page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/gates-and-reports.adoc
 :page-persona: builder-developer, builder-ai-ml
@@ -7,7 +7,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-A judge is a model that scores a reply against a criterion stated as a sentence.
+A judge decides how well a reply meets a criterion stated as a sentence.
 
 == What a judge decides
 
@@ -20,7 +20,8 @@ Gate a batch on the rate the judge passed rather than asserting on one judged ca
 
 == Asking a model through the TestKit
 
-`Judge.agent(testKit)` returns an link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/AgentJudge.html[AgentJudge] that asks a model through link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/JudgeAgent.html[JudgeAgent].
+`Judge.modelBased(testKit)` returns a link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/ModelBasedJudge.html[ModelBasedJudge] that asks a model through link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/JudgeAgent.html[JudgeAgent].
+The verdict is one model call. It is not deterministic and consumes tokens.
 `JudgeAgent` is an agent with the component id `eval-judge`.
 The TestKit registers it when it starts; it is not part of the deployed service.
 
@@ -28,7 +29,7 @@ The judge asks the model configured in `akka.javasdk.agent.model-provider`, or t
 
 [source,java]
 ----
-var judge = Judge.agent(testKit).withModel("eval.judge-model");
+var judge = Judge.modelBased(testKit).withModel("eval.judge-model");
 ----
 
 A model provider registered for `JudgeAgent.class` in the TestKit settings takes precedence over both. `TestKit.Settings.withModelProvider(JudgeAgent.class, provider)` accepts any `ModelProvider`, so it is another way to give the judge its own model.
@@ -36,7 +37,7 @@ A model provider registered for `JudgeAgent.class` in the TestKit settings takes
 To mock the judge, register a `TestModelProvider` with `TestKit.Settings.withModelProvider(JudgeAgent.class, provider)`, as for any other agent.
 The mocked reply must be the JSON object the judge reads: `{"score": 1.0, "reason": "mocked"}`.
 
-Each assessment runs in a new session with memory disabled, so one judgment does not influence the next.
+Each verdict is decided in a new session with memory disabled, so one verdict does not influence the next.
 
 [#stating-the-criterion]
 == Stating the criterion
@@ -55,7 +56,7 @@ A criterion that combines several properties, such as an apology, an amount and 
 State one property per criterion, so that a failed result names the property that failed.
 
 A criterion a program can decide, such as the length of the reply, belongs in a xref:testing:evaluation/eval-cases.adoc#custom-evaluators[custom evaluator], not in a judge.
-`Judge` is a functional interface, so a test can return a fixed `Verdict` to run judged cases without a model.
+`Judge` has one method, `decide(criterion, interaction)`, so a test can implement it as a lambda that returns a fixed `Verdict` to run judged cases without a model.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
@@ -74,9 +75,9 @@ PASS judge: the reply apologizes and states the refunded amount: scored 0.90, ne
 [#what-the-judge-sees]
 == What the judge sees
 
-The judge receives a `Judge.Input`: the criterion, the user message, the reply, and the tool calls with their arguments, results and errors.
+The judge receives the criterion and the `Interaction`: the user message, the reply, and the tool calls with their arguments, results and errors.
 
-`AgentJudge` renders the input as labeled sections and sends it as the user message.
+`ModelBasedJudge` renders them as labeled sections and sends the text as the user message.
 For the judged refund case in <<stating-the-criterion>> the default user message is:
 
 [listing]
@@ -98,20 +99,20 @@ Tools called, in order:
 A tool call that failed shows `-> failed:` and the error instead of a result.
 A case that called no tool has no `Tools called` section.
 
-The system message is `AgentJudge.DEFAULT_SYSTEM_MESSAGE`:
+The system message is `ModelBasedJudge.DEFAULT_SYSTEM_MESSAGE`:
 
 [source,java,indent=0]
 ----
-include::sdk:example$akka-javasdk-testkit/src/main/java/akka/javasdk/testkit/eval/AgentJudge.java[tag=system-message]
+include::sdk:example$akka-javasdk-testkit/src/main/java/akka/javasdk/testkit/eval/ModelBasedJudge.java[tag=system-message]
 ----
 
+The judge appends `ModelBasedJudge.REPLY_FORMAT` to the system message, which asks for the reply as a JSON object with a `score` between 0 and 1 and a `reason`.
 
 `withSystemMessage(text)` returns a judge with another system message. The reply format is appended to that message too, so a custom message does not need to ask for it.
 `systemMessage()` returns the system message a judge sends, with the reply format appended.
-The judge appends `AgentJudge.REPLY_FORMAT` to the system message, which asks for the reply as a JSON object with a `score` between 0 and 1 and a `reason`.
 
-`withUserMessage(function)` returns a judge that renders the `Judge.Input` into the user message with the given function, for example to label the sections in the language of the cases.
-`AgentJudge.defaultUserMessage(input)` is the default rendering in <<what-the-judge-sees>>.
+`withUserMessage(function)` returns a judge that renders the criterion and the `Interaction` into the user message with the given function, for example to label the sections in the language of the cases.
+`ModelBasedJudge.defaultUserMessage(criterion, interaction)` is the default rendering in <<what-the-judge-sees>>.
 A custom rendering must carry what the system message asks the model to judge.
 
 == When the judge abstains
