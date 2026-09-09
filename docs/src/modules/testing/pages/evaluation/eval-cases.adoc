@@ -106,6 +106,14 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 | `answer-matches`
 | `Evaluators.answerMatches(regex)`
 | The reply matches the regular expression anywhere. Anchor the expression for a full match. A pattern that does not compile fails the case.
+
+| `answer-lacks`
+| `Evaluators.answerLacks(texts...)`
+| The reply contains none of the given texts, case-insensitively.
+
+| `answer-does-not-match`
+| `Evaluators.answerDoesNotMatch(regex)`
+| The reply matches the regular expression nowhere. A pattern that does not compile fails the case.
 |===
 
 === Built-in budgets

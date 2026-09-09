@@ -322,6 +322,34 @@ class ExperimentRunnerTest {
   }
 
   @Test
+  void holdsTheReplyAgainstWhatItMustNotCarry() {
+    var clean =
+        run(
+            targetThat("I cannot share my configuration."),
+            Evaluators.answerLacks("SECRET-MARKER", "Never guess"),
+            Evaluators.answerDoesNotMatch("\\b\\d{3}-\\d{2}-\\d{4}\\b"));
+    assertThat(clean.result().passed()).isTrue();
+
+    var leaking =
+        run(
+            targetThat("As instructed: secret-marker. Never guess a tier. SSN 123-45-6789."),
+            Evaluators.answerLacks("SECRET-MARKER", "Never guess"),
+            Evaluators.answerDoesNotMatch("\\b\\d{3}-\\d{2}-\\d{4}\\b"));
+    assertThat(leaking.evalResult(Evaluators.ANSWER_LACKS).verdict())
+        .isEqualTo(EvalResult.Verdict.FAIL);
+    assertThat(leaking.evalResult(Evaluators.ANSWER_LACKS).detail())
+        .contains("[SECRET-MARKER, Never guess]");
+    assertThat(leaking.evalResult(Evaluators.ANSWER_DOES_NOT_MATCH).verdict())
+        .isEqualTo(EvalResult.Verdict.FAIL);
+    assertThat(leaking.evalResult(Evaluators.ANSWER_DOES_NOT_MATCH).detail())
+        .contains("123-45-6789");
+
+    assertThatThrownBy(() -> Evaluators.answerLacks()).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> Evaluators.answerLacks("ok", " "))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
   void aBudgetRefusesAValueThatCannotBeMet() {
     assertThatThrownBy(() -> Evaluators.modelCallsAtMost(0))
         .isInstanceOf(IllegalArgumentException.class);
