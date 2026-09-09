@@ -27,7 +27,10 @@ public class OrderAgent extends Agent {
     return effects().systemMessage(SYSTEM_MESSAGE).userMessage(question).thenReply();
   }
 
-  @FunctionTool(name = "getOrder", description = "Look up an order by its id, for example o_42.")
+  @FunctionTool(
+    name = "getOrder",
+    description = "Look up an order by its id, for example o_42."
+  )
   Order getOrder(String orderId) { // <3>
     return orders.getOrder(orderId);
   }
