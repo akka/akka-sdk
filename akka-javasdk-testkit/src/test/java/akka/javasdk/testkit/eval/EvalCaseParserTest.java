@@ -76,7 +76,7 @@ class EvalCaseParserTest {
   }
 
   @Test
-  void recordedSpendBecomesBudgetsWithSlackOnTokensAndLatency(@TempDir Path dir)
+  void recordedSpendBecomesBudgetsWithToleranceOnTokensAndLatency(@TempDir Path dir)
       throws IOException {
     var file =
         Files.writeString(
@@ -89,7 +89,7 @@ class EvalCaseParserTest {
 
     var cases = EvalCaseParser.parse(file);
 
-    // c1: the model call count as recorded, tokens and latency with 1.5 slack.
+    // c1: the model call count as recorded, tokens and latency at 1.5 times the recorded figures.
     var spent = cases.get(0);
     assertThat(verdicts(spent, traced(2, 165, Duration.ofMillis(1500))))
         .containsExactly(
@@ -111,7 +111,7 @@ class EvalCaseParserTest {
 
     assertThat(cases.get(2).evaluators()).isEmpty();
 
-    // Slack 1.0 holds a case to exactly what was recorded.
+    // A tolerance of 1.0 holds a case to exactly what was recorded.
     var exact = EvalCaseParser.parse(file, 1.0).get(0);
     assertThat(verdicts(exact, traced(2, 110, Duration.ofMillis(1000))))
         .containsEntry(Evaluators.TOKEN_BUDGET, Verdict.PASS)
@@ -139,7 +139,7 @@ class EvalCaseParserTest {
         .hasMessageContaining("line 3: latencyMs");
     assertThatThrownBy(() -> EvalCaseParser.parse(file, 0.5))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("slack");
+        .hasMessageContaining("tolerance");
   }
 
   @Test

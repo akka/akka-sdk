@@ -283,7 +283,8 @@ public class SupportAgentEvalTest extends TestKitSupport {
   @Test
   public void replayBaseline() {
     // The captures carry production's spend too, so each case is held to its model call count
-    // and to its latency with slack; the token budget abstains under the scripted model.
+    // and to its recorded latency times the tolerance; the token budget abstains under the
+    // scripted model.
     var replayed = EvalCaseParser.parse(captures());
     var bindings =
         ToolBindings.builder()
