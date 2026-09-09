@@ -4,6 +4,7 @@
 
 package akka.javasdk.enforcer;
 
+import java.util.regex.Pattern;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 
 /**
@@ -24,6 +25,12 @@ import org.apache.maven.artifact.versioning.ComparableVersion;
  * </ul>
  */
 class VersionComparator {
+
+  /**
+   * A resolved snapshot deployed to a remote repository carries a timestamp and build number in
+   * place of the {@code SNAPSHOT} qualifier, e.g. {@code 1.2.3-20260909.132344-1}.
+   */
+  private static final Pattern TIMESTAMPED_SNAPSHOT = Pattern.compile("-\\d{8}\\.\\d{6}-\\d+$");
 
   enum Strictness {
     /** Only flag when the app version is newer than the runtime version. */
@@ -63,6 +70,12 @@ class VersionComparator {
   }
 
   static ConflictResult check(String appVersion, String runtimeVersion, Strictness strictness) {
+    return checkNormalized(
+        normalizeSnapshot(appVersion), normalizeSnapshot(runtimeVersion), strictness);
+  }
+
+  private static ConflictResult checkNormalized(
+      String appVersion, String runtimeVersion, Strictness strictness) {
     if (appVersion.equals(runtimeVersion)) {
       return ConflictResult.none();
     }
@@ -187,5 +200,16 @@ class VersionComparator {
    */
   private static boolean qualifiersEqual(String appVersion, String runtimeVersion) {
     return getQualifier(appVersion).equalsIgnoreCase(getQualifier(runtimeVersion));
+  }
+
+  /**
+   * Rewrites a resolved timestamped snapshot back to its {@code -SNAPSHOT} base version, so that
+   * {@code 1.2.3-20260909.132344-1} and {@code 1.2.3-SNAPSHOT} are recognised as the same artifact.
+   * Maven's {@link ComparableVersion} reads the timestamp as a numeric qualifier and sorts it above
+   * {@code SNAPSHOT}, which would otherwise be reported as the application being newer than the
+   * runtime. Versions without a timestamp are returned unchanged.
+   */
+  static String normalizeSnapshot(String version) {
+    return TIMESTAMPED_SNAPSHOT.matcher(version).replaceFirst("-SNAPSHOT");
   }
 }

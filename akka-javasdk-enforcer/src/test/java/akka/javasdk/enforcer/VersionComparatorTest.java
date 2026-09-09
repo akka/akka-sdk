@@ -201,4 +201,60 @@ class VersionComparatorTest {
       assertEquals(APP_NEWER, r.direction);
     }
   }
+
+  @Nested
+  class TimestampedSnapshots {
+    // A snapshot resolved from a remote repository carries a timestamp and build number instead of
+    // the SNAPSHOT qualifier. It is the same artifact, so it must not be reported as a conflict.
+    // Regression: the runtime's own snapshot was flagged as "newer than runtime" in CI, where the
+    // dependency is downloaded rather than built locally.
+
+    @Test
+    void timestampedSnapshotMatchesBaseSnapshot() {
+      assertFalse(
+          check("1.6.16-8-5f6024e9-20260909.132344-1", "1.6.16-8-5f6024e9-SNAPSHOT", NEWER_ONLY)
+              .isConflict);
+    }
+
+    @Test
+    void timestampedSnapshotMatchesInEveryStrictness() {
+      for (Strictness strictness : Strictness.values()) {
+        assertFalse(
+            check("2.18.3-20260909.132344-1", "2.18.3-SNAPSHOT", strictness).isConflict,
+            "unexpected conflict with strictness " + strictness);
+      }
+    }
+
+    @Test
+    void timestampedSnapshotOnEitherSide() {
+      assertFalse(check("2.18.3-SNAPSHOT", "2.18.3-20260909.132344-1", NEWER_ONLY).isConflict);
+      assertFalse(check("2.18.3-20260909.132344-1", "2.18.3-20260909.132344-1", EXACT).isConflict);
+    }
+
+    @Test
+    void differentBaseVersionsStillConflict() {
+      // Normalizing the timestamp must not hide a genuine version difference
+      ConflictResult r = check("2.18.5-20260909.132344-1", "2.18.3-SNAPSHOT", NEWER_ONLY);
+      assertTrue(r.isConflict);
+      assertEquals(APP_NEWER, r.direction);
+    }
+
+    @Test
+    void releaseVersionsAreUnaffected() {
+      assertEquals("33.5.0-jre", normalizeSnapshot("33.5.0-jre"));
+      assertEquals("2.18.3", normalizeSnapshot("2.18.3"));
+      assertEquals("2.18.3-SNAPSHOT", normalizeSnapshot("2.18.3-SNAPSHOT"));
+      assertEquals("2.18.3-SNAPSHOT", normalizeSnapshot("2.18.3-20260909.132344-1"));
+      assertEquals(
+          "1.6.16-8-5f6024e9-SNAPSHOT", normalizeSnapshot("1.6.16-8-5f6024e9-20260909.132344-1"));
+    }
+
+    @Test
+    void timestampLikeVersionsThatAreNotSnapshotsAreUnaffected() {
+      // Only a trailing "-<8 digits>.<6 digits>-<build>" is a Maven snapshot timestamp
+      assertEquals("1.0-20260909.1323-1", normalizeSnapshot("1.0-20260909.1323-1"));
+      assertEquals("1.0-20260909.132344", normalizeSnapshot("1.0-20260909.132344"));
+      assertEquals("20260909.132344-1", normalizeSnapshot("20260909.132344-1"));
+    }
+  }
 }
