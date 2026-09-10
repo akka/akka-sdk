@@ -26,7 +26,7 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is wha
 | The share of cases with no failed result is at least the rate.
 
 | `Gate.evaluatorRateAtLeast(evaluator, rate)`
-| One evaluator's pass rate, over the cases where it was conclusive, is at least the rate. Fails when the evaluator judged no case. Evaluator names are in `Evaluators`, or the name a custom evaluator reports under.
+| At least this share of the named evaluator's results passed. Inconclusive results are left out of the count. The gate fails when the evaluator has no result to count. The name is a constant in `Evaluators`, or the name a custom evaluator returns from `name()`.
 
 | `Gate.noTargetFailures()`
 | No case failed while loading its recorded calls or in the agent call.
