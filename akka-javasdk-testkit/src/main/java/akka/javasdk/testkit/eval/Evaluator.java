@@ -19,7 +19,10 @@ public interface Evaluator {
    */
   String name();
 
-  /** Checks one turn. Abstain when the evidence this check needs is absent. */
+  /**
+   * Checks one turn. Inconclusive when the evidence this check needs is absent or does not support
+   * a verdict.
+   */
   EvalResult evaluate(EvalCase evalCase, Interaction interaction);
 
   /**
@@ -34,8 +37,11 @@ public interface Evaluator {
     public enum Verdict {
       PASS,
       FAIL,
-      /** The evidence this check needs is absent; neither a pass nor a fail. */
-      ABSTAIN
+      /**
+       * The evidence this check needs is absent or does not support a verdict; neither a pass nor a
+       * fail.
+       */
+      INCONCLUSIVE
     }
 
     public EvalResult {
@@ -57,9 +63,12 @@ public interface Evaluator {
       return new EvalResult("", Verdict.FAIL, detail);
     }
 
-    /** The evidence this check needs is absent; neither a pass nor a fail. */
-    public static EvalResult abstain(String detail) {
-      return new EvalResult("", Verdict.ABSTAIN, detail);
+    /**
+     * The evidence this check needs is absent or does not support a verdict; neither a pass nor a
+     * fail.
+     */
+    public static EvalResult inconclusive(String detail) {
+      return new EvalResult("", Verdict.INCONCLUSIVE, detail);
     }
 
     /** The same result, attributed to the named evaluator. */

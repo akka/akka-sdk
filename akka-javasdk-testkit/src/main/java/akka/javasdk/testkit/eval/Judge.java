@@ -43,7 +43,7 @@ public interface Judge {
    * The judge's answer.
    *
    * @param score between 0 and 1. Any other value, {@code NaN} included, makes the evaluator
-   *     abstain
+   *     inconclusive
    * @param reason one line, printed under a failed case. Empty when the model gave none
    */
   record Verdict(double score, String reason) {
@@ -59,8 +59,8 @@ public interface Judge {
   }
 
   /**
-   * The criterion must score at least this. Abstains when there is no reply, when the judge throws
-   * or gives no verdict, or when the score is not between 0 and 1.
+   * The criterion must score at least this. Inconclusive when there is no reply, when the judge
+   * throws or gives no verdict, or when the score is not between 0 and 1.
    */
   default Evaluator scoringAtLeast(String criterion, double threshold) {
     if (criterion == null || criterion.isBlank())

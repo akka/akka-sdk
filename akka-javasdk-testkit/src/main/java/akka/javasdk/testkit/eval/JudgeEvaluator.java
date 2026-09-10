@@ -20,20 +20,20 @@ record JudgeEvaluator(Judge judge, String criterion, double threshold) implement
   @Override
   public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
     if (interaction.reply().isBlank()) {
-      return EvalResult.abstain(criterion + ": there is no reply to judge");
+      return EvalResult.inconclusive(criterion + ": there is no reply to judge");
     }
     Judge.Verdict verdict;
     try {
       verdict = judge.decide(criterion, interaction);
     } catch (RuntimeException e) {
-      return EvalResult.abstain(criterion + ": the judge failed: " + e.getMessage());
+      return EvalResult.inconclusive(criterion + ": the judge failed: " + e.getMessage());
     }
     if (verdict == null) {
-      return EvalResult.abstain(criterion + ": the judge gave no verdict");
+      return EvalResult.inconclusive(criterion + ": the judge gave no verdict");
     }
     var score = verdict.score();
     if (Double.isNaN(score) || score < 0 || score > 1) {
-      return EvalResult.abstain(
+      return EvalResult.inconclusive(
           criterion + ": the judge scored " + score + ", which is not a share");
     }
     var detail =

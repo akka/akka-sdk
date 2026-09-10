@@ -45,7 +45,7 @@ class GateTest {
   }
 
   @Test
-  void anEvaluatorIsRatedOverTheCasesThatDidNotAbstain() {
+  void anEvaluatorIsRatedOverTheCasesWhereItWasConclusive() {
     var cases =
         List.of(
             EvalCase.of("c1", "q", Evaluators.toolArgument("getCustomer", "customerId", "c1")),
@@ -55,7 +55,7 @@ class GateTest {
     var report = run(Gate.evaluatorRateAtLeast(Evaluators.TOOL_ARGUMENTS, 0.5), cases);
 
     assertThat(report.passed()).isTrue();
-    assertThat(report.render()).contains("tool-arguments 1/2 (1 abstained)");
+    assertThat(report.render()).contains("tool-arguments 1/2 (1 inconclusive)");
     assertThat(run(Gate.evaluatorRateAtLeast(Evaluators.TOOL_ARGUMENTS, 0.9), cases).passed())
         .isFalse();
   }

@@ -392,7 +392,7 @@ public final class ExperimentRunner {
               results.size()));
     }
 
-    /** Pass counts per evaluator, over the cases where it did not abstain. */
+    /** Pass counts per evaluator, over the cases where it was conclusive. */
     private Map<String, Rate> rates() {
       var rates = new LinkedHashMap<String, Rate>();
       for (var result : results) {
@@ -409,7 +409,7 @@ public final class ExperimentRunner {
   private static final class Rate {
     private int passed;
     private int judged;
-    private int abstained;
+    private int inconclusive;
 
     private void count(EvalResult.Verdict verdict) {
       switch (verdict) {
@@ -418,13 +418,13 @@ public final class ExperimentRunner {
           judged++;
         }
         case FAIL -> judged++;
-        case ABSTAIN -> abstained++;
+        case INCONCLUSIVE -> inconclusive++;
       }
     }
 
     private String render(String evaluator) {
-      var abstentions = abstained == 0 ? "" : " (" + abstained + " abstained)";
-      return evaluator + " " + passed + "/" + judged + abstentions;
+      var undecided = inconclusive == 0 ? "" : " (" + inconclusive + " inconclusive)";
+      return evaluator + " " + passed + "/" + judged + undecided;
     }
   }
 }

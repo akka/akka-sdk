@@ -142,7 +142,7 @@ Each field present becomes a budget evaluator on the case.
 A rerun almost never spends the same as the recording, so the token and latency budgets allow more than the recorded figures.
 `EvalCaseParser.parse(path)` uses `EvalCaseParser.DEFAULT_TOLERANCE`, which is 1.5.
 `parse(path, tolerance)` sets another tolerance; `1.0` holds a case to exactly what was recorded, and a value below `1.0` is rejected.
-Under a `TestModelProvider` the token budget abstains, because a mocked model reports no tokens.
+Under a `TestModelProvider` the token budget is inconclusive, because a mocked model reports no tokens.
 
 == The replayed batch
 
@@ -164,13 +164,13 @@ gate: passed — pass rate 1.00 over 5 cases, required 0.90
   tool-order 3/3
   tool-arguments 5/5
   model-call-budget 2/2
-  token-budget 0/0 (2 abstained)
+  token-budget 0/0 (2 inconclusive)
   latency-budget 2/2
 spend: 9 model calls, 0 tokens in, 0 out, 30 ms in total, slowest prod-2 at 7 ms, over 5/5 cases with evidence
 ----
 
 Three recordings name tools, so three cases have `tools` and `tool-order` results, and their five recorded arguments give five `tool-arguments` results.
-Two recordings carry spend figures, so two cases have budgets, and their token budgets abstained.
+Two recordings carry spend figures, so two cases have budgets, and their token budgets were inconclusive.
 
 == See also
 

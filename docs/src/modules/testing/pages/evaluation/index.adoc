@@ -35,7 +35,7 @@ Evaluation is not the place for the following.
 . The case's recorded tool calls, if any, are loaded into the stubs through the runner's `ToolBindings`.
 . The runner calls the agent's command handler through the TestKit component client, in a fresh session, with the case's user message.
 . The runner reads the trace the runtime wrote for that session through `TelemetryReader`: the tool calls with their arguments, results and errors, the model calls with their token counts, the guardrail evaluations and the latency.
-. Every evaluator of the case reads the reply and the trace and reports a result: pass, fail, or abstain when the evidence it needs is absent.
+. Every evaluator of the case reads the reply and the trace and reports a result: pass, fail, or inconclusive when the evidence it needs is absent.
 . The gate checks the aggregated results and the report is returned.
 
 [mermaid]

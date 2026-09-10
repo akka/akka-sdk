@@ -1,5 +1,5 @@
 = Eval cases and evaluators
-:page-summary: An EvalCase carries the user message and its evaluators; the built-in evaluators check the tool calls, the reply and the spend of a turn, and abstain when their evidence is absent.
+:page-summary: An EvalCase carries the user message and its evaluators; the built-in evaluators check the tool calls, the reply and the spend of a turn, and are inconclusive when their evidence is absent.
 :page-when-to-use: Writing cases by hand and choosing what each one checks.
 :page-related: testing:evaluation/getting-started.adoc, testing:evaluation/judges.adoc, testing:evaluation/replay.adoc
 :page-persona: builder-developer, builder-ai-ml
@@ -45,7 +45,7 @@ A replayed case is the exception: its recorded results are loaded per case, see 
 == Evaluators
 
 An link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator] is one check over the reply and the traced tool calls of a turn.
-It reports a result: pass, fail, or abstain when the evidence it needs is absent.
+It reports a result: pass, fail, or inconclusive when the evidence it needs is absent.
 A case carries any number of evaluators, and they are all of the same type:
 
 * the built-in evaluators, created through the factories in link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluators.html[Evaluators];
@@ -78,15 +78,15 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 
 | `tool-order`
 | `Evaluators.toolOrder(names...)`
-| The named tools were called in this relative order. Calls to other tools may come between. Abstains when one of the named tools was never called.
+| The named tools were called in this relative order. Calls to other tools may come between. Inconclusive when one of the named tools was never called.
 
 | `tool-arguments`
 | `Evaluators.toolArgument(tool, argument, value)`
-| A call to the tool carried the argument with this value. Abstains when the tool was never called.
+| A call to the tool carried the argument with this value. Inconclusive when the tool was never called.
 
 | `tool-results`
 | `Evaluators.toolResult(tool, text)`
-| The result of the tool contains the text, case-insensitively. Abstains when the tool was never called or the trace carries no result for it.
+| The result of the tool contains the text, case-insensitively. Inconclusive when the tool was never called or the trace carries no result for it.
 
 | `forbidden-tools`
 | `Evaluators.forbiddenTools(names...)`
@@ -132,17 +132,17 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 
 | `token-budget`
 | `Evaluators.tokensAtMost(tokens)`
-| Input and output tokens together stay within the limit. Abstains when the model reported no tokens.
+| Input and output tokens together stay within the limit. Inconclusive when the model reported no tokens.
 
 | `latency-budget`
 | `Evaluators.latencyAtMost(duration)`
-| The agent command completed within the duration. Abstains when the trace carries no timing.
+| The agent command completed within the duration. Inconclusive when the trace carries no timing.
 |===
 
 [#custom-evaluators]
 == Custom evaluator
 
-A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator]: `name()` returns the name its results are reported under, and `evaluate(...)` receives the case and the `Interaction`, the reply and everything the runtime traced for the turn, and returns an `EvalResult`: a pass, a fail with a reason, or an abstention.
+A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator]: `name()` returns the name its results are reported under, and `evaluate(...)` receives the case and the `Interaction`, the reply and everything the runtime traced for the turn, and returns an `EvalResult`: a pass, a fail with a reason, or an inconclusive result.
 
 `RefundWithinTotal` is an evaluator that checks that the amount the agent passed to `issueRefund` does not exceed the total of the order.
 
@@ -152,7 +152,7 @@ A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/RefundWithinTotal.java[tag=class]
 ----
 <1> The name the report prints the results under, and a gate can rate.
-<2> No refund call means nothing to check. Abstain rather than fail; the `tools` evaluator on the case reports the missing call.
+<2> No refund call means nothing to check. Report an inconclusive result rather than a fail; the `tools` evaluator on the case reports the missing call.
 <3> Tool arguments arrive as the runtime decoded them from the model's JSON: a number is a `Number`, an object is a `Map`.
 
 It goes into a case next to the built-in evaluators.
@@ -164,14 +164,14 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 ----
 <1> The evaluator carries what it needs to know about the case.
 
-[#abstaining]
-== Abstaining when the evidence is absent
+[#inconclusive]
+== Inconclusive results
 
-An evaluator reads only what it names and abstains when that evidence is absent.
-A tool that was never called fails `tools` and makes `tool-order` and `tool-arguments` abstain, so one missing call is reported once.
-An abstention is neither a pass nor a fail.
-A case with abstentions and no failed result passes.
-The report counts abstentions per evaluator name, and `Gate.evaluatorRateAtLeast` rates evaluators over the results that did not abstain.
+An evaluator reads only what it names and is inconclusive when that evidence is absent or does not support a verdict.
+A tool that was never called fails `tools` and makes `tool-order` and `tool-arguments` inconclusive, so one missing call is reported once.
+An inconclusive result is neither a pass nor a fail.
+A case with inconclusive results and no failed result passes.
+The report counts inconclusive results per evaluator name, and `Gate.evaluatorRateAtLeast` rates evaluators over the conclusive results.
 
 == See also
 
