@@ -39,35 +39,40 @@ import java.util.Map;
  * correctness.
  *
  * <p>{@code modelCalls}, {@code tokens} and {@code latencyMs} are optional. When present they
- * become budgets on the case: the model call count as recorded, tokens and latency multiplied by a
- * slack factor. {@code tokens} is either a total or an object with {@code input} and {@code
+ * become budgets on the case: the model call count as recorded, tokens and latency multiplied by
+ * the tolerance. {@code tokens} is either a total or an object with {@code input} and {@code
  * output}.
  */
 public final class EvalCaseParser {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  /** Token and latency budgets are 1.5 times the recorded figures. */
-  public static final double DEFAULT_SLACK = 1.5;
+  /**
+   * Multiplies the recorded token and latency figures to set the budgets. A rerun almost never
+   * spends the same as the recording, so the budgets allow 50% more.
+   */
+  public static final double DEFAULT_TOLERANCE = 1.5;
 
   private EvalCaseParser() {}
 
   /**
-   * Reads the JSONL file with {@link #DEFAULT_SLACK}.
+   * Reads the JSONL file with {@link #DEFAULT_TOLERANCE}.
    *
    * @throws IllegalArgumentException listing every line that does not parse, has no {@code input},
    *     or names a tool call without a name
    */
   public static List<EvalCase> parse(Path canonicalJsonl) {
-    return parse(canonicalJsonl, DEFAULT_SLACK);
+    return parse(canonicalJsonl, DEFAULT_TOLERANCE);
   }
 
   /**
-   * Reads the JSONL file. {@code slack} multiplies the recorded token and latency figures to give
-   * the budgets. {@code 1.0} holds a case to exactly what was recorded.
+   * Reads the JSONL file. {@code tolerance} multiplies the recorded token and latency figures to
+   * set the budgets. {@code 1.0} holds a case to exactly what was recorded. Values below {@code
+   * 1.0} are rejected.
    */
-  public static List<EvalCase> parse(Path canonicalJsonl, double slack) {
-    if (slack < 1.0) throw new IllegalArgumentException("slack is at least 1.0, was " + slack);
+  public static List<EvalCase> parse(Path canonicalJsonl, double tolerance) {
+    if (tolerance < 1.0)
+      throw new IllegalArgumentException("tolerance must be at least 1.0, was " + tolerance);
     List<String> lines;
     try {
       lines = Files.readAllLines(canonicalJsonl);
@@ -82,7 +87,7 @@ public final class EvalCaseParser {
       if (line.isBlank()) continue;
       var lineNumber = i + 1;
       try {
-        cases.add(readCase(MAPPER.readTree(line), lineNumber, slack));
+        cases.add(readCase(MAPPER.readTree(line), lineNumber, tolerance));
       } catch (IllegalArgumentException | IOException e) {
         problems.add("line " + lineNumber + ": " + e.getMessage());
       }
@@ -94,7 +99,7 @@ public final class EvalCaseParser {
     return List.copyOf(cases);
   }
 
-  private static EvalCase readCase(JsonNode interaction, int lineNumber, double slack) {
+  private static EvalCase readCase(JsonNode interaction, int lineNumber, double tolerance) {
     var input = interaction.path("input").asText("");
     if (input.isBlank()) throw new IllegalArgumentException("no input");
     var id = interaction.path("id").asText("replay-" + lineNumber);
@@ -107,20 +112,23 @@ public final class EvalCaseParser {
     }
 
     var evaluators = baseline(recorded);
-    evaluators.addAll(budgets(interaction, slack));
+    evaluators.addAll(budgets(interaction, tolerance));
     return new EvalCase(id, input, recorded, evaluators);
   }
 
   /** Turns the recorded spend into budgets. */
-  private static List<Evaluator> budgets(JsonNode interaction, double slack) {
+  private static List<Evaluator> budgets(JsonNode interaction, double tolerance) {
+
     var evaluators = new ArrayList<Evaluator>();
     var modelCalls = interaction.path("modelCalls");
+
     if (!modelCalls.isMissingNode()) {
       if (!modelCalls.canConvertToInt() || modelCalls.asInt() < 1)
         throw new IllegalArgumentException("modelCalls is not a positive count: " + modelCalls);
       evaluators.add(Evaluators.modelCallsAtMost(modelCalls.asInt()));
     }
     var tokens = interaction.path("tokens");
+
     if (!tokens.isMissingNode()) {
       long total;
       if (tokens.isNumber()) {
@@ -133,14 +141,17 @@ public final class EvalCaseParser {
       }
       if (total < 1)
         throw new IllegalArgumentException("tokens is not a positive count: " + tokens);
-      evaluators.add(Evaluators.tokensAtMost((long) Math.ceil(total * slack)));
+      evaluators.add(Evaluators.tokensAtMost((long) Math.ceil(total * tolerance)));
     }
+
     var latency = interaction.path("latencyMs");
     if (!latency.isMissingNode()) {
       if (!latency.canConvertToLong() || latency.asLong() < 1)
         throw new IllegalArgumentException("latencyMs is not a positive count: " + latency);
+
       evaluators.add(
-          Evaluators.latencyAtMost(Duration.ofMillis((long) Math.ceil(latency.asLong() * slack))));
+          Evaluators.latencyAtMost(
+              Duration.ofMillis((long) Math.ceil(latency.asLong() * tolerance))));
     }
     return evaluators;
   }
