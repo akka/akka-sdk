@@ -282,6 +282,7 @@ mutator
 mutators
 mvnw
 NACLs
+[Nn]amespaced
 [Nn]amespaces?
 newname
 npm
