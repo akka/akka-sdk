@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -84,6 +85,25 @@ public final class Evaluators {
 
   /** Loading the case's recorded calls into the stubs threw, so the agent was never called. */
   public static final String SETUP = "setup";
+
+  private static final Set<String> BUILT_IN_NAMES =
+      Set.of(
+          TOOLS,
+          TOOL_ORDER,
+          TOOL_ARGUMENTS,
+          TOOL_RESULTS,
+          TOOL_CALL_BUDGET,
+          MODEL_CALL_BUDGET,
+          TOKEN_BUDGET,
+          LATENCY_BUDGET,
+          FORBIDDEN_TOOLS,
+          ANSWER_CONTAINS,
+          ANSWER_MATCHES,
+          ANSWER_LACKS,
+          ANSWER_DOES_NOT_MATCH,
+          JUDGE,
+          TARGET,
+          SETUP);
 
   private Evaluators() {}
 
@@ -208,6 +228,20 @@ public final class Evaluators {
    */
   public static Evaluator answerLacksPaymentCard() {
     return new AnswerLacksLuhnNumber(luhnCandidate(13, 19), ANSWER_LACKS_PAYMENT_CARD);
+  }
+
+  /**
+   * The reply must satisfy the predicate. The name is what the report prints these results under
+   * and what {@link Gate#evaluatorRateAtLeast} refers to; it must not be one of the built-in names.
+   * The result is a pass or a fail, never inconclusive. A check that also reads the tool calls
+   * implements {@link Evaluator} instead.
+   */
+  public static Evaluator answerSatisfies(String name, Predicate<String> predicate) {
+    requireName(name, "evaluator");
+    if (BUILT_IN_NAMES.contains(name))
+      throw new IllegalArgumentException(name + " is a built-in evaluator name");
+    if (predicate == null) throw new IllegalArgumentException("predicate required");
+    return new AnswerSatisfies(name, predicate);
   }
 
   private record Tools(Set<String> expected) implements Evaluator {
@@ -530,6 +564,15 @@ public final class Evaluators {
   private static Pattern luhnCandidate(int minDigits, int maxDigits) {
     return Pattern.compile(
         "\\b\\d(?:[ -]?\\d){" + (minDigits - 1) + "," + (maxDigits - 1) + "}\\b");
+  }
+
+  private record AnswerSatisfies(String name, Predicate<String> predicate) implements Evaluator {
+    @Override
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      return predicate.test(interaction.reply())
+          ? EvalResult.pass()
+          : EvalResult.fail("reply does not satisfy the predicate");
+    }
   }
 
   private static Set<String> toolNames(String... names) {

@@ -399,6 +399,28 @@ class ExperimentRunnerTest {
   }
 
   @Test
+  void aPredicateOverTheReplyReportsUnderTheNameItWasGiven() {
+    var refuses = Evaluators.answerSatisfies("refusal", reply -> reply.contains("I can't"));
+
+    var refused = run(targetThat("I can't help with that."), refuses);
+    assertThat(refused.evalResult("refusal").verdict()).isEqualTo(EvalResult.Verdict.PASS);
+
+    var complied = run(targetThat("Sure, here is the list."), refuses);
+    assertThat(complied.evalResult("refusal").verdict()).isEqualTo(EvalResult.Verdict.FAIL);
+    assertThat(complied.evalResult("refusal").detail()).contains("does not satisfy the predicate");
+  }
+
+  @Test
+  void aPredicateEvaluatorNeedsANameOfItsOwn() {
+    assertThatThrownBy(() -> Evaluators.answerSatisfies(" ", reply -> true))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> Evaluators.answerSatisfies("refusal", null))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> Evaluators.answerSatisfies(Evaluators.JUDGE, reply -> true))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
   void aBudgetRefusesAValueThatCannotBeMet() {
     assertThatThrownBy(() -> Evaluators.modelCallsAtMost(0))
         .isInstanceOf(IllegalArgumentException.class);

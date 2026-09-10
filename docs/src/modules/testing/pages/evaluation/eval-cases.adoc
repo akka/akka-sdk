@@ -122,6 +122,10 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 | `answer-lacks-luhn-number`
 | `Evaluators.answerLacksLuhnNumber(minDigits, maxDigits)`
 | The reply contains no sequence of digits within the length range that passes the Luhn checksum. The same checksum validates identifiers other than payment cards, each with its own length, so give the range of the one you are looking for.
+
+| the name you pass
+| `Evaluators.answerSatisfies(name, predicate)`
+| The predicate accepts the reply. Use it for a check the other evaluators do not express, such as a refusal in any language, a semantic match, or a lookup in your own dataset. The result is a pass or a fail, never inconclusive. The name must not be one of the built-in names above.
 |===
 
 === Built-in budgets
