@@ -10,7 +10,7 @@ import java.util.Locale;
  * The evaluator behind {@link Judge#scoringAtLeast}: asks the judge and holds the score to the
  * threshold.
  */
-record JudgeEvaluator(Judge judge, String criterion, double threshold) implements Evaluator {
+record JudgeEvaluator(Judge judge, String criterion, double threshold) implements BuiltInEvaluator {
 
   @Override
   public String name() {

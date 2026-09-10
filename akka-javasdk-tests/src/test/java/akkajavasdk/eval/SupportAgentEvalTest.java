@@ -229,10 +229,10 @@ public class SupportAgentEvalTest extends TestKitSupport {
     // tokens, so that budget is inconclusive rather than passing on nothing.
     assertThat(result.passed()).isFalse();
     assertThat(result.describe())
-        .contains("PASS tool-call-budget")
-        .contains("FAIL model-call-budget: made 3 model calls, allowed 2")
-        .contains("INCONCLUSIVE token-budget")
-        .contains("PASS latency-budget");
+        .contains("PASS akka-eval:tool-call-budget")
+        .contains("FAIL akka-eval:model-call-budget: made 3 model calls, allowed 2")
+        .contains("INCONCLUSIVE akka-eval:token-budget")
+        .contains("PASS akka-eval:latency-budget");
   }
 
   @Test
@@ -244,7 +244,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
     // The tool threw, so the agent call failed and the target reported it.
     assertThat(result.passed()).isFalse();
-    assertThat(result.describe()).contains("FAIL target");
+    assertThat(result.describe()).contains("FAIL akka-eval:target");
 
     // The trace still has the call, with the error the tool raised.
     var calls = result.interaction().toolCalls();
@@ -297,8 +297,8 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();
     assertThat(report.render())
-        .contains("model-call-budget 3/3")
-        .contains("latency-budget 3/3")
+        .contains("akka-eval:model-call-budget 3/3")
+        .contains("akka-eval:latency-budget 3/3")
         .contains("token-budget 0/0 (3 inconclusive)")
         .contains("spend: ")
         .contains("over 6/6 cases with evidence");
@@ -335,7 +335,9 @@ public class SupportAgentEvalTest extends TestKitSupport {
     var result = runOne(evalCase);
 
     assertThat(result.passed()).withFailMessage(result::describe).isTrue();
-    assertThat(result.describe()).contains("PASS judge").contains("scored 0.90, needed 0.50");
+    assertThat(result.describe())
+        .contains("PASS akka-eval:judge")
+        .contains("scored 0.90, needed 0.50");
   }
 
   @Test
@@ -360,7 +362,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
                 judge.mustSatisfy("odpowiedz podaje nazwisko klienta")));
 
     assertThat(result.passed()).withFailMessage(result::describe).isTrue();
-    assertThat(result.describe()).contains("PASS judge").contains("spelnia");
+    assertThat(result.describe()).contains("PASS akka-eval:judge").contains("spelnia");
   }
 
   @Test
@@ -375,7 +377,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
                 "unjudgeable", "Who is cust_1?", judge.mustSatisfy("the reply is helpful")));
 
     assertThat(result.passed()).isTrue();
-    assertThat(result.describe()).contains("INCONCLUSIVE judge");
+    assertThat(result.describe()).contains("INCONCLUSIVE akka-eval:judge");
   }
 
   @Test

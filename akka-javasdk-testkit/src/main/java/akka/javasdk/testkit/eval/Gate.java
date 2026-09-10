@@ -67,7 +67,8 @@ public final class Gate {
 
   /**
    * The pass rate of one evaluator, over the cases where it was conclusive, must be at least this.
-   * Fails when the evaluator judged no case. Evaluator names are in {@link Evaluators}.
+   * Fails when the evaluator judged no case. Built-in names are in {@link Evaluators}; a custom
+   * evaluator answers to its bare name as well as to the {@link Evaluators#CUSTOM_PREFIX} form.
    */
   public static Gate evaluatorRateAtLeast(String evaluator, double rate) {
     if (evaluator == null || evaluator.isBlank())
@@ -77,7 +78,7 @@ public final class Gate {
           var evalResults =
               results.stream()
                   .flatMap(result -> result.evalResults().stream())
-                  .filter(evalResult -> evalResult.evaluator().equals(evaluator))
+                  .filter(evalResult -> Evaluators.sameName(evalResult.evaluator(), evaluator))
                   .filter(evalResult -> evalResult.verdict() != EvalResult.Verdict.INCONCLUSIVE)
                   .toList();
           if (evalResults.isEmpty()) {

@@ -27,49 +27,56 @@ import java.util.regex.PatternSyntaxException;
  * evaluator.
  *
  * <p>The name constants are what the report prints and what {@link Gate#evaluatorRateAtLeast}
- * refers to. {@link #TARGET} and {@link #SETUP} are reported by the runner when a case did not
- * reach evaluation.
+ * refers to. Every name carries a namespace: {@link #BUILT_IN_PREFIX} for the evaluators this
+ * package ships, {@link #CUSTOM_PREFIX} for everything else, which the runner adds. {@link #TARGET}
+ * and {@link #SETUP} are reported by the runner when a case did not reach evaluation.
  */
 public final class Evaluators {
 
+  /** The namespace of the evaluators this package ships. */
+  public static final String BUILT_IN_PREFIX = "akka-eval:";
+
+  /** The namespace the runner reports every other evaluator under. */
+  public static final String CUSTOM_PREFIX = "custom-eval:";
+
   /** {@link #tools}: every named tool was called. */
-  public static final String TOOLS = "tools";
+  public static final String TOOLS = "akka-eval:tools";
 
   /** {@link #toolOrder}: the named tools were called in that relative order. */
-  public static final String TOOL_ORDER = "tool-order";
+  public static final String TOOL_ORDER = "akka-eval:tool-order";
 
   /** {@link #toolArgument}: the tool was called with the argument value. */
-  public static final String TOOL_ARGUMENTS = "tool-arguments";
+  public static final String TOOL_ARGUMENTS = "akka-eval:tool-arguments";
 
   /** {@link #toolResult}: the tool's result carried the text. */
-  public static final String TOOL_RESULTS = "tool-results";
+  public static final String TOOL_RESULTS = "akka-eval:tool-results";
 
   /** {@link #toolCallsAtMost}: the agent made at most that many tool calls. */
-  public static final String TOOL_CALL_BUDGET = "tool-call-budget";
+  public static final String TOOL_CALL_BUDGET = "akka-eval:tool-call-budget";
 
   /** {@link #modelCallsAtMost}: the agent made at most that many model calls. */
-  public static final String MODEL_CALL_BUDGET = "model-call-budget";
+  public static final String MODEL_CALL_BUDGET = "akka-eval:model-call-budget";
 
   /** {@link #tokensAtMost}: the turn used at most that many tokens, in and out. */
-  public static final String TOKEN_BUDGET = "token-budget";
+  public static final String TOKEN_BUDGET = "akka-eval:token-budget";
 
   /** {@link #latencyAtMost}: the turn was answered within that time. */
-  public static final String LATENCY_BUDGET = "latency-budget";
+  public static final String LATENCY_BUDGET = "akka-eval:latency-budget";
 
   /** {@link #forbiddenTools}: none of the named tools was called. */
-  public static final String FORBIDDEN_TOOLS = "forbidden-tools";
+  public static final String FORBIDDEN_TOOLS = "akka-eval:forbidden-tools";
 
   /** {@link #answerContains}: the reply carries every given text. */
-  public static final String ANSWER_CONTAINS = "answer-contains";
+  public static final String ANSWER_CONTAINS = "akka-eval:answer-contains";
 
   /** {@link #answerMatches}: the reply matches the pattern. */
-  public static final String ANSWER_MATCHES = "answer-matches";
+  public static final String ANSWER_MATCHES = "akka-eval:answer-matches";
 
   /** {@link #answerLacks}: the reply carries none of the given texts. */
-  public static final String ANSWER_LACKS = "answer-lacks";
+  public static final String ANSWER_LACKS = "akka-eval:answer-lacks";
 
   /** {@link #answerDoesNotMatch}: the reply does not match the pattern. */
-  public static final String ANSWER_DOES_NOT_MATCH = "answer-does-not-match";
+  public static final String ANSWER_DOES_NOT_MATCH = "akka-eval:answer-does-not-match";
 
   /** {@link #answerLacksLuhnNumber}: the reply carries no number passing the Luhn checksum. */
   public static final String ANSWER_LACKS_LUHN_NUMBER = "answer-lacks-luhn-number";
@@ -78,34 +85,27 @@ public final class Evaluators {
   public static final String ANSWER_LACKS_PAYMENT_CARD = "answer-lacks-payment-card";
 
   /** {@link Judge}: a model scored the reply against a criterion. */
-  public static final String JUDGE = "judge";
+  public static final String JUDGE = "akka-eval:judge";
 
   /** The agent call failed. */
-  public static final String TARGET = "target";
+  public static final String TARGET = "akka-eval:target";
 
   /** Loading the case's recorded calls into the stubs threw, so the agent was never called. */
-  public static final String SETUP = "setup";
-
-  private static final Set<String> BUILT_IN_NAMES =
-      Set.of(
-          TOOLS,
-          TOOL_ORDER,
-          TOOL_ARGUMENTS,
-          TOOL_RESULTS,
-          TOOL_CALL_BUDGET,
-          MODEL_CALL_BUDGET,
-          TOKEN_BUDGET,
-          LATENCY_BUDGET,
-          FORBIDDEN_TOOLS,
-          ANSWER_CONTAINS,
-          ANSWER_MATCHES,
-          ANSWER_LACKS,
-          ANSWER_DOES_NOT_MATCH,
-          JUDGE,
-          TARGET,
-          SETUP);
+  public static final String SETUP = "akka-eval:setup";
 
   private Evaluators() {}
+
+  /** The name the report prints an evaluator's results under. */
+  static String reportedName(Evaluator evaluator) {
+    return evaluator instanceof BuiltInEvaluator
+        ? evaluator.name()
+        : CUSTOM_PREFIX + evaluator.name();
+  }
+
+  /** A reported name answers to itself, and a custom one also to the bare name it was given. */
+  static boolean sameName(String reported, String wanted) {
+    return reported.equals(wanted) || reported.equals(CUSTOM_PREFIX + wanted);
+  }
 
   /** These tools must be called, in any order. Other calls are allowed. */
   public static Evaluator tools(String... names) {
@@ -231,20 +231,21 @@ public final class Evaluators {
   }
 
   /**
-   * The reply must satisfy the predicate. The name is what the report prints these results under
-   * and what {@link Gate#evaluatorRateAtLeast} refers to; it must not be one of the built-in names.
+   * The reply must satisfy the predicate. The report prints these results under {@link
+   * #CUSTOM_PREFIX} and the given name, which {@link Gate#evaluatorRateAtLeast} also accepts bare.
    * The result is a pass or a fail, never inconclusive. A check that also reads the tool calls
    * implements {@link Evaluator} instead.
    */
   public static Evaluator answerSatisfies(String name, Predicate<String> predicate) {
     requireName(name, "evaluator");
-    if (BUILT_IN_NAMES.contains(name))
-      throw new IllegalArgumentException(name + " is a built-in evaluator name");
+    if (name.startsWith(BUILT_IN_PREFIX) || name.startsWith(CUSTOM_PREFIX))
+      throw new IllegalArgumentException(
+          "the namespace is added for you, so name it " + name.substring(name.indexOf(':') + 1));
     if (predicate == null) throw new IllegalArgumentException("predicate required");
     return new AnswerSatisfies(name, predicate);
   }
 
-  private record Tools(Set<String> expected) implements Evaluator {
+  private record Tools(Set<String> expected) implements BuiltInEvaluator {
     @Override
     public String name() {
       return TOOLS;
@@ -261,7 +262,7 @@ public final class Evaluators {
     }
   }
 
-  private record ToolOrder(List<String> expected) implements Evaluator {
+  private record ToolOrder(List<String> expected) implements BuiltInEvaluator {
     @Override
     public String name() {
       return TOOL_ORDER;
@@ -290,7 +291,8 @@ public final class Evaluators {
     }
   }
 
-  private record ToolArgument(String tool, String argument, Object value) implements Evaluator {
+  private record ToolArgument(String tool, String argument, Object value)
+      implements BuiltInEvaluator {
     @Override
     public String name() {
       return TOOL_ARGUMENTS;
@@ -331,7 +333,7 @@ public final class Evaluators {
     }
   }
 
-  private record ToolResult(String tool, String text) implements Evaluator {
+  private record ToolResult(String tool, String text) implements BuiltInEvaluator {
     @Override
     public String name() {
       return TOOL_RESULTS;
@@ -355,7 +357,7 @@ public final class Evaluators {
     }
   }
 
-  private record ForbiddenTools(Set<String> forbidden) implements Evaluator {
+  private record ForbiddenTools(Set<String> forbidden) implements BuiltInEvaluator {
     @Override
     public String name() {
       return FORBIDDEN_TOOLS;
@@ -370,7 +372,7 @@ public final class Evaluators {
     }
   }
 
-  private record ToolCallBudget(int limit) implements Evaluator {
+  private record ToolCallBudget(int limit) implements BuiltInEvaluator {
     @Override
     public String name() {
       return TOOL_CALL_BUDGET;
@@ -386,7 +388,7 @@ public final class Evaluators {
     }
   }
 
-  private record ModelCallBudget(int limit) implements Evaluator {
+  private record ModelCallBudget(int limit) implements BuiltInEvaluator {
     @Override
     public String name() {
       return MODEL_CALL_BUDGET;
@@ -404,7 +406,7 @@ public final class Evaluators {
     }
   }
 
-  private record TokenBudget(long limit) implements Evaluator {
+  private record TokenBudget(long limit) implements BuiltInEvaluator {
     @Override
     public String name() {
       return TOKEN_BUDGET;
@@ -430,7 +432,7 @@ public final class Evaluators {
     }
   }
 
-  private record LatencyBudget(Duration limit) implements Evaluator {
+  private record LatencyBudget(Duration limit) implements BuiltInEvaluator {
     @Override
     public String name() {
       return LATENCY_BUDGET;
@@ -448,7 +450,7 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerContains(List<String> texts) implements Evaluator {
+  private record AnswerContains(List<String> texts) implements BuiltInEvaluator {
     @Override
     public String name() {
       return ANSWER_CONTAINS;
@@ -467,7 +469,7 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerMatches(String regex) implements Evaluator {
+  private record AnswerMatches(String regex) implements BuiltInEvaluator {
     @Override
     public String name() {
       return ANSWER_MATCHES;
@@ -487,7 +489,7 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerLacks(List<String> texts) implements Evaluator {
+  private record AnswerLacks(List<String> texts) implements BuiltInEvaluator {
     @Override
     public String name() {
       return ANSWER_LACKS;
@@ -504,7 +506,7 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerDoesNotMatch(String regex) implements Evaluator {
+  private record AnswerDoesNotMatch(String regex) implements BuiltInEvaluator {
     @Override
     public String name() {
       return ANSWER_DOES_NOT_MATCH;

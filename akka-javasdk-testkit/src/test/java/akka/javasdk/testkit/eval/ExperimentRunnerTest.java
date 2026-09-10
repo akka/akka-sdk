@@ -47,7 +47,7 @@ class ExperimentRunnerTest {
   private record CaseResultOf(ExperimentRunner.CaseResult result) {
     EvalResult evalResult(String evaluator) {
       return result.evalResults().stream()
-          .filter(f -> f.evaluator().equals(evaluator))
+          .filter(f -> Evaluators.sameName(f.evaluator(), evaluator))
           .findFirst()
           .orElseThrow(() -> new AssertionError(evaluator + " did not report"));
     }
@@ -404,6 +404,8 @@ class ExperimentRunnerTest {
 
     var refused = run(targetThat("I can't help with that."), refuses);
     assertThat(refused.evalResult("refusal").verdict()).isEqualTo(EvalResult.Verdict.PASS);
+    assertThat(refused.evalResult("refusal").evaluator()).isEqualTo("custom-eval:refusal");
+    assertThat(refused.result().describe()).doesNotContain("akka-eval:refusal");
 
     var complied = run(targetThat("Sure, here is the list."), refuses);
     assertThat(complied.evalResult("refusal").verdict()).isEqualTo(EvalResult.Verdict.FAIL);
@@ -416,8 +418,33 @@ class ExperimentRunnerTest {
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> Evaluators.answerSatisfies("refusal", null))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void aNameThatAlreadyCarriesANamespaceIsRefused() {
     assertThatThrownBy(() -> Evaluators.answerSatisfies(Evaluators.JUDGE, reply -> true))
-        .isInstanceOf(IllegalArgumentException.class);
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("judge");
+    assertThatThrownBy(() -> Evaluators.answerSatisfies("custom-eval:refusal", reply -> true))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("refusal");
+  }
+
+  @Test
+  void aThrowingPredicateFailsItsOwnResult() {
+    var run =
+        run(
+            targetThat("done"),
+            Evaluators.answerSatisfies(
+                "refusal",
+                reply -> {
+                  throw new IllegalStateException("no dictionary loaded");
+                }));
+
+    assertThat(run.evalResult("refusal").verdict()).isEqualTo(EvalResult.Verdict.FAIL);
+    assertThat(run.evalResult("refusal").detail())
+        .contains("IllegalStateException")
+        .contains("no dictionary loaded");
   }
 
   @Test
@@ -634,7 +661,7 @@ class ExperimentRunnerTest {
         .contains("case c FAILED")
         .contains("reply: I could not find them.")
         .contains("getCustomer{customerId=cust_9}")
-        .contains("FAIL answer-contains");
+        .contains("FAIL akka-eval:answer-contains");
   }
 
   @Test
@@ -655,6 +682,8 @@ class ExperimentRunnerTest {
     var run = run(targetThat("done"), throwing, Evaluators.answerContains("done"));
 
     assertThat(run.result().passed()).isFalse();
+    assertThat(run.evalResult("refund-within-total").evaluator())
+        .isEqualTo("custom-eval:refund-within-total");
     assertThat(run.evalResult("refund-within-total").verdict()).isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(run.evalResult("refund-within-total").detail())
         .contains("NullPointerException")

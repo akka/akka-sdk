@@ -141,15 +141,15 @@ A rendered report of this batch:
 [listing]
 ----
 3/3 cases passed (100%)
-gate: passed — pass rate 1.00 over 3 cases, required 0.90; tool-arguments rate 1.00 over 2 judged cases, required 1.00; no target failures
-  tools 1/1
-  tool-arguments 2/2
-  forbidden-tools 2/2
-  answer-contains 2/2
-  tool-order 1/1
-  answer-matches 1/1
-  tool-call-budget 1/1
-  model-call-budget 1/1
+gate: passed — pass rate 1.00 over 3 cases, required 0.90; akka-eval:tool-arguments rate 1.00 over 2 judged cases, required 1.00; no target failures
+  akka-eval:tools 1/1
+  akka-eval:tool-arguments 2/2
+  akka-eval:forbidden-tools 2/2
+  akka-eval:answer-contains 2/2
+  akka-eval:tool-order 1/1
+  akka-eval:answer-matches 1/1
+  akka-eval:tool-call-budget 1/1
+  akka-eval:model-call-budget 1/1
 spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status at 489 ms, over 3/3 cases with evidence
 ----
 

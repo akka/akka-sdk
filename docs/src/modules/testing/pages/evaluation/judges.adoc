@@ -66,7 +66,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 +
 [listing]
 ----
-PASS judge: the reply apologizes and states the refunded amount: scored 0.90, needed 0.50 — apologizes and refunds 49.99
+PASS akka-eval:judge: the reply apologizes and states the refunded amount: scored 0.90, needed 0.50 — apologizes and refunds 49.99
 ----
 
 [#what-the-judge-sees]
@@ -120,7 +120,7 @@ The `judge` evaluator is inconclusive, and the case is not failed, when:
 * the judge throws, for example because the model is unavailable;
 * the score is not between 0 and 1.
 
-The inconclusive result carries the reason and appears in the report as `INCONCLUSIVE judge:` followed by the criterion and the reason.
+The inconclusive result carries the reason and appears in the report as `INCONCLUSIVE akka-eval:judge:` followed by the criterion and the reason.
 xref:testing:evaluation/eval-cases.adoc#inconclusive[Inconclusive results] describes how the report and the gates count inconclusive results.
 
 [#gating-a-judged-batch]

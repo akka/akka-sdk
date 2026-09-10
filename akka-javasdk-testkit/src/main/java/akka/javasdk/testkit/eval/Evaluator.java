@@ -14,8 +14,9 @@ package akka.javasdk.testkit.eval;
 public interface Evaluator {
 
   /**
-   * The name the report prints this evaluator's results under, and what {@link
-   * Gate#evaluatorRateAtLeast} refers to.
+   * The name this evaluator's results are reported under, and what {@link
+   * Gate#evaluatorRateAtLeast} refers to. The report prints it under {@link
+   * Evaluators#CUSTOM_PREFIX}, so return the bare name.
    */
   String name();
 

@@ -222,16 +222,17 @@ public final class ExperimentRunner {
     // still report.
     private static EvalResult evaluate(
         Evaluator evaluator, EvalCase evalCase, Interaction interaction) {
+      var name = Evaluators.reportedName(evaluator);
       EvalResult result;
       try {
         result = evaluator.evaluate(evalCase, interaction);
       } catch (RuntimeException e) {
-        return EvalResult.fail("the evaluator threw " + describe(e)).attributedTo(evaluator.name());
+        return EvalResult.fail("the evaluator threw " + describe(e)).attributedTo(name);
       }
       if (result == null) {
-        return EvalResult.fail("the evaluator returned no result").attributedTo(evaluator.name());
+        return EvalResult.fail("the evaluator returned no result").attributedTo(name);
       }
-      return result.attributedTo(evaluator.name());
+      return result.attributedTo(name);
     }
   }
 
