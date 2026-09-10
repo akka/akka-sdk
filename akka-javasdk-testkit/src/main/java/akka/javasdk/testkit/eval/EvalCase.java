@@ -6,6 +6,7 @@ package akka.javasdk.testkit.eval;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * One evaluation case: a message to the agent and the evaluators its reply and tool calls are
@@ -27,27 +28,28 @@ public record EvalCase(
     String id, String userMessage, List<RecordedCall> recordedCalls, List<Evaluator> evaluators) {
 
   public EvalCase {
+
     if (id == null || id.isBlank()) throw new IllegalArgumentException("case id required");
+
     if (userMessage == null || userMessage.isBlank())
       throw new IllegalArgumentException("userMessage required");
+
     if (recordedCalls == null) throw new IllegalArgumentException("recordedCalls required");
-    if (recordedCalls.stream().anyMatch(c -> c == null))
+
+    if (recordedCalls.stream().anyMatch(Objects::isNull))
       throw new IllegalArgumentException("recorded call required");
+
     if (evaluators == null) throw new IllegalArgumentException("evaluators required");
-    if (evaluators.stream().anyMatch(e -> e == null))
+
+    if (evaluators.stream().anyMatch(Objects::isNull))
       throw new IllegalArgumentException("evaluator required");
+
     recordedCalls = List.copyOf(recordedCalls);
     evaluators = List.copyOf(evaluators);
   }
 
-  /** A case written by hand. */
-  public EvalCase(String id, String userMessage, List<Evaluator> evaluators) {
-    this(id, userMessage, List.of(), evaluators);
-  }
-
-  /** A case written by hand. */
   public static EvalCase of(String id, String userMessage, Evaluator... evaluators) {
-    return new EvalCase(id, userMessage, List.of(evaluators));
+    return new EvalCase(id, userMessage, List.of(), List.of(evaluators));
   }
 
   /** The same case with these evaluators added. */
