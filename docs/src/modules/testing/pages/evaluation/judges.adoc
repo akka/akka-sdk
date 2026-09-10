@@ -34,9 +34,6 @@ var judge = Judge.modelBased(testKit).withModel("eval.judge-model");
 
 A model provider registered for `JudgeAgent.class` in the TestKit settings takes precedence over both. `TestKit.Settings.withModelProvider(JudgeAgent.class, provider)` accepts any `ModelProvider`, so it is another way to give the judge its own model.
 
-To mock the judge, register a `TestModelProvider` with `TestKit.Settings.withModelProvider(JudgeAgent.class, provider)`, as for any other agent.
-The mocked reply must be the JSON object the judge reads: `{"score": 1.0, "reason": "mocked"}`.
-
 Each verdict is decided in a new session with memory disabled, so one verdict does not influence the next.
 
 [#stating-the-criterion]
