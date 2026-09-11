@@ -74,7 +74,7 @@
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
                 <artifactId>proto-google-common-protos</artifactId>
-                <version>2.59.2</version>
+                <version>2.64.1</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
@@ -84,12 +84,12 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.11.0</version>
+                <version>2.14.0</version>
             </dependency>
             <dependency>
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
-                <version>2.36.0</version>
+                <version>2.50.0</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -99,7 +99,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>33.4.8-android</version>
+                <version>33.6.0-android</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -109,7 +109,7 @@
             <dependency>
                 <groupId>com.google.j2objc</groupId>
                 <artifactId>j2objc-annotations</artifactId>
-                <version>3.0.0</version>
+                <version>3.1</version>
             </dependency>
             <dependency>
                 <groupId>com.google.protobuf</groupId>
@@ -129,7 +129,7 @@
             <dependency>
                 <groupId>com.lightbend.akka.grpc</groupId>
                 <artifactId>akka-grpc-runtime_2.13</artifactId>
-                <version>2.5.11</version>
+                <version>2.5.12</version>
             </dependency>
             <dependency>
                 <groupId>com.thesamet.scalapb</groupId>
@@ -154,12 +154,12 @@
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-actor_2.13</artifactId>
-                <version>2.10.21</version>
+                <version>2.10.22</version>
             </dependency>
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-discovery_2.13</artifactId>
-                <version>2.10.21</version>
+                <version>2.10.22</version>
             </dependency>
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
@@ -179,17 +179,17 @@
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-pki_2.13</artifactId>
-                <version>2.10.21</version>
+                <version>2.10.22</version>
             </dependency>
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-protobuf-v3_2.13</artifactId>
-                <version>2.10.21</version>
+                <version>2.10.22</version>
             </dependency>
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-stream_2.13</artifactId>
-                <version>2.10.21</version>
+                <version>2.10.22</version>
             </dependency>
             <dependency>
                 <groupId>dev.langchain4j</groupId>
@@ -204,47 +204,47 @@
             <dependency>
                 <groupId>io.akka</groupId>
                 <artifactId>akka-sdk-spi_2.13</artifactId>
-                <version>1.6.16</version>
+                <version>1.6.16-12-382c24a7-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-api</artifactId>
-                <version>1.77.1</version>
+                <version>1.83.0</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-context</artifactId>
-                <version>1.77.1</version>
+                <version>1.83.0</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-core</artifactId>
-                <version>1.77.1</version>
+                <version>1.83.0</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-netty-shaded</artifactId>
-                <version>1.77.1</version>
+                <version>1.83.0</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-protobuf</artifactId>
-                <version>1.77.1</version>
+                <version>1.83.0</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-protobuf-lite</artifactId>
-                <version>1.77.1</version>
+                <version>1.83.0</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-stub</artifactId>
-                <version>1.77.1</version>
+                <version>1.83.0</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-util</artifactId>
-                <version>1.77.1</version>
+                <version>1.83.0</version>
             </dependency>
             <dependency>
                 <groupId>io.opentelemetry</groupId>
@@ -304,7 +304,7 @@
             <dependency>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-annotations</artifactId>
-                <version>1.24</version>
+                <version>1.27</version>
             </dependency>
             <dependency>
                 <groupId>org.jspecify</groupId>
@@ -402,7 +402,7 @@
         <dependency>
             <groupId>com.google.api.grpc</groupId>
             <artifactId>proto-google-common-protos</artifactId>
-            <version>2.59.2</version>
+            <version>2.64.1</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
@@ -412,12 +412,12 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.11.0</version>
+            <version>2.14.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.errorprone</groupId>
             <artifactId>error_prone_annotations</artifactId>
-            <version>2.36.0</version>
+            <version>2.50.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -427,7 +427,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.4.8-android</version>
+            <version>33.6.0-android</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -437,7 +437,7 @@
         <dependency>
             <groupId>com.google.j2objc</groupId>
             <artifactId>j2objc-annotations</artifactId>
-            <version>3.0.0</version>
+            <version>3.1</version>
         </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
@@ -457,7 +457,7 @@
         <dependency>
             <groupId>com.lightbend.akka.grpc</groupId>
             <artifactId>akka-grpc-runtime_2.13</artifactId>
-            <version>2.5.11</version>
+            <version>2.5.12</version>
         </dependency>
         <dependency>
             <groupId>com.thesamet.scalapb</groupId>
@@ -482,12 +482,12 @@
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-actor_2.13</artifactId>
-            <version>2.10.21</version>
+            <version>2.10.22</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-discovery_2.13</artifactId>
-            <version>2.10.21</version>
+            <version>2.10.22</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
@@ -507,17 +507,17 @@
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-pki_2.13</artifactId>
-            <version>2.10.21</version>
+            <version>2.10.22</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-protobuf-v3_2.13</artifactId>
-            <version>2.10.21</version>
+            <version>2.10.22</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-stream_2.13</artifactId>
-            <version>2.10.21</version>
+            <version>2.10.22</version>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
@@ -532,47 +532,47 @@
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-sdk-spi_2.13</artifactId>
-            <version>1.6.16</version>
+            <version>1.6.16-12-382c24a7-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-api</artifactId>
-            <version>1.77.1</version>
+            <version>1.83.0</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-context</artifactId>
-            <version>1.77.1</version>
+            <version>1.83.0</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-core</artifactId>
-            <version>1.77.1</version>
+            <version>1.83.0</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>
-            <version>1.77.1</version>
+            <version>1.83.0</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-protobuf</artifactId>
-            <version>1.77.1</version>
+            <version>1.83.0</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-protobuf-lite</artifactId>
-            <version>1.77.1</version>
+            <version>1.83.0</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
-            <version>1.77.1</version>
+            <version>1.83.0</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-util</artifactId>
-            <version>1.77.1</version>
+            <version>1.83.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
@@ -632,7 +632,7 @@
         <dependency>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>animal-sniffer-annotations</artifactId>
-            <version>1.24</version>
+            <version>1.27</version>
         </dependency>
         <dependency>
             <groupId>org.jspecify</groupId>
