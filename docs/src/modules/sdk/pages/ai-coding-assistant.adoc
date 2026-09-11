@@ -1,6 +1,6 @@
 = Using an AI coding assistant
-:page-summary: Configure an AI coding assistant to call the Akka CLI directly, without the Akka Specify Plugin's spec-driven workflow. To install the Specify Plugin itself, see Set up your AI harness.
-:page-when-to-use: Prompting a coding assistant to write Akka code outside spec-driven development, or configuring an assistant the Specify Plugin does not support.
+:page-summary: Configure an AI coding assistant to call the Akka CLI directly, without the Akka Specify Plugin's spec-driven workflow. To install the Akka Specify Plugin itself, see Set up your AI harness.
+:page-when-to-use: Prompting a coding assistant to write Akka code outside spec-driven development, or configuring an assistant the Akka Specify Plugin does not support.
 :page-related: xref:sdk:spec-driven-development.adoc[], xref:getting-started:set-up-dev-env.adoc[], xref:sdk:ai-coding-assistant-guidelines.adoc[]
 :page-persona: Developer, Tech Lead, Architect
 
