@@ -114,6 +114,14 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 | `answer-does-not-match`
 | `Evaluators.answerDoesNotMatch(regex)`
 | The reply matches the regular expression nowhere. A pattern that does not compile fails the case.
+
+| `answer-lacks-payment-card`
+| `Evaluators.answerLacksPaymentCard()`
+| The reply contains no payment card number. A card number is a sequence of 13 to 19 digits, with spaces and dashes allowed between them, that passes the Luhn checksum.
+
+| `answer-lacks-luhn-number`
+| `Evaluators.answerLacksLuhnNumber(minDigits, maxDigits)`
+| The reply contains no sequence of digits within the length range that passes the Luhn checksum. The same checksum validates identifiers other than payment cards, each with its own length, so give the range of the one you are looking for.
 |===
 
 === Built-in budgets

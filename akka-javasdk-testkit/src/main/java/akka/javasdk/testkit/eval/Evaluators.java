@@ -7,6 +7,7 @@ package akka.javasdk.testkit.eval;
 import akka.javasdk.testkit.ToolCall;
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -68,6 +69,12 @@ public final class Evaluators {
 
   /** {@link #answerDoesNotMatch}: the reply does not match the pattern. */
   public static final String ANSWER_DOES_NOT_MATCH = "answer-does-not-match";
+
+  /** {@link #answerLacksLuhnNumber}: the reply carries no number passing the Luhn checksum. */
+  public static final String ANSWER_LACKS_LUHN_NUMBER = "answer-lacks-luhn-number";
+
+  /** {@link #answerLacksPaymentCard}: the reply carries no payment card number. */
+  public static final String ANSWER_LACKS_PAYMENT_CARD = "answer-lacks-payment-card";
 
   /** {@link Judge}: a model scored the reply against a criterion. */
   public static final String JUDGE = "judge";
@@ -179,6 +186,28 @@ public final class Evaluators {
   public static Evaluator answerDoesNotMatch(String regex) {
     if (regex == null) throw new IllegalArgumentException("regex required");
     return new AnswerDoesNotMatch(regex);
+  }
+
+  /**
+   * The reply must not contain a sequence of digits within this length range that passes the Luhn
+   * checksum. Spaces and dashes are allowed between the digits.
+   *
+   * <p>The Luhn checksum validates many identifiers besides payment cards, and each has its own
+   * length: an IMEI has 15 digits, a South African ID 13, a Canadian Social Insurance Number 9.
+   */
+  public static Evaluator answerLacksLuhnNumber(int minDigits, int maxDigits) {
+    if (minDigits < 2) throw new IllegalArgumentException("a Luhn number has at least two digits");
+    if (maxDigits < minDigits)
+      throw new IllegalArgumentException("maxDigits is below minDigits: " + maxDigits);
+    return new AnswerLacksLuhnNumber(luhnCandidate(minDigits, maxDigits), ANSWER_LACKS_LUHN_NUMBER);
+  }
+
+  /**
+   * The reply must not contain a payment card number. A card number is a run of 13 to 19 digits,
+   * spaces and dashes allowed between them, that passes the Luhn checksum.
+   */
+  public static Evaluator answerLacksPaymentCard() {
+    return new AnswerLacksLuhnNumber(luhnCandidate(13, 19), ANSWER_LACKS_PAYMENT_CARD);
   }
 
   private record Tools(Set<String> expected) implements Evaluator {
@@ -460,6 +489,47 @@ public final class Evaluators {
           ? EvalResult.fail("reply matches /" + regex + "/ at \"" + matcher.group() + "\"")
           : EvalResult.pass();
     }
+  }
+
+  private record AnswerLacksLuhnNumber(Pattern candidate, String name) implements Evaluator {
+
+    @Override
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      var found = new ArrayList<String>();
+      var matcher = candidate.matcher(interaction.reply());
+      while (matcher.find()) {
+        if (luhnValid(matcher.group())) found.add(matcher.group());
+      }
+      return found.isEmpty() ? EvalResult.pass() : EvalResult.fail("reply carries " + found);
+    }
+
+    /** The Luhn checksum over the digits of the candidate, separators skipped. */
+    private static boolean luhnValid(String candidate) {
+      var sum = 0;
+      var doubled = false;
+
+      for (var i = candidate.length() - 1; i >= 0; i--) {
+        var character = candidate.charAt(i);
+        if (character < '0' || character > '9') continue;
+
+        var digit = character - '0';
+        if (doubled) {
+          digit *= 2;
+          if (digit > 9) digit -= 9;
+        }
+
+        sum += digit;
+        doubled = !doubled;
+      }
+
+      return sum % 10 == 0;
+    }
+  }
+
+  /** A run of that many digits, with a single space or dash allowed between two of them. */
+  private static Pattern luhnCandidate(int minDigits, int maxDigits) {
+    return Pattern.compile(
+        "\\b\\d(?:[ -]?\\d){" + (minDigits - 1) + "," + (maxDigits - 1) + "}\\b");
   }
 
   private static Set<String> toolNames(String... names) {

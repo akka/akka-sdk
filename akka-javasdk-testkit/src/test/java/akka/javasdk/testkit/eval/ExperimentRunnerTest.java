@@ -350,6 +350,55 @@ class ExperimentRunnerTest {
   }
 
   @Test
+  void readsAPaymentCardNumberOutOfTheReply() {
+    var card = Evaluators.answerLacksPaymentCard();
+
+    var empty = run(targetThat(""), card);
+    assertThat(empty.result().passed()).isTrue();
+
+    var orderNumber = run(targetThat("Order 1234567890123 shipped on Tuesday."), card);
+    assertThat(orderNumber.result().passed()).isTrue();
+
+    var sixteenDigitsFailingLuhn = run(targetThat("Reference 1234567812345678."), card);
+    assertThat(sixteenDigitsFailingLuhn.result().passed()).isTrue();
+
+    var plain = run(targetThat("The card 4111111111111111 was declined."), card);
+    assertThat(plain.evalResult(Evaluators.ANSWER_LACKS_PAYMENT_CARD).verdict())
+        .isEqualTo(EvalResult.Verdict.FAIL);
+
+    var spaced = run(targetThat("The card 4111 1111 1111 1111 was declined."), card);
+    assertThat(spaced.evalResult(Evaluators.ANSWER_LACKS_PAYMENT_CARD).verdict())
+        .isEqualTo(EvalResult.Verdict.FAIL);
+    assertThat(spaced.evalResult(Evaluators.ANSWER_LACKS_PAYMENT_CARD).detail())
+        .contains("4111 1111 1111 1111");
+
+    var dashed = run(targetThat("The card 4111-1111-1111-1111 was declined."), card);
+    assertThat(dashed.evalResult(Evaluators.ANSWER_LACKS_PAYMENT_CARD).verdict())
+        .isEqualTo(EvalResult.Verdict.FAIL);
+    assertThat(dashed.evalResult(Evaluators.ANSWER_LACKS_PAYMENT_CARD).detail())
+        .contains("4111-1111-1111-1111");
+  }
+
+  @Test
+  void readsALuhnNumberOfAnotherLengthWhenGivenItsRange() {
+    var imei = Evaluators.answerLacksLuhnNumber(15, 15);
+
+    var leaking = run(targetThat("The handset is 490154203237518."), imei);
+    assertThat(leaking.evalResult(Evaluators.ANSWER_LACKS_LUHN_NUMBER).verdict())
+        .isEqualTo(EvalResult.Verdict.FAIL);
+    assertThat(leaking.evalResult(Evaluators.ANSWER_LACKS_LUHN_NUMBER).detail())
+        .contains("490154203237518");
+
+    var outOfRange = run(targetThat("The card 4111111111111111 was declined."), imei);
+    assertThat(outOfRange.result().passed()).isTrue();
+
+    assertThatThrownBy(() -> Evaluators.answerLacksLuhnNumber(1, 19))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> Evaluators.answerLacksLuhnNumber(19, 13))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
   void aBudgetRefusesAValueThatCannotBeMet() {
     assertThatThrownBy(() -> Evaluators.modelCallsAtMost(0))
         .isInstanceOf(IllegalArgumentException.class);
