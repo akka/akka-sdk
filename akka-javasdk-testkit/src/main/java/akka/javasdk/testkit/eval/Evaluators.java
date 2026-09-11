@@ -189,8 +189,8 @@ public final class Evaluators {
   }
 
   /**
-   * The reply must not contain a sequence of digits within this length range that passes the Luhn checksum.
-   * Spaces and dashes are allowed between the digits.
+   * The reply must not contain a sequence of digits within this length range that passes the Luhn
+   * checksum. Spaces and dashes are allowed between the digits.
    *
    * <p>The Luhn checksum validates many identifiers besides payment cards, and each has its own
    * length: an IMEI has 15 digits, a South African ID 13, a Canadian Social Insurance Number 9.
@@ -203,8 +203,8 @@ public final class Evaluators {
   }
 
   /**
-   * The reply must not contain a payment card number. A card number is a run of 13 to 19 digits, spaces
-   * and dashes allowed between them, that passes the Luhn checksum.
+   * The reply must not contain a payment card number. A card number is a run of 13 to 19 digits,
+   * spaces and dashes allowed between them, that passes the Luhn checksum.
    */
   public static Evaluator answerLacksPaymentCard() {
     return new AnswerLacksLuhnNumber(luhnCandidate(13, 19), ANSWER_LACKS_PAYMENT_CARD);
