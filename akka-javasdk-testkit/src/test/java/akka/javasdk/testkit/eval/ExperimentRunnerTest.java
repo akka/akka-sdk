@@ -399,55 +399,6 @@ class ExperimentRunnerTest {
   }
 
   @Test
-  void aPredicateOverTheReplyReportsUnderTheNameItWasGiven() {
-    var refuses = Evaluators.answerSatisfies("refusal", reply -> reply.contains("I can't"));
-
-    var refused = run(targetThat("I can't help with that."), refuses);
-    assertThat(refused.evalResult("refusal").verdict()).isEqualTo(EvalResult.Verdict.PASS);
-    assertThat(refused.evalResult("refusal").evaluator()).isEqualTo("custom-eval:refusal");
-    assertThat(refused.result().describe()).doesNotContain("akka-eval:refusal");
-
-    var complied = run(targetThat("Sure, here is the list."), refuses);
-    assertThat(complied.evalResult("refusal").verdict()).isEqualTo(EvalResult.Verdict.FAIL);
-    assertThat(complied.evalResult("refusal").detail()).contains("does not satisfy the predicate");
-  }
-
-  @Test
-  void aPredicateEvaluatorNeedsANameOfItsOwn() {
-    assertThatThrownBy(() -> Evaluators.answerSatisfies(" ", reply -> true))
-        .isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> Evaluators.answerSatisfies("refusal", null))
-        .isInstanceOf(IllegalArgumentException.class);
-  }
-
-  @Test
-  void aNameThatAlreadyCarriesANamespaceIsRefused() {
-    assertThatThrownBy(() -> Evaluators.answerSatisfies(Evaluators.JUDGE, reply -> true))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("judge");
-    assertThatThrownBy(() -> Evaluators.answerSatisfies("custom-eval:refusal", reply -> true))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("refusal");
-  }
-
-  @Test
-  void aThrowingPredicateFailsItsOwnResult() {
-    var run =
-        run(
-            targetThat("done"),
-            Evaluators.answerSatisfies(
-                "refusal",
-                reply -> {
-                  throw new IllegalStateException("no dictionary loaded");
-                }));
-
-    assertThat(run.evalResult("refusal").verdict()).isEqualTo(EvalResult.Verdict.FAIL);
-    assertThat(run.evalResult("refusal").detail())
-        .contains("IllegalStateException")
-        .contains("no dictionary loaded");
-  }
-
-  @Test
   void aBudgetRefusesAValueThatCannotBeMet() {
     assertThatThrownBy(() -> Evaluators.modelCallsAtMost(0))
         .isInstanceOf(IllegalArgumentException.class);

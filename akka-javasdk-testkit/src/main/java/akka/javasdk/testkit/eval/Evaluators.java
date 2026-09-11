@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -99,9 +98,7 @@ public final class Evaluators {
 
   /** The name the report prints an evaluator's results under. */
   static String reportedName(Evaluator evaluator) {
-    return evaluator instanceof BuiltInEvaluator
-        ? evaluator.name()
-        : CUSTOM_PREFIX + evaluator.name();
+    return evaluator instanceof BuiltIn ? evaluator.name() : CUSTOM_PREFIX + evaluator.name();
   }
 
   /** A reported name answers to itself, and a custom one also to the bare name it was given. */
@@ -232,22 +229,10 @@ public final class Evaluators {
     return new AnswerLacksLuhnNumber(luhnCandidate(13, 19), ANSWER_LACKS_PAYMENT_CARD);
   }
 
-  /**
-   * The reply must satisfy the predicate. The report prints these results under {@link
-   * #CUSTOM_PREFIX} and the given name, which {@link Gate#evaluatorRateAtLeast} also accepts bare.
-   * The result is a pass or a fail, never inconclusive. A check that also reads the tool calls
-   * implements {@link Evaluator} instead.
-   */
-  public static Evaluator answerSatisfies(String name, Predicate<String> predicate) {
-    requireName(name, "evaluator");
-    if (name.startsWith(BUILT_IN_PREFIX) || name.startsWith(CUSTOM_PREFIX))
-      throw new IllegalArgumentException(
-          "the namespace is added for you, so name it " + name.substring(name.indexOf(':') + 1));
-    if (predicate == null) throw new IllegalArgumentException("predicate required");
-    return new AnswerSatisfies(name, predicate);
-  }
+  /** An evaluator this class ships, whose {@link Evaluator#name} is already qualified. */
+  private sealed interface BuiltIn extends Evaluator {}
 
-  private record Tools(Set<String> expected) implements BuiltInEvaluator {
+  private record Tools(Set<String> expected) implements BuiltIn {
     @Override
     public String name() {
       return TOOLS;
@@ -264,7 +249,7 @@ public final class Evaluators {
     }
   }
 
-  private record ToolOrder(List<String> expected) implements BuiltInEvaluator {
+  private record ToolOrder(List<String> expected) implements BuiltIn {
     @Override
     public String name() {
       return TOOL_ORDER;
@@ -293,8 +278,7 @@ public final class Evaluators {
     }
   }
 
-  private record ToolArgument(String tool, String argument, Object value)
-      implements BuiltInEvaluator {
+  private record ToolArgument(String tool, String argument, Object value) implements BuiltIn {
     @Override
     public String name() {
       return TOOL_ARGUMENTS;
@@ -335,7 +319,7 @@ public final class Evaluators {
     }
   }
 
-  private record ToolResult(String tool, String text) implements BuiltInEvaluator {
+  private record ToolResult(String tool, String text) implements BuiltIn {
     @Override
     public String name() {
       return TOOL_RESULTS;
@@ -359,7 +343,7 @@ public final class Evaluators {
     }
   }
 
-  private record ForbiddenTools(Set<String> forbidden) implements BuiltInEvaluator {
+  private record ForbiddenTools(Set<String> forbidden) implements BuiltIn {
     @Override
     public String name() {
       return FORBIDDEN_TOOLS;
@@ -374,7 +358,7 @@ public final class Evaluators {
     }
   }
 
-  private record ToolCallBudget(int limit) implements BuiltInEvaluator {
+  private record ToolCallBudget(int limit) implements BuiltIn {
     @Override
     public String name() {
       return TOOL_CALL_BUDGET;
@@ -390,7 +374,7 @@ public final class Evaluators {
     }
   }
 
-  private record ModelCallBudget(int limit) implements BuiltInEvaluator {
+  private record ModelCallBudget(int limit) implements BuiltIn {
     @Override
     public String name() {
       return MODEL_CALL_BUDGET;
@@ -408,7 +392,7 @@ public final class Evaluators {
     }
   }
 
-  private record TokenBudget(long limit) implements BuiltInEvaluator {
+  private record TokenBudget(long limit) implements BuiltIn {
     @Override
     public String name() {
       return TOKEN_BUDGET;
@@ -434,7 +418,7 @@ public final class Evaluators {
     }
   }
 
-  private record LatencyBudget(Duration limit) implements BuiltInEvaluator {
+  private record LatencyBudget(Duration limit) implements BuiltIn {
     @Override
     public String name() {
       return LATENCY_BUDGET;
@@ -452,7 +436,7 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerContains(List<String> texts) implements BuiltInEvaluator {
+  private record AnswerContains(List<String> texts) implements BuiltIn {
     @Override
     public String name() {
       return ANSWER_CONTAINS;
@@ -471,7 +455,7 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerMatches(String regex) implements BuiltInEvaluator {
+  private record AnswerMatches(String regex) implements BuiltIn {
     @Override
     public String name() {
       return ANSWER_MATCHES;
@@ -491,7 +475,7 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerLacks(List<String> texts) implements BuiltInEvaluator {
+  private record AnswerLacks(List<String> texts) implements BuiltIn {
     @Override
     public String name() {
       return ANSWER_LACKS;
@@ -508,7 +492,7 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerDoesNotMatch(String regex) implements BuiltInEvaluator {
+  private record AnswerDoesNotMatch(String regex) implements BuiltIn {
     @Override
     public String name() {
       return ANSWER_DOES_NOT_MATCH;
@@ -529,7 +513,7 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerLacksLuhnNumber(Pattern candidate, String name) implements BuiltInEvaluator {
+  private record AnswerLacksLuhnNumber(Pattern candidate, String name) implements BuiltIn {
 
     @Override
     public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
@@ -570,12 +554,42 @@ public final class Evaluators {
         "\\b\\d(?:[ -]?\\d){" + (minDigits - 1) + "," + (maxDigits - 1) + "}\\b");
   }
 
-  private record AnswerSatisfies(String name, Predicate<String> predicate) implements Evaluator {
+  /** The evaluator behind {@link Judge#scoringAtLeast}: asks the judge and holds the score. */
+  record JudgeEvaluator(Judge judge, String criterion, double threshold) implements BuiltIn {
+
+    @Override
+    public String name() {
+      return JUDGE;
+    }
+
     @Override
     public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
-      return predicate.test(interaction.reply())
-          ? EvalResult.pass()
-          : EvalResult.fail("reply does not satisfy the predicate");
+      if (interaction.reply().isBlank()) {
+        return EvalResult.inconclusive(criterion + ": there is no reply to judge");
+      }
+      Judge.Verdict verdict;
+      try {
+        verdict = judge.decide(criterion, interaction);
+      } catch (RuntimeException e) {
+        return EvalResult.inconclusive(criterion + ": the judge failed: " + e.getMessage());
+      }
+      if (verdict == null) {
+        return EvalResult.inconclusive(criterion + ": the judge gave no verdict");
+      }
+      var score = verdict.score();
+      if (Double.isNaN(score) || score < 0 || score > 1) {
+        return EvalResult.inconclusive(
+            criterion + ": the judge scored " + score + ", which is not a share");
+      }
+      var detail =
+          String.format(
+              Locale.ROOT,
+              "%s: scored %.2f, needed %.2f%s",
+              criterion,
+              score,
+              threshold,
+              verdict.reason().isEmpty() ? "" : " — " + verdict.reason());
+      return score >= threshold ? EvalResult.pass(detail) : EvalResult.fail(detail);
     }
   }
 

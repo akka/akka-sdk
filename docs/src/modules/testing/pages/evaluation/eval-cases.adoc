@@ -75,7 +75,6 @@ Everything else reports under `custom-eval:`, which the runner adds to the name 
 The two namespaces cannot collide, so a check of your own never merges into a built-in row of the report.
 
 `Gate.evaluatorRateAtLeast` accepts a custom evaluator under its bare name as well as its `custom-eval:` name.
-`Evaluators.answerSatisfies` refuses a name that already carries either prefix.
 
 === Built-in evaluators on tool calls
 
@@ -126,17 +125,13 @@ The two namespaces cannot collide, so a check of your own never merges into a bu
 | `Evaluators.answerDoesNotMatch(regex)`
 | The reply matches the regular expression nowhere. A pattern that does not compile fails the case.
 
-| `answer-lacks-payment-card`
+| `akka-eval:answer-lacks-payment-card`
 | `Evaluators.answerLacksPaymentCard()`
 | The reply contains no payment card number. A card number is a sequence of 13 to 19 digits, with spaces and dashes allowed between them, that passes the Luhn checksum.
 
-| `answer-lacks-luhn-number`
+| `akka-eval:answer-lacks-luhn-number`
 | `Evaluators.answerLacksLuhnNumber(minDigits, maxDigits)`
 | The reply contains no sequence of digits within the length range that passes the Luhn checksum. The same checksum validates identifiers other than payment cards, each with its own length, so give the range of the one you are looking for.
-
-| `custom-eval:` and the name you pass
-| `Evaluators.answerSatisfies(name, predicate)`
-| The predicate accepts the reply. Use it for a check the other evaluators do not express, such as a refusal in any language, a semantic match, or a lookup in your own dataset. The result is a pass or a fail, never inconclusive. A predicate that throws fails its own result.
 |===
 
 === Built-in budgets
