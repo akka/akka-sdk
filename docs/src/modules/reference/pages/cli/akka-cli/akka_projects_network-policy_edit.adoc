@@ -1,26 +1,24 @@
-= akka projects instance-types list
+= akka projects network-policy edit
 
-List instance types this project may deploy with.
+Edit the network policy configuration for your Akka project.
 
 == Synopsis
 
-The `akka project instance-types list` command shows the service instance types the project is allowed to use, resolved from the org-config hierarchy.
-The row marked DEFAULT is what a service gets when it is deployed without `--instance-type`: the organization's configured default, or the platform default when the organization sets none.
-
-Optional `--region` and `--service` refine the resolution to a specific deployment region or service within the project.
+The `akka project network-policy edit` command will open a YAML descriptor for the network policy configuration in your editor, allowing you to edit it.
 
 ----
-akka projects instance-types list [flags]
+akka projects network-policy edit [flags]
 ----
 
 == Options
 
 ----
-  -h, --help             help for list
+      --force-global     force an existing regional resource to be configured as a global resource
+      --force-regional   force an existing global resource to be configured as a regional resource
+  -h, --help             help for edit
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
       --project string   project to use if not using the default configured project
-      --region string    Refine resolution to a specific deployment region
-      --service string   Refine resolution to a specific service in the project
+      --region string    region to use if project has more than one region
 ----
 
 == Options inherited from parent commands
@@ -41,7 +39,7 @@ akka projects instance-types list [flags]
 
 == SEE ALSO
 
-* link:akka_projects_instance-types.html[akka projects instance-types]	 - Inspect the service instance types available to a project.
+* link:akka_projects_network-policy.html[akka projects network-policy]	 - Manage the network policy for your Akka project.
 
 [discrete]
 

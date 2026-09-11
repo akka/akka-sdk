@@ -1,26 +1,21 @@
-= akka projects instance-types list
+= akka specify probes list
 
-List instance types this project may deploy with.
-
-== Synopsis
-
-The `akka project instance-types list` command shows the service instance types the project is allowed to use, resolved from the org-config hierarchy.
-The row marked DEFAULT is what a service gets when it is deployed without `--instance-type`: the organization's configured default, or the platform default when the organization sets none.
-
-Optional `--region` and `--service` refine the resolution to a specific deployment region or service within the project.
+Show which probes can reach this system, and which cannot.
 
 ----
-akka projects instance-types list [flags]
+akka specify probes list [flags]
 ----
 
 == Options
 
 ----
+      --dir string       project directory (default: current)
   -h, --help             help for list
-      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string   project to use if not using the default configured project
-      --region string    Refine resolution to a specific deployment region
-      --service string   Refine resolution to a specific service in the project
+      --probe string     changes against the study level's defaults, e.g. +clock,-appearance
+      --rebuild string   a running instance of the rebuild, for the probes that compare two systems
+      --source string    a readable clone of the system being examined
+      --study string     how deeply to study it: read, run, or diff (default "read")
+      --target string    a running instance of it
 ----
 
 == Options inherited from parent commands
@@ -41,7 +36,7 @@ akka projects instance-types list [flags]
 
 == SEE ALSO
 
-* link:akka_projects_instance-types.html[akka projects instance-types]	 - Inspect the service instance types available to a project.
+* link:akka_specify_probes.html[akka specify probes]	 - [Incubating] List, run, and test the probes that examine a system.
 
 [discrete]
 

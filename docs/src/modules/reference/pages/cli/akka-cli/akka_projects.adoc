@@ -41,6 +41,7 @@ For more details on projects, see https://doc.akka.io/operations/projects/index.
 * link:akka_projects_hostnames.html[akka projects hostnames]	 - Manage hostnames for your Akka project.
 * link:akka_projects_instance-types.html[akka projects instance-types]	 - Inspect the service instance types available to a project.
 * link:akka_projects_list.html[akka projects list]	 - List all projects.
+* link:akka_projects_network-policy.html[akka projects network-policy]	 - Manage the network policy for your Akka project.
 * link:akka_projects_new.html[akka projects new]	 - Create a new Akka project.
 * link:akka_projects_observability.html[akka projects observability]	 - Manage the observability settings for your Akka project.
 * link:akka_projects_open.html[akka projects open]	 - Open the current project in the console.

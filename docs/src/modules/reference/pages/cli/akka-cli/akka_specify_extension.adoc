@@ -1,26 +1,16 @@
-= akka projects instance-types list
+= akka specify extension
 
-List instance types this project may deploy with.
+[Incubating] Verify an auditor or a probe against the extension contract.
 
 == Synopsis
 
-The `akka project instance-types list` command shows the service instance types the project is allowed to use, resolved from the org-config hierarchy.
-The row marked DEFAULT is what a service gets when it is deployed without `--instance-type`: the organization's configured default, or the platform default when the organization sets none.
-
-Optional `--region` and `--service` refine the resolution to a specific deployment region or service within the project.
-
-----
-akka projects instance-types list [flags]
-----
+[Incubating] An auditor or a probe is a command that reads a JSON request on standard input and writes a JSON answer on standard output.
+'verify' puts a battery of requests to one and reports whether it speaks that contract, including the requests it cannot answer.
 
 == Options
 
 ----
-  -h, --help             help for list
-      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string   project to use if not using the default configured project
-      --region string    Refine resolution to a specific deployment region
-      --service string   Refine resolution to a specific service in the project
+  -h, --help   help for extension
 ----
 
 == Options inherited from parent commands
@@ -41,7 +31,8 @@ akka projects instance-types list [flags]
 
 == SEE ALSO
 
-* link:akka_projects_instance-types.html[akka projects instance-types]	 - Inspect the service instance types available to a project.
+* link:akka_specify.html[akka specify]	 - [Incubating] Initialize and manage AI-assisted Akka development projects.
+* link:akka_specify_extension_verify.html[akka specify extension verify]	 - Put a battery of requests to an extension and report what it does with them.
 
 [discrete]
 

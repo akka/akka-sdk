@@ -1,0 +1,58 @@
+= akka specify extension verify
+
+Put a battery of requests to an extension and report what it does with them.
+
+== Synopsis
+
+Runs an extension against requests it should answer and requests it cannot, and reports each result as a rule the engine relies on or as advice.
+
+The requests it cannot answer are the point.
+An extension is easy to write so that it answers correctly when asked something it understands, and easy to write so that it answers a question it could not have understood with a verdict about the project.
+
+Name the command after '--', or name a declared condition with --condition to verify the auditor that condition already declares.
+
+----
+akka specify extension verify [-- command [args...]] [flags]
+----
+
+== Examples
+
+----
+  akka specify extension verify -- python examples/extensions/licence-scan.py
+  akka specify extension verify --kind probe -- ./corp-surface-probe
+  akka specify extension verify --condition CORP-LICENCE-SCAN
+----
+
+== Options
+
+----
+      --condition string   verify the auditor a declared condition names
+      --dir string         project directory (default: current)
+  -h, --help               help for verify
+      --kind string        which contract to verify: auditor or probe (default "auditor")
+      --params string      a JSON object to send as the condition's params
+      --policy string      path to an org governance policy
+      --timeout duration   how long each request may take (default 2m0s)
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_specify_extension.html[akka specify extension]	 - [Incubating] Verify an auditor or a probe against the extension contract.
+
+[discrete]
+
