@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -223,7 +224,12 @@ public final class Evaluators {
       var missing = expected.stream().filter(t -> !called.contains(t)).toList();
       return missing.isEmpty()
           ? EvalResult.pass()
-          : EvalResult.fail("never called " + missing + "; called " + calledOrNothing(called));
+          : EvalResult.fail(
+              "never called "
+                  + missing
+                  + "; called "
+                  + calledOrNothing(called)
+                  + rejectedNames(calls));
     }
   }
 
@@ -239,7 +245,7 @@ public final class Evaluators {
       var called = names(calls);
       var missing = expected.stream().filter(t -> !called.contains(t)).toList();
       if (!missing.isEmpty()) {
-        return EvalResult.inconclusive("never called " + missing);
+        return EvalResult.inconclusive("never called " + missing + rejectedNames(calls));
       }
       return isSubsequence(expected, calls)
           ? EvalResult.pass()
@@ -267,7 +273,7 @@ public final class Evaluators {
       var calls = interaction.toolCalls();
       var toTheTool = calls.stream().filter(c -> c.name().equals(tool)).toList();
       if (toTheTool.isEmpty()) {
-        return EvalResult.inconclusive(tool + " was never called");
+        return EvalResult.inconclusive(tool + " was never called" + rejectedNames(calls));
       }
       var carried = toTheTool.stream().anyMatch(c -> sameValue(value, c.arguments().get(argument)));
       return carried
@@ -312,7 +318,7 @@ public final class Evaluators {
               .flatMap(c -> c.result().stream())
               .toList();
       if (results.isEmpty()) {
-        return EvalResult.inconclusive(tool + " has no recorded result");
+        return EvalResult.inconclusive(tool + " has no recorded result" + rejectedNames(calls));
       }
       var lowerText = text.toLowerCase(Locale.ROOT);
       return results.stream().anyMatch(r -> r.toLowerCase(Locale.ROOT).contains(lowerText))
@@ -545,6 +551,33 @@ public final class Evaluators {
 
   private static void requireName(String name, String what) {
     if (name == null || name.isBlank()) throw new IllegalArgumentException(what + " name required");
+  }
+
+  // The name the runtime reports when it rejects a tool call, which it does before the tool runs.
+  private static final Pattern UNKNOWN_TOOL_NAME = Pattern.compile("Unknown tool name \\[([^]]*)]");
+
+  /**
+   * What the model called under a name that is not registered. A tool method is registered as
+   * {@code <Class>_<method>}, while a system message that names its tools uses the plain method
+   * name, so a model that reads the name in the prompt sends a name the runtime does not know. The
+   * trace records such a call without a name, which is why the tool looks as if it was never
+   * called.
+   */
+  private static String rejectedNames(List<ToolCall> calls) {
+    var rejected =
+        calls.stream()
+            .flatMap(call -> call.error().stream())
+            .map(UNKNOWN_TOOL_NAME::matcher)
+            .filter(Matcher::find)
+            .map(matcher -> matcher.group(1))
+            .distinct()
+            .toList();
+    if (rejected.isEmpty()) return "";
+    return "; the runtime rejected "
+        + rejected
+        + (rejected.size() == 1 ? " as an unknown tool name" : " as unknown tool names")
+        + ". A method annotated with @FunctionTool is registered as <Class>_<method> unless the"
+        + " annotation sets a name. Set the name when the system message names the tool.";
   }
 
   private static LinkedHashSet<String> names(List<ToolCall> calls) {
