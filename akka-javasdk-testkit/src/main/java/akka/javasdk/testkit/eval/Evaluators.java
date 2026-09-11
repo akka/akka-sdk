@@ -8,6 +8,9 @@ import akka.javasdk.testkit.ToolCall;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -17,7 +20,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 /**
- * The built-in evaluators, and the names every evaluator reports under.
+ * The built-in evaluators.
  *
  * <p>Each factory returns an {@link Evaluator} for one check over the reply and the traced tool
  * calls. An evaluator reads only the evidence it names and is inconclusive when that evidence is
@@ -25,71 +28,60 @@ import java.util.regex.PatternSyntaxException;
  * inconclusive. Give the evaluators to an {@link EvalCase}, next to a {@link Judge} or a custom
  * evaluator.
  *
- * <p>The name constants are what the report prints and what {@link Gate#evaluatorRateAtLeast}
- * refers to. {@link #TARGET} and {@link #SETUP} are reported by the runner when a case did not
- * reach evaluation.
+ * <p>The report prints an evaluator's results under its {@link EvalLabel}, and {@link
+ * Gate#evaluatorRateAtLeast} refers to an evaluator by class. A custom evaluator's label carries
+ * {@link #CUSTOM_PREFIX}, so it cannot collide with a built-in one. {@link #TARGET} and {@link
+ * #SETUP} are reported by the runner when a case did not reach evaluation.
  */
 public final class Evaluators {
 
-  /** {@link #tools}: every named tool was called. */
-  public static final String TOOLS = "tools";
+  /** The namespace the report prints a custom evaluator under. */
+  public static final String CUSTOM_PREFIX = "custom-eval:";
 
-  /** {@link #toolOrder}: the named tools were called in that relative order. */
-  public static final String TOOL_ORDER = "tool-order";
-
-  /** {@link #toolArgument}: the tool was called with the argument value. */
-  public static final String TOOL_ARGUMENTS = "tool-arguments";
-
-  /** {@link #toolResult}: the tool's result carried the text. */
-  public static final String TOOL_RESULTS = "tool-results";
-
-  /** {@link #toolCallsAtMost}: the agent made at most that many tool calls. */
-  public static final String TOOL_CALL_BUDGET = "tool-call-budget";
-
-  /** {@link #modelCallsAtMost}: the agent made at most that many model calls. */
-  public static final String MODEL_CALL_BUDGET = "model-call-budget";
-
-  /** {@link #tokensAtMost}: the turn used at most that many tokens, in and out. */
-  public static final String TOKEN_BUDGET = "token-budget";
-
-  /** {@link #latencyAtMost}: the turn was answered within that time. */
-  public static final String LATENCY_BUDGET = "latency-budget";
-
-  /** {@link #forbiddenTools}: none of the named tools was called. */
-  public static final String FORBIDDEN_TOOLS = "forbidden-tools";
-
-  /** {@link #answerContains}: the reply carries every given text. */
-  public static final String ANSWER_CONTAINS = "answer-contains";
-
-  /** {@link #answerMatches}: the reply matches the pattern. */
-  public static final String ANSWER_MATCHES = "answer-matches";
-
-  /** {@link #answerLacks}: the reply carries none of the given texts. */
-  public static final String ANSWER_LACKS = "answer-lacks";
-
-  /** {@link #answerDoesNotMatch}: the reply does not match the pattern. */
-  public static final String ANSWER_DOES_NOT_MATCH = "answer-does-not-match";
-
-  /** {@link #answerLacksLuhnNumber}: the reply carries no number passing the Luhn checksum. */
-  public static final String ANSWER_LACKS_LUHN_NUMBER = "answer-lacks-luhn-number";
-
-  /** {@link #answerLacksPaymentCard}: the reply carries no payment card number. */
-  public static final String ANSWER_LACKS_PAYMENT_CARD = "answer-lacks-payment-card";
-
-  /** {@link Judge}: a model scored the reply against a criterion. */
-  public static final String JUDGE = "judge";
-
-  /** The agent call failed. */
+  /** The label of the result the runner reports when the agent call failed. */
   public static final String TARGET = "target";
 
-  /** Loading the case's recorded calls into the stubs threw, so the agent was never called. */
+  /**
+   * The label of the result the runner reports when loading the case's recorded calls into the
+   * stubs threw, so the agent was never called.
+   */
   public static final String SETUP = "setup";
 
   private Evaluators() {}
 
+  /**
+   * The name the report prints results of this evaluator under: its {@link EvalLabel}, prefixed
+   * with {@link #CUSTOM_PREFIX} unless the evaluator is one of the built-ins.
+   *
+   * @throws IllegalArgumentException when the class carries no {@link EvalLabel}
+   */
+  public static String label(Class<? extends Evaluator> evaluator) {
+    var label = requireLabel(evaluator);
+    return BuiltIn.class.isAssignableFrom(evaluator) ? label : CUSTOM_PREFIX + label;
+  }
+
+  /** The class's {@link EvalLabel}: present, not blank, and without the prefix the runner adds. */
+  static String requireLabel(Class<? extends Evaluator> evaluator) {
+    if (evaluator == null) throw new IllegalArgumentException("evaluator required");
+    var label = evaluator.getAnnotation(EvalLabel.class);
+    if (label == null)
+      throw new IllegalArgumentException(
+          evaluator.getName()
+              + " carries no @EvalLabel; an evaluator is a named class annotated with it");
+    if (label.value().isBlank())
+      throw new IllegalArgumentException(evaluator.getName() + " has a blank @EvalLabel");
+    if (label.value().startsWith(CUSTOM_PREFIX))
+      throw new IllegalArgumentException(
+          evaluator.getName()
+              + " puts "
+              + CUSTOM_PREFIX
+              + " in its @EvalLabel; the runner adds the prefix");
+    return label.value();
+  }
+
   /** These tools must be called, in any order. Other calls are allowed. */
   public static Evaluator tools(String... names) {
-    return new Tools(toolNames(names));
+    return new Tools(setOf(names));
   }
 
   /**
@@ -97,7 +89,7 @@ public final class Evaluators {
    * Inconclusive when one of them was never called.
    */
   public static Evaluator toolOrder(String... names) {
-    return new ToolOrder(List.copyOf(toolNames(names)));
+    return new ToolOrder(listOf(names));
   }
 
   /**
@@ -105,8 +97,6 @@ public final class Evaluators {
    * when the tool was never called.
    */
   public static Evaluator toolArgument(String tool, String argument, Object value) {
-    requireName(tool, "tool");
-    requireName(argument, "argument");
     return new ToolArgument(tool, argument, value);
   }
 
@@ -115,19 +105,16 @@ public final class Evaluators {
    * tool was never called or the trace carries no result for it.
    */
   public static Evaluator toolResult(String tool, String text) {
-    requireName(tool, "tool");
-    if (text == null || text.isEmpty()) throw new IllegalArgumentException("text required");
     return new ToolResult(tool, text);
   }
 
   /** None of these tools may be called. */
   public static Evaluator forbiddenTools(String... names) {
-    return new ForbiddenTools(toolNames(names));
+    return new ForbiddenTools(setOf(names));
   }
 
   /** The agent may make at most this many tool calls while answering. */
   public static Evaluator toolCallsAtMost(int calls) {
-    if (calls < 0) throw new IllegalArgumentException("a budget is not negative");
     return new ToolCallBudget(calls);
   }
 
@@ -136,7 +123,6 @@ public final class Evaluators {
    * carried no model calls.
    */
   public static Evaluator modelCallsAtMost(int calls) {
-    if (calls < 1) throw new IllegalArgumentException("an answer takes at least one model call");
     return new ModelCallBudget(calls);
   }
 
@@ -145,7 +131,6 @@ public final class Evaluators {
    * model call reported tokens, as with a mocked model.
    */
   public static Evaluator tokensAtMost(long tokens) {
-    if (tokens < 1) throw new IllegalArgumentException("a token budget is positive");
     return new TokenBudget(tokens);
   }
 
@@ -154,37 +139,26 @@ public final class Evaluators {
    * timing.
    */
   public static Evaluator latencyAtMost(Duration latency) {
-    if (latency == null || latency.isNegative() || latency.isZero())
-      throw new IllegalArgumentException("a latency budget is positive");
     return new LatencyBudget(latency);
   }
 
   /** The reply must contain every given text, case-insensitively. */
   public static Evaluator answerContains(String... texts) {
-    if (texts == null || texts.length == 0)
-      throw new IllegalArgumentException("at least one text required");
-    return new AnswerContains(List.of(texts));
+    return new AnswerContains(listOf(texts));
   }
 
   /** The reply must match the regular expression, anywhere in it. Anchor it for a full match. */
   public static Evaluator answerMatches(String regex) {
-    if (regex == null) throw new IllegalArgumentException("regex required");
     return new AnswerMatches(regex);
   }
 
   /** The reply must not contain any of the given texts, case-insensitively. */
   public static Evaluator answerLacks(String... texts) {
-    if (texts == null || texts.length == 0)
-      throw new IllegalArgumentException("at least one text required");
-    for (var text : texts) {
-      if (text == null || text.isBlank()) throw new IllegalArgumentException("text required");
-    }
-    return new AnswerLacks(List.of(texts));
+    return new AnswerLacks(listOf(texts));
   }
 
   /** The reply must not match the regular expression anywhere in it. */
   public static Evaluator answerDoesNotMatch(String regex) {
-    if (regex == null) throw new IllegalArgumentException("regex required");
     return new AnswerDoesNotMatch(regex);
   }
 
@@ -196,10 +170,7 @@ public final class Evaluators {
    * length: an IMEI has 15 digits, a South African ID 13, a Canadian Social Insurance Number 9.
    */
   public static Evaluator answerLacksLuhnNumber(int minDigits, int maxDigits) {
-    if (minDigits < 2) throw new IllegalArgumentException("a Luhn number has at least two digits");
-    if (maxDigits < minDigits)
-      throw new IllegalArgumentException("maxDigits is below minDigits: " + maxDigits);
-    return new AnswerLacksLuhnNumber(luhnCandidate(minDigits, maxDigits), ANSWER_LACKS_LUHN_NUMBER);
+    return new AnswerLacksLuhnNumber(minDigits, maxDigits);
   }
 
   /**
@@ -207,13 +178,18 @@ public final class Evaluators {
    * spaces and dashes allowed between them, that passes the Luhn checksum.
    */
   public static Evaluator answerLacksPaymentCard() {
-    return new AnswerLacksLuhnNumber(luhnCandidate(13, 19), ANSWER_LACKS_PAYMENT_CARD);
+    return new AnswerLacksPaymentCard();
   }
 
-  private record Tools(Set<String> expected) implements Evaluator {
-    @Override
-    public String name() {
-      return TOOLS;
+  /** An evaluator this class ships, reported without {@link #CUSTOM_PREFIX}. */
+  private sealed interface BuiltIn extends Evaluator {}
+
+  /** {@link #tools}. */
+  @EvalLabel("tools")
+  public record Tools(Set<String> expected) implements BuiltIn {
+
+    public Tools {
+      expected = toolNames(expected);
     }
 
     @Override
@@ -227,10 +203,12 @@ public final class Evaluators {
     }
   }
 
-  private record ToolOrder(List<String> expected) implements Evaluator {
-    @Override
-    public String name() {
-      return TOOL_ORDER;
+  /** {@link #toolOrder}. */
+  @EvalLabel("tool-order")
+  public record ToolOrder(List<String> expected) implements BuiltIn {
+
+    public ToolOrder {
+      expected = List.copyOf(toolNames(expected));
     }
 
     @Override
@@ -256,10 +234,13 @@ public final class Evaluators {
     }
   }
 
-  private record ToolArgument(String tool, String argument, Object value) implements Evaluator {
-    @Override
-    public String name() {
-      return TOOL_ARGUMENTS;
+  /** {@link #toolArgument}. */
+  @EvalLabel("tool-arguments")
+  public record ToolArgument(String tool, String argument, Object value) implements BuiltIn {
+
+    public ToolArgument {
+      requireName(tool, "tool");
+      requireName(argument, "argument");
     }
 
     @Override
@@ -297,10 +278,13 @@ public final class Evaluators {
     }
   }
 
-  private record ToolResult(String tool, String text) implements Evaluator {
-    @Override
-    public String name() {
-      return TOOL_RESULTS;
+  /** {@link #toolResult}. */
+  @EvalLabel("tool-results")
+  public record ToolResult(String tool, String text) implements BuiltIn {
+
+    public ToolResult {
+      requireName(tool, "tool");
+      if (text == null || text.isEmpty()) throw new IllegalArgumentException("text required");
     }
 
     @Override
@@ -321,10 +305,12 @@ public final class Evaluators {
     }
   }
 
-  private record ForbiddenTools(Set<String> forbidden) implements Evaluator {
-    @Override
-    public String name() {
-      return FORBIDDEN_TOOLS;
+  /** {@link #forbiddenTools}. */
+  @EvalLabel("forbidden-tools")
+  public record ForbiddenTools(Set<String> forbidden) implements BuiltIn {
+
+    public ForbiddenTools {
+      forbidden = toolNames(forbidden);
     }
 
     @Override
@@ -336,10 +322,12 @@ public final class Evaluators {
     }
   }
 
-  private record ToolCallBudget(int limit) implements Evaluator {
-    @Override
-    public String name() {
-      return TOOL_CALL_BUDGET;
+  /** {@link #toolCallsAtMost}. */
+  @EvalLabel("tool-call-budget")
+  public record ToolCallBudget(int limit) implements BuiltIn {
+
+    public ToolCallBudget {
+      if (limit < 0) throw new IllegalArgumentException("a budget is not negative");
     }
 
     @Override
@@ -352,10 +340,12 @@ public final class Evaluators {
     }
   }
 
-  private record ModelCallBudget(int limit) implements Evaluator {
-    @Override
-    public String name() {
-      return MODEL_CALL_BUDGET;
+  /** {@link #modelCallsAtMost}. */
+  @EvalLabel("model-call-budget")
+  public record ModelCallBudget(int limit) implements BuiltIn {
+
+    public ModelCallBudget {
+      if (limit < 1) throw new IllegalArgumentException("an answer takes at least one model call");
     }
 
     @Override
@@ -370,10 +360,12 @@ public final class Evaluators {
     }
   }
 
-  private record TokenBudget(long limit) implements Evaluator {
-    @Override
-    public String name() {
-      return TOKEN_BUDGET;
+  /** {@link #tokensAtMost}. */
+  @EvalLabel("token-budget")
+  public record TokenBudget(long limit) implements BuiltIn {
+
+    public TokenBudget {
+      if (limit < 1) throw new IllegalArgumentException("a token budget is positive");
     }
 
     @Override
@@ -396,10 +388,13 @@ public final class Evaluators {
     }
   }
 
-  private record LatencyBudget(Duration limit) implements Evaluator {
-    @Override
-    public String name() {
-      return LATENCY_BUDGET;
+  /** {@link #latencyAtMost}. */
+  @EvalLabel("latency-budget")
+  public record LatencyBudget(Duration limit) implements BuiltIn {
+
+    public LatencyBudget {
+      if (limit == null || limit.isNegative() || limit.isZero())
+        throw new IllegalArgumentException("a latency budget is positive");
     }
 
     @Override
@@ -414,10 +409,12 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerContains(List<String> texts) implements Evaluator {
-    @Override
-    public String name() {
-      return ANSWER_CONTAINS;
+  /** {@link #answerContains}. */
+  @EvalLabel("answer-contains")
+  public record AnswerContains(List<String> texts) implements BuiltIn {
+
+    public AnswerContains {
+      texts = nonBlankTexts(texts);
     }
 
     @Override
@@ -433,10 +430,12 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerMatches(String regex) implements Evaluator {
-    @Override
-    public String name() {
-      return ANSWER_MATCHES;
+  /** {@link #answerMatches}. */
+  @EvalLabel("answer-matches")
+  public record AnswerMatches(String regex) implements BuiltIn {
+
+    public AnswerMatches {
+      if (regex == null) throw new IllegalArgumentException("regex required");
     }
 
     @Override
@@ -453,10 +452,12 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerLacks(List<String> texts) implements Evaluator {
-    @Override
-    public String name() {
-      return ANSWER_LACKS;
+  /** {@link #answerLacks}. */
+  @EvalLabel("answer-lacks")
+  public record AnswerLacks(List<String> texts) implements BuiltIn {
+
+    public AnswerLacks {
+      texts = nonBlankTexts(texts);
     }
 
     @Override
@@ -470,10 +471,12 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerDoesNotMatch(String regex) implements Evaluator {
-    @Override
-    public String name() {
-      return ANSWER_DOES_NOT_MATCH;
+  /** {@link #answerDoesNotMatch}. */
+  @EvalLabel("answer-does-not-match")
+  public record AnswerDoesNotMatch(String regex) implements BuiltIn {
+
+    public AnswerDoesNotMatch {
+      if (regex == null) throw new IllegalArgumentException("regex required");
     }
 
     @Override
@@ -491,16 +494,31 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerLacksLuhnNumber(Pattern candidate, String name) implements Evaluator {
+  /** {@link #answerLacksLuhnNumber}. */
+  @EvalLabel("answer-lacks-luhn-number")
+  public record AnswerLacksLuhnNumber(int minDigits, int maxDigits) implements BuiltIn {
+
+    public AnswerLacksLuhnNumber {
+      if (minDigits < 2)
+        throw new IllegalArgumentException("a Luhn number has at least two digits");
+      if (maxDigits < minDigits)
+        throw new IllegalArgumentException("maxDigits is below minDigits: " + maxDigits);
+    }
 
     @Override
     public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
       var found = new ArrayList<String>();
-      var matcher = candidate.matcher(interaction.reply());
+      var matcher = candidate().matcher(interaction.reply());
       while (matcher.find()) {
         if (luhnValid(matcher.group())) found.add(matcher.group());
       }
       return found.isEmpty() ? EvalResult.pass() : EvalResult.fail("reply carries " + found);
+    }
+
+    /** A run of that many digits, with a single space or dash allowed between two of them. */
+    private Pattern candidate() {
+      return Pattern.compile(
+          "\\b\\d(?:[ -]?\\d){" + (minDigits - 1) + "," + (maxDigits - 1) + "}\\b");
     }
 
     /** The Luhn checksum over the digits of the candidate, separators skipped. */
@@ -526,21 +544,87 @@ public final class Evaluators {
     }
   }
 
-  /** A run of that many digits, with a single space or dash allowed between two of them. */
-  private static Pattern luhnCandidate(int minDigits, int maxDigits) {
-    return Pattern.compile(
-        "\\b\\d(?:[ -]?\\d){" + (minDigits - 1) + "," + (maxDigits - 1) + "}\\b");
+  /** {@link #answerLacksPaymentCard}. */
+  @EvalLabel("answer-lacks-payment-card")
+  public record AnswerLacksPaymentCard() implements BuiltIn {
+
+    private static final AnswerLacksLuhnNumber CARD_NUMBER = new AnswerLacksLuhnNumber(13, 19);
+
+    @Override
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      return CARD_NUMBER.evaluate(evalCase, interaction);
+    }
   }
 
-  private static Set<String> toolNames(String... names) {
-    if (names == null || names.length == 0)
+  /** The evaluator behind {@link Judge#scoringAtLeast}: asks the judge and holds the score. */
+  @EvalLabel("judge")
+  public record JudgeEvaluator(Judge judge, String criterion, double threshold) implements BuiltIn {
+
+    public JudgeEvaluator {
+      if (judge == null) throw new IllegalArgumentException("judge required");
+      if (criterion == null || criterion.isBlank())
+        throw new IllegalArgumentException("criterion required");
+    }
+
+    @Override
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      if (interaction.reply().isBlank()) {
+        return EvalResult.inconclusive(criterion + ": there is no reply to judge");
+      }
+      Judge.Verdict verdict;
+      try {
+        verdict = judge.decide(criterion, interaction);
+      } catch (RuntimeException e) {
+        return EvalResult.inconclusive(criterion + ": the judge failed: " + e.getMessage());
+      }
+      if (verdict == null) {
+        return EvalResult.inconclusive(criterion + ": the judge gave no verdict");
+      }
+      var score = verdict.score();
+      if (Double.isNaN(score) || score < 0 || score > 1) {
+        return EvalResult.inconclusive(
+            criterion + ": the judge scored " + score + ", which is not a share");
+      }
+      var detail =
+          String.format(
+              Locale.ROOT,
+              "%s: scored %.2f, needed %.2f%s",
+              criterion,
+              score,
+              threshold,
+              verdict.reason().isEmpty() ? "" : " — " + verdict.reason());
+      return score >= threshold ? EvalResult.pass(detail) : EvalResult.fail(detail);
+    }
+  }
+
+  private static Set<String> setOf(String... names) {
+    return names == null ? Set.of() : new LinkedHashSet<>(Arrays.asList(names));
+  }
+
+  private static List<String> listOf(String... items) {
+    return items == null ? List.of() : Arrays.asList(items);
+  }
+
+  /** Non-blank, in the given order, without duplicates. */
+  private static Set<String> toolNames(Collection<String> names) {
+    if (names == null || names.isEmpty())
       throw new IllegalArgumentException("at least one tool name required");
     var set = new LinkedHashSet<String>();
     for (var name : names) {
       requireName(name, "tool");
       set.add(name);
     }
-    return set;
+    return Collections.unmodifiableSet(set);
+  }
+
+  /** Non-blank, in the given order. */
+  private static List<String> nonBlankTexts(List<String> texts) {
+    if (texts == null || texts.isEmpty())
+      throw new IllegalArgumentException("at least one text required");
+    for (var text : texts) {
+      if (text == null || text.isBlank()) throw new IllegalArgumentException("text required");
+    }
+    return List.copyOf(texts);
   }
 
   private static void requireName(String name, String what) {

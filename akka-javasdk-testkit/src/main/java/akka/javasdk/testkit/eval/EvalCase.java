@@ -21,8 +21,8 @@ import java.util.Objects;
  * @param recordedCalls the tool calls a recording carried, in recorded order. Empty for a case
  *     written by hand
  * @param evaluators the checks over the reply and the tool calls: built-ins from {@link
- *     Evaluators}, a {@link Judge} criterion, or a custom {@link Evaluator}. Empty when the case
- *     only collects evidence
+ *     Evaluators}, a {@link Judge} criterion, or a custom {@link Evaluator}, each a class annotated
+ *     with {@link EvalLabel}. Empty when the case only collects evidence
  */
 public record EvalCase(
     String id, String userMessage, List<RecordedCall> recordedCalls, List<Evaluator> evaluators) {
@@ -43,6 +43,8 @@ public record EvalCase(
 
     if (evaluators.stream().anyMatch(Objects::isNull))
       throw new IllegalArgumentException("evaluator required");
+
+    for (var evaluator : evaluators) Evaluators.requireLabel(evaluator.getClass());
 
     recordedCalls = List.copyOf(recordedCalls);
     evaluators = List.copyOf(evaluators);

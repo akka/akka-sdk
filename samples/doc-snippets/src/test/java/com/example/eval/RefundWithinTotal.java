@@ -1,22 +1,19 @@
 package com.example.eval;
 
 import akka.javasdk.testkit.eval.EvalCase;
+import akka.javasdk.testkit.eval.EvalLabel;
 import akka.javasdk.testkit.eval.Evaluator;
 import akka.javasdk.testkit.eval.Interaction;
 
 // tag::class[]
 /** The refund the agent issued must not exceed the order's total. */
+@EvalLabel("refund-within-total") // <1>
 public final class RefundWithinTotal implements Evaluator {
 
   private final int totalCents;
 
   public RefundWithinTotal(int totalCents) {
     this.totalCents = totalCents;
-  }
-
-  @Override
-  public String name() {
-    return "refund-within-total"; // <1>
   }
 
   @Override

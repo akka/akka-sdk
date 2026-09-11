@@ -282,7 +282,7 @@ mutator
 mutators
 mvnw
 NACLs
-[Nn]amespaces?
+[Nn]amespaced
 newname
 npm
 npx

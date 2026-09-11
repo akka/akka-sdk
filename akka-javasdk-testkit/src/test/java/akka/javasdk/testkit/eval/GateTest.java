@@ -52,11 +52,11 @@ class GateTest {
             EvalCase.of("c2", "q", Evaluators.toolArgument("getCustomer", "customerId", "wrong")),
             EvalCase.of("c3", "q", Evaluators.toolArgument("neverCalled", "id", "x")));
 
-    var report = run(Gate.evaluatorRateAtLeast(Evaluators.TOOL_ARGUMENTS, 0.5), cases);
+    var report = run(Gate.evaluatorRateAtLeast(Evaluators.ToolArgument.class, 0.5), cases);
 
     assertThat(report.passed()).isTrue();
     assertThat(report.render()).contains("tool-arguments 1/2 (1 inconclusive)");
-    assertThat(run(Gate.evaluatorRateAtLeast(Evaluators.TOOL_ARGUMENTS, 0.9), cases).passed())
+    assertThat(run(Gate.evaluatorRateAtLeast(Evaluators.ToolArgument.class, 0.9), cases).passed())
         .isFalse();
   }
 
@@ -64,7 +64,7 @@ class GateTest {
   void anEvaluatorThatJudgedNothingCannotBeRated() {
     var report =
         run(
-            Gate.evaluatorRateAtLeast(Evaluators.ANSWER_MATCHES, 1.0),
+            Gate.evaluatorRateAtLeast(Evaluators.AnswerMatches.class, 1.0),
             List.of(expectingAnswer("c1", "c1")));
 
     assertThat(report.passed()).isFalse();

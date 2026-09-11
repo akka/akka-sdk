@@ -265,7 +265,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
             .agent(SupportAgent::ask)
             .gate(
                 Gate.passRateAtLeast(0.9)
-                    .and(Gate.evaluatorRateAtLeast(Evaluators.TOOL_ARGUMENTS, 1.0))
+                    .and(Gate.evaluatorRateAtLeast(Evaluators.ToolArgument.class, 1.0))
                     .and(Gate.noTargetFailures()))
             .run();
 

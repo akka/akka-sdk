@@ -66,6 +66,16 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 <3> The reply must match the regular expression somewhere. Anchor it for a full match.
 <4> Budgets. At most two tool calls and three model calls for this turn.
 
+[#evaluator-names]
+=== Evaluator names
+
+Every evaluator class carries an `@EvalLabel`, the name the report prints its results under.
+A built-in evaluator reports under its label as is, for example `tools`.
+A custom evaluator reports under `custom-eval:` followed by its label, so a check of your own never merges into a built-in row of the report.
+A case refuses an evaluator whose class has no `@EvalLabel`.
+
+`Gate.evaluatorRateAtLeast` takes the evaluator's class, for example `Evaluators.ToolArgument.class` or `RefundWithinTotal.class`, and reads the label from it.
+
 === Built-in evaluators on tool calls
 
 [cols="1,2,3"]
@@ -150,7 +160,10 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 [#custom-evaluators]
 == Custom evaluator
 
-A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator]: `name()` returns the name its results are reported under, and `evaluate(...)` receives the case and the `Interaction`, the reply and everything the runtime traced for the turn, and returns an `EvalResult`: a pass, a fail with a reason, or an inconclusive result.
+A custom evaluator is a named class, annotated with `@EvalLabel`, that implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator].
+`evaluate(...)` receives the case and the `Interaction`, the reply and everything the runtime traced for the turn, and returns an `EvalResult`: a pass, a fail with a reason, or an inconclusive result.
+The report prints the results under `custom-eval:` and the label, see <<evaluator-names>>.
+An anonymous class or a lambda cannot carry the annotation, so a case refuses it.
 
 `RefundWithinTotal` is an evaluator that checks that the amount the agent passed to `issueRefund` does not exceed the total of the order.
 
@@ -159,7 +172,7 @@ A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit
 ----
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/RefundWithinTotal.java[tag=class]
 ----
-<1> The name the report prints the results under, and a gate can rate.
+<1> The label. The report prints the results under `custom-eval:refund-within-total`, and `Gate.evaluatorRateAtLeast(RefundWithinTotal.class, rate)` rates them.
 <2> No refund call means nothing to check. Report an inconclusive result rather than a fail; the `tools` evaluator on the case reports the missing call.
 <3> Tool arguments arrive as the runtime decoded them from the model's JSON: a number is a `Number`, an object is a `Map`.
 

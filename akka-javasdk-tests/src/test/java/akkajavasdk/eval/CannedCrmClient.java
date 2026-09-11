@@ -49,6 +49,11 @@ final class CannedCrmClient implements CrmClient {
     tickets.put(customerId, List.of(canned));
   }
 
+  /** The name of every customer the CRM knows. */
+  List<String> names() {
+    return customers.values().stream().map(Customer::name).toList();
+  }
+
   /** {@link ToolBindings.ResultLoader} for getCustomer. */
   void loadCustomer(RecordedCall call) {
     customers.put((String) call.argument("customerId"), call.resultAs(Customer.class));
