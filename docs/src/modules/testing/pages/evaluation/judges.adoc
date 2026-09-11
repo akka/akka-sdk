@@ -127,7 +127,7 @@ xref:testing:evaluation/eval-cases.adoc#inconclusive[Inconclusive results] descr
 == Gating a judged batch
 
 With a real model, hold a batch to the rate the judge passed.
-`Gate.evaluatorRateAtLeast(Evaluators.JUDGE, rate)` rates the `judge` evaluator over the cases where it was conclusive, and fails when it judged no case.
+`Gate.evaluatorRateAtLeast(Evaluators.JudgeEvaluator.class, rate)` rates the `judge` evaluator over the cases where it was conclusive, and fails when it judged no case.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]

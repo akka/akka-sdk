@@ -63,8 +63,6 @@ public interface Judge {
    * throws or gives no verdict, or when the score is not between 0 and 1.
    */
   default Evaluator scoringAtLeast(String criterion, double threshold) {
-    if (criterion == null || criterion.isBlank())
-      throw new IllegalArgumentException("criterion required");
     return new Evaluators.JudgeEvaluator(this, criterion, threshold);
   }
 

@@ -67,22 +67,21 @@ public final class Gate {
 
   /**
    * The pass rate of one evaluator, over the cases where it was conclusive, must be at least this.
-   * Fails when the evaluator judged no case. Built-in names are in {@link Evaluators}; a custom
-   * evaluator answers to its bare name as well as to the {@link Evaluators#CUSTOM_PREFIX} form.
+   * Fails when the evaluator judged no case. The built-in classes are nested in {@link Evaluators},
+   * for example {@code Evaluators.ToolArgument.class}.
    */
-  public static Gate evaluatorRateAtLeast(String evaluator, double rate) {
-    if (evaluator == null || evaluator.isBlank())
-      throw new IllegalArgumentException("evaluator name required");
+  public static Gate evaluatorRateAtLeast(Class<? extends Evaluator> evaluator, double rate) {
+    var label = Evaluators.label(evaluator);
     return new Gate(
         results -> {
           var evalResults =
               results.stream()
                   .flatMap(result -> result.evalResults().stream())
-                  .filter(evalResult -> Evaluators.sameName(evalResult.evaluator(), evaluator))
+                  .filter(evalResult -> evalResult.evaluator().equals(label))
                   .filter(evalResult -> evalResult.verdict() != EvalResult.Verdict.INCONCLUSIVE)
                   .toList();
           if (evalResults.isEmpty()) {
-            return Verdict.fail(evaluator + " judged no case, so its rate cannot be read");
+            return Verdict.fail(label + " judged no case, so its rate cannot be read");
           }
           var passed =
               evalResults.stream().filter(f -> f.verdict() == EvalResult.Verdict.PASS).count();
@@ -91,7 +90,7 @@ public final class Gate {
               String.format(
                   Locale.ROOT,
                   "%s rate %.2f over %d judged cases, required %.2f",
-                  evaluator,
+                  label,
                   actual,
                   evalResults.size(),
                   rate);

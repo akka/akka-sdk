@@ -47,7 +47,9 @@ class JudgeTest {
 
   private EvalResult resultOf(ExperimentRunner.CaseResult result) {
     return result.evalResults().stream()
-        .filter(evalResult -> evalResult.evaluator().equals(Evaluators.JUDGE))
+        .filter(
+            evalResult ->
+                evalResult.evaluator().equals(Evaluators.label(Evaluators.JudgeEvaluator.class)))
         .findFirst()
         .orElseThrow();
   }
@@ -153,7 +155,7 @@ class JudgeTest {
                     turn.caseId().equals("explained") ? "because it was overdue" : "12.50"));
     var report =
         ExperimentRunner.against(new ExperimentRunner().cases(cases), explaining)
-            .gate(Gate.evaluatorRateAtLeast(Evaluators.JUDGE, 0.5))
+            .gate(Gate.evaluatorRateAtLeast(Evaluators.JudgeEvaluator.class, 0.5))
             .run();
 
     assertThat(report.passed()).isTrue();
@@ -162,7 +164,7 @@ class JudgeTest {
         turn -> EvalTarget.Outcome.answered(Interaction.of(turn.userMessage(), "12.50"));
     assertThat(
             ExperimentRunner.against(new ExperimentRunner().cases(cases), bare)
-                .gate(Gate.evaluatorRateAtLeast(Evaluators.JUDGE, 0.5))
+                .gate(Gate.evaluatorRateAtLeast(Evaluators.JudgeEvaluator.class, 0.5))
                 .run()
                 .passed())
         .isFalse();
