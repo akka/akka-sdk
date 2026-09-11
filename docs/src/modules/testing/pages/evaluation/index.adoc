@@ -17,11 +17,10 @@ The agent runs in the in-process runtime with its tools, session memory and guar
 The runtime traces every model call and tool call, and the evaluation reads that trace as evidence.
 Nothing is persisted and nothing leaves the test JVM.
 
-Use evaluation for three purposes.
+Use evaluation for two purposes.
 
-* In every build, with the model mocked by `TestModelProvider`, assert that the agent calls the right tools with the right arguments and turns the tool results into the reply. Every case must pass.
-* On demand, run the same cases against a real model. Replies vary between runs, so a gate holds the batch to a pass rate rather than every case to a pass. A model judge scores criteria that the built-in evaluators cannot state, such as tone.
-* Turn recorded production interactions into cases with `EvalCaseParser`. A replayed case expects the tools, the order and the arguments production used, and holds the agent to the recorded spend.
+* Measure the quality of an agent against a real model. Run a set of cases as one batch. A gate states what the case results of the batch must satisfy. A real model does not give the same reply twice, so set a gate that requires a minimum pass rate over all cases instead of the default gate, which requires every case to pass.
+* Check that an agent still behaves as it did in production. `EvalCaseParser` turns recorded production interactions into cases. Each replayed case expects the agent to call the same tools, in the same order and with the same arguments as in the recording. When the recording carries the model call count, the tokens and the latency, the case also holds the agent to that spend.
 
 Evaluation is not the place for the following.
 

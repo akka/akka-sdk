@@ -34,9 +34,6 @@ var judge = Judge.modelBased(testKit).withModel("eval.judge-model");
 
 A model provider registered for `JudgeAgent.class` in the TestKit settings takes precedence over both. `TestKit.Settings.withModelProvider(JudgeAgent.class, provider)` accepts any `ModelProvider`, so it is another way to give the judge its own model.
 
-To mock the judge, register a `TestModelProvider` with `TestKit.Settings.withModelProvider(JudgeAgent.class, provider)`, as for any other agent.
-The mocked reply must be the JSON object the judge reads: `{"score": 1.0, "reason": "mocked"}`.
-
 Each verdict is decided in a new session with memory disabled, so one verdict does not influence the next.
 
 [#stating-the-criterion]
@@ -45,7 +42,7 @@ Each verdict is decided in a new session with memory disabled, so one verdict do
 A criterion is one sentence that states what a good reply does, for example "the reply states only what the tools returned".
 The judge scores the reply against it and returns the score with a one-sentence reason.
 
-`mustSatisfy(criterion)` and `scoringAtLeast(criterion, threshold)` turn the judge into an `Evaluator`, given to a case next to the built-in evaluators.
+`mustSatisfy(criterion)` and `scoringAtLeast(criterion, threshold)` turn the judge into an `Evaluator`.
 
 * `mustSatisfy` passes at a score of at least 0.5.
 * `scoringAtLeast` passes at the given threshold.
@@ -112,8 +109,8 @@ The judge appends `ModelBasedJudge.REPLY_FORMAT` to the system message, which as
 `systemMessage()` returns the system message a judge sends, with the reply format appended.
 
 `withUserMessage(function)` returns a judge that renders the criterion and the `Interaction` into the user message with the given function, for example to label the sections in the language of the cases.
-`ModelBasedJudge.defaultUserMessage(criterion, interaction)` is the default rendering in <<what-the-judge-sees>>.
-A custom rendering must carry what the system message asks the model to judge.
+
+`ModelBasedJudge.defaultUserMessage(criterion, interaction)` is the default rendering in <<what-the-judge-sees>>. A custom rendering must carry what the system message asks the model to judge.
 
 == When the judge is inconclusive
 

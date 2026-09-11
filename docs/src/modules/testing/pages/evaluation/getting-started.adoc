@@ -12,21 +12,23 @@ include::ROOT:partial$include.adoc[]
 
 A unit test asserts that a call returns one expected value.
 An agent's reply cannot be asserted that way.
-The model decides which tools to call, with which arguments, and how to word the reply, and a real model might not make the same decisions twice.
-Asserting on the exact reply fails on a harmless rewording and passes on a reply that sounds right but invents an order.
+The model decides which tools to call, with which arguments, and how to formulate a reply, and a real model might not make the same decisions twice.
+Asserting on the exact reply fails on a harmless rewording.
 
 An evaluation test sends the agent a fixed set of messages, the eval cases, and checks each turn with evaluators: which tools were called, in which order, with which arguments, what the reply must contain, and what a turn may cost.
 Criteria that have no exact answer, such as tone, go to a model judge that scores the reply.
-Because a real model varies, an evaluation counts results over the whole set and holds it to a rate, rather than holding every case to a pass.
+A real model does not give the same reply twice, so an evaluation does not require every case to pass.
+It counts the results over the whole set of cases and requires a minimum pass rate.
 
 The EvalKit is a set of utilities in the Akka TestKit for testing agents with an ordinary JUnit test.
 
 * The agent runs in the TestKit runtime with its tools, session memory and guardrails.
 * The evidence is the trace the runtime records for the turn. The test does not instrument the agent.
-* With the model mocked by `TestModelProvider`, the same cases are deterministic and run in every build. Without the mock, they run against the real model on demand, with a gate on rates.
+* With the model mocked by `TestModelProvider`, the same cases are deterministic and run in every build. Without the mock, they run against the real model on demand, with a gate that requires a minimum pass rate.
 * Cases can be written in Java or derived from recorded production interactions.
 
-This page builds an evaluation for the order agent of an online shop, from the agent to a gated batch.
+This page shows how to write an evaluation for the order agent of an online shop.
+It starts with the agent, then adds one eval case, then a batch of cases with a gate.
 The complete code is in the link:{sample-base-url}/doc-snippets/src/test/java/com/example/eval[doc-snippets sample, window="new"].
 
 == The agent under evaluation
@@ -109,8 +111,8 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 <4> Without a gate the report passes only when every case passes. The rendered report is the failure message, so a failed case prints its evidence.
 
 A single case against a real model is not a reliable check.
-The model may word the reply differently on another run, or call a tool it did not call before, and the case fails on that run.
-The next step holds a set of cases to a rate instead.
+The model may formulate the reply differently on another run, or call a tool it did not call before, and the case fails on that run.
+The next step runs a set of cases and requires a minimum pass rate over all of them instead.
 
 == A batch behind a gate
 

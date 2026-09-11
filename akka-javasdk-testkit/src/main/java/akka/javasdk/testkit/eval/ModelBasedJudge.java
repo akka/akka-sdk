@@ -62,11 +62,16 @@ public final class ModelBasedJudge implements Judge {
       String systemMessage,
       BiFunction<String, Interaction, String> userMessage,
       String modelConfigPath) {
+
     if (componentClient == null) throw new IllegalArgumentException("componentClient required");
+
     if (systemMessage == null || systemMessage.isBlank())
       throw new IllegalArgumentException("systemMessage required");
+
     if (userMessage == null) throw new IllegalArgumentException("userMessage required");
+
     if (modelConfigPath == null) throw new IllegalArgumentException("modelConfigPath required");
+
     this.componentClient = componentClient;
     this.systemMessage = systemMessage;
     this.userMessage = userMessage;
