@@ -40,58 +40,60 @@ public final class Evaluators {
   public static final String CUSTOM_PREFIX = "custom-eval:";
 
   /** {@link #tools}: every named tool was called. */
-  public static final String TOOLS = "akka-eval:tools";
+  public static final String TOOLS = BUILT_IN_PREFIX + "tools";
 
   /** {@link #toolOrder}: the named tools were called in that relative order. */
-  public static final String TOOL_ORDER = "akka-eval:tool-order";
+  public static final String TOOL_ORDER = BUILT_IN_PREFIX + "tool-order";
 
   /** {@link #toolArgument}: the tool was called with the argument value. */
-  public static final String TOOL_ARGUMENTS = "akka-eval:tool-arguments";
+  public static final String TOOL_ARGUMENTS = BUILT_IN_PREFIX + "tool-arguments";
 
   /** {@link #toolResult}: the tool's result carried the text. */
-  public static final String TOOL_RESULTS = "akka-eval:tool-results";
+  public static final String TOOL_RESULTS = BUILT_IN_PREFIX + "tool-results";
 
   /** {@link #toolCallsAtMost}: the agent made at most that many tool calls. */
-  public static final String TOOL_CALL_BUDGET = "akka-eval:tool-call-budget";
+  public static final String TOOL_CALL_BUDGET = BUILT_IN_PREFIX + "tool-call-budget";
 
   /** {@link #modelCallsAtMost}: the agent made at most that many model calls. */
-  public static final String MODEL_CALL_BUDGET = "akka-eval:model-call-budget";
+  public static final String MODEL_CALL_BUDGET = BUILT_IN_PREFIX + "model-call-budget";
 
   /** {@link #tokensAtMost}: the turn used at most that many tokens, in and out. */
-  public static final String TOKEN_BUDGET = "akka-eval:token-budget";
+  public static final String TOKEN_BUDGET = BUILT_IN_PREFIX + "token-budget";
 
   /** {@link #latencyAtMost}: the turn was answered within that time. */
-  public static final String LATENCY_BUDGET = "akka-eval:latency-budget";
+  public static final String LATENCY_BUDGET = BUILT_IN_PREFIX + "latency-budget";
 
   /** {@link #forbiddenTools}: none of the named tools was called. */
-  public static final String FORBIDDEN_TOOLS = "akka-eval:forbidden-tools";
+  public static final String FORBIDDEN_TOOLS = BUILT_IN_PREFIX + "forbidden-tools";
 
   /** {@link #answerContains}: the reply carries every given text. */
-  public static final String ANSWER_CONTAINS = "akka-eval:answer-contains";
+  public static final String ANSWER_CONTAINS = BUILT_IN_PREFIX + "answer-contains";
 
   /** {@link #answerMatches}: the reply matches the pattern. */
-  public static final String ANSWER_MATCHES = "akka-eval:answer-matches";
+  public static final String ANSWER_MATCHES = BUILT_IN_PREFIX + "answer-matches";
 
   /** {@link #answerLacks}: the reply carries none of the given texts. */
-  public static final String ANSWER_LACKS = "akka-eval:answer-lacks";
+  public static final String ANSWER_LACKS = BUILT_IN_PREFIX + "answer-lacks";
 
   /** {@link #answerDoesNotMatch}: the reply does not match the pattern. */
-  public static final String ANSWER_DOES_NOT_MATCH = "akka-eval:answer-does-not-match";
+  public static final String ANSWER_DOES_NOT_MATCH = BUILT_IN_PREFIX + "answer-does-not-match";
 
   /** {@link #answerLacksLuhnNumber}: the reply carries no number passing the Luhn checksum. */
-  public static final String ANSWER_LACKS_LUHN_NUMBER = "answer-lacks-luhn-number";
+  public static final String ANSWER_LACKS_LUHN_NUMBER =
+      BUILT_IN_PREFIX + "answer-lacks-luhn-number";
 
   /** {@link #answerLacksPaymentCard}: the reply carries no payment card number. */
-  public static final String ANSWER_LACKS_PAYMENT_CARD = "answer-lacks-payment-card";
+  public static final String ANSWER_LACKS_PAYMENT_CARD =
+      BUILT_IN_PREFIX + "answer-lacks-payment-card";
 
   /** {@link Judge}: a model scored the reply against a criterion. */
-  public static final String JUDGE = "akka-eval:judge";
+  public static final String JUDGE = BUILT_IN_PREFIX + "judge";
 
   /** The agent call failed. */
-  public static final String TARGET = "akka-eval:target";
+  public static final String TARGET = BUILT_IN_PREFIX + "target";
 
   /** Loading the case's recorded calls into the stubs threw, so the agent was never called. */
-  public static final String SETUP = "akka-eval:setup";
+  public static final String SETUP = BUILT_IN_PREFIX + "setup";
 
   private Evaluators() {}
 
