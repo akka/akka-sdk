@@ -1,26 +1,11 @@
-= akka projects instance-types list
+= akka projects network-policy remove
 
-List instance types this project may deploy with.
-
-== Synopsis
-
-The `akka project instance-types list` command shows the service instance types the project is allowed to use, resolved from the org-config hierarchy.
-The row marked DEFAULT is what a service gets when it is deployed without `--instance-type`: the organization's configured default, or the platform default when the organization sets none.
-
-Optional `--region` and `--service` refine the resolution to a specific deployment region or service within the project.
-
-----
-akka projects instance-types list [flags]
-----
+Remove an ingress or egress rule from the network policy for your Akka project.
 
 == Options
 
 ----
-  -h, --help             help for list
-      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string   project to use if not using the default configured project
-      --region string    Refine resolution to a specific deployment region
-      --service string   Refine resolution to a specific service in the project
+  -h, --help   help for remove
 ----
 
 == Options inherited from parent commands
@@ -41,7 +26,9 @@ akka projects instance-types list [flags]
 
 == SEE ALSO
 
-* link:akka_projects_instance-types.html[akka projects instance-types]	 - Inspect the service instance types available to a project.
+* link:akka_projects_network-policy.html[akka projects network-policy]	 - Manage the network policy for your Akka project.
+* link:akka_projects_network-policy_remove_egress-rule.html[akka projects network-policy remove egress-rule]	 - Remove an egress rule from the network policy for your Akka project.
+* link:akka_projects_network-policy_remove_ingress-rule.html[akka projects network-policy remove ingress-rule]	 - Remove an ingress rule from the network policy for your Akka project.
 
 [discrete]
 

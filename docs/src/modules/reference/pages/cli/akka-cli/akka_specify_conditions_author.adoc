@@ -1,0 +1,55 @@
+= akka specify conditions author
+
+Write derived conditions into the project.
+
+== Synopsis
+
+Writes conditions into the project's generated set.
+A condition whose id is already there is replaced, so re-running discovery updates its own work rather than accumulating duplicates.
+
+An auditor a tool wrote does not run until its exact command is approved.
+Pass --consent-for to approve the commands as they are written, naming the system being ported.
+Give that only when you accepted the run at its outset: it is the consent that lets an unattended run proceed without stopping at each condition.
+
+----
+akka specify conditions author [flags]
+----
+
+== Examples
+
+----
+  akka specify conditions author --file conditions.yaml
+  akka specify conditions author --file conditions.yaml --consent-for redash
+----
+
+== Options
+
+----
+      --consent-for string   approve the auditors as written, naming the system this run is porting
+      --dir string           project directory (default: current)
+      --file string          a YAML or JSON file of conditions, or - for standard input (default "-")
+  -h, --help                 help for author
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_specify_conditions.html[akka specify conditions]	 - [Incubating] Write, list, and graduate the conditions a tool derived.
+
+[discrete]
+

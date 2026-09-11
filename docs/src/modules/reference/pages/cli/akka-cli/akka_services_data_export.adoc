@@ -31,7 +31,7 @@ akka services data export SERVICE [flags]
   -h, --help                                     help for export
       --include-event-sourced-entities           Whether event sourced entities should be included. Defaults to false.
       --include-event-sourced-entity-snapshots   Whether event sourced entity snapshots should be included. Defaults to true. (default true)
-      --include-value-entities                   Whether value entities should be included. Defaults to false.
+      --include-value-entities                   Whether value entities should be included. Defaults to false. Only applies to legacy Kalix services.
       --owner string                             the owner of the project to use, needed if you have two projects with the same name from different owners
       --platform-managed                         Use the platform managed store. Not available in every region.
       --platform-managed-object-prefix string    If using the platform managed store, a prefix to prepend to the object name, for example, 'my-export/'
@@ -45,7 +45,7 @@ akka services data export SERVICE [flags]
       --s3-secret-key string                     If exporting to S3, the name of the key inside the Akka secret that contains the secret access key to authenticate with. Defaults to secret-access-key. (default "secret-access-key")
       --s3-session-key string                    If exporting to S3, the name of the key inside the Akka secret that contains the session token to authenticate with.
       --split-objects-at string                  Split objects at the given number of bytes. This can be used to limit the size of the objects stored. If configured, all objects will have a '.partN' suffix added to them, where in is the part number starting at 1. The byte value may be specified using SI units (MB, GB etc) or IEC units (MiB, GiB etc). For example, 1GB.
-      --value-entity-type stringArray            Limit exporting values entities to just the given entity types. Can be specified multiple times. Implies --include-value-entities.
+      --value-entity-type stringArray            Limit exporting values entities to just the given entity types. Can be specified multiple times. Implies --include-value-entities. Only applies to legacy Kalix services.
 ----
 
 == Options inherited from parent commands

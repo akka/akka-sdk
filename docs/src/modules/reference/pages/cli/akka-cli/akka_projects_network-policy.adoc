@@ -1,0 +1,45 @@
+= akka projects network-policy
+
+Manage the network policy for your Akka project.
+
+== Synopsis
+
+The `akka project network-policy` family of commands manages the network policy for your Akka project, controlling which ingress and egress traffic is allowed to and from the services in your project.
+
+Traffic between services in the same project, and traffic that is necessary for Akka infrastructure, is always allowed regardless of this configuration.
+Every project has exactly one network policy, named "default" - it can be configured, but not created or deleted.
+
+== Options
+
+----
+  -h, --help   help for network-policy
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_projects.html[akka projects]	 - Manage your Akka projects.
+* link:akka_projects_network-policy_add.html[akka projects network-policy add]	 - Add an ingress or egress rule to the network policy for your Akka project.
+* link:akka_projects_network-policy_apply.html[akka projects network-policy apply]	 - Apply a network policy descriptor to the currently configured project.
+* link:akka_projects_network-policy_edit.html[akka projects network-policy edit]	 - Edit the network policy configuration for your Akka project.
+* link:akka_projects_network-policy_export.html[akka projects network-policy export]	 - Export a network policy descriptor from the currently configured project.
+* link:akka_projects_network-policy_get.html[akka projects network-policy get]	 - Get the network policy configuration for your Akka project.
+* link:akka_projects_network-policy_remove.html[akka projects network-policy remove]	 - Remove an ingress or egress rule from the network policy for your Akka project.
+
+[discrete]
+

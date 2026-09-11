@@ -33,10 +33,14 @@ Use 'akka specify init' to create a new project with all the resources needed fo
 
 * link:akka.html[akka]	 - Akka control
 * link:akka_specify_attest.html[akka specify attest]	 - Record an attestation that a delegated check ran externally, or a harness was activated.
+* link:akka_specify_auditor-test.html[akka specify auditor-test]	 - [Incubating] Run one auditor and print what it was asked and what it answered.
+* link:akka_specify_conditions.html[akka specify conditions]	 - [Incubating] Write, list, and graduate the conditions a tool derived.
 * link:akka_specify_conform.html[akka specify conform]	 - Evaluate exit conditions and report the engine verdict.
 * link:akka_specify_docs.html[akka specify docs]	 - Show where the generated project documentation is, and optionally open it.
+* link:akka_specify_extension.html[akka specify extension]	 - [Incubating] Verify an auditor or a probe against the extension contract.
 * link:akka_specify_init.html[akka specify init]	 - Initialize a new Akka project for AI-assisted development.
 * link:akka_specify_mode.html[akka specify mode]	 - Show or set the local project mode.
+* link:akka_specify_probes.html[akka specify probes]	 - [Incubating] List, run, and test the probes that examine a system.
 * link:akka_specify_ship.html[akka specify ship]	 - Ship the project when all in-scope exit conditions are satisfied.
 * link:akka_specify_signoff.html[akka specify signoff]	 - Record a human sign-off that closes an exit condition.
 * link:akka_specify_status.html[akka specify status]	 - Show the exit-condition Definition-of-Done manifest.
