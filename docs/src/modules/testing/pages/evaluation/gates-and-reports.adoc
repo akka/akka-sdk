@@ -67,15 +67,15 @@ A rendered report of a passing batch:
 [listing]
 ----
 3/3 cases passed (100%)
-gate: passed — pass rate 1.00 over 3 cases, required 0.90; akka-eval:tool-arguments rate 1.00 over 2 judged cases, required 1.00; no target failures
-  akka-eval:tools 1/1
-  akka-eval:tool-arguments 2/2
-  akka-eval:forbidden-tools 2/2
-  akka-eval:answer-contains 2/2
-  akka-eval:tool-order 1/1
-  akka-eval:answer-matches 1/1
-  akka-eval:tool-call-budget 1/1
-  akka-eval:model-call-budget 1/1
+gate: passed — pass rate 1.00 over 3 cases, required 0.90; tool-arguments rate 1.00 over 2 judged cases, required 1.00; no target failures
+  tools 1/1
+  tool-arguments 2/2
+  forbidden-tools 2/2
+  answer-contains 2/2
+  tool-order 1/1
+  answer-matches 1/1
+  tool-call-budget 1/1
+  model-call-budget 1/1
 spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status at 489 ms, over 3/3 cases with evidence
 ----
 
@@ -83,7 +83,7 @@ Line by line:
 
 . The cases with no failed result, and the pass rate.
 . The gate's verdict and its detail. A combined gate lists the detail of each part.
-. One line per evaluator, named as xref:testing:evaluation/eval-cases.adoc#namespaces[the namespaces] give it: the cases it passed over the cases it judged. An evaluator that was inconclusive on some cases shows the count in brackets, for example `akka-eval:token-budget 0/0 (2 inconclusive)`.
+. One line per evaluator, under its xref:testing:evaluation/eval-cases.adoc#evaluator-names[evaluator name]: the cases it passed over the cases it judged. An evaluator that was inconclusive on some cases shows the count in brackets, for example `token-budget 0/0 (2 inconclusive)`.
 . The spend: model calls, tokens and latency summed over the cases whose trace carried model calls, and the slowest case. The line is absent when no case carried model calls.
 . After these lines, every failed case with its evidence, see <<reading-a-failed-case>>.
 
@@ -97,13 +97,13 @@ This report is from a case that asks where order o_42 is, with an evaluator that
 ----
 0/1 cases passed (0%)
 gate: FAILED — failed cases [wrong-order]
-  akka-eval:tool-arguments 0/1
+  tool-arguments 0/1
 spend: 2 model calls, 123 tokens in, 321 out, 6 ms in total, slowest wrong-order at 6 ms, over 1/1 cases with evidence
 case wrong-order FAILED
   reply: Order o_42 is shipped.
   tools: getOrder{orderId=o_42}
   model: 2 calls, 123 tokens in, 321 out, 6 ms
-  FAIL akka-eval:tool-arguments: getOrder(orderId) expected o_43, was [o_42]
+  FAIL tool-arguments: getOrder(orderId) expected o_43, was [o_42]
 ----
 
 A failed case prints the reply, the tool calls with their arguments, the model spend, and every result with its detail.

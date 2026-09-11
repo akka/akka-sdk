@@ -612,7 +612,7 @@ class ExperimentRunnerTest {
         .contains("case c FAILED")
         .contains("reply: I could not find them.")
         .contains("getCustomer{customerId=cust_9}")
-        .contains("FAIL akka-eval:answer-contains");
+        .contains("FAIL answer-contains");
   }
 
   @Test

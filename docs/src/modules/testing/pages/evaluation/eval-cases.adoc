@@ -30,7 +30,7 @@ link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/EvalCase.html[EvalCase] 
 | The checks the turn must pass, as a list or as trailing arguments. Empty when the case only collects evidence. `withEvaluators(...)` returns the same case with more evaluators.
 |===
 
-A case that throws while its recorded calls are loaded is reported as failed under the `akka-eval:setup` evaluator.
+A case that throws while its recorded calls are loaded is reported as failed under the `setup` evaluator.
 The agent is not called.
 
 Each case runs in a fresh session, so no case can read the session memory of an earlier case.
@@ -66,13 +66,12 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 <3> The reply must match the regular expression somewhere. Anchor it for a full match.
 <4> Budgets. At most two tool calls and three model calls for this turn.
 
-[#namespaces]
-=== Evaluator name namespaces
+[#evaluator-names]
+=== Evaluator names
 
-Every result is reported under a namespaced name.
-The evaluators the SDK ships report under `akka-eval:`, and the constants in `Evaluators` carry that prefix.
-Everything else reports under `custom-eval:`, which the runner adds to the name a custom evaluator returns from `name()`.
-The two namespaces cannot collide, so a check of your own never merges into a built-in row of the report.
+A built-in evaluator reports under the name its constant in `Evaluators` gives, for example `tools`.
+A custom evaluator reports under `custom-eval:` followed by the name it returns from `name()`.
+The runner adds the prefix, so a check of your own never merges into a built-in row of the report.
 
 `Gate.evaluatorRateAtLeast` accepts a custom evaluator under its bare name as well as its `custom-eval:` name.
 
@@ -82,23 +81,23 @@ The two namespaces cannot collide, so a check of your own never merges into a bu
 |===
 | Evaluator | Created with | Passes when
 
-| `akka-eval:tools`
+| `tools`
 | `Evaluators.tools(names...)`
 | Every named tool was called, in any order. Other calls are allowed.
 
-| `akka-eval:tool-order`
+| `tool-order`
 | `Evaluators.toolOrder(names...)`
 | The named tools were called in this relative order. Calls to other tools may come between. Inconclusive when one of the named tools was never called.
 
-| `akka-eval:tool-arguments`
+| `tool-arguments`
 | `Evaluators.toolArgument(tool, argument, value)`
 | A call to the tool carried the argument with this value. Inconclusive when the tool was never called.
 
-| `akka-eval:tool-results`
+| `tool-results`
 | `Evaluators.toolResult(tool, text)`
 | The result of the tool contains the text, case-insensitively. Inconclusive when the tool was never called or the trace carries no result for it.
 
-| `akka-eval:forbidden-tools`
+| `forbidden-tools`
 | `Evaluators.forbiddenTools(names...)`
 | None of the named tools was called.
 |===
@@ -109,27 +108,27 @@ The two namespaces cannot collide, so a check of your own never merges into a bu
 |===
 | Evaluator | Created with | Passes when
 
-| `akka-eval:answer-contains`
+| `answer-contains`
 | `Evaluators.answerContains(texts...)`
 | The reply contains every given text, case-insensitively.
 
-| `akka-eval:answer-matches`
+| `answer-matches`
 | `Evaluators.answerMatches(regex)`
 | The reply matches the regular expression anywhere. Anchor the expression for a full match. A pattern that does not compile fails the case.
 
-| `akka-eval:answer-lacks`
+| `answer-lacks`
 | `Evaluators.answerLacks(texts...)`
 | The reply contains none of the given texts, case-insensitively.
 
-| `akka-eval:answer-does-not-match`
+| `answer-does-not-match`
 | `Evaluators.answerDoesNotMatch(regex)`
 | The reply matches the regular expression nowhere. A pattern that does not compile fails the case.
 
-| `akka-eval:answer-lacks-payment-card`
+| `answer-lacks-payment-card`
 | `Evaluators.answerLacksPaymentCard()`
 | The reply contains no payment card number. A card number is a sequence of 13 to 19 digits, with spaces and dashes allowed between them, that passes the Luhn checksum.
 
-| `akka-eval:answer-lacks-luhn-number`
+| `answer-lacks-luhn-number`
 | `Evaluators.answerLacksLuhnNumber(minDigits, maxDigits)`
 | The reply contains no sequence of digits within the length range that passes the Luhn checksum. The same checksum validates identifiers other than payment cards, each with its own length, so give the range of the one you are looking for.
 |===
@@ -140,19 +139,19 @@ The two namespaces cannot collide, so a check of your own never merges into a bu
 |===
 | Evaluator | Created with | Passes when
 
-| `akka-eval:tool-call-budget`
+| `tool-call-budget`
 | `Evaluators.toolCallsAtMost(calls)`
 | The agent made at most this many tool calls.
 
-| `akka-eval:model-call-budget`
+| `model-call-budget`
 | `Evaluators.modelCallsAtMost(calls)`
 | The agent made at most this many model calls. An answer takes at least one.
 
-| `akka-eval:token-budget`
+| `token-budget`
 | `Evaluators.tokensAtMost(tokens)`
 | Input and output tokens together stay within the limit. Inconclusive when the model reported no tokens.
 
-| `akka-eval:latency-budget`
+| `latency-budget`
 | `Evaluators.latencyAtMost(duration)`
 | The agent command completed within the duration. Inconclusive when the trace carries no timing.
 |===
@@ -161,7 +160,7 @@ The two namespaces cannot collide, so a check of your own never merges into a bu
 == Custom evaluator
 
 A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator]: `name()` returns the bare name its results are reported under, and `evaluate(...)` receives the case and the `Interaction`, the reply and everything the runtime traced for the turn, and returns an `EvalResult`: a pass, a fail with a reason, or an inconclusive result.
-The runner prints the results under `custom-eval:` and that name, see <<namespaces>>.
+The runner prints the results under `custom-eval:` and that name, see <<evaluator-names>>.
 
 `RefundWithinTotal` is an evaluator that checks that the amount the agent passed to `issueRefund` does not exceed the total of the order.
 
@@ -171,7 +170,7 @@ The runner prints the results under `custom-eval:` and that name, see <<namespac
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/RefundWithinTotal.java[tag=class]
 ----
 <1> The bare name. The report prints the results under `custom-eval:refund-within-total`, and a gate rates them under either form.
-<2> No refund call means nothing to check. Report an inconclusive result rather than a fail; the `akka-eval:tools` evaluator on the case reports the missing call.
+<2> No refund call means nothing to check. Report an inconclusive result rather than a fail; the `tools` evaluator on the case reports the missing call.
 <3> Tool arguments arrive as the runtime decoded them from the model's JSON: a number is a `Number`, an object is a `Map`.
 
 It goes into a case next to the built-in evaluators.
@@ -187,7 +186,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 == Inconclusive results
 
 An evaluator reads only what it names and is inconclusive when that evidence is absent or does not support a verdict.
-A tool that was never called fails `akka-eval:tools` and makes `akka-eval:tool-order` and `akka-eval:tool-arguments` inconclusive, so one missing call is reported once.
+A tool that was never called fails `tools` and makes `tool-order` and `tool-arguments` inconclusive, so one missing call is reported once.
 An inconclusive result is neither a pass nor a fail.
 A case with inconclusive results and no failed result passes.
 The report counts inconclusive results per evaluator name, and `Gate.evaluatorRateAtLeast` rates evaluators over the conclusive results.

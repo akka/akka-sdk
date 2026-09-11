@@ -26,73 +26,68 @@ import java.util.regex.PatternSyntaxException;
  * evaluator.
  *
  * <p>The name constants are what the report prints and what {@link Gate#evaluatorRateAtLeast}
- * refers to. Every name carries a namespace: {@link #BUILT_IN_PREFIX} for the evaluators this
- * package ships, {@link #CUSTOM_PREFIX} for everything else, which the runner adds. {@link #TARGET}
- * and {@link #SETUP} are reported by the runner when a case did not reach evaluation.
+ * refers to. The runner reports every other evaluator under {@link #CUSTOM_PREFIX}, so a custom
+ * name cannot collide with a built-in one. {@link #TARGET} and {@link #SETUP} are reported by the
+ * runner when a case did not reach evaluation.
  */
 public final class Evaluators {
 
-  /** The namespace of the evaluators this package ships. */
-  public static final String BUILT_IN_PREFIX = "akka-eval:";
-
-  /** The namespace the runner reports every other evaluator under. */
+  /** The namespace the runner reports a custom evaluator under. */
   public static final String CUSTOM_PREFIX = "custom-eval:";
 
   /** {@link #tools}: every named tool was called. */
-  public static final String TOOLS = BUILT_IN_PREFIX + "tools";
+  public static final String TOOLS = "tools";
 
   /** {@link #toolOrder}: the named tools were called in that relative order. */
-  public static final String TOOL_ORDER = BUILT_IN_PREFIX + "tool-order";
+  public static final String TOOL_ORDER = "tool-order";
 
   /** {@link #toolArgument}: the tool was called with the argument value. */
-  public static final String TOOL_ARGUMENTS = BUILT_IN_PREFIX + "tool-arguments";
+  public static final String TOOL_ARGUMENTS = "tool-arguments";
 
   /** {@link #toolResult}: the tool's result carried the text. */
-  public static final String TOOL_RESULTS = BUILT_IN_PREFIX + "tool-results";
+  public static final String TOOL_RESULTS = "tool-results";
 
   /** {@link #toolCallsAtMost}: the agent made at most that many tool calls. */
-  public static final String TOOL_CALL_BUDGET = BUILT_IN_PREFIX + "tool-call-budget";
+  public static final String TOOL_CALL_BUDGET = "tool-call-budget";
 
   /** {@link #modelCallsAtMost}: the agent made at most that many model calls. */
-  public static final String MODEL_CALL_BUDGET = BUILT_IN_PREFIX + "model-call-budget";
+  public static final String MODEL_CALL_BUDGET = "model-call-budget";
 
   /** {@link #tokensAtMost}: the turn used at most that many tokens, in and out. */
-  public static final String TOKEN_BUDGET = BUILT_IN_PREFIX + "token-budget";
+  public static final String TOKEN_BUDGET = "token-budget";
 
   /** {@link #latencyAtMost}: the turn was answered within that time. */
-  public static final String LATENCY_BUDGET = BUILT_IN_PREFIX + "latency-budget";
+  public static final String LATENCY_BUDGET = "latency-budget";
 
   /** {@link #forbiddenTools}: none of the named tools was called. */
-  public static final String FORBIDDEN_TOOLS = BUILT_IN_PREFIX + "forbidden-tools";
+  public static final String FORBIDDEN_TOOLS = "forbidden-tools";
 
   /** {@link #answerContains}: the reply carries every given text. */
-  public static final String ANSWER_CONTAINS = BUILT_IN_PREFIX + "answer-contains";
+  public static final String ANSWER_CONTAINS = "answer-contains";
 
   /** {@link #answerMatches}: the reply matches the pattern. */
-  public static final String ANSWER_MATCHES = BUILT_IN_PREFIX + "answer-matches";
+  public static final String ANSWER_MATCHES = "answer-matches";
 
   /** {@link #answerLacks}: the reply carries none of the given texts. */
-  public static final String ANSWER_LACKS = BUILT_IN_PREFIX + "answer-lacks";
+  public static final String ANSWER_LACKS = "answer-lacks";
 
   /** {@link #answerDoesNotMatch}: the reply does not match the pattern. */
-  public static final String ANSWER_DOES_NOT_MATCH = BUILT_IN_PREFIX + "answer-does-not-match";
+  public static final String ANSWER_DOES_NOT_MATCH = "answer-does-not-match";
 
   /** {@link #answerLacksLuhnNumber}: the reply carries no number passing the Luhn checksum. */
-  public static final String ANSWER_LACKS_LUHN_NUMBER =
-      BUILT_IN_PREFIX + "answer-lacks-luhn-number";
+  public static final String ANSWER_LACKS_LUHN_NUMBER = "answer-lacks-luhn-number";
 
   /** {@link #answerLacksPaymentCard}: the reply carries no payment card number. */
-  public static final String ANSWER_LACKS_PAYMENT_CARD =
-      BUILT_IN_PREFIX + "answer-lacks-payment-card";
+  public static final String ANSWER_LACKS_PAYMENT_CARD = "answer-lacks-payment-card";
 
   /** {@link Judge}: a model scored the reply against a criterion. */
-  public static final String JUDGE = BUILT_IN_PREFIX + "judge";
+  public static final String JUDGE = "judge";
 
   /** The agent call failed. */
-  public static final String TARGET = BUILT_IN_PREFIX + "target";
+  public static final String TARGET = "target";
 
   /** Loading the case's recorded calls into the stubs threw, so the agent was never called. */
-  public static final String SETUP = BUILT_IN_PREFIX + "setup";
+  public static final String SETUP = "setup";
 
   private Evaluators() {}
 
