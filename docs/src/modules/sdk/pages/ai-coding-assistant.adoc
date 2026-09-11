@@ -1,10 +1,14 @@
 = Using an AI coding assistant
+:page-summary: Configure an AI coding assistant to call the Akka CLI directly, without the Akka Specify Plugin's spec-driven workflow. To install the Akka Specify Plugin itself, see Set up your AI harness.
+:page-when-to-use: Prompting a coding assistant to write Akka code outside spec-driven development, or configuring an assistant the Akka Specify Plugin does not support.
+:page-related: xref:sdk:spec-driven-development.adoc[], xref:getting-started:set-up-dev-env.adoc[], xref:sdk:ai-coding-assistant-guidelines.adoc[]
+:page-persona: Developer, Tech Lead, Architect
 
 include::ROOT:partial$include.adoc[]
 
 [NOTE]
 ====
-These guidelines are for enabling AI assistants to use the Akka CLI natively. If you are using the xref:sdk:spec-driven-development.adoc[Akka Specify Plugin] with spec-driven development, all of this configuration and these best practices are enabled within the Akka Specify Plugin automatically.
+This page configures an AI assistant to call the Akka CLI natively, without spec-driven development. To install the Akka Specify Plugin instead, see xref:getting-started:set-up-dev-env.adoc#_set_up_your_ai_harness[Set up your AI harness] -- the plugin enables this configuration and these best practices automatically, and you do not need the steps below.
 ====
 
 AI coding assistants can increase your productivity when developing Akka services. This guide will give you some practical hints of how to setup Akka knowledge and how to prompt the AI assistant. We are using https://docs.claude.com/en/docs/claude-code/overview[Claude code, window="new"],  https://www.qodo.ai[Qodo, window="new"], https://www.cursor.com[Cursor, window="new"] and https://www.jetbrains.com/help/idea/ai-assistant-in-jetbrains-ides.html[IntelliJ IDEA, window="new"] as examples of such coding assistants, but the techniques are applicable for other tools as well.
