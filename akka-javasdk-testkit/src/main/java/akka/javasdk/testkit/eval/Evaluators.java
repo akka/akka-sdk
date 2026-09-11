@@ -189,7 +189,7 @@ public final class Evaluators {
   }
 
   /**
-   * The reply must carry no run of digits within this length range that passes the Luhn checksum.
+   * The reply must not contain a sequence of digits within this length range that passes the Luhn checksum.
    * Spaces and dashes are allowed between the digits.
    *
    * <p>The Luhn checksum validates many identifiers besides payment cards, and each has its own
@@ -203,7 +203,7 @@ public final class Evaluators {
   }
 
   /**
-   * The reply must carry no payment card number. A card number is a run of 13 to 19 digits, spaces
+   * The reply must not contain a payment card number. A card number is a run of 13 to 19 digits, spaces
    * and dashes allowed between them, that passes the Luhn checksum.
    */
   public static Evaluator answerLacksPaymentCard() {
