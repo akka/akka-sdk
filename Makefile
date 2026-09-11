@@ -17,6 +17,20 @@ antora_docker_image := local/antora-doc
 antora_docker_image_tag := latest
 BASE_PATH := $(shell git rev-parse --show-prefix)
 
+antora_worktree_repo := ${ROOT_DIR}/target/antora-content-source
+
+# Sets the docker mounts for an Antora build.
+# Antora requires a content source whose .git is a directory. A linked git worktree is
+# mounted through a scratch repository.
+define antora_mounts
+	mounts="-v ${ROOT_DIR}:/antora"; \
+	if [ -f "${ROOT_DIR}/.git" ]; then \
+		mkdir -p "${ROOT_DIR}/target"; \
+		docs/bin/antora-worktree-repo.sh "${antora_worktree_repo}"; \
+		mounts="-v ${antora_worktree_repo}:/antora -v ${ROOT_DIR}/docs:/antora/docs -v ${ROOT_DIR}/target:/antora/target"; \
+	fi;
+endef
+
 .SILENT:
 
 build: managed local open
@@ -104,18 +118,20 @@ local: docker-image examples antora-local whitepapers done
 prod: docker-image managed antora-prod done
 
 antora-local:
+	$(antora_mounts) \
 	docker run \
 		--user "$$(id -u):$$(id -g)" \
-		-v ${ROOT_DIR}:/antora \
+		$$mounts \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
 		--cache-dir=.cache/antora --stacktrace --log-failure-level=warn \
 		docs/antora-playbook-local.yml
 
 antora-prod:
+	$(antora_mounts) \
 	docker run \
 		--user "$$(id -u):$$(id -g)" \
-		-v ${ROOT_DIR}:/antora \
+		$$mounts \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
 		--cache-dir=.cache/antora --stacktrace --log-level error --log-failure-level=warn \
