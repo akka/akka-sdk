@@ -21,7 +21,7 @@ New installs start in *À la carte* mode. To use Enforced, switch first:
 == Prerequisites
 
 * Complete xref:getting-started:set-up-dev-env.adoc#_set_up_your_ai_harness[Set up your AI harness] -- install the Akka Specify Plugin and run `/akka:setup`.
-* An https://platform.openai.com/api-keys[OpenAI API key, window="new"], required only for this tutorial's generated agent -- not for installing the Specify Plugin. The application code calls OpenAI directly, independently of your AI coding assistant. Set `OPENAI_API_KEY` in your environment before starting your assistant; on Mac/Linux use `export` so child processes inherit it.
+* An https://platform.openai.com/api-keys[OpenAI API key, window="new"], required only for this tutorial's generated agent -- not for installing the Akka Specify Plugin. The application code calls OpenAI directly, independently of your AI coding assistant. Set `OPENAI_API_KEY` in your environment before starting your assistant; on Mac/Linux use `export` so child processes inherit it.
 
 [#enforced]
 == Build in Enforced mode
