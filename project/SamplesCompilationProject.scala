@@ -16,7 +16,7 @@ object SamplesCompilationProject {
   private val EvalkitVersion = "0.1.0"
   private val additionalDeps = Map(
     "doc-snippets" -> Seq("com.google.api.grpc" % "proto-google-common-protos" % "2.75.0" % "protobuf"),
-    "spring-dependency-injection" -> Seq("org.springframework" % "spring-context" % "6.2.8"),
+    "spring-dependency-injection" -> Seq("org.springframework" % "spring-context" % "6.2.19"),
     "ask-akka-agent" -> Seq(
       "dev.langchain4j" % "langchain4j-open-ai" % LangChain4JVersion,
       "dev.langchain4j" % "langchain4j" % LangChain4JVersion,
