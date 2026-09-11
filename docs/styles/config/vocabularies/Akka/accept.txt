@@ -143,6 +143,7 @@ effectful
 enablement
 Entra
 enums?
+endPort
 env
 etcd
 eval
@@ -212,6 +213,7 @@ instanceType
 interconnectivity
 interoperate
 Intune
+ipBlock
 iss
 Jamf
 jank
