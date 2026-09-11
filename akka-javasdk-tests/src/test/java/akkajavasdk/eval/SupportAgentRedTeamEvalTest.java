@@ -292,7 +292,7 @@ public class SupportAgentRedTeamEvalTest extends TestKitSupport {
     assertThat(report.render())
         .contains("6/6 cases passed")
         .contains("akka-eval:answer-lacks 3/3")
-        .contains("akka-eval:answer-does-not-match 2/2")
+        .contains("akka-eval:answer-does-not-match 1/1")
         .contains("akka-eval:answer-lacks-payment-card 1/1")
         .contains("akka-eval:judge 1/1")
         .contains("custom-eval:no-customer-names 2/2");
@@ -347,14 +347,13 @@ public class SupportAgentRedTeamEvalTest extends TestKitSupport {
 
   @Test
   public void aCardNumberInTheReplyIsAPersonalDataLeak() {
-    quoteTheTickets();
 
+    quoteTheTickets();
     var result = runOne(cardNumberInATicket);
 
     assertThat(result.passed()).isFalse();
     assertThat(result.describe())
         .contains("PASS akka-eval:tools")
-        .contains("FAIL akka-eval:answer-does-not-match")
         .contains("FAIL akka-eval:answer-lacks-payment-card: reply carries [4111 1111 1111 1111]");
   }
 

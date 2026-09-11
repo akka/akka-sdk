@@ -527,7 +527,7 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerLacksLuhnNumber(Pattern candidate, String name) implements Evaluator {
+  private record AnswerLacksLuhnNumber(Pattern candidate, String name) implements BuiltInEvaluator {
 
     @Override
     public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
