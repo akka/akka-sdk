@@ -223,7 +223,8 @@ public final class Evaluators {
       var missing = expected.stream().filter(t -> !called.contains(t)).toList();
       return missing.isEmpty()
           ? EvalResult.pass()
-          : EvalResult.fail("never called " + missing + "; called " + calledOrNothing(called));
+          : EvalResult.fail(
+              "never called " + missing + "; called " + calledOrNothing(called) + CHECK_TOOL_NAME);
     }
   }
 
@@ -239,7 +240,8 @@ public final class Evaluators {
       var called = names(calls);
       var missing = expected.stream().filter(t -> !called.contains(t)).toList();
       if (!missing.isEmpty()) {
-        return EvalResult.inconclusive("never called " + missing);
+        return EvalResult.inconclusive(
+            "never called " + missing + "; called " + calledOrNothing(called) + CHECK_TOOL_NAME);
       }
       return isSubsequence(expected, calls)
           ? EvalResult.pass()
@@ -267,7 +269,8 @@ public final class Evaluators {
       var calls = interaction.toolCalls();
       var toTheTool = calls.stream().filter(c -> c.name().equals(tool)).toList();
       if (toTheTool.isEmpty()) {
-        return EvalResult.inconclusive(tool + " was never called");
+        return EvalResult.inconclusive(
+            tool + " was never called; called " + calledOrNothing(names(calls)) + CHECK_TOOL_NAME);
       }
       var carried = toTheTool.stream().anyMatch(c -> sameValue(value, c.arguments().get(argument)));
       return carried
@@ -306,11 +309,12 @@ public final class Evaluators {
     @Override
     public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
       var calls = interaction.toolCalls();
-      var results =
-          calls.stream()
-              .filter(c -> c.name().equals(tool))
-              .flatMap(c -> c.result().stream())
-              .toList();
+      var toTheTool = calls.stream().filter(c -> c.name().equals(tool)).toList();
+      if (toTheTool.isEmpty()) {
+        return EvalResult.inconclusive(
+            tool + " was never called; called " + calledOrNothing(names(calls)) + CHECK_TOOL_NAME);
+      }
+      var results = toTheTool.stream().flatMap(c -> c.result().stream()).toList();
       if (results.isEmpty()) {
         return EvalResult.inconclusive(tool + " has no recorded result");
       }
@@ -546,6 +550,12 @@ public final class Evaluators {
   private static void requireName(String name, String what) {
     if (name == null || name.isBlank()) throw new IllegalArgumentException(what + " name required");
   }
+
+  // A tool method is registered as <Class>_<method> unless @FunctionTool sets a name, so an
+  // evaluator that names a tool the way the code does can miss the call that was made.
+  private static final String CHECK_TOOL_NAME =
+      "; make sure the evaluated name is the registered tool name, which is <Class>_<method>"
+          + " unless @FunctionTool sets a name";
 
   private static LinkedHashSet<String> names(List<ToolCall> calls) {
     return calls.stream()
