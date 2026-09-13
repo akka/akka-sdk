@@ -280,6 +280,7 @@ maxModelLen
 maxModels
 maxSurge
 maxUnavailable
+[Mm]cp
 memoized
 memoryPercent
 migratable
