@@ -19,31 +19,27 @@ Add to `.zed/settings.json` at the project root, under `context_servers`:
 {
   "context_servers": {
     "akka": {
-      "command": {
-        "path": "akka",
-        "args": ["mcp", "serve"]
-      }
+      "command": "akka",
+      "args": ["mcp", "serve"]
     }
   }
 }
 ----
 
-// <VERIFY: confirm Zed's current key name — `context_servers` was the setting as of Zed 0.148; check the Zed docs at go-live>
-
-Reload Zed's AI panel after saving. The Akka tools appear under the `akka` server.
+Reload Zed's AI panel after saving. The Akka tools appear under the `akka` server. Zed also reads `AGENTS.md` if present, so keeping the file at the project root gives the model Akka conventions in addition to the tools.
 
 == Aider
 
-Aider does not have native MCP client support. Two options:
+Aider does not have native MCP client support. Two workarounds:
 
 * Drive the Akka CLI directly through Aider's shell integration — Aider can run `akka` commands and read their output.
-* Use a community MCP-to-stdio bridge (for example, `mcp-cli`) and expose the Akka MCP server through Aider's tool interface. // <VERIFY: recommend or link a specific bridge once one is stable>
+* Run an MCP-to-stdio bridge alongside Aider and expose `akka mcp serve` through Aider's tool interface.
 
 Either way, keep `AGENTS.md` at the project root so Aider's model receives Akka conventions.
 
 == Sourcegraph Cody
 
-Add to Cody's MCP settings (`~/.config/cody/mcp.json` on macOS/Linux, `%APPDATA%\Cody\mcp.json` on Windows):
+Cody registers MCP servers through its own configuration surface; the exact settings path has moved between Cody releases, so consult the current https://sourcegraph.com/docs/cody/capabilities/model-context-protocol[Cody MCP documentation, window="new"] for the file location that matches your Cody version. The registration entry follows the common stdio pattern:
 
 [source,json]
 ----
@@ -56,8 +52,6 @@ Add to Cody's MCP settings (`~/.config/cody/mcp.json` on macOS/Linux, `%APPDATA%
   }
 }
 ----
-
-// <VERIFY: exact Cody MCP settings path — Sourcegraph's MCP configuration surface is still stabilizing; confirm at go-live>
 
 Restart the Cody panel after saving.
 
