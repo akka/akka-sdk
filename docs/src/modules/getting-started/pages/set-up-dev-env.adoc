@@ -26,6 +26,61 @@ Install the Akka Specify Plugin in your AI coding assistant. From there the plug
 
 include::ROOT:partial$install-harness-table.adoc[]
 
+[IMPORTANT]
+====
+`/akka:setup` and `akka specify init` both scaffold into the current directory and expect that directory to be *empty*. Create a fresh folder first (`mkdir my-akka-project && cd my-akka-project`) so nothing existing is overwritten. See xref:sdk:spec-driven-development.adoc[Spec-driven development] for the full lifecycle.
+====
+
+[#_harness_support_matrix]
+=== Harness support matrix
+
+Not every AI coding harness has a first-class Akka install. The matrix below groups harnesses by which install path applies. Every plugin install references `akka@ai-marketplace` at a stable release tag (never `main`).
+
+* *Plugin (bundle install)* — the harness reads Akka's plugin bundle from `akka/ai-marketplace` and registers the full toolset (slash commands where supported, MCP server, SDK context).
+* *CLI init (`akka specify init --agent <harness>`)* — no bundle for this harness; the Akka CLI writes the harness's own native rules or instructions file plus its MCP config.
+* *CLI + AGENTS.md + manual MCP* — fallback for harnesses without a plugin bundle and without a CLI agent profile. Install the CLI, register the MCP server by hand, keep `AGENTS.md` at the project root.
+
+[cols="2,1,3", options="header"]
+|===
+| Harness | Path | Install target
+
+| Claude Code                            | Plugin        | `/plugin marketplace add akka/ai-marketplace` then `/plugin install akka@ai-marketplace`
+| Claude Tag (Slack)                     | Plugin        | Claude Code manifest in `akka/ai-marketplace`
+| OpenAI Codex CLI                       | Plugin        | `codex plugin marketplace add akka/ai-marketplace`
+| Cursor                                 | Plugin        | Cursor Marketplace (search "Akka") or `akka specify init --agent cursor`
+| Kiro (AWS)                             | Plugin        | Kiro Powers (search "Akka")
+| GitHub Copilot (VS Code)               | Plugin        | `akka specify init --agent vscode-copilot`
+| Antigravity (`agy`)                    | Plugin        | `agy plugin install https://github.com/akka/ai-marketplace`
+| GitHub Copilot (JetBrains, VS, Xcode, Neovim) | CLI init | `akka specify init --agent <ide>-copilot`
+| Factory (Droid)                        | CLI init      | `akka specify init --agent factory`
+| Roo Code                               | CLI init      | `akka specify init --agent roo`
+| Kilo Code                              | CLI init      | `akka specify init --agent kilo`
+| Devin                                  | CLI init      | `akka specify init --agent devin`
+| Trae                                   | CLI init      | `akka specify init --agent trae`
+| Warp                                   | CLI init      | `akka specify init --agent warp`
+| Replit Agent                           | CLI init      | `akka specify init --agent replit`
+| Google Jules                           | CLI init      | `akka specify init --agent jules`
+| Cline                                  | CLI init      | `akka specify init --agent cline`
+| JetBrains AI / Junie                   | CLI init      | `akka specify init --agent junie`
+| Zed AI                                 | CLI init      | `akka specify init --agent zed`
+| Aider                                  | CLI + AGENTS.md + manual MCP | See xref:sdk:register-mcp.adoc[Register the Akka MCP server]
+| Sourcegraph Cody                       | CLI + AGENTS.md + manual MCP | See xref:sdk:register-mcp.adoc[Register the Akka MCP server]
+| Claude.ai chat (with Projects)         | CLI + AGENTS.md + manual MCP | Paste the install playbook at https://akka.ai[akka.ai, window="new"] into the project's custom instructions; MCP is admin-gated
+| Any harness not listed                 | CLI + AGENTS.md + manual MCP | Same as Aider
+|===
+
+NOTE: `--agent` profiles the CLI ships today are `cursor` and `vscode-copilot`. Additional profiles are added as harnesses stabilize; where a profile is not yet shipped, use the CLI + `AGENTS.md` + manual MCP fallback. The current `AGENTS.md` template ships with the Akka CLI and is also published at https://doc.akka.io/sdk/_attachments/AGENTS.md[doc.akka.io/sdk/_attachments/AGENTS.md, window="new"] so `akka specify init` and manual setups reference the same file. // <VERIFY: keep this list of shipped `--agent` profiles in sync with the Akka CLI release notes at the go-live date>
+
+.Unsupported harnesses
+Do not install into these; recommend the user pick a supported harness instead:
+
+* *Windsurf / Cascade* — end-of-life July 1 2026.
+* *Gemini Code Assist* — superseded by Antigravity June 18 2026. Migrate to Antigravity.
+* *Tabnine, Codeium (non-Windsurf)* — autocomplete-only surfaces; Akka's MCP tools do not map.
+* *Amazon Q Developer, Continue.dev, JetBrains Fleet AI, Void* — discontinued.
+
+For AI-driven installs, the human-facing entry point is https://akka.ai[akka.ai, window="new"] — paste "install Akka from akka.ai" into any supported harness and it walks the flow above.
+
 === Update the plugin
 
 Keep the Akka Specify Plugin up to date with the latest commands and fixes.
