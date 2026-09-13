@@ -28,7 +28,7 @@ include::ROOT:partial$install-harness-table.adoc[]
 
 [IMPORTANT]
 ====
-`/akka:setup` and `akka specify init` both scaffold into the current directory and expect that directory to be *empty*. Create a fresh folder first (`mkdir my-akka-project && cd my-akka-project`) so nothing existing is overwritten. See xref:sdk:spec-driven-development.adoc[Spec-driven development] for the full lifecycle.
+`/akka:setup` and `akka specify init` both scaffold into the current directory. Create a fresh folder first (`mkdir my-akka-project && cd my-akka-project`) so nothing existing is overwritten. See xref:sdk:spec-driven-development.adoc[Spec-driven development] for the full lifecycle.
 ====
 
 [#_harness_support_matrix]
@@ -47,9 +47,9 @@ Not every AI coding harness has a first-class Akka install. The matrix below gro
 | Claude Code                            | Plugin        | `/plugin marketplace add akka/ai-marketplace` then `/plugin install akka@ai-marketplace`
 | Claude Tag (Slack)                     | Plugin        | Claude Code manifest in `akka/ai-marketplace`
 | OpenAI Codex CLI                       | Plugin        | `codex plugin marketplace add akka/ai-marketplace`
-| Cursor                                 | Plugin        | Cursor Marketplace (search "Akka") or `akka specify init --agent cursor`
+| Cursor                                 | Plugin or CLI init | Cursor Marketplace (search "Akka") or `akka specify init --agent cursor`
 | Kiro (AWS)                             | Plugin        | Kiro Powers (search "Akka")
-| GitHub Copilot (VS Code)               | Plugin        | `akka specify init --agent vscode-copilot`
+| GitHub Copilot (VS Code)               | CLI init      | `akka specify init --agent vscode-copilot`
 | Antigravity (`agy`)                    | Plugin        | `agy plugin install https://github.com/akka/ai-marketplace`
 | Any other harness with AGENTS.md support (Factory, Devin, Junie, Roo, Trae, Warp, Zed, Jules, Visual Studio 2022 Copilot, GitHub Copilot coding agent, ...) | CLI + AGENTS.md + manual MCP | `akka specify init --agent generic` writes `AGENTS.md` and `.mcp.json`; if the harness's MCP path is elsewhere, see xref:sdk:register-mcp.adoc[Register the Akka MCP server]
 | Aider                                  | CLI + AGENTS.md + manual MCP | See xref:sdk:register-mcp.adoc[Register the Akka MCP server]
