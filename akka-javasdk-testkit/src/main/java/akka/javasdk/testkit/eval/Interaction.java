@@ -4,6 +4,7 @@
 
 package akka.javasdk.testkit.eval;
 
+import akka.javasdk.JsonSupport;
 import akka.javasdk.testkit.AgentTrace;
 import akka.javasdk.testkit.GuardrailResult;
 import akka.javasdk.testkit.ModelCall;
@@ -12,10 +13,11 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * One turn: the user message, the agent's reply as text and what the runtime traced while producing
- * it. This is what an {@link Evaluator} and a {@link Judge} read.
+ * One turn: the input the agent was given, its reply as text and what the runtime traced while
+ * producing it. This is what an {@link Evaluator} and a {@link Judge} read.
  *
- * @param userMessage what the user sent
+ * @param input the command sent to the agent, as text. A String command is used as is, any other
+ *     command is rendered as JSON by {@link #asText}
  * @param reply the agent's reply
  * @param toolCalls in call order
  * @param modelCalls in call order
@@ -25,7 +27,7 @@ import java.util.List;
  *     reply; empty when the trace did not carry it
  */
 public record Interaction(
-    String userMessage,
+    String input,
     String reply,
     List<ToolCall> toolCalls,
     List<ModelCall> modelCalls,
@@ -34,7 +36,7 @@ public record Interaction(
     String finalModelText) {
 
   public Interaction {
-    if (userMessage == null) throw new IllegalArgumentException("userMessage required");
+    if (input == null) throw new IllegalArgumentException("input required");
     if (reply == null) throw new IllegalArgumentException("reply required");
     if (toolCalls == null) throw new IllegalArgumentException("toolCalls required");
     if (modelCalls == null) throw new IllegalArgumentException("modelCalls required");
@@ -47,14 +49,14 @@ public record Interaction(
   }
 
   /** A reply with tool calls only. */
-  public Interaction(String userMessage, String reply, List<ToolCall> toolCalls) {
-    this(userMessage, reply, toolCalls, List.of(), List.of(), Duration.ZERO, "");
+  public Interaction(String input, String reply, List<ToolCall> toolCalls) {
+    this(input, reply, toolCalls, List.of(), List.of(), Duration.ZERO, "");
   }
 
   /** A reply with the traced evidence. */
-  public Interaction(String userMessage, String reply, AgentTrace trace) {
+  public Interaction(String input, String reply, AgentTrace trace) {
     this(
-        userMessage,
+        input,
         reply,
         required(trace).toolCalls(),
         trace.modelCalls(),
@@ -69,8 +71,18 @@ public record Interaction(
   }
 
   /** A reply with no evidence. */
-  public static Interaction of(String userMessage, String reply) {
-    return new Interaction(userMessage, reply, List.of());
+  public static Interaction of(String input, String reply) {
+    return new Interaction(input, reply, List.of());
+  }
+
+  /**
+   * A command or a reply as the text an evaluator and a judge read. A String is used as is, any
+   * other value is rendered as JSON. Null becomes the empty string.
+   */
+  public static String asText(Object value) {
+    if (value == null) return "";
+    if (value instanceof String text) return text;
+    return JsonSupport.encodeToString(value);
   }
 
   /** Input tokens summed over the model calls. */

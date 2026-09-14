@@ -32,7 +32,7 @@ Evaluation is not the place for the following.
 `ExperimentRunner` runs the cases one after the other, in the calling thread.
 
 . The case's recorded tool calls, if any, are loaded into the stubs through the runner's `ToolBindings`.
-. The runner calls the agent's command handler through the TestKit component client, in a fresh session, with the case's user message.
+. The runner calls the agent's command handler through the TestKit component client, in a fresh session, with the case's command.
 . The runner reads the trace the runtime wrote for that session through `TelemetryReader`: the tool calls with their arguments, results and errors, the model calls with their token counts, the guardrail evaluations and the latency.
 . Every evaluator of the case reads the reply and the trace and reports a result: pass, fail, or inconclusive when the evidence it needs is absent.
 . The gate checks the aggregated results and the report is returned.
@@ -61,7 +61,7 @@ It does not abort the batch.
 | Type | Role
 
 | `EvalCase`
-| One case: an id, the user message, the recorded tool calls, and the evaluators. See xref:testing:evaluation/eval-cases.adoc[].
+| One case: an id, the command sent to the agent, the recorded tool calls, and the evaluators. See xref:testing:evaluation/eval-cases.adoc[].
 
 | `Evaluators`
 | The built-in evaluators: tool calls, order and arguments, reply text, and budgets. See xref:testing:evaluation/eval-cases.adoc[].

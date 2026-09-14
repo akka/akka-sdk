@@ -33,6 +33,9 @@ import java.util.stream.Collectors;
  * Experiment#run}. Without a gate every case must pass, which suits a mocked model. With a real
  * model gate on rates instead.
  *
+ * <p>The cases carry the command the agent's command handler takes, so the handler's own type is
+ * passed through unchanged.
+ *
  * <pre>{@code
  * var runner = new ExperimentRunner(testKit);
  *
@@ -61,10 +64,11 @@ public final class ExperimentRunner {
    * The cases the experiment runs.
    *
    * @param first the first case
-   * @param more further cases
+   * @param more further cases, with the same command type
    */
-  public ExperimentCases cases(EvalCase first, EvalCase... more) {
-    var all = new ArrayList<EvalCase>();
+  @SafeVarargs
+  public final <C> ExperimentCases<C> cases(EvalCase<C> first, EvalCase<C>... more) {
+    var all = new ArrayList<EvalCase<C>>();
     all.add(first);
     all.addAll(List.of(more));
     return cases(all);
@@ -75,56 +79,54 @@ public final class ExperimentRunner {
    *
    * @param cases at least one case
    */
-  public ExperimentCases cases(List<EvalCase> cases) {
+  public <C> ExperimentCases<C> cases(List<EvalCase<C>> cases) {
     if (cases == null || cases.isEmpty()) {
       throw new IllegalArgumentException("at least one case required");
     }
     if (cases.stream().anyMatch(c -> c == null)) {
       throw new IllegalArgumentException("case required");
     }
-    return new Cases(testKit, List.copyOf(cases), List.of(), ToolBindings.none());
+    return new Cases<>(testKit, List.copyOf(cases), List.of(), ToolBindings.none());
   }
 
   // For the runner's own tests: the cases run against a scripted target instead of an agent.
-  static Experiment against(ExperimentCases cases, EvalTarget target) {
-    return ((Cases) cases).target(target);
+  static <C> Experiment against(ExperimentCases<C> cases, EvalTarget<C> target) {
+    return ((Cases<C>) cases).target(target);
   }
 
-  private record Cases(
-      TestKit testKit, List<EvalCase> cases, List<Evaluator> evaluators, ToolBindings bindings)
-      implements ExperimentCases {
+  private record Cases<C>(
+      TestKit testKit, List<EvalCase<C>> cases, List<Evaluator> evaluators, ToolBindings bindings)
+      implements ExperimentCases<C> {
 
     @Override
-    public ExperimentCases evaluator(Evaluator evaluator) {
+    public ExperimentCases<C> evaluator(Evaluator evaluator) {
       if (evaluator == null) throw new IllegalArgumentException("evaluator required");
       var next = new ArrayList<>(evaluators);
       next.add(evaluator);
-      return new Cases(testKit, cases, List.copyOf(next), bindings);
+      return new Cases<>(testKit, cases, List.copyOf(next), bindings);
     }
 
     @Override
-    public ExperimentCases bindings(ToolBindings bindings) {
+    public ExperimentCases<C> bindings(ToolBindings bindings) {
       if (bindings == null) throw new IllegalArgumentException("bindings required");
-      return new Cases(testKit, cases, evaluators, bindings);
+      return new Cases<>(testKit, cases, evaluators, bindings);
     }
 
     @Override
-    public <A extends Agent, R> Experiment agent(Function2<A, String, Agent.Effect<R>> method) {
-      return agent(method, Function.identity(), AgentTarget::asText);
+    public <A extends Agent, R> Experiment agent(Function2<A, C, Agent.Effect<R>> method) {
+      return agent(method, Interaction::asText);
     }
 
     @Override
-    public <A extends Agent, C, R> Experiment agent(
-        Function2<A, C, Agent.Effect<R>> method,
-        Function<String, C> command,
-        Function<R, String> replyText) {
-      return target(new AgentTarget<>(testKit, method, command, replyText));
+    public <A extends Agent, R> Experiment agent(
+        Function2<A, C, Agent.Effect<R>> method, Function<R, String> replyText) {
+      return target(new AgentTarget<>(testKit, method, replyText));
     }
 
-    private Experiment target(EvalTarget target) {
+    private Experiment target(EvalTarget<C> target) {
       if (target == null) throw new IllegalArgumentException("target required");
       requireBindingsForRecordedTools();
-      return new Ready(cases, evaluators, bindings, target, Gate.allCasesPass());
+      return new Ready<>(cases, evaluators, bindings, target, Gate.allCasesPass());
     }
 
     // Before the first agent call, so a new tool in production cannot be replayed by accident
@@ -159,18 +161,18 @@ public final class ExperimentRunner {
     }
   }
 
-  private record Ready(
-      List<EvalCase> cases,
+  private record Ready<C>(
+      List<EvalCase<C>> cases,
       List<Evaluator> evaluators,
       ToolBindings bindings,
-      EvalTarget target,
+      EvalTarget<C> target,
       Gate gate)
       implements Experiment {
 
     @Override
     public Experiment gate(Gate gate) {
       if (gate == null) throw new IllegalArgumentException("gate required");
-      return new Ready(cases, evaluators, bindings, target, gate);
+      return new Ready<>(cases, evaluators, bindings, target, gate);
     }
 
     @Override
@@ -179,18 +181,18 @@ public final class ExperimentRunner {
       return new Report(results, gate.check(results));
     }
 
-    private CaseResult evaluate(EvalCase evalCase) {
+    private CaseResult evaluate(EvalCase<C> evalCase) {
       try {
         bindings.load(evalCase.recordedCalls());
       } catch (RuntimeException e) {
         return new CaseResult(
             evalCase.id(),
-            Interaction.of(evalCase.userMessage(), ""),
+            Interaction.of(evalCase.commandText(), ""),
             List.of(EvalResult.fail(describe(e)).attributedTo(Evaluators.SETUP)));
       }
 
       var turn =
-          new EvalTarget.Turn(UUID.randomUUID().toString(), evalCase.id(), evalCase.userMessage());
+          new EvalTarget.Turn<>(UUID.randomUUID().toString(), evalCase.id(), evalCase.command());
       EvalTarget.Outcome outcome;
       try {
         outcome = target.call(turn);
@@ -202,7 +204,7 @@ public final class ExperimentRunner {
         case EvalTarget.Outcome.Failed failed ->
             new CaseResult(
                 evalCase.id(),
-                new Interaction(evalCase.userMessage(), "", failed.toolCalls()),
+                new Interaction(evalCase.commandText(), "", failed.toolCalls()),
                 List.of(EvalResult.fail(failed.reason()).attributedTo(Evaluators.TARGET)));
         case EvalTarget.Outcome.Answered answered -> {
           var interaction = answered.interaction();
@@ -221,7 +223,7 @@ public final class ExperimentRunner {
     // An evaluator that throws or returns nothing fails its own result, the other evaluators
     // still report.
     private static EvalResult evaluate(
-        Evaluator evaluator, EvalCase evalCase, Interaction interaction) {
+        Evaluator evaluator, EvalCase<?> evalCase, Interaction interaction) {
       EvalResult result;
       try {
         result = evaluator.evaluate(evalCase, interaction);

@@ -14,36 +14,35 @@ import java.util.function.Function;
  * ExperimentRunner#cases}.
  *
  * <p>Not for user extension.
+ *
+ * @param <C> the command type of the cases, which the agent's command handler must take
  */
 @DoNotInherit
-public interface ExperimentCases {
+public interface ExperimentCases<C> {
 
   /** An evaluator that runs on every case, in addition to the case's expectations. */
-  ExperimentCases evaluator(Evaluator evaluator);
+  ExperimentCases<C> evaluator(Evaluator evaluator);
 
   /**
    * The stubs the recorded tool calls are loaded into. Needed when a case carries recorded calls,
    * such as one from {@link EvalCaseParser}. Every tool a case names must be bound.
    */
-  ExperimentCases bindings(ToolBindings bindings);
+  ExperimentCases<C> bindings(ToolBindings bindings);
 
   /**
-   * The agent under test. The command handler takes the case's message as a String. A String reply
-   * is used as is, any other reply is rendered as JSON.
+   * The agent under test. Its command handler takes the case's command. A String reply is used as
+   * is, any other reply is rendered as JSON.
    *
    * @param method the agent's command handler, for example {@code SupportAgent::ask}
    */
-  <A extends Agent, R> Experiment agent(Function2<A, String, Agent.Effect<R>> method);
+  <A extends Agent, R> Experiment agent(Function2<A, C, Agent.Effect<R>> method);
 
   /**
-   * The agent under test, with a command handler that has its own command and reply types.
+   * The agent under test, with a reply the expectations read as something other than its JSON.
    *
    * @param method the agent's command handler
-   * @param command builds the command from the case's message
    * @param replyText renders the reply as the text the expectations read
    */
-  <A extends Agent, C, R> Experiment agent(
-      Function2<A, C, Agent.Effect<R>> method,
-      Function<String, C> command,
-      Function<R, String> replyText);
+  <A extends Agent, R> Experiment agent(
+      Function2<A, C, Agent.Effect<R>> method, Function<R, String> replyText);
 }
