@@ -15,17 +15,26 @@ import java.util.List;
  *
  * <p>A turn either answers with the reply and the tool calls, or fails with a reason and the tool
  * calls made before the failure. A target that throws is treated as failed with no tool calls.
+ *
+ * @param <C> the command the target is called with
  */
 @FunctionalInterface
-interface EvalTarget {
+interface EvalTarget<C> {
 
-  Outcome call(Turn turn);
+  Outcome call(Turn<C> turn);
 
   /**
    * @param sessionId fresh per case, so one case cannot read another's session memory
    * @param caseId the case being run, for a target that logs or routes by it
+   * @param command the case's command, as the agent's command handler takes it
    */
-  record Turn(String sessionId, String caseId, String userMessage) {}
+  record Turn<C>(String sessionId, String caseId, C command) {
+
+    /** The command as the text the {@link Interaction} carries. */
+    String commandText() {
+      return Interaction.asText(command);
+    }
+  }
 
   /** The result of one turn. */
   sealed interface Outcome {

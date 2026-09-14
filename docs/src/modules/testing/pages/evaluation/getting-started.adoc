@@ -42,8 +42,8 @@ Both delegate to an `OrderService`, which the agent receives through its constru
 ----
 include::sdk:example$doc-snippets/src/main/java/com/example/eval/OrderAgent.java[tag=class]
 ----
-<1> The order system is injected. Production provides a client for the real system through a `DependencyProvider`; the evaluation provides a stub.
-<2> The command handler the evaluation calls. It takes the case's user message as a `String` and replies with a `String`.
+<1> The `OrderService` is injected. Production provides a client for the real service through a `DependencyProvider`; the evaluation provides a stub.
+<2> The command handler the evaluation calls. It takes the case's command, here a `String`, and replies with a `String`. A handler that takes its own type, such as a record.
 <3> The tools. Each tool sets an explicit `name`. Evaluators and recordings refer to tools by that name.
 
 [source,java,indent=0]
@@ -86,7 +86,7 @@ A JUnit `@Tag` with a Failsafe `groups` filter, a Maven profile, or a class name
 == The first case
 
 An `EvalCase` describes one turn with the agent.
-It carries the message the agent receives and the evaluators that check what the agent did with it.
+It carries the command the agent receives and the evaluators that check what the agent did with it.
 The first case asks where an order is and expects the agent to look the order up without refunding it.
 
 [source,java,indent=0]
@@ -95,7 +95,7 @@ The first case asks where an order is and expects the agent to look the order up
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=status-case]
 ----
 <1> The id names the case in the report.
-<2> The message the agent receives.
+<2> The command the agent receives.
 <3> The evaluators. The agent must call `getOrder` with the order id from the question, must not issue a refund, and the reply must carry the order's status.
 
 An experiment is a set of cases bound to an agent and a gate, run once for one report.

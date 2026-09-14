@@ -217,7 +217,7 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+    public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var calls = interaction.toolCalls();
       var called = names(calls);
       var missing = expected.stream().filter(t -> !called.contains(t)).toList();
@@ -234,7 +234,7 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+    public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var calls = interaction.toolCalls();
       var called = names(calls);
       var missing = expected.stream().filter(t -> !called.contains(t)).toList();
@@ -263,7 +263,7 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+    public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var calls = interaction.toolCalls();
       var toTheTool = calls.stream().filter(c -> c.name().equals(tool)).toList();
       if (toTheTool.isEmpty()) {
@@ -304,7 +304,7 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+    public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var calls = interaction.toolCalls();
       var results =
           calls.stream()
@@ -328,7 +328,7 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+    public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var calls = interaction.toolCalls();
       var called = names(calls);
       var violated = forbidden.stream().filter(called::contains).toList();
@@ -343,7 +343,7 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+    public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var calls = interaction.toolCalls();
       return calls.size() <= limit
           ? EvalResult.pass()
@@ -359,7 +359,7 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+    public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var made = interaction.modelCalls().size();
       if (made == 0) {
         return EvalResult.inconclusive("no model calls in the evidence");
@@ -377,7 +377,7 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+    public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var used = interaction.totalTokens();
       if (used == 0) {
         return EvalResult.inconclusive("no token counts in the evidence");
@@ -403,7 +403,7 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+    public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var took = interaction.latency();
       if (took.isZero()) {
         return EvalResult.inconclusive("no timing in the evidence");
@@ -421,7 +421,7 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+    public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var text = interaction.reply().toLowerCase(Locale.ROOT);
       var missing =
           texts.stream()
@@ -440,7 +440,7 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+    public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       Pattern pattern;
       try {
         pattern = Pattern.compile(regex, Pattern.DOTALL);
@@ -460,7 +460,7 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+    public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var text = interaction.reply().toLowerCase(Locale.ROOT);
       var found =
           texts.stream()
@@ -477,7 +477,7 @@ public final class Evaluators {
     }
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+    public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       Pattern pattern;
       try {
         pattern = Pattern.compile(regex, Pattern.DOTALL);
@@ -494,7 +494,7 @@ public final class Evaluators {
   private record AnswerLacksLuhnNumber(Pattern candidate, String name) implements Evaluator {
 
     @Override
-    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+    public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var found = new ArrayList<String>();
       var matcher = candidate.matcher(interaction.reply());
       while (matcher.find()) {

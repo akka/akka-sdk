@@ -154,7 +154,7 @@ class EvalCaseParserTest {
 
     assertThat(cases).hasSize(2);
     assertThat(cases.get(0).id()).isEqualTo("greeting");
-    assertThat(cases.get(0).userMessage()).isEqualTo("hi");
+    assertThat(cases.get(0).command()).isEqualTo("hi");
     assertThat(cases.get(0).evaluators()).isEmpty();
     assertThat(cases.get(1).id()).isEqualTo("replay-2");
   }
@@ -188,7 +188,7 @@ class EvalCaseParserTest {
   }
 
   /** The verdict of each of the case's evaluators over the evidence, in evaluator order. */
-  private static Map<String, Verdict> verdicts(EvalCase evalCase, Interaction interaction) {
+  private static Map<String, Verdict> verdicts(EvalCase<?> evalCase, Interaction interaction) {
     var byName = new LinkedHashMap<String, Verdict>();
     for (var evaluator : evalCase.evaluators()) {
       var result = evaluator.evaluate(evalCase, interaction);
@@ -239,5 +239,36 @@ class EvalCaseParserTest {
             List.of(new ToolCall("issueRefund", Map.of("orderId", "o_9", "note", "x"))));
     assertThat(verdicts(evalCase, withANote))
         .containsEntry(Evaluators.TOOL_ARGUMENTS, Verdict.FAIL);
+  }
+
+  record Ask(String customerId, String question) {}
+
+  @Test
+  void readsTheRecordedInputIntoTheAgentsCommandType(@TempDir Path dir) throws IOException {
+    var file =
+        Files.writeString(
+            dir.resolve("captures.jsonl"),
+            """
+            {"id":"c1","input":{"customerId":"cust_1","question":"Where is o_42?"},\
+            "toolCalls":[{"name":"getOrder","arguments":{"orderId":"o_42"}}]}
+            """);
+
+    var cases = EvalCaseParser.parse(file, Ask.class);
+
+    assertThat(cases)
+        .singleElement()
+        .extracting(EvalCase::command)
+        .isEqualTo(new Ask("cust_1", "Where is o_42?"));
+    assertThat(cases.getFirst().recordedCalls()).singleElement().isNotNull();
+  }
+
+  @Test
+  void reportsAnInputThatIsNotTheCommandType(@TempDir Path dir) throws IOException {
+    var file =
+        Files.writeString(dir.resolve("captures.jsonl"), "{\"id\":\"c1\",\"input\":\"hi\"}\n");
+
+    assertThatThrownBy(() -> EvalCaseParser.parse(file, Ask.class))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("line 1: input is not a Ask");
   }
 }

@@ -19,27 +19,29 @@ import org.junit.jupiter.api.Test;
 class ExperimentRunnerTest {
 
   /** Answers with the given text and tool calls. */
-  private static EvalTarget targetThat(String answer, ToolCall... calls) {
+  private static EvalTarget<String> targetThat(String answer, ToolCall... calls) {
     return turn ->
-        EvalTarget.Outcome.answered(new Interaction(turn.userMessage(), answer, List.of(calls)));
+        EvalTarget.Outcome.answered(new Interaction(turn.command(), answer, List.of(calls)));
   }
 
   private static ToolCall call(String name, String argument, Object value) {
     return new ToolCall(name, Map.of(argument, value));
   }
 
-  private CaseResultOf run(EvalTarget target, Evaluator... evaluators) {
+  private CaseResultOf run(EvalTarget<String> target, Evaluator... evaluators) {
     var evalCase = EvalCase.of("c", "a question", evaluators);
     return new CaseResultOf(single(target, evalCase));
   }
 
   /** The cases against a scripted target, ready to run. */
-  private static Experiment experiment(EvalTarget target, EvalCase... cases) {
+  @SafeVarargs
+  private static Experiment experiment(EvalTarget<String> target, EvalCase<String>... cases) {
     return ExperimentRunner.against(new ExperimentRunner().cases(List.of(cases)), target);
   }
 
   /** Runs one case and reads its result out of the report. */
-  private static ExperimentRunner.CaseResult single(EvalTarget target, EvalCase evalCase) {
+  private static ExperimentRunner.CaseResult single(
+      EvalTarget<String> target, EvalCase<String> evalCase) {
     return experiment(target, evalCase).run().results().getFirst();
   }
 
@@ -152,7 +154,7 @@ class ExperimentRunnerTest {
 
   @Test
   void aThrownTargetIsAFailedCaseNotAWrongAnswer() {
-    EvalTarget throwing =
+    EvalTarget<String> throwing =
         turn -> {
           throw new IllegalStateException("model unavailable");
         };
@@ -179,7 +181,7 @@ class ExperimentRunnerTest {
   }
 
   /** A target whose evidence carries model calls, tokens and timing. */
-  private static EvalTarget tracedThat(
+  private static EvalTarget<String> tracedThat(
       String answer, int modelCalls, long tokensPerCall, Duration took) {
     var calls =
         java.util.stream.IntStream.range(0, modelCalls)
@@ -190,7 +192,7 @@ class ExperimentRunnerTest {
             .toList();
     return turn ->
         EvalTarget.Outcome.answered(
-            new Interaction(turn.userMessage(), answer, List.of(), calls, List.of(), took, answer));
+            new Interaction(turn.command(), answer, List.of(), calls, List.of(), took, answer));
   }
 
   @Test
@@ -268,7 +270,7 @@ class ExperimentRunnerTest {
 
   @Test
   void theReportSumsWhatTheRunSpentOverTheCasesWithEvidence() {
-    EvalTarget target =
+    EvalTarget<String> target =
         turn ->
             switch (turn.caseId()) {
               case "quick" -> tracedThat("done", 1, 100, Duration.ofMillis(40)).call(turn);
@@ -299,11 +301,11 @@ class ExperimentRunnerTest {
 
   @Test
   void aFailedCaseShowsTheModelsOwnTextWhenTheReplyWasMappedFromIt() {
-    EvalTarget mapped =
+    EvalTarget<String> mapped =
         turn ->
             EvalTarget.Outcome.answered(
                 new Interaction(
-                    turn.userMessage(),
+                    turn.command(),
                     "{\"tier\":\"gold\"}",
                     List.of(),
                     List.of(),
@@ -413,7 +415,8 @@ class ExperimentRunnerTest {
   @Test
   void aFailedTurnKeepsTheToolCallsItsEvidenceSourceSaw() {
     var seen = call("getCustomer", "customerId", "cust_404");
-    EvalTarget failing = turn -> EvalTarget.Outcome.failed("no customer cust_404", List.of(seen));
+    EvalTarget<String> failing =
+        turn -> EvalTarget.Outcome.failed("no customer cust_404", List.of(seen));
 
     var result = single(failing, EvalCase.of("c", "a question", Evaluators.tools("getCustomer")));
 
@@ -439,16 +442,16 @@ class ExperimentRunnerTest {
                 })
             .build();
     var evalCase =
-        new EvalCase(
+        new EvalCase<>(
             "c",
             "a question",
             List.of(new RecordedCall("getCustomer", Map.of("customerId", "cust_1"), "\"Ada\"")),
             List.of(Evaluators.answerContains("Ada")));
-    EvalTarget target =
+    EvalTarget<String> target =
         turn -> {
           order.add("turn");
           return EvalTarget.Outcome.answered(
-              Interaction.of(turn.userMessage(), "Hello " + stub.get("cust_1")));
+              Interaction.of(turn.command(), "Hello " + stub.get("cust_1")));
         };
 
     var result =
@@ -464,19 +467,19 @@ class ExperimentRunnerTest {
   @Test
   void aRecordedToolWithoutABindingIsRefusedBeforeAnyCaseRuns() {
     var calls = new java.util.ArrayList<String>();
-    EvalTarget target =
+    EvalTarget<String> target =
         turn -> {
           calls.add(turn.caseId());
-          return EvalTarget.Outcome.answered(Interaction.of(turn.userMessage(), "done"));
+          return EvalTarget.Outcome.answered(Interaction.of(turn.command(), "done"));
         };
     var lookup =
-        new EvalCase(
+        new EvalCase<>(
             "lookup",
             "who is cust_1?",
             List.of(new RecordedCall("getCustomer", Map.of(), "{}")),
             List.of());
     var tickets =
-        new EvalCase(
+        new EvalCase<>(
             "tickets",
             "what is open?",
             List.of(
@@ -504,7 +507,7 @@ class ExperimentRunnerTest {
     var bindings =
         ToolBindings.builder().bind("getCustomer", call -> call.resultAs(Duration.class)).build();
     var evalCase =
-        new EvalCase(
+        new EvalCase<>(
             "c",
             "a question",
             List.of(new RecordedCall("getCustomer", Map.of(), "{\"id\":\"cust_1\"}")),
@@ -535,18 +538,18 @@ class ExperimentRunnerTest {
           }
 
           @Override
-          public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+          public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
             return interaction.reply().contains("sorry")
                 ? EvalResult.fail("the reply apologizes")
                 : EvalResult.pass();
           }
         };
 
-    EvalTarget target =
+    EvalTarget<String> target =
         turn ->
             EvalTarget.Outcome.answered(
                 Interaction.of(
-                    turn.userMessage(), turn.caseId().equals("apologetic") ? "sorry" : "sure"));
+                    turn.command(), turn.caseId().equals("apologetic") ? "sorry" : "sure"));
 
     var report =
         ExperimentRunner.against(
@@ -564,13 +567,11 @@ class ExperimentRunnerTest {
 
   @Test
   void aTargetsOwnToolEvidenceIsUsedWhenItSuppliesSome() {
-    EvalTarget withEvidence =
+    EvalTarget<String> withEvidence =
         turn ->
             EvalTarget.Outcome.answered(
                 new Interaction(
-                    turn.userMessage(),
-                    "done",
-                    List.of(call("getCustomer", "customerId", "cust_1"))));
+                    turn.command(), "done", List.of(call("getCustomer", "customerId", "cust_1"))));
 
     var result =
         single(
@@ -625,7 +626,7 @@ class ExperimentRunnerTest {
           }
 
           @Override
-          public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+          public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
             throw new NullPointerException("amountCents is missing");
           }
         };
@@ -651,7 +652,7 @@ class ExperimentRunnerTest {
           }
 
           @Override
-          public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+          public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
             return null;
           }
         };
@@ -694,5 +695,42 @@ class ExperimentRunnerTest {
     assertThat(literal.evalResult(Evaluators.TOOL_ARGUMENTS).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(literal.result().describe()).contains("note=null");
+  }
+
+  record Ask(String customerId, String question) {}
+
+  @Test
+  void sendsTheCommandTypeOfTheCaseToTheAgent() {
+    var asked = new java.util.ArrayList<Ask>();
+    EvalTarget<Ask> target =
+        turn -> {
+          asked.add(turn.command());
+          return EvalTarget.Outcome.answered(Interaction.of(turn.commandText(), "o_42 is shipped"));
+        };
+
+    var evalCase =
+        EvalCase.of("c", new Ask("cust_1", "Where is o_42?"), Evaluators.answerContains("shipped"));
+    var result =
+        ExperimentRunner.against(new ExperimentRunner().cases(evalCase), target)
+            .run()
+            .results()
+            .getFirst();
+
+    assertThat(asked).containsExactly(new Ask("cust_1", "Where is o_42?"));
+    assertThat(result.passed()).isTrue();
+    // A judge and the report read a command that is not a String as its JSON.
+    assertThat(result.interaction().input())
+        .isEqualTo("{\"customerId\":\"cust_1\",\"question\":\"Where is o_42?\"}");
+  }
+
+  @Test
+  void aCaseWithoutACommandIsRejected() {
+    assertThatThrownBy(() -> EvalCase.of("c", null))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("command required");
+
+    assertThatThrownBy(() -> EvalCase.of("c", "  "))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("command required");
   }
 }

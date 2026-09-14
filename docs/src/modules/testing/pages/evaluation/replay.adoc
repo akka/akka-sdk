@@ -34,7 +34,7 @@ include::sdk:example$doc-snippets/src/test/resources/eval/replies.jsonl[lines=1]
 
 | `input`
 | yes
-| The user message the runner sends to the agent.
+| The command the runner sends to the agent. Text for a command handler that takes a `String`.
 
 | `output`
 | no
@@ -55,6 +55,8 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 <3> A xref:testing:evaluation/judges.adoc[judge] scores every reply against one criterion.
 
 The file is read once, and every line that does not parse or has no `input` is listed with its line number in one `IllegalArgumentException`.
+
+For an agent whose command handler takes its own type, record `input` as the JSON of that command and read the file with `parse(path, commandType)`, which returns `List<EvalCase<C>>`.
 
 == The tool calls
 

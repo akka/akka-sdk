@@ -22,8 +22,12 @@ public interface Evaluator {
   /**
    * Checks one turn. Inconclusive when the evidence this check needs is absent or does not support
    * a verdict.
+   *
+   * @param evalCase the case that produced the interaction. An evaluator written for one command
+   *     type casts {@link EvalCase#command()} to it
+   * @param interaction the reply and the traced evidence
    */
-  EvalResult evaluate(EvalCase evalCase, Interaction interaction);
+  EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction);
 
   /**
    * What an evaluator found on one turn. This is what a {@link ExperimentRunner.CaseResult} holds.
