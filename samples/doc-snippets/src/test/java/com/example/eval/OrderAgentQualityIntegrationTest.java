@@ -171,7 +171,10 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   @Test
   public void repliesStayFactual() {
     var judge = Judge.modelBased(testKit);
-    var factual = judge.shouldScoreAtLeast("the reply states only what the tools returned", 0.7); // <1>
+    var factual = judge.shouldScoreAtLeast(
+      "the reply states only what the tools returned",
+      0.7
+    ); // <1>
 
     var report = new ExperimentRunner(testKit)
       .cases(curated())
