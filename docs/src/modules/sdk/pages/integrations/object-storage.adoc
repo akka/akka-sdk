@@ -109,8 +109,13 @@ akka.javasdk.dev-mode.object-storage.buckets = [
   # Filesystem backend (explicit directory)
   { name = "images", provider = "filesystem", directory = "target/dev-images" }
 
-  # S3-compatible backend (e.g. MinIO or AWS S3 with static credentials)
+  # Amazon S3, using the region to find the endpoint
   # { name = "documents", provider = "s3", bucket = "my-bucket", region = "us-east-1"
+  #   credentials { type = "static", access-key-id = "AKID", secret-access-key = "secret" } }
+
+  # An S3-compatible service, e.g. a local MinIO server
+  # { name = "datasets", provider = "s3", bucket = "datasets", region = "us-east-1"
+  #   endpoint-url = "http://localhost:9000"
   #   credentials { type = "static", access-key-id = "AKID", secret-access-key = "secret" } }
 
   # Google Cloud Storage with a service-account key file
@@ -120,6 +125,14 @@ akka.javasdk.dev-mode.object-storage.buckets = [
 ----
 
 S3 and GCS buckets without any explicit authentication configured will both rely on their respective default authentication options, see https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials-chain.html#credentials-default[S3], https://doc.akka.io/libraries/alpakka/current/google-common.html#configuration[GCS] for more details.
+
+=== Using an S3-compatible service
+
+An `s3` bucket takes its endpoint from the region, which addresses Amazon S3. To use an S3-compatible service such as MinIO, set `endpoint-url` on the bucket entry to the address of the service.
+
+`access-style` is how the bucket is addressed at the endpoint. Set it to `path` to address the bucket as a path, or to `virtual` to address it as a subdomain. When `endpoint-url` contains a `{bucket}` placeholder, `virtual` substitutes the bucket name for it.
+
+`access-style` defaults to `path` when `endpoint-url` is set, and an explicit value overrides that default. Subdomain addressing needs wildcard DNS, so an S3-compatible service usually requires path access style.
 
 When the `buckets` list is non-empty, only the named buckets are accessible — matching production behavior. When it is empty (the default), all names are accepted.
 
