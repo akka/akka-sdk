@@ -36,7 +36,8 @@ import java.util.stream.Collectors;
  * <pre>{@code
  * var runner = new ExperimentRunner(testKit);
  *
- * var report = runner.cases(cases).agent(SupportAgent::ask).gate(Gate.passRateAtLeast(0.9)).run();
+ * var report =
+ *     runner.cases(cases).agent(SupportAgent::ask).gate(Gate.passRateShouldBeAtLeast(0.9)).run();
  * assertThat(report.passed()).withFailMessage(report::render).isTrue();
  * }</pre>
  */
@@ -124,7 +125,7 @@ public final class ExperimentRunner {
     private Experiment target(EvalTarget target) {
       if (target == null) throw new IllegalArgumentException("target required");
       requireBindingsForRecordedTools();
-      return new Ready(cases, evaluators, bindings, target, Gate.allCasesPass());
+      return new Ready(cases, evaluators, bindings, target, Gate.allCasesShouldPass());
     }
 
     // Before the first agent call, so a new tool in production cannot be replayed by accident

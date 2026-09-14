@@ -145,9 +145,9 @@ gate: passed — pass rate 1.00 over 3 cases, required 0.90; tool-arguments rate
   tools 1/1
   tool-arguments 2/2
   forbidden-tools 2/2
-  answer-contains 2/2
+  reply-contains 2/2
   tool-order 1/1
-  answer-matches 1/1
+  reply-matches 1/1
   tool-call-budget 1/1
   model-call-budget 1/1
 spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status at 489 ms, over 3/3 cases with evidence

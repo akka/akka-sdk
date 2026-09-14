@@ -73,23 +73,23 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 | Evaluator | Created with | Passes when
 
 | `tools`
-| `Evaluators.tools(names...)`
+| `Evaluators.shouldCallTools(names...)`, `Evaluators.shouldCallTool(name)`
 | Every named tool was called, in any order. Other calls are allowed.
 
 | `tool-order`
-| `Evaluators.toolOrder(names...)`
+| `Evaluators.shouldCallToolsInOrder(names...)`
 | The named tools were called in this relative order. Calls to other tools may come between. Inconclusive when one of the named tools was never called.
 
 | `tool-arguments`
-| `Evaluators.toolArgument(tool, argument, value)`
+| `Evaluators.shouldCallToolWith(tool, argument, value)`
 | A call to the tool carried the argument with this value. Inconclusive when the tool was never called.
 
 | `tool-results`
-| `Evaluators.toolResult(tool, text)`
+| `Evaluators.toolResultShouldContain(tool, text)`
 | The result of the tool contains the text, case-insensitively. Inconclusive when the tool was never called or the trace carries no result for it.
 
 | `forbidden-tools`
-| `Evaluators.forbiddenTools(names...)`
+| `Evaluators.shouldNotCallTools(names...)`, `Evaluators.shouldNotCallTool(name)`
 | None of the named tools was called.
 |===
 
@@ -99,30 +99,34 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 |===
 | Evaluator | Created with | Passes when
 
-| `answer-contains`
-| `Evaluators.answerContains(texts...)`
+| `reply-contains`
+| `Evaluators.replyShouldContain(texts...)`
 | The reply contains every given text, case-insensitively.
 
-| `answer-matches`
-| `Evaluators.answerMatches(regex)`
-| The reply matches the regular expression anywhere. Anchor the expression for a full match. A pattern that does not compile fails the case.
+| `reply-matches`
+| `Evaluators.replyShouldMatch(regex)`, `Evaluators.replyShouldMatch(pattern)`
+| The reply matches the regular expression anywhere. Anchor the expression for a full match.
 
-| `answer-lacks`
-| `Evaluators.answerLacks(texts...)`
+| `reply-lacks`
+| `Evaluators.replyShouldNotContain(texts...)`
 | The reply contains none of the given texts, case-insensitively.
 
-| `answer-does-not-match`
-| `Evaluators.answerDoesNotMatch(regex)`
-| The reply matches the regular expression nowhere. A pattern that does not compile fails the case.
+| `reply-does-not-match`
+| `Evaluators.replyShouldNotMatch(regex)`, `Evaluators.replyShouldNotMatch(pattern)`
+| The reply matches the regular expression nowhere.
 
-| `answer-lacks-payment-card`
-| `Evaluators.answerLacksPaymentCard()`
+| `reply-lacks-payment-card`
+| `Evaluators.replyShouldNotContainPaymentCard()`
 | The reply contains no payment card number. A card number is a sequence of 13 to 19 digits, with spaces and dashes allowed between them, that passes the Luhn checksum.
 
-| `answer-lacks-luhn-number`
-| `Evaluators.answerLacksLuhnNumber(minDigits, maxDigits)`
+| `reply-lacks-luhn-number`
+| `Evaluators.replyShouldNotContainLuhnNumber(minDigits, maxDigits)`
 | The reply contains no sequence of digits within the length range that passes the Luhn checksum. The same checksum validates identifiers other than payment cards, each with its own length, so give the range of the one you are looking for.
 |===
+
+The `String` forms of `replyShouldMatch` and `replyShouldNotMatch` compile the expression with `Pattern.DOTALL`, so `.` also matches line breaks.
+The `Pattern` forms use the pattern as given, with its own flags.
+A regular expression that does not compile throws `PatternSyntaxException` when the case is created.
 
 === Built-in budgets
 
@@ -131,19 +135,19 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 | Evaluator | Created with | Passes when
 
 | `tool-call-budget`
-| `Evaluators.toolCallsAtMost(calls)`
+| `Evaluators.shouldMakeAtMostToolCalls(calls)`
 | The agent made at most this many tool calls.
 
 | `model-call-budget`
-| `Evaluators.modelCallsAtMost(calls)`
-| The agent made at most this many model calls. An answer takes at least one.
+| `Evaluators.shouldMakeAtMostModelCalls(calls)`
+| The agent made at most this many model calls. A reply takes at least one.
 
 | `token-budget`
-| `Evaluators.tokensAtMost(tokens)`
+| `Evaluators.shouldUseAtMostTokens(tokens)`
 | Input and output tokens together stay within the limit. Inconclusive when the model reported no tokens.
 
 | `latency-budget`
-| `Evaluators.latencyAtMost(duration)`
+| `Evaluators.shouldReplyWithin(duration)`
 | The agent command completed within the duration. Inconclusive when the trace carries no timing.
 |===
 
@@ -179,7 +183,7 @@ An evaluator reads only what it names and is inconclusive when that evidence is 
 A tool that was never called fails `tools` and makes `tool-order` and `tool-arguments` inconclusive, so one missing call is reported once.
 An inconclusive result is neither a pass nor a fail.
 A case with inconclusive results and no failed result passes.
-The report counts inconclusive results per evaluator name, and `Gate.evaluatorRateAtLeast` rates evaluators over the conclusive results.
+The report counts inconclusive results per evaluator name, and `Gate.evaluatorPassRateShouldBeAtLeast` rates evaluators over the conclusive results.
 
 == See also
 

@@ -61,10 +61,10 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
     return EvalCase.of(
       "order-status", // <1>
       "Where is order o_42?", // <2>
-      Evaluators.tools("getOrder"), // <3>
-      Evaluators.toolArgument("getOrder", "orderId", "o_42"),
-      Evaluators.forbiddenTools("issueRefund"),
-      Evaluators.answerContains("shipped")
+      Evaluators.shouldCallTool("getOrder"), // <3>
+      Evaluators.shouldCallToolWith("getOrder", "orderId", "o_42"),
+      Evaluators.shouldNotCallTool("issueRefund"),
+      Evaluators.replyShouldContain("shipped")
     );
   }
 
@@ -74,11 +74,11 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
     return EvalCase.of(
       "full-refund",
       "Order o_9 arrived broken. I want my money back.",
-      Evaluators.toolOrder("getOrder", "issueRefund"), // <1>
-      Evaluators.toolArgument("issueRefund", "amountCents", 4999), // <2>
-      Evaluators.answerMatches("refund(ed)?.*49\\.99"), // <3>
-      Evaluators.toolCallsAtMost(2), // <4>
-      Evaluators.modelCallsAtMost(3)
+      Evaluators.shouldCallToolsInOrder("getOrder", "issueRefund"), // <1>
+      Evaluators.shouldCallToolWith("issueRefund", "amountCents", 4999), // <2>
+      Evaluators.replyShouldMatch("refund(ed)?.*49\\.99"), // <3>
+      Evaluators.shouldMakeAtMostToolCalls(2), // <4>
+      Evaluators.shouldMakeAtMostModelCalls(3)
     );
   }
 
@@ -87,8 +87,8 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
     return EvalCase.of(
       "greeting",
       "hello?",
-      Evaluators.forbiddenTools("getOrder", "issueRefund"),
-      Evaluators.answerContains("order number")
+      Evaluators.shouldNotCallTools("getOrder", "issueRefund"),
+      Evaluators.replyShouldContain("order number")
     );
   }
 
@@ -119,9 +119,9 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
       .cases(curated())
       .agent(OrderAgent::ask)
       .gate(
-        Gate.passRateAtLeast(0.9) // <1>
-          .and(Gate.evaluatorRateAtLeast(Evaluators.TOOL_ARGUMENTS, 1.0)) // <2>
-          .and(Gate.noTargetFailures()) // <3>
+        Gate.passRateShouldBeAtLeast(0.9) // <1>
+          .and(Gate.evaluatorPassRateShouldBeAtLeast(Evaluators.TOOL_ARGUMENTS, 1.0)) // <2>
+          .and(Gate.targetShouldNotFail()) // <3>
       )
       .run();
 
@@ -136,7 +136,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
     var refund = EvalCase.of(
       "refund-within-total",
       "Order o_9 arrived broken. I want my money back.",
-      Evaluators.tools("issueRefund"),
+      Evaluators.shouldCallTool("issueRefund"),
       new RefundWithinTotal(orders.getOrder("o_9").totalCents()) // <1>
     );
 
@@ -155,8 +155,8 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
     var refund = EvalCase.of(
       "judged-refund",
       "Order o_9 arrived broken. I want my money back.",
-      Evaluators.tools("issueRefund"),
-      judge.mustSatisfy("the reply apologizes and states the refunded amount") // <2>
+      Evaluators.shouldCallTool("issueRefund"),
+      judge.shouldSatisfy("the reply apologizes and states the refunded amount") // <2>
     );
 
     var report = new ExperimentRunner(testKit).cases(refund).agent(OrderAgent::ask).run();
@@ -171,13 +171,13 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   @Test
   public void repliesStayFactual() {
     var judge = Judge.modelBased(testKit);
-    var factual = judge.scoringAtLeast("the reply states only what the tools returned", 0.7); // <1>
+    var factual = judge.shouldScoreAtLeast("the reply states only what the tools returned", 0.7); // <1>
 
     var report = new ExperimentRunner(testKit)
       .cases(curated())
       .evaluator(factual)
       .agent(OrderAgent::ask)
-      .gate(Gate.evaluatorRateAtLeast(Evaluators.JUDGE, 0.8)) // <2>
+      .gate(Gate.evaluatorPassRateShouldBeAtLeast(Evaluators.JUDGE, 0.8)) // <2>
       .run();
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();
@@ -190,7 +190,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
     var wrongOrder = EvalCase.of(
       "wrong-order",
       "Where is order o_42?",
-      Evaluators.toolArgument("getOrder", "orderId", "o_43")
+      Evaluators.shouldCallToolWith("getOrder", "orderId", "o_43")
     );
 
     var report = new ExperimentRunner(testKit).cases(wrongOrder).agent(OrderAgent::ask).run();
@@ -208,7 +208,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
     var unknown = EvalCase.of(
       "unknown-order",
       "Where is order o_404?",
-      Evaluators.tools("getOrder")
+      Evaluators.shouldCallTool("getOrder")
     );
 
     var report = new ExperimentRunner(testKit).cases(unknown).agent(OrderAgent::ask).run();
@@ -226,14 +226,14 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   public void recordedRepliesStayOnTopic() {
     var replayed = EvalCaseParser.parse(recording("/eval/replies.jsonl")); // <1>
     var judge = Judge.modelBased(testKit);
-    var onTopic = judge.scoringAtLeast(
+    var onTopic = judge.shouldScoreAtLeast(
       "the reply asks for an order number or closes the conversation",
       0.7
     );
 
     var report = new ExperimentRunner(testKit)
       .cases(replayed)
-      .evaluator(Evaluators.forbiddenTools("issueRefund")) // <2>
+      .evaluator(Evaluators.shouldNotCallTool("issueRefund")) // <2>
       .evaluator(onTopic) // <3>
       .agent(OrderAgent::ask)
       .run();
@@ -264,7 +264,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
       .cases(replayed)
       .bindings(bindings) // <3>
       .agent(OrderAgent::ask)
-      .gate(Gate.passRateAtLeast(0.9)) // <4>
+      .gate(Gate.passRateShouldBeAtLeast(0.9)) // <4>
       .run();
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();

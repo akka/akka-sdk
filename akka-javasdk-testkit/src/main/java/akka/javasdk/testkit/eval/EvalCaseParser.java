@@ -125,7 +125,7 @@ public final class EvalCaseParser {
     if (!modelCalls.isMissingNode()) {
       if (!modelCalls.canConvertToInt() || modelCalls.asInt() < 1)
         throw new IllegalArgumentException("modelCalls is not a positive count: " + modelCalls);
-      evaluators.add(Evaluators.modelCallsAtMost(modelCalls.asInt()));
+      evaluators.add(Evaluators.shouldMakeAtMostModelCalls(modelCalls.asInt()));
     }
     var tokens = interaction.path("tokens");
 
@@ -141,7 +141,7 @@ public final class EvalCaseParser {
       }
       if (total < 1)
         throw new IllegalArgumentException("tokens is not a positive count: " + tokens);
-      evaluators.add(Evaluators.tokensAtMost((long) Math.ceil(total * tolerance)));
+      evaluators.add(Evaluators.shouldUseAtMostTokens((long) Math.ceil(total * tolerance)));
     }
 
     var latency = interaction.path("latencyMs");
@@ -150,7 +150,7 @@ public final class EvalCaseParser {
         throw new IllegalArgumentException("latencyMs is not a positive count: " + latency);
 
       evaluators.add(
-          Evaluators.latencyAtMost(
+          Evaluators.shouldReplyWithin(
               Duration.ofMillis((long) Math.ceil(latency.asLong() * tolerance))));
     }
     return evaluators;
@@ -174,12 +174,12 @@ public final class EvalCaseParser {
       names.add(call.tool());
       order.add(call.tool());
     }
-    evaluators.add(Evaluators.tools(names.toArray(String[]::new)));
-    evaluators.add(Evaluators.toolOrder(order.toArray(String[]::new)));
+    evaluators.add(Evaluators.shouldCallTools(names.toArray(String[]::new)));
+    evaluators.add(Evaluators.shouldCallToolsInOrder(order.toArray(String[]::new)));
     for (var call : recorded) {
       for (var argument : call.arguments().entrySet()) {
         evaluators.add(
-            Evaluators.toolArgument(call.tool(), argument.getKey(), argument.getValue()));
+            Evaluators.shouldCallToolWith(call.tool(), argument.getKey(), argument.getValue()));
       }
     }
     return evaluators;

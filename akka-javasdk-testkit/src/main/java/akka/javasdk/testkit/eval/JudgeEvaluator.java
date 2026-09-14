@@ -7,7 +7,7 @@ package akka.javasdk.testkit.eval;
 import java.util.Locale;
 
 /**
- * The evaluator behind {@link Judge#scoringAtLeast}: asks the judge and holds the score to the
+ * The evaluator behind {@link Judge#shouldScoreAtLeast}: asks the judge and holds the score to the
  * threshold.
  */
 record JudgeEvaluator(Judge judge, String criterion, double threshold) implements Evaluator {

@@ -13,6 +13,7 @@ import akka.javasdk.testkit.eval.Evaluator.EvalResult;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
 /** The runner over a scripted target that needs no runtime. */
@@ -61,11 +62,11 @@ class ExperimentRunnerTest {
     var run =
         run(
             target,
-            Evaluators.tools("getCustomer"),
-            Evaluators.toolArgument("getCustomer", "customerId", "cust_1"),
-            Evaluators.forbiddenTools("openTickets"),
-            Evaluators.answerContains("ada lovelace"),
-            Evaluators.answerMatches("gold"));
+            Evaluators.shouldCallTool("getCustomer"),
+            Evaluators.shouldCallToolWith("getCustomer", "customerId", "cust_1"),
+            Evaluators.shouldNotCallTool("openTickets"),
+            Evaluators.replyShouldContain("ada lovelace"),
+            Evaluators.replyShouldMatch("gold"));
 
     assertThat(run.result().passed()).isTrue();
     assertThat(run.result().evalResults())
@@ -79,9 +80,9 @@ class ExperimentRunnerTest {
     var run =
         run(
             targetThat("I do not know."),
-            Evaluators.tools("getCustomer"),
-            Evaluators.toolOrder("getCustomer"),
-            Evaluators.toolArgument("getCustomer", "customerId", "cust_1"));
+            Evaluators.shouldCallTool("getCustomer"),
+            Evaluators.shouldCallToolsInOrder("getCustomer"),
+            Evaluators.shouldCallToolWith("getCustomer", "customerId", "cust_1"));
 
     assertThat(run.evalResult(Evaluators.TOOLS).verdict()).isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(run.evalResult(Evaluators.TOOLS).detail()).contains("no tools");
@@ -101,14 +102,14 @@ class ExperimentRunnerTest {
                 ToolCall.of("getCustomer"),
                 ToolCall.of("somethingElse"),
                 ToolCall.of("openTickets")),
-            Evaluators.toolOrder("getCustomer", "openTickets"));
+            Evaluators.shouldCallToolsInOrder("getCustomer", "openTickets"));
     assertThat(inOrder.evalResult(Evaluators.TOOL_ORDER).verdict())
         .isEqualTo(EvalResult.Verdict.PASS);
 
     var reversed =
         run(
             targetThat("done", ToolCall.of("openTickets"), ToolCall.of("getCustomer")),
-            Evaluators.toolOrder("getCustomer", "openTickets"));
+            Evaluators.shouldCallToolsInOrder("getCustomer", "openTickets"));
     assertThat(reversed.evalResult(Evaluators.TOOL_ORDER).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(reversed.evalResult(Evaluators.TOOL_ORDER).detail())
@@ -120,7 +121,7 @@ class ExperimentRunnerTest {
     var run =
         run(
             targetThat("done", call("getCustomer", "customerId", "cust_2")),
-            Evaluators.toolArgument("getCustomer", "customerId", "cust_1"));
+            Evaluators.shouldCallToolWith("getCustomer", "customerId", "cust_1"));
 
     assertThat(run.evalResult(Evaluators.TOOL_ARGUMENTS).detail())
         .contains("expected cust_1")
@@ -132,7 +133,7 @@ class ExperimentRunnerTest {
     var run =
         run(
             targetThat("done", call("charge", "amount", 12L)),
-            Evaluators.toolArgument("charge", "amount", 12));
+            Evaluators.shouldCallToolWith("charge", "amount", 12));
 
     assertThat(run.evalResult(Evaluators.TOOL_ARGUMENTS).verdict())
         .isEqualTo(EvalResult.Verdict.PASS);
@@ -143,8 +144,8 @@ class ExperimentRunnerTest {
     var run =
         run(
             targetThat("Ada Lovelace", ToolCall.of("openTickets")),
-            Evaluators.answerContains("Ada"),
-            Evaluators.forbiddenTools("openTickets"));
+            Evaluators.replyShouldContain("Ada"),
+            Evaluators.shouldNotCallTool("openTickets"));
 
     assertThat(run.result().passed()).isFalse();
     assertThat(run.evalResult(Evaluators.FORBIDDEN_TOOLS).detail()).contains("openTickets");
@@ -157,7 +158,8 @@ class ExperimentRunnerTest {
           throw new IllegalStateException("model unavailable");
         };
 
-    var result = single(throwing, EvalCase.of("c", "a question", Evaluators.answerContains("x")));
+    var result =
+        single(throwing, EvalCase.of("c", "a question", Evaluators.replyShouldContain("x")));
 
     assertThat(result.passed()).isFalse();
     assertThat(result.evalResults()).hasSize(1);
@@ -170,7 +172,7 @@ class ExperimentRunnerTest {
     var run =
         run(
             targetThat("Ada Lovelace", call("getCustomer", "customerId", "cust_1")),
-            Evaluators.toolResult("getCustomer", "Ada Lovelace"));
+            Evaluators.toolResultShouldContain("getCustomer", "Ada Lovelace"));
 
     assertThat(run.result().passed()).isTrue();
     assertThat(run.evalResult(Evaluators.TOOL_RESULTS).verdict())
@@ -197,11 +199,11 @@ class ExperimentRunnerTest {
   void aToolCallBudgetCountsEveryCall() {
     var twoCalls = targetThat("done", ToolCall.of("getCustomer"), ToolCall.of("getCustomer"));
 
-    var within = run(twoCalls, Evaluators.toolCallsAtMost(2));
+    var within = run(twoCalls, Evaluators.shouldMakeAtMostToolCalls(2));
     assertThat(within.evalResult(Evaluators.TOOL_CALL_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.PASS);
 
-    var over = run(twoCalls, Evaluators.toolCallsAtMost(1));
+    var over = run(twoCalls, Evaluators.shouldMakeAtMostToolCalls(1));
     assertThat(over.evalResult(Evaluators.TOOL_CALL_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(over.evalResult(Evaluators.TOOL_CALL_BUDGET).detail())
@@ -212,17 +214,17 @@ class ExperimentRunnerTest {
   void aModelCallBudgetReadsTheTracedCallsAndIsInconclusiveWithoutThem() {
     var threeCalls = tracedThat("done", 3, 100, Duration.ofMillis(40));
 
-    var within = run(threeCalls, Evaluators.modelCallsAtMost(3));
+    var within = run(threeCalls, Evaluators.shouldMakeAtMostModelCalls(3));
     assertThat(within.evalResult(Evaluators.MODEL_CALL_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.PASS);
 
-    var over = run(threeCalls, Evaluators.modelCallsAtMost(2));
+    var over = run(threeCalls, Evaluators.shouldMakeAtMostModelCalls(2));
     assertThat(over.evalResult(Evaluators.MODEL_CALL_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(over.evalResult(Evaluators.MODEL_CALL_BUDGET).detail())
         .contains("made 3 model calls, allowed 2");
 
-    var untraced = run(targetThat("done"), Evaluators.modelCallsAtMost(1));
+    var untraced = run(targetThat("done"), Evaluators.shouldMakeAtMostModelCalls(1));
     assertThat(untraced.evalResult(Evaluators.MODEL_CALL_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
     assertThat(untraced.result().passed()).isTrue();
@@ -232,17 +234,17 @@ class ExperimentRunnerTest {
   void aTokenBudgetSumsInputAndOutputAndIsInconclusiveWhenNoneWereReported() {
     var threeHundred = tracedThat("done", 3, 100, Duration.ofMillis(40));
 
-    var within = run(threeHundred, Evaluators.tokensAtMost(300));
+    var within = run(threeHundred, Evaluators.shouldUseAtMostTokens(300));
     assertThat(within.evalResult(Evaluators.TOKEN_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.PASS);
 
-    var over = run(threeHundred, Evaluators.tokensAtMost(299));
+    var over = run(threeHundred, Evaluators.shouldUseAtMostTokens(299));
     assertThat(over.evalResult(Evaluators.TOKEN_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(over.evalResult(Evaluators.TOKEN_BUDGET).detail()).contains("used 300 tokens");
 
     var unreported =
-        run(tracedThat("done", 2, 0, Duration.ofMillis(40)), Evaluators.tokensAtMost(10));
+        run(tracedThat("done", 2, 0, Duration.ofMillis(40)), Evaluators.shouldUseAtMostTokens(10));
     assertThat(unreported.evalResult(Evaluators.TOKEN_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
   }
@@ -251,17 +253,17 @@ class ExperimentRunnerTest {
   void aLatencyBudgetReadsTheCommandsDurationAndIsInconclusiveWithoutTiming() {
     var forty = tracedThat("done", 1, 10, Duration.ofMillis(40));
 
-    var within = run(forty, Evaluators.latencyAtMost(Duration.ofMillis(40)));
+    var within = run(forty, Evaluators.shouldReplyWithin(Duration.ofMillis(40)));
     assertThat(within.evalResult(Evaluators.LATENCY_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.PASS);
 
-    var over = run(forty, Evaluators.latencyAtMost(Duration.ofMillis(39)));
+    var over = run(forty, Evaluators.shouldReplyWithin(Duration.ofMillis(39)));
     assertThat(over.evalResult(Evaluators.LATENCY_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(over.evalResult(Evaluators.LATENCY_BUDGET).detail())
         .contains("took 40 ms, allowed 39 ms");
 
-    var untimed = run(targetThat("done"), Evaluators.latencyAtMost(Duration.ofSeconds(1)));
+    var untimed = run(targetThat("done"), Evaluators.shouldReplyWithin(Duration.ofSeconds(1)));
     assertThat(untimed.evalResult(Evaluators.LATENCY_BUDGET).verdict())
         .isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
   }
@@ -311,47 +313,50 @@ class ExperimentRunnerTest {
                     Duration.ofMillis(5),
                     "```json\n{\"tier\":\"gold\"}\n```"));
 
-    var result = single(mapped, EvalCase.of("c", "q", Evaluators.answerContains("silver")));
+    var result = single(mapped, EvalCase.of("c", "q", Evaluators.replyShouldContain("silver")));
 
     assertThat(result.describe())
         .contains("reply: {\"tier\":\"gold\"}")
         .contains("model text: ```json {\"tier\":\"gold\"} ```");
 
-    var same = run(targetThat("plain"), Evaluators.answerContains("other"));
+    var same = run(targetThat("plain"), Evaluators.replyShouldContain("other"));
     assertThat(same.result().describe()).doesNotContain("model text:");
   }
+
+  private static final Pattern SSN = Pattern.compile("\\b\\d{3}-\\d{2}-\\d{4}\\b");
 
   @Test
   void holdsTheReplyAgainstWhatItMustNotCarry() {
     var clean =
         run(
             targetThat("I cannot share my configuration."),
-            Evaluators.answerLacks("SECRET-MARKER", "Never guess"),
-            Evaluators.answerDoesNotMatch("\\b\\d{3}-\\d{2}-\\d{4}\\b"));
+            Evaluators.replyShouldNotContain("SECRET-MARKER", "Never guess"),
+            Evaluators.replyShouldNotMatch(SSN));
     assertThat(clean.result().passed()).isTrue();
 
     var leaking =
         run(
             targetThat("As instructed: secret-marker. Never guess a tier. SSN 123-45-6789."),
-            Evaluators.answerLacks("SECRET-MARKER", "Never guess"),
-            Evaluators.answerDoesNotMatch("\\b\\d{3}-\\d{2}-\\d{4}\\b"));
-    assertThat(leaking.evalResult(Evaluators.ANSWER_LACKS).verdict())
+            Evaluators.replyShouldNotContain("SECRET-MARKER", "Never guess"),
+            Evaluators.replyShouldNotMatch(SSN));
+    assertThat(leaking.evalResult(Evaluators.REPLY_LACKS).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
-    assertThat(leaking.evalResult(Evaluators.ANSWER_LACKS).detail())
+    assertThat(leaking.evalResult(Evaluators.REPLY_LACKS).detail())
         .contains("[SECRET-MARKER, Never guess]");
-    assertThat(leaking.evalResult(Evaluators.ANSWER_DOES_NOT_MATCH).verdict())
+    assertThat(leaking.evalResult(Evaluators.REPLY_DOES_NOT_MATCH).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
-    assertThat(leaking.evalResult(Evaluators.ANSWER_DOES_NOT_MATCH).detail())
+    assertThat(leaking.evalResult(Evaluators.REPLY_DOES_NOT_MATCH).detail())
         .contains("123-45-6789");
 
-    assertThatThrownBy(() -> Evaluators.answerLacks()).isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> Evaluators.answerLacks("ok", " "))
+    assertThatThrownBy(() -> Evaluators.replyShouldNotContain())
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> Evaluators.replyShouldNotContain("ok", " "))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   void readsAPaymentCardNumberOutOfTheReply() {
-    var card = Evaluators.answerLacksPaymentCard();
+    var card = Evaluators.replyShouldNotContainPaymentCard();
 
     var empty = run(targetThat(""), card);
     assertThat(empty.result().passed()).isTrue();
@@ -363,50 +368,50 @@ class ExperimentRunnerTest {
     assertThat(sixteenDigitsFailingLuhn.result().passed()).isTrue();
 
     var plain = run(targetThat("The card 4111111111111111 was declined."), card);
-    assertThat(plain.evalResult(Evaluators.ANSWER_LACKS_PAYMENT_CARD).verdict())
+    assertThat(plain.evalResult(Evaluators.REPLY_LACKS_PAYMENT_CARD).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
 
     var spaced = run(targetThat("The card 4111 1111 1111 1111 was declined."), card);
-    assertThat(spaced.evalResult(Evaluators.ANSWER_LACKS_PAYMENT_CARD).verdict())
+    assertThat(spaced.evalResult(Evaluators.REPLY_LACKS_PAYMENT_CARD).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
-    assertThat(spaced.evalResult(Evaluators.ANSWER_LACKS_PAYMENT_CARD).detail())
+    assertThat(spaced.evalResult(Evaluators.REPLY_LACKS_PAYMENT_CARD).detail())
         .contains("4111 1111 1111 1111");
 
     var dashed = run(targetThat("The card 4111-1111-1111-1111 was declined."), card);
-    assertThat(dashed.evalResult(Evaluators.ANSWER_LACKS_PAYMENT_CARD).verdict())
+    assertThat(dashed.evalResult(Evaluators.REPLY_LACKS_PAYMENT_CARD).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
-    assertThat(dashed.evalResult(Evaluators.ANSWER_LACKS_PAYMENT_CARD).detail())
+    assertThat(dashed.evalResult(Evaluators.REPLY_LACKS_PAYMENT_CARD).detail())
         .contains("4111-1111-1111-1111");
   }
 
   @Test
   void readsALuhnNumberOfAnotherLengthWhenGivenItsRange() {
-    var imei = Evaluators.answerLacksLuhnNumber(15, 15);
+    var imei = Evaluators.replyShouldNotContainLuhnNumber(15, 15);
 
     var leaking = run(targetThat("The handset is 490154203237518."), imei);
-    assertThat(leaking.evalResult(Evaluators.ANSWER_LACKS_LUHN_NUMBER).verdict())
+    assertThat(leaking.evalResult(Evaluators.REPLY_LACKS_LUHN_NUMBER).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
-    assertThat(leaking.evalResult(Evaluators.ANSWER_LACKS_LUHN_NUMBER).detail())
+    assertThat(leaking.evalResult(Evaluators.REPLY_LACKS_LUHN_NUMBER).detail())
         .contains("490154203237518");
 
     var outOfRange = run(targetThat("The card 4111111111111111 was declined."), imei);
     assertThat(outOfRange.result().passed()).isTrue();
 
-    assertThatThrownBy(() -> Evaluators.answerLacksLuhnNumber(1, 19))
+    assertThatThrownBy(() -> Evaluators.replyShouldNotContainLuhnNumber(1, 19))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> Evaluators.answerLacksLuhnNumber(19, 13))
+    assertThatThrownBy(() -> Evaluators.replyShouldNotContainLuhnNumber(19, 13))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   void aBudgetRefusesAValueThatCannotBeMet() {
-    assertThatThrownBy(() -> Evaluators.modelCallsAtMost(0))
+    assertThatThrownBy(() -> Evaluators.shouldMakeAtMostModelCalls(0))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> Evaluators.tokensAtMost(0))
+    assertThatThrownBy(() -> Evaluators.shouldUseAtMostTokens(0))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> Evaluators.latencyAtMost(Duration.ZERO))
+    assertThatThrownBy(() -> Evaluators.shouldReplyWithin(Duration.ZERO))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> Evaluators.toolCallsAtMost(-1))
+    assertThatThrownBy(() -> Evaluators.shouldMakeAtMostToolCalls(-1))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -415,7 +420,8 @@ class ExperimentRunnerTest {
     var seen = call("getCustomer", "customerId", "cust_404");
     EvalTarget failing = turn -> EvalTarget.Outcome.failed("no customer cust_404", List.of(seen));
 
-    var result = single(failing, EvalCase.of("c", "a question", Evaluators.tools("getCustomer")));
+    var result =
+        single(failing, EvalCase.of("c", "a question", Evaluators.shouldCallTool("getCustomer")));
 
     assertThat(result.passed()).isFalse();
     assertThat(result.evalResults())
@@ -443,7 +449,7 @@ class ExperimentRunnerTest {
             "c",
             "a question",
             List.of(new RecordedCall("getCustomer", Map.of("customerId", "cust_1"), "\"Ada\"")),
-            List.of(Evaluators.answerContains("Ada")));
+            List.of(Evaluators.replyShouldContain("Ada")));
     EvalTarget target =
         turn -> {
           order.add("turn");
@@ -508,7 +514,7 @@ class ExperimentRunnerTest {
             "c",
             "a question",
             List.of(new RecordedCall("getCustomer", Map.of(), "{\"id\":\"cust_1\"}")),
-            List.of(Evaluators.tools("getCustomer")));
+            List.of(Evaluators.shouldCallTool("getCustomer")));
 
     var result =
         ExperimentRunner.against(new ExperimentRunner().cases(evalCase).bindings(bindings), target)
@@ -576,7 +582,9 @@ class ExperimentRunnerTest {
         single(
             withEvidence,
             EvalCase.of(
-                "c", "a question", Evaluators.toolArgument("getCustomer", "customerId", "cust_1")));
+                "c",
+                "a question",
+                Evaluators.shouldCallToolWith("getCustomer", "customerId", "cust_1")));
 
     assertThat(result.passed()).isTrue();
   }
@@ -593,8 +601,8 @@ class ExperimentRunnerTest {
     var report =
         experiment(
                 targetThat("no"),
-                EvalCase.of("ok", "q", Evaluators.answerContains("no")),
-                EvalCase.of("bad", "q", Evaluators.answerContains("yes")))
+                EvalCase.of("ok", "q", Evaluators.replyShouldContain("no")),
+                EvalCase.of("bad", "q", Evaluators.replyShouldContain("yes")))
             .run();
 
     assertThat(report.passed()).isFalse();
@@ -606,13 +614,13 @@ class ExperimentRunnerTest {
     var run =
         run(
             targetThat("I could not find them.", call("getCustomer", "customerId", "cust_9")),
-            Evaluators.answerContains("Ada Lovelace"));
+            Evaluators.replyShouldContain("Ada Lovelace"));
 
     assertThat(run.result().describe())
         .contains("case c FAILED")
         .contains("reply: I could not find them.")
         .contains("getCustomer{customerId=cust_9}")
-        .contains("FAIL answer-contains");
+        .contains("FAIL reply-contains");
   }
 
   @Test
@@ -630,14 +638,14 @@ class ExperimentRunnerTest {
           }
         };
 
-    var run = run(targetThat("done"), throwing, Evaluators.answerContains("done"));
+    var run = run(targetThat("done"), throwing, Evaluators.replyShouldContain("done"));
 
     assertThat(run.result().passed()).isFalse();
     assertThat(run.evalResult("refund-within-total").verdict()).isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(run.evalResult("refund-within-total").detail())
         .contains("NullPointerException")
         .contains("amountCents is missing");
-    assertThat(run.evalResult(Evaluators.ANSWER_CONTAINS).verdict())
+    assertThat(run.evalResult(Evaluators.REPLY_CONTAINS).verdict())
         .isEqualTo(EvalResult.Verdict.PASS);
   }
 
@@ -667,14 +675,14 @@ class ExperimentRunnerTest {
     var asString =
         run(
             targetThat("done", call("issueRefund", "amountCents", "4999")),
-            Evaluators.toolArgument("issueRefund", "amountCents", 4999));
+            Evaluators.shouldCallToolWith("issueRefund", "amountCents", 4999));
     assertThat(asString.evalResult(Evaluators.TOOL_ARGUMENTS).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
 
     var asDecimal =
         run(
             targetThat("done", call("issueRefund", "amountCents", 4999.0)),
-            Evaluators.toolArgument("issueRefund", "amountCents", 4999));
+            Evaluators.shouldCallToolWith("issueRefund", "amountCents", 4999));
     assertThat(asDecimal.evalResult(Evaluators.TOOL_ARGUMENTS).verdict())
         .isEqualTo(EvalResult.Verdict.PASS);
   }
@@ -686,11 +694,11 @@ class ExperimentRunnerTest {
     arguments.put("note", null);
     var target = targetThat("done", new ToolCall("issueRefund", arguments));
 
-    var isNull = run(target, Evaluators.toolArgument("issueRefund", "note", null));
+    var isNull = run(target, Evaluators.shouldCallToolWith("issueRefund", "note", null));
     assertThat(isNull.evalResult(Evaluators.TOOL_ARGUMENTS).verdict())
         .isEqualTo(EvalResult.Verdict.PASS);
 
-    var literal = run(target, Evaluators.toolArgument("issueRefund", "note", "null"));
+    var literal = run(target, Evaluators.shouldCallToolWith("issueRefund", "note", "null"));
     assertThat(literal.evalResult(Evaluators.TOOL_ARGUMENTS).verdict())
         .isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(literal.result().describe()).contains("note=null");

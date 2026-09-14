@@ -109,11 +109,11 @@ The recorded tool calls become evaluators on the case.
 They describe what production did.
 They are a baseline, not a statement of correctness.
 
-* `Evaluators.tools`: every recorded tool is called.
-* `Evaluators.toolOrder`: in the recorded relative order.
-* `Evaluators.toolArgument`: one per recorded argument, which must arrive with its recorded value.
+* `Evaluators.shouldCallTools`: every recorded tool is called.
+* `Evaluators.shouldCallToolsInOrder`: in the recorded relative order.
+* `Evaluators.shouldCallToolWith`: one per recorded argument, which must arrive with its recorded value.
 
-For the recording of `prod-2` the case gets `tools("getOrder", "issueRefund")`, `toolOrder("getOrder", "issueRefund")`, and three `toolArgument` evaluators: `orderId` on `getOrder`, and `orderId` and `amountCents` on `issueRefund`.
+For the recording of `prod-2` the case gets `shouldCallTools("getOrder", "issueRefund")`, `shouldCallToolsInOrder("getOrder", "issueRefund")`, and three `shouldCallToolWith` evaluators: `orderId` on `getOrder`, and `orderId` and `amountCents` on `issueRefund`.
 
 == The spend
 
@@ -135,9 +135,9 @@ All three fields are optional, and each must be a positive count.
 
 Each field present becomes a budget evaluator on the case.
 
-* `modelCalls` becomes `modelCallsAtMost`, as recorded.
-* `tokens` becomes `tokensAtMost`, the recorded total multiplied by the tolerance.
-* `latencyMs` becomes `latencyAtMost`, the recorded latency multiplied by the same tolerance.
+* `modelCalls` becomes `shouldMakeAtMostModelCalls`, as recorded.
+* `tokens` becomes `shouldUseAtMostTokens`, the recorded total multiplied by the tolerance.
+* `latencyMs` becomes `shouldReplyWithin`, the recorded latency multiplied by the same tolerance.
 
 A rerun almost never spends the same as the recording, so the token and latency budgets allow more than the recorded figures.
 `EvalCaseParser.parse(path)` uses `EvalCaseParser.DEFAULT_TOLERANCE`, which is 1.5.
