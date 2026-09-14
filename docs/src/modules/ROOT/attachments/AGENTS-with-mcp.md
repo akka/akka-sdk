@@ -1,5 +1,15 @@
 # Akka
 
+> **About this file.** This is the `AGENTS.md` variant for Akka SDK
+> projects that have the Akka MCP server wired in and the spec-driven
+> development scaffolding (`.akka/templates/`, `.akka/constitution/`,
+> `akka-context/`) on disk. It is intentionally brief: the MCP tools
+> and the on-disk context are the source of truth, so this file only
+> orients the assistant toward them. If you are working without MCP
+> tools, use the standalone `AGENTS.md` instead — it inlines the
+> component patterns, imports, and gotchas that this file expects you
+> to look up through the MCP server.
+
 Akka is a platform for building and operating agentic and event-driven
 services. It supplies a Java/Scala SDK (agents, workflows, entities,
 views, endpoints) and a runtime that runs those services with active-
