@@ -8,6 +8,34 @@ Generate components with correct:
 - Complete test coverage
 - Akka SDK patterns and conventions
 
+## Driving the project with the Akka MCP server
+
+If Akka MCP tools are available (names containing `akka_`, possibly with a
+harness-specific prefix), prefer them over shelling out to `akka` or `mvn`.
+Otherwise, use the equivalent `mvn` / `akka` CLI command, or read and write the
+`.akka/` and `specs/` files directly.
+
+If an Akka workflow command or skill is installed (e.g. `/akka:specify`,
+`/akka-implement`), follow it — this section is only a summary for harnesses
+without one.
+
+**Spec-driven development loop** (only in projects initialized with
+`akka specify init`, i.e. where `.akka/` exists).
+Templates live in `.akka/templates/`, the constitution in `.akka/constitution/`;
+the MCP tools read and write into those trees.
+
+1. **Read the constitution first** — `akka_sdd_constitution`. Project-specific constraints override anything in this file.
+2. **Specify** — for a new feature, `akka_sdd_get_template` (template `spec`), `akka_sdd_create_spec`, `akka_sdd_list_specs`.
+3. **Plan and break down** — `akka_sdd_get_template` for `plan` and `tasks`. `akka_sdd_list_templates` enumerates what is available.
+4. **Implement** — write under `src/`, using `akka-context/` for the SDK surface.
+5. **Build and test** — `akka_maven_compile`, `akka_maven_test` (`test_class` or `test_method` for a focused loop), `akka_maven_verify` for the full lifecycle including integration tests.
+6. **Run locally** — `akka_local_start`, then `akka_local_run_service`. Verify with `akka_local_status`, `akka_local_logs`, `akka_local_request`. `akka_local_stop_service` when done.
+7. **Ship (only when asked)** — `akka_build_image`, then `akka_services_deploy` (with `push=true`). Use `akka_services_logs` and `akka_routes_create` to finish the rollout.
+
+For inspection of running services (entities, workflows, views, agent interactions), use `akka_backoffice_*`. `akka_refresh` updates the on-disk skills, templates, and docs if they seem stale. Do not re-run `akka_sdd_init` in an initialized project.
+
+Iterate locally (compile → test → run) until the service works before touching platform-deploy tools.
+
 ## Documentation Strategy
 
 ### Available Documentation
