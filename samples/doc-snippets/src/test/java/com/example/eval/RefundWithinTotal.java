@@ -20,7 +20,7 @@ public final class RefundWithinTotal implements Evaluator {
   }
 
   @Override
-  public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+  public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
     var refund = interaction
       .toolCalls()
       .stream()

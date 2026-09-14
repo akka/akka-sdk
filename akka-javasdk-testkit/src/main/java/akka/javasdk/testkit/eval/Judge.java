@@ -29,7 +29,7 @@ public interface Judge {
 
   /**
    * @param criterion what a good reply does, as one sentence
-   * @param interaction the user message, the reply and the evidence the case produced
+   * @param interaction the input, the reply and the evidence the case produced
    */
   Verdict decide(String criterion, Interaction interaction);
 

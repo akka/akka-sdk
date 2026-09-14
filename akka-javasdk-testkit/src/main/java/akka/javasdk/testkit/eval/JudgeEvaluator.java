@@ -18,7 +18,7 @@ record JudgeEvaluator(Judge judge, String criterion, double threshold) implement
   }
 
   @Override
-  public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+  public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
     if (interaction.reply().isBlank()) {
       return EvalResult.inconclusive(criterion + ": there is no reply to judge");
     }

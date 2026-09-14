@@ -27,18 +27,19 @@ class JudgeTest {
   private static final String CRITERION = "the reply explains why the fee was charged";
 
   private ExperimentRunner.CaseResult judged(Judge judge, String reply, Evaluator... evaluators) {
-    EvalTarget target =
+    EvalTarget<String> target =
         turn ->
             EvalTarget.Outcome.answered(
                 new Interaction(
-                    turn.userMessage(),
+                    turn.command(),
                     reply,
                     List.of(new ToolCall("getLoan", Map.of("loanId", "loan_5001")))));
     return single(target, EvalCase.of("c", "Why was I charged a late fee?", evaluators));
   }
 
   /** Runs one case against a scripted target and reads its result out of the report. */
-  private static ExperimentRunner.CaseResult single(EvalTarget target, EvalCase evalCase) {
+  private static ExperimentRunner.CaseResult single(
+      EvalTarget<String> target, EvalCase<String> evalCase) {
     return ExperimentRunner.against(new ExperimentRunner().cases(evalCase), target)
         .run()
         .results()
@@ -92,7 +93,7 @@ class JudgeTest {
     judged(judge, "an answer", judge.shouldSatisfy(CRITERION));
 
     assertThat(askedCriterion[0]).isEqualTo(CRITERION);
-    assertThat(asked[0].userMessage()).isEqualTo("Why was I charged a late fee?");
+    assertThat(asked[0].input()).isEqualTo("Why was I charged a late fee?");
     assertThat(asked[0].reply()).isEqualTo("an answer");
     assertThat(asked[0].toolCalls()).extracting(ToolCall::name).containsExactly("getLoan");
   }
@@ -129,7 +130,7 @@ class JudgeTest {
 
     var result =
         single(
-            turn -> EvalTarget.Outcome.answered(Interaction.of(turn.userMessage(), "")),
+            turn -> EvalTarget.Outcome.answered(Interaction.of(turn.command(), "")),
             EvalCase.of("c", "a question", judge.shouldSatisfy(CRITERION)));
 
     assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
@@ -145,11 +146,11 @@ class JudgeTest {
             EvalCase.of("explained", "why?", judge.shouldSatisfy(CRITERION)),
             EvalCase.of("bare", "why?", judge.shouldSatisfy(CRITERION)));
 
-    EvalTarget explaining =
+    EvalTarget<String> explaining =
         turn ->
             EvalTarget.Outcome.answered(
                 Interaction.of(
-                    turn.userMessage(),
+                    turn.command(),
                     turn.caseId().equals("explained") ? "because it was overdue" : "12.50"));
     var report =
         ExperimentRunner.against(new ExperimentRunner().cases(cases), explaining)
@@ -158,8 +159,8 @@ class JudgeTest {
 
     assertThat(report.passed()).isTrue();
     assertThat(report.render()).contains("judge 1/2");
-    EvalTarget bare =
-        turn -> EvalTarget.Outcome.answered(Interaction.of(turn.userMessage(), "12.50"));
+    EvalTarget<String> bare =
+        turn -> EvalTarget.Outcome.answered(Interaction.of(turn.command(), "12.50"));
     assertThat(
             ExperimentRunner.against(new ExperimentRunner().cases(cases), bare)
                 .gate(Gate.evaluatorPassRateShouldBeAtLeast(Evaluators.JUDGE, 0.5))

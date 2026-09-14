@@ -15,19 +15,19 @@ import org.junit.jupiter.api.Test;
 class GateTest {
 
   /** Answers with the case id and calls getCustomer with it, so a case can be made to fail. */
-  private final EvalTarget target =
+  private final EvalTarget<String> target =
       turn ->
           EvalTarget.Outcome.answered(
               new Interaction(
-                  turn.userMessage(),
+                  turn.command(),
                   turn.caseId(),
                   List.of(new ToolCall("getCustomer", Map.of("customerId", turn.caseId())))));
 
-  private static EvalCase expectingReply(String id, String expected) {
+  private static EvalCase<String> expectingReply(String id, String expected) {
     return EvalCase.of(id, "a question", Evaluators.replyShouldContain(expected));
   }
 
-  private ExperimentRunner.EvalReport run(Gate gate, List<EvalCase> cases) {
+  private ExperimentRunner.EvalReport run(Gate gate, List<EvalCase<String>> cases) {
     return ExperimentRunner.against(new ExperimentRunner().cases(cases), target).gate(gate).run();
   }
 
@@ -77,10 +77,10 @@ class GateTest {
 
   @Test
   void aThrownTargetFailsTheRunWhateverTheRateIs() {
-    EvalTarget throwing =
+    EvalTarget<String> throwing =
         turn -> {
           if (turn.caseId().equals("c2")) throw new IllegalStateException("model unavailable");
-          return EvalTarget.Outcome.answered(Interaction.of(turn.userMessage(), turn.caseId()));
+          return EvalTarget.Outcome.answered(Interaction.of(turn.command(), turn.caseId()));
         };
     var cases = List.of(expectingReply("c1", "c1"), expectingReply("c2", "c2"));
 

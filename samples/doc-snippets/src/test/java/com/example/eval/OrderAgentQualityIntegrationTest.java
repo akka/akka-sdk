@@ -57,7 +57,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   // end::class[]
 
   // tag::status-case[]
-  private EvalCase orderStatus() {
+  private EvalCase<String> orderStatus() {
     return EvalCase.of(
       "order-status", // <1>
       "Where is order o_42?", // <2>
@@ -70,7 +70,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
 
   // end::status-case[]
   // tag::refund-case[]
-  private EvalCase fullRefund() {
+  private EvalCase<String> fullRefund() {
     return EvalCase.of(
       "full-refund",
       "Order o_9 arrived broken. I want my money back.",
@@ -83,7 +83,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   }
 
   // end::refund-case[]
-  private EvalCase greeting() {
+  private EvalCase<String> greeting() {
     return EvalCase.of(
       "greeting",
       "hello?",
@@ -93,7 +93,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   }
 
   // tag::curated[]
-  private List<EvalCase> curated() {
+  private List<EvalCase<String>> curated() {
     return List.of(orderStatus(), fullRefund(), greeting());
   }
 

@@ -4,6 +4,7 @@
 
 package akka.javasdk.testkit.eval;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -42,6 +43,10 @@ import java.util.Map;
  * become budgets on the case: the model call count as recorded, tokens and latency multiplied by
  * the tolerance. {@code tokens} is either a total or an object with {@code input} and {@code
  * output}.
+ *
+ * <p>{@code input} is the text an agent whose command handler takes a String is sent. For a handler
+ * with its own command type, record {@code input} as the JSON of that command and name the type in
+ * {@link #parse(Path, Class)}.
  */
 public final class EvalCaseParser {
 
@@ -56,21 +61,44 @@ public final class EvalCaseParser {
   private EvalCaseParser() {}
 
   /**
-   * Reads the JSONL file with {@link #DEFAULT_TOLERANCE}.
+   * Reads the JSONL file with {@link #DEFAULT_TOLERANCE}, as cases sending the recorded {@code
+   * input} text.
    *
    * @throws IllegalArgumentException listing every line that does not parse, has no {@code input},
    *     or names a tool call without a name
    */
-  public static List<EvalCase> parse(Path canonicalJsonl) {
-    return parse(canonicalJsonl, DEFAULT_TOLERANCE);
+  public static List<EvalCase<String>> parse(Path canonicalJsonl) {
+    return parse(canonicalJsonl, String.class, DEFAULT_TOLERANCE);
   }
 
   /**
-   * Reads the JSONL file. {@code tolerance} multiplies the recorded token and latency figures to
-   * set the budgets. {@code 1.0} holds a case to exactly what was recorded. Values below {@code
-   * 1.0} are rejected.
+   * Reads the JSONL file, as cases sending the recorded {@code input} text. {@code tolerance}
+   * multiplies the recorded token and latency figures to set the budgets. {@code 1.0} holds a case
+   * to exactly what was recorded. Values below {@code 1.0} are rejected.
    */
-  public static List<EvalCase> parse(Path canonicalJsonl, double tolerance) {
+  public static List<EvalCase<String>> parse(Path canonicalJsonl, double tolerance) {
+    return parse(canonicalJsonl, String.class, tolerance);
+  }
+
+  /**
+   * Reads the JSONL file with {@link #DEFAULT_TOLERANCE}, as cases sending the recorded {@code
+   * input} read into the agent's command type.
+   *
+   * @param commandType the agent command handler's parameter type. {@code String.class} takes the
+   *     recorded text, any other type is read from the recorded {@code input} JSON
+   */
+  public static <C> List<EvalCase<C>> parse(Path canonicalJsonl, Class<C> commandType) {
+    return parse(canonicalJsonl, commandType, DEFAULT_TOLERANCE);
+  }
+
+  /**
+   * Reads the JSONL file, as cases sending the recorded {@code input} read into the agent's command
+   * type. {@code tolerance} multiplies the recorded token and latency figures to set the budgets.
+   * {@code 1.0} holds a case to exactly what was recorded. Values below {@code 1.0} are rejected.
+   */
+  public static <C> List<EvalCase<C>> parse(
+      Path canonicalJsonl, Class<C> commandType, double tolerance) {
+    if (commandType == null) throw new IllegalArgumentException("commandType required");
     if (tolerance < 1.0)
       throw new IllegalArgumentException("tolerance must be at least 1.0, was " + tolerance);
     List<String> lines;
@@ -80,14 +108,14 @@ public final class EvalCaseParser {
       throw new UncheckedIOException("cannot read " + canonicalJsonl, e);
     }
 
-    var cases = new ArrayList<EvalCase>();
+    var cases = new ArrayList<EvalCase<C>>();
     var problems = new ArrayList<String>();
     for (int i = 0; i < lines.size(); i++) {
       var line = lines.get(i);
       if (line.isBlank()) continue;
       var lineNumber = i + 1;
       try {
-        cases.add(readCase(MAPPER.readTree(line), lineNumber, tolerance));
+        cases.add(readCase(MAPPER.readTree(line), lineNumber, commandType, tolerance));
       } catch (IllegalArgumentException | IOException e) {
         problems.add("line " + lineNumber + ": " + e.getMessage());
       }
@@ -99,9 +127,9 @@ public final class EvalCaseParser {
     return List.copyOf(cases);
   }
 
-  private static EvalCase readCase(JsonNode interaction, int lineNumber, double tolerance) {
-    var input = interaction.path("input").asText("");
-    if (input.isBlank()) throw new IllegalArgumentException("no input");
+  private static <C> EvalCase<C> readCase(
+      JsonNode interaction, int lineNumber, Class<C> commandType, double tolerance) {
+    var command = command(interaction.path("input"), commandType);
     var id = interaction.path("id").asText("replay-" + lineNumber);
 
     var recorded = new ArrayList<RecordedCall>();
@@ -113,7 +141,23 @@ public final class EvalCaseParser {
 
     var evaluators = baseline(recorded);
     evaluators.addAll(budgets(interaction, tolerance));
-    return new EvalCase(id, input, recorded, evaluators);
+    return new EvalCase<>(id, command, recorded, evaluators);
+  }
+
+  /** The recorded input as the command the agent is sent. */
+  private static <C> C command(JsonNode input, Class<C> commandType) {
+    if (commandType == String.class) {
+      var text = input.isValueNode() ? input.asText("") : "";
+      if (text.isBlank()) throw new IllegalArgumentException("no input");
+      return commandType.cast(text);
+    }
+    if (input.isMissingNode() || input.isNull()) throw new IllegalArgumentException("no input");
+    try {
+      return MAPPER.treeToValue(input, commandType);
+    } catch (JsonProcessingException e) {
+      throw new IllegalArgumentException(
+          "input is not a " + commandType.getSimpleName() + ": " + e.getOriginalMessage());
+    }
   }
 
   /** Turns the recorded spend into budgets. */
