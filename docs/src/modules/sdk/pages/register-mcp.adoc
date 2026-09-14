@@ -1,0 +1,86 @@
+= Register the Akka MCP server
+
+include::ROOT:partial$include.adoc[]
+
+The Akka CLI ships an MCP server that exposes Akka's build, test, deploy, spec-driven-development, and runtime-inspection tools to any MCP-capable AI coding harness. If your harness has a first-class Akka install (see xref:getting-started:set-up-dev-env.adoc#_harness_support_matrix[harness support matrix]), that install registers the server for you.
+
+NOTE: Use this page only when you are on the CLI + `AGENTS.md` + manual MCP fallback path — Aider, Sourcegraph Cody, Zed, or any harness not covered by a plugin bundle or an `akka specify init --agent` profile.
+
+.Prerequisites
+* The Akka CLI on `PATH` (xref:operations:cli/installation.adoc[Install the Akka CLI]).
+* An `AGENTS.md` file at the project root — `akka specify init` (with no `--agent` flag) writes one.
+
+Every snippet below registers the same command: `akka mcp serve` running on stdio, with no extra environment. If a config file at the target path already exists, merge the Akka entry into the existing `mcpServers` (or equivalent) object rather than overwriting.
+
+== Zed
+
+Add to `.zed/settings.json` at the project root, under `context_servers`:
+
+[source,json]
+----
+{
+  "context_servers": {
+    "akka": {
+      "command": "akka",
+      "args": ["mcp", "serve"]
+    }
+  }
+}
+----
+
+Reload Zed's AI panel after saving. The Akka tools appear under the `akka` server. Zed also reads `AGENTS.md` if present, so keeping the file at the project root gives the model Akka conventions in addition to the tools.
+
+== Aider
+
+Aider does not have native MCP client support. Two workarounds:
+
+* Drive the Akka CLI directly through Aider's shell integration — Aider can run `akka` commands and read their output.
+* Run an MCP-to-stdio bridge alongside Aider and expose `akka mcp serve` through Aider's tool interface.
+
+Either way, keep `AGENTS.md` at the project root so Aider's model receives Akka conventions.
+
+== Sourcegraph Cody
+
+Cody registers MCP servers through its own configuration surface; the exact settings path has moved between Cody releases, so consult the current https://sourcegraph.com/docs/cody/capabilities/model-context-protocol[Cody MCP documentation, window="new"] for the file location that matches your Cody version. The registration entry follows the common stdio pattern:
+
+[source,json]
+----
+{
+  "mcpServers": {
+    "akka": {
+      "command": "akka",
+      "args": ["mcp", "serve"]
+    }
+  }
+}
+----
+
+Restart the Cody panel after saving.
+
+== Claude.ai chat (Projects)
+
+MCP is admin-gated in Anthropic's Projects surface, so a per-project registration is not possible today. Paste the Akka install playbook from https://akka.ai[akka.ai, window="new"] into the project's custom instructions and drive Akka manually through the CLI in a separate terminal.
+
+== Generic stdio harness
+
+Any harness that speaks the MCP stdio transport registers a server that runs `akka mcp serve` with no arguments and no extra environment. The command follows this shape:
+
+[source,json]
+----
+{
+  "mcpServers": {
+    "akka": {
+      "command": "akka",
+      "args": ["mcp", "serve"]
+    }
+  }
+}
+----
+
+Consult your harness documentation for the exact settings file and key name. Once the harness reloads, the Akka MCP tools are available; the tool inventory is described in xref:reference:cli/akka-cli/akka_mcp_serve.adoc[akka mcp serve].
+
+== See also
+
+* xref:getting-started:set-up-dev-env.adoc[Set up your dev env]
+* xref:sdk:ai-coding-assistant.adoc[Using an AI coding assistant]
+* xref:sdk:spec-driven-development.adoc[Spec-driven development]
