@@ -34,11 +34,7 @@ include::ROOT:partial$install-harness-table.adoc[]
 [#_harness_support_matrix]
 === Harness support matrix
 
-Not every AI coding harness has a first-class Akka install. The matrix below groups harnesses by which install path applies. Every plugin install references `akka@ai-marketplace` at a stable release tag (never `main`).
-
-* *Plugin (bundle install)* — the harness reads Akka's plugin bundle from `akka/ai-marketplace` and registers the full toolset (slash commands where supported, MCP server, SDK context).
-* *CLI init (`akka specify init --agent <harness>`)* — no bundle for this harness; the Akka CLI writes the harness's own native rules or instructions file plus its MCP config.
-* *CLI + AGENTS.md + manual MCP* — fallback for harnesses without a plugin bundle and without a CLI agent profile. Install the CLI, register the MCP server by hand, keep `AGENTS.md` at the project root.
+Not every AI coding harness has a first-class Akka install. The matrix below groups harnesses by which install path applies.
 
 [cols="2,1,3", options="header"]
 |===
@@ -59,15 +55,13 @@ Not every AI coding harness has a first-class Akka install. The matrix below gro
 | Any harness not listed                 | CLI + AGENTS.md + manual MCP | Same as Aider
 |===
 
+==== Installation path
+
+* *Plugin (bundle install)* — the harness reads Akka's plugin bundle from https://github.com/akka/ai-marketplace[`akka/ai-marketplace`] and registers the full toolset (slash commands where supported, MCP server, SDK context).
+* *CLI init (`akka specify init --agent <harness>`)* — no bundle for this harness; the Akka CLI writes the harness's own native rules or instructions file plus its MCP config.
+* *CLI + AGENTS.md + manual MCP* — fallback for harnesses without a plugin bundle and without a CLI agent profile. Install the CLI, register the MCP server by hand, keep `AGENTS.md` at the project root.
+
 NOTE: The Akka CLI's `--agent` profiles today are `claude-code` (default), `cursor`, `vscode-copilot`, and `generic` (see xref:reference:cli/akka-cli/akka_specify_init.adoc[akka specify init]). Every other harness in the "CLI + AGENTS.md + manual MCP" rows uses `--agent generic`, which writes a harness-agnostic `AGENTS.md` plus `.mcp.json`. Where the harness looks for MCP configuration at a different filename (Zed, Cody, etc.), follow the manual step in xref:sdk:register-mcp.adoc[Register the Akka MCP server] after `akka specify init --agent generic`. Additional per-harness profiles are on the roadmap; they will appear in this table as the CLI ships them. The canonical `AGENTS.md` template is published at https://doc.akka.io/sdk/_attachments/AGENTS.md[doc.akka.io/sdk/_attachments/AGENTS.md, window="new"] so `akka specify init` and manual setups reference the same file.
-
-.Unsupported harnesses
-Do not install into these; recommend the user pick a supported harness instead:
-
-* *Windsurf / Cascade* — end-of-life July 1 2026.
-* *Gemini Code Assist* — superseded by Antigravity June 18 2026. Migrate to Antigravity.
-* *Tabnine, Codeium (non-Windsurf)* — autocomplete-only surfaces; Akka's MCP tools do not map.
-* *Amazon Q Developer, Continue.dev, JetBrains Fleet AI, Void* — discontinued.
 
 For AI-driven installs, the human-facing entry point is https://akka.ai[akka.ai, window="new"] — paste "install Akka from akka.ai" into any supported harness and it walks the flow above.
 

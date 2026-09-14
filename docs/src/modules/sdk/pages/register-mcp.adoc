@@ -2,7 +2,9 @@
 
 include::ROOT:partial$include.adoc[]
 
-The Akka CLI ships an MCP server that exposes Akka's build, test, deploy, spec-driven-development, and runtime-inspection tools to any MCP-capable AI coding harness. If your harness has a first-class Akka install (see xref:getting-started:set-up-dev-env.adoc#_harness_support_matrix[harness support matrix]), that install registers the server for you. Use this page only when you are on the CLI + `AGENTS.md` + manual MCP fallback path — Aider, Sourcegraph Cody, Zed, or any harness not covered by a plugin bundle or an `akka specify init --agent` profile.
+The Akka CLI ships an MCP server that exposes Akka's build, test, deploy, spec-driven-development, and runtime-inspection tools to any MCP-capable AI coding harness. If your harness has a first-class Akka install (see xref:getting-started:set-up-dev-env.adoc#_harness_support_matrix[harness support matrix]), that install registers the server for you.
+
+NOTE: Use this page only when you are on the CLI + `AGENTS.md` + manual MCP fallback path — Aider, Sourcegraph Cody, Zed, or any harness not covered by a plugin bundle or an `akka specify init --agent` profile.
 
 .Prerequisites
 * The Akka CLI on `PATH` (xref:operations:cli/installation.adoc[Install the Akka CLI]).
