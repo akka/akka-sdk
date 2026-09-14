@@ -208,6 +208,7 @@ hyperscalers
 [Ii]nfosec
 Injectable
 inlined
+inlines
 inspectable
 instanceType
 interconnectivity
