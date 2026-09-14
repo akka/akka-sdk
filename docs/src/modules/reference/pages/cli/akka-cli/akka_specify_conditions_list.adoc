@@ -1,26 +1,17 @@
-= akka projects instance-types list
+= akka specify conditions list
 
-List instance types this project may deploy with.
-
-== Synopsis
-
-The `akka project instance-types list` command shows the service instance types the project is allowed to use, resolved from the org-config hierarchy.
-The row marked DEFAULT is what a service gets when it is deployed without `--instance-type`: the organization's configured default, or the platform default when the organization sets none.
-
-Optional `--region` and `--service` refine the resolution to a specific deployment region or service within the project.
+Show the conditions a tool derived for this project.
 
 ----
-akka projects instance-types list [flags]
+akka specify conditions list [flags]
 ----
 
 == Options
 
 ----
-  -h, --help             help for list
-      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string   project to use if not using the default configured project
-      --region string    Refine resolution to a specific deployment region
-      --service string   Refine resolution to a specific service in the project
+      --dir string   project directory (default: current)
+  -h, --help         help for list
+      --json         write the set as JSON, for a tool to rewrite
 ----
 
 == Options inherited from parent commands
@@ -41,7 +32,7 @@ akka projects instance-types list [flags]
 
 == SEE ALSO
 
-* link:akka_projects_instance-types.html[akka projects instance-types]	 - Inspect the service instance types available to a project.
+* link:akka_specify_conditions.html[akka specify conditions]	 - [Incubating] Write, list, and graduate the conditions a tool derived.
 
 [discrete]
 

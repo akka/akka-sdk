@@ -32,7 +32,7 @@ akka services data import SERVICE [flags]
   -h, --help                                               help for import
       --include-event-sourced-entities                     Whether event sourced entities should be imported. Defaults to false.
       --include-event-sourced-entity-snapshots             Whether event sourced entity snapshots should be imported. Defaults to true. (default true)
-      --include-value-entities                             Whether value entities should be imported. Defaults to false.
+      --include-value-entities                             Whether value entities should be imported. Defaults to false. Only applies to legacy Kalix services.
       --owner string                                       the owner of the project to use, needed if you have two projects with the same name from different owners
       --platform-managed                                   Use the platform managed store. Not available in every region.
       --platform-managed-object-prefix string              If using the platform managed store, a prefix to prepend to the object name, for example, 'my-export/'
@@ -46,7 +46,7 @@ akka services data import SERVICE [flags]
       --s3-secret-key string                               If exporting to S3, the name of the key inside the Akka secret that contains the secret access key to authenticate with. Defaults to secret-access-key. (default "secret-access-key")
       --s3-session-key string                              If exporting to S3, the name of the key inside the Akka secret that contains the session token to authenticate with.
       --truncate                                           Whether all existing data should be truncated prior to import.
-      --value-entity-object stringArray                    A storage object name (relative to the bucket and object prefix) to import from. Multiple may be specified. If not specified, the default object names used by the export process are used. Implies --include-value-entities.
+      --value-entity-object stringArray                    A storage object name (relative to the bucket and object prefix) to import from. Multiple may be specified. If not specified, the default object names used by the export process are used. Implies --include-value-entities. Only applies to legacy Kalix services.
 ----
 
 == Options inherited from parent commands

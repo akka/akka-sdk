@@ -1,26 +1,16 @@
-= akka projects instance-types list
+= akka specify conditions
 
-List instance types this project may deploy with.
+[Incubating] Write, list, and graduate the conditions a tool derived.
 
 == Synopsis
 
-The `akka project instance-types list` command shows the service instance types the project is allowed to use, resolved from the org-config hierarchy.
-The row marked DEFAULT is what a service gets when it is deployed without `--instance-type`: the organization's configured default, or the platform default when the organization sets none.
-
-Optional `--region` and `--service` refine the resolution to a specific deployment region or service within the project.
-
-----
-akka projects instance-types list [flags]
-----
+[Incubating] A tool such as /akka:port derives exit conditions from a system it studied and writes them into the project.
+They are kept apart from the ones a person wrote, so that graduating them at the end of a port cannot reach a condition somebody authored by hand.
 
 == Options
 
 ----
-  -h, --help             help for list
-      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string   project to use if not using the default configured project
-      --region string    Refine resolution to a specific deployment region
-      --service string   Refine resolution to a specific service in the project
+  -h, --help   help for conditions
 ----
 
 == Options inherited from parent commands
@@ -41,7 +31,10 @@ akka projects instance-types list [flags]
 
 == SEE ALSO
 
-* link:akka_projects_instance-types.html[akka projects instance-types]	 - Inspect the service instance types available to a project.
+* link:akka_specify.html[akka specify]	 - [Incubating] Initialize and manage AI-assisted Akka development projects.
+* link:akka_specify_conditions_author.html[akka specify conditions author]	 - Write derived conditions into the project.
+* link:akka_specify_conditions_graduate.html[akka specify conditions graduate]	 - Replace the derived conditions with ones that no longer need the original.
+* link:akka_specify_conditions_list.html[akka specify conditions list]	 - Show the conditions a tool derived for this project.
 
 [discrete]
 
