@@ -183,8 +183,15 @@ public class TelemetryReader {
     var started = commands.getFirst().getStartEpochNanos();
     var ended = commands.stream().mapToLong(SpanData::getEndEpochNanos).max().orElse(started);
     var finalText = modelCalls.isEmpty() ? "" : finalText(modelCalls.getLast().outputMessages());
+    var userMessage =
+        modelCalls.isEmpty() ? "" : userMessage(modelCalls.getFirst().inputMessages());
     return new AgentTrace(
-        toolCalls, modelCalls, guardrails, Duration.ofNanos(ended - started), finalText);
+        toolCalls,
+        modelCalls,
+        guardrails,
+        Duration.ofNanos(ended - started),
+        userMessage,
+        finalText);
   }
 
   private Stream<SpanData> spans() {
@@ -296,6 +303,27 @@ public class TelemetryReader {
         attributes.get(GUARDRAIL_CATEGORY),
         !blocked && !"fail".equals(attributes.get(GUARDRAIL_RESULT)),
         blocked ? span.getStatus().getDescription() : "");
+  }
+
+  // The rendered input messages are a JSON array of messages with parts. Returns the text parts
+  // of the first user message, which is what the agent asked the model.
+  private static String userMessage(String inputMessages) {
+    if (inputMessages == null || inputMessages.isBlank()) return "";
+    try {
+      var messages = JsonSupport.getObjectMapper().readTree(inputMessages);
+      if (!messages.isArray()) return "";
+      for (var message : messages) {
+        if (!"user".equals(message.path("role").asText())) continue;
+        var text = new StringBuilder();
+        for (var part : message.path("parts")) {
+          if ("text".equals(part.path("type").asText())) text.append(part.path("content").asText());
+        }
+        return text.toString();
+      }
+      return "";
+    } catch (Exception e) {
+      return "";
+    }
   }
 
   // The rendered output messages are a JSON array of messages with parts. Returns the text parts

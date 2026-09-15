@@ -69,8 +69,8 @@ public record EvalCase<C>(
   }
 
   /**
-   * The command as the text a {@link Judge} and the report read: a String command as is, any other
-   * command as JSON.
+   * The command as the text a {@link Judge} reads: a String command as is, any other command as
+   * JSON. This is what the {@link Interaction} carries as its input.
    */
   public String commandText() {
     return Interaction.asText(command);

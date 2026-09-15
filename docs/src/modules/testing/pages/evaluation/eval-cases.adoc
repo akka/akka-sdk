@@ -35,8 +35,9 @@ The agent is not called.
 
 Each case runs in a fresh session, so no case can read the session memory of an earlier case.
 
-A judge and the report read the command as text: a `String` command as is, any other command as its JSON.
-`EvalCase.commandText()` returns that text.
+A model-based judge is asked about the user message the agent sent the model, which `Interaction.userMessage()` carries from the runtime trace.
+When the trace has no user message, the judge is asked about the case's command instead, as text: a `String` command as is, any other command as its JSON.
+`Interaction.asked()` returns whichever of the two applies.
 
 == Preparing the stubs
 

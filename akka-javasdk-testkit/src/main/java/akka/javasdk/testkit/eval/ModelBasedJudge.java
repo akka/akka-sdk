@@ -128,11 +128,15 @@ public final class ModelBasedJudge implements Judge {
                 systemMessage(), userMessage.apply(criterion, interaction), modelConfigPath));
   }
 
-  /** The criterion and the interaction as text, in labeled sections. */
+  /**
+   * The criterion and the interaction as text, in labeled sections. What the agent was asked is
+   * {@link Interaction#asked()}: the user message the model saw when the trace carried it,
+   * otherwise the case's command.
+   */
   public static String defaultUserMessage(String criterion, Interaction interaction) {
     var text = new StringBuilder();
     text.append("Criterion:\n").append(criterion);
-    text.append("\n\nThe agent was asked:\n").append(interaction.input());
+    text.append("\n\nThe agent was asked:\n").append(interaction.asked());
     text.append("\n\nThe agent replied:\n").append(interaction.reply());
     if (!interaction.toolCalls().isEmpty()) {
       text.append("\n\nTools called, in order:");

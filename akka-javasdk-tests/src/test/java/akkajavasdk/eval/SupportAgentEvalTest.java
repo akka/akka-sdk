@@ -300,9 +300,14 @@ public class SupportAgentEvalTest extends TestKitSupport {
             .getFirst();
 
     assertThat(result.passed()).withFailMessage(result::describe).isTrue();
-    // The report and a judge read a command that is not a String as its JSON.
+    // The case's command as text, which is its JSON for a command that is not a String.
     assertThat(result.interaction().input())
         .isEqualTo("{\"customerId\":\"cust_7\",\"text\":\"What am I waiting on?\"}");
+    // What the model saw: the user message the handler built from the command. A judge is asked
+    // about this rather than about the command.
+    assertThat(result.interaction().userMessage())
+        .isEqualTo("Customer cust_7 asks: What am I waiting on?");
+    assertThat(result.interaction().asked()).isEqualTo(result.interaction().userMessage());
     assertThat(result.describe()).contains("PASS tool-order").contains("PASS tool-arguments");
   }
 

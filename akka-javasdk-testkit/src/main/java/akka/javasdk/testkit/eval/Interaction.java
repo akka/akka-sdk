@@ -18,6 +18,9 @@ import java.util.List;
  *
  * @param input the command sent to the agent, as text. A String command is used as is, any other
  *     command is rendered as JSON by {@link #asText}
+ * @param userMessage the user message the agent sent the model, which is what the model saw. The
+ *     command handler builds it from the command, so it may differ from {@code input}. Empty when
+ *     the trace did not carry it
  * @param reply the agent's reply
  * @param toolCalls in call order
  * @param modelCalls in call order
@@ -28,6 +31,7 @@ import java.util.List;
  */
 public record Interaction(
     String input,
+    String userMessage,
     String reply,
     List<ToolCall> toolCalls,
     List<ModelCall> modelCalls,
@@ -37,6 +41,7 @@ public record Interaction(
 
   public Interaction {
     if (input == null) throw new IllegalArgumentException("input required");
+    if (userMessage == null) throw new IllegalArgumentException("userMessage required");
     if (reply == null) throw new IllegalArgumentException("reply required");
     if (toolCalls == null) throw new IllegalArgumentException("toolCalls required");
     if (modelCalls == null) throw new IllegalArgumentException("modelCalls required");
@@ -48,17 +53,18 @@ public record Interaction(
     guardrails = List.copyOf(guardrails);
   }
 
-  /** A reply with tool calls only. */
+  /** A reply with tool calls only, and no user message in the evidence. */
   public Interaction(String input, String reply, List<ToolCall> toolCalls) {
-    this(input, reply, toolCalls, List.of(), List.of(), Duration.ZERO, "");
+    this(input, "", reply, toolCalls, List.of(), List.of(), Duration.ZERO, "");
   }
 
-  /** A reply with the traced evidence. */
+  /** A reply with the traced evidence, including the user message the agent sent the model. */
   public Interaction(String input, String reply, AgentTrace trace) {
     this(
         input,
+        required(trace).userMessage(),
         reply,
-        required(trace).toolCalls(),
+        trace.toolCalls(),
         trace.modelCalls(),
         trace.guardrails(),
         trace.duration(),
@@ -73,6 +79,14 @@ public record Interaction(
   /** A reply with no evidence. */
   public static Interaction of(String input, String reply) {
     return new Interaction(input, reply, List.of());
+  }
+
+  /**
+   * What the agent was asked, as a judge reads it: the user message the agent sent the model when
+   * the trace carried it, otherwise the case's command as text.
+   */
+  public String asked() {
+    return userMessage.isEmpty() ? input : userMessage;
   }
 
   /**
