@@ -13,7 +13,7 @@ A judge decides how well a reply meets a criterion stated as a sentence.
 
 The built-in evaluators compare the reply and the tool calls against exact values.
 Some criteria have no exact value.
-A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Judge.html[Judge] scores such a criterion between 0 and 1, and the score becomes a result on the case under the `judge` evaluator.
+A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Judge.html[Judge] scores such a criterion between 0 and 1, and the score becomes a result on the case with the label `judge`.
 
 A judged score can differ between runs of the same reply.
 Gate a batch on the rate the judge passed rather than asserting on one judged case, see <<gating-a-judged-batch>>.
@@ -61,7 +61,7 @@ A criterion a program can decide, such as the length of the reply, belongs in a 
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=judge]
 ----
 <1> A judge bound to the running TestKit. It asks the model configured in `application.conf`.
-<2> The criterion, in words. The result is reported under the `judge` evaluator.
+<2> The criterion, in words. The result has the label `judge`.
 <3> The case description contains the judged result as one line. The line starts with the verdict and the evaluator name, then the criterion, the score, the threshold, and the reason the model gave:
 +
 [listing]
@@ -127,7 +127,7 @@ xref:testing:evaluation/eval-cases.adoc#inconclusive[Inconclusive results] descr
 == Gating a judged batch
 
 With a real model, hold a batch to the rate the judge passed.
-`Gate.evaluatorPassRateShouldBeAtLeast(Evaluators.JUDGE, minimumRate)` rates the `judge` evaluator over the cases where it was conclusive, and fails when it judged no case.
+`Gate.passRateShouldBeAtLeast(Evaluators.JudgeEvaluator.class, minimumRate)` rates the `judge` evaluator over the cases where it was conclusive, and fails when it judged no case.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]

@@ -120,7 +120,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
       .agent(OrderAgent::ask)
       .gate(
         Gate.passRateShouldBeAtLeast(0.9) // <1>
-          .and(Gate.evaluatorPassRateShouldBeAtLeast(Evaluators.TOOL_ARGUMENTS, 1.0)) // <2>
+          .and(Gate.passRateShouldBeAtLeast(Evaluators.ToolArgument.class, 1.0)) // <2>
           .and(Gate.targetShouldNotFail()) // <3>
       )
       .run();
@@ -180,7 +180,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
       .cases(curated())
       .evaluator(factual)
       .agent(OrderAgent::ask)
-      .gate(Gate.evaluatorPassRateShouldBeAtLeast(Evaluators.JUDGE, 0.8)) // <2>
+      .gate(Gate.passRateShouldBeAtLeast(Evaluators.JudgeEvaluator.class, 0.8)) // <2>
       .run();
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();
