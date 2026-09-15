@@ -38,7 +38,7 @@ public final class Gate {
   }
 
   /** Every case must pass. The gate that applies when none is given. */
-  public static Gate allCasesPass() {
+  public static Gate allCasesShouldPass() {
     return new Gate(
         results -> {
           var failed = results.stream().filter(r -> !r.passed()).map(CaseResult::caseId).toList();
@@ -48,8 +48,8 @@ public final class Gate {
         });
   }
 
-  /** The share of cases with no failed result must be at least this. */
-  public static Gate passRateAtLeast(double rate) {
+  /** The share of cases with no failed result must be at least {@code minimumRate}. */
+  public static Gate passRateShouldBeAtLeast(double minimumRate) {
     return new Gate(
         results -> {
           var passed = results.stream().filter(CaseResult::passed).count();
@@ -60,16 +60,17 @@ public final class Gate {
                   "pass rate %.2f over %d cases, required %.2f",
                   actual,
                   results.size(),
-                  rate);
-          return actual >= rate ? Verdict.pass(summary) : Verdict.fail(summary);
+                  minimumRate);
+          return actual >= minimumRate ? Verdict.pass(summary) : Verdict.fail(summary);
         });
   }
 
   /**
-   * The pass rate of one evaluator, over the cases where it was conclusive, must be at least this.
-   * Fails when the evaluator judged no case. Evaluator names are in {@link Evaluators}.
+   * The pass rate of one evaluator, over the cases where it was conclusive, must be at least {@code
+   * minimumRate}. Fails when the evaluator judged no case. Evaluator names are in {@link
+   * Evaluators}.
    */
-  public static Gate evaluatorRateAtLeast(String evaluator, double rate) {
+  public static Gate evaluatorPassRateShouldBeAtLeast(String evaluator, double minimumRate) {
     if (evaluator == null || evaluator.isBlank())
       throw new IllegalArgumentException("evaluator name required");
     return new Gate(
@@ -93,13 +94,13 @@ public final class Gate {
                   evaluator,
                   actual,
                   evalResults.size(),
-                  rate);
-          return actual >= rate ? Verdict.pass(summary) : Verdict.fail(summary);
+                  minimumRate);
+          return actual >= minimumRate ? Verdict.pass(summary) : Verdict.fail(summary);
         });
   }
 
   /** No case may fail while its recorded calls are loaded or in the agent call. */
-  public static Gate noTargetFailures() {
+  public static Gate targetShouldNotFail() {
     return new Gate(
         results -> {
           var failed =

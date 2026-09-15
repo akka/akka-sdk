@@ -15,7 +15,7 @@ public interface Evaluator {
 
   /**
    * The name the report prints this evaluator's results under, and what {@link
-   * Gate#evaluatorRateAtLeast} refers to.
+   * Gate#evaluatorPassRateShouldBeAtLeast} refers to.
    */
   String name();
 

@@ -19,16 +19,16 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is wha
 |===
 | Gate | Passes when
 
-| `Gate.allCasesPass()`
+| `Gate.allCasesShouldPass()`
 | No case has a failed result. This is the gate that applies when none is given.
 
-| `Gate.passRateAtLeast(rate)`
-| The share of cases with no failed result is at least the rate.
+| `Gate.passRateShouldBeAtLeast(minimumRate)`
+| The share of cases with no failed result is at least `minimumRate`.
 
-| `Gate.evaluatorRateAtLeast(evaluator, rate)`
-| At least this share of the named evaluator's results passed. Inconclusive results are left out of the count. The gate fails when the evaluator has no result to count. The name is a constant in `Evaluators`, or the name a custom evaluator returns from `name()`.
+| `Gate.evaluatorPassRateShouldBeAtLeast(evaluator, minimumRate)`
+| The share of the named evaluator's results that passed is at least `minimumRate`. Inconclusive results are left out of the count. The gate fails when the evaluator has no result to count. The name is a constant in `Evaluators`, or the name a custom evaluator returns from `name()`.
 
-| `Gate.noTargetFailures()`
+| `Gate.targetShouldNotFail()`
 | No case failed while loading its recorded calls or in the agent call.
 
 | `gate.and(other)`
@@ -69,9 +69,9 @@ gate: passed — pass rate 1.00 over 3 cases, required 0.90; tool-arguments rate
   tools 1/1
   tool-arguments 2/2
   forbidden-tools 2/2
-  answer-contains 2/2
+  reply-contains 2/2
   tool-order 1/1
-  answer-matches 1/1
+  reply-matches 1/1
   tool-call-budget 1/1
   model-call-budget 1/1
 spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status at 489 ms, over 3/3 cases with evidence

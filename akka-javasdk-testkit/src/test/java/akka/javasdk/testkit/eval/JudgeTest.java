@@ -60,7 +60,7 @@ class JudgeTest {
         judged(
             judge,
             "The fee was charged because the payment was 12 days overdue.",
-            judge.scoringAtLeast(CRITERION, 0.7));
+            judge.shouldScoreAtLeast(CRITERION, 0.7));
 
     assertThat(result.passed()).isTrue();
     assertThat(resultOf(result).detail())
@@ -72,7 +72,7 @@ class JudgeTest {
     Judge judge =
         (criterion, interaction) -> Judge.Verdict.of(0.3, "it states the fee without a reason");
 
-    var result = judged(judge, "You were charged 12.50.", judge.mustSatisfy(CRITERION));
+    var result = judged(judge, "You were charged 12.50.", judge.shouldSatisfy(CRITERION));
 
     assertThat(result.passed()).isFalse();
     assertThat(resultOf(result).detail()).contains("scored 0.30, needed 0.50");
@@ -89,7 +89,7 @@ class JudgeTest {
           return Judge.Verdict.of(1, "");
         };
 
-    judged(judge, "an answer", judge.mustSatisfy(CRITERION));
+    judged(judge, "an answer", judge.shouldSatisfy(CRITERION));
 
     assertThat(askedCriterion[0]).isEqualTo(CRITERION);
     assertThat(asked[0].userMessage()).isEqualTo("Why was I charged a late fee?");
@@ -101,7 +101,7 @@ class JudgeTest {
   void aScoreOffTheScaleIsInconclusiveRatherThanFailingTheCase() {
     Judge judge = (criterion, interaction) -> Judge.Verdict.of(7, "seven out of ten");
 
-    var result = judged(judge, "an answer", judge.mustSatisfy(CRITERION));
+    var result = judged(judge, "an answer", judge.shouldSatisfy(CRITERION));
 
     assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
     assertThat(result.passed()).isTrue();
@@ -114,7 +114,7 @@ class JudgeTest {
           throw new IllegalStateException("the judge's provider is not configured");
         };
 
-    var result = judged(judge, "an answer", judge.mustSatisfy(CRITERION));
+    var result = judged(judge, "an answer", judge.shouldSatisfy(CRITERION));
 
     assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
     assertThat(resultOf(result).detail()).contains("provider is not configured");
@@ -130,7 +130,7 @@ class JudgeTest {
     var result =
         single(
             turn -> EvalTarget.Outcome.answered(Interaction.of(turn.userMessage(), "")),
-            EvalCase.of("c", "a question", judge.mustSatisfy(CRITERION)));
+            EvalCase.of("c", "a question", judge.shouldSatisfy(CRITERION)));
 
     assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
   }
@@ -142,8 +142,8 @@ class JudgeTest {
             Judge.Verdict.of(interaction.reply().contains("because") ? 0.9 : 0.2, "");
     var cases =
         List.of(
-            EvalCase.of("explained", "why?", judge.mustSatisfy(CRITERION)),
-            EvalCase.of("bare", "why?", judge.mustSatisfy(CRITERION)));
+            EvalCase.of("explained", "why?", judge.shouldSatisfy(CRITERION)),
+            EvalCase.of("bare", "why?", judge.shouldSatisfy(CRITERION)));
 
     EvalTarget explaining =
         turn ->
@@ -153,7 +153,7 @@ class JudgeTest {
                     turn.caseId().equals("explained") ? "because it was overdue" : "12.50"));
     var report =
         ExperimentRunner.against(new ExperimentRunner().cases(cases), explaining)
-            .gate(Gate.evaluatorRateAtLeast(Evaluators.JUDGE, 0.5))
+            .gate(Gate.evaluatorPassRateShouldBeAtLeast(Evaluators.JUDGE, 0.5))
             .run();
 
     assertThat(report.passed()).isTrue();
@@ -162,7 +162,7 @@ class JudgeTest {
         turn -> EvalTarget.Outcome.answered(Interaction.of(turn.userMessage(), "12.50"));
     assertThat(
             ExperimentRunner.against(new ExperimentRunner().cases(cases), bare)
-                .gate(Gate.evaluatorRateAtLeast(Evaluators.JUDGE, 0.5))
+                .gate(Gate.evaluatorPassRateShouldBeAtLeast(Evaluators.JUDGE, 0.5))
                 .run()
                 .passed())
         .isFalse();
@@ -172,7 +172,7 @@ class JudgeTest {
   void aJudgeThatGivesNoVerdictIsInconclusive() {
     Judge judge = (criterion, interaction) -> null;
 
-    var result = judged(judge, "an answer", judge.mustSatisfy(CRITERION));
+    var result = judged(judge, "an answer", judge.shouldSatisfy(CRITERION));
 
     assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
     assertThat(resultOf(result).detail()).contains("no verdict");

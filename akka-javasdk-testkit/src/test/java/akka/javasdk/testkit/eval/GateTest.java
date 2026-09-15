@@ -23,8 +23,8 @@ class GateTest {
                   turn.caseId(),
                   List.of(new ToolCall("getCustomer", Map.of("customerId", turn.caseId())))));
 
-  private static EvalCase expectingAnswer(String id, String expected) {
-    return EvalCase.of(id, "a question", Evaluators.answerContains(expected));
+  private static EvalCase expectingReply(String id, String expected) {
+    return EvalCase.of(id, "a question", Evaluators.replyShouldContain(expected));
   }
 
   private ExperimentRunner.EvalReport run(Gate gate, List<EvalCase> cases) {
@@ -35,28 +35,32 @@ class GateTest {
   void aPassRateToleratesOneWrongCaseInFour() {
     var cases =
         List.of(
-            expectingAnswer("c1", "c1"),
-            expectingAnswer("c2", "c2"),
-            expectingAnswer("c3", "c3"),
-            expectingAnswer("c4", "something else"));
+            expectingReply("c1", "c1"),
+            expectingReply("c2", "c2"),
+            expectingReply("c3", "c3"),
+            expectingReply("c4", "something else"));
 
-    assertThat(run(Gate.passRateAtLeast(0.75), cases).passed()).isTrue();
-    assertThat(run(Gate.passRateAtLeast(0.8), cases).passed()).isFalse();
+    assertThat(run(Gate.passRateShouldBeAtLeast(0.75), cases).passed()).isTrue();
+    assertThat(run(Gate.passRateShouldBeAtLeast(0.8), cases).passed()).isFalse();
   }
 
   @Test
   void anEvaluatorIsRatedOverTheCasesWhereItWasConclusive() {
     var cases =
         List.of(
-            EvalCase.of("c1", "q", Evaluators.toolArgument("getCustomer", "customerId", "c1")),
-            EvalCase.of("c2", "q", Evaluators.toolArgument("getCustomer", "customerId", "wrong")),
-            EvalCase.of("c3", "q", Evaluators.toolArgument("neverCalled", "id", "x")));
+            EvalCase.of(
+                "c1", "q", Evaluators.shouldCallToolWith("getCustomer", "customerId", "c1")),
+            EvalCase.of(
+                "c2", "q", Evaluators.shouldCallToolWith("getCustomer", "customerId", "wrong")),
+            EvalCase.of("c3", "q", Evaluators.shouldCallToolWith("neverCalled", "id", "x")));
 
-    var report = run(Gate.evaluatorRateAtLeast(Evaluators.TOOL_ARGUMENTS, 0.5), cases);
+    var report = run(Gate.evaluatorPassRateShouldBeAtLeast(Evaluators.TOOL_ARGUMENTS, 0.5), cases);
 
     assertThat(report.passed()).isTrue();
     assertThat(report.render()).contains("tool-arguments 1/2 (1 inconclusive)");
-    assertThat(run(Gate.evaluatorRateAtLeast(Evaluators.TOOL_ARGUMENTS, 0.9), cases).passed())
+    assertThat(
+            run(Gate.evaluatorPassRateShouldBeAtLeast(Evaluators.TOOL_ARGUMENTS, 0.9), cases)
+                .passed())
         .isFalse();
   }
 
@@ -64,8 +68,8 @@ class GateTest {
   void anEvaluatorThatJudgedNothingCannotBeRated() {
     var report =
         run(
-            Gate.evaluatorRateAtLeast(Evaluators.ANSWER_MATCHES, 1.0),
-            List.of(expectingAnswer("c1", "c1")));
+            Gate.evaluatorPassRateShouldBeAtLeast(Evaluators.REPLY_MATCHES, 1.0),
+            List.of(expectingReply("c1", "c1")));
 
     assertThat(report.passed()).isFalse();
     assertThat(report.render()).contains("judged no case");
@@ -78,11 +82,11 @@ class GateTest {
           if (turn.caseId().equals("c2")) throw new IllegalStateException("model unavailable");
           return EvalTarget.Outcome.answered(Interaction.of(turn.userMessage(), turn.caseId()));
         };
-    var cases = List.of(expectingAnswer("c1", "c1"), expectingAnswer("c2", "c2"));
+    var cases = List.of(expectingReply("c1", "c1"), expectingReply("c2", "c2"));
 
     var report =
         ExperimentRunner.against(new ExperimentRunner().cases(cases), throwing)
-            .gate(Gate.passRateAtLeast(0.5).and(Gate.noTargetFailures()))
+            .gate(Gate.passRateShouldBeAtLeast(0.5).and(Gate.targetShouldNotFail()))
             .run();
 
     assertThat(report.passRate()).isEqualTo(0.5);
@@ -93,7 +97,7 @@ class GateTest {
   @Test
   void aRunWithNoGatePassesWhenEveryCaseDoes() {
     var report =
-        ExperimentRunner.against(new ExperimentRunner().cases(expectingAnswer("c1", "c1")), target)
+        ExperimentRunner.against(new ExperimentRunner().cases(expectingReply("c1", "c1")), target)
             .run();
 
     assertThat(report.passed()).isTrue();

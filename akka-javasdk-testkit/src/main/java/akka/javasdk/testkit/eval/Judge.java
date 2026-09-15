@@ -5,8 +5,8 @@
 package akka.javasdk.testkit.eval;
 
 /**
- * Decides how well a reply meets a criterion given as a sentence. {@link #mustSatisfy} and {@link
- * #scoringAtLeast} turn the score into an {@link Evaluator}.
+ * Decides how well a reply meets a criterion given as a sentence. {@link #shouldSatisfy} and {@link
+ * #shouldScoreAtLeast} turn the score into an {@link Evaluator}.
  *
  * <pre>{@code
  * var judge = Judge.modelBased(testKit);
@@ -14,8 +14,8 @@ package akka.javasdk.testkit.eval;
  * EvalCase.of(
  *     "tier",
  *     "Which tier is cust_1 on?",
- *     Evaluators.tools("getCustomer"),
- *     judge.mustSatisfy("the reply states the customer's tier and invents nothing"));
+ *     Evaluators.shouldCallTool("getCustomer"),
+ *     judge.shouldSatisfy("the reply states the customer's tier and invents nothing"));
  * }</pre>
  *
  * <p>{@link #modelBased} asks a model through {@link JudgeAgent}, which uses the model provider of
@@ -59,17 +59,17 @@ public interface Judge {
   }
 
   /**
-   * The criterion must score at least this. Inconclusive when there is no reply, when the judge
-   * throws or gives no verdict, or when the score is not between 0 and 1.
+   * The criterion must score at least {@code threshold}. Inconclusive when there is no reply, when
+   * the judge throws or gives no verdict, or when the score is not between 0 and 1.
    */
-  default Evaluator scoringAtLeast(String criterion, double threshold) {
+  default Evaluator shouldScoreAtLeast(String criterion, double threshold) {
     if (criterion == null || criterion.isBlank())
       throw new IllegalArgumentException("criterion required");
     return new JudgeEvaluator(this, criterion, threshold);
   }
 
-  /** The criterion must score at least 0.5. */
-  default Evaluator mustSatisfy(String criterion) {
-    return scoringAtLeast(criterion, 0.5);
+  /** Same as {@link #shouldScoreAtLeast} with a threshold of 0.5. */
+  default Evaluator shouldSatisfy(String criterion) {
+    return shouldScoreAtLeast(criterion, 0.5);
   }
 }

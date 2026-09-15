@@ -153,22 +153,22 @@ public class SupportAgentEvalTest extends TestKitSupport {
         EvalCase.of(
             "customer-lookup",
             "Is cust_1 still one of our customers, and under what name?",
-            Evaluators.tools("getCustomer"),
-            Evaluators.toolArgument("getCustomer", "customerId", "cust_1"),
-            Evaluators.forbiddenTools("openTickets"),
-            Evaluators.answerContains("Ada Lovelace")),
+            Evaluators.shouldCallTool("getCustomer"),
+            Evaluators.shouldCallToolWith("getCustomer", "customerId", "cust_1"),
+            Evaluators.shouldNotCallTool("openTickets"),
+            Evaluators.replyShouldContain("Ada Lovelace")),
         EvalCase.of(
             "open-tickets",
             "What is cust_7 waiting on? List their open tickets.",
-            Evaluators.tools("getCustomer", "openTickets"),
-            Evaluators.toolOrder("getCustomer", "openTickets"),
-            Evaluators.toolArgument("openTickets", "customerId", "cust_7"),
-            Evaluators.answerContains("card declined")),
+            Evaluators.shouldCallTools("getCustomer", "openTickets"),
+            Evaluators.shouldCallToolsInOrder("getCustomer", "openTickets"),
+            Evaluators.shouldCallToolWith("openTickets", "customerId", "cust_7"),
+            Evaluators.replyShouldContain("card declined")),
         EvalCase.of(
             "no-tools-for-smalltalk",
             "hi there!",
-            Evaluators.forbiddenTools("getCustomer", "openTickets"),
-            Evaluators.answerContains("customer id")));
+            Evaluators.shouldNotCallTools("getCustomer", "openTickets"),
+            Evaluators.replyShouldContain("customer id")));
   }
 
   @Test
@@ -177,9 +177,9 @@ public class SupportAgentEvalTest extends TestKitSupport {
         EvalCase.of(
             "customer-lookup-result",
             "Who is cust_1?",
-            Evaluators.toolArgument("getCustomer", "customerId", "cust_1"),
-            Evaluators.toolResult("getCustomer", "Ada Lovelace"),
-            Evaluators.toolResult("getCustomer", "\"tier\":\"gold\""));
+            Evaluators.shouldCallToolWith("getCustomer", "customerId", "cust_1"),
+            Evaluators.toolResultShouldContain("getCustomer", "Ada Lovelace"),
+            Evaluators.toolResultShouldContain("getCustomer", "\"tier\":\"gold\""));
 
     var result = runOne(lookup);
 
@@ -194,7 +194,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
         EvalCase.of(
             "open-tickets-evidence",
             "What is cust_7 waiting on? List their open tickets.",
-            Evaluators.toolOrder("getCustomer", "openTickets"));
+            Evaluators.shouldCallToolsInOrder("getCustomer", "openTickets"));
 
     var result = runOne(tickets);
 
@@ -218,10 +218,10 @@ public class SupportAgentEvalTest extends TestKitSupport {
         EvalCase.of(
             "open-tickets-budget",
             "What is cust_7 waiting on? List their open tickets.",
-            Evaluators.toolCallsAtMost(2),
-            Evaluators.modelCallsAtMost(2),
-            Evaluators.tokensAtMost(1_000),
-            Evaluators.latencyAtMost(ofSeconds(30)));
+            Evaluators.shouldMakeAtMostToolCalls(2),
+            Evaluators.shouldMakeAtMostModelCalls(2),
+            Evaluators.shouldUseAtMostTokens(1_000),
+            Evaluators.shouldReplyWithin(ofSeconds(30)));
 
     var result = runOne(tickets);
 
@@ -238,7 +238,8 @@ public class SupportAgentEvalTest extends TestKitSupport {
   @Test
   public void traceKeepsTheFailedToolCall() {
     var unknown =
-        EvalCase.of("unknown-customer", "Who is cust_404?", Evaluators.tools("getCustomer"));
+        EvalCase.of(
+            "unknown-customer", "Who is cust_404?", Evaluators.shouldCallTool("getCustomer"));
 
     var result = runOne(unknown);
 
@@ -264,9 +265,9 @@ public class SupportAgentEvalTest extends TestKitSupport {
             .cases(curatedCases().toList())
             .agent(SupportAgent::ask)
             .gate(
-                Gate.passRateAtLeast(0.9)
-                    .and(Gate.evaluatorRateAtLeast(Evaluators.TOOL_ARGUMENTS, 1.0))
-                    .and(Gate.noTargetFailures()))
+                Gate.passRateShouldBeAtLeast(0.9)
+                    .and(Gate.evaluatorPassRateShouldBeAtLeast(Evaluators.TOOL_ARGUMENTS, 1.0))
+                    .and(Gate.targetShouldNotFail()))
             .run();
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();
@@ -292,7 +293,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
             .cases(replayed)
             .bindings(bindings)
             .agent(SupportAgent::ask)
-            .gate(Gate.passRateAtLeast(0.85))
+            .gate(Gate.passRateShouldBeAtLeast(0.85))
             .run();
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();
@@ -329,8 +330,9 @@ public class SupportAgentEvalTest extends TestKitSupport {
         EvalCase.of(
             "judged-lookup",
             "Who is cust_1?",
-            Evaluators.tools("getCustomer"),
-            judge.mustSatisfy("the reply states the customer's name and tier and invents nothing"));
+            Evaluators.shouldCallTool("getCustomer"),
+            judge.shouldSatisfy(
+                "the reply states the customer's name and tier and invents nothing"));
 
     var result = runOne(evalCase);
 
@@ -357,7 +359,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
             EvalCase.of(
                 "judged-in-polish",
                 "Who is cust_1?",
-                judge.mustSatisfy("odpowiedz podaje nazwisko klienta")));
+                judge.shouldSatisfy("odpowiedz podaje nazwisko klienta")));
 
     assertThat(result.passed()).withFailMessage(result::describe).isTrue();
     assertThat(result.describe()).contains("PASS judge").contains("spelnia");
@@ -372,7 +374,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
     var result =
         runOne(
             EvalCase.of(
-                "unjudgeable", "Who is cust_1?", judge.mustSatisfy("the reply is helpful")));
+                "unjudgeable", "Who is cust_1?", judge.shouldSatisfy("the reply is helpful")));
 
     assertThat(result.passed()).isTrue();
     assertThat(result.describe()).contains("INCONCLUSIVE judge");
@@ -384,7 +386,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
         EvalCase.of(
             "wrong-customer",
             "Who is cust_1?",
-            Evaluators.toolArgument("getCustomer", "customerId", "cust_2"));
+            Evaluators.shouldCallToolWith("getCustomer", "customerId", "cust_2"));
 
     var result = runOne(wrongExpectation);
 

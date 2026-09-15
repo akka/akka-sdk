@@ -14,67 +14,69 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 /**
  * The built-in evaluators, and the names every evaluator reports under.
  *
  * <p>Each factory returns an {@link Evaluator} for one check over the reply and the traced tool
  * calls. An evaluator reads only the evidence it names and is inconclusive when that evidence is
- * absent: a tool that was never called fails {@link #tools}, and {@link #toolArgument} is
- * inconclusive. Give the evaluators to an {@link EvalCase}, next to a {@link Judge} or a custom
- * evaluator.
+ * absent: a tool that was never called fails {@link #shouldCallTools}, and {@link
+ * #shouldCallToolWith} is inconclusive. Give the evaluators to an {@link EvalCase}, next to a
+ * {@link Judge} or a custom evaluator.
  *
- * <p>The name constants are what the report prints and what {@link Gate#evaluatorRateAtLeast}
- * refers to. {@link #TARGET} and {@link #SETUP} are reported by the runner when a case did not
- * reach evaluation.
+ * <p>The name constants are what the report prints and what {@link
+ * Gate#evaluatorPassRateShouldBeAtLeast} refers to. {@link #TARGET} and {@link #SETUP} are reported
+ * by the runner when a case did not reach evaluation.
  */
 public final class Evaluators {
 
-  /** {@link #tools}: every named tool was called. */
+  /** {@link #shouldCallTools}: every named tool was called. */
   public static final String TOOLS = "tools";
 
-  /** {@link #toolOrder}: the named tools were called in that relative order. */
+  /** {@link #shouldCallToolsInOrder}: the named tools were called in that relative order. */
   public static final String TOOL_ORDER = "tool-order";
 
-  /** {@link #toolArgument}: the tool was called with the argument value. */
+  /** {@link #shouldCallToolWith}: the tool was called with the argument value. */
   public static final String TOOL_ARGUMENTS = "tool-arguments";
 
-  /** {@link #toolResult}: the tool's result carried the text. */
+  /** {@link #toolResultShouldContain}: the tool's result carried the text. */
   public static final String TOOL_RESULTS = "tool-results";
 
-  /** {@link #toolCallsAtMost}: the agent made at most that many tool calls. */
+  /** {@link #shouldMakeAtMostToolCalls}: the agent made at most that many tool calls. */
   public static final String TOOL_CALL_BUDGET = "tool-call-budget";
 
-  /** {@link #modelCallsAtMost}: the agent made at most that many model calls. */
+  /** {@link #shouldMakeAtMostModelCalls}: the agent made at most that many model calls. */
   public static final String MODEL_CALL_BUDGET = "model-call-budget";
 
-  /** {@link #tokensAtMost}: the turn used at most that many tokens, in and out. */
+  /** {@link #shouldUseAtMostTokens}: the turn used at most that many tokens, in and out. */
   public static final String TOKEN_BUDGET = "token-budget";
 
-  /** {@link #latencyAtMost}: the turn was answered within that time. */
+  /** {@link #shouldReplyWithin}: the agent replied within that time. */
   public static final String LATENCY_BUDGET = "latency-budget";
 
-  /** {@link #forbiddenTools}: none of the named tools was called. */
+  /** {@link #shouldNotCallTools}: none of the named tools was called. */
   public static final String FORBIDDEN_TOOLS = "forbidden-tools";
 
-  /** {@link #answerContains}: the reply carries every given text. */
-  public static final String ANSWER_CONTAINS = "answer-contains";
+  /** {@link #replyShouldContain}: the reply carries every given text. */
+  public static final String REPLY_CONTAINS = "reply-contains";
 
-  /** {@link #answerMatches}: the reply matches the pattern. */
-  public static final String ANSWER_MATCHES = "answer-matches";
+  /** {@link #replyShouldMatch}: the reply matches the pattern. */
+  public static final String REPLY_MATCHES = "reply-matches";
 
-  /** {@link #answerLacks}: the reply carries none of the given texts. */
-  public static final String ANSWER_LACKS = "answer-lacks";
+  /** {@link #replyShouldNotContain}: the reply carries none of the given texts. */
+  public static final String REPLY_LACKS = "reply-lacks";
 
-  /** {@link #answerDoesNotMatch}: the reply does not match the pattern. */
-  public static final String ANSWER_DOES_NOT_MATCH = "answer-does-not-match";
+  /** {@link #replyShouldNotMatch}: the reply does not match the pattern. */
+  public static final String REPLY_DOES_NOT_MATCH = "reply-does-not-match";
 
-  /** {@link #answerLacksLuhnNumber}: the reply carries no number passing the Luhn checksum. */
-  public static final String ANSWER_LACKS_LUHN_NUMBER = "answer-lacks-luhn-number";
+  /**
+   * {@link #replyShouldNotContainLuhnNumber}: the reply carries no number passing the Luhn
+   * checksum.
+   */
+  public static final String REPLY_LACKS_LUHN_NUMBER = "reply-lacks-luhn-number";
 
-  /** {@link #answerLacksPaymentCard}: the reply carries no payment card number. */
-  public static final String ANSWER_LACKS_PAYMENT_CARD = "answer-lacks-payment-card";
+  /** {@link #replyShouldNotContainPaymentCard}: the reply carries no payment card number. */
+  public static final String REPLY_LACKS_PAYMENT_CARD = "reply-lacks-payment-card";
 
   /** {@link Judge}: a model scored the reply against a criterion. */
   public static final String JUDGE = "judge";
@@ -88,15 +90,20 @@ public final class Evaluators {
   private Evaluators() {}
 
   /** These tools must be called, in any order. Other calls are allowed. */
-  public static Evaluator tools(String... names) {
+  public static Evaluator shouldCallTools(String... names) {
     return new Tools(toolNames(names));
+  }
+
+  /** This tool must be called. Other calls are allowed. */
+  public static Evaluator shouldCallTool(String name) {
+    return new Tools(toolNames(name));
   }
 
   /**
    * These tools must be called in this relative order. Calls to other tools may come between.
    * Inconclusive when one of them was never called.
    */
-  public static Evaluator toolOrder(String... names) {
+  public static Evaluator shouldCallToolsInOrder(String... names) {
     return new ToolOrder(List.copyOf(toolNames(names)));
   }
 
@@ -104,7 +111,7 @@ public final class Evaluators {
    * The named tool must be called with this argument value. Numbers compare by value. Inconclusive
    * when the tool was never called.
    */
-  public static Evaluator toolArgument(String tool, String argument, Object value) {
+  public static Evaluator shouldCallToolWith(String tool, String argument, Object value) {
     requireName(tool, "tool");
     requireName(argument, "argument");
     return new ToolArgument(tool, argument, value);
@@ -114,29 +121,34 @@ public final class Evaluators {
    * The result of the named tool must contain this text, case-insensitively. Inconclusive when the
    * tool was never called or the trace carries no result for it.
    */
-  public static Evaluator toolResult(String tool, String text) {
+  public static Evaluator toolResultShouldContain(String tool, String text) {
     requireName(tool, "tool");
     if (text == null || text.isEmpty()) throw new IllegalArgumentException("text required");
     return new ToolResult(tool, text);
   }
 
   /** None of these tools may be called. */
-  public static Evaluator forbiddenTools(String... names) {
+  public static Evaluator shouldNotCallTools(String... names) {
     return new ForbiddenTools(toolNames(names));
   }
 
-  /** The agent may make at most this many tool calls while answering. */
-  public static Evaluator toolCallsAtMost(int calls) {
+  /** This tool may not be called. */
+  public static Evaluator shouldNotCallTool(String name) {
+    return new ForbiddenTools(toolNames(name));
+  }
+
+  /** The agent may make at most this many tool calls while replying. */
+  public static Evaluator shouldMakeAtMostToolCalls(int calls) {
     if (calls < 0) throw new IllegalArgumentException("a budget is not negative");
     return new ToolCallBudget(calls);
   }
 
   /**
-   * The agent may make at most this many model calls while answering. Inconclusive when the trace
+   * The agent may make at most this many model calls while replying. Inconclusive when the trace
    * carried no model calls.
    */
-  public static Evaluator modelCallsAtMost(int calls) {
-    if (calls < 1) throw new IllegalArgumentException("an answer takes at least one model call");
+  public static Evaluator shouldMakeAtMostModelCalls(int calls) {
+    if (calls < 1) throw new IllegalArgumentException("a reply takes at least one model call");
     return new ModelCallBudget(calls);
   }
 
@@ -144,7 +156,7 @@ public final class Evaluators {
    * The turn may use at most this many tokens, input and output together. Inconclusive when no
    * model call reported tokens, as with a mocked model.
    */
-  public static Evaluator tokensAtMost(long tokens) {
+  public static Evaluator shouldUseAtMostTokens(long tokens) {
     if (tokens < 1) throw new IllegalArgumentException("a token budget is positive");
     return new TokenBudget(tokens);
   }
@@ -153,39 +165,57 @@ public final class Evaluators {
    * The agent command must complete within this time. Inconclusive when the trace carries no
    * timing.
    */
-  public static Evaluator latencyAtMost(Duration latency) {
+  public static Evaluator shouldReplyWithin(Duration latency) {
     if (latency == null || latency.isNegative() || latency.isZero())
       throw new IllegalArgumentException("a latency budget is positive");
     return new LatencyBudget(latency);
   }
 
   /** The reply must contain every given text, case-insensitively. */
-  public static Evaluator answerContains(String... texts) {
+  public static Evaluator replyShouldContain(String... texts) {
     if (texts == null || texts.length == 0)
       throw new IllegalArgumentException("at least one text required");
-    return new AnswerContains(List.of(texts));
+    return new ReplyContains(List.of(texts));
   }
 
-  /** The reply must match the regular expression, anywhere in it. Anchor it for a full match. */
-  public static Evaluator answerMatches(String regex) {
+  /**
+   * The reply must match the regular expression, anywhere in it. Anchor it for a full match. The
+   * expression is compiled with {@link Pattern#DOTALL}, so {@code .} also matches line breaks.
+   */
+  public static Evaluator replyShouldMatch(String regex) {
     if (regex == null) throw new IllegalArgumentException("regex required");
-    return new AnswerMatches(regex);
+    return replyShouldMatch(Pattern.compile(regex, Pattern.DOTALL));
+  }
+
+  /** The reply must match the pattern, anywhere in it. Anchor the pattern for a full match. */
+  public static Evaluator replyShouldMatch(Pattern pattern) {
+    if (pattern == null) throw new IllegalArgumentException("pattern required");
+    return new ReplyMatches(pattern);
   }
 
   /** The reply must not contain any of the given texts, case-insensitively. */
-  public static Evaluator answerLacks(String... texts) {
+  public static Evaluator replyShouldNotContain(String... texts) {
     if (texts == null || texts.length == 0)
       throw new IllegalArgumentException("at least one text required");
     for (var text : texts) {
       if (text == null || text.isBlank()) throw new IllegalArgumentException("text required");
     }
-    return new AnswerLacks(List.of(texts));
+    return new ReplyLacks(List.of(texts));
   }
 
-  /** The reply must not match the regular expression anywhere in it. */
-  public static Evaluator answerDoesNotMatch(String regex) {
+  /**
+   * The reply must not match the regular expression anywhere in it. The expression is compiled with
+   * {@link Pattern#DOTALL}, so {@code .} also matches line breaks.
+   */
+  public static Evaluator replyShouldNotMatch(String regex) {
     if (regex == null) throw new IllegalArgumentException("regex required");
-    return new AnswerDoesNotMatch(regex);
+    return replyShouldNotMatch(Pattern.compile(regex, Pattern.DOTALL));
+  }
+
+  /** The reply must not match the pattern anywhere in it. */
+  public static Evaluator replyShouldNotMatch(Pattern pattern) {
+    if (pattern == null) throw new IllegalArgumentException("pattern required");
+    return new ReplyDoesNotMatch(pattern);
   }
 
   /**
@@ -195,19 +225,19 @@ public final class Evaluators {
    * <p>The Luhn checksum validates many identifiers besides payment cards, and each has its own
    * length: an IMEI has 15 digits, a South African ID 13, a Canadian Social Insurance Number 9.
    */
-  public static Evaluator answerLacksLuhnNumber(int minDigits, int maxDigits) {
+  public static Evaluator replyShouldNotContainLuhnNumber(int minDigits, int maxDigits) {
     if (minDigits < 2) throw new IllegalArgumentException("a Luhn number has at least two digits");
     if (maxDigits < minDigits)
       throw new IllegalArgumentException("maxDigits is below minDigits: " + maxDigits);
-    return new AnswerLacksLuhnNumber(luhnCandidate(minDigits, maxDigits), ANSWER_LACKS_LUHN_NUMBER);
+    return new ReplyLacksLuhnNumber(luhnCandidate(minDigits, maxDigits), REPLY_LACKS_LUHN_NUMBER);
   }
 
   /**
    * The reply must not contain a payment card number. A card number is a run of 13 to 19 digits,
    * spaces and dashes allowed between them, that passes the Luhn checksum.
    */
-  public static Evaluator answerLacksPaymentCard() {
-    return new AnswerLacksLuhnNumber(luhnCandidate(13, 19), ANSWER_LACKS_PAYMENT_CARD);
+  public static Evaluator replyShouldNotContainPaymentCard() {
+    return new ReplyLacksLuhnNumber(luhnCandidate(13, 19), REPLY_LACKS_PAYMENT_CARD);
   }
 
   private record Tools(Set<String> expected) implements Evaluator {
@@ -414,10 +444,10 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerContains(List<String> texts) implements Evaluator {
+  private record ReplyContains(List<String> texts) implements Evaluator {
     @Override
     public String name() {
-      return ANSWER_CONTAINS;
+      return REPLY_CONTAINS;
     }
 
     @Override
@@ -433,30 +463,24 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerMatches(String regex) implements Evaluator {
+  private record ReplyMatches(Pattern pattern) implements Evaluator {
     @Override
     public String name() {
-      return ANSWER_MATCHES;
+      return REPLY_MATCHES;
     }
 
     @Override
     public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
-      Pattern pattern;
-      try {
-        pattern = Pattern.compile(regex, Pattern.DOTALL);
-      } catch (PatternSyntaxException e) {
-        return EvalResult.fail("not a regular expression: " + regex);
-      }
       return pattern.matcher(interaction.reply()).find()
           ? EvalResult.pass()
-          : EvalResult.fail("reply does not match /" + regex + "/");
+          : EvalResult.fail("reply does not match /" + pattern.pattern() + "/");
     }
   }
 
-  private record AnswerLacks(List<String> texts) implements Evaluator {
+  private record ReplyLacks(List<String> texts) implements Evaluator {
     @Override
     public String name() {
-      return ANSWER_LACKS;
+      return REPLY_LACKS;
     }
 
     @Override
@@ -470,28 +494,23 @@ public final class Evaluators {
     }
   }
 
-  private record AnswerDoesNotMatch(String regex) implements Evaluator {
+  private record ReplyDoesNotMatch(Pattern pattern) implements Evaluator {
     @Override
     public String name() {
-      return ANSWER_DOES_NOT_MATCH;
+      return REPLY_DOES_NOT_MATCH;
     }
 
     @Override
     public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
-      Pattern pattern;
-      try {
-        pattern = Pattern.compile(regex, Pattern.DOTALL);
-      } catch (PatternSyntaxException e) {
-        return EvalResult.fail("not a regular expression: " + regex);
-      }
       var matcher = pattern.matcher(interaction.reply());
       return matcher.find()
-          ? EvalResult.fail("reply matches /" + regex + "/ at \"" + matcher.group() + "\"")
+          ? EvalResult.fail(
+              "reply matches /" + pattern.pattern() + "/ at \"" + matcher.group() + "\"")
           : EvalResult.pass();
     }
   }
 
-  private record AnswerLacksLuhnNumber(Pattern candidate, String name) implements Evaluator {
+  private record ReplyLacksLuhnNumber(Pattern candidate, String name) implements Evaluator {
 
     @Override
     public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
