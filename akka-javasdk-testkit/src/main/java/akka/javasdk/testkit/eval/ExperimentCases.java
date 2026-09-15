@@ -18,7 +18,10 @@ import java.util.function.Function;
 @DoNotInherit
 public interface ExperimentCases {
 
-  /** An evaluator that runs on every case, in addition to the case's expectations. */
+  /**
+   * An evaluator that runs on every case, in addition to the case's expectations. Its class carries
+   * an {@link EvalLabel}.
+   */
   ExperimentCases evaluator(Evaluator evaluator);
 
   /**

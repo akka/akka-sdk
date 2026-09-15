@@ -51,7 +51,8 @@ flowchart LR
     Gate --> Report[EvalReport]
 ----
 
-A case that fails while loading its recorded calls, or whose agent call throws, is reported as a failed case under the `setup` or `target` evaluator.
+A case whose recorded calls fail to load fails with a result labeled `setup`.
+A case whose agent call throws fails with a result labeled `target`.
 It does not abort the batch.
 
 == The parts of an evaluation

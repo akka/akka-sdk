@@ -67,22 +67,26 @@ public final class Gate {
 
   /**
    * The pass rate of one evaluator, over the cases where it was conclusive, must be at least {@code
-   * minimumRate}. Fails when the evaluator judged no case. Evaluator names are in {@link
-   * Evaluators}.
+   * minimumRate}. Fails when the evaluator judged no case.
+   *
+   * @param evaluator the evaluator's class. The built-ins are nested in {@link Evaluators}, for
+   *     example {@code Evaluators.ToolArgument.class}
+   * @throws IllegalArgumentException when the class does not carry a valid {@link EvalLabel}
    */
-  public static Gate evaluatorPassRateShouldBeAtLeast(String evaluator, double minimumRate) {
-    if (evaluator == null || evaluator.isBlank())
-      throw new IllegalArgumentException("evaluator name required");
+  public static Gate passRateShouldBeAtLeast(
+      Class<? extends Evaluator> evaluator, double minimumRate) {
+    var label = Evaluators.label(evaluator);
+
     return new Gate(
         results -> {
           var evalResults =
               results.stream()
                   .flatMap(result -> result.evalResults().stream())
-                  .filter(evalResult -> evalResult.evaluator().equals(evaluator))
+                  .filter(evalResult -> evalResult.evaluator().equals(label))
                   .filter(evalResult -> evalResult.verdict() != EvalResult.Verdict.INCONCLUSIVE)
                   .toList();
           if (evalResults.isEmpty()) {
-            return Verdict.fail(evaluator + " judged no case, so its rate cannot be read");
+            return Verdict.fail(label + " judged no case, so its rate cannot be read");
           }
           var passed =
               evalResults.stream().filter(f -> f.verdict() == EvalResult.Verdict.PASS).count();
@@ -91,7 +95,7 @@ public final class Gate {
               String.format(
                   Locale.ROOT,
                   "%s rate %.2f over %d judged cases, required %.2f",
-                  evaluator,
+                  label,
                   actual,
                   evalResults.size(),
                   minimumRate);
