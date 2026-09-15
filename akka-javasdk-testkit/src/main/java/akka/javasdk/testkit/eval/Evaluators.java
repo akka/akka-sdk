@@ -68,9 +68,9 @@ public final class Evaluators {
     if (label.value().startsWith(CUSTOM_PREFIX))
       throw new IllegalArgumentException(
           evaluator.getName()
-              + " puts "
+              + " has "
               + CUSTOM_PREFIX
-              + " in its @EvalLabel; the runner adds the prefix");
+              + " in its @EvalLabel; This prefix is reserved.");
 
     return BuiltIn.class.isAssignableFrom(evaluator)
         ? label.value()
