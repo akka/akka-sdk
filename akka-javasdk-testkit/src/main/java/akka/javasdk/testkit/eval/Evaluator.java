@@ -5,19 +5,13 @@
 package akka.javasdk.testkit.eval;
 
 /**
- * One check over one case's evidence. The built-ins are in {@link Evaluators}; a custom one
- * implements this interface. Give it to an {@link EvalCase}, or to {@link
- * ExperimentCases#evaluator} to run on every case.
+ * One check over one case's evidence. The built-ins are in {@link Evaluators}. A custom one is a
+ * named class annotated with {@link EvalLabel} that implements this interface. Give it to an {@link
+ * EvalCase}, or to {@link ExperimentCases#evaluator} to run on every case.
  *
  * <p>An evaluator reads only the interaction. It never calls the service.
  */
 public interface Evaluator {
-
-  /**
-   * The name the report prints this evaluator's results under, and what {@link
-   * Gate#evaluatorPassRateShouldBeAtLeast} refers to.
-   */
-  String name();
 
   /**
    * Checks one turn. Inconclusive when the evidence this check needs is absent or does not support
@@ -31,8 +25,8 @@ public interface Evaluator {
   /**
    * What an evaluator found on one turn. This is what a {@link ExperimentRunner.CaseResult} holds.
    *
-   * @param evaluator the name of the check that produced this, printed in the report. The runner
-   *     fills it in from {@link Evaluator#name}, so an evaluator leaves it empty.
+   * @param evaluator the label of the evaluator that produced this result. The runner fills it in
+   *     from the evaluator's {@link EvalLabel}, so an evaluator leaves it empty.
    * @param detail the reason, printed under a failed case
    */
   record EvalResult(String evaluator, Verdict verdict, String detail) {

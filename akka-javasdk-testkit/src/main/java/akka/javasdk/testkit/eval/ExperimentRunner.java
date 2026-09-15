@@ -102,6 +102,8 @@ public final class ExperimentRunner {
     @Override
     public ExperimentCases<C> evaluator(Evaluator evaluator) {
       if (evaluator == null) throw new IllegalArgumentException("evaluator required");
+      Evaluators.label(evaluator.getClass());
+
       var next = new ArrayList<>(evaluators);
       next.add(evaluator);
       return new Cases<>(testKit, cases, List.copyOf(next), bindings);
@@ -225,16 +227,18 @@ public final class ExperimentRunner {
     // still report.
     private static EvalResult evaluate(
         Evaluator evaluator, EvalCase<?> evalCase, Interaction interaction) {
+      var label = Evaluators.label(evaluator.getClass());
+
       EvalResult result;
       try {
         result = evaluator.evaluate(evalCase, interaction);
       } catch (RuntimeException e) {
-        return EvalResult.fail("the evaluator threw " + describe(e)).attributedTo(evaluator.name());
+        return EvalResult.fail("the evaluator threw " + describe(e)).attributedTo(label);
       }
       if (result == null) {
-        return EvalResult.fail("the evaluator returned no result").attributedTo(evaluator.name());
+        return EvalResult.fail("the evaluator returned no result").attributedTo(label);
       }
-      return result.attributedTo(evaluator.name());
+      return result.attributedTo(label);
     }
   }
 
