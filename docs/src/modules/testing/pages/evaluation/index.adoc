@@ -17,10 +17,11 @@ The agent runs in the in-process runtime with its tools, session memory and guar
 The runtime traces every model call and tool call, and the evaluation reads that trace as evidence.
 Nothing is persisted and nothing leaves the test JVM.
 
-Use evaluation for two purposes.
+Use evaluation for three purposes.
 
 * Measure the quality of an agent against a real model. Run a set of cases as one batch. A gate states what the case results of the batch must satisfy. A real model does not give the same reply twice, so set a gate that requires a minimum pass rate over all cases instead of the default gate, which requires every case to pass.
 * Check that an agent still behaves as it did in production. `EvalCaseParser` turns recorded production interactions into cases. Each replayed case expects the agent to call the same tools, in the same order and with the same arguments as in the recording. When the recording carries the model call count, the tokens and the latency, the case also holds the agent to that spend.
+* Attack an agent and check that it holds. The user message of the case is an attack, and its evaluators state what a breached reply looks like, see xref:testing:evaluation/adversarial.adoc[].
 
 Evaluation is not the place for the following.
 
@@ -92,5 +93,6 @@ The API documentation is at link:{attachmentsdir}/testkit/akka/javasdk/testkit/e
 == See also
 
 * xref:testing:evaluation/getting-started.adoc[]
+* xref:testing:evaluation/adversarial.adoc[]
 * xref:sdk:agents/testing.adoc[]
 * xref:sdk:agents/llm_eval.adoc[]

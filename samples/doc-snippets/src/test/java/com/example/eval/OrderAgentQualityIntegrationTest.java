@@ -50,8 +50,8 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   @BeforeEach
   public void theOrders() {
     orders.reset(); // <4>
-    orders.addOrder(new Order("o_42", "shipped", 2599));
-    orders.addOrder(new Order("o_9", "delivered", 4999));
+    orders.addOrder(new Order("o_42", "shipped", 2599, "leave it with a neighbour"));
+    orders.addOrder(new Order("o_9", "delivered", 4999, ""));
   }
 
   // end::class[]
