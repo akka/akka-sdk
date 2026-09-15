@@ -213,7 +213,7 @@ class EvalCaseParserTest {
                         "",
                         ""))
             .toList();
-    return new Interaction("q", "done", List.of(), calls, List.of(), latency, "done");
+    return new Interaction("q", "", "done", List.of(), calls, List.of(), latency, "done");
   }
 
   @Test

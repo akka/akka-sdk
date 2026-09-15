@@ -192,7 +192,7 @@ class ExperimentRunnerTest {
             .toList();
     return turn ->
         EvalTarget.Outcome.answered(
-            new Interaction(turn.command(), answer, List.of(), calls, List.of(), took, answer));
+            new Interaction(turn.command(), "", answer, List.of(), calls, List.of(), took, answer));
   }
 
   @Test
@@ -306,6 +306,7 @@ class ExperimentRunnerTest {
             EvalTarget.Outcome.answered(
                 new Interaction(
                     turn.command(),
+                    "",
                     "{\"tier\":\"gold\"}",
                     List.of(),
                     List.of(),

@@ -18,6 +18,7 @@ import akka.javasdk.client.ViewClient;
 import akka.javasdk.client.WorkflowClient;
 import akka.javasdk.testkit.ToolCall;
 import akka.javasdk.testkit.eval.Evaluator.EvalResult;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -234,5 +235,39 @@ class JudgeTest {
         Class<T> agentClass, String agentId) {
       throw new UnsupportedOperationException();
     }
+  }
+
+  @Test
+  void theJudgePromptCarriesTheUserMessageTheModelSawWhenTheTraceHasIt() {
+    var interaction =
+        new Interaction(
+            "{\"customerId\":\"cust_1\",\"text\":\"What name is on file?\"}",
+            "Customer cust_1 asks: What name is on file?",
+            "The account is under Ada Lovelace.",
+            List.of(new ToolCall("getCustomer", Map.of("customerId", "cust_1"))),
+            List.of(),
+            List.of(),
+            Duration.ZERO,
+            "");
+
+    assertThat(interaction.asked()).isEqualTo("Customer cust_1 asks: What name is on file?");
+
+    var prompt = ModelBasedJudge.defaultUserMessage(CRITERION, interaction);
+
+    assertThat(prompt)
+        .contains("The agent was asked:\nCustomer cust_1 asks: What name is on file?")
+        // the raw command is not in the prompt, only the tool call's own arguments
+        .doesNotContain("{\"customerId\"")
+        .contains("The agent replied:\nThe account is under Ada Lovelace.")
+        .contains("getCustomer");
+  }
+
+  @Test
+  void theJudgePromptFallsBackToTheCommandWhenTheTraceHasNoUserMessage() {
+    var interaction = Interaction.of("Why was I charged a late fee?", "Because it is overdue.");
+
+    assertThat(interaction.asked()).isEqualTo("Why was I charged a late fee?");
+    assertThat(ModelBasedJudge.defaultUserMessage(CRITERION, interaction))
+        .contains("The agent was asked:\nWhy was I charged a late fee?");
   }
 }
