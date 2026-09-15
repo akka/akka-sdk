@@ -628,10 +628,10 @@ class ExperimentRunnerTest {
         .hasMessageContaining("blank @EvalLabel");
     assertThatThrownBy(() -> EvalCase.of("c", "a question", new PrefixedLabel()))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("the runner adds the prefix");
+        .hasMessageContaining("This prefix is reserved");
     assertThatThrownBy(() -> Gate.passRateShouldBeAtLeast(PrefixedLabel.class, 1.0))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("the runner adds the prefix");
+        .hasMessageContaining("This prefix is reserved");
   }
 
   @Test
