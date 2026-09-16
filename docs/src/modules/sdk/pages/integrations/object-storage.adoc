@@ -130,7 +130,7 @@ S3 and GCS buckets without any explicit authentication configured will both rely
 
 An `s3` bucket takes its endpoint from the region, which addresses Amazon S3. To use an S3-compatible service such as MinIO, set `endpoint-url` on the bucket entry to the address of the service.
 
-`access-style` is how the bucket is addressed at the endpoint. Set it to `path` to address the bucket as a path, or to `virtual` to address it as a subdomain. When `endpoint-url` contains a `{bucket}` placeholder, `virtual` substitutes the bucket name for it.
+`access-style` is how the bucket is addressed at the endpoint. Set it to `path` to address the bucket as a path, or to `virtual` to address it as a subdomain. When `endpoint-url` contains a `+{bucket}+` placeholder, `virtual` substitutes the bucket name for it.
 
 `access-style` defaults to `path` when `endpoint-url` is set, and an explicit value overrides that default. Subdomain addressing needs wildcard DNS, so an S3-compatible service usually requires path access style.
 
