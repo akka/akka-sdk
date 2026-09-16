@@ -72,9 +72,13 @@ PASS judge: the reply apologizes and states the refunded amount: scored 0.90, ne
 [#what-the-judge-sees]
 == What the judge sees
 
-The judge receives the criterion and the `Interaction`: the user message, the reply, and the tool calls with their arguments, results and errors.
+The judge receives the criterion and the `Interaction`: what the agent was asked, the reply, and the tool calls with their arguments, results and errors.
 
-`ModelBasedJudge` renders them as labeled sections and sends the text as the user message.
+What the agent was asked is the user message the agent sent the model, read from the runtime trace.
+That is the text the model under test saw, which is not always the case's command: a command handler builds the user message from the command, and may wrap it or leave fields of it out.
+When the trace carries no user message, the case's command is used instead.
+
+`ModelBasedJudge` renders the sections as text and sends it as the user message.
 For the judged refund case in <<stating-the-criterion>> the default user message is:
 
 [listing]
@@ -82,7 +86,7 @@ For the judged refund case in <<stating-the-criterion>> the default user message
 Criterion:
 the reply apologizes and states the refunded amount
 
-The user asked:
+The agent was asked:
 Order o_9 arrived broken. I want my money back.
 
 The agent replied:

@@ -22,11 +22,13 @@ import akka.javasdk.testkit.eval.Gate;
 import akka.javasdk.testkit.eval.Judge;
 import akka.javasdk.testkit.eval.JudgeAgent;
 import akka.javasdk.testkit.eval.ToolBindings;
+import akkajavasdk.components.agent.eval.AccountSupportAgent;
 import akkajavasdk.components.agent.eval.CrmClient;
 import akkajavasdk.components.agent.eval.Customer;
 import akkajavasdk.components.agent.eval.SupportAgent;
 import akkajavasdk.components.agent.eval.Ticket;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -41,6 +43,10 @@ import org.junit.jupiter.api.Test;
  * CRM knows before the cases run. It records nothing: the runner calls the agent and reads the tool
  * evidence from the trace the runtime wrote for the call.
  *
+ * <p>{@link AccountSupportAgent} is the same assistant with a command handler that takes a record.
+ * Its cases carry that record, so the customer asking is part of the case rather than of the
+ * question text.
+ *
  * <p>The model is mocked too, by a {@link TestModelProvider} that behaves like a competent one: it
  * looks a customer up when the question names one, reads their tickets when the question asks for
  * them, and answers without tools when there is nothing to look up. That is what makes the wiring
@@ -53,10 +59,13 @@ public class SupportAgentEvalTest extends TestKitSupport {
   // strips it, so expectations are written against the plain method names.
   private static final String GET_CUSTOMER = "SupportAgent_getCustomer";
   private static final String OPEN_TICKETS = "SupportAgent_openTickets";
+  private static final String ACCOUNT_GET_CUSTOMER = "AccountSupportAgent_getCustomer";
+  private static final String ACCOUNT_OPEN_TICKETS = "AccountSupportAgent_openTickets";
 
   private static final Pattern CUSTOMER_ID = Pattern.compile("cust_\\d+");
 
   private final TestModelProvider supportModel = new TestModelProvider();
+  private final TestModelProvider accountModel = new TestModelProvider();
   private final TestModelProvider judgeModel = new TestModelProvider();
   private final CannedCrmClient crm = new CannedCrmClient();
 
@@ -67,6 +76,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
     return TestKit.Settings.DEFAULT
         .withDependencyProvider(dependencies())
         .withModelProvider(SupportAgent.class, supportModel)
+        .withModelProvider(AccountSupportAgent.class, accountModel)
         .withModelProvider(JudgeAgent.class, judgeModel);
   }
 
@@ -99,43 +109,54 @@ public class SupportAgentEvalTest extends TestKitSupport {
   }
 
   /** One case with the mocked model. There is no gate, so the case itself must pass. */
-  private ExperimentRunner.CaseResult runOne(EvalCase evalCase) {
+  private ExperimentRunner.CaseResult runOne(EvalCase<String> evalCase) {
     return experimentRunner.cases(evalCase).agent(SupportAgent::ask).run().results().getFirst();
   }
 
   @BeforeEach
   public void mockTheModel() {
     supportModel.reset();
+    scriptTheModel(supportModel, GET_CUSTOMER, OPEN_TICKETS);
 
-    supportModel
+    // The same script for the agent whose command handler takes a record. Its tools carry that
+    // agent's name, and the customer id reaches the model in the user message the agent builds
+    // from the command.
+    accountModel.reset();
+    scriptTheModel(accountModel, ACCOUNT_GET_CUSTOMER, ACCOUNT_OPEN_TICKETS);
+  }
+
+  private static void scriptTheModel(
+      TestModelProvider model, String getCustomer, String openTickets) {
+
+    model
         .whenUserMessage(message -> customerId(message.content()).isPresent())
         .reply(
             message ->
                 new AiResponse(
-                    new ToolInvocationRequest(GET_CUSTOMER, arguments(message.content()))));
+                    new ToolInvocationRequest(getCustomer, arguments(message.content()))));
 
-    supportModel
+    model
         .whenUserMessage(message -> customerId(message.content()).isEmpty())
         .reply("Happy to help. Give me a customer id and I will look them up.");
 
     // A tool result comes back without the question that prompted it, so this stand-in decides
     // the follow-up from the record it just read: the ticket fixtures are cust_7. A real model
     // still has the question in its context and needs no such trick.
-    supportModel
+    model
         .whenToolResult(
-            result -> result.name().equals(GET_CUSTOMER) && result.content().contains("cust_7"))
+            result -> result.name().equals(getCustomer) && result.content().contains("cust_7"))
         .thenReply(
             result ->
                 new AiResponse(
-                    new ToolInvocationRequest(OPEN_TICKETS, "{\"customerId\":\"cust_7\"}")));
+                    new ToolInvocationRequest(openTickets, "{\"customerId\":\"cust_7\"}")));
 
-    supportModel
+    model
         .whenToolResult(
-            result -> result.name().equals(GET_CUSTOMER) && !result.content().contains("cust_7"))
+            result -> result.name().equals(getCustomer) && !result.content().contains("cust_7"))
         .thenReply(result -> new AiResponse("Customer record: " + result.content()));
 
-    supportModel
-        .whenToolResult(result -> result.name().equals(OPEN_TICKETS))
+    model
+        .whenToolResult(result -> result.name().equals(openTickets))
         .thenReply(result -> new AiResponse("Open tickets: " + result.content()));
   }
 
@@ -148,7 +169,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
     return "{\"customerId\":\"" + customerId(message).orElseThrow() + "\"}";
   }
 
-  Stream<EvalCase> curatedCases() {
+  Stream<EvalCase<String>> curatedCases() {
     return Stream.of(
         EvalCase.of(
             "customer-lookup",
@@ -254,6 +275,66 @@ public class SupportAgentEvalTest extends TestKitSupport {
     assertThat(calls.getFirst().arguments()).containsEntry("customerId", "cust_404");
     assertThat(calls.getFirst().error())
         .hasValueSatisfying(e -> assertThat(e).contains("cust_404"));
+  }
+
+  // ---- a command handler that takes its own type ----
+
+  @Test
+  public void aCommandOfItsOwnTypeIsSentToTheAgent() {
+    // The caller is part of the command, not of the question, so this case cannot be written as
+    // one string.
+    var ticketsOfTheCaller =
+        EvalCase.of(
+            "tickets-of-the-caller",
+            new AccountSupportAgent.Question("cust_7", "What am I waiting on?"),
+            Evaluators.shouldCallToolsInOrder("getCustomer", "openTickets"),
+            Evaluators.shouldCallToolWith("getCustomer", "customerId", "cust_7"),
+            Evaluators.replyShouldContain("card declined"));
+
+    var result =
+        experimentRunner
+            .cases(ticketsOfTheCaller)
+            .agent(AccountSupportAgent::ask)
+            .run()
+            .results()
+            .getFirst();
+
+    assertThat(result.passed()).withFailMessage(result::describe).isTrue();
+    // The case's command as text, which is its JSON for a command that is not a String.
+    assertThat(result.interaction().input())
+        .isEqualTo("{\"customerId\":\"cust_7\",\"text\":\"What am I waiting on?\"}");
+    // What the model saw: the user message the handler built from the command. A judge is asked
+    // about this rather than about the command.
+    assertThat(result.interaction().userMessage())
+        .isEqualTo("Customer cust_7 asks: What am I waiting on?");
+    assertThat(result.interaction().asked()).isEqualTo(result.interaction().userMessage());
+    assertThat(result.describe()).contains("PASS tool-order").contains("PASS tool-arguments");
+  }
+
+  @Test
+  public void typedCasesRunAsABatchBehindAGate() {
+    List<EvalCase<AccountSupportAgent.Question>> cases =
+        List.of(
+            EvalCase.of(
+                "who-am-i",
+                new AccountSupportAgent.Question("cust_1", "What name is my account under?"),
+                Evaluators.shouldCallToolWith("getCustomer", "customerId", "cust_1"),
+                Evaluators.shouldNotCallTools("openTickets"),
+                Evaluators.replyShouldContain("Ada Lovelace")),
+            EvalCase.of(
+                "my-open-tickets",
+                new AccountSupportAgent.Question("cust_7", "Anything still open on my account?"),
+                Evaluators.shouldCallTools("getCustomer", "openTickets"),
+                Evaluators.replyShouldContain("card declined")));
+
+    var report =
+        experimentRunner
+            .cases(cases)
+            .agent(AccountSupportAgent::ask)
+            .gate(Gate.passRateShouldBeAtLeast(1.0).and(Gate.targetShouldNotFail()))
+            .run();
+
+    assertThat(report.passed()).withFailMessage(report::render).isTrue();
   }
 
   // ---- mode 2: quality, one gated batch. Tag it and point it at a real model. ----

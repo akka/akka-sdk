@@ -15,6 +15,8 @@ import java.util.List;
  * @param modelCalls in call order
  * @param guardrails every guardrail evaluation, in order
  * @param duration from the start of the first command to the end of the last
+ * @param userMessage the text of the user message the agent sent the model in the first model call,
+ *     which is what the model saw; empty when the trace did not carry the messages
  * @param finalModelText the text of the last model response, before the agent mapped it into the
  *     reply; empty when the trace did not carry the messages
  */
@@ -23,6 +25,7 @@ public record AgentTrace(
     List<ModelCall> modelCalls,
     List<GuardrailResult> guardrails,
     Duration duration,
+    String userMessage,
     String finalModelText) {
 
   public AgentTrace {
@@ -30,9 +33,10 @@ public record AgentTrace(
     modelCalls = modelCalls == null ? List.of() : List.copyOf(modelCalls);
     guardrails = guardrails == null ? List.of() : List.copyOf(guardrails);
     duration = duration == null ? Duration.ZERO : duration;
+    userMessage = userMessage == null ? "" : userMessage;
     finalModelText = finalModelText == null ? "" : finalModelText;
   }
 
   public static final AgentTrace NONE =
-      new AgentTrace(List.of(), List.of(), List.of(), Duration.ZERO, "");
+      new AgentTrace(List.of(), List.of(), List.of(), Duration.ZERO, "", "");
 }

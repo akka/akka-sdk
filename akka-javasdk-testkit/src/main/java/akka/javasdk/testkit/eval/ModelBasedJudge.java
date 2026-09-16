@@ -37,8 +37,8 @@ public final class ModelBasedJudge implements Judge {
       """
       You judge whether an agent's reply meets a stated criterion.
 
-      You will be given the criterion, the message the user sent, the reply the agent produced,
-      and the tools it called to produce that reply. Score how fully the reply meets the
+      You will be given the criterion, the input the agent was given, the reply the agent
+      produced, and the tools it called to produce that reply. Score how fully the reply meets the
       criterion, between 0 (does not meet it) and 1 (fully meets it). Judge the criterion you
       were given and nothing else: a reply you would have worded differently still meets a
       criterion it satisfies.
@@ -128,11 +128,15 @@ public final class ModelBasedJudge implements Judge {
                 systemMessage(), userMessage.apply(criterion, interaction), modelConfigPath));
   }
 
-  /** The criterion and the interaction as text, in labeled sections. */
+  /**
+   * The criterion and the interaction as text, in labeled sections. What the agent was asked is
+   * {@link Interaction#asked()}: the user message the model saw when the trace carried it,
+   * otherwise the case's command.
+   */
   public static String defaultUserMessage(String criterion, Interaction interaction) {
     var text = new StringBuilder();
     text.append("Criterion:\n").append(criterion);
-    text.append("\n\nThe user asked:\n").append(interaction.userMessage());
+    text.append("\n\nThe agent was asked:\n").append(interaction.asked());
     text.append("\n\nThe agent replied:\n").append(interaction.reply());
     if (!interaction.toolCalls().isEmpty()) {
       text.append("\n\nTools called, in order:");

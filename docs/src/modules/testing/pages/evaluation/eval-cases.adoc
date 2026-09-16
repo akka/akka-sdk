@@ -1,5 +1,5 @@
 = Eval cases and evaluators
-:page-summary: An EvalCase carries the user message and its evaluators; the built-in evaluators check the tool calls, the reply and the spend of a turn, and are inconclusive when their evidence is absent.
+:page-summary: An EvalCase carries the command sent to the agent and its evaluators; the built-in evaluators check the tool calls, the reply and the spend of a turn, and are inconclusive when their evidence is absent.
 :page-when-to-use: Writing cases by hand and choosing what each one checks.
 :page-related: testing:evaluation/getting-started.adoc, testing:evaluation/judges.adoc, testing:evaluation/replay.adoc
 :page-persona: builder-developer, builder-ai-ml
@@ -20,11 +20,11 @@ link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/EvalCase.html[EvalCase] 
 | `id`
 | Names the case in the report. Unique within the suite.
 
-| `userMessage`
-| The message the agent receives. The runner turns it into the command with the mapping given to `agent(...)`, see xref:testing:evaluation/getting-started.adoc#first-case[Writing the first case].
+| `command`
+| What the agent's command handler receives: the user message as a `String`, or the handler's own type, such as a record with several fields. All cases of one experiment have the same command type, and the case names it: `List<EvalCase<String>>`, or `List<EvalCase<MyCommand>>` for a handler that takes `MyCommand`.
 
 | `recordedCalls`
-| The tool calls a recording carried, as data. The runner loads their results into the stubs through the `ToolBindings` given to it, see xref:testing:evaluation/replay.adoc#tool-bindings[Binding tools to stubs]. Empty for a case written by hand. `EvalCase.of(id, userMessage, evaluators...)` creates such a case.
+| The tool calls a recording carried, as data. The runner loads their results into the stubs through the `ToolBindings` given to it, see xref:testing:evaluation/replay.adoc#tool-bindings[Binding tools to stubs]. Empty for a case written by hand. `EvalCase.of(id, command, evaluators...)` creates such a case.
 
 | `evaluators`
 | The checks the turn must pass, as a list or as trailing arguments. Empty when the case only collects evidence. `withEvaluators(...)` returns the same case with more evaluators.
@@ -34,6 +34,10 @@ A case that throws while its recorded calls are loaded is reported as failed und
 The agent is not called.
 
 Each case runs in a fresh session, so no case can read the session memory of an earlier case.
+
+A model-based judge is asked about the user message the agent sent the model, which `Interaction.userMessage()` carries from the runtime trace.
+When the trace has no user message, the judge is asked about the case's command instead, as text: a `String` command as is, any other command as its JSON.
+`Interaction.asked()` returns whichever of the two applies.
 
 == Preparing the stubs
 
@@ -154,7 +158,7 @@ A regular expression that does not compile throws `PatternSyntaxException` when 
 [#custom-evaluators]
 == Custom evaluator
 
-A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator]: `name()` returns the name its results are reported under, and `evaluate(...)` receives the case and the `Interaction`, the reply and everything the runtime traced for the turn, and returns an `EvalResult`: a pass, a fail with a reason, or an inconclusive result.
+A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator]: `name()` returns the name its results are reported under, and `evaluate(...)` receives the case as `EvalCase<?>` and the `Interaction`, the reply and everything the runtime traced for the turn, and returns an `EvalResult`: a pass, a fail with a reason, or an inconclusive result.
 
 `RefundWithinTotal` is an evaluator that checks that the amount the agent passed to `issueRefund` does not exceed the total of the order.
 

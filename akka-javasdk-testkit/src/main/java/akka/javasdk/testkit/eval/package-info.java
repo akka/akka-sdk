@@ -2,8 +2,9 @@
  * Evaluation of an agent inside a {@code TestKitSupport} test. Cases run against the running
  * service and are scored on the reply and on the tool calls the runtime traced.
  *
- * <p>An {@link akka.javasdk.testkit.eval.EvalCase} has the user message and the evaluators the
- * reply and the tool calls are checked with. The built-in evaluators are in {@link
+ * <p>An {@link akka.javasdk.testkit.eval.EvalCase} has the command sent to the agent and the
+ * evaluators the reply and the tool calls are checked with. The command is the user message as a
+ * String, or the command handler's own type. The built-in evaluators are in {@link
  * akka.javasdk.testkit.eval.Evaluators}. The test prepares the mocked tools before the run. Cases
  * are written in Java, or derived from recorded production interactions by {@link
  * akka.javasdk.testkit.eval.EvalCaseParser}. A derived case carries the recorded tool calls and
