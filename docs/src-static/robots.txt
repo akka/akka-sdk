@@ -2,6 +2,9 @@ Sitemap: https://doc.akka.io/sitemap.xml
 Sitemap: https://doc.akka.io/sitemap-libraries.xml
 User-agent: *
 
+# unreleased documentation previews
+Disallow: /preview/
+
 # docs snapshots
 Disallow: /snapshots/
 Disallow: /libraries/akka-core/snapshot/
