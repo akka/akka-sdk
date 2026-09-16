@@ -110,6 +110,7 @@ CVE's
 CVEs
 cybercrime
 Datadog
+[Dd]atastores?
 DBs
 decisioning
 declaratively
@@ -143,15 +144,16 @@ docstrings
 Doctolib
 downscaling
 Droid
+[Dd]rillable
 DSRs
 DTDs
 Dynatrace
 effectful
 [Ee]mptyState
 enablement
+endPort
 Entra
 enums?
-endPort
 env
 etcd
 eval
@@ -287,6 +289,7 @@ migratable
 minInstances
 Ministral
 minSeverity
+misconfiguration
 misconfigurations
 misconfigured
 Mistral
