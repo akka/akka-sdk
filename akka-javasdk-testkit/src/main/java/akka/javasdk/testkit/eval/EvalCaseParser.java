@@ -44,9 +44,9 @@ import java.util.Map;
  * the tolerance. {@code tokens} is either a total or an object with {@code input} and {@code
  * output}.
  *
- * <p>{@code input} is the text an agent whose command handler takes a String is sent. For a handler
- * with its own command type, record {@code input} as the JSON of that command and name the type in
- * {@link #parse(Path, Class)}.
+ * <p>{@code input} is what the agent is sent. Record it as text for a command handler that takes a
+ * String. For a handler with its own command type, record it as the JSON of that command and pass
+ * the type to {@link #parse(Path, Class)}.
  */
 public final class EvalCaseParser {
 
@@ -61,8 +61,8 @@ public final class EvalCaseParser {
   private EvalCaseParser() {}
 
   /**
-   * Reads the JSONL file with {@link #DEFAULT_TOLERANCE}, as cases sending the recorded {@code
-   * input} text.
+   * Reads the JSONL file into cases that send the recorded {@code input} as text, with {@link
+   * #DEFAULT_TOLERANCE}.
    *
    * @throws IllegalArgumentException listing every line that does not parse, has no {@code input},
    *     or names a tool call without a name
@@ -72,29 +72,32 @@ public final class EvalCaseParser {
   }
 
   /**
-   * Reads the JSONL file, as cases sending the recorded {@code input} text. {@code tolerance}
-   * multiplies the recorded token and latency figures to set the budgets. {@code 1.0} holds a case
-   * to exactly what was recorded. Values below {@code 1.0} are rejected.
+   * Reads the JSONL file into cases that send the recorded {@code input} as text.
+   *
+   * @param tolerance multiplies the recorded token and latency figures to set the budgets. {@code
+   *     1.0} holds a case to exactly what was recorded. Values below {@code 1.0} are rejected
    */
   public static List<EvalCase<String>> parse(Path canonicalJsonl, double tolerance) {
     return parse(canonicalJsonl, String.class, tolerance);
   }
 
   /**
-   * Reads the JSONL file with {@link #DEFAULT_TOLERANCE}, as cases sending the recorded {@code
-   * input} read into the agent's command type.
+   * Reads the JSONL file with {@link #DEFAULT_TOLERANCE}.
    *
-   * @param commandType the agent command handler's parameter type. {@code String.class} takes the
-   *     recorded text, any other type is read from the recorded {@code input} JSON
+   * @param commandType the type the agent's command handler takes, which the recorded {@code input}
+   *     is deserialized to
    */
   public static <C> List<EvalCase<C>> parse(Path canonicalJsonl, Class<C> commandType) {
     return parse(canonicalJsonl, commandType, DEFAULT_TOLERANCE);
   }
 
   /**
-   * Reads the JSONL file, as cases sending the recorded {@code input} read into the agent's command
-   * type. {@code tolerance} multiplies the recorded token and latency figures to set the budgets.
-   * {@code 1.0} holds a case to exactly what was recorded. Values below {@code 1.0} are rejected.
+   * Reads the JSONL file.
+   *
+   * @param commandType the type the agent's command handler takes, which the recorded {@code input}
+   *     is deserialized to
+   * @param tolerance multiplies the recorded token and latency figures to set the budgets. {@code
+   *     1.0} holds a case to exactly what was recorded. Values below {@code 1.0} are rejected
    */
   public static <C> List<EvalCase<C>> parse(
       Path canonicalJsonl, Class<C> commandType, double tolerance) {
@@ -144,7 +147,6 @@ public final class EvalCaseParser {
     return new EvalCase<>(id, command, recorded, evaluators);
   }
 
-  /** The recorded input as the command the agent is sent. */
   private static <C> C command(JsonNode input, Class<C> commandType) {
     if (commandType == String.class) {
       var text = input.isValueNode() ? input.asText("") : "";

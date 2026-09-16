@@ -9,12 +9,12 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * One evaluation case: the command sent to the agent and the evaluators its reply and tool calls
- * are checked with.
+ * One evaluation case: the command sent to the agent and the evaluators to run against the agent's
+ * reply and tool calls.
  *
  * <p>The command is what the agent's command handler takes. It is a String for a handler that takes
  * the user message directly, or the handler's own type, such as a record with several fields. All
- * cases of one experiment have the same command type.
+ * cases of one experiment must have the same command type.
  *
  * <pre>{@code
  * EvalCase.of("tier", "Which tier is cust_1 on?", Evaluators.shouldCallTools("getCustomer"));
