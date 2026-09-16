@@ -9,3 +9,4 @@ Akka provides three kinds of testing.
 * *Evaluation* runs an agent through a fixed set of eval cases inside a TestKit test and checks each reply and the tool calls the runtime traced with built-in evaluators, a model judge and a gate.
 
 Start with xref:testing:unit.adoc[] to test one component at a time, xref:testing:integration.adoc[] to test the wiring, and xref:testing:evaluation/index.adoc[] to check an agent's tool use and answers.
+An evaluation whose cases are attacks is an xref:testing:evaluation/adversarial.adoc[adversarial test].

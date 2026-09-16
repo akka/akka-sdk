@@ -93,7 +93,7 @@ The agent replied:
 I am sorry the order arrived broken. I have refunded 49.99 to your card.
 
 Tools called, in order:
-- getOrder {orderId=o_9} -> {"id":"o_9","status":"delivered","totalCents":4999}
+- getOrder {orderId=o_9} -> {"id":"o_9","status":"delivered","totalCents":4999,"note":""}
 - issueRefund {orderId=o_9, amountCents=4999} -> {"orderId":"o_9","amountCents":4999,"reference":"ref_1"}
 ----
 

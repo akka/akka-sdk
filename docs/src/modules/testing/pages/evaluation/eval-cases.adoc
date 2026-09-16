@@ -154,6 +154,9 @@ The `String` forms of `replyShouldMatch` and `replyShouldNotMatch` compile the e
 The `Pattern` forms use the pattern as given, with its own flags.
 A regular expression that does not compile throws `PatternSyntaxException` when the case is created.
 
+`replyShouldNotContain`, `replyShouldNotMatch`, `replyShouldNotContainPaymentCard` and `replyShouldNotContainLuhnNumber` state what a reply must not carry.
+xref:testing:evaluation/adversarial.adoc[] builds cases from them to check an agent under attack.
+
 === Built-in budgets
 
 [cols="1,2,3"]
@@ -222,3 +225,4 @@ The report counts inconclusive results per evaluator label, and `Gate.passRateSh
 
 * xref:testing:evaluation/judges.adoc[]
 * xref:testing:evaluation/replay.adoc[] derives cases with the built-in evaluators from recordings.
+* xref:testing:evaluation/adversarial.adoc[] states what a breached reply looks like, with the same evaluators.
