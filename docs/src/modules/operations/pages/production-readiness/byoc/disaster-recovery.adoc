@@ -56,9 +56,9 @@ Which scenarios to drill live before launch is a joint decision made during the 
 |===
 | Scenario | Readiness | Akka recommends
 
+| <<crc-restore,Container Registry Config restore>> | Drillable today | Recommended (customer-led)
 | <<database-corruption,Database corruption / data recovery>> | Drillable today | Must drill
 | <<service-deletion,Service deletion and restore>> | Drillable today | Must drill
-| <<crc-restore,Container Registry Config restore>> | Drillable today | Recommended (customer-led)
 | <<region-failure,Full region failure and rebuild>> | Procedure documented | Recommended
 | <<az-failure,Single / multi-AZ failure>> | Procedure documented | Recommended
 | <<private-connectivity,Private connectivity failure>> | Procedure documented | Optional
@@ -67,8 +67,29 @@ Which scenarios to drill live before launch is a joint decision made during the 
 | <<chaos-vectors,Additional chaos vectors>> | Named in catalog | Defer
 |===
 
+[#crc-restore]
+== 1. Container Registry Config restore
+
+The ContainerRegistryConfig (CRC), the Kubernetes resource holding the customer's container registry credentials, is missing or its tokens are invalid for a namespace. Pods cannot pull their images and services in that namespace stop coming up.
+
+This is a fully customer-controlled scenario. Because the CRC carries the customer's own registry credentials and tokens, Akka does not intervene unless explicitly asked.
+
+.Recovery procedure
+[%collapsible]
+====
+[cols="2,1,5", options="header"]
+|===
+| Phase | Owner | Action
+
+| Detection | Customer | The customer sees services not coming back up in the console. Pod events surface image pull errors. The customer's own observability (minimum-instance alerts and similar) surfaces the failure.
+| Triage | Customer | The customer confirms the CRC is missing or its tokens are invalid in the affected namespace.
+| Resolution | Customer | The customer re-applies the correct CRC by re-issuing tokens, updating credentials, or restoring from their own configuration source. Pods retry image pulls and start successfully. Estimated time is minutes once the customer has the correct configuration on hand.
+| Escalation (only if needed) | Customer to Akka | If the customer cannot restore the CRC themselves, for example because of a suspected Akka operator bug, the customer raises a severity 1 incident. Akka runs a targeted Velero restore of the CRC.
+|===
+====
+
 [#database-corruption]
-== 1. Database corruption / data recovery
+== 2. Database corruption / data recovery
 
 Data in the customer's region is corrupted, lost, or rolled to an invalid state. Recovery restores the regional database to a known-good point in time.
 
@@ -101,7 +122,7 @@ Akka offers whole-database recovery via PITR. By default the database is single 
 ====
 
 [#service-deletion]
-== 2. Service deletion and restore
+== 3. Service deletion and restore
 
 An Akka service is hard-deleted from the cluster, either intentionally by Akka at the customer's request or by misconfiguration. The service resource is gone from the console.
 
@@ -124,27 +145,6 @@ Customer-initiated service deletion is disabled; service deletions are coordinat
 | Decision | Shared | Akka confirms the recovery scope: the service resource is restored, and its data in the regional database is unaffected and reachable once the service is back. The customer confirms restore intent and Akka proceeds.
 | Resolution | Akka | Akka runs a targeted Velero restore of the service's Kubernetes resource, verifies the service is recreated in the cluster, and verifies it is connected to its data in the regional shared database. Estimated time is minutes from the green-lit decision.
 | Customer-side recovery | Customer | The customer verifies the service is back in the console, validates the data is reachable, and resumes traffic.
-|===
-====
-
-[#crc-restore]
-== 3. Container Registry Config restore
-
-The ContainerRegistryConfig (CRC), the Kubernetes resource holding the customer's container registry credentials, is missing or its tokens are invalid for a namespace. Pods cannot pull their images and services in that namespace stop coming up.
-
-This is a fully customer-controlled scenario. Because the CRC carries the customer's own registry credentials and tokens, Akka does not intervene unless explicitly asked.
-
-.Recovery procedure
-[%collapsible]
-====
-[cols="2,1,5", options="header"]
-|===
-| Phase | Owner | Action
-
-| Detection | Customer | The customer sees services not coming back up in the console. Pod events surface image pull errors. The customer's own observability (minimum-instance alerts and similar) surfaces the failure.
-| Triage | Customer | The customer confirms the CRC is missing or its tokens are invalid in the affected namespace.
-| Resolution | Customer | The customer re-applies the correct CRC by re-issuing tokens, updating credentials, or restoring from their own configuration source. Pods retry image pulls and start successfully. Estimated time is minutes once the customer has the correct configuration on hand.
-| Escalation (only if needed) | Customer to Akka | If the customer cannot restore the CRC themselves, for example because of a suspected Akka operator bug, the customer raises a severity 1 incident. Akka runs a targeted Velero restore of the CRC.
 |===
 ====
 
