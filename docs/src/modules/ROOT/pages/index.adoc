@@ -105,5 +105,6 @@ Akka is a full-stack platform for agentic AI: developer experience, runtime, and
 [discrete]
 == More
 
+* https://akka.ai[akka.ai] — paste "install Akka from akka.ai" into any supported AI coding harness and it walks the install for you. See xref:getting-started:set-up-dev-env.adoc#_harness_support_matrix[harness support matrix] for the list of supported harnesses.
 * xref:ROOT:resources.adoc[Resources] — blogs, demos, webinars, training, and community links.
 * https://doc.akka.io/libraries/akka-dependencies/current/overview.html[Akka Libraries] — the Akka libraries for the JVM, in production for over a decade.

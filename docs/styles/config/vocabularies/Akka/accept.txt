@@ -11,6 +11,7 @@ Agentgateway
 Agrona
 agy
 AI's
+Aider
 AILuminate
 Aiven
 [Aa]kka
@@ -24,6 +25,7 @@ anonymized
 [Aa]nthropic
 [Aa]ntora
 (?i)API
+Antigravity
 APIs
 [Aa]rchitecting
 artifactId
@@ -55,6 +57,7 @@ byClassifier
 CA
 CA's
 CAs
+Cascade
 caSecret
 Cembaluk
 [Cc]hatbots
@@ -68,9 +71,12 @@ cleartext
 CLI's
 clientCertificate
 clientId
+Cline
 cloudName
 codegen
+Codeium
 Codex
+Cody
 commit
 comms
 [Cc]omposability
@@ -111,6 +117,7 @@ deserialize
 Deserializing
 dev
 devicesPerReplica
+Devin
 dialogs
 Dmitry
 DNS
@@ -121,6 +128,7 @@ Docstrings
 docstrings
 Doctolib
 downscaling
+Droid
 DSRs
 DTDs
 Dynatrace
@@ -141,10 +149,13 @@ expirationSeconds
 [Ee]xplainability
 externalSecret
 facto
+[Ff]ailback
+Factory
 failover
 fanout
 fetchable
 Fitbit
+Fleet
 focusable
 Garak
 gcp
@@ -200,6 +211,8 @@ jank
 Javadoc
 jmesPath
 Json
+Jules
+Junie
 JUnit
 JVM's
 (?i)JWT
@@ -212,6 +225,8 @@ Keycloak
 keyId
 keySets
 keysets?
+Kilo
+Kiro
 Kolesnikov
 kubectl
 kubelet
@@ -243,6 +258,7 @@ maxModelLen
 maxModels
 maxSurge
 maxUnavailable
+[Mm]cp
 memoized
 memoryPercent
 migratable
@@ -260,6 +276,7 @@ mutators
 mvnw
 namespace
 [Nn]amespaces?
+Neovim
 newname
 npm
 npx
@@ -357,6 +374,7 @@ remoting
 repartitions
 replayability
 replicatedRead
+Replit
 repo
 repoint
 repos
@@ -373,6 +391,7 @@ Rollout
 rollout
 rollup
 (?i)RPC
+Roo
 [Rr]ulesets?
 runbook
 Runbooks
@@ -385,6 +404,7 @@ runtimes
 SAST
 sbt
 (?i)Scala
+[Ss]caffolded
 schema
 scrypt
 SDKs
@@ -410,6 +430,7 @@ SLOs
 smallstep
 snapshotWhen
 Snyk
+Sourcegraph
 sourceType
 [Ss]plunk
 src
@@ -434,6 +455,7 @@ substring
 subtree
 Swiggy
 Szymanski
+Tabnine
 teardown
 Telecom
 [Tt]elemedicine
@@ -459,6 +481,7 @@ toolchain
 [Tt]oolsets?
 touchpoints
 traceSampling
+Trae
 transcoded
 [Tt]ranscoding
 [Tt]riage[ds]?
@@ -505,16 +528,20 @@ viewport
 viewports
 VMs
 VNet
+Void
 volumeMounts
 VPCs
-[Ww]alkthrough
+[Ww]alkthroughs?
+Warp
 Weaviate
 [Ww]hitepaper
+Windsurf
 winget
 workloadIdentity
 XLarge
 XSmall
 Yugabyte
+Zed
 Zolotko
 Zou
 [Zz]sh
