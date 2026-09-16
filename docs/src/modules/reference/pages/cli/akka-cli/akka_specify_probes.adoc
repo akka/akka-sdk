@@ -1,26 +1,18 @@
-= akka projects instance-types list
+= akka specify probes
 
-List instance types this project may deploy with.
+[Incubating] List, run, and test the probes that examine a system.
 
 == Synopsis
 
-The `akka project instance-types list` command shows the service instance types the project is allowed to use, resolved from the org-config hierarchy.
-The row marked DEFAULT is what a service gets when it is deployed without `--instance-type`: the organization's configured default, or the platform default when the organization sets none.
-
-Optional `--region` and `--service` refine the resolution to a specific deployment region or service within the project.
-
-----
-akka projects instance-types list [flags]
-----
+[Incubating] A probe answers one question about a system a specification is being derived from.
+'list' shows which probes can reach the system in front of you and which cannot, with the reason.
+'run' executes a selection and records what it found.
+'test' runs one probe and prints its raw exchange, for debugging a probe you wrote.
 
 == Options
 
 ----
-  -h, --help             help for list
-      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string   project to use if not using the default configured project
-      --region string    Refine resolution to a specific deployment region
-      --service string   Refine resolution to a specific service in the project
+  -h, --help   help for probes
 ----
 
 == Options inherited from parent commands
@@ -41,7 +33,11 @@ akka projects instance-types list [flags]
 
 == SEE ALSO
 
-* link:akka_projects_instance-types.html[akka projects instance-types]	 - Inspect the service instance types available to a project.
+* link:akka_specify.html[akka specify]	 - [Incubating] Initialize and manage AI-assisted Akka development projects.
+* link:akka_specify_probes_approve.html[akka specify probes approve]	 - Record that a declared probe's command may run.
+* link:akka_specify_probes_list.html[akka specify probes list]	 - Show which probes can reach this system, and which cannot.
+* link:akka_specify_probes_run.html[akka specify probes run]	 - Run the selected probes and record what they found.
+* link:akka_specify_probes_test.html[akka specify probes test]	 - Run one probe and print what it was asked and what it answered.
 
 [discrete]
 

@@ -12,6 +12,13 @@ Current versions
 
 == September 2026
 
+* Akka CLI 3.0.74
+- Network policy support
+- Support for Google's Antigravity
+- Fix for resolved default in instance-types list
+- Fix for nil pointer on regional resource export
+- Workload identity fixes
+
 * xref:release-notes/runtime/1.6.16.adoc[Akka Runtime 1.6.16]
 - View and agent fixes, a log severity change for view update failures, and dependency updates for reported vulnerabilities
 

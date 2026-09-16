@@ -4,53 +4,53 @@
 
 include::ROOT:partial$include.adoc[]
 
-What Akka expects of customer applications before going live in BYOC (Bring Your Own Cloud), the deployment model where Akka Automated Operations runs inside the customer's cloud account. The platform handles a substantial portion of the operational surface, and Akka protects the deployment within those bounds, but a robust production system is a shared outcome, and the items below sit on the customer side of that line.
+What Akka expects of customer applications before going live in BYOC (Bring Your Own Cloud), the deployment model where Akka Automated Operations runs inside the customer's cloud account. Akka handles most of the operational surface and protects the deployment within those bounds. Production is still a shared outcome; the items below are the customer's side of that line.
 
 == Overview
 
 [discrete]
 === How to use this page
 
-This page is a guideline, not the final checklist: the authoritative version for your application is the one you and your Akka team build and manage together.
+This page is a guideline. The authoritative checklist for your application is the one you build with your Akka team.
 
-Walk this page before going live, using the at-a-glance below as the quick entry point and the detailed checklists for the specifics. The items are a baseline drawn from what Akka has found necessary across BYOC deployments; each application should add anything specific to its own request flows and failure modes. Modifications or removals are also possible but should be discussed with your Forward Deployed Engineer (FDE), the named Akka engineer assigned to your account, so the original rationale can be shared and the change evaluated jointly.
+Walk this page before going live: use the at-a-glance below as the quick entry point and the detailed checklists for specifics. The items are a baseline drawn from BYOC deployments; add anything specific to your request flows and failure modes. Discuss modifications or removals with your Forward Deployed Engineer (FDE), the named Akka engineer assigned to your account, so the original rationale is shared and the change is evaluated jointly.
 
-Reaching the reliability and availability your deployment is built for depends on working these items through with your Akka team; your agreement and the Federation Plane SLA Policy remain the authoritative statement of what is committed.
+The agreement and the Federation Plane SLA Policy are the authoritative statement of what is committed. Reaching the reliability and availability of your deployment depends on working these items through with your Akka team.
 
-As the customer-side complement to the Shared Responsibility Model, each item is yours to verify, and Akka recommends not advancing to production until each is appropriately covered. Akka strongly encourages engaging your FDE and Akka's customer success and support teams (mailto:support@akka.io[support@akka.io]) throughout this preparation to make go-live as smooth as possible, although the work can also be completed independently.
+Each item is yours to verify. Akka recommends not advancing to production until each is covered. Engage your FDE and Akka's customer success and support teams (mailto:support@akka.io[support@akka.io]) throughout the work, or complete it independently.
 
-Items also split across two levels. Some are *region-level*: established for the region and shared by every application running on it, much of disaster recovery, backups, and baseline platform alerting is operational and lives here. Others are *application-level*: handled per service, such as sizing, application observability, and rollback paths. This page lists both together; the tailored checklist your Akka team builds with you sorts each item to the right level, so region-level work is not repeated for every application, though it still recurs on its own cadence to stay current.
+Items split across two levels. *Region-level* items are established once for the region and shared by every application running on it (disaster recovery, backups, baseline platform alerting). *Application-level* items are handled per service (sizing, application observability, rollback paths). This page lists both; your Akka team's tailored checklist assigns each item to the right level, so region-level work is not repeated per application, though it still recurs on its own cadence.
 
-Akka Automated Operations runs the platform end-to-end inside your cloud account: runtime, region installation, scaling, patching, observability of the platform itself, backups, and the operational rituals around them. The items on this page are the customer-side preparation that complements that work, so production is reliable from day one. Your FDE walks through the principal items ahead of go-live.
+Akka Automated Operations runs the platform end-to-end inside your cloud account: runtime, region installation, scaling, patching, platform observability, backups, and the operational rituals around them. The items on this page are the customer-side complement. Your FDE walks the principal items before go-live.
 
-This page targets the typical *Day 2 Ops* engagement (1 dev region + 1 prod region, single prod region with cold-rebuild DR (Disaster Recovery), the plan and procedures for restoring service after a region or platform-level outage). The final section covers the additional requirements that apply to the *Business Continuity* tier (multi-region with cross-region failover).
+This page targets the *Day 2 Ops* engagement (1 dev region + 1 prod region, single prod region with cold-rebuild DR (Disaster Recovery)). The final section covers the additional requirements for the *Business Continuity* tier (multi-region with cross-region failover).
 
 [NOTE]
 .*Tier note*
 ====
-If your business requires rapid, automated cross-region failover, Day 2 Ops is not the right tier. DR at Day 2 is a cold rebuild, the recovery window is on the order of hours, driven by data-export frequency and rebuild time. Confirm this with the business early.
+If the business requires rapid, automated cross-region failover, Day 2 Ops is not the right tier. DR at Day 2 is a cold rebuild; recovery is on the order of hours, driven by data-export frequency and rebuild time. Confirm with the business early.
 ====
 
 .*At a glance, what we ask of you*
 [NOTE]
 ====
-. *Size with us; capture the result in writing.* The FDE works through the sizing exercise with you once. Cluster shape, broker capacity, and dev/prod parity should live in version control alongside your descriptors.
-. *Wire your observability.* Logs, metrics, and traces flow through your enterprise platform via the Akka-supplied exporter. Akka cannot see your application data, so this responsibility sits with the customer, and it is what allows your team and your on-call to answer "is the system healthy?".
-. *Make CI/CD routine, including rollback.* Image rollback is the most commonly rehearsed path. Descriptor changes, JWT (JSON Web Token) rotations, and partial migrations require rehearsed rollback paths as well.
-. *Test under stress, not just happy path.* Load, soak, spike, chaos, run them against a realistically-sized dev region before production traffic hits. Cheap to do, expensive to skip.
-. *Rehearse recovery.* DR is typically a two-session exercise: a tabletop covering scenarios, then a live simulation of the scenario(s) the customer and Akka jointly agree matter most. Business Continuity adds cross-region failover and failback drills on top.
+. *Size with Akka; capture the result in writing.* The FDE runs the sizing exercise once. Cluster shape, broker capacity, and dev/prod parity live in version control alongside your descriptors.
+. *Wire your observability.* Logs, metrics, and traces flow to your enterprise platform via the Akka-supplied exporter. Akka cannot see your application data, so observability is yours; it is what lets your team and on-call answer "is the system healthy?".
+. *Make CI/CD routine, including rollback.* Image rollback is the most commonly rehearsed path. Descriptor changes, JWT (JSON Web Token) rotations, and partial migrations need rehearsed rollback paths too.
+. *Test under stress, not just happy path.* Run load, soak, spike, and chaos tests against a realistically-sized dev region before production traffic.
+. *Rehearse recovery.* DR is a two-session exercise: a tabletop covering scenarios, then a live simulation of the scenarios the customer and Akka agree matter most. Business Continuity adds cross-region failover and failback drills.
 . *Sign off explicitly.* A single named owner (an individual or a designated body such as a go-live board) declares the application production-ready.
 ====
 
 [NOTE]
 .*Akka's side*
 ====
-Akka runs a parallel internal pre-production validation against the platform-side commitments captured in the RACI: backups, replication, observability stack, baseline regional alerts, certificate monitoring, and similar. This page covers the customer-side complement; the two are designed to pair.
+Akka runs a parallel internal pre-production validation against the platform-side commitments in the RACI: backups, replication, observability stack, baseline regional alerts, certificate monitoring. This page is the customer-side complement; the two pair together.
 ====
 
 == Architecture and design review
 
-Akka reviews your application's high-level architecture and design so we understand the whole system, not isolated snippets, and can guide it toward production. Do this mid-stream, not only right before go-live, so the findings can still shape the build.
+Akka reviews your application's high-level architecture and design to understand the whole system, not isolated snippets, and to guide it toward production. Run this mid-stream, not just before go-live, so findings can still shape the build.
 
 [cols="1,3", options="header"]
 |===
@@ -278,7 +278,7 @@ Akka instruments the platform with its own observability stack and runs baseline
 
 == Non-functional testing
 
-Run all of these against the dev region, sized realistically. Without realistic dev-region sizing, results are meaningless.
+Run these against the dev region, sized realistically. Without realistic sizing, results are meaningless.
 
 .*Detailed checklist*
 [%collapsible]
@@ -349,20 +349,20 @@ Run all of these against the dev region, sized realistically. Without realistic 
 [discrete]
 ==== Disaster recovery drills
 
-Without multi-region failover, DR is a cold rebuild, and rehearsing it is the single most important exercise at this tier.
+Without multi-region failover, DR is a cold rebuild. Rehearsing it is the most important exercise at this tier.
 
-A DR rehearsal is worth as much for what it surfaces as for the recovery itself. Walking a real recovery end-to-end is where teams find the gaps that would otherwise appear mid-incident, e.g. who owns each step, a firewall rule that has to be opened for a rebuilt database, a data-export destination that was assumed rather than verified, or access that no one currently holds. There are many possible scenarios, and Akka works with you on the most prevalent so that you can be prepared.
+A DR rehearsal is worth as much for what it surfaces as for the recovery itself. Walking a real recovery end-to-end surfaces the gaps that would otherwise appear mid-incident: who owns each step, a firewall rule that must be opened for a rebuilt database, a data-export destination that was assumed rather than verified, or access no one currently holds. Akka works with you on the most prevalent scenarios.
 
-Start with a tabletop: walk the failure scenarios end-to-end, confirm who does what, and capture the prerequisites and gaps. From there, choose the scenario(s) that matter most and exercise them live.
+Start with a tabletop: walk failure scenarios end-to-end, confirm who does what, capture prerequisites and gaps. Then exercise the scenarios that matter most live. The xref:operations:production-readiness/byoc/disaster-recovery.adoc[disaster recovery scenario catalog] is the detailed reference the tabletop walks through.
 
 * [ ] DR tabletop run with Akka: scenarios walked end-to-end, ownership of each step confirmed, prerequisites and gaps captured (network/firewall changes, data-export destinations, access, and the like)
-* [ ] The most important scenario(s) from the tabletop exercised live, with gaps fed back and re-tests scheduled
+* [ ] The most important scenarios from the tabletop exercised live, with gaps fed back and re-tests scheduled
 * [ ] DR runbook captured from the exercise: declaration criteria, data restore, region rebuild, cutover, verification
 
 [discrete]
 ==== Rollback testing
 
-Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and partial data migrations frequently are not. Incidents tend to extend significantly when those rollback paths have not been exercised.
+Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and partial data migrations often are not. Incidents extend when those rollback paths are unrehearsed.
 
 Rehearse the paths your application relies on, at least:
 
@@ -384,7 +384,7 @@ Rehearse the paths your application relies on, at least:
 
 == Operational readiness (often missed)
 
-These sit in the cracks between teams and are the most commonly skipped. They are baseline at Day 2 Ops, and Business Continuity builds on top of that baseline.
+These fall between teams and are the most commonly skipped. They are baseline at Day 2 Ops; Business Continuity builds on that baseline.
 
 [cols="1,3", options="header"]
 |===
@@ -421,7 +421,7 @@ These sit in the cracks between teams and are the most commonly skipped. They ar
 [discrete]
 ==== Runbook coverage
 
-Walk the alert list and the dependency list; every plausible failure should have a runbook. Confirm runbooks exist for at least:
+Every plausible failure needs a runbook. Confirm runbooks exist for at least:
 
 * [ ] Prod-region cold rebuild
 * [ ] Broker outage
@@ -454,7 +454,7 @@ Walk the alert list and the dependency list; every plausible failure should have
 
 == Compliance and governance
 
-Not every customer is regulated, but where you are, these are the items auditors and regulators ask for. Consider each; skip only with a documented reason.
+Where you are regulated, these are the items auditors and regulators ask for. Consider each; skip only with a documented reason.
 
 [cols="1,3", options="header"]
 |===
@@ -476,7 +476,7 @@ Not every customer is regulated, but where you are, these are the items auditors
 [discrete]
 ==== Vendor and dependency continuity
 
-For governance and audit, document the continuity posture of each third-party dependency; the operational response runbooks live under Operational readiness.
+Document the continuity posture of each third-party dependency. Operational response runbooks live under Operational readiness.
 
 * [ ] Every external dependency (LLM provider, message broker, and the like) has a documented fallback or an explicitly accepted risk
 * [ ] Akka control-plane outage understood and documented: applications keep running; deploys and control-plane operations pause
@@ -485,7 +485,7 @@ For governance and audit, document the continuity posture of each third-party de
 ==== Compliance evidence
 
 * [ ] Regulatory evidence scenario rehearsed end-to-end: for a specific agent decision from N months ago, produce the prompt, model version, guardrail verdict, and tool authorization in the format your regulator accepts
-* [ ] Gaps surfaced in the rehearsal closed before launch
+* [ ] Gaps from the rehearsal closed before launch
 * [ ] Akka's compliance artifacts located for your own evidence pack (SOC 2 / SOC 3, penetration-test summary, subprocessor list via trust.akka.io)
 
 [discrete]
@@ -504,23 +504,23 @@ For governance and audit, document the continuity posture of each third-party de
 
 == Multi-region (Business Continuity tier)
 
-The sections above cover Day 2 Ops with a single prod region. For the Business Continuity tier (multi-region with cross-region failover), the following requirements layer on top of those above; they are not a replacement.
+The sections above cover Day 2 Ops with a single prod region. For the Business Continuity tier (multi-region with cross-region failover), the requirements below layer on top; they do not replace those above.
 
 [IMPORTANT]
 .*Tier requirement*
 ====
-Akka reads from both regions, so cross-region failover is typically very fast, often sub-minute. Replication lag for the most recent writes is driven mostly by overall system load rather than by a tunable platform setting. The bullets below cover the application-side responsibilities that need to be in place to operate correctly in a multi-region setup.
+Akka reads from both regions, so cross-region failover is fast (often sub-minute). Replication lag on recent writes is driven by overall system load, not a tunable platform setting. The bullets below are the application-side responsibilities needed to operate correctly in a multi-region setup.
 ====
 
 [NOTE]
 .*Availability level and replication mode*
 ====
-Availability comes in levels; choose per service against its needs.
+Choose availability level per service.
 
-* *Single region, multiple availability zones*: the baseline, resilient to the loss of an availability zone. On Akka-operated infrastructure, high availability across zones is the default.
-* *Multi-region, replicated*: the highest-availability posture Akka offers, resilient to the loss of an entire region, with geographic failover and low-latency local access (xref:concepts:multi-region.adoc[]).
+* *Single region, multiple availability zones*: baseline. Resilient to loss of an AZ. High availability across zones is the default on Akka-operated infrastructure.
+* *Multi-region, replicated*: highest availability. Resilient to loss of an entire region, with geographic failover and low-latency local access (xref:concepts:multi-region.adoc[]).
 
-Within multi-region, the replication mode set per service determines the failover behavior. The modes, replicated writes, and replicated reads with a request-region or pinned-region primary, along with their consistency and switch-over semantics, are defined in xref:concepts:multi-region.adoc[].
+Within multi-region, the replication mode set per service determines failover behavior. The modes (replicated writes; replicated reads with a request-region or pinned-region primary) and their consistency and switch-over semantics are defined in xref:concepts:multi-region.adoc[].
 
 Single-region (not replicated) has no cross-region failover; recovery is a cold rebuild, the Day 2 Ops tier. Operational setup is in xref:operations:regions/index.adoc[].
 ====
@@ -558,19 +558,19 @@ Single-region (not replicated) has no cross-region failover; recovery is a cold 
 Before flipping prod traffic on:
 
 .*Required sign-offs*
-Gather the sign-offs your application and organization call for, commonly architecture, security (CISO / InfoSec), compliance (if regulated), SRE / platform (runbook tested, on-call ready), FinOps (cost forecast accepted), the product owner (accepting the SLOs, including the recovery window), and the DR tabletop plus its live simulation (or the cross-region failover drill at Business Continuity). Which apply depends on the application and the organization.
+Gather the sign-offs your application and organization require: architecture, security (CISO / InfoSec), compliance (if regulated), SRE / platform (runbook tested, on-call ready), FinOps (cost forecast accepted), the product owner (accepting the SLOs and recovery window), and the DR tabletop plus its live simulation (or the cross-region failover drill at Business Continuity).
 
 * [ ] *Final go/no-go verification:* the named go/no-go owner confirms every item on this checklist is satisfied, and Akka reviews and confirms that readiness with them before production traffic is enabled
 
 [IMPORTANT]
 .*The gate*
 ====
-A single named owner (an individual or a designated body such as a go-live board) is accountable for the application end-to-end and has explicitly approved its readiness for production. Without that owner, the checklist becomes an aggregate of assumed readiness in which each party presumes coverage by another.
+A single named owner (individual or designated body such as a go-live board) is accountable end-to-end and has explicitly approved production readiness. Without one, the checklist becomes assumed readiness in which each party presumes another has covered it.
 ====
 
 == Day-1 and post-launch readiness
 
-Going live is the start, not the finish. These items carry the launch through its first hours and weeks: what success looks like, how the team watches closely during hypercare, and how early findings feed back into the work.
+These items carry the launch through its first hours and weeks: success criteria, hypercare coverage, and how early findings feed back into the work.
 
 === Launch criteria
 
@@ -591,13 +591,13 @@ Going live is the start, not the finish. These items carry the launch through it
 
 Three recurring failure modes worth identifying early:
 
-. *Sizing assumptions remain undocumented.* When traffic profiles change or staff transition, subsequent capacity decisions have no recorded baseline. Capture inputs, assumptions, and resulting cluster shape in version control alongside descriptors.
-. *DR and chaos drills are scheduled and then repeatedly deferred.* Recurring deferrals can extend planned exercises by many months. Establish a recurring calendar entry, assign a named owner or team, and treat skipped drills as a sign-off blocker for the next release.
-. *Rollback procedures cover code but not configuration.* Image rollback is commonly rehearsed. Descriptor changes, JWT rotations, and partial data migrations frequently are not, and that is where incidents extend significantly.
+. *Sizing assumptions remain undocumented.* When traffic profiles change or staff transition, capacity decisions have no recorded baseline. Capture inputs, assumptions, and cluster shape in version control alongside descriptors.
+. *DR and chaos drills are scheduled and repeatedly deferred.* Deferrals extend planned exercises by months. Set a recurring calendar entry, assign a named owner, and treat skipped drills as a sign-off blocker for the next release.
+. *Rollback procedures cover code but not configuration.* Image rollback is commonly rehearsed; descriptor changes, JWT rotations, and partial data migrations often are not, and that is where incidents extend.
 
-The most commonly omitted requirement is a single named owner of the application (an individual or a designated body), accountable for production readiness end-to-end and with the authority to declare readiness or identify remaining gaps.
+The most commonly omitted requirement is a single named owner of the application (individual or designated body), accountable for production readiness end-to-end and authorized to declare readiness or identify remaining gaps.
 
 [NOTE]
 ====
-This page is part of the BYOC Shared Responsibility Model and is maintained as a living reference, updated periodically as Akka's platform and operational practices evolve. To receive notifications of material updates, email mailto:support@akka.io[support@akka.io].
+This page is part of the BYOC Shared Responsibility Model and is updated as Akka's platform and operational practices evolve. To receive notifications of material updates, email mailto:support@akka.io[support@akka.io].
 ====

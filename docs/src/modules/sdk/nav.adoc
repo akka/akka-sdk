@@ -4,6 +4,7 @@
 *** xref:sdk:enforced-mode.adoc[]
 *** xref:sdk:a-la-carte-mode.adoc[]
 *** xref:sdk:ai-coding-assistant.adoc[]
+*** xref:sdk:register-mcp.adoc[Register the Akka MCP server]
 ** xref:sdk:components/index.adoc[]
 *** xref:sdk:agents.adoc[Agents]
 **** xref:sdk:agents/prompt.adoc[Prompts]

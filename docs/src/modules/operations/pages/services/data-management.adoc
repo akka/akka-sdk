@@ -9,7 +9,7 @@ Akka allows exporting and importing data to and from your services.
 * Migrating data out of Akka
 * Disaster recovery - note, Akka already backs up all data for disaster recovery purposes
 
-Akka exports/imports data to/from local cloud object stores. If your service is deployed to an AWS region, then you can export/import data to/from S3, if GCP, then to/from GCS, and if Azure, then to/from Azure Blob Storage. Event sourced entities and value entities are supported, however at present views are not supported.
+Akka exports/imports data to/from local cloud object stores. If your service is deployed to an AWS region, then you can export/import data to/from S3, if GCP, then to/from GCS, and if Azure, then to/from Azure Blob Storage. Event sourced entities are supported, however at present views are not supported.
 
 The export format can either be protobuf or line separated JSON.
 
@@ -288,7 +288,7 @@ akka service data export assets --s3-secret my-credentials \
 
 The format of the export is controlled using the `--format` flag, which can either be `protobuf` or `json`. The default is `protobuf`. Additionally, the compression algorithm that is used to compress/decompress the export can be specified using the `--compression` flag, which can either be `gzip` or `none`, with the default being `gzip`.
 
-To control what gets exported, the `--include-event-sourced-entities` and `--include-value-entities` flags can be used.
+The `--include-event-sourced-entities` flag is required. The export command fails without exporting anything if it is omitted.
 
 By default, the export will be run synchronously, displaying the progress of the export as it runs. Cancelling the export command will not stop the export, it will continue to run in the background. The export command can be run asynchronously by passing the `--async` flag.
 
@@ -372,7 +372,7 @@ akka service data import assets --platform-managed \
 
 === Importing from S3, GCS or Azure Blob Storage
 
-The names of the files to import can either be specified explicitly, by passing `--event-sourced-entity-object`, `--event-sourced-entity-snapshot-object` and/or `--value-entity-object` flags, or Akka can use the default filenames that it selects when creating an export. In the latter case, `--s3-object-prefix`, `--gcs-object-prefix`, and `--abs-object-prefix` can be used, and `--include-event-sourced-entities` and `--include-value-entities` can be used to control which export types Akka will look for.
+The names of the files to import can either be specified explicitly, by passing `--event-sourced-entity-object` and `--event-sourced-entity-snapshot-object` flags, or Akka can use the default filenames that it selects when creating an export. In the latter case, the `--include-event-sourced-entities` flag is required, so Akka knows to look for the default event sourced entity object. `--s3-object-prefix`, `--gcs-object-prefix`, and `--abs-object-prefix` can be used to prepend a prefix to those default filenames.
 
 The flags for specifying credentials and object names specific to S3, GCS, and Azure Blob Storage are the same as for exporting.
 

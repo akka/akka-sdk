@@ -32,10 +32,12 @@ akka specify init [directory] [flags]
 == Options
 
 ----
-      --agent string       AI agent to configure (claude-code, cursor, vscode-copilot, generic). (default "claude-code")
-  -h, --help               help for init
-      --skip-commands      Skip slash-command installation (use when commands are provided by a plugin).
-      --skip-token-check   Skip the Maven resolver/token check (for scripted or pre-provisioned environments).
+      --agent string             AI agent to configure (agy, claude-code, cursor, vscode-copilot, generic). (default "claude-code")
+      --channel string           Release channel for AI marketplace + constitution: stable (default; blessed tag) or edge (main branch).
+  -h, --help                     help for init
+      --marketplace-ref string   Override AI marketplace git ref (branch, tag, or commit SHA).
+      --skip-commands            Skip slash-command installation (use when commands are provided by a plugin).
+      --skip-token-check         Skip the Maven resolver/token check (for scripted or pre-provisioned environments).
 ----
 
 == Options inherited from parent commands

@@ -20,6 +20,8 @@ akka specify mode [enforced|a-la-carte] [flags]
 == Options
 
 ----
+      --allows string            ask whether a named command may be run under the effective mode; exits 1 when it may not
+      --as-engine                ask as the engine carrying the command out as part of its sequence, rather than as a person invoking it
       --dir string               project directory (default: current)
       --exit-conditions string   in à-la-carte mode, whether to 'honor' or 'ignore' existing exit conditions
   -h, --help                     help for mode
