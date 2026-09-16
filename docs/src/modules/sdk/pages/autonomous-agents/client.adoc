@@ -57,6 +57,8 @@ componentClient
 
 IMPORTANT: When you manage tasks and agents separately, you are responsible for the agent's lifecycle. Call `terminate()` when an agent is permanently done. The `runSingleTask` shortcut handles this automatically. The explicit `assignTasks` flow does not. Idle agents are passivated automatically to release memory, and reactivates transparently on the next command (e.g. `assignTask`). An agent that holds access to a shared backlog stays resident rather than passivating, so it does not miss new claimable tasks pushed to it.
 
+Termination is permanent for that instance id. A stopped agent instance rejects `resume()`, task assignment, and any other command with an error. To retry the work, start a new agent instance with a new instance id, do not reuse the old one. Terminating an agent does not apply any result its current iteration was still producing, so a task the agent was actively working on can be left `IN_PROGRESS` rather than reaching a terminal state. Because a task is a separate entity from the agent, an orphaned task can still be resolved directly, for example by calling `fail(...)` on it through `forTask(...)`, independent of the terminated agent instance.
+
 == Task lifecycle operations
 
 Beyond `create` and `get`, the `forTask(...)` client exposes the operations that drive a task through its lifecycle: `assign`, `complete`, and `fail`. The runtime calls these on the agent's behalf as it picks up, completes, or fails tasks during iteration. Application code calls the same operations when an external actor (typically a human) drives a task that no agent is assigned to. See xref:sdk:autonomous-agents/capabilities.adoc#external-input[External input] for the human-approval pattern that uses them end to end.
@@ -93,6 +95,8 @@ The task transitions to `FAILED`. Any dependents are cancelled automatically.
 == Suspend and resume
 
 A running agent can be suspended and later resumed. While suspended, the agent stops iterating: it will not start new model calls or process queued tasks. Tasks already assigned remain in the queue and are processed when the agent resumes.
+
+Suspend takes effect at the next iteration boundary. A single iteration can include several model calls and tool-call rounds before it completes, and suspending during an iteration does not interrupt that iteration, it only prevents the next one from starting. If the current iteration reaches a result that satisfies the task, the task still completes normally even though the agent is suspended. To stop a task without waiting for its current iteration to finish, call `terminate()` instead.
 
 [source,java,indent=0]
 ----
