@@ -16,6 +16,9 @@ import java.lang.annotation.Target;
  *
  * <p>For a custom evaluator, the report adds {@link Evaluators#CUSTOM_PREFIX} to the label. The
  * label must not start with that prefix.
+ *
+ * <p>Labels must be unique across all evaluators in an experiment. The rule is per class, not per
+ * instance.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

@@ -74,10 +74,9 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 === Evaluator labels
 
 Every evaluator class carries an `@EvalLabel`: the label used in the report to group its results.
-A built-in evaluator uses its label as is, for example `tools`.
-A custom evaluator gets the `custom-eval:` prefix, for example `custom-eval:refund-within-total`.
-The prefix keeps custom results apart from built-in results.
-A case refuses an evaluator whose class has no `@EvalLabel`.
+A built-in evaluator uses its label as is, for example `tools`. A custom evaluator gets the `custom-eval:` prefix,
+for example `custom-eval:refund-within-total`. The prefix keeps custom results apart from built-in results.
+A case refuses an evaluator without a `@EvalLabel`. Labels must be unique across all evaluators in an experiment. The rule is per class, not per instance.
 
 `Gate.passRateShouldBeAtLeast(evaluatorClass, minimumRate)` takes the evaluator's class and reads the label from it.
 The built-in classes are nested in `Evaluators`, and the tables below list each one next to its label.

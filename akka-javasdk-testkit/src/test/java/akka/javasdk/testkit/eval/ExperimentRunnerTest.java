@@ -91,6 +91,14 @@ class ExperimentRunnerTest {
     }
   }
 
+  @EvalLabel("no-apology")
+  private record AlsoNoApology() implements Evaluator {
+    @Override
+    public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+      return EvalResult.pass();
+    }
+  }
+
   @EvalLabel("custom-eval:refusal")
   private record PrefixedLabel() implements Evaluator {
     @Override
@@ -632,6 +640,52 @@ class ExperimentRunnerTest {
     assertThatThrownBy(() -> Gate.passRateShouldBeAtLeast(PrefixedLabel.class, 1.0))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("This prefix is reserved");
+  }
+
+  @Test
+  void twoEvaluatorsWithTheSameLabelAreRefusedWhenTheExperimentIsBuilt() {
+    var target = targetThat("done");
+
+    assertThatThrownBy(
+            () ->
+                experiment(
+                    target, EvalCase.of("c", "a question", new NoApology(), new AlsoNoApology())))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("share the same @EvalLabel \"no-apology\"");
+
+    assertThatThrownBy(
+            () ->
+                experiment(
+                    target,
+                    EvalCase.of("c1", "a question", new NoApology()),
+                    EvalCase.of("c2", "another question", new AlsoNoApology())))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("share the same @EvalLabel \"no-apology\"");
+
+    assertThatThrownBy(
+            () ->
+                ExperimentRunner.against(
+                    new ExperimentRunner()
+                        .cases(EvalCase.of("c", "a question", new NoApology()))
+                        .evaluator(new AlsoNoApology()),
+                    target))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("share the same @EvalLabel \"no-apology\"");
+  }
+
+  @Test
+  void twoEvaluatorsOfTheSameClassShareTheirLabel() {
+    var report =
+        experiment(
+                targetThat("refund done"),
+                EvalCase.of(
+                    "c",
+                    "a question",
+                    Evaluators.replyShouldContain("refund"),
+                    Evaluators.replyShouldContain("missing")))
+            .run();
+
+    assertThat(report.render()).contains("reply-contains 1/2");
   }
 
   @Test
