@@ -12,6 +12,9 @@ Current versions
 
 == September 2026
 
+* Akka CLI 3.0.75
+- support for more AI assistants in `akka specify init --agent ...`
+
 * Akka CLI 3.0.74
 - Network policy support
 - Support for Google's Antigravity
