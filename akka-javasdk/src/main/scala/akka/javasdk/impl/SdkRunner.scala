@@ -200,25 +200,24 @@ object SdkRunner {
     val sanitizationSettings = Sanitization.loadSettings(applicationConf)
 
     val devModeSettings =
-      if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled")) {
+      Option.when(applicationConf.getBoolean("akka.javasdk.dev-mode.enabled")) {
         val backofficeSettings = BackofficeSettingsLoader.loadBackofficeSettings(applicationConf)
         val objectStorageBuckets =
           extractDevObjectStorageBuckets(applicationConf.getConfig("akka.javasdk.dev-mode.object-storage"))
-        Some(
-          new SpiDevModeSettings(
-            httpPort = applicationConf.getInt("akka.javasdk.dev-mode.http-port"),
-            aclEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.acl.enabled"),
-            persistenceEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.persistence.enabled"),
-            serviceName = applicationConf.getString("akka.javasdk.dev-mode.service-name"),
-            eventingSupport = extractBrokerConfig(applicationConf.getConfig("akka.javasdk.dev-mode.eventing")),
-            mockedEventing = SpiMockedEventingSettings.empty,
-            testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
-            selfServiceName = None,
-            backoffice = backofficeSettings,
-            objectStorageBuckets = objectStorageBuckets,
-            // running locally binds the configured port; only the testkit asks for an assigned one
-            ephemeralHttpPort = false))
-      } else None
+        new SpiDevModeSettings(
+          httpPort = applicationConf.getInt("akka.javasdk.dev-mode.http-port"),
+          aclEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.acl.enabled"),
+          persistenceEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.persistence.enabled"),
+          serviceName = applicationConf.getString("akka.javasdk.dev-mode.service-name"),
+          eventingSupport = extractBrokerConfig(applicationConf.getConfig("akka.javasdk.dev-mode.eventing")),
+          mockedEventing = SpiMockedEventingSettings.empty,
+          testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
+          selfServiceName = None,
+          backoffice = backofficeSettings,
+          objectStorageBuckets = objectStorageBuckets,
+          // running locally binds the configured port; only the testkit asks for an assigned one
+          ephemeralHttpPort = false)
+      }
 
     val agentInteractionLogEnabled =
       devModeSettings.isDefined || // always enabled in dev mode
@@ -245,15 +244,21 @@ object SdkRunner {
         val name = c.getString("name")
         c.getString("provider") match {
           case "filesystem" =>
-            val directory = if (c.hasPath("directory")) Some(c.getString("directory")) else None
+            val directory = Option.when(c.hasPath("directory")) {
+              c.getString("directory")
+            }
             new SpiDevObjectStorageFilesystemBucketConfig(name, directory)
           case "s3" =>
             val creds = parseDevS3Credentials(name, c)
             // endpoint-url is the address of an S3-compatible service (e.g. MinIO). Without it the
             // endpoint comes from the region, which addresses Amazon S3.
-            val endpointUrl = if (c.hasPath("endpoint-url")) Some(c.getString("endpoint-url")) else None
+            val endpointUrl = Option.when(c.hasPath("endpoint-url")) {
+              c.getString("endpoint-url")
+            }
             val accessStyle =
-              if (c.hasPath("access-style")) Some(parseDevS3AccessStyle(name, c.getString("access-style"))) else None
+              Option.when(c.hasPath("access-style")) {
+                parseDevS3AccessStyle(name, c.getString("access-style"))
+              }
             new SpiDevObjectStorageS3BucketConfig(
               name,
               c.getString("bucket"),
