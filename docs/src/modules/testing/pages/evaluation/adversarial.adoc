@@ -14,7 +14,7 @@ An adversarial suite is red teaming written as tests: you collect the attacks, a
 
 == How an adversarial case differs from an eval case
 
-An adversarial case uses the same API as any other eval case: the same `EvalCase`, the same evaluators, the same `ExperimentRunner`, the same `Gate` and the same report.
+An adversarial case uses the same API as any other eval case: `EvalCase`, the evaluators, `ExperimentRunner`, `Gate` and the report.
 What changes is the mindset.
 An eval case states what a good reply does.
 An adversarial case states what a breached reply looks like and requires its absence.
@@ -58,11 +58,11 @@ An attack can enter the agent in three places, and one case can check all three.
 
 == The three kinds of check, in cost order
 
-Use the cheapest check that decides the case.
+Use the simplest check that decides the case.
 
 . An exact check over the reply or the tool calls: `replyShouldNotContain`, `replyShouldNotMatch`, `replyShouldNotContainPaymentCard` and `shouldNotCallTools`. It is reproducible and free. A failed result shows what leaked.
 . A regular expression that recognizes a refusal or a compliance. It decides the clear cases and misses the rest, so combine it with an exact check.
-. A xref:testing:evaluation/judges.adoc[judge]. It costs one model call and is not deterministic. It detects what a pattern cannot, such as the same content written as fiction. Gate a judged case on a rate, not on one run.
+. A xref:testing:evaluation/judges.adoc[judge]. It costs one model call and is not deterministic. It detects what a regular expression pattern cannot, such as the same content written as fiction. Gate a judged case on a rate, not on one run.
 
 xref:testing:evaluation/eval-cases.adoc[] lists every built-in evaluator and what it reports.
 
