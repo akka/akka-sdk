@@ -40,19 +40,27 @@ Not every AI coding harness has a first-class Akka install. The matrix below gro
 |===
 | Harness | Path | Install target
 
-| Claude Code                            | Plugin        | `/plugin marketplace add akka/ai-marketplace` then `/plugin install akka@ai-marketplace`
-| Claude Tag (Slack)                     | Plugin        | Claude Code manifest in `akka/ai-marketplace`
-| OpenAI Codex CLI                       | Plugin        | `codex plugin marketplace add akka/ai-marketplace`
-| Cursor                                 | Plugin or CLI init | Cursor Marketplace (search "Akka") or `akka specify init --agent cursor`
-| Kiro (AWS)                             | Plugin        | Kiro Powers (search "Akka")
-| GitHub Copilot (VS Code)               | CLI init      | `akka specify init --agent vscode-copilot`
-| Antigravity (`agy`)                    | Plugin        | `agy plugin install https://github.com/akka/ai-marketplace`
-| Any other harness with AGENTS.md support (Factory, Devin, Junie, Roo, Trae, Warp, Zed, Jules, Visual Studio 2022 Copilot, GitHub Copilot coding agent, ...) | CLI + AGENTS.md + manual MCP | `akka specify init --agent generic` writes `AGENTS.md` and `.mcp.json`; if the harness's MCP path is elsewhere, see xref:sdk:register-mcp.adoc[Register the Akka MCP server]
-| Aider                                  | CLI + AGENTS.md + manual MCP | See xref:sdk:register-mcp.adoc[Register the Akka MCP server]
-| Sourcegraph Cody                       | CLI + AGENTS.md + manual MCP | See xref:sdk:register-mcp.adoc[Register the Akka MCP server]
-| Zed AI                                 | CLI + AGENTS.md + manual MCP | See xref:sdk:register-mcp.adoc[Register the Akka MCP server]
+| Claude Code                            | Plugin              | `/plugin marketplace add akka/ai-marketplace` then `/plugin install akka@ai-marketplace`
+| Claude Tag (Slack)                     | Plugin              | Claude Code manifest in `akka/ai-marketplace`
+| OpenAI Codex CLI                       | Plugin or CLI init  | `codex plugin marketplace add akka/ai-marketplace`, or `akka specify init --agent codex` + xref:sdk:register-mcp.adoc[Register the Akka MCP server]
+| Cursor                                 | Plugin or CLI init  | Cursor Marketplace (search "Akka") or `akka specify init --agent cursor`
+| Kiro (AWS)                             | Plugin              | Kiro Powers (search "Akka")
+| GitHub Copilot (VS Code)               | CLI init            | `akka specify init --agent vscode-copilot`
+| GitHub Copilot in Visual Studio 2022   | CLI init            | `akka specify init --agent vs-copilot`
+| GitHub Copilot coding agent            | CLI init + off-workspace MCP | `akka specify init --agent copilot-agent` (registers MCP in repo/org settings on github.com)
+| Antigravity (`agy`)                    | Plugin              | `agy plugin install https://github.com/akka/ai-marketplace`
+| Roo Code                               | CLI init            | `akka specify init --agent roo`
+| Trae                                   | CLI init            | `akka specify init --agent trae`
+| Factory Droid                          | CLI init            | `akka specify init --agent factory`
+| Cognition Devin                        | CLI init            | `akka specify init --agent devin`
+| JetBrains Junie                        | CLI init            | `akka specify init --agent junie`
+| Warp                                   | CLI init + off-workspace MCP | `akka specify init --agent warp` (registers MCP via Warp Settings → MCP)
+| Google Jules                           | CLI init + off-workspace MCP | `akka specify init --agent jules` (registers MCP in Jules workspace settings)
+| Zed                                    | CLI init + off-workspace MCP | `akka specify init --agent zed` + Zed's `context_servers` block (see xref:sdk:register-mcp.adoc[Register the Akka MCP server])
+| Aider                                  | CLI + AGENTS.md + manual MCP | `akka specify init` (neutral) + xref:sdk:register-mcp.adoc[Register the Akka MCP server]
+| Sourcegraph Cody                       | CLI + AGENTS.md + manual MCP | `akka specify init` (neutral) + xref:sdk:register-mcp.adoc[Register the Akka MCP server]
 | Claude.ai chat (with Projects)         | CLI + AGENTS.md + manual MCP | Paste the install playbook at https://akka.ai[akka.ai, window="new"] into the project's custom instructions; MCP is admin-gated
-| Any harness not listed                 | CLI + AGENTS.md + manual MCP | Same as Aider
+| Any harness not listed                 | CLI + AGENTS.md + manual MCP | `akka specify init` (writes `AGENTS.md` + `.mcp.json`); if the harness's MCP path is elsewhere, see xref:sdk:register-mcp.adoc[Register the Akka MCP server]
 |===
 
 ==== Installation path
@@ -61,7 +69,7 @@ Not every AI coding harness has a first-class Akka install. The matrix below gro
 * *CLI init (`akka specify init --agent <harness>`)* — no bundle for this harness; the Akka CLI writes the harness's own native rules or instructions file plus its MCP config.
 * *CLI + AGENTS.md + manual MCP* — fallback for harnesses without a plugin bundle and without a CLI agent profile. Install the CLI, register the MCP server by hand, keep `AGENTS.md` at the project root.
 
-NOTE: The Akka CLI's `--agent` profiles today are `claude-code` (default), `cursor`, `vscode-copilot`, and `generic` (see xref:reference:cli/akka-cli/akka_specify_init.adoc[akka specify init]). Every other harness in the "CLI + AGENTS.md + manual MCP" rows uses `--agent generic`, which writes a harness-agnostic `AGENTS.md` plus `.mcp.json`. Where the harness looks for MCP configuration at a different filename (Zed, Cody, etc.), follow the manual step in xref:sdk:register-mcp.adoc[Register the Akka MCP server] after `akka specify init --agent generic`. Additional per-harness profiles are on the roadmap; they will appear in this table as the CLI ships them. The canonical `AGENTS.md` template is published at https://doc.akka.io/sdk/_attachments/AGENTS.md[doc.akka.io/sdk/_attachments/AGENTS.md, window="new"] so `akka specify init` and manual setups reference the same file.
+NOTE: `akka specify init` with no `--agent` flag writes a portable install (`AGENTS.md` + `.mcp.json`) and auto-detects the harness from Tier 1 marker files in the target directory (`.claude/`, `.cursor/`, `.roo/`, `.trae/`, `.factory/`, `.devin/`, `.junie/`, `.vscode/mcp.json`) — a single unambiguous marker overrides the default. Verified `--agent` profiles that install a per-harness commands / rules surface: `claude-code`, `cursor`, `vscode-copilot`, `vs-copilot`, `roo`, `trae`, `agy`. AGENTS.md-native profiles that write a project MCP file: `generic`, `factory`, `devin`, `junie`. AGENTS.md-native profiles whose MCP registration lives outside the workspace: `warp`, `jules`, `zed`, `copilot-agent`, `codex` (each prints the vendor-specific registration hint). Scaffolded (installs neutral files with a warning until the vendor publishes verifiable rules-file / MCP-config paths): `kilo`, `cline`, `replit`, `jetbrains-copilot`, `xcode-copilot`, `nvim-copilot`. See xref:reference:cli/akka-cli/akka_specify_init.adoc[akka specify init] for the full list. The canonical `AGENTS.md` template is published at https://doc.akka.io/_attachments/AGENTS.md[doc.akka.io/_attachments/AGENTS.md, window="new"] so `akka specify init` and manual setups reference the same file.
 
 For AI-driven installs, the human-facing entry point is https://akka.ai[akka.ai, window="new"] — paste "install Akka from akka.ai" into any supported harness and it walks the flow above.
 

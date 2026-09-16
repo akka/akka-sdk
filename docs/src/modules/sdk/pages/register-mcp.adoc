@@ -4,7 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 The Akka CLI ships an MCP server that exposes Akka's build, test, deploy, spec-driven-development, and runtime-inspection tools to any MCP-capable AI coding harness. If your harness has a first-class Akka install (see xref:getting-started:set-up-dev-env.adoc#_harness_support_matrix[harness support matrix]), that install registers the server for you.
 
-NOTE: Use this page only when you are on the CLI + `AGENTS.md` + manual MCP fallback path — Aider, Sourcegraph Cody, Zed, or any harness not covered by a plugin bundle or an `akka specify init --agent` profile.
+NOTE: Use this page for harnesses whose MCP config is not a project file the Akka CLI can write. `akka specify init --agent <name>` writes `AGENTS.md` for AGENTS.md-native harnesses (Warp, Jules, Zed, Copilot coding agent, Codex) but leaves MCP registration to you — the register step below completes the setup. Also applies to any harness with no CLI profile at all (Aider, Sourcegraph Cody, Claude.ai chat).
 
 .Prerequisites
 * The Akka CLI on `PATH` (xref:operations:cli/installation.adoc[Install the Akka CLI]).
@@ -29,6 +29,28 @@ Add to `.zed/settings.json` at the project root, under `context_servers`:
 ----
 
 Reload Zed's AI panel after saving. The Akka tools appear under the `akka` server. Zed also reads `AGENTS.md` if present, so keeping the file at the project root gives the model Akka conventions in addition to the tools.
+
+== OpenAI Codex CLI
+
+Codex reads MCP servers from `[mcp_servers.<name>]` TOML sections in `~/.codex/config.toml` (user-global) or, for trusted projects, `.codex/config.toml` at the project root.
+
+Recommended: register through the Codex CLI, which writes the config without TOML syntax risk:
+
+[source,bash]
+----
+codex mcp add akka -- akka mcp serve
+----
+
+Or hand-edit `~/.codex/config.toml` (or `.codex/config.toml` for a trusted project) and add:
+
+[source,toml]
+----
+[mcp_servers.akka]
+command = "akka"
+args = ["mcp", "serve"]
+----
+
+Codex reads `AGENTS.md` natively, so keeping the file at the project root gives the model Akka conventions alongside the tools. `akka specify init --agent codex` writes an `AGENTS.md` and prints the same registration hint above.
 
 == Aider
 
