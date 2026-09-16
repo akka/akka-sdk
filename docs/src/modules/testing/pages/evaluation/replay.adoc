@@ -82,7 +82,7 @@ For the agent to see what production saw, the stub must return the recorded resu
 A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/ToolBindings.html[ToolBindings] maps each tool name to a loader that puts the recorded result into the stub serving that tool.
 Give the bindings to the runner with `bindings(...)`.
 Before each case the runner loads the case's recorded calls through them, in recorded order, then calls the agent.
-A loader that throws fails the case under the `setup` evaluator.
+A loader that throws fails the case with a result labeled `setup`.
 
 The runner refuses to start when a case names a tool without a binding.
 The error lists each unbound tool with the cases that name it, so a new tool in production cannot be replayed by accident against a stub that does not know it.

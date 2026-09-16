@@ -102,6 +102,8 @@ public final class ExperimentRunner {
     @Override
     public ExperimentCases<C> evaluator(Evaluator evaluator) {
       if (evaluator == null) throw new IllegalArgumentException("evaluator required");
+      Evaluators.label(evaluator.getClass());
+
       var next = new ArrayList<>(evaluators);
       next.add(evaluator);
       return new Cases<>(testKit, cases, List.copyOf(next), bindings);
@@ -126,8 +128,35 @@ public final class ExperimentRunner {
 
     private Experiment target(EvalTarget<C> target) {
       if (target == null) throw new IllegalArgumentException("target required");
+      requireDistinctLabels();
       requireBindingsForRecordedTools();
       return new Ready<>(cases, evaluators, bindings, target, Gate.allCasesShouldPass());
+    }
+
+    private void requireDistinctLabels() {
+      var classByLabel = new LinkedHashMap<String, Class<? extends Evaluator>>();
+
+      for (var evalCase : cases) {
+        for (var evaluator : evalCase.evaluators()) requireDistinctLabel(classByLabel, evaluator);
+      }
+
+      for (var evaluator : evaluators) requireDistinctLabel(classByLabel, evaluator);
+    }
+
+    private static void requireDistinctLabel(
+        Map<String, Class<? extends Evaluator>> classByLabel, Evaluator evaluator) {
+      var type = evaluator.getClass();
+      var previous = classByLabel.putIfAbsent(Evaluators.label(type), type);
+
+      if (previous != null && previous != type) {
+        throw new IllegalArgumentException(
+            previous.getName()
+                + " and "
+                + type.getName()
+                + " share the same @EvalLabel \""
+                + type.getAnnotation(EvalLabel.class).value()
+                + "\"; the report groups results by label. Give each evaluator a unique label.");
+      }
     }
 
     // Before the first agent call, so a new tool in production cannot be replayed by accident
@@ -225,16 +254,18 @@ public final class ExperimentRunner {
     // still report.
     private static EvalResult evaluate(
         Evaluator evaluator, EvalCase<?> evalCase, Interaction interaction) {
+      var label = Evaluators.label(evaluator.getClass());
+
       EvalResult result;
       try {
         result = evaluator.evaluate(evalCase, interaction);
       } catch (RuntimeException e) {
-        return EvalResult.fail("the evaluator threw " + describe(e)).attributedTo(evaluator.name());
+        return EvalResult.fail("the evaluator threw " + describe(e)).attributedTo(label);
       }
       if (result == null) {
-        return EvalResult.fail("the evaluator returned no result").attributedTo(evaluator.name());
+        return EvalResult.fail("the evaluator returned no result").attributedTo(label);
       }
-      return result.attributedTo(evaluator.name());
+      return result.attributedTo(label);
     }
   }
 

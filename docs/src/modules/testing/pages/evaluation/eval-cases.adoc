@@ -30,7 +30,7 @@ link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/EvalCase.html[EvalCase] 
 | The checks the turn must pass, as a list or as trailing arguments. Empty when the case only collects evidence. `withEvaluators(...)` returns the same case with more evaluators.
 |===
 
-A case that throws while its recorded calls are loaded is reported as failed under the `setup` evaluator.
+A case that throws while its recorded calls are loaded fails with a result labeled `setup`.
 The agent is not called.
 
 Each case runs in a fresh session, so no case can read the session memory of an earlier case.
@@ -70,29 +70,45 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 <3> The reply must match the regular expression somewhere. Anchor it for a full match.
 <4> Budgets. At most two tool calls and three model calls for this turn.
 
+[#evaluator-labels]
+=== Evaluator labels
+
+Every evaluator class carries an `@EvalLabel`: the label used in the report to group its results.
+A built-in evaluator uses its label as is, for example `tools`. A custom evaluator gets the `custom-eval:` prefix,
+for example `custom-eval:refund-within-total`. The prefix keeps custom results apart from built-in results.
+A case refuses an evaluator without a `@EvalLabel`. Labels must be unique across all evaluators in an experiment. The rule is per class, not per instance.
+
+`Gate.passRateShouldBeAtLeast(evaluatorClass, minimumRate)` takes the evaluator's class and reads the label from it.
+The built-in classes are nested in `Evaluators`, and the tables below list each one next to its label.
+
 === Built-in evaluators on tool calls
 
 [cols="1,2,3"]
 |===
-| Evaluator | Created with | Passes when
+| Label and class | Created with | Passes when
 
-| `tools`
+| `tools` +
+`Evaluators.Tools`
 | `Evaluators.shouldCallTools(names...)`, `Evaluators.shouldCallTool(name)`
 | Every named tool was called, in any order. Other calls are allowed.
 
-| `tool-order`
+| `tool-order` +
+`Evaluators.ToolOrder`
 | `Evaluators.shouldCallToolsInOrder(names...)`
 | The named tools were called in this relative order. Calls to other tools may come between. Inconclusive when one of the named tools was never called.
 
-| `tool-arguments`
+| `tool-arguments` +
+`Evaluators.ToolArgument`
 | `Evaluators.shouldCallToolWith(tool, argument, value)`
 | A call to the tool carried the argument with this value. Inconclusive when the tool was never called.
 
-| `tool-results`
+| `tool-results` +
+`Evaluators.ToolResult`
 | `Evaluators.toolResultShouldContain(tool, text)`
 | The result of the tool contains the text, case-insensitively. Inconclusive when the tool was never called or the trace carries no result for it.
 
-| `forbidden-tools`
+| `forbidden-tools` +
+`Evaluators.ForbiddenTools`
 | `Evaluators.shouldNotCallTools(names...)`, `Evaluators.shouldNotCallTool(name)`
 | None of the named tools was called.
 |===
@@ -101,29 +117,35 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 
 [cols="1,2,3"]
 |===
-| Evaluator | Created with | Passes when
+| Label and class | Created with | Passes when
 
-| `reply-contains`
+| `reply-contains` +
+`Evaluators.ReplyContains`
 | `Evaluators.replyShouldContain(texts...)`
 | The reply contains every given text, case-insensitively.
 
-| `reply-matches`
+| `reply-matches` +
+`Evaluators.ReplyMatches`
 | `Evaluators.replyShouldMatch(regex)`, `Evaluators.replyShouldMatch(pattern)`
 | The reply matches the regular expression anywhere. Anchor the expression for a full match.
 
-| `reply-lacks`
+| `reply-lacks` +
+`Evaluators.ReplyLacks`
 | `Evaluators.replyShouldNotContain(texts...)`
 | The reply contains none of the given texts, case-insensitively.
 
-| `reply-does-not-match`
+| `reply-does-not-match` +
+`Evaluators.ReplyDoesNotMatch`
 | `Evaluators.replyShouldNotMatch(regex)`, `Evaluators.replyShouldNotMatch(pattern)`
 | The reply matches the regular expression nowhere.
 
-| `reply-lacks-payment-card`
+| `reply-lacks-payment-card` +
+`Evaluators.ReplyLacksPaymentCard`
 | `Evaluators.replyShouldNotContainPaymentCard()`
 | The reply contains no payment card number. A card number is a sequence of 13 to 19 digits, with spaces and dashes allowed between them, that passes the Luhn checksum.
 
-| `reply-lacks-luhn-number`
+| `reply-lacks-luhn-number` +
+`Evaluators.ReplyLacksLuhnNumber`
 | `Evaluators.replyShouldNotContainLuhnNumber(minDigits, maxDigits)`
 | The reply contains no sequence of digits within the length range that passes the Luhn checksum. The same checksum validates identifiers other than payment cards, each with its own length, so give the range of the one you are looking for.
 |===
@@ -136,21 +158,25 @@ A regular expression that does not compile throws `PatternSyntaxException` when 
 
 [cols="1,2,3"]
 |===
-| Evaluator | Created with | Passes when
+| Label and class | Created with | Passes when
 
-| `tool-call-budget`
+| `tool-call-budget` +
+`Evaluators.ToolCallBudget`
 | `Evaluators.shouldMakeAtMostToolCalls(calls)`
 | The agent made at most this many tool calls.
 
-| `model-call-budget`
+| `model-call-budget` +
+`Evaluators.ModelCallBudget`
 | `Evaluators.shouldMakeAtMostModelCalls(calls)`
 | The agent made at most this many model calls. A reply takes at least one.
 
-| `token-budget`
+| `token-budget` +
+`Evaluators.TokenBudget`
 | `Evaluators.shouldUseAtMostTokens(tokens)`
 | Input and output tokens together stay within the limit. Inconclusive when the model reported no tokens.
 
-| `latency-budget`
+| `latency-budget` +
+`Evaluators.LatencyBudget`
 | `Evaluators.shouldReplyWithin(duration)`
 | The agent command completed within the duration. Inconclusive when the trace carries no timing.
 |===
@@ -158,7 +184,10 @@ A regular expression that does not compile throws `PatternSyntaxException` when 
 [#custom-evaluators]
 == Custom evaluator
 
-A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator]: `name()` returns the name its results are reported under, and `evaluate(...)` receives the case as `EvalCase<?>` and the `Interaction`, the reply and everything the runtime traced for the turn, and returns an `EvalResult`: a pass, a fail with a reason, or an inconclusive result.
+A custom evaluator is a named class annotated with `@EvalLabel` that implements link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Evaluator.html[Evaluator].
+`evaluate(...)` receives the case as `EvalCase<?>` and the `Interaction`, the reply and everything the runtime traced for the turn, and returns an `EvalResult`: a pass, a fail with a reason, or an inconclusive result.
+In the report, its label gets the `custom-eval:` prefix, see <<evaluator-labels>>.
+An anonymous class or a lambda cannot carry the annotation, so a case refuses it.
 
 `RefundWithinTotal` is an evaluator that checks that the amount the agent passed to `issueRefund` does not exceed the total of the order.
 
@@ -167,7 +196,7 @@ A custom evaluator implements link:{attachmentsdir}/testkit/akka/javasdk/testkit
 ----
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/RefundWithinTotal.java[tag=class]
 ----
-<1> The name the report prints the results under, and a gate can rate.
+<1> The label. The report shows it as `custom-eval:refund-within-total`. `Gate.passRateShouldBeAtLeast(RefundWithinTotal.class, minimumRate)` rates the results of this evaluator.
 <2> No refund call means nothing to check. Report an inconclusive result rather than a fail; the `tools` evaluator on the case reports the missing call.
 <3> Tool arguments arrive as the runtime decoded them from the model's JSON: a number is a `Number`, an object is a `Map`.
 
@@ -187,7 +216,7 @@ An evaluator reads only what it names and is inconclusive when that evidence is 
 A tool that was never called fails `tools` and makes `tool-order` and `tool-arguments` inconclusive, so one missing call is reported once.
 An inconclusive result is neither a pass nor a fail.
 A case with inconclusive results and no failed result passes.
-The report counts inconclusive results per evaluator name, and `Gate.evaluatorPassRateShouldBeAtLeast` rates evaluators over the conclusive results.
+The report counts inconclusive results per evaluator label, and `Gate.passRateShouldBeAtLeast(evaluatorClass, minimumRate)` rates an evaluator over its conclusive results.
 
 == See also
 
