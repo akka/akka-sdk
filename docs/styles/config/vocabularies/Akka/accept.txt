@@ -429,6 +429,7 @@ runtimes
 SAST
 sbt
 (?i)Scala
+[Ss]caffolded
 schema
 scrypt
 SDKs
