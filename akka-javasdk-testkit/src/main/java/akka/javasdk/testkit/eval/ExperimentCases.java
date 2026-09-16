@@ -38,7 +38,7 @@ public interface ExperimentCases<C> {
   <A extends Agent, R> Experiment agent(Function2<A, C, Agent.Effect<R>> method);
 
   /**
-   * The agent under test, with the reply rendered by {@code replyText} instead of as JSON.
+   * The agent under test. {@code replyText} renders the reply instead of the default JSON.
    *
    * @param method the agent's command handler
    * @param replyText renders the reply as the text the evaluators read

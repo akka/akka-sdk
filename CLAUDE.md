@@ -7,6 +7,9 @@ application.conf comments, and git commit comments.
 
 - Simple language. Short sentences. No contractions. No em-dash.
 - Second person. Imperative for instructions, declarative for facts. No first person.
+- Active voice with a named actor. Do not promote the receiver to subject ("the agent is sent
+  the input"); say who does what ("the runner sends the input to the agent"). Do not defer the
+  noun ("X is what ...", "what X does is ..."); name it first.
 - No mannered prose and metaphors. E.g. use "this point still matters" instead of "this point earns its keep".
 - Describe current behaviour. No development history, no rejected alternatives, no counts that
   go stale (how many tests, modules or classes). Do not document planned or half-built features.

@@ -44,9 +44,9 @@ import java.util.Map;
  * the tolerance. {@code tokens} is either a total or an object with {@code input} and {@code
  * output}.
  *
- * <p>{@code input} is what the agent is sent. Record it as text for a command handler that takes a
- * String. For a handler with its own command type, record it as the JSON of that command and pass
- * the type to {@link #parse(Path, Class)}.
+ * <p>The runner sends {@code input} to the agent. Record it as text when the command handler takes
+ * a String. When the handler has its own command type, record it as the JSON of that command and
+ * pass the type to {@link #parse(Path, Class)}.
  */
 public final class EvalCaseParser {
 
@@ -84,8 +84,8 @@ public final class EvalCaseParser {
   /**
    * Reads the JSONL file with {@link #DEFAULT_TOLERANCE}.
    *
-   * @param commandType the type the agent's command handler takes, which the recorded {@code input}
-   *     is deserialized to
+   * @param commandType the type the agent's command handler takes. The parser deserializes the
+   *     recorded {@code input} to it
    */
   public static <C> List<EvalCase<C>> parse(Path canonicalJsonl, Class<C> commandType) {
     return parse(canonicalJsonl, commandType, DEFAULT_TOLERANCE);
@@ -94,8 +94,8 @@ public final class EvalCaseParser {
   /**
    * Reads the JSONL file.
    *
-   * @param commandType the type the agent's command handler takes, which the recorded {@code input}
-   *     is deserialized to
+   * @param commandType the type the agent's command handler takes. The parser deserializes the
+   *     recorded {@code input} to it
    * @param tolerance multiplies the recorded token and latency figures to set the budgets. {@code
    *     1.0} holds a case to exactly what was recorded. Values below {@code 1.0} are rejected
    */
