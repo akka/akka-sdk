@@ -99,6 +99,7 @@ cutover
 CVEs
 cybercrime
 Datadog
+[Dd]atastores?
 DBs
 decisioning
 declaratively
@@ -129,14 +130,16 @@ docstrings
 Doctolib
 downscaling
 Droid
+[Dd]rillable
 DSRs
 DTDs
 Dynatrace
 effectful
 [Ee]mptyState
 enablement
+endPort
 Entra
-enum
+enums?
 env
 etcd
 eval
@@ -265,6 +268,8 @@ migratable
 minInstances
 Ministral
 minSeverity
+misconfigurations?
+misconfigured
 Mistral
 mitigations
 mojibake
