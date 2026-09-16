@@ -17,7 +17,7 @@ public final class NoRefundIssued implements Evaluator {
   }
 
   @Override
-  public EvalResult evaluate(EvalCase evalCase, Interaction interaction) {
+  public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
     var issued = orders.issued(); // <1>
     return issued.isEmpty()
       ? EvalResult.pass()
