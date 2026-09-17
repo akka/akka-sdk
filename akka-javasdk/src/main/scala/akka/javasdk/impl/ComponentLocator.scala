@@ -10,7 +10,10 @@ import java.net.URI
 
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
+import scala.util.Failure
+import scala.util.Success
 
+import akka.actor.DynamicAccess
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
@@ -21,11 +24,15 @@ import akka.javasdk.agent.evaluator.HallucinationEvaluator
 import akka.javasdk.agent.evaluator.SummarizationEvaluator
 import akka.javasdk.agent.evaluator.ToxicityEvaluator
 import akka.javasdk.agent.task.TaskEntity
+import akka.javasdk.annotations.GrpcEndpoint
+import akka.javasdk.annotations.http.HttpEndpoint
+import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.agent.task.BacklogEntity
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
+import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -44,6 +51,8 @@ private[javasdk] object ComponentLocator {
   private val MetaInfPath = "META-INF/"
   val DescriptorComponentBasePath = "akka.javasdk.components"
   val DescriptorServiceSetupEntryPath = "akka.javasdk.service-setup"
+  // user config listing components from library jars to load as if defined in the service
+  val LibraryComponentsConfigPath = "akka.javasdk.library.components"
 
   // Component type keys - these must be kept in sync with ComponentAnnotationProcessor.java
   // in the akka-javasdk-annotation-processor module
@@ -73,6 +82,20 @@ private[javasdk] object ComponentLocator {
     WorkflowKey)
 
   private val logger = LoggerFactory.getLogger(getClass)
+
+  private val akkaComponentTypeAndBaseClasses: Map[String, Class[_]] =
+    Map(
+      ComponentType.HttpEndpoint -> classOf[AnyRef],
+      ComponentType.GrpcEndpoint -> classOf[AnyRef],
+      ComponentType.McpEndpoint -> classOf[AnyRef],
+      ComponentType.TimedAction -> classOf[TimedAction],
+      ComponentType.Consumer -> classOf[Consumer],
+      ComponentType.EventSourcedEntity -> classOf[EventSourcedEntity[_, _]],
+      ComponentType.Workflow -> classOf[Workflow[_]],
+      ComponentType.KeyValueEntity -> classOf[KeyValueEntity[_]],
+      ComponentType.View -> classOf[AnyRef],
+      ComponentType.Agent -> classOf[Agent],
+      ComponentType.AutonomousAgent -> classOf[AutonomousAgent])
 
   /**
    * Checks if a filename matches the component descriptor pattern (akka-javasdk-components_*.conf).
@@ -230,21 +253,91 @@ private[javasdk] object ComponentLocator {
 
   case class LocatedClasses(components: Seq[Class[_]], service: Option[Class[_]])
 
-  def locateUserComponents(system: ActorSystem[_]): LocatedClasses = {
-    val akkaComponentTypeAndBaseClasses: Map[String, Class[_]] =
-      Map(
-        ComponentType.HttpEndpoint -> classOf[AnyRef],
-        ComponentType.GrpcEndpoint -> classOf[AnyRef],
-        ComponentType.McpEndpoint -> classOf[AnyRef],
-        ComponentType.TimedAction -> classOf[TimedAction],
-        ComponentType.Consumer -> classOf[Consumer],
-        ComponentType.EventSourcedEntity -> classOf[EventSourcedEntity[_, _]],
-        ComponentType.Workflow -> classOf[Workflow[_]],
-        ComponentType.KeyValueEntity -> classOf[KeyValueEntity[_]],
-        ComponentType.View -> classOf[AnyRef],
-        ComponentType.Agent -> classOf[Agent],
-        ComponentType.AutonomousAgent -> classOf[AutonomousAgent])
+  // Descriptor loading uses AnyRef for endpoints and views since the annotation processor already checked them.
+  // Config listed classes are user input so they get a stricter check.
+  private def libraryComponentTypeCheck(componentTypeKey: String): (Class[_] => Boolean, String) =
+    componentTypeKey match {
+      case HttpEndpointKey => (_.isAnnotationPresent(classOf[HttpEndpoint]), "a class annotated with @HttpEndpoint")
+      case GrpcEndpointKey => (_.isAnnotationPresent(classOf[GrpcEndpoint]), "a class annotated with @GrpcEndpoint")
+      case McpEndpointKey  => (_.isAnnotationPresent(classOf[McpEndpoint]), "a class annotated with @McpEndpoint")
+      case ViewKey         => (classOf[View].isAssignableFrom(_), s"a class extending ${classOf[View].getName}")
+      case other =>
+        val baseClass = akkaComponentTypeAndBaseClasses(other)
+        (baseClass.isAssignableFrom(_), s"a class extending ${baseClass.getName}")
+    }
 
+  /**
+   * Loads the component classes listed under `akka.javasdk.library.components` in the application config. Classes
+   * already located through descriptor files are skipped.
+   */
+  private[impl] def loadLibraryComponents(
+      applicationConfig: Config,
+      dynamicAccess: DynamicAccess,
+      descriptorComponents: Set[Class[_]]): Seq[Class[_]] = {
+    if (!applicationConfig.hasPath(LibraryComponentsConfigPath)) Seq.empty
+    else {
+      val libraryConfig = applicationConfig.getConfig(LibraryComponentsConfigPath)
+      val unknownKeys = libraryConfig.root().keySet().asScala.filterNot(akkaComponentTypeAndBaseClasses.contains)
+      if (unknownKeys.nonEmpty) {
+        throw new IllegalStateException(
+          s"Unknown component type(s) [${unknownKeys.toSeq.sorted.mkString(", ")}] in config [$LibraryComponentsConfigPath]. " +
+          s"Supported component types: [${AllComponentTypeKeys.mkString(", ")}]")
+      }
+
+      val listed: Seq[(String, String)] = AllComponentTypeKeys.flatMap { componentTypeKey =>
+        if (libraryConfig.hasPath(componentTypeKey))
+          libraryConfig.getStringList(componentTypeKey).asScala.map(componentTypeKey -> _)
+        else Seq.empty
+      }
+      val allClassNames = listed.map(_._2)
+      val duplicates = allClassNames.diff(allClassNames.distinct).distinct
+      if (duplicates.nonEmpty) {
+        throw new IllegalStateException(
+          s"Duplicate library component(s) [${duplicates.mkString(", ")}] in config [$LibraryComponentsConfigPath]. " +
+          "Each component class should only be listed once.")
+      }
+
+      AllComponentTypeKeys.flatMap { componentTypeKey =>
+        val classNames = listed.collect { case (`componentTypeKey`, className) => className }
+        if (classNames.isEmpty) Seq.empty
+        else {
+          val (isExpectedType, expectedTypeDescription) = libraryComponentTypeCheck(componentTypeKey)
+          val loaded = classNames.flatMap { className =>
+            val componentClass = dynamicAccess.getClassFor[AnyRef](className) match {
+              case Success(cls) => cls
+              case Failure(ex) =>
+                throw new IllegalStateException(
+                  s"Could not load library component class [$className] listed in config [$LibraryComponentsConfigPath.$componentTypeKey]. " +
+                  "Make sure the library containing it is on the classpath.",
+                  ex)
+            }
+            if (!isExpectedType(componentClass)) {
+              throw new IllegalStateException(
+                s"Library component class [$className] listed in config [$LibraryComponentsConfigPath.$componentTypeKey] " +
+                s"is not a $componentTypeKey component, expected $expectedTypeDescription")
+            }
+            if (descriptorComponents.contains(componentClass)) {
+              logger.info(
+                "Library component [{}] listed in config [{}.{}] is already registered through a component descriptor, ignoring",
+                className,
+                LibraryComponentsConfigPath,
+                componentTypeKey)
+              None
+            } else Some(componentClass)
+          }
+          if (loaded.nonEmpty)
+            logger.info(
+              "Adding library components from config [{}.{}]: [{}]",
+              LibraryComponentsConfigPath,
+              componentTypeKey,
+              loaded.map(_.getName).mkString(", "))
+          loaded
+        }
+      }
+    }
+  }
+
+  def locateUserComponents(system: ActorSystem[_]): LocatedClasses = {
     // Alternative to but inspired by the stdlib SPI style of registering in META-INF/services
     // since we don't always have top supertypes and want to inject things into component constructors
     logger.info(
@@ -267,7 +360,7 @@ private[javasdk] object ComponentLocator {
         "No components found. If you have any, it looks like your project needs to be recompiled. Run `mvn clean compile` and try again.")
     val componentConfig = descriptorConfig.getConfig(DescriptorComponentBasePath)
 
-    val components: Seq[Class[_]] = akkaComponentTypeAndBaseClasses.flatMap {
+    val descriptorComponents: Seq[Class[_]] = akkaComponentTypeAndBaseClasses.flatMap {
       case (componentTypeKey, componentTypeClass) =>
         if (componentConfig.hasPath(componentTypeKey)) {
           componentConfig.getStringList(componentTypeKey).asScala.map { className =>
@@ -286,6 +379,10 @@ private[javasdk] object ComponentLocator {
         } else
           Seq.empty
     }.toSeq
+
+    val libraryComponents =
+      loadLibraryComponents(ApplicationConfig(system).getConfig, system.dynamicAccess, descriptorComponents.toSet)
+    val components = descriptorComponents ++ libraryComponents
 
     val hasAgentComponents = components.exists(c => classOf[Agent].isAssignableFrom(c))
     val hasAutonomousAgentComponents = components.exists(c => classOf[AutonomousAgent].isAssignableFrom(c))
