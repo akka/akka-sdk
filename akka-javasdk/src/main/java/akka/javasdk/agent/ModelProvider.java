@@ -23,6 +23,22 @@ import java.util.stream.Collectors;
  */
 public sealed interface ModelProvider {
 
+  /**
+   * Returns a copy of this provider with the given extra HTTP headers on every request to the model
+   * API. Use it for authentication tokens to an AI gateway or proxy, or for routing and tracing
+   * headers.
+   *
+   * <p>For a provider built in code, the given headers replace whatever the configuration set for
+   * that provider. For {@link FromConfig}, they are added to the headers of the provider that the
+   * configuration resolves to, and a header named in both takes the value given here.
+   *
+   * <p>{@link Custom} does not support this and throws {@link UnsupportedOperationException}.
+   *
+   * @param additionalModelRequestHeaders the headers to add to each model request
+   * @return a copy of this provider carrying the given headers
+   */
+  ModelProvider withAdditionalModelRequestHeaders(List<HttpHeader> additionalModelRequestHeaders);
+
   /** Parses a single {@code "name:value"} header entry */
   private static HttpHeader parseHeaderEntry(String entry) {
     int colonIdx = entry.indexOf(':');
@@ -62,7 +78,27 @@ public sealed interface ModelProvider {
     return new FromConfig(configPath);
   }
 
-  record FromConfig(String configPath) implements ModelProvider {}
+  /**
+   * A model provider selected by configuration, resolved when the agent makes the request.
+   *
+   * @param configPath the configuration path to read model settings from, empty for the path named
+   *     by {@code akka.javasdk.agent.model-provider}
+   * @param additionalModelRequestHeaders extra HTTP headers, added to the headers of the provider
+   *     that {@code configPath} resolves to
+   */
+  record FromConfig(String configPath, List<HttpHeader> additionalModelRequestHeaders)
+      implements ModelProvider {
+
+    public FromConfig(String configPath) {
+      this(configPath, List.of());
+    }
+
+    @Override
+    public FromConfig withAdditionalModelRequestHeaders(
+        List<HttpHeader> additionalModelRequestHeaders) {
+      return new FromConfig(configPath, additionalModelRequestHeaders);
+    }
+  }
 
   /** Settings for the Anthropic Large Language Model provider. */
   static Anthropic anthropic() {
@@ -2646,6 +2682,23 @@ public sealed interface ModelProvider {
      */
     default String modelName() {
       return "custom";
+    }
+
+    /**
+     * Not supported. A custom provider builds its own chat model, so the SDK cannot attach headers
+     * to its requests. Add the headers in {@link #createChatModel()} and {@link
+     * #createStreamingChatModel()} instead.
+     *
+     * @throws UnsupportedOperationException always
+     */
+    @Override
+    default ModelProvider withAdditionalModelRequestHeaders(
+        List<HttpHeader> additionalModelRequestHeaders) {
+      throw new UnsupportedOperationException(
+          "A custom model provider ["
+              + getClass().getName()
+              + "] builds its own chat model, so the SDK cannot add request headers to it. Add the"
+              + " headers where the provider creates the chat model.");
     }
   }
 
