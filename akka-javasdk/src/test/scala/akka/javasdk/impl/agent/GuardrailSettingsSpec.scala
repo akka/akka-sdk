@@ -43,6 +43,13 @@ object GuardrailSettingsSpec {
         category = TOXIC
         use-for = ["*"]
       }
+
+      "model call guard" {
+        class = "test.MyModelGuard"
+        agents = ["some-agent"]
+        category = PROMPT_INJECTION
+        use-for = ["before-model-call"]
+      }
     }
     """)
 }
@@ -53,7 +60,7 @@ class GuardrailSettingsSpec extends AnyWordSpec with Matchers {
   "The GuardrailSettings" should {
     "load from config" in {
       val settings = GuardrailSettings(config.getConfig("akka.javasdk.agent.guardrails"))
-      settings.configuredGuardrails.size shouldBe 4
+      settings.configuredGuardrails.size shouldBe 5
 
       val first = settings.configuredGuardrails.find(_.name == "request prompt injection").get
       first.implementationClass shouldBe "akka.javasdk.agent.SimilarityGuard"
@@ -75,6 +82,9 @@ class GuardrailSettingsSpec extends AnyWordSpec with Matchers {
 
       val fourth = settings.configuredGuardrails.find(_.name == "wildcard guard").get
       fourth.useFor shouldBe Set(UseFor.Wildcard)
+
+      val fifth = settings.configuredGuardrails.find(_.name == "model call guard").get
+      fifth.useFor shouldBe Set(UseFor.BeforeModelCall)
     }
 
   }
