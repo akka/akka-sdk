@@ -714,7 +714,9 @@ The API key can be defined with an environment variable, `OPENAI_API_KEY` or `AN
 
 == Additional model request headers
 
-All built in model providers support attaching extra HTTP headers to every request sent to the model API. This is useful for passing authentication tokens to an AI gateway or proxy, adding routing or tracing headers, or meeting any other header requirements imposed by the endpoint.
+Most built in model providers support attaching extra HTTP headers to every request sent to the model API. This is useful for passing authentication tokens to an AI gateway or proxy, adding routing or tracing headers, or meeting any other header requirements imposed by the endpoint.
+
+Bedrock and Local AI drop the headers, and so does a custom provider, because those providers build their client themselves. A custom provider can add headers where it creates the chat model.
 
 === Configuration
 
@@ -773,9 +775,9 @@ For example, to set a header only for Anthropic requests:
 ADDITIONAL_ANTHROPIC_REQUEST_HEADERS_0="Authorization:Bearer mytoken"
 ----
 
-=== Programmatic override
+=== Headers set in code
 
-Headers can also be set directly in code, which overrides any configuration value for that model:
+Set headers on a model provider built in code. They replace any configuration value for that provider:
 
 [source,java,indent=0]
 ----
@@ -784,6 +786,66 @@ ModelProvider.openAi()
     .withAdditionalModelRequestHeaders(
         List.of(RawHeader.create("Authorization", "Bearer mygatewaytoken")));
 ----
+
+Set headers on `ModelProvider.fromConfig` when the value is only known at request time, such as a token
+the agent reads from its own context. The provider still comes from configuration, so you do not repeat
+the model name or the API key:
+
+[source,java,indent=0]
+----
+ModelProvider.fromConfig()
+    .withAdditionalModelRequestHeaders(
+        List.of(RawHeader.create("X-Tenant", tenantId)));
+----
+
+Headers set on `fromConfig` are added to the headers of the provider that the configuration resolves to,
+so a gateway token set in configuration survives. A header name set in both keeps the value from code, and
+the configured one is dropped. Header names are compared ignoring case.
+
+Use the provider on one interaction with `effects().model(...)`, or on a whole autonomous agent with
+`modelProvider(...)` on its definition. An autonomous agent reads its definition once at startup, so the
+headers are the same for every instance of that agent.
+
+== Identity headers
+
+The runtime adds two headers to each model request, so that a gateway or proxy in front of the model API
+can attribute the request:
+
+[cols="1m,3"]
+|===
+| Header | Value
+
+| x-akka-agent-id | The component id of the agent that made the request
+| x-akka-flow-id | The flow the request belongs to, or the session id when the request has no flow
+
+|===
+
+Turn them off for every provider:
+
+[source,hocon,indent=0]
+----
+akka.javasdk.agent.identity-headers = off
+----
+
+The global setting can also be supplied with an environment variable:
+
+[source,bash,indent=0]
+----
+MODEL_REQUEST_IDENTITY_HEADERS=off
+----
+
+Each provider section inherits the global value and can override it:
+
+[source,hocon,indent=0]
+----
+akka.javasdk.agent.openai.identity-headers = off
+----
+
+A provider named in configuration takes the value from the section it resolves to. A provider built in code
+takes the global value, because it has no section.
+
+Bedrock, Local AI and custom providers never send these headers, for the same reason they drop the extra
+headers above.
 
 == Reference configurations
 The following is a list of the various reference configurations for each of the AI models
