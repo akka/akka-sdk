@@ -255,7 +255,7 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
     // recording is idempotent on the evaluation id: this step is retried until it succeeds
     recorder.recordResult(trigger, toSpiResult(outcome)).map { _ =>
       log.debug("Evaluation [{}] finished with [{}]", workflowId, outcome.kind())
-      //TODO end or delete or a setting for that?
+      // TODO end or delete or a setting for that?
       new SpiWorkflow.StepTransitionalEffect(SpiWorkflow.NoPersistence, SpiWorkflow.Delete)
     }
   }
