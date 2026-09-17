@@ -6,6 +6,7 @@ package akka.javasdk.agent;
 
 import akka.javasdk.Tracing;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -16,6 +17,8 @@ import java.util.concurrent.CompletionStage;
  * values:
  *
  * <ul>
+ *   <li>{@code before-model-call} — fired before every model invocation, with the conversation
+ *       entering the call
  *   <li>{@code before-agent-response} — fired once per agent interaction, on the final agent reply
  * </ul>
  *
@@ -35,6 +38,52 @@ public non-sealed interface ModelGuardrail extends Guardrail {
    */
   public interface CallContext {
 
+    /** The boundary a {@link ModelGuardrail} is being evaluated at. */
+    enum Boundary {
+      BEFORE_MODEL_CALL,
+      BEFORE_AGENT_RESPONSE
+    }
+
+    /**
+     * A message in the conversation a guardrail inspects, carrying its origin: what the user said,
+     * what the model replied (and which tools it requested), and what a tool returned.
+     */
+    sealed interface ConversationMessage {
+
+      /** A tool call the model requested: its id, tool name, and raw arguments. */
+      record ToolCallRequest(String id, String name, String arguments) {}
+
+      /** A user-authored message. */
+      record UserMessage(List<MessageContent> contents) implements ConversationMessage {}
+
+      /** A model reply: its text and the tool calls it requested. */
+      record AiMessage(String text, List<ToolCallRequest> toolRequests)
+          implements ConversationMessage {}
+
+      /** The result a tool returned for a requested tool call. */
+      record ToolCallResult(String id, String toolName, List<MessageContent> contents)
+          implements ConversationMessage {}
+    }
+
+    /**
+     * The conversation entering a model call: the system message and the messages so far, oldest
+     * first.
+     */
+    record ConversationContext(String systemMessage, List<ConversationMessage> messages) {}
+
+    /** The boundary this call is being checked at. */
+    Boundary boundary();
+
+    /** True when this call is checked at {@code before-model-call}. */
+    default boolean isBeforeModelCall() {
+      return boundary() == Boundary.BEFORE_MODEL_CALL;
+    }
+
+    /** True when this call is checked at {@code before-agent-response}. */
+    default boolean isBeforeAgentResponse() {
+      return boundary() == Boundary.BEFORE_AGENT_RESPONSE;
+    }
+
     /** The component id of the agent this interaction belongs to. */
     String agentId();
 
@@ -43,6 +92,12 @@ public non-sealed interface ModelGuardrail extends Guardrail {
 
     /** The name of the model involved in the interaction being checked. */
     String modelName();
+
+    /**
+     * The conversation entering the model call, present only at {@code before-model-call}. Empty at
+     * boundaries that carry no conversation, such as {@code before-agent-response}.
+     */
+    Optional<ConversationContext> conversation();
 
     /**
      * The text being checked. Non-empty only when {@link #textOnly()} is true; empty for multimodal
