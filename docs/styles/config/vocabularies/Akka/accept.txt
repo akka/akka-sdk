@@ -3,6 +3,7 @@ accessor
 Ack
 ACLs
 ACRs
+[Aa]ccessors
 actuals
 Adoptium
 ADRs
