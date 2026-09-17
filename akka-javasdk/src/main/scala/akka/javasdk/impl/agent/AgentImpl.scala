@@ -306,7 +306,19 @@ private[impl] object AgentImpl {
             identityHeaders),
           p.thinking())
       case p: ModelProvider.LocalAI =>
-        new SpiAgent.ModelProvider.LocalAI(p.baseUrl(), p.modelName(), p.temperature(), p.topP(), p.maxTokens())
+        // Local AI has no timeout or retry settings of its own, so those keep the SPI defaults
+        new SpiAgent.ModelProvider.LocalAI(
+          p.baseUrl(),
+          p.modelName(),
+          p.temperature(),
+          p.topP(),
+          p.maxTokens(),
+          new SpiAgent.ModelSettings(
+            SpiAgent.DefaultModelSettings.modelConnectionTimeout,
+            SpiAgent.DefaultModelSettings.modelResponseTimeout,
+            SpiAgent.DefaultModelSettings.maxModelRetries,
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq,
+            identityHeaders))
       case p: ModelProvider.Ollama =>
         new SpiAgent.ModelProvider.Ollama(
           p.baseUrl(),
