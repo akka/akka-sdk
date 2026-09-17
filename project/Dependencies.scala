@@ -8,13 +8,13 @@ object Dependencies {
     val ProtocolVersionMinor = 1
   }
 
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.10-35-e58b9e42-SNAPSHOT")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.17-42-ad34f182-SNAPSHOT")
 
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
-  val AkkaVersion = "2.10.18"
-  val AkkaHttpVersion = "10.7.4" // Note: should at least the Akka HTTP version required by Akka gRPC
+  val AkkaVersion = "2.10.22"
+  val AkkaHttpVersion = "10.7.5" // Note: should at least the Akka HTTP version required by Akka gRPC
   val AkkaGrpcVersion = akka.grpc.gen.BuildInfo.version
   val GoogleProtobufVersion = akka.grpc.gen.BuildInfo.googleProtobufVersion
 
@@ -22,22 +22,24 @@ object Dependencies {
   val ScalaVersion = "2.13.18"
   val CrossScalaVersions = Seq(ScalaVersion)
 
-  val ScalaTestVersion = "3.2.14"
+  val ScalaTestVersion = "3.2.20"
   // https://github.com/akka/akka/blob/main/project/Dependencies.scala#L31
-  val JacksonVersion = "2.21.2"
+  val JacksonVersion = "2.21.5"
   val JacksonDatabindVersion = JacksonVersion
   val JacksonAnnotationsVersion = "2.21"
-  val Langchain4jVersion = "1.15.0"
-  val LogbackVersion = "1.5.23"
+  val Langchain4jVersion = "1.18.1"
+  val LogbackVersion = "1.6.3"
   val LogbackContribVersion = "0.1.5"
   val JUnitVersion = "4.13.2"
   val JUnitInterfaceVersion = "0.11"
   val JUnitJupiterVersion = "5.10.1"
-  val OpenTelemetryVersion = "1.57.0"
-  val OpenTelemetrySemConv = "1.34.0"
+  val OpenTelemetryVersion = "1.64.0"
+  val OpenTelemetrySemConv = "1.40.0"
 
   val CommonsIoVersion = "2.11.0"
   val MunitVersion = "0.7.29"
+
+  val AssertJVersion = "3.27.7"
 
   val kalixTestkitProtocol = "io.akka" % "kalix-testkit-protocol" % AkkaRuntimeVersion
   val akkaSdkSpi = "io.akka" %% "akka-sdk-spi" % AkkaRuntimeVersion
@@ -50,7 +52,7 @@ object Dependencies {
   val logbackJson = "ch.qos.logback.contrib" % "logback-json-classic" % LogbackContribVersion
   val logbackJackson = "ch.qos.logback.contrib" % "logback-jackson" % LogbackContribVersion
 
-  val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
+  val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.19"
 
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % JacksonVersion
   val jacksonAnnotations = "com.fasterxml.jackson.core" % "jackson-annotations" % JacksonAnnotationsVersion
@@ -59,6 +61,20 @@ object Dependencies {
   val jacksonJsr310 = "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % JacksonVersion
   val jacksonParameterNames = "com.fasterxml.jackson.module" % "jackson-module-parameter-names" % JacksonVersion
   val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonVersion
+
+  // TODO advance Jackson to 2.22.x. langchain4j 1.18.x depends on 2.22.1, and coursier resolves the
+  // higher version unless every module is held down together: jackson-module-scala refuses to load
+  // against a databind from a different minor. Held at the version akka resolves until the whole
+  // build, and the runtime, can move.
+  val jacksonModules: Seq[ModuleID] =
+    Seq(
+      jacksonAnnotations,
+      jacksonCore,
+      jacksonDatabind,
+      jacksonJdk8,
+      jacksonJsr310,
+      jacksonParameterNames,
+      jacksonScala)
 
   val langchain4j = "dev.langchain4j" % "langchain4j" % Langchain4jVersion
 
@@ -74,7 +90,7 @@ object Dependencies {
   val opentelemetryContext = "io.opentelemetry" % "opentelemetry-context" % OpenTelemetryVersion
   val opentelemetrySemConv = "io.opentelemetry.semconv" % "opentelemetry-semconv" % OpenTelemetrySemConv
 
-  val typesafeConfig = "com.typesafe" % "config" % "1.4.6"
+  val typesafeConfig = "com.typesafe" % "config" % "1.4.8"
   val protobufJavaUtil = "com.google.protobuf" % "protobuf-java-util" % GoogleProtobufVersion
 
   private val deps = libraryDependencies
@@ -120,7 +136,7 @@ object Dependencies {
     akkaDependency("akka-actor-typed") % Provided,
     "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
     junit5 % Test,
-    "org.assertj" % "assertj-core" % "3.24.2" % Test)
+    "org.assertj" % "assertj-core" % AssertJVersion % Test)
 
   val javaSdkTestKit =
     deps ++=
@@ -137,7 +153,7 @@ object Dependencies {
         junit5,
         // convenience-transitive dependencies for user assertions and async interactions
         "org.awaitility" % "awaitility" % "4.2.1",
-        "org.assertj" % "assertj-core" % "3.24.2",
+        "org.assertj" % "assertj-core" % AssertJVersion,
         // for the tests of the testkit itself
         "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
         scalaTest % Test)
@@ -145,7 +161,7 @@ object Dependencies {
   val tests =
     deps ++= Seq(
       // FIXME why doesn't these two come along transitively from the testkit?
-      "org.assertj" % "assertj-core" % "3.24.2" % Test,
+      "org.assertj" % "assertj-core" % AssertJVersion % Test,
       "org.awaitility" % "awaitility" % "4.2.1" % Test,
       AkkaDevRuntime % Test,
       akkaDependency("akka-testkit"),

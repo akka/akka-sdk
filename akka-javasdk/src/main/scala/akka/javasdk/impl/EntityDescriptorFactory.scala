@@ -18,7 +18,7 @@ import akka.javasdk.workflow.Workflow
 private[impl] object EntityDescriptorFactory extends ComponentDescriptorFactory {
 
   override def buildDescriptorFor(component: Class[_], serializer: Serializer): ComponentDescriptor = {
-    //TODO remove capitalization of method name, can't be done per component, because component client reuse the same logic for all
+    // TODO remove capitalization of method name, can't be done per component, because component client reuse the same logic for all
     // getMethods (not getDeclaredMethods) so command handlers inherited from a base class are included
     val commandHandlerMethods = if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(component)) {
       component.getMethods.collect {

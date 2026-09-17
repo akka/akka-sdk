@@ -16,7 +16,7 @@ import akka.javasdk.timedaction.TimedAction
 private[impl] object TimedActionDescriptorFactory extends ComponentDescriptorFactory {
 
   override def buildDescriptorFor(component: Class[_], serializer: Serializer): ComponentDescriptor = {
-    //TODO remove capitalization of method name, can't be done per component, because component client reuse the same logic for all
+    // TODO remove capitalization of method name, can't be done per component, because component client reuse the same logic for all
     // getMethods (not getDeclaredMethods) so command handlers inherited from a base class are included
     val invokers = component.getMethods.collect {
       case method if isCommandHandlerCandidate[TimedAction.Effect](method) =>

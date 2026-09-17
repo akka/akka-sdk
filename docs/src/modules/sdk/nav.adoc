@@ -1,7 +1,10 @@
 * xref:sdk:index.adoc[]
 ** Building with AI
 *** xref:sdk:spec-driven-development.adoc[]
+*** xref:sdk:enforced-mode.adoc[]
+*** xref:sdk:a-la-carte-mode.adoc[]
 *** xref:sdk:ai-coding-assistant.adoc[]
+*** xref:sdk:register-mcp.adoc[Register the Akka MCP server]
 ** xref:sdk:components/index.adoc[]
 *** xref:sdk:agents.adoc[Agents]
 **** xref:sdk:agents/prompt.adoc[Prompts]
@@ -36,6 +39,7 @@
 *** xref:sdk:timed-actions.adoc[Timers]
 *** xref:sdk:consuming-producing.adoc[Consumers]
 *** xref:sdk:evaluators.adoc[Evaluators]
+** xref:sdk:web-applications.adoc[Web applications]
 ** xref:sdk:integrations/index.adoc[]
 *** xref:sdk:component-and-service-calls.adoc[]
 *** xref:sdk:integrations/ai-and-models.adoc[]

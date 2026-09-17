@@ -1,0 +1,170 @@
+= Experience exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Experience] type. These apply when a feature has a user interface; a headless or API-only service strikes them as a group. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
+
+== Keyboard and focus accessibility
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `EXP-KEYBOARD-ALL-INTERACTIVE` | Every interactive control is reachable and operable using only the keyboard.
+| `EXP-NO-KEYBOARD-TRAP` | Keyboard focus can always be moved away from any component without a pointer (WCAG 2.1.2).
+| `EXP-FOCUS-VISIBLE` | A visible focus indicator is present on every focusable element when it receives focus (WCAG 2.4.7).
+| `EXP-FOCUS-ORDER-LOGICAL` | Tab order follows a meaningful sequence that preserves reading and operational order (WCAG 2.4.3).
+| `EXP-FOCUS-NOT-OBSCURED` | The focused element is not entirely hidden by sticky headers, footers, or overlays (WCAG 2.4.11).
+| `EXP-SKIP-TO-CONTENT` | A skip link or landmark mechanism lets keyboard users bypass repeated navigation blocks (WCAG 2.4.1).
+| `EXP-FOCUS-TRAP-MODAL` | Open modal dialogs confine focus to the dialog and restore it to the trigger on close.
+| `EXP-NO-POSITIVE-TABINDEX` | No element uses a positive `tabindex` value that overrides the natural document order.
+| `EXP-FOCUS-ON-ROUTE-CHANGE` | Focus moves to a sensible target after a client-side route change so keyboard context is not lost.
+| `EXP-DISMISS-ON-ESC` | Popovers, menus, and dialogs can be dismissed with the Escape key.
+|===
+
+== Semantics, ARIA, and assistive technology
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `EXP-ALT-TEXT-IMAGES` | All informative images expose meaningful text alternatives and decorative images are marked empty (WCAG 1.1.1).
+| `EXP-LANDMARK-REGIONS` | Page structure uses semantic landmarks (header, nav, main, footer) so regions are navigable.
+| `EXP-HEADING-HIERARCHY` | Headings are used in a correct, non-skipping hierarchical order that reflects document structure.
+| `EXP-NAME-ROLE-VALUE` | Custom widgets expose an accessible name, role, and state to assistive technology (WCAG 4.1.2).
+| `EXP-ARIA-VALID` | ARIA roles, states, and properties are valid and used only where native semantics are insufficient.
+| `EXP-LIVE-REGION-ANNOUNCE` | Asynchronous status changes are announced through an appropriate ARIA live region.
+| `EXP-BUTTON-VS-LINK` | Actions use buttons and navigation uses links so semantics match behavior.
+| `EXP-ICON-ONLY-LABEL` | Icon-only controls carry an accessible label describing their action.
+| `EXP-STATUS-MESSAGES` | Success, warning, and error messages are programmatically determinable without receiving focus (WCAG 4.1.3).
+| `EXP-DECORATIVE-HIDDEN` | Purely decorative content is hidden from the accessibility tree with `aria-hidden` or equivalent.
+|===
+
+== Visual accessibility and color
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `EXP-CONTRAST-TEXT` | Body and large text meet the minimum contrast ratios of WCAG 1.4.3 against their background.
+| `EXP-CONTRAST-NONTEXT` | UI components and meaningful graphics meet the 3:1 non-text contrast requirement (WCAG 1.4.11).
+| `EXP-COLOR-NOT-SOLE-CUE` | Color is never the only means of conveying information, state, or distinction (WCAG 1.4.1).
+| `EXP-TEXT-RESIZE-200` | Content remains usable and readable when text is zoomed to 200% (WCAG 1.4.4).
+| `EXP-REFLOW-320` | Content reflows without horizontal scrolling at a 320 CSS-pixel viewport width (WCAG 1.4.10).
+| `EXP-TEXT-SPACING` | Layout tolerates increased line, letter, and paragraph spacing without clipping content (WCAG 1.4.12).
+| `EXP-NO-TEXT-IN-IMAGES` | Text is rendered as real text rather than baked into images except for logos (WCAG 1.4.5).
+| `EXP-CONTRAST-STATES` | Hover, focus, active, and disabled states preserve sufficient contrast and remain distinguishable.
+| `EXP-CONTENT-ON-HOVER` | Content revealed on hover or focus is dismissable, hoverable, and persistent (WCAG 1.4.13).
+|===
+
+== Forms and input UX
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `EXP-LABEL-EVERY-FIELD` | Every form control has a programmatically associated, visible label (WCAG 1.3.1, 3.3.2).
+| `EXP-ERROR-IDENTIFY` | Validation errors identify the specific field and describe the problem in text (WCAG 3.3.1).
+| `EXP-ERROR-SUGGESTION` | When a fix is known, the interface suggests how to correct the input error (WCAG 3.3.3).
+| `EXP-INLINE-VALIDATION` | Field-level validation feedback appears near its control rather than only in a summary.
+| `EXP-REQUIRED-INDICATED` | Required fields are indicated both visually and programmatically, not by color alone.
+| `EXP-AUTOCOMPLETE-TOKENS` | Inputs collecting personal data declare correct HTML `autocomplete` tokens (WCAG 1.3.5).
+| `EXP-INPUT-TYPE-MOBILE` | Inputs use appropriate types and `inputmode` so mobile keyboards match the expected data.
+| `EXP-ERROR-FOCUS-MANAGE` | On submit failure, focus and an error summary direct the user to the first invalid field.
+| `EXP-NO-DESTRUCTIVE-DEFAULT` | Destructive or irreversible submissions require explicit confirmation before proceeding (WCAG 3.3.4).
+| `EXP-SUBMIT-DISABLE-DOUBLE` | Submit controls prevent duplicate submission while a request is in flight.
+| `EXP-PRESERVE-INPUT-ERROR` | User-entered data is preserved and not cleared when validation fails.
+|===
+
+== Loading, empty, and error states
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `EXP-LOADING-INDICATOR` | Asynchronous operations show a loading indicator within a perceptible threshold.
+| `EXP-SKELETON-STABLE` | Loading placeholders reserve final layout dimensions to avoid content shift on resolution.
+| `EXP-EMPTY-STATE-GUIDES` | Empty collections show an explanatory empty state with a next action rather than a blank region.
+| `EXP-ERROR-STATE-RECOVER` | Failed operations present a human-readable error with a retry or recovery path.
+| `EXP-NO-RAW-ERRORS` | Stack traces, status codes, and raw exception text are never surfaced to end users.
+| `EXP-TIMEOUT-FEEDBACK` | Long-running or timed-out requests give feedback instead of hanging indefinitely.
+| `EXP-OPTIMISTIC-ROLLBACK` | Optimistic UI updates roll back and inform the user when the underlying request fails.
+| `EXP-PARTIAL-FAILURE` | Partial failures in a composite view degrade gracefully without blanking the whole screen.
+| `EXP-STALE-DATA-SIGNAL` | Stale or cached data is signaled to the user when a refresh fails.
+|===
+
+== Performance and Core Web Vitals
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `EXP-LCP-THRESHOLD` | Largest Contentful Paint meets the good threshold of 2.5 seconds at the 75th percentile.
+| `EXP-INP-THRESHOLD` | Interaction to Next Paint stays within the 200 millisecond good threshold at the 75th percentile.
+| `EXP-CLS-THRESHOLD` | Cumulative Layout Shift stays at or below 0.1 across the page lifecycle.
+| `EXP-TTFB-BUDGET` | Time to First Byte remains within the defined server-response budget.
+| `EXP-IMAGE-DIMENSIONS` | Images and media declare explicit width and height or aspect ratio to prevent layout shift.
+| `EXP-IMAGE-OPTIMIZED` | Images are served in modern formats, responsively sized, and lazily loaded below the fold.
+| `EXP-JS-BUDGET` | Shipped JavaScript stays within the agreed transfer and execution budget.
+| `EXP-FONT-DISPLAY` | Web fonts use a display strategy that avoids invisible text and reflow on load.
+| `EXP-NO-BLOCKING-RESOURCES` | Render-blocking scripts and styles are deferred, inlined, or eliminated on the critical path.
+| `EXP-NO-MAIN-THREAD-BLOCK` | No single long task blocks the main thread beyond the defined responsiveness threshold.
+|===
+
+== Responsive and cross-device
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `EXP-NO-HORIZONTAL-SCROLL` | Layouts produce no unintended horizontal scrolling at supported viewport widths.
+| `EXP-BREAKPOINT-INTEGRITY` | Layout remains coherent and usable across all declared responsive breakpoints.
+| `EXP-TOUCH-TARGET-SIZE` | Interactive targets meet the minimum touch target size for pointer accessibility (WCAG 2.5.8).
+| `EXP-VIEWPORT-META` | A responsive viewport meta tag is present and does not disable user scaling.
+| `EXP-ORIENTATION-SUPPORT` | Content is usable in both portrait and landscape orientations (WCAG 1.3.4).
+| `EXP-SAFE-AREA-INSETS` | Layouts respect device safe-area insets such as notches and rounded corners.
+| `EXP-HOVER-ALT-TOUCH` | Functionality dependent on hover has an equivalent interaction on touch devices.
+| `EXP-CONTENT-PARITY` | Small-viewport layouts retain functional and content parity with larger viewports.
+| `EXP-STICKY-NO-OVERLAP` | Sticky or fixed elements do not overlap or obscure primary content on small screens.
+|===
+
+== Internationalization and localization
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `EXP-NO-HARDCODED-STRINGS` | All user-facing copy is externalized to translation resources rather than hardcoded.
+| `EXP-LANG-ATTRIBUTE` | The document and any language changes declare a correct `lang` attribute (WCAG 3.1.1, 3.1.2).
+| `EXP-RTL-MIRRORING` | Layouts mirror correctly and remain usable under right-to-left locales.
+| `EXP-LOCALE-FORMATS` | Dates, times, numbers, and currencies render using the active locale's formatting rules.
+| `EXP-TEXT-EXPANSION` | UI accommodates translation length expansion without truncation or overlap.
+| `EXP-NO-STRING-CONCAT` | Translatable messages avoid concatenation and use parameterized, pluralized forms.
+| `EXP-CHAR-ENCODING` | Content renders non-Latin scripts and extended characters without mojibake.
+| `EXP-BIDI-ISOLATION` | Mixed-direction text uses proper bidirectional isolation to prevent reordering errors.
+| `EXP-LOCALE-SWITCH-PERSIST` | A chosen locale is applied consistently and persisted across navigation.
+|===
+
+== Navigation, routing, and resilience
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `EXP-URL-REFLECTS-STATE` | Meaningful application state is reflected in a shareable, bookmarkable URL.
+| `EXP-BACK-FORWARD-WORKS` | Browser back and forward controls restore the expected view and scroll position.
+| `EXP-DEEP-LINK-VALID` | Direct navigation to any deep link resolves correctly without requiring prior in-app steps.
+| `EXP-404-HANDLED` | Unknown routes render a helpful not-found state with a path back to valid content.
+| `EXP-PAGE-TITLE-UNIQUE` | Each view sets a unique, descriptive document title (WCAG 2.4.2).
+| `EXP-ACTIVE-NAV-STATE` | The current location is indicated within navigation without relying on color alone.
+| `EXP-NO-SENSITIVE-IN-URL` | Credentials, tokens, and sensitive personal data never appear in URLs or query strings.
+| `EXP-EXTERNAL-LINK-SAFE` | Links opening new contexts use safe `rel` attributes and signal the context change.
+| `EXP-PROGRESSIVE-ENHANCE` | Core content and navigation remain functional when JavaScript is unavailable or fails to load.
+| `EXP-UNSAVED-CHANGES-GUARD` | Navigating away from unsaved changes prompts the user before data is lost.
+|===
+
+== Visual quality, motion, and cross-browser
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `EXP-VISUAL-REGRESSION` | Key screens match approved visual baselines within the allowed pixel tolerance.
+| `EXP-NO-LAYOUT-OVERFLOW` | Content does not clip, overlap, or overflow its container at supported sizes.
+| `EXP-REDUCED-MOTION` | Animations honor the `prefers-reduced-motion` setting by reducing or removing motion (WCAG 2.3.3).
+| `EXP-NO-SEIZURE-FLASH` | No content flashes more than three times per second (WCAG 2.3.1).
+| `EXP-ANIMATION-PAUSABLE` | Auto-playing or looping motion can be paused, stopped, or hidden (WCAG 2.2.2).
+| `EXP-DARK-MODE-PARITY` | If a dark theme is offered, all components render correctly with adequate contrast in it.
+| `EXP-CROSS-BROWSER-PARITY` | The feature renders and behaves consistently across the supported browser matrix.
+| `EXP-CONSISTENT-COMPONENTS` | Shared components render consistently with the design system rather than one-off styles.
+| `EXP-NO-CONSOLE-ERRORS` | Rendering the feature produces no uncaught JavaScript errors in the browser console.
+| `EXP-PRINT-STYLES` | Printable views apply styles that produce legible, non-truncated output when printed.
+|===

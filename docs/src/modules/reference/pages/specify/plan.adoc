@@ -1,4 +1,4 @@
-= /akka.plan
+= /akka:plan
 
 Convert a feature specification into a technical implementation plan.
 

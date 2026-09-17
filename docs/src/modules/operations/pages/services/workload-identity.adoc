@@ -1,7 +1,7 @@
 = Workload Identity
 include::ROOT:partial$include.adoc[]
 
-Akka services can authenticate with cloud provider APIs and third-party services using workload identity. Rather than managing long-lived credentials, Akka issues short-lived OpenID Connect (OIDC) tokens that prove the identity of your service. The target service verifies these tokens against Akka's OIDC issuer for your services region and grants access based on its own identity and access policies.
+Akka services can authenticate with cloud provider APIs, the Akka platform API, and third-party services using workload identity. Rather than managing long-lived credentials, Akka issues short-lived OpenID Connect (OIDC) tokens that prove the identity of your service. The target service verifies these tokens against Akka's OIDC issuer for your services region and grants access based on its own identity and access policies.
 
 This approach works with the local cloud provider where your Akka service is running (AWS, Azure, or GCP), as well as with any other cloud provider or third-party service that supports OIDC-based workload identity authentication.
 
@@ -375,6 +375,70 @@ spec:
 
 The GCP SDK in your service automatically authenticates using the workload identity — no additional code is needed.
 
+[#authenticating-with-the-akka-platform-api]
+== Authenticating with the Akka platform API
+
+Akka services can authenticate with the Akka platform API itself, the same API used by the Akka CLI and by the platform API client libraries. This allows code running in a service to call the platform API — for example to look up other services in a project, or to manage projects and organizations — without embedding a token or credentials of its own.
+
+=== Configuring the service
+
+Configure this in the xref:reference:descriptors/service-descriptor.adoc[service descriptor] by setting an empty `akka` object under `workloadIdentity`:
+
+[source, yaml]
+----
+resource: Service
+resourceVersion: v1
+metadata:
+  name: my-service
+spec:
+  image: my-container-registry/my-image:latest
+  workloadIdentity:
+    akka: {}
+----
+
+For the full configuration reference, see xref:reference:descriptors/service-descriptor.adoc#AkkaWorkloadIdentity[AkkaWorkloadIdentity] in the service descriptor reference.
+
+Once configured, Akka mounts a token into the service container and sets the environment variables that the Akka CLI and the platform API client libraries read automatically. No additional code is needed to authenticate.
+
+=== Authorizing the service
+
+Configuring workload identity gives the service an identity, `system:serviceaccount:<project-id>:klx-<service-name>` — the same identity described in <<Token subject claim,above>>. It does not by itself grant the service any permissions. To authorize the service to act on a project or organization, grant it a role, the same way you would grant a role to a user.
+
+==== Granting a project role to a service
+
+Use the `--service` flag on `akka roles add-binding` in place of `--email` or `--username`:
+
+[source, command line]
+----
+akka roles add-binding --service my-service --role developer
+----
+
+If the service belongs to a different project than the one the role is being granted on, specify it with `--service-project`:
+
+[source, command line]
+----
+akka roles add-binding --service my-service --service-project my-service-project \
+  --role viewer
+----
+
+If the target project has more than one region, specify which region the service is running in with `--service-region`. To grant the role to the service in every region belonging to the project's region group, use `--service-region-group` instead.
+
+For the full set of options, see xref:reference:cli/akka-cli/akka_roles_add-binding.adoc[akka roles add-binding] and xref:operations:projects/manage-project-access.adoc[Managing project users].
+
+==== Granting an organization role to a service
+
+Use the same `--service` flag on `akka organizations users add-binding`:
+
+[source, command line]
+----
+akka organizations users add-binding --organization my-organization \
+  --service my-service --role member
+----
+
+The `--service-project`, `--service-region`, and `--service-region-group` flags work the same way as for `akka roles add-binding`, above.
+
+For the full set of options, see xref:reference:cli/akka-cli/akka_organizations_users_add-binding.adoc[akka organizations users add-binding] and xref:operations:organizations/manage-users.adoc[Managing organization users].
+
 == Authenticating with third-party and non-local cloud providers
 
 For any service that supports OIDC-based workload identity — whether it is a different cloud provider, a SaaS platform, or a self-hosted service — you configure trust by registering Akka's OIDC issuer and granting access based on the token's `sub` claim.
@@ -403,3 +467,9 @@ String token = Files.readString(Path.of("/var/run/secrets/tokens/my-service-toke
 ----
 
 Because the token is rotated automatically by Akka, always read it fresh from the file before each use rather than caching it in memory.
+
+== See also
+
+- xref:reference:descriptors/service-descriptor.adoc#WorkloadIdentity[WorkloadIdentity in the service descriptor reference]
+- xref:projects/manage-project-access.adoc[]
+- xref:organizations/manage-users.adoc[]

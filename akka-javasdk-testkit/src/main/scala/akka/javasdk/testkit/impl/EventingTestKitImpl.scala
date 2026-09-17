@@ -159,7 +159,7 @@ object EventingTestKitImpl {
         case Value.Empty              => new SpiMetadataEntry(entry.key, "")
         case Value.StringValue(value) => new SpiMetadataEntry(entry.key, value)
         case Value.BytesValue(value) =>
-          new SpiMetadataEntry(entry.key, value.toStringUtf8) //FIXME binary not supported
+          new SpiMetadataEntry(entry.key, value.toStringUtf8) // FIXME binary not supported
       })
     new SpiMetadata(entries)
   }

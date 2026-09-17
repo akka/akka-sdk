@@ -9,14 +9,23 @@ akka organizations users add-binding --user-id USER_ID --role ROLE [flags]
 == Options
 
 ----
-      --email string          The email. Use to grant a role to a user identified by the given email address.
-      --group string          The group. Use to grant a role to a group in the specified organization with this name.
-      --group-org string      The name or id of the organization that owns the group, if not the organization this binding is being added to.
-  -h, --help                  help for add-binding
-      --organization string   name or ID for organization
-      --role string           The role for the invited user
-      --user-id string        The user ID. Use to grant a role to a user identified by their given UUID.
-      --username string       The username. Use to grant a role to a user identified by the given username.
+      --email string                       The email. Use to grant a role to a user identified by the given email address.
+      --group string                       The group. Use to grant a role to a group in the specified organization with this name.
+      --group-org string                   The name or id of the organization that owns the group, if not the organization this binding is being added to.
+  -h, --help                               help for add-binding
+      --identity-provider string           The id of the workload identity provider that --workload-identity-subject or --workload-identity-claim refers to.
+      --identity-provider-org string       The name or id of the organization that owns the workload identity provider, if not the organization that owns this role binding (or the project it belongs to).
+      --organization string                name or ID for organization
+      --role string                        The role for the invited user
+      --service string                     The Akka service name. Use to grant a role to an Akka service.
+      --service-project string             The name or id of the project that the service specified by --service belongs to.
+      --service-project-owner string       The owner of the project specified by --service-project, needed if you have two projects with the same name from different owners.
+      --service-region string              The region the service specified by --service is running in. Only needed if the project has more than one region.
+      --service-region-group               Grant the role to the service specified by --service in every region belonging to the project's region group, rather than to a single region.
+      --user-id string                     The user ID. Use to grant a role to a user identified by their given UUID.
+      --username string                    The username. Use to grant a role to a user identified by the given username.
+      --workload-identity-claim string     A claim of a workload identity JWT, in the form claim-name=claim-value. Use to grant a role to any workload authenticated with this claim via a workload identity provider.
+      --workload-identity-subject string   The subject claim of a workload identity JWT. Use to grant a role to any workload authenticated with this subject via a workload identity provider.
 ----
 
 == Options inherited from parent commands

@@ -111,6 +111,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       if (maxSizeInBytes <= 0)
         throw new IllegalArgumentException("Maximum size must be greater than 0");
       messages = messages != null ? messages : new LinkedList<>();
+      tokenUsage = tokenUsage != null ? tokenUsage : TokenUsage.EMPTY;
       int sizeBefore = messages.size();
       currentSizeInBytes =
           enforceMaxCapacity(sessionId, messages, currentSizeInBytes, maxSizeInBytes);

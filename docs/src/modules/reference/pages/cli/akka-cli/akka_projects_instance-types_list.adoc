@@ -5,7 +5,7 @@ List instance types this project may deploy with.
 == Synopsis
 
 The `akka project instance-types list` command shows the service instance types the project is allowed to use, resolved from the org-config hierarchy.
-The platform default is always included and marked.
+The row marked DEFAULT is what a service gets when it is deployed without `--instance-type`: the organization's configured default, or the platform default when the organization sets none.
 
 Optional `--region` and `--service` refine the resolution to a specific deployment region or service within the project.
 

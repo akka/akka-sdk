@@ -12,7 +12,7 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 [[_starting_your_service]]
 == Starting your service
 
-As an example, we will use the xref:getting-started:shopping-cart/build-and-deploy-shopping-cart.adoc[Shopping Cart] sample.
+The examples use the xref:getting-started:shopping-cart/build-and-deploy-shopping-cart.adoc[Shopping Cart] sample.
 
 To start your service locally, run the following command from the root of your project:
 
@@ -135,7 +135,7 @@ This port is configured in `akka.javasdk.dev-mode.http-port` property in the
 include::sdk:example$event-sourced-customer-registry-subscriber/src/main/resources/application.conf[tag=custom-port]
 ----
 
-With both services configured, we can start them independently by running `mvn compile exec:java` in two separate terminals.
+With both services configured, start them independently by running `mvn compile exec:java` in two separate terminals.
 
 == Invoking cloud based services from local services
 

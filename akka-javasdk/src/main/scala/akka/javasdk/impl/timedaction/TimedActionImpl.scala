@@ -16,6 +16,7 @@ import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.UnhandledExceptionReporting
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
@@ -78,7 +79,8 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
     tracerFactory: () => Tracer,
     jsonSerializer: Serializer,
     regionInfo: RegionInfo,
-    componentDescriptor: ComponentDescriptor)
+    componentDescriptor: ComponentDescriptor,
+    unhandledExceptionReporter: () => Option[UnhandledExceptionReporting.Reporter] = () => None)
     extends SpiTimedAction {
   import TimedActionImpl.CommandContextImpl
 
@@ -139,6 +141,13 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
       log.error(
         s"Failure during handling command [${command.name}] from TimedAction component [${timedActionClass.getSimpleName}].",
         ex)
+      UnhandledExceptionReporting.report(
+        unhandledExceptionReporter,
+        ex,
+        correlationId,
+        componentId,
+        timedActionClass.getName,
+        log)
       protocolFailure(correlationId)
     }
   }

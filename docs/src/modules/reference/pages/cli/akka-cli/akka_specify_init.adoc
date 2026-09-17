@@ -9,21 +9,23 @@ This command:
 
 . Clones an Akka sample project (or uses the current directory with '.')
 . Downloads the Akka SDK constitution (and additional constitution, if configured)
-. Installs slash commands and templates
+. Installs SDD templates, and (when --agent selects a slash-command harness) per-harness slash commands / rules
 . Configures the MCP server for AI agent integration
 
-The cloned repository includes CLAUDE.md, AGENTS.md, and Akka AI context files that are version-synchronized with the SDK.
+The install surface varies by --agent: neutral / generic / factory / devin / junie / warp / jules / zed / codex / copilot-agent get AGENTS.md and rely on the Akka MCP tools directly;
+claude-code / cursor / vscode-copilot / vs-copilot / roo / trae / agy also get per-harness slash commands or rules.
 
 NOTE: Building the project requires the Akka resolver in your Maven settings.xml.
 If not yet configured, this command will guide you through setup before initializing the project.
 Use --skip-token-check to bypass this check (useful in scripts or pre-provisioned container environments where Maven is already configured, e.g.
 via an internal mirror).
 
-After running this command, open Claude Code (or your preferred AI agent) in the project directory to start developing.
+After running this command, open your AI coding agent (Claude Code, Cursor, Copilot, Zed, Warp, ...) in the project directory to start developing.
 
-Examples:   akka specify init my-service    # clone sample into new directory   cd my-service && claude
+Examples:   akka specify init my-service --agent claude-code   # clone sample;
+Claude Code profile   cd my-service && claude
 
-akka specify init .             # install resources in current directory   claude
+akka specify init .                                # neutral install in cwd   # then open your preferred AGENTS.md-aware agent
 
 ----
 akka specify init [directory] [flags]
@@ -32,10 +34,20 @@ akka specify init [directory] [flags]
 == Options
 
 ----
-      --agent string       AI agent to configure (claude-code, cursor, vscode-copilot, generic). (default "claude-code")
-  -h, --help               help for init
-      --skip-commands      Skip slash-command installation (use when commands are provided by a plugin).
-      --skip-token-check   Skip the Maven resolver/token check (for scripted or pre-provisioned environments).
+      --agent string             AI agent to configure (omit for AGENTS.md + .mcp.json only).
+                                   Verified profiles:
+                                     claude-code, cursor, vscode-copilot, agy, roo, trae, vs-copilot.
+                                   AGENTS.md-native (writes a project MCP file):
+                                     generic, factory, devin, junie.
+                                   AGENTS.md-native aliases (MCP registered outside the workspace — CLI prints the vendor-specific hint):
+                                     warp, jules, zed, copilot-agent, codex.
+                                   Scaffolded (installs agent-neutral files with a warning):
+                                     kilo, cline, replit, jetbrains-copilot, xcode-copilot, nvim-copilot.
+      --channel string           Release channel for AI marketplace + constitution: stable (default; blessed tag) or edge (main branch).
+  -h, --help                     help for init
+      --marketplace-ref string   Override AI marketplace git ref (branch, tag, or commit SHA).
+      --skip-commands            Skip slash-command installation (use when commands are provided by a plugin).
+      --skip-token-check         Skip the Maven resolver/token check (for scripted or pre-provisioned environments).
 ----
 
 == Options inherited from parent commands

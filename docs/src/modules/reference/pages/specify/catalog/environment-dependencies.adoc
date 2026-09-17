@@ -1,0 +1,140 @@
+= Environment & Dependencies exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Environment & Dependencies] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
+
+== Dependency identification & availability
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `ENV-DEPS-DECLARED` | Every runtime and build dependency the code imports is explicitly declared in the manifest.
+| `ENV-NO-PHANTOM-DEPS` | No dependency is used in source without a corresponding manifest entry.
+| `ENV-NO-UNUSED-DEPS` | No declared dependency is absent from the actual import graph.
+| `ENV-DEPS-RESOLVABLE` | Every declared dependency resolves to a concrete artifact from a configured repository.
+| `ENV-DEPS-DOWNLOADABLE` | All resolved artifacts are fetchable and present in the local cache or offline store.
+| `ENV-TRANSITIVE-RESOLVED` | The full transitive dependency graph resolves without missing nodes.
+| `ENV-REPO-REACHABLE` | Every configured artifact repository is reachable and returns valid metadata.
+| `ENV-DEPS-INTEGRITY` | Downloaded artifacts match their published checksums or signatures.
+|===
+
+== Version pinning & deterministic resolution
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `ENV-LOCKFILE-PRESENT` | A lockfile capturing exact resolved versions exists and is committed.
+| `ENV-LOCKFILE-CURRENT` | The lockfile is in sync with the declared manifest and needs no regeneration.
+| `ENV-NO-VERSION-RANGES` | No production dependency is declared with an open or floating version range.
+| `ENV-NO-SNAPSHOT-DEPS` | No dependency resolves to a SNAPSHOT, nightly, or otherwise mutable version.
+| `ENV-DETERMINISTIC-RESOLVE` | Repeated resolution from the manifest yields byte-identical version sets.
+| `ENV-NO-VERSION-CONFLICT` | No two paths in the graph demand incompatible versions of the same artifact.
+| `ENV-DUP-DEPS-CONVERGED` | Duplicate dependencies are converged to a single agreed version.
+| `ENV-PLUGIN-VERSIONS-PINNED` | Build plugins and extensions are pinned to explicit versions.
+| `ENV-CHECKSUM-VERIFY-ON` | Dependency checksum verification is enabled in the resolver configuration.
+|===
+
+== Toolchain & runtime prerequisites
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `ENV-JAVA-VERSION` | The installed JDK matches the version required by the project.
+| `ENV-MAVEN-VERSION` | The installed Maven meets the project's minimum required version.
+| `ENV-BUILD-TOOL-PINNED` | The build tool version is pinned via a wrapper or toolchain descriptor.
+| `ENV-SDK-VERSION-PINNED` | The Akka SDK dependency is pinned to an approved, explicit version.
+| `ENV-CLI-VERSION-PINNED` | The Akka CLI is installed at an approved, explicit version.
+| `ENV-CLI-ON-PATH` | The required CLI executables are present and discoverable on PATH.
+| `ENV-RUNTIME-APPROVED` | The runtime version falls within the approved support window.
+| `ENV-TOOLCHAIN-CURRENT` | No toolchain component lags the governed minimum by more than the allowed margin.
+| `ENV-CONTAINER-RUNTIME` | The container runtime required for build and test is installed and operational.
+|===
+
+== Configuration completeness & validation
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `ENV-CONFIG-KEYS-PRESENT` | Every configuration key the application reads has a defined value.
+| `ENV-CONFIG-SCHEMA-VALID` | Configuration files validate against their declared schema.
+| `ENV-NO-PLACEHOLDER-VALUES` | No configuration value is left as an unresolved placeholder or template token.
+| `ENV-CONFIG-TYPES-VALID` | Each configuration value parses as its declared type and range.
+| `ENV-ENV-VARS-DEFINED` | All environment variables referenced by the app are defined in the target environment.
+| `ENV-ENV-VAR-NAMING` | Environment variable names follow the governed provider/service naming convention.
+| `ENV-NO-CONFIG-CONFLICT` | No configuration key is defined with conflicting values across sources.
+| `ENV-CONFIG-DEFAULTS-SAFE` | Fallback defaults for optional configuration are present and within safe bounds.
+|===
+
+== Secrets, tokens & credentials
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `ENV-SECRETS-PRESENT` | Every secret the application requires is provisioned in the target environment.
+| `ENV-TOKENS-VALID` | Required API tokens authenticate successfully against their providers.
+| `ENV-TOKENS-UNEXPIRED` | No required token or credential is expired or within its expiry window.
+| `ENV-DOWNLOAD-TOKEN-VALID` | The Akka download token is present and authorizes artifact retrieval.
+| `ENV-NO-HARDCODED-SECRETS` | No secret is committed to source or embedded in tracked configuration.
+| `ENV-SECRET-KEYS-COMPLETE` | Every secret key referenced by the app has a corresponding stored value.
+| `ENV-CREDENTIAL-SCOPE` | Provisioned credentials carry the scopes the application actually requires.
+|===
+
+== Environment parity & reproducible builds
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `ENV-DEV-CI-PARITY` | The dev environment's resolved toolchain and dependencies match CI.
+| `ENV-CI-PROD-PARITY` | The CI-built environment matches the production runtime specification.
+| `ENV-BUILD-REPRODUCIBLE` | Rebuilding from the same commit produces identical output artifacts.
+| `ENV-NO-HOST-LEAKAGE` | The build does not depend on undeclared host-specific state or paths.
+| `ENV-LOCKED-BUILD-INPUTS` | All build inputs are pinned so the build is hermetic and repeatable.
+| `ENV-TIMEZONE-LOCALE-SET` | Build and runtime timezone and locale are fixed to governed values.
+| `ENV-CLEAN-BUILD-PASSES` | A build from a clean, cacheless environment completes successfully.
+| `ENV-CONTAINER-DEFINED` | A container or environment descriptor fully captures the runtime setup.
+| `ENV-NO-MANUAL-STEPS` | The environment can be stood up with no undocumented manual steps.
+|===
+
+== External service connectivity
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `ENV-SERVICES-REACHABLE` | Every required external service endpoint is reachable from the environment.
+| `ENV-SERVICE-AUTH-OK` | Authentication against each external service succeeds with provisioned credentials.
+| `ENV-SERVICE-HEALTHCHECK` | Each external dependency passes a liveness or health probe before use.
+| `ENV-MOCKS-VERIFIED` | Services stubbed or mocked for the environment are wired and pass their contract checks.
+| `ENV-NETWORK-CONFIG` | Required ports, hosts, and network routes are open and correctly configured.
+| `ENV-PROXY-CONFIG` | Proxy settings are present and correct where outbound access is mediated.
+| `ENV-TLS-TRUST` | Required TLS certificates and trust anchors are installed and valid.
+|===
+
+== Akka setup state & drift detection
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `ENV-SETUP-CURRENT` | The `/akka:setup` state matches the latest resolved governance with no drift.
+| `ENV-AKKA-CONTEXT-FRESH` | The downloaded akka-context documentation is present and current.
+| `ENV-MCP-JSON-PRESENT` | A valid `.mcp.json` is present with the expected server configuration.
+| `ENV-AGENTS-MD-PRESENT` | An `AGENTS.md` is present and reflects the current project setup.
+| `ENV-PROJECT-SCAFFOLDED` | The Akka project scaffold matches the expected structure and files.
+| `ENV-SETUP-IDEMPOTENT` | Re-running setup produces no changes, confirming a converged environment.
+| `ENV-CONTEXT-VERSION-MATCH` | The akka-context version aligns with the pinned SDK and CLI versions.
+| `ENV-GOVERNANCE-SYNCED` | Local setup reflects the latest resolved governance revision.
+| `ENV-NO-SETUP-DRIFT` | A drift check reports the environment state matches the recorded baseline.
+|===
+
+== Dependency freshness, deprecation & EOL
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `ENV-NO-DEPRECATED-DEPS` | No dependency in use is marked deprecated by its maintainer.
+| `ENV-NO-DEPRECATED-APIS` | No called API is annotated deprecated in the resolved dependency versions.
+| `ENV-NO-EOL-DEPS` | No dependency is past its end-of-life or end-of-support date.
+| `ENV-DEPS-WITHIN-FRESHNESS` | Every dependency is within the governed maximum age or lag from latest.
+| `ENV-BASE-IMAGE-CURRENT` | The container base image is at an approved, non-stale tag.
+| `ENV-BASE-IMAGE-DIGEST` | The base image is pinned by digest rather than a mutable tag.
+| `ENV-NO-YANKED-DEPS` | No resolved dependency version has been yanked or withdrawn upstream.
+| `ENV-UPGRADE-PATH-CLEAR` | No dependency is blocked from a required security or governance upgrade.
+|===

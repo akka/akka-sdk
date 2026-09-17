@@ -1,0 +1,132 @@
+= Pipeline & Scanning exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Pipeline & Scanning] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
+
+== CI/CD gates and status checks
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `SCAN-CI-GREEN-EVERY-COMMIT` | Every commit on the branch produces a passing CI pipeline run with no failed jobs.
+| `SCAN-REQUIRED-STATUS-CHECKS` | All branch-protection required status checks are configured and reported as passing.
+| `SCAN-CI-BLOCKS-MERGE-ON-FAIL` | Merge is blocked whenever any required pipeline job reports a failure.
+| `SCAN-NO-SKIPPED-REQUIRED-JOBS` | No required CI job is skipped, cancelled, or marked neutral to satisfy the gate.
+| `SCAN-PIPELINE-RUNS-ON-PR` | The full pipeline is triggered on every pull request against a protected branch.
+| `SCAN-CI-PASSES-DEFAULT-BRANCH` | The most recent pipeline run on the default branch is in a passing state.
+| `SCAN-STALE-STATUS-REEVALUATED` | Status checks are re-run against the merge result rather than a stale head commit.
+| `SCAN-NO-MANUAL-CHECK-OVERRIDE` | No required check was dismissed or force-passed by an administrator override.
+| `SCAN-ALL-MATRIX-LEGS-PASS` | Every leg of a build matrix completes successfully before the check is green.
+|===
+
+== Static analysis and code quality
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `SCAN-SAST-CLEAN` | Static application security testing reports no open findings above the configured threshold.
+| `SCAN-SAST-NO-HIGH-SEVERITY` | No high or critical severity SAST findings remain unresolved on the scanned revision.
+| `SCAN-SAST-RUNS-EVERY-BUILD` | SAST is executed as a required stage on every pipeline run, not on a schedule only.
+| `SCAN-QUALITY-GATE-PASS` | The configured quality gate (e.g. SonarQube) returns a passing status for the analysis.
+| `SCAN-COVERAGE-GATE-ENFORCED` | Code coverage meets or exceeds the enforced minimum threshold in CI.
+| `SCAN-COVERAGE-NO-REGRESSION` | Coverage on changed lines does not drop below the project baseline.
+| `SCAN-NO-WARNINGS-AS-ERRORS-BYPASS` | The build does not disable or downgrade warnings-as-errors to pass compilation.
+| `SCAN-LINT-CLEAN` | Configured linters report zero errors on the scanned source tree.
+| `SCAN-CODE-DUPLICATION-BELOW-THRESHOLD` | Measured code duplication stays under the configured maximum percentage.
+| `SCAN-NO-NEW-CODE-SMELLS` | No new maintainability issues are introduced above the accepted debt ratio.
+|===
+
+== Dependency and supply-chain scanning
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `SCAN-SCA-NO-KNOWN-VULNS` | Software composition analysis reports no dependencies with known vulnerabilities above threshold.
+| `SCAN-SCA-NO-CRITICAL-CVE` | No dependency carries an unresolved critical-severity CVE at build time.
+| `SCAN-DEPENDENCY-LOCKFILE-PRESENT` | A committed lockfile fully pins the resolved dependency graph.
+| `SCAN-NO-YANKED-DEPENDENCIES` | No resolved dependency version has been yanked or withdrawn upstream.
+| `SCAN-TRANSITIVE-DEPS-SCANNED` | Transitive dependencies, not only direct ones, are included in the vulnerability scan.
+| `SCAN-LICENSE-COMPLIANCE-PASS` | The license compliance scan passes against the approved-license policy.
+| `SCAN-NO-DENYLISTED-LICENSES` | No dependency ships under a denylisted or copyleft-incompatible license.
+| `SCAN-DEPENDENCY-AGE-WITHIN-POLICY` | No dependency is older or more stale than the maximum allowed by policy.
+| `SCAN-VULN-DB-FRESH` | The vulnerability database used by the scan is within the allowed freshness window.
+|===
+
+== Secret and credential scanning
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `SCAN-SECRETS-CLEAN` | Secret scanning reports no detected secrets in the scanned changes.
+| `SCAN-SECRET-SCAN-FULL-HISTORY` | Secret detection covers the full commit history, not only the latest diff.
+| `SCAN-NO-HARDCODED-CREDENTIALS` | No hardcoded passwords, API keys, or tokens are present in source or config.
+| `SCAN-NO-PRIVATE-KEYS-COMMITTED` | No private keys or certificate material are committed to the repository.
+| `SCAN-VERIFIED-SECRETS-REVOKED` | Any secret flagged as verified-active has been revoked before the gate passes.
+| `SCAN-SECRET-SCAN-ON-PUSH` | Secret scanning runs on push and blocks the pipeline when triggered.
+| `SCAN-NO-CLOUD-TOKENS-IN-ARTIFACTS` | Build artifacts contain no embedded cloud credentials or session tokens.
+| `SCAN-ENV-FILES-EXCLUDED` | Environment and secret files are excluded from version control and artifacts.
+|===
+
+== Infrastructure, container, and dynamic scanning
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `SCAN-IAC-CONFIG-CLEAN` | Infrastructure-as-code scanning reports no misconfigurations above the threshold.
+| `SCAN-IAC-NO-PUBLIC-EXPOSURE` | IaC scanning finds no resources unintentionally exposed to the public internet.
+| `SCAN-IAC-POLICY-AS-CODE-PASS` | Infrastructure definitions pass the organization's policy-as-code rule set.
+| `SCAN-CONTAINER-IMAGE-CLEAN` | Container image scanning reports no vulnerabilities above the configured threshold.
+| `SCAN-CONTAINER-NO-CRITICAL-CVE` | The built container image contains no unresolved critical-severity CVEs.
+| `SCAN-BASE-IMAGE-SUPPORTED` | The container base image is a currently supported, non-end-of-life version.
+| `SCAN-IMAGE-NO-ROOT-USER` | The container image is configured to run as a non-root user.
+| `SCAN-CONTAINER-MINIMAL-PACKAGES` | The image contains no unnecessary packages beyond the runtime's needs.
+| `SCAN-DAST-CLEAN` | Dynamic application security testing reports no findings above the threshold.
+| `SCAN-DAST-NO-HIGH-FINDINGS` | No high-severity DAST findings remain open on the tested deployment.
+|===
+
+== Build reproducibility and hermeticity
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `SCAN-BUILD-REPRODUCIBLE` | Rebuilding from the same source yields a bit-for-bit identical artifact.
+| `SCAN-BUILD-HERMETIC` | The build runs in an isolated environment with fully declared inputs.
+| `SCAN-BUILD-TOOLS-PINNED` | All build tools are pinned to exact, verified versions.
+| `SCAN-TOOLCHAIN-VERSION-PINNED` | The compiler and language toolchain versions are pinned rather than floating.
+| `SCAN-NO-NETWORK-DURING-BUILD` | The build performs no unmanaged network access after dependency resolution.
+| `SCAN-BUILD-INPUTS-HASHED` | All build inputs are content-hashed and recorded for verification.
+| `SCAN-DETERMINISTIC-TIMESTAMPS` | Artifacts embed normalized timestamps to preserve reproducibility.
+| `SCAN-LOCKED-DEPENDENCY-RESOLUTION` | Dependency resolution is fully locked and does not vary between builds.
+|===
+
+== Artifact integrity and provenance
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `SCAN-ARTIFACT-SIGNED` | Every released artifact is cryptographically signed by the pipeline.
+| `SCAN-SIGNATURE-VERIFIED` | Artifact signatures are verified against a trusted key before promotion.
+| `SCAN-SBOM-GENERATED` | A software bill of materials is generated for each build.
+| `SCAN-SBOM-ATTACHED-TO-RELEASE` | The generated SBOM is attached to and distributed with the release.
+| `SCAN-PROVENANCE-ATTESTATION-PRESENT` | A signed provenance attestation accompanies each produced artifact.
+| `SCAN-SLSA-LEVEL-MET` | The build provenance satisfies the required SLSA level.
+| `SCAN-ARTIFACT-DIGEST-PINNED` | Artifacts are referenced by immutable content digest rather than mutable tag.
+| `SCAN-ARTIFACT-INTEGRITY-VERIFIED` | Consumed artifacts are integrity-checked against their recorded digests.
+| `SCAN-BUILD-PROVENANCE-NON-FALSIFIABLE` | Provenance is generated by the trusted build platform and cannot be forged by the build.
+|===
+
+== Pipeline security and hardening
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `SCAN-PIPELINE-AS-CODE-REVIEWED` | Pipeline definitions are version-controlled and code-reviewed before merge.
+| `SCAN-CI-ACTIONS-PINNED-SHA` | CI actions and reusable workflows are pinned to full commit SHAs.
+| `SCAN-NO-UNPINNED-THIRD-PARTY-ACTIONS` | No third-party CI action is referenced by a mutable tag or branch.
+| `SCAN-CACHE-POISONING-PROTECTED` | Build caches are scoped and validated to prevent cross-branch poisoning.
+| `SCAN-PROTECTED-RELEASE-BRANCH` | Release branches enforce protection rules against direct or force pushes.
+| `SCAN-DEPLOYMENT-APPROVAL-REQUIRED` | Deployment to protected environments requires a recorded manual approval.
+| `SCAN-DEPLOY-GATE-ENFORCED` | Deployment gates block promotion until all upstream checks succeed.
+| `SCAN-CI-SECRETS-SCOPED` | CI secrets are scoped to the minimum environments and jobs that need them.
+| `SCAN-RUNNER-LEAST-PRIVILEGE` | Pipeline runners operate with least-privilege credentials and permissions.
+| `SCAN-NO-SELF-HOSTED-UNTRUSTED-RUNNER` | Untrusted code does not execute on self-hosted runners with elevated access.
+|===

@@ -1,4 +1,4 @@
-= /akka.issues
+= /akka:issues
 
 Convert tasks into GitHub issues.
 

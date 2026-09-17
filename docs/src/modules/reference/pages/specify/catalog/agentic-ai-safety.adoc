@@ -1,0 +1,42 @@
+= Agentic AI Safety exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Agentic AI Safety] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
+
+This type covers the safety of an agent or LLM feature the service exposes — prompt-injection resistance, output handling, bounded autonomy, and the transparency and risk-classification obligations of regimes such as the OWASP LLM and Agentic risk lists and the EU AI Act.
+
+[NOTE]
+====
+This is a defined, tiered Definition-of-Done type, but it ships no default-library conditions yet. Today it is satisfied by Akka's own agent controls — guardrails, classifiers, sanitizers, and evaluations — which enforce these invariants inside the platform. The ids below are candidates for inspiration.
+====
+
+== Prompt and input safety
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `AI-PROMPT-INJECTION-GUARDED` | User and tool input is screened for prompt-injection before it reaches the model, by an Akka guardrail or classifier.
+| `AI-NO-SYSTEM-PROMPT-LEAK` | The system prompt and tool definitions cannot be extracted through crafted input.
+| `AI-INPUT-CLASSIFIED` | Inbound content is classified for policy-violating or unsafe categories before use.
+|===
+
+== Output and action safety
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `AI-OUTPUT-SANITIZED` | Model output is sanitized before it is rendered, executed, or forwarded to another system.
+| `AI-TOOL-SCOPE-BOUNDED` | The agent may call only the tools its task authorizes, within their granted permissions.
+| `AI-NO-UNBOUNDED-AUTONOMY` | No high-impact action runs without a bound — a budget, a confirmation, or a human gate.
+| `AI-HIGH-RISK-HUMAN-IN-LOOP` | Actions classified as high-risk require recorded human approval before they proceed.
+|===
+
+== Governance and transparency
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `AI-RISK-CLASSIFIED` | The feature is assigned a documented risk classification under the governing regime.
+| `AI-TRANSPARENCY-DISCLOSED` | Users are told they are interacting with an AI system where the regime requires it.
+| `AI-DECISION-EVALUATED` | Agent behavior is measured against a recorded evaluation set before ship.
+| `AI-ACTION-AUDIT-LOGGED` | Each agent action is logged with enough context to reconstruct what it did and why.
+|===

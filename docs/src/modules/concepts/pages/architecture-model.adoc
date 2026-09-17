@@ -34,7 +34,7 @@ src/
 * The `api` directory exposes functionality to the outside world. This includes HTTP, gRPC, or MCP interfaces that forward requests to the application layer.
 * The `application` directory contains the building blocks provided by Akka, implemented by you. It includes components such as `Agent`, `Entity`, `View`, `Workflow`, `Timer`, and `Consumer`.
 * The `domain` directory holds plain Java classes that describe business rules and domain models. These are not tied to Akka or the runtime. Many use `record` to reduce boilerplate. You can test this logic without starting Akka or the runtime. This keeps the code focused and easier to maintain.
-* The `resources` directory includes configuration files and other static content.
+* The `resources` directory includes configuration files and other static content. A `static-resources` subdirectory holds the files of a web application, which the service can serve to a browser alongside its API. See xref:sdk:web-applications.adoc[Web applications].
 * The `test` directory contains unit and integration tests. Its structure mirrors `main` to make it easier to relate tests to the code they verify.
 
 Keeping these areas distinct improves clarity and long-term maintainability. It also encourages testing and runtime separation.

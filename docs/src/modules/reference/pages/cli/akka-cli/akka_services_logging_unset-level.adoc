@@ -7,6 +7,8 @@ Unset the logger level configuration.
 Unset the logger level configuration for a specific logger in the given service.
 The level will be reverted to the parent logger configuration.
 This configuration will be applied to all instances of the service.
+By default the command runs in the primary region.
+Use --region to select another region, or --all-regions to run it in every region of the project.
 
 ----
 akka services logging unset-level [SERVICE_NAME] [LOGGER_NAME] [flags]
@@ -17,12 +19,17 @@ akka services logging unset-level [SERVICE_NAME] [LOGGER_NAME] [flags]
 ----
 
 > akka service logging unset-level my-service com.example.MyClass
+> akka service logging unset-level my-service com.example.MyClass --all-regions
 ----
 
 == Options
 
 ----
-  -h, --help   help for unset-level
+      --all-regions      run the command on all regions
+  -h, --help             help for unset-level
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
+      --region string    region to use if project has more than one region
 ----
 
 == Options inherited from parent commands

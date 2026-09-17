@@ -18,3 +18,12 @@
     {{#with (or antoraVersion site.antoraVersion)}}
     <meta name="generator" content="Antora {{{this}}}">
     {{/with}}
+    <style>
+      /* Wrap long lines inside source code blocks instead of scrolling horizontally. */
+      pre.highlight code,
+      pre code.hljs {
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+      }
+    </style>

@@ -1,4 +1,4 @@
-= /akka.build
+= /akka:build
 
 Build, test, and run the service locally.
 

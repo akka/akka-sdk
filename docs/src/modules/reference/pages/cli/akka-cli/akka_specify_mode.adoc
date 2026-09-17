@@ -1,0 +1,52 @@
+= akka specify mode
+
+Show or set the local project mode.
+
+== Synopsis
+
+[Incubating] Show or set the local project mode.
+With no org policy and no project override, the effective mode is a-la-carte -- the ship gate is advisory.
+An org policy may set a different default and lock it;
+when the mode is locked, only the org-allowed mode(s) may be set, so a locked enforced mode cannot be dropped to à-la-carte to bypass the ship gate.
+
+In a-la-carte mode the exit-condition set is dormant until asked for: only the Akka-intrinsic baseline resolves, and no auditors are created.
+Use --exit-conditions=honor to start checking conditions (still advisory), or --exit-conditions=ignore to set them aside.
+Switching a project that already has conditions and auditors to a-la-carte requires one of the two, so the choice is never made silently.
+
+----
+akka specify mode [enforced|a-la-carte] [flags]
+----
+
+== Options
+
+----
+      --allows string            ask whether a named command may be run under the effective mode; exits 1 when it may not
+      --as-engine                ask as the engine carrying the command out as part of its sequence, rather than as a person invoking it
+      --dir string               project directory (default: current)
+      --exit-conditions string   in à-la-carte mode, whether to 'honor' or 'ignore' existing exit conditions
+  -h, --help                     help for mode
+      --policy string            path to an org governance policy-as-code file (policy.yaml)
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_specify.html[akka specify]	 - [Incubating] Initialize and manage AI-assisted Akka development projects.
+
+[discrete]
+

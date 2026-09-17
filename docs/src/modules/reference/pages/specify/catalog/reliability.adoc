@@ -1,0 +1,161 @@
+= Reliability exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Reliability] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
+
+== Retries and backoff
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REL-RETRY-EXPONENTIAL-BACKOFF` | Retried operations increase their delay exponentially between successive attempts rather than retrying at a fixed interval.
+| `REL-RETRY-JITTER-APPLIED` | Backoff delays include randomized jitter so concurrent clients do not retry in synchronized waves.
+| `REL-RETRY-MAX-ATTEMPTS-BOUNDED` | Every retry policy declares a finite maximum attempt count or total elapsed budget.
+| `REL-RETRY-ONLY-TRANSIENT` | Retries are attempted only for transient or retryable failure classes, not for deterministic client errors.
+| `REL-RETRY-BUDGET-ENFORCED` | A retry budget caps the fraction of total traffic that may be retries to prevent retry-amplified overload.
+| `REL-RETRY-CEILING-CAPPED` | Exponential backoff is capped at a maximum delay so retry intervals never grow unbounded.
+| `REL-RETRY-NON-BLOCKING` | Retry waits are scheduled asynchronously and do not block worker threads while awaiting the next attempt.
+| `REL-RETRY-GIVEUP-OBSERVABLE` | Exhaustion of a retry policy emits a distinct terminal signal or metric rather than failing silently.
+| `REL-RETRY-DLQ-ON-EXHAUST` | Messages that exhaust all retries are routed to a dead-letter queue or equivalent quarantine surface.
+|===
+
+== Timeouts and deadlines
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REL-TIMEOUT-ALL-CALLS` | Every outbound network or inter-service call is governed by an explicit timeout.
+| `REL-TIMEOUT-NO-INFINITE-WAIT` | No blocking call, lock acquisition, or await is permitted to wait indefinitely.
+| `REL-TIMEOUT-DEADLINE-PROPAGATED` | A request deadline is propagated across service hops so downstream calls inherit the remaining budget.
+| `REL-TIMEOUT-BELOW-UPSTREAM` | Each service's timeout is shorter than its callers' timeouts to avoid wasted work on already-abandoned requests.
+| `REL-TIMEOUT-CONNECT-DISTINCT` | Connection-establishment timeouts are configured separately from request or read timeouts.
+| `REL-TIMEOUT-CANCEL-PROPAGATES` | A cancelled or timed-out request cancels its in-flight downstream work rather than orphaning it.
+| `REL-TIMEOUT-ASK-BOUNDED` | Every request-response (ask) interaction between entities or services specifies a bounded reply timeout.
+| `REL-TIMEOUT-VALUES-TUNABLE` | Timeout durations are externally configurable and not hardcoded at call sites.
+|===
+
+== Circuit breaking and bulkheads
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REL-CB-PROTECTS-DEPENDENCIES` | Calls to each external dependency are wrapped in a circuit breaker that opens on sustained failures.
+| `REL-CB-HALF-OPEN-PROBE` | An open circuit transitions to a half-open state that probes recovery with limited trial traffic before fully closing.
+| `REL-CB-FAILURE-THRESHOLD` | Circuit-breaker trip conditions are defined by explicit failure-rate or consecutive-failure thresholds.
+| `REL-CB-FAST-FAIL-WHEN-OPEN` | An open circuit fails calls immediately instead of allowing them to hang against a failing dependency.
+| `REL-BULKHEAD-RESOURCE-ISOLATION` | Independent dependencies use isolated resource pools so exhaustion in one cannot starve the others.
+| `REL-BULKHEAD-CONCURRENCY-CAP` | Concurrent in-flight calls to each dependency are capped to a bounded limit.
+| `REL-BACKPRESSURE-BOUNDED-QUEUES` | All work queues and mailboxes are bounded so backlog cannot grow without limit under load.
+| `REL-BACKPRESSURE-SIGNALLED` | Streaming and ingestion paths propagate backpressure to upstream producers rather than buffering unboundedly.
+| `REL-LOAD-SHEDDING-ACTIVE` | The system sheds or rejects excess load with a clear signal once capacity limits are reached.
+|===
+
+== Idempotency and delivery guarantees
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REL-IDEMPOTENT-MUTATIONS` | State-changing operations produce the same result when the same request is delivered more than once.
+| `REL-IDEMPOTENCY-KEY-REQUIRED` | Externally triggered mutations carry an idempotency key used to deduplicate retried requests.
+| `REL-DEDUP-WINDOW-DEFINED` | Duplicate-suppression logic specifies a bounded retention window for tracked request identifiers.
+| `REL-AT-LEAST-ONCE-SAFE` | Consumers tolerate at-least-once delivery by handling redelivered messages without corrupting state.
+| `REL-EFFECTIVELY-EXACTLY-ONCE` | Effectively-once processing is achieved by combining at-least-once delivery with idempotent effects.
+| `REL-OUTBOX-PATTERN` | State changes and their outgoing messages are committed atomically via an outbox to prevent lost or ghost events.
+| `REL-ACK-AFTER-PERSIST` | Incoming messages are acknowledged only after their effects are durably persisted.
+| `REL-ORDERING-PRESERVED` | Per-entity or per-key message ordering is preserved where the domain requires it.
+| `REL-POISON-MESSAGE-ISOLATED` | Repeatedly failing messages are isolated so they do not block progress on the rest of the stream.
+|===
+
+== Cluster resilience and node loss
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REL-CLUSTER-SURVIVES-NODE-LOSS` | The cluster continues serving traffic after the abrupt loss of any single node.
+| `REL-NO-SINGLE-POINT-FAILURE` | No single instance, node, or process is the sole path for any critical operation.
+| `REL-SHARD-REBALANCE-ON-LOSS` | Sharded entities on a lost node are rebalanced and reactivated on surviving nodes automatically.
+| `REL-SPLIT-BRAIN-RESOLVED` | A split-brain resolver deterministically downs the losing partition to prevent divergent cluster halves.
+| `REL-QUORUM-REQUIRED` | Cluster membership and leadership decisions require a majority quorum to proceed.
+| `REL-ROLLING-RESTART-SAFE` | Nodes can be restarted one at a time with no loss of availability or in-flight work.
+| `REL-NODE-DRAIN-BEFORE-STOP` | A node hands off its shards and drains work before leaving the cluster.
+| `REL-REBALANCE-CONVERGES` | Shard rebalancing converges to a balanced distribution within a bounded time after membership changes.
+| `REL-CAPACITY-N-PLUS-ONE` | The cluster retains sufficient headroom to absorb the load of a lost node without saturation.
+|===
+
+== Supervision and recovery
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REL-SUPERVISION-STRATEGY-DEFINED` | Every stateful component declares an explicit supervision strategy for handling failures.
+| `REL-RESTART-WITH-BACKOFF` | Failed components restart under a backoff supervisor rather than restarting in a tight loop.
+| `REL-ENTITY-RECOVERS-BY-REPLAY` | An event-sourced entity reconstructs its state by replaying its persisted event log after restart.
+| `REL-PASSIVATION-PRESERVES-STATE` | Passivated entities can be reactivated later with their state fully recovered from durable storage.
+| `REL-SNAPSHOT-BOUNDS-REPLAY` | Snapshots are taken so entity recovery replay time stays within an acceptable bound.
+| `REL-RECOVERY-TIME-BOUNDED` | Component and entity recovery completes within a defined maximum duration.
+| `REL-FAILURE-ISOLATED` | A failure in one entity or component does not cascade to unrelated entities or components.
+| `REL-CORRUPT-STATE-DETECTED` | Recovery detects and quarantines corrupt or unreplayable state instead of crash-looping on it.
+| `REL-INFLIGHT-WORK-RESUMES` | Durable in-flight work such as sagas or projections resumes from its last checkpoint after a restart.
+|===
+
+== Health, readiness, and graceful shutdown
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REL-LIVENESS-PROBE` | The service exposes a liveness probe that reflects whether the process is healthy enough to run.
+| `REL-READINESS-PROBE` | The service exposes a readiness probe that gates traffic until dependencies and warmup are ready.
+| `REL-READINESS-DEPENDENCY-AWARE` | Readiness reports not-ready when a required downstream dependency is unavailable.
+| `REL-GRACEFUL-SHUTDOWN-HOOK` | Shutdown drains in-flight requests and releases resources before the process exits.
+| `REL-SHUTDOWN-STOPS-INTAKE` | On shutdown the instance stops accepting new work before terminating existing work.
+| `REL-SHUTDOWN-WITHIN-GRACE` | Graceful shutdown completes within the platform-provided termination grace period.
+| `REL-STARTUP-DEPENDENCY-WAIT` | Startup waits for or degrades gracefully around dependencies that are not yet available.
+| `REL-HEALTH-EXCLUDES-DEEP-CHECKS` | Liveness checks avoid heavy downstream calls that could cause false-positive restarts.
+| `REL-PROBE-TIMEOUTS-SET` | Health and readiness probes have bounded timeouts so a hung check cannot stall orchestration.
+|===
+
+== Graceful degradation and fallbacks
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REL-FALLBACK-ON-DEPENDENCY-FAIL` | A degraded but functional response is returned when a non-critical dependency is unavailable.
+| `REL-CACHE-SERVES-STALE` | Cached or last-known-good data is served when the source of truth is temporarily unreachable.
+| `REL-DEFAULT-ON-MISSING-DATA` | Safe default values are used when optional data cannot be retrieved in time.
+| `REL-CRITICAL-PATH-MINIMIZED` | The critical request path depends on the smallest possible set of must-succeed dependencies.
+| `REL-NONCRITICAL-FAILS-SILENT` | Failures in non-essential features degrade quietly without failing the overall request.
+| `REL-PARTIAL-RESULTS-ALLOWED` | Aggregations return available partial results when some contributing sources fail.
+| `REL-FEATURE-DISABLE-SWITCH` | Expensive or fragile features can be disabled at runtime to preserve core availability.
+| `REL-DEGRADED-MODE-SIGNALLED` | Operation in a degraded mode is surfaced through metrics or response metadata for observability.
+|===
+
+== Disaster recovery and failover
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REL-RTO-DEFINED-AND-MET` | A recovery-time objective is defined and validated against measured recovery duration.
+| `REL-RPO-DEFINED-AND-MET` | A recovery-point objective is defined and validated against measured maximum data loss.
+| `REL-BACKUPS-SCHEDULED` | Durable state is backed up on a defined schedule covering all critical data stores.
+| `REL-BACKUP-RESTORE-TESTED` | Backup restoration is periodically exercised end-to-end to prove backups are usable.
+| `REL-MULTI-REGION-REPLICATION` | Critical state is replicated across regions to survive a full regional outage.
+| `REL-REGION-FAILOVER-TESTED` | Failover to a secondary region is tested and completes within the defined RTO.
+| `REL-FAILBACK-SUPPORTED` | The system can return to its primary region after recovery without data loss or manual surgery.
+| `REL-DATA-DURABILITY-REPLICATED` | Persisted data is stored with sufficient replication to survive the loss of a storage node or zone.
+| `REL-DR-RUNBOOK-EXECUTABLE` | A disaster-recovery runbook exists and has been executed successfully in a drill.
+|===
+
+== Fault injection and resilience validation
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `REL-CHAOS-NODE-KILL-TESTED` | Randomized node termination is exercised and the system maintains its availability targets.
+| `REL-LATENCY-INJECTION-TESTED` | Injected downstream latency is validated to trigger timeouts and fallbacks rather than cascading stalls.
+| `REL-DEPENDENCY-OUTAGE-TESTED` | A simulated dependency outage confirms circuit breakers and degradation paths behave as designed.
+| `REL-NETWORK-PARTITION-TESTED` | Induced network partitions are validated against the split-brain and quorum behavior.
+| `REL-RESOURCE-EXHAUSTION-TESTED` | Behavior under CPU, memory, or connection exhaustion is exercised and stays within safe limits.
+| `REL-CLOCK-SKEW-TOLERATED` | Correctness is validated under injected clock skew between nodes.
+| `REL-LOAD-SPIKE-SURVIVED` | A sudden load spike is validated to trigger shedding or backpressure without collapse.
+| `REL-STEADY-STATE-DEFINED` | Resilience experiments define a measurable steady-state hypothesis that is asserted before and after fault injection.
+| `REL-BLAST-RADIUS-BOUNDED` | Fault-injection experiments confirm that a single failure's impact stays within its expected blast radius.
+|===

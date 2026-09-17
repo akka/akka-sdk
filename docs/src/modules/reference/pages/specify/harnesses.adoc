@@ -1,0 +1,61 @@
+= /akka:harnesses
+
+Generate the enterprise-configuration assets the project's policy requires, wired to this project's surfaces.
+
+== Usage
+
+[source]
+----
+/akka:harnesses
+----
+
+== Description
+
+A *harness* is a generated configuration asset that connects the project to an external enterprise system: a CI workflow, a scanner configuration, a supply-chain step, or a content-governance package. `/akka:harnesses` reads the required surfaces declared in the governance policy, detects which are already present, and generates the project-adapted asset for each gap into `/harnesses/<surface>/`. It records what it generated in `.akka/harnesses.lock` and surfaces each asset at the xref:reference:specify/exit-condition-schema.adoc[exit-condition] level for you to approve, adjust, or skip.
+
+The command produces the asset. A family of exit conditions verifies it, and those conditions gate ship in xref:sdk:enforced-mode.adoc[enforced mode] and stay advisory in xref:sdk:a-la-carte-mode.adoc[a-la-carte mode]. This is the same generator-plus-exit-condition pattern that governs `/akka:implement` and `/akka:build`.
+
+== Folder layout
+
+One directory per surface, plus the lock file:
+
+[source]
+----
+/harnesses
+  /ci                github-actions.yml         wires to Actions
+  /scanning          semgrep.yml, gitleaks.toml wires to a central SAST or secret service
+  /supply-chain      cosign.yml, sbom-step.yml  wires to Sigstore or a registry
+  /content           .vale.ini, styles/         wires to content governance
+.akka/harnesses.lock                            policy version, surface signature, per-asset record
+----
+
+== The three-way responsibility split
+
+A harness has three owners, and each owns a distinct part:
+
+[cols="1,3",options="header"]
+|===
+| Owner | Owns
+
+| Enterprise | The requirement, the target values, the mandated vendors, and the privileged endpoints. Optionally a reference fragment the generator adapts.
+| Akka Specify Plugin | Generating the project-adapted asset into `/harnesses`, wiring it to this project's surfaces, and the auditor that proves the asset is current and enforcing.
+| Developer | The last-mile connection into systems only the developer can reach: adding the secret, enabling the workflow, linking the account.
+|===
+
+The plugin generates and verifies. It does not hold the developer's credentials, and it does not decide the enterprise requirement.
+
+== Verification and currency
+
+Three exit conditions verify a harness. It is *configured* when the asset is present and correct, *activated* when the developer's last-mile wiring is in place, and *attested* when a delegated receipt resolves a check the plugin cannot run in this tree. The configured and activated conditions are checked by a xref:reference:specify/auditor-kinds.adoc[provisioned] auditor; the attested condition is a delegated one, resolved by a recorded xref:reference:specify/attestations.adoc[attestation].
+
+The provisioned auditor checks currency, not only presence. It reads `.akka/harnesses.lock` — which records the policy version and a per-asset signature — and reds when the policy version has moved (the asset is stale) or the recorded asset is missing, so an asset that passed on the day it was generated cannot fall behind the policy without the gate noticing. When it holds, the auditor resolves green: `<capability> harness active`.
+
+Verification is adversarial. A generated CI job that contains the mandated step but sets `continue-on-error: true`, or runs a scanner without gating the merge, fails its check: the asset is present but its invariant is false. The auditor confirms that the workflow exists, references the required steps, and blocks the merge on their failure.
+
+== See also
+
+* xref:reference:specify/project-surface.adoc[]
+* xref:reference:specify/auditor-kinds.adoc[]
+* xref:reference:specify/attestations.adoc[]
+* xref:reference:specify/catalog/enterprise-integration.adoc[Enterprise Integration exit conditions]
+* xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done types]

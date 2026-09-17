@@ -1,4 +1,4 @@
-= /akka.inspect
+= /akka:inspect
 
 Inspect a running service's runtime state against the specification.
 
@@ -23,7 +23,7 @@ The inspection workflow:
 6. Summarizes findings
 7. Offers next steps
 
-Works with both locally running services (after `/akka.build`) and deployed services (after `/akka.deploy`).
+Works with both locally running services (after `/akka:build`) and deployed services (after `/akka:deploy`).
 
 == See also
 

@@ -1,3 +1,3 @@
 == Unfamiliar with concepts like vectors, embeddings or RAG?
 
-We recommend reviewing our xref:concepts:ai-agents.adoc#_foundational_ai_concepts_video[foundational explainer on AI concepts]. It offers helpful background that will deepen your understanding of the technologies and patterns used throughout this tutorial.
+For helpful background on the technologies and patterns used throughout this tutorial, see the xref:concepts:ai-agents.adoc#_foundational_ai_concepts_video[foundational explainer on AI concepts].

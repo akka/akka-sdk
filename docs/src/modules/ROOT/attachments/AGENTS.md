@@ -8,6 +8,34 @@ Generate components with correct:
 - Complete test coverage
 - Akka SDK patterns and conventions
 
+## Driving the project with the Akka MCP server
+
+If Akka MCP tools are available (names containing `akka_`, possibly with a
+harness-specific prefix), prefer them over shelling out to `akka` or `mvn`.
+Otherwise, use the equivalent `mvn` / `akka` CLI command, or read and write the
+`.akka/` and `specs/` files directly.
+
+If an Akka workflow command or skill is installed (e.g. `/akka:specify`,
+`/akka-implement`), follow it — this section is only a summary for harnesses
+without one.
+
+**Spec-driven development loop** (only in projects initialized with
+`akka specify init`, i.e. where `.akka/` exists).
+Templates live in `.akka/templates/`, the constitution in `.akka/constitution/`;
+the MCP tools read and write into those trees.
+
+1. **Read the constitution first** — `akka_sdd_constitution`. Project-specific constraints override anything in this file.
+2. **Specify** — for a new feature, `akka_sdd_get_template` (template `spec`), `akka_sdd_create_spec`, `akka_sdd_list_specs`.
+3. **Plan and break down** — `akka_sdd_get_template` for `plan` and `tasks`. `akka_sdd_list_templates` enumerates what is available.
+4. **Implement** — write under `src/`, using `akka-context/` for the SDK surface.
+5. **Build and test** — `akka_maven_compile`, `akka_maven_test` (`test_class` or `test_method` for a focused loop), `akka_maven_verify` for the full lifecycle including integration tests.
+6. **Run locally** — `akka_local_start`, then `akka_local_run_service`. Verify with `akka_local_status`, `akka_local_logs`, `akka_local_request`. `akka_local_stop_service` when done.
+7. **Ship (only when asked)** — `akka_build_image`, then `akka_services_deploy` (with `push=true`). Use `akka_services_logs` and `akka_routes_create` to finish the rollout.
+
+For inspection of running services (entities, workflows, views, agent interactions), use `akka_backoffice_*`. `akka_refresh` updates the on-disk skills, templates, and docs if they seem stale. Do not re-run `akka_sdd_init` in an initialized project.
+
+Iterate locally (compile → test → run) until the service works before touching platform-deploy tools.
+
 ## Documentation Strategy
 
 ### Available Documentation
@@ -46,12 +74,27 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/views.html.md` - Query models and projections
 - `akka-context/sdk/workflows.html.md` - Saga patterns and orchestration
 - `akka-context/sdk/consuming-producing.html.md` - Event consumption and topics
-- `akka-context/sdk/http-endpoints.html.md` - RESTful APIs
+- `akka-context/sdk/http-endpoints.html.md` - RESTful APIs, server-sent events, WebSockets, serving web application files
+- `akka-context/sdk/web-applications.html.md` - Serving a browser UI from the service: single-page application files, generated HTML, custom domains
 - `akka-context/sdk/grpc-endpoints.html.md` - Protocol buffer APIs
+- `akka-context/sdk/mcp-endpoints.html.md` - Exposing tools, resources, and prompts to MCP clients
 - `akka-context/sdk/timed-actions.html.md` - Scheduling and timers
 - `akka-context/sdk/setup-and-dependency-injection.html.md` - Service bootstrap and dependency injection
 
+**Cross-cutting concerns:**
+- `akka-context/sdk/access-control.html.md` - ACLs on components and endpoints
+- `akka-context/sdk/auth-with-jwts.html.md` - JWT authentication
+- `akka-context/sdk/component-and-service-calls.html.md` - Calling other components and services
+- `akka-context/sdk/errors-and-failures.html.md` - Error handling and failure semantics
+- `akka-context/sdk/serialization.html.md` - `@TypeName`, JSON serialization, schema evolution
+- `akka-context/sdk/integrations/object-storage.html.md` - Binary objects in buckets, `object://` URIs for multimodal agents
+- `akka-context/sdk/sanitization.html.md` - Masking PII in agent interactions
+- `akka-context/sdk/metric.html.md` - Custom OpenTelemetry metrics
+- `akka-context/sdk/model-provider-details.html.md` - Model provider configuration and API keys
+- `akka-context/sdk/streaming.html.md` - Stream processing and Akka Streams
+
 **Guides and reference:**
+- `akka-context/sdk/components/index.html.md` - Component list plus the decision guide ("Choosing a component type"): decision matrix, when NOT to use each, boundary rules
 - `akka-context/getting-started/planner-agent/dynamic-team.html.md` - Dynamic agent planning and orchestration
 - `akka-context/reference/views/**` - Detailed reference docs of views
 - `akka-context/reference/config/reference.html.md` - Full configuration reference
@@ -60,6 +103,7 @@ Access these documentation files for detailed patterns:
 ### When to Read Documentation
 
 **MANDATORY - Always read documentation BEFORE coding for:**
+- **Component mapping for a new feature** - ALWAYS read `sdk/components/index.html.md` ("Choosing a component type") before deciding which components a feature needs (which entity type, workflow vs consumer, whether a view is needed at all)
 - **Workflows** - ALWAYS read `workflows.html.md` first time in session (complex patterns, compensation, recovery)
 - **Agents** - ALWAYS read `agents.html.md` first time in session (LLM integration, tools, streaming)
 - **Autonomous Agents** - ALWAYS read `autonomous-agents.html.md` first time in session (durable execution, tasks, multi-agent coordination)
@@ -74,6 +118,31 @@ Access these documentation files for detailed patterns:
 
 ## Component Architecture
 
+### Choosing the Right Component
+
+Decide the component mapping BEFORE writing code. The full rubrics with reasoning are in `akka-context/sdk/components/index.html.md` ("Choosing a component type"). The short form:
+
+| Need | Component | Avoid when |
+|---|---|---|
+| State per id; history, audit, or downstream reactions matter | Event Sourced Entity | Nobody consumes events and no history needed → Key Value Entity |
+| State per id; only the latest value matters | Key Value Entity | State grows a history list → Event Sourced Entity |
+| Query by non-id attributes; lists, aggregation, pagination | View | Lookup is by entity id → read the entity directly |
+| Multi-step process with retries, compensation, or a status | Workflow | Single step or independent reactions → Consumer or direct call |
+| React to persisted events (side effects, propagation, projection) | Consumer | Caller needs the result now → direct ComponentClient call |
+| One LLM request-response with tools/memory | Agent (Workflow-orchestrated if fixed multi-step) | Model decides next step or agents coordinate → Autonomous Agent |
+| Durable model-driven work; multi-agent coordination | Autonomous Agent | Fixed steps, one model call each → Workflow + Agents |
+| Run something later or on a schedule | Timed Action | The delay is a step in a process → Workflow pause/timer |
+| API for browsers; SSE/WebSocket; serve a UI | HTTP Endpoint | Non-browser clients → gRPC Endpoint |
+| Typed contract for services and other non-browser clients | gRPC Endpoint | Browser-facing consumers → HTTP Endpoint |
+| Expose tools/resources/prompts to LLM clients in other services | MCP Endpoint | Agents in the same service → function tools; human or programmatic clients → HTTP/gRPC Endpoint |
+| Pure logic: validation, calculation, transformation | Plain class in `domain` | Never a component; no state, no subscription, no schedule, no API |
+
+Boundary rules:
+- Persist in an entity/workflow only what must survive restarts, be audited, or drive reactions. Values derivable from their inputs are computed per request, in memory. Endpoints are stateless; never cache business state in endpoint fields.
+- Entities are your cache: do not add Redis or a caching layer in front of them. Large binaries go to object storage; keep the reference in state.
+- Within a service, always `ComponentClient`. NEVER call your own service's HTTP endpoints from inside the service. Across services: service-to-service eventing for reactions, `HttpClientProvider`/`GrpcClientProvider` with the service name for synchronous calls.
+- Side effects belong in Consumers reacting to events, never in entity command handlers. External blocking calls never run in entities; put them in a workflow step (durable, retried), a consumer (reactive, idempotent), an endpoint (request-scoped), or an agent tool.
+
 ### Component Types & Key Characteristics
 
 **Agent**
@@ -82,10 +151,15 @@ Access these documentation files for detailed patterns:
 - Returns `Effect<T>` or `StreamEffect` (for streaming responses)
 - Use `effects().systemMessage().userMessage().thenReply()`
 - Three types of tools: `@FunctionTool` (agent methods), external tools via `.tools()`, MCP tools via `.mcpTools()`
+- A tool returning a plain type produces a JSON tool response. To return media to the model, declare the return type as `MessageContent` and return `ImageMessageContent.fromBytes(...)`, `PdfMessageContent.fromBytes(...)`, or `TextMessageContent` (SDK 3.6.1+)
+- To return several pieces of content in one tool result, declare `List<MessageContent>`; elements are delivered in list order. `List<? extends MessageContent>` and subtype lists work; any other element type falls back to a plain JSON response
+- A `MessageContent` tool must return a non-null value, and a list form must contain at least one non-null element — otherwise `IllegalArgumentException`
+- Inline bytes are not kept in session memory; they become an `[image]`/`[pdf]` placeholder. To keep media across turns, store it with `ObjectStorage` and return `ImageUrlMessageContent.create(bucket, key)` — the `object://` reference is persisted and resolved on each request
 - Stateless design (no mutable state in agent class)
 - Session memory automatic via session ID (shared across agents with same session ID)
 - Session ID typically UUID for new interactions, or workflow ID for orchestration
 - Control memory with `MemoryProvider.none()`, `.limitedWindow()`, or `.limitedWindow().readLast(N)`
+- In multi-agent sessions, restrict what an agent sees with `MemoryFilter.includeFromAgentId(...)`, `.excludeFromAgentId(...)`, or `.includeFromAgentRole(...)`; the factories return a supplier that chains fluently
 - Structured responses: use `responseConformsTo(Class)` (preferred) or `responseAs(Class)` with manual JSON instructions
 - Model config: prefer default in config, override with `.model(ModelProvider.openAi()...)` if needed
 - Error handling with `.onFailure(throwable -> fallbackValue)`
@@ -141,6 +215,7 @@ Access these documentation files for detailed patterns:
 - Step methods accept 0 or 1 parameter and return `StepEffect`
 - Steps use `@StepName`, `stepEffects()` in steps, `effects()` in commands
 - Compensation via `thenTransitionTo(compensationStep)` on failure
+- A running workflow can be stopped from outside with `componentClient.forWorkflow(id).terminate(MyWorkflow.class)`, or the overload taking a `reason`. It cannot be resumed afterwards, and calling `terminate` again is a safe no-op. The workflow passivates and stops consuming runtime resources
 
 **Consumer**
 - Extends `Consumer`, has `@Component(id = "...")`
@@ -563,10 +638,87 @@ Favor endpoint APIs that follow REST principles.
 
 When an HTTP method returns an `akka.http.javadsl.model.HttpResponse` instead of a custom type and it can return errors, avoid throwing exceptions. Instead, use HTTP error response methods such as `akka.javasdk.http.HttpResponses.badRequest` or `akka.javasdk.http.HttpResponses.notFound`.
 
+### MCP Endpoints
+
+Use an MCP endpoint to expose capabilities to MCP clients. This is the reverse direction from
+`.mcpTools()` on an agent, which *consumes* a remote MCP server.
+
+```java
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
+@McpEndpoint(serverName = "my-service-mcp", serverVersion = "0.0.1")
+public class MyMcpEndpoint {
+
+  @McpTool(name = "add", description = "Add two numbers")
+  public String add(@Description("The first number") int n1, @Description("The second number") int n2) {
+    return String.valueOf(n1 + n2);
+  }
+}
+```
+
+- Served at `/mcp` by default.
+- Three member kinds: `@McpTool` (callable), `@McpResource` (fetchable content), `@McpPrompt`.
+- Descriptions matter — the calling LLM relies on them. Use `@Description` on every parameter.
+- Tool input classes must use primitives, boxed primitives, or `String`. All fields are required
+  by default; make a parameter optional by typing it `Optional<T>`.
+- See `akka-context/sdk/mcp-endpoints.html.md`.
+
+### Object storage
+
+For binary data (images, PDFs, documents), inject `ObjectStorageProvider` and call `forBucket`.
+Do not put large binaries in entity state.
+
+```java
+public class ImageEndpoint {
+  private final ObjectStorage bucket;
+
+  public ImageEndpoint(ObjectStorageProvider provider) {
+    this.bucket = provider.forBucket("images");
+  }
+}
+```
+
+- `put`, `get`, `getMetadata`, `delete`, `list` for small to medium payloads.
+- `putStreamAsync`, `getStreamAsync`, `streamList` for large objects — prefer these over `list()`
+  on large buckets.
+- Objects are reachable by agents as multimodal content via `ImageUrlMessageContent.create(bucket, key)`
+  and `PdfUrlMessageContent.create(bucket, key)`, which produce `object://` URIs the SDK resolves.
+- Dev mode uses a local filesystem backend with no configuration; any bucket name is accepted.
+- `TestKitSupport` provides an in-memory backend, isolated per test class.
+- See `akka-context/sdk/integrations/object-storage.html.md`.
+
 ### Endpoint with web UI
 
-Static resources such as HTML, CSS files can be packaged together with the service.
-See documentation "Serving static content" in `akka-context/sdk/http-endpoints.html.md`.
+A service can serve its own browser UI. Put the files in `src/main/resources/static-resources`
+and return them from an endpoint method with `HttpResponses.staticResource`.
+
+For a single-page application, map one method to a `**` subtree and strip the prefix. Do not
+write one `@Get` per file:
+
+```java
+@HttpEndpoint
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL)) // required for browser access
+public class UiEndpoint {
+
+  @Get("/ui/**")
+  public HttpResponse assets(HttpRequest request) {
+    return HttpResponses.staticResource(request, "/ui/");
+  }
+}
+```
+
+`GET /ui/app.css` serves `static-resources/app.css`. When the remaining path is empty or ends
+with `/`, `index.html` from that directory is served, so `GET /ui/` returns the application shell.
+
+Content types are set from the file extension.
+
+Use `HttpResponses.of(StatusCodes.OK, ContentTypes.TEXT_HTML_UTF8, bytes)` when the page is
+generated at request time rather than read from a packaged file.
+
+To push updates into an open page, use server-sent events or a `@WebSocket` method rather than
+polling from the browser.
+
+See "Serving web application assets" in `akka-context/sdk/http-endpoints.html.md` and the full
+guide in `akka-context/sdk/web-applications.html.md`.
 If the user gives no style preferences, you should use something similar to the CSS in `akka-context/ui/default-akka-style.css`
 
 ### Agent Testing Pattern
@@ -699,6 +851,12 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Return protobuf types from domain layer
 - Import `WorkflowSettings` -> WorkflowSettings is an inner class of Workflow, so no additional import is needed
 - Static import `maxRetries` -> use `RecoverStrategy.maxRetries()` (import `Workflow.RecoverStrategy`)
+- Write one `@Get` per file when serving a web UI → map a `**` subtree and strip the prefix with `HttpResponses.staticResource(request, prefix)`
+- Put web UI files directly in `src/main/resources` → they must be in `src/main/resources/static-resources`
+- Store large binaries in entity state → put them in a bucket via `ObjectStorageProvider`
+- Return raw bytes from a `@FunctionTool` expecting the model to see an image → declare the return type as `MessageContent` and use `ImageMessageContent.fromBytes(...)`
+- Expect inline tool image/PDF bytes to persist in session memory → they become an `[image]`/`[pdf]` placeholder; store in a bucket and return `ImageUrlMessageContent.create(bucket, key)` to keep them
+- Use `@McpTool` parameter types other than primitives, boxed primitives, or `String` → unsupported; mark optional parameters `Optional<T>`
 
 ✅ **DO:**
 - Use Java records for immutable data
@@ -719,6 +877,14 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 ## Self-Review Checklist
 
 Before presenting code, verify:
+
+**Component choice**
+- [ ] Component mapping follows `sdk/components/index.html.md` ("Choosing a component type"); each component needs its guarantees (durable state, subscription, schedule, process, API surface)
+- [ ] No Key Value Entity with a hand-maintained history list (use Event Sourced); no Event Sourced Entity with a single whole-state `StateChanged` event (use Key Value)
+- [ ] No View whose only query is by entity id; no read-your-own-write through a View in the same request
+- [ ] No single-step Workflow (use a Consumer or direct call); no consumer chain that hides a multi-step process (use a Workflow)
+- [ ] Side effects live in Consumers, not in entity command handlers or `.thenReply()`
+- [ ] Nothing is a component that could be a plain domain class
 
 **Imports**
 - [ ] Using `akka.*` not `io.akka.*`

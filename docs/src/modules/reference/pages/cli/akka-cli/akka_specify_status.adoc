@@ -1,0 +1,49 @@
+= akka specify status
+
+Show the exit-condition Definition-of-Done manifest.
+
+== Synopsis
+
+[Incubating] Resolve the exit-condition library against an org governance floor (policy-as-code) and the project's own state, then render the dense Definition-of-Done manifest: every condition grouped by tier, with lock, on/off, status, and provenance.
+Struck, waived, and signed-off conditions reflect the project state, so this view agrees with 'conform'.
+Auditors are not run here -- use 'akka specify conform' for evaluated statuses.
+
+With --policy pointing at an org 'akka-specify-governance' policy.yaml you can see conditions lock (ALWAYS-APPLY), defaults get struck (turned off), and corporate exit conditions appear.
+
+Examples:   akka specify status   akka specify status --policy ./policy.yaml
+
+----
+akka specify status [directory] [flags]
+----
+
+== Options
+
+----
+      --dir string      project directory (default: current directory or positional arg)
+  -h, --help            help for status
+      --mode string     override the displayed mode label (enforced|a-la-carte)
+      --policy string   path to an org governance policy-as-code file (policy.yaml)
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_specify.html[akka specify]	 - [Incubating] Initialize and manage AI-assisted Akka development projects.
+
+[discrete]
+

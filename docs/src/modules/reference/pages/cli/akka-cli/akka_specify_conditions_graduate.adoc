@@ -1,0 +1,61 @@
+= akka specify conditions graduate
+
+Replace the derived conditions with ones that no longer need the original.
+
+== Synopsis
+
+Replaces the project's derived conditions with the set given.
+
+This is what runs at the end of a port.
+During the port each parity auditor compares the rebuild against the original, so it already captured what the original answered;
+graduation points the auditor at that captured value, and the condition survives the original being switched off.
+
+A condition present before and absent from the new set is retired.
+Its id is reported, because a check that disappears with no account of itself is worse than one that was never written.
+
+Graduation replaces each auditor's command, so the approval recorded against the old command no longer applies.
+Pass --consent-for to approve the new commands as they are written;
+without it each waits for its own approval.
+The consent given when the conditions were first written does not carry over, because it was given for commands that did not exist yet.
+
+----
+akka specify conditions graduate [flags]
+----
+
+== Examples
+
+----
+  akka specify conditions graduate --file graduated.yaml
+----
+
+== Options
+
+----
+      --consent-for string   approve the rewritten auditors as written, naming the system this run is porting
+      --dir string           project directory (default: current)
+      --file string          a YAML or JSON file of the graduated conditions, or - for standard input (default "-")
+  -h, --help                 help for graduate
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_specify_conditions.html[akka specify conditions]	 - [Incubating] Write, list, and graduate the conditions a tool derived.
+
+[discrete]
+

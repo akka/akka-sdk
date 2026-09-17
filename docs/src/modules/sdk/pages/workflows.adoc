@@ -47,7 +47,7 @@ Step handler methods can be private and are used to implement the internal busin
 
 == Modeling state
 
-We want to build a simple workflow that transfers funds between two wallets. Before that, we will create a wallet subdomain with some basic functionalities that we could use later. A `WalletEntity` is implemented as an xref:event-sourced-entities.adoc[Event Sourced Entity], which is a better choice than a Key Value Entity for implementing a wallet, because a ledger of all transactions is usually required by the business.
+This example builds a simple workflow that transfers funds between two wallets. First, define a wallet subdomain with some basic functionality to use later. A `WalletEntity` is implemented as an xref:event-sourced-entities.adoc[Event Sourced Entity], which is a better choice than a Key Value Entity for implementing a wallet, because a ledger of all transactions is usually required by the business.
 
 The `Wallet` class represents domain object that holds the wallet balance. We can also withdraw or deposit funds to the wallet.
 
@@ -77,7 +77,7 @@ include::example$transfer-workflow/src/main/java/com/example/wallet/application/
 <3> Deposit funds to the wallet.
 <4> Get current wallet balance.
 
-Now we can focus on the workflow implementation itself. A workflow has state, which can be updated in command handlers and step implementations. During the state modeling we might consider the information that is required for validation, running the steps, collecting data from steps or tracking the workflow progress.
+Now focus on the workflow implementation itself. A workflow has state, which can be updated in command handlers and step implementations. When modeling the state, consider the information required for validation, running the steps, collecting data from steps, or tracking the workflow progress.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow/src/main/java/com/example/transfer/domain/TransferState.java[TransferState.java]
@@ -89,7 +89,7 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/domain/Tra
 
 == Implementing behavior
 
-Now that we have our workflow state defined, the remaining tasks can be summarized as follows:
+With the workflow state defined, the remaining tasks are:
 
 - declare your workflow and pick a workflow id (it needs to be unique as it will be used for sharding purposes);
 - implement handler(s) to interact with the workflow (e.g. to start a workflow, or provide additional data) or retrieve its current state;
@@ -97,7 +97,7 @@ Now that we have our workflow state defined, the remaining tasks can be summariz
 
 == Starting workflow
 
-Have a look at what our transfer workflow will look like for the first 2 points from the above list. We will now define how to launch a workflow with a `startTransfer` command handler that will return an `Effect` to start a workflow by providing a transition to the first step. Also, we will update the state with an initial value.
+The following shows what the transfer workflow looks like for the first two points above. It defines how to launch a workflow with a `startTransfer` command handler that returns an `Effect` to start a workflow by transitioning to the first step, and updates the state with an initial value.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
@@ -108,7 +108,7 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 <2> Extend `Workflow<S>`, where `S` is the state type this workflow will store (i.e. `TransferState`).
 <3> Create a method to start the workflow that returns an `Effect<Done>` class.
 <4> The validation ensures the transfer amount is greater than zero and the workflow is not running already. Otherwise, we might corrupt the existing workflow.
-<5> From the incoming data we create an initial `TransferState`.
+<5> From the incoming data, create an initial `TransferState`.
 <6> We instruct Akka to persist the new state.
 <7> With the `transitionTo` method, we inform that the first step is defined in `TransferWorkflow::withdrawStep` and the input for this step is a `Withdraw` object.
 <8> The last instruction is to inform the caller that the workflow was successfully started.
@@ -143,7 +143,7 @@ IMPORTANT: In the following example all `WalletEntity` interactions are not idem
 
 == Retrieving state
 
-To have access to the current state of the workflow we can use `currentState()`. However, if this is the first command we are receiving for this workflow, the state will be `null`. We can change it by overriding the `emptyState` method. The following example shows the implementation of the read-only command handler:
+To access the current state of the workflow, use `currentState()`. However, if this is the first command received for the workflow, the state is `null`. Override the `emptyState` method to change that. The following example shows the implementation of the read-only command handler:
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]

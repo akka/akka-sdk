@@ -1,0 +1,44 @@
+= akka specify attest
+
+Record an attestation that a delegated check ran externally, or a harness was activated.
+
+== Synopsis
+
+[Incubating] A delegated check runs in an external system (a central SAST service, a SIEM) or reflects a judgment the CLI cannot make.
+Recording an attestation -- a receipt the engine trusts in place of running the check -- resolves the condition or covers the harness capability.
+Pass a condition id or a harness capability name (for example sast).
+
+----
+akka specify attest <key> [flags]
+----
+
+== Options
+
+----
+      --dir string   project directory (default: current)
+  -h, --help         help for attest
+      --ref string   receipt reference (run URL, signature, or rubric hash)
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_specify.html[akka specify]	 - [Incubating] Initialize and manage AI-assisted Akka development projects.
+
+[discrete]
+

@@ -8,6 +8,7 @@ Akka's _Project Descriptor_ is a multi-document YAML file that defines the compl
 . xref:#project[the project itself],
 . xref:#service[services],
 . xref:#route[routes],
+. xref:#network-policy[network policy],
 . xref:#observability[observability settings],
 . xref:#external-secret[external secrets],
 . xref:#secret[secrets],
@@ -23,7 +24,7 @@ Each document in the project descriptor represents a single resource and follows
 |===
 |Field   |Type                    |Description
 
-|*resource*         |string _required_  |The type of resource: `Project`, `Service`, `Route`, `Observability`, `ExternalSecret`, `Secret`, `ServiceConfig`, `Broker`, or `RoleBindings`
+|*resource*         |string _required_  |The type of resource: `Project`, `Service`, `Route`, `NetworkPolicy`, `Observability`, `ExternalSecret`, `Secret`, `ServiceConfig`, `Broker`, or `RoleBindings`
 |*resourceVersion*  |string _required_  |The version of the resource schema. Currently only `v1` is supported.
 |*metadata*         |<<Metadata>>       |Optional metadata for the resource. Required for `Project`, `Service`, `Route`, `ExternalSecret`, `Secret`, and `ServiceConfig` resources.
 |*spec*             |object _required_  |The specification for the resource. Structure depends on the resource type.
@@ -41,7 +42,7 @@ Each document in the project descriptor represents a single resource and follows
 
 == Resource types
 
-The project descriptor supports the following resource types. A single descriptor can contain multiple `Service`, `Route`, `ExternalSecret`, `Secret`, and `ServiceConfig` documents, each with a unique name. The `Project`, `Observability`, `Broker`, and `RoleBindings` resources are project-level singletons—only one of each can exist per project.
+The project descriptor supports the following resource types. A single descriptor can contain multiple `Service`, `Route`, `ExternalSecret`, `Secret`, and `ServiceConfig` documents, each with a unique name. The `Project`, `NetworkPolicy`, `Observability`, `Broker`, and `RoleBindings` resources are project-level singletons—only one of each can exist per project.
 
 [#project]
 === Project
@@ -117,6 +118,30 @@ spec:
     - prefix: /api
       route:
         service: my-service
+----
+
+[#network-policy]
+=== NetworkPolicy
+
+Configures the project's network policy, controlling what ingress and egress traffic is allowed to and from the project's services at the network level. Only one network policy configuration exists per project, and it does not require a `metadata.name`. See xref:reference:descriptors/network-policy-descriptor.adoc[] for the complete reference.
+
+[source,yaml]
+----
+resource: NetworkPolicy
+resourceVersion: v1
+spec:
+  ingress:
+    - ports:
+        - port: akka-service
+      from:
+        - service: order-service
+          projectId: 3f29b6d8-9c34-4a1a-8f77-2b6e9d9a5b21
+  egress:
+    - ports:
+        - port: 443
+      to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
 ----
 
 [#observability]
@@ -589,5 +614,6 @@ spec:
 
 * xref:reference:descriptors/service-descriptor.adoc[Service Descriptor reference]
 * xref:reference:descriptors/route-descriptor.adoc[Route Descriptor reference]
+* xref:reference:descriptors/network-policy-descriptor.adoc[Network Policy Descriptor reference]
 * xref:reference:descriptors/observability-descriptor.adoc[Observability Descriptor reference]
 * xref:reference:cli/akka-cli/akka_projects.adoc[`akka projects` CLI commands]

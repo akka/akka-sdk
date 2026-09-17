@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 520" role="img" aria-labelledby="title">
+  <title id="title">Exemplar prompts cluster into a use case. Each use case draws on several tools. A general-purpose tool such as calendar is used by more than one use case.</title>
+  <defs>
+    <style>
+      .bg { fill: #000000; }
+      .box { fill: #141414; stroke: #a6a6a6; stroke-width: 3px; }
+      .box-usecase { fill: #1a1a1a; stroke: #ffce4a; stroke-width: 3px; }
+      .box-shared { fill: #141414; stroke: #00dbdd; stroke-width: 3px; }
+      .cluster { fill: none; stroke: #ffce4a; stroke-width: 3px; stroke-linecap: round; }
+      .uses { fill: none; stroke: #a6a6a6; stroke-width: 3px; stroke-linecap: round; }
+      .uses-shared { fill: none; stroke: #00dbdd; stroke-width: 3px; stroke-linecap: round; }
+      .prompt { fill: #f1f1f1; font-family: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 19px; font-style: italic; }
+      .usecase { fill: #f1f1f1; font-family: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 25px; }
+      .tool { fill: #f1f1f1; font-family: 'Roboto Mono', 'DejaVu Sans Mono', monospace; font-size: 21px; }
+      .header { fill: #a6a6a6; font-family: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 21px; letter-spacing: 1.5px; }
+      .note { fill: #a6a6a6; font-family: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 18px; }
+    </style>
+    <marker id="a-y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#ffce4a"/>
+    </marker>
+    <marker id="a-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a6a6a6"/>
+    </marker>
+    <marker id="a-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#00dbdd"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1240" height="520"/>
+
+  <text class="header" x="225" y="52" text-anchor="middle">EXEMPLAR PROMPTS</text>
+  <text class="header" x="610" y="52" text-anchor="middle">USE CASES</text>
+  <text class="header" x="1030" y="52" text-anchor="middle">TOOLS</text>
+
+  <rect class="box" x="40" y="88" width="370" height="62"/>
+  <text class="prompt" x="225" y="126" text-anchor="middle">"Where is my package?"</text>
+  <rect class="box" x="40" y="154" width="370" height="62"/>
+  <text class="prompt" x="225" y="192" text-anchor="middle">"Will this arrive before Friday?"</text>
+  <rect class="box" x="40" y="220" width="370" height="62"/>
+  <text class="prompt" x="225" y="245" text-anchor="middle">"Tracking says delivered</text>
+  <text class="prompt" x="225" y="268" text-anchor="middle">but nothing came."</text>
+
+  <rect class="box" x="40" y="340" width="370" height="62"/>
+  <text class="prompt" x="225" y="378" text-anchor="middle">"What did I buy in March?"</text>
+  <rect class="box" x="40" y="406" width="370" height="62"/>
+  <text class="prompt" x="225" y="431" text-anchor="middle">"I need to return the jacket</text>
+  <text class="prompt" x="225" y="454" text-anchor="middle">from order 4471."</text>
+
+  <path class="cluster" marker-end="url(#a-y)" d="M410,119 C445,119 458,160 482,168"/>
+  <path class="cluster" marker-end="url(#a-y)" d="M410,185 L482,185"/>
+  <path class="cluster" marker-end="url(#a-y)" d="M410,251 C445,251 458,210 482,202"/>
+  <path class="cluster" marker-end="url(#a-y)" d="M410,371 C445,371 458,388 482,392"/>
+  <path class="cluster" marker-end="url(#a-y)" d="M410,437 C445,437 458,420 482,416"/>
+
+  <rect class="box-usecase" x="490" y="141" width="240" height="88"/>
+  <text class="usecase" x="610" y="194" text-anchor="middle">Shipping check</text>
+
+  <rect class="box-usecase" x="490" y="360" width="240" height="88"/>
+  <text class="usecase" x="610" y="413" text-anchor="middle">Orders</text>
+
+  <path class="uses" marker-end="url(#a-g)" d="M730,165 C790,165 815,105 872,105"/>
+  <path class="uses" marker-end="url(#a-g)" d="M730,181 L872,181"/>
+  <path class="uses-shared" marker-end="url(#a-c)" d="M730,210 C790,210 815,299 872,299"/>
+  <path class="uses-shared" marker-end="url(#a-c)" d="M730,384 C790,384 815,299 872,299"/>
+  <path class="uses" marker-end="url(#a-g)" d="M730,424 C790,424 815,429 872,429"/>
+
+  <rect class="box" x="880" y="76" width="300" height="58"/>
+  <text class="tool" x="1030" y="112" text-anchor="middle">track-package</text>
+  <rect class="box" x="880" y="152" width="300" height="58"/>
+  <text class="tool" x="1030" y="188" text-anchor="middle">shipping-events</text>
+
+  <rect class="box-shared" x="880" y="270" width="300" height="58"/>
+  <text class="tool" x="1030" y="306" text-anchor="middle">calendar</text>
+  <text class="note" x="1030" y="352" text-anchor="middle">used by many use cases</text>
+
+  <rect class="box" x="880" y="400" width="300" height="58"/>
+  <text class="tool" x="1030" y="436" text-anchor="middle">order-lookup</text>
+</svg>

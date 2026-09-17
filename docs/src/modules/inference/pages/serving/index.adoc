@@ -1,0 +1,57 @@
+= Serving models
+:page-summary: Serving a model means running it on hardware in your project and exposing it on a hostname that OpenAI-compatible clients can call.
+:page-persona: builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+Serving a model means running it on hardware in your project and exposing it on a hostname that OpenAI-compatible clients can call. Akka runs the model, allocates the hardware it needs, and terminates TLS on a hostname you own.
+
+You describe what you want to run in a model descriptor, a YAML file that declares four kinds of resource. Applying that file is what creates them.
+
+[cols="1,3", options="header"]
+|===
+| Resource
+| What it declares
+
+| `Secret`
+| Credentials the deployment needs, such as the token that downloads gated weights.
+
+| `Accelerator`
+| A claim on a slice of the GPU inventory available in your region.
+
+| `ModelDeployment`
+| One model, the accelerator it runs on, and how the engine serves it.
+
+| `InferenceRoute`
+| A hostname, and the deployments reachable on it.
+|===
+
+Applying a descriptor writes these in dependency order, so nothing refers to a resource that does not exist yet: secrets, then accelerators, then model deployments, then routes. See xref:reference:descriptors/model-descriptor.adoc[Model descriptor] for every field of every resource.
+
+Each resource also has commands that create and inspect it directly, without a descriptor. Use the descriptor for anything you intend to keep, because a descriptor can be version controlled and re-applied. Use the commands to look at what is running and to make a one-off change.
+
+== Serving a model for the first time
+
+Work through these pages in order. The result is a model answering requests on a hostname, with a key that authorizes them.
+
+. xref:inference:serving/reviewing-hardware.adoc[Reviewing available hardware] shows the GPUs your region has and how much of each is free.
+. xref:inference:serving/allocating-hardware.adoc[Allocating hardware to models] claims a slice of that inventory.
+. xref:inference:serving/deploying-models.adoc[Deploying models] declares the model, applies the descriptor, and waits for the model to become ready.
+. xref:inference:serving/exposing-models.adoc[Exposing models on a hostname] puts the model behind a URL.
+. xref:inference:serving/issuing-api-keys.adoc[Issuing API keys] authorizes clients to use that URL.
+. xref:inference:serving/calling-a-model.adoc[Calling a deployed model] sends the first request.
+
+xref:inference:serving/removing-deployments.adoc[Removing deployments] covers exporting what is running and tearing it down.
+
+== Serving and routing
+
+Serving decides what runs. xref:inference:routing/index.adoc[Routing requests to models] decides which of several providers answers a given request, and a model you serve yourself is one destination a route can name. The two are independent: a served model is reachable on its own hostname whether or not any route names it.
+
+include::partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
+* xref:reference:inference-cli/models.adoc[Model commands]
+* xref:sdk:model-provider-details.adoc[AI model provider configuration]

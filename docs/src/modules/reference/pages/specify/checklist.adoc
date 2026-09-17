@@ -1,4 +1,4 @@
-= /akka.checklist
+= /akka:checklist
 
 Generate a custom checklist for the current feature.
 

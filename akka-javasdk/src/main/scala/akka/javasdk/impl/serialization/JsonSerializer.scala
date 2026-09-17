@@ -187,8 +187,7 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
           migrate(clazz, bytesPayload.bytes, fromVersion, migration)
         } else {
           throw new IllegalStateException(
-            s"Migration version [$supportedForwardVersion] is " +
-            "behind version [$fromVersion] of deserialized type [${expectedType.getName}]")
+            s"Migration version [$supportedForwardVersion] is behind version [$fromVersion] of deserialized type [${expectedType.getTypeName}]")
         }
       } else {
         parseBytes(expectedType, bytesPayload.bytes)
@@ -350,7 +349,7 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
   private[akka] def registerTypeHints(clz: Class[_]): Unit = {
     lookupTypeHint(clz)
     if (clz.getAnnotation(classOf[JsonSubTypes]) != null) {
-      //registering all subtypes
+      // registering all subtypes
       clz
         .getAnnotation(classOf[JsonSubTypes])
         .value()
@@ -420,7 +419,7 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
       .map(_.value())
       .map(migrationClass => migrationClass.getConstructor().newInstance())
       .map(migration =>
-        (migration.currentVersion(), migration.supportedClassNames().asScala.toList)) //TODO what about TypeName
+        (migration.currentVersion(), migration.supportedClassNames().asScala.toList)) // TODO what about TypeName
       .getOrElse((0, List.empty))
   }
 

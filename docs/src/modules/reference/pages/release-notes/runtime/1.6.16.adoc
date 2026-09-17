@@ -1,0 +1,22 @@
+= Akka Runtime 1.6.16
+:page-summary: Runtime 1.6.16 raises the log severity of view update failures, fixes view field resolution and several agent defects, and updates dependencies with reported vulnerabilities.
+
+include::ROOT:partial$include.adoc[]
+
+Released 2026-09-09.
+
+
+== Changes
+
+* Views: a query field path that passes through two levels of repeated message resolves to the correct field.
+* Views: a `BigDecimal` column is now correctly read back from a historical view.
+* Agents: the configured `response-timeout` is applied for OpenAI-based model providers.
+* Agents: a structured response from a Vertex AI model is parsed into the response type.
+* Agents: a `null` value no longer causes a `NullPointerException` in the sanitizer.
+* Agents: a name collision between an MCP tool and a built-in tool no longer hangs tool discovery
+* Entity deletion: a case where tracing data caused problem with deletes was fixed
+
+== Noteworthy dependency updates
+
+* Langchain4j 1.18.1
+* Netty 4.1.137.Final
