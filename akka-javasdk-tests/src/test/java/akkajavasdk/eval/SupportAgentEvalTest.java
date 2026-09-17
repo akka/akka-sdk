@@ -87,7 +87,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
       @Override
       public <T> T getDependency(Class<T> type) {
         if (type == CrmClient.class) return (T) crm;
-        throw new IllegalArgumentException("no such dependency: " + type);
+        return null;
       }
     };
   }
