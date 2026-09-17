@@ -91,4 +91,3 @@ Each entry links to the deterministic-testing section on that component's own pa
 
 * xref:testing:integration.adoc[]
 * xref:testing:evaluation/index.adoc[]
-* xref:testing:red-teaming/index.adoc[]

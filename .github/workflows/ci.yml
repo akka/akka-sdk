@@ -373,7 +373,6 @@ jobs:
           - { sample: multi-agent, it: true, test: true }
           - { sample: helloworld-agent, it: true, test: true }
           - { sample: helloworld-agent-kotlin, it: true, test: true }
-          - { sample: evaluation-playground, it: false, test: true }
 
     steps:
       - name: Checkout Global Scripts
