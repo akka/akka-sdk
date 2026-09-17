@@ -330,7 +330,7 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
       spiHeaders(provider) shouldBe Seq("X-Request-Id" -> "r-1")
     }
 
-    "explain why a custom provider cannot take them" in {
+    "tell a custom provider to override the wither" in {
       val exc = intercept[UnsupportedOperationException] {
         new NoConfigMyModelProvider().withAdditionalModelRequestHeaders(
           List[HttpHeader](RawHeader.create("X-Request-Id", "r-1")).asJava)

@@ -32,7 +32,8 @@ public sealed interface ModelProvider {
    * that provider. For {@link FromConfig}, they are added to the headers of the provider that the
    * configuration resolves to, and a header named in both takes the value given here.
    *
-   * <p>{@link Custom} does not support this and throws {@link UnsupportedOperationException}.
+   * <p>{@link Custom} throws {@link UnsupportedOperationException} unless the implementation
+   * overrides this method.
    *
    * @param additionalModelRequestHeaders the headers to add to each model request
    * @return a copy of this provider carrying the given headers
@@ -2685,11 +2686,12 @@ public sealed interface ModelProvider {
     }
 
     /**
-     * Not supported. A custom provider builds its own chat model, so the SDK cannot attach headers
-     * to its requests. Add the headers in {@link #createChatModel()} and {@link
-     * #createStreamingChatModel()} instead.
+     * A custom provider builds its own chat model, so the SDK cannot attach headers to its
+     * requests. Override this method to keep the given headers, and add them in {@link
+     * #createChatModel()} and {@link #createStreamingChatModel()}. The given list is the one stated
+     * in code. The SDK does not merge it with headers the provider already holds.
      *
-     * @throws UnsupportedOperationException always
+     * @throws UnsupportedOperationException unless this method is overridden
      */
     @Override
     default ModelProvider withAdditionalModelRequestHeaders(
@@ -2697,8 +2699,9 @@ public sealed interface ModelProvider {
       throw new UnsupportedOperationException(
           "A custom model provider ["
               + getClass().getName()
-              + "] builds its own chat model, so the SDK cannot add request headers to it. Add the"
-              + " headers where the provider creates the chat model.");
+              + "] builds its own chat model, so the SDK cannot add request headers to it. Override"
+              + " withAdditionalModelRequestHeaders to keep them, and add them where the provider"
+              + " creates the chat model.");
     }
   }
 

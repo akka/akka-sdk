@@ -714,9 +714,9 @@ The API key can be defined with an environment variable, `OPENAI_API_KEY` or `AN
 
 == Additional model request headers
 
-Most built in model providers support attaching extra HTTP headers to every request sent to the model API. This is useful for passing authentication tokens to an AI gateway or proxy, adding routing or tracing headers, or meeting any other header requirements imposed by the endpoint.
+All built in model providers support attaching extra HTTP headers to every request sent to the model API. This is useful for passing authentication tokens to an AI gateway or proxy, adding routing or tracing headers, or meeting any other header requirements imposed by the endpoint.
 
-Bedrock and Local AI drop the headers, and so does a custom provider, because those providers build their client themselves. A custom provider can add headers where it creates the chat model.
+A custom provider builds its own chat model. Override `withAdditionalModelRequestHeaders` to take the headers and add them where the chat model is created.
 
 === Configuration
 
@@ -844,8 +844,7 @@ akka.javasdk.agent.openai.identity-headers = off
 A provider named in configuration takes the value from the section it resolves to. A provider built in code
 takes the global value, because it has no section.
 
-Bedrock, Local AI and custom providers never send these headers, for the same reason they drop the extra
-headers above.
+A custom provider builds its own chat model, so the runtime does not add these headers to its requests.
 
 == Reference configurations
 The following is a list of the various reference configurations for each of the AI models
