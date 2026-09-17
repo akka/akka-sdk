@@ -827,13 +827,6 @@ Turn them off for every provider:
 akka.javasdk.agent.identity-headers = off
 ----
 
-The global setting can also be supplied with an environment variable:
-
-[source,bash,indent=0]
-----
-MODEL_REQUEST_IDENTITY_HEADERS=off
-----
-
 Each provider section inherits the global value and can override it:
 
 [source,hocon,indent=0]
