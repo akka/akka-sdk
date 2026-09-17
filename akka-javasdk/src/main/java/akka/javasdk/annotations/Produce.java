@@ -28,6 +28,10 @@ public @interface Produce {
   /**
    * Annotation to configure the component to produce an event stream that can be consumed by other
    * services.
+   *
+   * <p>The event handler should be a pure transformation of the incoming event and should not call
+   * other components or external systems. Consuming services replay the stream, so the handler runs
+   * again for already transformed events.
    */
   @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)

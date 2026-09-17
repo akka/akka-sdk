@@ -194,6 +194,7 @@ Boundary rules:
 - Annotated with `@Consume.From*` (EventSourcedEntity, KeyValueEntity, Workflow, Topic, ServiceStream)
 - Handlers return `Effect` with `effects().done()` or `effects().ignore()`
 - Produce with `@Produce.ToTopic` or `@Produce.ServiceStream`
+- A `@Produce.ServiceStream` handler should be a pure transformation of the incoming event: no calls to other components or external systems. Consuming services replay the stream, so the handler runs again for already transformed events. Look up extra data on the consuming side instead
 - Use `@DeleteHandler` for KVE/Workflow deletions
 
 **Timed Action**
