@@ -180,6 +180,7 @@ object SdkRunner {
 
   val FutureDone: Future[Done] = Future.successful(Done)
 
+  @nowarn("msg=deprecated")
   def extractSpiSettings(applicationConf: Config): SpiSettings = {
     val eventSourcedEntitySnapshotEvery = applicationConf.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
     val cleanupDeletedEntityAfter =
@@ -246,7 +247,7 @@ object SdkRunner {
             new SpiDevObjectStorageFilesystemBucketConfig(name, directory)
           case "s3" =>
             val creds = parseDevS3Credentials(name, c)
-            new SpiDevObjectStorageS3BucketConfig(name, c.getString("bucket"), c.getString("region"), creds)
+            new SpiDevObjectStorageS3BucketConfig(name, c.getString("bucket"), c.getString("region"), creds, None, None)
           case "gcs" =>
             val creds = parseDevGcsCredentials(name, c)
             new SpiDevObjectStorageGcsBucketConfig(name, c.getString("bucket"), creds)

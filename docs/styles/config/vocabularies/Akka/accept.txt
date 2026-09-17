@@ -169,6 +169,7 @@ facto
 [Ff]ailback
 Factory
 failover
+Failsafe
 fanout
 fetchable
 filePermission
@@ -387,8 +388,6 @@ recompiles
 recoverability
 recurse
 redeliveries
-Redkit
-redkit
 Redpanda
 reflows
 refreshInterval
