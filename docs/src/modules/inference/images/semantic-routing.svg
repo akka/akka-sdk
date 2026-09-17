@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 580" role="img" aria-labelledby="title">
+  <title id="title">Agents send requests to a gateway. The gateway consults a semantic router, which selects a model provider and streams a verifiable record of each decision to an evidence log. The gateway forwards the request to the selected provider.</title>
+  <defs>
+    <style>
+      .bg { fill: #000000; }
+      .box { fill: #141414; stroke: #a6a6a6; stroke-width: 3px; }
+      .box-gateway { fill: #1a1a1a; stroke: #f1f1f1; stroke-width: 3px; }
+      .box-router { fill: #1a1a1a; stroke: #ffce4a; stroke-width: 3px; }
+      .box-evidence { fill: #141414; stroke: #00dbdd; stroke-width: 3px; }
+      .flow { fill: none; stroke: #ffce4a; stroke-width: 3px; stroke-linecap: round; }
+      .control { fill: none; stroke: #ffce4a; stroke-width: 3px; stroke-linecap: round; stroke-dasharray: 4 8; }
+      .evidence { fill: none; stroke: #00dbdd; stroke-width: 3px; stroke-linecap: round; }
+      .label { fill: #f1f1f1; font-family: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 26px; }
+      .label-lg { fill: #f1f1f1; font-family: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 30px; }
+      .label-sm { fill: #a6a6a6; font-family: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 20px; }
+      .header { fill: #a6a6a6; font-family: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 22px; letter-spacing: 1.5px; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#ffce4a"/>
+    </marker>
+    <marker id="arrow-evidence" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#00dbdd"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1240" height="580"/>
+
+  <text class="header" x="145" y="64" text-anchor="middle">AGENTS</text>
+  <text class="header" x="1025" y="64" text-anchor="middle">MODEL PROVIDERS</text>
+
+  <rect class="box" x="50" y="104" width="190" height="72"/>
+  <text class="label" x="145" y="149" text-anchor="middle">Agent</text>
+  <rect class="box" x="50" y="214" width="190" height="72"/>
+  <text class="label" x="145" y="259" text-anchor="middle">Agent</text>
+  <rect class="box" x="50" y="324" width="190" height="72"/>
+  <text class="label" x="145" y="369" text-anchor="middle">Agent</text>
+
+  <path class="flow" marker-end="url(#arrow)" d="M240,140 C320,140 360,210 437,210"/>
+  <path class="flow" marker-end="url(#arrow)" d="M240,250 L437,250"/>
+  <path class="flow" marker-end="url(#arrow)" d="M240,360 C320,360 360,290 437,290"/>
+
+  <rect class="box-gateway" x="445" y="175" width="200" height="150"/>
+  <text class="label-lg" x="545" y="260" text-anchor="middle">Gateway</text>
+
+  <path class="flow" marker-end="url(#arrow)" d="M645,215 C745,215 790,130 892,130"/>
+  <path class="flow" marker-end="url(#arrow)" d="M645,235 C745,235 790,210 892,210"/>
+  <path class="flow" marker-end="url(#arrow)" d="M645,265 C745,265 790,290 892,290"/>
+  <path class="flow" marker-end="url(#arrow)" d="M645,285 C745,285 790,370 892,370"/>
+
+  <rect class="box" x="900" y="100" width="250" height="60"/>
+  <text class="label" x="1025" y="139" text-anchor="middle">General-purpose</text>
+  <rect class="box" x="900" y="180" width="250" height="60"/>
+  <text class="label" x="1025" y="219" text-anchor="middle">Low-latency</text>
+  <rect class="box" x="900" y="260" width="250" height="60"/>
+  <text class="label" x="1025" y="299" text-anchor="middle">Domain-specific</text>
+  <rect class="box" x="900" y="340" width="250" height="60"/>
+  <text class="label" x="1025" y="379" text-anchor="middle">Self-hosted</text>
+
+  <path class="control" marker-start="url(#arrow)" marker-end="url(#arrow)" d="M545,331 L545,418"/>
+  <text class="label-sm" x="568" y="384" text-anchor="start">backend decision</text>
+
+  <rect class="box-router" x="410" y="424" width="270" height="112"/>
+  <text class="label" x="545" y="462" text-anchor="middle">Semantic router</text>
+  <text class="label-sm" x="545" y="488" text-anchor="middle">classifies request meaning,</text>
+  <text class="label-sm" x="545" y="512" text-anchor="middle">selects a backend</text>
+
+  <path class="evidence" marker-end="url(#arrow-evidence)" d="M686,480 L892,480"/>
+  <text class="label-sm" x="789" y="466" text-anchor="middle">verifiable data</text>
+
+  <rect class="box-evidence" x="900" y="424" width="250" height="112"/>
+  <text class="label" x="1025" y="462" text-anchor="middle">Evidence log</text>
+  <text class="label-sm" x="1025" y="488" text-anchor="middle">verifiable record of</text>
+  <text class="label-sm" x="1025" y="512" text-anchor="middle">each routing decision</text>
+</svg>

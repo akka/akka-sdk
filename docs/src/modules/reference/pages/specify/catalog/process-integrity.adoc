@@ -1,0 +1,140 @@
+= Process Integrity exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Process Integrity] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
+
+[NOTE]
+====
+Only three of the ids on this page ship in the xref:reference:specify/default-library.adoc[default library]: `PROC-SOURCE-GROUNDING`, `PROC-AUDITOR-COVERAGE`, and `PROC-ADEQUACY-REVIEWED`. Every other id below is a candidate for inspiration -- adopting one means authoring the condition and its covering auditor.
+====
+
+== Source grounding and anti-hallucination
+
+"No invented APIs" is not a standalone auditor; it is enforced by delegation. A declarative type-check auditor on each ecosystem surface (`tsc --noEmit`, `mvn compile`, and so on) fails on a symbol that does not exist, so the invariant is folded into `PROC-AUDITOR-COVERAGE` (a covering auditor exists for the surface) and `PROC-ADEQUACY-REVIEWED` (the auditor is reviewed to catch it). What remains as a distinct source-grounding condition is citing API usage to official documentation.
+
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PROC-SOURCE-GROUNDING` | API usage is cited to official documentation; invented APIs are caught by the delegated type-check auditors under coverage and adequacy.
+| `PROC-DOCS-CITED-FOR-FRAMEWORK` | Each non-trivial framework usage cites the official documentation section it was derived from.
+| `PROC-IMPORTS-RESOLVE` | All imports and package references compile against the pinned dependency set with no unresolved symbols.
+| `PROC-NO-PHANTOM-CONFIG` | Configuration keys written by the AI exist in the target framework's documented configuration schema.
+| `PROC-VERSION-ACCURATE-USAGE` | API usage matches the signature and semantics of the exact dependency version in the lockfile, not a different release.
+| `PROC-CITATIONS-RESOLVE` | Every documentation URL or reference the AI cites resolves to a live, relevant source.
+| `PROC-NO-UNGROUNDED-CLAIMS` | Factual assertions in generated comments or docs are grounded in a cited source rather than asserted from model priors.
+|===
+
+== Provenance and traceability
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PROC-ARTIFACT-PROVENANCE-RECORDED` | Each generated artifact records which run, model, and prompt produced it.
+| `PROC-CODE-TRACES-TO-TASK` | Every generated code change maps to a task or spec item that requested it.
+| `PROC-TASK-TRACES-TO-SPEC` | Each executed task links back to the specification requirement it fulfills.
+| `PROC-COMMIT-LINKS-SPEC-ITEM` | Every commit references the spec, plan, or task identifier it implements.
+| `PROC-GENERATED-FILES-LABELED` | Files or sections authored by the AI are marked as machine-generated in a discoverable way.
+| `PROC-NO-ORPHAN-ARTIFACTS` | No generated artifact exists without a traceable originating task or spec item.
+| `PROC-PROVENANCE-CHAIN-COMPLETE` | The chain from spec to plan to task to artifact is unbroken for every shipped change.
+|===
+
+== Spec adherence and scope control
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PROC-NO-SCOPE-BEYOND-SPEC` | No feature, endpoint, or behavior is implemented that the specification does not call for.
+| `PROC-ALL-SPEC-ITEMS-ADDRESSED` | Every in-scope specification item has a corresponding implementation or an explicit deferral.
+| `PROC-NO-UNAPPROVED-DEPENDENCIES` | No new third-party dependency is added unless the spec or plan authorizes it.
+| `PROC-NO-SILENT-REQUIREMENT-DROP` | No specified requirement is dropped without an explicit, recorded decision.
+| `PROC-NO-GOLD-PLATING` | No speculative abstraction or configurability is added beyond what the spec requests.
+| `PROC-CHANGES-WITHIN-STATED-FILES` | Edits stay within the files or modules the plan scopes, or the deviation is recorded.
+| `PROC-NO-UNAUTHORIZED-INTERFACE-CHANGE` | Public interfaces are changed only where the spec authorizes it.
+| `PROC-SCOPE-DELTA-DECLARED` | Any deviation between delivered scope and specified scope is explicitly declared, not hidden.
+|===
+
+== Plan and constitution adherence
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PROC-FOLLOWS-APPROVED-PLAN` | Implementation follows the approved plan's steps and sequencing rather than an ad hoc path.
+| `PROC-CONSTITUTION-CONSTRAINTS-MET` | The build satisfies every applicable constraint stated in the project constitution.
+| `PROC-NO-CONSTITUTION-VIOLATION` | No change violates a prohibition or principle defined in the constitution.
+| `PROC-ARCH-PATTERNS-HONORED` | Generated code conforms to the architectural patterns the plan or constitution mandates.
+| `PROC-CHANGE-REVIEWED-VS-CONSTITUTION` | Each change is checked against the constitution before it is accepted.
+| `PROC-PLAN-DEVIATION-RECORDED` | Any departure from the approved plan is recorded with a rationale.
+| `PROC-STYLE-CONVENTIONS-FOLLOWED` | Generated code matches the project's mandated style and naming conventions.
+|===
+
+== Honest reporting and anti-green-washing
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PROC-NO-FABRICATED-RESULTS` | No test result, metric, or check outcome is reported that was not actually produced.
+| `PROC-REPORTED-STATUS-MATCHES-REALITY` | Claimed pass/fail status matches the actual observed state of the build.
+| `PROC-NO-STUBBED-PASS` | No check is made to pass by stubbing, mocking, or hard-coding its expected result.
+| `PROC-FAILURES-SURFACED` | Failures and errors are reported rather than suppressed or summarized away.
+| `PROC-NO-OVERSTATED-COVERAGE` | Reported test or requirement coverage is not overstated relative to what is actually exercised.
+| `PROC-UNVERIFIED-ITEMS-FLAGGED` | Items that could not be verified are flagged as unverified rather than reported as passing.
+| `PROC-NO-MISLEADING-SUMMARY` | Completion summaries do not claim work as done that is partial, skipped, or deferred.
+| `PROC-ERRORS-NOT-SWALLOWED` | The build does not silently catch and discard errors to appear successful.
+|===
+
+== Auditor coverage and verifiability
+
+Two of these conditions are the locked process-integrity gates: they are always on and cannot be struck. `PROC-AUDITOR-COVERAGE` requires that every material build surface has a covering auditor (see xref:reference:specify/coverage-gate.adoc[Coverage gate]); `PROC-ADEQUACY-REVIEWED` requires a fresh adversarial review of every auditor, keyed to the current checks (see xref:reference:specify/adequacy-review.adoc[Adequacy review]).
+
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PROC-AUDITOR-COVERAGE` | Every material build surface has a covering auditor, else the gate is red. Locked: always on, cannot be struck.
+| `PROC-ADEQUACY-REVIEWED` | A fresh adversarial review, keyed to the current checks, covers every auditor and confirms it cannot pass while its invariant is false. Locked: always on, cannot be struck.
+| `PROC-NO-UNVERIFIABLE-CLAIMS` | No condition is asserted as met without a machine-checkable auditor backing it.
+| `PROC-AUDITOR-RUNS-CLEAN` | Each auditor executes without error and returns a definite pass or fail verdict.
+| `PROC-EVIDENCE-RETAINED-PER-EC` | Evidence supporting each verified condition is retained and retrievable.
+| `PROC-EVIDENCE-MATCHES-VERDICT` | Retained evidence actually substantiates the pass/fail verdict recorded for the condition.
+|===
+
+== Reproducibility and determinism
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PROC-BUILD-STEPS-DETERMINISTIC` | Build steps produce the same result when re-run from the same inputs.
+| `PROC-DEPENDENCIES-PINNED` | All dependencies are pinned to exact versions so the build is reproducible.
+| `PROC-NO-UNCOMMITTED-INPUTS` | Every input required to reproduce the build is committed or otherwise recorded.
+| `PROC-VERIFICATION-REPRODUCIBLE` | Re-running the verification against the same artifacts yields the same verdicts.
+| `PROC-NO-HIDDEN-ENV-DEPENDENCE` | The build does not depend on undocumented environment state to succeed.
+| `PROC-RANDOMNESS-SEEDED` | Any nondeterministic step is seeded or bounded so results are reproducible.
+|===
+
+== Human gates and enforcement integrity
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PROC-HUMAN-SIGNOFF-HONORED` | Required human sign-off gates are obtained before the gated step proceeds.
+| `PROC-NO-ENFORCEMENT-BYPASS` | Enforcement of exit conditions is not disabled, skipped, or circumvented.
+| `PROC-NO-SKIPPED-TESTS` | No test is silently skipped, ignored, or marked pending to pass the build.
+| `PROC-NO-DISABLED-CHECKS` | No lint, type, or security check is disabled to force a passing result.
+| `PROC-NO-DESTRUCTIVE-OP-WITHOUT-APPROVAL` | Destructive operations are not performed without the required explicit approval.
+| `PROC-GATE-ORDER-RESPECTED` | Gated stages run only after their prerequisite gates have passed.
+| `PROC-SUPPRESSIONS-JUSTIFIED` | Any warning or check suppression carries a recorded justification.
+|===
+
+== Secrets, safety, and model provenance
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `PROC-NO-SECRETS-IN-PROMPTS` | No credentials or secrets are placed into prompts sent to the model.
+| `PROC-NO-SECRETS-IN-LOGS` | No secrets are written into build logs, transcripts, or generated artifacts.
+| `PROC-NO-PII-IN-PROMPTS` | No personal or sensitive data is leaked into prompts beyond what the task authorizes.
+| `PROC-MODEL-VERSION-RECORDED` | The model and version used for the build is recorded for each generation step.
+| `PROC-PROMPT-GUARDRAILS-APPLIED` | Required agent and prompt guardrails are applied to every generation step.
+| `PROC-NO-SECRET-EXFIL-IN-CODE` | Generated code does not transmit secrets or sensitive data to unauthorized destinations.
+| `PROC-TOOL-PERMISSIONS-RESPECTED` | The agent operates within its granted tool and permission scope during the build.
+|===

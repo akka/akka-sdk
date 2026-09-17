@@ -1,0 +1,156 @@
+= Documentation & Training exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Documentation & Training] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
+
+== README & project overview
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DOC-README-EXISTS` | A README file is present at the repository root.
+| `DOC-README-TITLE-DESCRIPTION` | The README opens with a project title and a one-paragraph description of what the project does.
+| `DOC-README-BADGES-CURRENT` | Status badges (build, coverage, version) resolve to live endpoints and are not broken.
+| `DOC-README-INSTALL-SECTION` | The README contains an installation or setup section with runnable commands.
+| `DOC-README-USAGE-EXAMPLE` | The README includes at least one minimal usage example showing the primary workflow.
+| `DOC-README-PREREQUISITES` | Required runtimes, versions, and system dependencies are listed before install steps.
+| `DOC-README-LICENSE-LINK` | The README states the license and links to the LICENSE file.
+| `DOC-README-SUPPORT-CHANNELS` | The README points to support channels, issue tracker, or community forums.
+| `DOC-README-PROJECT-STATUS` | The README declares maturity or lifecycle status (alpha, beta, stable, deprecated).
+| `DOC-README-TOC-PRESENT` | A table of contents is present when the README exceeds a configured length threshold.
+|===
+
+== Quickstart & getting started
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DOC-QUICKSTART-EXISTS` | A dedicated quickstart or getting-started guide exists.
+| `DOC-QUICKSTART-TIME-TO-HELLO` | The quickstart reaches a working "hello world" result in a stated, bounded number of steps.
+| `DOC-QUICKSTART-COPY-PASTE` | Every quickstart command block is copy-paste runnable without manual editing.
+| `DOC-QUICKSTART-PREREQS-STATED` | The quickstart states its prerequisites and assumed starting state.
+| `DOC-QUICKSTART-EXPECTED-OUTPUT` | Each quickstart step shows the expected output so users can self-verify.
+| `DOC-QUICKSTART-CLEANUP-STEPS` | The quickstart provides teardown or cleanup instructions for created resources.
+| `DOC-QUICKSTART-NO-DEAD-STEPS` | No quickstart step references removed commands, flags, or endpoints.
+| `DOC-QUICKSTART-PLATFORM-COVERAGE` | The quickstart covers each officially supported operating system or platform.
+| `DOC-QUICKSTART-NEXT-STEPS` | The quickstart ends with links to deeper documentation or next tutorials.
+|===
+
+== API reference
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DOC-API-OPENAPI-PRESENT` | An OpenAPI or gRPC/protobuf specification file exists for every public service.
+| `DOC-API-SPEC-VALIDATES` | The API specification passes a schema validator without errors.
+| `DOC-API-SPEC-MATCHES-CODE` | The published API specification matches the routes and handlers implemented in code.
+| `DOC-API-ENDPOINT-DESCRIPTIONS` | Every endpoint or RPC method carries a human-readable description.
+| `DOC-API-PARAM-DOCUMENTED` | Every request parameter, field, and header documents its type and meaning.
+| `DOC-API-RESPONSE-CODES` | Each endpoint documents its success and error response codes with schemas.
+| `DOC-API-EXAMPLE-PAYLOADS` | Each endpoint provides example request and response payloads.
+| `DOC-API-AUTH-DOCUMENTED` | Authentication and authorization requirements are documented per endpoint.
+| `DOC-API-DEPRECATION-MARKED` | Deprecated endpoints and fields are flagged with removal timelines.
+| `DOC-API-ERROR-CATALOG` | A catalog of error codes maps each code to a cause and remediation.
+| `DOC-API-RATE-LIMITS` | Rate limits, quotas, and pagination behavior are documented where they apply.
+|===
+
+== Architecture documentation & diagrams
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DOC-ARCH-OVERVIEW-EXISTS` | A system architecture overview document exists describing major components.
+| `DOC-ARCH-DIAGRAM-PRESENT` | At least one architecture diagram depicts components and their interactions.
+| `DOC-ARCH-DIAGRAM-SOURCE` | Architecture diagrams are stored as editable source, not only as exported images.
+| `DOC-ARCH-DATA-FLOW` | Data-flow or sequence diagrams document the primary request and event paths.
+| `DOC-ARCH-COMPONENT-OWNERSHIP` | Each documented component identifies its owning team or maintainer.
+| `DOC-ARCH-DEPENDENCY-MAP` | External and internal service dependencies are enumerated in the architecture docs.
+| `DOC-ARCH-TRACE-TO-SPEC` | Architecture components link back to their originating requirements in the knowledge graph.
+| `DOC-ARCH-DIAGRAM-CURRENT` | Architecture diagrams reference only components that still exist in the codebase.
+| `DOC-ARCH-BOUNDARY-DOCUMENTED` | Trust boundaries and network zones are marked in the architecture documentation.
+|===
+
+== Architecture Decision Records
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DOC-ADR-DIRECTORY-EXISTS` | A dedicated ADR directory or log exists in the repository.
+| `DOC-ADR-TEMPLATE-FOLLOWED` | Each ADR follows the agreed template with context, decision, and consequences.
+| `DOC-ADR-STATUS-FIELD` | Every ADR records a status such as proposed, accepted, or superseded.
+| `DOC-ADR-NUMBERED-SEQUENTIAL` | ADRs are numbered sequentially without gaps or duplicate identifiers.
+| `DOC-ADR-SUPERSEDE-LINKED` | Superseded ADRs link to the decisions that replace them.
+| `DOC-ADR-DATE-RECORDED` | Each ADR records the date the decision was made.
+| `DOC-ADR-SIGNIFICANT-CHANGES` | Architecturally significant changes in the diff are accompanied by a new or updated ADR.
+| `DOC-ADR-ALTERNATIVES-CAPTURED` | Each ADR documents the alternatives considered and why they were rejected.
+| `DOC-ADR-TRACE-TO-COMPONENT` | ADRs link to the components or modules they govern in the traceability graph.
+|===
+
+== Operational docs, runbooks & troubleshooting
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DOC-RUNBOOK-EXISTS` | A runbook exists for each production-critical service or workflow.
+| `DOC-RUNBOOK-ALERT-LINKED` | Every alert links to a runbook section describing its response procedure.
+| `DOC-RUNBOOK-ONCALL-STEPS` | Runbooks contain concrete, ordered steps an on-call engineer can execute.
+| `DOC-RUNBOOK-ROLLBACK` | Deployment and rollback procedures are documented with exact commands.
+| `DOC-RUNBOOK-ESCALATION-PATH` | Runbooks specify escalation contacts and severity thresholds.
+| `DOC-TROUBLESHOOTING-GUIDE` | A troubleshooting guide maps common failure symptoms to diagnoses.
+| `DOC-FAQ-PRESENT` | A FAQ addresses recurring user and operator questions.
+| `DOC-RUNBOOK-RECOVERY-DR` | Backup, restore, and disaster-recovery procedures are documented and dated.
+| `DOC-RUNBOOK-DEPENDENCIES` | Runbooks list upstream and downstream dependencies impacted during incidents.
+| `DOC-RUNBOOK-VERIFIED-RECENT` | Each runbook records a last-verified date within the configured freshness window.
+|===
+
+== Changelog, release notes & versioned docs
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DOC-CHANGELOG-EXISTS` | A changelog file is present and maintained.
+| `DOC-CHANGELOG-UPDATED` | The changelog contains an entry for the current release or unreleased section.
+| `DOC-CHANGELOG-FORMAT` | Changelog entries follow a consistent, parseable format such as Keep a Changelog.
+| `DOC-CHANGELOG-SEMVER` | Version numbers in the changelog conform to the project's versioning scheme.
+| `DOC-RELEASE-NOTES-BREAKING` | Release notes call out breaking changes and required migration steps.
+| `DOC-RELEASE-NOTES-DATED` | Each released version records a release date.
+| `DOC-DOCS-VERSIONED` | Documentation is versioned so users can view docs matching a specific release.
+| `DOC-DOCS-VERSION-SWITCHER` | Published docs expose a version selector covering supported releases.
+| `DOC-MIGRATION-GUIDE` | A migration guide accompanies each major version bump.
+| `DOC-DEPRECATION-NOTICE` | Deprecations are announced in release notes ahead of removal.
+|===
+
+== Code comments, docstrings & configuration reference
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DOC-DOCSTRING-PUBLIC-API` | Every exported function, class, and method carries a docstring or doc comment.
+| `DOC-DOCSTRING-PARAMS-RETURNS` | Public API docstrings document parameters, return values, and raised errors.
+| `DOC-DOCSTRING-NO-STALE` | Docstrings describe the current signature with no parameters that no longer exist.
+| `DOC-COMMENT-COVERAGE` | Public API documentation coverage meets a configured minimum threshold.
+| `DOC-CONFIG-REFERENCE-EXISTS` | A configuration reference documents every supported setting and environment variable.
+| `DOC-CONFIG-DEFAULTS-LISTED` | The configuration reference states the default value for each setting.
+| `DOC-CONFIG-REQUIRED-MARKED` | Required configuration keys are distinguished from optional ones.
+| `DOC-CONFIG-MATCHES-CODE` | Every documented configuration key is actually read by the code, and vice versa.
+| `DOC-GENERATED-API-BUILDS` | Auto-generated API documentation builds without warnings or errors.
+| `DOC-GLOSSARY-EXISTS` | A glossary defines domain terms and acronyms used across the documentation.
+|===
+
+== Onboarding, training & doc health
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `DOC-ONBOARDING-GUIDE` | An onboarding guide walks a new contributor from clone to first successful build.
+| `DOC-ONBOARDING-ENV-SETUP` | The onboarding guide documents local environment setup end to end.
+| `DOC-CONTRIBUTING-EXISTS` | A CONTRIBUTING guide describes branching, review, and submission workflow.
+| `DOC-CODE-OF-CONDUCT` | A code of conduct is present and linked from the contribution guide.
+| `DOC-TRAINING-MATERIAL` | Training material or tutorials exist for the primary user and operator personas.
+| `DOC-TRAINING-EXERCISES` | Training material includes hands-on exercises with verifiable outcomes.
+| `DOC-EXAMPLES-COMPILE` | Every code example in the documentation compiles and runs in continuous integration.
+| `DOC-LINKS-RESOLVE` | Internal and external documentation links pass an automated link check.
+| `DOC-FRESHNESS-WINDOW` | No documentation page is older than its configured staleness threshold without review.
+| `DOC-ORPHAN-PAGES` | Every documentation page is reachable from navigation with no orphaned files.
+| `DOC-TRACE-COVERAGE` | Every shipped feature has at least one linked doc in the knowledge-graph traceability layer.
+| `DOC-TRACE-NO-DRIFT` | A deterministic traceability check reports no drift between docs, code, and requirements.
+|===

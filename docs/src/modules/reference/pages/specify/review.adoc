@@ -1,4 +1,4 @@
-= /akka.review
+= /akka:review
 
 Review implemented code against the spec, plan, and constitution.
 

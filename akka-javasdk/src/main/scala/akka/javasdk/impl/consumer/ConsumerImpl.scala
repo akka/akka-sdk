@@ -24,6 +24,7 @@ import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.UnhandledExceptionReporting
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.AsyncEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ConsumedEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ProduceEffect
@@ -63,7 +64,8 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     internalSerializer: Serializer,
     ignoreUnknown: Boolean,
     componentDescriptor: ComponentDescriptor,
-    regionInfo: RegionInfo)
+    regionInfo: RegionInfo,
+    unhandledExceptionReporter: () => Option[UnhandledExceptionReporting.Reporter] = () => None)
     extends SpiConsumer {
 
   private val log: Logger = LoggerFactory.getLogger(consumerClass)
@@ -158,6 +160,13 @@ private[impl] final class ConsumerImpl[C <: Consumer](
         s"Failure during handling message of type [${message.payload.fold("none")(
           _.contentType)}] from Consumer component [${consumerClass.getSimpleName}].",
         ex)
+      UnhandledExceptionReporting.report(
+        unhandledExceptionReporter,
+        ex,
+        correlationId,
+        componentId,
+        consumerClass.getName,
+        log)
       protocolFailure(correlationId)
     }
   }

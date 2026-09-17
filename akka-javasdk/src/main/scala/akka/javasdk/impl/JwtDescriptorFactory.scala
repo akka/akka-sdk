@@ -36,7 +36,7 @@ private[impl] object JwtDescriptorFactory {
       jwtAnnotation: Option[JWT],
       className: String,
       method: Option[Method] = None): Option[RuntimeJWT] = {
-    //Validates the a.j.a.JWT.StaticClaim and creates a.r.s.spi.StaticClaim out of it
+    // Validates the a.j.a.JWT.StaticClaim and creates a.r.s.spi.StaticClaim out of it
     def createStaticClaim(staticClaim: JWT.StaticClaim): Option[StaticClaim] = {
       val culprit = method.getOrElse(className).toString
       val content: Option[StaticClaimContent] = (staticClaim.values(), staticClaim.pattern) match {

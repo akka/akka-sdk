@@ -1,0 +1,275 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.testkit.eval;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.entry;
+
+import akka.javasdk.testkit.ModelCall;
+import akka.javasdk.testkit.ToolCall;
+import akka.javasdk.testkit.eval.Evaluator.EvalResult.Verdict;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+class EvalCaseParserTest {
+
+  record Customer(String id, String name) {}
+
+  private static final String CAPTURE =
+      """
+      {"id":"c1","input":"Is cust_1 still a customer?","toolCalls":[\
+      {"name":"getCustomer","arguments":{"customerId":"cust_1"},\
+      "result":{"id":"cust_1","name":"Ada Lovelace"}}],\
+      "output":"Yes, Ada Lovelace is an active customer."}
+      {"id":"c2","input":"hi there!","toolCalls":[]}
+      """;
+
+  @Test
+  void carriesTheRecordedCallsAndExpectsThemAsTheBaseline(@TempDir Path dir) throws IOException {
+    var file = Files.writeString(dir.resolve("captures.jsonl"), CAPTURE);
+
+    var cases = EvalCaseParser.parse(file);
+
+    assertThat(cases).extracting(EvalCase::id).containsExactly("c1", "c2");
+
+    // The recorded call as data, for the runner to load through the bindings it is given.
+    assertThat(cases.get(0).recordedCalls())
+        .singleElement()
+        .satisfies(
+            call -> {
+              assertThat(call.tool()).isEqualTo("getCustomer");
+              assertThat(call.argument("customerId")).isEqualTo("cust_1");
+              assertThat(call.resultAs(Customer.class))
+                  .isEqualTo(new Customer("cust_1", "Ada Lovelace"));
+            });
+
+    // The baseline: the recorded tool, its order and its argument, as three evaluators.
+    var asRecorded =
+        new Interaction(
+            "q", "done", List.of(new ToolCall("getCustomer", Map.of("customerId", "cust_1"))));
+    assertThat(verdicts(cases.get(0), asRecorded))
+        .containsExactly(
+            entry(Evaluators.Tools.class, Verdict.PASS),
+            entry(Evaluators.ToolOrder.class, Verdict.PASS),
+            entry(Evaluators.ToolArgument.class, Verdict.PASS));
+    var otherCustomer =
+        new Interaction(
+            "q", "done", List.of(new ToolCall("getCustomer", Map.of("customerId", "cust_2"))));
+    assertThat(verdicts(cases.get(0), otherCustomer))
+        .containsEntry(Evaluators.ToolArgument.class, Verdict.FAIL);
+    assertThat(verdicts(cases.get(0), Interaction.of("q", "done")))
+        .containsEntry(Evaluators.Tools.class, Verdict.FAIL);
+
+    assertThat(cases.get(1).recordedCalls()).isEmpty();
+    assertThat(cases.get(1).evaluators()).isEmpty();
+  }
+
+  @Test
+  void recordedSpendBecomesBudgetsWithToleranceOnTokensAndLatency(@TempDir Path dir)
+      throws IOException {
+    var file =
+        Files.writeString(
+            dir.resolve("captures.jsonl"),
+            """
+            {"id":"c1","input":"hi","toolCalls":[],"modelCalls":2,"tokens":{"input":100,"output":10},"latencyMs":1000}
+            {"id":"c2","input":"hi","toolCalls":[],"tokens":300}
+            {"id":"c3","input":"hi","toolCalls":[]}
+            """);
+
+    var cases = EvalCaseParser.parse(file);
+
+    // c1: the model call count as recorded, tokens and latency at 1.5 times the recorded figures.
+    var spent = cases.get(0);
+    assertThat(verdicts(spent, traced(2, 165, Duration.ofMillis(1500))))
+        .containsExactly(
+            entry(Evaluators.ModelCallBudget.class, Verdict.PASS),
+            entry(Evaluators.TokenBudget.class, Verdict.PASS),
+            entry(Evaluators.LatencyBudget.class, Verdict.PASS));
+    assertThat(verdicts(spent, traced(3, 166, Duration.ofMillis(1501))))
+        .containsExactly(
+            entry(Evaluators.ModelCallBudget.class, Verdict.FAIL),
+            entry(Evaluators.TokenBudget.class, Verdict.FAIL),
+            entry(Evaluators.LatencyBudget.class, Verdict.FAIL));
+
+    // c2: tokens only.
+    var tokensOnly = cases.get(1);
+    assertThat(verdicts(tokensOnly, traced(1, 450, Duration.ofMillis(1))))
+        .containsExactly(entry(Evaluators.TokenBudget.class, Verdict.PASS));
+    assertThat(verdicts(tokensOnly, traced(1, 451, Duration.ofMillis(1))))
+        .containsExactly(entry(Evaluators.TokenBudget.class, Verdict.FAIL));
+
+    assertThat(cases.get(2).evaluators()).isEmpty();
+
+    // A tolerance of 1.0 holds a case to exactly what was recorded.
+    var exact = EvalCaseParser.parse(file, 1.0).get(0);
+    assertThat(verdicts(exact, traced(2, 110, Duration.ofMillis(1000))))
+        .containsEntry(Evaluators.TokenBudget.class, Verdict.PASS)
+        .containsEntry(Evaluators.LatencyBudget.class, Verdict.PASS);
+    assertThat(verdicts(exact, traced(2, 111, Duration.ofMillis(1001))))
+        .containsEntry(Evaluators.TokenBudget.class, Verdict.FAIL)
+        .containsEntry(Evaluators.LatencyBudget.class, Verdict.FAIL);
+  }
+
+  @Test
+  void refusesASpendFigureThatIsNotACount(@TempDir Path dir) throws IOException {
+    var file =
+        Files.writeString(
+            dir.resolve("captures.jsonl"),
+            """
+            {"id":"c1","input":"hi","toolCalls":[],"modelCalls":0}
+            {"id":"c2","input":"hi","toolCalls":[],"tokens":"many"}
+            {"id":"c3","input":"hi","toolCalls":[],"latencyMs":-5}
+            """);
+
+    assertThatThrownBy(() -> EvalCaseParser.parse(file))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("line 1: modelCalls")
+        .hasMessageContaining("line 2: tokens")
+        .hasMessageContaining("line 3: latencyMs");
+    assertThatThrownBy(() -> EvalCaseParser.parse(file, 0.5))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("tolerance");
+  }
+
+  @Test
+  void parsesARecordingWithoutToolCalls(@TempDir Path dir) throws IOException {
+    var file =
+        Files.writeString(
+            dir.resolve("replies.jsonl"),
+            "{\"id\":\"greeting\",\"input\":\"hi\",\"output\":\"Hello.\"}\n"
+                + "{\"input\":\"thanks\",\"toolCalls\":[]}\n");
+
+    var cases = EvalCaseParser.parse(file);
+
+    assertThat(cases).hasSize(2);
+    assertThat(cases.get(0).id()).isEqualTo("greeting");
+    assertThat(cases.get(0).command()).isEqualTo("hi");
+    assertThat(cases.get(0).evaluators()).isEmpty();
+    assertThat(cases.get(1).id()).isEqualTo("replay-2");
+  }
+
+  @Test
+  void reportsEveryProblemWithItsLineNumber(@TempDir Path dir) throws IOException {
+    var file =
+        Files.writeString(
+            dir.resolve("captures.jsonl"),
+            "not json\n\n{\"id\":\"x\"}\n{\"input\":\"hi\",\"toolCalls\":[{\"result\":1}]}\n");
+
+    assertThatThrownBy(() -> EvalCaseParser.parse(file))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("line 1")
+        .hasMessageContaining("line 3: no input")
+        .hasMessageContaining("line 4: tool call with no name");
+  }
+
+  @Test
+  void recordedCallReadsResultIntoTheStubsType() {
+    var call =
+        new RecordedCall(
+            "getCustomer",
+            Map.of("customerId", "cust_1"),
+            "{\"id\":\"cust_1\",\"name\":\"Ada Lovelace\"}");
+
+    assertThat(call.resultAs(Customer.class)).isEqualTo(new Customer("cust_1", "Ada Lovelace"));
+    assertThatThrownBy(() -> call.resultAs(List.class))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("getCustomer");
+  }
+
+  /** The verdict of each of the case's evaluators over the evidence, in evaluator order. */
+  private static Map<Class<? extends Evaluator>, Verdict> verdicts(
+      EvalCase<?> evalCase, Interaction interaction) {
+    var byClass = new LinkedHashMap<Class<? extends Evaluator>, Verdict>();
+    for (var evaluator : evalCase.evaluators()) {
+      var result = evaluator.evaluate(evalCase, interaction);
+      byClass.put(evaluator.getClass(), result.verdict());
+    }
+    return byClass;
+  }
+
+  /** Evidence with model calls, the given total tokens and the given latency. */
+  private static Interaction traced(int modelCalls, long tokens, Duration latency) {
+    var calls =
+        java.util.stream.IntStream.range(0, modelCalls)
+            .mapToObj(
+                i ->
+                    new ModelCall(
+                        "test",
+                        "custom",
+                        List.of("STOP"),
+                        i == 0 ? tokens : 0,
+                        0,
+                        Duration.ofMillis(1),
+                        "",
+                        ""))
+            .toList();
+    return new Interaction("q", "", "done", List.of(), calls, List.of(), latency, "done");
+  }
+
+  @Test
+  void aRecordedNullArgumentIsPartOfTheBaseline(@TempDir Path dir) throws IOException {
+    var file =
+        Files.writeString(
+            dir.resolve("captures.jsonl"),
+            "{\"id\":\"c1\",\"input\":\"refund o_9\",\"toolCalls\":[{\"name\":\"issueRefund\","
+                + "\"arguments\":{\"orderId\":\"o_9\",\"note\":null},\"result\":true}]}\n");
+
+    var evalCase = EvalCaseParser.parse(file).getFirst();
+
+    var arguments = new HashMap<String, Object>();
+    arguments.put("orderId", "o_9");
+    arguments.put("note", null);
+    var asRecorded = new Interaction("q", "done", List.of(new ToolCall("issueRefund", arguments)));
+    assertThat(verdicts(evalCase, asRecorded).values()).containsOnly(Verdict.PASS);
+
+    var withANote =
+        new Interaction(
+            "q",
+            "done",
+            List.of(new ToolCall("issueRefund", Map.of("orderId", "o_9", "note", "x"))));
+    assertThat(verdicts(evalCase, withANote))
+        .containsEntry(Evaluators.ToolArgument.class, Verdict.FAIL);
+  }
+
+  record Ask(String customerId, String question) {}
+
+  @Test
+  void readsTheRecordedInputIntoTheAgentsCommandType(@TempDir Path dir) throws IOException {
+    var file =
+        Files.writeString(
+            dir.resolve("captures.jsonl"),
+            """
+            {"id":"c1","input":{"customerId":"cust_1","question":"Where is o_42?"},\
+            "toolCalls":[{"name":"getOrder","arguments":{"orderId":"o_42"}}]}
+            """);
+
+    var cases = EvalCaseParser.parse(file, Ask.class);
+
+    assertThat(cases)
+        .singleElement()
+        .extracting(EvalCase::command)
+        .isEqualTo(new Ask("cust_1", "Where is o_42?"));
+    assertThat(cases.getFirst().recordedCalls()).singleElement().isNotNull();
+  }
+
+  @Test
+  void reportsAnInputThatIsNotTheCommandType(@TempDir Path dir) throws IOException {
+    var file =
+        Files.writeString(dir.resolve("captures.jsonl"), "{\"id\":\"c1\",\"input\":\"hi\"}\n");
+
+    assertThatThrownBy(() -> EvalCaseParser.parse(file, Ask.class))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("line 1: input is not a Ask");
+  }
+}

@@ -215,9 +215,7 @@ The configuration for the resources used by an Akka Service.
 |Field          |Type                        |Description
 
 |*instanceType* |string
-a|The type of instance to use. Supported values are:
-
-* `small` - A small instance.
+a|The instance type to run the service on, for example `g1.memory.small`. Must be one of the types your organization allows. If unset, the organization or platform default applies. See xref:operations:services/instance-sizing.adoc[] for the current catalog and how to change it.
 |*autoscaling*  |<<ServiceAutoscaling>> |The autoscaling configuration for a service. Autoscaling is only supported for non-trial projects.
 |*runtime*    |<<Runtime>> |The runtime configuration for the service.
 |===
@@ -458,6 +456,7 @@ service:
       passwordKey: truststore-password
 ----
 
+[#WorkloadIdentity]
 === WorkloadIdentity
 
 Workload identity configuration for a service.
@@ -469,6 +468,7 @@ Workload identity configuration for a service.
 |*aws*   |<<AwsWorkloadIdentity>>   |AWS workload identity configuration. Only relevant for AWS regions, ignored in other regions.
 |*azure* |<<AzureWorkloadIdentity>> |Azure workload identity configuration. Only relevant for Azure regions, ignored in other regions.
 |*gcp*   |<<GcpWorkloadIdentity>>   |GCP workload identity configuration. Only relevant for GCP regions, ignored in other regions.
+|*akka*  |<<AkkaWorkloadIdentity>>  |Akka platform workload identity configuration. Allows the service to authenticate with the Akka platform API.
 |===
 
 === AwsWorkloadIdentity
@@ -507,3 +507,18 @@ Workload identity configuration for GCP regions to authenticate with the GCP API
 
 |*gcpServiceAccount* |string |If you wish your service to impersonate a GCP service account, rather than using their own principal directly, the service account that you wish them to assume.
 |===
+
+[#AkkaWorkloadIdentity]
+=== AkkaWorkloadIdentity
+
+Workload identity configuration for authenticating with the Akka platform API itself, rather than a cloud provider's API. Configuring this mounts a token and sets the environment variables that the Akka platform API client libraries and the Akka CLI use to authenticate with the Akka platform automatically, without additional configuration.
+
+This type has no fields. Its presence in the descriptor, with an empty object as its value, enables the feature:
+
+[source, yaml]
+----
+name: <<service-name>>
+service:
+  workloadIdentity:
+    akka: {}
+----

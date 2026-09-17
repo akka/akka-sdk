@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 560" role="img" aria-labelledby="title">
+  <title id="title">Agents send model requests to a proxy. The proxy calls out to the gateway router, which runs the exchange through a pipeline of static routing followed by semantic routing. The decision returns to the proxy, which forwards the request to the model provider it names.</title>
+  <defs>
+    <style>
+      .bg { fill: #000000; }
+      .box { fill: #141414; stroke: #a6a6a6; stroke-width: 3px; }
+      .box-proxy { fill: #1a1a1a; stroke: #f1f1f1; stroke-width: 3px; }
+      .box-router { fill: #1a1a1a; stroke: #ffce4a; stroke-width: 3px; }
+      .box-stage { fill: #141414; stroke: #a6a6a6; stroke-width: 3px; }
+      .flow { fill: none; stroke: #ffce4a; stroke-width: 3px; stroke-linecap: round; }
+      .callout { fill: none; stroke: #ffce4a; stroke-width: 3px; stroke-linecap: round; stroke-dasharray: 4 8; }
+      .step { fill: none; stroke: #f1f1f1; stroke-width: 3px; stroke-linecap: round; }
+      .label { fill: #f1f1f1; font-family: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 24px; }
+      .label-lg { fill: #f1f1f1; font-family: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 28px; }
+      .label-sm { fill: #a6a6a6; font-family: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 19px; }
+      .header { fill: #a6a6a6; font-family: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 21px; letter-spacing: 1.5px; }
+    </style>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#ffce4a"/>
+    </marker>
+    <marker id="aw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#f1f1f1"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1240" height="560"/>
+
+  <text class="header" x="130" y="52" text-anchor="middle">AGENTS</text>
+  <text class="header" x="1100" y="52" text-anchor="middle">MODEL PROVIDERS</text>
+
+  <rect class="box" x="40" y="86" width="180" height="60"/>
+  <text class="label" x="130" y="123" text-anchor="middle">Agent</text>
+  <rect class="box" x="40" y="156" width="180" height="60"/>
+  <text class="label" x="130" y="193" text-anchor="middle">Agent</text>
+  <rect class="box" x="40" y="226" width="180" height="60"/>
+  <text class="label" x="130" y="263" text-anchor="middle">Agent</text>
+
+  <path class="flow" marker-end="url(#ar)" d="M220,116 C270,116 300,150 344,150"/>
+  <path class="flow" marker-end="url(#ar)" d="M220,186 L344,186"/>
+  <path class="flow" marker-end="url(#ar)" d="M220,256 C270,256 300,215 344,215"/>
+
+  <rect class="box-proxy" x="360" y="90" width="240" height="176"/>
+  <text class="label-lg" x="480" y="172" text-anchor="middle">Proxy</text>
+  <text class="label-sm" x="480" y="200" text-anchor="middle">Agentgateway</text>
+
+  <path class="flow" marker-end="url(#ar)" d="M600,140 C700,140 790,116 992,116"/>
+  <path class="flow" marker-end="url(#ar)" d="M600,178 C700,178 790,196 992,196"/>
+  <path class="flow" marker-end="url(#ar)" d="M600,215 C700,215 790,276 992,276"/>
+
+  <rect class="box" x="1000" y="86" width="200" height="60"/>
+  <text class="label" x="1100" y="123" text-anchor="middle">Provider</text>
+  <rect class="box" x="1000" y="166" width="200" height="60"/>
+  <text class="label" x="1100" y="203" text-anchor="middle">Provider</text>
+  <rect class="box" x="1000" y="246" width="200" height="60"/>
+  <text class="label" x="1100" y="283" text-anchor="middle">Provider</text>
+
+  <path class="callout" marker-start="url(#ar)" marker-end="url(#ar)" d="M480,272 L480,324"/>
+  <text class="label-sm" x="502" y="304" text-anchor="start">callout</text>
+
+  <rect class="box-router" x="310" y="330" width="620" height="170"/>
+  <text class="label-lg" x="620" y="373" text-anchor="middle">Gateway router</text>
+
+  <rect class="box-stage" x="350" y="400" width="230" height="76"/>
+  <text class="label" x="465" y="446" text-anchor="middle">Static routing</text>
+
+  <path class="step" marker-end="url(#aw)" d="M584,438 L652,438"/>
+
+  <rect class="box-stage" x="660" y="400" width="230" height="76"/>
+  <text class="label" x="775" y="446" text-anchor="middle">Semantic routing</text>
+</svg>

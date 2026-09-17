@@ -1,0 +1,41 @@
+= NEVER conditions (prohibitions)
+
+Most exit conditions are *completions*: something that must become true before a build ships. A *prohibition* is the opposite — something that must *never* become true. An exit condition's `kind` field is `completion` (the default) or `prohibition`, and the kind sets how the engine reads the auditor's result.
+
+== Completion versus prohibition
+
+A completion starts OPEN and resolves GREEN when its auditor passes. A prohibition is satisfied while the banned condition is absent and reds the moment the condition appears. The two kinds share the same auditors; the kind decides how the result is read.
+
+== An unaudited prohibition is RED
+
+A completion with no auditor stays OPEN, waiting for a sign-off. A prohibition with no auditor is *RED*, with the message `unenforced prohibition — needs a check`. An unenforced ban gives false confidence — nothing is watching the thing that must never happen — so the engine treats it as a failure rather than a pending item.
+
+A prohibition cannot be closed by a human sign-off. A sign-off only turns an OPEN condition GREEN; it never turns a RED condition GREEN. A prohibition clears only when an auditor proves the banned condition is absent.
+
+== The NEVER section
+
+The conformance manifest prints prohibitions in a separate `NEVER` section, after the completions and grouped by tier, so the bans a reader must not violate stay visible as a distinct list.
+
+The `NEVER-` id prefix is a naming convention, not the mechanism: `kind: prohibition` is the switch. Two of the shipped prohibitions do not carry the prefix.
+
+== The shipped prohibitions
+
+The default library ships four prohibitions:
+
+[cols="1,2",options="header"]
+|===
+| Exit condition | Auditor
+
+| `SEC-SECRETS-NOT-COMMITTED` | `git-secrets` — no secret is committed to the repository
+| `NEVER-COMMIT-BUILD-OUTPUT` | `no-build-output` — no build output (`target`, `dist`, `node_modules`, `build`) is tracked
+| `NEVER-UNPINNED-DEP` | `deps-pinned` — no dependency is left unpinned (a lockfile or `go.sum` is present)
+| `CONTENT-LANGUAGE` | `content-vale` — no banned phrase reaches the generated prose
+|===
+
+`CONTENT-LANGUAGE` is off by default; the other three are on but developer-configurable.
+
+== Related
+
+* xref:reference:specify/exit-condition-schema.adoc[Exit condition schema]
+* xref:reference:specify/auditors.adoc[Auditors]
+* xref:reference:specify/content-governance.adoc[]

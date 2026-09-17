@@ -1,0 +1,146 @@
+= Functional exit conditions
+
+Candidate exit conditions for the xref:sdk:enforced-mode.adoc#dod-types[Functional] type. See xref:reference:specify/catalog/index.adoc[the catalog overview] for how to adopt these.
+
+== API contract conformance
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `FUNC-RESPONSE-MATCHES-SCHEMA` | Every endpoint response body validates against its published OpenAPI/JSON Schema definition with no extra or missing required fields.
+| `FUNC-REQUEST-SCHEMA-ENFORCED` | Requests that violate the declared request schema are rejected rather than silently coerced or partially applied.
+| `FUNC-CONTENT-TYPE-HONORED` | The endpoint returns the `Content-Type` it advertises and rejects unsupported media types with `415 Unsupported Media Type`.
+| `FUNC-REQUIRED-FIELDS-PRESENT` | Every field marked required in the contract is always present and non-null in successful responses.
+| `FUNC-FIELD-TYPES-STABLE` | Each response field carries the JSON type declared in the contract (no string-for-number or number-for-string drift).
+| `FUNC-ENUM-VALUES-BOUNDED` | Fields typed as enums only ever emit values from the documented enumeration set.
+| `FUNC-NO-UNDOCUMENTED-FIELDS` | Responses contain no fields absent from the contract, preventing accidental leakage of internal state.
+| `FUNC-GRPC-PROTO-CONFORMANCE` | gRPC responses deserialize cleanly against the compiled `.proto` message definitions for the service.
+| `FUNC-EXAMPLES-ARE-VALID` | Documented request/response examples in the contract validate against their own schemas.
+|===
+
+== HTTP endpoint semantics
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `FUNC-STATUS-CODE-CORRECT` | Each endpoint returns the semantically correct status code for the outcome (200/201/204/4xx/5xx) rather than a generic 200.
+| `FUNC-CREATE-RETURNS-201` | Resource-creating requests return `201 Created` with a `Location` header pointing at the new resource.
+| `FUNC-DELETE-IS-IDEMPOTENT-204` | Deleting an existing resource returns `204`/`200`, and re-deleting a missing one returns a defined status without a 5xx.
+| `FUNC-GET-HAS-NO-SIDE-EFFECTS` | `GET` and `HEAD` requests never mutate server state (safe-method guarantee).
+| `FUNC-METHOD-NOT-ALLOWED` | Unsupported HTTP methods on a route return `405 Method Not Allowed` with an accurate `Allow` header.
+| `FUNC-UNKNOWN-ROUTE-404` | Requests to undefined paths return `404` rather than a framework default error page.
+| `FUNC-HEAD-MATCHES-GET` | `HEAD` responses carry the same headers and status as the equivalent `GET` with an empty body.
+| `FUNC-REDIRECTS-RESOLVE` | Documented redirects return the correct 3xx code and a resolvable `Location` target.
+| `FUNC-AKKA-ENDPOINT-ROUTES` | Each Akka HTTP endpoint method is reachable at its declared path and binds path/query parameters as specified.
+|===
+
+== Error semantics
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `FUNC-ERROR-BODY-STRUCTURED` | Error responses return a consistent machine-readable shape (e.g. RFC 9457 problem+json) rather than free-form text.
+| `FUNC-CLIENT-ERROR-IS-4XX` | Caller-caused failures (bad input, missing resource, conflict) map to 4xx, never 5xx.
+| `FUNC-SERVER-ERROR-IS-5XX` | Genuine server faults map to 5xx and never masquerade as a 2xx success.
+| `FUNC-ERROR-MESSAGE-ACTIONABLE` | Validation errors identify the offending field and reason so a client can correct the request.
+| `FUNC-NO-STACK-TRACE-LEAK` | Error responses never expose stack traces, internal class names, or SQL to the caller.
+| `FUNC-CONFLICT-RETURNS-409` | Operations that violate a uniqueness or state precondition return `409 Conflict`.
+| `FUNC-UNPROCESSABLE-422` | Syntactically valid but semantically invalid payloads return `422` (or the documented equivalent), distinct from `400`.
+| `FUNC-ERROR-CODE-STABLE` | Application error codes are stable identifiers that do not change wording-to-wording across releases.
+| `FUNC-PARTIAL-FAILURE-REPORTED` | Batch operations report per-item success/failure rather than failing or succeeding as an opaque whole.
+|===
+
+== Input validation and output behavior
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `FUNC-BOUNDARY-VALUES-HANDLED` | Minimum, maximum, and zero-length inputs produce the specified result rather than an unhandled error.
+| `FUNC-REQUIRED-INPUT-REJECTED` | Omitting a required input field is rejected with a validation error, not defaulted silently.
+| `FUNC-MALFORMED-INPUT-REJECTED` | Malformed payloads (invalid JSON, wrong encoding) are rejected with `400` before business logic runs.
+| `FUNC-STRING-LENGTH-BOUNDED` | Inputs exceeding documented length limits are rejected rather than truncated or stored oversized.
+| `FUNC-NUMERIC-RANGE-ENFORCED` | Out-of-range numeric inputs are rejected against the documented min/max bounds.
+| `FUNC-UNICODE-PRESERVED` | Non-ASCII and multi-byte characters round-trip through the endpoint without corruption.
+| `FUNC-NULL-VS-ABSENT-DISTINCT` | The API distinguishes an explicit `null` from an absent field where the contract assigns them different meanings.
+| `FUNC-OUTPUT-DETERMINISTIC` | Given identical inputs and state, the endpoint returns an equivalent output (field values and ordering as specified).
+| `FUNC-DEFAULTS-APPLIED` | Optional inputs left unset receive the documented default values in the stored and returned representation.
+|===
+
+== Idempotency and concurrency
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `FUNC-IDEMPOTENT-RETRY-SAFE` | Replaying a mutating request with the same idempotency key produces one effect and returns the original result.
+| `FUNC-PUT-IS-IDEMPOTENT` | Repeated identical `PUT` requests converge on the same resource state without duplicating side effects.
+| `FUNC-OPTIMISTIC-CONCURRENCY` | Conflicting concurrent updates are detected via version/ETag and the loser receives `409`/`412` rather than a lost update.
+| `FUNC-ETAG-PRECONDITION` | `If-Match`/`If-None-Match` preconditions are evaluated and enforced as specified.
+| `FUNC-NO-DUPLICATE-ON-RETRY` | A retried create does not produce duplicate entities when an idempotency key or natural key is supplied.
+| `FUNC-EVENT-EXACTLY-ONCE-EFFECT` | Event-sourced command handling yields the same resulting state regardless of at-least-once delivery retries.
+| `FUNC-CONSUMER-IDEMPOTENT` | A consumer reprocessing a redelivered message produces no duplicate or divergent downstream effect.
+| `FUNC-ATOMIC-STATE-TRANSITION` | A command either fully applies its state change and events or applies none of it (no partial mutation).
+|===
+
+== Pagination, filtering, and sorting
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `FUNC-PAGINATION-COMPLETE` | Paging through a collection returns every item exactly once with no gaps or duplicates across pages.
+| `FUNC-PAGE-SIZE-BOUNDED` | Requested page sizes are clamped to a documented maximum rather than allowing unbounded result sets.
+| `FUNC-CURSOR-STABLE` | Cursor/keyset pagination remains consistent under concurrent inserts, avoiding skipped or repeated rows.
+| `FUNC-SORT-ORDER-HONORED` | Results are returned in the requested and documented sort order, with a defined tiebreaker for equal keys.
+| `FUNC-FILTER-SEMANTICS-CORRECT` | Filter parameters return exactly the subset matching the documented predicate, including empty results when nothing matches.
+| `FUNC-INVALID-FILTER-REJECTED` | Unknown filter or sort fields are rejected with a `400` rather than silently ignored.
+| `FUNC-TOTAL-COUNT-ACCURATE` | Any returned total/count reflects the true number of matching items under the active filter.
+| `FUNC-EMPTY-COLLECTION-SHAPE` | An empty collection returns a valid empty list with `200`, not `404` or `null`.
+| `FUNC-VIEW-QUERY-RETURNS-EXPECTED` | Each Akka View query returns the rows matching its declared selection criteria and projection.
+|===
+
+== Business-rule correctness
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `FUNC-INVARIANT-HELD` | Documented domain invariants (e.g. balance never negative) hold after every accepted command.
+| `FUNC-STATE-MACHINE-TRANSITIONS` | Only the transitions defined in the workflow/entity state model are permitted; illegal transitions are rejected.
+| `FUNC-PRECONDITION-ENFORCED` | Operations requiring a precondition (e.g. approved before shipped) fail cleanly when the precondition is unmet.
+| `FUNC-CALCULATION-CORRECT` | Derived values (totals, taxes, prorations, rounding) match the specified formula to the required precision.
+| `FUNC-DUPLICATE-REJECTED` | Business-level duplicates (same order, same email) are rejected per the uniqueness rule.
+| `FUNC-AUTHORIZATION-ENFORCED` | Actions disallowed for the caller's role are refused with `403`, independent of input validity.
+| `FUNC-QUOTA-LIMIT-ENFORCED` | Operations exceeding a documented quota or rate limit are refused with the specified status.
+| `FUNC-SIDE-EFFECT-TRIGGERED` | A successful command emits the specified downstream effect (event, notification, timer) exactly as required.
+| `FUNC-CANCELLATION-REVERSIBLE` | Compensating actions (cancel, refund, rollback) return the entity to the specified prior state.
+|===
+
+== Agents, workflows, and asynchronous behavior
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `FUNC-AGENT-OUTPUT-STRUCTURED` | An agent returning structured output produces a payload that validates against its declared response schema.
+| `FUNC-AGENT-TOOL-INVOKED` | The agent calls the specified tool/function with correctly typed arguments for the documented scenario.
+| `FUNC-AGENT-GROUNDED-RESPONSE` | The agent's answer is derived from the supplied context/retrieval rather than fabricating unsupported facts.
+| `FUNC-WORKFLOW-COMPLETES` | A started workflow reaches its terminal success state under nominal inputs within the defined step sequence.
+| `FUNC-WORKFLOW-COMPENSATES` | A failing workflow step triggers the defined compensation and leaves no partially committed state.
+| `FUNC-WORKFLOW-RESUMES` | A workflow interrupted mid-flight resumes from its last durable step rather than restarting or dropping work.
+| `FUNC-TIMER-FIRES` | Scheduled timers/durable timers fire the specified action at or after their due time.
+| `FUNC-CONSUMER-PROCESSES-EVENT` | A consumer subscribed to an entity's events applies the documented reaction for each event type it handles.
+| `FUNC-DEAD-LETTER-ON-FAILURE` | Messages that exhaust retries are routed to the defined failure path rather than being silently dropped.
+|===
+
+== Versioning and backward compatibility
+[cols="2,3",options="header"]
+|===
+| Exit condition | What it checks
+
+| `FUNC-NO-BREAKING-FIELD-REMOVAL` | A new API version does not remove or rename fields that existing clients depend on.
+| `FUNC-ADDITIVE-CHANGES-ONLY` | Minor-version schema changes are additive, with new fields optional and defaulted for older clients.
+| `FUNC-OLD-CLIENTS-STILL-WORK` | Requests shaped for the previous contract version continue to succeed against the current deployment.
+| `FUNC-EVENT-SCHEMA-EVOLVES` | Older persisted events deserialize under the current event schema via the defined upcasting/migration path.
+| `FUNC-SERIALIZATION-COMPATIBLE` | Stored entity state written by a prior version is readable by the current version without data loss.
+| `FUNC-DEFAULT-FOR-NEW-FIELD` | Newly added required-by-logic fields receive a safe default when reading records that predate them.
+| `FUNC-DEPRECATION-STILL-SERVED` | Endpoints marked deprecated remain functional and advertise their deprecation per the documented policy.
+| `FUNC-VERSION-NEGOTIATED` | The service honors the requested API version (path/header) and returns the matching contract behavior.
+| `FUNC-ENUM-UNKNOWN-TOLERATED` | Clients and consumers tolerate newly added enum values without crashing on the unknown case.
+|===

@@ -1,0 +1,316 @@
+= Disaster recovery
+:page-summary: The BYOK8s disaster recovery scenario catalog: for each failure mode, which side notices it, how notification flows, the recovery procedure, and Akka's current readiness and recommendation for drilling it live before launch.
+:page-related: xref:operations:production-readiness/byok8s/shared-responsibility.adoc[], xref:operations:production-readiness/byok8s/checklist.adoc[], xref:operations:production-readiness/index.adoc[]
+:page-persona: operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+Disaster recovery scenarios for BYOK8s (Bring Your Own Kubernetes) deployments. Each entry names the detection owner, notification flow, recovery procedure, and whether Akka can drill it live before launch. The xref:operations:production-readiness/byok8s/checklist.adoc[production readiness checklist] links here for its DR tabletop item. The xref:operations:production-readiness/byok8s/shared-responsibility.adoc[Shared Responsibility Model] covers backup, PITR (Point-in-Time Recovery), and multi-region failover ownership.
+
+In BYOK8s the customer owns the Kubernetes cluster and the database, so several scenarios below shift ownership toward the customer compared to xref:operations:production-readiness/byoc/disaster-recovery.adoc[the BYOC catalog]: database backups and PITR execution, and private connectivity end to end.
+
+[NOTE]
+.The DR tabletop
+====
+Akka runs this catalog as a joint tabletop with the customer before launch, led by the customer's FDE (Forward Deployed Engineer). The tabletop confirms paging entry points, incident channel, and decision authority for the customer's account, and records which scenarios get a live drill before go-live.
+====
+
+== How to read this
+
+Each scenario carries two labels: readiness (can Akka drill it today?) and recommendation (should the customer drill it before launch?).
+
+[cols="1,3", options="header"]
+|===
+| Readiness | Meaning
+
+| Drillable today
+| Runbook and tooling are ready. Can drill against pre-production.
+
+| Procedure documented
+| Steps are known. A live drill needs more engineering.
+
+| Named in catalog
+| High-level notes only. Needs deeper analysis before drilling.
+|===
+
+[cols="1,3", options="header"]
+|===
+| Akka recommends | Meaning
+
+| Must drill
+| Required before launch.
+
+| Recommended
+| Drill when the capability is ready. Not required before launch.
+
+| Optional
+| Discuss based on use case and risk tolerance.
+
+| Defer
+| Documented only. Revisit after launch.
+|===
+
+Scenario selection is a joint decision at the tabletop.
+
+Notification cells say `Standard flow` when they match the pattern in the *Standard communication flow* section below. Only exceptions are spelled out.
+
+== Scenario catalog
+
+[cols="3,1,2", options="header"]
+|===
+| Scenario | Readiness | Akka recommends
+
+| <<database-corruption,Database corruption / data recovery>> | Drillable today | Must drill
+| <<service-deletion,Service deletion and restore>> | Drillable today | Must drill
+| <<private-connectivity,Private connectivity failure>> | Drillable today | Must drill (customer-led)
+| <<crc-restore,Container Registry Config restore>> | Drillable today | Recommended (customer-led)
+| <<region-failure,Full region failure and rebuild>> | Procedure documented | Recommended
+| <<az-failure,Single / multi-AZ failure>> | Procedure documented | Recommended
+| <<load-balancer,Load balancer / ingress failure>> | Procedure documented | Optional
+| <<runtime-sdk,Runtime / SDK version compatibility>> | Named in catalog | Defer
+| <<chaos-vectors,Additional chaos vectors>> | Named in catalog | Defer
+|===
+
+[#database-corruption]
+== 1. Database corruption / data recovery
+
+Data in the customer's region is corrupted, lost, or rolled to an invalid state. Recovery restores the regional database to a known-good point in time.
+
+[IMPORTANT]
+.Customer-managed backups
+====
+In BYOK8s the customer owns automated database backups and PITR configuration. Akka does not run backups against the customer's database. The drill depends on the customer having automated backups, retention, and PITR enabled and accessible. Confirm at the tabletop.
+====
+
+[NOTE]
+.Scope of recovery
+====
+Recovery uses whole-database PITR against the customer's database. The database is single per region and holds state for every project and service running there. A restore returns all services to the chosen timestamp at once.
+====
+
+.Recovery procedure
+[%collapsible]
+====
+[cols="2,1,5", options="header"]
+|===
+| Phase | Owner | Action
+
+| Detection | Shared | The customer usually sees symptoms first (data inconsistencies, missing records, business-logic failures). Akka may also surface platform-side signals such as stalled projections (Akka runtime constructs that derive views from event streams).
+| Notification | Shared | Standard flow.
+| Triage | Shared | The customer identifies the most recent uncorrupted PITR target from their backups, confirms backup integrity, and identifies which services and data are affected. Akka shares platform-side signals that help scope the impact. Together, they weigh how far back to restore (loses recent activity across every service in the region) against reconciliation cost afterward.
+| Decision | Customer | The customer authorizes the whole-database restore at the chosen timestamp, acknowledging that all services in the region revert.
+| Resolution | Shared | The customer clones the database at the target timestamp via PITR and notifies Akka the clone is ready, with connection details. Akka pauses traffic to the affected services, makes the clone the active datastore, updates every service in the region to use it, and resumes traffic. Both jointly verify platform health end to end.
+| Customer-side recovery | Customer | The customer verifies data state in every affected service, reconciles activity from after the restore point, and resumes traffic.
+|===
+====
+
+[#service-deletion]
+== 2. Service deletion and restore
+
+An Akka service is hard-deleted from the cluster, either by Akka at the customer's request or by misconfiguration. The service resource is gone from the console.
+
+[NOTE]
+.Scope of recovery
+====
+Customer-initiated service deletion is disabled; deletions are coordinated with Akka. Akka restores the service's Kubernetes resource via Velero, the backup-and-restore tool Akka uses for stateful Kubernetes resources. The data lives in the regional shared database and is reachable once the service is restored. Data corruption within a running service requires whole-database recovery; see <<database-corruption>>.
+====
+
+.Recovery procedure
+[%collapsible]
+====
+[cols="2,1,5", options="header"]
+|===
+| Phase | Owner | Action
+
+| Detection | Customer | The service is gone from the console, or endpoints become unreachable.
+| Notification | Customer | Customer raises a severity 1 incident with the service name, namespace, and approximate deletion time. Akka starts an incident bridge or joins the customer's existing bridge.
+| Triage | Akka | Akka confirms the service's Kubernetes resource is missing from cluster state, identifies the most recent Velero backup that contains it, and confirms backup integrity.
+| Decision | Shared | Akka confirms scope: the service resource is restored, and its data in the regional database is unaffected. The customer confirms restore intent.
+| Resolution | Akka | Akka runs a targeted Velero restore, verifies the service is recreated, and verifies it connects to its data in the regional database. Minutes from approval.
+| Customer-side recovery | Customer | The customer verifies the service in the console, validates data is reachable, and resumes traffic.
+|===
+====
+
+[#private-connectivity]
+== 3. Private connectivity failure
+
+Private connectivity between the customer's environment and an external system fails. Symptoms include timeouts to private systems, blocked ports, network policy mismatches, or peering link failures. The customer's services lose access to whatever the affected path was reaching.
+
+[NOTE]
+.Drill scope
+====
+The drill requires the customer to have private connectivity in place. Scope: the customer breaks and re-establishes their connectivity path; Akka exercises the port allowlist or network policy adjustment path if any non-standard ports are in scope.
+====
+
+.Recovery procedure
+[%collapsible]
+====
+[cols="2,1,5", options="header"]
+|===
+| Phase | Owner | Action
+
+| Detection | Customer | In BYOK8s the customer designs, implements, and operates private connectivity, so detection sits with the customer. Akka has no direct alarm on the customer's connectivity path.
+| Notification | Customer | If Akka platform reachability or operation is affected, the customer raises a severity 1 incident with the observed symptom. Otherwise the customer handles this internally.
+| Triage | Shared | The customer identifies the fault on the connectivity path (blocked port, network policy, peering misconfiguration, or other). Akka confirms platform-side network policies, ports, and configuration relevant to the connectivity.
+| Decision | Shared | If the fault is customer-side, the customer decides the fix. If platform-side changes are needed (a new port allowlist or network policy adjustment), Akka and the customer agree on those.
+| Resolution | Shared | The customer executes connectivity-path fixes on the customer-managed side: re-establishing peering, updating network policies, opening ports, or rebuilding the affected connectivity component. Akka adjusts platform-side network policies or port allowlists via infrastructure as code as needed.
+| Customer-side recovery | Customer | The customer verifies connectivity is restored end to end.
+|===
+====
+
+[#crc-restore]
+== 4. Container Registry Config restore
+
+The ContainerRegistryConfig (CRC), the Kubernetes resource holding the customer's container registry credentials, is missing or its tokens are invalid for a namespace. Pods cannot pull their images and services in that namespace stop coming up.
+
+Customer-controlled. Akka does not intervene unless asked, since the CRC holds customer-owned credentials.
+
+.Recovery procedure
+[%collapsible]
+====
+[cols="2,1,5", options="header"]
+|===
+| Phase | Owner | Action
+
+| Detection | Customer | Services do not come back up in the console. Pod events show image pull errors. Customer observability (minimum-instance alerts and similar) surfaces the failure.
+| Triage | Customer | The customer confirms the CRC is missing or its tokens are invalid in the affected namespace.
+| Resolution | Customer | The customer re-applies the CRC by re-issuing tokens, updating credentials, or restoring from their own configuration source. Pods retry image pulls and start. Minutes, once the configuration is on hand.
+| Escalation (only if needed) | Customer to Akka | If the customer cannot restore the CRC themselves, for example a suspected Akka operator bug, the customer raises a severity 1 incident. Akka runs a targeted Velero restore of the CRC.
+|===
+====
+
+[#region-failure]
+== 5. Full region failure and rebuild
+
+The customer's cloud region becomes unavailable and the application is unreachable. Single-region deployments have no automatic failover; recovery is a coordinated rebuild.
+
+[NOTE]
+.Single-region scope
+====
+Single-region only. Multi-region failover is a sub-minute routing event; see xref:concepts:multi-region.adoc[].
+====
+
+.Recovery procedure
+[%collapsible]
+====
+[cols="2,1,5", options="header"]
+|===
+| Phase | Owner | Action
+
+| Detection | Shared | The customer monitors the cloud provider status page and end-to-end probes; Akka monitors platform health signals. Akka recommends the customer subscribe to the cloud provider status feed.
+| Notification | Shared | Standard flow.
+| Triage | Shared | Akka and the customer confirm scope (region-wide versus localized) and both track the cloud provider's status feed for an ETA. They assess the wait-versus-rebuild trade-off, and if rebuild looks likely, agree the PITR target timestamp using the same trade-off as <<database-corruption>>.
+| Decision | Customer | The customer decides whether to wait for cloud recovery or proceed with a full rebuild. Akka provides estimates and trade-offs.
+| Resolution: rebuild path | Shared | The customer provisions the new Kubernetes cluster in the replacement region, re-establishes the customer-managed side of private connectivity, and creates the new regional database via PITR at the agreed timestamp. Akka installs platform machinery on the new cluster, runs a Velero restore of Kubernetes state, connects services to the restored datastore, and re-establishes platform-side networking (certificates, federation, network policies, port allowlists). Total time depends largely on the customer's cluster and database provisioning; Akka's portion is on the order of hours once infrastructure is ready.
+| Customer-side recovery | Shared | The customer updates DNS records for the new load balancer. Both validate traffic end to end.
+|===
+====
+
+[#az-failure]
+== 6. Single / multi-AZ failure
+
+A cloud availability zone (AZ) becomes unavailable. Quorum-based services heal automatically in single-AZ cases; multi-AZ failure with quorum loss may need manual intervention.
+
+.Recovery procedure
+[%collapsible]
+====
+[cols="2,1,5", options="header"]
+|===
+| Phase | Owner | Action
+
+| Detection | Shared | The customer monitors the cloud provider status page, Kubernetes-level signals from their cluster (node-not-ready, pod reschedules), and end-to-end checks. Akka monitors Akka-runtime alerts (split-brain resolver activity, missed heartbeats). The split-brain resolver is the Akka-runtime mechanism that decides the authoritative subset of a cluster after a network partition or AZ failure.
+| Notification | Shared | Standard flow. Akka issues a proactive status update even if no customer action is required.
+| Triage | Shared | The customer confirms Kubernetes node and pod state from their cluster. Akka confirms split-brain resolver activity and verifies quorum at the Akka-runtime level. Together they classify: single-AZ failure with quorum preserved, or multi-AZ failure with quorum loss.
+| Decision | Shared | Akka and the customer choose: wait for cloud recovery, add cluster capacity, or proceed with Akka-runtime manual recovery.
+| Resolution | Shared | Single-AZ failure with quorum preserved: the platform auto-heals if the customer-managed cluster has capacity headroom in remaining AZs; Kubernetes reschedules pods onto remaining nodes while Akka monitors recovery. Multi-AZ failure with quorum loss: Akka performs manual Akka-runtime recovery per the documented runbook; the customer adds node capacity if Akka requests it.
+| Customer-side recovery | Customer | The customer verifies the application is functioning normally.
+|===
+====
+
+[#load-balancer]
+== 7. Load balancer / ingress failure
+
+.Recovery procedure
+[%collapsible]
+====
+[cols="2,1,5", options="header"]
+|===
+| Phase | Owner | Action
+
+| Detection | Customer | Frontend behavior or customer monitoring shows failed requests, edge errors, or dropped traffic.
+| Notification | Customer | Customer raises a severity 1 incident with the observed symptom.
+| Triage | Akka | Akka confirms the load balancer is the fault and decides whether to fix in place or recreate.
+| Decision | Shared | Fix in place, or recreate. Recreate requires a customer DNS update.
+| Resolution | Akka | Akka fixes or recreates the load balancer. If the in-cluster proxy fallback is configured, traffic continues via the proxy while the load balancer is recreated. Akka confirms whether this applies for the customer at the tabletop.
+| Customer-side recovery | Customer | If recreated, the customer updates DNS records for the new endpoint and verifies traffic.
+|===
+====
+
+[#runtime-sdk]
+== 8. Runtime / SDK version compatibility
+
+Runtime-versus-SDK compatibility is a shared responsibility. Akka detects what it can on the platform side; the customer smoke-tests SDK-runtime combinations in pre-production before promotion.
+
+.Recovery procedure
+[%collapsible]
+====
+[cols="2,1,5", options="header"]
+|===
+| Phase | Owner | Action
+
+| Detection | Shared | Akka runs preliminary compatibility checks and can surface known-bad combinations. The customer smoke-tests SDK-runtime combinations in pre-production before promotion.
+| Notification | Shared | Standard flow. Customer includes the runtime version, the SDK version, and the observed error.
+| Triage | Akka | Akka confirms it is a runtime/SDK mismatch and identifies the offending combination.
+| Decision | Shared | Akka recommends a path by blast radius: runtime rollback (smallest blast radius, default where viable), manual patching (where rollback is risky or not viable), or rolling the SDK forward (where rollback is not viable and the SDK change is small). The customer confirms.
+| Resolution | Akka | Akka rolls back the runtime per the documented procedure. If rollback fails, Akka performs manual patching.
+| Customer-side recovery | Customer | The customer verifies the application is functioning normally.
+|===
+====
+
+[#chaos-vectors]
+== 9. Additional chaos vectors
+
+Documented procedures. Not walked in detail at the tabletop. Drill readiness varies.
+
+[cols="2,3", options="header"]
+|===
+| Scenario | Notes
+
+| Federation / control-plane connectivity loss | New project creation may be blocked. Existing workloads continue uninterrupted.
+| Certificate failure | Variants: Let's Encrypt cluster issuer, customer-provided issuer, Akka mTLS rotation, customer-provisioned certificates.
+| In-cluster proxy / mesh failure | Component-level restart; fallback routing where configured.
+| Runtime issue requiring rollback | Documented rollback procedure; manual patching as last resort.
+| Observability stack failure | Both sides lose visibility; the procedure must specify out-of-band communication paths.
+|===
+
+== Standard communication flow
+
+The detecting side notifies the other. Akka shares guidance on what each side should monitor so the customer is equipped to detect issues early:
+
+. Detection.
+. The first responder identifies the scenario class.
+. The customer raises a severity 1 incident, or Akka notifies through the agreed channel.
+. A joint incident channel is opened.
+. Akka and the customer triage jointly.
+. The two sides decide which procedure applies.
+. The procedure executes: Akka on the platform side, the customer on the application side.
+. The customer is notified at the start, at the decision point, and at completion.
+. A post-incident review follows within the SLA (Service Level Agreement).
+
+[NOTE]
+.What to monitor
+====
+The customer should subscribe to the cloud provider status page (for example status.cloud.google.com for GCP, or status.aws.amazon.com for AWS), configure status feeds for the region in use, and watch end-to-end probes against their application, including Kubernetes-level signals from their cluster. Akka shares which platform signals it emits so the customer can layer additional alerts.
+====
+
+== Follow-up commitments
+
+Before scenarios chosen for a live drill are exercised:
+
+* The customer wires up production logging, metrics, and alerting sufficient to surface the documented failure modes, including Kubernetes-level signals from the customer's cluster.
+* The customer defines the on-call rotation and severity 1 entry point.
+* The customer identifies the decision authority for declaring an incident and authorizing recovery.
+* The customer configures and verifies automated database backups, PITR enablement, retention window, and deletion protection on the regional database.
+* Akka and the customer schedule periodic backup-and-restore testing.
+
+These outputs, with the scenarios selected for a live drill, feed the xref:operations:production-readiness/byok8s/checklist.adoc[production readiness checklist]'s disaster recovery drill item.

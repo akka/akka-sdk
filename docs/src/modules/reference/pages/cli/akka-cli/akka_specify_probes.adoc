@@ -1,0 +1,43 @@
+= akka specify probes
+
+[Incubating] List, run, and test the probes that examine a system.
+
+== Synopsis
+
+[Incubating] A probe answers one question about a system a specification is being derived from.
+'list' shows which probes can reach the system in front of you and which cannot, with the reason.
+'run' executes a selection and records what it found.
+'test' runs one probe and prints its raw exchange, for debugging a probe you wrote.
+
+== Options
+
+----
+  -h, --help   help for probes
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_specify.html[akka specify]	 - [Incubating] Initialize and manage AI-assisted Akka development projects.
+* link:akka_specify_probes_approve.html[akka specify probes approve]	 - Record that a declared probe's command may run.
+* link:akka_specify_probes_list.html[akka specify probes list]	 - Show which probes can reach this system, and which cannot.
+* link:akka_specify_probes_run.html[akka specify probes run]	 - Run the selected probes and record what they found.
+* link:akka_specify_probes_test.html[akka specify probes test]	 - Run one probe and print what it was asked and what it answered.
+
+[discrete]
+

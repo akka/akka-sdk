@@ -2676,7 +2676,13 @@ public sealed interface ModelProvider {
   enum BedrockPromptCachePlacement {
     AFTER_SYSTEM,
     AFTER_USER_MESSAGE,
-    AFTER_TOOLS
+    AFTER_TOOLS,
+    /**
+     * Cache point after the most recent user message, so that it advances as the conversation
+     * grows. Requires a session history whose oldest messages are stable between turns, otherwise
+     * the cached prefix is invalidated before it can be read.
+     */
+    AFTER_LAST_USER_MESSAGE
   }
 
   record Bedrock(

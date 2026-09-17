@@ -13,5 +13,4 @@
 **** xref:concepts:ai-agents.adoc[]
 **** xref:concepts:ai-orchestration-patterns.adoc[]
 **** xref:concepts:governance-and-the-runtime.adoc[]
- section
 *** xref:ROOT:resources.adoc[Resources]

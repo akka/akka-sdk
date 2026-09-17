@@ -108,7 +108,7 @@ The following `docker-compose.yml` starts the emulator on `localhost:8085`:
 ```yaml
 services:
   gcloud-pubsub-emulator:
-    image: gcr.io/google.com/cloudsdktool/cloud-sdk:432.0.0-emulators
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:582.0.0-emulators
     command: gcloud beta emulators pubsub start --project=test --host-port=0.0.0.0:8085
     ports:
       - 8085:8085

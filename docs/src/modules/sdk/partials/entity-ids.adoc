@@ -1,7 +1,7 @@
 
 == Identifying the Entity
 
-In order to interact with an Entity in Akka, we need to assign a *component id* and an instance *id*:
+To interact with an Entity in Akka, assign a *component id* and an instance *id*:
 
 * *component id* is a unique identifier for all entities of a given type. To define the component id, the entity class must be annotated with `@Component` and have a unique and stable identifier assigned.
 * *id*, on the other hand, is unique per instance. The entity id is used in the component client when calling the entity from for example an Endpoint.

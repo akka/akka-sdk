@@ -26,7 +26,8 @@ import akka.javasdk.workflow.Workflow;
  *
  * <p><strong>Network Serialization:</strong> Only {@code CommandException} and its subtypes are
  * serialized and sent over the network when components are called across different nodes. Other
- * exceptions are transformed into generic HTTP 500 errors. The Jackson serialization is configured
+ * exceptions, including a {@link java.util.concurrent.TimeoutException} from a component call that
+ * times out, are transformed into generic HTTP 500 errors. The Jackson serialization is configured
  * to ignore fields like stack trace or cause from the {@link Throwable} class.
  *
  * <p><strong>Usage Examples:</strong>

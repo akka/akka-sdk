@@ -1,0 +1,134 @@
+= Routing on request meaning
+:page-summary: Semantic routing selects a destination from what a request means, by matching it against use cases discovered in live traffic.
+:page-persona: builder-developer, builder-ai-ml
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+Semantic routing selects a destination from what a request means. The meaning of a request is derived when it arrives and matched against a list of known use cases, each mapped to a backend.
+
+Meaning is determined by vector arithmetic, not by a model, so it costs no tokens. This is different from a xref:inference:routing/request-attributes.adoc#_deferring_a_decision_to_a_classifier[classifier], which does call a model.
+
+This is the second of the two stages described in xref:inference:routing/index.adoc[Routing requests to models]. It runs only for requests that attribute routing did not claim.
+
+== Where routing on meaning belongs
+
+Some language SDKs and agent frameworks offer semantic routing in application code or in configuration. Sending all agentic traffic through an AI gateway is the way to apply one set of routing rules to every request and to prove afterwards that it was applied.
+
+== Architecture
+
+image:semantic-routing.svg[Semantic routing architecture with an evidence log, width=740]
+
+Agents cannot know they are going through a gateway. As with an HTTP proxy, the infrastructure directs traffic to it and application code never makes that decision.
+
+The gateway passes each request to the semantic router. The router examines the content, returns the backend that should serve it, and the gateway forwards the request to that model provider.
+
+The router streams a verifiable record of each decision to an evidence log. Each record covers one routing decision, so the backend chosen for a past request can be checked afterwards: what was decided, when, from which context, for which input, and against which hashed version of the routing rules. The evidence chain is cryptographically unforgeable, which is what lets a decision withstand governance and compliance scrutiny.
+
+Because the router derives its decision from the request rather than from a model name the caller supplied, the set of providers behind the gateway can change without a change to agent code.
+
+== Getting from traffic to a routing policy
+
+Discovery runs continuously against live traffic. Turning what it finds into enforced routing is four steps.
+
+=== 1. Read the working set
+
+The working set is what has been discovered so far, and it keeps changing as traffic arrives.
+
+[source, shell]
+----
+akka use-cases working-set
+----
+
+To see whether the working set is stable enough to fix, and what is holding it back:
+
+[source, shell]
+----
+akka use-cases status
+----
+
+[source, shell]
+----
+akka use-cases non-admission
+----
+
+=== 2. Label what was discovered
+
+The router does not name the clusters it finds. Read the requests nearest the center of a cluster and decide what to call it:
+
+[source, shell]
+----
+akka use-cases exemplars list 7
+----
+
+[source, shell]
+----
+akka use-cases label 7 orders
+----
+
+See xref:inference:routing/defining-use-cases.adoc[Defining use cases] for what a use case is and how one is discovered.
+
+=== 3. Freeze the working set as a manifest
+
+Once every use case above the relevance threshold has a label, fix the set and give each label a backend:
+
+[source, shell]
+----
+akka use-cases freeze --as 2026-08 --backend orders=frontier --backend cart=finetune
+----
+
+A manifest is immutable, versioned, and provenance-verifiable. To compare one against the working set as it now stands:
+
+[source, shell]
+----
+akka use-cases manifests diff 2026-08
+----
+
+=== 4. Deploy the manifest
+
+Only one manifest is live at a time:
+
+[source, shell]
+----
+akka use-cases manifests deploy 2026-08
+----
+
+See xref:inference:routing/routing-use-cases.adoc[Routing use cases] for what a manifest holds and how a use case reaches a backend.
+
+== Shifting traffic gradually
+
+A routing policy states what serves a use case and in what share. To send a copy of the traffic to a second model without using its answers, or to move a fraction of real traffic onto it:
+
+[source, shell]
+----
+akka routing-policies route finetune --usecase orders --shadow 10
+----
+
+[source, shell]
+----
+akka routing-policies route finetune --usecase orders --canary 5
+----
+
+Setting a dial to `0` removes it. To return to the previous published policy:
+
+[source, shell]
+----
+akka routing-policies rollback orders
+----
+
+To refuse any routing change to a use case until the refusal is lifted:
+
+[source, shell]
+----
+akka routing-policies veto orders
+----
+
+include::partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:routing/defining-use-cases.adoc[Defining use cases]
+* xref:inference:routing/routing-use-cases.adoc[Routing use cases]
+* xref:reference:inference-cli/routing.adoc#use-cases[`akka use-cases` command reference]
+* link:{url-agentgateway}[Agentgateway (CNCF), window="new"]
+* link:{url-envoy-ai-gateway}[Envoy AI Gateway (CNCF), window="new"]

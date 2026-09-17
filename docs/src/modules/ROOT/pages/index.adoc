@@ -56,6 +56,7 @@ Akka is a full-stack platform for agentic AI: developer experience, runtime, and
 
 * xref:sdk:spec-driven-development.adoc[Spec-driven development]
 * xref:sdk:components/index.adoc[Components]
+* xref:sdk:web-applications.adoc[Web applications]
 * xref:sdk:integrations/index.adoc[Integrations]
 * xref:sdk:setup-and-configuration/index.adoc[Configuration]
 --
@@ -76,6 +77,19 @@ Akka is a full-stack platform for agentic AI: developer experience, runtime, and
 [.grid-item]
 --
 [discrete]
+== xref:inference:index.adoc[Inference]
+
+**Run AI models** — serving models on hardware in your project and routing requests to a provider.
+
+* xref:inference:serving/index.adoc[Serving models]
+* xref:inference:serving/deploying-models.adoc[Deploying models]
+* xref:inference:routing/index.adoc[Routing requests to models]
+* xref:inference:routing/request-meaning.adoc[Routing on request meaning]
+--
+
+[.grid-item]
+--
+[discrete]
 == xref:reference:index.adoc[Reference]
 
 **Look it up** — CLI, APIs, configuration, and release notes.
@@ -91,5 +105,6 @@ Akka is a full-stack platform for agentic AI: developer experience, runtime, and
 [discrete]
 == More
 
+* https://akka.ai[akka.ai] — paste "install Akka from akka.ai" into any supported AI coding harness and it walks the install for you. See xref:getting-started:set-up-dev-env.adoc#_harness_support_matrix[harness support matrix] for the list of supported harnesses.
 * xref:ROOT:resources.adoc[Resources] — blogs, demos, webinars, training, and community links.
 * https://doc.akka.io/libraries/akka-dependencies/current/overview.html[Akka Libraries] — the Akka libraries for the JVM, in production for over a decade.

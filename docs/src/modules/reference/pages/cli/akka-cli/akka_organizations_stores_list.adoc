@@ -1,0 +1,54 @@
+= akka organizations stores list
+
+List the store clusters the current (or specified) organization may pin a project to
+
+== Synopsis
+
+The `akka organizations stores list` command lists the store clusters the current (or specified) organization may pin a project to.
+Only stores the organization may actually pin are listed: a region contributes its stores only where store selection is enabled for the organization.
+
+Use `--region` to consider only the regions a project is intended to run in.
+The ALL REGIONS column reports whether a store is declared in every region considered, which is what makes it safe to pin on a project running in all of them.
+
+When no store is pinned at creation, the platform resolves one independently in each region.
+
+----
+akka organizations stores list [flags]
+----
+
+== Examples
+
+----
+akka organizations stores list --region gcp-us-east1 --region gcp-eu-west1
+----
+
+== Options
+
+----
+  -h, --help                  help for list
+      --organization string   name or ID for organization
+      --region strings        only consider these regions, repeat the flag for more than one (default: every region available to the organization)
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_organizations_stores.html[akka organizations stores]	 - List the store clusters your organization may pin a project to
+
+[discrete]
+

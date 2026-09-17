@@ -36,7 +36,6 @@ For more details on regions, see https://doc.akka.io/operations/regions/index.ht
 
 * link:akka.html[akka]	 - Akka control
 * link:akka_regions_list.html[akka regions list]	 - List Akka regions.
-* link:akka_regions_list-stores.html[akka regions list-stores]	 - List the Postgres store clusters available in each region.
 
 [discrete]
 

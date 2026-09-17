@@ -136,7 +136,7 @@ image:ai_orch_magentic.jpg[Diagram illustrating magentic orchestration for AI ap
 
 In this dynamic variant of the supervisor pattern, an AI model creates the plan, decides the next step, evaluates results, and determines when the goal has been achieved. Either supervisor implementation works for this pattern. With a workflow supervisor, the workflow still provides durable execution with built-in retry mechanisms; the AI influences *what* happens, but the workflow ensures it happens *reliably*. With an xref:sdk:autonomous-agents.adoc[Autonomous Agent] coordinator using delegation, the same guarantees come from the runtime: the model picks the next worker and the runtime persists the task, retries failures, and bounds iteration.
 
-When we use one of these supervisors as a ubiquitous coordinator and allow agents to be small, purpose-built model interaction components, then the need for individual, concrete patterns becomes less explicit. We don’t need to rewrite agents if we want to use them in different ways, we can either change how planning agents work, modify small bits of logic in the workflow, or change the coordinator's declaration.
+When one of these supervisors acts as a ubiquitous coordinator and agents stay small, purpose-built model interaction components, the need for individual, concrete patterns becomes less explicit. Agents do not need to be rewritten to be used in different ways — instead, change how planning agents work, modify small bits of logic in the workflow, or change the coordinator's declaration.
 
 === Examples
 The xref:getting-started:planner-agent/dynamic-team.adoc[planner-agent tutorial] illustrates this pattern with an Autonomous Agent coordinator that delegates to worker agents.

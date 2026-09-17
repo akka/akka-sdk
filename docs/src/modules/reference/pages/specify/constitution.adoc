@@ -1,4 +1,4 @@
-= /akka.constitution
+= /akka:constitution
 
 Create or update the project constitution.
 

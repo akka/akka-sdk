@@ -1,0 +1,10 @@
+{
+  "name": "akka-whitepaper-pdf",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Renders built Antora pages into branded white paper PDFs for doc.akka.io.",
+  "dependencies": {
+    "playwright": "^1.48.0"
+  }
+}

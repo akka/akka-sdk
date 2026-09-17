@@ -17,6 +17,20 @@ antora_docker_image := local/antora-doc
 antora_docker_image_tag := latest
 BASE_PATH := $(shell git rev-parse --show-prefix)
 
+antora_worktree_repo := ${ROOT_DIR}/target/antora-content-source
+
+# Sets the docker mounts for an Antora build.
+# Antora requires a content source whose .git is a directory. A linked git worktree is
+# mounted through a scratch repository.
+define antora_mounts
+	mounts="-v ${ROOT_DIR}:/antora"; \
+	if [ -f "${ROOT_DIR}/.git" ]; then \
+		mkdir -p "${ROOT_DIR}/target"; \
+		docs/bin/antora-worktree-repo.sh "${antora_worktree_repo}"; \
+		mounts="-v ${antora_worktree_repo}:/antora -v ${ROOT_DIR}/docs:/antora/docs -v ${ROOT_DIR}/target:/antora/target"; \
+	fi;
+endef
+
 .SILENT:
 
 build: managed local open
@@ -42,10 +56,10 @@ attributes: prepare
 		> "${managed_partials}/attributes.adoc"
 	echo ":akka-runtime-version: $$(docs/bin/runtime-version-from-sbt.sh)" \
 		>> "${managed_partials}/attributes.adoc"
-	echo ":akka-cli-version: 3.0.66" >> "${managed_partials}/attributes.adoc"
+	echo ":akka-cli-version: 3.0.75" >> "${managed_partials}/attributes.adoc"
 	echo ":akka-cli-min-version: 3.0.4" >> "${managed_partials}/attributes.adoc"
 	# see https://adoptium.net/marketplace/
-	echo ":java-version: 21" \
+	echo ":java-version: 25" \
 		>> "${managed_partials}/attributes.adoc"
 	# see https://maven.apache.org/docs/history.html
 	echo ":minimum_maven_version: 3.9" \
@@ -71,6 +85,8 @@ examples: prepare
 	rsync -a akka-javasdk/src/main/resources "${java_managed_examples}/akka-javasdk/src/main/"
 	mkdir -p "${java_managed_examples}/akka-javasdk/src/main/java/akka/javasdk/agent/"
 	rsync -a akka-javasdk/src/main/java/akka/javasdk/agent/evaluator "${java_managed_examples}/akka-javasdk/src/main/java/akka/javasdk/agent/"
+	mkdir -p "${java_managed_examples}/akka-javasdk-testkit/src/main/java/akka/javasdk/testkit/"
+	rsync -a akka-javasdk-testkit/src/main/java/akka/javasdk/testkit/eval "${java_managed_examples}/akka-javasdk-testkit/src/main/java/akka/javasdk/testkit/"
 	# Remove prettier-ignore comments from copied examples
 	docs/bin/remove-prettier-ignore.sh "${java_managed_examples}"
 
@@ -80,27 +96,42 @@ bundles:
 	./docs/bin/bundle.sh --zip "${java_managed_attachments}/choreography-saga-quickstart.zip" samples/choreography-saga-quickstart
 	./docs/bin/bundle.sh --zip "${java_managed_attachments}/workflow-quickstart.zip" samples/transfer-workflow-compensation
 
+whitepapers:
+	if ! command -v node >/dev/null 2>&1; then \
+	  echo ">> Skipping white paper PDF: Node.js not found (install Node to render it locally)."; \
+	else \
+	  if [ ! -d docs/bin/whitepaper/node_modules ]; then \
+	    echo ">> Installing white paper render tooling (Playwright + Chromium), first run only..."; \
+	    (cd docs/bin/whitepaper && npm install && npx playwright install chromium); \
+	  fi; \
+	  node docs/bin/whitepaper/render-pdf.mjs "${TARGET_DIR}" operations/technical-overview.html "${TARGET_DIR}/operations/_attachments/whitepapers/aao-technical-overview.pdf"; \
+	fi
+
 done:
 	@echo "Generated docs at ${TARGET_DIR}/index.html"
 
 open:
 	open "${TARGET_DIR}/index.html"
 
-local: docker-image examples antora-local done
+local: docker-image examples antora-local whitepapers done
 
 prod: docker-image managed antora-prod done
 
 antora-local:
+	$(antora_mounts) \
 	docker run \
-		-v ${ROOT_DIR}:/antora \
+		--user "$$(id -u):$$(id -g)" \
+		$$mounts \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
 		--cache-dir=.cache/antora --stacktrace --log-failure-level=warn \
 		docs/antora-playbook-local.yml
 
 antora-prod:
+	$(antora_mounts) \
 	docker run \
-		-v ${ROOT_DIR}:/antora \
+		--user "$$(id -u):$$(id -g)" \
+		$$mounts \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
 		--cache-dir=.cache/antora --stacktrace --log-level error --log-failure-level=warn \
@@ -116,6 +147,9 @@ validate-links:
 
 verify-internal-refs:
 	ruby docs/bin/verify-internal-refs.rb
+
+vale:
+	docs/bin/vale.sh
 
 deploy: clean managed
 	bin/deploy.sh --module java --upstream ${upstream} --branch ${branch} ${sources}

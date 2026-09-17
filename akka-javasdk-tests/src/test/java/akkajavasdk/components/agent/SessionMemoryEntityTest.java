@@ -95,6 +95,37 @@ public class SessionMemoryEntityTest {
   }
 
   @Test
+  public void shouldDeserializeWithNullTokenUsage() {
+    // given
+    var testKit =
+        EventSourcedTestKit.ofEntityWithState(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty),
+            new SessionMemoryEntity.State("sId", 10000, 100, null, null, false, 0));
+    var timestamp = Instant.now();
+    String userMsg = "Hello, how are you?";
+    String aiMsg = "I'm fine, thanks for asking!";
+    UserMessage userMessage = new UserMessage(timestamp, userMsg, COMPONENT_ID);
+    var aiMessage = new AiMessage(timestamp, aiMsg, COMPONENT_ID, Collections.emptyList());
+
+    // when
+    EventSourcedResult<Done> result =
+        testKit
+            .method(SessionMemoryEntity::addInteraction)
+            .invoke(new AddInteractionCmd(userMessage, aiMessage));
+
+    // then
+    assertThat(result.getReply()).isEqualTo(done());
+
+    // Check events - ignoring timestamp comparison
+    var events = result.getAllEvents();
+    assertThat(events).hasSize(2);
+
+    var state = (SessionMemoryEntity.State) result.getUpdatedState();
+    assertThat(state.messages()).isNotNull();
+    assertThat(state.tokenUsage()).isNotNull();
+  }
+
+  @Test
   public void shouldAddMessageWithAttributesToHistory() {
     // given
     var testKit =

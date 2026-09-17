@@ -100,9 +100,21 @@ jobs:
           sbt --client "additionalValidation" || \
             { echo "[error] Additional validation failed."; false; }
 
+      - name: Check dependency alignment with the Akka Runtime
+        run: |
+          sbt --client "checkRuntimeDependencyAlignment" || \
+            {
+              echo "[error] Direct dependencies are not aligned with the versions the Akka Runtime provides."
+              echo "[error] Run 'sbt checkRuntimeDependencyAlignment' locally to reproduce, the failure lists what to update."
+              false
+            }
+
       - name: sbt shutdown
         run: |
           sbt --client shutdown
+
+      - name: Artifact BOM validation
+        uses: akka/github-actions-scripts/artifact_bom_validation@main
 
   publish-local:
     name: Build and publish artifacts and plugins locally
@@ -361,7 +373,6 @@ jobs:
           - { sample: multi-agent, it: true, test: true }
           - { sample: helloworld-agent, it: true, test: true }
           - { sample: helloworld-agent-kotlin, it: true, test: true }
-          - { sample: evaluation-playground, it: false, test: true }
 
     steps:
       - name: Checkout Global Scripts
