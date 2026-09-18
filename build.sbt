@@ -163,7 +163,7 @@ lazy val akkaJavaSdkEnforcer =
       autoScalaLibrary := false, // pure Java, no Scala dependency
       Compile / javacOptions ++= Seq("-encoding", "UTF-8", "--release", "11"),
       libraryDependencies ++= Seq(
-        "org.apache.maven.enforcer" % "enforcer-api" % "3.5.0" % Provided,
+        "org.apache.maven.enforcer" % "enforcer-api" % "3.6.3" % Provided,
         "org.apache.maven" % "maven-core" % "3.9.16" % Provided,
         "javax.inject" % "javax.inject" % "1" % Provided,
         Dependencies.junit5 % Test,
