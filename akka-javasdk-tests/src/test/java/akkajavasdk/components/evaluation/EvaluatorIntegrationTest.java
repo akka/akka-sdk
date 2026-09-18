@@ -80,8 +80,7 @@ public class EvaluatorIntegrationTest extends TestKitSupport {
     assertThat(record.trigger()).isEqualTo(EvaluationRecord.Trigger.ON_INTERACTION);
     assertThat(record.outcome()).isInstanceOf(EvaluationRecord.Outcome.Verdict.class);
 
-    assertThat(record.evaluations()).hasSize(1);
-    var evaluation = record.evaluations().getFirst();
+    var evaluation = record.evaluation().orElseThrow();
     assertThat(evaluation.passed()).isTrue();
     assertThat(evaluation.score()).hasValue(0.9);
     assertThat(evaluation.explanation()).isEqualTo("clear and helpful");
@@ -100,8 +99,7 @@ public class EvaluatorIntegrationTest extends TestKitSupport {
 
     EvaluationRecord record = evaluationFor("How do I export my data?");
 
-    assertThat(record.evaluations()).hasSize(1);
-    var evaluation = record.evaluations().getFirst();
+    var evaluation = record.evaluation().orElseThrow();
     assertThat(evaluation.passed()).isFalse();
     assertThat(evaluation.explanation()).isEqualTo("dismissive and unhelpful");
   }
@@ -121,7 +119,7 @@ public class EvaluatorIntegrationTest extends TestKitSupport {
     assertThat(record.outcome())
         .isEqualTo(
             new EvaluationRecord.Outcome.Inconclusive("judge returned no reason for its verdict"));
-    assertThat(record.evaluations()).isEmpty();
+    assertThat(record.evaluation()).isEmpty();
   }
 
   /**
@@ -136,7 +134,7 @@ public class EvaluatorIntegrationTest extends TestKitSupport {
     EvaluationRecord record = evaluationFor("Why is my service down?");
 
     assertThat(record.outcome()).isInstanceOf(EvaluationRecord.Outcome.Failed.class);
-    assertThat(record.evaluations()).isEmpty();
+    assertThat(record.evaluation()).isEmpty();
   }
 
   /**

@@ -88,8 +88,7 @@ public class WorkflowEvaluatorIntegrationTest extends TestKitSupport {
     assertThat(record.trigger()).isEqualTo(EvaluationRecord.Trigger.ON_INTERACTION);
     assertThat(record.outcome()).isInstanceOf(EvaluationRecord.Outcome.Verdict.class);
 
-    assertThat(record.evaluations()).hasSize(1);
-    var evaluation = record.evaluations().getFirst();
+    var evaluation = record.evaluation().orElseThrow();
     assertThat(evaluation.passed()).isTrue();
     assertThat(evaluation.score()).hasValue(0.9);
     assertThat(evaluation.explanation()).isEqualTo("clear and helpful");
@@ -114,8 +113,7 @@ public class WorkflowEvaluatorIntegrationTest extends TestKitSupport {
 
     EvaluationRecord record = awaitRecordedEvaluation();
 
-    assertThat(record.evaluations()).hasSize(1);
-    var evaluation = record.evaluations().get(0);
+    var evaluation = record.evaluation().orElseThrow();
     assertThat(evaluation.passed()).isFalse();
     assertThat(evaluation.explanation()).isEqualTo("dismissive and unhelpful");
   }

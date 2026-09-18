@@ -6,6 +6,7 @@ package akka.javasdk.testkit;
 
 import akka.javasdk.evaluation.Evaluator;
 import akka.javasdk.evaluation.Subject;
+import akka.javasdk.ledger.LedgerClient;
 import akka.javasdk.testkit.impl.EvaluatorResultImpl;
 import akka.javasdk.testkit.impl.TestKitEvaluationContext;
 import java.util.function.Supplier;
@@ -54,12 +55,29 @@ public class EvaluatorTestKit<E extends Evaluator> {
    * Run the evaluator's {@code evaluate} handler over the given subject, using the given evaluation
    * id.
    *
+   * <p>{@link akka.javasdk.evaluation.EvaluationContext#interaction()} resolves against an empty
+   * in-memory ledger; use {@link #evaluate(Subject, String, LedgerClient)} to seed it.
+   *
    * @param subject the interaction to evaluate
    * @param evaluationId the id of the evaluation
    * @return the result of the evaluation
    */
   public EvaluatorResult evaluate(Subject subject, String evaluationId) {
-    var context = new TestKitEvaluationContext(subject, evaluationId);
+    return evaluate(subject, evaluationId, TestLedgerClient.create());
+  }
+
+  /**
+   * Run the evaluator's {@code evaluate} handler over the given subject and evaluation id, with
+   * {@link akka.javasdk.evaluation.EvaluationContext#interaction()} resolved through the given
+   * ledger client — the same way the runtime resolves it.
+   *
+   * @param subject the interaction to evaluate
+   * @param evaluationId the id of the evaluation
+   * @param ledgerClient the ledger client to resolve the subject's interaction content through
+   * @return the result of the evaluation
+   */
+  public EvaluatorResult evaluate(Subject subject, String evaluationId, LedgerClient ledgerClient) {
+    var context = new TestKitEvaluationContext(subject, evaluationId, ledgerClient);
     var effect = evaluatorFactory.get().evaluate(context);
     return new EvaluatorResultImpl(effect);
   }

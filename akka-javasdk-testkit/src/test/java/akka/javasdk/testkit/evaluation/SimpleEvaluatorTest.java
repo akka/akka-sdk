@@ -12,6 +12,7 @@ import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.Subject;
 import akka.javasdk.testkit.EvaluatorResult;
 import akka.javasdk.testkit.EvaluatorTestKit;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 public class SimpleEvaluatorTest {
@@ -20,7 +21,7 @@ public class SimpleEvaluatorTest {
       EvaluatorTestKit.of(SimpleEvaluator::new);
 
   private Subject agentInteraction(String interactionId) {
-    return new Subject.AgentInteraction("support-agent", interactionId);
+    return new Subject.Interaction(interactionId, Optional.of("support-agent"), Optional.empty());
   }
 
   @Test
@@ -31,8 +32,7 @@ public class SimpleEvaluatorTest {
     assertFalse(result.isInconclusive());
     assertFalse(result.isAsync());
 
-    assertEquals(1, result.getEvaluations().size());
-    Evaluation evaluation = result.getEvaluations().get(0);
+    Evaluation evaluation = result.getEvaluation();
     assertTrue(evaluation.passed());
     assertEquals(0.9, evaluation.score().orElseThrow());
     assertEquals("good", evaluation.label().orElseThrow());
@@ -56,18 +56,19 @@ public class SimpleEvaluatorTest {
     assertTrue(result.isAsync());
     // async effect resolves to the terminal completion
     assertTrue(result.isComplete());
-    assertEquals(1, result.getEvaluations().size());
-    assertEquals("async verdict", result.getEvaluations().get(0).explanation());
-    assertEquals(0.5, result.getEvaluations().get(0).score().orElseThrow());
+    assertEquals("async verdict", result.getEvaluation().explanation());
+    assertEquals(0.5, result.getEvaluation().score().orElseThrow());
   }
 
   @Test
   public void worksWithFlowInteractionSubject() {
-    Subject flow = new Subject.FlowInteraction("flow-1", "support-agent", "interaction-1");
+    Subject flow =
+        new Subject.Interaction(
+            "interaction-1", Optional.of("support-agent"), Optional.of("flow-1"));
 
     EvaluatorResult result = testKit.evaluate(flow);
 
     assertTrue(result.isComplete());
-    assertEquals("support-agent", result.getEvaluations().get(0).attributes().get("agent"));
+    assertEquals("support-agent", result.getEvaluation().attributes().get("agent"));
   }
 }

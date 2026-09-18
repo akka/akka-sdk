@@ -6,9 +6,10 @@ package akka.javasdk.impl.evaluation;
 
 import akka.annotation.InternalApi;
 import akka.javasdk.evaluation.Evaluation;
+import akka.javasdk.evaluation.ExperimentContext;
 import akka.javasdk.evaluation.Subject;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * INTERNAL API
@@ -26,43 +27,124 @@ public final class WorkflowEvaluatorProtocol {
   /** What created the trigger the evaluation was started with. */
   public enum TriggerSource {
     MANUAL,
-    ON_INTERACTION
+    ON_INTERACTION,
+    EXPERIMENT_TRIAL,
+    EXPERIMENT_COMPLETED
+  }
+
+  /** Which {@link Subject} variant a persisted {@link StateEnvelope} carries. */
+  public enum SubjectKind {
+    INTERACTION,
+    FLOW,
+    SESSION,
+    EVALUATION,
+    EXPERIMENT
+  }
+
+  /**
+   * The experiment trial a persisted envelope's subject came out of, present when {@link
+   * #triggerSource} is {@link TriggerSource#EXPERIMENT_TRIAL}. Mirrors {@link ExperimentContext}
+   * minus {@code expectedOutput}, which is not persisted and re-resolved as empty on every read.
+   */
+  public record ExperimentContextData(
+      String experimentId,
+      String datasetId,
+      String datasetItemId,
+      int agentRepetition,
+      int judgeRepetition) {
+
+    public ExperimentContext toExperimentContext() {
+      return new ExperimentContext(
+          experimentId,
+          datasetId,
+          datasetItemId,
+          agentRepetition,
+          judgeRepetition,
+          Optional.empty());
+    }
   }
 
   public record StateEnvelope(
       TriggerSource triggerSource,
-      String flowId,
+      SubjectKind subjectKind,
+      String subjectId,
       String agentComponentId,
-      String interactionId,
+      String flowId,
+      ExperimentContextData experimentContext,
       byte[] userState,
       String userStateContentType) {
 
     public Subject getSubject() {
-      if (flowId != null)
-        return new Subject.FlowInteraction(flowId, agentComponentId, interactionId);
-      else return new Subject.AgentInteraction(agentComponentId, interactionId);
+      return switch (subjectKind) {
+        case INTERACTION ->
+            new Subject.Interaction(
+                subjectId, Optional.ofNullable(agentComponentId), Optional.ofNullable(flowId));
+        case FLOW -> new Subject.Flow(subjectId);
+        case SESSION -> new Subject.Session(subjectId);
+        case EVALUATION -> new Subject.Evaluation(subjectId);
+        case EXPERIMENT -> new Subject.Experiment(subjectId);
+      };
+    }
+
+    public Optional<ExperimentContext> getExperimentContext() {
+      return Optional.ofNullable(experimentContext).map(ExperimentContextData::toExperimentContext);
     }
 
     public static StateEnvelope of(
         TriggerSource triggerSource,
         Subject subject,
+        ExperimentContextData experimentContext,
         byte[] userState,
         String userStateContentType) {
       return switch (subject) {
-        case Subject.FlowInteraction flow ->
+        case Subject.Interaction i ->
             new StateEnvelope(
                 triggerSource,
-                flow.flowId(),
-                flow.agentComponentId(),
-                flow.interactionId(),
+                SubjectKind.INTERACTION,
+                i.interactionId(),
+                i.agentComponentId().orElse(null),
+                i.flowId().orElse(null),
+                experimentContext,
                 userState,
                 userStateContentType);
-        case Subject.AgentInteraction agent ->
+        case Subject.Flow f ->
             new StateEnvelope(
                 triggerSource,
+                SubjectKind.FLOW,
+                f.flowId(),
                 null,
-                agent.agentComponentId(),
-                agent.interactionId(),
+                null,
+                experimentContext,
+                userState,
+                userStateContentType);
+        case Subject.Session s ->
+            new StateEnvelope(
+                triggerSource,
+                SubjectKind.SESSION,
+                s.sessionId(),
+                null,
+                null,
+                experimentContext,
+                userState,
+                userStateContentType);
+        case Subject.Evaluation e ->
+            new StateEnvelope(
+                triggerSource,
+                SubjectKind.EVALUATION,
+                e.evaluationId(),
+                null,
+                null,
+                experimentContext,
+                userState,
+                userStateContentType);
+        case Subject.Experiment x ->
+            new StateEnvelope(
+                triggerSource,
+                SubjectKind.EXPERIMENT,
+                x.experimentId(),
+                null,
+                null,
+                experimentContext,
                 userState,
                 userStateContentType);
       };
@@ -70,7 +152,7 @@ public final class WorkflowEvaluatorProtocol {
   }
 
   /** The terminal outcome of an evaluation, input to the built-in record step. */
-  public record Outcome(Kind kind, List<EvaluationData> evaluations, String reason) {
+  public record Outcome(Kind kind, EvaluationData evaluation, String reason) {
 
     public enum Kind {
       COMPLETED,
@@ -78,17 +160,16 @@ public final class WorkflowEvaluatorProtocol {
       FAILED
     }
 
-    public static Outcome completed(List<Evaluation> evaluations) {
-      return new Outcome(
-          Kind.COMPLETED, evaluations.stream().map(EvaluationData::from).toList(), null);
+    public static Outcome completed(Evaluation evaluation) {
+      return new Outcome(Kind.COMPLETED, EvaluationData.from(evaluation), null);
     }
 
     public static Outcome inconclusive(String reason) {
-      return new Outcome(Kind.INCONCLUSIVE, List.of(), reason);
+      return new Outcome(Kind.INCONCLUSIVE, null, reason);
     }
 
     public static Outcome failed(String reason) {
-      return new Outcome(Kind.FAILED, List.of(), reason);
+      return new Outcome(Kind.FAILED, null, reason);
     }
   }
 

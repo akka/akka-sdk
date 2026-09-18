@@ -65,7 +65,7 @@ private[javasdk] final class LedgerClientImpl(spiLedgerClient: SpiLedgerClient, 
  * INTERNAL API
  */
 @InternalApi
-private[ledger] object LedgerClientImpl {
+private[javasdk] object LedgerClientImpl {
 
   def toInteractionRecord(record: SpiLedger.InteractionRecord): InteractionRecord =
     new InteractionRecord(
@@ -98,15 +98,17 @@ private[ledger] object LedgerClientImpl {
 
   private def toEvaluationTrigger(trigger: SpiLedger.EvaluationTrigger): EvaluationRecord.Trigger =
     trigger match {
-      case SpiLedger.EvaluationTrigger.Unspecified   => EvaluationRecord.Trigger.UNSPECIFIED
-      case SpiLedger.EvaluationTrigger.Manual        => EvaluationRecord.Trigger.MANUAL
-      case SpiLedger.EvaluationTrigger.OnInteraction => EvaluationRecord.Trigger.ON_INTERACTION
+      case SpiLedger.EvaluationTrigger.Unspecified           => EvaluationRecord.Trigger.UNSPECIFIED
+      case SpiLedger.EvaluationTrigger.Manual                => EvaluationRecord.Trigger.MANUAL
+      case SpiLedger.EvaluationTrigger.OnInteraction         => EvaluationRecord.Trigger.ON_INTERACTION
+      case SpiLedger.EvaluationTrigger.OnExperimentTrial     => EvaluationRecord.Trigger.EXPERIMENT_TRIAL
+      case SpiLedger.EvaluationTrigger.OnExperimentCompleted => EvaluationRecord.Trigger.EXPERIMENT_COMPLETED
     }
 
   private def toEvaluationOutcome(outcome: SpiLedger.EvaluationOutcome): EvaluationRecord.Outcome =
     outcome match {
       case verdict: SpiLedger.EvaluationVerdict =>
-        new EvaluationRecord.Outcome.Verdict(verdict.evaluations.map(toEvaluation).asJava)
+        new EvaluationRecord.Outcome.Verdict(toEvaluation(verdict.evaluation))
       case inconclusive: SpiLedger.EvaluationInconclusive =>
         new EvaluationRecord.Outcome.Inconclusive(inconclusive.reason)
       case failure: SpiLedger.EvaluationFailure =>

@@ -145,14 +145,16 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
       r.score.map(Double.box).toJava,
       r.label.toJava,
       r.confidence.map(Double.box).toJava,
-      r.attributes.asJava)
+      r.attributes.asJava,
+      r.explanation.toJava)
 
   private def fromClassification(c: Classification): SpiClassifier.Classification =
     new SpiClassifier.Classification(
       c.score.toScala.map(Double.unbox),
       c.label.toScala,
       c.confidence.toScala.map(Double.unbox),
-      c.attributes.asScala.toMap)
+      c.attributes.asScala.toMap,
+      c.explanation.toScala)
 
   /**
    * Wraps a user classifier so the runtime can invoke it once registered. `resolve` runs on every invocation rather

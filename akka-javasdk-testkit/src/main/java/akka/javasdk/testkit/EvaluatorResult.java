@@ -5,7 +5,6 @@
 package akka.javasdk.testkit;
 
 import akka.javasdk.evaluation.Evaluation;
-import java.util.List;
 
 /**
  * Represents the result of an Evaluator handling an evaluation when run through the testkit.
@@ -19,7 +18,7 @@ import java.util.List;
 public interface EvaluatorResult {
 
   /**
-   * @return true if the evaluation completed with one or more verdicts
+   * @return true if the evaluation completed with a verdict
    */
   boolean isComplete();
 
@@ -34,9 +33,9 @@ public interface EvaluatorResult {
   boolean isAsync();
 
   /**
-   * @return the evaluations the evaluation completed with, or throws if it was not complete
+   * @return the evaluation the evaluation completed with, or throws if it was not complete
    */
-  List<Evaluation> getEvaluations();
+  Evaluation getEvaluation();
 
   /**
    * @return the reason the evaluation was inconclusive, or throws if it was not inconclusive

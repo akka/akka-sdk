@@ -11,8 +11,11 @@ import java.util.concurrent.CompletionStage;
  * Client for fetching records from the ledger — the log of recorded agent interactions.
  *
  * <p>A {@code LedgerClient} can be injected into any component. An {@link
- * akka.javasdk.evaluation.Evaluator} is the primary consumer: it fetches the interaction referenced
- * by its {@link akka.javasdk.evaluation.Subject#interactionId()} to evaluate it.
+ * akka.javasdk.evaluation.Evaluator} evaluating an {@link
+ * akka.javasdk.evaluation.Subject.Interaction} does not need to call it directly — the runtime
+ * resolves that interaction's content onto {@link
+ * akka.javasdk.evaluation.EvaluationContext#interaction()} before the evaluator runs. It remains
+ * useful for fetching ledger detail beyond the subject, such as a prior evaluation record.
  *
  * <p>Not for user extension.
  */

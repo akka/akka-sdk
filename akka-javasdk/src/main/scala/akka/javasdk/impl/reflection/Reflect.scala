@@ -28,6 +28,8 @@ import akka.javasdk.annotations.AgentRole
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.Consume
 import akka.javasdk.annotations.EnableReplicationFilter
+import akka.javasdk.annotations.Evaluates
+import akka.javasdk.annotations.EvaluatorVersion
 import akka.javasdk.annotations.GrpcEndpoint
 import akka.javasdk.annotations.ProtoEventTypes
 import akka.javasdk.annotations.http.HttpEndpoint
@@ -35,6 +37,7 @@ import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.evaluation.Evaluator
+import akka.javasdk.evaluation.Subject
 import akka.javasdk.evaluation.WorkflowEvaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.ComponentDescriptor
@@ -551,6 +554,22 @@ private[impl] object Reflect {
     } else {
       None
     }
+  }
+
+  /**
+   * The subject kinds an evaluator declares via `@Evaluates`, or `Subject.Interaction` alone when absent, since a
+   * binding under `agents` (the only binding kind today) always fires on one.
+   */
+  def readEvaluatorSubjectKinds(clz: Class[_]): Set[Class[_ <: Subject]] = {
+    val ann = clz.getAnnotation(classOf[Evaluates])
+    if (ann != null) ann.value().toSet
+    else Set(classOf[Subject.Interaction])
+  }
+
+  /** The version an evaluator declares via `@EvaluatorVersion`, or `"1"` when absent. */
+  def readEvaluatorVersion(clz: Class[_]): String = {
+    val ann = clz.getAnnotation(classOf[EvaluatorVersion])
+    if (ann != null) ann.value() else "1"
   }
 
   def readComponentDescription(annotated: AnnotatedElement): Option[String] = {

@@ -5,6 +5,7 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
+import akka.javasdk.evaluation.Subject;
 import akka.stream.Materializer;
 import akka.stream.javadsl.Sink;
 import java.util.concurrent.CompletionStage;
@@ -26,7 +27,7 @@ public class DurableEvaluator extends Evaluator {
 
   @Override
   public Effect evaluate(EvaluationContext context) {
-    String transcript = context.subject().interactionId();
+    String transcript = ((Subject.Interaction) context.subject()).interactionId();
     String workflowId = context.evaluationId();
     // tag::async[]
     // Subscribe to the workflow's completion report before starting it, so it can't be missed.

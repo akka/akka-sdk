@@ -4,8 +4,6 @@
 
 package akka.javasdk.impl.evaluation
 
-import scala.jdk.CollectionConverters._
-
 import akka.annotation.InternalApi
 import akka.japi.function
 import akka.javasdk.evaluation.Evaluation
@@ -26,7 +24,7 @@ private[javasdk] object WorkflowEvaluatorEffects {
 
   sealed trait Transition
   final case class StepTransition(stepName: String, input: Option[Any], declaringClass: Class[_]) extends Transition
-  final case class CompleteTransition(evaluations: List[Evaluation]) extends Transition
+  final case class CompleteTransition(evaluation: Evaluation) extends Transition
   final case class InconclusiveTransition(reason: String) extends Transition
 
   sealed trait Persistence[+S]
@@ -46,10 +44,8 @@ private[javasdk] object WorkflowEvaluatorEffects {
     StepRef(WorkflowDescriptor.stepMethodName(method), method.getDeclaringClass)
   }
 
-  private def completeEffect[S](persistence: Persistence[S], evaluations: List[Evaluation]): Effect = {
-    require(evaluations.nonEmpty, "Evaluations must not be empty")
-    EffectImpl(persistence, CompleteTransition(evaluations))
-  }
+  private def completeEffect[S](persistence: Persistence[S], evaluation: Evaluation): Effect =
+    EffectImpl(persistence, CompleteTransition(evaluation))
 
   private def inconclusiveEffect[S](persistence: Persistence[S], reason: String): Effect = {
     require(reason != null && reason.nonEmpty, "Given reason must not be null or empty")
@@ -77,11 +73,8 @@ private[javasdk] object WorkflowEvaluatorEffects {
     override def transitionTo[W, I](methodRef: function.Function2[W, I, Effect]): WithInput[I, Effect] =
       transitionWithInput(persistence, methodRef)
 
-    override def complete(evaluation: Evaluation, more: Evaluation*): Effect =
-      completeEffect(persistence, evaluation :: more.toList)
-
-    override def complete(evaluations: java.util.List[Evaluation]): Effect =
-      completeEffect(persistence, evaluations.asScala.toList)
+    override def complete(evaluation: Evaluation): Effect =
+      completeEffect(persistence, evaluation)
 
     override def inconclusive(reason: String): Effect =
       inconclusiveEffect(persistence, reason)
@@ -96,11 +89,8 @@ private[javasdk] object WorkflowEvaluatorEffects {
     override def transitionTo[W, I](methodRef: function.Function2[W, I, Effect]): WithInput[I, Effect] =
       transitionWithInput(persistence, methodRef)
 
-    override def complete(evaluation: Evaluation, more: Evaluation*): Effect =
-      completeEffect(persistence, evaluation :: more.toList)
-
-    override def complete(evaluations: java.util.List[Evaluation]): Effect =
-      completeEffect(persistence, evaluations.asScala.toList)
+    override def complete(evaluation: Evaluation): Effect =
+      completeEffect(persistence, evaluation)
 
     override def inconclusive(reason: String): Effect =
       inconclusiveEffect(persistence, reason)
