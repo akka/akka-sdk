@@ -52,7 +52,7 @@ object Dependencies {
   val logbackJson = "ch.qos.logback.contrib" % "logback-json-classic" % LogbackContribVersion
   val logbackJackson = "ch.qos.logback.contrib" % "logback-jackson" % LogbackContribVersion
 
-  val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.18"
+  val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.19"
 
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % JacksonVersion
   val jacksonAnnotations = "com.fasterxml.jackson.core" % "jackson-annotations" % JacksonAnnotationsVersion
