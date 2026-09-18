@@ -254,37 +254,37 @@
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-common</artifactId>
-                <version>1.64.0</version>
+                <version>1.65.0</version>
             </dependency>
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-context</artifactId>
-                <version>1.64.0</version>
+                <version>1.65.0</version>
             </dependency>
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-sdk</artifactId>
-                <version>1.64.0</version>
+                <version>1.65.0</version>
             </dependency>
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-sdk-common</artifactId>
-                <version>1.64.0</version>
+                <version>1.65.0</version>
             </dependency>
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-sdk-logs</artifactId>
-                <version>1.64.0</version>
+                <version>1.65.0</version>
             </dependency>
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-sdk-metrics</artifactId>
-                <version>1.64.0</version>
+                <version>1.65.0</version>
             </dependency>
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-sdk-trace</artifactId>
-                <version>1.64.0</version>
+                <version>1.65.0</version>
             </dependency>
             <dependency>
                 <groupId>io.opentelemetry.semconv</groupId>
@@ -587,37 +587,37 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-common</artifactId>
-            <version>1.64.0</version>
+            <version>1.65.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-context</artifactId>
-            <version>1.64.0</version>
+            <version>1.65.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk</artifactId>
-            <version>1.64.0</version>
+            <version>1.65.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-common</artifactId>
-            <version>1.64.0</version>
+            <version>1.65.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-logs</artifactId>
-            <version>1.64.0</version>
+            <version>1.65.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-metrics</artifactId>
-            <version>1.64.0</version>
+            <version>1.65.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-trace</artifactId>
-            <version>1.64.0</version>
+            <version>1.65.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry.semconv</groupId>
