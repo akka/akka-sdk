@@ -190,6 +190,13 @@ Inline bytes are only supported as a function tool *return* value. To send an im
 Only some model providers accept multimodal tool results (currently Anthropic, Bedrock, and Google AI Gemini).
 ====
 
+[#parallel_tool_calls]
+== Calling multiple tools from one model response
+
+A model response can request more than one tool call at once. Akka runs those tool calls concurrently rather than one after another, and returns the results to the model in the same order the model requested them, regardless of the order in which the individual calls finish.
+
+The ordering matters because a model matches each tool result back to its corresponding request by position. Consider an agent with one tool that reads a value from memory and another that calls a slow external service. If the model requests both in the same turn, the external call typically finishes after the in-memory one, but the model still receives the two results aligned to the order it asked for them, not the order they completed in.
+
 [#configuring_tool_call_limits]
 == Configuring tool call limits
 
