@@ -11,9 +11,9 @@ import scala.concurrent.duration.DurationInt
 
 import akka.Done
 import akka.javasdk.evaluation.TranscriptQualityEvaluator
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorImpl.RecordStepName
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.Outcome
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.StateEnvelope
+import akka.javasdk.impl.evaluation.DurableEvaluatorImpl.RecordStepName
+import akka.javasdk.impl.evaluation.DurableEvaluatorProtocol.Outcome
+import akka.javasdk.impl.evaluation.DurableEvaluatorProtocol.StateEnvelope
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi
 import akka.runtime.sdk.spi.BytesPayload
@@ -25,7 +25,7 @@ import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValues {
+class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValues {
 
   private val serializer = new Serializer
   private val evaluationId = "evaluation-1"
@@ -40,7 +40,7 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
   }
 
   private def newImpl(recorder: SpiEvaluator.EvaluationRecorder = new RecorderProbe) =
-    new WorkflowEvaluatorImpl[TranscriptQualityEvaluator.State, TranscriptQualityEvaluator](
+    new DurableEvaluatorImpl[TranscriptQualityEvaluator.State, TranscriptQualityEvaluator](
       evaluationId,
       classOf[TranscriptQualityEvaluator],
       classOf[TranscriptQualityEvaluator.State],
@@ -65,7 +65,7 @@ class WorkflowEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionVal
     serializer.fromBytes(classOf[StateEnvelope], persistence.asInstanceOf[SpiWorkflow.UpdateState].newState)
   }
 
-  "WorkflowEvaluatorImpl" should {
+  "DurableEvaluatorImpl" should {
 
     "start the evaluation with the structured trigger and persist the subject envelope" in {
       val effect = await(newImpl().handleEvaluationStart(None, trigger()))

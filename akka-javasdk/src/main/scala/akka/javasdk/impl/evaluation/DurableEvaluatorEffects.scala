@@ -8,21 +8,21 @@ import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
 import akka.japi.function
+import akka.javasdk.evaluation.DurableEvaluator.Effect
+import akka.javasdk.evaluation.DurableEvaluator.WithInput
 import akka.javasdk.evaluation.Evaluation
-import akka.javasdk.evaluation.WorkflowEvaluator.Effect
-import akka.javasdk.evaluation.WorkflowEvaluator.WithInput
 import akka.javasdk.impl.client.MethodRefResolver
 import akka.javasdk.impl.workflow.WorkflowDescriptor
 
 /**
  * INTERNAL API
  *
- * Effect model for [[akka.javasdk.evaluation.WorkflowEvaluator]]. A deliberately small subset of the workflow effects:
+ * Effect model for [[akka.javasdk.evaluation.DurableEvaluator]]. A deliberately small subset of the workflow effects:
  * state update plus either a step transition or a terminal evaluation outcome (complete / inconclusive). There is no
  * pause, end, delete or reply — the component's lifecycle guarantees are enforced by construction.
  */
 @InternalApi
-private[javasdk] object WorkflowEvaluatorEffects {
+private[javasdk] object DurableEvaluatorEffects {
 
   sealed trait Transition
   final case class StepTransition(stepName: String, input: Option[Any], declaringClass: Class[_]) extends Transition

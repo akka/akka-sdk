@@ -4,7 +4,6 @@
 
 package akka.javasdk.impl.evaluation
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters._
@@ -15,7 +14,6 @@ import akka.javasdk.evaluation.Evaluation
 import akka.javasdk.evaluation.EvaluationContext
 import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.evaluation.Subject
-import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.AsyncEffect
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.CompleteEffect
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.InconclusiveEffect
 import akka.runtime.sdk.spi.SpiEvaluator
@@ -64,15 +62,11 @@ private[impl] object EvaluatorImpl {
  * by the descriptor's instance factory.
  */
 @InternalApi
-private[impl] final class EvaluatorImpl[E <: Evaluator](
-    factory: () => E,
-    evaluatorClass: Class[E],
-    sdkExecutionContext: ExecutionContext)
+private[impl] final class EvaluatorImpl[E <: Evaluator](factory: () => E, evaluatorClass: Class[E])
     extends SpiEvaluator {
   import EvaluatorImpl._
 
   private val log: Logger = LoggerFactory.getLogger(evaluatorClass)
-  private implicit val executionContext: ExecutionContext = sdkExecutionContext
 
   override def evaluate(spiContext: SpiEvaluator.EvaluationContext): Future[SpiEvaluator.Effect] = {
     val context = new EvaluationContextImpl(spiContext)
@@ -95,9 +89,6 @@ private[impl] final class EvaluatorImpl[E <: Evaluator](
         Future.successful(new SpiEvaluator.CompleteEffect(evaluations.map(toSpiEvaluation)))
       case InconclusiveEffect(reason) =>
         Future.successful(new SpiEvaluator.InconclusiveEffect(reason))
-      case AsyncEffect(futureEffect) =>
-        // pending future is a suspended evaluation; a failed future is recorded as a failure by the runtime
-        futureEffect.flatMap(toSpiEffect)
       case unknown =>
         throw new IllegalArgumentException(s"Unknown Evaluator.Effect type ${unknown.getClass}")
     }

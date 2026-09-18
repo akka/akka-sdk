@@ -13,15 +13,15 @@ import java.util.Map;
 /**
  * INTERNAL API
  *
- * <p>SDK-internal serialized shapes of the workflow evaluator: the persisted state envelope
- * wrapping the user state, and the evaluation outcome carried as input to the built-in record step.
- * Both are written and read only by the SDK — the start of an evaluation and the recording of its
- * result cross the runtime boundary as structured types on the SPI ({@code SpiWorkflowEvaluator}).
+ * <p>SDK-internal serialized shapes of the durable evaluator: the persisted state envelope wrapping
+ * the user state, and the evaluation outcome carried as input to the built-in record step. Both are
+ * written and read only by the SDK — the start of an evaluation and the recording of its result
+ * cross the runtime boundary as structured types on the SPI ({@code SpiWorkflowEvaluator}).
  */
 @InternalApi
-public final class WorkflowEvaluatorProtocol {
+public final class DurableEvaluatorProtocol {
 
-  private WorkflowEvaluatorProtocol() {}
+  private DurableEvaluatorProtocol() {}
 
   /** What created the trigger the evaluation was started with. */
   public enum TriggerSource {

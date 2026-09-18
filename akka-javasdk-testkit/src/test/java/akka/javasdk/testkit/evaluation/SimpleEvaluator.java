@@ -8,11 +8,10 @@ import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
 import akka.javasdk.evaluation.Subject;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * A simple evaluator used in unit tests. Branches on the subject's interaction id to exercise the
- * complete, inconclusive, and async effects.
+ * complete and inconclusive effects.
  */
 public class SimpleEvaluator extends Evaluator {
 
@@ -23,12 +22,6 @@ public class SimpleEvaluator extends Evaluator {
     return switch (subject.interactionId()) {
       case "inconclusive" ->
           effects().inconclusive("cannot evaluate interaction " + subject.interactionId());
-      case "async" ->
-          // delegate asynchronously, resolving to a completed evaluation
-          effects()
-              .asyncEffect(
-                  CompletableFuture.completedFuture(
-                      effects().complete(Evaluation.passed("async verdict").withScore(0.5))));
       default ->
           effects()
               .complete(

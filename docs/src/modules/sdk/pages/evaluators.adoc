@@ -59,7 +59,6 @@ The `Effect` returned by `evaluate` is one of:
 
 * `effects().complete(evaluation, ...)` — the evaluation completed with one or more verdicts.
 * `effects().inconclusive(reason)` — the evaluator ran but reached no verdict, for example there was no transcript or the interaction was not applicable.
-* `effects().asyncEffect(futureEffect)` — continue asynchronously from a `CompletionStage` of another effect (see <<_durable_multi_step_evaluation>>).
 
 == Binding evaluators to agents
 
@@ -106,17 +105,12 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/JudgeDelegatin
 
 For implementing the judge agent itself, see xref:sdk:agents/llm_eval.adoc[LLM evaluation].
 
-=== Durable multi-step evaluation
+== Durable evaluators
 
-For an evaluation that involves several steps and must survive restarts, delegate to a xref:sdk:workflows.adoc[workflow] and suspend on its result with `asyncEffect`:
+For an evaluation that runs in several steps and must survive restarts, extend link:{attachmentsdir}/api/akka/javasdk/evaluation/DurableEvaluator.html[`DurableEvaluator`] instead of `Evaluator`.
+A durable evaluator keeps state across its steps, and each evaluation runs as its own durable instance that resumes from the last completed step.
 
-[source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/DurableEvaluator.java[DurableEvaluator.java]
-----
-include::example$doc-snippets/src/main/java/com/example/evaluator/DurableEvaluator.java[tag=async]
-----
-
-The workflow provides the durability; the evaluator suspends until it reports back.
+// TODO: document DurableEvaluator: steps and transitions, state, settings, and testing.
 
 [#_the_ledger_client]
 == The ledger client
@@ -171,8 +165,6 @@ Use link:{attachmentsdir}/testkit/akka/javasdk/testkit/EvaluatorTestKit.html[`Ev
 include::example$doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[tag=test]
 ----
 <1> `TestLedgerClient.create().seed(...)` builds an in-memory `LedgerClient` holding the given records, keyed by interaction id.
-
-An asynchronous effect is resolved before the `EvaluatorResult` is returned, so `isComplete()` and `isInconclusive()` reflect the terminal outcome; `isAsync()` additionally reports whether the effect was produced asynchronously.
 
 == See also
 
