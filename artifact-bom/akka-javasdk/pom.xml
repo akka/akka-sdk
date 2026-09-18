@@ -289,7 +289,7 @@
             <dependency>
                 <groupId>io.opentelemetry.semconv</groupId>
                 <artifactId>opentelemetry-semconv</artifactId>
-                <version>1.40.0</version>
+                <version>1.44.0</version>
             </dependency>
             <dependency>
                 <groupId>io.perfmark</groupId>
@@ -622,7 +622,7 @@
         <dependency>
             <groupId>io.opentelemetry.semconv</groupId>
             <artifactId>opentelemetry-semconv</artifactId>
-            <version>1.40.0</version>
+            <version>1.44.0</version>
         </dependency>
         <dependency>
             <groupId>io.perfmark</groupId>
