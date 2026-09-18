@@ -109,8 +109,11 @@ private[impl] object AgentImpl {
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
   }
 
-  def modelProviderFromConfig(config: Config, configPath: String, componentId: String)(implicit
-      system: ActorSystem[_]): ModelProvider = {
+  /**
+   * The configuration section that a `ModelProvider.fromConfig` path selects. An empty path means the section named by
+   * `akka.javasdk.agent.model-provider`, and a name without a dot is looked up under `akka.javasdk.agent`.
+   */
+  private[impl] def resolveModelProviderConfigPath(config: Config, configPath: String): String = {
     val actualPath =
       if (configPath == "")
         config.getString("akka.javasdk.agent.model-provider")
@@ -121,13 +124,17 @@ private[impl] object AgentImpl {
       throw new IllegalArgumentException(
         s"You must define model provider configuration in [akka.javasdk.agent.model-provider]")
 
-    val resolvedConfigPath =
-      if (config.hasPath(actualPath))
-        actualPath
-      else if (!actualPath.contains('.') && config.hasPath("akka.javasdk.agent." + actualPath))
-        "akka.javasdk.agent." + actualPath
-      else
-        throw new IllegalArgumentException(s"Undefined model provider configuration [$actualPath]")
+    if (config.hasPath(actualPath))
+      actualPath
+    else if (!actualPath.contains('.') && config.hasPath("akka.javasdk.agent." + actualPath))
+      "akka.javasdk.agent." + actualPath
+    else
+      throw new IllegalArgumentException(s"Undefined model provider configuration [$actualPath]")
+  }
+
+  def modelProviderFromConfig(config: Config, configPath: String, componentId: String)(implicit
+      system: ActorSystem[_]): ModelProvider = {
+    val resolvedConfigPath = resolveModelProviderConfigPath(config, configPath)
 
     try {
       log.debug("Model provider from config [{}]", resolvedConfigPath)
@@ -216,20 +223,37 @@ private[impl] object AgentImpl {
       configured.filterNot(h => statedNames(h.lowercaseName())) ++ statedInCode
     }
 
+  /** The global identity headers switch, which each provider section inherits. */
+  private def globalIdentityHeaders(config: Config): Boolean =
+    config.getBoolean("akka.javasdk.agent.identity-headers")
+
+  private[impl] def toSpiModelProvider(modelProvider: ModelProvider, config: Config, componentId: String)(implicit
+      system: ActorSystem[_]): SpiAgent.ModelProvider =
+    toSpiModelProvider(modelProvider, config, componentId, globalIdentityHeaders(config))
+
   @tailrec
   @nowarn("msg=deprecated")
-  private[impl] def toSpiModelProvider(modelProvider: ModelProvider, config: Config, componentId: String)(implicit
-      system: ActorSystem[_]): SpiAgent.ModelProvider = {
+  private def toSpiModelProvider(
+      modelProvider: ModelProvider,
+      config: Config,
+      componentId: String,
+      identityHeaders: Boolean)(implicit system: ActorSystem[_]): SpiAgent.ModelProvider = {
     modelProvider match {
       case p: ModelProvider.FromConfig =>
-        val resolved = modelProviderFromConfig(config, p.configPath(), componentId)
+        val resolvedConfigPath = resolveModelProviderConfigPath(config, p.configPath())
+        val resolved = modelProviderFromConfig(config, resolvedConfigPath, componentId)
         val statedInCode = p.additionalModelRequestHeaders().asScala.toSeq
         val withHeaders =
           if (statedInCode.isEmpty) resolved
           else
             resolved.withAdditionalModelRequestHeaders(
               mergeAdditionalModelRequestHeaders(additionalModelRequestHeaders(resolved), statedInCode).asJava)
-        toSpiModelProvider(withHeaders, config, componentId)
+        // the section the provider resolved to may override the global switch
+        val sectionConfig = config.getConfig(resolvedConfigPath)
+        val sectionIdentityHeaders =
+          if (sectionConfig.hasPath("identity-headers")) sectionConfig.getBoolean("identity-headers")
+          else identityHeaders
+        toSpiModelProvider(withHeaders, config, componentId, sectionIdentityHeaders)
       case p: ModelProvider.Anthropic =>
         new SpiAgent.ModelProvider.Anthropic(
           apiKey = p.apiKey,
@@ -243,7 +267,8 @@ private[impl] object AgentImpl {
             p.connectionTimeout().toScala,
             p.responseTimeout().toScala,
             p.maxRetries(),
-            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq),
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq,
+            identityHeaders),
           thinkingBudgetTokens = p.thinkingBudgetTokens,
           cacheSystemMessages = p.cacheSystemMessages,
           cacheTools = p.cacheTools)
@@ -259,7 +284,8 @@ private[impl] object AgentImpl {
             p.connectionTimeout().toScala,
             p.responseTimeout().toScala,
             p.maxRetries(),
-            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq),
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq,
+            identityHeaders),
           p.thinkingBudget.toScala.map(_.intValue()),
           p.thinkingLevel,
           p.mediaResolution(),
@@ -276,7 +302,8 @@ private[impl] object AgentImpl {
             p.connectionTimeout().toScala,
             p.responseTimeout().toScala,
             p.maxRetries(),
-            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq),
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq,
+            identityHeaders),
           p.thinking())
       case p: ModelProvider.LocalAI =>
         new SpiAgent.ModelProvider.LocalAI(p.baseUrl(), p.modelName(), p.temperature(), p.topP(), p.maxTokens())
@@ -290,7 +317,8 @@ private[impl] object AgentImpl {
             p.connectionTimeout().toScala,
             p.responseTimeout().toScala,
             p.maxRetries(),
-            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq),
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq,
+            identityHeaders),
           p.think)
       case p: ModelProvider.OpenAi =>
         new SpiAgent.ModelProvider.OpenAi(
@@ -305,7 +333,8 @@ private[impl] object AgentImpl {
             p.connectionTimeout().toScala,
             p.responseTimeout().toScala,
             p.maxRetries(),
-            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq),
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq,
+            identityHeaders),
           thinking = p.thinking)
       case p: ModelProvider.AzureOpenAi =>
         new SpiAgent.ModelProvider.AzureOpenAi(
@@ -326,7 +355,8 @@ private[impl] object AgentImpl {
             p.connectionTimeout().toScala,
             p.responseTimeout().toScala,
             p.maxRetries(),
-            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq))
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq,
+            identityHeaders))
       case p: ModelProvider.VertexAi =>
         new SpiAgent.ModelProvider.VertexAi(
           modelName = p.modelName,
@@ -339,7 +369,8 @@ private[impl] object AgentImpl {
             p.connectionTimeout().toScala,
             p.responseTimeout().toScala,
             p.maxRetries(),
-            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq),
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq,
+            identityHeaders),
           temperature = p.temperature,
           topP = p.topP,
           thinkingBudget = p.thinkingBudget,
@@ -365,7 +396,8 @@ private[impl] object AgentImpl {
             FiniteDuration.apply(30, TimeUnit.SECONDS),
             p.responseTimeout().toScala,
             p.maxRetries(),
-            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq),
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq,
+            identityHeaders),
           promptCaching = p.promptCaching.toScala.map {
             case ModelProvider.BedrockPromptCachePlacement.AFTER_SYSTEM =>
               SpiAgent.ModelProvider.BedrockPromptCachePlacement.AfterSystem
@@ -394,7 +426,8 @@ private[impl] object AgentImpl {
             p.connectionTimeout().toScala,
             p.responseTimeout().toScala,
             p.maxRetries(),
-            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq))
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq,
+            identityHeaders))
     }
   }
 
