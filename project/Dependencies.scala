@@ -32,7 +32,7 @@ object Dependencies {
   val LogbackContribVersion = "0.1.5"
   val JUnitVersion = "4.13.2"
   val JUnitInterfaceVersion = "0.11"
-  val JUnitJupiterVersion = "5.10.1"
+  val JUnitJupiterVersion = "5.10.5"
   val OpenTelemetryVersion = "1.64.0"
   val OpenTelemetrySemConv = "1.40.0"
 

@@ -1258,7 +1258,7 @@
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter</artifactId>
-                <version>5.10.1</version>
+                <version>5.10.5</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
@@ -2760,7 +2760,7 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.10.1</version>
+            <version>5.10.5</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
