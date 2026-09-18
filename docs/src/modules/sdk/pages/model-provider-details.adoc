@@ -808,6 +808,40 @@ Use the provider on one interaction with `effects().model(...)`, or on a whole a
 `modelProvider(...)` on its definition. An autonomous agent reads its definition once at startup, so the
 headers are the same for every instance of that agent.
 
+== Identity headers
+
+The runtime adds two headers to each model request, so that a gateway or proxy in front of the model API
+can attribute the request:
+
+[cols="1m,3"]
+|===
+| Header | Value
+
+| x-akka-agent-id | The component id of the agent that made the request
+| x-akka-flow-id | The flow the request belongs to, or the session id when the request has no flow
+
+|===
+
+Turn them off for every provider:
+
+[source,hocon,indent=0]
+----
+akka.javasdk.agent.identity-headers = off
+----
+
+Each provider section inherits the global value and can override it:
+
+[source,hocon,indent=0]
+----
+akka.javasdk.agent.openai.identity-headers = off
+----
+
+A provider named in configuration takes the value from the section it resolves to. A provider built in code
+takes the global value, because it has no section.
+
+Local AI does not send these headers. A custom provider builds its own chat model, so the runtime does not
+add these headers to its requests.
+
 == Reference configurations
 The following is a list of the various reference configurations for each of the AI models
 
