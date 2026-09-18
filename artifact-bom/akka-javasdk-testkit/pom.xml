@@ -655,7 +655,7 @@
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j</artifactId>
-                <version>1.18.1</version>
+                <version>1.20.0</version>
             </dependency>
             <dependency>
                 <groupId>dev.langchain4j</groupId>
@@ -2157,7 +2157,7 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
-            <version>1.18.1</version>
+            <version>1.20.0</version>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
