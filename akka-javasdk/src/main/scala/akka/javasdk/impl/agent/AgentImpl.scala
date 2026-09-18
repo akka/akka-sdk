@@ -23,6 +23,7 @@ import scala.util.control.NonFatal
 
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
+import akka.http.javadsl.model.{ HttpHeader => JavaHttpHeader }
 import akka.http.scaladsl.model.HttpHeader
 import akka.javasdk.CommandException
 import akka.javasdk.DependencyProvider
@@ -179,13 +180,56 @@ private[impl] object AgentImpl {
       .get
   }
 
+  /**
+   * The extra model request headers a provider already carries. A `Custom` provider builds its own chat model and
+   * carries none.
+   */
+  private def additionalModelRequestHeaders(modelProvider: ModelProvider): Seq[JavaHttpHeader] = {
+    val headers = modelProvider match {
+      case p: ModelProvider.Anthropic      => p.additionalModelRequestHeaders()
+      case p: ModelProvider.GoogleAIGemini => p.additionalModelRequestHeaders()
+      case p: ModelProvider.HuggingFace    => p.additionalModelRequestHeaders()
+      case p: ModelProvider.LocalAI        => p.additionalModelRequestHeaders()
+      case p: ModelProvider.Ollama         => p.additionalModelRequestHeaders()
+      case p: ModelProvider.OpenAi         => p.additionalModelRequestHeaders()
+      case p: ModelProvider.AzureOpenAi    => p.additionalModelRequestHeaders()
+      case p: ModelProvider.VertexAi       => p.additionalModelRequestHeaders()
+      case p: ModelProvider.Bedrock        => p.additionalModelRequestHeaders()
+      case p: ModelProvider.MistralAi      => p.additionalModelRequestHeaders()
+      case p: ModelProvider.FromConfig     => p.additionalModelRequestHeaders()
+      case _: ModelProvider.Custom         => java.util.List.of[JavaHttpHeader]()
+    }
+    headers.asScala.toSeq
+  }
+
+  /**
+   * Adds the headers stated in code to the ones the configured provider carries. A name stated in both keeps only the
+   * value from code, because the runtime appends these headers to the request without removing duplicates. HTTP header
+   * names are case-insensitive, so compare them that way.
+   */
+  private[impl] def mergeAdditionalModelRequestHeaders(
+      configured: Seq[JavaHttpHeader],
+      statedInCode: Seq[JavaHttpHeader]): Seq[JavaHttpHeader] =
+    if (statedInCode.isEmpty) configured
+    else {
+      val statedNames = statedInCode.map(_.lowercaseName()).toSet
+      configured.filterNot(h => statedNames(h.lowercaseName())) ++ statedInCode
+    }
+
   @tailrec
   @nowarn("msg=deprecated")
   private[impl] def toSpiModelProvider(modelProvider: ModelProvider, config: Config, componentId: String)(implicit
       system: ActorSystem[_]): SpiAgent.ModelProvider = {
     modelProvider match {
       case p: ModelProvider.FromConfig =>
-        toSpiModelProvider(modelProviderFromConfig(config, p.configPath(), componentId), config, componentId)
+        val resolved = modelProviderFromConfig(config, p.configPath(), componentId)
+        val statedInCode = p.additionalModelRequestHeaders().asScala.toSeq
+        val withHeaders =
+          if (statedInCode.isEmpty) resolved
+          else
+            resolved.withAdditionalModelRequestHeaders(
+              mergeAdditionalModelRequestHeaders(additionalModelRequestHeaders(resolved), statedInCode).asJava)
+        toSpiModelProvider(withHeaders, config, componentId)
       case p: ModelProvider.Anthropic =>
         new SpiAgent.ModelProvider.Anthropic(
           apiKey = p.apiKey,
