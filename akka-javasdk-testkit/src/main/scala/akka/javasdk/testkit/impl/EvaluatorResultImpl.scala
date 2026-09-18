@@ -4,8 +4,6 @@
 
 package akka.javasdk.testkit.impl
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
@@ -18,36 +16,12 @@ import akka.javasdk.testkit.EvaluatorResult
  * INTERNAL API
  */
 @InternalApi
-private[testkit] object EvaluatorResultImpl {
-  private val DefaultTimeout = 10.seconds
-}
-
-/**
- * INTERNAL API
- */
-@InternalApi
 private[testkit] final class EvaluatorResultImpl(effect: EvaluatorEffectImpl.PrimaryEffect) extends EvaluatorResult {
-  import EvaluatorResultImpl.DefaultTimeout
-
   def this(effect: Evaluator.Effect) = this(effect.asInstanceOf[EvaluatorEffectImpl.PrimaryEffect])
 
-  private val async: Boolean = effect.isInstanceOf[EvaluatorEffectImpl.AsyncEffect]
+  override def isComplete(): Boolean = effect.isInstanceOf[EvaluatorEffectImpl.CompleteEffect]
 
-  // resolve any async effects to a terminal complete/inconclusive
-  private val terminal: EvaluatorEffectImpl.PrimaryEffect = resolve(effect)
-
-  private def resolve(effect: EvaluatorEffectImpl.PrimaryEffect): EvaluatorEffectImpl.PrimaryEffect =
-    effect match {
-      case EvaluatorEffectImpl.AsyncEffect(future) =>
-        resolve(Await.result(future, DefaultTimeout).asInstanceOf[EvaluatorEffectImpl.PrimaryEffect])
-      case other => other
-    }
-
-  override def isAsync(): Boolean = async
-
-  override def isComplete(): Boolean = terminal.isInstanceOf[EvaluatorEffectImpl.CompleteEffect]
-
-  override def isInconclusive(): Boolean = terminal.isInstanceOf[EvaluatorEffectImpl.InconclusiveEffect]
+  override def isInconclusive(): Boolean = effect.isInstanceOf[EvaluatorEffectImpl.InconclusiveEffect]
 
   override def getEvaluations(): java.util.List[Evaluation] =
     getEffectOfType(classOf[EvaluatorEffectImpl.CompleteEffect]).evaluations.asJava
@@ -56,9 +30,9 @@ private[testkit] final class EvaluatorResultImpl(effect: EvaluatorEffectImpl.Pri
     getEffectOfType(classOf[EvaluatorEffectImpl.InconclusiveEffect]).reason
 
   private def getEffectOfType[E](expectedClass: Class[E]): E = {
-    if (expectedClass.isInstance(terminal)) terminal.asInstanceOf[E]
+    if (expectedClass.isInstance(effect)) effect.asInstanceOf[E]
     else
       throw new NoSuchElementException(
-        "expected effect type [" + expectedClass.getName + "] but found [" + terminal.getClass.getName + "]")
+        "expected effect type [" + expectedClass.getName + "] but found [" + effect.getClass.getName + "]")
   }
 }

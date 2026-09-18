@@ -16,18 +16,18 @@ import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.evaluation.EvaluationContext
 import akka.javasdk.evaluation.Subject
-import akka.javasdk.evaluation.WorkflowEvaluator
+import akka.javasdk.evaluation.DurableEvaluator
 import akka.javasdk.impl.ErrorHandling
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorEffects.CompleteTransition
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorEffects.EffectImpl
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorEffects.InconclusiveTransition
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorEffects.NoPersistence
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorEffects.StepTransition
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorEffects.UpdateState
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.EvaluationData
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.Outcome
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.StateEnvelope
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorProtocol.TriggerSource
+import akka.javasdk.impl.evaluation.DurableEvaluatorEffects.CompleteTransition
+import akka.javasdk.impl.evaluation.DurableEvaluatorEffects.EffectImpl
+import akka.javasdk.impl.evaluation.DurableEvaluatorEffects.InconclusiveTransition
+import akka.javasdk.impl.evaluation.DurableEvaluatorEffects.NoPersistence
+import akka.javasdk.impl.evaluation.DurableEvaluatorEffects.StepTransition
+import akka.javasdk.impl.evaluation.DurableEvaluatorEffects.UpdateState
+import akka.javasdk.impl.evaluation.DurableEvaluatorProtocol.EvaluationData
+import akka.javasdk.impl.evaluation.DurableEvaluatorProtocol.Outcome
+import akka.javasdk.impl.evaluation.DurableEvaluatorProtocol.StateEnvelope
+import akka.javasdk.impl.evaluation.DurableEvaluatorProtocol.TriggerSource
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.workflow.WorkflowDescriptor
 import akka.runtime.sdk.spi.BytesPayload
@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] object WorkflowEvaluatorImpl {
+private[javasdk] object DurableEvaluatorImpl {
 
   /**
    * Built-in final step: records the evaluation outcome with the runtime and deletes the instance. Also, the failover
@@ -89,12 +89,12 @@ private[javasdk] object WorkflowEvaluatorImpl {
 /**
  * INTERNAL API
  *
- * Adapts a user [[WorkflowEvaluator]] to the [[SpiWorkflowEvaluator]] expected by the runtime. The evaluator is hosted
+ * Adapts a user [[DurableEvaluator]] to the [[SpiWorkflowEvaluator]] expected by the runtime. The evaluator is hosted
  * as a workflow — one instance per evaluation, started by the runtime with the structured trigger — with a built-in
  * final step that records the outcome and deletes the instance.
  */
 @InternalApi
-private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]](
+private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
     workflowId: String,
     evaluatorClass: Class[E],
     stateClass: Class[S],
@@ -104,12 +104,12 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
     sdkExecutionContext: ExecutionContext)
     extends SpiWorkflowEvaluator {
 
-  import WorkflowEvaluatorImpl._
+  import DurableEvaluatorImpl._
 
   private val log = LoggerFactory.getLogger(evaluatorClass)
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
 
-  // step methods: zero or one arg methods returning WorkflowEvaluator.Effect, defined in the
+  // step methods: zero or one arg methods returning DurableEvaluator.Effect, defined in the
   // evaluator class or inherited (onEvaluation is the built-in entry point, not a step)
   private val stepMethods: Map[String, Method] = {
     def allMethods(c: Class[_]): Seq[Method] =
@@ -118,7 +118,7 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
 
     allMethods(evaluatorClass)
       .filter { m =>
-        m.getReturnType == classOf[WorkflowEvaluator.Effect] &&
+        m.getReturnType == classOf[DurableEvaluator.Effect] &&
         m.getParameterCount <= 1 &&
         !m.isSynthetic &&
         m.getName != "onEvaluation"
@@ -197,8 +197,8 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
     // there are no user-defined command handlers
     Future.failed(
       new IllegalArgumentException(
-        s"Unexpected command [${command.name}] for WorkflowEvaluator [${evaluatorClass.getName}], " +
-        "a workflow evaluator does not accept commands"))
+        s"Unexpected command [${command.name}] for DurableEvaluator [${evaluatorClass.getName}], " +
+        "a durable evaluator does not accept commands"))
 
   override def invokeStep(
       userState: Option[BytesPayload],
@@ -214,7 +214,7 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
       val stepMethod = stepMethods.getOrElse(
         stepCommand.stepName,
         throw new IllegalArgumentException(
-          s"Step [${stepCommand.stepName}] not found in WorkflowEvaluator [${evaluatorClass.getName}], " +
+          s"Step [${stepCommand.stepName}] not found in DurableEvaluator [${evaluatorClass.getName}], " +
           s"known steps: [${stepMethods.keys.mkString(", ")}]"))
 
       Future {
@@ -276,12 +276,12 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
       Option(data.label()),
       data.attributes().asScala.toMap)
 
-  private def invokeStepMethod(method: Method, evaluator: E, input: Option[Any]): WorkflowEvaluator.Effect =
+  private def invokeStepMethod(method: Method, evaluator: E, input: Option[Any]): DurableEvaluator.Effect =
     try {
       method.setAccessible(true)
       input match {
-        case Some(value) => method.invoke(evaluator, value.asInstanceOf[AnyRef]).asInstanceOf[WorkflowEvaluator.Effect]
-        case None        => method.invoke(evaluator).asInstanceOf[WorkflowEvaluator.Effect]
+        case Some(value) => method.invoke(evaluator, value.asInstanceOf[AnyRef]).asInstanceOf[DurableEvaluator.Effect]
+        case None        => method.invoke(evaluator).asInstanceOf[DurableEvaluator.Effect]
       }
     } catch {
       case e: java.lang.reflect.InvocationTargetException =>
@@ -289,7 +289,7 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
     }
 
   private def toSpiPersistence(
-      persistence: WorkflowEvaluatorEffects.Persistence[Any],
+      persistence: DurableEvaluatorEffects.Persistence[Any],
       triggerSource: TriggerSource,
       subject: Subject): SpiWorkflow.Persistence =
     persistence match {
@@ -311,12 +311,12 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
     new SpiWorkflow.UpdateState(serializer.toBytes(envelope))
   }
 
-  private def toSpiTransition(transition: WorkflowEvaluatorEffects.Transition): SpiWorkflow.Transition =
+  private def toSpiTransition(transition: DurableEvaluatorEffects.Transition): SpiWorkflow.Transition =
     transition match {
       case StepTransition(stepName, input, declaringClass) =>
         if (!declaringClass.isAssignableFrom(evaluatorClass)) {
           throw new IllegalArgumentException(
-            s"WorkflowEvaluator [${evaluatorClass.getName}] transitions to step [$stepName] from another class " +
+            s"DurableEvaluator [${evaluatorClass.getName}] transitions to step [$stepName] from another class " +
             s"[${declaringClass.getName}], which is not allowed.")
         }
         new SpiWorkflow.StepTransition(stepName, input.map(serializer.toBytes))
@@ -343,11 +343,11 @@ private[javasdk] final class WorkflowEvaluatorImpl[S, E <: WorkflowEvaluator[S]]
       stepName: String,
       input: Option[BytesPayload],
       userState: Option[BytesPayload]): Future[BytesPayload] =
-    Future.failed(new UnsupportedOperationException(s"executeStep is not supported for WorkflowEvaluator"))
+    Future.failed(new UnsupportedOperationException(s"executeStep is not supported for DurableEvaluator"))
 
   override def transition(
       stepName: String,
       result: Option[BytesPayload],
       userState: Option[BytesPayload]): Future[SpiWorkflow.TransitionalOnlyEffect] =
-    Future.failed(new UnsupportedOperationException(s"transition is not supported for WorkflowEvaluator"))
+    Future.failed(new UnsupportedOperationException(s"transition is not supported for DurableEvaluator"))
 }

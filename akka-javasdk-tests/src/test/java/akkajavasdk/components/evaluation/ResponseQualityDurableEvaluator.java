@@ -8,20 +8,20 @@ import static java.time.Duration.ofSeconds;
 
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.evaluation.DurableEvaluator;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
-import akka.javasdk.evaluation.WorkflowEvaluator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A workflow evaluator running a multi-step evaluation: fetch the transcript in one step, judge it
+ * A durable evaluator running a multi-step evaluation: fetch the transcript in one step, judge it
  * with an LLM-as-judge agent in another, and complete with the verdict. Driven by the runtime for
  * each interaction of the agents it is bound to.
  */
-@Component(id = "response-quality-workflow-evaluator")
-public class ResponseQualityWorkflowEvaluator
-    extends WorkflowEvaluator<ResponseQualityWorkflowEvaluator.State> {
+@Component(id = "response-quality-durable-evaluator")
+public class ResponseQualityDurableEvaluator
+    extends DurableEvaluator<ResponseQualityDurableEvaluator.State> {
 
   public record State(String transcript) {}
 
@@ -42,7 +42,7 @@ public class ResponseQualityWorkflowEvaluator
 
   private final ComponentClient componentClient;
 
-  public ResponseQualityWorkflowEvaluator(ComponentClient componentClient) {
+  public ResponseQualityDurableEvaluator(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 
@@ -56,7 +56,7 @@ public class ResponseQualityWorkflowEvaluator
 
   @Override
   public Effect onEvaluation(EvaluationContext context) {
-    return effects().transitionTo(ResponseQualityWorkflowEvaluator::fetchTranscript);
+    return effects().transitionTo(ResponseQualityDurableEvaluator::fetchTranscript);
   }
 
   private Effect fetchTranscript() {
@@ -66,7 +66,7 @@ public class ResponseQualityWorkflowEvaluator
         "interaction " + subject.interactionId() + " of agent " + subject.agentComponentId();
     return effects()
         .updateState(new State(transcript))
-        .transitionTo(ResponseQualityWorkflowEvaluator::judge);
+        .transitionTo(ResponseQualityDurableEvaluator::judge);
   }
 
   private Effect judge() {

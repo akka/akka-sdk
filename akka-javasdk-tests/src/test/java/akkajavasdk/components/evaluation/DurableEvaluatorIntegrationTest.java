@@ -21,9 +21,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * Integration test of the full workflow-evaluator flow: an agent interaction (agent model stubbed
+ * Integration test of the full durable-evaluator flow: an agent interaction (agent model stubbed
  * with {@link TestModelProvider}) fires a trigger for the bound {@link
- * ResponseQualityWorkflowEvaluator}, which runs its evaluation as a workflow — fetching the
+ * ResponseQualityDurableEvaluator}, which runs its evaluation in durable steps — fetching the
  * transcript in one step and judging it with an LLM-as-judge agent (also stubbed) in another —
  * until the verdict is recorded.
  *
@@ -32,7 +32,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * runtime.
  */
 @ExtendWith(Junit5LogCapturing.class)
-public class WorkflowEvaluatorIntegrationTest extends TestKitSupport {
+public class DurableEvaluatorIntegrationTest extends TestKitSupport {
 
   private final TestModelProvider agentModel = new TestModelProvider();
   private final TestModelProvider judgeModel = new TestModelProvider();
@@ -44,7 +44,7 @@ public class WorkflowEvaluatorIntegrationTest extends TestKitSupport {
         .withModelProvider(QualityJudge.class, judgeModel)
         .withAdditionalConfig(
             """
-            akka.javasdk.evaluation.evaluators.response-quality-workflow-evaluator {
+            akka.javasdk.evaluation.evaluators.response-quality-durable-evaluator {
               agents {
                 wf-evaluated-agent { trigger = interaction }
               }
@@ -54,7 +54,7 @@ public class WorkflowEvaluatorIntegrationTest extends TestKitSupport {
 
   @BeforeEach
   public void beforeEach() {
-    ResponseQualityWorkflowEvaluator.clearEvaluationIds();
+    ResponseQualityDurableEvaluator.clearEvaluationIds();
   }
 
   @AfterEach
@@ -82,7 +82,7 @@ public class WorkflowEvaluatorIntegrationTest extends TestKitSupport {
 
     EvaluationRecord record = awaitRecordedEvaluation();
 
-    assertThat(record.evaluatorComponentId()).isEqualTo("response-quality-workflow-evaluator");
+    assertThat(record.evaluatorComponentId()).isEqualTo("response-quality-durable-evaluator");
     assertThat(record.agentComponentId()).isEqualTo("wf-evaluated-agent");
     assertThat(record.interactionId()).isNotBlank();
     assertThat(record.trigger()).isEqualTo(EvaluationRecord.Trigger.ON_INTERACTION);
@@ -129,9 +129,9 @@ public class WorkflowEvaluatorIntegrationTest extends TestKitSupport {
     Awaitility.await()
         .atMost(30, TimeUnit.SECONDS)
         .untilAsserted(
-            () -> assertThat(ResponseQualityWorkflowEvaluator.evaluationIds()).hasSize(1));
+            () -> assertThat(ResponseQualityDurableEvaluator.evaluationIds()).hasSize(1));
 
-    String evaluationId = ResponseQualityWorkflowEvaluator.evaluationIds().iterator().next();
+    String evaluationId = ResponseQualityDurableEvaluator.evaluationIds().iterator().next();
 
     return Awaitility.await()
         .atMost(30, TimeUnit.SECONDS)

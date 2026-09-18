@@ -8,13 +8,12 @@ import akka.javasdk.annotations.Component;
 import java.time.Duration;
 
 /**
- * Example workflow evaluator used to validate the API ergonomics and drive the unit test: a
+ * Example durable evaluator used to validate the API ergonomics and drive the unit test: a
  * multi-step evaluation that fetches the transcript, then judges it, and finishes with a verdict or
  * an inconclusive report.
  */
 @Component(id = "transcript-quality-evaluator")
-public class TranscriptQualityEvaluator
-    extends WorkflowEvaluator<TranscriptQualityEvaluator.State> {
+public class TranscriptQualityEvaluator extends DurableEvaluator<TranscriptQualityEvaluator.State> {
 
   public record State(String transcript) {}
 

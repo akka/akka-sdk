@@ -62,7 +62,7 @@ import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.evaluation.Evaluator
-import akka.javasdk.evaluation.WorkflowEvaluator
+import akka.javasdk.evaluation.DurableEvaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.grpc.AbstractGrpcEndpoint
@@ -94,7 +94,7 @@ import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.consumer.MessageContextImpl
 import akka.javasdk.impl.evaluation.EvaluatorImpl
 import akka.javasdk.impl.evaluation.EvaluatorSettings
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorImpl
+import akka.javasdk.impl.evaluation.DurableEvaluatorImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
@@ -458,7 +458,7 @@ private object ComponentType {
   val Agent = "agent"
   val AutonomousAgent = "autonomous-agent"
   val Evaluator = "evaluator"
-  val WorkflowEvaluator = "workflow-evaluator"
+  val DurableEvaluator = "durable-evaluator"
 }
 
 /**
@@ -758,7 +758,7 @@ private final class Sdk(
   private var agentDescriptors = Vector.empty[AgentDescriptor]
   private var autonomousAgentDescriptors = Vector.empty[AutonomousAgentDescriptor]
   private var evaluatorDescriptors = Vector.empty[EvaluatorDescriptor]
-  private var workflowEvaluatorDescriptors = Vector.empty[WorkflowEvaluatorDescriptor]
+  private var durableEvaluatorDescriptors = Vector.empty[WorkflowEvaluatorDescriptor]
   // Populated during scanning: componentId → (agentDefinition, spiTaskDefinitions)
   // Used by delegation wiring inside instanceFactory (called lazily after all agents registered)
   private var autonomousAgentDefinitionMap =
@@ -1196,8 +1196,7 @@ private final class Sdk(
             // the runtime sets OTel baggage akka.evaluation.id around evaluate, so the wired
             // ComponentClient inherits it from the ambient context for judge-call correlation
             () => wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(None, callerSpiffe)),
-            evaluatorClass,
-            sdkExecutionContext)
+            evaluatorClass)
         }
 
         evaluatorDescriptors :+=
@@ -1210,30 +1209,29 @@ private final class Sdk(
             instanceFactory = instanceFactory,
             provided = isProvided(clz))
 
-      case clz if Reflect.isWorkflowEvaluator(clz) =>
+      case clz if Reflect.isDurableEvaluator(clz) =>
         val componentId = Reflect.readComponentId(clz)
-        val evaluatorClass = clz.asInstanceOf[Class[WorkflowEvaluator[Nothing]]]
-        val stateType = Reflect.workflowEvaluatorStateType(clz).asInstanceOf[Class[Nothing]]
+        val evaluatorClass = clz.asInstanceOf[Class[DurableEvaluator[Nothing]]]
+        val stateType = Reflect.durableEvaluatorStateType(clz).asInstanceOf[Class[Nothing]]
         serializer.registerTypeHints(stateType)
 
-        val workflowEvaluatorBindings = EvaluatorSettings.agentBindings(applicationConfig, componentId)
+        val durableEvaluatorBindings = EvaluatorSettings.agentBindings(applicationConfig, componentId)
 
-        workflowEvaluatorDescriptors :+=
+        durableEvaluatorDescriptors :+=
           new WorkflowEvaluatorDescriptor(
             componentId,
             clz.getName,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            bindings = workflowEvaluatorBindings,
+            bindings = durableEvaluatorBindings,
             instanceFactory = { factoryContext =>
               val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
-              new WorkflowEvaluatorImpl[Nothing, WorkflowEvaluator[Nothing]](
+              new DurableEvaluatorImpl[Nothing, DurableEvaluator[Nothing]](
                 factoryContext.evaluationId,
                 evaluatorClass,
                 stateType,
                 () =>
-                  wiredInstance("Workflow Evaluator", evaluatorClass)(
-                    sideEffectingComponentInjects(None, callerSpiffe)),
+                  wiredInstance("Durable Evaluator", evaluatorClass)(sideEffectingComponentInjects(None, callerSpiffe)),
                 factoryContext.recorder,
                 serializer,
                 sdkExecutionContext)
@@ -1336,7 +1334,7 @@ private final class Sdk(
         agentDescriptors ++
         autonomousAgentDescriptors ++
         evaluatorDescriptors ++
-        workflowEvaluatorDescriptors ++
+        durableEvaluatorDescriptors ++
         mcpEndpoints)
         .filterNot(isDisabled(combinedDisabledComponents))
 

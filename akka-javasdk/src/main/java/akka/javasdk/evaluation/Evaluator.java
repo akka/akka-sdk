@@ -6,7 +6,6 @@ package akka.javasdk.evaluation;
 
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl;
 import java.util.List;
-import java.util.concurrent.CompletionStage;
 
 /**
  * An Evaluator is a stateless component that evaluates agent interactions.
@@ -15,12 +14,11 @@ import java.util.concurrent.CompletionStage;
  * akka.javasdk.evaluation.evaluators}, keyed by the evaluator's component id. The runtime invokes
  * {@link #evaluate(EvaluationContext)} for each interaction of a bound agent, passing an {@link
  * EvaluationContext} that identifies the interaction to evaluate. The handler returns an {@link
- * Effect} describing the outcome — the recorded evaluations, an inconclusive result, or an
- * asynchronous continuation.
+ * Effect} describing the outcome — the recorded evaluations or an inconclusive result.
  *
- * <p>Blocking calls made from {@link #evaluate(EvaluationContext)} run on virtual threads. For
- * durable multi-step evaluation, delegate to a workflow and return {@link
- * Effect.Builder#asyncEffect(CompletionStage)}.
+ * <p>Blocking calls made from {@link #evaluate(EvaluationContext)} run on virtual threads. For an
+ * evaluation that runs in several steps and must survive restarts, extend {@link DurableEvaluator}
+ * instead.
  *
  * <p>Concrete classes can accept the following types to the constructor:
  *
@@ -59,7 +57,6 @@ public abstract class Evaluator {
    * <ul>
    *   <li>complete with one or more {@link Evaluation}s (the verdict)
    *   <li>report that the evaluation was inconclusive — it ran but reached no verdict
-   *   <li>continue asynchronously from a {@link CompletionStage} of another effect
    * </ul>
    */
   public interface Effect {
@@ -97,14 +94,6 @@ public abstract class Evaluator {
        * @return the inconclusive effect
        */
       Effect inconclusive(String reason);
-
-      /**
-       * Continue the evaluation asynchronously from the result of the given stage.
-       *
-       * @param futureEffect the future effect to continue with
-       * @return the async effect
-       */
-      Effect asyncEffect(CompletionStage<Effect> futureEffect);
     }
   }
 }

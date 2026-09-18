@@ -35,7 +35,7 @@ import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.evaluation.Evaluator
-import akka.javasdk.evaluation.WorkflowEvaluator
+import akka.javasdk.evaluation.DurableEvaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.client.ComponentClientImpl
@@ -172,8 +172,8 @@ private[impl] object Reflect {
   def isEvaluator(cls: Class[_]): Boolean =
     classOf[Evaluator].isAssignableFrom(cls)
 
-  def isWorkflowEvaluator(cls: Class[_]): Boolean =
-    classOf[WorkflowEvaluator[_]].isAssignableFrom(cls)
+  def isDurableEvaluator(cls: Class[_]): Boolean =
+    classOf[DurableEvaluator[_]].isAssignableFrom(cls)
 
   def isToolCandidate(cls: Class[_]): Boolean =
     isEventSourcedEntity(cls) ||
@@ -299,11 +299,11 @@ private[impl] object Reflect {
     findSingleTypeParam(component, classOf[Workflow[_]], s"Cannot find workflow state class for $component")
   }
 
-  def workflowEvaluatorStateType(component: Class[_]): Class[_] = {
+  def durableEvaluatorStateType(component: Class[_]): Class[_] = {
     findSingleTypeParam(
       component,
-      classOf[WorkflowEvaluator[_]],
-      s"Cannot find workflow evaluator state class for $component")
+      classOf[DurableEvaluator[_]],
+      s"Cannot find durable evaluator state class for $component")
   }
 
   def workflowKnownInputTypes(clz: Class[_]): List[Class[_]] = {

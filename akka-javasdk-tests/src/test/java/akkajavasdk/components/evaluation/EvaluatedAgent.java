@@ -8,13 +8,13 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.Component;
 
 /**
- * A simple agent whose interactions are evaluated by {@link ResponseQualityWorkflowEvaluator},
- * bound through configuration in the workflow-evaluator integration test.
+ * A simple agent whose interactions are evaluated by {@link ResponseQualityDurableEvaluator}, bound
+ * through configuration in the durable-evaluator integration test.
  */
 @Component(
     id = "wf-evaluated-agent",
     name = "Evaluated Agent",
-    description = "A support agent whose responses are evaluated by a workflow evaluator.")
+    description = "A support agent whose responses are evaluated by a durable evaluator.")
 public class EvaluatedAgent extends Agent {
 
   public Effect<String> ask(String question) {

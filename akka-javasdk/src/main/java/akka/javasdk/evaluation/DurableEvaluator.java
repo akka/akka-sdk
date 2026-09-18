@@ -5,21 +5,21 @@
 package akka.javasdk.evaluation;
 
 import akka.annotation.InternalApi;
-import akka.javasdk.impl.evaluation.WorkflowEvaluatorEffects;
+import akka.javasdk.impl.evaluation.DurableEvaluatorEffects;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * A WorkflowEvaluator is a stateful, durable component that evaluates agent interactions in
- * multiple steps.
+ * A DurableEvaluator is a stateful component that evaluates agent interactions in multiple steps,
+ * with durable execution across those steps.
  *
- * <p>Use a WorkflowEvaluator instead of an {@link Evaluator} when the evaluation is long-running or
+ * <p>Use a DurableEvaluator instead of an {@link Evaluator} when the evaluation is long-running or
  * needs durable, multi-step execution — for example composed evaluations that accumulate state
  * across several judge calls, or evaluations that wait on human review. Each evaluation runs as its
  * own durable instance: if it is stopped for any reason, it resumes from the last completed step.
  *
- * <p>Like an {@link Evaluator}, a WorkflowEvaluator is bound to one or more agents through
+ * <p>Like an {@link Evaluator}, a DurableEvaluator is bound to one or more agents through
  * configuration under {@code akka.javasdk.evaluation.evaluators}, keyed by the evaluator's
  * component id. The runtime invokes {@link #onEvaluation(EvaluationContext)} for each interaction
  * of a bound agent. The evaluation then progresses through steps — methods returning {@link Effect}
@@ -43,7 +43,7 @@ import java.util.Optional;
  *
  * @param <S> The type of the state accumulated across the steps of this evaluation.
  */
-public abstract class WorkflowEvaluator<S> {
+public abstract class DurableEvaluator<S> {
 
   private Optional<S> currentState = Optional.empty();
   private Optional<EvaluationContext> evaluationContext = Optional.empty();
@@ -102,7 +102,7 @@ public abstract class WorkflowEvaluator<S> {
    * Returns a builder for the {@link Effect} returned by {@link #onEvaluation} and step methods.
    */
   protected final Effect.Builder<S> effects() {
-    return WorkflowEvaluatorEffects.createBuilder();
+    return DurableEvaluatorEffects.createBuilder();
   }
 
   /** Override to configure timeouts and retries for this evaluator. */
@@ -258,7 +258,7 @@ public abstract class WorkflowEvaluator<S> {
   }
 
   /**
-   * Settings for a workflow evaluator. Unset values fall back to the runtime defaults.
+   * Settings for a durable evaluator. Unset values fall back to the runtime defaults.
    *
    * <p>Failures are always terminal: when a step exhausts its retries, or the evaluation timeout
    * expires, a failed evaluation is recorded and the instance is cleaned up.
