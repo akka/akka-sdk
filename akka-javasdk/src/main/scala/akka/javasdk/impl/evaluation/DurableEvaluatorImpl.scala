@@ -14,9 +14,9 @@ import scala.jdk.OptionConverters.RichOptional
 
 import akka.Done
 import akka.annotation.InternalApi
+import akka.javasdk.evaluation.DurableEvaluator
 import akka.javasdk.evaluation.EvaluationContext
 import akka.javasdk.evaluation.Subject
-import akka.javasdk.evaluation.DurableEvaluator
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.evaluation.DurableEvaluatorEffects.CompleteTransition
 import akka.javasdk.impl.evaluation.DurableEvaluatorEffects.EffectImpl

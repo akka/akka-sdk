@@ -8,9 +8,9 @@ import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
 import akka.japi.function
-import akka.javasdk.evaluation.Evaluation
 import akka.javasdk.evaluation.DurableEvaluator.Effect
 import akka.javasdk.evaluation.DurableEvaluator.WithInput
+import akka.javasdk.evaluation.Evaluation
 import akka.javasdk.impl.client.MethodRefResolver
 import akka.javasdk.impl.workflow.WorkflowDescriptor
 
