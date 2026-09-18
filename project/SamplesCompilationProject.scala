@@ -12,7 +12,7 @@ import sbt.Test
 
 object SamplesCompilationProject {
 
-  private val LangChain4JVersion = "1.1.0"
+  private val LangChain4JVersion = "1.20.0"
   private val additionalDeps = Map(
     "doc-snippets" -> Seq("com.google.api.grpc" % "proto-google-common-protos" % "2.75.0" % "protobuf"),
     "spring-dependency-injection" -> Seq("org.springframework" % "spring-context" % "6.2.8"),
