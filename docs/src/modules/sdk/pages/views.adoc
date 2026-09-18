@@ -267,26 +267,92 @@ You may realize after a deployment that you forgot adding some parameters to the
 SELECT * FROM customers WHERE name = :customer_name AND is-active = true
 ----
 
+[#rebuild-checklist]
+=== Deciding if a change requires a View rebuild
 
-=== Incompatible changes
+Each row of a View table is stored as one JSON document. The View definitions are stored and validated when a new version is deployed. There will be an error message if the changes are not compatible. The stored definition consists of the table names and the data type of each field that a query filters, sorts, or groups on. Everything else can change without a rebuild.
 
-Some specific scenarios might require a complete rebuild of the View, for example:
+[cols="3,1"]
+|===
+| Change | Rebuild?
 
-* adding or removing tables for multi-table views;
-* changing the data type of a column that is part of an index.
+| Rename a table, or add or remove a table in a multi-table View
+| Required
 
-Such changes require you to define a new View. Akka will then rebuild it from the source event log or value changes.
+| Change the data type of a field that a query filters, sorts, or groups on
+| Required
 
-TIP: You should be able to test if a change is compatible locally by running the service with xref:sdk:running-locally.adoc#persistence-enabled[persistence mode enabled], producing some data, and then changing the View query and re-running the service. If the service boots up correctly and is able to serve the new query, the change is compatible.
+| Change which fields a query filters, sorts, or groups on
+| Not needed
 
-Rebuilding a new View may take some time if there are many events that have to be processed. The recommended way when changing a View is multi-step, with two deployments:
+| Add or remove a query
+| Not needed
+
+| Change the `TableUpdater` logic
+| Not needed
+
+| Add a field to the row type
+| Optional, see <<optional-rebuild>>
+
+| Remove a field from the row type
+| Optional, see <<optional-rebuild>>
+|===
+
+=== Changes that require a rebuild
+
+These changes make the new View definition incompatible with the data that is already stored. When you deploy such a change, Akka logs an error, keeps the stored data as it is, and fails all queries and updates for that View until you deploy a compatible definition. Follow the steps in <<rebuilding>> to replace the View.
+
+Renaming a table::
+The table name is part of the View identity. For a single table View the table name is taken from the `FROM` clause of the query, for a multi-table View it is declared with `@Table` on each `TableUpdater`. Renaming a table, or adding or removing a table in a multi-table View, makes the deployed View incompatible with the stored one, even if nothing else changes.
+
+Changing the data type of a queried field::
+If a query filters, sorts, or groups on a field, for example `age`, and the new row type declares that field with a different type, for example `int` to `String`, the stored index for that field can no longer be read.
++
+The stored definition keeps every field that a query in this or any previously deployed version of the View has used. Removing the field from all queries first, and changing its type in a later deployment, is still incompatible. Akka does not check the type of fields that no query has ever used, but the stored JSON documents must still deserialize into the new row type. Avoid changing the type of a field altogether. Add a new field with a new name and the new type, and remove the old field, as described in xref:sdk:serialization.adoc#_schema_evolution[Schema evolution].
+
+[#optional-rebuild]
+=== Changes where a rebuild is optional
+
+Adding a field to the row type::
+The whole row is stored as one JSON document, so a new field is compatible with the stored rows. Existing rows do not have a value for the field until they are updated again. Reading such a row gives the default value for the field, `null` for reference types. To populate the field from historical entity data, rebuild the View.
+
+Removing a field from the row type::
+Removing a field is compatible with the stored rows. The removed data stays in the JSON document of a row until the next update of that row. An update writes the whole row from the row type, which drops the removed field. Rows that are never updated again keep the removed data in the database. For primitive values the extra space is small, but for nested structures it can add up. A rebuild removes the unused data from all rows.
++
+A query that still filters, sorts, or groups on the removed field is an error. The service fails to start with a query parse error for the View. Update or remove the query in the same change.
+
+=== Changes that do not require a rebuild
+
+Akka updates indexes in place for these changes and keeps serving queries through the deployment.
+
+Changing which fields a query filters, sorts, or groups on::
+Adding, removing, or replacing the fields a query filters, sorts, or groups on is compatible. Akka drops the index that is no longer needed and builds the new one, without touching the stored rows.
+
+Adding or removing queries::
+A new query method against the same table, or removing a query that is no longer needed, is compatible.
+
+Changing the `TableUpdater` logic::
+How the `TableUpdater` maps events or state changes into a row is not part of the compatibility check.
+
+Changes elsewhere in the service::
+The compatibility check covers one View and its tables. Changes to other components in the service never affect it.
+
+[NOTE]
+====
+Running locally with xref:sdk:running-locally.adoc#persistence-enabled[persistence enabled] uses an H2 database, which stores each field of the row type as a separate column instead of one JSON document per row. The compatibility check is stricter in that mode: adding or removing any field of the row type is reported as incompatible, while it is compatible in a deployed service. A View that starts and serves queries locally after a change is compatible when deployed. A compatibility error locally does not mean that the change is incompatible when deployed. Use the table above to decide, or delete the local database file and restart.
+====
+
+[#rebuilding]
+=== Rebuilding a View
+
+To rebuild a View, define a new View with a new `@Component` identifier. Akka builds it from the source event log or state changes.
+
+Rebuilding a View may take some time if there are many events that have to be processed. The recommended way is multi-step, with two deployments:
 
 . Define the new View with a new `@Component`, and keep the old View intact.
 . Deploy the new View, and let it rebuild. Verify that the new query works as expected. The old View can still be used.
 . Remove the old View and redirect the endpoint calls to the new View.
 . Deploy the second change.
-
-The View definitions are stored and validated when a new version is deployed. There will be an error message if the changes are not compatible.
 
 WARNING: Views from topics cannot be rebuilt from the source messages, because it might not be possible to consume all events from the topic again. The new View is built from new messages published to the topic.
 
