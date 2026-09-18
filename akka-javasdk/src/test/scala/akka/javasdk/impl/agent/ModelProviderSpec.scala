@@ -10,6 +10,7 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.javadsl.model.HttpHeader
 import akka.http.javadsl.model.headers.RawHeader
 import akka.javasdk.agent.ModelProvider
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -40,6 +41,12 @@ object ModelProviderSpec {
         gateway-openai {
           additional-model-request-headers = ["Authorization:Bearer configured-token"]
         }
+
+        anonymous-openai = $${akka.javasdk.agent.openai}
+        anonymous-openai {
+          additional-model-request-headers = ["Authorization:Bearer configured-token"]
+          identity-headers = off
+        }
       }
     }
 
@@ -48,10 +55,52 @@ object ModelProviderSpec {
       model-name = "gemini-2.5-flash"
     }
     """))
+
+  private val identityHeadersOffConfig =
+    ConfigFactory.load(ConfigFactory.parseString(s"""
+    akka.javasdk.agent {
+      model-provider = openai
+      identity-headers = off
+
+      gateway-openai = $${akka.javasdk.agent.openai}
+      gateway-openai {
+        additional-model-request-headers = ["Authorization:Bearer configured-token"]
+      }
+    }
+    """))
+
+  /**
+   * A provider kind, by the simple name of its `ModelProvider` type, the reference.conf section that configures it, and
+   * an instance built in code.
+   */
+  final case class ProviderKind(name: String, configSection: Option[String], provider: ModelProvider)
+
+  /**
+   * Every provider kind that reaches the runtime with model settings. Adding a kind without adding it here fails `cover
+   * every model provider kind`.
+   */
+  private val providersCarryingModelSettings: Seq[ProviderKind] = Seq(
+    ProviderKind("Anthropic", Some("anthropic"), ModelProvider.anthropic()),
+    ProviderKind("GoogleAIGemini", Some("googleai-gemini"), ModelProvider.googleAiGemini()),
+    ProviderKind("HuggingFace", Some("hugging-face"), ModelProvider.huggingFace()),
+    ProviderKind("Ollama", Some("ollama"), ModelProvider.ollama()),
+    ProviderKind("OpenAi", Some("openai"), ModelProvider.openAi()),
+    ProviderKind("AzureOpenAi", Some("azure-openai"), ModelProvider.azureOpenAi()),
+    ProviderKind("VertexAi", Some("vertex-ai"), ModelProvider.vertexAi()),
+    ProviderKind("Bedrock", Some("bedrock"), ModelProvider.bedrock()),
+    ProviderKind("MistralAi", Some("mistral-ai"), ModelProvider.mistralAi()))
+
+  /** The SPI has no model settings for these two, so they never carry the switch. */
+  private val providersWithoutModelSettings: Seq[ProviderKind] = Seq(
+    ProviderKind("LocalAI", Some("local-ai"), ModelProvider.localAI()),
+    ProviderKind("Custom", None, new NoConfigMyModelProvider()))
 }
 
 class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matchers {
   import ModelProviderSpec.config
+  import ModelProviderSpec.identityHeadersOffConfig
+  import ModelProviderSpec.providersCarryingModelSettings
+  import ModelProviderSpec.providersWithoutModelSettings
 
   private val defaultConfig = ConfigFactory.load()
 
@@ -293,6 +342,84 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
       val provider = new ModelProvider.FromConfig("gateway-openai")
       provider.additionalModelRequestHeaders() shouldBe empty
       spiHeaders(provider) shouldBe Seq("Authorization" -> "Bearer configured-token")
+    }
+  }
+
+  "Identity headers" should {
+
+    def identityHeaders(modelProvider: ModelProvider, cfg: Config): Boolean =
+      AgentImpl.toSpiModelProvider(modelProvider, cfg, "myagent").modelSettings.identityHeaders
+
+    "cover every model provider kind" in {
+      val permitted = classOf[ModelProvider].getPermittedSubclasses.map(_.getSimpleName).toSet
+      val covered =
+        (providersCarryingModelSettings ++ providersWithoutModelSettings).map(_.name).toSet + "FromConfig"
+      covered shouldBe permitted
+    }
+
+    "be on by default for every provider kind built in code" in {
+      providersCarryingModelSettings.foreach { kind =>
+        withClue(s"[${kind.name}] ") {
+          identityHeaders(kind.provider, config) shouldBe true
+        }
+      }
+    }
+
+    "be on by default for every provider kind named in config" in {
+      providersCarryingModelSettings.foreach { kind =>
+        withClue(s"[${kind.name}] ") {
+          identityHeaders(ModelProvider.fromConfig(kind.configSection.get), config) shouldBe true
+        }
+      }
+    }
+
+    "follow the global switch for a provider built in code" in {
+      providersCarryingModelSettings.foreach { kind =>
+        withClue(s"[${kind.name}] ") {
+          identityHeaders(kind.provider, identityHeadersOffConfig) shouldBe false
+        }
+      }
+    }
+
+    "follow the global switch for every provider kind named in config" in {
+      providersCarryingModelSettings.foreach { kind =>
+        withClue(s"[${kind.name}] ") {
+          identityHeaders(ModelProvider.fromConfig(kind.configSection.get), identityHeadersOffConfig) shouldBe false
+        }
+      }
+    }
+
+    "follow the global switch for a provider from config" in {
+      identityHeaders(ModelProvider.fromConfig("gateway-openai"), identityHeadersOffConfig) shouldBe false
+      identityHeaders(ModelProvider.fromConfig(""), identityHeadersOffConfig) shouldBe false
+    }
+
+    "keep the provider headers when the switch is off" in {
+      AgentImpl
+        .toSpiModelProvider(ModelProvider.fromConfig("gateway-openai"), identityHeadersOffConfig, "myagent")
+        .modelSettings
+        .additionalModelRequestHeaders
+        .map(h => h.name -> h.value) shouldBe Seq("Authorization" -> "Bearer configured-token")
+    }
+
+    "let the resolved section override the global switch" in {
+      identityHeaders(ModelProvider.fromConfig("anonymous-openai"), config) shouldBe false
+      // the same section reached through akka.javasdk.agent.model-provider
+      val cfg = ConfigFactory
+        .parseString("akka.javasdk.agent.model-provider = anonymous-openai")
+        .withFallback(config)
+        .resolve()
+      identityHeaders(ModelProvider.fromConfig(""), cfg) shouldBe false
+      // a sibling section is unaffected
+      identityHeaders(ModelProvider.fromConfig("gateway-openai"), config) shouldBe true
+    }
+
+    "never carry the switch for a provider without model settings" in {
+      providersWithoutModelSettings.foreach { kind =>
+        withClue(s"[${kind.name}] ") {
+          identityHeaders(kind.provider, config) shouldBe false
+        }
+      }
     }
   }
 
