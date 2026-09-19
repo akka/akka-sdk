@@ -11,7 +11,7 @@
 ****** xref:operations:technical-overview/azure.adoc[Azure]
 ****** xref:operations:technical-overview/gcp.adoc[GCP]
 ***** BYOK8s
-****** xref:operations:technical-overview/byok8s-requirements.adoc[Requirements]
+****** xref:operations:technical-overview/byok8s-requirements.adoc[Getting started]
 ****** xref:operations:technical-overview/byok8s-aws.adoc[AWS]
 ****** xref:operations:technical-overview/byok8s-azure.adoc[Azure]
 ****** xref:operations:technical-overview/byok8s-gcp.adoc[GCP]
