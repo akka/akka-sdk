@@ -13,8 +13,7 @@ This page covers running Akka Automated Operations (AAO) on AWS. For the archite
 Download link:../_attachments/whitepapers/aao-aws.pdf[this page as a PDF], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview].
 ====
 
-// DIAGRAM: recreated as a themed SVG from the original whitepaper AWS "hub and spoke" drawing. Flagged for creator review.
-image::operations:aao-aws-architecture.svg[AAO on AWS]
+image::operations:aao-aws-multitenant.png[AAO on AWS: multi-tenant architecture]
 
 == AWS resources
 
