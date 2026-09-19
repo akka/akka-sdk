@@ -30,6 +30,7 @@ Once the region is running, do not change any provisioned infrastructure without
 . *Akka smoke tests* — Akka attaches the region to the Federation Plane and runs smoke tests.
 . *Region handover* — Akka assigns the region to your organization. A production-labeled region is not fully handed over until you complete the xref:operations:production-readiness/byok8s/checklist.adoc[region-readiness steps].
 
+[#requirements]
 == Infrastructure requirements
 
 [cols="1,3", options="header"]
@@ -94,6 +95,7 @@ Database size is driven by total application data operations per second at peak 
 
 Akka reaches the cluster through Teleport, which uses ports 3023, 3024, and 3026 in addition to 443. Teleport is a certificate authority and identity-aware proxy; the non-standard ports segment traffic types, and the security boundary is mutual TLS rather than the port. The full egress hostname and IP allowlist (Teleport, console, Federation Plane, Control Tower, observability, and container registry endpoints) is on the xref:operations:technical-overview/data-flows.adoc[data flows] page.
 
+[#smoke-tests]
 == Customer smoke-testing checklist
 
 * Check connectivity between the database instance and the Kubernetes cluster.
@@ -102,10 +104,17 @@ Akka reaches the cluster through Teleport, which uses ports 3023, 3024, and 3026
 
 == Per-cloud notes
 
-The requirements above are cloud-agnostic. Each cloud adds a few specifics. The provisioning identity and resource inventory for each cloud are on the xref:operations:technical-overview/aws.adoc[AWS], xref:operations:technical-overview/azure.adoc[Azure], and xref:operations:technical-overview/gcp.adoc[GCP] pages.
+The requirements above are cloud-agnostic. A complete BYOK8s setup for one cloud has four parts, in order:
+
+. Meet the <<requirements,infrastructure requirements>> and pass the <<smoke-tests,smoke tests>> above.
+. Apply your cloud's specifics in its section below.
+. Provision the cloud resources listed on the cloud page (xref:operations:technical-overview/aws.adoc[AWS], xref:operations:technical-overview/azure.adoc[Azure], or xref:operations:technical-overview/gcp.adoc[GCP]).
+. Complete the xref:operations:production-readiness/byok8s/checklist.adoc[production-readiness checklist] before going live.
 
 [#aws]
 === AWS (EKS)
+
+Apply these AWS additions to the <<requirements,shared requirements>> above.
 
 *Route 53 records* — create these in your hosted zone (public or private):
 
@@ -124,12 +133,18 @@ The requirements above are cloud-agnostic. Each cloud adds a few specifics. The 
 * *RDS for PostgreSQL* — PostgreSQL 17, Multi-AZ, automatic minor upgrades and deletion protection; parameter group `rds.force_ssl = 1`. Because SSL is required, install the RDS CA bundle (`+https://truststore.pki.rds.amazonaws.com/<region>/<region>-bundle.pem+`) into the `kalix-system` and `kalix-management-system` namespaces.
 * *Database credentials* — use the external-secrets operator to mirror them from AWS Secrets Manager.
 
+*Next:* provision the AWS resources on the xref:operations:technical-overview/aws.adoc[AWS page], then complete the xref:operations:production-readiness/byok8s/checklist.adoc[production-readiness checklist].
+
 [#azure]
 === Azure (AKS)
 
-Register the resource providers and enable EncryptionAtHost as described on the xref:operations:technical-overview/azure.adoc[Azure page]. Use Azure Database for PostgreSQL flexible server for the database, and the Azure secrets-store CSI driver provider.
+Apply these Azure additions to the <<requirements,shared requirements>> above. Register the resource providers and enable EncryptionAtHost as described on the xref:operations:technical-overview/azure.adoc[Azure page]. Use Azure Database for PostgreSQL flexible server for the database, and the Azure secrets-store CSI driver provider.
+
+*Next:* provision the Azure resources on the xref:operations:technical-overview/azure.adoc[Azure page], then complete the xref:operations:production-readiness/byok8s/checklist.adoc[production-readiness checklist].
 
 [#gcp]
 === GCP (GKE)
 
-Use Cloud SQL for PostgreSQL for the database (reachable over private services access), Cloud DNS for the two subdomain zones, and the GCP secrets-store CSI driver provider. See the xref:operations:technical-overview/gcp.adoc[GCP page] for the identity model and resource inventory.
+Apply these GCP additions to the <<requirements,shared requirements>> above. Use Cloud SQL for PostgreSQL (reachable over private services access), Cloud DNS for the two subdomain zones, and the GCP secrets-store CSI driver provider.
+
+*Next:* provision the GCP resources on the xref:operations:technical-overview/gcp.adoc[GCP page], then complete the xref:operations:production-readiness/byok8s/checklist.adoc[production-readiness checklist].

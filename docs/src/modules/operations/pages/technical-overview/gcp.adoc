@@ -9,8 +9,7 @@ include::ROOT:partial$include.adoc[]
 // REVIEW: The prose GCP source doc was never completed (it is a deprecated work-in-progress
 // clone of the Azure doc). The resource inventory below is derived from the akka-bootstrap
 // modules/google Terraform module (v1.1.5). The exact IAM roles and bindings live in that module
-// and are intentionally not duplicated here (see the note on akka-bootstrap). Diagrams still to
-// be added. Tracked in issue #1792.
+// and are intentionally not duplicated here (see the note on akka-bootstrap). Tracked in issue #1792.
 
 This page covers running Akka Automated Operations (AAO) on GCP. For the architecture and concepts, start with the xref:operations:technical-overview.adoc[technical overview].
 
@@ -18,6 +17,9 @@ This page covers running Akka Automated Operations (AAO) on GCP. For the archite
 ====
 Download link:../_attachments/whitepapers/aao-gcp.pdf[this page as a PDF], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview].
 ====
+
+// DIAGRAM: recreated as a themed SVG from the akka-bootstrap modules/google model and the whitepaper style. Flagged for creator review.
+image::operations:aao-gcp-architecture.svg[AAO on GCP]
 
 == GCP resources
 

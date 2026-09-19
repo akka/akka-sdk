@@ -13,7 +13,8 @@ This page covers running Akka Automated Operations (AAO) on Azure. For the archi
 Download link:../_attachments/whitepapers/aao-azure.pdf[this page as a PDF], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview].
 ====
 
-// DIAGRAM: recreate the original whitepaper Azure "multi-tenant" and "VNet peering with NAT" drawings as themed SVGs. Flagged for creator review; not yet added.
+// DIAGRAM: recreated as a themed SVG from the original whitepaper Azure drawings. Flagged for creator review.
+image::operations:aao-azure-architecture.svg[AAO on Azure]
 
 == Azure resources
 
