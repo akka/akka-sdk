@@ -75,13 +75,8 @@ Within Kubernetes, Akka uses least-privilege access scoped to the Akka-managed n
 
 == Choose your cloud
 
-Continue with your cloud for its resource inventory, identity specifics, private connectivity, and `values.hcl`.
+Continue with your cloud for its specifics:
 
-[cols="1,1", options="header"]
-|===
-| Cloud | Start here
-
-| *AWS* | xref:operations:technical-overview/aws.adoc[BYOC on AWS]
-| *Azure* | xref:operations:technical-overview/azure.adoc[BYOC on Azure]
-| *GCP* | xref:operations:technical-overview/gcp.adoc[BYOC on GCP]
-|===
+* xref:operations:technical-overview/aws.adoc[BYOC on AWS]: VPC and subnets, the IAM identity model, private connectivity, and the AWS `values.hcl`.
+* xref:operations:technical-overview/azure.adoc[BYOC on Azure]: virtual network, the Microsoft Entra ID identity model, resource providers, private connectivity, and the Azure `values.hcl`.
+* xref:operations:technical-overview/gcp.adoc[BYOC on GCP]: VPC, the service-account identity model, private connectivity, and the GCP `values.hcl`.
