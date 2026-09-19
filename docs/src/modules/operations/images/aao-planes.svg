@@ -29,7 +29,7 @@
   <rect x="375" y="360" width="470" height="175" rx="8" fill="#fdf3d0" stroke="#f5b60b" stroke-width="2"/>
   <rect x="375" y="360" width="470" height="50" rx="8" fill="#1a1a1a"/>
   <text x="610" y="384" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">Akka Application Planes (Regions)</text>
-  <text x="610" y="401" text-anchor="middle" font-size="10.5" fill="#ffce4a" font-family="'Roboto Mono',monospace">deploy in our serverless cloud @ akka.io  |  your VPC @ GCP, AWS, Azure</text>
+  <text x="610" y="401" text-anchor="middle" font-size="10.5" fill="#ffce4a" font-family="'Roboto Mono',monospace">Akka cloud @ akka.io  |  your cloud @ AWS, Azure, GCP</text>
   <text x="395" y="445" font-size="14" fill="#1a1a1a">&#8594; Your services and agents</text>
   <text x="395" y="469" font-size="14" fill="#1a1a1a">&#8594; Your routes and endpoints</text>
   <text x="395" y="493" font-size="14" fill="#1a1a1a">&#8594; Secrets</text>
