@@ -193,16 +193,16 @@ Choose your deployment model and follow its setup. Each setup page ends by letti
 | Model | What Akka does | Start here
 
 | *Dedicated*
-| Akka hosts and operates the region in Akka's cloud. There are no customer installation steps.
-| xref:operations:production-readiness/dedicated/checklist.adoc[Dedicated readiness]
+| Akka hosts and operates the region in Akka's cloud.
+| xref:operations:production-readiness/dedicated/checklist.adoc[Get started with Dedicated]
 
 | *BYOC*
-| Akka provisions and operates a region inside your own cloud account, using the `akka-bootstrap` install flow and identity model.
-| xref:operations:technical-overview/byoc.adoc[BYOC setup]
+| Akka provisions and operates the region in your own cloud account.
+| xref:operations:technical-overview/byoc.adoc[Get started with BYOC]
 
 | *BYOK8s*
-| You provision the Kubernetes cluster to Akka's specification, then Akka installs the platform into it.
-| xref:operations:technical-overview/byok8s-requirements.adoc[BYOK8s requirements]
+| Akka installs and operates the platform on a cluster you provide.
+| xref:operations:technical-overview/byok8s-requirements.adoc[Get started with BYOK8s]
 |===
 
 For help deciding between models and sizing for availability and data residency, see xref:operations:production-readiness/choosing-your-environment.adoc[].

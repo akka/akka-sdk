@@ -12,7 +12,7 @@ This page lists the cloud-agnostic setup. For your cloud's resource inventory, p
 
 [NOTE]
 ====
-Download link:../_attachments/whitepapers/aao-byoc.pdf[all of BYOC as a PDF, window=_blank] (shared setup, AWS, Azure, GCP, and data flows), or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
+Download the link:../_attachments/whitepapers/aao-byoc.pdf[full BYOC setup as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
 ====
 
 == Installation flow
@@ -75,4 +75,13 @@ Within Kubernetes, Akka uses least-privilege access scoped to the Akka-managed n
 
 == Choose your cloud
 
-Continue with your cloud for its resource inventory, identity specifics, private connectivity, and `values.hcl`: xref:operations:technical-overview/aws.adoc[AWS], xref:operations:technical-overview/azure.adoc[Azure], or xref:operations:technical-overview/gcp.adoc[GCP].
+Continue with your cloud for its resource inventory, identity specifics, private connectivity, and `values.hcl`.
+
+[cols="1,1", options="header"]
+|===
+| Cloud | Start here
+
+| *AWS* | xref:operations:technical-overview/aws.adoc[BYOC on AWS]
+| *Azure* | xref:operations:technical-overview/azure.adoc[BYOC on Azure]
+| *GCP* | xref:operations:technical-overview/gcp.adoc[BYOC on GCP]
+|===

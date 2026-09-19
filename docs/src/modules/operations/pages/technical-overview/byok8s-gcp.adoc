@@ -10,7 +10,7 @@ Run Akka Automated Operations (AAO) on a GKE cluster you provision and operate. 
 
 [NOTE]
 ====
-Download link:../_attachments/whitepapers/aao-byok8s-gcp.pdf[BYOK8s on GCP as a PDF, window=_blank] (this page plus data flows), or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
+Download link:../_attachments/whitepapers/aao-byok8s-gcp.pdf[BYOK8s on GCP as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
 ====
 
 include::operations:partial$byok8s-requirements.adoc[]

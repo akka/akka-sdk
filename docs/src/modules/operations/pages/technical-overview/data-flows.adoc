@@ -10,7 +10,7 @@ This page documents the individual network flows between your environment and th
 
 [NOTE]
 ====
-Download link:../_attachments/whitepapers/aao-data-flows.pdf[this page as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
+Download the link:../_attachments/whitepapers/aao-data-flows.pdf[data flows as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
 ====
 
 Connectivity terms used below:
