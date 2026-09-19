@@ -6,7 +6,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Akka Automated Operations (AAO) is a remotely installed, actively maintained Akka region that runs inside your own environment, on Kubernetes across AWS, Azure, or GCP. You keep custodial ownership of the infrastructure. Akka installs, monitors, patches, and scales it.
+Akka Automated Operations (AAO) is a remotely installed, actively maintained Akka region that runs inside your own environment, on Kubernetes across AWS, Azure, or GCP. You keep custodial ownership of the infrastructure. Akka installs, monitors, patches, and scales it, targeting up to 99.9999% availability with low latency.
 
 Application data stays within your environment. A limited set of platform interactions still crosses to the Akka Federation Plane: deployments, key rotation, the management API, metadata synchronization, and platform observability. The xref:operations:technical-overview/data-flows.adoc[data flows] page lists every flow.
 
@@ -208,6 +208,6 @@ Every network flow between your environment and the Akka platform is documented 
 
 == Support and maintenance
 
-Akka continuously applies security patches and software upgrades to the underlying platform, including the infrastructure upgrades needed to keep it secure and performant. Compute nodes are elastic and expand and contract with deployed services. Database storage autoscales, while additional database CPU and memory are applied by the Akka team when workloads exceed utilization thresholds. On request, Akka can pre-warm environments ahead of anticipated spikes.
+Akka continuously applies security patches and software upgrades to the underlying platform, including the infrastructure upgrades needed to keep it secure and performant. You provide a recurring maintenance window (typically 1 to 4 hours per week) for operations that may cause downtime; in practice, most updates are non-events. Compute nodes are elastic and expand and contract with deployed services. Database storage autoscales, while additional database CPU and memory are applied by the Akka team when workloads exceed utilization thresholds. On request, Akka can pre-warm environments ahead of anticipated spikes.
 
 If issues arise, Akka provides a customer support portal where cases are created and addressed per the Customer Support Policy.
