@@ -35,9 +35,9 @@ Setup depends on two choices: which cloud you run in, and which deployment model
 | xref:operations:technical-overview/gcp.adoc[GCP setup]
 
 | *BYOK8s* (you bring the cluster)
-| xref:operations:technical-overview/byok8s-requirements.adoc#aws[AWS notes]
-| xref:operations:technical-overview/byok8s-requirements.adoc#azure[Azure notes]
-| xref:operations:technical-overview/byok8s-requirements.adoc#gcp[GCP notes]
+| xref:operations:technical-overview/byok8s-aws.adoc[AWS setup]
+| xref:operations:technical-overview/byok8s-azure.adoc[Azure setup]
+| xref:operations:technical-overview/byok8s-gcp.adoc[GCP setup]
 |===
 
 For help deciding between models and sizing for availability and data residency, see xref:operations:production-readiness/choosing-your-environment.adoc[].

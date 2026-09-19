@@ -9,6 +9,9 @@
 ***** xref:operations:technical-overview/azure.adoc[Azure]
 ***** xref:operations:technical-overview/gcp.adoc[GCP]
 ***** xref:operations:technical-overview/byok8s-requirements.adoc[BYOK8s requirements]
+****** xref:operations:technical-overview/byok8s-aws.adoc[BYOK8s on AWS]
+****** xref:operations:technical-overview/byok8s-azure.adoc[BYOK8s on Azure]
+****** xref:operations:technical-overview/byok8s-gcp.adoc[BYOK8s on GCP]
 ***** xref:operations:technical-overview/data-flows.adoc[Data flows]
 
 **** xref:operations:organizations/index.adoc[]

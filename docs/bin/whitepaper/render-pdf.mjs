@@ -19,6 +19,9 @@ const PAGES = [
   { rel: 'operations/technical-overview/azure.html',               out: 'aao-azure.pdf',                title: 'On Azure',             subtitle: 'Resources, identity model, connectivity, and BYOK8s notes for Azure.' },
   { rel: 'operations/technical-overview/gcp.html',                 out: 'aao-gcp.pdf',                  title: 'On GCP',               subtitle: 'Resources, identity model, connectivity, and BYOK8s notes for GCP.' },
   { rel: 'operations/technical-overview/byok8s-requirements.html', out: 'aao-byok8s-requirements.pdf',  title: 'BYOK8s Requirements',  subtitle: 'Infrastructure requirements for running AAO on a Kubernetes cluster you provide.' },
+  { rel: 'operations/technical-overview/byok8s-aws.html',          out: 'aao-byok8s-aws.pdf',           title: 'BYOK8s on AWS',        subtitle: 'Self-contained BYOK8s setup for AWS.',   full: false },
+  { rel: 'operations/technical-overview/byok8s-azure.html',        out: 'aao-byok8s-azure.pdf',         title: 'BYOK8s on Azure',      subtitle: 'Self-contained BYOK8s setup for Azure.', full: false },
+  { rel: 'operations/technical-overview/byok8s-gcp.html',          out: 'aao-byok8s-gcp.pdf',           title: 'BYOK8s on GCP',        subtitle: 'Self-contained BYOK8s setup for GCP.',   full: false },
   { rel: 'operations/technical-overview/data-flows.html',          out: 'aao-data-flows.pdf',           title: 'Data Flows',           subtitle: 'Every network flow between your environment and the Akka platform.' },
 ];
 const FULL_OUT = 'aao-technical-overview-full.pdf';
@@ -85,7 +88,7 @@ for (const p of PAGES) {
       '<span class="pageNumber"></span>/<span class="totalPages"></span></div>',
   });
   writeFileSync(resolve(outDir, p.out), buf);
-  buffers.push(buf);
+  if (p.full !== false) buffers.push(buf);
   await page.close();
   console.log('wrote', resolve(outDir, p.out));
 }

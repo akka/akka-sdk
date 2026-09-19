@@ -101,7 +101,7 @@ By default, traffic between the region and your internal networks traverses the 
 [#byok8s]
 == Bringing your own EKS cluster (BYOK8s)
 
-If you provision the cluster yourself instead of having Akka provision into your account, follow the shared xref:operations:technical-overview/byok8s-requirements.adoc[BYOK8s requirements]. The AWS-specific notes (Route 53 records, IRSA `dns01` solver, EKS addons and AMI, RDS parameters and CA truststore, external-secrets from Secrets Manager) are in the xref:operations:technical-overview/byok8s-requirements.adoc#aws[AWS section] there.
+If you provision the cluster yourself instead of having Akka provision into your account, see xref:operations:technical-overview/byok8s-aws.adoc[Akka Automated Operations on AWS with your own Kubernetes] for the complete, self-contained guide (the shared requirements plus the AWS specifics).
 
 == See also
 

@@ -92,7 +92,7 @@ By default, traffic between the region and your internal networks traverses the 
 [#byok8s]
 == Bringing your own AKS cluster (BYOK8s)
 
-If you provision the cluster yourself, follow the shared xref:operations:technical-overview/byok8s-requirements.adoc[BYOK8s requirements] and apply the Azure specifics above (resource providers, EncryptionAtHost, and the Entra ID identity model). Use Azure Database for PostgreSQL flexible server for the database.
+If you provision the cluster yourself, see xref:operations:technical-overview/byok8s-azure.adoc[Akka Automated Operations on Azure with your own Kubernetes] for the complete, self-contained guide.
 
 == See also
 
