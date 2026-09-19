@@ -1,0 +1,78 @@
+= Bring Your Own Cloud setup
+:page-summary: The cloud-agnostic BYOC setup — the install flow, the akka-bootstrap utility, and the identity model Akka uses to provision and operate a region in your cloud account.
+:page-when-to-use: Use this as the shared BYOC reference. For your cloud's resources, connectivity, and values.hcl specifics, use the per-cloud pages.
+:page-related: xref:operations:technical-overview.adoc[], xref:operations:technical-overview/aws.adoc[], xref:operations:technical-overview/byok8s-requirements.adoc[]
+:page-persona: operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+Under Bring Your Own Cloud (BYOC), Akka provisions and operates a region inside your own cloud account. You prepare the account with the `akka-bootstrap` utility and grant Akka a deployment identity; Akka then provisions the region, runs smoke tests, and hands it over.
+
+This page lists the cloud-agnostic setup. For your cloud's resource inventory, private connectivity, and `values.hcl` specifics, follow the per-cloud page: xref:operations:technical-overview/aws.adoc[AWS], xref:operations:technical-overview/azure.adoc[Azure], or xref:operations:technical-overview/gcp.adoc[GCP].
+
+[NOTE]
+====
+Download link:../_attachments/whitepapers/aao-byoc.pdf[this page as a PDF], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview].
+====
+
+== Installation flow
+
+. *Understand* — review the xref:operations:technical-overview.adoc[technical overview] and receive the `akka-bootstrap` utility from your Akka Success Team, so you can inspect exactly which permissions Akka's deployment identity will require.
+. *Request a region* — submit a region request through the form in the Akka customer portal.
+. *Cloud account* — create a cloud account for Akka. Not strictly required, but a dedicated account simplifies cost management.
+. *Apply permissions* — run `akka-bootstrap` to configure the account, then attach the generated deployment-identity details to your region request.
+. *Provision* — Akka remotely provisions the region and attaches it to a platform organization created for you.
+. *DNS* — create record sets in your DNS zone that map to the region's load-balancer IP.
+. *Smoke tests* — Akka attaches the region to the Federation Plane and runs smoke tests.
+. *Region handover* — register a user at akka.io with a corporate email; Akka makes them your organization's primary owner. A production-labeled region is not fully handed over until you complete the xref:operations:production-readiness/byoc/checklist.adoc[region-readiness steps].
+
+== The akka-bootstrap utility
+
+`akka-bootstrap` prepares your cloud account for AAO by creating the Deployment Identity role the Federation Plane uses to create and manage infrastructure. It creates and manages the Deployment Identity operations role only. You create the Editor, Viewer, and SRE identities.
+
+It is a Terragrunt project with a per-cloud module layout:
+
+[source]
+----
+.
+├── main.tftpl        # generates provider config + module calls
+├── modules
+│   ├── aws/          # IAM roles, trust policy
+│   ├── azure/        # app registration, service principal, roles
+│   └── google/       # service account, IAM bindings
+├── README.md
+└── terragrunt.hcl    # orchestration: reads values.hcl
+----
+
+You create a `values.hcl` with your backend configuration and the region details for your cloud (the exact block differs per cloud; see the per-cloud page), then run the Terragrunt lifecycle:
+
+[source,command line]
+----
+terragrunt init     # initialize and validate the generated Terraform
+terragrunt plan     # review the planned changes
+terragrunt apply    # provision the identity, roles, and credentials
+----
+
+After a successful apply, share the generated deployment-identity details with Akka: the role ARN to assume on AWS, the service-principal credentials on Azure, or the service-account identity to impersonate on GCP.
+
+The utility is the source of truth for the exact permissions Akka's deployment identity requires. Review its generated output rather than a hand-maintained list, so the permissions you grant always match what Akka runs.
+
+== Identity model
+
+AAO uses four roles across all clouds:
+
+[cols="1,2,1", options="header"]
+|===
+| Role | Responsibilities | Who creates it
+
+| Deployment | Creation and management of infrastructure | `akka-bootstrap`
+| Editor | Management of infrastructure without delete permissions | You
+| Viewer | Read-only permissions for infrastructure | You
+| SRE | Identical to the Deployment role, for emergency response or upkeep | You
+|===
+
+Within Kubernetes, Akka uses least-privilege access scoped to the Akka-managed namespaces and takes no access to customer-owned Kubernetes resources.
+
+== Per-cloud setup
+
+Continue with your cloud for its resource inventory, identity specifics, private connectivity, and `values.hcl`: xref:operations:technical-overview/aws.adoc[AWS], xref:operations:technical-overview/azure.adoc[Azure], or xref:operations:technical-overview/gcp.adoc[GCP].

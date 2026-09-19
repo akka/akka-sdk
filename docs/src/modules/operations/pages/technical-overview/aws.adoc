@@ -50,7 +50,7 @@ The exact IAM actions for each role are created and managed by `akka-bootstrap` 
 
 == Installation
 
-Prepare your AWS account with the `akka-bootstrap` utility, then Akka provisions the region. See the xref:operations:technical-overview.adoc#_the_akka_bootstrap_utility[akka-bootstrap overview] for how the utility is structured.
+Prepare your AWS account with the `akka-bootstrap` utility, then Akka provisions the region. See xref:operations:technical-overview/byoc.adoc[Bring Your Own Cloud setup] for the akka-bootstrap utility and the shared install flow.
 
 Create a `values.hcl` file with your backend configuration and AWS region details:
 

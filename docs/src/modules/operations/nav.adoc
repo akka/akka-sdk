@@ -6,6 +6,7 @@
 
 **** xref:operations:technical-overview.adoc[Technical Overview]
 ***** BYOC
+****** xref:operations:technical-overview/byoc.adoc[Getting started]
 ****** xref:operations:technical-overview/aws.adoc[AWS]
 ****** xref:operations:technical-overview/azure.adoc[Azure]
 ****** xref:operations:technical-overview/gcp.adoc[GCP]

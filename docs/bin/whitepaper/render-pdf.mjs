@@ -15,6 +15,7 @@ const printCss = readFileSync(cssPath, 'utf8');
 // The hub first, then the spokes. The merged PDF concatenates in this order.
 const PAGES = [
   { rel: 'operations/technical-overview.html',                     out: 'aao-technical-overview.pdf',   title: 'Technical Overview',   subtitle: 'Architecture, installation, and operations across Kubernetes on AWS, Azure, and GCP.' },
+  { rel: 'operations/technical-overview/byoc.html',                out: 'aao-byoc.pdf',                 title: 'BYOC Setup',           subtitle: 'Install flow, akka-bootstrap, and identity model for Bring Your Own Cloud.' },
   { rel: 'operations/technical-overview/aws.html',                 out: 'aao-aws.pdf',                  title: 'On AWS',               subtitle: 'Resources, identity model, connectivity, and BYOK8s notes for AWS.' },
   { rel: 'operations/technical-overview/azure.html',               out: 'aao-azure.pdf',                title: 'On Azure',             subtitle: 'Resources, identity model, connectivity, and BYOK8s notes for Azure.' },
   { rel: 'operations/technical-overview/gcp.html',                 out: 'aao-gcp.pdf',                  title: 'On GCP',               subtitle: 'Resources, identity model, connectivity, and BYOK8s notes for GCP.' },
