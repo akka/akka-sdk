@@ -13,8 +13,7 @@ This page covers running Akka Automated Operations (AAO) on Azure. For the archi
 Download link:../_attachments/whitepapers/aao-azure.pdf[this page as a PDF], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview].
 ====
 
-// DIAGRAM: recreated as a themed SVG from the original whitepaper Azure drawings. Flagged for creator review.
-image::operations:aao-azure-architecture.svg[AAO on Azure]
+image::operations:aao-azure-default.png[AAO on Azure: default architecture]
 
 == Azure resources
 
@@ -87,7 +86,9 @@ Then run `terragrunt init`, `terragrunt plan`, and `terragrunt apply`. After a s
 
 == Private connectivity
 
-By default, traffic between the region and your internal networks traverses the internet. To keep it private, AAO on Azure uses Virtual Network Peering with Azure Firewall and user-defined NAT gateways. The per-flow detail is on the xref:operations:technical-overview/data-flows.adoc[data flows] page.
+By default, traffic between the region and your internal networks traverses the internet. To keep it private, AAO on Azure uses Virtual Network Peering with a user-defined NAT gateway. The per-flow detail is on the xref:operations:technical-overview/data-flows.adoc[data flows] page.
+
+image::operations:aao-azure-vnet-peering.png[AAO on Azure: private connectivity with Virtual Network Peering and a user-defined NAT gateway]
 
 [#byok8s]
 == Bringing your own AKS cluster (BYOK8s)

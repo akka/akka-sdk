@@ -97,6 +97,14 @@ Managed Kubernetes hosts the Application Plane, with workloads spread across ava
 
 By default, traffic between the region and your internal networks traverses the internet. To keep it private, AAO on AWS uses an AWS Transit Gateway to route region-to-internal traffic across accounts and VPCs. The per-flow detail is on the xref:operations:technical-overview/data-flows.adoc[data flows] page.
 
+The Transit Gateway pattern:
+
+image::operations:aao-aws-transit-gateway.png[AAO on AWS: private connectivity with Transit Gateway]
+
+A hub-and-spoke topology (private only, with platform images pulled from a container registry bucket):
+
+image::operations:aao-aws-hub-and-spoke.png[AAO on AWS: hub and spoke]
+
 [#byok8s]
 == Bringing your own EKS cluster (BYOK8s)
 
