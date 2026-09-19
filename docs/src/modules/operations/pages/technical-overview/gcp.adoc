@@ -1,0 +1,51 @@
+= Akka Automated Operations on GCP
+:page-summary: GCP-specific setup for Akka Automated Operations — the identity model, GKE, and private connectivity for running an AAO region on Google Cloud.
+:page-when-to-use: Use this when Akka provisions an AAO region into your GCP project (BYOC), or when you run AAO on your own GKE cluster (BYOK8s) on GCP.
+:page-related: xref:operations:technical-overview.adoc[], xref:operations:technical-overview/byok8s-requirements.adoc[], xref:operations:technical-overview/data-flows.adoc[]
+:page-persona: operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+// REVIEW: The GCP source document was never completed (it is a deprecated work-in-progress
+// clone of the Azure doc). This page is seeded from the consolidated whitepaper's GCP section
+// and the generic model. The GCP-specific resource inventory, IAM roles/bindings, and the exact
+// permission set still need to be sourced from the akka-bootstrap modules/google Terraform or
+// confirmed with SRE before this page is complete. Tracked in issue #1792.
+
+This page covers running Akka Automated Operations (AAO) on GCP. For the architecture and concepts, start with the xref:operations:technical-overview.adoc[technical overview].
+
+[NOTE]
+====
+This page is in progress. The GCP-specific resource and permission detail is being sourced from the `akka-bootstrap` `modules/google` module. The identity model, orchestration, and connectivity below are accurate; the full resource inventory will follow.
+====
+
+== Identity model
+
+The cloud account is a GCP project. A dedicated Google service account is created for the region and assigned a non-human privileged role with the minimum permissions to set up and manage it. The service account is then configured so the Federation Plane's identity can impersonate it to bootstrap and manage the region.
+
+Rather than long-lived exported keys, the Federation Plane impersonates the dedicated service account, which keeps bootstrap and management credential-free on your side.
+
+AAO uses four roles: Deployment (created by `akka-bootstrap`), and Editor, Viewer, and SRE (created by you). The exact roles and bindings are created and managed by `akka-bootstrap` and are the source of truth; review the generated permission reference rather than a copy here.
+
+== Google GKE
+
+Managed Kubernetes hosts the Application Plane, with instances spread topologically across zones. Use CloudSQL for PostgreSQL for the database.
+
+== Installation
+
+Prepare your project with the `akka-bootstrap` utility. In `values.hcl`, use a `gcs` backend and populate the `gcp` block of `akka_regions`, then run `terragrunt init`, `terragrunt plan`, and `terragrunt apply`. After a successful apply, share the generated service-account details with Akka so the Federation Plane can impersonate it. Bootstrap is driven by the `modules/google` Terraform module.
+
+== Private connectivity
+
+By default, traffic between the region and your internal networks traverses the internet. To keep it private, AAO on GCP uses VPC Peering between the region VPC and your internal networks. The per-flow detail is on the xref:operations:technical-overview/data-flows.adoc[data flows] page.
+
+[#byok8s]
+== Bringing your own GKE cluster (BYOK8s)
+
+If you provision the cluster yourself, follow the shared xref:operations:technical-overview/byok8s-requirements.adoc[BYOK8s requirements]. Use CloudSQL for PostgreSQL for the database. The GCP-specific certificate and secrets-store details will be added once sourced.
+
+== See also
+
+* xref:operations:technical-overview.adoc[Technical overview]
+* xref:operations:technical-overview/byok8s-requirements.adoc[BYOK8s requirements]
+* xref:operations:technical-overview/data-flows.adoc[Data flows]

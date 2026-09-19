@@ -1,9 +1,11 @@
+[Aa]llowlist(ed|ing)?
 AAO
 accessor
 Ack
 ACLs
 ACRs
 actuals
+addons?
 Adoptium
 ADRs
 Agentgateway

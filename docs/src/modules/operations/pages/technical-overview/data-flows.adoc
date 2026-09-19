@@ -1,0 +1,95 @@
+= Data flows and security pathways
+:page-summary: Every network flow between your environment and the Akka Automated Operations platform, with direction, connectivity, and authentication, for security review.
+:page-when-to-use: Use this for a security or InfoSec review of AAO, to see exactly what data crosses where and how each flow is authenticated.
+:page-related: xref:operations:technical-overview.adoc[], xref:operations:regions/infrastructure.adoc[], xref:operations:technical-overview/aws.adoc[]
+:page-persona: operator-platform, operator-sre, security-reviewer
+
+include::ROOT:partial$include.adoc[]
+
+This page documents the individual network flows between your environment and the Akka platform. Each flow lists the data carried, its direction, the connectivity used, and how it is authenticated. "Your ..." denotes a resource in your own environment.
+
+Connectivity terms used below:
+
+* *Peering* — a private network path between your environment and the Akka region.
+* *Firewall, Federation Plane allowlisted* — a customer-initiated outbound flow to the Federation Plane over the internet, from an allowlisted egress path.
+* *Akka NAT gateway* — a region-initiated egress flow. Akka can work with you to route these through your firewall instead.
+* *Pre-authorized IP ranges* — Federation-Plane-to-region flows over the internet. A private-connectivity option is available.
+
+== Your end users
+
+[cols="2,1,1,2", options="header"]
+|===
+| Flow | Direction | Connectivity | Auth
+
+| End user accessing an Akka service from outside your environment | End user → Akka Region | Public (through your firewall) | Your keys, secrets, and tokens
+| End user accessing an Akka service from inside your environment | End user → Akka Region | Private (peering) | Your keys, secrets, and tokens
+|===
+
+== Your deployed Akka services
+
+[cols="2,1,1,2", options="header"]
+|===
+| Flow | Direction | Connectivity | Auth
+
+| Access to your private internal systems | Your service → your APIs | Private (peering) | Your keys, secrets, and tokens
+| Pushing observability metrics for your services to your observability | Akka Region → your observability | Private (peering) | Your keys, secrets, and tokens
+|===
+
+== Your operators, admins, and developers
+
+[cols="2,1,1,2", options="header"]
+|===
+| Flow | Direction | Connectivity | Auth
+
+| Akka CLI or console authentication initiation | CLI or console → Federation Plane | Public (firewall, Federation Plane allowlisted) | Akka authentication
+| OpenID authentication | Console → your IAM | Public | OpenID
+| Add a region to a project | CLI → Federation Plane | Public (firewall, Federation Plane allowlisted) | Akka authenticated, valid access token
+| Initiate multi-region failover | CLI → Akka Region | Private (peering) | Akka authenticated, valid access token
+| List services and projects | CLI → Akka Region | Private (peering) | Akka authenticated, valid access token
+| Create a project | CLI → Federation Plane | Public (firewall, Federation Plane allowlisted) | Akka authenticated, valid access token
+| Add a user, role, or permission | CLI → Federation Plane | Public (firewall, Federation Plane allowlisted) | Akka authenticated, valid access token
+| Inspect service components in a region | CLI → Akka Region | Private (peering) | Akka authenticated, valid access token
+| Deploy a service: initiate deployment | CI/CD or developer → Akka Region | Private (peering) | Akka authenticated, valid access token
+| Deploy a service: region pulls the image | Akka Region → your image registry | Private (peering) | Akka authenticated, valid access token
+|===
+
+== Akka SRE
+
+[cols="2,1,1,2", options="header"]
+|===
+| Flow | Direction | Connectivity | Auth
+
+| Troubleshoot a region (cloud console or kubectl) | Your VDI, when needed → Akka Region | Private (your remote desktop) | Your cloud credentials, granted through Teleport
+|===
+
+== Akka Region
+
+[cols="2,1,1,2", options="header"]
+|===
+| Flow | Direction | Connectivity | Auth
+
+| Region observability metadata to the Federation Plane | Akka Region → Federation Plane | Public (Akka NAT gateway) | Kubernetes RBAC and Federation Plane observability token
+| Region requests the public key set | Akka Region → Federation Plane | Public (Akka NAT gateway) | Internal Akka JWT authentication
+| Certificate expiration monitoring (can be disabled) | Akka Region → Akka SRE | Public (Akka NAT gateway) | Kubernetes RBAC
+| Replication to another Akka Region | Akka Region → Akka Region | Private (peering) | Mutual TLS and ACLs
+|===
+
+== Akka Federation Plane
+
+All flows below use the bootstrap credential you create and share with Akka.
+
+[cols="2,1,1", options="header"]
+|===
+| Flow | Direction | Connectivity
+
+| Bootstrap a new Akka Region | Federation Plane → Akka Region | Public (pre-authorized IP ranges)
+| Install a new version of Akka into a region | Federation Plane → Akka Region | Public (pre-authorized IP ranges)
+| Maintain infrastructure (drift detection) | Federation Plane → Akka Region | Public (pre-authorized IP ranges)
+| Upgrade infrastructure (Kubernetes, database) | Federation Plane → Akka Region | Public (pre-authorized IP ranges)
+| Multi-region root CA management for cross-region mTLS | Federation Plane → Akka Region | Public (pre-authorized IP ranges)
+| Synchronize project, user, role, organization, and region metadata | Federation Plane → Akka Region | Public (pre-authorized IP ranges)
+|===
+
+== Private connectivity by cloud
+
+Each cloud offers a private-connectivity option to keep region-to-internal traffic off the public internet: Transit Gateway on AWS, VPC Peering on GCP, and VNet Peering with Azure Firewall on Azure. See the xref:operations:technical-overview/aws.adoc[AWS], xref:operations:technical-overview/azure.adoc[Azure], and xref:operations:technical-overview/gcp.adoc[GCP] pages.

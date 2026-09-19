@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 420" font-family="'Instrument Sans',-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="Akka Automated Operations on AWS">
+  <!-- Recreated from the original whitepaper AWS hub-and-spoke drawing. Light figure; dark-mode theming is a follow-up. -->
+  <rect x="0" y="0" width="820" height="420" fill="#ffffff"/>
+  <text x="410" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#1a1a1a">Akka Automated Operations on AWS</text>
+
+  <!-- AWS account boundary -->
+  <rect x="40" y="56" width="740" height="330" rx="12" fill="none" stroke="#ff9900" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="60" y="80" font-size="13" font-weight="700" fill="#b26b00" letter-spacing="1">YOUR AWS ACCOUNT</text>
+
+  <!-- VPC -->
+  <rect x="70" y="96" width="470" height="270" rx="10" fill="#f5f8ff" stroke="#0aa2ff" stroke-width="1.5"/>
+  <text x="88" y="120" font-size="13" font-weight="700" fill="#0a6ebd">VPC (3 subnets per region)</text>
+
+  <!-- EKS -->
+  <rect x="92" y="136" width="200" height="150" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
+  <text x="192" y="158" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1a1a">Amazon EKS</text>
+  <text x="192" y="180" text-anchor="middle" font-size="11" fill="#5f6b73">Application Plane region</text>
+  <text x="192" y="200" text-anchor="middle" font-size="11" fill="#5f6b73">across availability zones</text>
+  <text x="192" y="224" text-anchor="middle" font-size="11" fill="#5f6b73">Akka operators, Linkerd</text>
+  <text x="192" y="244" text-anchor="middle" font-size="11" fill="#5f6b73">encrypted event store</text>
+
+  <!-- RDS + ELB + others -->
+  <rect x="312" y="136" width="200" height="44" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
+  <text x="412" y="163" text-anchor="middle" font-size="12" fill="#1a1a1a">RDS for PostgreSQL (Multi-AZ)</text>
+  <rect x="312" y="188" width="200" height="44" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
+  <text x="412" y="215" text-anchor="middle" font-size="12" fill="#1a1a1a">Elastic Load Balancing</text>
+  <rect x="312" y="240" width="200" height="46" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
+  <text x="412" y="262" text-anchor="middle" font-size="11" fill="#1a1a1a">S3 &#183; KMS &#183; Route 53</text>
+  <text x="412" y="278" text-anchor="middle" font-size="11" fill="#5f6b73">IAM roles via akka-bootstrap</text>
+
+  <!-- private connectivity -->
+  <rect x="92" y="300" width="420" height="50" rx="8" fill="#fff8e6" stroke="#f5b60b"/>
+  <text x="302" y="322" text-anchor="middle" font-size="12" font-weight="600" fill="#8a6d0b">Transit Gateway (optional private connectivity)</text>
+  <text x="302" y="340" text-anchor="middle" font-size="11" fill="#5f6b73">keeps region-to-internal traffic off the public internet</text>
+
+  <!-- Federation plane -->
+  <rect x="576" y="136" width="180" height="90" rx="10" fill="#e6f6f6" stroke="#02a4a7" stroke-width="2"/>
+  <text x="666" y="166" text-anchor="middle" font-size="13" font-weight="700" fill="#0b6d6f">Akka Federation</text>
+  <text x="666" y="184" text-anchor="middle" font-size="13" font-weight="700" fill="#0b6d6f">Plane</text>
+  <text x="666" y="206" text-anchor="middle" font-size="10" fill="#5f6b73">assume-role, TLS 443</text>
+
+  <line x1="540" y1="170" x2="576" y2="170" stroke="#02a4a7" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="576" y1="190" x2="540" y2="190" stroke="#02a4a7" stroke-width="2" marker-end="url(#a)"/>
+
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#02a4a7"/>
+    </marker>
+  </defs>
+</svg>

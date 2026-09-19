@@ -5,6 +5,11 @@
 *** xref:operations:akka-platform.adoc[Akka Automated Operations]
 
 **** xref:operations:technical-overview.adoc[Technical Overview]
+***** xref:operations:technical-overview/aws.adoc[AWS]
+***** xref:operations:technical-overview/azure.adoc[Azure]
+***** xref:operations:technical-overview/gcp.adoc[GCP]
+***** xref:operations:technical-overview/byok8s-requirements.adoc[BYOK8s requirements]
+***** xref:operations:technical-overview/data-flows.adoc[Data flows]
 
 **** xref:operations:organizations/index.adoc[]
 ***** xref:operations:organizations/manage-users.adoc[Manage users]
