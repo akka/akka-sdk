@@ -193,8 +193,7 @@ Choose your deployment model and follow its setup. Each setup page ends by letti
 | Model | What Akka does | Start here
 
 | *Dedicated*
-| Akka hosts and operates the region in Akka's cloud.
-| xref:operations:production-readiness/dedicated/checklist.adoc[Get started with Dedicated]
+2+| Akka hosts and operates the region in Akka's cloud, so there is nothing for you to install or provision. When you prepare to go live, review the xref:operations:production-readiness/dedicated/checklist.adoc[Dedicated production readiness].
 
 | *BYOC*
 | Akka provisions and operates the region in your own cloud account.
