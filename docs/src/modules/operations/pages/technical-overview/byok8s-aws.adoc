@@ -1,0 +1,43 @@
+= Akka Automated Operations on AWS with your own Kubernetes
+:page-summary: The complete BYOK8s-on-AWS setup — the shared Kubernetes requirements plus the AWS specifics (Route 53, IRSA, EKS, RDS, external-secrets).
+:page-when-to-use: Use this when you provision and operate your own EKS cluster and Akka installs the platform into it.
+:page-related: xref:operations:technical-overview/aws.adoc[], xref:operations:technical-overview/byok8s-requirements.adoc[], xref:operations:technical-overview/data-flows.adoc[]
+:page-persona: operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+Run Akka Automated Operations (AAO) on an EKS cluster you provision and operate. This page is the complete BYOK8s-on-AWS path: the shared requirements first, then the AWS specifics.
+
+[NOTE]
+====
+Download link:../_attachments/whitepapers/aao-byok8s-aws.pdf[this page as a PDF], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview].
+====
+
+include::operations:partial$byok8s-requirements.adoc[]
+
+== AWS specifics
+
+Apply these AWS additions to the requirements above.
+
+*Route 53 records* — create these in your hosted zone (public or private):
+
+[cols="2,1,2", options="header"]
+|===
+| Record | Type | Target
+
+| `akka.[zone]` | A | Network Load Balancer (platform APIs)
+| `*.akka.[zone]` | CNAME | `akka.[zone]`
+| `services.akka.[zone]` | A | Network Load Balancer (user services and app support APIs)
+| `*.services.akka.[zone]` | CNAME | `services.akka.[zone]`
+|===
+
+* *Certificates* — cert-manager `ClusterIssuer` with the Route 53 `dns01` solver, authorized through IRSA (IAM Roles for Service Accounts) to write validation TXT records.
+* *EKS cluster* — node groups (one On-Demand, optionally one Spot) at 16 vCPU / 64 GB (for example `m5.4xlarge`); AMI `AL2023_x86_64_STANDARD`; managed addons `coredns`, `aws-ebs-csi-driver`, `vpc-cni`, `kube-proxy`, and the AWS secrets-store CSI driver provider; Calico in policy-only mode.
+* *RDS for PostgreSQL* — PostgreSQL 17, Multi-AZ, automatic minor upgrades and deletion protection; parameter group `rds.force_ssl = 1`. Because SSL is required, install the RDS CA bundle (`+https://truststore.pki.rds.amazonaws.com/<region>/<region>-bundle.pem+`) into the `kalix-system` and `kalix-management-system` namespaces.
+* *Database credentials* — use the external-secrets operator to mirror them from AWS Secrets Manager.
+
+== See also
+
+* xref:operations:technical-overview/aws.adoc[AAO on AWS] — the AWS resource inventory and identity model
+* xref:operations:production-readiness/byok8s/checklist.adoc[BYOK8s production readiness]
+* xref:operations:technical-overview/data-flows.adoc[Data flows]

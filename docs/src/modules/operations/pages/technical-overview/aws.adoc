@@ -1,0 +1,111 @@
+= Akka Automated Operations on AWS
+:page-summary: AWS-specific setup for Akka Automated Operations — the resources Akka provisions, the identity model, data flows, private connectivity, and the AWS notes for bringing your own EKS cluster.
+:page-when-to-use: Use this when Akka provisions an AAO region into your AWS account (BYOC), or when you run AAO on your own EKS cluster (BYOK8s) on AWS.
+:page-related: xref:operations:technical-overview.adoc[], xref:operations:technical-overview/byok8s-requirements.adoc[], xref:operations:technical-overview/data-flows.adoc[]
+:page-persona: operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+This page covers running Akka Automated Operations (AAO) on AWS. For the architecture and concepts, start with the xref:operations:technical-overview.adoc[technical overview].
+
+[NOTE]
+====
+Download link:../_attachments/whitepapers/aao-aws.pdf[this page as a PDF], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview].
+====
+
+// DIAGRAM: recreated as a themed SVG from the original whitepaper AWS "hub and spoke" drawing. Flagged for creator review.
+image::operations:aao-aws-architecture.svg[AAO on AWS]
+
+== AWS resources
+
+AAO on AWS uses these AWS services:
+
+* AWS Identity and Access Management (IAM)
+* AWS RDS for PostgreSQL
+* AWS Elastic Kubernetes Service (EKS)
+* AWS Virtual Private Cloud (VPC)
+* AWS Elastic Load Balancing
+* AWS Route 53
+* AWS Simple Storage Service (S3)
+* AWS Key Management Service (KMS)
+* AWS Transit Gateway
+
+== Identity model
+
+To begin, create a non-human privileged IAM role with the minimum permissions to set up and manage the Akka environment, plus a trust policy that lets the Federation Plane's identity assume it. This role handles initial infrastructure bootstrapping, release deployments, and ongoing maintenance.
+
+AAO uses four roles:
+
+[cols="1,2,1", options="header"]
+|===
+| Role | Responsibilities | Who creates it
+
+| Deployment | Creation and management of infrastructure on AWS | `akka-bootstrap`
+| Editor | Management of infrastructure without delete permissions | You
+| Viewer | Read-only permissions for infrastructure | You
+| SRE | Identical to the Deployment role, for emergency response or upkeep | You
+|===
+
+The exact IAM actions for each role are created and managed by `akka-bootstrap` and are the source of truth. Review the permission reference the utility generates rather than a copy here, so the permissions you grant always match what Akka runs. Within Kubernetes, Akka uses least-privilege access scoped to the Akka-managed namespaces and takes no access to customer-owned Kubernetes resources.
+
+== Installation
+
+Prepare your AWS account with the `akka-bootstrap` utility, then Akka provisions the region. See xref:operations:technical-overview/byoc.adoc[Bring Your Own Cloud setup] for the akka-bootstrap utility and the shared install flow.
+
+Create a `values.hcl` file with your backend configuration and AWS region details:
+
+[source,hcl]
+----
+inputs = {
+  backend = {
+    type = "s3"
+    config = {
+      bucket = "your-terraform-state-bucket"
+      prefix = "akka-bootstrap"
+    }
+  }
+  akka_regions = {
+    aws = [
+      {
+        environment       = "prod"       # dev | stage | prod
+        akka_region_name  = "aws-<tenant>-<tenant-env>-<region>"
+        cloud_region_name = "<region>"
+        profile           = "<profile>"
+      }
+    ]
+    azure = []
+    gcp   = []
+  }
+}
+----
+
+Then run the Terragrunt lifecycle:
+
+[source,command line]
+----
+terragrunt init     # initialize and validate the generated Terraform
+terragrunt plan     # review the planned changes
+terragrunt apply    # provision the IAM role, policies, and credentials
+----
+
+After a successful apply, attach the generated role ARN to your region request so the Federation Plane can assume it and manage resources in your account.
+
+== Amazon EKS
+
+Managed Kubernetes hosts the Application Plane, with workloads spread across availability zones. Akka deploys operators for route management, elasticity, metadata sync, rolling deployment, certificate management, key rotation, and multi-region failover.
+
+== Private connectivity
+
+By default, traffic between the region and your internal networks traverses the internet. To keep it private, AAO on AWS uses an AWS Transit Gateway to route region-to-internal traffic across accounts and VPCs. The per-flow detail is on the xref:operations:technical-overview/data-flows.adoc[data flows] page.
+
+[#byok8s]
+== Bringing your own EKS cluster (BYOK8s)
+
+If you provision the cluster yourself instead of having Akka provision into your account, see xref:operations:technical-overview/byok8s-aws.adoc[Akka Automated Operations on AWS with your own Kubernetes] for the complete, self-contained guide (the shared requirements plus the AWS specifics).
+
+== See also
+
+* xref:operations:technical-overview.adoc[Technical overview]
+* xref:operations:technical-overview/byok8s-requirements.adoc[BYOK8s requirements]
+* xref:operations:technical-overview/data-flows.adoc[Data flows]
+* xref:operations:production-readiness/byoc/disaster-recovery.adoc[BYOC disaster recovery]

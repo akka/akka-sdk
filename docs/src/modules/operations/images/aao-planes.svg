@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="500" viewBox="0 0 840 500" font-family="'Instrument Sans',-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="Akka Federation Plane and Application Plane">
+  <!-- Recreated from the original whitepaper Federation/Application Plane diagram. Light figure; dark-mode theming is a follow-up. -->
+  <rect x="0" y="0" width="840" height="500" fill="#ffffff"/>
+  <!-- Federation Plane -->
+  <rect x="120" y="30" width="600" height="96" rx="10" fill="#e6f6f6" stroke="#02a4a7" stroke-width="2"/>
+  <text x="420" y="62" text-anchor="middle" font-size="20" font-weight="700" fill="#0b6d6f">Akka Federation Plane</text>
+  <text x="420" y="86" text-anchor="middle" font-size="13" fill="#1a1a1a">Global coordination, run and managed by Akka at akka.io</text>
+  <text x="420" y="106" text-anchor="middle" font-size="12" fill="#5f6b73">Orgs and accounts &#183; user access &#183; key rotation &#183; token issuance &#183; deployment</text>
+
+  <!-- Your environment boundary -->
+  <rect x="40" y="196" width="760" height="270" rx="12" fill="none" stroke="#adadad" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <text x="60" y="222" font-size="13" font-weight="700" fill="#5f6b73" letter-spacing="1">YOUR ENVIRONMENT</text>
+
+  <!-- Application Plane region(s) -->
+  <g>
+    <rect x="70" y="240" width="330" height="200" rx="10" fill="#f5f5f5" stroke="#c9c9c9" stroke-width="1.5"/>
+    <text x="235" y="268" text-anchor="middle" font-size="17" font-weight="700" fill="#1a1a1a">Application Plane region</text>
+    <rect x="92" y="286" width="286" height="30" rx="6" fill="#ffffff" stroke="#d9d9d9"/>
+    <text x="235" y="306" text-anchor="middle" font-size="12" fill="#1a1a1a">Managed Kubernetes cluster (OCI containers)</text>
+    <rect x="92" y="322" width="286" height="30" rx="6" fill="#ffffff" stroke="#d9d9d9"/>
+    <text x="235" y="342" text-anchor="middle" font-size="12" fill="#1a1a1a">Encrypted, event-sourced data store</text>
+    <rect x="92" y="358" width="286" height="30" rx="6" fill="#ffffff" stroke="#d9d9d9"/>
+    <text x="235" y="378" text-anchor="middle" font-size="12" fill="#1a1a1a">Akka operators, proxies, image cache</text>
+    <text x="235" y="414" text-anchor="middle" font-size="12" font-weight="600" fill="#0b6d6f">Application data stays here</text>
+  </g>
+  <g>
+    <rect x="470" y="240" width="260" height="200" rx="10" fill="#f5f5f5" stroke="#c9c9c9" stroke-width="1.5"/>
+    <text x="600" y="268" text-anchor="middle" font-size="17" font-weight="700" fill="#1a1a1a">Peer region</text>
+    <text x="600" y="300" text-anchor="middle" font-size="12" fill="#5f6b73">Optional, for multi-region</text>
+    <text x="600" y="320" text-anchor="middle" font-size="12" fill="#5f6b73">replication and failover</text>
+  </g>
+
+  <!-- limited control-plane crossing -->
+  <line x1="235" y1="126" x2="235" y2="240" stroke="#02a4a7" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="235" y1="240" x2="235" y2="126" stroke="#02a4a7" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="250" y="150" width="330" height="60" rx="6" fill="#fff8e6" stroke="#f5b60b"/>
+  <text x="415" y="172" text-anchor="middle" font-size="12" font-weight="600" fill="#8a6d0b">Limited platform interactions only</text>
+  <text x="415" y="190" text-anchor="middle" font-size="11" fill="#5f6b73">deploy &#183; key rotation &#183; management API &#183; metadata &#183; observability</text>
+
+  <!-- inter-region mTLS -->
+  <line x1="400" y1="340" x2="470" y2="340" stroke="#5f6b73" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+  <line x1="470" y1="360" x2="400" y2="360" stroke="#5f6b73" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+  <text x="435" y="333" text-anchor="middle" font-size="10" fill="#5f6b73">mTLS</text>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#02a4a7"/>
+    </marker>
+  </defs>
+</svg>
