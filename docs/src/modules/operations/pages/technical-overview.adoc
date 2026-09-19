@@ -186,10 +186,23 @@ If issues arise, Akka provides a customer support portal where cases are created
 
 == Where to go next
 
-Choose your deployment model and follow its setup page. Each setup page ends by letting you choose your cloud.
+Choose your deployment model and follow its setup. Each setup page ends by letting you choose your cloud.
 
-* *Dedicated*: Akka hosts and operates the region in Akka's cloud, so there are no customer installation steps. Akka provisions the region and connects it to you over a private link. See xref:operations:production-readiness/dedicated/checklist.adoc[Dedicated production readiness].
-* *BYOC*: Akka provisions and operates a region inside your own cloud account. Start with the xref:operations:technical-overview/byoc.adoc[Bring Your Own Cloud setup] (install flow, `akka-bootstrap`, and identity model), then choose your cloud.
-* *BYOK8s*: you provision the Kubernetes cluster to Akka's specification. Start with the xref:operations:technical-overview/byok8s-requirements.adoc[BYOK8s requirements], then choose your cloud.
+[cols="1,3,1", options="header"]
+|===
+| Model | What Akka does | Start here
+
+| *Dedicated*
+| Akka hosts and operates the region in Akka's cloud. There are no customer installation steps.
+| xref:operations:production-readiness/dedicated/checklist.adoc[Dedicated readiness]
+
+| *BYOC*
+| Akka provisions and operates a region inside your own cloud account, using the `akka-bootstrap` install flow and identity model.
+| xref:operations:technical-overview/byoc.adoc[BYOC setup]
+
+| *BYOK8s*
+| You provision the Kubernetes cluster to Akka's specification, then Akka installs the platform into it.
+| xref:operations:technical-overview/byok8s-requirements.adoc[BYOK8s requirements]
+|===
 
 For help deciding between models and sizing for availability and data residency, see xref:operations:production-readiness/choosing-your-environment.adoc[].
