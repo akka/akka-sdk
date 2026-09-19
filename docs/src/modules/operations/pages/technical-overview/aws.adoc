@@ -1,5 +1,5 @@
 = Akka Automated Operations on AWS
-:page-summary: AWS-specific setup for Akka Automated Operations — the resources Akka provisions, the identity model, data flows, private connectivity, and the AWS notes for bringing your own EKS cluster.
+:page-summary: AWS-specific setup for Akka Automated Operations: the resources Akka provisions, the identity model, data flows, private connectivity, and the AWS notes for bringing your own EKS cluster.
 :page-when-to-use: Use this when Akka provisions an AAO region into your AWS account (BYOC), or when you run AAO on your own EKS cluster (BYOK8s) on AWS.
 :page-related: xref:operations:technical-overview.adoc[], xref:operations:technical-overview/byok8s-requirements.adoc[], xref:operations:technical-overview/data-flows.adoc[]
 :page-persona: operator-platform, operator-sre
@@ -10,7 +10,7 @@ This page covers running Akka Automated Operations (AAO) on AWS. For the archite
 
 [NOTE]
 ====
-Download link:../_attachments/whitepapers/aao-aws.pdf[this page as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
+Download link:../_attachments/whitepapers/aao-byoc-aws.pdf[BYOC on AWS as a PDF, window=_blank] (shared setup, AWS specifics, and data flows), or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
 ====
 
 The default multi-tenant architecture. Akka provisions a region into your VPC with public, private, and database subnets, and reaches it from the Federation Plane for control-plane operations.

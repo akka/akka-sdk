@@ -1,5 +1,5 @@
 = Akka Automated Operations on GCP
-:page-summary: GCP-specific setup for Akka Automated Operations — the identity model, GKE, and private connectivity for running an AAO region on Google Cloud.
+:page-summary: GCP-specific setup for Akka Automated Operations: the identity model, GKE, and private connectivity for running an AAO region on Google Cloud.
 :page-when-to-use: Use this when Akka provisions an AAO region into your GCP project (BYOC), or when you run AAO on your own GKE cluster (BYOK8s) on GCP.
 :page-related: xref:operations:technical-overview.adoc[], xref:operations:technical-overview/byok8s-requirements.adoc[], xref:operations:technical-overview/data-flows.adoc[]
 :page-persona: operator-platform, operator-sre
@@ -15,7 +15,7 @@ This page covers running Akka Automated Operations (AAO) on GCP. For the archite
 
 [NOTE]
 ====
-Download link:../_attachments/whitepapers/aao-gcp.pdf[this page as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
+Download link:../_attachments/whitepapers/aao-byoc-gcp.pdf[BYOC on GCP as a PDF, window=_blank] (shared setup, GCP specifics, and data flows), or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
 ====
 
 // DIAGRAM: recreated as a themed SVG from the akka-bootstrap modules/google model and the whitepaper style. Flagged for creator review.

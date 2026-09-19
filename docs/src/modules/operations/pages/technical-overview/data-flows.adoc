@@ -15,10 +15,10 @@ Download link:../_attachments/whitepapers/aao-data-flows.pdf[this page as a PDF,
 
 Connectivity terms used below:
 
-* *Peering* — a private network path between your environment and the Akka region.
-* *Firewall, Federation Plane allowlisted* — a customer-initiated outbound flow to the Federation Plane over the internet, from an allowlisted egress path.
-* *Akka NAT gateway* — a region-initiated egress flow. Akka can work with you to route these through your firewall instead.
-* *Pre-authorized IP ranges* — Federation-Plane-to-region flows over the internet. A private-connectivity option is available.
+* *Peering*: a private network path between your environment and the Akka region.
+* *Firewall, Federation Plane allowlisted*: a customer-initiated outbound flow to the Federation Plane over the internet, from an allowlisted egress path.
+* *Akka NAT gateway*: a region-initiated egress flow. Akka can work with you to route these through your firewall instead.
+* *Pre-authorized IP ranges*: Federation-Plane-to-region flows over the internet. A private-connectivity option is available.
 
 == Your end users
 

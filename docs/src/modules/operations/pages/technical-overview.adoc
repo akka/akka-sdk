@@ -1,5 +1,5 @@
 = Akka Automated Operations technical overview
-:page-summary: A technical overview of Akka Automated Operations (AAO): the two-plane architecture, what Akka automates and provisions, the shared-responsibility split, and how a region is installed and operated — with a path selector that routes to the per-hyperscaler and per-deployment-model detail.
+:page-summary: A technical overview of Akka Automated Operations (AAO): the two-plane architecture, what Akka automates and provisions, the shared-responsibility split, and how a region is installed and operated, ending with the setup path for each deployment model and cloud.
 :page-when-to-use: Use this to understand how AAO works end to end and to find the right setup path for your cloud and deployment model.
 :page-related: xref:concepts:deployment-model.adoc[], xref:operations:akka-platform.adoc[], xref:operations:production-readiness/index.adoc[], xref:operations:regions/index.adoc[]
 :page-persona: operator-platform, operator-sre
@@ -121,9 +121,9 @@ Akka Operators:: Route management, elasticity automation, metadata sync, rolling
 
 System management is shared between you and Akka across provisioning and ongoing operations, and the split shifts with the deployment model. For the authoritative, row-by-row breakdown with the full Responsible / Accountable / Consulted / Informed (RACI) split, see the production-readiness shared-responsibility and RACI pages for your model:
 
-* Dedicated — xref:operations:production-readiness/dedicated/shared-responsibility.adoc[Shared responsibility] and xref:operations:production-readiness/dedicated/raci.adoc[RACI]
-* BYOC — xref:operations:production-readiness/byoc/shared-responsibility.adoc[Shared responsibility] and xref:operations:production-readiness/byoc/raci.adoc[RACI]
-* BYOK8s — xref:operations:production-readiness/byok8s/shared-responsibility.adoc[Shared responsibility] and xref:operations:production-readiness/byok8s/raci.adoc[RACI]
+* Dedicated: xref:operations:production-readiness/dedicated/shared-responsibility.adoc[Shared responsibility] and xref:operations:production-readiness/dedicated/raci.adoc[RACI]
+* BYOC: xref:operations:production-readiness/byoc/shared-responsibility.adoc[Shared responsibility] and xref:operations:production-readiness/byoc/raci.adoc[RACI]
+* BYOK8s: xref:operations:production-readiness/byok8s/shared-responsibility.adoc[Shared responsibility] and xref:operations:production-readiness/byok8s/raci.adoc[RACI]
 
 == Security and encryption
 
@@ -186,29 +186,10 @@ If issues arise, Akka provides a customer support portal where cases are created
 
 == Where to go next
 
-Setup depends on two choices: which cloud you run in and which deployment model you use.
+Choose your deployment model and follow its setup page. Each setup page ends by letting you choose your cloud.
 
-By deployment model:
-
-* *Dedicated* — Akka hosts and operates the region in Akka's cloud, so there are no customer installation steps. Akka provisions the region and connects it to you over a private link. See xref:operations:production-readiness/dedicated/checklist.adoc[Dedicated production readiness].
-* *BYOC* — Akka provisions and operates a region inside your own cloud account. Start with xref:operations:technical-overview/byoc.adoc[Bring Your Own Cloud setup] (install flow, `akka-bootstrap`, identity model), then your cloud page below.
-* *BYOK8s* — you provision the Kubernetes cluster to Akka's specification. Start with xref:operations:technical-overview/byok8s-requirements.adoc[BYOK8s requirements], then your cloud page below.
-
-By cloud (BYOC and BYOK8s):
-
-[cols="1,1,1,1", options="header"]
-|===
-| Deployment model | AWS | Azure | GCP
-
-| *BYOC* (Akka provisions into your cloud)
-| xref:operations:technical-overview/aws.adoc[AWS setup]
-| xref:operations:technical-overview/azure.adoc[Azure setup]
-| xref:operations:technical-overview/gcp.adoc[GCP setup]
-
-| *BYOK8s* (you bring the cluster)
-| xref:operations:technical-overview/byok8s-aws.adoc[AWS setup]
-| xref:operations:technical-overview/byok8s-azure.adoc[Azure setup]
-| xref:operations:technical-overview/byok8s-gcp.adoc[GCP setup]
-|===
+* *Dedicated*: Akka hosts and operates the region in Akka's cloud, so there are no customer installation steps. Akka provisions the region and connects it to you over a private link. See xref:operations:production-readiness/dedicated/checklist.adoc[Dedicated production readiness].
+* *BYOC*: Akka provisions and operates a region inside your own cloud account. Start with the xref:operations:technical-overview/byoc.adoc[Bring Your Own Cloud setup] (install flow, `akka-bootstrap`, and identity model), then choose your cloud.
+* *BYOK8s*: you provision the Kubernetes cluster to Akka's specification. Start with the xref:operations:technical-overview/byok8s-requirements.adoc[BYOK8s requirements], then choose your cloud.
 
 For help deciding between models and sizing for availability and data residency, see xref:operations:production-readiness/choosing-your-environment.adoc[].

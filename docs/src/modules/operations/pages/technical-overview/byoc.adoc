@@ -1,5 +1,5 @@
 = Bring Your Own Cloud setup
-:page-summary: The cloud-agnostic BYOC setup — the install flow, the akka-bootstrap utility, and the identity model Akka uses to provision and operate a region in your cloud account.
+:page-summary: The cloud-agnostic BYOC setup: the install flow, the akka-bootstrap utility, and the identity model Akka uses to provision and operate a region in your cloud account.
 :page-when-to-use: Use this as the shared BYOC reference. For your cloud's resources, connectivity, and values.hcl specifics, use the per-cloud pages.
 :page-related: xref:operations:technical-overview.adoc[], xref:operations:technical-overview/aws.adoc[], xref:operations:technical-overview/byok8s-requirements.adoc[]
 :page-persona: operator-platform, operator-sre
@@ -12,19 +12,19 @@ This page lists the cloud-agnostic setup. For your cloud's resource inventory, p
 
 [NOTE]
 ====
-Download link:../_attachments/whitepapers/aao-byoc.pdf[this page as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
+Download link:../_attachments/whitepapers/aao-byoc.pdf[all of BYOC as a PDF, window=_blank] (shared setup, AWS, Azure, GCP, and data flows), or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
 ====
 
 == Installation flow
 
-. *Understand* — review the xref:operations:technical-overview.adoc[technical overview] and receive the `akka-bootstrap` utility from your Akka Success Team, so you can inspect exactly which permissions Akka's deployment identity will require.
-. *Request a region* — submit a region request through the form in the Akka customer portal.
-. *Cloud account* — create a cloud account for Akka. Not strictly required, but a dedicated account simplifies cost management.
-. *Apply permissions* — run `akka-bootstrap` to configure the account, then attach the generated deployment-identity details to your region request.
-. *Provision* — Akka remotely provisions the region and attaches it to a platform organization created for you.
-. *DNS* — create record sets in your DNS zone that map to the region's load-balancer IP.
-. *Smoke tests* — Akka attaches the region to the Federation Plane and runs smoke tests.
-. *Region handover* — register a user at akka.io with a corporate email; Akka makes them your organization's primary owner. A production-labeled region is not fully handed over until you complete the xref:operations:production-readiness/byoc/checklist.adoc[region-readiness steps].
+. *Understand*: review the xref:operations:technical-overview.adoc[technical overview] and receive the `akka-bootstrap` utility from your Akka Success Team, so you can inspect exactly which permissions Akka's deployment identity will require.
+. *Request a region*: submit a region request through the form in the Akka customer portal.
+. *Cloud account*: create a cloud account for Akka. Not strictly required, but a dedicated account simplifies cost management.
+. *Apply permissions*: run `akka-bootstrap` to configure the account, then attach the generated deployment-identity details to your region request.
+. *Provision*: Akka remotely provisions the region and attaches it to a platform organization created for you.
+. *DNS*: create record sets in your DNS zone that map to the region's load-balancer IP.
+. *Smoke tests*: Akka attaches the region to the Federation Plane and runs smoke tests.
+. *Region handover*: register a user at akka.io with a corporate email; Akka makes them your organization's primary owner. A production-labeled region is not fully handed over until you complete the xref:operations:production-readiness/byoc/checklist.adoc[region-readiness steps].
 
 == The akka-bootstrap utility
 
@@ -73,6 +73,6 @@ AAO uses four roles across all clouds:
 
 Within Kubernetes, Akka uses least-privilege access scoped to the Akka-managed namespaces and takes no access to customer-owned Kubernetes resources.
 
-== Per-cloud setup
+== Choose your cloud
 
 Continue with your cloud for its resource inventory, identity specifics, private connectivity, and `values.hcl`: xref:operations:technical-overview/aws.adoc[AWS], xref:operations:technical-overview/azure.adoc[Azure], or xref:operations:technical-overview/gcp.adoc[GCP].

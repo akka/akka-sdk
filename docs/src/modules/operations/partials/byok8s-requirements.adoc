@@ -5,15 +5,15 @@ Once the region is running, do not change any provisioned infrastructure without
 
 == Installation flow
 
-. *Understand* — review the xref:operations:technical-overview.adoc[technical overview] and contact your Akka Success Team for a BYOK8s package.
-. *Capacity planning* — size the environment with your Akka Success Team.
-. *Infrastructure requirements* — agree on DNS subdomain zones, certificate provider, and related decisions.
-. *Infrastructure provisioning* — provision the network, cluster, and database, and set up the egress domain allowlist.
-. *Customer smoke tests* — run the checklist below before handing the cluster to Akka.
-. *Teleport* — install the Akka-provided Teleport Helm chart. Deploy it promptly: the join token has a 3-hour TTL.
-. *Installation* — Akka configures the cluster as an application-plane region and sets up platform observability. You seed database credentials into the namespaces Akka provides.
-. *Akka smoke tests* — Akka attaches the region to the Federation Plane and runs smoke tests.
-. *Region handover* — Akka assigns the region to your organization. A production-labeled region is not fully handed over until you complete the xref:operations:production-readiness/byok8s/checklist.adoc[region-readiness steps].
+. *Understand*: review the xref:operations:technical-overview.adoc[technical overview] and contact your Akka Success Team for a BYOK8s package.
+. *Capacity planning*: size the environment with your Akka Success Team.
+. *Infrastructure requirements*: agree on DNS subdomain zones, certificate provider, and related decisions.
+. *Infrastructure provisioning*: provision the network, cluster, and database, and set up the egress domain allowlist.
+. *Customer smoke tests*: run the checklist below before handing the cluster to Akka.
+. *Teleport*: install the Akka-provided Teleport Helm chart. Deploy it promptly: the join token has a 3-hour TTL.
+. *Installation*: Akka configures the cluster as an application-plane region and sets up platform observability. You seed database credentials into the namespaces Akka provides.
+. *Akka smoke tests*: Akka attaches the region to the Federation Plane and runs smoke tests.
+. *Region handover*: Akka assigns the region to your organization. A production-labeled region is not fully handed over until you complete the xref:operations:production-readiness/byok8s/checklist.adoc[region-readiness steps].
 
 [#requirements]
 == Infrastructure requirements
