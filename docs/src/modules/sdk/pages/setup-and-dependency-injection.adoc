@@ -69,6 +69,38 @@ include::example$doc-snippets/src/main/java/com/example/Bootstrap.java[tag=disab
 <1> Override `disabledComponents`
 <2> Provide a set of component classes to disable depending on the configuration
 
+== Using components from libraries
+
+Components defined in a library jar on the classpath can be added to the service through configuration. List the fully qualified class names under the key for the component type they implement in `application.conf`:
+
+[source,hocon]
+----
+akka.javasdk.library.components {
+  http-endpoint = ["com.example.library.OrderEndpoint", "com.example.library.CustomerEndpoint"]
+}
+----
+
+The listed classes are loaded on startup as if they were defined in the service itself. The service logs the added library components at startup.
+
+The config block has one key per component type:
+
+[options="header" cols="1,1"]
+|===
+|Component type |Config key
+
+|Event Sourced Entity |`event-sourced-entity`
+|Key Value Entity |`key-value-entity`
+|Workflow |`workflow`
+|View |`view`
+|Consumer |`consumer`
+|Timed Action |`timed-action`
+|Agent |`agent`
+|Autonomous Agent |`autonomous-agent`
+|HTTP Endpoint |`http-endpoint`
+|gRPC Endpoint |`grpc-endpoint`
+|MCP Endpoint |`mcp-endpoint`
+|===
+
 
 [#_dependency_injection]
 == Dependency injection
