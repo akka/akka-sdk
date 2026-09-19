@@ -8,6 +8,11 @@ include::ROOT:partial$include.adoc[]
 
 Under Bring Your Own Kubernetes (BYOK8s), you provision the cluster to Akka's specification and install Teleport to grant access. Akka then configures the cluster as an application-plane region, runs smoke tests, and hands it over. This model runs in your cloud or your own data center.
 
+[NOTE]
+====
+Download link:../_attachments/whitepapers/aao-byok8s-requirements.pdf[this page as a PDF], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview].
+====
+
 [WARNING]
 ====
 Once the region is running, do not change any provisioned infrastructure without first informing Akka. It could break the Akka region.
@@ -64,7 +69,7 @@ Once the region is running, do not change any provisioned infrastructure without
 
 === Database credentials
 
-Seed the connection credentials (username, password, host, database name) as Kubernetes Secrets into both the `kalix-system` and `kalix-management-system` namespaces. You create these namespaces if needed, but do not manage them: AAO imports them into its management scope and reconciles them. Akka recommends the link:https://external-secrets.io[external-secrets operator, window="new"] to mirror credentials from your cloud secret store.
+Seed the connection credentials (username, password, host, database name) as Kubernetes Secrets into both the `kalix-system` and `kalix-management-system` namespaces. You create these namespaces if needed, but do not manage them: AAO imports them into its management scope and reconciles them. Akka recommends the link:{url-external-secrets}[external-secrets operator, window="new"] to mirror credentials from your cloud secret store.
 
 === Access
 
@@ -97,17 +102,34 @@ Akka reaches the cluster through Teleport, which uses ports 3023, 3024, and 3026
 
 == Per-cloud notes
 
-[#aws]
-=== AWS
+The requirements above are cloud-agnostic. Each cloud adds a few specifics. The provisioning identity and resource inventory for each cloud are on the xref:operations:technical-overview/aws.adoc[AWS], xref:operations:technical-overview/azure.adoc[Azure], and xref:operations:technical-overview/gcp.adoc[GCP] pages.
 
-Run on EKS. See the AWS specifics (Route 53 records, IRSA `dns01` solver, EKS addons and AMI, RDS parameters and CA truststore, external-secrets from Secrets Manager) on the xref:operations:technical-overview/aws.adoc#byok8s[AWS page].
+[#aws]
+=== AWS (EKS)
+
+*Route 53 records* — create these in your hosted zone (public or private):
+
+[cols="2,1,2", options="header"]
+|===
+| Record | Type | Target
+
+| `akka.[zone]` | A | Network Load Balancer (platform APIs)
+| `*.akka.[zone]` | CNAME | `akka.[zone]`
+| `services.akka.[zone]` | A | Network Load Balancer (user services and app support APIs)
+| `*.services.akka.[zone]` | CNAME | `services.akka.[zone]`
+|===
+
+* *Certificates* — cert-manager `ClusterIssuer` with the Route 53 `dns01` solver, authorized through IRSA (IAM Roles for Service Accounts) to write validation TXT records.
+* *EKS cluster* — node groups (one On-Demand, optionally one Spot) at 16 vCPU / 64 GB (for example `m5.4xlarge`); AMI `AL2023_x86_64_STANDARD`; managed addons `coredns`, `aws-ebs-csi-driver`, `vpc-cni`, `kube-proxy`, and the AWS secrets-store CSI driver provider; Calico in policy-only mode.
+* *RDS for PostgreSQL* — PostgreSQL 17, Multi-AZ, automatic minor upgrades and deletion protection; parameter group `rds.force_ssl = 1`. Because SSL is required, install the RDS CA bundle (`+https://truststore.pki.rds.amazonaws.com/<region>/<region>-bundle.pem+`) into the `kalix-system` and `kalix-management-system` namespaces.
+* *Database credentials* — use the external-secrets operator to mirror them from AWS Secrets Manager.
 
 [#azure]
-=== Azure
+=== Azure (AKS)
 
-Run on AKS. See the xref:operations:technical-overview/azure.adoc[Azure page] for the resource providers to register, EncryptionAtHost, and the Azure identity model.
+Register the resource providers and enable EncryptionAtHost as described on the xref:operations:technical-overview/azure.adoc[Azure page]. Use Azure Database for PostgreSQL flexible server for the database, and the Azure secrets-store CSI driver provider.
 
 [#gcp]
-=== GCP
+=== GCP (GKE)
 
-Run on GKE. See the xref:operations:technical-overview/gcp.adoc[GCP page].
+Use Cloud SQL for PostgreSQL for the database (reachable over private services access), Cloud DNS for the two subdomain zones, and the GCP secrets-store CSI driver provider. See the xref:operations:technical-overview/gcp.adoc[GCP page] for the identity model and resource inventory.

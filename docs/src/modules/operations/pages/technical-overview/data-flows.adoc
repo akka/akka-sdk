@@ -8,6 +8,11 @@ include::ROOT:partial$include.adoc[]
 
 This page documents the individual network flows between your environment and the Akka platform. Each flow lists the data carried, its direction, the connectivity used, and how it is authenticated. "Your ..." denotes a resource in your own environment.
 
+[NOTE]
+====
+Download link:../_attachments/whitepapers/aao-data-flows.pdf[this page as a PDF], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview].
+====
+
 Connectivity terms used below:
 
 * *Peering* — a private network path between your environment and the Akka region.

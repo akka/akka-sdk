@@ -6,18 +6,31 @@
 
 include::ROOT:partial$include.adoc[]
 
-// REVIEW: The GCP source document was never completed (it is a deprecated work-in-progress
-// clone of the Azure doc). This page is seeded from the consolidated whitepaper's GCP section
-// and the generic model. The GCP-specific resource inventory, IAM roles/bindings, and the exact
-// permission set still need to be sourced from the akka-bootstrap modules/google Terraform or
-// confirmed with SRE before this page is complete. Tracked in issue #1792.
+// REVIEW: The prose GCP source doc was never completed (it is a deprecated work-in-progress
+// clone of the Azure doc). The resource inventory below is derived from the akka-bootstrap
+// modules/google Terraform module (v1.1.5). The exact IAM roles and bindings live in that module
+// and are intentionally not duplicated here (see the note on akka-bootstrap). Diagrams still to
+// be added. Tracked in issue #1792.
 
 This page covers running Akka Automated Operations (AAO) on GCP. For the architecture and concepts, start with the xref:operations:technical-overview.adoc[technical overview].
 
 [NOTE]
 ====
-This page is in progress. The GCP-specific resource and permission detail is being sourced from the `akka-bootstrap` `modules/google` module. The identity model, orchestration, and connectivity below are accurate; the full resource inventory will follow.
+Download link:../_attachments/whitepapers/aao-gcp.pdf[this page as a PDF], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview].
 ====
+
+== GCP resources
+
+AAO on GCP uses these Google Cloud services (from the `akka-bootstrap` `modules/google` module):
+
+* Cloud IAM and Cloud Resource Manager (service account, custom roles, and bindings)
+* Compute Engine networking (VPC, subnets, Cloud NAT, external IP, Cloud Load Balancing)
+* Google Kubernetes Engine (GKE)
+* Cloud SQL for PostgreSQL
+* Service Networking (private services access for the database)
+* Cloud DNS (public and private zones)
+* Cloud KMS
+* Cloud Storage
 
 == Identity model
 

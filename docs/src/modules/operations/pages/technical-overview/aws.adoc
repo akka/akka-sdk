@@ -8,6 +8,11 @@ include::ROOT:partial$include.adoc[]
 
 This page covers running Akka Automated Operations (AAO) on AWS. For the architecture and concepts, start with the xref:operations:technical-overview.adoc[technical overview].
 
+[NOTE]
+====
+Download link:../_attachments/whitepapers/aao-aws.pdf[this page as a PDF], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview].
+====
+
 // DIAGRAM: recreated as a themed SVG from the original whitepaper AWS "hub and spoke" drawing. Flagged for creator review.
 image::operations:aao-aws-architecture.svg[AAO on AWS]
 
@@ -96,42 +101,7 @@ By default, traffic between the region and your internal networks traverses the 
 [#byok8s]
 == Bringing your own EKS cluster (BYOK8s)
 
-If you provision the cluster yourself, follow the shared xref:operations:technical-overview/byok8s-requirements.adoc[BYOK8s requirements] and apply these AWS specifics.
-
-=== Route 53 records
-
-Create these records in your hosted zone (public or private):
-
-[cols="2,1,2", options="header"]
-|===
-| Record | Type | Target
-
-| `akka.[zone]` | A | Network Load Balancer (platform APIs)
-| `*.akka.[zone]` | CNAME | `akka.[zone]`
-| `services.akka.[zone]` | A | Network Load Balancer (user services and app support APIs)
-| `*.services.akka.[zone]` | CNAME | `services.akka.[zone]`
-|===
-
-=== Certificates
-
-Use a cert-manager `ClusterIssuer` with the Route 53 `dns01` solver, authorized through IRSA (IAM Roles for Service Accounts) to write the validation TXT records.
-
-=== EKS cluster
-
-* Node groups: one On-Demand, optionally one Spot; 16 vCPU / 64 GB (for example `m5.4xlarge`).
-* AMI: `AL2023_x86_64_STANDARD`.
-* Managed addons: `coredns`, `aws-ebs-csi-driver`, `vpc-cni`, `kube-proxy`, and the AWS secrets-store CSI driver provider.
-* Network policy: Calico in policy-only mode (not an overlay CNI unless the IP pool is too small).
-
-=== RDS for PostgreSQL
-
-* Engine PostgreSQL 17, Multi-AZ, automatic minor upgrades and deletion protection enabled.
-* Parameter group: `rds.force_ssl = 1` (optionally `log_connections` and `log_disconnections`).
-* Because `rds.force_ssl` requires SSL, install the RDS CA bundle into the `kalix-system` and `kalix-management-system` namespaces. The bundle is at `+https://truststore.pki.rds.amazonaws.com/<region>/<region>-bundle.pem+`.
-
-=== Database credentials
-
-Seed the connection credentials into the `kalix-system` and `kalix-management-system` namespaces. On AWS, use the external-secrets operator to mirror them from AWS Secrets Manager.
+If you provision the cluster yourself instead of having Akka provision into your account, follow the shared xref:operations:technical-overview/byok8s-requirements.adoc[BYOK8s requirements]. The AWS-specific notes (Route 53 records, IRSA `dns01` solver, EKS addons and AMI, RDS parameters and CA truststore, external-secrets from Secrets Manager) are in the xref:operations:technical-overview/byok8s-requirements.adoc#aws[AWS section] there.
 
 == See also
 

@@ -10,6 +10,11 @@ Akka Automated Operations (AAO) is a remotely installed, actively maintained Akk
 
 Application data stays within your environment. A limited set of platform interactions still crosses to the Akka Federation Plane: deployments, key rotation, the management API, metadata synchronization, and platform observability. The xref:operations:technical-overview/data-flows.adoc[data flows] page lists every flow.
 
+[NOTE]
+====
+Download the full overview as a single link:_attachments/whitepapers/aao-technical-overview-full.pdf[PDF]. Each page below is also available as its own PDF.
+====
+
 // DIAGRAM: recreated as a themed SVG from the original whitepaper "Federation Plane / Application Plane" drawing. Flagged for creator review.
 image::operations:aao-planes.svg[Federation Plane and Application Plane]
 
@@ -162,7 +167,7 @@ Data at rest uses the store's default encryption. Keys are provided by Akka or y
 
 Data Encryption Keys (DEKs) encrypt data and are stored alongside it, themselves encrypted by a Key Encryption Key (KEK). KEKs live separately as Kubernetes secrets and rotate periodically. Rotating a KEK re-encrypts DEKs without re-encrypting the underlying data. Inter-region traffic uses mutual TLS with unique per-client and per-service certificates. Communication is established only if both sides mutually authenticate. See xref:operations:regions/infrastructure.adoc[] for the multi-region certificate and ingress details.
 
-Akka adheres to a range of compliance standards. Full certification detail lives in the https://trust.akka.io[Akka Trust Center, window="new"].
+Akka adheres to a range of compliance standards. Full certification detail lives in the link:{url-akka-trust-center}[Akka Trust Center, window="new"].
 
 == Networking and ports
 
