@@ -10,7 +10,7 @@ This page covers running Akka Automated Operations (AAO) on Azure. For the archi
 
 [NOTE]
 ====
-Download link:../_attachments/whitepapers/aao-azure.pdf[this page as a PDF], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview].
+Download link:../_attachments/whitepapers/aao-azure.pdf[this page as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
 ====
 
 The default architecture. Akka provisions a region into your virtual network with private and database subnets, using Microsoft Entra ID for the deployment identity.

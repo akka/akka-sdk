@@ -12,7 +12,7 @@ This page lists the cloud-agnostic setup. For your cloud's resource inventory, p
 
 [NOTE]
 ====
-Download link:../_attachments/whitepapers/aao-byoc.pdf[this page as a PDF], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview].
+Download link:../_attachments/whitepapers/aao-byoc.pdf[this page as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
 ====
 
 == Installation flow

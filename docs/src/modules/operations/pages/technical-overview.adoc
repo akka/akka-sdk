@@ -12,7 +12,7 @@ Application data stays within your environment. A limited set of platform intera
 
 [NOTE]
 ====
-Download the full overview as a single link:_attachments/whitepapers/aao-technical-overview-full.pdf[PDF]. Each page below is also available as its own PDF.
+Download the full overview as a single link:_attachments/whitepapers/aao-technical-overview-full.pdf[PDF, window=_blank]. Each page below is also available as its own PDF.
 ====
 
 // DIAGRAM: recreated as a themed SVG from the original whitepaper "Federation Plane / Application Plane" drawing. Flagged for creator review.

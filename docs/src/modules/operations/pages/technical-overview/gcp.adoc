@@ -15,7 +15,7 @@ This page covers running Akka Automated Operations (AAO) on GCP. For the archite
 
 [NOTE]
 ====
-Download link:../_attachments/whitepapers/aao-gcp.pdf[this page as a PDF], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview].
+Download link:../_attachments/whitepapers/aao-gcp.pdf[this page as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
 ====
 
 // DIAGRAM: recreated as a themed SVG from the akka-bootstrap modules/google model and the whitepaper style. Flagged for creator review.

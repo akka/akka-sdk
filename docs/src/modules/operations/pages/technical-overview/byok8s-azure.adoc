@@ -10,7 +10,7 @@ Run Akka Automated Operations (AAO) on an AKS cluster you provision and operate.
 
 [NOTE]
 ====
-Download link:../_attachments/whitepapers/aao-byok8s-azure.pdf[this page as a PDF], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview].
+Download link:../_attachments/whitepapers/aao-byok8s-azure.pdf[this page as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
 ====
 
 include::operations:partial$byok8s-requirements.adoc[]
