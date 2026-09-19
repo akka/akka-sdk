@@ -16,6 +16,9 @@ Download the full overview as a single link:_attachments/whitepapers/aao-technic
 ====
 
 // DIAGRAM: recreated as a themed SVG from the original whitepaper "Federation Plane / Application Plane" drawing. Flagged for creator review.
+The two planes and the main flows between them:
+
+.The Federation Plane and one or more per-region Application Planes
 image::operations:aao-planes.svg[Federation Plane and Application Plane]
 
 == Choose your path
