@@ -1,7 +1,7 @@
 = Akka Automated Operations on AWS with your own Kubernetes
 :page-summary: The complete BYOK8s-on-AWS setup: the shared Kubernetes requirements plus the AWS specifics (Route 53, IRSA, EKS, RDS, external-secrets).
 :page-when-to-use: Use this when you provision and operate your own EKS cluster and Akka installs the platform into it.
-:page-related: xref:operations:technical-overview/aws.adoc[], xref:operations:technical-overview/byok8s-requirements.adoc[], xref:operations:technical-overview/data-flows.adoc[]
+:page-related: xref:operations:technical-overview/byoc-aws.adoc[], xref:operations:technical-overview/byok8s-requirements.adoc[], xref:operations:technical-overview/data-flows.adoc[]
 :page-persona: operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
@@ -38,6 +38,6 @@ Apply these AWS additions to the requirements above.
 
 == See also
 
-* xref:operations:technical-overview/aws.adoc[AAO on AWS]: the AWS resource inventory and identity model
+* xref:operations:technical-overview/byoc-aws.adoc[BYOC on AWS]: the AWS resource inventory and identity model
 * xref:operations:production-readiness/byok8s/checklist.adoc[BYOK8s production readiness]
 * xref:operations:technical-overview/data-flows.adoc[Data flows]

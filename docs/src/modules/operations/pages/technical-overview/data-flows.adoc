@@ -1,7 +1,7 @@
 = Data flows and security pathways
 :page-summary: Every network flow between your environment and the Akka Automated Operations platform, with source and destination, connectivity, and authentication, for security review.
 :page-when-to-use: Use this for a security or InfoSec review of AAO, to see exactly what data crosses where and how each flow is authenticated.
-:page-related: xref:operations:technical-overview.adoc[], xref:operations:regions/infrastructure.adoc[], xref:operations:technical-overview/aws.adoc[]
+:page-related: xref:operations:technical-overview.adoc[], xref:operations:regions/infrastructure.adoc[], xref:operations:technical-overview/byoc-aws.adoc[]
 :page-persona: operator-platform, operator-sre, security-reviewer
 
 include::ROOT:partial$include.adoc[]
@@ -97,4 +97,4 @@ All flows below use the bootstrap credential you create and share with Akka.
 
 == Private connectivity by cloud
 
-Each cloud offers a private-connectivity option to keep region-to-internal traffic off the public internet: Transit Gateway on AWS, VPC Peering on GCP, and VNet Peering with Azure Firewall on Azure. See the xref:operations:technical-overview/aws.adoc[AWS], xref:operations:technical-overview/azure.adoc[Azure], and xref:operations:technical-overview/gcp.adoc[GCP] pages.
+Under BYOC, Akka can set up a private-connectivity option per cloud to keep region-to-internal traffic off the public internet: Transit Gateway on AWS, VPC Peering on GCP, and VNet Peering with Azure Firewall on Azure. See the xref:operations:technical-overview/byoc-aws.adoc[BYOC on AWS], xref:operations:technical-overview/byoc-azure.adoc[BYOC on Azure], and xref:operations:technical-overview/byoc-gcp.adoc[BYOC on GCP] pages.

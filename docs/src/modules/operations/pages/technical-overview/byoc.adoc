@@ -1,14 +1,14 @@
 = Bring Your Own Cloud setup
 :page-summary: The cloud-agnostic BYOC setup: the install flow, the akka-bootstrap utility, and the identity model Akka uses to provision and operate a region in your cloud account.
 :page-when-to-use: Use this as the shared BYOC reference. For your cloud's resources, connectivity, and values.hcl specifics, use the per-cloud pages.
-:page-related: xref:operations:technical-overview.adoc[], xref:operations:technical-overview/aws.adoc[], xref:operations:technical-overview/byok8s-requirements.adoc[]
+:page-related: xref:operations:technical-overview.adoc[], xref:operations:technical-overview/byoc-aws.adoc[], xref:operations:technical-overview/byok8s-requirements.adoc[]
 :page-persona: operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
 
 Under Bring Your Own Cloud (BYOC), Akka provisions and operates a region inside your own cloud account. You prepare the account with the `akka-bootstrap` utility and grant Akka a deployment identity; Akka then provisions the region, runs smoke tests, and hands it over.
 
-This page lists the cloud-agnostic setup. For your cloud's resource inventory, private connectivity, and `values.hcl` specifics, follow the per-cloud page: xref:operations:technical-overview/aws.adoc[AWS], xref:operations:technical-overview/azure.adoc[Azure], or xref:operations:technical-overview/gcp.adoc[GCP].
+This page lists the cloud-agnostic setup. For your cloud's resource inventory, private connectivity, and `values.hcl` specifics, follow the per-cloud page: xref:operations:technical-overview/byoc-aws.adoc[AWS], xref:operations:technical-overview/byoc-azure.adoc[Azure], or xref:operations:technical-overview/byoc-gcp.adoc[GCP].
 
 [NOTE]
 ====
@@ -77,6 +77,6 @@ Within Kubernetes, Akka uses least-privilege access scoped to the Akka-managed n
 
 Continue with your cloud for its specifics:
 
-* xref:operations:technical-overview/aws.adoc[BYOC on AWS]: VPC and subnets, the IAM identity model, private connectivity, and the AWS `values.hcl`.
-* xref:operations:technical-overview/azure.adoc[BYOC on Azure]: virtual network, the Microsoft Entra ID identity model, resource providers, private connectivity, and the Azure `values.hcl`.
-* xref:operations:technical-overview/gcp.adoc[BYOC on GCP]: VPC, the service-account identity model, private connectivity, and the GCP `values.hcl`.
+* xref:operations:technical-overview/byoc-aws.adoc[BYOC on AWS]: VPC and subnets, the IAM identity model, private connectivity, and the AWS `values.hcl`.
+* xref:operations:technical-overview/byoc-azure.adoc[BYOC on Azure]: virtual network, the Microsoft Entra ID identity model, resource providers, private connectivity, and the Azure `values.hcl`.
+* xref:operations:technical-overview/byoc-gcp.adoc[BYOC on GCP]: VPC, the service-account identity model, private connectivity, and the GCP `values.hcl`.
