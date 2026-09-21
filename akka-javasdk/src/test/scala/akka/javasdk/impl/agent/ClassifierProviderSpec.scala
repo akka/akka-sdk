@@ -16,12 +16,12 @@ import scala.concurrent.Future
 
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
+import akka.javasdk.agent.AgentResponseGuardrail
 import akka.javasdk.agent.Classification
 import akka.javasdk.agent.Classifier
 import akka.javasdk.agent.ClassifierClient
 import akka.javasdk.agent.ClassifierContext
 import akka.javasdk.agent.Decision
-import akka.javasdk.agent.AgentResponseGuardrail
 import akka.runtime.sdk.spi.SpiClassifier
 import akka.runtime.sdk.spi.SpiClassifierClient
 import akka.runtime.sdk.spi.SpiConfiguredClassifier
