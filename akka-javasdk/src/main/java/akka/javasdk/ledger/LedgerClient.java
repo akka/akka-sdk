@@ -4,6 +4,7 @@
 
 package akka.javasdk.ledger;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletionStage;
 
@@ -61,4 +62,28 @@ public interface LedgerClient {
    *     NoSuchElementException} if no evaluation exists with that id
    */
   CompletionStage<EvaluationRecord> getEvaluationAsync(String evaluationId);
+
+  /**
+   * Fetch the evaluations recorded about the interaction with the given {@code interactionId},
+   * newest first.
+   *
+   * <p>Unlike the lookups by id, an interaction without evaluations, and an unknown {@code
+   * interactionId}, both return an empty list.
+   *
+   * <p>Blocks the calling thread until the records have been fetched. Safe to call on a Loom
+   * virtual thread. Use {@link #getEvaluationsAsync(String)} for the non-blocking variant.
+   *
+   * @param interactionId the id of the evaluated interaction, as carried by {@link
+   *     akka.javasdk.agent.Agent.AgentReply#interactionId()}
+   * @return the evaluations of that interaction, newest first
+   */
+  List<EvaluationRecord> getEvaluations(String interactionId);
+
+  /**
+   * Async variant of {@link #getEvaluations(String)}.
+   *
+   * @param interactionId the id of the evaluated interaction
+   * @return a stage that completes with the evaluations of that interaction, newest first
+   */
+  CompletionStage<List<EvaluationRecord>> getEvaluationsAsync(String interactionId);
 }

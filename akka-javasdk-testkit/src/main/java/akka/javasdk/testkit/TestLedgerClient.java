@@ -7,6 +7,8 @@ package akka.javasdk.testkit;
 import akka.javasdk.ledger.EvaluationRecord;
 import akka.javasdk.ledger.InteractionRecord;
 import akka.javasdk.ledger.LedgerClient;
+import java.util.Comparator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -91,5 +93,18 @@ public final class TestLedgerClient implements LedgerClient {
           new NoSuchElementException("No evaluation with id [" + evaluationId + "]"));
     }
     return CompletableFuture.completedFuture(record);
+  }
+
+  @Override
+  public List<EvaluationRecord> getEvaluations(String interactionId) {
+    return evaluations.values().stream()
+        .filter(record -> record.interactionId().equals(interactionId))
+        .sorted(Comparator.comparing(EvaluationRecord::timestamp).reversed())
+        .toList();
+  }
+
+  @Override
+  public CompletionStage<List<EvaluationRecord>> getEvaluationsAsync(String interactionId) {
+    return CompletableFuture.completedFuture(getEvaluations(interactionId));
   }
 }
