@@ -10,6 +10,7 @@ import scala.jdk.CollectionConverters._
 import scala.util.matching.Regex
 
 import akka.annotation.InternalApi
+import akka.javasdk.impl.ConfiguredSanitizer.UseFor
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigObject
 import com.typesafe.config.ConfigValueType
@@ -72,32 +73,26 @@ import com.typesafe.config.ConfigValueType
 
 /**
  * INTERNAL API
- *
- * Where an entry masks. Separate from [[akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor]], whose values are
- * guardrail boundaries.
- */
-@InternalApi private[javasdk] sealed abstract class UseFor(val configValue: String) {
-  override def toString: String = configValue
-}
-
-/**
- * INTERNAL API
- */
-@InternalApi private[javasdk] object UseFor {
-  case object ModelInput extends UseFor("model-input")
-  case object ToolResult extends UseFor("tool-result")
-  case object Logs extends UseFor("logs")
-
-  val All: Set[UseFor] = Set(ModelInput, ToolResult, Logs)
-
-  /** The points an entry masks at when it cannot mask log messages. */
-  val AgentPoints: Set[UseFor] = Set(ModelInput, ToolResult)
-}
-
-/**
- * INTERNAL API
  */
 @InternalApi private[javasdk] object ConfiguredSanitizer {
+
+  /**
+   * Where an entry masks. The values are application points, not the boundaries [[ConfiguredGuardrail.UseFor]] holds.
+   */
+  sealed abstract class UseFor(val configValue: String) {
+    override def toString: String = configValue
+  }
+
+  object UseFor {
+    case object ModelInput extends UseFor("model-input")
+    case object ToolResult extends UseFor("tool-result")
+    case object Logs extends UseFor("logs")
+
+    val All: Set[UseFor] = Set(ModelInput, ToolResult, Logs)
+
+    /** The points an entry masks at when it cannot mask log messages. */
+    val AgentPoints: Set[UseFor] = Set(ModelInput, ToolResult)
+  }
 
   // Kept in step with the groups the runtime expands a predefined entry into, in
   // runtime/core/src/main/scala/kalix/runtime/sanitizer/SanitizerEngine.scala.

@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl
 
+import akka.javasdk.impl.ConfiguredSanitizer.UseFor
 import akka.runtime.sdk.spi.SpiDataSanitizer
 import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
