@@ -3,7 +3,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Released RELEASE-DATE.
+Released 2026-09-24.
 
 == Changes
 
