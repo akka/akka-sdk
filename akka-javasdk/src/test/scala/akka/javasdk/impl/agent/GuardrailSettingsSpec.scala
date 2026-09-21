@@ -31,10 +31,9 @@ object GuardrailSettingsSpec {
       }
 
       "agent response guard" {
-        class = "test.MyModelGuard"
+        class = "test.MyResponseGuard"
         agents = ["some-agent"]
         category = TOXIC
-        use-for = ["before-agent-response"]
       }
 
       "wildcard guard" {
@@ -42,13 +41,6 @@ object GuardrailSettingsSpec {
         agents = ["some-agent"]
         category = TOXIC
         use-for = ["*"]
-      }
-
-      "model call guard" {
-        class = "test.MyModelGuard"
-        agents = ["some-agent"]
-        category = PROMPT_INJECTION
-        use-for = ["before-model-call"]
       }
     }
     """)
@@ -60,7 +52,7 @@ class GuardrailSettingsSpec extends AnyWordSpec with Matchers {
   "The GuardrailSettings" should {
     "load from config" in {
       val settings = GuardrailSettings(config.getConfig("akka.javasdk.agent.guardrails"))
-      settings.configuredGuardrails.size shouldBe 5
+      settings.configuredGuardrails.size shouldBe 4
 
       val first = settings.configuredGuardrails.find(_.name == "request prompt injection").get
       first.implementationClass shouldBe "akka.javasdk.agent.SimilarityGuard"
@@ -78,13 +70,26 @@ class GuardrailSettingsSpec extends AnyWordSpec with Matchers {
       second.config.getString("some-other-property") shouldBe "foo"
 
       val third = settings.configuredGuardrails.find(_.name == "agent response guard").get
-      third.useFor shouldBe Set(UseFor.BeforeAgentResponse)
+      third.useFor shouldBe empty
 
       val fourth = settings.configuredGuardrails.find(_.name == "wildcard guard").get
       fourth.useFor shouldBe Set(UseFor.Wildcard)
+    }
 
-      val fifth = settings.configuredGuardrails.find(_.name == "model call guard").get
-      fifth.useFor shouldBe Set(UseFor.BeforeModelCall)
+    Seq("before-tool-call", "before-model-call", "before-agent-response").foreach { boundary =>
+      s"reject use-for [$boundary]" in {
+        val faulty = ConfigFactory.parseString(s"""
+          "guard" {
+            class = "test.MyGuard"
+            agents = ["some-agent"]
+            category = TOXIC
+            use-for = ["$boundary"]
+          }
+          """)
+        intercept[IllegalArgumentException] {
+          GuardrailSettings(faulty)
+        }.getMessage should include(s"Unknown use-for [$boundary]")
+      }
     }
 
   }

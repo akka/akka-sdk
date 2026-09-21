@@ -1,12 +1,12 @@
 package com.example.guardrail;
 
 // tag::all[]
+import akka.javasdk.agent.AgentResponseGuardrail;
 import akka.javasdk.agent.ClassifierClient;
 import akka.javasdk.agent.Decision;
 import akka.javasdk.agent.GuardrailContext;
-import akka.javasdk.agent.ModelGuardrail;
 
-public class ClassifierBackedGuard implements ModelGuardrail {
+public class ClassifierBackedGuard implements AgentResponseGuardrail {
 
   private final ClassifierClient classifierClient;
   private final String classifierName;
@@ -19,7 +19,7 @@ public class ClassifierBackedGuard implements ModelGuardrail {
   @Override
   public Decision decide(CallContext ctx) {
     try {
-      var classification = classifierClient.classify(classifierName, ctx.text()); // <3>
+      var classification = classifierClient.classify(classifierName, ctx.reply().text()); // <3>
       if (classification.label().map("toxic"::equals).orElse(false)) {
         return new Decision.Deny("blocked by classifier " + classifierName);
       }

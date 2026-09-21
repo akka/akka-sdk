@@ -13,13 +13,13 @@ import java.util.concurrent.CompletionStage;
  *
  * <p>An implementation has a public constructor, optionally taking a {@link GuardrailContext}
  * parameter, which gives access to the guardrail's configured name and config section. The per-call
- * data is delivered to {@link #decide} via {@link CallContext}. Guardrails are enabled and bound to
- * boundaries via configuration; see the agent documentation.
+ * data is delivered to {@link #decide} via {@link CallContext}. Guardrails are enabled via
+ * configuration; see the agent documentation.
  */
-public non-sealed interface ToolGuardrail extends Guardrail {
+public non-sealed interface ToolCallGuardrail extends Guardrail {
 
   /**
-   * Per-call context passed to a {@link ToolGuardrail} during {@link ToolGuardrail#decide}.
+   * Per-call context passed to a {@link ToolCallGuardrail} during {@link ToolCallGuardrail#decide}.
    *
    * <p>Carries data about the specific tool call being checked.
    *

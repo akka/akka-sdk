@@ -25,12 +25,18 @@ NOTE: For protecting sensitive information like PII, see xref:sdk:sanitization.a
 
 == Kinds of guardrail
 
-A guardrail implements one of two interfaces, according to the boundary it protects:
+A guardrail implements one of three interfaces. The interface sets where the runtime evaluates the guardrail:
 
-* link:{attachmentsdir}/api/akka/javasdk/agent/ModelGuardrail.html[`ModelGuardrail`] — evaluates the agent's final reply, once per interaction (the before-agent-response boundary).
-* link:{attachmentsdir}/api/akka/javasdk/agent/ToolGuardrail.html[`ToolGuardrail`] — evaluates a function-tool call before it is dispatched (the before-tool-call boundary), with access to the tool name and its raw JSON arguments.
+* link:{attachmentsdir}/api/akka/javasdk/agent/ModelCallGuardrail.html[`ModelCallGuardrail`] evaluates the input to each model call. The runtime evaluates it before the first model call. It evaluates the guardrail again before each later call that sends tool results back to the model.
+* link:{attachmentsdir}/api/akka/javasdk/agent/AgentResponseGuardrail.html[`AgentResponseGuardrail`] evaluates the agent's final reply, once per interaction.
+* link:{attachmentsdir}/api/akka/javasdk/agent/ToolCallGuardrail.html[`ToolCallGuardrail`] evaluates a function tool call before the runtime runs the tool. It sees the tool name and the raw JSON arguments.
 
-Both return a link:{attachmentsdir}/api/akka/javasdk/agent/Decision.html[`Decision`]:
+A guardrail class implements exactly one of these interfaces.
+To check several points, write one class per interface.
+
+NOTE: The runtime does not evaluate `ModelCallGuardrail` or `AgentResponseGuardrail` for an agent that streams its reply with a `StreamEffect`.
+
+All three return a link:{attachmentsdir}/api/akka/javasdk/agent/Decision.html[`Decision`]:
 
 * `Decision.Allow` — the guardrail saw nothing wrong; the call proceeds.
 * `Decision.Deny` — the call must not proceed. The `reason` is surfaced to the user as the failure message. Whether the interaction is aborted or merely recorded is governed by `report-only` (see <<_configuring_guardrails>>).
@@ -40,31 +46,50 @@ Both return a link:{attachmentsdir}/api/akka/javasdk/agent/Decision.html[`Decisi
 ====
 The earlier link:{attachmentsdir}/api/akka/javasdk/agent/TextGuardrail.html[`TextGuardrail`] interface — which returns a `Guardrail.Result` (a boolean plus explanation) rather than a `Decision` — is deprecated for removal.
 Existing `TextGuardrail` implementations still run, and the built-in `SimilarityGuard` (see <<_similarity_guardrail>>) is configured the same way.
-New guardrails should implement `ModelGuardrail` or `ToolGuardrail`.
+New guardrails should implement `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail`.
 ====
 
-== Implementing a model guardrail
+== Implementing an agent response guardrail
 
-A `ModelGuardrail` receives a `CallContext` carrying the content being evaluated — the agent's final reply — along with the `agentId()`, `sessionId()`, and `modelName()` of the interaction, and returns a `Decision`:
+An `AgentResponseGuardrail` receives a `CallContext` with the `agentId()`, `sessionId()`, and `modelName()` of the interaction, and returns a `Decision`.
+The `reply()` method returns the agent's final reply as a `Guardrail.Message.AiMessage`:
 
 [source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/guardrail/ProfanityModelGuard.java[ProfanityModelGuard.java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/guardrail/ProfanityResponseGuard.java[ProfanityResponseGuard.java]
 ----
-include::example$doc-snippets/src/main/java/com/example/guardrail/ProfanityModelGuard.java[tag=all]
+include::example$doc-snippets/src/main/java/com/example/guardrail/ProfanityResponseGuard.java[tag=all]
 ----
-<1> Implement `ModelGuardrail`.
-<2> An optional link:{attachmentsdir}/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] constructor parameter gives access to the guardrail's configured name and its config section. Here the `search-for` property is read from configuration.
+<1> Implement `AgentResponseGuardrail`.
+<2> An optional link:{attachmentsdir}/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] constructor parameter gives access to the guardrail's configured name and its config section. Here the guardrail reads the `search-for` property from configuration.
 <3> `decide` receives the per-call `CallContext`.
-<4> Return `Decision.Deny` to reject the call, with a reason surfaced to the user.
-<5> Return `Decision.Allow` to let the call proceed.
+<4> Return `Decision.Deny` to reject the reply, with a reason surfaced to the user.
+<5> Return `Decision.Allow` to let the reply through.
 
-`decide` may block: guardrails are evaluated on virtual threads. Implementations that prefer composing futures can override `decideAsync` instead; the default `decideAsync` delegates to `decide`.
+`decide` may block, because the runtime evaluates guardrails on virtual threads. To compose futures instead, override `decideAsync`. The default `decideAsync` delegates to `decide`.
 
-When the content being checked is multimodal, `text()` is empty: check `textOnly()` and inspect the individual text, image, and PDF parts via `contents()`.
+== Implementing a model call guardrail
 
-== Implementing a tool guardrail
+A `ModelCallGuardrail` receives the conversation that enters a model call.
+Its `CallContext` holds the `systemMessage()`, all `messages()` in the conversation, and the `newMessages()` after the last `AiMessage`.
+On the first model call, `newMessages()` holds the user message.
+On each later call, it holds the tool results that the runtime sends back to the model.
 
-A `ToolGuardrail` evaluates a function-tool call before it runs.
+Each message is a `Guardrail.Message` that keeps its origin: a `UserMessage`, an `AiMessage`, or a `ToolCallResponse`.
+When the model calls several tools at once, each result is a separate `ToolCallResponse`:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/guardrail/ToolResultInjectionGuard.java[ToolResultInjectionGuard.java]
+----
+include::example$doc-snippets/src/main/java/com/example/guardrail/ToolResultInjectionGuard.java[tag=all]
+----
+<1> Implement `ModelCallGuardrail`.
+<2> Check only the messages that are new to this model call.
+<3> Match the tool results by type. Each one carries the tool name and its content parts.
+<4> Deny the model call when a tool result contains the injection text.
+
+== Implementing a tool call guardrail
+
+A `ToolCallGuardrail` evaluates a function tool call before the runtime runs the tool.
 Its `CallContext` exposes the calling `agentId()`, the `toolName()`, the `toolCallId()`, and the raw JSON `arguments()` the model produced:
 
 [source,java,indent=0]
@@ -72,37 +97,39 @@ Its `CallContext` exposes the calling `agentId()`, the `toolName()`, the `toolCa
 ----
 include::example$doc-snippets/src/main/java/com/example/guardrail/PaymentToolGuard.java[tag=all]
 ----
-<1> Implement `ToolGuardrail`.
+<1> Implement `ToolCallGuardrail`.
 <2> `decide` inspects the tool call described by `CallContext`.
-<3> The arguments are delivered as the raw JSON string the model produced.
-<4> Return `Decision.Deny` to block the tool call before it is dispatched.
-
-A tool guardrail binds only to the before-tool-call boundary; see the note on `use-for` in <<_configuring_guardrails>>.
+<3> The runtime delivers the arguments as the raw JSON string the model produced.
+<4> Return `Decision.Deny` to block the tool call before the runtime runs the tool.
 
 == Configuring guardrails
 
-Guardrails are enabled by configuration, so you can enforce at deployment time that certain guardrails are always active.
+You enable guardrails in configuration, so you can enforce at deployment time that certain guardrails are always active.
 
 [source,conf,indent=0]
 .src/main/resources/application.conf
 ----
 akka.javasdk.agent.guardrails {
-  "profanity guard" {                                    // <1>
-    class = "com.example.guardrail.ProfanityModelGuard"  // <2>
-    agents = ["planner-agent"]                           // <3>
-    agent-roles = ["worker"]                             // <4>
-    category = TOXIC                                     // <5>
-    use-for = ["before-agent-response"]                  // <6>
-    report-only = false                                  // <7>
-    search-for = "bad stuff"                             // <8>
+  "profanity guard" {                                       // <1>
+    class = "com.example.guardrail.ProfanityResponseGuard"  // <2>
+    agents = ["planner-agent"]                              // <3>
+    agent-roles = ["worker"]                                // <4>
+    category = TOXIC                                        // <5>
+    report-only = false                                     // <6>
+    search-for = "bad stuff"                                // <7>
+  }
+
+  "tool result injection guard" {
+    class = "com.example.guardrail.ToolResultInjectionGuard"
+    agents = ["*"]
+    category = PROMPT_INJECTION
   }
 
   "payment tool guard" {
     class = "com.example.guardrail.PaymentToolGuard"
     agents = ["*"]
     category = POLICY
-    use-for = ["before-tool-call"]                       // <9>
-    report-only = false
+    tools = ["transferFunds"]                               // <8>
   }
 }
 ----
@@ -111,14 +138,13 @@ akka.javasdk.agent.guardrails {
 <3> Enable this guardrail for agents with these component ids.
 <4> Enable this guardrail for agents with these roles.
 <5> The type of validation, such as PII and TOXIC.
-<6> The boundary the guardrail binds to; a `ModelGuardrail` binds to `before-agent-response`, the final agent reply.
-<7> If it did not pass the evaluation criteria, the execution can either be aborted or continue anyway. In both cases, the result is tracked in logs, metrics and traces.
-<8> An application-specific property, read by the guardrail from its `GuardrailContext`.
-<9> A `ToolGuardrail` binds to the `before-tool-call` boundary.
+<6> If the guardrail denies, the runtime either aborts the interaction or lets it continue. In both cases, the runtime records the result in logs, metrics, and traces.
+<7> An application-specific property, read by the guardrail from its `GuardrailContext`.
+<8> Optional, for a `ToolCallGuardrail` only. Restricts the guardrail to the named tools. Without it, the guardrail sees every tool call on the selected agents.
 
-A before-tool-call guardrail can be restricted to specific tools with the optional `tools` property, for example `tools = ["transferFunds"]`. Without it, the guardrail sees every tool call on the selected agents.
+The `class` property sets the implementation class. The class must implement `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail` (or the deprecated `TextGuardrail`), be public, and have a public constructor. The constructor may take a link:{attachmentsdir}/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which holds the name and the config section of the guardrail. The `ProfanityResponseGuard` example reads its `search-for` property this way.
 
-The implementation class of the guardrail is configured with the `class` property. The class must implement `ModelGuardrail` or `ToolGuardrail` (or the deprecated `TextGuardrail`), be public, and have a public constructor. The constructor may optionally take a link:{attachmentsdir}/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which includes the name and the config section for the specific guardrail. In the `ProfanityModelGuard` example above you can see how the configuration property `search-for` is read from the configuration of the `GuardrailContext` parameter.
+The guardrail interface sets where the runtime evaluates the guardrail, so the configuration has no boundary setting. If a `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail` defines `use-for`, the runtime fails at startup.
 
 === Agent selection
 
@@ -135,9 +161,11 @@ This role is defined in the `@AgentRole` annotation.
 
 The name and the category are reported in logs, metrics, and traces. The `category` should classify the type of validation. It can be any value, but a few recommended categories are JAILBREAK, PROMPT_INJECTION, PII, TOXIC, HALLUCINATED, NSFW, FORMAT.
 
-The guardrail is bound to boundaries with the `use-for` property. Each value is tied to a guardrail interface: `before-agent-response` (fired once on the final agent reply) is for a `ModelGuardrail`, and `before-tool-call` (fired before a function-tool call) is for a `ToolGuardrail`. The values `model-request`, `model-response`, `mcp-tool-request`, and `mcp-tool-response` are deprecated and usable only by the deprecated `TextGuardrail`.
+=== Configuring a deprecated TextGuardrail
 
-NOTE: The `*` wildcard expands according to the guardrail's interface: `before-agent-response` for a `ModelGuardrail`, `before-tool-call` for a `ToolGuardrail`, and the deprecated model and MCP-tool boundaries for a `TextGuardrail`.
+A `TextGuardrail`, including the built-in `SimilarityGuard`, requires the `use-for` property.
+It accepts one or more of `model-request`, `model-response`, `mcp-tool-request`, and `mcp-tool-response`, or `*` for all four.
+These values are deprecated. A `model-request` guardrail becomes a `ModelCallGuardrail`, and a `model-response` guardrail becomes an `AgentResponseGuardrail`.
 
 == Classifier-backed guardrails
 
@@ -159,7 +187,7 @@ The classifier is configured separately under `akka.javasdk.agent.classifiers`; 
 
 == Handling a denied interaction
 
-When a `ModelGuardrail` returns `Decision.Deny` with `report-only = false`, the interaction is aborted and the reason is surfaced to the agent's failure handling as a `Guardrail.GuardrailException`, which you can map in `onFailure`:
+When a `ModelCallGuardrail` or an `AgentResponseGuardrail` returns `Decision.Deny` with `report-only = false`, the runtime aborts the interaction. The runtime surfaces the reason to the agent's failure handling as a `Guardrail.GuardrailException`, which you can map in `onFailure`:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/guardrail/GuardedAgent.java[GuardedAgent.java]

@@ -12,18 +12,20 @@ import java.util.concurrent.TimeUnit
 import scala.annotation.nowarn
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
+import akka.javasdk.agent.AgentResponseGuardrail
 import akka.javasdk.agent.Decision
 import akka.javasdk.agent.Guardrail
+import akka.javasdk.agent.Guardrail.Message
 import akka.javasdk.agent.GuardrailContext
 import akka.javasdk.agent.MessageContent
-import akka.javasdk.agent.ModelGuardrail
-import akka.javasdk.agent.ModelGuardrail.CallContext.ConversationMessage
+import akka.javasdk.agent.ModelCallGuardrail
 import akka.javasdk.agent.SimilarityGuard
 import akka.javasdk.agent.TextGuardrail
-import akka.javasdk.agent.ToolGuardrail
+import akka.javasdk.agent.ToolCallGuardrail
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiJsonSchema
 import akka.util.ByteString
@@ -74,19 +76,19 @@ object GuardrailProviderSpec {
       new Guardrail.Result(false, s"${context.name} says no")
   }
 
-  class MyToolGuard(context: GuardrailContext) extends ToolGuardrail {
-    override def decide(ctx: ToolGuardrail.CallContext): Decision =
+  class MyToolGuard(context: GuardrailContext) extends ToolCallGuardrail {
+    override def decide(ctx: ToolCallGuardrail.CallContext): Decision =
       new Decision.Deny(s"${context.name} says no")
   }
 
-  class AllowingToolGuard extends ToolGuardrail {
-    override def decide(ctx: ToolGuardrail.CallContext): Decision =
+  class AllowingToolGuard extends ToolCallGuardrail {
+    override def decide(ctx: ToolCallGuardrail.CallContext): Decision =
       new Decision.Allow()
   }
 
   // Echoes every context field into the deny reason so a test can assert the full mapping.
-  class EchoingToolGuard extends ToolGuardrail {
-    override def decide(ctx: ToolGuardrail.CallContext): Decision =
+  class EchoingToolGuard extends ToolCallGuardrail {
+    override def decide(ctx: ToolCallGuardrail.CallContext): Decision =
       new Decision.Deny(s"${ctx.agentId}|${ctx.toolName}|${ctx.toolCallId}|${ctx.arguments}|${ctx.sessionId}")
   }
 
@@ -105,16 +107,41 @@ object GuardrailProviderSpec {
       sessionId = "session-1",
       telemetryContext = Context.root())
 
-  class MyModelGuard(context: GuardrailContext) extends ModelGuardrail {
-    override def decide(ctx: ModelGuardrail.CallContext): Decision =
+  class MyResponseGuard(context: GuardrailContext) extends AgentResponseGuardrail {
+    override def decide(ctx: AgentResponseGuardrail.CallContext): Decision =
       new Decision.Deny(s"${context.name} says no")
   }
 
-  // Echoes every context identifier into the deny reason so a test can assert the full mapping.
-  class EchoingModelGuard extends ModelGuardrail {
-    override def decide(ctx: ModelGuardrail.CallContext): Decision =
-      new Decision.Deny(s"${ctx.agentId}|${ctx.sessionId}|${ctx.modelName}|${ctx.text}")
+  // Echoes every context identifier into the deny reason.
+  class EchoingModelCallGuard extends ModelCallGuardrail {
+    override def decide(ctx: ModelCallGuardrail.CallContext): Decision = {
+      val text = ctx.newMessages.asScala.map(textOf).mkString(",")
+      new Decision.Deny(s"${ctx.agentId}|${ctx.sessionId}|${ctx.modelName}|$text")
+    }
   }
+
+  // Echoes every context identifier into the deny reason.
+  class EchoingResponseGuard extends AgentResponseGuardrail {
+    override def decide(ctx: AgentResponseGuardrail.CallContext): Decision =
+      new Decision.Deny(s"${ctx.agentId}|${ctx.sessionId}|${ctx.modelName}|${ctx.reply.text}")
+  }
+
+  class MyModelCallGuard extends ModelCallGuardrail {
+    override def decide(ctx: ModelCallGuardrail.CallContext): Decision = new Decision.Allow()
+  }
+
+  private def textOf(message: Message): String =
+    message match {
+      case u: Message.UserMessage      => u.contents.asScala.map(textOf).mkString
+      case a: Message.AiMessage        => a.text
+      case t: Message.ToolCallResponse => t.contents.asScala.map(textOf).mkString
+    }
+
+  private def textOf(content: MessageContent): String =
+    content match {
+      case t: MessageContent.TextMessageContent => t.text
+      case _                                    => ""
+    }
 
   private def agentResponseContent(text: String): SpiAgent.Guardrail.AgentResponseContent =
     new SpiAgent.Guardrail.AgentResponseContent(
@@ -133,76 +160,100 @@ object GuardrailProviderSpec {
       modelName = "test-model",
       telemetryContext = Context.root())
 
-  // Records the per-call context so a test can assert what the model guard received. The provider
-  // instantiates the guard via reflection, so the captured context is published through this holder.
-  @volatile var capturedModelContext: ModelGuardrail.CallContext = _
+  // One tool round: the user question, the model's tool request, and the tool result.
+  private val toolRoundMessages: Seq[SpiAgent.ContextMessage] = Seq(
+    new SpiAgent.ContextMessage.UserMessage("first question"),
+    new SpiAgent.ContextMessage.AiMessage(
+      "calling tool",
+      Seq(new SpiAgent.ToolCallRequest("id-1", "search", "{}")),
+      None,
+      Map.empty),
+    new SpiAgent.ContextMessage.ToolCallResponseMessage("id-1", "search", "tool result text"))
 
-  class CapturingModelGuard extends ModelGuardrail {
-    override def decide(ctx: ModelGuardrail.CallContext): Decision = {
-      capturedModelContext = ctx
+  // Holds the per-call context captured by the guard.
+  @volatile var capturedModelCallContext: ModelCallGuardrail.CallContext = _
+
+  class CapturingModelCallGuard extends ModelCallGuardrail {
+    override def decide(ctx: ModelCallGuardrail.CallContext): Decision = {
+      capturedModelCallContext = ctx
       new Decision.Allow()
     }
   }
 
-  class BothGuard extends ToolGuardrail with ModelGuardrail {
-    override def decide(ctx: ModelGuardrail.CallContext): Decision = new Decision.Allow()
-    override def decide(ctx: ToolGuardrail.CallContext): Decision = new Decision.Allow()
+  // Holds the per-call context captured by the guard.
+  @volatile var capturedResponseContext: AgentResponseGuardrail.CallContext = _
+
+  class CapturingResponseGuard extends AgentResponseGuardrail {
+    override def decide(ctx: AgentResponseGuardrail.CallContext): Decision = {
+      capturedResponseContext = ctx
+      new Decision.Allow()
+    }
   }
 
-  class FailingModelGuard extends ModelGuardrail {
+  class ToolAndResponseGuard extends ToolCallGuardrail with AgentResponseGuardrail {
+    override def decide(ctx: AgentResponseGuardrail.CallContext): Decision = new Decision.Allow()
+    override def decide(ctx: ToolCallGuardrail.CallContext): Decision = new Decision.Allow()
+  }
+
+  class ModelCallAndResponseGuard extends ModelCallGuardrail with AgentResponseGuardrail {
+    override def decide(ctx: AgentResponseGuardrail.CallContext): Decision = new Decision.Allow()
+    override def decide(ctx: ModelCallGuardrail.CallContext): Decision = new Decision.Allow()
+  }
+
+  class FailingResponseGuard extends AgentResponseGuardrail {
     val cause = new IllegalStateException("upstream classifier unreachable")
-    override def decide(ctx: ModelGuardrail.CallContext): Decision =
+    override def decide(ctx: AgentResponseGuardrail.CallContext): Decision =
       new Decision.Fail("could not decide", cause)
   }
 
-  class ThrowingModelGuard extends ModelGuardrail {
-    override def decide(ctx: ModelGuardrail.CallContext): Decision =
+  class ThrowingResponseGuard extends AgentResponseGuardrail {
+    override def decide(ctx: AgentResponseGuardrail.CallContext): Decision =
       throw new IllegalStateException("kaboom")
   }
 
-  class ThrowingToolGuard extends ToolGuardrail {
-    override def decide(ctx: ToolGuardrail.CallContext): Decision =
+  class ThrowingToolGuard extends ToolCallGuardrail {
+    override def decide(ctx: ToolCallGuardrail.CallContext): Decision =
       throw new IllegalStateException("kaboom")
   }
 
   // A guard implemented via the sync decide(...) must never have its sync method invoked when the
   // async variant is overridden -- decide throwing here proves the SDK only calls decideAsync.
-  abstract class AsyncOnlyModelGuard extends ModelGuardrail {
-    final override def decide(ctx: ModelGuardrail.CallContext): Decision =
+  abstract class AsyncOnlyResponseGuard extends AgentResponseGuardrail {
+    final override def decide(ctx: AgentResponseGuardrail.CallContext): Decision =
       throw new UnsupportedOperationException("sync decide must not be called when decideAsync is overridden")
   }
 
   // Fails the returned stage rather than throwing or returning Decision.Fail -- the third way a
   // guardrail can fail to reach a verdict.
-  class FailedStageModelGuard extends AsyncOnlyModelGuard {
-    override def decideAsync(ctx: ModelGuardrail.CallContext): CompletionStage[Decision] =
+  class FailedStageResponseGuard extends AsyncOnlyResponseGuard {
+    override def decideAsync(ctx: AgentResponseGuardrail.CallContext): CompletionStage[Decision] =
       CompletableFuture.failedFuture(new IllegalStateException("stage blew up"))
   }
 
-  class NullStageModelGuard extends AsyncOnlyModelGuard {
-    override def decideAsync(ctx: ModelGuardrail.CallContext): CompletionStage[Decision] = null
+  class NullStageResponseGuard extends AsyncOnlyResponseGuard {
+    override def decideAsync(ctx: AgentResponseGuardrail.CallContext): CompletionStage[Decision] = null
   }
 
-  class NullDecisionModelGuard extends ModelGuardrail {
-    override def decide(ctx: ModelGuardrail.CallContext): Decision = null
+  class NullDecisionResponseGuard extends AgentResponseGuardrail {
+    override def decide(ctx: AgentResponseGuardrail.CallContext): Decision = null
   }
 
   // Completes only when released, so a test can observe that decideAsync(...) doesn't block the caller.
-  class SlowModelGuard extends AsyncOnlyModelGuard {
+  class SlowResponseGuard extends AsyncOnlyResponseGuard {
     val started = new CountDownLatch(1)
     val release = new CompletableFuture[Decision]()
 
-    override def decideAsync(ctx: ModelGuardrail.CallContext): CompletionStage[Decision] = {
+    override def decideAsync(ctx: AgentResponseGuardrail.CallContext): CompletionStage[Decision] = {
       started.countDown()
       release
     }
   }
 
-  @volatile var slowModelGuard: SlowModelGuard = _
+  @volatile var slowResponseGuard: SlowResponseGuard = _
 
   // The provider instantiates guards reflectively, so publish the instance for the test to drive.
-  class PublishingSlowModelGuard extends SlowModelGuard {
-    slowModelGuard = this
+  class PublishingSlowResponseGuard extends SlowResponseGuard {
+    slowResponseGuard = this
   }
 
   class WrongGuard
@@ -313,7 +364,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         "componentId and role wildcard guard")
     }
 
-    "register a ToolGuardrail and attach it at the before-tool-call boundary" in {
+    "register a ToolCallGuardrail and attach it at the before-tool-call boundary" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -321,7 +372,6 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyToolGuard"
               agents = ["tool-agent"]
               category = TOOL_POLICY
-              use-for = ["before-tool-call"]
             }
           }
         """)
@@ -346,7 +396,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       result.explanation shouldBe "my tool guard says no"
     }
 
-    "populate the ToolGuardrailContext from the tool call content" in {
+    "populate the ToolCallGuardrailContext from the tool call content" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -354,7 +404,6 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$EchoingToolGuard"
               agents = ["tool-agent"]
               category = TOOL_POLICY
-              use-for = ["before-tool-call"]
             }
           }
         """)
@@ -370,7 +419,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       result.explanation shouldBe "tool-agent|some-tool|call-1|{}|session-1"
     }
 
-    "let a tool call proceed when the before-tool-call ToolGuardrail allows it" in {
+    "let a tool call proceed when the before-tool-call ToolCallGuardrail allows it" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -378,7 +427,6 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$AllowingToolGuard"
               agents = ["tool-agent"]
               category = TOOL_POLICY
-              use-for = ["before-tool-call"]
             }
           }
         """)
@@ -393,7 +441,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       result.passed shouldBe true
     }
 
-    "attach a before-tool-call ToolGuardrail to every tool when no tool filter is configured" in {
+    "attach a before-tool-call ToolCallGuardrail to every tool when no tool filter is configured" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -401,7 +449,6 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$AllowingToolGuard"
               agents = ["tool-agent"]
               category = TOOL_POLICY
-              use-for = ["before-tool-call"]
             }
           }
         """)
@@ -414,7 +461,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       descriptors.map(_.requestGuardrails.size) shouldBe Seq(1, 1)
     }
 
-    "attach a before-tool-call ToolGuardrail only to the named tools when a tool filter is configured" in {
+    "attach a before-tool-call ToolCallGuardrail only to the named tools when a tool filter is configured" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -422,7 +469,6 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$AllowingToolGuard"
               agents = ["tool-agent"]
               category = TOOL_POLICY
-              use-for = ["before-tool-call"]
               tools = ["allowed-tool"]
             }
           }
@@ -439,15 +485,14 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       byName("other-tool") shouldBe 0
     }
 
-    "register a ModelGuardrail at before-model-call and expose the newest frame via CallContext" in {
+    "register a ModelCallGuardrail at before-model-call and expose the newest frame via CallContext" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
             "echoing model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$EchoingModelGuard"
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$EchoingModelCallGuard"
               agents = ["model-agent"]
               category = MODEL_POLICY
-              use-for = ["before-model-call"]
             }
           }
         """)
@@ -459,30 +504,84 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       g.beforeAgentResponseGuardrails shouldBe empty
 
       // the newest frame entering this model call is the tool result, not the earlier turns
-      val messages = Seq(
-        new SpiAgent.ContextMessage.UserMessage("first question"),
-        new SpiAgent.ContextMessage.AiMessage(
-          "calling tool",
-          Seq(new SpiAgent.ToolCallRequest("id-1", "search", "{}")),
-          None,
-          Map.empty),
-        new SpiAgent.ContextMessage.ToolCallResponseMessage("id-1", "search", "tool result text"))
-
       val result =
-        Await.result(g.beforeModelCallGuardrails.head.evaluate(modelCallContent(messages)), 3.seconds)
+        Await.result(g.beforeModelCallGuardrails.head.evaluate(modelCallContent(toolRoundMessages)), 3.seconds)
       result.passed shouldBe false
       result.explanation shouldBe "model-agent|session-1|test-model|tool result text"
     }
 
-    "expose the conversation with origins to a ModelGuardrail at before-model-call" in {
+    "expose the conversation with origins to a ModelCallGuardrail" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
             "capturing model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelGuard"
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelCallGuard"
               agents = ["model-agent"]
               category = MODEL_POLICY
-              use-for = ["before-model-call"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).beforeModelCallGuardrails.head
+
+      Await.result(spiGuardrail.evaluate(modelCallContent(toolRoundMessages)), 3.seconds).passed shouldBe true
+
+      val conversation = capturedModelCallContext
+      conversation.systemMessage() shouldBe "system prompt"
+
+      val received = conversation.messages()
+      received.size shouldBe 3
+
+      val userMessage = received.get(0).asInstanceOf[Message.UserMessage]
+      userMessage.contents().get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "first question"
+
+      val aiMessage = received.get(1).asInstanceOf[Message.AiMessage]
+      aiMessage.text() shouldBe "calling tool"
+      aiMessage.toolCallRequests().get(0).name() shouldBe "search"
+
+      val toolResult = received.get(2).asInstanceOf[Message.ToolCallResponse]
+      toolResult.name() shouldBe "search"
+      toolResult.contents().get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "tool result text"
+
+      conversation.newMessages().asScala.toSeq shouldBe Seq(toolResult)
+    }
+
+    "expose the user message as the new messages on the first model call" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "capturing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelCallGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).beforeModelCallGuardrails.head
+
+      val messages = Seq(new SpiAgent.ContextMessage.UserMessage("first question"))
+      Await.result(spiGuardrail.evaluate(modelCallContent(messages)), 3.seconds).passed shouldBe true
+
+      val conversation = capturedModelCallContext
+      val newMessages = conversation.newMessages()
+      newMessages.size shouldBe 1
+      val userMessage = newMessages.get(0).asInstanceOf[Message.UserMessage]
+      userMessage.contents().get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "first question"
+    }
+
+    "expose each parallel tool result as its own new message at before-model-call" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "capturing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelCallGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
             }
           }
         """)
@@ -492,51 +591,34 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val spiGuardrail = provider.agentGuardrails("model-agent", role = None).beforeModelCallGuardrails.head
 
       val messages = Seq(
-        new SpiAgent.ContextMessage.UserMessage("first question"),
+        new SpiAgent.ContextMessage.UserMessage("weather in Lisbon and Porto?"),
         new SpiAgent.ContextMessage.AiMessage(
-          "calling tool",
-          Seq(new SpiAgent.ToolCallRequest("id-1", "search", "{}")),
+          "",
+          Seq(
+            new SpiAgent.ToolCallRequest("id-1", "weather", """{"city":"Lisbon"}"""),
+            new SpiAgent.ToolCallRequest("id-2", "weather", """{"city":"Porto"}""")),
           None,
           Map.empty),
-        new SpiAgent.ContextMessage.ToolCallResponseMessage("id-1", "search", "tool result text"))
+        new SpiAgent.ContextMessage.ToolCallResponseMessage("id-1", "weather", "Lisbon: 22C"),
+        new SpiAgent.ContextMessage.ToolCallResponseMessage("id-2", "weather", "Porto: 18C"))
 
       Await.result(spiGuardrail.evaluate(modelCallContent(messages)), 3.seconds).passed shouldBe true
 
-      val ctx = capturedModelContext
-      ctx.boundary() shouldBe ModelGuardrail.CallContext.Boundary.BEFORE_MODEL_CALL
-      ctx.isBeforeModelCall() shouldBe true
-
-      val conversation = ctx.conversation().get()
-      conversation.systemMessage() shouldBe "system prompt"
-
-      val received = conversation.messages()
-      received.size shouldBe 3
-
-      val userMessage = received.get(0).asInstanceOf[ConversationMessage.UserMessage]
-      userMessage.contents().get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "first question"
-
-      val aiMessage = received.get(1).asInstanceOf[ConversationMessage.AiMessage]
-      aiMessage.text() shouldBe "calling tool"
-      aiMessage.toolRequests().get(0).name() shouldBe "search"
-
-      val toolResult = received.get(2).asInstanceOf[ConversationMessage.ToolCallResult]
-      toolResult.toolName() shouldBe "search"
-      toolResult.contents().get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "tool result text"
-
-      // contents() stays the newest frame; the conversation is only in conversation().messages()
-      ctx.textOnly() shouldBe true
-      ctx.text() shouldBe "tool result text"
+      val conversation = capturedModelCallContext
+      val results = conversation.newMessages().asScala.toSeq.map(_.asInstanceOf[Message.ToolCallResponse])
+      results.map(_.id()) shouldBe Seq("id-1", "id-2")
+      results.map(r => r.contents().get(0).asInstanceOf[MessageContent.TextMessageContent].text()) shouldBe
+      Seq("Lisbon: 22C", "Porto: 18C")
     }
 
-    "register a ModelGuardrail at before-agent-response and expose ids via CallContext" in {
+    "register an AgentResponseGuardrail at before-agent-response and expose ids via CallContext" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
             "echoing model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$EchoingModelGuard"
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$EchoingResponseGuard"
               agents = ["model-agent"]
               category = MODEL_POLICY
-              use-for = ["before-agent-response"]
             }
           }
         """)
@@ -553,15 +635,14 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       result.explanation shouldBe "model-agent|session-1|test-model|final reply"
     }
 
-    "register a ModelGuardrail and produce a working SpiAgent.Guardrail" in {
+    "register an AgentResponseGuardrail and produce a working SpiAgent.Guardrail" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
             "my model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyModelGuard"
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyResponseGuard"
               agents = ["model-agent"]
               category = MODEL_POLICY
-              use-for = ["before-agent-response"]
             }
           }
         """)
@@ -582,15 +663,14 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       result.explanation shouldBe "my model guard says no"
     }
 
-    "expose a non-text agent reply to a ModelGuardrail via CallContext.contents() with empty text()" in {
+    "fail the evaluation of a non-text agent reply" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
             "capturing model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelGuard"
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingResponseGuard"
               agents = ["model-agent"]
               category = MODEL_POLICY
-              use-for = ["before-agent-response"]
             }
           }
         """)
@@ -606,28 +686,18 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         "test-model",
         Context.root())
 
-      Await.result(spiGuardrail.evaluate(imageReply), 3.seconds).passed shouldBe true
-
-      val ctx = capturedModelContext
-      // text() is empty for a non-text reply; the part is carried in contents() instead
-      ctx.textOnly() shouldBe false
-      ctx.text() shouldBe ""
-
-      ctx.contents().size shouldBe 1
-      val image = ctx.contents().get(0).asInstanceOf[MessageContent.ImageDataMessageContent]
-      image.data() shouldBe "imgbytes".getBytes
-      image.mimeType() shouldBe java.util.Optional.of("image/png")
+      val error = intercept[IllegalArgumentException](Await.result(spiGuardrail.evaluate(imageReply), 3.seconds))
+      error.getMessage should include("Only a text agent response is supported")
     }
 
-    "expose a text-only agent reply as textOnly with the text in text() and contents()" in {
+    "expose a text agent reply without tool requests" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
             "capturing model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelGuard"
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingResponseGuard"
               agents = ["model-agent"]
               category = MODEL_POLICY
-              use-for = ["before-agent-response"]
             }
           }
         """)
@@ -639,15 +709,9 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val textContent = agentResponseContent("just text")
       Await.result(spiGuardrail.evaluate(textContent), 3.seconds).passed shouldBe true
 
-      val ctx = capturedModelContext
-      ctx.boundary() shouldBe ModelGuardrail.CallContext.Boundary.BEFORE_AGENT_RESPONSE
-      ctx.isBeforeAgentResponse() shouldBe true
-      ctx.textOnly() shouldBe true
-      ctx.text() shouldBe "just text"
-      ctx.contents().size shouldBe 1
-      ctx.contents().get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "just text"
-      // the before-agent-response boundary carries no conversation
-      ctx.conversation().isPresent shouldBe false
+      val ctx = capturedResponseContext
+      ctx.reply().text() shouldBe "just text"
+      ctx.reply().toolCallRequests() shouldBe empty
     }
 
     "translate a Decision.Fail into a failed Future preserving reason and cause" in {
@@ -655,10 +719,9 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         .parseString(s"""
           akka.javasdk.agent.guardrails {
             "failing model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$FailingModelGuard"
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$FailingResponseGuard"
               agents = ["failing-agent"]
               category = MODEL_POLICY
-              use-for = ["before-agent-response"]
             }
           }
         """)
@@ -676,15 +739,14 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       failure.getCause.getMessage shouldBe "upstream classifier unreachable"
     }
 
-    "translate a failed CompletionStage from a ModelGuardrail into a failed Future preserving the cause" in {
+    "translate a failed CompletionStage from an AgentResponseGuardrail into a failed Future preserving the cause" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
             "failed stage model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$FailedStageModelGuard"
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$FailedStageResponseGuard"
               agents = ["failed-stage-agent"]
               category = MODEL_POLICY
-              use-for = ["before-agent-response"]
             }
           }
         """)
@@ -701,15 +763,14 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       failure.getCause.getMessage shouldBe "stage blew up"
     }
 
-    "translate a null CompletionStage from a ModelGuardrail into a failed Future" in {
+    "translate a null CompletionStage from an AgentResponseGuardrail into a failed Future" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
             "null stage model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$NullStageModelGuard"
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$NullStageResponseGuard"
               agents = ["null-stage-agent"]
               category = MODEL_POLICY
-              use-for = ["before-agent-response"]
             }
           }
         """)
@@ -724,15 +785,14 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       failure.getCause shouldBe a[NullPointerException]
     }
 
-    "translate a null Decision from a sync ModelGuardrail into a failed Future" in {
+    "translate a null Decision from a sync AgentResponseGuardrail into a failed Future" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
             "null decision model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$NullDecisionModelGuard"
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$NullDecisionResponseGuard"
               agents = ["null-decision-agent"]
               category = MODEL_POLICY
-              use-for = ["before-agent-response"]
             }
           }
         """)
@@ -747,15 +807,14 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       failure.getMessage should include("null Decision")
     }
 
-    "not block the caller while a ModelGuardrail's decision is still pending" in {
+    "not block the caller while an AgentResponseGuardrail's decision is still pending" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
             "slow model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$PublishingSlowModelGuard"
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$PublishingSlowResponseGuard"
               agents = ["slow-agent"]
               category = MODEL_POLICY
-              use-for = ["before-agent-response"]
             }
           }
         """)
@@ -767,25 +826,24 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val eventual = spiGuardrail.evaluate(agentResponseContent("anything"))
 
       // evaluate(...) returned while the guard's decision is still outstanding
-      slowModelGuard.started.await(3, TimeUnit.SECONDS) shouldBe true
+      slowResponseGuard.started.await(3, TimeUnit.SECONDS) shouldBe true
       eventual.isCompleted shouldBe false
 
-      slowModelGuard.release.complete(new Decision.Deny("took its time"))
+      slowResponseGuard.release.complete(new Decision.Deny("took its time"))
 
       val result = Await.result(eventual, 3.seconds)
       result.passed shouldBe false
       result.explanation shouldBe "took its time"
     }
 
-    "translate a thrown exception from a ModelGuardrail into a failed Future preserving the throwable as cause" in {
+    "translate a thrown exception from an AgentResponseGuardrail into a failed Future preserving the throwable as cause" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
             "throwing model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$ThrowingModelGuard"
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$ThrowingResponseGuard"
               agents = ["throwing-agent"]
               category = MODEL_POLICY
-              use-for = ["before-agent-response"]
             }
           }
         """)
@@ -803,7 +861,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       failure.getCause.getMessage shouldBe "kaboom"
     }
 
-    "translate a thrown exception from a ToolGuardrail into a failed Future preserving the throwable as cause" in {
+    "translate a thrown exception from a ToolCallGuardrail into a failed Future preserving the throwable as cause" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -811,7 +869,6 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$ThrowingToolGuard"
               agents = ["throwing-tool-agent"]
               category = TOOL_POLICY
-              use-for = ["before-tool-call"]
             }
           }
         """)
@@ -830,16 +887,15 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       failure.getCause.getMessage shouldBe "kaboom"
     }
 
-    "throw from validate when a class implements both ToolGuardrail and ModelGuardrail" in {
+    "throw from validate when a class implements both ToolCallGuardrail and AgentResponseGuardrail" in {
       val faultyConfig =
         ConfigFactory
           .parseString(s"""
           akka.javasdk.agent.guardrails {
             "both guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$BothGuard"
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$ToolAndResponseGuard"
               agents = ["some-agent"]
               category = MIXED
-              use-for = ["model-response"]
             }
           }
           """)
@@ -848,71 +904,54 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val message = intercept[IllegalArgumentException] {
         provider.validate()
       }.getMessage
-      message should include(classOf[ToolGuardrail].getName)
-      message should include(classOf[ModelGuardrail].getName)
+      message should include(classOf[ToolCallGuardrail].getName)
+      message should include(classOf[AgentResponseGuardrail].getName)
     }
 
-    "throw from validate when a ToolGuardrail is bound to a model-side use-for" in {
+    "throw from validate when a class implements both ModelCallGuardrail and AgentResponseGuardrail" in {
       val faultyConfig =
         ConfigFactory
           .parseString(s"""
           akka.javasdk.agent.guardrails {
-            "mismatched tool guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyToolGuard"
+            "both guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$ModelCallAndResponseGuard"
               agents = ["some-agent"]
               category = MIXED
-              use-for = ["model-response"]
             }
           }
           """)
           .withFallback(config)
       val provider = new GuardrailProvider(system, faultyConfig, testTracerFactory)
-      intercept[IllegalArgumentException] {
+      val message = intercept[IllegalArgumentException] {
         provider.validate()
-      }.getMessage should include("can only be bound to the before-tool-call use-for")
+      }.getMessage
+      message should include(classOf[ModelCallGuardrail].getName)
+      message should include(classOf[AgentResponseGuardrail].getName)
     }
 
-    "throw from validate when a ModelGuardrail is bound to a tool-side use-for" in {
-      val faultyConfig =
-        ConfigFactory
-          .parseString(s"""
-          akka.javasdk.agent.guardrails {
-            "mismatched model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyModelGuard"
-              agents = ["some-agent"]
-              category = MIXED
-              use-for = ["mcp-tool-request"]
+    Seq("MyToolGuard", "MyModelCallGuard", "MyResponseGuard").foreach { guardClass =>
+      s"throw from validate when $guardClass defines use-for" in {
+        val faultyConfig =
+          ConfigFactory
+            .parseString(s"""
+            akka.javasdk.agent.guardrails {
+              "guard with use-for" {
+                class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$$guardClass"
+                agents = ["some-agent"]
+                category = MIXED
+                use-for = ["*"]
+              }
             }
-          }
-          """)
-          .withFallback(config)
-      val provider = new GuardrailProvider(system, faultyConfig, testTracerFactory)
-      intercept[IllegalArgumentException] {
-        provider.validate()
-      }.getMessage should include("can only be bound to model-side use-for values")
+            """)
+            .withFallback(config)
+        val provider = new GuardrailProvider(system, faultyConfig, testTracerFactory)
+        intercept[IllegalArgumentException] {
+          provider.validate()
+        }.getMessage should include("must not define use-for")
+      }
     }
 
-    "reject a ModelGuardrail bound to a deprecated model-side use-for value" in {
-      val cfg = ConfigFactory
-        .parseString(s"""
-          akka.javasdk.agent.guardrails {
-            "misbound model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyModelGuard"
-              agents = ["model-agent"]
-              category = MODEL_POLICY
-              use-for = ["model-response"]
-            }
-          }
-        """)
-        .withFallback(config)
-
-      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
-      intercept[IllegalArgumentException] {
-        provider.validate()
-      }.getMessage should include("can only be bound to model-side use-for values")
-    }
-
-    "reject a TextGuardrail bound to before-agent-response" in {
+    "reject a use-for value that names a boundary of the new guardrails" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -929,54 +968,70 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       intercept[IllegalArgumentException] {
         provider.validate()
-      }.getMessage should include("can only be bound to the deprecated use-for values")
+      }.getMessage should include("Unknown use-for [before-agent-response]")
     }
 
-    "expand the use-for wildcard per guardrail interface type" in {
+    "throw from validate when a TextGuardrail defines no use-for" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
-            "wildcard text guard" {
+            "unbound text guard" {
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
-              agents = ["wildcard-agent"]
+              agents = ["model-agent"]
               category = TOXIC
-              use-for = ["*"]
-            }
-            "wildcard model guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyModelGuard"
-              agents = ["wildcard-agent"]
-              category = MODEL_POLICY
-              use-for = ["*"]
-            }
-            "wildcard tool guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$AllowingToolGuard"
-              agents = ["wildcard-agent"]
-              category = PERMISSION
-              use-for = ["*"]
             }
           }
         """)
         .withFallback(config)
 
       val provider = new GuardrailProvider(system, cfg, testTracerFactory)
-      val g = provider.agentGuardrails("wildcard-agent", role = None)
+      intercept[IllegalArgumentException] {
+        provider.validate()
+      }.getMessage should include("must define use-for")
+    }
 
-      // TextGuardrail "*": the four legacy boundaries, exactly as before this change
-      g.modelRequestGuardrails.map(_.name) should contain("wildcard text guard")
-      g.modelResponseGuardrails.map(_.name) should contain("wildcard text guard")
-      g.mcpToolRequestGuardrails.map(_.name) should contain("wildcard text guard")
-      g.mcpToolResponseGuardrails.map(_.name) should contain("wildcard text guard")
+    "bind the new guardrails by type and expand the TextGuardrail wildcard" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "wildcard text guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agents = ["typed-agent"]
+              category = TOXIC
+              use-for = ["*"]
+            }
+            "model call guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyModelCallGuard"
+              agents = ["typed-agent"]
+              category = MODEL_POLICY
+            }
+            "response guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyResponseGuard"
+              agents = ["typed-agent"]
+              category = MODEL_POLICY
+            }
+            "tool guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$AllowingToolGuard"
+              agents = ["typed-agent"]
+              category = PERMISSION
+            }
+          }
+        """)
+        .withFallback(config)
 
-      // ModelGuardrail "*": the model-side boundaries only
-      g.beforeModelCallGuardrails.map(_.name) shouldBe Seq("wildcard model guard")
-      g.beforeAgentResponseGuardrails.map(_.name) shouldBe Seq("wildcard model guard")
-      g.modelRequestGuardrails.map(_.name) should not contain "wildcard model guard"
-      g.modelResponseGuardrails.map(_.name) should not contain "wildcard model guard"
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val g = provider.agentGuardrails("typed-agent", role = None)
 
-      // ToolGuardrail "*": before-tool-call only
+      g.modelRequestGuardrails.map(_.name) shouldBe Seq("wildcard text guard")
+      g.modelResponseGuardrails.map(_.name) shouldBe Seq("wildcard text guard")
+      g.mcpToolRequestGuardrails.map(_.name) shouldBe Seq("wildcard text guard")
+      g.mcpToolResponseGuardrails.map(_.name) shouldBe Seq("wildcard text guard")
+
+      g.beforeModelCallGuardrails.map(_.name) shouldBe Seq("model call guard")
+      g.beforeAgentResponseGuardrails.map(_.name) shouldBe Seq("response guard")
+
       val descriptors = g.withToolGuardrails(Seq(toolDescriptor("some-tool")))
-      descriptors.head.requestGuardrails.map(_.name) shouldBe Seq("wildcard tool guard")
-      g.beforeAgentResponseGuardrails.map(_.name) should not contain "wildcard tool guard"
+      descriptors.head.requestGuardrails.map(_.name) shouldBe Seq("tool guard")
     }
 
   }

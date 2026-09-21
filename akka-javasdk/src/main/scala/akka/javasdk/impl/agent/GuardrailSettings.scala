@@ -58,12 +58,8 @@ import com.typesafe.config.ConfigObject
     final case object ModelResponse extends UseFor
     final case object McpToolRequest extends UseFor
     final case object McpToolResponse extends UseFor
-    final case object BeforeToolCall extends UseFor
-    final case object BeforeModelCall extends UseFor
-    final case object BeforeAgentResponse extends UseFor
 
-    // Placeholder for a "*" declaration. It expands per guardrail interface type once the
-    // implementation class is known (GuardrailProvider), not at parse time.
+    // Placeholder for a "*" declaration. It expands to all four values above.
     final case object Wildcard extends UseFor {
       override def toString: String = "*"
     }
@@ -71,23 +67,20 @@ import com.typesafe.config.ConfigObject
 
   def apply(name: String, config: Config): ConfiguredGuardrail = {
     val useFor: Set[UseFor] = config
-      .getStringList("use-for")
-      .iterator
-      .asScala
+      .getOptionalStringSet("use-for")
       .map(_.toLowerCase(Locale.ROOT))
-      .flatMap {
-        case "model-request"         => UseFor.ModelRequest :: Nil
-        case "model-response"        => UseFor.ModelResponse :: Nil
-        case "mcp-tool-request"      => UseFor.McpToolRequest :: Nil
-        case "mcp-tool-response"     => UseFor.McpToolResponse :: Nil
-        case "before-tool-call"      => UseFor.BeforeToolCall :: Nil
-        case "before-model-call"     => UseFor.BeforeModelCall :: Nil
-        case "before-agent-response" => UseFor.BeforeAgentResponse :: Nil
-        case "*"                     => UseFor.Wildcard :: Nil
+      .map {
+        case "model-request"     => UseFor.ModelRequest
+        case "model-response"    => UseFor.ModelResponse
+        case "mcp-tool-request"  => UseFor.McpToolRequest
+        case "mcp-tool-response" => UseFor.McpToolResponse
+        case "*"                 => UseFor.Wildcard
         case other =>
-          throw new IllegalArgumentException(s"Unknown use-for [$other] in guardrail configuration [$name]")
+          throw new IllegalArgumentException(
+            s"Unknown use-for [$other] in guardrail configuration [$name]. use-for applies only to the " +
+            "deprecated TextGuardrail. ToolCallGuardrail, ModelCallGuardrail and AgentResponseGuardrail " +
+            "bind to their boundary by type and take no use-for.")
       }
-      .toSet
 
     new ConfiguredGuardrail(
       name = name,
@@ -97,7 +90,7 @@ import com.typesafe.config.ConfigObject
       category = config.getString("category"),
       reportOnly = config.getOptionalBoolean("report-only"),
       useFor = useFor,
-      // Optional tool-name filter for the before-tool-call boundary; empty means "all tools on the agent".
+      // Optional tool-name filter for a ToolCallGuardrail; empty means "all tools on the agent".
       tools = config.getOptionalStringSet("tools"),
       config = config)
   }

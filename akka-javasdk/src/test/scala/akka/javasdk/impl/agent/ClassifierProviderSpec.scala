@@ -21,7 +21,7 @@ import akka.javasdk.agent.Classifier
 import akka.javasdk.agent.ClassifierClient
 import akka.javasdk.agent.ClassifierContext
 import akka.javasdk.agent.Decision
-import akka.javasdk.agent.ModelGuardrail
+import akka.javasdk.agent.AgentResponseGuardrail
 import akka.runtime.sdk.spi.SpiClassifier
 import akka.runtime.sdk.spi.SpiClassifierClient
 import akka.runtime.sdk.spi.SpiConfiguredClassifier
@@ -94,14 +94,14 @@ object ClassifierProviderSpec {
     }
   }
 
-  // Implements both ModelGuardrail and Classifier -- allowed, since a classifier is looked up by
+  // Implements both AgentResponseGuardrail and Classifier -- allowed, since a classifier is looked up by
   // name rather than dispatched, so there's no ambiguity with the guardrail's boundary dispatch.
   // Zero-arg constructor is the only shape a dual-purpose class can have: classifier construction
   // goes through the SDK's wiredInstance (which requires a single public constructor), while
   // guardrail construction only matches (GuardrailContext) or (), and neither path matches the
   // other's context type.
-  class DualPurpose extends ModelGuardrail with Classifier {
-    override def decide(ctx: ModelGuardrail.CallContext): Decision =
+  class DualPurpose extends AgentResponseGuardrail with Classifier {
+    override def decide(ctx: AgentResponseGuardrail.CallContext): Decision =
       new Decision.Allow()
     override def classify(input: String): Classification =
       Classification.label(s"dual:$input")
@@ -305,7 +305,7 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
       } finally pool.shutdown()
     }
 
-    "accept a class implementing both ModelGuardrail and Classifier" in {
+    "accept a class implementing both AgentResponseGuardrail and Classifier" in {
       val classifierCfg = ConfigFactory.parseString(s"""
         akka.javasdk.agent.classifiers {
           "dual" {
@@ -325,7 +325,6 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
             class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$DualPurpose"
             agents = ["some-agent"]
             category = TOXIC
-            use-for = ["before-agent-response"]
           }
         }
         """)

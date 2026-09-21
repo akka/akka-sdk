@@ -2,9 +2,9 @@ package com.example.guardrail;
 
 // tag::all[]
 import akka.javasdk.agent.Decision;
-import akka.javasdk.agent.ToolGuardrail;
+import akka.javasdk.agent.ToolCallGuardrail;
 
-public class PaymentToolGuard implements ToolGuardrail { // <1>
+public class PaymentToolGuard implements ToolCallGuardrail { // <1>
 
   @Override
   public Decision decide(CallContext ctx) { // <2>

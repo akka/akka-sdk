@@ -17,6 +17,7 @@ import scala.util.control.NonFatal
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Tracing
+import akka.javasdk.agent.AgentResponseGuardrail
 import akka.javasdk.agent.Classification
 import akka.javasdk.agent.ClassifierClient
 import akka.javasdk.agent.Decision
@@ -24,13 +25,12 @@ import akka.javasdk.agent.Decision.Allow
 import akka.javasdk.agent.Decision.Deny
 import akka.javasdk.agent.Decision.Fail
 import akka.javasdk.agent.Guardrail
+import akka.javasdk.agent.Guardrail.Message
 import akka.javasdk.agent.GuardrailContext
-import akka.javasdk.agent.MessageContent
-import akka.javasdk.agent.ModelGuardrail
-import akka.javasdk.agent.ModelGuardrail.CallContext.ConversationMessage
+import akka.javasdk.agent.ModelCallGuardrail
 import akka.javasdk.agent.SimilarityGuard
 import akka.javasdk.agent.TextGuardrail
-import akka.javasdk.agent.ToolGuardrail
+import akka.javasdk.agent.ToolCallGuardrail
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.runtime.sdk.spi.SpiAgent
@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory
   /**
    * INTERNAL API
    */
-  @InternalApi private[javasdk] final class ToolGuardrailCallContextImpl(
+  @InternalApi private[javasdk] final class ToolCallGuardrailCallContextImpl(
       val agentId: String,
       val toolName: String,
       val toolCallId: String,
@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory
       val sessionId: String,
       telemetryContext: Option[OtelContext],
       tracerFactory: () => Tracer)
-      extends ToolGuardrail.CallContext {
+      extends ToolCallGuardrail.CallContext {
 
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
   }
@@ -63,33 +63,41 @@ import org.slf4j.LoggerFactory
   /**
    * INTERNAL API
    */
-  @InternalApi private[javasdk] final class ModelGuardrailCallContextImpl(
-      contentList: java.util.List[MessageContent],
+  @InternalApi private[javasdk] final class ModelCallGuardrailCallContextImpl(
+      override val systemMessage: String,
+      spiMessages: Seq[SpiAgent.ContextMessage],
       override val agentId: String,
       override val sessionId: String,
       override val modelName: String,
-      boundaryValue: ModelGuardrail.CallContext.Boundary,
-      conversationValue: java.util.Optional[ModelGuardrail.CallContext.ConversationContext],
       telemetryContext: Option[OtelContext],
       tracerFactory: () => Tracer)
-      extends ModelGuardrail.CallContext {
+      extends ModelCallGuardrail.CallContext {
 
-    private val singleTextContent: Option[String] =
-      contentList.asScala.toSeq match {
-        case Seq(t: MessageContent.TextMessageContent) => Some(t.text())
-        case _                                         => None
-      }
+    private lazy val conversationMessages: Seq[Message] =
+      spiMessages.map(toMessage)
 
-    override def boundary(): ModelGuardrail.CallContext.Boundary = boundaryValue
+    override lazy val messages: java.util.List[Message] =
+      conversationMessages.asJava
 
-    override def conversation(): java.util.Optional[ModelGuardrail.CallContext.ConversationContext] =
-      conversationValue
+    override lazy val newMessages: java.util.List[Message] =
+      conversationMessages
+        .drop(conversationMessages.lastIndexWhere(_.isInstanceOf[Message.AiMessage]) + 1)
+        .asJava
 
-    override val textOnly: Boolean = singleTextContent.isDefined
+    override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
+  }
 
-    override val text: String = singleTextContent.getOrElse("")
-
-    override def contents(): java.util.List[MessageContent] = contentList
+  /**
+   * INTERNAL API
+   */
+  @InternalApi private[javasdk] final class AgentResponseGuardrailCallContextImpl(
+      override val reply: Message.AiMessage,
+      override val agentId: String,
+      override val sessionId: String,
+      override val modelName: String,
+      telemetryContext: Option[OtelContext],
+      tracerFactory: () => Tracer)
+      extends AgentResponseGuardrail.CallContext {
 
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
   }
@@ -111,9 +119,13 @@ import org.slf4j.LoggerFactory
     val mcpToolResponseGuardrails: Seq[SpiAgent.Guardrail] =
       collectGuardrails(UseFor.McpToolResponse)
     val beforeModelCallGuardrails: Seq[SpiAgent.Guardrail] =
-      collectGuardrails(UseFor.BeforeModelCall)
+      entries.collect { case entry @ GuardrailEntry(_, _: ModelCallGuardrail) =>
+        toSpiGuardrail(entry, tracerFactory)
+      }
     val beforeAgentResponseGuardrails: Seq[SpiAgent.Guardrail] =
-      collectGuardrails(UseFor.BeforeAgentResponse)
+      entries.collect { case entry @ GuardrailEntry(_, _: AgentResponseGuardrail) =>
+        toSpiGuardrail(entry, tracerFactory)
+      }
 
     // The model-side guardrails grouped by their SPI boundaries, as handed to the runtime.
     // MCP and before-tool-call guardrails travel on their descriptors instead.
@@ -124,13 +136,12 @@ import org.slf4j.LoggerFactory
         .add(SpiAgent.GuardrailBoundary.BeforeModelCall, beforeModelCallGuardrails)
         .add(SpiAgent.GuardrailBoundary.BeforeAgentResponse, beforeAgentResponseGuardrails)
 
-    // The before-tool-call guardrails applicable to the given tool. An entry with an empty `tools`
-    // set applies to every tool on the agent; otherwise only to the named tools.
+    // The ToolCallGuardrails applicable to the given tool. An entry with an empty `tools` set
+    // applies to every tool on the agent; otherwise only to the named tools.
     private def beforeToolCallGuardrails(toolName: String): Seq[SpiAgent.Guardrail] =
       entries.collect {
-        case entry
-            if entry.configuredGuardrail.useFor.contains(UseFor.BeforeToolCall) &&
-              (entry.configuredGuardrail.tools.isEmpty || entry.configuredGuardrail.tools.contains(toolName)) =>
+        case entry @ GuardrailEntry(configured, _: ToolCallGuardrail)
+            if configured.tools.isEmpty || configured.tools.contains(toolName) =>
           toSpiGuardrail(entry, tracerFactory)
       }
 
@@ -163,7 +174,7 @@ import org.slf4j.LoggerFactory
     override val reportOnly: Boolean = entry.configuredGuardrail.reportOnly
   }
 
-  final class ToolGuardrailAdapter(entry: GuardrailEntry, guardrail: ToolGuardrail, tracerFactory: () => Tracer)
+  final class ToolCallGuardrailAdapter(entry: GuardrailEntry, guardrail: ToolCallGuardrail, tracerFactory: () => Tracer)
       extends SpiAgent.Guardrail {
 
     override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
@@ -171,7 +182,7 @@ import org.slf4j.LoggerFactory
         case toolCall: SpiAgent.Guardrail.ToolCallContent =>
           decideSafely(
             guardrail.decideAsync(
-              new ToolGuardrailCallContextImpl(
+              new ToolCallGuardrailCallContextImpl(
                 toolCall.agentId,
                 toolCall.toolName,
                 toolCall.toolCallId,
@@ -189,56 +200,65 @@ import org.slf4j.LoggerFactory
     override val reportOnly: Boolean = entry.configuredGuardrail.reportOnly
   }
 
-  final class ModelGuardrailAdapter(entry: GuardrailEntry, guardrail: ModelGuardrail, tracerFactory: () => Tracer)
+  final class ModelCallGuardrailAdapter(
+      entry: GuardrailEntry,
+      guardrail: ModelCallGuardrail,
+      tracerFactory: () => Tracer)
+      extends SpiAgent.Guardrail {
+
+    override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
+      content match {
+        case modelCall: SpiAgent.Guardrail.ModelCallContent =>
+          decideSafely(
+            guardrail.decideAsync(
+              new ModelCallGuardrailCallContextImpl(
+                modelCall.systemMessage,
+                modelCall.messages,
+                modelCall.agentId,
+                modelCall.sessionId,
+                modelCall.modelName,
+                Option(modelCall.telemetryContext),
+                tracerFactory)))
+        case other =>
+          Future.failed(
+            new IllegalArgumentException(s"Only model call content is supported, but was [${other.getClass.getName}]"))
+      }
+
+    override val name: String = entry.configuredGuardrail.name
+    override val category: String = entry.configuredGuardrail.category
+    override val reportOnly: Boolean = entry.configuredGuardrail.reportOnly
+  }
+
+  final class AgentResponseGuardrailAdapter(
+      entry: GuardrailEntry,
+      guardrail: AgentResponseGuardrail,
+      tracerFactory: () => Tracer)
       extends SpiAgent.Guardrail {
 
     override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
       content match {
         case agentResponse: SpiAgent.Guardrail.AgentResponseContent =>
-          val contents = java.util.List.of[MessageContent](AgentImpl.fromSpiMessageContent(agentResponse.content))
-          decideSafely(
-            guardrail.decideAsync(
-              new ModelGuardrailCallContextImpl(
-                contents,
-                agentResponse.agentId,
-                agentResponse.sessionId,
-                agentResponse.modelName,
-                boundaryValue = ModelGuardrail.CallContext.Boundary.BEFORE_AGENT_RESPONSE,
-                conversationValue = java.util.Optional.empty(),
-                Option(agentResponse.telemetryContext),
-                tracerFactory)))
-        case modelCall: SpiAgent.Guardrail.ModelCallContent =>
-          // contents() carries the newest frame entering this model call: the messages after the
-          // last AI message (the user message on the first call, the tool results afterwards)
-          val newestFrame = modelCall.messages.reverse
-            .takeWhile(!_.isInstanceOf[SpiAgent.ContextMessage.AiMessage])
-            .reverse
-          val contents = newestFrame
-            .flatMap {
-              case u: SpiAgent.ContextMessage.UserMessage             => u.contents
-              case t: SpiAgent.ContextMessage.ToolCallResponseMessage => t.contents
-              case _                                                  => Seq.empty
-            }
-            .map(AgentImpl.fromSpiMessageContent)
-            .asJava
-          val conversation = new ModelGuardrail.CallContext.ConversationContext(
-            modelCall.systemMessage,
-            modelCall.messages.map(toConversationMessage).asJava)
-          decideSafely(
-            guardrail.decideAsync(
-              new ModelGuardrailCallContextImpl(
-                contents,
-                modelCall.agentId,
-                modelCall.sessionId,
-                modelCall.modelName,
-                boundaryValue = ModelGuardrail.CallContext.Boundary.BEFORE_MODEL_CALL,
-                conversationValue = java.util.Optional.of(conversation),
-                Option(modelCall.telemetryContext),
-                tracerFactory)))
+          agentResponse.content match {
+            case text: SpiAgent.TextMessageContent =>
+              val reply = new Message.AiMessage(text.text, java.util.List.of())
+              decideSafely(
+                guardrail.decideAsync(
+                  new AgentResponseGuardrailCallContextImpl(
+                    reply,
+                    agentResponse.agentId,
+                    agentResponse.sessionId,
+                    agentResponse.modelName,
+                    Option(agentResponse.telemetryContext),
+                    tracerFactory)))
+            case other =>
+              Future.failed(
+                new IllegalArgumentException(
+                  s"Only a text agent response is supported, but was [${other.getClass.getName}]"))
+          }
         case other =>
           Future.failed(
             new IllegalArgumentException(
-              s"Only model call and agent response content is supported, but was [${other.getClass.getName}]"))
+              s"Only agent response content is supported, but was [${other.getClass.getName}]"))
       }
 
     override val name: String = entry.configuredGuardrail.name
@@ -248,21 +268,22 @@ import org.slf4j.LoggerFactory
 
   // Maps a conversation entry from its SPI representation onto the public guardrail-facing ADT,
   // so guardrail implementations never see SPI types.
-  private def toConversationMessage(message: SpiAgent.ContextMessage): ConversationMessage =
+  private def toMessage(message: SpiAgent.ContextMessage): Message =
     message match {
       case u: SpiAgent.ContextMessage.UserMessage =>
-        new ConversationMessage.UserMessage(u.contents.map(AgentImpl.fromSpiMessageContent).asJava)
+        new Message.UserMessage(u.contents.map(AgentImpl.fromSpiMessageContent).asJava)
       case a: SpiAgent.ContextMessage.AiMessage =>
-        new ConversationMessage.AiMessage(
+        new Message.AiMessage(
           Option(a.content).getOrElse(""),
-          a.toolRequests.map(tr => new ConversationMessage.ToolCallRequest(tr.id, tr.name, tr.arguments)).asJava)
+          a.toolRequests.map(tr => new Message.ToolCallRequest(tr.id, tr.name, tr.arguments)).asJava)
       case t: SpiAgent.ContextMessage.ToolCallResponseMessage =>
-        new ConversationMessage.ToolCallResult(t.id, t.name, t.contents.map(AgentImpl.fromSpiMessageContent).asJava)
+        new Message.ToolCallResponse(t.id, t.name, t.contents.map(AgentImpl.fromSpiMessageContent).asJava)
     }
 
   // A guardrail can fail to reach a verdict in three ways: throw from decide(...), return a failed
   // CompletionStage, or complete with an explicit Decision.Fail. All three are treated as if it had
   // returned new Decision.Fail(message, throwable). A null stage NPEs here and lands on the same path.
+  // decisionToSpiResult rejects a null Decision.
   //
   // TODO: thrown exceptions and explicit new Decision.Fail(...) currently collapse onto the same
   // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
@@ -292,24 +313,21 @@ import org.slf4j.LoggerFactory
   @nowarn("cat=deprecation")
   private def toSpiGuardrail(entry: GuardrailEntry, tracerFactory: () => Tracer): SpiAgent.Guardrail =
     entry.guardrail match {
-      case g: SimilarityGuard => toSpiSimilarityGuard(g, entry.configuredGuardrail)
-      case g: TextGuardrail   => new TextGuardrailAdapter(entry, g)
-      case g: ToolGuardrail   => new ToolGuardrailAdapter(entry, g, tracerFactory)
-      case g: ModelGuardrail  => new ModelGuardrailAdapter(entry, g, tracerFactory)
+      case g: SimilarityGuard        => toSpiSimilarityGuard(g, entry.configuredGuardrail)
+      case g: TextGuardrail          => new TextGuardrailAdapter(entry, g)
+      case g: ToolCallGuardrail      => new ToolCallGuardrailAdapter(entry, g, tracerFactory)
+      case g: ModelCallGuardrail     => new ModelCallGuardrailAdapter(entry, g, tracerFactory)
+      case g: AgentResponseGuardrail => new AgentResponseGuardrailAdapter(entry, g, tracerFactory)
     }
 
   private def toSpiSimilarityGuard(g: SimilarityGuard, c: ConfiguredGuardrail): SpiAgent.SimilarityGuard =
     new SpiAgent.SimilarityGuard(c.name, c.category, c.reportOnly, g.badExamplesResourceDir, g.threshold)
 
-  // Each guardrail interface is pinned to its own use-for values. The legacy values are reachable
-  // only by the deprecated TextGuardrail; new boundaries only by the new interfaces.
-  // FIXME: extend ToolGuardrail to the MCP tool request/response boundaries (MCP-as-tool-call
-  // unification is a separate issue). That requires ToolGuardrailAdapter to build a
-  // ToolGuardrailContext from the MCP TextContent and ToolSideUseFor to also include
-  // McpToolRequest/McpToolResponse.
-  private val ToolSideUseFor: Set[UseFor] = Set(UseFor.BeforeToolCall)
-  private val ModelSideUseFor: Set[UseFor] = Set(UseFor.BeforeModelCall, UseFor.BeforeAgentResponse)
-  private val TextSideUseFor: Set[UseFor] =
+  // The use-for values a TextGuardrail can bind to. "*" expands to all of them.
+  // FIXME: extend ToolCallGuardrail to the MCP tool request/response boundaries (MCP-as-tool-call
+  // unification is a separate issue). That requires ToolCallGuardrailAdapter to build a
+  // ToolCallGuardrail.CallContext from the MCP TextContent.
+  private val TextGuardrailUseFor: Set[UseFor] =
     Set(UseFor.ModelRequest, UseFor.ModelResponse, UseFor.McpToolRequest, UseFor.McpToolResponse)
 
   // Default classifierClient for call sites (and tests) that don't supply one; any call fails
@@ -341,25 +359,22 @@ import org.slf4j.LoggerFactory
   }
 
   private lazy val guardrailsByComponentId: Map[String, Seq[GuardrailEntry]] = {
-    configuredGuardrails.foldLeft(Map.empty[String, Vector[GuardrailEntry]]) {
-      case (acc, config) if config.useFor.nonEmpty =>
-        config.agents.foldLeft(acc) { case (acc2, componentId) =>
-          acc2.updated(componentId, acc2.getOrElse(componentId, Vector.empty) :+ createGuardrail(config))
-        }
-      case (acc, _) => acc
+    configuredGuardrails.foldLeft(Map.empty[String, Vector[GuardrailEntry]]) { case (acc, config) =>
+      config.agents.foldLeft(acc) { case (acc2, componentId) =>
+        acc2.updated(componentId, acc2.getOrElse(componentId, Vector.empty) :+ createGuardrail(config))
+      }
     }
   }
 
   private lazy val guardrailsByRole: Map[String, Seq[GuardrailEntry]] = {
-    configuredGuardrails.foldLeft(Map.empty[String, Vector[GuardrailEntry]]) {
-      case (acc, config) if config.useFor.nonEmpty =>
-        config.agentRoles.foldLeft(acc) { case (acc2, role) =>
-          acc2.updated(role, acc2.getOrElse(role, Vector.empty) :+ createGuardrail(config))
-        }
-      case (acc, _) => acc
+    configuredGuardrails.foldLeft(Map.empty[String, Vector[GuardrailEntry]]) { case (acc, config) =>
+      config.agentRoles.foldLeft(acc) { case (acc2, role) =>
+        acc2.updated(role, acc2.getOrElse(role, Vector.empty) :+ createGuardrail(config))
+      }
     }
   }
 
+  @nowarn("cat=deprecation")
   private def createGuardrail(c: ConfiguredGuardrail): GuardrailEntry = {
     val guardrailContext = new GuardrailContextImpl(c.name, c.config, classifierClient)
     val instance = system.dynamicAccess
@@ -375,43 +390,41 @@ import org.slf4j.LoggerFactory
       .get
 
     validateSingleInterface(c.name, instance)
-    warnOnDeprecatedUseFor(c)
 
-    val expanded = expandWildcard(c, instance)
-    validateUseFor(expanded, instance)
-    GuardrailEntry(expanded, instance)
+    instance match {
+      case _: TextGuardrail =>
+        warnOnDeprecatedUseFor(c)
+        val expanded = expandWildcard(c)
+        validateTextGuardrailUseFor(expanded)
+        GuardrailEntry(expanded, instance)
+
+      case _ =>
+        rejectUseFor(c, instance)
+        GuardrailEntry(c, instance)
+    }
   }
 
-  // Guardrail is sealed (permits TextGuardrail, ToolGuardrail, ModelGuardrail) so any instance
-  // implements at least one. Reject classes that implement more than one — the dispatch in
-  // toSpiGuardrail is otherwise ambiguous.
+  // Guardrail is sealed (permits TextGuardrail, ToolCallGuardrail, ModelCallGuardrail,
+  // AgentResponseGuardrail).
   @nowarn("cat=deprecation")
   private def validateSingleInterface(guardrailName: String, instance: Guardrail): Unit = {
     val implemented = Seq(
       Option.when(instance.isInstanceOf[TextGuardrail])(classOf[TextGuardrail].getName),
-      Option.when(instance.isInstanceOf[ToolGuardrail])(classOf[ToolGuardrail].getName),
-      Option.when(instance.isInstanceOf[ModelGuardrail])(classOf[ModelGuardrail].getName)).flatten
+      Option.when(instance.isInstanceOf[ToolCallGuardrail])(classOf[ToolCallGuardrail].getName),
+      Option.when(instance.isInstanceOf[ModelCallGuardrail])(classOf[ModelCallGuardrail].getName),
+      Option.when(instance.isInstanceOf[AgentResponseGuardrail])(classOf[AgentResponseGuardrail].getName)).flatten
 
     if (implemented.size > 1)
       throw new IllegalArgumentException(
         s"Guardrail [$guardrailName] must implement only one of " +
-        s"[${classOf[ToolGuardrail].getName}] or [${classOf[ModelGuardrail].getName}], " +
+        s"[${classOf[ToolCallGuardrail].getName}], [${classOf[ModelCallGuardrail].getName}] or " +
+        s"[${classOf[AgentResponseGuardrail].getName}], " +
         s"but [${instance.getClass.getName}] implements [${implemented.mkString(", ")}]")
   }
 
-  // "*" expands to the boundaries the guardrail's interface may bind to.
-  @nowarn("cat=deprecation")
-  private def expandWildcard(c: ConfiguredGuardrail, instance: Guardrail): ConfiguredGuardrail =
+  private def expandWildcard(c: ConfiguredGuardrail): ConfiguredGuardrail =
     if (!c.useFor.contains(UseFor.Wildcard)) c
-    else {
-      val expansion = instance match {
-        case _: ToolGuardrail  => ToolSideUseFor
-        case _: ModelGuardrail => ModelSideUseFor
-        // TextGuardrail, including the built-in SimilarityGuard
-        case _ => TextSideUseFor
-      }
-      c.copy(useFor = c.useFor - UseFor.Wildcard ++ expansion)
-    }
+    else c.copy(useFor = c.useFor - UseFor.Wildcard ++ TextGuardrailUseFor)
 
   // Runs on the DECLARED use-for set (before wildcard expansion) so a "*" declaration
   // does not trigger the warning.
@@ -420,35 +433,25 @@ import org.slf4j.LoggerFactory
     if (deprecated.nonEmpty)
       log.warn(
         "Guardrail [{}] uses deprecated use-for value(s) [{}]. Implement " +
-        "akka.javasdk.agent.ModelGuardrail and bind it to [before-model-call] (for model-request) " +
-        "or [before-agent-response] (for model-response) instead.",
+        "akka.javasdk.agent.ModelCallGuardrail (for model-request) or " +
+        "akka.javasdk.agent.AgentResponseGuardrail (for model-response) instead.",
         c.name,
         deprecated.mkString(", "))
   }
 
-  // Each interface may only bind to its own use-for values (see the pinned sets above).
-  // Validation runs on the wildcard-expanded set, so a "*" declaration is always valid.
-  @nowarn("cat=deprecation")
-  private def validateUseFor(c: ConfiguredGuardrail, instance: Guardrail): Unit =
-    instance match {
-      case _: ToolGuardrail if !c.useFor.subsetOf(ToolSideUseFor) =>
-        val invalid = c.useFor.diff(ToolSideUseFor)
-        throw new IllegalArgumentException(
-          s"ToolGuardrail [${c.name}] can only be bound to the before-tool-call use-for value, " +
-          s"but was also bound to [${invalid.mkString(", ")}]")
-      case _: ModelGuardrail if !c.useFor.subsetOf(ModelSideUseFor) =>
-        val invalid = c.useFor.diff(ModelSideUseFor)
-        throw new IllegalArgumentException(
-          s"ModelGuardrail [${c.name}] can only be bound to model-side use-for values " +
-          s"(before-model-call, before-agent-response), but was also bound to [${invalid.mkString(", ")}]")
-      case _: TextGuardrail if !c.useFor.subsetOf(TextSideUseFor) =>
-        val invalid = c.useFor.diff(TextSideUseFor)
-        throw new IllegalArgumentException(
-          s"TextGuardrail [${c.name}] can only be bound to the deprecated use-for values " +
-          s"(model-request, model-response, mcp-tool-request, mcp-tool-response), " +
-          s"but was also bound to [${invalid.mkString(", ")}]")
-      case _ => // ok
-    }
+  private def validateTextGuardrailUseFor(c: ConfiguredGuardrail): Unit =
+    if (c.useFor.isEmpty)
+      throw new IllegalArgumentException(
+        s"TextGuardrail [${c.name}] must define use-for with one or more of " +
+        s"[model-request, model-response, mcp-tool-request, mcp-tool-response] or [*]")
+
+  // ToolCallGuardrail, ModelCallGuardrail and AgentResponseGuardrail bind to their boundary by type.
+  private def rejectUseFor(c: ConfiguredGuardrail, instance: Guardrail): Unit =
+    if (c.config.hasPath("use-for"))
+      throw new IllegalArgumentException(
+        s"Guardrail [${c.name}] must not define use-for. [${instance.getClass.getName}] binds to its " +
+        "boundary by type: ToolCallGuardrail before each tool call, ModelCallGuardrail before each " +
+        "model call, and AgentResponseGuardrail on the final agent reply.")
 
   def validate(): Unit = {
     guardrailsByComponentId
