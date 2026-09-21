@@ -259,7 +259,34 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
     }
   }
 
+  "The settings the runtime reads at startup" should {
+
+    "fail for an entry the service cannot start with" in {
+      val exc = intercept[IllegalArgumentException](
+        SdkRunner.extractSpiSettings(
+          ConfigFactory
+            .parseString("""
+            akka.javasdk.sanitization.sanitizers {
+              "broken" { pattern = "([unclosed" }
+            }
+            """)
+            .withFallback(ConfigFactory.load())))
+
+      exc.getMessage should include("Sanitizer [broken] has an invalid [pattern = ([unclosed]")
+    }
+  }
+
   "A removed sanitization key" should {
+
+    "fail at startup" in {
+      val exc = intercept[IllegalArgumentException](
+        SdkRunner.extractSpiSettings(
+          ConfigFactory
+            .parseString("""akka.javasdk.sanitization.predefined-sanitizers = ["CREDIT_CARD"]""")
+            .withFallback(ConfigFactory.load())))
+
+      exc.getMessage should include("[akka.javasdk.sanitization.predefined-sanitizers] is not used")
+    }
 
     "fail with the form that replaced it" in {
       val exc = intercept[IllegalArgumentException](

@@ -215,15 +215,18 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       runtimeClient.lastName shouldEqual Some("CREDIT_CARD")
     }
 
-    "throw a descriptive IllegalArgumentException for an unknown sanitizer name" in {
+    "report an unknown sanitizer name, with the configured ones" in {
       val (provider, _) = newProvider(system, config)
 
-      val asyncFailure = intercept[IllegalArgumentException](provider.client.sanitizeAsync("does-not-exist", "x"))
-      asyncFailure.getMessage should include("No sanitizer configured with name [does-not-exist]")
-      asyncFailure.getMessage should include("no-context")
+      val blocking = intercept[IllegalArgumentException](provider.client.sanitize("does-not-exist", "x"))
+      blocking.getMessage should include("No sanitizer configured with name [does-not-exist]")
+      blocking.getMessage should include("no-context")
 
-      intercept[IllegalArgumentException](provider.client.sanitize("does-not-exist", "x")).getMessage should include(
-        "No sanitizer configured with name [does-not-exist]")
+      // the async variant reports it through the returned stage
+      val failure = intercept[java.util.concurrent.ExecutionException](
+        provider.client.sanitizeAsync("does-not-exist", "x").toCompletableFuture.get(3, TimeUnit.SECONDS))
+      failure.getCause shouldBe an[IllegalArgumentException]
+      failure.getCause.getMessage should include("No sanitizer configured with name [does-not-exist]")
     }
 
     "throw from validate when the configured class does not implement TextSanitizer" in {
