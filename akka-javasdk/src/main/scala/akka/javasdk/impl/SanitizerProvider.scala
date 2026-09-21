@@ -21,6 +21,7 @@ import akka.runtime.sdk.spi.SpiDataSanitizer
 import akka.runtime.sdk.spi.SpiSanitizer
 import akka.runtime.sdk.spi.SpiSanitizerClient
 import com.typesafe.config.Config
+import org.slf4j.LoggerFactory
 
 /**
  * INTERNAL API
@@ -37,6 +38,8 @@ import com.typesafe.config.Config
     applicationConfig: Config,
     runtimeSanitizerClient: SpiSanitizerClient,
     wireSanitizer: (Class[TextSanitizer], SanitizerContext) => TextSanitizer) {
+
+  private val log = LoggerFactory.getLogger(classOf[SanitizerProvider])
 
   lazy val configuredSanitizers: Seq[ConfiguredSanitizer] = Sanitization.configuredSanitizers(applicationConfig)
 
@@ -85,7 +88,7 @@ import com.typesafe.config.Config
    */
   def spiSanitizers(enabledForComponents: ConfiguredSanitizer => Set[String]): Seq[SpiDataSanitizer] =
     configuredSanitizers.map { s =>
-      val components = enabledForComponents(s)
+      val components = agentComponents(s, enabledForComponents(s))
       s.kind match {
         case SanitizerKind.Implementation(className) =>
           new SpiDataSanitizer.Custom(
@@ -100,6 +103,21 @@ import com.typesafe.config.Config
             .declarativeSpiSanitizer(s, components)
             .getOrElse(throw new IllegalStateException(s"Sanitizer [${s.name}] has no runtime entry"))
       }
+    }
+
+  // The runtime reads an empty set as every agent, so an entry whose agents and agent roles match no agent of
+  // this service is handed a component id no agent can be annotated with. It is reported, because a scope that
+  // matches nothing is masking a deployment asked for and does not get.
+  private def agentComponents(sanitizer: ConfiguredSanitizer, resolved: Set[String]): Set[String] =
+    if (resolved.nonEmpty || !sanitizer.scoped) resolved
+    else {
+      log.warn(
+        "Sanitizer [{}] masks for no agent. It names agents [{}] and agent roles [{}], and this service has no " +
+        "agent that matches. It is still reachable by name.",
+        sanitizer.name,
+        sanitizer.agents.toSeq.sorted.mkString(", "),
+        sanitizer.agentRoles.toSeq.sorted.mkString(", "))
+      SanitizerProvider.NoAgent
     }
 
   /** Eagerly constructs every sanitizer the service implements, so bad config and classes fail at startup. */
@@ -144,6 +162,9 @@ import com.typesafe.config.Config
  * INTERNAL API
  */
 @InternalApi private[javasdk] object SanitizerProvider {
+
+  /** Not a component id any agent can be annotated with, so an entry carrying it applies to no agent. */
+  private val NoAgent: Set[String] = Set("")
 
   /**
    * Wraps a user sanitizer so the runtime can invoke it once registered. `resolve` runs on every invocation rather than

@@ -1525,12 +1525,8 @@ private final class Sdk(
 
     val classifierSetup = new SpiClassifierSetup(classifierProvider.spiConfiguredClassifiers)
 
-    val sanitizerSetup = new SpiSanitizerSetup(sanitizerProvider.spiSanitizers { sanitizer =>
-      val components = sanitizerEnabledForComponent.getOrElse(sanitizer.name, Set.empty)
-      // The runtime reads an empty set as every agent, so an entry that names agents or roles this service
-      // does not have is handed a component id no agent can be annotated with.
-      if (components.isEmpty && sanitizer.scoped) Set("") else components
-    })
+    val sanitizerSetup = new SpiSanitizerSetup(
+      sanitizerProvider.spiSanitizers(sanitizer => sanitizerEnabledForComponent.getOrElse(sanitizer.name, Set.empty)))
 
     val serviceNameOverride = sdkSettings.devModeSettings.map(_.serviceName)
 

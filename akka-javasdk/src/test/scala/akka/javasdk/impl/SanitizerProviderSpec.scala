@@ -294,6 +294,21 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       "CREDIT_CARD"
     }
 
+    "hand over a component id no agent can have when the scope matches no agent" in {
+      val scopedConfig = ConfigFactory
+        .parseString("""
+          akka.javasdk.sanitization.sanitizers {
+            "missing-scope" { pattern = "a", agents = ["no-such-agent"] }
+          }
+          """)
+        .withFallback(ConfigFactory.load())
+      val (provider, _) = newProvider(system, scopedConfig)
+
+      // an empty set is every agent to the runtime, which is the opposite of what the entry asks for
+      provider.spiSanitizers(_ => Set.empty).map(_.enabledForComponents) shouldEqual Seq(Set(""))
+      provider.spiSanitizers(_ => Set("some-agent")).map(_.enabledForComponents) shouldEqual Seq(Set("some-agent"))
+    }
+
     "leave out a disabled entry" in {
       val disabledConfig = ConfigFactory
         .parseString(s"""
