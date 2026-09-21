@@ -1,6 +1,6 @@
 package com.example.api;
 
-import akka.javasdk.Sanitizer;
+import akka.javasdk.SanitizerClient;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
@@ -10,18 +10,17 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class SanitizingEndpoint {
 
-  private final Sanitizer sanitizer;
+  private final SanitizerClient sanitizerClient;
 
-  public SanitizingEndpoint(Sanitizer sanitizer) {
-    this.sanitizer = sanitizer;
+  public SanitizingEndpoint(SanitizerClient sanitizerClient) {
+    this.sanitizerClient = sanitizerClient;
   }
 
   @Get("/somepath/{id}")
   public String returnSanitizedData(String id) {
     // String data from another component or a third party library/API
     String someText = loadText();
-    String sanitizedText = sanitizer.sanitize(someText);
-    return sanitizedText;
+    return sanitizerClient.sanitize("customer-ids", someText);
   }
 
   // end::ad-hoc-sanitization[]

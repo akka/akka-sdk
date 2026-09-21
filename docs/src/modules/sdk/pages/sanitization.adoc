@@ -20,11 +20,13 @@ By shifting sanitization from application logic into the runtime, you gain:
 
 Sanitization is disabled by default. You enable it selectively through configuration, choosing exactly which categories of sensitive data to mask.
 
-When enabled, sanitization is automatically applied to text that is:
+A sanitizer applies everywhere unless it says otherwise. The three application points are:
 
-* written to logs
-* passed to agent models from agent requests
-* passed to agent models from local tool or MCP tool output
+* `logs`: text written to logs
+* `model-input`: text passed to agent models from agent requests
+* `tool-result`: text passed to agent models from local tool or MCP tool output
+
+Each sanitizer can name the points it masks at, and the agents it masks for. See <<Configuring sanitizers>>.
 
 Text matched by a sanitizer is replaced by a mask of `*` containing the same number of characters as the original matched string.
 
@@ -42,7 +44,9 @@ Before being written in logs or passed to agent models.
 
 === Ad hoc sanitization
 
-You can also apply sanitization programmatically in any component where it makes sense for a specific business case — for example, before sending text to a third-party API or before writing text into the state of an entity. To do this, xref:setup-and-dependency-injection.adoc[inject] an `akka.javasdk.Sanitizer` in the component constructor and then call `akka.javasdk.Sanitizer#sanitize` on the text.
+You can also mask text programmatically in any component where it makes sense for a specific business case, for example before sending text to a third-party API or before writing text into the state of an entity. To do this, xref:setup-and-dependency-injection.adoc[inject] an `akka.javasdk.SanitizerClient` in the component constructor and call `sanitize` with the name of a configured sanitizer and the text.
+
+A sanitizer scoped to an agent or to an application point masks the text you pass here as well. The name selects which sanitizer runs, and nothing else does.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/SanitizingEndpoint.java[SanitizingEndpoint.java]
@@ -51,13 +55,59 @@ include::example$doc-snippets/src/main/java/com/example/api/SanitizingEndpoint.j
 ----
 
 
-== Sanitizer types
+== Configuring sanitizers
 
-Two types of sanitizers are available, and you can combine predefined and custom sanitizers in the same service.
+You configure sanitizers as named entries of `akka.javasdk.sanitization.sanitizers`. The name is how application code reaches the sanitizer, and how it is reported. Each entry defines exactly one of:
 
-=== Predefined
+* `pattern`: a Java regular expression matching the text to mask
+* `predefined`: a built-in group of patterns, see <<Predefined groups>>
+* `class`: an implementation class, see <<Sanitizer implementations>>
 
-A small set of common sanitizers is built into the Akka runtime. You enable them by name in your configuration:
+Each entry can also state where and for which agents it masks:
+
+* `use-for`: the application points to mask at, any of `model-input`, `tool-result` and `logs`, or `*`. An entry that defines no `use-for` masks at every point it can.
+* `agents`: the component ids of the agents to mask for. Use `*` for every agent.
+* `agent-roles`: the roles of the agents to mask for. Use `*` for every agent that has a role.
+* `enabled`: set it to `false` to drop the entry. A dropped entry masks nothing and constructs nothing.
+
+An entry that defines neither `agents` nor `agent-roles` masks for every agent. An entry that defines both masks for an agent that matches either one.
+
+[source,hocon,indent=0]
+----
+akka.javasdk.sanitization.sanitizers {
+  "credit-card" {
+    predefined = CREDIT_CARD
+  }
+  "customer-ids" {
+    pattern = "S\\d{10}"
+    use-for = ["logs"]
+  }
+  "account-numbers" {
+    class = "com.example.sanitizer.AccountSanitizer"
+    use-for = ["model-input", "tool-result"]
+    agent-roles = ["customer-facing"]
+    account-prefix = "ACC-"
+  }
+}
+----
+
+The `customer-ids` entry above masks a hypothetical customer ID in the form S0123456789, so that text like:
+
+[literal]
+Customer S0847362951 reported an issue with their order
+
+Is written to logs as:
+
+[literal]
+Customer *********** reported an issue with their order
+
+The `logs` application point cannot be combined with `class`, `agents` or `agent-roles`. The runtime installs the log sanitizer at startup, before the service has constructed a class, and a log message belongs to no agent.
+
+Any other key of an entry is configuration for that entry. An implementation reads it from the `SanitizerContext` its constructor takes, see <<Sanitizer implementations>>.
+
+=== Predefined groups
+
+A small set of common sanitizers is built into the Akka runtime. You select one with `predefined`:
 
 [options="header" cols="1,1"]
 |===
@@ -70,49 +120,27 @@ A small set of common sanitizers is built into the Akka runtime. You enable them
 |`IP_ADDRESS`| ipv4 and ipv6 network addresses
 |===
 
-Enable one or more of these in your service `application.conf` file like this:
+=== Sanitizer implementations
 
-[source,hocon,indent=0]
+When a regular expression cannot express what to mask, implement `akka.javasdk.TextSanitizer` and configure the class with `class`. Return the text unchanged when there is nothing to mask. A thrown exception fails the call the text was masked for, so unmasked text is never passed on.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/sanitizer/AccountSanitizer.java[AccountSanitizer.java]
 ----
-akka.javasdk.sanitization {
-  predefined-sanitizers = ["IBAN", "CREDIT_CARD"]
-}
-----
-
-=== Custom
-
-In many cases you need sanitizers specific to your application and business domain. Custom sanitizers let you define regular expressions that identify character sequences to mask.
-
-You define custom sanitizers by adding a config block `akka.javasdk.sanitization.regex-sanitizers` with a name for each sanitizer, followed by a config block containing a single `pattern` key whose value is a valid Java regular expression matching the text to mask.
-
-This example masks a hypothetical customer ID in the form S0123456789:
-
-[source,hocon,indent=0]
-----
-akka.javasdk.sanitization.regex-sanitizers = {
-  "CUSTOMER_IDS" = { pattern = "S\\d{10}" }
-}
+include::example$doc-snippets/src/main/java/com/example/sanitizer/AccountSanitizer.java[tag=all]
 ----
 
-This would cause text like:
+The constructor can take an `akka.javasdk.SanitizerContext`, which gives access to the entry name and its configuration, and any other injectable type, such as an `akka.javasdk.agent.ClassifierClient` to mask what a configured classifier detects.
 
-[literal]
-Customer S0847362951 reported an issue with their order
-
-To be masked to:
-
-[literal]
-Customer *********** reported an issue with their order
-
-Before being written in logs or passed to agent models.
+The `sanitize` method may block. The runtime always invokes a sanitizer on a virtual thread.
 
 == Performance considerations
 
-Sanitization is applied to every log entry. In high-throughput applications, numerous sanitization rules or complex regular expressions may impact performance. You should monitor application performance and optimize regex patterns if necessary.
+An entry that masks at the `logs` application point is applied to every log entry. In high-throughput applications, numerous sanitization rules or complex regular expressions may impact performance. You should monitor application performance and optimize regex patterns if necessary.
 
 == Testing sanitization
 
-In tests you can access the sanitizer directly from the `getSanitizer` method in `TestKit` or `TestKitSupport` to assert that expected texts are masked given your service sanitizer configuration.
+In tests you can access the sanitizer client from the `getSanitizerClient` method in `TestKit` or `TestKitSupport`, and mask with a configured sanitizer by name to assert that expected texts are masked given your service sanitizer configuration.
 
 == See also
 
