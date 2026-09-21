@@ -4,11 +4,7 @@
 
 package akka.javasdk.impl.evaluation
 
-import java.util.concurrent.CompletionStage
-
-import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
-import scala.jdk.FutureConverters.CompletionStageOps
 
 import akka.annotation.InternalApi
 import akka.javasdk.evaluation.Evaluation
@@ -25,8 +21,6 @@ private[javasdk] object EvaluatorEffectImpl {
 
   final case class InconclusiveEffect(reason: String) extends PrimaryEffect {}
 
-  final case class AsyncEffect(effect: Future[Evaluator.Effect]) extends PrimaryEffect {}
-
   class Builder extends Evaluator.Effect.Builder {
     override def complete(evaluation: Evaluation, more: Evaluation*): Evaluator.Effect =
       CompleteEffect(evaluation +: more.toSeq)
@@ -38,9 +32,6 @@ private[javasdk] object EvaluatorEffectImpl {
     }
 
     override def inconclusive(reason: String): Evaluator.Effect = InconclusiveEffect(reason)
-
-    override def asyncEffect(futureEffect: CompletionStage[Evaluator.Effect]): Evaluator.Effect =
-      AsyncEffect(futureEffect.asScala)
   }
 
   def builder(): Evaluator.Effect.Builder = new Builder()

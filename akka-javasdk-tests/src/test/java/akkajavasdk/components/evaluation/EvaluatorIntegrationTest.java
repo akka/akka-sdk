@@ -26,7 +26,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * which fetches the interaction from the ledger and judges it with an LLM-as-judge agent (also
  * stubbed) in a single handler.
  *
- * <p>The counterpart of {@link WorkflowEvaluatorIntegrationTest} for an evaluator that is not a
+ * <p>The counterpart of {@link DurableEvaluatorIntegrationTest} for an evaluator that is not a
  * workflow: here the runtime records the outcome the handler returns, rather than the evaluator
  * reporting it from a built-in record step. Each outcome is asserted on the evaluation as recorded
  * in the ledger.

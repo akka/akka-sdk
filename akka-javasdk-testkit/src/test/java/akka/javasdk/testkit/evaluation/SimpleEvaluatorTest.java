@@ -29,7 +29,6 @@ public class SimpleEvaluatorTest {
 
     assertTrue(result.isComplete());
     assertFalse(result.isInconclusive());
-    assertFalse(result.isAsync());
 
     assertEquals(1, result.getEvaluations().size());
     Evaluation evaluation = result.getEvaluations().get(0);
@@ -47,18 +46,6 @@ public class SimpleEvaluatorTest {
     assertTrue(result.isInconclusive());
     assertFalse(result.isComplete());
     assertEquals("cannot evaluate interaction inconclusive", result.getInconclusiveReason());
-  }
-
-  @Test
-  public void resolvesAsyncEffect() {
-    EvaluatorResult result = testKit.evaluate(agentInteraction("async"));
-
-    assertTrue(result.isAsync());
-    // async effect resolves to the terminal completion
-    assertTrue(result.isComplete());
-    assertEquals(1, result.getEvaluations().size());
-    assertEquals("async verdict", result.getEvaluations().get(0).explanation());
-    assertEquals(0.5, result.getEvaluations().get(0).score().orElseThrow());
   }
 
   @Test
