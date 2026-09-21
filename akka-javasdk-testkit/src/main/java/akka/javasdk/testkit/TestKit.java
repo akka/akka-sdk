@@ -1645,17 +1645,25 @@ public class TestKit {
     return sanitizer;
   }
 
-  /** Stop the testkit and local runtime. */
+  /**
+   * Stop the testkit and local runtime, and wait for the runtime to terminate.
+   *
+   * @throws IllegalStateException if the runtime could not be stopped. Its runtime may still be
+   *     running, with its threads and the ports it bound still held.
+   */
   public void stop() {
+    int port = runtimePort;
     try {
       if (runtimeActorSystem != null) {
         akka.testkit.javadsl.TestKit.shutdownActorSystem(
             runtimeActorSystem.classicSystem(), FiniteDuration.create(10, TimeUnit.SECONDS), true);
       }
     } catch (Exception e) {
-      log.error("TestKit runtime failed to terminate", e);
+      throw new IllegalStateException(
+          "TestKit runtime failed to terminate. Port [" + port + "]", e);
+    } finally {
+      started = false;
     }
-    started = false;
   }
 
   /**
