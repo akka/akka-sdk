@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl
 
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
 
@@ -47,22 +48,27 @@ import com.typesafe.config.Config
   private val cache = mutable.Map.empty[String, TextSanitizer]
 
   val client: SanitizerClient = new SanitizerClient {
-    override def sanitizeAsync(name: String, text: String): CompletionStage[String] = {
-      requireConfigured(name)
-      runtimeSanitizerClient.sanitize(byName(name).runtimeName, text).asJava
-    }
+    override def sanitizeAsync(name: String, text: String): CompletionStage[String] =
+      byName.get(name) match {
+        case Some(sanitizer) => runtimeSanitizerClient.sanitize(sanitizer.runtimeName, text).asJava
+        case None            => CompletableFuture.failedFuture(notConfigured(name))
+      }
 
-    override def sanitize(name: String, text: String): String =
+    override def sanitize(name: String, text: String): String = {
+      requireConfigured(name)
       try sanitizeAsync(name, text).toCompletableFuture.join()
       catch {
         case e: CompletionException => throw ErrorHandling.unwrapCompletionException(e)
       }
+    }
   }
 
+  private def notConfigured(name: String): IllegalArgumentException =
+    new IllegalArgumentException(
+      s"No sanitizer configured with name [$name]. Configured sanitizers: [${byName.keys.mkString(", ")}]")
+
   private def requireConfigured(name: String): Unit =
-    if (!byName.contains(name))
-      throw new IllegalArgumentException(
-        s"No sanitizer configured with name [$name]. Configured sanitizers: [${byName.keys.mkString(", ")}]")
+    if (!byName.contains(name)) throw notConfigured(name)
 
   /** The entries that apply to the agent with this component id and role. */
   def agentSanitizers(componentId: String, role: Option[String]): Seq[ConfiguredSanitizer] =

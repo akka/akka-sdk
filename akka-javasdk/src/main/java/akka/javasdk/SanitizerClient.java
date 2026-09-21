@@ -26,9 +26,8 @@ public interface SanitizerClient {
   String sanitize(String name, String text);
 
   /**
-   * Async variant of {@link #sanitize}.
-   *
-   * @throws IllegalArgumentException if no sanitizer is configured with that name
+   * Async variant of {@link #sanitize}. The returned stage fails with an {@link
+   * IllegalArgumentException} when no sanitizer is configured with that name.
    */
   CompletionStage<String> sanitizeAsync(String name, String text);
 }

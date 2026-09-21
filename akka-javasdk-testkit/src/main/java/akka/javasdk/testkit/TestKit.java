@@ -16,6 +16,7 @@ import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
 import akka.javasdk.Principal;
 import akka.javasdk.Sanitizer;
+import akka.javasdk.SanitizerClient;
 import akka.javasdk.ServiceSetup;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
@@ -934,7 +935,11 @@ public class TestKit {
   private TimerScheduler timerScheduler;
   private Optional<DependencyProvider> dependencyProvider;
   private AgentRegistry agentRegistry;
+
+  @SuppressWarnings("removal")
   private Sanitizer sanitizer;
+
+  private SanitizerClient sanitizerClient;
   private ClassifierClient classifierClient;
   private LedgerClient ledgerClient;
   private int eventingTestKitPort = -1;
@@ -1102,6 +1107,7 @@ public class TestKit {
       dependencyProvider =
           Optional.ofNullable(startupContext.dependencyProvider().getOrElse(() -> null));
       sanitizer = startupContext.sanitizer();
+      sanitizerClient = startupContext.sanitizerClient();
       classifierClient = startupContext.classifierClient();
       ledgerClient = startupContext.ledgerClient();
 
@@ -1646,9 +1652,22 @@ public class TestKit {
    * @return The configured sanitizer for the service, for test assertions that the expected
    *     anonymization is applied. Will always return an instance, if no sanitization rules are
    *     configured, the returned sanitizer will return all text fed to it as is.
+   * @deprecated Use {@link #getSanitizerClient()}, which masks with one configured sanitizer by
+   *     name.
    */
+  @Deprecated(since = "3.7.0", forRemoval = true)
+  @SuppressWarnings("removal")
   public Sanitizer getSanitizer() {
     return sanitizer;
+  }
+
+  /**
+   * @return The sanitizer client for the service, for test assertions that the expected
+   *     anonymization is applied, and for masking with a configured sanitizer directly without
+   *     going through a component.
+   */
+  public SanitizerClient getSanitizerClient() {
+    return sanitizerClient;
   }
 
   /**
