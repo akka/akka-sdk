@@ -10,8 +10,8 @@ import java.util.concurrent.CompletionStage;
 /**
  * Client for masking text with a configured sanitizer by name.
  *
- * <p>Can be injected in all components, and reaches every configured sanitizer, including the ones
- * a {@link TextSanitizer} implements.
+ * <p>Can be injected in service setup, endpoints, agents, consumers, timed actions and workflows.
+ * Reaches every configured sanitizer, including the ones a {@link TextSanitizer} implements.
  *
  * <p>Not for user extension, implementation provided by the SDK.
  */

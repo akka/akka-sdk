@@ -14,7 +14,7 @@ This matters because protecting personally identifiable information is simultane
 
 By shifting sanitization from application logic into the runtime, you gain:
 
-* **Consistency** — every code path that emits logs or feeds data to an agent is covered by the same policy.
+* **Consistency** — every code path an entry applies to is covered by the same policy, with nothing to remember at the call site.
 * **Auditability** — governance and infosec teams can inspect a single configuration to verify what categories of PII are masked.
 * **Reduced attack surface** — in the event of a breach, masked data limits exposure.
 
@@ -44,7 +44,7 @@ Before being written in logs or passed to agent models.
 
 === Ad hoc sanitization
 
-You can also mask text programmatically in any component where it makes sense for a specific business case, for example before sending text to a third-party API or before writing text into the state of an entity. To do this, xref:setup-and-dependency-injection.adoc[inject] an `akka.javasdk.SanitizerClient` in the component constructor and call `sanitize` with the name of a configured sanitizer and the text.
+You can also mask text programmatically where it makes sense for a specific business case, for example before sending text to a third-party API or before passing it to an entity to store. To do this, xref:setup-and-dependency-injection.adoc[inject] an `akka.javasdk.SanitizerClient` into an endpoint, an agent, a consumer, a timed action, a workflow or the service setup, and call `sanitize` with the name of a configured sanitizer and the text.
 
 A sanitizer scoped to an agent or to an application point masks the text you pass here as well. The name selects which sanitizer runs, and nothing else does.
 
@@ -65,30 +65,17 @@ You configure sanitizers as named entries of `akka.javasdk.sanitization.sanitize
 
 Each entry can also state where and for which agents it masks:
 
-* `use-for`: the application points to mask at, any of `model-input`, `tool-result` and `logs`, or `*`. An entry that defines no `use-for` masks at every point it can.
+* `use-for`: the application points to mask at, any of `model-input`, `tool-result` and `logs`, or `*`. An entry that defines no `use-for`, or defines `*`, masks at every point it can. A class-based or agent-scoped entry cannot mask log messages, so for those it means model input and tool results.
 * `agents`: the component ids of the agents to mask for. Use `*` for every agent.
 * `agent-roles`: the roles of the agents to mask for. Use `*` for every agent that has a role.
 * `enabled`: set it to `false` to drop the entry. A dropped entry masks nothing and constructs nothing.
 
 An entry that defines neither `agents` nor `agent-roles` masks for every agent. An entry that defines both masks for an agent that matches either one.
 
-[source,hocon,indent=0]
+[source,json,indent=0]
+.{sample-base-url}/doc-snippets/src/main/resources/application.conf[application.conf]
 ----
-akka.javasdk.sanitization.sanitizers {
-  "credit-card" {
-    predefined = CREDIT_CARD
-  }
-  "customer-ids" {
-    pattern = "S\\d{10}"
-    use-for = ["logs"]
-  }
-  "account-numbers" {
-    class = "com.example.sanitizer.AccountSanitizer"
-    use-for = ["model-input", "tool-result"]
-    agent-roles = ["customer-facing"]
-    account-prefix = "ACC-"
-  }
-}
+include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=sanitizers]
 ----
 
 The `customer-ids` entry above masks a hypothetical customer ID in the form S0123456789, so that text like:

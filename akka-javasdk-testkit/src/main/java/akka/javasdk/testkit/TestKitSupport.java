@@ -113,9 +113,10 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
   }
 
   /**
-   * @return The configured sanitizer for the service, for test assertions that the expected
-   *     anonymization is applied. Will always return an instance, if no sanitization rules are
-   *     configured, the returned sanitizer will return all text fed to it as is.
+   * @return The sanitizer that applies every configured pattern and predefined rule of the service,
+   *     for test assertions that the expected anonymization is applied. Will always return an
+   *     instance, if no sanitization rules are configured, the returned sanitizer will return all
+   *     text fed to it as is.
    * @deprecated Use {@link #getSanitizerClient()}, which masks with one configured sanitizer by
    *     name.
    */
