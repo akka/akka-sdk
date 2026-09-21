@@ -42,8 +42,11 @@ import akka.javasdk.NotificationPublisher
 import akka.javasdk.Principals
 import akka.javasdk.Retries
 import akka.javasdk.Sanitizer
+import akka.javasdk.SanitizerClient
+import akka.javasdk.SanitizerContext
 import akka.javasdk.ServiceSetup
 import akka.javasdk.SpiffeContext
+import akka.javasdk.TextSanitizer
 import akka.javasdk.Tracing
 import akka.javasdk.UnhandledExceptionContext
 import akka.javasdk.UnhandledExceptionHandler
@@ -164,7 +167,9 @@ import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
+import akka.runtime.sdk.spi.SpiSanitizerClient
 import akka.runtime.sdk.spi.SpiSanitizerEngine
+import akka.runtime.sdk.spi.SpiSanitizerSetup
 import akka.runtime.sdk.spi.SpiServiceInfo
 import akka.runtime.sdk.spi.SpiSettings
 import akka.runtime.sdk.spi.SpiSpiffeContext
@@ -421,6 +426,7 @@ class SdkRunner private (
         getSettings,
         startContext.sanitizer,
         startContext.classifierClient,
+        startContext.sanitizerClient,
         httpMockLookup,
         grpcMockLookup,
         startContext.inMemorySpanExporter,
@@ -466,6 +472,7 @@ private object ComponentType {
  */
 @InternalApi
 private[javasdk] object Sdk {
+  @nowarn("msg=deprecated")
   final case class StartupContext(
       componentClients: ComponentClients,
       eventLogClient: EventLogClient,
@@ -478,6 +485,7 @@ private[javasdk] object Sdk {
       serializer: Serializer,
       sanitizer: Sanitizer,
       classifierClient: ClassifierClient,
+      sanitizerClient: SanitizerClient,
       ledgerClient: LedgerClient,
       inMemorySpanExporter: Option[InMemorySpanExporter],
       // Completed by the runtime with the address its HTTP endpoint was bound to, see StartContext. Carried
@@ -536,6 +544,7 @@ private final class Sdk(
     spiSettings: SpiSettings,
     runtimeSanitizer: SpiSanitizerEngine,
     runtimeClassifierClient: SpiClassifierClient,
+    runtimeSanitizerClient: SpiSanitizerClient,
     httpMockLookup: String => Option[
       java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
     grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient],
@@ -631,6 +640,12 @@ private final class Sdk(
       throw exc
   }
 
+  // Constructed after the ClassifierProvider so a sanitizer's constructor can take a ClassifierClient.
+  // Validated from preStart, like the classifiers, so a sanitizer constructor can depend on the user's
+  // DependencyProvider.
+  private val sanitizerProvider =
+    new SanitizerProvider(system, applicationConfig, runtimeSanitizerClient, wireSanitizer)
+
   // Routes classifier construction through the general DI mechanism (classifiers only --
   // guardrails are left to the separate enhanced-guardrail work), so a classifier's constructor
   // can declare any of the platform-managed dependencies (HttpClientProvider, ComponentClient,
@@ -639,6 +654,14 @@ private final class Sdk(
     wiredInstance[Classifier]("Classifier", clz) {
       sideEffectingComponentInjects(None, callerSpiffe = None).orElse {
         case c if c == classOf[ClassifierContext] =>
+          context
+      }
+    }
+
+  private def wireSanitizer(clz: Class[TextSanitizer], context: SanitizerContext): TextSanitizer =
+    wiredInstance[TextSanitizer]("Sanitizer", clz) {
+      sideEffectingComponentInjects(None, callerSpiffe = None).orElse {
+        case c if c == classOf[SanitizerContext] =>
           context
       }
     }
@@ -653,10 +676,24 @@ private final class Sdk(
         throw exc
     }
 
+  // Called from preStart for the same reason as validateClassifiers().
+  private def validateSanitizers(): Unit =
+    try sanitizerProvider.validate()
+    catch {
+      case NonFatal(exc) =>
+        logger.error("Invalid sanitizers: {}", exc.getMessage, exc)
+        throw exc
+    }
+
   lazy private val sanitizer = SanitizerImpl(runtimeSanitizer)
+  // The injected handle is deprecated in favour of SanitizerClient, so the class reference is held here
+  // rather than repeated at each injection site.
+  @nowarn("msg=deprecated")
+  private val deprecatedSanitizerClass: Class[_] = classOf[Sanitizer]
   // Root-context handle for callers with no per-call telemetryContext (StartupContext/testkit);
   // components get a per-injection handle via classifierClient(telemetryContext) below.
   lazy private val classifierClient: ClassifierClient = classifierProvider.client
+  lazy private val sanitizerClient: SanitizerClient = sanitizerProvider.client
 
   private def classifierClient(telemetryContext: Option[OtelContext]): ClassifierClient =
     telemetryContext match {
@@ -766,6 +803,16 @@ private final class Sdk(
   private var agentRegistryInfo = Vector.empty[AgentRegistryImpl.AgentDetails]
   // guardrail name => component ids
   private var guardrailEnabledForComponent = Map.empty[String, Set[String]]
+  // sanitizer name => component ids
+  private var sanitizerEnabledForComponent = Map.empty[String, Set[String]]
+
+  // An entry that names neither agents nor agent-roles applies to every agent, so it is accumulated for
+  // each of them.
+  private def accumulateSanitizers(componentId: String, role: Option[String]): Unit =
+    sanitizerProvider.agentSanitizers(componentId, role).foreach { sanitizer =>
+      sanitizerEnabledForComponent = sanitizerEnabledForComponent
+        .updated(sanitizer.name, sanitizerEnabledForComponent.getOrElse(sanitizer.name, Set.empty) + componentId)
+    }
 
   // Set once `spiComponents` below is computed (after this scanning loop). Consumers and timed
   // actions are constructed during the loop but only read this lazily, when handling a message,
@@ -856,7 +903,7 @@ private final class Sdk(
               wiredInstance("Event Sourced Entity", clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[EventSourcedEntityContext] => context
-                case s if s == classOf[Sanitizer]                 => sanitizer
+                case s if s == deprecatedSanitizerClass           => sanitizer
                 case r if r == classOf[AgentRegistry]             => agentRegistry
                 case p if p == classOf[NotificationPublisher[_]] =>
                   new NotificationPublisher[Any] {
@@ -909,7 +956,7 @@ private final class Sdk(
               wiredInstance("Key Value Entity", clz.asInstanceOf[Class[KeyValueEntity[AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[KeyValueEntityContext] => context
-                case s if s == classOf[Sanitizer]             => sanitizer
+                case s if s == deprecatedSanitizerClass       => sanitizer
                 case r if r == classOf[AgentRegistry]         => agentRegistry
                 case p if p == classOf[NotificationPublisher[_]] =>
                   new NotificationPublisher[Any] {
@@ -1047,6 +1094,10 @@ private final class Sdk(
             guardrailEnabledForComponent.getOrElse(guardrailName, Set.empty) + componentId)
         }
 
+        // Unlike a guardrail, a sanitizer bound by agent-roles also binds an autonomous agent, so the role
+        // is read for both kinds of agent.
+        accumulateSanitizers(componentId, Reflect.readAgentRole(autonomousAgentClass))
+
         // Throwaway instance to read definition() — uses scan-time injects so
         // ComponentClient injection cannot force agentCapabilityConverter mid-scan.
         val agentDefinition: AgentDefinitionImpl = {
@@ -1143,6 +1194,8 @@ private final class Sdk(
             guardrailName,
             guardrailEnabledForComponent.getOrElse(guardrailName, Set.empty) + componentId)
         }
+
+        accumulateSanitizers(componentId, agentRoleOptValue)
 
         val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
           val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
@@ -1278,8 +1331,9 @@ private final class Sdk(
     case e if e == classOf[Executor]           =>
       // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
       sdkExecutionContext.asInstanceOf[Executor]
-    case s if s == classOf[Sanitizer]        => sanitizer
+    case s if s == deprecatedSanitizerClass  => sanitizer
     case c if c == classOf[ClassifierClient] => classifierClient(telemetryContext)
+    case s if s == classOf[SanitizerClient]  => sanitizerClient
     case l if l == classOf[LedgerClient]     => ledgerClient
     case s if s == classOf[Meter]            => sdkMeter
     case o if o == classOf[ObjectStorageProvider] =>
@@ -1342,6 +1396,7 @@ private final class Sdk(
       serviceSetup match {
         case None =>
           validateClassifiers()
+          validateSanitizers()
           startedPromise.trySuccess(
             StartupContext(
               runtimeComponentClients,
@@ -1355,6 +1410,7 @@ private final class Sdk(
               serializer,
               sanitizer,
               classifierClient,
+              sanitizerClient,
               ledgerClient,
               inMemorySpanExporter,
               httpEndpointBound))
@@ -1369,6 +1425,7 @@ private final class Sdk(
             }
           }
           validateClassifiers()
+          validateSanitizers()
           // Only register the shutdown task if the user actually overrode onShutdown,
           // otherwise we'd add a no-op task to coordinated shutdown for every service.
           val onShutdownOverridden =
@@ -1397,6 +1454,7 @@ private final class Sdk(
               serializer,
               sanitizer,
               classifierClient,
+              sanitizerClient,
               ledgerClient,
               inMemorySpanExporter,
               httpEndpointBound))
@@ -1467,6 +1525,13 @@ private final class Sdk(
 
     val classifierSetup = new SpiClassifierSetup(classifierProvider.spiConfiguredClassifiers)
 
+    val sanitizerSetup = new SpiSanitizerSetup(sanitizerProvider.spiSanitizers { sanitizer =>
+      val components = sanitizerEnabledForComponent.getOrElse(sanitizer.name, Set.empty)
+      // The runtime reads an empty set as every agent, so an entry that names agents or roles this service
+      // does not have is handed a component id no agent can be annotated with.
+      if (components.isEmpty && sanitizer.scoped) Set("") else components
+    })
+
     val serviceNameOverride = sdkSettings.devModeSettings.map(_.serviceName)
 
     new SpiComponents(
@@ -1479,6 +1544,7 @@ private final class Sdk(
       componentDescriptors = descriptors,
       guardrailSetup = guardrailSetup,
       classifierSetup = classifierSetup,
+      sanitizerSetup = sanitizerSetup,
       preStart = preStart,
       onStart = onStart,
       reportError = reportError,
