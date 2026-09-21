@@ -107,6 +107,21 @@ public class SanitizerIntegrationTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldMaskForEveryAgentWhenTheSanitizerNamesNone() {
+    var scopedCapture = captureUserMessage(scopedAgentModel);
+    var otherCapture = captureUserMessage(otherAgentModel);
+    var roleCapture = captureUserMessage(roleAgentModel);
+
+    askScopedAgent("tell me about modelsecret");
+    askOtherAgent("tell me about modelsecret");
+    askRoleAgent("tell me about modelsecret");
+
+    assertThat(scopedCapture.get()).contains("tell me about ***********");
+    assertThat(otherCapture.get()).contains("tell me about ***********");
+    assertThat(roleCapture.get()).contains("tell me about ***********");
+  }
+
+  @Test
   public void shouldMaskForTheRoleTheSanitizerNamesAndNoOther() {
     var roleCapture = captureUserMessage(roleAgentModel);
     var otherCapture = captureUserMessage(otherAgentModel);
