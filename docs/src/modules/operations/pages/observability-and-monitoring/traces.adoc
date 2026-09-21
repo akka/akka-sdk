@@ -10,3 +10,5 @@ You can filter by time to select traces in the desired time period. And further 
 
 image:operations:dashboard-control-tower-span-screenshot.png[]
 
+Each span also carries the resource attributes of the service that produced it. To declare attributes of your own, see xref:operations:observability-and-monitoring/observability-exports.adoc#custom_resource_attributes[Adding custom resource attributes].
+

@@ -385,6 +385,7 @@ repoint
 repos
 reputational
 reshard
+resourceAttributes
 resourceVersion
 rethrow
 retryable
