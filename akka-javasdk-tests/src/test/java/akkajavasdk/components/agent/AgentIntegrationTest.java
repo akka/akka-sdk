@@ -105,6 +105,25 @@ public class AgentIntegrationTest extends TestKitSupport {
     assertThat(result.tokenUsage().outputTokens()).isEqualTo(321);
   }
 
+  /** The detailed reply carries the id of the ledger record written for the interaction. */
+  @Test
+  public void shouldReplyWithTheInteractionIdOfTheRecordedInteraction() {
+    testModelProvider.whenMessage(s -> s.equals("hello")).reply("123456");
+
+    Agent.AgentReply<SomeAgent.SomeResponse> result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(SomeAgent::mapLlmResponse)
+            .withDetailedReply()
+            .invoke("hello");
+
+    assertThat(result.interactionId()).isPresent();
+    var interaction = getLedgerClient().getInteraction(result.interactionId().get());
+    assertThat(interaction.agentComponentId()).isEqualTo("some-agent");
+    assertThat(interaction.finalResponseText()).isEqualTo("123456");
+  }
+
   @Test
   public void shouldTestMultiModalUserMessage() {
     // given

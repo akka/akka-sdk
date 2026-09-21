@@ -77,9 +77,11 @@ public abstract class Agent implements AgentDelegationWorker {
    *
    * @param value The result of the agent call
    * @param tokenUsage The token usage from the AI model interaction
+   * @param interactionId The id of the interaction recorded in the ledger. Empty when the ledger did
+   *     not record the interaction.
    * @param <T> The type of the result value
    */
-  public record AgentReply<T>(T value, TokenUsage tokenUsage) {}
+  public record AgentReply<T>(T value, TokenUsage tokenUsage, Optional<String> interactionId) {}
 
   private volatile Optional<AgentContext> context = Optional.empty();
 
