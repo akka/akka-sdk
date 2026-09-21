@@ -11,12 +11,11 @@ import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akkajavasdk.Junit5LogCapturing;
-import java.util.NoSuchElementException;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -52,11 +51,6 @@ public class DurableEvaluatorIntegrationTest extends TestKitSupport {
             """);
   }
 
-  @BeforeEach
-  public void beforeEach() {
-    ResponseQualityDurableEvaluator.clearEvaluationIds();
-  }
-
   @AfterEach
   public void afterEach() {
     agentModel.reset();
@@ -72,15 +66,7 @@ public class DurableEvaluatorIntegrationTest extends TestKitSupport {
         """
             .stripIndent());
 
-    String answer =
-        componentClient
-            .forAgent()
-            .inSession(UUID.randomUUID().toString())
-            .method(EvaluatedAgent::ask)
-            .invoke("How do I reset my password?");
-    assertThat(answer).isNotBlank();
-
-    EvaluationRecord record = awaitRecordedEvaluation();
+    EvaluationRecord record = evaluationFor("How do I reset my password?");
 
     assertThat(record.evaluatorComponentId()).isEqualTo("response-quality-durable-evaluator");
     assertThat(record.agentComponentId()).isEqualTo("wf-evaluated-agent");
@@ -104,15 +90,7 @@ public class DurableEvaluatorIntegrationTest extends TestKitSupport {
         """
             .stripIndent());
 
-    String answer =
-        componentClient
-            .forAgent()
-            .inSession(UUID.randomUUID().toString())
-            .method(EvaluatedAgent::ask)
-            .invoke("How do I export my data?");
-    assertThat(answer).isNotBlank();
-
-    EvaluationRecord record = awaitRecordedEvaluation();
+    EvaluationRecord record = evaluationFor("How do I export my data?");
 
     assertThat(record.evaluations()).hasSize(1);
     var evaluation = record.evaluations().get(0);
@@ -121,21 +99,30 @@ public class DurableEvaluatorIntegrationTest extends TestKitSupport {
   }
 
   /**
-   * Await the evaluation the agent interaction triggered, as recorded in the ledger: first the id
-   * the evaluator ran with, then the record the built-in record step writes when the evaluation
-   * terminates.
+   * Ask the evaluated agent, then await the evaluation the interaction triggered, as recorded in
+   * the ledger by the built-in record step when the evaluation terminates. The reply carries the id
+   * of the interaction, which is what the evaluations are recorded against.
    */
-  private EvaluationRecord awaitRecordedEvaluation() {
-    Awaitility.await()
-        .atMost(30, TimeUnit.SECONDS)
-        .untilAsserted(
-            () -> assertThat(ResponseQualityDurableEvaluator.evaluationIds()).hasSize(1));
+  private EvaluationRecord evaluationFor(String question) {
+    var reply =
+        componentClient
+            .forAgent()
+            .inSession(UUID.randomUUID().toString())
+            .method(EvaluatedAgent::ask)
+            .withDetailedReply()
+            .invoke(question);
+    assertThat(reply.value()).isNotBlank();
 
-    String evaluationId = ResponseQualityDurableEvaluator.evaluationIds().iterator().next();
+    String interactionId = reply.interactionId().orElseThrow();
 
-    return Awaitility.await()
-        .atMost(30, TimeUnit.SECONDS)
-        .ignoreException(NoSuchElementException.class)
-        .until(() -> getLedgerClient().getEvaluation(evaluationId), record -> record != null);
+    List<EvaluationRecord> records =
+        Awaitility.await()
+            .atMost(30, TimeUnit.SECONDS)
+            .until(
+                () -> getLedgerClient().getEvaluations(interactionId), found -> !found.isEmpty());
+
+    assertThat(records).hasSize(1);
+    assertThat(records.getFirst().interactionId()).isEqualTo(interactionId);
+    return records.getFirst();
   }
 }

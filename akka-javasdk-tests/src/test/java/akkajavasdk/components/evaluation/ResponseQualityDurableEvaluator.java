@@ -11,8 +11,6 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.evaluation.DurableEvaluator;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A durable evaluator running a multi-step evaluation: fetch the transcript in one step, judge it
@@ -24,21 +22,6 @@ public class ResponseQualityDurableEvaluator
     extends DurableEvaluator<ResponseQualityDurableEvaluator.State> {
 
   public record State(String transcript) {}
-
-  /**
-   * Test probe: the ids of the evaluations this evaluator ran. The runtime generates the id, so
-   * this is how a test learns which evaluation to fetch from the ledger; the verdict itself is
-   * asserted on the recorded evaluation, not here.
-   */
-  private static final Set<String> evaluationIds = ConcurrentHashMap.newKeySet();
-
-  public static Set<String> evaluationIds() {
-    return evaluationIds;
-  }
-
-  public static void clearEvaluationIds() {
-    evaluationIds.clear();
-  }
 
   private final ComponentClient componentClient;
 
@@ -80,7 +63,6 @@ public class ResponseQualityDurableEvaluator
             .invoke(currentState().transcript());
 
     var evaluation = Evaluation.of(verdict.passed(), verdict.reason()).withScore(verdict.score());
-    evaluationIds.add(evaluationContext().evaluationId());
     return effects().complete(evaluation);
   }
 }
