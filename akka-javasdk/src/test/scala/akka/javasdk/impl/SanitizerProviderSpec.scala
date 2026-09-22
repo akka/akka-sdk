@@ -9,8 +9,10 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
@@ -19,6 +21,7 @@ import akka.javasdk.TextSanitizer
 import akka.javasdk.agent.Classification
 import akka.javasdk.agent.ClassifierClient
 import akka.runtime.sdk.spi.SpiDataSanitizer
+import akka.runtime.sdk.spi.SpiLogSanitizer
 import akka.runtime.sdk.spi.SpiSanitizerClient
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -51,6 +54,25 @@ object SanitizerProviderSpec {
       }
       "warm-colors" {
         pattern = "(?i)(red|orange|yellow)"
+      }
+    }
+    """)
+    .withFallback(ConfigFactory.load())
+
+  private val logsConfig = ConfigFactory
+    .parseString(s"""
+    akka.javasdk.sanitization.sanitizers {
+      "logs-only" {
+        pattern = "(secret)"
+        use-for = ["logs"]
+      }
+      "implemented-logs" {
+        class = "akka.javasdk.impl.SanitizerProviderSpec$$NoContextSanitizer"
+        use-for = ["logs"]
+      }
+      "agent-scoped" {
+        pattern = "(other)"
+        agents = ["some-agent"]
       }
     }
     """)
@@ -326,6 +348,47 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       provider.spiSanitizers(_ => Set.empty) shouldBe empty
       provider.validate()
       ConstructionCount.get() shouldEqual 0
+    }
+  }
+
+  "The log sanitizers handed to the runtime" should {
+
+    "carry every entry that masks log messages, under the name the runtime registers it with" in {
+      val (provider, _) = newProvider(system, config)
+
+      provider.spiLogSanitizers.map(_.name).toSet shouldEqual Set(
+        "with-context",
+        "no-context",
+        "classifier-backed",
+        "counted",
+        "async-only",
+        "CREDIT_CARD",
+        "warm-colors")
+    }
+
+    "mask with the instance of a class based entry" in {
+      val (provider, _) = newProvider(system, config)
+
+      val custom = provider.spiLogSanitizers.collectFirst {
+        case custom: SpiLogSanitizer.Custom if custom.name == "no-context" => custom
+      }.get
+
+      custom.implementationClass shouldEqual classOf[NoContextSanitizer].getName
+      Await.result(custom.instance.sanitize("quiet"), 3.seconds) shouldEqual "QUIET"
+    }
+
+    "leave out an entry bound to an agent" in {
+      val (provider, _) = newProvider(system, logsConfig)
+
+      provider.spiLogSanitizers.map(_.name).toSet shouldEqual Set("logs-only", "implemented-logs")
+    }
+
+    "bind an entry that masks log messages only to no agent" in {
+      val (provider, _) = newProvider(system, logsConfig)
+
+      // such an entry is still handed over here, because the runtime builds the by-name registry from this list
+      provider.spiSanitizers(_ => Set("some-agent")).map(e => e.name -> e.enabledForComponents).toMap shouldEqual
+      Map("logs-only" -> Set(""), "implemented-logs" -> Set(""), "agent-scoped" -> Set("some-agent"))
     }
   }
 }

@@ -156,19 +156,19 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         """).useFor shouldEqual Set(UseFor.ModelInput, UseFor.ToolResult)
     }
 
-    "leave out log messages for an implementation that names no point" in {
+    "include log messages for an implementation that names no point" in {
       parseOne("""
         "implemented" { class = "com.example.PiiSanitizer" }
-        """).useFor shouldEqual Set(UseFor.ModelInput, UseFor.ToolResult)
+        """).useFor shouldEqual Set(UseFor.ModelInput, UseFor.ToolResult, UseFor.Logs)
     }
 
-    "fail when logs is combined with class" in {
-      failure("""
+    "hold logs for an implementation that names it" in {
+      parseOne("""
         "implemented-logs" {
           class = "com.example.PiiSanitizer"
           use-for = ["logs"]
         }
-        """) should include("Sanitizer [implemented-logs] cannot combine [class] with the [logs] application point")
+        """).useFor shouldEqual Set(UseFor.Logs)
     }
 
     "fail when logs is combined with agents" in {
@@ -249,9 +249,14 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         }
         """)))
 
+      // The log messages an entry masks are not an application point of an agent, so an entry that only masks
+      // them carries none here. It masks log messages as a log sanitizer of the setup carrier.
       settings.sanitizers.map(entry => (entry.getClass, entry.name, entry.useFor)) shouldEqual Seq(
-        (classOf[SpiDataSanitizer.Regex], "warm-colors", Set("logs")),
-        (classOf[SpiDataSanitizer.Predefined], "CREDIT_CARD", Set("model-input", "tool-result", "logs")))
+        (classOf[SpiDataSanitizer.Regex], "warm-colors", Set.empty[SpiDataSanitizer.UseFor]),
+        (
+          classOf[SpiDataSanitizer.Predefined],
+          "CREDIT_CARD",
+          Set(SpiDataSanitizer.UseFor.ModelInput, SpiDataSanitizer.UseFor.ToolResult)))
 
       settings.sanitizers.map(_.enabledForComponents) shouldEqual Seq(Set.empty, Set.empty)
       settings.sanitizers.collectFirst { case regex: SpiDataSanitizer.Regex =>
@@ -274,6 +279,21 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
             .withFallback(ConfigFactory.load())))
 
       exc.getMessage should include("Sanitizer [broken] has an invalid [pattern = ([unclosed]")
+    }
+
+    "fail for an entry that combines an agent scope with the logs application point" in {
+      val exc = intercept[IllegalArgumentException](
+        SdkRunner.extractSpiSettings(
+          ConfigFactory
+            .parseString("""
+            akka.javasdk.sanitization.sanitizers {
+              "agent-logs" { pattern = "a", agents = ["some-agent"], use-for = ["logs"] }
+            }
+            """)
+            .withFallback(ConfigFactory.load())))
+
+      exc.getMessage should include(
+        "Sanitizer [agent-logs] cannot combine [agents] or [agent-roles] with the [logs] application point")
     }
   }
 
