@@ -1,0 +1,13 @@
+= Akka Runtime 1.6.17
+:page-summary: Runtime 1.6.17 long event backlog catch up optimization
+
+include::ROOT:partial$include.adoc[]
+
+Released 2026-09-24.
+
+== Changes
+
+* Views and Eventing: optimization of views and consumers that catch up over a long event backlog
+* gRPC endpoints: a `google.protobuf.Any` field with an unknown type no longer fails a debug traced request
+* Agents: tool results and messages with several or non-text contents no longer fail a debug traced request
+* TestKit: every trace is a debug trace

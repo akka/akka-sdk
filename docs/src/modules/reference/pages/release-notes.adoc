@@ -12,6 +12,9 @@ Current versions
 
 == September 2026
 
+* xref:release-notes/runtime/1.6.17.adoc[Akka Runtime 1.6.17]
+- Optimization of views and consumers that catch up over a long event backlog, and debug tracing fixes
+
 * Akka CLI 3.0.75
 - support for more AI assistants in `akka specify init --agent ...`
 
