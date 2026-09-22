@@ -73,15 +73,13 @@ import org.slf4j.LoggerFactory
       tracerFactory: () => Tracer)
       extends ModelCallGuardrail.CallContext {
 
-    private lazy val conversationMessages: Seq[Message] =
-      spiMessages.map(toMessage)
-
     override lazy val messages: java.util.List[Message] =
-      conversationMessages.asJava
+      spiMessages.map(toMessage).asJava
 
     override lazy val newMessages: java.util.List[Message] =
-      conversationMessages
-        .drop(conversationMessages.lastIndexWhere(_.isInstanceOf[Message.AiMessage]) + 1)
+      spiMessages
+        .drop(spiMessages.lastIndexWhere(_.isInstanceOf[SpiAgent.ContextMessage.AiMessage]) + 1)
+        .map(toMessage)
         .asJava
 
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
