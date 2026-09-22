@@ -144,6 +144,8 @@ akka.javasdk.agent.guardrails {
 
 The `class` property sets the implementation class. The class must implement `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail` (or the deprecated `TextGuardrail`), be public, and have a public constructor. The constructor may take a link:{attachmentsdir}/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which holds the name and the config section of the guardrail. The `ProfanityResponseGuard` example reads its `search-for` property this way.
 
+The runtime shares one guardrail instance across concurrent calls from different sessions and agents. The implementation must be thread safe.
+
 The guardrail interface sets where the runtime evaluates the guardrail, so the configuration has no boundary setting. If a `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail` defines `use-for`, the runtime fails at startup.
 
 === Agent selection

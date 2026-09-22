@@ -15,6 +15,9 @@ import java.util.concurrent.CompletionStage;
  * parameter, which gives access to the guardrail's configured name and config section. The per-call
  * data is delivered to {@link #decide} via {@link CallContext}. Guardrails are enabled via
  * configuration; see the agent documentation.
+ *
+ * <p>The runtime shares one instance across concurrent calls from different sessions and agents. An
+ * implementation must be thread safe.
  */
 public non-sealed interface ToolCallGuardrail extends Guardrail {
 
