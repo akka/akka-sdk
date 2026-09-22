@@ -1,0 +1,113 @@
+= Structured judgment
+:page-summary: A structured judgment asks a SystemOne model a set of questions about a state and returns one answer per question, each with a probability.
+:page-when-to-use: Routing, classification, scoring and yes or no checks where the answer is one of a known set of options
+
+include::ROOT:partial$include.adoc[]
+
+A structured judgment is an agent effect that asks a SystemOne model a set of questions about a state and returns one answer per question, each with a probability. A SystemOne model does not generate text. It returns a probability distribution over the options you supply, so it fits decisions that a chat model would make with a prompt and a parsed reply: routing, classification, scoring and yes or no checks. The SystemOne API is described at link:{url-ext-systemone-docs}[docs.typesafe.ai, window="new"].
+
+The default SystemOne endpoint is the TypeSafe Jev API. Configure the endpoint and the API key as described in <<Configuring the provider>>.
+
+== When to use a structured judgment
+
+Use a structured judgment when the answer is one of a known set of options and you want a probability for it:
+
+* Routing: which team, tool or agent handles an input.
+* Classification: which category an input belongs to.
+* Scoring: where an input falls on a scale you define.
+* Checks: whether an input has a property, such as urgency or a refund request.
+
+Use a model request with `userMessage` when the agent has to generate text, call tools or continue a conversation. A structured judgment has no system message, no tools and no session memory. The state you pass is the whole input the model sees.
+
+== Asking questions
+
+Start the request with `judgment()`, pass the state, add the questions and reply with the `Judgment`.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/TriageAgent.java[TriageAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/TriageAgent.java[tag=judgment]
+----
+<1> `judgment()` must be the first call on the builder. It starts a structured judgment request instead of a model request.
+<2> The state is the content to judge. A `String` is sent as text. Any other object or collection is serialized to JSON and sent as an object or an array. Numbers, booleans and null are not accepted.
+<3> A choice question picks one option. Each option has a key, which is returned as the answer, and a description that tells the model what the option covers. An option without a description is a bare label.
+<4> A score question places the state on an ordered scale of 2 to 10 levels, from lowest to highest.
+<5> A yes or no question returns the probability of yes. The descriptions of yes and no are optional.
+<6> The reply is the `Judgment` with one answer per question key.
+
+Each question has a key. The key must be unique within the request and identifies the answer in the `Judgment`. The model evaluates the questions independently, so the answer to one question does not influence another. Ask several questions about the same state in one request rather than making one request per question.
+
+== Reading the answers
+
+The `Judgment` holds one answer per question key. Read an answer as the type of its question with `choice`, `score` and `yesNo`.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/TriageAgentMore.java[TriageAgentMore.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/TriageAgentMore.java[tag=judgment-answers]
+----
+<1> A `ChoiceAnswer` has the selected option key, a probability per option and a confidence.
+<2> The confidence says how peaked the distribution is, from 0 to 1. A confidence below 0.5 means the options are close. Route such cases to a person or a different system instead of acting on the choice.
+<3> A `YesNoAnswer` has the probability of yes. `isYes()` is true at 0.5 and above. `isYes(threshold)` uses your own threshold.
+
+A `ScoreAnswer` has the position along the levels as a number that can fall between two levels, the levels as a legend by index, a probability per level and a confidence.
+
+The `Judgment` also carries the model that answered and the token usage of the call. A caller that invokes the agent through the `ComponentClient` with `withDetailedReply()` gets the same token usage on the `AgentReply`.
+
+To reply with your own type instead of the `Judgment`, use `map`.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/TriageAgentMore.java[TriageAgentMore.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/TriageAgentMore.java[tag=judgment-map]
+----
+<1> `map` receives the `Judgment` and returns the reply value.
+<2> `onFailure` recovers from a failed call, see <<Failure handling>>.
+
+== Configuring the provider
+
+The provider is configured under `akka.javasdk.agent.judgment-model-provider`, separate from the model provider of model requests, because a SystemOne model is not a chat model.
+
+[source,hocon,indent=0]
+----
+include::example$doc-snippets/src/main/resources/application.conf[tag=agent-judgment-model-config]
+----
+
+The `system-one` section has the API key, the model name, the base URL, the timeouts and the number of retries. The default base URL is the TypeSafe Jev API. Set `base-url` for another SystemOne endpoint. See xref:sdk:model-provider-details.adoc#_systemone[SystemOne configuration] for all properties.
+
+To set the provider in code, or to use a different configuration section for one agent, use `model` on the builder.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/TriageAgentMore.java[TriageAgentMore.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/TriageAgentMore.java[tag=judgment-model]
+----
+<1> `JudgmentModelProvider.systemOne()` starts from the defaults of the `system-one` configuration section.
+<2> `JudgmentModelProvider.fromConfig(path)` loads another configuration section, for example one with a different model name or endpoint.
+
+== Guardrails
+
+Request guardrails configured with `use-for = ["model-request"]` run on the state before the request leaves the service, in the same way they run on a user message. A `String` state is checked as text. An object or array state is checked as its JSON text. Response guardrails do not apply because the model returns probabilities, not text. See xref:sdk:agents/guardrails.adoc[Guardrails].
+
+== Failure handling
+
+A failed call raises the same exceptions as a model request. Recover with `onFailure` in the same way, see xref:sdk:agents/failures.adoc[Failure handling].
+
+* `ModelException` for an authentication error, a rejected request or an unexpected response.
+* `RateLimitException` when the endpoint rate limits the request after the configured retries.
+* `ModelTimeoutException` when connecting or waiting for the answer takes longer than the configured timeouts.
+* `InternalServerException` when the endpoint reports an internal error or is overloaded after the configured retries.
+* `GuardrailException` when a request guardrail blocks the state.
+
+The builder rejects an invalid request before the call: a blank or duplicate question key, a choice without options, a score with fewer than 2 or more than 10 levels, a missing state or a request without questions.
+
+== Testing
+
+Replace the provider with link:{attachmentsdir}/testkit/akka/javasdk/testkit/TestJudgmentModelProvider.html[TestJudgmentModelProvider] in tests, see xref:sdk:agents/testing.adoc#_mocking_judgment_responses[Mocking judgment responses].
+
+== See also
+
+* xref:sdk:agents.adoc[Agents]
+* xref:sdk:agents/structured.adoc[Structured responses]
+* xref:sdk:agents/failures.adoc[Failure handling]
+* xref:sdk:model-provider-details.adoc[AI model provider configuration]
