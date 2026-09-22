@@ -1675,7 +1675,7 @@ public class TestKit {
    * A band below the range operating systems draw ephemeral ports from: 32768 and up on Linux,
    * 49152 and up on macOS and Windows.
    *
-   * The configured testkit port should be below this band, so the picker below cannot draw it.
+   * <p>The configured testkit port should be below this band, so the picker below cannot draw it.
    */
   static final int EVENTING_PORT_BAND_FIRST = 20000;
 
