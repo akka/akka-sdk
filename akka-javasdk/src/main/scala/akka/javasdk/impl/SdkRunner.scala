@@ -120,6 +120,7 @@ import akka.runtime.sdk.spi.AgentDescriptor
 import akka.runtime.sdk.spi.AutonomousAgentDescriptor
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.ConsumerDescriptor
+import akka.runtime.sdk.spi.DeploymentInfo
 import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
 import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
@@ -391,6 +392,7 @@ class SdkRunner private (
         startContext.tracerFactory,
         startContext.sdkMeter,
         startContext.regionInfo,
+        startContext.deploymentInfo,
         dependencyProvider,
         disabledComponents,
         overrideDisabledComponents,
@@ -499,6 +501,7 @@ private final class Sdk(
     tracerFactory: String => Tracer,
     sdkMeter: Meter,
     regionInfo: RegionInfo,
+    deploymentInfo: DeploymentInfo,
     dependencyProviderOverride: Option[DependencyProvider],
     disabledComponents: Set[Class[_]],
     overrideDisabledComponents: Boolean,
@@ -542,6 +545,7 @@ private final class Sdk(
     None,
     remoteIdentification.map(ri => RawHeader(ri.headerName, ri.headerValue)),
     sdkSettings,
+    deploymentInfo,
     // We know it is a dispatcher/executor
     sdkExecutionContext.asInstanceOf[Executor],
     None,
@@ -560,6 +564,7 @@ private final class Sdk(
     system,
     sdkSettings,
     userServiceConfig,
+    deploymentInfo,
     remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)),
     grpcMockLookup)
 
