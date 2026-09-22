@@ -5,8 +5,8 @@
 package akka.javasdk.agent;
 
 /**
- * The verdict of a {@link ToolGuardrail} or {@link ModelGuardrail}: {@link Allow}, {@link Deny}, or
- * {@link Fail}.
+ * The verdict of a {@link ToolCallGuardrail}, {@link ModelCallGuardrail} or {@link
+ * AgentResponseGuardrail}: {@link Allow}, {@link Deny}, or {@link Fail}.
  */
 public sealed interface Decision {
 

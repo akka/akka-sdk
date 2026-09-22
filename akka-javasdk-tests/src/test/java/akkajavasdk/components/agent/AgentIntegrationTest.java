@@ -69,8 +69,10 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(ProtobufAgentDirectReply.class, testModelProvider)
         .withModelProvider(ProtobufAgentWithConformsTo.class, testModelProvider)
         .withModelProvider(ProtobufAgentWithResponseAs.class, testModelProvider)
-        .withModelProvider(ModelGuardrailTestAgent.class, testModelProvider)
+        .withModelProvider(AgentResponseGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(ClassifierBackedGuardrailTestAgent.class, testModelProvider)
+        .withModelProvider(BeforeModelCallGuardrailTestAgent.class, testModelProvider)
+        .withModelProvider(NonBlockingGuardrailsTestAgent.class, testModelProvider)
         .withDependencyProvider(depsProvider);
   }
 
@@ -622,23 +624,84 @@ public class AgentIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldUseConfiguredModelGuardrail() {
+  public void shouldUseConfiguredAgentResponseGuardrail() {
     // given
-    // model-guardrail-test-agent is configured to use the BlockingModelGuard, a ModelGuardrail
-    // returning new Decision.Deny(...)
+    // model-guardrail-test-agent is configured to use the BlockingModelGuard, an
+    // AgentResponseGuardrail returning new Decision.Deny(...)
     testModelProvider.whenMessage(s -> s.equals("hello")).reply("anything");
 
     // when
-    ModelGuardrailTestAgent.SomeResponse result =
+    AgentResponseGuardrailTestAgent.SomeResponse result =
         componentClient
             .forAgent()
             .inSession(newSessionId())
-            .method(ModelGuardrailTestAgent::mapLlmResponse)
+            .method(AgentResponseGuardrailTestAgent::mapLlmResponse)
             .invoke("hello");
 
     // then
-    // the GuardrailException still reaches onFailure even for the new ModelGuardrail
+    // the GuardrailException still reaches onFailure even for an AgentResponseGuardrail
     assertThat(result.response()).contains("blocked by test model guard");
+  }
+
+  @Test
+  public void shouldFireBeforeModelCallGuardrailWithConversation() {
+    // given
+    testModelProvider.whenMessage(s -> s.equals("hello")).reply("never reached");
+
+    // when
+    BeforeModelCallGuardrailTestAgent.SomeResponse result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(BeforeModelCallGuardrailTestAgent::ask)
+            .invoke("hello");
+
+    // then
+    // the deny reason proves the boundary fired before the model and carried the full conversation
+    assertThat(result.response()).contains("system=[You are a helpful assistant]");
+    assertThat(result.response()).contains("user=[hello]");
+  }
+
+  @Test
+  public void shouldFireModelCallGuardrailBeforeEachModelCallInToolLoop() {
+    // given
+    testModelProvider
+        .whenMessage(s -> s.equals("what day is it?"))
+        .reply(new ToolInvocationRequest("NonBlockingGuardrailsTestAgent_getDateOfToday", ""));
+    testModelProvider
+        .whenToolResult(result -> result.content().equals("2025-01-01"))
+        .thenReply(result -> new AiResponse("Today is " + result.content()));
+
+    // when
+    var sessionId = newSessionId();
+    var result =
+        componentClient
+            .forAgent()
+            .inSession(sessionId)
+            .method(NonBlockingGuardrailsTestAgent::ask)
+            .invoke("what day is it?");
+
+    // then
+    assertThat(result.response()).isEqualTo("Today is 2025-01-01");
+    assertThat(RecordingModelCallGuard.newMessageTypesBySession.get(sessionId))
+        .containsExactly(List.of("UserMessage"), List.of("ToolCallResponse"));
+  }
+
+  @Test
+  public void shouldReturnReplyWhenReportOnlyResponseGuardrailDenies() {
+    // given
+    testModelProvider.whenMessage(s -> s.equals("say hi")).reply("hi");
+
+    // when
+    var result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(NonBlockingGuardrailsTestAgent::ask)
+            .invoke("say hi");
+
+    // then
+    assertThat(result.response()).isEqualTo("hi");
   }
 
   @Test

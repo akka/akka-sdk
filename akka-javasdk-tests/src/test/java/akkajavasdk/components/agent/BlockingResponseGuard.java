@@ -4,14 +4,14 @@
 
 package akkajavasdk.components.agent;
 
+import akka.javasdk.agent.AgentResponseGuardrail;
 import akka.javasdk.agent.Decision;
 import akka.javasdk.agent.GuardrailContext;
-import akka.javasdk.agent.ModelGuardrail;
 
-public class BlockingModelGuard implements ModelGuardrail {
+public class BlockingResponseGuard implements AgentResponseGuardrail {
   private final String blockReason;
 
-  public BlockingModelGuard(GuardrailContext context) {
+  public BlockingResponseGuard(GuardrailContext context) {
     this.blockReason = context.config().getString("block-reason");
   }
 

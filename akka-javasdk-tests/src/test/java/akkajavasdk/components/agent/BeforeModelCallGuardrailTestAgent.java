@@ -8,13 +8,13 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.Guardrail;
 import akka.javasdk.annotations.Component;
 
-@Component(id = "model-guardrail-test-agent")
-public class ModelGuardrailTestAgent extends Agent {
+@Component(id = "before-model-call-guardrail-test-agent")
+public class BeforeModelCallGuardrailTestAgent extends Agent {
   public record SomeResponse(String response) {}
 
-  public Effect<SomeResponse> mapLlmResponse(String question) {
+  public Effect<SomeResponse> ask(String question) {
     return effects()
-        .systemMessage("You are a helpful...")
+        .systemMessage("You are a helpful assistant")
         .userMessage(question)
         .map(SomeResponse::new)
         .onFailure(
