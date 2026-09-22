@@ -22,7 +22,6 @@ import java.util.Set;
  *   <li>{@link com.typesafe.config.Config}
  *   <li>{@link akka.javasdk.agent.AgentRegistry}
  *   <li>{@link akka.javasdk.SanitizerClient} - for masking text with a configured sanitizer
- *   <li>{@link akka.javasdk.Sanitizer} - deprecated, use {@link akka.javasdk.SanitizerClient}
  * </ul>
  */
 public interface ServiceSetup {

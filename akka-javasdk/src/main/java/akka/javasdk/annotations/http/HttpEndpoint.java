@@ -56,7 +56,6 @@ import java.lang.annotation.Target;
  *   <li>{@link io.opentelemetry.api.trace.Span}
  *   <li>{@link akka.javasdk.agent.AgentRegistry} - contains information about all agents
  *   <li>{@link akka.javasdk.SanitizerClient} - for masking text with a configured sanitizer
- *   <li>{@link akka.javasdk.Sanitizer} - deprecated, use {@link akka.javasdk.SanitizerClient}
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider}
  * </ul>
  *

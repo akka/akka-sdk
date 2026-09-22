@@ -88,8 +88,6 @@ The following types can be injected in all component types:
 | Contains information about all agents, see xref:agents.adoc[]
 | `com.typesafe.config.Config`
 | Access the user defined configuration picked up from `application.conf`
-| `akka.javasdk.Sanitizer`
-| Deprecated, use `akka.javasdk.SanitizerClient`. Allows for applying sanitization, see xref:sdk:sanitization.adoc[]
 | `io.opentelemetry.api.metrics.Meter`
 | Allows creating custom Open Telemetry metrics, see xref:sdk:metric.adoc[]
 |===
