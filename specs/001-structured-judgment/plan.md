@@ -233,7 +233,7 @@ public record Judgment(Map<String, Answer> answers, String model, Agent.TokenUsa
       implements Answer {}
 
   public record ScoreAnswer(
-      double score, List<String> legend, List<Double> probabilities, double confidence)
+      double value, List<String> legend, List<Double> probabilities, double confidence)
       implements Answer {}
 
   public record YesNoAnswer(double probability) implements Answer {

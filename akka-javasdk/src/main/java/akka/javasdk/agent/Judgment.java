@@ -60,13 +60,13 @@ public record Judgment(Map<String, Answer> answers, String model, Agent.TokenUsa
   /**
    * The answer to a {@link Question.Score}.
    *
-   * @param score the position along the levels, counted from 0, which can fall between two levels
+   * @param value the position along the levels, counted from 0, which can fall between two levels
    * @param legend the level descriptions by index
    * @param probabilities the probability per level index
    * @param confidence how peaked the distribution is, from 0 to 1
    */
   public record ScoreAnswer(
-      double score, List<String> legend, List<Double> probabilities, double confidence)
+      double value, List<String> legend, List<Double> probabilities, double confidence)
       implements Answer {
     public ScoreAnswer {
       legend = List.copyOf(Objects.requireNonNull(legend, "legend"));

@@ -120,7 +120,7 @@ class TestJudgmentModelProviderTest {
 
   @Test
   void answerHelpers() {
-    assertThat(TestJudgmentModelProvider.score(2.5).score()).isEqualTo(2.5);
+    assertThat(TestJudgmentModelProvider.score(2.5).value()).isEqualTo(2.5);
     assertThat(TestJudgmentModelProvider.yes().isYes()).isTrue();
     assertThat(TestJudgmentModelProvider.no().isYes()).isFalse();
     assertThat(TestJudgmentModelProvider.no().isYes(0.0)).isTrue();

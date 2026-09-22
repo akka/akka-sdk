@@ -373,7 +373,7 @@ private[impl] object AgentImpl {
           a.confidence)
       case a: Judgment.ScoreAnswer =>
         new SpiAgent.ScoreAnswer(
-          a.score,
+          a.value,
           a.legend.asScala.toSeq,
           a.probabilities.asScala.map(_.doubleValue).toSeq,
           a.confidence)

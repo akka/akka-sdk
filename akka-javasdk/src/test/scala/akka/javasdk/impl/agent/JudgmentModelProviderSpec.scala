@@ -207,7 +207,7 @@ class JudgmentModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSp
       judgment.choice("route").selected shouldBe "billing"
       judgment.choice("route").probabilities.get("billing") shouldBe 0.9
       judgment.choice("route").confidence shouldBe 0.8
-      judgment.score("severity").score shouldBe 1.3
+      judgment.score("severity").value shouldBe 1.3
       judgment.score("severity").legend.asScala shouldBe Seq("Low", "High")
       judgment.yesNo("urgent").probability shouldBe 0.87
       judgment.yesNo("urgent").isYes shouldBe true

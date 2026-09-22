@@ -78,7 +78,7 @@ public class JudgmentAgentIntegrationTest extends TestKitSupport {
     assertThat(judgment.choice("route").selected()).isEqualTo("billing");
     assertThat(judgment.choice("route").probabilities()).containsEntry("technical", 0.1);
     assertThat(judgment.choice("route").confidence()).isEqualTo(0.8);
-    assertThat(judgment.score("severity").score()).isEqualTo(2.4);
+    assertThat(judgment.score("severity").value()).isEqualTo(2.4);
     assertThat(judgment.score("severity").legend())
         .containsExactly("Low", "Medium", "High", "Critical");
     assertThat(judgment.yesNo("urgent").isYes()).isTrue();
