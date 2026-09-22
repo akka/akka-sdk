@@ -179,3 +179,28 @@ NOTE: These metrics are only applicable to multi-region deployments.
 | `akka.timed_action.message.duration` (filter where `error.type` attribute is present)
 | > 0
 |===
+
+== JVM runtime
+
+Every Akka service exports the standard https://opentelemetry.io/docs/specs/semconv/runtime/jvm-metrics/[OpenTelemetry JVM metrics]. The alerts below catch resource leaks and saturation that component metrics do not show.
+
+[cols="2,2,1"]
+|===
+| Alert condition | Metric | Suggested threshold
+
+| Thread count
+| `jvm.thread.count`
+| > 500
+
+| GC time
+| `jvm.gc.duration` (sum over 1 min)
+| > 10% of wall time
+
+| CPU utilization
+| `jvm.cpu.recent_utilization`
+| > 0.9 for 5 min
+|===
+
+NOTE: A steadily rising thread count usually means a resource is created per request and never closed, for example an HTTP client or an executor. Use the xref:sdk:component-and-service-calls.adoc[SDK-provided HTTP client] instead of creating your own.
+
+NOTE: CPU exhaustion does not need immediate action. Akka autoscales the service when CPU usage exceeds the configured `cpuUsageThreshold`, up to `maxInstances`. Alert on CPU to know when the service runs at its maximum bound. See xref:reference:descriptors/service-descriptor.adoc#_serviceautoscaling[ServiceAutoscaling].
