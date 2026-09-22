@@ -23,7 +23,7 @@ public interface LedgerClient {
    * Fetch the full record for the interaction with the given (globally unique) {@code
    * interactionId}.
    *
-   * <p>Blocks the calling thread until the record has been fetched. Safe to call on a Loom virtual
+   * <p>Blocks the calling thread until the record has been fetched. Safe to call on a virtual
    * thread. Use {@link #getInteractionAsync(String)} for the non-blocking variant.
    *
    * @param interactionId the globally unique id of the interaction to fetch
@@ -45,7 +45,7 @@ public interface LedgerClient {
    * Fetch the record for the evaluation with the given {@code evaluationId}. An evaluation is
    * recorded when it terminates, so the record exists only once the evaluation has finished.
    *
-   * <p>Blocks the calling thread until the record has been fetched. Safe to call on a Loom virtual
+   * <p>Blocks the calling thread until the record has been fetched. Safe to call on a virtual
    * thread. Use {@link #getEvaluationAsync(String)} for the non-blocking variant.
    *
    * @param evaluationId the globally unique id of the evaluation to fetch
@@ -67,15 +67,12 @@ public interface LedgerClient {
    * Fetch the evaluations recorded about the interaction with the given {@code interactionId},
    * newest first.
    *
-   * <p>Unlike the lookups by id, an interaction without evaluations, and an unknown {@code
-   * interactionId}, both return an empty list.
-   *
-   * <p>Blocks the calling thread until the records have been fetched. Safe to call on a Loom
+   * <p>Blocks the calling thread until the records have been fetched. Safe to call on a
    * virtual thread. Use {@link #getEvaluationsAsync(String)} for the non-blocking variant.
    *
    * @param interactionId the id of the evaluated interaction, as carried by {@link
    *     akka.javasdk.agent.Agent.AgentReply#interactionId()}
-   * @return the evaluations of that interaction, newest first
+   * @return the evaluations of that interaction, or empty list if no there aren't any evaluations associated with the passed interactionId
    */
   List<EvaluationRecord> getEvaluations(String interactionId);
 
@@ -83,7 +80,7 @@ public interface LedgerClient {
    * Async variant of {@link #getEvaluations(String)}.
    *
    * @param interactionId the id of the evaluated interaction
-   * @return a stage that completes with the evaluations of that interaction, newest first
+   * @return a stage that completes with the evaluations of that interaction
    */
   CompletionStage<List<EvaluationRecord>> getEvaluationsAsync(String interactionId);
 }
