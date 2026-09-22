@@ -24,7 +24,7 @@ public class BeforeModelCallGuard implements ModelCallGuardrail {
   }
 
   private static String lastUserText(List<Message> messages) {
-    var last = messages.get(messages.size() - 1);
+    var last = messages.getLast();
     if (last instanceof Message.UserMessage userMessage
         && userMessage.contents().get(0) instanceof MessageContent.TextMessageContent text) {
       return text.text();
