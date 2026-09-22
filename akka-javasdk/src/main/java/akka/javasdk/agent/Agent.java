@@ -81,7 +81,12 @@ public abstract class Agent implements AgentDelegationWorker {
    *     not record the interaction.
    * @param <T> The type of the result value
    */
-  public record AgentReply<T>(T value, TokenUsage tokenUsage, Optional<String> interactionId) {}
+  public record AgentReply<T>(T value, TokenUsage tokenUsage, Optional<String> interactionId) {
+
+    public AgentReply(T value, TokenUsage tokenUsage) {
+      this(value, tokenUsage, Optional.empty());
+    }
+  }
 
   private volatile Optional<AgentContext> context = Optional.empty();
 
