@@ -68,6 +68,7 @@
         <!-- These are dependent on runtime environment and cannot be customized by users -->
         <maven.compiler.release>21</maven.compiler.release>
         <akka-runtime.version>REPLACED_BY_BUILD</akka-runtime.version>
+        <akka-protocol.version>REPLACED_BY_BUILD</akka-protocol.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skip.deploy>true</skip.deploy>
@@ -148,6 +149,12 @@
                                         <!-- tag for generated image -->
                                         <tag>${docker.tag}</tag>
                                     </tags>
+                                    <!-- image metadata for SDK and runtime compatibility checks -->
+                                    <labels>
+                                        <io.akka.sdk.version>${akka-javasdk.version}</io.akka.sdk.version>
+                                        <io.akka.sdk.expected-runtime>${akka-runtime.version}</io.akka.sdk.expected-runtime>
+                                        <io.akka.sdk.protocol>${akka-protocol.version}</io.akka.sdk.protocol>
+                                    </labels>
                                     <assembly>
                                         <inline>
                                             <dependencySets>
@@ -685,6 +692,12 @@
                                                 <!-- tag for generated image -->
                                                 <tag>${docker.tag}</tag>
                                             </tags>
+                                            <!-- image metadata for SDK and runtime compatibility checks -->
+                                            <labels>
+                                                <io.akka.sdk.version>${akka-javasdk.version}</io.akka.sdk.version>
+                                                <io.akka.sdk.expected-runtime>${akka-runtime.version}</io.akka.sdk.expected-runtime>
+                                                <io.akka.sdk.protocol>${akka-protocol.version}</io.akka.sdk.protocol>
+                                            </labels>
                                             <entryPoint>
                                                 <exec>
                                                     <arg>java</arg>

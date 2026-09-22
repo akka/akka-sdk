@@ -188,6 +188,7 @@ lazy val akkaJavaSdkParent =
           pom,
           version.value,
           AkkaRuntimeVersion,
+          s"${Kalix.ProtocolVersionMajor}.${Kalix.ProtocolVersionMinor}",
           AkkaGrpcVersion,
           GoogleProtobufVersion,
           Dependencies.JacksonVersion,
@@ -198,6 +199,7 @@ def updatePomVersion(
     node: Elem,
     v: String,
     runtimeVersion: String,
+    protocolVersion: String,
     akkaGrpcVersion: String,
     googleProtobufVersion: String,
     jacksonVersion: String,
@@ -213,6 +215,8 @@ def updatePomVersion(
               <akka-runtime.version>{runtimeVersion}</akka-runtime.version>
             case <akka-javasdk.version>{_}</akka-javasdk.version> =>
               <akka-javasdk.version>{v}</akka-javasdk.version>
+            case <akka-protocol.version>{_}</akka-protocol.version> =>
+              <akka-protocol.version>{protocolVersion}</akka-protocol.version>
             case <akka.grpc.version>{_}</akka.grpc.version> =>
               <akka.grpc.version>{akkaGrpcVersion}</akka.grpc.version>
             case <protobuf-java.version>{_}</protobuf-java.version> =>
