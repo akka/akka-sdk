@@ -8,6 +8,7 @@ import scala.annotation.nowarn
 
 import akka.annotation.InternalApi
 import akka.javasdk.Sanitizer
+import akka.javasdk.impl.ConfiguredSanitizer.UseFor
 import akka.runtime.sdk.spi.SpiDataSanitizer
 import akka.runtime.sdk.spi.SpiDataSanitizerSettings
 import akka.runtime.sdk.spi.SpiSanitizerEngine
@@ -26,8 +27,10 @@ private[javasdk] object Sanitization {
     Map(s"$SanitizationPath.regex-sanitizers" -> "pattern", s"$SanitizationPath.predefined-sanitizers" -> "predefined")
 
   /**
-   * The declarative entries, handed over before this service has any classes. The runtime builds the log sanitizer and
-   * the service wide sanitizer from them.
+   * The declarative entries, handed over before this service has any classes. The runtime builds the service wide
+   * sanitizer from them. It builds the engine that masks log messages from the log sanitizers of
+   * [[akka.runtime.sdk.spi.SpiSanitizerSetup]] instead, once this service is handed over, so that a sanitizer this
+   * service implements can mask log messages too.
    */
   def loadSettings(config: Config): SpiDataSanitizerSettings =
     new SpiDataSanitizerSettings(configuredSanitizers(config).flatMap(declarativeSpiSanitizer(_, Set.empty)))
@@ -44,7 +47,7 @@ private[javasdk] object Sanitization {
   def declarativeSpiSanitizer(
       sanitizer: ConfiguredSanitizer,
       enabledForComponents: Set[String]): Option[SpiDataSanitizer] = {
-    val useFor = sanitizer.useFor.map(_.configValue)
+    val useFor = spiUseFor(sanitizer)
     sanitizer.kind match {
       case SanitizerKind.Pattern(regex) =>
         Some(new SpiDataSanitizer.Regex(sanitizer.name, regex, useFor, enabledForComponents, sanitizer.config))
@@ -53,6 +56,16 @@ private[javasdk] object Sanitization {
       case _: SanitizerKind.Implementation => None
     }
   }
+
+  /**
+   * The application points of an agent the entry masks at. Log messages are not one of them: an entry that masks them
+   * is handed over as a [[akka.runtime.sdk.spi.SpiLogSanitizer]].
+   */
+  def spiUseFor(sanitizer: ConfiguredSanitizer): Set[SpiDataSanitizer.UseFor] =
+    sanitizer.useFor.collect {
+      case UseFor.ModelInput => SpiDataSanitizer.UseFor.ModelInput
+      case UseFor.ToolResult => SpiDataSanitizer.UseFor.ToolResult
+    }
 
   private def checkRemovedKeys(config: Config): Unit =
     RemovedKeys.foreach { case (path, key) =>

@@ -1526,7 +1526,8 @@ private final class Sdk(
     val classifierSetup = new SpiClassifierSetup(classifierProvider.spiConfiguredClassifiers)
 
     val sanitizerSetup = new SpiSanitizerSetup(
-      sanitizerProvider.spiSanitizers(sanitizer => sanitizerEnabledForComponent.getOrElse(sanitizer.name, Set.empty)))
+      sanitizerProvider.spiSanitizers(sanitizer => sanitizerEnabledForComponent.getOrElse(sanitizer.name, Set.empty)),
+      sanitizerProvider.spiLogSanitizers)
 
     val serviceNameOverride = sdkSettings.devModeSettings.map(_.serviceName)
 

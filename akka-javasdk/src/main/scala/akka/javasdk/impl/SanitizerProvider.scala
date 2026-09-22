@@ -18,6 +18,7 @@ import akka.javasdk.SanitizerClient
 import akka.javasdk.SanitizerContext
 import akka.javasdk.TextSanitizer
 import akka.runtime.sdk.spi.SpiDataSanitizer
+import akka.runtime.sdk.spi.SpiLogSanitizer
 import akka.runtime.sdk.spi.SpiSanitizer
 import akka.runtime.sdk.spi.SpiSanitizerClient
 import com.typesafe.config.Config
@@ -73,14 +74,15 @@ import org.slf4j.LoggerFactory
   private def requireConfigured(name: String): Unit =
     if (!byName.contains(name)) throw notConfigured(name)
 
-  /** The entries that apply to the agent with this component id and role. */
+  /** The entries that mask agent text and apply to the agent with this component id and role. */
   def agentSanitizers(componentId: String, role: Option[String]): Seq[ConfiguredSanitizer] =
-    configuredSanitizers.filter(_.appliesTo(componentId, role))
+    configuredSanitizers.filter(s => s.masksAgentText && s.appliesTo(componentId, role))
 
   /**
    * The entries to hand to the runtime, each with the agents it resolved to. A pattern or predefined entry is also in
    * [[akka.runtime.sdk.spi.SpiSettings]], which the runtime reads before this service has any classes; the runtime
-   * joins the two by name.
+   * joins the two by name. An entry that masks log messages only is here as well, bound to no agent, because the
+   * runtime builds the by-name registry from this list.
    *
    * Each implementation is resolved lazily, on first `sanitize(...)` call, rather than here: this runs while assembling
    * `SpiComponents` (required synchronously for the runtime handshake), before `preStart` runs `validate()` and before
@@ -95,7 +97,7 @@ import org.slf4j.LoggerFactory
             name = s.name,
             implementationClass = className,
             instance = new SanitizerProvider.SpiSanitizerAdapter(() => getOrCreate(s.name)),
-            useFor = s.useFor.map(_.configValue),
+            useFor = Sanitization.spiUseFor(s),
             enabledForComponents = components,
             config = s.config)
         case _ =>
@@ -105,11 +107,34 @@ import org.slf4j.LoggerFactory
       }
     }
 
-  // The runtime reads an empty set as every agent, so an entry whose agents and agent roles match no agent of
-  // this service is handed a component id no agent can be annotated with. It is reported, because a scope that
-  // matches nothing is masking a deployment asked for and does not get.
+  /**
+   * The entries that mask log messages. A log line belongs to no agent, so these carry neither application points nor
+   * components. The runtime builds the log engine from them once this service is handed over, and calls a sanitizer of
+   * this list while it writes a log event.
+   */
+  def spiLogSanitizers: Seq[SpiLogSanitizer] =
+    configuredSanitizers.filter(_.masksLogs).map { s =>
+      s.kind match {
+        case SanitizerKind.Pattern(regex) =>
+          new SpiLogSanitizer.Regex(s.runtimeName, regex, s.config)
+        case SanitizerKind.Predefined(_) =>
+          new SpiLogSanitizer.Predefined(s.runtimeName, s.config)
+        case SanitizerKind.Implementation(className) =>
+          new SpiLogSanitizer.Custom(
+            s.runtimeName,
+            className,
+            new SanitizerProvider.SpiSanitizerAdapter(() => getOrCreate(s.name)),
+            s.config)
+      }
+    }
+
+  // The runtime reads an empty set as every agent, so a component id no agent can be annotated with is what
+  // binds an entry to none: an entry that masks log messages only, and one whose agents and agent roles match
+  // no agent of this service. The second is reported, because a scope that matches nothing is masking a
+  // deployment asked for and does not get.
   private def agentComponents(sanitizer: ConfiguredSanitizer, resolved: Set[String]): Set[String] =
-    if (resolved.nonEmpty || !sanitizer.scoped) resolved
+    if (!sanitizer.masksAgentText) SanitizerProvider.NoAgent
+    else if (resolved.nonEmpty || !sanitizer.scoped) resolved
     else {
       log.warn(
         "Sanitizer [{}] masks for no agent. It names agents [{}] and agent roles [{}], and this service has no " +

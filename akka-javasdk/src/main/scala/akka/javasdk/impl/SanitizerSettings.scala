@@ -86,11 +86,16 @@ import com.typesafe.config.ConfigValueType
   object UseFor {
     case object ModelInput extends UseFor("model-input")
     case object ToolResult extends UseFor("tool-result")
+
+    /**
+     * Log messages and the subject id of an unhandled exception. Unlike the other two, this is not a point of an agent:
+     * it decides whether the entry is handed over as a log sanitizer.
+     */
     case object Logs extends UseFor("logs")
 
     val All: Set[UseFor] = Set(ModelInput, ToolResult, Logs)
 
-    /** The points an entry masks at when it cannot mask log messages. */
+    /** The points of an agent. */
     val AgentPoints: Set[UseFor] = Set(ModelInput, ToolResult)
   }
 
@@ -105,12 +110,11 @@ import com.typesafe.config.ConfigValueType
     val agentRoles = optionalStringSet(config, "agent-roles")
     val kind = readKind(name, config)
     val scoped = agents.nonEmpty || agentRoles.nonEmpty
-    val implementation = kind.isInstanceOf[SanitizerKind.Implementation]
 
     new ConfiguredSanitizer(
       name = name,
       kind = kind,
-      useFor = readUseFor(name, config, scoped, implementation),
+      useFor = readUseFor(name, config, scoped),
       agents = agents,
       agentRoles = agentRoles,
       config = config)
@@ -150,7 +154,7 @@ import com.typesafe.config.ConfigValueType
     }
   }
 
-  private def readUseFor(name: String, config: Config, scoped: Boolean, implementation: Boolean): Set[UseFor] = {
+  private def readUseFor(name: String, config: Config, scoped: Boolean): Set[UseFor] = {
     val declared = declaredUseFor(config).map(_.toLowerCase(Locale.ROOT))
     val named: Set[UseFor] = declared.iterator
       .filterNot(_ == "*")
@@ -165,22 +169,15 @@ import com.typesafe.config.ConfigValueType
       }
       .toSet
 
-    if (named.contains(UseFor.Logs)) {
-      if (implementation)
-        throw new IllegalArgumentException(
-          s"Sanitizer [$name] cannot combine [class] with the [logs] application point. The runtime installs the " +
-          "log sanitizer from the settings it is given at startup, before the SDK can construct a class, and the " +
-          "log layout keeps the first engine it is given.")
-      if (scoped)
-        throw new IllegalArgumentException(
-          s"Sanitizer [$name] cannot combine [agents] or [agent-roles] with the [logs] application point. A log " +
-          "line belongs to no agent, so the runtime has no agent to match the scope against.")
-    }
+    if (named.contains(UseFor.Logs) && scoped)
+      throw new IllegalArgumentException(
+        s"Sanitizer [$name] cannot combine [agents] or [agent-roles] with the [logs] application point. A log " +
+        "line belongs to no agent, so the runtime has no agent to match the scope against.")
 
-    // An entry that names no application point, or names "*", masks wherever the rest of it allows. A
-    // class based or agent scoped entry leaves out log messages, for the reasons in the errors above.
+    // An entry that names no application point, or names "*", masks wherever the rest of it allows. An agent
+    // scoped entry leaves out log messages, for the reason in the error above.
     if (declared.isEmpty || declared.contains("*")) {
-      if (implementation || scoped) UseFor.AgentPoints else UseFor.All
+      if (scoped) UseFor.AgentPoints else UseFor.All
     } else named
   }
 
@@ -213,6 +210,14 @@ import com.typesafe.config.ConfigValueType
   }
 
   def scoped: Boolean = agents.nonEmpty || agentRoles.nonEmpty
+
+  /**
+   * Whether the entry masks at an application point of an agent, and so is handed over with the agents it applies to.
+   */
+  def masksAgentText: Boolean = useFor.exists(UseFor.AgentPoints.contains)
+
+  /** Whether the entry masks log messages, and so is handed over as a log sanitizer. */
+  def masksLogs: Boolean = useFor.contains(UseFor.Logs)
 
   /** Whether the entry applies to the agent with this component id and role. */
   def appliesTo(componentId: String, role: Option[String]): Boolean =
