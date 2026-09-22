@@ -65,7 +65,7 @@ You configure sanitizers as named entries of `akka.javasdk.sanitization.sanitize
 
 Each entry can also state where and for which agents it masks:
 
-* `use-for`: the application points to mask at, any of `model-input`, `tool-result` and `logs`, or `*`. An entry that defines no `use-for`, or defines `*`, masks at every point it can. A class-based or agent-scoped entry cannot mask log messages, so for those it means model input and tool results.
+* `use-for`: the application points to mask at, any of `model-input`, `tool-result` and `logs`, or `*`. An entry that defines no `use-for`, or defines `*`, masks at every point it can. An agent-scoped entry cannot mask log messages, so for those it means model input and tool results.
 * `agents`: the component ids of the agents to mask for. Use `*` for every agent.
 * `agent-roles`: the roles of the agents to mask for. Use `*` for every agent that has a role.
 * `enabled`: set it to `false` to drop the entry. A dropped entry masks nothing and constructs nothing.
@@ -88,7 +88,7 @@ Is written to logs as:
 [literal]
 Customer *********** reported an issue with their order
 
-The `logs` application point cannot be combined with `class`, `agents` or `agent-roles`. The runtime installs the log sanitizer at startup, before the service has constructed a class, and a log message belongs to no agent.
+The `logs` application point cannot be combined with `agents` or `agent-roles`. A log message belongs to no agent, so the runtime has no agent to match the scope against.
 
 Any other key of an entry is configuration for that entry. An implementation reads it from the `SanitizerContext` its constructor takes, see <<Sanitizer implementations>>.
 
@@ -121,9 +121,13 @@ The constructor can take an `akka.javasdk.SanitizerContext`, which gives access 
 
 The `sanitize` method may block. The runtime always invokes a sanitizer on a virtual thread.
 
+An implementation can mask log messages, as a pattern can. The runtime calls it while it writes a log event, and the thread writing the event waits for the masked text. Keep such an implementation fast, and do not log from it: the runtime masks a line the sanitizer logs itself with the configured patterns only. An entry that defines no `use-for` masks at every application point, log messages included.
+
 == Performance considerations
 
 An entry that masks at the `logs` application point is applied to every log entry. In high-throughput applications, numerous sanitization rules or complex regular expressions may impact performance. You should monitor application performance and optimize regex patterns if necessary.
+
+An implementation class that masks log messages holds the log event until it answers. If it does not answer within ten seconds, or it fails, the runtime writes the event with the message replaced by the reason and raises the event to a warning.
 
 == Testing sanitization
 
