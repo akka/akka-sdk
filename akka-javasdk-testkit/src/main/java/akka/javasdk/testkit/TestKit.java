@@ -907,6 +907,14 @@ public class TestKit {
    */
   private static final Duration RUNTIME_STARTED_TIMEOUT = Duration.ofSeconds(10);
 
+  /**
+   * How long to wait for the runtime's ActorSystem to terminate. This covers the whole coordinated
+   * shutdown, whose cost is dominated by leaving the cluster and shutting down one shard region per
+   * component, so it has to be larger than the timeout of any single phase.
+   */
+  private static final FiniteDuration RUNTIME_SHUTDOWN_TIMEOUT =
+      FiniteDuration.create(20, TimeUnit.SECONDS);
+
   private final Settings settings;
 
   private EventingTestKit.MessageBuilder messageBuilder;
@@ -1194,9 +1202,7 @@ public class TestKit {
       if (runtimeActorSystem != null) {
         try {
           akka.testkit.javadsl.TestKit.shutdownActorSystem(
-              runtimeActorSystem.classicSystem(),
-              FiniteDuration.create(10, TimeUnit.SECONDS),
-              true);
+              runtimeActorSystem.classicSystem(), RUNTIME_SHUTDOWN_TIMEOUT, true);
         } catch (Exception shutdownFailure) {
           ex.addSuppressed(shutdownFailure);
         }
@@ -1650,7 +1656,7 @@ public class TestKit {
     try {
       if (runtimeActorSystem != null) {
         akka.testkit.javadsl.TestKit.shutdownActorSystem(
-            runtimeActorSystem.classicSystem(), FiniteDuration.create(10, TimeUnit.SECONDS), true);
+            runtimeActorSystem.classicSystem(), RUNTIME_SHUTDOWN_TIMEOUT, true);
       }
     } catch (Exception e) {
       log.error("TestKit runtime failed to terminate", e);
