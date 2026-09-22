@@ -87,21 +87,24 @@ public sealed interface Question permits Question.Choice, Question.Score, Questi
       public Option {
         requireKey(key);
         Objects.requireNonNull(description, "description");
+        if (description.isPresent() && description.get().isBlank())
+          throw new IllegalArgumentException("Option description must not be blank");
       }
     }
 
     public Choice {
       requireInstructions(instructions);
       Objects.requireNonNull(options, "options");
-      options = List.copyOf(options);
-      if (options.size() > MAX_OPTIONS)
-        throw new IllegalArgumentException(
-            "A choice question can have at most " + MAX_OPTIONS + " options");
       Set<String> keys = new HashSet<>();
       for (Option option : options) {
+        if (option == null) throw new IllegalArgumentException("Options must not contain null");
         if (!keys.add(option.key()))
           throw new IllegalArgumentException("Duplicate option key [" + option.key() + "]");
       }
+      if (options.size() > MAX_OPTIONS)
+        throw new IllegalArgumentException(
+            "A choice question can have at most " + MAX_OPTIONS + " options");
+      options = List.copyOf(options);
     }
 
     /** The same question with one more option. */
@@ -132,13 +135,13 @@ public sealed interface Question permits Question.Choice, Question.Score, Questi
     public Score {
       requireInstructions(instructions);
       Objects.requireNonNull(levels, "levels");
-      levels = List.copyOf(levels);
-      if (levels.size() < 2 || levels.size() > 10)
-        throw new IllegalArgumentException("A score question must have 2 to 10 levels");
       for (String level : levels) {
         if (level == null || level.isBlank())
           throw new IllegalArgumentException("Score levels must not be blank");
       }
+      if (levels.size() < 2 || levels.size() > 10)
+        throw new IllegalArgumentException("A score question must have 2 to 10 levels");
+      levels = List.copyOf(levels);
     }
   }
 
@@ -154,6 +157,10 @@ public sealed interface Question permits Question.Choice, Question.Score, Questi
       requireInstructions(instructions);
       Objects.requireNonNull(whenYes, "whenYes");
       Objects.requireNonNull(whenNo, "whenNo");
+      if (whenYes.isPresent() && whenYes.get().isBlank())
+        throw new IllegalArgumentException("whenYes must not be blank");
+      if (whenNo.isPresent() && whenNo.get().isBlank())
+        throw new IllegalArgumentException("whenNo must not be blank");
     }
   }
 }

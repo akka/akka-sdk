@@ -283,7 +283,9 @@ private[impl] object AgentImpl {
           new SpiAgent.ChoiceQuestion(
             key,
             choice.instructions,
-            choice.options.asScala.map(option => option.key -> option.description.toScala).toSeq)
+            choice.options.asScala
+              .map(option => new SpiAgent.ChoiceOption(option.key, option.description.toScala))
+              .toSeq)
         case (key, score: Question.Score) =>
           new SpiAgent.ScoreQuestion(key, score.instructions, score.levels.asScala.toSeq)
         case (key, yesNo: Question.YesNo) =>
@@ -294,7 +296,7 @@ private[impl] object AgentImpl {
     val questions = new java.util.LinkedHashMap[String, Question]()
     spiRequest.questions.foreach {
       case q: SpiAgent.ChoiceQuestion =>
-        val options = q.options.map { case (key, description) => new Question.Choice.Option(key, description.toJava) }
+        val options = q.options.map(option => new Question.Choice.Option(option.key, option.description.toJava))
         questions.put(q.key, new Question.Choice(q.instructions, options.asJava))
       case q: SpiAgent.ScoreQuestion =>
         questions.put(q.key, new Question.Score(q.instructions, q.levels.asJava))
@@ -304,12 +306,31 @@ private[impl] object AgentImpl {
     new JudgmentRequest(spiRequest.stateJson, questions)
   }
 
-  /** The answers in request order, followed by any answer the model returned for an unknown key. */
-  private[impl] def toJudgment(response: SpiAgent.JudgmentResponse, questionKeys: Seq[String]): Judgment = {
+  /**
+   * The answers in request order, followed by any answer the model returned for an unknown key. Fails with a
+   * ModelException when a question has no answer or an answer of another type, so that onFailure sees the same
+   * exception as for any other bad model response.
+   */
+  private[impl] def toJudgment(response: SpiAgent.JudgmentResponse, questions: Seq[(String, Question)]): Judgment = {
     val answers = new java.util.LinkedHashMap[String, Judgment.Answer]()
-    val orderedKeys = questionKeys ++ response.answers.keys.filterNot(questionKeys.contains).toSeq.sorted
-    orderedKeys.foreach { key =>
-      response.answers.get(key).foreach(answer => answers.put(key, toAnswer(answer)))
+    questions.foreach { case (key, question) =>
+      val answer =
+        response.answers.getOrElse(key, throw new ModelException(s"The model returned no answer for question [$key]"))
+      val matches = (question, answer) match {
+        case (_: Question.Choice, _: SpiAgent.ChoiceAnswer) => true
+        case (_: Question.Score, _: SpiAgent.ScoreAnswer)   => true
+        case (_: Question.YesNo, _: SpiAgent.NoulAnswer)    => true
+        case _                                              => false
+      }
+      if (!matches)
+        throw new ModelException(
+          s"The model returned a [${answer.getClass.getSimpleName}] for question [$key], " +
+          s"which is a [${question.getClass.getSimpleName}] question")
+      answers.put(key, toAnswer(answer))
+    }
+    val questionKeys = questions.map(_._1)
+    response.answers.keys.filterNot(questionKeys.contains).toSeq.sorted.foreach { key =>
+      answers.put(key, toAnswer(response.answers(key)))
     }
     new Judgment(answers, response.model, new Agent.TokenUsage(response.inputTokenCount, response.outputTokenCount))
   }
@@ -937,17 +958,17 @@ private[impl] final class AgentImpl(
             val spiProvider = toSpiJudgmentModelProvider(provider, config, componentId, sdkExecutionContext)
             val state = req.state.getOrElse(throw new IllegalStateException("A judgment request needs a state"))
             val spiRequest = toSpiJudgmentRequest(judgmentStateJson(serializer.objectMapper, state), req.questions)
-            val questionKeys = req.questions.map(_._1)
+            val questions = req.questions
             val userMapping = req.responseMapping
             val responseMapping: SpiAgent.JudgmentResponse => Any = { response =>
-              val judgment = toJudgment(response, questionKeys)
+              val judgment = toJudgment(response, questions)
               userMapping match {
                 case Some(mapping) => mapping(judgment)
                 case None          => judgment
               }
             }
             new SpiAgent.RequestJudgmentEffect(
-              provider = spiProvider,
+              modelProvider = spiProvider,
               request = spiRequest,
               responseMapping = responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),

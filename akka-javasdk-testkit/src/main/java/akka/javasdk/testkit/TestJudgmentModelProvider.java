@@ -9,9 +9,9 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.Judgment;
 import akka.javasdk.agent.JudgmentModelProvider;
 import akka.javasdk.agent.JudgmentRequest;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -38,8 +38,8 @@ public final class TestJudgmentModelProvider implements JudgmentModelProvider.Cu
 
   private static final Agent.TokenUsage NO_TOKENS = new Agent.TokenUsage(0, 0);
 
-  private List<Pair<Predicate<JudgmentRequest>, Function<JudgmentRequest, Judgment>>> rules =
-      new ArrayList<>();
+  private final List<Pair<Predicate<JudgmentRequest>, Function<JudgmentRequest, Judgment>>> rules =
+      new CopyOnWriteArrayList<>();
 
   @Override
   public String modelName() {
@@ -81,7 +81,7 @@ public final class TestJudgmentModelProvider implements JudgmentModelProvider.Cu
 
   /** Removes all rules. */
   public void reset() {
-    rules = new ArrayList<>();
+    rules.clear();
   }
 
   /** A choice answer with all probability on the chosen option. */

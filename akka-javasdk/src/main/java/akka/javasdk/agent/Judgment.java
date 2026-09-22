@@ -20,14 +20,16 @@ import java.util.Objects;
  * #score} and {@link #yesNo} to read an answer as its type.
  *
  * @param answers the answer per question key, in request order
- * @param model the model that answered
- * @param tokenUsage the tokens consumed by the call
+ * @param model the model that answered, empty when unknown
+ * @param tokenUsage the tokens consumed by the call, zero when unknown
  */
 public record Judgment(Map<String, Answer> answers, String model, Agent.TokenUsage tokenUsage) {
 
   public Judgment {
     Objects.requireNonNull(answers, "answers");
     answers = Collections.unmodifiableMap(new LinkedHashMap<>(answers));
+    model = model == null ? "" : model;
+    tokenUsage = tokenUsage == null ? new Agent.TokenUsage(0, 0) : tokenUsage;
   }
 
   /** The answer to one question. The type follows the type of the question. */
@@ -47,7 +49,13 @@ public record Judgment(Map<String, Answer> answers, String model, Agent.TokenUsa
    * @param confidence how peaked the distribution is, from 0 to 1
    */
   public record ChoiceAnswer(String choice, Map<String, Double> probabilities, double confidence)
-      implements Answer {}
+      implements Answer {
+    public ChoiceAnswer {
+      Objects.requireNonNull(choice, "choice");
+      Objects.requireNonNull(probabilities, "probabilities");
+      probabilities = Collections.unmodifiableMap(new LinkedHashMap<>(probabilities));
+    }
+  }
 
   /**
    * The answer to a {@link Question.Score}.
@@ -59,7 +67,12 @@ public record Judgment(Map<String, Answer> answers, String model, Agent.TokenUsa
    */
   public record ScoreAnswer(
       double score, List<String> legend, List<Double> probabilities, double confidence)
-      implements Answer {}
+      implements Answer {
+    public ScoreAnswer {
+      legend = List.copyOf(Objects.requireNonNull(legend, "legend"));
+      probabilities = List.copyOf(Objects.requireNonNull(probabilities, "probabilities"));
+    }
+  }
 
   /**
    * The answer to a {@link Question.YesNo}.

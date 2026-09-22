@@ -72,9 +72,11 @@ class JudgmentEffectSpec extends AnyWordSpec with Matchers {
       request.state shouldBe Some(state)
     }
 
-    "reject a null, number or boolean state" in {
+    "reject a null, blank, optional, number or boolean state" in {
       val builder = new BaseAgentEffectBuilder[AnyRef]().judgment()
       an[IllegalArgumentException] should be thrownBy builder.state(null)
+      an[IllegalArgumentException] should be thrownBy builder.state("  ")
+      an[IllegalArgumentException] should be thrownBy builder.state(java.util.Optional.of("ticket"))
       an[IllegalArgumentException] should be thrownBy builder.state(Integer.valueOf(42))
       an[IllegalArgumentException] should be thrownBy builder.state(java.lang.Boolean.TRUE)
     }
@@ -121,6 +123,7 @@ class JudgmentEffectSpec extends AnyWordSpec with Matchers {
       an[IllegalArgumentException] should be thrownBy Question.choice(" ")
       an[IllegalArgumentException] should be thrownBy route.option("billing")
       an[IllegalArgumentException] should be thrownBy route.option(" ", "blank key")
+      an[IllegalArgumentException] should be thrownBy route.option("other", " ")
       val tooMany = (1 to Question.Choice.MAX_OPTIONS).foldLeft(Question.choice("Pick one")) { (q, i) =>
         q.option(s"option-$i")
       }
@@ -141,6 +144,7 @@ class JudgmentEffectSpec extends AnyWordSpec with Matchers {
     "validate a yes or no question" in {
       an[IllegalArgumentException] should be thrownBy Question.yesNo("")
       a[NullPointerException] should be thrownBy Question.yesNo("Urgent?", null, "Can wait")
+      an[IllegalArgumentException] should be thrownBy Question.yesNo("Urgent?", " ", "Can wait")
       val yesNo = Question.yesNo("Urgent?", "Time-sensitive", "Can wait")
       yesNo.whenYes.get shouldBe "Time-sensitive"
       yesNo.whenNo.get shouldBe "Can wait"

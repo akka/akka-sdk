@@ -129,7 +129,7 @@ private[javasdk] object BaseAgentEffectBuilder {
       provider: JudgmentModelProvider,
       state: Option[AnyRef],
       questions: Vector[(String, Question)],
-      responseMapping: Option[Function1[Any, Any]],
+      responseMapping: Option[Judgment => Any],
       failureMapping: Option[Throwable => Any],
       replyMetadata: Metadata)
       extends PrimaryEffectImpl
@@ -360,6 +360,10 @@ private[javasdk] final class JudgmentEffectBuilder(private var _primaryEffect: R
     state match {
       case null =>
         throw new IllegalArgumentException("state must not be null")
+      case text: String if text.isBlank =>
+        throw new IllegalArgumentException("state must not be blank")
+      case _: java.util.Optional[_] =>
+        throw new IllegalArgumentException("state must not be an Optional, pass its value")
       case _: java.lang.Number | _: java.lang.Boolean | _: java.lang.Character =>
         throw new IllegalArgumentException(
           s"state must be a String, an object or a collection, not [${state.getClass.getName}]")
@@ -384,12 +388,10 @@ private[javasdk] final class JudgmentEffectBuilder(private var _primaryEffect: R
   }
 
   override def map[T](mapper: function.Function[Judgment, T]): MappingFailureBuilder[T] =
-    new JudgmentMappingEffectBuilder[T](
-      _primaryEffect.copy(responseMapping = Some(mapper.asScala.asInstanceOf[Function1[Any, Any]])))
+    new JudgmentMappingEffectBuilder[T](_primaryEffect.copy(responseMapping = Some(mapper.asScala)))
 
   override def onFailure(exceptionHandler: function.Function[Throwable, Judgment]): FailureBuilder[Judgment] =
-    new JudgmentMappingEffectBuilder[Judgment](
-      _primaryEffect.copy(failureMapping = Some(exceptionHandler.asScala.asInstanceOf[Function1[Throwable, Any]])))
+    new JudgmentMappingEffectBuilder[Judgment](_primaryEffect.copy(failureMapping = Some(exceptionHandler.asScala)))
 
   override def thenReply(): Effect[Judgment] = {
     RequestJudgment.validateComplete(_primaryEffect)
@@ -418,8 +420,7 @@ private[javasdk] final class JudgmentMappingEffectBuilder[Reply](private var _pr
     with AgentEffectImpl {
 
   override def onFailure(exceptionHandler: function.Function[Throwable, Reply]): FailureBuilder[Reply] = {
-    _primaryEffect =
-      _primaryEffect.copy(failureMapping = Some(exceptionHandler.asScala.asInstanceOf[Function1[Throwable, Any]]))
+    _primaryEffect = _primaryEffect.copy(failureMapping = Some(exceptionHandler.asScala))
     this
   }
 

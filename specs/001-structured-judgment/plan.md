@@ -522,10 +522,11 @@ Conversion rules in `AgentImpl`:
 
 ### Phase B status (2026-09-22)
 
-Committed on the `structured-judgment-effect` branch of `akka-sdk` (`cb9012db8`), built against
-the locally published runtime `1.6.17-17-54c4dd1a-SNAPSHOT` from the Phase A branch with
+Committed on the `structured-judgment-effect` branch of `akka-sdk`, built against the locally
+published runtime `1.6.17-18-bd82910a-SNAPSHOT` from the Phase A branch with
 `-Dakka-runtime.version`. `AkkaRuntimeVersion` in `project/Dependencies.scala` stays at `1.6.17`
-until the runtime release exists.
+until the runtime release exists. The review fixes of both branches are included: the SPI effect
+field is `modelProvider` and choice options are `SpiAgent.ChoiceOption` values.
 
 Verified:
 

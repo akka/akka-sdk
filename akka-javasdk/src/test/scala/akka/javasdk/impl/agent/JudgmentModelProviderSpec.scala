@@ -20,6 +20,7 @@ import akka.javasdk.agent.Agent
 import akka.javasdk.agent.Judgment
 import akka.javasdk.agent.JudgmentModelProvider
 import akka.javasdk.agent.JudgmentRequest
+import akka.javasdk.agent.ModelException
 import akka.javasdk.agent.Question
 import akka.runtime.sdk.spi.SpiAgent
 import com.typesafe.config.Config
@@ -79,7 +80,8 @@ class JudgmentModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSp
     "load defaults from config for system-one" in {
       val provider =
         JudgmentModelProvider.SystemOne.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.system-one"))
-      provider shouldBe JudgmentModelProvider.systemOne()
+      // the api key and the headers have environment variable overrides
+      provider.withApiKey("").withAdditionalModelRequestHeaders(JList.of()) shouldBe JudgmentModelProvider.systemOne()
       provider.modelName shouldBe "jev-latest"
       provider.baseUrl shouldBe "https://api.typesafe.ai"
       provider.responseTimeout shouldBe Duration.ofSeconds(30)
@@ -165,7 +167,9 @@ class JudgmentModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSp
       spiRequest.questions.map(_.key) shouldBe Seq("route", "severity", "urgent")
       val choice = spiRequest.questions.head.asInstanceOf[SpiAgent.ChoiceQuestion]
       choice.instructions shouldBe "Which team?"
-      choice.options shouldBe Seq("billing" -> Some("Payments"), "technical" -> None)
+      choice.options.map(option => option.key -> option.description) shouldBe Seq(
+        "billing" -> Some("Payments"),
+        "technical" -> None)
       spiRequest.questions(1).asInstanceOf[SpiAgent.ScoreQuestion].levels shouldBe Seq("Low", "High")
       val noul = spiRequest.questions(2).asInstanceOf[SpiAgent.NoulQuestion]
       noul.whenTrue shouldBe Some("Time-sensitive")
@@ -196,7 +200,7 @@ class JudgmentModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSp
         120,
         9,
         Instant.now())
-      val judgment = AgentImpl.toJudgment(response, Seq("route", "severity", "urgent"))
+      val judgment = AgentImpl.toJudgment(response, Seq("route" -> route, "severity" -> severity, "urgent" -> urgent))
       judgment.answers.keySet.asScala.toSeq shouldBe Seq("route", "severity", "urgent")
       judgment.model shouldBe "jev-1.13.0"
       judgment.tokenUsage shouldBe new Agent.TokenUsage(120, 9)
@@ -209,6 +213,24 @@ class JudgmentModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSp
       judgment.yesNo("urgent").isYes shouldBe true
       an[IllegalArgumentException] should be thrownBy judgment.choice("severity")
       an[IllegalArgumentException] should be thrownBy judgment.yesNo("missing")
+    }
+
+    "fail with a ModelException when an answer is missing or has the wrong type" in {
+      val missing = new SpiAgent.JudgmentResponse(
+        "jev-1.13.0",
+        Map("route" -> new SpiAgent.ChoiceAnswer("billing", Map("billing" -> 1.0), 1.0)),
+        1,
+        1,
+        Instant.now())
+      (the[ModelException] thrownBy
+      AgentImpl.toJudgment(missing, Seq("route" -> route, "urgent" -> urgent)) should have)
+        .message("The model returned no answer for question [urgent]")
+
+      val wrongType =
+        new SpiAgent.JudgmentResponse("jev-1.13.0", Map("route" -> new SpiAgent.NoulAnswer(0.5)), 1, 1, Instant.now())
+      (the[ModelException] thrownBy
+      AgentImpl.toJudgment(wrongType, Seq("route" -> route)) should have)
+        .message("The model returned a [NoulAnswer] for question [route], which is a [Choice] question")
     }
 
     "convert a Judgment from a custom provider to an SPI response" in {

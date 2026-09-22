@@ -172,7 +172,11 @@ public sealed interface JudgmentModelProvider
    */
   non-sealed interface Custom extends JudgmentModelProvider {
 
-    /** Answer the request. Every question in the request must get an answer of its type. */
+    /**
+     * Answer the request. Every question in the request must get an answer of its type, otherwise
+     * the call fails with a {@link ModelException}. An empty model name or a null token usage is
+     * replaced by the provider's model name and zero usage.
+     */
     Judgment judge(JudgmentRequest request);
 
     /** The model name reported in the interaction log and in telemetry. */
