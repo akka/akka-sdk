@@ -36,13 +36,19 @@ private[impl] case class AgentInvokeReplyOnlyMethodRefImpl[A1, R](componentMetho
 
   override def invokeAsync(): CompletionStage[Agent.AgentReply[R]] = {
     componentMethodRefImpl.callComponent().thenApply { callResult =>
-      new Agent.AgentReply[R](callResult.value, toTokenUsage(callResult.metadata))
+      new Agent.AgentReply[R](
+        callResult.value,
+        toTokenUsage(callResult.metadata),
+        callResult.metadata.get(SpiAgent.AgentInteractionIdKey))
     }
   }
 
   override def invokeAsync(arg: A1): CompletionStage[Agent.AgentReply[R]] = {
     componentMethodRefImpl.callComponent(arg).thenApply { callResult =>
-      new Agent.AgentReply[R](callResult.value, toTokenUsage(callResult.metadata))
+      new Agent.AgentReply[R](
+        callResult.value,
+        toTokenUsage(callResult.metadata),
+        callResult.metadata.get(SpiAgent.AgentInteractionIdKey))
     }
   }
 
