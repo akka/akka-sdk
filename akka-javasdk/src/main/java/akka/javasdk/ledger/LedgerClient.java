@@ -67,12 +67,13 @@ public interface LedgerClient {
    * Fetch the evaluations recorded about the interaction with the given {@code interactionId},
    * newest first.
    *
-   * <p>Blocks the calling thread until the records have been fetched. Safe to call on a
-   * virtual thread. Use {@link #getEvaluationsAsync(String)} for the non-blocking variant.
+   * <p>Blocks the calling thread until the records have been fetched. Safe to call on a virtual
+   * thread. Use {@link #getEvaluationsAsync(String)} for the non-blocking variant.
    *
    * @param interactionId the id of the evaluated interaction, as carried by {@link
    *     akka.javasdk.agent.Agent.AgentReply#interactionId()}
-   * @return the evaluations of that interaction, or empty list if no there aren't any evaluations associated with the passed interactionId
+   * @return the evaluations of that interaction, or empty list if no there aren't any evaluations
+   *     associated with the passed interactionId
    */
   List<EvaluationRecord> getEvaluations(String interactionId);
 
