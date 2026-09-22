@@ -167,7 +167,8 @@ The name and the category are reported in logs, metrics, and traces. The `catego
 
 A `TextGuardrail`, including the built-in `SimilarityGuard`, requires the `use-for` property.
 It accepts one or more of `model-request`, `model-response`, `mcp-tool-request`, and `mcp-tool-response`, or `*` for all four.
-These values are deprecated. A `model-request` guardrail becomes a `ModelCallGuardrail`, and a `model-response` guardrail becomes an `AgentResponseGuardrail`.
+The `model-request` and `model-response` values are deprecated. A `model-request` guardrail becomes a `ModelCallGuardrail`, and a `model-response` guardrail becomes an `AgentResponseGuardrail`.
+The `mcp-tool-request` and `mcp-tool-response` values are not deprecated. A `TextGuardrail` is the only guardrail type that the runtime evaluates for MCP tool calls.
 
 == Classifier-backed guardrails
 

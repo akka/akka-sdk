@@ -9,7 +9,7 @@ import akka.javasdk.agent.Guardrail;
 import akka.javasdk.annotations.Component;
 
 @Component(id = "model-guardrail-test-agent")
-public class ModelGuardrailTestAgent extends Agent {
+public class AgentResponseGuardrailTestAgent extends Agent {
   public record SomeResponse(String response) {}
 
   public Effect<SomeResponse> mapLlmResponse(String question) {
