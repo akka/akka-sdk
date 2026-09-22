@@ -44,7 +44,7 @@ Before being written in logs or passed to agent models.
 
 === Ad hoc sanitization
 
-You can also mask text programmatically where it makes sense for a specific business case, for example before sending text to a third-party API or before passing it to an entity to store. To do this, xref:setup-and-dependency-injection.adoc[inject] an `akka.javasdk.SanitizerClient` into an endpoint, an agent, a consumer, a timed action, a workflow or the service setup, and call `sanitize` with the name of a configured sanitizer and the text.
+You can also mask text programmatically where it makes sense for a specific business case, for example before sending text to a third-party API or before passing it to an entity to store. To do this, xref:setup-and-dependency-injection.adoc[inject] an `akka.javasdk.SanitizerClient` into a component and call `sanitize` with the name of a configured sanitizer and the text.
 
 A sanitizer scoped to an agent or to an application point masks the text you pass here as well. The name selects which sanitizer runs, and nothing else does.
 
