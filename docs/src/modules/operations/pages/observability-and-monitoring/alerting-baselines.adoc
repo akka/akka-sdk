@@ -194,7 +194,7 @@ Every Akka service exports the standard https://opentelemetry.io/docs/specs/semc
 
 | GC time
 | `jvm.gc.duration` (sum over 1 min)
-| > 10% of wall time
+| > 6 s per minute (10% of the time spent in GC pauses)
 
 | CPU utilization
 | `jvm.cpu.recent_utilization`
