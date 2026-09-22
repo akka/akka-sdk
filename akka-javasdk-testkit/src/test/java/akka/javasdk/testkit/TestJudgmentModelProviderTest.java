@@ -39,11 +39,11 @@ class TestJudgmentModelProviderTest {
 
     Judgment judgment = provider.judge(ticket);
 
-    assertThat(judgment.choice("route").choice()).isEqualTo("billing");
+    assertThat(judgment.choice("route").selected()).isEqualTo("billing");
     assertThat(judgment.choice("route").probabilities()).containsEntry("billing", 1.0);
     assertThat(judgment.model()).isEqualTo("test-judgment-model");
     assertThat(judgment.tokenUsage()).isEqualTo(new Agent.TokenUsage(0, 0));
-    assertThat(provider.judge(structured).choice("route").choice()).isEqualTo("billing");
+    assertThat(provider.judge(structured).choice("route").selected()).isEqualTo("billing");
   }
 
   @Test
@@ -58,7 +58,7 @@ class TestJudgmentModelProviderTest {
         .reply(Map.of("urgent", TestJudgmentModelProvider.yes()));
 
     Judgment routed = provider.judge(ticket);
-    assertThat(routed.choice("route").choice()).isEqualTo("billing");
+    assertThat(routed.choice("route").selected()).isEqualTo("billing");
     assertThat(routed.tokenUsage()).isEqualTo(new Agent.TokenUsage(12, 3));
 
     assertThat(provider.judge(structured).yesNo("urgent").isYes()).isTrue();
@@ -73,7 +73,7 @@ class TestJudgmentModelProviderTest {
               "route", TestJudgmentModelProvider.choice(choice.options().getLast().key()));
         });
 
-    assertThat(provider.judge(ticket).choice("route").choice()).isEqualTo("technical");
+    assertThat(provider.judge(ticket).choice("route").selected()).isEqualTo("technical");
   }
 
   @Test
@@ -83,7 +83,7 @@ class TestJudgmentModelProviderTest {
         .whenRequest(request -> true)
         .reply(Map.of("route", TestJudgmentModelProvider.choice("technical")));
 
-    assertThat(provider.judge(ticket).choice("route").choice()).isEqualTo("technical");
+    assertThat(provider.judge(ticket).choice("route").selected()).isEqualTo("technical");
   }
 
   @Test

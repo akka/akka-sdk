@@ -44,14 +44,14 @@ public record Judgment(Map<String, Answer> answers, String model, Agent.TokenUsa
   /**
    * The answer to a {@link Question.Choice}.
    *
-   * @param choice the selected option key
+   * @param selected the key of the selected option
    * @param probabilities the probability per option key
    * @param confidence how peaked the distribution is, from 0 to 1
    */
-  public record ChoiceAnswer(String choice, Map<String, Double> probabilities, double confidence)
+  public record ChoiceAnswer(String selected, Map<String, Double> probabilities, double confidence)
       implements Answer {
     public ChoiceAnswer {
-      Objects.requireNonNull(choice, "choice");
+      Objects.requireNonNull(selected, "selected");
       Objects.requireNonNull(probabilities, "probabilities");
       probabilities = Collections.unmodifiableMap(new LinkedHashMap<>(probabilities));
     }

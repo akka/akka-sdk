@@ -39,7 +39,7 @@ public class TriageAgentIntegrationTest extends TestKitSupport {
       .method(TriageAgent::triage)
       .invoke("My payouts have been failing for 3 days.");
 
-    assertThat(judgment.choice("route").choice()).isEqualTo("billing");
+    assertThat(judgment.choice("route").selected()).isEqualTo("billing");
     assertThat(judgment.yesNo("urgent").isYes()).isTrue();
   }
 

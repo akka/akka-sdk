@@ -28,7 +28,7 @@ public class SomeJudgmentRoutingAgent extends Agent {
         .map(
             judgment ->
                 new Routing(
-                    judgment.choice("route").choice(),
+                    judgment.choice("route").selected(),
                     judgment.yesNo("urgent").isYes(),
                     judgment.choice("route").confidence()))
         .onFailure(

@@ -23,7 +23,7 @@ public class SomeJudgmentStructuredStateAgent extends Agent {
         .question(
             "route",
             Question.choice("Which team should handle this?").option("billing").option("technical"))
-        .map(judgment -> judgment.choice("route").choice())
+        .map(judgment -> judgment.choice("route").selected())
         .thenReply();
   }
 }

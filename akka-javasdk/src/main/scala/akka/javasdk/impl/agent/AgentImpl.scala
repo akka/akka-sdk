@@ -368,7 +368,7 @@ private[impl] object AgentImpl {
     answer match {
       case a: Judgment.ChoiceAnswer =>
         new SpiAgent.ChoiceAnswer(
-          a.choice,
+          a.selected,
           a.probabilities.asScala.map { case (key, probability) => key -> probability.doubleValue }.toMap,
           a.confidence)
       case a: Judgment.ScoreAnswer =>

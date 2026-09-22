@@ -229,7 +229,7 @@ public record Judgment(Map<String, Answer> answers, String model, Agent.TokenUsa
   })
   public sealed interface Answer permits ChoiceAnswer, ScoreAnswer, YesNoAnswer {}
 
-  public record ChoiceAnswer(String choice, Map<String, Double> probabilities, double confidence)
+  public record ChoiceAnswer(String selected, Map<String, Double> probabilities, double confidence)
       implements Answer {}
 
   public record ScoreAnswer(
@@ -617,7 +617,7 @@ version temporarily and reverting, as `docs/AGENTS.md` describes.
   with a `TestJudgmentModelProvider` registered in `TestKit.Settings`. Asserts the typed
   accessors, `AgentReply.tokenUsage`, and that no session memory entry was written.
 - Failure path: the test provider throws; `onFailure` maps it to a fallback `Judgment`.
-- Mapping path: `map(j -> j.choice("route").choice()).thenReply()` returns `Effect<String>`.
+- Mapping path: `map(j -> j.choice("route").selected()).thenReply()` returns `Effect<String>`.
 
 **Testkit tests (`akka-javasdk-testkit/src/test/java/akka/javasdk/testkit/`)**
 

@@ -46,7 +46,7 @@ class JudgmentEffectSpec extends AnyWordSpec with Matchers {
     "keep the provider, the mapping, the failure mapping and the reply metadata" in {
       val provider = JudgmentModelProvider.systemOne().withApiKey("key")
       val metadata = Metadata.EMPTY.add("k", "v")
-      val mapper: JFunction[Judgment, String] = judgment => judgment.choice("route").choice()
+      val mapper: JFunction[Judgment, String] = judgment => judgment.choice("route").selected()
       val recover: JFunction[Throwable, String] = _ => "unknown"
 
       val effect = new BaseAgentEffectBuilder[AnyRef]()

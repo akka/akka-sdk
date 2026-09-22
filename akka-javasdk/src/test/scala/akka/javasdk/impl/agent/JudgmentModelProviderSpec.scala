@@ -204,7 +204,7 @@ class JudgmentModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSp
       judgment.answers.keySet.asScala.toSeq shouldBe Seq("route", "severity", "urgent")
       judgment.model shouldBe "jev-1.13.0"
       judgment.tokenUsage shouldBe new Agent.TokenUsage(120, 9)
-      judgment.choice("route").choice shouldBe "billing"
+      judgment.choice("route").selected shouldBe "billing"
       judgment.choice("route").probabilities.get("billing") shouldBe 0.9
       judgment.choice("route").confidence shouldBe 0.8
       judgment.score("severity").score shouldBe 1.3

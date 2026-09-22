@@ -31,9 +31,9 @@ public interface TriageAgentMore {
         return "human-review";
       }
       if (judgment.yesNo("urgent").isYes()) { // <3>
-        return route.choice() + "-urgent";
+        return route.selected() + "-urgent";
       }
-      return route.choice();
+      return route.selected();
     }
   }
 
@@ -57,7 +57,7 @@ public interface TriageAgentMore {
         )
         .question("urgent", Question.yesNo("Does this need a reply today?"))
         .map(judgment -> // <1>
-          new Routing(judgment.choice("route").choice(), judgment.yesNo("urgent").isYes())
+          new Routing(judgment.choice("route").selected(), judgment.yesNo("urgent").isYes())
         )
         .onFailure(throwable -> { // <2>
           if (throwable instanceof ModelException) {

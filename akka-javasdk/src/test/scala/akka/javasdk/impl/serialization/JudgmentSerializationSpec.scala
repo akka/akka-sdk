@@ -40,7 +40,7 @@ class JudgmentSerializationSpec extends AnyWordSpec with Matchers {
 
       val restored = serializer.fromBytes(classOf[Judgment], bytes)
       restored shouldBe judgment
-      restored.choice("route").choice shouldBe "billing"
+      restored.choice("route").selected shouldBe "billing"
       restored.score("severity").legend.get(1) shouldBe "Medium"
       restored.yesNo("urgent").isYes shouldBe true
     }
