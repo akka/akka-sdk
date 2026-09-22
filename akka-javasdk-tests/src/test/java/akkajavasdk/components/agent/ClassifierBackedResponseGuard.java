@@ -23,11 +23,11 @@ import java.util.concurrent.CompletionStage;
  * ClassifierClient#classifyAsync} without blocking and mapping a classifier failure to an explicit
  * {@link Decision.Fail}, exercising that combination end-to-end.
  */
-public class ClassifierBackedModelGuard implements AgentResponseGuardrail {
+public class ClassifierBackedResponseGuard implements AgentResponseGuardrail {
   private final ClassifierClient classifierClient;
   private final String classifierName;
 
-  public ClassifierBackedModelGuard(GuardrailContext context) {
+  public ClassifierBackedResponseGuard(GuardrailContext context) {
     this.classifierClient = context.classifierClient();
     this.classifierName = context.config().getString("classifier");
   }

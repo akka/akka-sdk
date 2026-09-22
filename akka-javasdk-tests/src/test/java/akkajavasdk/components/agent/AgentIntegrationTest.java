@@ -69,7 +69,7 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(ProtobufAgentDirectReply.class, testModelProvider)
         .withModelProvider(ProtobufAgentWithConformsTo.class, testModelProvider)
         .withModelProvider(ProtobufAgentWithResponseAs.class, testModelProvider)
-        .withModelProvider(ModelGuardrailTestAgent.class, testModelProvider)
+        .withModelProvider(AgentResponseGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(ClassifierBackedGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(BeforeModelCallGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(NonBlockingGuardrailsTestAgent.class, testModelProvider)
@@ -612,11 +612,11 @@ public class AgentIntegrationTest extends TestKitSupport {
     testModelProvider.whenMessage(s -> s.equals("hello")).reply("anything");
 
     // when
-    ModelGuardrailTestAgent.SomeResponse result =
+    AgentResponseGuardrailTestAgent.SomeResponse result =
         componentClient
             .forAgent()
             .inSession(newSessionId())
-            .method(ModelGuardrailTestAgent::mapLlmResponse)
+            .method(AgentResponseGuardrailTestAgent::mapLlmResponse)
             .invoke("hello");
 
     // then
