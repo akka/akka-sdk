@@ -57,11 +57,17 @@ public sealed interface Guardrail
      * model's thinking or provider attributes.
      */
     record AiMessage(String text, List<ToolCallRequest> toolCallRequests) implements Message {
-      /** A tool call the model requested: its id, tool name, and raw arguments. */
+      /**
+       * A tool call the model requested: its id, tool name, and raw arguments. The id is never
+       * null, but it is empty when the model provider does not assign one.
+       */
       public static final record ToolCallRequest(String id, String name, String arguments) {}
     }
 
-    /** The result a tool returned for a requested tool call. */
+    /**
+     * The result a tool returned for a requested tool call. The id is never null, but it is empty
+     * when the model provider does not assign one.
+     */
     record ToolCallResponse(String id, String name, List<MessageContent> contents)
         implements Message {}
   }

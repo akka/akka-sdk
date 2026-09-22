@@ -27,7 +27,6 @@ import akka.javasdk.agent.Decision.Fail
 import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.Guardrail.Message
 import akka.javasdk.agent.Guardrail.Message.AiMessage
-import akka.javasdk.agent.Guardrail.Message.AiMessage.ToolCallRequest
 import akka.javasdk.agent.GuardrailContext
 import akka.javasdk.agent.ModelCallGuardrail
 import akka.javasdk.agent.SimilarityGuard
@@ -185,7 +184,7 @@ import org.slf4j.LoggerFactory
               new ToolCallGuardrailCallContextImpl(
                 toolCall.agentId,
                 toolCall.toolName,
-                toolCall.toolCallId,
+                Option(toolCall.toolCallId).getOrElse(""),
                 toolCall.arguments,
                 toolCall.sessionId,
                 Option(toolCall.telemetryContext),

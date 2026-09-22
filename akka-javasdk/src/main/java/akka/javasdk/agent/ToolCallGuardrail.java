@@ -37,7 +37,10 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
     /** The name of the tool about to be called. */
     String toolName();
 
-    /** The id of the tool call, correlating it with the model's tool-call request. */
+    /**
+     * The id of the tool call, correlating it with the model's tool-call request. Never null, but
+     * empty when the model provider does not assign one.
+     */
     String toolCallId();
 
     /** The raw JSON arguments the model produced for the tool call. */
