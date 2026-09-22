@@ -49,11 +49,11 @@ import org.slf4j.LoggerFactory
    * INTERNAL API
    */
   @InternalApi private[javasdk] final class ToolCallGuardrailCallContextImpl(
-      val agentId: String,
-      val toolName: String,
-      val toolCallId: String,
-      val arguments: String,
-      val sessionId: String,
+      override val agentId: String,
+      override val toolName: String,
+      override val toolCallId: String,
+      override val arguments: String,
+      override val sessionId: String,
       telemetryContext: Option[OtelContext],
       tracerFactory: () => Tracer)
       extends ToolCallGuardrail.CallContext {
