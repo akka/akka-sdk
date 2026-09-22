@@ -9,7 +9,6 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 
 public interface TriageAgentMore {
-
   // tag::judgment-answers[]
   public class TicketRouter {
 
@@ -30,8 +29,9 @@ public interface TriageAgentMore {
       if (route.confidence() < 0.5) { // <2>
         return "human-review";
       }
-      if (judgment.yesNo("urgent").isYes()) { // <3>
-        return route.selected() + "-urgent";
+      Judgment.ScoreAnswer severity = judgment.score("severity"); // <3>
+      if (judgment.yesNo("urgent").isYes() || severity.value() >= 2) { // <4>
+        return route.selected() + "-urgent"; // <5>
       }
       return route.selected();
     }
@@ -57,8 +57,7 @@ public interface TriageAgentMore {
         )
         .question("urgent", Question.yesNo("Does this need a reply today?"))
         .map(judgment -> // <1>
-          new Routing(judgment.choice("route").selected(), judgment.yesNo("urgent").isYes())
-        )
+          new Routing(judgment.choice("route").selected(), judgment.yesNo("urgent").isYes()))
         .onFailure(throwable -> { // <2>
           if (throwable instanceof ModelException) {
             return new Routing("human-review", false);
@@ -87,7 +86,9 @@ public interface TriageAgentMore {
         .state(ticket)
         .question(
           "route",
-          Question.choice("Which team should handle this?").option("billing").option("technical")
+          Question.choice("Which team should handle this?")
+            .option("billing")
+            .option("technical")
         )
         .thenReply();
     }
@@ -103,7 +104,9 @@ public interface TriageAgentMore {
         .state(ticket)
         .question(
           "route",
-          Question.choice("Which team should handle this?").option("billing").option("technical")
+          Question.choice("Which team should handle this?")
+            .option("billing")
+            .option("technical")
         )
         .thenReply();
     }

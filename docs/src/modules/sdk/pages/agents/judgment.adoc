@@ -46,11 +46,11 @@ The `Judgment` holds one answer per question key. Read an answer as the type of 
 ----
 include::example$doc-snippets/src/main/java/com/example/application/TriageAgentMore.java[tag=judgment-answers]
 ----
-<1> A `ChoiceAnswer` has the selected option key, a probability per option and a confidence.
+<1> `choice` returns the `ChoiceAnswer` of the question with this key. It has the key of the selected option, a probability per option and a confidence.
 <2> The confidence says how peaked the distribution is, from 0 to 1. A confidence below 0.5 means the options are close. Route such cases to a person or a different system instead of acting on the choice.
-<3> A `YesNoAnswer` has the probability of yes. `isYes()` is true at 0.5 and above. `isYes(threshold)` uses your own threshold.
-
-A `ScoreAnswer` has the position along the levels as a number that can fall between two levels, the levels as a legend by index, a probability per level and a confidence.
+<3> `score` returns the `ScoreAnswer`. `value()` is the position along the levels, counted from 0, and can fall between two levels. In this example 2 or more means High or Critical. The answer also has the levels as a legend by index, a probability per level and a confidence.
+<4> `yesNo` returns the `YesNoAnswer` with the probability of yes. `isYes()` is true at 0.5 and above. `isYes(threshold)` uses your own threshold.
+<5> `selected()` is the key of the selected option.
 
 The `Judgment` also carries the model that answered and the token usage of the call. A caller that invokes the agent through the `ComponentClient` with `withDetailedReply()` gets the same token usage on the `AgentReply`.
 

@@ -18,7 +18,10 @@ public class TriageAgentIntegrationTest extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT.withJudgmentModelProvider(TriageAgent.class, judgmentProvider); // <1>
+    return TestKit.Settings.DEFAULT.withJudgmentModelProvider(
+      TriageAgent.class,
+      judgmentProvider
+    ); // <1>
   }
 
   @Test
@@ -27,9 +30,12 @@ public class TriageAgentIntegrationTest extends TestKitSupport {
       .whenState("My payouts have been failing for 3 days.") // <2>
       .reply(
         Map.of(
-          "route", TestJudgmentModelProvider.choice("billing"), // <3>
-          "severity", TestJudgmentModelProvider.score(2.0),
-          "urgent", TestJudgmentModelProvider.yes()
+          "route",
+          TestJudgmentModelProvider.choice("billing"), // <3>
+          "severity",
+          TestJudgmentModelProvider.score(2.0),
+          "urgent",
+          TestJudgmentModelProvider.yes()
         )
       );
 
@@ -50,8 +56,7 @@ public class TriageAgentIntegrationTest extends TestKitSupport {
         .forAgent()
         .inSession(UUID.randomUUID().toString())
         .method(TriageAgent::triage)
-        .invoke("Unknown ticket")
-    ).hasMessageContaining("No judgment configured");
+        .invoke("Unknown ticket")).hasMessageContaining("No judgment configured");
   }
 }
 // end::judgment-test[]
