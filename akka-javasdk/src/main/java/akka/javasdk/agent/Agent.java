@@ -136,6 +136,7 @@ public abstract class Agent implements AgentDelegationWorker {
    *
    * <ul>
    *   <li>Make a request to the model and return the transformed response.
+   *   <li>Make a structured judgment request to a SystemOne model and return the answers.
    * </ul>
    *
    * @param <T> The type of the message that must be returned by this call.
@@ -366,6 +367,28 @@ public abstract class Agent implements AgentDelegationWorker {
        * @return An error reply.
        */
       <T> Agent.Effect<T> error(CommandException commandException);
+
+      /**
+       * Start a structured judgment request instead of a model request. The model answers a set of
+       * questions about a state with probabilities, see {@link Question} and {@link Judgment}.
+       *
+       * <p>This must be the first call on the builder. A judgment request has no system message,
+       * user message, tools or session memory.
+       *
+       * <pre>{@code
+       * return effects()
+       *     .judgment()
+       *     .state(ticket)
+       *     .question("route", Question.choice("Which team should handle this?")
+       *         .option("billing", "Payments, invoicing, refunds")
+       *         .option("technical", "Bugs, outages, integrations"))
+       *     .question("urgent", Question.yesNo("Does this need a reply today?"))
+       *     .thenReply();
+       * }</pre>
+       *
+       * @return the builder for the judgment request
+       */
+      JudgmentBuilder judgment();
     }
 
     interface OnSuccessBuilder {
@@ -523,6 +546,33 @@ public abstract class Agent implements AgentDelegationWorker {
        * @return A message reply.
        */
       Agent.Effect<Result> thenReply(Metadata metadata);
+    }
+
+    /**
+     * Builder for a structured judgment request, started with {@link Builder#judgment()}. The reply
+     * is a {@link Judgment}. Use {@link #map} to reply with another type and {@link #onFailure} to
+     * recover from a failed call.
+     */
+    interface JudgmentBuilder extends MappingResponseBuilder<Judgment> {
+
+      /**
+       * The model that answers the request. If undefined, the provider is defined by {@code
+       * akka.javasdk.agent.judgment-model-provider}.
+       */
+      JudgmentBuilder model(JudgmentModelProvider provider);
+
+      /**
+       * The content to judge. A String is sent as text. Any other object or collection is
+       * serialized to JSON and sent as an object or an array. Numbers, booleans and null are not
+       * accepted.
+       */
+      JudgmentBuilder state(Object state);
+
+      /**
+       * Add a question. The key identifies the answer in the {@link Judgment}. Keys must be unique
+       * within the request.
+       */
+      JudgmentBuilder question(String key, Question question);
     }
   }
 

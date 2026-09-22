@@ -27,6 +27,10 @@ abstract class AbstractAgentValidationSpec(val validationMode: ValidationMode)
       assertValid("valid/ValidAgentWithStreamEffect.java")
     }
 
+    "accept valid Agent with judgment effect" in {
+      assertValid("valid/ValidAgentWithJudgmentEffect.java")
+    }
+
     "accept valid Agent command handler with zero arguments" in {
       assertValid("valid/ValidAgentWithZeroArgs.java")
     }

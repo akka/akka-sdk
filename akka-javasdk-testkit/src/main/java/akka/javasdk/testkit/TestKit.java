@@ -19,6 +19,7 @@ import akka.javasdk.Sanitizer;
 import akka.javasdk.ServiceSetup;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
+import akka.javasdk.agent.JudgmentModelProvider;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
@@ -270,6 +271,7 @@ public class TestKit {
             new HashMap<>(),
             new HashMap<>(),
             new HashMap<>(),
+            new HashMap<>(),
             Collections.emptyList(),
             false);
 
@@ -302,6 +304,8 @@ public class TestKit {
     public final boolean overrideDisabledComponents;
 
     public final Map<String, ModelProvider> modelProvidersByAgentId;
+
+    public final Map<String, JudgmentModelProvider> judgmentModelProvidersByAgentId;
 
     /**
      * Map from service name to a synchronous HTTP request handler that mocks responses for that
@@ -349,6 +353,7 @@ public class TestKit {
         Set<Class<?>> disabledComponents,
         boolean overrideDisabledComponents,
         Map<String, ModelProvider> modelProvidersByAgentId,
+        Map<String, JudgmentModelProvider> judgmentModelProvidersByAgentId,
         Map<String, Function<HttpRequest, HttpResponse>> httpMocks,
         Map<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>> grpcMocks,
         List<ObjectStorageBucketConfig> objectStorageBuckets,
@@ -362,6 +367,7 @@ public class TestKit {
       this.disabledComponents = disabledComponents;
       this.overrideDisabledComponents = overrideDisabledComponents;
       this.modelProvidersByAgentId = modelProvidersByAgentId;
+      this.judgmentModelProvidersByAgentId = judgmentModelProvidersByAgentId;
       this.httpMocks = httpMocks;
       this.grpcMocks = grpcMocks;
       this.objectStorageBuckets = objectStorageBuckets;
@@ -388,6 +394,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -410,6 +417,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -432,6 +440,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -470,6 +479,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -490,6 +500,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -510,6 +521,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -529,6 +541,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -549,6 +562,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -567,6 +581,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -585,6 +600,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -606,6 +622,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -623,6 +640,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -644,6 +662,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -673,6 +692,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -694,6 +714,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -716,6 +737,7 @@ public class TestKit {
           disabledComponents,
           true,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -740,6 +762,7 @@ public class TestKit {
           Set.of(),
           true,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -764,6 +787,32 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           newModelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets,
+          ephemeralPort);
+    }
+
+    /**
+     * Override the judgment model provider for an {@link Agent} component, used by {@code
+     * effects().judgment()}. The class must be annotated with {@code @Component(id = "...")}.
+     */
+    public Settings withJudgmentModelProvider(Class<?> agentClass, JudgmentModelProvider provider) {
+      var componentId = getComponentId(agentClass);
+      var newJudgmentModelProvidersByAgentId = new HashMap<>(judgmentModelProvidersByAgentId);
+      newJudgmentModelProvidersByAgentId.put(componentId, provider);
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing,
+          dependencyProvider,
+          additionalConfig,
+          disabledComponents,
+          overrideDisabledComponents,
+          modelProvidersByAgentId,
+          newJudgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -800,6 +849,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           newHttpMocks,
           grpcMocks,
           objectStorageBuckets,
@@ -826,6 +876,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           grpcMocks,
           newBuckets,
@@ -869,6 +920,7 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
+          judgmentModelProvidersByAgentId,
           httpMocks,
           newGrpcMocks,
           objectStorageBuckets,
@@ -1104,6 +1156,11 @@ public class TestKit {
               startupContext
                   .overrideModelProvider()
                   .setModelProviderForAgent(agentId, modelProvider));
+      settings.judgmentModelProvidersByAgentId.forEach(
+          (agentId, provider) ->
+              startupContext
+                  .overrideModelProvider()
+                  .setJudgmentModelProviderForAgent(agentId, provider));
 
       // The runtime completes this with the address it bound, or fails it with the reason it
       // could not. It can also stay pending, when the runtime hangs before it gets as far as

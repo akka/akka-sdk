@@ -7,6 +7,7 @@ package akka.javasdk.impl.agent
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.annotation.InternalApi
+import akka.javasdk.agent.JudgmentModelProvider
 import akka.javasdk.agent.ModelProvider
 
 /**
@@ -21,5 +22,13 @@ import akka.javasdk.agent.ModelProvider
 
   def getModelProviderForAgent(agentId: String): Option[ModelProvider] =
     Option(modelProviderByAgentId.get(agentId))
+
+  private val judgmentModelProviderByAgentId = new ConcurrentHashMap[String, JudgmentModelProvider]()
+
+  def setJudgmentModelProviderForAgent(agentId: String, provider: JudgmentModelProvider): Unit =
+    judgmentModelProviderByAgentId.put(agentId, provider)
+
+  def getJudgmentModelProviderForAgent(agentId: String): Option[JudgmentModelProvider] =
+    Option(judgmentModelProviderByAgentId.get(agentId))
 
 }
