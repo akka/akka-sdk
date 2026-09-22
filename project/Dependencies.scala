@@ -152,7 +152,7 @@ object Dependencies {
         // user will interface with these
         junit5,
         // convenience-transitive dependencies for user assertions and async interactions
-        "org.awaitility" % "awaitility" % "4.2.1",
+        "org.awaitility" % "awaitility" % "4.2.2",
         "org.assertj" % "assertj-core" % AssertJVersion,
         // for the tests of the testkit itself
         "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
@@ -162,7 +162,7 @@ object Dependencies {
     deps ++= Seq(
       // FIXME why doesn't these two come along transitively from the testkit?
       "org.assertj" % "assertj-core" % AssertJVersion % Test,
-      "org.awaitility" % "awaitility" % "4.2.1" % Test,
+      "org.awaitility" % "awaitility" % "4.2.2" % Test,
       AkkaDevRuntime % Test,
       akkaDependency("akka-testkit"),
       // These are for the test of the testkit
