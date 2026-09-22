@@ -52,7 +52,10 @@ public sealed interface Guardrail
     /** A user-authored message. */
     record UserMessage(List<MessageContent> contents) implements Message {}
 
-    /** A model reply: its text and the tool calls it requested. */
+    /**
+     * A model reply, with only its text and the tool calls it requested. It does not include the
+     * model's thinking or provider attributes.
+     */
     record AiMessage(String text, List<ToolCallRequest> toolCallRequests) implements Message {}
 
     /** A tool call the model requested: its id, tool name, and raw arguments. */
