@@ -148,6 +148,11 @@
                                         <!-- tag for generated image -->
                                         <tag>${docker.tag}</tag>
                                     </tags>
+                                    <!-- image metadata for SDK and runtime compatibility checks -->
+                                    <labels>
+                                        <io.akka.sdk.version>${akka-javasdk.version}</io.akka.sdk.version>
+                                        <io.akka.sdk.expected-runtime>${akka-runtime.version}</io.akka.sdk.expected-runtime>
+                                    </labels>
                                     <assembly>
                                         <inline>
                                             <dependencySets>
@@ -685,6 +690,11 @@
                                                 <!-- tag for generated image -->
                                                 <tag>${docker.tag}</tag>
                                             </tags>
+                                            <!-- image metadata for SDK and runtime compatibility checks -->
+                                            <labels>
+                                                <io.akka.sdk.version>${akka-javasdk.version}</io.akka.sdk.version>
+                                                <io.akka.sdk.expected-runtime>${akka-runtime.version}</io.akka.sdk.expected-runtime>
+                                            </labels>
                                             <entryPoint>
                                                 <exec>
                                                     <arg>java</arg>
