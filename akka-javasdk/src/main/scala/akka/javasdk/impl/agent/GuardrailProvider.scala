@@ -404,8 +404,8 @@ import org.slf4j.LoggerFactory
     }
   }
 
-  // Guardrail is sealed (permits TextGuardrail, ToolCallGuardrail, ModelCallGuardrail,
-  // AgentResponseGuardrail).
+  // Fails when the instance implements more than one guardrail interface.
+  // toSpiGuardrail maps each instance to exactly one adapter.
   @nowarn("cat=deprecation")
   private def validateSingleInterface(guardrailName: String, instance: Guardrail): Unit = {
     val implemented = Seq(
