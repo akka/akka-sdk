@@ -26,6 +26,8 @@ import akka.javasdk.agent.Decision.Deny
 import akka.javasdk.agent.Decision.Fail
 import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.Guardrail.Message
+import akka.javasdk.agent.Guardrail.Message.AiMessage
+import akka.javasdk.agent.Guardrail.Message.AiMessage.ToolCallRequest
 import akka.javasdk.agent.GuardrailContext
 import akka.javasdk.agent.ModelCallGuardrail
 import akka.javasdk.agent.SimilarityGuard
@@ -273,7 +275,7 @@ import org.slf4j.LoggerFactory
       case a: SpiAgent.ContextMessage.AiMessage =>
         new Message.AiMessage(
           Option(a.content).getOrElse(""),
-          a.toolRequests.map(tr => new Message.ToolCallRequest(tr.id, tr.name, tr.arguments)).asJava)
+          a.toolRequests.map(tr => new AiMessage.ToolCallRequest(tr.id, tr.name, tr.arguments)).asJava)
       case t: SpiAgent.ContextMessage.ToolCallResponseMessage =>
         new Message.ToolCallResponse(t.id, t.name, t.contents.map(AgentImpl.fromSpiMessageContent).asJava)
     }

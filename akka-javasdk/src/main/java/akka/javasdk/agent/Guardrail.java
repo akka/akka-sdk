@@ -56,10 +56,10 @@ public sealed interface Guardrail
      * A model reply, with only its text and the tool calls it requested. It does not include the
      * model's thinking or provider attributes.
      */
-    record AiMessage(String text, List<ToolCallRequest> toolCallRequests) implements Message {}
-
-    /** A tool call the model requested: its id, tool name, and raw arguments. */
-    record ToolCallRequest(String id, String name, String arguments) {}
+    record AiMessage(String text, List<ToolCallRequest> toolCallRequests) implements Message {
+      /** A tool call the model requested: its id, tool name, and raw arguments. */
+      public static final record ToolCallRequest(String id, String name, String arguments) {}
+    }
 
     /** The result a tool returned for a requested tool call. */
     record ToolCallResponse(String id, String name, List<MessageContent> contents)
