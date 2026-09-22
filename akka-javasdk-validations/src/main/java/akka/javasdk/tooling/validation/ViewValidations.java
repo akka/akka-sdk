@@ -17,8 +17,10 @@ import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
 import akka.javasdk.validation.ast.TypeRefDef;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -36,9 +38,8 @@ public class ViewValidations {
       return Validation.Valid.instance();
     }
 
-    // Get all TableUpdater nested classes
-    List<TypeDef> tableUpdaters =
-        typeDef.getNestedTypes().stream().filter(ViewValidations::isViewTableUpdater).toList();
+    // Get all TableUpdater nested classes, including those inherited from base View classes
+    List<TypeDef> tableUpdaters = effectiveTableUpdaters(typeDef);
 
     // Validate View-level rules
     Validation viewValidation =
@@ -84,8 +85,7 @@ public class ViewValidations {
    * @return a Validation result indicating success or failure
    */
   private static Validation viewMustHaveAtLeastOneViewTableUpdater(TypeDef typeDef) {
-    long tableUpdaterCount =
-        typeDef.getNestedTypes().stream().filter(ViewValidations::isViewTableUpdater).count();
+    long tableUpdaterCount = effectiveTableUpdaters(typeDef).size();
 
     if (tableUpdaterCount < 1) {
       return Validation.of(
@@ -107,6 +107,56 @@ public class ViewValidations {
       return false;
     }
     return typeDef.extendsType("akka.javasdk.view.TableUpdater");
+  }
+
+  /**
+   * Collects the TableUpdaters of a view, including those declared on base View classes. A table
+   * updater declared closer to the concrete view overrides an inherited one for the same table name
+   * (the @Table value, or the single guessed table when there is no @Table). Same-class duplicates
+   * are kept so genuinely ambiguous views are still rejected.
+   */
+  private static List<TypeDef> effectiveTableUpdaters(TypeDef viewType) {
+    List<TypeDef> updaters = new ArrayList<>();
+    List<Integer> depths = new ArrayList<>();
+
+    TypeDef current = viewType;
+    int depth = 0;
+    while (current != null) {
+      for (TypeDef nested : current.getNestedTypes()) {
+        if (isViewTableUpdater(nested)) {
+          updaters.add(nested);
+          depths.add(depth);
+        }
+      }
+      Optional<TypeRefDef> superRef = current.getSuperclass();
+      if (superRef.isEmpty()) break;
+      String rawName = superRef.get().getRawQualifiedName();
+      if (rawName.equals("akka.javasdk.view.View") || rawName.equals("java.lang.Object")) break;
+      Optional<TypeDef> superType = superRef.get().resolveTypeDef();
+      if (superType.isEmpty()) break;
+      current = superType.get();
+      depth++;
+    }
+
+    // keep only the most-derived updater(s) per table name
+    Map<String, Integer> minDepthByTable = new HashMap<>();
+    for (int i = 0; i < updaters.size(); i++) {
+      minDepthByTable.merge(tableNameKey(updaters.get(i)), depths.get(i), Math::min);
+    }
+    List<TypeDef> effective = new ArrayList<>();
+    for (int i = 0; i < updaters.size(); i++) {
+      if (depths.get(i) == minDepthByTable.get(tableNameKey(updaters.get(i)))) {
+        effective.add(updaters.get(i));
+      }
+    }
+    return effective;
+  }
+
+  private static String tableNameKey(TypeDef updater) {
+    return updater
+        .findAnnotation("akka.javasdk.annotations.Table")
+        .flatMap(a -> a.getStringValue("value"))
+        .orElse("");
   }
 
   /**
@@ -260,8 +310,7 @@ public class ViewValidations {
    * @return a Validation result indicating success or failure
    */
   private static Validation viewMultipleTableUpdatersMustHaveTableAnnotations(TypeDef typeDef) {
-    List<TypeDef> tableUpdaters =
-        typeDef.getNestedTypes().stream().filter(ViewValidations::isViewTableUpdater).toList();
+    List<TypeDef> tableUpdaters = effectiveTableUpdaters(typeDef);
 
     if (tableUpdaters.size() > 1) {
       for (TypeDef tableUpdater : tableUpdaters) {
