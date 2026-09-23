@@ -10,7 +10,7 @@ import scala.jdk.CollectionConverters._
 import scala.util.matching.Regex
 
 import akka.annotation.InternalApi
-import akka.javasdk.impl.ConfiguredSanitizer.UseFor
+import akka.javasdk.impl.ConfiguredSanitizer.ApplyAt
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigObject
 import com.typesafe.config.ConfigValueType
@@ -68,32 +68,32 @@ import com.typesafe.config.ConfigValueType
   /**
    * Where an entry masks. The values are application points, not the boundaries [[ConfiguredGuardrail.UseFor]] holds.
    */
-  sealed abstract class UseFor(val configValue: String) {
+  sealed abstract class ApplyAt(val configValue: String) {
     override def toString: String = configValue
   }
 
-  object UseFor {
-    case object ModelInput extends UseFor("model-input")
-    case object ToolResult extends UseFor("tool-result")
+  object ApplyAt {
+    case object ModelCall extends ApplyAt("model-call")
+    case object ToolResult extends ApplyAt("tool-result")
 
     /**
      * Log messages and the subject id of an unhandled exception. Unlike the other two, this is not a point of an agent:
      * it decides whether the entry is handed over as a log sanitizer.
      */
-    case object Logs extends UseFor("logs")
+    case object Logs extends ApplyAt("logs")
 
     /**
      * Nothing the runtime masks on its own. Application code calls the entry by name, which it can do with every entry.
      */
-    case object Client extends UseFor("client")
+    case object Client extends ApplyAt("client")
 
-    val All: Set[UseFor] = Set(ModelInput, ToolResult, Logs, Client)
+    val All: Set[ApplyAt] = Set(ModelCall, ToolResult, Logs, Client)
 
     /** The points of an agent. */
-    val AgentPoints: Set[UseFor] = Set(ModelInput, ToolResult)
+    val AgentPoints: Set[ApplyAt] = Set(ModelCall, ToolResult)
 
     /** Every point the runtime masks at on its own. */
-    val MaskingPoints: Set[UseFor] = AgentPoints + Logs
+    val MaskingPoints: Set[ApplyAt] = AgentPoints + Logs
   }
 
   // Kept in step with the groups the runtime expands a predefined entry into, in
@@ -111,7 +111,7 @@ import com.typesafe.config.ConfigValueType
     new ConfiguredSanitizer(
       name = name,
       kind = kind,
-      useFor = readUseFor(name, config, scoped),
+      applyAt = readApplyAt(name, config, scoped),
       agents = agents,
       agentRoles = agentRoles,
       config = config)
@@ -151,27 +151,27 @@ import com.typesafe.config.ConfigValueType
     }
   }
 
-  private def readUseFor(name: String, config: Config, scoped: Boolean): Set[UseFor] = {
-    val declared = declaredUseFor(config).map(_.toLowerCase(Locale.ROOT))
-    val named: Set[UseFor] = declared.iterator
+  private def readApplyAt(name: String, config: Config, scoped: Boolean): Set[ApplyAt] = {
+    val declared = declaredApplyAt(config).map(_.toLowerCase(Locale.ROOT))
+    val named: Set[ApplyAt] = declared.iterator
       .filterNot(_ == "*")
       .map {
-        case "model-input" => UseFor.ModelInput
-        case "tool-result" => UseFor.ToolResult
-        case "logs"        => UseFor.Logs
-        case "client"      => UseFor.Client
+        case "model-call"  => ApplyAt.ModelCall
+        case "tool-result" => ApplyAt.ToolResult
+        case "logs"        => ApplyAt.Logs
+        case "client"      => ApplyAt.Client
         case other =>
           throw new IllegalArgumentException(
-            s"Sanitizer [$name] has unknown use-for [$other], valid values are " +
-            s"[${UseFor.All.toSeq.map(_.configValue).sorted.mkString(", ")}] or [*]")
+            s"Sanitizer [$name] has unknown apply-at [$other], valid values are " +
+            s"[${ApplyAt.All.toSeq.map(_.configValue).sorted.mkString(", ")}] or [*]")
       }
       .toSet
 
-    if (scoped && named.contains(UseFor.Logs))
+    if (scoped && named.contains(ApplyAt.Logs))
       throw new IllegalArgumentException(
         s"Sanitizer [$name] cannot combine [agents] or [agent-roles] with the [logs] application point. A log " +
         "line belongs to no agent, so the runtime has no agent to match the scope against.")
-    if (scoped && named.contains(UseFor.Client))
+    if (scoped && named.contains(ApplyAt.Client))
       throw new IllegalArgumentException(
         s"Sanitizer [$name] cannot combine [agents] or [agent-roles] with the [client] application point. A call " +
         "by name belongs to no agent, so the runtime has no agent to match the scope against. Every sanitizer " +
@@ -180,14 +180,14 @@ import com.typesafe.config.ConfigValueType
     // An entry that names no application point, or names "*", masks wherever the rest of it allows. An agent
     // scoped entry leaves out log messages, for the reason in the error above.
     if (declared.isEmpty || declared.contains("*")) {
-      if (scoped) UseFor.AgentPoints else UseFor.MaskingPoints
+      if (scoped) ApplyAt.AgentPoints else ApplyAt.MaskingPoints
     } else named
   }
 
-  private def declaredUseFor(config: Config): Seq[String] =
-    if (!config.hasPath("use-for")) Nil
-    else if (config.getValue("use-for").valueType == ConfigValueType.STRING) Seq(config.getString("use-for"))
-    else config.getStringList("use-for").asScala.toSeq
+  private def declaredApplyAt(config: Config): Seq[String] =
+    if (!config.hasPath("apply-at")) Nil
+    else if (config.getValue("apply-at").valueType == ConfigValueType.STRING) Seq(config.getString("apply-at"))
+    else config.getStringList("apply-at").asScala.toSeq
 
   private def optionalStringSet(config: Config, path: String): Set[String] =
     if (config.hasPath(path)) config.getStringList(path).asScala.toSet else Set.empty
@@ -199,7 +199,7 @@ import com.typesafe.config.ConfigValueType
 @InternalApi private[javasdk] final case class ConfiguredSanitizer(
     name: String,
     kind: SanitizerKind,
-    useFor: Set[UseFor],
+    applyAt: Set[ApplyAt],
     agents: Set[String],
     agentRoles: Set[String],
     config: Config) {
@@ -210,10 +210,10 @@ import com.typesafe.config.ConfigValueType
   /**
    * Whether the entry masks at an application point of an agent, and so is handed over with the agents it applies to.
    */
-  def masksAgentText: Boolean = useFor.exists(UseFor.AgentPoints.contains)
+  def masksAgentText: Boolean = applyAt.exists(ApplyAt.AgentPoints.contains)
 
   /** Whether the entry masks log messages, and so is handed over as a log sanitizer. */
-  def masksLogs: Boolean = useFor.contains(UseFor.Logs)
+  def masksLogs: Boolean = applyAt.contains(ApplyAt.Logs)
 
   /** Whether the entry applies to the agent with this component id and role. */
   def appliesTo(componentId: String, role: Option[String]): Boolean =

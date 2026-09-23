@@ -187,9 +187,9 @@ public class SanitizerIntegrationTest extends TestKitSupport {
 
     askScopedAgent("notes for acme, mind modelsecret and toolsecret");
 
-    // model-input-only masks the question, tool-result-only leaves it alone
+    // model-call-only masks the question, tool-result-only leaves it alone
     assertThat(capturedUserMessage.get()).contains("mind *********** and toolsecret");
-    // tool-result-only masks what the tool returned, model-input-only leaves it alone
+    // tool-result-only masks what the tool returned, model-call-only leaves it alone
     assertThat(capturedToolResult.get()).contains("********** and modelsecret");
   }
 

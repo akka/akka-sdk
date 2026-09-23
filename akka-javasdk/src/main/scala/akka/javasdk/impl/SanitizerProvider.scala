@@ -89,19 +89,19 @@ import org.slf4j.LoggerFactory
    */
   def spiSanitizers(enabledForComponents: ConfiguredSanitizer => Set[String]): Seq[SpiDataSanitizer] =
     configuredSanitizers.map { s =>
-      val (useFor, components) = agentBinding(s, enabledForComponents(s))
+      val (applyAt, components) = agentBinding(s, enabledForComponents(s))
       s.kind match {
         case SanitizerKind.Implementation(className) =>
           new SpiDataSanitizer.Custom(
             name = s.name,
             implementationClass = className,
             instance = new SanitizerProvider.SpiSanitizerAdapter(() => getOrCreate(s.name)),
-            useFor = useFor,
+            applyAt = applyAt,
             enabledForComponents = components,
             config = s.config)
         case _ =>
           Sanitization
-            .declarativeSpiSanitizer(s, useFor, components)
+            .declarativeSpiSanitizer(s, applyAt, components)
             .getOrElse(throw new IllegalStateException(s"Sanitizer [${s.name}] has no runtime entry"))
       }
     }
@@ -132,8 +132,8 @@ import org.slf4j.LoggerFactory
   // matches nothing is masking a deployment asked for and does not get.
   private def agentBinding(
       sanitizer: ConfiguredSanitizer,
-      resolved: Set[String]): (Set[SpiDataSanitizer.UseFor], Set[String]) =
-    if (resolved.nonEmpty || !sanitizer.scoped) (Sanitization.spiUseFor(sanitizer), resolved)
+      resolved: Set[String]): (Set[SpiDataSanitizer.ApplyAt], Set[String]) =
+    if (resolved.nonEmpty || !sanitizer.scoped) (Sanitization.spiApplyAt(sanitizer), resolved)
     else {
       log.warn(
         "Sanitizer [{}] masks for no agent. It names agents [{}] and agent roles [{}], and this service has no " +

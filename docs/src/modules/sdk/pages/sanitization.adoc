@@ -23,7 +23,7 @@ Sanitization is disabled by default. You enable it selectively through configura
 A sanitizer applies everywhere unless it says otherwise. The three application points are:
 
 * `logs`: text written to logs
-* `model-input`: text passed to agent models from agent requests
+* `model-call`: text passed to the model in each model call of an agent
 * `tool-result`: text passed to agent models from local tool or MCP tool output
 
 Each sanitizer can name the points it masks at, and the agents it masks for. See <<Configuring sanitizers>>.
@@ -46,7 +46,7 @@ Before being written in logs or passed to agent models.
 
 You can also mask text programmatically where it makes sense for a specific business case, for example before sending text to a third-party API or before passing it to an entity to store. To do this, xref:setup-and-dependency-injection.adoc[inject] an `akka.javasdk.SanitizerClient` into a component and call `sanitize` with the name of a configured sanitizer and the text.
 
-A sanitizer scoped to an agent or to an application point masks the text you pass here as well. The name selects which sanitizer runs, and nothing else does. For a sanitizer that only application code uses, define `use-for = ["client"]`, so that the runtime does not apply it anywhere on its own.
+A sanitizer scoped to an agent or to an application point masks the text you pass here as well. The name selects which sanitizer runs, and nothing else does. For a sanitizer that only application code uses, define `apply-at = ["client"]`, so that the runtime does not apply it anywhere on its own.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/SanitizingEndpoint.java[SanitizingEndpoint.java]
@@ -65,7 +65,7 @@ You configure sanitizers as named entries of `akka.javasdk.sanitization.sanitize
 
 Each entry can also state where and for which agents it masks:
 
-* `use-for`: the application points to mask at, any of `model-input`, `tool-result`, `logs` and `client`, or `*`. An entry that defines no `use-for`, or defines `*`, masks at every point it can. An agent-scoped entry cannot mask log messages, so for those it means model input and tool results. An entry with `client` masks nothing on its own, see <<Ad hoc sanitization>>.
+* `apply-at`: the application points to mask at, any of `model-call`, `tool-result`, `logs` and `client`, or `*`. An entry that defines no `apply-at`, or defines `*`, masks at every point it can. An agent-scoped entry cannot mask log messages, so for those it means model input and tool results. An entry with `client` masks nothing on its own, see <<Ad hoc sanitization>>.
 * `agents`: the component ids of the agents to mask for. Use `*` for every agent.
 * `agent-roles`: the roles of the agents to mask for. Use `*` for every agent that has a role.
 * `enabled`: set it to `false` to drop the entry. A dropped entry masks nothing and constructs nothing.

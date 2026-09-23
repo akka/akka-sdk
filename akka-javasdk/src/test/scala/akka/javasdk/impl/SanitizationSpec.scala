@@ -4,7 +4,7 @@
 
 package akka.javasdk.impl
 
-import akka.javasdk.impl.ConfiguredSanitizer.UseFor
+import akka.javasdk.impl.ConfiguredSanitizer.ApplyAt
 import akka.runtime.sdk.spi.SpiDataSanitizer
 import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
@@ -55,14 +55,14 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
       val sanitizer = parseOne("""
         "pii-detector" {
           class = "com.example.PiiSanitizer"
-          use-for = ["model-input"]
+          apply-at = ["model-call"]
           agent-roles = ["customer-facing"]
           threshold = 0.8
         }
         """)
 
       sanitizer.kind shouldEqual SanitizerKind.Implementation("com.example.PiiSanitizer")
-      sanitizer.useFor shouldEqual Set(UseFor.ModelInput)
+      sanitizer.applyAt shouldEqual Set(ApplyAt.ModelCall)
       sanitizer.agentRoles shouldEqual Set("customer-facing")
       sanitizer.config.getDouble("threshold") shouldEqual 0.8
     }
@@ -79,7 +79,7 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
 
     "fail when no detector is defined" in {
       failure("""
-        "nothing" { use-for = ["logs"] }
+        "nothing" { apply-at = ["logs"] }
         """) should include(
         "Sanitizer [nothing] must define exactly one of [pattern, predefined, class], but defines []")
     }
@@ -108,72 +108,72 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         """) should include("Sanitizer [broken] has an invalid [pattern = ([unclosed]")
     }
 
-    "fail for an unknown use-for" in {
+    "fail for an unknown apply-at" in {
       failure("""
         "wrong-point" {
           pattern = "a"
-          use-for = ["model-output"]
+          apply-at = ["model-output"]
         }
         """) should include(
-        "Sanitizer [wrong-point] has unknown use-for [model-output], valid values are " +
-        "[client, logs, model-input, tool-result] or [*]")
+        "Sanitizer [wrong-point] has unknown apply-at [model-output], valid values are " +
+        "[client, logs, model-call, tool-result] or [*]")
     }
 
     "load the same predefined group in more than one entry" in {
       parse("""
-        "cc-logs" { predefined = CREDIT_CARD, use-for = ["logs"] }
-        "cc-model" { predefined = CREDIT_CARD, use-for = ["model-input"], agents = ["billing-agent"] }
+        "cc-logs" { predefined = CREDIT_CARD, apply-at = ["logs"] }
+        "cc-model" { predefined = CREDIT_CARD, apply-at = ["model-call"], agents = ["billing-agent"] }
         """).map(s => s.name -> s.kind).toMap shouldEqual Map(
         "cc-logs" -> SanitizerKind.Predefined("CREDIT_CARD"),
         "cc-model" -> SanitizerKind.Predefined("CREDIT_CARD"))
     }
   }
 
-  "The use-for of a sanitizer" should {
+  "The apply-at of a sanitizer" should {
 
     "default to every application point" in {
       parseOne("""
         "everywhere" { pattern = "a" }
-        """).useFor shouldEqual Set(UseFor.ModelInput, UseFor.ToolResult, UseFor.Logs)
+        """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult, ApplyAt.Logs)
     }
 
     "expand a wildcard to every application point" in {
       parseOne("""
-        "everywhere" { pattern = "a", use-for = ["*"] }
-        """).useFor shouldEqual Set(UseFor.ModelInput, UseFor.ToolResult, UseFor.Logs)
+        "everywhere" { pattern = "a", apply-at = ["*"] }
+        """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult, ApplyAt.Logs)
     }
 
     "hold what it names" in {
       parseOne("""
-        "named" { pattern = "a", use-for = ["model-input", "tool-result"] }
-        """).useFor shouldEqual Set(UseFor.ModelInput, UseFor.ToolResult)
+        "named" { pattern = "a", apply-at = ["model-call", "tool-result"] }
+        """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult)
     }
 
     "leave out log messages for an agent scoped sanitizer that names no point" in {
       parseOne("""
         "scoped" { pattern = "a", agents = ["some-agent"] }
-        """).useFor shouldEqual Set(UseFor.ModelInput, UseFor.ToolResult)
+        """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult)
     }
 
     "include log messages for an implementation that names no point" in {
       parseOne("""
         "implemented" { class = "com.example.PiiSanitizer" }
-        """).useFor shouldEqual Set(UseFor.ModelInput, UseFor.ToolResult, UseFor.Logs)
+        """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult, ApplyAt.Logs)
     }
 
     "hold logs for an implementation that names it" in {
       parseOne("""
         "implemented-logs" {
           class = "com.example.PiiSanitizer"
-          use-for = ["logs"]
+          apply-at = ["logs"]
         }
-        """).useFor shouldEqual Set(UseFor.Logs)
+        """).applyAt shouldEqual Set(ApplyAt.Logs)
     }
 
     "hold client for a sanitizer that masks nothing on its own" in {
       parseOne("""
-        "by-name-only" { pattern = "a", use-for = ["client"] }
-        """).useFor shouldEqual Set(UseFor.Client)
+        "by-name-only" { pattern = "a", apply-at = ["client"] }
+        """).applyAt shouldEqual Set(ApplyAt.Client)
     }
 
     "fail when client is combined with agents" in {
@@ -181,7 +181,7 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         "agent-client" {
           pattern = "a"
           agents = ["some-agent"]
-          use-for = ["client"]
+          apply-at = ["client"]
         }
         """) should include(
         "Sanitizer [agent-client] cannot combine [agents] or [agent-roles] with the [client] application point")
@@ -192,7 +192,7 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         "agent-logs" {
           pattern = "a"
           agents = ["some-agent"]
-          use-for = ["logs"]
+          apply-at = ["logs"]
         }
         """) should include(
         "Sanitizer [agent-logs] cannot combine [agents] or [agent-roles] with the [logs] application point")
@@ -203,7 +203,7 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         "role-logs" {
           pattern = "a"
           agent-roles = ["customer-facing"]
-          use-for = ["logs"]
+          apply-at = ["logs"]
         }
         """) should include(
         "Sanitizer [role-logs] cannot combine [agents] or [agent-roles] with the [logs] application point")
@@ -258,8 +258,8 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
     "carry the pattern and predefined entries with their application points" in {
       val settings = Sanitization.loadSettings(ConfigFactory.load(ConfigFactory.parseString("""
         akka.javasdk.sanitization.sanitizers {
-          "warm-colors" { pattern = "(?i)(red|orange|yellow)", use-for = ["logs"] }
-          "account-ids" { pattern = "ACC-[0-9]+", use-for = ["client"] }
+          "warm-colors" { pattern = "(?i)(red|orange|yellow)", apply-at = ["logs"] }
+          "account-ids" { pattern = "ACC-[0-9]+", apply-at = ["client"] }
           "credit-card" { predefined = CREDIT_CARD }
           "pii-detector" { class = "com.example.PiiSanitizer" }
           "off" { pattern = "a", enabled = false }
@@ -269,11 +269,11 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
       // The runtime reads no application point as every point. Log messages are not a point of an agent, so an
       // entry that only masks them says here that it masks nothing on its own. It masks log messages as a log
       // sanitizer of the setup carrier.
-      settings.sanitizers.map(entry => entry.name -> (entry.getClass, entry.useFor)).toMap shouldEqual Map(
-        "warm-colors" -> (classOf[SpiDataSanitizer.Regex], Set(SpiDataSanitizer.UseFor.Client)),
-        "account-ids" -> (classOf[SpiDataSanitizer.Regex], Set(SpiDataSanitizer.UseFor.Client)),
+      settings.sanitizers.map(entry => entry.name -> (entry.getClass, entry.applyAt)).toMap shouldEqual Map(
+        "warm-colors" -> (classOf[SpiDataSanitizer.Regex], Set(SpiDataSanitizer.ApplyAt.Client)),
+        "account-ids" -> (classOf[SpiDataSanitizer.Regex], Set(SpiDataSanitizer.ApplyAt.Client)),
         "credit-card" -> (classOf[SpiDataSanitizer.Predefined],
-        Set(SpiDataSanitizer.UseFor.ModelInput, SpiDataSanitizer.UseFor.ToolResult)))
+        Set(SpiDataSanitizer.ApplyAt.ModelCall, SpiDataSanitizer.ApplyAt.ToolResult)))
 
       settings.sanitizers.map(_.enabledForComponents).toSet shouldEqual Set(Set.empty)
       settings.sanitizers.collectFirst { case predefined: SpiDataSanitizer.Predefined =>
@@ -307,7 +307,7 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
           ConfigFactory
             .parseString("""
             akka.javasdk.sanitization.sanitizers {
-              "agent-logs" { pattern = "a", agents = ["some-agent"], use-for = ["logs"] }
+              "agent-logs" { pattern = "a", agents = ["some-agent"], apply-at = ["logs"] }
             }
             """)
             .withFallback(ConfigFactory.load())))

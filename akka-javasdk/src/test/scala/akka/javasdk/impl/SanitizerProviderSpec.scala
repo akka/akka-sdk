@@ -65,11 +65,11 @@ object SanitizerProviderSpec {
     akka.javasdk.sanitization.sanitizers {
       "logs-only" {
         pattern = "(secret)"
-        use-for = ["logs"]
+        apply-at = ["logs"]
       }
       "implemented-logs" {
         class = "akka.javasdk.impl.SanitizerProviderSpec$$NoContextSanitizer"
-        use-for = ["logs"]
+        apply-at = ["logs"]
       }
       "agent-scoped" {
         pattern = "(other)"
@@ -77,7 +77,7 @@ object SanitizerProviderSpec {
       }
       "by-name-only" {
         pattern = "(account)"
-        use-for = ["client"]
+        apply-at = ["client"]
       }
     }
     """)
@@ -359,10 +359,10 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val (provider, _) = newProvider(system, scopedConfig)
 
       // an empty set is every agent to the runtime, which is the opposite of what the entry asks for
-      provider.spiSanitizers(_ => Set.empty).map(e => e.useFor -> e.enabledForComponents) shouldEqual Seq(
-        Set(SpiDataSanitizer.UseFor.Client) -> Set.empty)
-      provider.spiSanitizers(_ => Set("some-agent")).map(e => e.useFor -> e.enabledForComponents) shouldEqual Seq(
-        Set(SpiDataSanitizer.UseFor.ModelInput, SpiDataSanitizer.UseFor.ToolResult) -> Set("some-agent"))
+      provider.spiSanitizers(_ => Set.empty).map(e => e.applyAt -> e.enabledForComponents) shouldEqual Seq(
+        Set(SpiDataSanitizer.ApplyAt.Client) -> Set.empty)
+      provider.spiSanitizers(_ => Set("some-agent")).map(e => e.applyAt -> e.enabledForComponents) shouldEqual Seq(
+        Set(SpiDataSanitizer.ApplyAt.ModelCall, SpiDataSanitizer.ApplyAt.ToolResult) -> Set("some-agent"))
     }
 
     "leave out a disabled entry" in {
@@ -425,12 +425,12 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         case _                                             => Set.empty
       }
 
-      val nothingOnItsOwn = Set[SpiDataSanitizer.UseFor](SpiDataSanitizer.UseFor.Client)
-      entries.map(e => e.name -> (e.useFor, e.enabledForComponents)).toMap shouldEqual Map(
+      val nothingOnItsOwn = Set[SpiDataSanitizer.ApplyAt](SpiDataSanitizer.ApplyAt.Client)
+      entries.map(e => e.name -> (e.applyAt, e.enabledForComponents)).toMap shouldEqual Map(
         "logs-only" -> (nothingOnItsOwn, Set.empty),
         "implemented-logs" -> (nothingOnItsOwn, Set.empty),
         "by-name-only" -> (nothingOnItsOwn, Set.empty),
-        "agent-scoped" -> (Set(SpiDataSanitizer.UseFor.ModelInput, SpiDataSanitizer.UseFor.ToolResult),
+        "agent-scoped" -> (Set(SpiDataSanitizer.ApplyAt.ModelCall, SpiDataSanitizer.ApplyAt.ToolResult),
         Set("some-agent")))
     }
   }
