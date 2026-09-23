@@ -126,6 +126,17 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.ja
 <1> Fetch the full record for an interaction id. Blocks the calling thread — safe on a virtual thread — and throws `NoSuchElementException` if no interaction exists with that id.
 <2> The non-blocking variant.
 
+To go the other way, from an interaction to what was concluded about it, fetch its evaluations:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.java[LedgerUsage.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.java[tag=evaluations]
+----
+<1> The evaluations recorded about that interaction, newest first. An evaluation is recorded when it terminates, so one that is still running is not in the list, and an interaction without evaluations returns an empty list.
+
+The id to pass comes from `AgentReply.interactionId()`, which a call made with `withDetailedReply()` returns, or from `EvaluationContext.subject().interactionId()` inside an evaluator.
+
 === The interaction record
 
 link:{attachmentsdir}/api/akka/javasdk/ledger/InteractionRecord.html[`InteractionRecord`] holds the full record of a single interaction, plus convenience accessors for the common cases:

@@ -5,6 +5,7 @@
 package akka.javasdk.impl.ledger
 
 import java.net.URI
+import java.util
 import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
 
@@ -59,6 +60,18 @@ private[javasdk] final class LedgerClientImpl(spiLedgerClient: SpiLedgerClient, 
 
   override def getEvaluationAsync(evaluationId: String): CompletionStage[EvaluationRecord] =
     spiLedgerClient.getEvaluation(evaluationId).map(LedgerClientImpl.toEvaluationRecord).asJava
+
+  override def getEvaluations(interactionId: String): util.List[EvaluationRecord] =
+    try getEvaluationsAsync(interactionId).toCompletableFuture.join()
+    catch {
+      case e: CompletionException => throw ErrorHandling.unwrapCompletionException(e)
+    }
+
+  override def getEvaluationsAsync(interactionId: String): CompletionStage[util.List[EvaluationRecord]] =
+    spiLedgerClient
+      .getEvaluations(interactionId, from = None, limit = LedgerClientImpl.EvaluationsLimit)
+      .map(_.map(LedgerClientImpl.toEvaluationRecord).asJava)
+      .asJava
 }
 
 /**
@@ -66,6 +79,9 @@ private[javasdk] final class LedgerClientImpl(spiLedgerClient: SpiLedgerClient, 
  */
 @InternalApi
 private[ledger] object LedgerClientImpl {
+
+  /** Cap on the evaluations returned for one interaction, matching the ledger page size. */
+  private val EvaluationsLimit = 100
 
   def toInteractionRecord(record: SpiLedger.InteractionRecord): InteractionRecord =
     new InteractionRecord(

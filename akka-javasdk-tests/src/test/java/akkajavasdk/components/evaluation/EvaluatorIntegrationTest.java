@@ -11,12 +11,11 @@ import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akkajavasdk.Junit5LogCapturing;
-import java.util.NoSuchElementException;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -50,11 +49,6 @@ public class EvaluatorIntegrationTest extends TestKitSupport {
               }
             }
             """);
-  }
-
-  @BeforeEach
-  public void beforeEach() {
-    ResponseQualityEvaluator.clearEvaluationIds();
   }
 
   @AfterEach
@@ -141,27 +135,29 @@ public class EvaluatorIntegrationTest extends TestKitSupport {
 
   /**
    * Ask the evaluated agent, then await the evaluation the interaction triggered, as recorded in
-   * the ledger: first the id the evaluator ran with, then the record the runtime writes once the
-   * evaluation terminates.
+   * the ledger. The reply carries the id of the interaction, which is what the evaluations are
+   * recorded against.
    */
   private EvaluationRecord evaluationFor(String question) {
-    String answer =
+    var reply =
         componentClient
             .forAgent()
             .inSession(UUID.randomUUID().toString())
             .method(StatelessEvaluatedAgent::ask)
+            .withDetailedReply()
             .invoke(question);
-    assertThat(answer).isNotBlank();
+    assertThat(reply.value()).isNotBlank();
 
-    Awaitility.await()
-        .atMost(30, TimeUnit.SECONDS)
-        .untilAsserted(() -> assertThat(ResponseQualityEvaluator.evaluationIds()).hasSize(1));
+    String interactionId = reply.interactionId().orElseThrow();
 
-    String evaluationId = ResponseQualityEvaluator.evaluationIds().iterator().next();
+    List<EvaluationRecord> records =
+        Awaitility.await()
+            .atMost(30, TimeUnit.SECONDS)
+            .until(
+                () -> getLedgerClient().getEvaluations(interactionId), found -> !found.isEmpty());
 
-    return Awaitility.await()
-        .atMost(30, TimeUnit.SECONDS)
-        .ignoreException(NoSuchElementException.class)
-        .until(() -> getLedgerClient().getEvaluation(evaluationId), record -> record != null);
+    assertThat(records).hasSize(1);
+    assertThat(records.getFirst().interactionId()).isEqualTo(interactionId);
+    return records.getFirst();
   }
 }
