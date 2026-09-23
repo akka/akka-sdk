@@ -34,6 +34,7 @@ import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.Context
+import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -259,7 +260,12 @@ object GuardrailProviderSpec {
   class WrongGuard
 }
 
-class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matchers with LogCapturing {
+class GuardrailProviderSpec
+    extends ScalaTestWithActorTestKit
+    with AnyWordSpecLike
+    with Matchers
+    with OptionValues
+    with LogCapturing {
   import GuardrailProviderSpec._
 
   "The GuardrailProvider" should {
@@ -633,6 +639,145 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         Await.result(g.beforeAgentResponseGuardrails.head.evaluate(agentResponseContent("final reply")), 3.seconds)
       result.passed shouldBe false
       result.explanation shouldBe "model-agent|session-1|test-model|final reply"
+    }
+
+    "report a startup error only for a streaming agent with a blocking response guardrail" in {
+      GuardrailProvider.streamingResponseGuardrailError("a", streaming = true, Seq("guard")) shouldBe defined
+      GuardrailProvider.streamingResponseGuardrailError("a", streaming = false, Seq("guard")) shouldBe empty
+      GuardrailProvider.streamingResponseGuardrailError("a", streaming = true, Seq.empty) shouldBe empty
+      GuardrailProvider.streamingResponseGuardrailError("a", streaming = false, Seq.empty) shouldBe empty
+    }
+
+    "name the agent and every blocking guardrail in the startup error" in {
+      val error =
+        GuardrailProvider
+          .streamingResponseGuardrailError("model-agent", streaming = true, Seq("first guard", "second guard"))
+          .value
+
+      error should include("Agent [model-agent]")
+      error should include("first guard")
+      error should include("second guard")
+      error should include("Agent.Effect")
+      error should include("report-only")
+    }
+
+    "name a blocking response guardrail bound through the agent wildcard" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "wildcard agent guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$EchoingResponseGuard"
+              agents = ["*"]
+              category = MODEL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      provider.agentGuardrails("any-agent", role = None).blockingResponseGuardrailLabels shouldBe
+      Seq("category [MODEL_POLICY], name [wildcard agent guard]")
+    }
+
+    "name a blocking response guardrail bound through an agent role" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "role guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$EchoingResponseGuard"
+              agent-roles = ["streaming"]
+              category = MODEL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      provider.agentGuardrails("any-agent", role = Some("streaming")).blockingResponseGuardrailLabels shouldBe
+      Seq("category [MODEL_POLICY], name [role guard]")
+    }
+
+    "name a blocking text guardrail declared with the use-for wildcard" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "wildcard use-for guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agents = ["model-agent"]
+              category = TOXIC
+              use-for = ["*"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      provider.agentGuardrails("model-agent", role = None).blockingResponseGuardrailLabels shouldBe
+      Seq("category [TOXIC], name [wildcard use-for guard]")
+    }
+
+    "name the blocking guardrails of both response boundaries" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "blocking agent response guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$EchoingResponseGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+            }
+            "report-only agent response guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$EchoingResponseGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+              report-only = true
+            }
+            "blocking legacy guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agents = ["model-agent"]
+              category = TOXIC
+              use-for = ["model-response"]
+            }
+            "blocking request guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agents = ["model-agent"]
+              category = TOXIC
+              use-for = ["model-request"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val g = provider.agentGuardrails("model-agent", role = None)
+
+      g.blockingResponseGuardrailLabels should contain theSameElementsAs Seq(
+        "category [MODEL_POLICY], name [blocking agent response guard]",
+        "category [TOXIC], name [blocking legacy guard]")
+    }
+
+    "name no blocking guardrail when every response guardrail is report-only" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "report-only agent response guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$EchoingResponseGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+              report-only = true
+            }
+            "report-only legacy guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agents = ["model-agent"]
+              category = TOXIC
+              use-for = ["model-response"]
+              report-only = true
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      provider.agentGuardrails("model-agent", role = None).blockingResponseGuardrailLabels shouldBe empty
     }
 
     "register an AgentResponseGuardrail and produce a working SpiAgent.Guardrail" in {

@@ -103,6 +103,18 @@ import org.slf4j.LoggerFactory
 
   final case class GuardrailEntry(configuredGuardrail: ConfiguredGuardrail, guardrail: Guardrail)
 
+  /** The startup error for an agent that streams its reply and binds blocking response guardrails. */
+  def streamingResponseGuardrailError(
+      componentId: String,
+      streaming: Boolean,
+      blockingGuardrailLabels: Seq[String]): Option[String] =
+    Option.when(streaming && blockingGuardrailLabels.nonEmpty) {
+      s"Agent [$componentId] streams its reply, so it cannot use the blocking response " +
+      s"guardrail(s): ${blockingGuardrailLabels.mkString("; ")}. Give the agent a command handler that returns " +
+      "Agent.Effect, bind the guardrail to this agent through a separate report-only entry, or stop binding " +
+      "it to this agent. Marking the existing entry report-only stops it blocking on every agent bound to it."
+    }
+
   final class AgentGuardrails(val entries: Seq[GuardrailEntry], tracerFactory: () => Tracer) {
     private def collectGuardrails(useFor: UseFor): Seq[SpiAgent.Guardrail] =
       entries.collect {
@@ -125,6 +137,13 @@ import org.slf4j.LoggerFactory
       entries.collect { case entry @ GuardrailEntry(_, _: AgentResponseGuardrail) =>
         toSpiGuardrail(entry, tracerFactory)
       }
+
+    // The category and name of each blocking guardrail at before-agent-response or
+    // model-response.
+    val blockingResponseGuardrailLabels: Seq[String] =
+      (beforeAgentResponseGuardrails ++ modelResponseGuardrails)
+        .filterNot(_.reportOnly)
+        .map(guardrail => s"category [${guardrail.category}], name [${guardrail.name}]")
 
     // The model-side guardrails grouped by their SPI boundaries, as handed to the runtime.
     // MCP and before-tool-call guardrails travel on their descriptors instead.

@@ -723,21 +723,6 @@
                 <version>1.18.1</version>
             </dependency>
             <dependency>
-                <groupId>io.akka</groupId>
-                <artifactId>akka-runtime-core_2.13</artifactId>
-                <version>1.6.17-44-07273072-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>io.akka</groupId>
-                <artifactId>akka-runtime-dev_2.13</artifactId>
-                <version>1.6.17-44-07273072-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>io.akka</groupId>
-                <artifactId>akka-sdk-spi_2.13</artifactId>
-                <version>1.6.17-44-07273072-SNAPSHOT</version>
-            </dependency>
-            <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-api</artifactId>
                 <version>1.83.0</version>
@@ -2223,21 +2208,6 @@
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-open-ai</artifactId>
             <version>1.18.1</version>
-        </dependency>
-        <dependency>
-            <groupId>io.akka</groupId>
-            <artifactId>akka-runtime-core_2.13</artifactId>
-            <version>1.6.17-44-07273072-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>io.akka</groupId>
-            <artifactId>akka-runtime-dev_2.13</artifactId>
-            <version>1.6.17-44-07273072-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>io.akka</groupId>
-            <artifactId>akka-sdk-spi_2.13</artifactId>
-            <version>1.6.17-44-07273072-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
