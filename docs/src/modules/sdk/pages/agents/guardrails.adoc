@@ -45,7 +45,7 @@ All three return a link:{attachmentsdir}/api/akka/javasdk/agent/Decision.html[`D
 [NOTE]
 ====
 The earlier link:{attachmentsdir}/api/akka/javasdk/agent/TextGuardrail.html[`TextGuardrail`] interface — which returns a `Guardrail.Result` (a boolean plus explanation) rather than a `Decision` — is deprecated for removal.
-Existing `TextGuardrail` implementations still run, and the built-in `SimilarityGuard` (see <<_similarity_guardrail>>) is configured the same way.
+Existing `TextGuardrail` implementations still run.
 New guardrails should implement `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail`.
 ====
 
@@ -165,7 +165,7 @@ The name and the category are reported in logs, metrics, and traces. The `catego
 
 === Configuring a deprecated TextGuardrail
 
-A `TextGuardrail`, including the built-in `SimilarityGuard`, requires the `use-for` property.
+A `TextGuardrail`, including the deprecated built-in `SimilarityGuard`, requires the `use-for` property.
 It accepts one or more of `model-request`, `model-response`, `mcp-tool-request`, and `mcp-tool-response`, or `*` for all four.
 The `model-request` and `model-response` values are deprecated. A `model-request` guardrail becomes a `ModelCallGuardrail`, and a `model-response` guardrail becomes an `AgentResponseGuardrail`.
 The `mcp-tool-request` and `mcp-tool-response` values are not deprecated. A `TextGuardrail` is the only guardrail type that the runtime evaluates for MCP tool calls.
@@ -203,19 +203,18 @@ A `Decision.Fail` is always propagated as a failure regardless of `report-only`,
 
 == Similarity guardrail
 
-The built-in link:{attachmentsdir}/api/akka/javasdk/agent/SimilarityGuard.html[`SimilarityGuard`] evaluates the text by making a similarity search in a dataset of "bad examples". If the similarity exceeds a threshold, the result is flagged as blocked.
+The built-in link:{attachmentsdir}/api/akka/javasdk/agent/ModelCallSimilarityGuard.html[`ModelCallSimilarityGuard`] is a `ModelCallGuardrail`. Before each model call, the runtime searches a dataset of "bad examples" for matches. It checks the user message and the tool results. If the similarity reaches the threshold, the runtime denies the call.
 
-This is how to configure the `SimilarityGuard`:
+This is how to configure the `ModelCallSimilarityGuard`:
 
 [source,conf,indent=0]
 .src/main/resources/application.conf
 ----
 akka.javasdk.agent.guardrails {
   "jailbreak guard" {
-    class = "akka.javasdk.agent.SimilarityGuard"
+    class = "akka.javasdk.agent.ModelCallSimilarityGuard"
     agents = ["planner-agent", "weather-agent"]
     category = JAILBREAK
-    use-for = ["model-request"]
     threshold = 0.75
     bad-examples-resource-dir = "guardrail/jailbreak"
   }
@@ -225,6 +224,27 @@ akka.javasdk.agent.guardrails {
 Here, it is using predefined examples of jailbreak prompts in `guardrail/jailbreak`. Those have been incorporated from https://github.com/verazuo/jailbreak_llms/[https://github.com/verazuo/jailbreak_llms, window="new"], but you can define your own examples and place in a subdirectory of  `src/main/resources/`. All text files in the configured `bad-examples-resource-dir` are included in the similarity search.
 
 You can use this for other things than jailbreak attempt detection.
+
+The SDK ships this guardrail as the built-in `"default model-call jailbreak"`, with no agents selected by default. To enable it, set `agents` or `agent-roles`:
+
+[source,conf,indent=0]
+.src/main/resources/application.conf
+----
+akka.javasdk.agent.guardrails {
+  "default model-call jailbreak" {
+    agents = ["planner-agent", "weather-agent"]
+  }
+}
+----
+
+[NOTE]
+====
+The link:{attachmentsdir}/api/akka/javasdk/agent/SimilarityGuard.html[`SimilarityGuard`] class and the built-in `"default jailbreak"` guardrail are deprecated.
+They still work with `use-for`. See <<_configuring_a_deprecated_textguardrail,Configuring a deprecated TextGuardrail>>.
+For `use-for = ["model-request"]`, use `ModelCallSimilarityGuard` or `"default model-call jailbreak"` instead.
+For `mcp-tool-request` and `mcp-tool-response`, `SimilarityGuard` has no replacement. Keep using `SimilarityGuard` for them.
+To move off `"default jailbreak"`, enable `"default model-call jailbreak"` and remove `"default jailbreak"` from your agents. Do not change the `class` of `"default jailbreak"`. It keeps its `use-for` from the SDK defaults. A `ModelCallSimilarityGuard` must not define `use-for`.
+====
 
 == Testing
 

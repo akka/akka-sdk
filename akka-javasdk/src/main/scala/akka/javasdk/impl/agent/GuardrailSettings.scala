@@ -54,10 +54,18 @@ import com.typesafe.config.ConfigObject
 
   sealed trait UseFor
   final object UseFor {
-    final case object ModelRequest extends UseFor
-    final case object ModelResponse extends UseFor
-    final case object McpToolRequest extends UseFor
-    final case object McpToolResponse extends UseFor
+    final case object ModelRequest extends UseFor {
+      override def toString: String = "model-request"
+    }
+    final case object ModelResponse extends UseFor {
+      override def toString: String = "model-response"
+    }
+    final case object McpToolRequest extends UseFor {
+      override def toString: String = "mcp-tool-request"
+    }
+    final case object McpToolResponse extends UseFor {
+      override def toString: String = "mcp-tool-response"
+    }
 
     // Placeholder for a "*" declaration. It expands to all four values above.
     final case object Wildcard extends UseFor {
