@@ -12,6 +12,11 @@ Current versions
 
 == September 2026
 
+* https://github.com/akka/akka-sdk/releases/tag/v3.6.4[Akka SDK 3.6.4]
+- Runtime 1.6.16
+- Bedrock model provider option to place the prompt cache point after the last user message
+- Testkit runtime port improvements
+
 * xref:release-notes/runtime/1.6.17.adoc[Akka Runtime 1.6.17]
 - Optimization of views and consumers that catch up over a long event backlog, and debug tracing fixes
 
