@@ -1,24 +1,23 @@
-= akka services components list-ids
+= akka services components workflows get-state
 
-List recently active IDs for the given stateful component served by this service within specified time window (24h by default).
+Get the state for the given service, workflow component and id.
 
 == Synopsis
 
-The `akka service components list-ids` command lists ids for the given stateful component in this service.
+The `akka service components workflows get-state` command gets the state for the given ID of the workflow.
 
 ----
-akka services components list-ids SERVICE_NAME COMPONENT_ID [flags]
+akka services components workflows get-state SERVICE_NAME COMPONENT_ID WORKFLOW_ID [flags]
 ----
 
 == Options
 
 ----
-  -h, --help                   help for list-ids
-      --limit int32            Maximum number of ids to return. (default 100)
-      --owner string           the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string         project to use if not using the default configured project
-      --region string          region to use if project has more than one region
-      --time-window duration   How far back to look for ids, e.g. 1h, 24h. (default 24h0m0s)
+  -h, --help             help for get-state
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
+      --raw              Use to specify that messages should not be decoded, but should be a raw format.
+      --region string    region to use if project has more than one region
 ----
 
 == Options inherited from parent commands
@@ -39,7 +38,7 @@ akka services components list-ids SERVICE_NAME COMPONENT_ID [flags]
 
 == SEE ALSO
 
-* link:akka_services_components.html[akka services components]	 - Inspect components of a service.
+* link:akka_services_components_workflows.html[akka services components workflows]	 - Inspect and manage workflow executions.
 
 [discrete]
 
