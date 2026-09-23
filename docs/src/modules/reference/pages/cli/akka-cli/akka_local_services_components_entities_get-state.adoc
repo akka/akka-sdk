@@ -1,15 +1,23 @@
-= akka services components
+= akka local services components entities get-state
 
-Inspect components of a service.
+Get the state for the given service, entity component and id.
 
 == Synopsis
 
-The `akka service components` commands provides a way to inspect the components of a service but also to peek at the data stored in the different entities.
+The `akka local service components entities get-state` command gets the state for the given ID of the entity.
+
+----
+akka local services components entities get-state SERVICE_NAME COMPONENT_ID ENTITY_ID [flags]
+----
 
 == Options
 
 ----
-  -h, --help   help for components
+  -h, --help             help for get-state
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
+      --raw              Use to specify that messages should not be decoded, but should be a raw format.
+      --region string    region to use if project has more than one region
 ----
 
 == Options inherited from parent commands
@@ -30,13 +38,7 @@ The `akka service components` commands provides a way to inspect the components 
 
 == SEE ALSO
 
-* link:akka_services.html[akka services]	 - Manage and deploy services on Akka.
-* link:akka_services_components_agents.html[akka services components agents]	 - Manage autonomous agent components.
-* link:akka_services_components_entities.html[akka services components entities]	 - Manage entity components.
-* link:akka_services_components_list.html[akka services components list]	 - List the components served by this service.
-* link:akka_services_components_list-interactions.html[akka services components list-interactions]	 - List interactions from the Agent for the given service and Agent id.
-* link:akka_services_components_list-timers.html[akka services components list-timers]	 - List the timers registered in this service.
-* link:akka_services_components_workflows.html[akka services components workflows]	 - Inspect and manage workflow executions.
+* link:akka_local_services_components_entities.html[akka local services components entities]	 - Manage entity components.
 
 [discrete]
 

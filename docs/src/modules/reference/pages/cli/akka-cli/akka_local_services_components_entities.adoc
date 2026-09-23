@@ -1,23 +1,15 @@
-= akka local services components get-state
+= akka local services components entities
 
-List the state for the given service, stateful component and id.
+Manage entity components.
 
 == Synopsis
 
-The `akka local service components get-state` command gets the state for the given ID of the stateful component.
-
-----
-akka local services components get-state SERVICE_NAME COMPONENT_ID ID [flags]
-----
+The `akka local service components entities` commands manage individual entity instances of a service.
 
 == Options
 
 ----
-  -h, --help             help for get-state
-      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string   project to use if not using the default configured project
-      --raw              Use to specify that messages should not be decoded, but should be a raw format.
-      --region string    region to use if project has more than one region
+  -h, --help   help for entities
 ----
 
 == Options inherited from parent commands
@@ -39,6 +31,11 @@ akka local services components get-state SERVICE_NAME COMPONENT_ID ID [flags]
 == SEE ALSO
 
 * link:akka_local_services_components.html[akka local services components]	 - Inspect components of a service.
+* link:akka_local_services_components_entities_delete-snapshot.html[akka local services components entities delete-snapshot]	 - Delete the stored state snapshot of a single entity instance.
+* link:akka_local_services_components_entities_force-snapshot.html[akka local services components entities force-snapshot]	 - Create a state snapshot of a single entity instance now.
+* link:akka_local_services_components_entities_get-state.html[akka local services components entities get-state]	 - Get the state for the given service, entity component and id.
+* link:akka_local_services_components_entities_list-events.html[akka local services components entities list-events]	 - List events from the event journal for the given service, entity component and id.
+* link:akka_local_services_components_entities_list-ids.html[akka local services components entities list-ids]	 - List recently active IDs for the given entity component served by this service within specified time window (24h by default).
 
 [discrete]
 

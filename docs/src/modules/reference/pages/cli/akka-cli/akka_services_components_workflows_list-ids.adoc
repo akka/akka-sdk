@@ -1,15 +1,24 @@
-= akka services components
+= akka services components workflows list-ids
 
-Inspect components of a service.
+List recently active IDs for the given workflow component served by this service within specified time window (24h by default).
 
 == Synopsis
 
-The `akka service components` commands provides a way to inspect the components of a service but also to peek at the data stored in the different entities.
+The `akka service components workflows list-ids` command lists ids for the given workflow component in this service.
+
+----
+akka services components workflows list-ids SERVICE_NAME COMPONENT_ID [flags]
+----
 
 == Options
 
 ----
-  -h, --help   help for components
+  -h, --help                   help for list-ids
+      --limit int32            Maximum number of ids to return. (default 100)
+      --owner string           the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string         project to use if not using the default configured project
+      --region string          region to use if project has more than one region
+      --time-window duration   How far back to look for ids, e.g. 1h, 24h. (default 24h0m0s)
 ----
 
 == Options inherited from parent commands
@@ -30,12 +39,6 @@ The `akka service components` commands provides a way to inspect the components 
 
 == SEE ALSO
 
-* link:akka_services.html[akka services]	 - Manage and deploy services on Akka.
-* link:akka_services_components_agents.html[akka services components agents]	 - Manage autonomous agent components.
-* link:akka_services_components_entities.html[akka services components entities]	 - Manage entity components.
-* link:akka_services_components_list.html[akka services components list]	 - List the components served by this service.
-* link:akka_services_components_list-interactions.html[akka services components list-interactions]	 - List interactions from the Agent for the given service and Agent id.
-* link:akka_services_components_list-timers.html[akka services components list-timers]	 - List the timers registered in this service.
 * link:akka_services_components_workflows.html[akka services components workflows]	 - Inspect and manage workflow executions.
 
 [discrete]
