@@ -412,6 +412,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
+      # The prettier plugin downloads its own node from nodejs.org. This cache key does not
+      # depend on the parent pom, so a parent pom change does not force a fresh download.
+      - name: Cache prettier node install
+        # https://github.com/actions/cache/releases
+        uses: actions/cache@v5
+        with:
+          path: ~/.m2/repository/com/hubspot/maven/plugins/prettier-maven-plugin
+          key: ${{ runner.os }}-prettier-node-0.22
+
       - name: Download io.akka dependencies
         # https://github.com/actions/download-artifact/releases
         uses: actions/download-artifact@v8
@@ -436,7 +445,13 @@ jobs:
           export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
           cd samples/${DIR}
           echo "Running mvn formatting check on ${DIR} with SDK version: '${SDK_VERSION}'"
-          mvn -Pformatting prettier:check
+          # retry to survive a timeout while the prettier plugin downloads node
+          for attempt in 1 2 3; do
+            mvn -Pformatting prettier:check && exit 0
+            echo "prettier:check attempt ${attempt} failed"
+            sleep 15
+          done
+          exit 1
 
       - name: ${{ matrix.sample }} test-compile
         env:
