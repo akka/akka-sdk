@@ -221,11 +221,26 @@ public class SanitizerIntegrationTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldMaskWithAPredefinedGroupForTheAgentTheEntryNames() {
+    var scopedCapture = captureUserMessage(scopedAgentModel);
+    var otherCapture = captureUserMessage(otherAgentModel);
+
+    askScopedAgent("mail me at someone@example.com");
+    askOtherAgent("mail me at someone@example.com");
+
+    // the group is also selected by an entry that masks log messages, and that one masks no agent
+    assertThat(scopedCapture.get()).contains("mail me at " + "*".repeat(19));
+    assertThat(otherCapture.get()).contains("mail me at someone@example.com");
+  }
+
+  @Test
   public void shouldMaskByName() {
     assertThat(getSanitizerClient().sanitize("agent-scoped", "a scopedsecret here"))
         .isEqualTo("a ************ here");
     assertThat(getSanitizerClient().sanitize("recording", "a recordedsecret here"))
         .isEqualTo("a [recorded] here");
+    assertThat(getSanitizerClient().sanitize("email-in-logs", "mail someone@example.com"))
+        .isEqualTo("mail " + "*".repeat(19));
 
     var async =
         getSanitizerClient()

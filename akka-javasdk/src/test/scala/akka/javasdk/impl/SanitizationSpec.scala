@@ -41,7 +41,6 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         case SanitizerKind.Pattern(regex) => regex.regex shouldEqual """(?i)\bACC-[0-9]{8}\b"""
         case other                        => fail(s"unexpected kind [$other]")
       }
-      sanitizer.runtimeName shouldEqual "internal-account-ids"
     }
 
     "load a predefined sanitizer" in {
@@ -50,8 +49,6 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         """)
 
       sanitizer.kind shouldEqual SanitizerKind.Predefined("CREDIT_CARD")
-      // The runtime resolves the patterns of a predefined entry by the name it is registered under.
-      sanitizer.runtimeName shouldEqual "CREDIT_CARD"
     }
 
     "load an implementation sanitizer with its own settings" in {
@@ -122,11 +119,13 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         "[logs, model-input, tool-result] or [*]")
     }
 
-    "fail when two entries are handed to the runtime under the same name" in {
-      failure("""
+    "load the same predefined group in more than one entry" in {
+      parse("""
         "cc-logs" { predefined = CREDIT_CARD, use-for = ["logs"] }
-        "cc-model" { predefined = CREDIT_CARD, use-for = ["model-input"] }
-        """) should include("Sanitizers [cc-logs, cc-model] are all handed to the runtime as [CREDIT_CARD]")
+        "cc-model" { predefined = CREDIT_CARD, use-for = ["model-input"], agents = ["billing-agent"] }
+        """).map(s => s.name -> s.kind).toMap shouldEqual Map(
+        "cc-logs" -> SanitizerKind.Predefined("CREDIT_CARD"),
+        "cc-model" -> SanitizerKind.Predefined("CREDIT_CARD"))
     }
   }
 
@@ -255,10 +254,13 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         (classOf[SpiDataSanitizer.Regex], "warm-colors", Set.empty[SpiDataSanitizer.UseFor]),
         (
           classOf[SpiDataSanitizer.Predefined],
-          "CREDIT_CARD",
+          "credit-card",
           Set(SpiDataSanitizer.UseFor.ModelInput, SpiDataSanitizer.UseFor.ToolResult)))
 
       settings.sanitizers.map(_.enabledForComponents) shouldEqual Seq(Set.empty, Set.empty)
+      settings.sanitizers.collectFirst { case predefined: SpiDataSanitizer.Predefined =>
+        predefined.group
+      }.value shouldEqual "CREDIT_CARD"
       settings.sanitizers.collectFirst { case regex: SpiDataSanitizer.Regex =>
         regex.pattern.regex
       }.value shouldEqual "(?i)(red|orange|yellow)"

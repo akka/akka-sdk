@@ -32,22 +32,11 @@ import com.typesafe.config.ConfigValueType
         .collect { case (key, entry) if enabled(entry) => ConfiguredSanitizer(key, entry) }
         .toSeq
 
-    checkUniqueRuntimeNames(configuredSanitizers)
     new SanitizerSettings(configuredSanitizers)
   }
 
   private def enabled(entry: Config): Boolean =
     !entry.hasPath("enabled") || entry.getBoolean("enabled")
-
-  private def checkUniqueRuntimeNames(configuredSanitizers: Seq[ConfiguredSanitizer]): Unit =
-    configuredSanitizers.groupBy(_.runtimeName).foreach {
-      case (runtimeName, entries) if entries.size > 1 =>
-        throw new IllegalArgumentException(
-          s"Sanitizers [${entries.map(_.name).sorted.mkString(", ")}] are all handed to the runtime as " +
-          s"[$runtimeName]. The runtime identifies a predefined sanitizer by its group name, so a group can be " +
-          "configured once and no other entry can take its name.")
-      case _ => ()
-    }
 }
 
 /**
@@ -201,13 +190,6 @@ import com.typesafe.config.ConfigValueType
     agentRoles: Set[String],
     config: Config) {
   require(!name.isBlank, "name must be defined for sanitizer")
-
-  // The runtime resolves the patterns of a predefined entry by the name the entry is registered under, so a
-  // predefined entry travels under its group name. SanitizerProvider translates a by-name call to this.
-  def runtimeName: String = kind match {
-    case SanitizerKind.Predefined(group) => group
-    case _                               => name
-  }
 
   def scoped: Boolean = agents.nonEmpty || agentRoles.nonEmpty
 

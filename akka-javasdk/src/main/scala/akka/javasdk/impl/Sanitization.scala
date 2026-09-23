@@ -52,7 +52,7 @@ private[javasdk] object Sanitization {
       case SanitizerKind.Pattern(regex) =>
         Some(new SpiDataSanitizer.Regex(sanitizer.name, regex, useFor, enabledForComponents, sanitizer.config))
       case SanitizerKind.Predefined(group) =>
-        Some(new SpiDataSanitizer.Predefined(group, useFor, enabledForComponents, sanitizer.config))
+        Some(new SpiDataSanitizer.Predefined(sanitizer.name, group, useFor, enabledForComponents, sanitizer.config))
       case _: SanitizerKind.Implementation => None
     }
   }

@@ -70,6 +70,13 @@ public class LogSanitizerTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldMaskWithAPredefinedGroupThatAnotherEntryAlsoSelects() {
+    var written = write("mail me at someone@example.com");
+
+    assertThat(written).contains("mail me at " + "*".repeat(19));
+  }
+
+  @Test
   public void shouldNotMaskWithAnEntryBoundToAnAgent() {
     var written = write("a scopedsecret in a log message");
 

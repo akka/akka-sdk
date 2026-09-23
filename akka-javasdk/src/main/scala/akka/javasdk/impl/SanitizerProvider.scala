@@ -54,8 +54,8 @@ import org.slf4j.LoggerFactory
   val client: SanitizerClient = new SanitizerClient {
     override def sanitizeAsync(name: String, text: String): CompletionStage[String] =
       byName.get(name) match {
-        case Some(sanitizer) => runtimeSanitizerClient.sanitize(sanitizer.runtimeName, text).asJava
-        case None            => CompletableFuture.failedFuture(notConfigured(name))
+        case Some(_) => runtimeSanitizerClient.sanitize(name, text).asJava
+        case None    => CompletableFuture.failedFuture(notConfigured(name))
       }
 
     override def sanitize(name: String, text: String): String = {
@@ -116,12 +116,12 @@ import org.slf4j.LoggerFactory
     configuredSanitizers.filter(_.masksLogs).map { s =>
       s.kind match {
         case SanitizerKind.Pattern(regex) =>
-          new SpiLogSanitizer.Regex(s.runtimeName, regex, s.config)
-        case SanitizerKind.Predefined(_) =>
-          new SpiLogSanitizer.Predefined(s.runtimeName, s.config)
+          new SpiLogSanitizer.Regex(s.name, regex, s.config)
+        case SanitizerKind.Predefined(group) =>
+          new SpiLogSanitizer.Predefined(s.name, group, s.config)
         case SanitizerKind.Implementation(className) =>
           new SpiLogSanitizer.Custom(
-            s.runtimeName,
+            s.name,
             className,
             new SanitizerProvider.SpiSanitizerAdapter(() => getOrCreate(s.name)),
             s.config)

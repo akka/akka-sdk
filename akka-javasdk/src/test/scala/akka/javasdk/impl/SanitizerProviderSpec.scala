@@ -229,12 +229,12 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       provider.client.sanitize("warm-colors", "the red car") shouldEqual "the *** car"
     }
 
-    "reach a predefined entry under the group name the runtime registered it with" in {
+    "reach a predefined entry under its own name" in {
       val (provider, runtimeClient) = newProvider(system, config)
 
       provider.client.sanitize("credit-card", "some text")
 
-      runtimeClient.lastName shouldEqual Some("CREDIT_CARD")
+      runtimeClient.lastName shouldEqual Some("credit-card")
     }
 
     "report an unknown sanitizer name, with the configured ones" in {
@@ -312,8 +312,9 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       entries.collect { case custom: SpiDataSanitizer.Custom => custom.name } should contain("no-context")
       entries.collectFirst { case regex: SpiDataSanitizer.Regex => regex }.get.enabledForComponents shouldEqual Set(
         "some-agent")
-      entries.collectFirst { case predefined: SpiDataSanitizer.Predefined => predefined.name }.get shouldEqual
-      "CREDIT_CARD"
+      val predefined = entries.collectFirst { case predefined: SpiDataSanitizer.Predefined => predefined }.get
+      predefined.name shouldEqual "credit-card"
+      predefined.group shouldEqual "CREDIT_CARD"
     }
 
     "hand over a component id no agent can have when the scope matches no agent" in {
@@ -353,7 +354,7 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
 
   "The log sanitizers handed to the runtime" should {
 
-    "carry every entry that masks log messages, under the name the runtime registers it with" in {
+    "carry every entry that masks log messages, under its own name" in {
       val (provider, _) = newProvider(system, config)
 
       provider.spiLogSanitizers.map(_.name).toSet shouldEqual Set(
@@ -362,7 +363,7 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         "classifier-backed",
         "counted",
         "async-only",
-        "CREDIT_CARD",
+        "credit-card",
         "warm-colors")
     }
 
