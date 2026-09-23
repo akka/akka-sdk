@@ -186,7 +186,7 @@ com.example.api.ShoppingCartEntity       KeyValueEntity shopping-cart
 ```
 This table shows the component names, their types, and any associated type IDs.
 
-|  | If you want to view the events from an event sourced entity you can use the `akka services components list-events` command.
+|  | If you want to view the events from an event sourced entity you can use the `akka services components entities list-events` command.
 
 More information about this command in [components](../../reference/cli/akka-cli/akka_services_components_list-events.html) page. |
 
