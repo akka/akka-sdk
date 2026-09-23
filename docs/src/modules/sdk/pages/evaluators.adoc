@@ -63,7 +63,7 @@ The `Effect` returned by `evaluate` is one of:
 == Binding evaluators to agents
 
 Evaluators are bound to agents under `akka.javasdk.evaluation.evaluators`, keyed by the evaluator's `@Component` id.
-Each bound agent declares a `trigger` — currently only `interaction`, meaning the evaluator runs for each interaction of that agent:
+Each binding declares a `trigger` — currently only `interaction`, meaning the evaluator runs for each interaction of the bound agent:
 
 [source,conf,indent=0]
 .src/main/resources/application.conf
@@ -74,14 +74,20 @@ akka.javasdk.evaluation.evaluators {
       support-agent { trigger = interaction }     // <2>
       billing-agent { trigger = interaction, enabled = false } // <3>
     }
+    agent-roles {
+      customer-facing { trigger = interaction }   // <4>
+    }
   }
 }
 ----
 <1> The evaluator's `@Component` id.
 <2> Bind the evaluator to `support-agent`; it runs for each of that agent's interactions.
 <3> A binding can be disabled — for example in a deployment override — with `enabled = false`.
+<4> Bind the evaluator to every agent annotated with `@AgentRole("customer-facing")`.
 
-Both an evaluator and an individual agent binding may set `enabled` (default `true`); set it to `false` to disable the whole evaluator or a single agent binding.
+Under `agent-roles`, use `*` to bind every agent that has a role. The most specific binding decides for an agent: its entry under `agents`, then the entry for its role, then `*`. In the example, `billing-agent` is not evaluated even if it has the `customer-facing` role, because its own entry is disabled.
+
+Both an evaluator and an individual binding may set `enabled` (default `true`); set it to `false` to disable the whole evaluator or a single binding.
 Defaults applied to every evaluator and agent binding live under `akka.javasdk.evaluation.defaults`; change a default there to affect all bindings, or set the same key on an individual entry to override only that one.
 
 NOTE: Evaluators typically use an LLM and therefore have a cost and overhead. You may want to enable them in test or staging environments and keep them disabled, or sampled, in high-volume production. Toggling a binding's `enabled` per deployment is the mechanism for that.

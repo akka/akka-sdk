@@ -23,6 +23,15 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
   private def load(config: String): Config =
     ConfigFactory.load(ConfigFactory.parseString(config))
 
+  private val NoAgentRoles = Map.empty[String, Option[String]]
+
+  // the agents of the service, by component id, with their role
+  private val agentRoles = Map(
+    "support-agent" -> Some("customer-facing"),
+    "billing-agent" -> Some("customer-facing"),
+    "audit-agent" -> Some("internal"),
+    "plain-agent" -> None)
+
   "Evaluator descriptor factory" should {
 
     "be selected for evaluator components" in {
@@ -49,7 +58,7 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
           }
         }
         """)
-      val bindings = EvaluatorSettings.agentBindings(config, "conversation-quality")
+      val bindings = EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles)
       bindings should have size 2
       agentBindingIds(bindings) should contain theSameElementsAs Seq("support-agent", "billing-agent")
       bindings.head.asInstanceOf[SpiEvaluator.AgentBinding].event shouldBe SpiEvaluator.AgentBindingEvent.Interaction
@@ -60,18 +69,19 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
         akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
         """)
       agentBindingIds(
-        EvaluatorSettings.agentBindings(config, "conversation-quality")) should contain only "support-agent"
+        EvaluatorSettings
+          .agentBindings(config, "conversation-quality", NoAgentRoles)) should contain only "support-agent"
     }
 
     "produce no bindings when the evaluator is not configured" in {
-      EvaluatorSettings.agentBindings(load(""), "conversation-quality") shouldBe empty
+      EvaluatorSettings.agentBindings(load(""), "conversation-quality", NoAgentRoles) shouldBe empty
     }
 
     "produce no bindings when the evaluator has no agents configured" in {
       val config = load("""
         akka.javasdk.evaluation.evaluators.conversation-quality {}
         """)
-      EvaluatorSettings.agentBindings(config, "conversation-quality") shouldBe empty
+      EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles) shouldBe empty
     }
 
     "produce no bindings when the evaluator is disabled" in {
@@ -83,7 +93,7 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
           }
         }
         """)
-      EvaluatorSettings.agentBindings(config, "conversation-quality") shouldBe empty
+      EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles) shouldBe empty
     }
 
     "require a trigger on an enabled binding" in {
@@ -91,7 +101,7 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
         akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent {}
         """)
       val ex = intercept[IllegalArgumentException] {
-        EvaluatorSettings.agentBindings(config, "conversation-quality")
+        EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles)
       }
       ex.getMessage should include("trigger")
     }
@@ -101,9 +111,67 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
         akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = nonsense }
         """)
       val ex = intercept[IllegalArgumentException] {
-        EvaluatorSettings.agentBindings(config, "conversation-quality")
+        EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles)
       }
       ex.getMessage should include("nonsense")
+    }
+
+    "bind the agents that have a role" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agent-roles {
+          customer-facing { trigger = interaction }
+        }
+        """)
+      val bindings = EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)
+      agentBindingIds(bindings) shouldBe Seq("billing-agent", "support-agent")
+      bindings.head.asInstanceOf[SpiEvaluator.AgentBinding].event shouldBe SpiEvaluator.AgentBindingEvent.Interaction
+    }
+
+    "bind every agent that has a role for the role wildcard" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agent-roles {
+          "*" { trigger = interaction }
+        }
+        """)
+      agentBindingIds(EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)) shouldBe
+      Seq("audit-agent", "billing-agent", "support-agent")
+    }
+
+    "let the entry for the agent decide over the entry for its role" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          agents {
+            billing-agent { enabled = false }
+            plain-agent { trigger = interaction }
+          }
+          agent-roles {
+            customer-facing { trigger = interaction }
+          }
+        }
+        """)
+      agentBindingIds(EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)) shouldBe
+      Seq("plain-agent", "support-agent")
+    }
+
+    "let the entry for a role decide over the role wildcard" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agent-roles {
+          "*" { trigger = interaction }
+          internal { enabled = false }
+        }
+        """)
+      agentBindingIds(EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)) shouldBe
+      Seq("billing-agent", "support-agent")
+    }
+
+    "require a trigger on an enabled role binding" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agent-roles.customer-facing {}
+        """)
+      val ex = intercept[IllegalArgumentException] {
+        EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)
+      }
+      ex.getMessage should include("Evaluator agent role binding [customer-facing] must specify 'trigger'")
     }
 
     "exclude agents whose binding is disabled" in {
@@ -114,7 +182,8 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
         }
         """)
       agentBindingIds(
-        EvaluatorSettings.agentBindings(config, "conversation-quality")) should contain only "support-agent"
+        EvaluatorSettings
+          .agentBindings(config, "conversation-quality", NoAgentRoles)) should contain only "support-agent"
     }
   }
 }

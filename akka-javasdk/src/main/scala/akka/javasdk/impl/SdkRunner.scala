@@ -806,6 +806,17 @@ private final class Sdk(
   // sanitizer name => component ids
   private var sanitizerEnabledForComponent = Map.empty[String, Set[String]]
 
+  // component id => role, for every agent of this service. An evaluator binds agents by role, and it can be
+  // scanned before the agents it binds, so the roles are read up front.
+  private val agentRolesByComponentId: Map[String, Option[String]] =
+    componentClasses
+      .filter(hasComponentId)
+      .collect {
+        case clz if Reflect.isAgent(clz) || Reflect.isAutonomousAgent(clz) =>
+          Reflect.readComponentId(clz) -> Reflect.readAgentRole(clz)
+      }
+      .toMap
+
   // An entry that names neither agents nor agent-roles applies to every agent, so it is accumulated for
   // each of them.
   private def accumulateSanitizers(componentId: String, role: Option[String]): Unit =
@@ -1241,7 +1252,7 @@ private final class Sdk(
       case clz if Reflect.isEvaluator(clz) =>
         val componentId = Reflect.readComponentId(clz)
         val evaluatorClass = clz.asInstanceOf[Class[Evaluator]]
-        val bindings = EvaluatorSettings.agentBindings(applicationConfig, componentId)
+        val bindings = EvaluatorSettings.agentBindings(applicationConfig, componentId, agentRolesByComponentId)
 
         val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { factoryContext =>
           val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
@@ -1268,7 +1279,8 @@ private final class Sdk(
         val stateType = Reflect.durableEvaluatorStateType(clz).asInstanceOf[Class[Nothing]]
         serializer.registerTypeHints(stateType)
 
-        val durableEvaluatorBindings = EvaluatorSettings.agentBindings(applicationConfig, componentId)
+        val durableEvaluatorBindings =
+          EvaluatorSettings.agentBindings(applicationConfig, componentId, agentRolesByComponentId)
 
         durableEvaluatorDescriptors :+=
           new WorkflowEvaluatorDescriptor(
