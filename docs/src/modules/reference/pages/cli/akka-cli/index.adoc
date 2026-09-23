@@ -451,6 +451,40 @@ The xref:reference:cli/akka-cli/akka_services.adoc[akka services] command includ
 * xref:reference:cli/akka-cli/akka_services_views_list.adoc[akka services views list]
 * xref:reference:cli/akka-cli/akka_services_views_query.adoc[akka services views query]
 
+== Inspect service components
+The `akka services components` commands let you inspect the state of components.
+
+The xref:reference:cli/akka-cli/akka_services_components.adoc[akka services components] command includes the following options:
+
+* xref:reference:cli/akka-cli/akka_services_components_agents.adoc[akka services components agents]
+* xref:reference:cli/akka-cli/akka_services_components_agents_instances.adoc[akka services components agents instances]
+* xref:reference:cli/akka-cli/akka_services_components_agents_instances_describe.adoc[akka services components agents instances describe]
+* xref:reference:cli/akka-cli/akka_services_components_agents_instances_list.adoc[akka services components agents instances list]
+* xref:reference:cli/akka-cli/akka_services_components_agents_instances_resume.adoc[akka services components agents instances resume]
+* xref:reference:cli/akka-cli/akka_services_components_agents_instances_suspend.adoc[akka services components agents instances suspend]
+* xref:reference:cli/akka-cli/akka_services_components_agents_instances_terminate.adoc[akka services components agents instances terminate]
+* xref:reference:cli/akka-cli/akka_services_components_agents_interactions.adoc[akka services components agents interactions]
+* xref:reference:cli/akka-cli/akka_services_components_agents_interactions_list.adoc[akka services components agents interactions list]
+* xref:reference:cli/akka-cli/akka_services_components_entities.adoc[akka services components entities]
+* xref:reference:cli/akka-cli/akka_services_components_entities_delete-snapshot.adoc[akka services components entities delete-snapshot]
+* xref:reference:cli/akka-cli/akka_services_components_entities_force-snapshot.adoc[akka services components entities force-snapshot]
+* xref:reference:cli/akka-cli/akka_services_components_entities_get-state.adoc[akka services components entities get-state]
+* xref:reference:cli/akka-cli/akka_services_components_entities_list-events.adoc[akka services components entities list-events]
+* xref:reference:cli/akka-cli/akka_services_components_entities_list-ids.adoc[akka services components entities list-ids]
+* xref:reference:cli/akka-cli/akka_services_components_list-interactions.adoc[akka services components list-interactions]
+* xref:reference:cli/akka-cli/akka_services_components_list-timers.adoc[akka services components list-timers]
+* xref:reference:cli/akka-cli/akka_services_components_list.adoc[akka services components list]
+* xref:reference:cli/akka-cli/akka_services_components_workflows.adoc[akka services components workflows]
+* xref:reference:cli/akka-cli/akka_services_components_workflows_delete-snapshot.adoc[akka services components workflows delete-snapshot]
+* xref:reference:cli/akka-cli/akka_services_components_workflows_force-snapshot.adoc[akka services components workflows force-snapshot]
+* xref:reference:cli/akka-cli/akka_services_components_workflows_get-state.adoc[akka services components workflows get-state]
+* xref:reference:cli/akka-cli/akka_services_components_workflows_get.adoc[akka services components workflows get]
+* xref:reference:cli/akka-cli/akka_services_components_workflows_list-events.adoc[akka services components workflows list-events]
+* xref:reference:cli/akka-cli/akka_services_components_workflows_list-ids.adoc[akka services components workflows list-ids]
+* xref:reference:cli/akka-cli/akka_services_components_workflows_resume.adoc[akka services components workflows resume]
+* xref:reference:cli/akka-cli/akka_services_components_workflows_suspend.adoc[akka services components workflows suspend]
+* xref:reference:cli/akka-cli/akka_services_components_workflows_terminate.adoc[akka services components workflows terminate]
+
 == Configure services
 The `akka service-configs` commands allow configuring services.
 
