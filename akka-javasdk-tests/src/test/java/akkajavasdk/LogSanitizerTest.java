@@ -77,6 +77,13 @@ public class LogSanitizerTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldNotMaskWithAnEntryForTheClientOnly() {
+    var written = write("a clientsecret in a log message");
+
+    assertThat(written).contains("clientsecret");
+  }
+
+  @Test
   public void shouldNotMaskWithAnEntryBoundToAnAgent() {
     var written = write("a scopedsecret in a log message");
 

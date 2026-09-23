@@ -234,11 +234,25 @@ public class SanitizerIntegrationTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldNotMaskForAnyAgentWithASanitizerForTheClientOnly() {
+    var scopedCapture = captureUserMessage(scopedAgentModel);
+    var otherCapture = captureUserMessage(otherAgentModel);
+
+    askScopedAgent("tell me about clientsecret");
+    askOtherAgent("tell me about clientsecret");
+
+    assertThat(scopedCapture.get()).contains("tell me about clientsecret");
+    assertThat(otherCapture.get()).contains("tell me about clientsecret");
+  }
+
+  @Test
   public void shouldMaskByName() {
     assertThat(getSanitizerClient().sanitize("agent-scoped", "a scopedsecret here"))
         .isEqualTo("a ************ here");
     assertThat(getSanitizerClient().sanitize("recording", "a recordedsecret here"))
         .isEqualTo("a [recorded] here");
+    assertThat(getSanitizerClient().sanitize("by-name-only", "a clientsecret here"))
+        .isEqualTo("a ************ here");
     assertThat(getSanitizerClient().sanitize("email-in-logs", "mail someone@example.com"))
         .isEqualTo("mail " + "*".repeat(19));
 

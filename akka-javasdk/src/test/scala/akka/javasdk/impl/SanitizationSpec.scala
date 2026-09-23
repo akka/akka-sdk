@@ -116,7 +116,7 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         }
         """) should include(
         "Sanitizer [wrong-point] has unknown use-for [model-output], valid values are " +
-        "[logs, model-input, tool-result] or [*]")
+        "[client, logs, model-input, tool-result] or [*]")
     }
 
     "load the same predefined group in more than one entry" in {
@@ -168,6 +168,23 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
           use-for = ["logs"]
         }
         """).useFor shouldEqual Set(UseFor.Logs)
+    }
+
+    "hold client for a sanitizer that masks nothing on its own" in {
+      parseOne("""
+        "by-name-only" { pattern = "a", use-for = ["client"] }
+        """).useFor shouldEqual Set(UseFor.Client)
+    }
+
+    "fail when client is combined with agents" in {
+      failure("""
+        "agent-client" {
+          pattern = "a"
+          agents = ["some-agent"]
+          use-for = ["client"]
+        }
+        """) should include(
+        "Sanitizer [agent-client] cannot combine [agents] or [agent-roles] with the [client] application point")
     }
 
     "fail when logs is combined with agents" in {
@@ -242,27 +259,28 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
       val settings = Sanitization.loadSettings(ConfigFactory.load(ConfigFactory.parseString("""
         akka.javasdk.sanitization.sanitizers {
           "warm-colors" { pattern = "(?i)(red|orange|yellow)", use-for = ["logs"] }
+          "account-ids" { pattern = "ACC-[0-9]+", use-for = ["client"] }
           "credit-card" { predefined = CREDIT_CARD }
           "pii-detector" { class = "com.example.PiiSanitizer" }
           "off" { pattern = "a", enabled = false }
         }
         """)))
 
-      // The log messages an entry masks are not an application point of an agent, so an entry that only masks
-      // them carries none here. It masks log messages as a log sanitizer of the setup carrier.
-      settings.sanitizers.map(entry => (entry.getClass, entry.name, entry.useFor)) shouldEqual Seq(
-        (classOf[SpiDataSanitizer.Regex], "warm-colors", Set.empty[SpiDataSanitizer.UseFor]),
-        (
-          classOf[SpiDataSanitizer.Predefined],
-          "credit-card",
-          Set(SpiDataSanitizer.UseFor.ModelInput, SpiDataSanitizer.UseFor.ToolResult)))
+      // The runtime reads no application point as every point. Log messages are not a point of an agent, so an
+      // entry that only masks them says here that it masks nothing on its own. It masks log messages as a log
+      // sanitizer of the setup carrier.
+      settings.sanitizers.map(entry => entry.name -> (entry.getClass, entry.useFor)).toMap shouldEqual Map(
+        "warm-colors" -> (classOf[SpiDataSanitizer.Regex], Set(SpiDataSanitizer.UseFor.Client)),
+        "account-ids" -> (classOf[SpiDataSanitizer.Regex], Set(SpiDataSanitizer.UseFor.Client)),
+        "credit-card" -> (classOf[SpiDataSanitizer.Predefined],
+        Set(SpiDataSanitizer.UseFor.ModelInput, SpiDataSanitizer.UseFor.ToolResult)))
 
-      settings.sanitizers.map(_.enabledForComponents) shouldEqual Seq(Set.empty, Set.empty)
+      settings.sanitizers.map(_.enabledForComponents).toSet shouldEqual Set(Set.empty)
       settings.sanitizers.collectFirst { case predefined: SpiDataSanitizer.Predefined =>
         predefined.group
       }.value shouldEqual "CREDIT_CARD"
-      settings.sanitizers.collectFirst { case regex: SpiDataSanitizer.Regex =>
-        regex.pattern.regex
+      settings.sanitizers.collectFirst {
+        case regex: SpiDataSanitizer.Regex if regex.name == "warm-colors" => regex.pattern.regex
       }.value shouldEqual "(?i)(red|orange|yellow)"
     }
   }

@@ -33,7 +33,8 @@ private[javasdk] object Sanitization {
    * service implements can mask log messages too.
    */
   def loadSettings(config: Config): SpiDataSanitizerSettings =
-    new SpiDataSanitizerSettings(configuredSanitizers(config).flatMap(declarativeSpiSanitizer(_, Set.empty)))
+    new SpiDataSanitizerSettings(configuredSanitizers(config).flatMap(sanitizer =>
+      declarativeSpiSanitizer(sanitizer, spiUseFor(sanitizer), Set.empty)))
 
   def configuredSanitizers(config: Config): Seq[ConfiguredSanitizer] = {
     checkRemovedKeys(config)
@@ -46,8 +47,8 @@ private[javasdk] object Sanitization {
    */
   def declarativeSpiSanitizer(
       sanitizer: ConfiguredSanitizer,
-      enabledForComponents: Set[String]): Option[SpiDataSanitizer] = {
-    val useFor = spiUseFor(sanitizer)
+      useFor: Set[SpiDataSanitizer.UseFor],
+      enabledForComponents: Set[String]): Option[SpiDataSanitizer] =
     sanitizer.kind match {
       case SanitizerKind.Pattern(regex) =>
         Some(new SpiDataSanitizer.Regex(sanitizer.name, regex, useFor, enabledForComponents, sanitizer.config))
@@ -55,17 +56,24 @@ private[javasdk] object Sanitization {
         Some(new SpiDataSanitizer.Predefined(sanitizer.name, group, useFor, enabledForComponents, sanitizer.config))
       case _: SanitizerKind.Implementation => None
     }
-  }
 
   /**
-   * The application points of an agent the entry masks at. Log messages are not one of them: an entry that masks them
-   * is handed over as a [[akka.runtime.sdk.spi.SpiLogSanitizer]].
+   * What the entry is used for at the points of an agent. Log messages are not one of them: an entry that masks them is
+   * also handed over as a [[akka.runtime.sdk.spi.SpiLogSanitizer]].
    */
-  def spiUseFor(sanitizer: ConfiguredSanitizer): Set[SpiDataSanitizer.UseFor] =
-    sanitizer.useFor.collect {
+  def spiUseFor(sanitizer: ConfiguredSanitizer): Set[SpiDataSanitizer.UseFor] = {
+    val useFor: Set[SpiDataSanitizer.UseFor] = sanitizer.useFor.collect {
       case UseFor.ModelInput => SpiDataSanitizer.UseFor.ModelInput
       case UseFor.ToolResult => SpiDataSanitizer.UseFor.ToolResult
+      case UseFor.Client     => SpiDataSanitizer.UseFor.Client
     }
+    // The runtime reads no value as every point, so an entry that masks log messages only masks nothing on its own
+    // at the points of an agent.
+    if (useFor.isEmpty) MasksNothingOnItsOwn else useFor
+  }
+
+  /** How the runtime is told that an entry masks nothing at the points of an agent. */
+  val MasksNothingOnItsOwn: Set[SpiDataSanitizer.UseFor] = Set(SpiDataSanitizer.UseFor.Client)
 
   private def checkRemovedKeys(config: Config): Unit =
     RemovedKeys.foreach { case (path, key) =>

@@ -82,10 +82,18 @@ import com.typesafe.config.ConfigValueType
      */
     case object Logs extends UseFor("logs")
 
-    val All: Set[UseFor] = Set(ModelInput, ToolResult, Logs)
+    /**
+     * Nothing the runtime masks on its own. Application code calls the entry by name, which it can do with every entry.
+     */
+    case object Client extends UseFor("client")
+
+    val All: Set[UseFor] = Set(ModelInput, ToolResult, Logs, Client)
 
     /** The points of an agent. */
     val AgentPoints: Set[UseFor] = Set(ModelInput, ToolResult)
+
+    /** Every point the runtime masks at on its own. */
+    val MaskingPoints: Set[UseFor] = AgentPoints + Logs
   }
 
   // Kept in step with the groups the runtime expands a predefined entry into, in
@@ -151,6 +159,7 @@ import com.typesafe.config.ConfigValueType
         case "model-input" => UseFor.ModelInput
         case "tool-result" => UseFor.ToolResult
         case "logs"        => UseFor.Logs
+        case "client"      => UseFor.Client
         case other =>
           throw new IllegalArgumentException(
             s"Sanitizer [$name] has unknown use-for [$other], valid values are " +
@@ -158,15 +167,20 @@ import com.typesafe.config.ConfigValueType
       }
       .toSet
 
-    if (named.contains(UseFor.Logs) && scoped)
+    if (scoped && named.contains(UseFor.Logs))
       throw new IllegalArgumentException(
         s"Sanitizer [$name] cannot combine [agents] or [agent-roles] with the [logs] application point. A log " +
         "line belongs to no agent, so the runtime has no agent to match the scope against.")
+    if (scoped && named.contains(UseFor.Client))
+      throw new IllegalArgumentException(
+        s"Sanitizer [$name] cannot combine [agents] or [agent-roles] with the [client] application point. A call " +
+        "by name belongs to no agent, so the runtime has no agent to match the scope against. Every sanitizer " +
+        "can be called by name, so leave out [client] to mask for the named agents.")
 
     // An entry that names no application point, or names "*", masks wherever the rest of it allows. An agent
     // scoped entry leaves out log messages, for the reason in the error above.
     if (declared.isEmpty || declared.contains("*")) {
-      if (scoped) UseFor.AgentPoints else UseFor.All
+      if (scoped) UseFor.AgentPoints else UseFor.MaskingPoints
     } else named
   }
 

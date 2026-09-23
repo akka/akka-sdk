@@ -81,8 +81,7 @@ import org.slf4j.LoggerFactory
   /**
    * The entries to hand to the runtime, each with the agents it resolved to. A pattern or predefined entry is also in
    * [[akka.runtime.sdk.spi.SpiSettings]], which the runtime reads before this service has any classes; the runtime
-   * joins the two by name. An entry that masks log messages only is here as well, bound to no agent, because the
-   * runtime builds the by-name registry from this list.
+   * joins the two by name. An entry that masks nothing at the points of an agent is here as well, saying so.
    *
    * Each implementation is resolved lazily, on first `sanitize(...)` call, rather than here: this runs while assembling
    * `SpiComponents` (required synchronously for the runtime handshake), before `preStart` runs `validate()` and before
@@ -90,19 +89,19 @@ import org.slf4j.LoggerFactory
    */
   def spiSanitizers(enabledForComponents: ConfiguredSanitizer => Set[String]): Seq[SpiDataSanitizer] =
     configuredSanitizers.map { s =>
-      val components = agentComponents(s, enabledForComponents(s))
+      val (useFor, components) = agentBinding(s, enabledForComponents(s))
       s.kind match {
         case SanitizerKind.Implementation(className) =>
           new SpiDataSanitizer.Custom(
             name = s.name,
             implementationClass = className,
             instance = new SanitizerProvider.SpiSanitizerAdapter(() => getOrCreate(s.name)),
-            useFor = Sanitization.spiUseFor(s),
+            useFor = useFor,
             enabledForComponents = components,
             config = s.config)
         case _ =>
           Sanitization
-            .declarativeSpiSanitizer(s, components)
+            .declarativeSpiSanitizer(s, useFor, components)
             .getOrElse(throw new IllegalStateException(s"Sanitizer [${s.name}] has no runtime entry"))
       }
     }
@@ -128,13 +127,13 @@ import org.slf4j.LoggerFactory
       }
     }
 
-  // The runtime reads an empty set as every agent, so a component id no agent can be annotated with is what
-  // binds an entry to none: an entry that masks log messages only, and one whose agents and agent roles match
-  // no agent of this service. The second is reported, because a scope that matches nothing is masking a
-  // deployment asked for and does not get.
-  private def agentComponents(sanitizer: ConfiguredSanitizer, resolved: Set[String]): Set[String] =
-    if (!sanitizer.masksAgentText) SanitizerProvider.NoAgent
-    else if (resolved.nonEmpty || !sanitizer.scoped) resolved
+  // The runtime reads an empty component set as every agent, so an entry whose agents and agent roles match no
+  // agent of this service is handed over as masking nothing on its own. It is reported, because a scope that
+  // matches nothing is masking a deployment asked for and does not get.
+  private def agentBinding(
+      sanitizer: ConfiguredSanitizer,
+      resolved: Set[String]): (Set[SpiDataSanitizer.UseFor], Set[String]) =
+    if (resolved.nonEmpty || !sanitizer.scoped) (Sanitization.spiUseFor(sanitizer), resolved)
     else {
       log.warn(
         "Sanitizer [{}] masks for no agent. It names agents [{}] and agent roles [{}], and this service has no " +
@@ -142,7 +141,7 @@ import org.slf4j.LoggerFactory
         sanitizer.name,
         sanitizer.agents.toSeq.sorted.mkString(", "),
         sanitizer.agentRoles.toSeq.sorted.mkString(", "))
-      SanitizerProvider.NoAgent
+      (Sanitization.MasksNothingOnItsOwn, Set.empty)
     }
 
   /** Eagerly constructs every sanitizer the service implements, so bad config and classes fail at startup. */
@@ -187,9 +186,6 @@ import org.slf4j.LoggerFactory
  * INTERNAL API
  */
 @InternalApi private[javasdk] object SanitizerProvider {
-
-  /** Not a component id any agent can be annotated with, so an entry carrying it applies to no agent. */
-  private val NoAgent: Set[String] = Set("")
 
   /**
    * Wraps a user sanitizer so the runtime can invoke it once registered. `resolve` runs on every invocation rather than

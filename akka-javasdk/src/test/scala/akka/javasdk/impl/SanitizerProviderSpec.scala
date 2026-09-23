@@ -22,6 +22,7 @@ import akka.javasdk.agent.Classification
 import akka.javasdk.agent.ClassifierClient
 import akka.runtime.sdk.spi.SpiDataSanitizer
 import akka.runtime.sdk.spi.SpiLogSanitizer
+import akka.runtime.sdk.spi.SpiSanitizer
 import akka.runtime.sdk.spi.SpiSanitizerClient
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -74,6 +75,10 @@ object SanitizerProviderSpec {
         pattern = "(other)"
         agents = ["some-agent"]
       }
+      "by-name-only" {
+        pattern = "(account)"
+        use-for = ["client"]
+      }
     }
     """)
     .withFallback(ConfigFactory.load())
@@ -113,30 +118,49 @@ object SanitizerProviderSpec {
   class NotASanitizer
 
   /**
-   * Test-only stand-in for the runtime's sanitizer registry: looks an entry up by the name it was registered under and
-   * masks with it, wrapping the call in Future(...).flatten so a synchronous throw becomes a failed Future, as the
-   * runtime does.
+   * Test-only stand-in for the runtime's sanitizer registry: registers every entry by its name, and a log sanitizer
+   * only under a name the other entries do not hold, then looks an entry up by name and masks with it. A supplied
+   * sanitizer is called in Future(...).flatten so a synchronous throw becomes a failed Future, as the runtime does.
    */
   final class LoopbackSpiSanitizerClient extends SpiSanitizerClient {
-    @volatile private var byName: Map[String, SpiDataSanitizer] = Map.empty
+    @volatile private var byName: Map[String, String => Future[String]] = Map.empty
     @volatile var lastName: Option[String] = None
 
-    def register(entries: Seq[SpiDataSanitizer]): Unit = byName = entries.map(entry => entry.name -> entry).toMap
+    def register(entries: Seq[SpiDataSanitizer], logEntries: Seq[SpiLogSanitizer]): Unit = {
+      val configured = entries.map(entry => entry.name -> maskerOf(entry)).toMap
+      byName = configured ++ logEntries.collect {
+        case entry if !configured.contains(entry.name) => entry.name -> logMaskerOf(entry)
+      }
+    }
 
     override def sanitize(name: String, text: String): Future[String] = {
       lastName = Some(name)
       byName.get(name) match {
-        case Some(custom: SpiDataSanitizer.Custom) =>
-          Future(custom.instance.sanitize(text))(ExecutionContext.parasitic).flatten
-        case Some(regex: SpiDataSanitizer.Regex) =>
-          Future.successful(regex.pattern.replaceAllIn(text, m => "*" * (m.end - m.start)))
-        case Some(_) =>
-          // A predefined group expands to patterns the runtime holds, so this stand-in only records the name.
-          Future.successful(text)
-        case None =>
-          Future.failed(new IllegalArgumentException(s"No sanitizer registered with name [$name]"))
+        case Some(mask) => mask(text)
+        case None       => Future.failed(new IllegalArgumentException(s"No sanitizer registered with name [$name]"))
       }
     }
+
+    private def maskerOf(entry: SpiDataSanitizer): String => Future[String] =
+      entry match {
+        case custom: SpiDataSanitizer.Custom => supplied(custom.instance)
+        case regex: SpiDataSanitizer.Regex   => masked(regex.pattern)
+        // A predefined group expands to patterns the runtime holds, so this stand-in only records the name.
+        case _: SpiDataSanitizer.Predefined => Future.successful
+      }
+
+    private def logMaskerOf(entry: SpiLogSanitizer): String => Future[String] =
+      entry match {
+        case custom: SpiLogSanitizer.Custom => supplied(custom.instance)
+        case regex: SpiLogSanitizer.Regex   => masked(regex.pattern)
+        case _: SpiLogSanitizer.Predefined  => Future.successful
+      }
+
+    private def supplied(instance: SpiSanitizer): String => Future[String] =
+      text => Future(instance.sanitize(text))(ExecutionContext.parasitic).flatten
+
+    private def masked(pattern: scala.util.matching.Regex): String => Future[String] =
+      text => Future.successful(pattern.replaceAllIn(text, m => "*" * (m.end - m.start)))
   }
 
   private val classifierClient: ClassifierClient = new ClassifierClient {
@@ -168,7 +192,7 @@ object SanitizerProviderSpec {
       config: Config): (SanitizerProvider, LoopbackSpiSanitizerClient) = {
     val runtimeClient = new LoopbackSpiSanitizerClient
     val provider = new SanitizerProvider(system, config, runtimeClient, wireSanitizer)
-    runtimeClient.register(provider.spiSanitizers(_ => Set.empty))
+    runtimeClient.register(provider.spiSanitizers(_ => Set.empty), provider.spiLogSanitizers)
     (provider, runtimeClient)
   }
 }
@@ -235,6 +259,13 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       provider.client.sanitize("credit-card", "some text")
 
       runtimeClient.lastName shouldEqual Some("credit-card")
+    }
+
+    "reach an entry that masks log messages only, and one that masks nothing on its own" in {
+      val (provider, _) = newProvider(system, logsConfig)
+
+      provider.client.sanitize("logs-only", "a secret here") shouldEqual "a ****** here"
+      provider.client.sanitize("by-name-only", "an account here") shouldEqual "an ******* here"
     }
 
     "report an unknown sanitizer name, with the configured ones" in {
@@ -317,7 +348,7 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       predefined.group shouldEqual "CREDIT_CARD"
     }
 
-    "hand over a component id no agent can have when the scope matches no agent" in {
+    "hand over an entry whose scope matches no agent as masking nothing on its own" in {
       val scopedConfig = ConfigFactory
         .parseString("""
           akka.javasdk.sanitization.sanitizers {
@@ -328,8 +359,10 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val (provider, _) = newProvider(system, scopedConfig)
 
       // an empty set is every agent to the runtime, which is the opposite of what the entry asks for
-      provider.spiSanitizers(_ => Set.empty).map(_.enabledForComponents) shouldEqual Seq(Set(""))
-      provider.spiSanitizers(_ => Set("some-agent")).map(_.enabledForComponents) shouldEqual Seq(Set("some-agent"))
+      provider.spiSanitizers(_ => Set.empty).map(e => e.useFor -> e.enabledForComponents) shouldEqual Seq(
+        Set(SpiDataSanitizer.UseFor.Client) -> Set.empty)
+      provider.spiSanitizers(_ => Set("some-agent")).map(e => e.useFor -> e.enabledForComponents) shouldEqual Seq(
+        Set(SpiDataSanitizer.UseFor.ModelInput, SpiDataSanitizer.UseFor.ToolResult) -> Set("some-agent"))
     }
 
     "leave out a disabled entry" in {
@@ -378,18 +411,27 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       Await.result(custom.instance.sanitize("quiet"), 3.seconds) shouldEqual "QUIET"
     }
 
-    "leave out an entry bound to an agent" in {
+    "leave out an entry bound to an agent, and one that masks nothing on its own" in {
       val (provider, _) = newProvider(system, logsConfig)
 
       provider.spiLogSanitizers.map(_.name).toSet shouldEqual Set("logs-only", "implemented-logs")
     }
 
-    "bind an entry that masks log messages only to no agent" in {
+    "hand over an entry that masks log messages only as masking nothing at the points of an agent" in {
       val (provider, _) = newProvider(system, logsConfig)
 
-      // such an entry is still handed over here, because the runtime builds the by-name registry from this list
-      provider.spiSanitizers(_ => Set("some-agent")).map(e => e.name -> e.enabledForComponents).toMap shouldEqual
-      Map("logs-only" -> Set(""), "implemented-logs" -> Set(""), "agent-scoped" -> Set("some-agent"))
+      val entries = provider.spiSanitizers {
+        case sanitizer if sanitizer.name == "agent-scoped" => Set("some-agent")
+        case _                                             => Set.empty
+      }
+
+      val nothingOnItsOwn = Set[SpiDataSanitizer.UseFor](SpiDataSanitizer.UseFor.Client)
+      entries.map(e => e.name -> (e.useFor, e.enabledForComponents)).toMap shouldEqual Map(
+        "logs-only" -> (nothingOnItsOwn, Set.empty),
+        "implemented-logs" -> (nothingOnItsOwn, Set.empty),
+        "by-name-only" -> (nothingOnItsOwn, Set.empty),
+        "agent-scoped" -> (Set(SpiDataSanitizer.UseFor.ModelInput, SpiDataSanitizer.UseFor.ToolResult),
+        Set("some-agent")))
     }
   }
 }
