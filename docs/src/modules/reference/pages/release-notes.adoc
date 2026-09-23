@@ -12,6 +12,20 @@ Current versions
 
 == September 2026
 
+* Akka CLI 3.0.76
+- commands to manage snapshots for link:reference:cli/akka-cli/akka_local_services_components_entities.adoc[entities] and link:reference:cli/akka-cli/akka_local_services_components_workflows.adoc[workflows]
++
+[source, shell]
+----
+akka service components entities  delete-snapshot SERVICE_NAME COMPONENT_ID ENTITY_ID
+akka service components entities  force-snapshot  SERVICE_NAME COMPONENT_ID ENTITY_ID
+akka service components workflows delete-snapshot SERVICE_NAME COMPONENT_ID WORKFLOW_ID
+akka service components workflows force-snapshot  SERVICE_NAME COMPONENT_ID WORKFLOW_ID
+----
+- reorganized commands per component type e.g. `akka service components entities`
+- internal improvements
+
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.6.4[Akka SDK 3.6.4]
 - Runtime 1.6.16
 - Bedrock model provider option to place the prompt cache point after the last user message
