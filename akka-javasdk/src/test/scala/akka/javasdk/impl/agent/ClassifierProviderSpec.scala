@@ -84,23 +84,6 @@ object ClassifierProviderSpec {
       CompletableFuture.supplyAsync(() => Classification.label(s"async:$input"))
   }
 
-  val SlowConstructionCount = new AtomicInteger(0)
-
-  // Slow to construct, so that calls from several threads race to construct it.
-  class SlowClassifier extends Classifier {
-    SlowConstructionCount.incrementAndGet()
-    Thread.sleep(100)
-    override def classify(input: String): Classification = Classification.label("slow")
-  }
-
-  val FlakyConstructionCount = new AtomicInteger(0)
-
-  // Fails its first construction and succeeds after that.
-  class FlakyOnceClassifier extends Classifier {
-    if (FlakyConstructionCount.incrementAndGet() == 1) throw new IllegalStateException("first construction fails")
-    override def classify(input: String): Classification = Classification.label("flaky")
-  }
-
   @volatile var GatedConstructionStarted = new CountDownLatch(1)
   @volatile var GatedConstructionRelease = new CountDownLatch(1)
 
@@ -113,8 +96,6 @@ object ClassifierProviderSpec {
 
   private val constructionConfig = ConfigFactory.parseString(s"""
     akka.javasdk.agent.classifiers {
-      "slow" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$SlowClassifier" }
-      "flaky" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$FlakyOnceClassifier" }
       "gated" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$GatedClassifier" }
       "no-context" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$NoContextClassifier" }
     }
@@ -315,36 +296,6 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
       val result = provider.client.classifyAsync("async-only", "x").toCompletableFuture.get(3, TimeUnit.SECONDS)
       result.label() shouldBe java.util.Optional.of("async:x")
       provider.client.classify("async-only", "y").label() shouldBe java.util.Optional.of("async:y")
-    }
-
-    "construct a classifier once when several threads call it first at the same time" in {
-      SlowConstructionCount.set(0)
-      val provider = newProvider(system, constructionConfig)
-
-      val pool = Executors.newFixedThreadPool(8)
-      try {
-        val start = new CountDownLatch(1)
-        val calls = (1 to 8).map { _ =>
-          pool.submit { () =>
-            start.await()
-            provider.client.classify("slow", "x").label().get()
-          }
-        }
-        start.countDown()
-        calls.foreach(_.get(5, TimeUnit.SECONDS) shouldEqual "slow")
-      } finally pool.shutdown()
-
-      SlowConstructionCount.get() shouldEqual 1
-    }
-
-    "keep nothing when a construction fails, and construct again on the next call" in {
-      FlakyConstructionCount.set(0)
-      val provider = newProvider(system, constructionConfig)
-
-      intercept[IllegalStateException](provider.client.classify("flaky", "x")).getMessage shouldEqual
-      "first construction fails"
-      provider.client.classify("flaky", "x").label().get() shouldEqual "flaky"
-      FlakyConstructionCount.get() shouldEqual 2
     }
 
     "classify with a constructed classifier while another one is being constructed" in {

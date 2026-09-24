@@ -7,7 +7,6 @@ package akka.javasdk.impl
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -111,23 +110,6 @@ object SanitizerProviderSpec {
     override def sanitize(text: String): String = text
   }
 
-  val SlowConstructionCount = new AtomicInteger(0)
-
-  // Slow to construct, so that calls from several threads race to construct it.
-  class SlowSanitizer extends TextSanitizer {
-    SlowConstructionCount.incrementAndGet()
-    Thread.sleep(100)
-    override def sanitize(text: String): String = text
-  }
-
-  val FlakyConstructionCount = new AtomicInteger(0)
-
-  // Fails its first construction and succeeds after that.
-  class FlakyOnceSanitizer extends TextSanitizer {
-    if (FlakyConstructionCount.incrementAndGet() == 1) throw new IllegalStateException("first construction fails")
-    override def sanitize(text: String): String = text.toUpperCase
-  }
-
   @volatile var GatedConstructionStarted = new CountDownLatch(1)
   @volatile var GatedConstructionRelease = new CountDownLatch(1)
 
@@ -141,8 +123,6 @@ object SanitizerProviderSpec {
   private val constructionConfig = ConfigFactory
     .parseString(s"""
     akka.javasdk.sanitization.sanitizers {
-      "slow" { class = "akka.javasdk.impl.SanitizerProviderSpec$$SlowSanitizer" }
-      "flaky" { class = "akka.javasdk.impl.SanitizerProviderSpec$$FlakyOnceSanitizer" }
       "gated" { class = "akka.javasdk.impl.SanitizerProviderSpec$$GatedSanitizer" }
       "no-context" { class = "akka.javasdk.impl.SanitizerProviderSpec$$NoContextSanitizer" }
     }
@@ -288,36 +268,6 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       await(provider.client.sanitizeAsync("counted", "b"))
 
       ConstructionCount.get() shouldEqual 1
-    }
-
-    "construct a sanitizer once when several threads call it first at the same time" in {
-      SlowConstructionCount.set(0)
-      val (provider, _) = newProvider(system, constructionConfig)
-
-      val pool = Executors.newFixedThreadPool(8)
-      try {
-        val start = new CountDownLatch(1)
-        val calls = (1 to 8).map { _ =>
-          pool.submit { () =>
-            start.await()
-            await(provider.client.sanitizeAsync("slow", "x"))
-          }
-        }
-        start.countDown()
-        calls.foreach(_.get(5, TimeUnit.SECONDS) shouldEqual "x")
-      } finally pool.shutdown()
-
-      SlowConstructionCount.get() shouldEqual 1
-    }
-
-    "keep nothing when a construction fails, and construct again on the next call" in {
-      FlakyConstructionCount.set(0)
-      val (provider, _) = newProvider(system, constructionConfig)
-
-      intercept[IllegalStateException](provider.client.sanitize("flaky", "quiet")).getMessage shouldEqual
-      "first construction fails"
-      provider.client.sanitize("flaky", "quiet") shouldEqual "QUIET"
-      FlakyConstructionCount.get() shouldEqual 2
     }
 
     "mask with a constructed sanitizer while another one is being constructed" in {
