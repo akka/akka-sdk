@@ -104,7 +104,7 @@ whitepapers:
 	    echo ">> Installing white paper render tooling (Playwright + Chromium), first run only..."; \
 	    (cd docs/bin/whitepaper && npm install && npx playwright install chromium); \
 	  fi; \
-	  node docs/bin/whitepaper/render-pdf.mjs "${TARGET_DIR}" operations/technical-overview.html "${TARGET_DIR}/operations/_attachments/whitepapers/aao-technical-overview.pdf"; \
+	  node docs/bin/whitepaper/render-pdf.mjs "${TARGET_DIR}"; \
 	fi
 
 done:

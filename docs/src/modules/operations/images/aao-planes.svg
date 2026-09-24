@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1244" height="705" viewBox="0 0 1244 705" font-family="'Instrument Sans',-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="Akka Federation Plane and Application Plane architecture">
+  <!-- Recreated as a themed (light) SVG from the original whitepaper Federation/Application Plane diagram, preserving its content. Dark-mode theming is a follow-up. -->
+  <rect x="0" y="0" width="1244" height="705" fill="#ffffff"/>
+  <defs>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#1e7e37"/></marker>
+    <marker id="ad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#c99a10"/></marker>
+    <marker id="ak" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#1a1a1a"/></marker>
+  </defs>
+
+  <!-- Left: customer actors -->
+  <rect x="25" y="60" width="140" height="470" rx="10" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="95" y="250" text-anchor="middle" font-size="15" fill="#1a1a1a">Your devs</text>
+  <text x="95" y="274" text-anchor="middle" font-size="15" fill="#1a1a1a">Your evals</text>
+  <text x="95" y="298" text-anchor="middle" font-size="15" fill="#1a1a1a">Your ops</text>
+  <text x="95" y="322" text-anchor="middle" font-size="15" fill="#1a1a1a">Your CI/CD</text>
+  <text x="95" y="346" text-anchor="middle" font-size="15" fill="#1a1a1a">Your infosec</text>
+
+  <!-- Federation Plane -->
+  <rect x="375" y="35" width="470" height="190" rx="8" fill="#fdf3d0" stroke="#f5b60b" stroke-width="2"/>
+  <rect x="375" y="35" width="470" height="46" rx="8" fill="#1a1a1a"/>
+  <text x="610" y="58" text-anchor="middle" font-size="20" font-weight="700" fill="#ffffff">Akka Federation Plane</text>
+  <text x="610" y="74" text-anchor="middle" font-size="11" fill="#ffce4a" font-family="'Roboto Mono',monospace">api.akka.io</text>
+  <text x="490" y="118" font-size="14" fill="#1a1a1a">&#8594; Multi-region coordination</text>
+  <text x="490" y="142" font-size="14" fill="#1a1a1a">&#8594; Cross-region failover</text>
+  <text x="490" y="166" font-size="14" fill="#1a1a1a">&#8594; Multi-region deployment</text>
+  <text x="490" y="190" font-size="14" fill="#1a1a1a">&#8594; Multi-region key rotation</text>
+
+  <!-- Application Planes -->
+  <rect x="375" y="360" width="470" height="175" rx="8" fill="#fdf3d0" stroke="#f5b60b" stroke-width="2"/>
+  <rect x="375" y="360" width="470" height="50" rx="8" fill="#1a1a1a"/>
+  <text x="610" y="384" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">Akka Application Planes (Regions)</text>
+  <text x="610" y="401" text-anchor="middle" font-size="10.5" fill="#ffce4a" font-family="'Roboto Mono',monospace">Akka cloud @ akka.io  |  your cloud @ AWS, Azure, GCP</text>
+  <text x="395" y="445" font-size="14" fill="#1a1a1a">&#8594; Your services and agents</text>
+  <text x="395" y="469" font-size="14" fill="#1a1a1a">&#8594; Your routes and endpoints</text>
+  <text x="395" y="493" font-size="14" fill="#1a1a1a">&#8594; Secrets</text>
+  <text x="625" y="445" font-size="14" fill="#1a1a1a">&#8594; Region-to-region mTLS</text>
+  <text x="625" y="469" font-size="14" fill="#1a1a1a">&#8594; Cross-region memory replication</text>
+
+  <!-- Your exposed routes -->
+  <rect x="490" y="548" width="240" height="54" rx="8" fill="none" stroke="#adadad" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="610" y="572" text-anchor="middle" font-size="13" fill="#1a1a1a">Your exposed routes</text>
+  <text x="610" y="590" text-anchor="middle" font-size="11" fill="#1e7e37" font-family="'Roboto Mono',monospace">your.domain.url</text>
+
+  <!-- Your end users -->
+  <rect x="300" y="634" width="620" height="48" rx="10" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="610" y="663" text-anchor="middle" font-size="15" fill="#1a1a1a">Your end users</text>
+
+  <!-- Right: customer data stays local -->
+  <rect x="1095" y="340" width="124" height="270" rx="10" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="1157" y="438" text-anchor="middle" font-size="14" fill="#1a1a1a">Your secrets</text>
+  <text x="1157" y="462" text-anchor="middle" font-size="14" fill="#1a1a1a">Your data</text>
+  <text x="1157" y="486" text-anchor="middle" font-size="14" fill="#1a1a1a">Your services</text>
+  <text x="1157" y="510" text-anchor="middle" font-size="14" fill="#1a1a1a">Your traffic</text>
+
+  <!-- Flows: actors -> Federation (account/billing/region mgmt) -->
+  <text x="330" y="82" text-anchor="end" font-size="12" fill="#1e7e37">account</text>
+  <text x="330" y="100" text-anchor="end" font-size="12" fill="#1e7e37">billing</text>
+  <text x="330" y="118" text-anchor="end" font-size="12" fill="#1e7e37">region mgmt</text>
+  <path d="M165 150 L230 150 L230 120 L375 120" fill="none" stroke="#1e7e37" stroke-width="1.6" marker-end="url(#ag)"/>
+
+  <!-- Flows: actors -> Application (observability/import-export/service ops/agent deploy) -->
+  <text x="330" y="472" text-anchor="end" font-size="12" fill="#1e7e37">observability</text>
+  <text x="330" y="490" text-anchor="end" font-size="12" fill="#1e7e37">import/export</text>
+  <text x="330" y="508" text-anchor="end" font-size="12" fill="#1e7e37">service ops</text>
+  <text x="330" y="526" text-anchor="end" font-size="12" fill="#1e7e37">agent deploy</text>
+  <path d="M165 300 L230 300 L230 460 L375 460" fill="none" stroke="#1e7e37" stroke-width="1.6" marker-end="url(#ag)"/>
+
+  <!-- Flow: Federation -> Application (sync) -->
+  <text x="600" y="252" text-anchor="end" font-size="12" fill="#c99a10">sync users</text>
+  <text x="600" y="270" text-anchor="end" font-size="12" fill="#c99a10">sync projects</text>
+  <text x="600" y="288" text-anchor="end" font-size="12" fill="#c99a10">sync roles</text>
+  <text x="600" y="306" text-anchor="end" font-size="12" fill="#c99a10">key rotation</text>
+  <path d="M610 225 L610 360" fill="none" stroke="#c99a10" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ad)"/>
+
+  <!-- Flow: Application <-> your data (remains within your regions) -->
+  <text x="1005" y="452" text-anchor="middle" font-size="12" fill="#1e7e37">remains 100%</text>
+  <text x="1005" y="470" text-anchor="middle" font-size="12" fill="#1e7e37">within your</text>
+  <text x="1005" y="488" text-anchor="middle" font-size="12" fill="#1e7e37">regions</text>
+  <path d="M845 400 L970 400 L970 360 L1095 360" fill="none" stroke="#1e7e37" stroke-width="1.6" marker-end="url(#ag)"/>
+  <path d="M1095 560 L970 560 L970 520 L845 520" fill="none" stroke="#1e7e37" stroke-width="1.6" marker-end="url(#ag)"/>
+
+  <!-- Flow: end users -> exposed routes -> Application -->
+  <path d="M610 634 L610 602" fill="none" stroke="#1a1a1a" stroke-width="1.6" marker-end="url(#ak)"/>
+  <path d="M610 548 L610 535" fill="none" stroke="#1a1a1a" stroke-width="1.6" marker-end="url(#ak)"/>
+</svg>

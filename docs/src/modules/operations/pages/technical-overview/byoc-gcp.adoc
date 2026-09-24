@@ -1,0 +1,69 @@
+= Bring Your Own Cloud on GCP
+:page-summary: GCP-specific setup for Akka Automated Operations under Bring Your Own Cloud: the identity model, GKE, and private connectivity for a region Akka provisions on Google Cloud.
+:page-when-to-use: Use this when Akka provisions an AAO region into your GCP project under Bring Your Own Cloud.
+:page-related: xref:operations:technical-overview.adoc[], xref:operations:technical-overview/byok8s-requirements.adoc[], xref:operations:technical-overview/data-flows.adoc[]
+:page-persona: operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+// REVIEW: The prose GCP source doc was never completed (it is a deprecated work-in-progress
+// clone of the Azure doc). The resource inventory below is derived from the akka-bootstrap
+// modules/google Terraform module (v1.1.5). The exact IAM roles and bindings live in that module
+// and are intentionally not duplicated here (see the note on akka-bootstrap). Tracked in issue #1792.
+
+This page covers running Akka Automated Operations (AAO) on GCP. For the architecture and concepts, start with the xref:operations:technical-overview.adoc[technical overview].
+
+[NOTE]
+====
+Download link:../_attachments/whitepapers/aao-byoc-gcp.pdf[BYOC on GCP as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
+====
+
+// DIAGRAM: recreated as a themed SVG from the akka-bootstrap modules/google model and the whitepaper style. Flagged for creator review.
+The architecture Akka provisions into your GCP project, with a VPC network, GKE, Cloud SQL, and the supporting services below.
+
+.AAO on GCP: architecture
+image::operations:aao-gcp-architecture.svg[AAO on GCP]
+
+== GCP resources
+
+AAO on GCP uses these Google Cloud services (from the `akka-bootstrap` `modules/google` module):
+
+* Cloud IAM and Cloud Resource Manager (service account, custom roles, and bindings)
+* Compute Engine networking (VPC, subnets, Cloud NAT, external IP, Cloud Load Balancing)
+* Google Kubernetes Engine (GKE)
+* Cloud SQL for PostgreSQL
+* Service Networking (private services access for the database)
+* Cloud DNS (public and private zones)
+* Cloud KMS
+* Cloud Storage
+
+== Identity model
+
+The cloud account is a GCP project. A dedicated Google service account is created for the region and assigned a non-human privileged role with the minimum permissions to set up and manage it. The service account is then configured so the Federation Plane's identity can impersonate it to bootstrap and manage the region.
+
+Rather than long-lived exported keys, the Federation Plane impersonates the dedicated service account, which keeps bootstrap and management credential-free on your side.
+
+AAO uses four roles: Deployment (created by `akka-bootstrap`), and Editor, Viewer, and SRE (created by you). The exact roles and bindings are created and managed by `akka-bootstrap` and are the source of truth; review the generated permission reference rather than a copy here.
+
+== Google GKE
+
+Managed Kubernetes hosts the Application Plane, with instances spread topologically across zones. Use CloudSQL for PostgreSQL for the database.
+
+== Installation
+
+Prepare your project with the `akka-bootstrap` utility. In `values.hcl`, use a `gcs` backend and populate the `gcp` block of `akka_regions`, then run `terragrunt init`, `terragrunt plan`, and `terragrunt apply`. After a successful apply, share the generated service-account details with Akka so the Federation Plane can impersonate it. Bootstrap is driven by the `modules/google` Terraform module.
+
+== Private connectivity
+
+By default, traffic between the region and your internal networks traverses the internet. To keep it private, AAO on GCP uses VPC Peering between the region VPC and your internal networks. The per-flow detail is on the xref:operations:technical-overview/data-flows.adoc[data flows] page.
+
+[#byok8s]
+== Bringing your own GKE cluster (BYOK8s)
+
+If you provision the cluster yourself, see xref:operations:technical-overview/byok8s-gcp.adoc[Akka Automated Operations on GCP with your own Kubernetes] for the complete, self-contained guide.
+
+== See also
+
+* xref:operations:technical-overview.adoc[Technical overview]
+* xref:operations:technical-overview/byok8s-requirements.adoc[BYOK8s requirements]
+* xref:operations:technical-overview/data-flows.adoc[Data flows]
