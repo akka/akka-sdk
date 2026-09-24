@@ -181,6 +181,9 @@ private[impl] object Reflect {
     isWorkflow(cls) ||
     isView(cls)
 
+  def isStreamingAgent(cls: Class[_]): Boolean =
+    isAgent(cls) && cls.getMethods.exists(isCommandHandlerCandidate[Agent.StreamEffect])
+
   def isEvaluatorAgent(cls: Class[_]): Boolean = {
     isAgent(cls) && {
       val effectMethod =
