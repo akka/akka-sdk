@@ -50,6 +50,42 @@ jobs:
           SDK_VERSION="$(cat ~/akka-javasdk-version.txt)"
           echo "SDK version: '${SDK_VERSION}'"
 
+      - name: Fail if release depends on a runtime snapshot
+        run: |-
+          SDK_VERSION="$(cat ~/akka-javasdk-version.txt)"
+          RUNTIME_VERSION=$(sed -nE 's/.*val AkkaRuntimeVersion = .*"([^"]+)"\).*/\1/p' project/Dependencies.scala)
+          echo "SDK version: '${SDK_VERSION}', runtime version: '${RUNTIME_VERSION}'"
+          if [[ -z "$RUNTIME_VERSION" ]]; then
+            echo "::error::Could not read AkkaRuntimeVersion from project/Dependencies.scala"
+            exit 1
+          fi
+          if [[ "$SDK_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && ! [[ "$RUNTIME_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-M[0-9]+|-RC[0-9]+)?$ ]]; then
+            echo "::error::Release ${SDK_VERSION} depends on runtime snapshot ${RUNTIME_VERSION}"
+            exit 1
+          fi
+
+      - name: Fail if version is already published
+        # Cloudsmith accepts a re-publish of an existing version but keeps the old artifacts.
+        # Resolves through the repositories that setup_global_resolver.sh put in ~/.m2/settings.xml.
+        run: |-
+          SDK_VERSION="$(cat ~/akka-javasdk-version.txt)"
+          if [[ "$SDK_VERSION" == *-SNAPSHOT ]]; then
+            echo "Snapshot version '${SDK_VERSION}', skipping check"
+            exit 0
+          fi
+          for ARTIFACT in akka-javasdk akka-javasdk-parent; do
+            if OUTPUT=$(mvn --batch-mode -Dmaven.repo.local="$(mktemp -d)" dependency:get \
+                -Dartifact="io.akka:${ARTIFACT}:${SDK_VERSION}:pom" -Dtransitive=false 2>&1); then
+              echo "::error::io.akka:${ARTIFACT}:${SDK_VERSION} is already published"
+              exit 1
+            elif grep -q "Could not transfer artifact" <<< "$OUTPUT"; then
+              echo "$OUTPUT"
+              echo "::warning::Could not check if io.akka:${ARTIFACT}:${SDK_VERSION} is published"
+            else
+              echo "io.akka:${ARTIFACT}:${SDK_VERSION} is not previously published"
+            fi
+          done
+
       - name: sbt publishSigned
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
