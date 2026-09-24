@@ -7,8 +7,8 @@ package akka.javasdk.impl
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.ConcurrentHashMap
 
-import scala.collection.mutable
 import scala.concurrent.Future
 import scala.jdk.FutureConverters._
 
@@ -47,9 +47,9 @@ import org.slf4j.LoggerFactory
   private lazy val byName: Map[String, ConfiguredSanitizer] =
     configuredSanitizers.map(s => s.name -> s).toMap
 
-  // Guarded by this provider's monitor. Each sanitizer is constructed once (at validate() time, or lazily on
-  // first invocation via the SPI adapter) and memoized.
-  private val cache = mutable.Map.empty[String, TextSanitizer]
+  // Each sanitizer is constructed once (at validate() time, or lazily on first invocation via the SPI adapter) and
+  // memoized. A call to one that exists reads the map without a lock.
+  private val cache = new ConcurrentHashMap[String, TextSanitizer]()
 
   val client: SanitizerClient = new SanitizerClient {
     override def sanitizeAsync(name: String, text: String): CompletionStage[String] =
@@ -150,14 +150,14 @@ import org.slf4j.LoggerFactory
       if (s.kind.isInstanceOf[SanitizerKind.Implementation]) getOrCreate(s.name)
     }
 
-  private def getOrCreate(name: String): TextSanitizer = synchronized {
-    cache.get(name) match {
-      case Some(instance) => instance
-      case None =>
-        requireConfigured(name)
-        val instance = createSanitizer(byName(name))
-        cache(name) = instance
-        instance
+  private def getOrCreate(name: String): TextSanitizer = {
+    val cached = cache.get(name)
+    if (cached ne null) cached
+    else {
+      requireConfigured(name)
+      // Only on a miss: computeIfAbsent can lock the bin even when the key is present. The mapping function runs at
+      // most once per name and holds that lock while it constructs, which validate() does before any traffic.
+      cache.computeIfAbsent(name, _ => createSanitizer(byName(name)))
     }
   }
 
