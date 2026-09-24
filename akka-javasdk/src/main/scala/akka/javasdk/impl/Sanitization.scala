@@ -33,8 +33,10 @@ private[javasdk] object Sanitization {
    * service implements can mask log messages too.
    */
   def loadSettings(config: Config): SpiDataSanitizerSettings =
-    new SpiDataSanitizerSettings(configuredSanitizers(config).flatMap(sanitizer =>
-      declarativeSpiSanitizer(sanitizer, spiApplyAt(sanitizer), Set.empty)))
+    new SpiDataSanitizerSettings(
+      configuredSanitizers(config).flatMap(sanitizer =>
+        declarativeSpiSanitizer(sanitizer, spiApplyAt(sanitizer), Set.empty)),
+      logSanitizers = Nil)
 
   def configuredSanitizers(config: Config): Seq[ConfiguredSanitizer] = {
     checkRemovedKeys(config)
