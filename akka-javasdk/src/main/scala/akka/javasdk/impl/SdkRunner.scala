@@ -138,10 +138,13 @@ import akka.runtime.sdk.spi.SpiDevObjectStorageFilesystemBucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsBucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsNativeCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsServiceAccountKeyCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3AccessStyle
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3PathAccessStyle
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3VirtualHostAccessStyle
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup
@@ -198,25 +201,24 @@ object SdkRunner {
     val sanitizationSettings = Sanitization.loadSettings(applicationConf)
 
     val devModeSettings =
-      if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled")) {
+      Option.when(applicationConf.getBoolean("akka.javasdk.dev-mode.enabled")) {
         val backofficeSettings = BackofficeSettingsLoader.loadBackofficeSettings(applicationConf)
         val objectStorageBuckets =
           extractDevObjectStorageBuckets(applicationConf.getConfig("akka.javasdk.dev-mode.object-storage"))
-        Some(
-          new SpiDevModeSettings(
-            httpPort = applicationConf.getInt("akka.javasdk.dev-mode.http-port"),
-            aclEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.acl.enabled"),
-            persistenceEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.persistence.enabled"),
-            serviceName = applicationConf.getString("akka.javasdk.dev-mode.service-name"),
-            eventingSupport = extractBrokerConfig(applicationConf.getConfig("akka.javasdk.dev-mode.eventing")),
-            mockedEventing = SpiMockedEventingSettings.empty,
-            testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
-            selfServiceName = None,
-            backoffice = backofficeSettings,
-            objectStorageBuckets = objectStorageBuckets,
-            // running locally binds the configured port; only the testkit asks for an assigned one
-            ephemeralHttpPort = false))
-      } else None
+        new SpiDevModeSettings(
+          httpPort = applicationConf.getInt("akka.javasdk.dev-mode.http-port"),
+          aclEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.acl.enabled"),
+          persistenceEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.persistence.enabled"),
+          serviceName = applicationConf.getString("akka.javasdk.dev-mode.service-name"),
+          eventingSupport = extractBrokerConfig(applicationConf.getConfig("akka.javasdk.dev-mode.eventing")),
+          mockedEventing = SpiMockedEventingSettings.empty,
+          testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
+          selfServiceName = None,
+          backoffice = backofficeSettings,
+          objectStorageBuckets = objectStorageBuckets,
+          // running locally binds the configured port; only the testkit asks for an assigned one
+          ephemeralHttpPort = false)
+      }
 
     val agentInteractionLogEnabled =
       devModeSettings.isDefined || // always enabled in dev mode
@@ -243,11 +245,28 @@ object SdkRunner {
         val name = c.getString("name")
         c.getString("provider") match {
           case "filesystem" =>
-            val directory = if (c.hasPath("directory")) Some(c.getString("directory")) else None
+            val directory = Option.when(c.hasPath("directory")) {
+              c.getString("directory")
+            }
             new SpiDevObjectStorageFilesystemBucketConfig(name, directory)
           case "s3" =>
             val creds = parseDevS3Credentials(name, c)
-            new SpiDevObjectStorageS3BucketConfig(name, c.getString("bucket"), c.getString("region"), creds, None, None)
+            // endpoint-url is the address of an S3-compatible service (e.g. MinIO). Without it the
+            // endpoint comes from the region, which addresses Amazon S3.
+            val endpointUrl = Option.when(c.hasPath("endpoint-url")) {
+              c.getString("endpoint-url")
+            }
+            val accessStyle =
+              Option.when(c.hasPath("access-style")) {
+                parseDevS3AccessStyle(name, c.getString("access-style"))
+              }
+            new SpiDevObjectStorageS3BucketConfig(
+              name,
+              c.getString("bucket"),
+              c.getString("region"),
+              creds,
+              endpointUrl,
+              accessStyle)
           case "gcs" =>
             val creds = parseDevGcsCredentials(name, c)
             new SpiDevObjectStorageGcsBucketConfig(name, c.getString("bucket"), creds)
@@ -260,6 +279,15 @@ object SdkRunner {
           s"Expected object in akka.javasdk.dev-mode.object-storage.buckets, got [$other]")
     }
   }
+
+  private def parseDevS3AccessStyle(bucketName: String, accessStyle: String): SpiDevObjectStorageS3AccessStyle =
+    accessStyle match {
+      case "virtual" => SpiDevObjectStorageS3VirtualHostAccessStyle
+      case "path"    => SpiDevObjectStorageS3PathAccessStyle
+      case other =>
+        throw new IllegalArgumentException(
+          s"Unknown S3 access style [$other] for dev bucket [$bucketName]. Valid: virtual, path")
+    }
 
   private def parseDevS3Credentials(bucketName: String, c: com.typesafe.config.Config) = {
     if (!c.hasPath("credentials") || c.getValue("credentials").unwrapped() == "workload-identity")
