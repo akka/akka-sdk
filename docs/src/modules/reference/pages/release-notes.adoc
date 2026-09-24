@@ -12,6 +12,11 @@ Current versions
 
 == September 2026
 
+* https://github.com/akka/akka-sdk/releases/tag/v3.6.5[Akka SDK 3.6.5]
+- Runtime 1.6.16
+- Bedrock model provider option to place the prompt cache point after the last user message
+- Testkit runtime port improvements
+
 * Akka CLI 3.0.76
 - commands to manage snapshots for link:reference:cli/akka-cli/akka_local_services_components_entities.adoc[entities] and link:reference:cli/akka-cli/akka_local_services_components_workflows.adoc[workflows]
 +
@@ -24,12 +29,6 @@ akka service components workflows force-snapshot  SERVICE_NAME COMPONENT_ID WORK
 ----
 - reorganized commands per component type e.g. `akka service components entities`
 - internal improvements
-
-
-* https://github.com/akka/akka-sdk/releases/tag/v3.6.4[Akka SDK 3.6.4]
-- Runtime 1.6.16
-- Bedrock model provider option to place the prompt cache point after the last user message
-- Testkit runtime port improvements
 
 * xref:release-notes/runtime/1.6.17.adoc[Akka Runtime 1.6.17]
 - Optimization of views and consumers that catch up over a long event backlog, and debug tracing fixes
