@@ -107,11 +107,12 @@ import com.typesafe.config.ConfigValueType
     val agentRoles = optionalStringSet(config, "agent-roles")
     val kind = readKind(name, config)
     val scoped = agents.nonEmpty || agentRoles.nonEmpty
+    val implementation = kind.isInstanceOf[SanitizerKind.Implementation]
 
     new ConfiguredSanitizer(
       name = name,
       kind = kind,
-      applyAt = readApplyAt(name, config, scoped),
+      applyAt = readApplyAt(name, config, scoped, implementation),
       agents = agents,
       agentRoles = agentRoles,
       config = config)
@@ -151,7 +152,7 @@ import com.typesafe.config.ConfigValueType
     }
   }
 
-  private def readApplyAt(name: String, config: Config, scoped: Boolean): Set[ApplyAt] = {
+  private def readApplyAt(name: String, config: Config, scoped: Boolean, implementation: Boolean): Set[ApplyAt] = {
     val declared = declaredApplyAt(config).map(_.toLowerCase(Locale.ROOT))
     val named: Set[ApplyAt] = declared.iterator
       .filterNot(_ == "*")
@@ -178,9 +179,11 @@ import com.typesafe.config.ConfigValueType
         "can be called by name, so leave out [client] to mask for the named agents.")
 
     // An entry that names no application point, or names "*", masks wherever the rest of it allows. An agent
-    // scoped entry leaves out log messages, for the reason in the error above.
+    // scoped entry leaves out log messages, for the reason in the error above. A class leaves them out unless
+    // apply-at names logs: the log engine calls it for every log line of the service, the runtime's included,
+    // and waits for it on each one.
     if (declared.isEmpty || declared.contains("*")) {
-      if (scoped) ApplyAt.AgentPoints else ApplyAt.MaskingPoints
+      if (scoped || implementation) ApplyAt.AgentPoints else ApplyAt.MaskingPoints
     } else named
   }
 

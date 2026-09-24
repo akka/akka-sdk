@@ -155,10 +155,22 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult)
     }
 
-    "include log messages for an implementation that names no point" in {
+    "leave out log messages for an implementation that names no point" in {
       parseOne("""
         "implemented" { class = "com.example.PiiSanitizer" }
-        """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult, ApplyAt.Logs)
+        """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult)
+    }
+
+    "leave out log messages for an implementation that names the wildcard" in {
+      parseOne("""
+        "implemented" { class = "com.example.PiiSanitizer", apply-at = ["*"] }
+        """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult)
+    }
+
+    "hold every point an implementation names, logs included" in {
+      parseOne("""
+        "implemented" { class = "com.example.PiiSanitizer", apply-at = ["model-call", "logs"] }
+        """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.Logs)
     }
 
     "hold logs for an implementation that names it" in {

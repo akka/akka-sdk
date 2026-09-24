@@ -73,6 +73,9 @@ object SanitizerProviderSpec {
         class = "akka.javasdk.impl.SanitizerProviderSpec$$NoContextSanitizer"
         apply-at = ["logs"]
       }
+      "implemented-default" {
+        class = "akka.javasdk.impl.SanitizerProviderSpec$$NoContextSanitizer"
+      }
       "agent-scoped" {
         pattern = "(other)"
         agents = ["some-agent"]
@@ -475,24 +478,26 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
 
   "The log sanitizers handed to the runtime" should {
 
-    "carry every entry that masks log messages, under its own name" in {
+    "carry every pattern and predefined entry that names no point, under its own name" in {
       val (provider, _) = newProvider(system, config)
 
-      provider.spiLogSanitizers.map(_.name).toSet shouldEqual Set(
-        "with-context",
-        "no-context",
-        "classifier-backed",
-        "counted",
-        "async-only",
-        "credit-card",
-        "warm-colors")
+      // the class entries of this config name no point either, and a class masks log messages only when it says so
+      provider.spiLogSanitizers.map(_.name).toSet shouldEqual Set("credit-card", "warm-colors")
+    }
+
+    "carry a class entry that names logs, and not one that names no point" in {
+      val (provider, _) = newProvider(system, logsConfig)
+
+      val logSanitizers = provider.spiLogSanitizers.map(_.name).toSet
+      logSanitizers should contain("implemented-logs")
+      logSanitizers should not contain "implemented-default"
     }
 
     "mask with the instance of a class based entry" in {
-      val (provider, _) = newProvider(system, config)
+      val (provider, _) = newProvider(system, logsConfig)
 
       val custom = provider.spiLogSanitizers.collectFirst {
-        case custom: SpiLogSanitizer.Custom if custom.name == "no-context" => custom
+        case custom: SpiLogSanitizer.Custom if custom.name == "implemented-logs" => custom
       }.get
 
       custom.implementationClass shouldEqual classOf[NoContextSanitizer].getName
@@ -518,6 +523,9 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         "logs-only" -> (nothingOnItsOwn, Set.empty),
         "implemented-logs" -> (nothingOnItsOwn, Set.empty),
         "by-name-only" -> (nothingOnItsOwn, Set.empty),
+        "implemented-default" -> (Set(
+          SpiDataSanitizer.ApplyAt.ModelCall,
+          SpiDataSanitizer.ApplyAt.ToolResult), Set.empty),
         "agent-scoped" -> (Set(SpiDataSanitizer.ApplyAt.ModelCall, SpiDataSanitizer.ApplyAt.ToolResult),
         Set("some-agent")))
     }

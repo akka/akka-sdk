@@ -65,7 +65,7 @@ You configure sanitizers as named entries of `akka.javasdk.sanitization.sanitize
 
 Each entry can also state where and for which agents it masks:
 
-* `apply-at`: the application points to mask at, any of `model-call`, `tool-result`, `logs` and `client`, or `*`. An entry that defines no `apply-at`, or defines `*`, masks at every point it can. An agent-scoped entry cannot mask log messages, so for those it means model input and tool results. An entry with `client` masks nothing on its own, see <<Ad hoc sanitization>>.
+* `apply-at`: the application points to mask at, any of `model-call`, `tool-result`, `logs` and `client`, or `*`. A `pattern` or `predefined` entry that defines no `apply-at`, or defines `*`, masks at every point it can. A `class` entry that defines no `apply-at`, or defines `*`, masks at `model-call` and `tool-result`, and masks log messages only when `apply-at` names `logs`. An agent-scoped entry cannot mask log messages, so for those it means `model-call` and `tool-result`. An entry with `client` masks nothing on its own, see <<Ad hoc sanitization>>.
 * `agents`: the component ids of the agents to mask for. Use `*` for every agent.
 * `agent-roles`: the roles of the agents to mask for. Use `*` for every agent that has a role.
 * `enabled`: set it to `false` to drop the entry. A dropped entry masks nothing and constructs nothing.
@@ -119,7 +119,7 @@ include::example$doc-snippets/src/main/java/com/example/sanitizer/AccountSanitiz
 
 The constructor can take an `akka.javasdk.SanitizerContext`, which gives access to the entry name and its configuration, and any other injectable type, such as an `akka.javasdk.agent.ClassifierClient` to mask what a configured classifier detects.
 
-An implementation can mask log messages, as a pattern can. The runtime calls it while it writes a log event, and the thread writing the event waits for the masked text. Keep such an implementation fast, and do not log from it.
+An implementation masks log messages only when its `apply-at` names `logs`. The runtime then calls it for every log line of the service, including its own, while it writes the log event, and the thread writing the event waits for the masked text. Keep such an implementation fast, and do not log from it.
 
 == Performance considerations
 
