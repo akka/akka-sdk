@@ -20,7 +20,7 @@ By shifting sanitization from application logic into the runtime, you gain:
 
 Sanitization is disabled by default. You enable it selectively through configuration, choosing exactly which categories of sensitive data to mask.
 
-A sanitizer applies everywhere unless it says otherwise. The three application points are:
+A sanitizer masks at one or more application points:
 
 * `logs`: text written to logs
 * `model-call`: text passed to the model in each model call of an agent
@@ -65,12 +65,19 @@ You configure sanitizers as named entries of `akka.javasdk.sanitization.sanitize
 
 Each entry can also state where and for which agents it masks:
 
-* `apply-at`: the application points to mask at, any of `model-call`, `tool-result`, `logs` and `client`, or `*`. A `pattern` or `predefined` entry that defines no `apply-at`, or defines `*`, masks at every point it can. A `class` entry that defines no `apply-at`, or defines `*`, masks at `model-call` and `tool-result`, and masks log messages only when `apply-at` names `logs`. An agent-scoped entry cannot mask log messages, so for those it means `model-call` and `tool-result`. An entry with `client` masks nothing on its own, see <<Ad hoc sanitization>>.
+* `apply-at`: the application points to mask at, any of `model-call`, `tool-result`, `logs` and `client`.
 * `agents`: the component ids of the agents to mask for. Use `*` for every agent.
 * `agent-roles`: the roles of the agents to mask for. Use `*` for every agent that has a role.
 * `enabled`: set it to `false` to drop the entry. A dropped entry masks nothing and constructs nothing.
 
 An entry that defines neither `agents` nor `agent-roles` masks for every agent. An entry that defines both masks for an agent that matches either one.
+
+An entry that defines no `apply-at`, or defines `*`, masks at:
+
+* `model-call`, `tool-result` and `logs` for a `pattern` or `predefined` entry.
+* `model-call` and `tool-result` for a `class` entry, or an entry with `agents` or `agent-roles`.
+
+The `logs` and `client` application points are global and cannot be combined with `agents` or `agent-roles`, but you can define the sanitizer twice with different names to enable it for all logs and for specific agents. An entry with `client` masks nothing on its own, and application code calls it by name, see <<Ad hoc sanitization>>.
 
 [source,json,indent=0]
 .{sample-base-url}/doc-snippets/src/main/resources/application.conf[application.conf]
@@ -87,8 +94,6 @@ Is written to logs as:
 
 [literal]
 Customer *********** reported an issue with their order
-
-The `logs` application point is global and cannot be combined with `agents` or `agent-roles`, but you can define the sanitizer twice with different names to enable it for all logs and for specific agents. The `client` application point cannot be combined with `agents` or `agent-roles` either.
 
 Any other key of an entry is specific configuration for that sanitizer. An implementation reads it from the `SanitizerContext` constructor parameter, see <<Sanitizer implementations>>.
 
