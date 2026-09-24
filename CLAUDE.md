@@ -20,3 +20,10 @@ application.conf comments, and git commit comments.
   critical to a gotcha in this code.
 - Javadoc is contract level: what the caller needs. Maintainer notes go in `//` comments next
   to the code or in the PR description.
+
+## PRs and commits
+- One PR should target one feature or one improvement, don't expand with unrelated work outside the original plan
+- PR branches can be stacked to keep each PR focused and easier to review
+- Conventional prefix: `fix`/`chore`/`docs`/`test`/`build`/`bump`.
+- Short commit message, state the purpose, don't restate the diff.
+- No `Co-Authored-By: Claude` or `Claude-Session`
