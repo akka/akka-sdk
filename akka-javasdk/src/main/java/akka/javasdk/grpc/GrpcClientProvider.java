@@ -32,9 +32,10 @@ public interface GrpcClientProvider {
 
   /**
    * Returns a provider for gRPC clients to services that belong to a system feature enabled in this
-   * project. A service name passed to {@link #grpcClientFor(Class, String)} on the returned provider
-   * is resolved among the services of the system feature instead of the services of this project.
-   * Calls are routed, encrypted and identified the same way as calls to services in this project.
+   * project. A service name passed to {@link #grpcClientFor(Class, String)} on the returned
+   * provider is resolved among the services of the system feature instead of the services of this
+   * project. Calls are routed, encrypted and identified the same way as calls to services in this
+   * project.
    *
    * @param systemFeature the name of the system feature, for example {@code my-feature}
    */
