@@ -6,6 +6,7 @@ package akka.javasdk.impl
 
 import akka.javasdk.impl.ConfiguredSanitizer.ApplyAt
 import akka.runtime.sdk.spi.SpiDataSanitizer
+import akka.runtime.sdk.spi.SpiLogSanitizer
 import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
@@ -298,6 +299,30 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
   }
 
   "The settings the runtime reads at startup" should {
+
+    "carry the pattern and predefined entries that mask log messages as log sanitizers, and no class" in {
+      val settings = SdkRunner
+        .extractSpiSettings(
+          ConfigFactory
+            .parseString("""
+            akka.javasdk.sanitization.sanitizers {
+              "warm-colors" { pattern = "(?i)(red|orange|yellow)", apply-at = ["logs"] }
+              "credit-card" { predefined = CREDIT_CARD }
+              "model-only" { pattern = "a", apply-at = ["model-call"] }
+              "account-ids" { pattern = "ACC-[0-9]+", apply-at = ["client"] }
+              "pii-in-logs" { class = "com.example.PiiSanitizer", apply-at = ["logs"] }
+            }
+            """)
+            .withFallback(ConfigFactory.load()))
+        .sanitizerSettings
+        .value
+
+      settings.logSanitizers.map {
+        case regex: SpiLogSanitizer.Regex           => regex.name -> regex.pattern.regex
+        case predefined: SpiLogSanitizer.Predefined => predefined.name -> predefined.group
+        case custom: SpiLogSanitizer.Custom         => custom.name -> custom.implementationClass
+      }.toMap shouldEqual Map("warm-colors" -> "(?i)(red|orange|yellow)", "credit-card" -> "CREDIT_CARD")
+    }
 
     "fail for an entry the service cannot start with" in {
       val exc = intercept[IllegalArgumentException](

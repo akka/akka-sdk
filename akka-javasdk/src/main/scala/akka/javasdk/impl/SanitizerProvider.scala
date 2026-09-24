@@ -114,16 +114,16 @@ import org.slf4j.LoggerFactory
   def spiLogSanitizers: Seq[SpiLogSanitizer] =
     configuredSanitizers.filter(_.masksLogs).map { s =>
       s.kind match {
-        case SanitizerKind.Pattern(regex) =>
-          new SpiLogSanitizer.Regex(s.name, regex, s.config)
-        case SanitizerKind.Predefined(group) =>
-          new SpiLogSanitizer.Predefined(s.name, group, s.config)
         case SanitizerKind.Implementation(className) =>
           new SpiLogSanitizer.Custom(
             s.name,
             className,
             new SanitizerProvider.SpiSanitizerAdapter(() => getOrCreate(s.name)),
             s.config)
+        case _ =>
+          Sanitization
+            .declarativeSpiLogSanitizer(s)
+            .getOrElse(throw new IllegalStateException(s"Sanitizer [${s.name}] has no runtime log entry"))
       }
     }
 

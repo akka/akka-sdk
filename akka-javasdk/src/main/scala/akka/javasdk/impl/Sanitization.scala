@@ -11,6 +11,7 @@ import akka.javasdk.Sanitizer
 import akka.javasdk.impl.ConfiguredSanitizer.ApplyAt
 import akka.runtime.sdk.spi.SpiDataSanitizer
 import akka.runtime.sdk.spi.SpiDataSanitizerSettings
+import akka.runtime.sdk.spi.SpiLogSanitizer
 import akka.runtime.sdk.spi.SpiSanitizerEngine
 import com.typesafe.config.Config
 
@@ -28,15 +29,16 @@ private[javasdk] object Sanitization {
 
   /**
    * The declarative entries, handed over before this service has any classes. The runtime builds the service wide
-   * sanitizer from them. It builds the engine that masks log messages from the log sanitizers of
-   * [[akka.runtime.sdk.spi.SpiSanitizerSetup]] instead, once this service is handed over, so that a sanitizer this
-   * service implements can mask log messages too.
+   * sanitizer from them, and masks log messages from startup with the ones that mask log messages. Once this service is
+   * handed over, it masks log messages with the log sanitizers of [[akka.runtime.sdk.spi.SpiSanitizerSetup]] instead,
+   * which also hold the ones this service implements.
    */
-  def loadSettings(config: Config): SpiDataSanitizerSettings =
+  def loadSettings(config: Config): SpiDataSanitizerSettings = {
+    val sanitizers = configuredSanitizers(config)
     new SpiDataSanitizerSettings(
-      configuredSanitizers(config).flatMap(sanitizer =>
-        declarativeSpiSanitizer(sanitizer, spiApplyAt(sanitizer), Set.empty)),
-      logSanitizers = Nil)
+      sanitizers.flatMap(sanitizer => declarativeSpiSanitizer(sanitizer, spiApplyAt(sanitizer), Set.empty)),
+      logSanitizers = sanitizers.filter(_.masksLogs).flatMap(declarativeSpiLogSanitizer))
+  }
 
   def configuredSanitizers(config: Config): Seq[ConfiguredSanitizer] = {
     checkRemovedKeys(config)
@@ -56,6 +58,20 @@ private[javasdk] object Sanitization {
         Some(new SpiDataSanitizer.Regex(sanitizer.name, regex, applyAt, enabledForComponents, sanitizer.config))
       case SanitizerKind.Predefined(group) =>
         Some(new SpiDataSanitizer.Predefined(sanitizer.name, group, applyAt, enabledForComponents, sanitizer.config))
+      case _: SanitizerKind.Implementation => None
+    }
+
+  /**
+   * The runtime log sanitizer of a pattern or predefined sanitizer, under the same name and group on both carriers. A
+   * sanitizer the SDK implements has none, it is carried with its instance on
+   * [[akka.runtime.sdk.spi.SpiSanitizerSetup]] only.
+   */
+  def declarativeSpiLogSanitizer(sanitizer: ConfiguredSanitizer): Option[SpiLogSanitizer] =
+    sanitizer.kind match {
+      case SanitizerKind.Pattern(regex) =>
+        Some(new SpiLogSanitizer.Regex(sanitizer.name, regex, sanitizer.config))
+      case SanitizerKind.Predefined(group) =>
+        Some(new SpiLogSanitizer.Predefined(sanitizer.name, group, sanitizer.config))
       case _: SanitizerKind.Implementation => None
     }
 

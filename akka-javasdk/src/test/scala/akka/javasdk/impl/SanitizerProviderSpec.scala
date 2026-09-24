@@ -493,6 +493,26 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       logSanitizers should not contain "implemented-default"
     }
 
+    "hand over a declarative entry on both carriers under the same name, and a class entry on the setup carrier only" in {
+      def describe(entry: SpiLogSanitizer): (String, String) = entry match {
+        case regex: SpiLogSanitizer.Regex           => regex.name -> regex.pattern.regex
+        case predefined: SpiLogSanitizer.Predefined => predefined.name -> predefined.group
+        case custom: SpiLogSanitizer.Custom         => custom.name -> custom.implementationClass
+      }
+
+      val (provider, _) = newProvider(system, logsConfig)
+      Sanitization.loadSettings(logsConfig).logSanitizers.map(describe) shouldEqual Seq("logs-only" -> "(secret)")
+      provider.spiLogSanitizers.map(describe).toSet shouldEqual Set(
+        "logs-only" -> "(secret)",
+        "implemented-logs" -> classOf[NoContextSanitizer].getName)
+
+      // a pattern and a predefined group, both unscoped
+      val (unscoped, _) = newProvider(system, config)
+      Sanitization.loadSettings(config).logSanitizers.map(describe).toSet shouldEqual
+      unscoped.spiLogSanitizers.map(describe).toSet
+      unscoped.spiLogSanitizers.map(describe).toSet should contain("credit-card" -> "CREDIT_CARD")
+    }
+
     "mask with the instance of a class based entry" in {
       val (provider, _) = newProvider(system, logsConfig)
 
