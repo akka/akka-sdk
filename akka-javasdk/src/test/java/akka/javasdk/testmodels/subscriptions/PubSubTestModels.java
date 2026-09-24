@@ -152,6 +152,18 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  @Consume.FromServiceStream(
+      service = "feature-service",
+      systemFeature = "my-feature",
+      id = "feature-events",
+      ignoreUnknown = true)
+  public static class SystemFeatureStreamConsumer extends Consumer {
+
+    public Effect handle(EmployeeCreated created) {
+      return effects().done();
+    }
+  }
+
   @Consume.FromServiceStream(service = "some_service", id = "circular_events", ignoreUnknown = true)
   public static class CircularProtoConsumer extends Consumer {
 

@@ -139,6 +139,13 @@ public @interface Consume {
     String service();
 
     /**
+     * The system feature the producing service belongs to, when consuming from a service that is
+     * part of a system feature enabled in this project rather than a service in the project itself.
+     * Empty when the producing service is a service in this project.
+     */
+    String systemFeature() default "";
+
+    /**
      * In case you need to consume the same stream multiple times, each subscription should have a
      * unique consumer group.
      *

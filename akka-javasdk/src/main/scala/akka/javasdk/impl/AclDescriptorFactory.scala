@@ -12,6 +12,7 @@ import akka.runtime.sdk.spi.ACL
 import akka.runtime.sdk.spi.All
 import akka.runtime.sdk.spi.Internet
 import akka.runtime.sdk.spi.PrincipalMatcher
+import akka.runtime.sdk.spi.ProjectServiceNamePattern
 import akka.runtime.sdk.spi.ServiceNamePattern
 import com.google.rpc.Code
 
@@ -25,9 +26,14 @@ private[impl] object AclDescriptorFactory {
     "Invalid annotation usage. Matcher has both 'principal' and 'service' defined. " +
     "Only one is allowed."
 
+  val invalidScopeUsage: String =
+    "Invalid annotation usage. Matcher has 'scope' defined without 'service'."
+
   def validateMatcher(matcher: Acl.Matcher): Unit = {
     if (matcher.principal() != Acl.Principal.UNSPECIFIED && matcher.service().nonEmpty)
       throw new IllegalArgumentException(invalidAnnotationUsage)
+    if (matcher.scope() != Acl.Scope.LOCAL && matcher.service().isEmpty)
+      throw new IllegalArgumentException(invalidScopeUsage)
   }
 
   // receives the method, checks if it is annotated with @Acl and if so,
@@ -47,9 +53,13 @@ private[impl] object AclDescriptorFactory {
   private def toPrincipalMatcher(matchers: Array[Acl.Matcher]): List[PrincipalMatcher] =
     matchers.map { m =>
       m.principal match {
-        case Acl.Principal.ALL         => All
-        case Acl.Principal.INTERNET    => Internet
-        case Acl.Principal.UNSPECIFIED => new ServiceNamePattern(m.service())
+        case Acl.Principal.ALL      => All
+        case Acl.Principal.INTERNET => Internet
+        case Acl.Principal.UNSPECIFIED =>
+          m.scope match {
+            case Acl.Scope.LOCAL   => new ServiceNamePattern(m.service())
+            case Acl.Scope.PROJECT => new ProjectServiceNamePattern(m.service())
+          }
       }
     }.toList
 

@@ -10,7 +10,6 @@ import akka.dispatch.ExecutionContexts
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.view.ViewTestModels
 import akka.runtime.sdk.spi.ConsumerSource
-import akka.runtime.sdk.spi.Principal
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.ServiceNamePattern
 import akka.runtime.sdk.spi.SpiSchema.SpiClass
@@ -57,9 +56,9 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
         val options = desc.componentOptions
         val acl = options.aclOpt.get
         acl.allow.head match {
-          case _: Principal => fail()
           case pattern: ServiceNamePattern =>
             pattern.pattern shouldBe "test"
+          case _ => fail()
         }
       }
     }
@@ -69,9 +68,9 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
         val query = desc.queries.find(_.name == "getEmployeeByEmail").get
         val acl = query.methodOptions.acl.get
         acl.allow.head match {
-          case _: Principal => fail()
           case pattern: ServiceNamePattern =>
             pattern.pattern shouldBe "test"
+          case _ => fail()
         }
       }
     }
@@ -291,6 +290,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
           case stream: ConsumerSource.ServiceStreamSource =>
             stream.service shouldBe "employee_service"
             stream.streamId shouldBe "employee_events"
+            stream.systemFeature shouldBe None
           case _ => fail()
         }
 
