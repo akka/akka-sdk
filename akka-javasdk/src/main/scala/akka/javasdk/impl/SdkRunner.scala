@@ -224,6 +224,8 @@ object SdkRunner {
 
     val spiDeployedEventingSettings = extractDeployedEventingSettings(applicationConf)
 
+    val autoDebugTracing = applicationConf.getBoolean("akka.javasdk.telemetry.tracing.auto-debug")
+
     new SpiSettings(
       eventSourcedEntitySnapshotEvery,
       cleanupDeletedEntityAfter,
@@ -232,7 +234,8 @@ object SdkRunner {
       agentInteractionLogEnabled,
       devModeSettings,
       Some(sanitizationSettings),
-      Some(spiDeployedEventingSettings))
+      Some(spiDeployedEventingSettings),
+      autoDebugTracing)
   }
 
   private def extractDevObjectStorageBuckets(objectStorageConf: Config): Seq[SpiDevObjectStorageBucketConfig] = {
