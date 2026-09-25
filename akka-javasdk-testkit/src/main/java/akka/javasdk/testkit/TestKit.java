@@ -1633,13 +1633,9 @@ public class TestKit {
    *
    * <p>The testkit keeps one subscription for each {@code service} and {@code streamId} pair, and
    * every call with the same pair returns the same handle. The subscription reads the stream from
-   * the beginning and follows the rules of a consuming service. It drops copies of an event it has
-   * delivered, and it delivers the events of each entity in sequence number order. For an event
-   * sourced entity or a workflow it delivers events without gaps, so an event that does not arrive
-   * holds back the later events of that entity. For a key value entity it can skip an update when a
-   * newer update of the same entity arrives first. In a suite that shares a single {@code TestKit}
-   * across multiple tests, call {@link EventingTestKit.OutgoingMessages#clear()} at the start of
-   * each test to drop events produced by prior tests.
+   * the beginning and follows the rules of a consuming service. In a suite that shares a single
+   * {@code TestKit} across multiple tests, call {@link EventingTestKit.OutgoingMessages#clear()}
+   * at the start of each test to drop events produced by prior tests.
    *
    * @param service service name
    * @param streamId service stream id
