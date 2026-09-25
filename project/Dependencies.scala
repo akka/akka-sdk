@@ -34,7 +34,7 @@ object Dependencies {
   val JUnitInterfaceVersion = "0.11"
   val JUnitJupiterVersion = "5.10.5"
   val OpenTelemetryVersion = "1.66.0"
-  val OpenTelemetrySemConv = "1.40.0"
+  val OpenTelemetrySemConv = "1.44.0"
 
   val CommonsIoVersion = "2.11.0"
   val MunitVersion = "0.7.29"
