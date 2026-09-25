@@ -1634,8 +1634,8 @@ public class TestKit {
    * <p>The testkit keeps one subscription for each {@code service} and {@code streamId} pair, and
    * every call with the same pair returns the same handle. The subscription reads the stream from
    * the beginning and follows the rules of a consuming service. In a suite that shares a single
-   * {@code TestKit} across multiple tests, call {@link EventingTestKit.OutgoingMessages#clear()}
-   * at the start of each test to drop events produced by prior tests.
+   * {@code TestKit} across multiple tests, call {@link EventingTestKit.OutgoingMessages#clear()} at
+   * the start of each test to drop events produced by prior tests.
    *
    * @param service service name
    * @param streamId service stream id
