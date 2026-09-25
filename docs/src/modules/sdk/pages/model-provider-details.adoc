@@ -6,6 +6,8 @@ Akka provides integration with several backend AI models. You are responsible fo
 
 As discussed in the xref:agents.adoc#model[Configuring the model] section of the Agent documentation, supplying a model provider through code will override the model provider configured through `application.conf` settings. You can also have multiple model providers configured and then use the `fromConfig` method of the `ModelProvider` class to load a specific one.
 
+Structured judgment requests use a separate provider, configured under `akka.javasdk.agent.judgment-model-provider`, see <<SystemOne>> and xref:sdk:agents/judgment.adoc[Structured judgment].
+
 This page provides a detailed list of all of the configuration values available to each provider. As with all Akka configuration, the model configuration is declared using the https://github.com/lightbend/config/blob/main/HOCON.md[HOCON] format.
 
 == Definitions
@@ -618,6 +620,50 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`ModelProvider.OpenAi`] for programmatic settings.
 
+=== SystemOne
+
+A SystemOne model answers structured judgment requests, see xref:sdk:agents/judgment.adoc[Structured judgment]. It is configured under `akka.javasdk.agent.judgment-model-provider`, not under `model-provider`, because it is not a chat model.
+
+[cols="1m,1,4"]
+|===
+| Property | Type | Description
+
+| provider
+| "system-one"
+| Name of the provider. Must always be `system-one`
+
+| api-key
+| String
+| The API key, sent as a bearer token. Defaults to the value of the `SYSTEM_ONE_API_KEY` environment variable
+
+| model-name
+| String
+| The name of the model to use. Defaults to `jev-latest`, the most recent stable release of the TypeSafe Jev API
+
+| base-url
+| Url
+| The base URL of the SystemOne API. Defaults to the TypeSafe Jev API. The request goes to `/v1/systemone` under it
+
+| connection-timeout
+| Duration
+| Fail the request if connecting to the API takes longer than this
+
+| response-timeout
+| Duration
+| Fail the request if the answer takes longer than this
+
+| max-retries
+| Integer
+| Retry this many times when the API responds with rate limited (429) or overloaded (529)
+
+| additional-model-request-headers
+| List of String
+| List of `"name:value"` strings for HTTP headers to include in every request to the API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. Can also be set via `ADDITIONAL_SYSTEM_ONE_REQUEST_HEADERS_N` environment variables.
+
+|===
+
+See link:{attachmentsdir}/api/akka/javasdk/agent/JudgmentModelProvider.SystemOne.html[`JudgmentModelProvider.SystemOne`] for programmatic settings.
+
 === Vertex AI
 
 [cols="1m,1,4"]
@@ -861,6 +907,12 @@ include::example$akka-javasdk/src/main/resources/reference.conf[tag=ollama]
 [source,hocon,indent=0]
 ----
 include::example$akka-javasdk/src/main/resources/reference.conf[tag=openai]
+----
+
+=== SystemOne
+[source,hocon,indent=0]
+----
+include::example$akka-javasdk/src/main/resources/reference.conf[tag=system-one]
 ----
 
 === Vertex AI

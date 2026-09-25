@@ -25,9 +25,9 @@ allowOrigins
 [Aa]lpakka
 anonymized
 [Aa]nthropic
+Antigravity
 [Aa]ntora
 (?i)API
-Antigravity
 APIs
 [Aa]rchitecting
 artifactId
@@ -143,8 +143,8 @@ Docstrings
 docstrings
 Doctolib
 downscaling
-Droid
 [Dd]rillable
+Droid
 DSRs
 DTDs
 Dynatrace
@@ -166,8 +166,8 @@ expirationSeconds
 [Ee]xplainability
 externalSecret
 facto
-[Ff]ailback
 Factory
+[Ff]ailback
 failover
 Failsafe
 fanout
@@ -231,6 +231,7 @@ iss
 Jamf
 jank
 Javadoc
+Jev
 jmesPath
 Json
 Jules
@@ -417,8 +418,8 @@ roleplay
 Rollout
 rollout
 rollup
-(?i)RPC
 Roo
+(?i)RPC
 ruleset
 [Rr]ulesets?
 runbook
@@ -431,8 +432,8 @@ runtimes
 [Ss]anitization
 SAST
 sbt
-(?i)Scala
 [Ss]caffolded
+(?i)Scala
 schema
 scrypt
 SDKs
@@ -484,6 +485,7 @@ substring
 [Ss]ubtasks?
 subtree
 Swiggy
+SystemOne
 Szymanski
 Tabnine
 teardown
@@ -522,6 +524,7 @@ Trivy
 truststore
 tsc
 Tubi
+TypeSafe
 [Tt]ypesafe
 uid
 UIs

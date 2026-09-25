@@ -11,6 +11,7 @@
 **** xref:sdk:agents/calling.adoc[Agent invocation]
 **** xref:sdk:agents/memory.adoc[Session memory]
 **** xref:sdk:agents/structured.adoc[Structured responses]
+**** xref:sdk:agents/judgment.adoc[Structured judgment]
 **** xref:sdk:agents/failures.adoc[Failure handling]
 **** xref:sdk:agents/extending.adoc[Function tools]
 **** xref:sdk:agents/streaming.adoc[Streaming responses]

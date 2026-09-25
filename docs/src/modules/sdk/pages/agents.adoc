@@ -60,6 +60,7 @@ The Agent's Effect defines the operations that Akka should perform when an incom
 * fail a command by returning an error
 * return an error message
 * transform responses from a model and reply to incoming commands
+* ask a SystemOne model a set of questions about a state and reply with the answers, see xref:sdk:agents/judgment.adoc[Structured judgment]
 
 For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
 

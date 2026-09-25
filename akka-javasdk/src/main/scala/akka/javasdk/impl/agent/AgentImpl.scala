@@ -48,6 +48,7 @@ import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.ConstantSystemMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.NoPrimaryEffect
+import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestJudgment
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.TemplateSystemMessage
 import akka.javasdk.impl.agent.GuardrailProvider.AgentGuardrails
@@ -82,6 +83,7 @@ import akka.runtime.sdk.spi.SpiMetadata
 import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import akka.util.ByteString
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
 import io.opentelemetry.api.trace.Span
@@ -178,6 +180,206 @@ private[impl] object AgentImpl {
       }
       .get
   }
+
+  def judgmentModelProviderFromConfig(config: Config, configPath: String, componentId: String)(implicit
+      system: ActorSystem[_]): JudgmentModelProvider = {
+    val actualPath =
+      if (configPath == "")
+        config.getString("akka.javasdk.agent.judgment-model-provider")
+      else
+        configPath
+
+    if (actualPath == "")
+      throw new IllegalArgumentException(
+        s"You must define judgment model provider configuration in [akka.javasdk.agent.judgment-model-provider]")
+
+    val resolvedConfigPath =
+      if (config.hasPath(actualPath))
+        actualPath
+      else if (!actualPath.contains('.') && config.hasPath("akka.javasdk.agent." + actualPath))
+        "akka.javasdk.agent." + actualPath
+      else
+        throw new IllegalArgumentException(s"Undefined judgment model provider configuration [$actualPath]")
+
+    try {
+      log.debug("Judgment model provider from config [{}]", resolvedConfigPath)
+      val providerConfig = config.getConfig(resolvedConfigPath)
+      providerConfig.getString("provider") match {
+        case "system-one" => JudgmentModelProvider.SystemOne.fromConfig(providerConfig)
+        case fqcn if isFqcn(fqcn) =>
+          instantiateCustomJudgmentProvider(fqcn, providerConfig, resolvedConfigPath)
+        case other =>
+          throw new IllegalArgumentException(
+            s"Unknown judgment model provider [$other] in config [$resolvedConfigPath]. If you are trying to load a custom class implementation, make sure you are using the right full-qualified class name.")
+      }
+    } catch {
+      case exc: ConfigException =>
+        log.error(
+          "Invalid judgment model provider configuration at [{}] for agent [{}].",
+          resolvedConfigPath,
+          componentId,
+          exc)
+        throw exc
+    }
+  }
+
+  private def instantiateCustomJudgmentProvider(fqcn: String, providerConfig: Config, resolvedConfigPath: String)(
+      implicit system: ActorSystem[_]): JudgmentModelProvider.Custom = {
+    system.dynamicAccess
+      .createInstanceFor[JudgmentModelProvider.Custom](fqcn, (classOf[Config] -> providerConfig) :: Nil)
+      .recoverWith { case _: ClassNotFoundException | _: NoSuchMethodException =>
+        system.dynamicAccess.createInstanceFor[JudgmentModelProvider.Custom](fqcn, Nil)
+      }
+      .recoverWith { case _: ClassNotFoundException | _: NoSuchMethodException =>
+        Failure(new IllegalArgumentException(
+          s"Custom judgment model provider class [$fqcn] in config [$resolvedConfigPath] must implement " +
+          s"JudgmentModelProvider.Custom and optionally have a constructor with com.typesafe.config.Config parameter"))
+      }
+      .get
+  }
+
+  @tailrec
+  private[impl] def toSpiJudgmentModelProvider(
+      provider: JudgmentModelProvider,
+      config: Config,
+      componentId: String,
+      ec: ExecutionContext)(implicit system: ActorSystem[_]): SpiAgent.JudgmentModelProvider = {
+    provider match {
+      case p: JudgmentModelProvider.FromConfig =>
+        toSpiJudgmentModelProvider(
+          judgmentModelProviderFromConfig(config, p.configPath(), componentId),
+          config,
+          componentId,
+          ec)
+      case p: JudgmentModelProvider.SystemOne =>
+        new SpiAgent.JudgmentModelProvider.SystemOne(
+          apiKey = p.apiKey,
+          modelName = p.modelName,
+          baseUrl = p.baseUrl,
+          modelSettings = new SpiAgent.ModelSettings(
+            p.connectionTimeout().toScala,
+            p.responseTimeout().toScala,
+            p.maxRetries(),
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq))
+      case p: JudgmentModelProvider.Custom =>
+        new SpiAgent.JudgmentModelProvider.Custom(
+          providerName = p.getClass.getName,
+          modelName = p.modelName(),
+          judge = spiRequest =>
+            Future(toSpiJudgmentResponse(p.judge(toJudgmentRequest(spiRequest)), p.modelName()))(ec))
+    }
+  }
+
+  private[impl] def judgmentStateJson(objectMapper: ObjectMapper, state: AnyRef): String =
+    objectMapper.writeValueAsString(state)
+
+  private[impl] def toSpiJudgmentRequest(
+      stateJson: String,
+      questions: Seq[(String, Question)]): SpiAgent.JudgmentRequest =
+    new SpiAgent.JudgmentRequest(
+      stateJson,
+      questions.map {
+        case (key, choice: Question.Choice) =>
+          new SpiAgent.ChoiceQuestion(
+            key,
+            choice.instructions,
+            choice.options.asScala
+              .map(option => new SpiAgent.ChoiceOption(option.key, option.description.toScala))
+              .toSeq)
+        case (key, score: Question.Score) =>
+          new SpiAgent.ScoreQuestion(key, score.instructions, score.levels.asScala.toSeq)
+        case (key, yesNo: Question.YesNo) =>
+          new SpiAgent.NoulQuestion(key, yesNo.instructions, yesNo.whenYes.toScala, yesNo.whenNo.toScala)
+      })
+
+  private[impl] def toJudgmentRequest(spiRequest: SpiAgent.JudgmentRequest): JudgmentRequest = {
+    val questions = new java.util.LinkedHashMap[String, Question]()
+    spiRequest.questions.foreach {
+      case q: SpiAgent.ChoiceQuestion =>
+        val options = q.options.map(option => new Question.Choice.Option(option.key, option.description.toJava))
+        questions.put(q.key, new Question.Choice(q.instructions, options.asJava))
+      case q: SpiAgent.ScoreQuestion =>
+        questions.put(q.key, new Question.Score(q.instructions, q.levels.asJava))
+      case q: SpiAgent.NoulQuestion =>
+        questions.put(q.key, new Question.YesNo(q.instructions, q.whenTrue.toJava, q.whenFalse.toJava))
+    }
+    new JudgmentRequest(spiRequest.stateJson, questions)
+  }
+
+  /**
+   * The answers in request order, followed by any answer the model returned for an unknown key. Fails with a
+   * ModelException when a question has no answer or an answer of another type, so that onFailure sees the same
+   * exception as for any other bad model response.
+   */
+  private[impl] def toJudgment(response: SpiAgent.JudgmentResponse, questions: Seq[(String, Question)]): Judgment = {
+    val answers = new java.util.LinkedHashMap[String, Judgment.Answer]()
+    questions.foreach { case (key, question) =>
+      val answer =
+        response.answers.getOrElse(key, throw new ModelException(s"The model returned no answer for question [$key]"))
+      val matches = (question, answer) match {
+        case (_: Question.Choice, _: SpiAgent.ChoiceAnswer) => true
+        case (_: Question.Score, _: SpiAgent.ScoreAnswer)   => true
+        case (_: Question.YesNo, _: SpiAgent.NoulAnswer)    => true
+        case _                                              => false
+      }
+      if (!matches)
+        throw new ModelException(
+          s"The model returned a [${answer.getClass.getSimpleName}] for question [$key], " +
+          s"which is a [${question.getClass.getSimpleName}] question")
+      answers.put(key, toAnswer(answer))
+    }
+    val questionKeys = questions.map(_._1)
+    response.answers.keys.filterNot(questionKeys.contains).toSeq.sorted.foreach { key =>
+      answers.put(key, toAnswer(response.answers(key)))
+    }
+    new Judgment(answers, response.model, new Agent.TokenUsage(response.inputTokenCount, response.outputTokenCount))
+  }
+
+  private def toAnswer(answer: SpiAgent.JudgmentAnswer): Judgment.Answer =
+    answer match {
+      case a: SpiAgent.ChoiceAnswer =>
+        new Judgment.ChoiceAnswer(
+          a.choice,
+          a.probabilities.map { case (key, probability) => key -> java.lang.Double.valueOf(probability) }.asJava,
+          a.confidence)
+      case a: SpiAgent.ScoreAnswer =>
+        new Judgment.ScoreAnswer(
+          a.score,
+          a.legend.asJava,
+          a.probabilities.map(java.lang.Double.valueOf).asJava,
+          a.confidence)
+      case a: SpiAgent.NoulAnswer =>
+        new Judgment.YesNoAnswer(a.probability)
+    }
+
+  private[impl] def toSpiJudgmentResponse(judgment: Judgment, defaultModel: String): SpiAgent.JudgmentResponse = {
+    val answers = judgment.answers.asScala.map { case (key, answer) => key -> toSpiAnswer(answer) }.toMap
+    val model = Option(judgment.model).filter(_.nonEmpty).getOrElse(defaultModel)
+    val usage = Option(judgment.tokenUsage)
+    new SpiAgent.JudgmentResponse(
+      model,
+      answers,
+      usage.map(_.inputTokens).getOrElse(0),
+      usage.map(_.outputTokens).getOrElse(0),
+      Instant.now())
+  }
+
+  private def toSpiAnswer(answer: Judgment.Answer): SpiAgent.JudgmentAnswer =
+    answer match {
+      case a: Judgment.ChoiceAnswer =>
+        new SpiAgent.ChoiceAnswer(
+          a.selected,
+          a.probabilities.asScala.map { case (key, probability) => key -> probability.doubleValue }.toMap,
+          a.confidence)
+      case a: Judgment.ScoreAnswer =>
+        new SpiAgent.ScoreAnswer(
+          a.value,
+          a.legend.asScala.toSeq,
+          a.probabilities.asScala.map(_.doubleValue).toSeq,
+          a.confidence)
+      case a: Judgment.YesNoAnswer =>
+        new SpiAgent.NoulAnswer(a.probability)
+    }
 
   @tailrec
   @nowarn("msg=deprecated")
@@ -749,6 +951,29 @@ private[impl] final class AgentImpl(
               responseGuardrails = guardrails.modelResponseGuardrails,
               contentLoader = spiContentLoader,
               callToolFunction = request => Future(toolExecutor.executeMultimodal(request))(sdkExecutionContext))
+
+          case req: RequestJudgment =>
+            val provider =
+              overrideModelProvider.getJudgmentModelProviderForAgent(componentId).getOrElse(req.provider)
+            val spiProvider = toSpiJudgmentModelProvider(provider, config, componentId, sdkExecutionContext)
+            val state = req.state.getOrElse(throw new IllegalStateException("A judgment request needs a state"))
+            val spiRequest = toSpiJudgmentRequest(judgmentStateJson(serializer.objectMapper, state), req.questions)
+            val questions = req.questions
+            val userMapping = req.responseMapping
+            val responseMapping: SpiAgent.JudgmentResponse => Any = { response =>
+              val judgment = toJudgment(response, questions)
+              userMapping match {
+                case Some(mapping) => mapping(judgment)
+                case None          => judgment
+              }
+            }
+            new SpiAgent.RequestJudgmentEffect(
+              modelProvider = spiProvider,
+              request = spiRequest,
+              responseMapping = responseMapping,
+              failureMapping = req.failureMapping.map(mapSpiAgentException),
+              replyMetadata = MetadataImpl.toSpi(req.replyMetadata),
+              requestGuardrails = guardrails.modelRequestGuardrails)
 
           case NoPrimaryEffect =>
             errorOrReply match {

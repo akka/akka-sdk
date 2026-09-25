@@ -44,6 +44,8 @@ private[javasdk] final class AgentStreamEffectImpl
         _primaryEffect = f(RequestModel.empty)
       case req: RequestModel =>
         _primaryEffect = f(req)
+      case _: RequestJudgment =>
+        throw new IllegalStateException("A judgment request cannot be combined with a model request")
     }
   }
 

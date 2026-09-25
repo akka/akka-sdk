@@ -18,16 +18,21 @@ import akka.javasdk.agent
 import akka.javasdk.agent.Agent.Effect
 import akka.javasdk.agent.Agent.Effect.Builder
 import akka.javasdk.agent.Agent.Effect.FailureBuilder
+import akka.javasdk.agent.Agent.Effect.JudgmentBuilder
 import akka.javasdk.agent.Agent.Effect.MappingFailureBuilder
 import akka.javasdk.agent.Agent.Effect.MappingResponseBuilder
 import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
 import akka.javasdk.agent.ContentLoader
 import akka.javasdk.agent.ImageLoader
+import akka.javasdk.agent.Judgment
+import akka.javasdk.agent.JudgmentModelProvider
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
+import akka.javasdk.agent.Question
 import akka.javasdk.agent.RemoteMcpTools
 import akka.javasdk.agent.UserMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.PrimaryEffectImpl
+import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestJudgment
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
@@ -98,6 +103,37 @@ private[javasdk] object BaseAgentEffectBuilder {
 
   }
 
+  object RequestJudgment {
+    val empty: RequestJudgment =
+      RequestJudgment(
+        provider = JudgmentModelProvider.fromConfig(),
+        state = None,
+        questions = Vector.empty,
+        responseMapping = None,
+        failureMapping = None,
+        replyMetadata = Metadata.EMPTY)
+
+    def validateComplete(request: RequestJudgment): Unit = {
+      if (request.state.isEmpty)
+        throw new IllegalStateException("A judgment request needs a state, call state(...) before thenReply()")
+      if (request.questions.isEmpty)
+        throw new IllegalStateException(
+          "A judgment request needs at least one question, call question(...) before thenReply()")
+    }
+  }
+
+  /**
+   * A structured judgment request. The state is serialized to JSON when the effect is converted to the SPI.
+   */
+  final case class RequestJudgment(
+      provider: JudgmentModelProvider,
+      state: Option[AnyRef],
+      questions: Vector[(String, Question)],
+      responseMapping: Option[Judgment => Any],
+      failureMapping: Option[Throwable => Any],
+      replyMetadata: Metadata)
+      extends PrimaryEffectImpl
+
   case object NoPrimaryEffect extends PrimaryEffectImpl
 }
 
@@ -132,6 +168,8 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
         _primaryEffect = f(RequestModel.empty)
       case req: RequestModel =>
         _primaryEffect = f(req)
+      case _: RequestJudgment =>
+        throw new IllegalStateException("A judgment request cannot be combined with a model request")
     }
   }
 
@@ -249,6 +287,13 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
     this
   }
 
+  override def judgment(): JudgmentBuilder = {
+    if (_primaryEffect != NoPrimaryEffect || _secondaryEffect != NoSecondaryEffectImpl)
+      throw new IllegalStateException(
+        "judgment() must be the first call on the effects builder, it cannot be combined with a model request or a reply")
+    new JudgmentEffectBuilder(RequestJudgment.empty)
+  }
+
   override def tools(toolInstancesOrClasses: util.List[AnyRef]): Builder = {
     updateRequestModel(_.addTools(toolInstancesOrClasses.asScala.toSeq))
     this
@@ -286,6 +331,108 @@ private[javasdk] final class MappingResponseEffectBuilder[Reply](private var _pr
   override def thenReply(metadata: Metadata): MappingResponseEffectBuilder[Reply] = {
     updateRequestModel(_.copy(replyMetadata = metadata))
     this.asInstanceOf[MappingResponseEffectBuilder[Reply]]
+  }
+
+  override def primaryEffect: PrimaryEffectImpl = _primaryEffect
+
+  override def secondaryEffect: SecondaryEffectImpl = NoSecondaryEffectImpl
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] final class JudgmentEffectBuilder(private var _primaryEffect: RequestJudgment)
+    extends JudgmentBuilder
+    with Effect[Judgment]
+    with AgentEffectImpl {
+
+  private def update(f: RequestJudgment => RequestJudgment): Unit =
+    _primaryEffect = f(_primaryEffect)
+
+  override def model(provider: JudgmentModelProvider): JudgmentBuilder = {
+    if (provider == null) throw new IllegalArgumentException("provider must not be null")
+    update(_.copy(provider = provider))
+    this
+  }
+
+  override def state(state: AnyRef): JudgmentBuilder = {
+    state match {
+      case null =>
+        throw new IllegalArgumentException("state must not be null")
+      case text: String if text.isBlank =>
+        throw new IllegalArgumentException("state must not be blank")
+      case _: java.util.Optional[_] =>
+        throw new IllegalArgumentException("state must not be an Optional, pass its value")
+      case _: java.lang.Number | _: java.lang.Boolean | _: java.lang.Character =>
+        throw new IllegalArgumentException(
+          s"state must be a String, an object or a collection, not [${state.getClass.getName}]")
+      case _ =>
+    }
+    update(_.copy(state = Some(state)))
+    this
+  }
+
+  override def question(key: String, question: Question): JudgmentBuilder = {
+    if (key == null || key.isBlank) throw new IllegalArgumentException("question key must not be blank")
+    if (question == null) throw new IllegalArgumentException(s"question [$key] must not be null")
+    if (_primaryEffect.questions.exists(_._1 == key))
+      throw new IllegalArgumentException(s"duplicate question key [$key]")
+    question match {
+      case choice: Question.Choice if choice.options.isEmpty =>
+        throw new IllegalArgumentException(s"choice question [$key] must have at least one option")
+      case _ =>
+    }
+    update(req => req.copy(questions = req.questions :+ (key -> question)))
+    this
+  }
+
+  override def map[T](mapper: function.Function[Judgment, T]): MappingFailureBuilder[T] =
+    new JudgmentMappingEffectBuilder[T](_primaryEffect.copy(responseMapping = Some(mapper.asScala)))
+
+  override def onFailure(exceptionHandler: function.Function[Throwable, Judgment]): FailureBuilder[Judgment] =
+    new JudgmentMappingEffectBuilder[Judgment](_primaryEffect.copy(failureMapping = Some(exceptionHandler.asScala)))
+
+  override def thenReply(): Effect[Judgment] = {
+    RequestJudgment.validateComplete(_primaryEffect)
+    this
+  }
+
+  override def thenReply(metadata: Metadata): Effect[Judgment] = {
+    RequestJudgment.validateComplete(_primaryEffect)
+    update(_.copy(replyMetadata = metadata))
+    this
+  }
+
+  override def primaryEffect: PrimaryEffectImpl = _primaryEffect
+
+  override def secondaryEffect: SecondaryEffectImpl = NoSecondaryEffectImpl
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] final class JudgmentMappingEffectBuilder[Reply](private var _primaryEffect: RequestJudgment)
+    extends MappingFailureBuilder[Reply]
+    with FailureBuilder[Reply]
+    with Effect[Reply]
+    with AgentEffectImpl {
+
+  override def onFailure(exceptionHandler: function.Function[Throwable, Reply]): FailureBuilder[Reply] = {
+    _primaryEffect = _primaryEffect.copy(failureMapping = Some(exceptionHandler.asScala))
+    this
+  }
+
+  override def thenReply(): Effect[Reply] = {
+    RequestJudgment.validateComplete(_primaryEffect)
+    this
+  }
+
+  override def thenReply(metadata: Metadata): Effect[Reply] = {
+    RequestJudgment.validateComplete(_primaryEffect)
+    _primaryEffect = _primaryEffect.copy(replyMetadata = metadata)
+    this
   }
 
   override def primaryEffect: PrimaryEffectImpl = _primaryEffect

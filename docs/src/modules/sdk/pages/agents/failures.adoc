@@ -26,6 +26,8 @@ The `onFailure` method can handle the following types of exceptions:
 * **Unknown exceptions:**
   ** `RuntimeException` - For any unexpected errors that do not fall into the above categories
 
+A structured judgment call, see xref:sdk:agents/judgment.adoc[Structured judgment], raises the model-related exceptions and `GuardrailException`. It does not call tools and does not parse a response, so the tool execution and response processing exceptions do not occur.
+
 Apart from the listed specific exceptions, users can still encounter `RuntimeException` instances that wrap unexpected errors. Therefore, when handling errors in the `onFailure` method, it is recommended to always include a `default` case to handle any unknown exception types gracefully.
 
 == Implementing fallback strategies

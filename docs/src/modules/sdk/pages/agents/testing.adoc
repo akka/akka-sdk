@@ -26,6 +26,20 @@ The example mocks the `WeatherAgent` from the multi-agent sample. The bootstrap 
 
 You can also use `whenMessage(predicate).reply(response)` for conditional text responses that vary based on the user message. Invoke the agent through the `componentClient` and assert on the result as in any other integration test.
 
+== Mocking judgment responses
+
+An agent that uses `effects().judgment()` has a `JudgmentModelProvider` instead of a `ModelProvider`, see xref:sdk:agents/judgment.adoc[Structured judgment]. Replace it with link:{attachmentsdir}/testkit/akka/javasdk/testkit/TestJudgmentModelProvider.html[TestJudgmentModelProvider], which answers the questions without calling a SystemOne endpoint.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/application/TriageAgentIntegrationTest.java[TriageAgentIntegrationTest.java]
+----
+include::example$doc-snippets/src/test/java/com/example/application/TriageAgentIntegrationTest.java[tag=judgment-test]
+----
+<1> Register the test provider for the agent with `withJudgmentModelProvider`.
+<2> `whenState` matches the state the agent sends, as text. `fixedAnswers` answers every request.
+<3> Reply with one answer per question key. The helper methods `choice`, `score`, `yes` and `no` build answers with full confidence. Construct `Judgment.ChoiceAnswer`, `Judgment.ScoreAnswer` or `Judgment.YesNoAnswer` directly for other probabilities.
+<4> A request that matches no rule fails the call, which is how you test `onFailure`.
+
 == Mocked model in a deployed service
 
 In some scenarios it can be useful to run the service deployed but without interacting with an actual agent. For example,
