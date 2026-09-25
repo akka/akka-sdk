@@ -55,6 +55,7 @@ private[testkit] object StreamOutgoingMessagesImpl {
   private val ProtoAnyTypeUrl = GoogleTypeUrlPrefix + com.google.protobuf.Any.getDescriptor.getFullName
 
   // Envelope sources set by the event producer.
+  private val SourceQuery = ""
   private val SourceBacktracking = "BT"
   private val SourceSnapshot = "SN"
 
@@ -163,6 +164,17 @@ private[testkit] object StreamOutgoingMessagesImpl {
         } else if (seqNr == accepted + 1 || !strictSeqNr(env)) {
           acceptedSeqNrs.update(persistenceId, seqNr)
           env :: Nil
+        } else if (env.source == SourceQuery) {
+          // A gap from pub-sub fills from the query. The query delivers the events of one entity in order, so a gap
+          // from the query means it missed the event before this one, and that event does not arrive with a payload.
+          log.warn(
+            "Stream [{}] dropped persistence id [{}] sequence number [{}] from the database query, because sequence " +
+            "number [{}] did not arrive. The testkit holds back later events of that persistence id.",
+            streamId,
+            persistenceId,
+            seqNr,
+            accepted + 1)
+          Nil
         } else {
           log.debug(
             "Stream [{}] dropped persistence id [{}] sequence number [{}] from source [{}], expected [{}]",

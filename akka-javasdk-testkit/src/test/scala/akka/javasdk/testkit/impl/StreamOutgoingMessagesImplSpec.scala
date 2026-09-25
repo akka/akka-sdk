@@ -112,10 +112,25 @@ class StreamOutgoingMessagesImplSpec extends ScalaTestWithActorTestKit with AnyW
       }
     }
 
-    "not log a warning for a pub-sub gap" in {
+    "log a warning for a gap from the query" in {
+      LoggingTestKit
+        .warn("dropped persistence id [a] sequence number [3] from the database query, because sequence number [2]")
+        .expect {
+          run(query("a", 1), query("a", 3)) shouldBe Seq(("a", 1, ""))
+        }
+    }
+
+    "not log a warning for a pub-sub gap or a copy" in {
       LoggingTestKit.warn("Stream [test-stream]").withOccurrences(0).expect {
-        run(query("a", 1), pubSub("a", 3), query("a", 2), query("a", 3), backtracking("a", 1)) shouldBe
-        Seq(("a", 1, ""), ("a", 2, ""), ("a", 3, ""))
+        run(
+          query("a", 1),
+          pubSub("a", 3),
+          query("a", 2),
+          query("a", 3),
+          pubSub("a", 4),
+          query("a", 4),
+          backtracking("a", 1)) shouldBe
+        Seq(("a", 1, ""), ("a", 2, ""), ("a", 3, ""), ("a", 4, "PS"))
       }
     }
   }
