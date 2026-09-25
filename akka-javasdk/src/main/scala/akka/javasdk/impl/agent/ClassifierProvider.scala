@@ -6,8 +6,8 @@ package akka.javasdk.impl.agent
 
 import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.ConcurrentHashMap
 
-import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
@@ -56,9 +56,9 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
   private lazy val byName: Map[String, ConfiguredClassifier] =
     configuredClassifiers.map(c => c.name -> c).toMap
 
-  // Guarded by this provider's monitor. Each classifier is constructed once (at validate() time, or
-  // lazily on first invocation via the SPI adapter) and memoized.
-  private val cache = mutable.Map.empty[String, Classifier]
+  // Each classifier is constructed once (at validate() time, or lazily on first invocation via the SPI adapter) and
+  // memoized. A call to one that exists reads the map without a lock.
+  private val cache = new ConcurrentHashMap[String, Classifier]()
 
   /**
    * The client for call sites with no per-call `telemetryContext` -- a guardrail's `GuardrailContext`, another
@@ -88,14 +88,14 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
       throw new IllegalArgumentException(
         s"No classifier configured with name [$name]. Configured classifiers: [${byName.keys.mkString(", ")}]")
 
-  private def getOrCreate(name: String): Classifier = synchronized {
-    cache.get(name) match {
-      case Some(instance) => instance
-      case None =>
-        requireConfigured(name)
-        val instance = createClassifier(byName(name))
-        cache(name) = instance
-        instance
+  private def getOrCreate(name: String): Classifier = {
+    val cached = cache.get(name)
+    if (cached ne null) cached
+    else {
+      requireConfigured(name)
+      // Only on a miss: computeIfAbsent can lock the bin even when the key is present. The mapping function runs at
+      // most once per name and holds that lock while it constructs, which validate() does before any traffic.
+      cache.computeIfAbsent(name, _ => createClassifier(byName(name)))
     }
   }
 

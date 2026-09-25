@@ -11,8 +11,10 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
@@ -81,6 +83,23 @@ object ClassifierProviderSpec {
     override def classifyAsync(input: String): CompletionStage[Classification] =
       CompletableFuture.supplyAsync(() => Classification.label(s"async:$input"))
   }
+
+  @volatile var GatedConstructionStarted = new CountDownLatch(1)
+  @volatile var GatedConstructionRelease = new CountDownLatch(1)
+
+  // Holds its construction until the test releases it.
+  class GatedClassifier extends Classifier {
+    GatedConstructionStarted.countDown()
+    GatedConstructionRelease.await(10, TimeUnit.SECONDS)
+    override def classify(input: String): Classification = Classification.label("gated")
+  }
+
+  private val constructionConfig = ConfigFactory.parseString(s"""
+    akka.javasdk.agent.classifiers {
+      "gated" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$GatedClassifier" }
+      "no-context" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$NoContextClassifier" }
+    }
+    """)
 
   val ConcurrentCallCount = new AtomicInteger(0)
 
@@ -277,6 +296,24 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
       val result = provider.client.classifyAsync("async-only", "x").toCompletableFuture.get(3, TimeUnit.SECONDS)
       result.label() shouldBe java.util.Optional.of("async:x")
       provider.client.classify("async-only", "y").label() shouldBe java.util.Optional.of("async:y")
+    }
+
+    "classify with a constructed classifier while another one is being constructed" in {
+      GatedConstructionStarted = new CountDownLatch(1)
+      GatedConstructionRelease = new CountDownLatch(1)
+      val provider = newProvider(system, constructionConfig)
+      provider.client.classify("no-context", "x").label().get() shouldEqual "ok"
+
+      val constructing = Future(provider.client.classify("gated", "x"))(ExecutionContext.global)
+      try {
+        GatedConstructionStarted.await(3, TimeUnit.SECONDS) shouldBe true
+        // Runs on its own thread, because a call that waits for the construction above does not return.
+        Await
+          .result(Future(provider.client.classify("no-context", "x"))(ExecutionContext.global), 3.seconds)
+          .label()
+          .get() shouldEqual "ok"
+      } finally GatedConstructionRelease.countDown()
+      Await.result(constructing, 3.seconds).label().get() shouldEqual "gated"
     }
 
     "handle concurrent classify(...) calls against the shared singleton instance safely" in {

@@ -88,8 +88,6 @@ The following types can be injected in all component types:
 | Contains information about all agents, see xref:agents.adoc[]
 | `com.typesafe.config.Config`
 | Access the user defined configuration picked up from `application.conf`
-| `akka.javasdk.Sanitizer`
-| Allows for applying sanitization, see xref:sdk:sanitization.adoc[]
 | `io.opentelemetry.api.metrics.Meter`
 | Allows creating custom Open Telemetry metrics, see xref:sdk:metric.adoc[]
 |===
@@ -121,6 +119,8 @@ The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpo
 | For fetching recorded agent interactions from the ledger, primarily for evaluators, see xref:evaluators.adoc[]
 | `akka.javasdk.agent.ClassifierClient`
 | For invoking a configured classifier by name, see xref:agents/classifiers.adoc[]
+| `akka.javasdk.SanitizerClient`
+| For masking text with a configured sanitizer by name, see xref:sdk:sanitization.adoc[]
 |===
 
 Furthermore, the following component specific types can also be injected:

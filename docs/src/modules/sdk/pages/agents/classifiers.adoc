@@ -51,7 +51,7 @@ akka.javasdk.agent.classifiers {
 <2> Implementation class. It must be public and have a public constructor.
 <3> An application-specific property, read by the classifier from `ClassifierContext.config()`.
 
-A classifier configuration has no `agents`, `agent-roles`, `use-for`, or `category`: a classifier is not scoped to a boundary or a set of agents.
+A classifier configuration has no `agents`, `agent-roles`, or `category`: a classifier is not scoped to a boundary or a set of agents.
 Callers invoke it by name where they need it.
 
 == Invoking a classifier

@@ -37,7 +37,7 @@ import java.lang.annotation.*;
  *   <li>{@link com.typesafe.config.Config}
  *   <li>{@link io.opentelemetry.api.trace.Span}
  *   <li>{@link akka.javasdk.agent.AgentRegistry} - contains information about all agents
- *   <li>{@link akka.javasdk.Sanitizer} - allows for applying sanitization
+ *   <li>{@link akka.javasdk.SanitizerClient} - for masking text with a configured sanitizer
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider}
  * </ul>
  *
