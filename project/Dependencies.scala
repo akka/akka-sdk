@@ -27,14 +27,14 @@ object Dependencies {
   val JacksonVersion = "2.21.5"
   val JacksonDatabindVersion = JacksonVersion
   val JacksonAnnotationsVersion = "2.21"
-  val Langchain4jVersion = "1.18.1"
+  val Langchain4jVersion = "1.20.0"
   val LogbackVersion = "1.6.3"
   val LogbackContribVersion = "0.1.5"
   val JUnitVersion = "4.13.2"
   val JUnitInterfaceVersion = "0.11"
   val JUnitJupiterVersion = "5.10.5"
-  val OpenTelemetryVersion = "1.64.0"
-  val OpenTelemetrySemConv = "1.40.0"
+  val OpenTelemetryVersion = "1.66.0"
+  val OpenTelemetrySemConv = "1.44.0"
 
   val CommonsIoVersion = "2.11.0"
   val MunitVersion = "0.7.29"
@@ -90,7 +90,7 @@ object Dependencies {
   val opentelemetryContext = "io.opentelemetry" % "opentelemetry-context" % OpenTelemetryVersion
   val opentelemetrySemConv = "io.opentelemetry.semconv" % "opentelemetry-semconv" % OpenTelemetrySemConv
 
-  val typesafeConfig = "com.typesafe" % "config" % "1.4.8"
+  val typesafeConfig = "com.typesafe" % "config" % "1.4.9"
   val protobufJavaUtil = "com.google.protobuf" % "protobuf-java-util" % GoogleProtobufVersion
 
   private val deps = libraryDependencies
@@ -152,7 +152,7 @@ object Dependencies {
         // user will interface with these
         junit5,
         // convenience-transitive dependencies for user assertions and async interactions
-        "org.awaitility" % "awaitility" % "4.2.1",
+        "org.awaitility" % "awaitility" % "4.2.2",
         "org.assertj" % "assertj-core" % AssertJVersion,
         // for the tests of the testkit itself
         "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
@@ -162,7 +162,7 @@ object Dependencies {
     deps ++= Seq(
       // FIXME why doesn't these two come along transitively from the testkit?
       "org.assertj" % "assertj-core" % AssertJVersion % Test,
-      "org.awaitility" % "awaitility" % "4.2.1" % Test,
+      "org.awaitility" % "awaitility" % "4.2.2" % Test,
       AkkaDevRuntime % Test,
       akkaDependency("akka-testkit"),
       // These are for the test of the testkit
