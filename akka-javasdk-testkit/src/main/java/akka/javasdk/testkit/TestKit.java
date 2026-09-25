@@ -1631,10 +1631,11 @@ public class TestKit {
    * was registered via {@link Settings#withStreamOutgoingMessages(String, String)}); the underlying
    * subscription itself is resolved against the service-under-test by {@code streamId}.
    *
-   * <p>Each call returns a handle whose subscription replays events from the beginning of the
-   * stream. In a suite that shares a single {@code TestKit} across multiple tests, call {@link
-   * EventingTestKit.OutgoingMessages#clear()} at the start of each test to drop events produced by
-   * prior tests.
+   * <p>The testkit keeps one subscription for each {@code service} and {@code streamId} pair, and
+   * every call with the same pair returns the same handle. The subscription reads the stream from
+   * the beginning and follows the rules of a consuming service. In a suite that shares a single
+   * {@code TestKit} across multiple tests, call {@link EventingTestKit.OutgoingMessages#clear()} at
+   * the start of each test to drop events produced by prior tests.
    *
    * @param service service name
    * @param streamId service stream id
