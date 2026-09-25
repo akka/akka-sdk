@@ -6,10 +6,12 @@ package akka.javasdk.testkit.impl
 
 import java.util.concurrent.atomic.AtomicBoolean
 
+import scala.collection.mutable
 import scala.util.Failure
 import scala.util.Success
 
 import akka.Done
+import akka.NotUsed
 import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -20,11 +22,13 @@ import akka.javasdk.impl.serialization.Serializer
 import akka.persistence.Persistence
 import akka.persistence.query.Offset
 import akka.persistence.query.typed.EventEnvelope
+import akka.projection.AllowSeqNrGapsMetadata
 import akka.projection.grpc.consumer.GrpcQuerySettings
 import akka.projection.grpc.consumer.scaladsl.GrpcReadJournal
 import akka.stream.KillSwitches
 import akka.stream.Materializer
 import akka.stream.SystemMaterializer
+import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Sink
 import akka.testkit.TestProbe
@@ -49,6 +53,10 @@ private[testkit] object StreamOutgoingMessagesImpl {
 
   private val GoogleTypeUrlPrefix = AnySupport.DefaultTypeUrlPrefix + "/"
   private val ProtoAnyTypeUrl = GoogleTypeUrlPrefix + com.google.protobuf.Any.getDescriptor.getFullName
+
+  // Envelope sources set by the event producer.
+  private val SourceBacktracking = "BT"
+  private val SourceSnapshot = "SN"
 
   def apply(
       system: ActorSystem[_],
@@ -88,6 +96,7 @@ private[testkit] object StreamOutgoingMessagesImpl {
     val (killSwitch, done) = journal
       .eventsBySlices[AnyRef](streamId, sliceRange.min, sliceRange.max, Offset.noOffset)
       .viaMat(KillSwitches.single)(Keep.right)
+      .via(offsetStoreFilter(streamId))
       .toMat(Sink.foreach { (env: EventEnvelope[AnyRef]) =>
         toEmitSingleCommand(env, streamId).foreach(cmd => probe.ref ! cmd)
       })(Keep.both)
@@ -118,6 +127,57 @@ private[testkit] object StreamOutgoingMessagesImpl {
 
     new OutgoingMessagesImpl(probe, serializer)
   }
+
+  // The producer merges its database query with pub-sub and does not remove copies. Once it accepts pub-sub events,
+  // each event arrives twice, first from pub-sub and then from the query. A pub-sub event can also arrive before an
+  // earlier event that waits for the next query poll. Backtracking envelopes arrive later, without a payload.
+  //
+  // This flow applies the rules of the offset store of a consuming projection. It keeps the last accepted sequence
+  // number per persistence id. A number at or below it is a copy. A strict envelope must be the next number, and a gap
+  // is dropped. A pub-sub event ahead of a gap arrives again from the query, after the missing events. A snapshot, or
+  // an envelope with AllowSeqNrGapsMetadata, may be any higher number. An envelope without a payload does not move the
+  // number, because the copy with the payload can arrive after it. A filtered envelope moves the number, so the next
+  // event is not a gap. The state lives in the stage, so `clear()` on the handle does not reset it.
+  private[impl] def offsetStoreFilter(streamId: String): Flow[EventEnvelope[AnyRef], EventEnvelope[AnyRef], NotUsed] =
+    Flow[EventEnvelope[AnyRef]].statefulMapConcat { () =>
+      val acceptedSeqNrs = mutable.Map.empty[String, Long]
+
+      env => {
+        val persistenceId = env.persistenceId
+        val seqNr = env.sequenceNr
+        val accepted = acceptedSeqNrs.getOrElse(persistenceId, 0L)
+
+        if (!env.filtered && env.eventOption.isEmpty) {
+          // Backtracking runs well behind the query. When it finds the next number, the query missed that event, and
+          // the event does not arrive with a payload.
+          if (env.source == SourceBacktracking && seqNr == accepted + 1)
+            log.warn(
+              "Stream [{}] did not receive persistence id [{}] sequence number [{}] with a payload. The testkit does " +
+              "not deliver it, or later events of that persistence id that must follow it in sequence.",
+              streamId,
+              persistenceId,
+              seqNr)
+          Nil
+        } else if (seqNr <= accepted) {
+          Nil
+        } else if (seqNr == accepted + 1 || !strictSeqNr(env)) {
+          acceptedSeqNrs.update(persistenceId, seqNr)
+          env :: Nil
+        } else {
+          log.debug(
+            "Stream [{}] dropped persistence id [{}] sequence number [{}] from source [{}], expected [{}]",
+            streamId,
+            persistenceId,
+            seqNr,
+            env.source,
+            accepted + 1)
+          Nil
+        }
+      }
+    }
+
+  private def strictSeqNr(env: EventEnvelope[AnyRef]): Boolean =
+    env.source != SourceSnapshot && env.metadata[AllowSeqNrGapsMetadata.type].isEmpty
 
   private def toEmitSingleCommand(env: EventEnvelope[AnyRef], streamId: String): Option[EmitSingleCommand] = {
     if (env.filtered || env.eventOption.isEmpty) None
