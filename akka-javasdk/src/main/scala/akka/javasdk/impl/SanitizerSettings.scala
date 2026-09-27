@@ -178,12 +178,12 @@ import com.typesafe.config.ConfigValueType
         "by name belongs to no agent, so the runtime has no agent to match the scope against. Every sanitizer " +
         "can be called by name, so leave out [client] to mask for the named agents.")
 
-    // An entry that names no application point, or names "*", masks wherever the rest of it allows. An agent
-    // scoped entry leaves out log messages, for the reason in the error above. A class leaves them out unless
-    // apply-at names logs: the log engine calls it for every log line of the service, the runtime's included,
-    // and waits for it on each one.
+    // An entry that names no application point, or names "*", masks wherever the rest of it allows, and at
+    // every point it names beside "*". An agent scoped entry leaves out log messages, for the reason in the error
+    // above. A class leaves them out unless apply-at names logs: the log engine calls it for every log line of the
+    // service, the runtime's included, and waits for it on each one.
     if (declared.isEmpty || declared.contains("*")) {
-      if (scoped || implementation) ApplyAt.AgentPoints else ApplyAt.MaskingPoints
+      (if (scoped || implementation) ApplyAt.AgentPoints else ApplyAt.MaskingPoints) ++ named
     } else named
   }
 

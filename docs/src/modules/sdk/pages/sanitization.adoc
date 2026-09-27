@@ -77,6 +77,8 @@ An entry that defines no `apply-at`, or defines `*`, masks at:
 * `model-call`, `tool-result` and `logs` for a `pattern` or `predefined` entry.
 * `model-call` and `tool-result` for a `class` entry, or an entry with `agents` or `agent-roles`.
 
+Points named beside `*` are added, so `apply-at = ["*", "logs"]` makes a `class` entry mask log messages as well.
+
 The `logs` and `client` application points are global and cannot be combined with `agents` or `agent-roles`, but you can define the sanitizer twice with different names to enable it for all logs and for specific agents. An entry with `client` masks nothing on its own, and application code calls it by name, see <<Ad hoc sanitization>>.
 
 [source,json,indent=0]

@@ -168,6 +168,12 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult)
     }
 
+    "add the points an implementation names beside the wildcard" in {
+      parseOne("""
+        "implemented" { class = "com.example.PiiSanitizer", apply-at = ["*", "logs"] }
+        """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult, ApplyAt.Logs)
+    }
+
     "hold every point an implementation names, logs included" in {
       parseOne("""
         "implemented" { class = "com.example.PiiSanitizer", apply-at = ["model-call", "logs"] }
