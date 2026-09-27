@@ -75,9 +75,8 @@ An entry that defines neither `agents` nor `agent-roles` masks for every agent. 
 An entry that defines no `apply-at`, or defines `*`, masks at:
 
 * `model-call`, `tool-result` and `logs` for a `pattern` or `predefined` entry.
-* `model-call` and `tool-result` for a `class` entry, or an entry with `agents` or `agent-roles`.
-
-Points named beside `*` are added, so `apply-at = ["*", "logs"]` makes a `class` entry mask log messages as well.
+* every point its class can mask at for a `class` entry, see <<Sanitizer implementations>>.
+* `model-call` and `tool-result` for an entry with `agents` or `agent-roles`.
 
 The `logs` and `client` application points are global and cannot be combined with `agents` or `agent-roles`, but you can define the sanitizer twice with different names to enable it for all logs and for specific agents. An entry with `client` masks nothing on its own, and application code calls it by name, see <<Ad hoc sanitization>>.
 
@@ -116,7 +115,12 @@ A small set of common sanitizers is built into the Akka runtime. You select one 
 
 === Sanitizer implementations
 
-When a regular expression cannot express what to mask, implement `akka.javasdk.TextSanitizer` and configure the class with `class`. Return the text unchanged when there is nothing to mask.
+When a regular expression cannot express what to mask, implement a class and configure it with `class`. The interface of the class decides where it can mask:
+
+* `akka.javasdk.TextSanitizer` masks the text of agents, at `model-call` and `tool-result`.
+* `akka.javasdk.LogSanitizer` masks log messages, at `logs`.
+
+A class can implement both. Return the text unchanged when there is nothing to mask.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/sanitizer/AccountSanitizer.java[AccountSanitizer.java]
@@ -124,9 +128,15 @@ When a regular expression cannot express what to mask, implement `akka.javasdk.T
 include::example$doc-snippets/src/main/java/com/example/sanitizer/AccountSanitizer.java[tag=all]
 ----
 
-The constructor can take an `akka.javasdk.SanitizerContext`, which gives access to the entry name and its configuration, and any other injectable type, such as an `akka.javasdk.agent.ClassifierClient` to mask what a configured classifier detects.
+The constructor of a `TextSanitizer` can take an `akka.javasdk.SanitizerContext`, which gives access to the entry name and its configuration, and any other injectable type, such as an `akka.javasdk.agent.ClassifierClient` to mask what a configured classifier detects.
 
-An implementation masks log messages only when its `apply-at` names `logs`. The runtime then calls it for every log line of the service, including its own, while it writes the log event, and the thread writing the event waits for the masked text. Keep such an implementation fast, and do not log from it. Do not call a classifier, an agent or a remote service from it either. The runtime masks the log lines that such a call writes with the same sanitizer, so one call can lead to more calls, without end when the call fails and logs the failure.
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/sanitizer/TokenLogSanitizer.java[TokenLogSanitizer.java]
+----
+include::example$doc-snippets/src/main/java/com/example/sanitizer/TokenLogSanitizer.java[tag=all]
+----
+
+The runtime calls a `LogSanitizer` for every log line of the service, including its own, while it writes the log event, and the thread writing the event waits for the masked text. Its constructor takes no parameter or an `akka.javasdk.SanitizerContext`, and nothing else. Keep it a fast function of the message and its configuration, and do not log from it. The SDK constructs a class that implements both interfaces as a `LogSanitizer`.
 
 == Performance considerations
 
