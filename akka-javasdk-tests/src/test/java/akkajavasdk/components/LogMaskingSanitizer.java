@@ -4,20 +4,20 @@
 
 package akkajavasdk.components;
 
+import akka.javasdk.LogSanitizer;
 import akka.javasdk.SanitizerContext;
-import akka.javasdk.TextSanitizer;
 
 /** Masks log messages, which a sanitizer the service implements can do. */
-public class LogSanitizer implements TextSanitizer {
+public class LogMaskingSanitizer implements LogSanitizer {
 
   private final String replacement;
 
-  public LogSanitizer(SanitizerContext context) {
+  public LogMaskingSanitizer(SanitizerContext context) {
     this.replacement = context.config().getString("replacement");
   }
 
   @Override
-  public String sanitize(String text) {
-    return text.replace("logsecret", replacement);
+  public String sanitize(String message) {
+    return message.replace("logsecret", replacement);
   }
 }

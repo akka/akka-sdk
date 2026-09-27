@@ -34,15 +34,19 @@ private[javasdk] object Sanitization {
    * which also hold the ones this service implements.
    */
   def loadSettings(config: Config): SpiDataSanitizerSettings = {
-    val sanitizers = configuredSanitizers(config)
+    // A class entry is not handed over here, and this runs before the classes of this service are looked at, so every
+    // class counts as implementing both interfaces. SanitizerProvider parses again with the real ones.
+    val sanitizers = configuredSanitizers(config, (_, _) => SanitizerInterfaces.Both)
     new SpiDataSanitizerSettings(
       sanitizers.flatMap(sanitizer => declarativeSpiSanitizer(sanitizer, spiApplyAt(sanitizer), Set.empty)),
       logSanitizers = sanitizers.filter(_.masksLogs).flatMap(declarativeSpiLogSanitizer))
   }
 
-  def configuredSanitizers(config: Config): Seq[ConfiguredSanitizer] = {
+  def configuredSanitizers(
+      config: Config,
+      interfacesOf: (String, String) => SanitizerInterfaces): Seq[ConfiguredSanitizer] = {
     checkRemovedKeys(config)
-    SanitizerSettings(config.getConfig(SanitizersPath)).configuredSanitizers
+    SanitizerSettings(config.getConfig(SanitizersPath), interfacesOf).configuredSanitizers
   }
 
   /**

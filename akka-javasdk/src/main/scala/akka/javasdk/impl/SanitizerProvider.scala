@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl
 
+import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
@@ -15,6 +16,7 @@ import scala.util.control.NonFatal
 
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
+import akka.javasdk.LogSanitizer
 import akka.javasdk.SanitizerClient
 import akka.javasdk.SanitizerContext
 import akka.javasdk.TextSanitizer
@@ -43,14 +45,16 @@ import org.slf4j.LoggerFactory
 
   private val log = LoggerFactory.getLogger(classOf[SanitizerProvider])
 
-  lazy val configuredSanitizers: Seq[ConfiguredSanitizer] = Sanitization.configuredSanitizers(applicationConfig)
+  lazy val configuredSanitizers: Seq[ConfiguredSanitizer] =
+    Sanitization.configuredSanitizers(applicationConfig, interfacesOf)
 
   private lazy val byName: Map[String, ConfiguredSanitizer] =
     configuredSanitizers.map(s => s.name -> s).toMap
 
   // Each sanitizer is constructed once (at validate() time, or lazily on first invocation via the SPI adapter) and
-  // memoized. A call to one that exists reads the map without a lock.
-  private val cache = new ConcurrentHashMap[String, TextSanitizer]()
+  // memoized. A call to one that exists reads the map without a lock. An instance is a TextSanitizer, a
+  // LogSanitizer or both.
+  private val cache = new ConcurrentHashMap[String, AnyRef]()
 
   val client: SanitizerClient = new SanitizerClient {
     override def sanitizeAsync(name: String, text: String): CompletionStage[String] =
@@ -119,7 +123,7 @@ import org.slf4j.LoggerFactory
           new SpiLogSanitizer.Custom(
             s.name,
             className,
-            new SanitizerProvider.SpiSanitizerAdapter(() => getOrCreate(s.name)),
+            new SanitizerProvider.SpiLogSanitizerAdapter(() => getOrCreate(s.name)),
             s.config)
         case _ =>
           Sanitization
@@ -151,7 +155,7 @@ import org.slf4j.LoggerFactory
       if (s.kind.isInstanceOf[SanitizerKind.Implementation]) getOrCreate(s.name)
     }
 
-  private def getOrCreate(name: String): TextSanitizer = {
+  private def getOrCreate(name: String): AnyRef = {
     val cached = cache.get(name)
     if (cached ne null) cached
     else {
@@ -162,25 +166,56 @@ import org.slf4j.LoggerFactory
     }
   }
 
-  private def createSanitizer(s: ConfiguredSanitizer): TextSanitizer = {
+  private def createSanitizer(s: ConfiguredSanitizer): AnyRef = {
     val className = s.kind match {
       case SanitizerKind.Implementation(className) => className
       case other =>
         throw new IllegalArgumentException(s"Sanitizer [${s.name}] is not implemented by a class, but by [$other]")
     }
-    val clz =
-      try system.dynamicAccess.classLoader.loadClass(className)
-      catch {
-        case _: ClassNotFoundException =>
-          throw new IllegalArgumentException(s"Sanitizer [${s.name}] implementation class [$className] not found")
-      }
-    if (!classOf[TextSanitizer].isAssignableFrom(clz))
-      throw new IllegalArgumentException(
-        s"Sanitizer [${s.name}] must implement [${classOf[TextSanitizer].getName}], but [$className] does not")
-
+    val clz = loadClass(s.name, className)
     val context = new SanitizerContextImpl(s.name, s.config)
-    wireSanitizer(clz.asInstanceOf[Class[TextSanitizer]], context)
+    if (classOf[LogSanitizer].isAssignableFrom(clz)) constructLogSanitizer(s.name, clz, context)
+    else wireSanitizer(clz.asInstanceOf[Class[TextSanitizer]], context)
   }
+
+  // A log sanitizer runs for every log line of the service, so its constructor takes nothing but its
+  // SanitizerContext. The general injection would also offer the application config and the user's
+  // DependencyProvider.
+  private def constructLogSanitizer(name: String, clz: Class[_], context: SanitizerContext): AnyRef = {
+    val constructor = clz.getDeclaredConstructors match {
+      case Array(c) if c.getParameterCount == 0                                         => c
+      case Array(c) if c.getParameterTypes.sameElements(Seq(classOf[SanitizerContext])) => c
+      case _ =>
+        throw new IllegalArgumentException(
+          s"Sanitizer [$name] implements [${classOf[LogSanitizer].getName}], so [${clz.getName}] must have one " +
+          s"public constructor, which takes no parameter or a [${classOf[SanitizerContext].getName}]")
+    }
+    try if (constructor.getParameterCount == 0) constructor.newInstance().asInstanceOf[AnyRef]
+    else constructor.newInstance(context).asInstanceOf[AnyRef]
+    catch {
+      case exc: InvocationTargetException if exc.getCause != null => throw exc.getCause
+    }
+  }
+
+  // Loads the class of an entry to see which sanitizer interfaces it implements, which decides where it can mask.
+  private def interfacesOf(name: String, className: String): SanitizerInterfaces = {
+    val clz = loadClass(name, className)
+    val interfaces = SanitizerInterfaces(
+      text = classOf[TextSanitizer].isAssignableFrom(clz),
+      log = classOf[LogSanitizer].isAssignableFrom(clz))
+    if (!interfaces.text && !interfaces.log)
+      throw new IllegalArgumentException(
+        s"Sanitizer [$name] must implement [${classOf[TextSanitizer].getName}] or " +
+        s"[${classOf[LogSanitizer].getName}], but [$className] implements neither")
+    interfaces
+  }
+
+  private def loadClass(name: String, className: String): Class[_] =
+    try system.dynamicAccess.classLoader.loadClass(className)
+    catch {
+      case _: ClassNotFoundException =>
+        throw new IllegalArgumentException(s"Sanitizer [$name] implementation class [$className] not found")
+    }
 }
 
 /**
@@ -194,14 +229,41 @@ import org.slf4j.LoggerFactory
    * it is cheap after the first resolution. A failed construction, an exception from the user code and a null stage all
    * return a failed Future rather than throw.
    */
-  private final class SpiSanitizerAdapter(resolve: () => TextSanitizer) extends SpiSanitizer {
+  private final class SpiSanitizerAdapter(resolve: () => AnyRef) extends SpiSanitizer {
     override def sanitize(text: String): Future[String] =
       try {
-        val stage = resolve().sanitizeAsync(text)
-        if (stage eq null) Future.failed(new NullPointerException("TextSanitizer.sanitizeAsync returned null"))
-        else stage.asScala
+        resolve() match {
+          case sanitizer: TextSanitizer =>
+            val stage = sanitizer.sanitizeAsync(text)
+            if (stage eq null) Future.failed(new NullPointerException("TextSanitizer.sanitizeAsync returned null"))
+            else stage.asScala
+          // an entry of a class that only masks log messages, called by name
+          case sanitizer: LogSanitizer => logSanitize(sanitizer, text)
+          case other =>
+            Future.failed(new IllegalStateException(s"[${other.getClass.getName}] is not a sanitizer"))
+        }
       } catch {
         case NonFatal(e) => Future.failed(e)
       }
+  }
+
+  /** As [[SpiSanitizerAdapter]], for the log sanitizer entry of a class that implements [[LogSanitizer]]. */
+  private final class SpiLogSanitizerAdapter(resolve: () => AnyRef) extends SpiSanitizer {
+    override def sanitize(text: String): Future[String] =
+      try {
+        resolve() match {
+          case sanitizer: LogSanitizer => logSanitize(sanitizer, text)
+          case other =>
+            Future.failed(new IllegalStateException(s"[${other.getClass.getName}] is not a LogSanitizer"))
+        }
+      } catch {
+        case NonFatal(e) => Future.failed(e)
+      }
+  }
+
+  private def logSanitize(sanitizer: LogSanitizer, text: String): Future[String] = {
+    val masked = sanitizer.sanitize(text)
+    if (masked eq null) Future.failed(new NullPointerException("LogSanitizer.sanitize returned null"))
+    else Future.successful(masked)
   }
 }

@@ -7,11 +7,11 @@ package akka.javasdk;
 import com.typesafe.config.Config;
 
 /**
- * Context information available to a {@link TextSanitizer} constructor. Gives access to the
- * sanitizer's name and its configuration.
+ * Context information available to a {@link TextSanitizer} or {@link LogSanitizer} constructor.
+ * Gives access to the sanitizer's name and its configuration.
  *
  * <p>To mask what a configured classifier detects, inject an {@link
- * akka.javasdk.agent.ClassifierClient} into the constructor.
+ * akka.javasdk.agent.ClassifierClient} into the constructor of a {@link TextSanitizer}.
  */
 public interface SanitizerContext {
 

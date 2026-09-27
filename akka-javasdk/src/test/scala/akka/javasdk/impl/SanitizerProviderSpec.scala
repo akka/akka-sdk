@@ -17,6 +17,7 @@ import scala.concurrent.duration._
 
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
+import akka.javasdk.LogSanitizer
 import akka.javasdk.SanitizerContext
 import akka.javasdk.TextSanitizer
 import akka.javasdk.agent.Classification
@@ -69,7 +70,7 @@ object SanitizerProviderSpec {
         apply-at = ["logs"]
       }
       "implemented-logs" {
-        class = "akka.javasdk.impl.SanitizerProviderSpec$$NoContextSanitizer"
+        class = "akka.javasdk.impl.SanitizerProviderSpec$$UpperCaseLogSanitizer"
         apply-at = ["logs"]
       }
       "implemented-default" {
@@ -140,6 +141,44 @@ object SanitizerProviderSpec {
 
   class NotASanitizer
 
+  class UpperCaseLogSanitizer extends LogSanitizer {
+    override def sanitize(message: String): String = message.toUpperCase
+  }
+
+  class ContextLogSanitizer(context: SanitizerContext) extends LogSanitizer {
+    private val replacement = context.config().getString("replacement")
+    override def sanitize(message: String): String = message.replace("secret", replacement)
+  }
+
+  // Asks for more than a LogSanitizer constructor can take.
+  class ClassifierBackedLogSanitizer(client: ClassifierClient) extends LogSanitizer {
+    override def sanitize(message: String): String = client.classify("labeller", message).label().orElse("")
+  }
+
+  // One sanitize for both interfaces. sanitizeAsync shows which path the runtime entry took.
+  class BothWaysSanitizer extends TextSanitizer with LogSanitizer {
+    override def sanitize(text: String): String = s"sync:$text"
+    override def sanitizeAsync(text: String): CompletionStage[String] =
+      CompletableFuture.completedFuture(s"async:$text")
+  }
+
+  class FailingConstructionSanitizer extends TextSanitizer {
+    throw new IllegalStateException("cannot construct")
+    override def sanitize(text: String): String = text
+  }
+
+  private val logClassConfig = ConfigFactory
+    .parseString(s"""
+    akka.javasdk.sanitization.sanitizers {
+      "with-context" {
+        class = "akka.javasdk.impl.SanitizerProviderSpec$$ContextLogSanitizer"
+        replacement = "[hidden]"
+      }
+      "both-ways" { class = "akka.javasdk.impl.SanitizerProviderSpec$$BothWaysSanitizer" }
+    }
+    """)
+    .withFallback(ConfigFactory.load())
+
   class ThrowingSanitizer extends TextSanitizer {
     override def sanitize(text: String): String = throw new IllegalStateException("kaboom")
   }
@@ -154,7 +193,7 @@ object SanitizerProviderSpec {
     akka.javasdk.sanitization.sanitizers {
       "throwing" { class = "akka.javasdk.impl.SanitizerProviderSpec$$ThrowingSanitizer" }
       "null-stage" { class = "akka.javasdk.impl.SanitizerProviderSpec$$NullStageSanitizer" }
-      "missing" { class = "com.example.NoSuchSanitizer" }
+      "failing-construction" { class = "akka.javasdk.impl.SanitizerProviderSpec$$FailingConstructionSanitizer" }
     }
     """)
     .withFallback(ConfigFactory.load())
@@ -344,7 +383,7 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
 
       failure("throwing") shouldBe an[IllegalStateException]
       failure("null-stage").getMessage shouldEqual "TextSanitizer.sanitizeAsync returned null"
-      failure("missing").getMessage should include("Sanitizer [missing] implementation class")
+      failure("failing-construction").getMessage shouldEqual "cannot construct"
     }
 
     "report an unknown sanitizer name, with the configured ones" in {
@@ -361,7 +400,7 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       failure.getCause.getMessage should include("No sanitizer configured with name [does-not-exist]")
     }
 
-    "throw from validate when the configured class does not implement TextSanitizer" in {
+    "fail when the configured class implements neither sanitizer interface" in {
       val faultyConfig = ConfigFactory
         .parseString(s"""
           akka.javasdk.sanitization.sanitizers {
@@ -371,13 +410,12 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
           }
           """)
         .withFallback(ConfigFactory.load())
-      val (provider, _) = newProvider(system, faultyConfig)
-
-      intercept[IllegalArgumentException](provider.validate()).getMessage should include(
-        "Sanitizer [bad] must implement [akka.javasdk.TextSanitizer]")
+      intercept[IllegalArgumentException](newProvider(system, faultyConfig)).getMessage shouldEqual
+      "Sanitizer [bad] must implement [akka.javasdk.TextSanitizer] or [akka.javasdk.LogSanitizer], but " +
+      "[akka.javasdk.impl.SanitizerProviderSpec$NotASanitizer] implements neither"
     }
 
-    "throw from validate when the configured class is missing" in {
+    "fail when the configured class is missing" in {
       val faultyConfig = ConfigFactory
         .parseString("""
           akka.javasdk.sanitization.sanitizers {
@@ -387,9 +425,7 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
           }
           """)
         .withFallback(ConfigFactory.load())
-      val (provider, _) = newProvider(system, faultyConfig)
-
-      intercept[IllegalArgumentException](provider.validate()).getMessage should include(
+      intercept[IllegalArgumentException](newProvider(system, faultyConfig)).getMessage should include(
         "Sanitizer [missing] implementation class [com.example.NoSuchSanitizer] not found")
     }
 
@@ -492,7 +528,7 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       Sanitization.loadSettings(logsConfig).logSanitizers.map(describe) shouldEqual Seq("logs-only" -> "(secret)")
       provider.spiLogSanitizers.map(describe).toSet shouldEqual Set(
         "logs-only" -> "(secret)",
-        "implemented-logs" -> classOf[NoContextSanitizer].getName)
+        "implemented-logs" -> classOf[UpperCaseLogSanitizer].getName)
 
       // a pattern and a predefined group, both unscoped
       val (unscoped, _) = newProvider(system, config)
@@ -508,8 +544,56 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         case custom: SpiLogSanitizer.Custom if custom.name == "implemented-logs" => custom
       }.get
 
-      custom.implementationClass shouldEqual classOf[NoContextSanitizer].getName
+      custom.implementationClass shouldEqual classOf[UpperCaseLogSanitizer].getName
       Await.result(custom.instance.sanitize("quiet"), 3.seconds) shouldEqual "QUIET"
+    }
+
+    "construct a LogSanitizer with its SanitizerContext" in {
+      val (provider, _) = newProvider(system, logClassConfig)
+
+      val custom = provider.spiLogSanitizers.collectFirst {
+        case custom: SpiLogSanitizer.Custom if custom.name == "with-context" => custom
+      }.get
+      Await.result(custom.instance.sanitize("a secret"), 3.seconds) shouldEqual "a [hidden]"
+    }
+
+    "refuse a LogSanitizer constructor that takes more than its SanitizerContext" in {
+      val faultyConfig = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.sanitization.sanitizers {
+            "classifier-in-logs" { class = "akka.javasdk.impl.SanitizerProviderSpec$$ClassifierBackedLogSanitizer" }
+          }
+          """)
+        .withFallback(ConfigFactory.load())
+      val (provider, _) = newProvider(system, faultyConfig)
+
+      intercept[IllegalArgumentException](provider.validate()).getMessage should include(
+        "Sanitizer [classifier-in-logs] implements [akka.javasdk.LogSanitizer], so " +
+        "[akka.javasdk.impl.SanitizerProviderSpec$ClassifierBackedLogSanitizer] must have one public constructor, " +
+        "which takes no parameter or a [akka.javasdk.SanitizerContext]")
+    }
+
+    "mask log messages with sanitize, and agent text with sanitizeAsync, for a class that implements both" in {
+      val (provider, _) = newProvider(system, logClassConfig)
+
+      val logEntry = provider.spiLogSanitizers.collectFirst {
+        case custom: SpiLogSanitizer.Custom if custom.name == "both-ways" => custom
+      }.get
+      val agentEntry = provider
+        .spiSanitizers(_ => Set.empty)
+        .collectFirst {
+          case custom: SpiDataSanitizer.Custom if custom.name == "both-ways" => custom
+        }
+        .get
+
+      Await.result(logEntry.instance.sanitize("x"), 3.seconds) shouldEqual "sync:x"
+      Await.result(agentEntry.instance.sanitize("x"), 3.seconds) shouldEqual "async:x"
+    }
+
+    "reach a LogSanitizer by name" in {
+      val (provider, _) = newProvider(system, logsConfig)
+
+      provider.client.sanitize("implemented-logs", "quiet") shouldEqual "QUIET"
     }
 
     "leave out an entry bound to an agent, and one that masks nothing on its own" in {

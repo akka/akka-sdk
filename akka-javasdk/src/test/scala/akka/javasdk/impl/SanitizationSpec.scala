@@ -14,12 +14,21 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
 
+  // Stands in for loading the class of an entry: the class name says which sanitizer interfaces it implements.
+  private def interfacesOf(name: String, className: String): SanitizerInterfaces = className match {
+    case "com.example.LogPiiSanitizer"  => SanitizerInterfaces(text = false, log = true)
+    case "com.example.BothPiiSanitizer" => SanitizerInterfaces.Both
+    case _                              => SanitizerInterfaces(text = true, log = false)
+  }
+
   private def parse(entries: String): Seq[ConfiguredSanitizer] =
-    Sanitization.configuredSanitizers(ConfigFactory.load(ConfigFactory.parseString(s"""
+    Sanitization.configuredSanitizers(
+      ConfigFactory.load(ConfigFactory.parseString(s"""
       akka.javasdk.sanitization.sanitizers {
         $entries
       }
-      """)))
+      """)),
+      interfacesOf)
 
   private def parseOne(entry: String): ConfiguredSanitizer = {
     val all = parse(entry)
@@ -156,37 +165,67 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult)
     }
 
-    "leave out log messages for an implementation that names no point" in {
+    "default to the points of an agent for a TextSanitizer class" in {
       parseOne("""
         "implemented" { class = "com.example.PiiSanitizer" }
         """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult)
-    }
-
-    "leave out log messages for an implementation that names the wildcard" in {
       parseOne("""
         "implemented" { class = "com.example.PiiSanitizer", apply-at = ["*"] }
         """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult)
     }
 
-    "add the points an implementation names beside the wildcard" in {
+    "default to log messages for a LogSanitizer class" in {
       parseOne("""
-        "implemented" { class = "com.example.PiiSanitizer", apply-at = ["*", "logs"] }
+        "implemented" { class = "com.example.LogPiiSanitizer" }
+        """).applyAt shouldEqual Set(ApplyAt.Logs)
+    }
+
+    "default to every point for a class that implements both" in {
+      parseOne("""
+        "implemented" { class = "com.example.BothPiiSanitizer" }
         """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult, ApplyAt.Logs)
     }
 
-    "hold every point an implementation names, logs included" in {
+    "leave out log messages for a class that implements both and is scoped to an agent" in {
       parseOne("""
-        "implemented" { class = "com.example.PiiSanitizer", apply-at = ["model-call", "logs"] }
+        "implemented" { class = "com.example.BothPiiSanitizer", agents = ["some-agent"] }
+        """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult)
+    }
+
+    "hold what a class names within what its interfaces allow" in {
+      parseOne("""
+        "implemented" { class = "com.example.BothPiiSanitizer", apply-at = ["model-call", "logs"] }
         """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.Logs)
     }
 
-    "hold logs for an implementation that names it" in {
+    "add the points named beside the wildcard" in {
       parseOne("""
-        "implemented-logs" {
-          class = "com.example.PiiSanitizer"
-          apply-at = ["logs"]
-        }
-        """).applyAt shouldEqual Set(ApplyAt.Logs)
+        "everywhere" { pattern = "a", apply-at = ["*", "client"] }
+        """).applyAt shouldEqual Set(ApplyAt.ModelCall, ApplyAt.ToolResult, ApplyAt.Logs, ApplyAt.Client)
+    }
+
+    "fail when a TextSanitizer class names logs" in {
+      failure("""
+        "text-in-logs" { class = "com.example.PiiSanitizer", apply-at = ["logs"] }
+        """) should include(
+        "Sanitizer [text-in-logs] cannot mask at [logs], because [com.example.PiiSanitizer] does not implement " +
+        "[akka.javasdk.LogSanitizer].")
+    }
+
+    "fail when a LogSanitizer class names a point of an agent" in {
+      failure("""
+        "log-in-model" { class = "com.example.LogPiiSanitizer", apply-at = ["model-call"] }
+        """) should include(
+        "Sanitizer [log-in-model] cannot mask at [model-call], because [com.example.LogPiiSanitizer] does not " +
+        "implement [akka.javasdk.TextSanitizer].")
+    }
+
+    "fail when a LogSanitizer class is scoped to an agent" in {
+      failure("""
+        "log-scoped" { class = "com.example.LogPiiSanitizer", agents = ["some-agent"] }
+        """) should include(
+        "Sanitizer [log-scoped] cannot define [agents] or [agent-roles], because [com.example.LogPiiSanitizer] " +
+        "implements only [akka.javasdk.LogSanitizer]")
     }
 
     "hold client for a sanitizer that masks nothing on its own" in {
@@ -374,11 +413,13 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
 
     "fail with the form that replaced it" in {
       val exc = intercept[IllegalArgumentException](
-        Sanitization.configuredSanitizers(ConfigFactory.load(ConfigFactory.parseString("""
+        Sanitization.configuredSanitizers(
+          ConfigFactory.load(ConfigFactory.parseString("""
           akka.javasdk.sanitization.regex-sanitizers {
             "warm-colors" = { pattern = "(?i)(red|orange|yellow)" }
           }
-          """))))
+          """)),
+          (_, _) => SanitizerInterfaces.Both))
 
       exc.getMessage shouldEqual
       "Configuration [akka.javasdk.sanitization.regex-sanitizers] is not used. Configure each sanitizer as a " +
@@ -387,9 +428,11 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
 
     "fail for the predefined list" in {
       val exc = intercept[IllegalArgumentException](
-        Sanitization.configuredSanitizers(ConfigFactory.load(ConfigFactory.parseString("""
+        Sanitization.configuredSanitizers(
+          ConfigFactory.load(ConfigFactory.parseString("""
           akka.javasdk.sanitization.predefined-sanitizers = ["CREDIT_CARD"]
-          """))))
+          """)),
+          (_, _) => SanitizerInterfaces.Both))
 
       exc.getMessage should include("[akka.javasdk.sanitization.predefined-sanitizers] is not used")
       exc.getMessage should include("[predefined] key")

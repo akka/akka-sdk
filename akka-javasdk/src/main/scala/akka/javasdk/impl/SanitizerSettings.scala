@@ -10,6 +10,8 @@ import scala.jdk.CollectionConverters._
 import scala.util.matching.Regex
 
 import akka.annotation.InternalApi
+import akka.javasdk.LogSanitizer
+import akka.javasdk.TextSanitizer
 import akka.javasdk.impl.ConfiguredSanitizer.ApplyAt
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigObject
@@ -20,7 +22,11 @@ import com.typesafe.config.ConfigValueType
  */
 @InternalApi private[javasdk] object SanitizerSettings {
 
-  def apply(config: Config): SanitizerSettings = {
+  /**
+   * @param interfacesOf
+   *   the sanitizer interfaces of an entry's class, by entry name and class name
+   */
+  def apply(config: Config, interfacesOf: (String, String) => SanitizerInterfaces): SanitizerSettings = {
     val configuredSanitizers =
       config.root.asScala.iterator
         .map {
@@ -29,7 +35,7 @@ import com.typesafe.config.ConfigValueType
             throw new IllegalArgumentException(
               s"Sanitizer [$key] must be a config object, but was [${value.valueType}]")
         }
-        .collect { case (key, entry) if enabled(entry) => ConfiguredSanitizer(key, entry) }
+        .collect { case (key, entry) if enabled(entry) => ConfiguredSanitizer(key, entry, interfacesOf) }
         .toSeq
 
     new SanitizerSettings(configuredSanitizers)
@@ -43,6 +49,21 @@ import com.typesafe.config.ConfigValueType
  * INTERNAL API
  */
 @InternalApi private[javasdk] final case class SanitizerSettings(configuredSanitizers: Seq[ConfiguredSanitizer])
+
+/**
+ * INTERNAL API
+ *
+ * Which sanitizer interfaces a class implements. They decide where it can mask: a [[akka.javasdk.TextSanitizer]] at the
+ * points of an agent, a [[akka.javasdk.LogSanitizer]] at log messages.
+ */
+@InternalApi private[javasdk] final case class SanitizerInterfaces(text: Boolean, log: Boolean)
+
+/**
+ * INTERNAL API
+ */
+@InternalApi private[javasdk] object SanitizerInterfaces {
+  val Both: SanitizerInterfaces = SanitizerInterfaces(text = true, log = true)
+}
 
 /**
  * INTERNAL API
@@ -102,17 +123,19 @@ import com.typesafe.config.ConfigValueType
 
   private val Detectors = Seq("pattern", "predefined", "class")
 
-  def apply(name: String, config: Config): ConfiguredSanitizer = {
+  def apply(
+      name: String,
+      config: Config,
+      interfacesOf: (String, String) => SanitizerInterfaces): ConfiguredSanitizer = {
     val agents = optionalStringSet(config, "agents")
     val agentRoles = optionalStringSet(config, "agent-roles")
     val kind = readKind(name, config)
     val scoped = agents.nonEmpty || agentRoles.nonEmpty
-    val implementation = kind.isInstanceOf[SanitizerKind.Implementation]
 
     new ConfiguredSanitizer(
       name = name,
       kind = kind,
-      applyAt = readApplyAt(name, config, scoped, implementation),
+      applyAt = readApplyAt(name, config, scoped, kind, interfacesOf),
       agents = agents,
       agentRoles = agentRoles,
       config = config)
@@ -152,7 +175,12 @@ import com.typesafe.config.ConfigValueType
     }
   }
 
-  private def readApplyAt(name: String, config: Config, scoped: Boolean, implementation: Boolean): Set[ApplyAt] = {
+  private def readApplyAt(
+      name: String,
+      config: Config,
+      scoped: Boolean,
+      kind: SanitizerKind,
+      interfacesOf: (String, String) => SanitizerInterfaces): Set[ApplyAt] = {
     val declared = declaredApplyAt(config).map(_.toLowerCase(Locale.ROOT))
     val named: Set[ApplyAt] = declared.iterator
       .filterNot(_ == "*")
@@ -178,13 +206,36 @@ import com.typesafe.config.ConfigValueType
         "by name belongs to no agent, so the runtime has no agent to match the scope against. Every sanitizer " +
         "can be called by name, so leave out [client] to mask for the named agents.")
 
-    // An entry that names no application point, or names "*", masks wherever the rest of it allows, and at
-    // every point it names beside "*". An agent scoped entry leaves out log messages, for the reason in the error
-    // above. A class leaves them out unless apply-at names logs: the log engine calls it for every log line of the
-    // service, the runtime's included, and waits for it on each one.
-    if (declared.isEmpty || declared.contains("*")) {
-      (if (scoped || implementation) ApplyAt.AgentPoints else ApplyAt.MaskingPoints) ++ named
-    } else named
+    // Where the entry can mask, and where it masks when it names no point or names "*". An agent scoped entry
+    // leaves out log messages, for the reason in the error above. A class masks where its interfaces allow.
+    val (allowed, defaults) = kind match {
+      case SanitizerKind.Implementation(className) =>
+        val interfaces = interfacesOf(name, className)
+        if (scoped && !interfaces.text)
+          throw new IllegalArgumentException(
+            s"Sanitizer [$name] cannot define [agents] or [agent-roles], because [$className] implements only " +
+            s"[${classOf[LogSanitizer].getName}] and a log line belongs to no agent.")
+        val agentPoints = if (interfaces.text) ApplyAt.AgentPoints else Set.empty[ApplyAt]
+        val logs = if (interfaces.log) Set[ApplyAt](ApplyAt.Logs) else Set.empty[ApplyAt]
+        (agentPoints ++ logs + ApplyAt.Client, if (scoped) agentPoints else agentPoints ++ logs)
+      case _ =>
+        (ApplyAt.All, if (scoped) ApplyAt.AgentPoints else ApplyAt.MaskingPoints)
+    }
+
+    val notAllowed = named -- allowed
+    if (notAllowed.nonEmpty) {
+      val className = kind match {
+        case SanitizerKind.Implementation(className) => className
+        case _                                       => ""
+      }
+      val missing =
+        if (notAllowed.contains(ApplyAt.Logs)) classOf[LogSanitizer].getName else classOf[TextSanitizer].getName
+      throw new IllegalArgumentException(
+        s"Sanitizer [$name] cannot mask at [${notAllowed.toSeq.map(_.configValue).sorted.mkString(", ")}], " +
+        s"because [$className] does not implement [$missing].")
+    }
+
+    if (declared.isEmpty || declared.contains("*")) defaults ++ named else named
   }
 
   private def declaredApplyAt(config: Config): Seq[String] =
