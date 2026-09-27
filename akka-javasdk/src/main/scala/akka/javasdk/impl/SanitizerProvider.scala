@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.concurrent.Future
 import scala.jdk.FutureConverters._
+import scala.util.control.NonFatal
 
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -190,10 +191,17 @@ import org.slf4j.LoggerFactory
   /**
    * Wraps a user sanitizer so the runtime can invoke it once registered. `resolve` runs on every invocation rather than
    * at construction, so registration can happen before the sanitizer is safe to construct; `getOrCreate` memoizes, so
-   * it is cheap after the first resolution.
+   * it is cheap after the first resolution. A failed construction, an exception from the user code and a null stage all
+   * return a failed Future rather than throw.
    */
   private final class SpiSanitizerAdapter(resolve: () => TextSanitizer) extends SpiSanitizer {
     override def sanitize(text: String): Future[String] =
-      resolve().sanitizeAsync(text).asScala
+      try {
+        val stage = resolve().sanitizeAsync(text)
+        if (stage eq null) Future.failed(new NullPointerException("TextSanitizer.sanitizeAsync returned null"))
+        else stage.asScala
+      } catch {
+        case NonFatal(e) => Future.failed(e)
+      }
   }
 }

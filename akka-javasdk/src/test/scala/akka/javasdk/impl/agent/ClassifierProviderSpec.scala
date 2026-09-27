@@ -32,6 +32,7 @@ import com.typesafe.config.ConfigException
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.{ Context => TelemetryContext }
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -67,6 +68,19 @@ object ClassifierProviderSpec {
   }
 
   class WrongClassifier
+
+  class NullStageClassifier extends Classifier {
+    override def classify(input: String): Classification = Classification.label("unused")
+    override def classifyAsync(input: String): CompletionStage[Classification] = null
+  }
+
+  private val failingConfig = ConfigFactory.parseString(s"""
+    akka.javasdk.agent.classifiers {
+      "throwing" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$ThrowingClassifier" }
+      "null-stage" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$NullStageClassifier" }
+      "missing" { class = "com.example.NoSuchClassifier" }
+    }
+    """)
 
   // Composes another configured classifier by calling it through the injected client, never holding
   // a reference to the classifier itself.
@@ -235,6 +249,21 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
       val provider = newProvider(system, config)
       val result = provider.client.classify("toxicity", "some text")
       result.label() shouldBe java.util.Optional.of("classified:some text")
+    }
+
+    "return a failed Future from the runtime entry rather than throw" in {
+      val provider = newProvider(system, failingConfig)
+      val instances = provider.spiConfiguredClassifiers.map(c => c.name -> c.instance).toMap
+
+      def failure(name: String): Throwable = {
+        // throws here if the adapter throws
+        val classified = instances(name).classify(new SpiClassifier.TextContent("text", TelemetryContext.root()))
+        intercept[Exception](Await.result(classified, 3.seconds))
+      }
+
+      failure("throwing") shouldBe an[IllegalStateException]
+      failure("null-stage").getMessage shouldEqual "Classifier.classifyAsync returned null"
+      failure("missing").getMessage should include("Classifier [missing] implementation class")
     }
 
     "throw a descriptive IllegalArgumentException for an unknown classifier name" in {

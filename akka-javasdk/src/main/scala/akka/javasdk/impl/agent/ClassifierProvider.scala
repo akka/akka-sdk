@@ -13,6 +13,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
 import scala.jdk.OptionConverters._
+import scala.util.control.NonFatal
 
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -157,13 +158,20 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
   /**
    * Wraps a user classifier so the runtime can invoke it once registered. `resolve` runs on every invocation rather
    * than at construction, so registration (`spiConfiguredClassifiers`) can happen before the classifier is safe to
-   * construct; `getOrCreate` memoizes, so it is cheap after the first resolution.
+   * construct; `getOrCreate` memoizes, so it is cheap after the first resolution. A failed construction, an exception
+   * from the user code and a null stage all return a failed Future rather than throw.
    */
   private final class SpiClassifierAdapter(resolve: () => Classifier) extends SpiClassifier {
     override def classify(content: SpiClassifier.Content): Future[SpiClassifier.Classification] =
       content match {
         case text: SpiClassifier.TextContent =>
-          resolve().classifyAsync(text.text).asScala.map(fromClassification)(ExecutionContext.parasitic)
+          try {
+            val stage = resolve().classifyAsync(text.text)
+            if (stage eq null) Future.failed(new NullPointerException("Classifier.classifyAsync returned null"))
+            else stage.asScala.map(fromClassification)(ExecutionContext.parasitic)
+          } catch {
+            case NonFatal(e) => Future.failed(e)
+          }
       }
   }
 }

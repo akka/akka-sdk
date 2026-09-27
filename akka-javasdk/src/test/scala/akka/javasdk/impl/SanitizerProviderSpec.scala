@@ -140,6 +140,25 @@ object SanitizerProviderSpec {
 
   class NotASanitizer
 
+  class ThrowingSanitizer extends TextSanitizer {
+    override def sanitize(text: String): String = throw new IllegalStateException("kaboom")
+  }
+
+  class NullStageSanitizer extends TextSanitizer {
+    override def sanitize(text: String): String = text
+    override def sanitizeAsync(text: String): CompletionStage[String] = null
+  }
+
+  private val failingConfig = ConfigFactory
+    .parseString(s"""
+    akka.javasdk.sanitization.sanitizers {
+      "throwing" { class = "akka.javasdk.impl.SanitizerProviderSpec$$ThrowingSanitizer" }
+      "null-stage" { class = "akka.javasdk.impl.SanitizerProviderSpec$$NullStageSanitizer" }
+      "missing" { class = "com.example.NoSuchSanitizer" }
+    }
+    """)
+    .withFallback(ConfigFactory.load())
+
   /**
    * Test-only stand-in for the runtime's sanitizer registry: registers every entry by its name, and a log sanitizer
    * only under a name the other entries do not hold, then looks an entry up by name and masks with it. A supplied
@@ -307,6 +326,25 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
 
       provider.client.sanitize("logs-only", "a secret here") shouldEqual "a ****** here"
       provider.client.sanitize("by-name-only", "an account here") shouldEqual "an ******* here"
+    }
+
+    "return a failed Future from the runtime entry rather than throw" in {
+      val (provider, _) = newProvider(system, failingConfig)
+      val instances = provider
+        .spiSanitizers(_ => Set.empty)
+        .collect { case custom: SpiDataSanitizer.Custom =>
+          custom.name -> custom.instance
+        }
+        .toMap
+
+      def failure(name: String): Throwable = {
+        val masked = instances(name).sanitize("text") // throws here if the adapter throws
+        intercept[Exception](Await.result(masked, 3.seconds))
+      }
+
+      failure("throwing") shouldBe an[IllegalStateException]
+      failure("null-stage").getMessage shouldEqual "TextSanitizer.sanitizeAsync returned null"
+      failure("missing").getMessage should include("Sanitizer [missing] implementation class")
     }
 
     "report an unknown sanitizer name, with the configured ones" in {
