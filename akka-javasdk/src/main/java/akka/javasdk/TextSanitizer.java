@@ -24,7 +24,9 @@ import java.util.concurrent.CompletionStage;
  * <p>An implementation configured for the {@code logs} application point runs while a log event is
  * written, and the thread writing the event waits for it. Keep it fast, and do not log from it: the
  * runtime masks a line the sanitizer logs itself with the configured patterns only, rather than
- * calling the sanitizer again.
+ * calling the sanitizer again. Do not call a classifier, an agent or a remote service from it
+ * either. The runtime masks the log lines that such a call writes with the same sanitizer, so one
+ * call can lead to more calls, without end when the call fails and logs the failure.
  *
  * <p>Text sanitizers are enabled with configuration; see sanitization documentation.
  */

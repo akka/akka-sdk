@@ -126,7 +126,7 @@ include::example$doc-snippets/src/main/java/com/example/sanitizer/AccountSanitiz
 
 The constructor can take an `akka.javasdk.SanitizerContext`, which gives access to the entry name and its configuration, and any other injectable type, such as an `akka.javasdk.agent.ClassifierClient` to mask what a configured classifier detects.
 
-An implementation masks log messages only when its `apply-at` names `logs`. The runtime then calls it for every log line of the service, including its own, while it writes the log event, and the thread writing the event waits for the masked text. Keep such an implementation fast, and do not log from it.
+An implementation masks log messages only when its `apply-at` names `logs`. The runtime then calls it for every log line of the service, including its own, while it writes the log event, and the thread writing the event waits for the masked text. Keep such an implementation fast, and do not log from it. Do not call a classifier, an agent or a remote service from it either. The runtime masks the log lines that such a call writes with the same sanitizer, so one call can lead to more calls, without end when the call fails and logs the failure.
 
 == Performance considerations
 
