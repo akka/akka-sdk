@@ -806,16 +806,16 @@ private final class Sdk(
   // sanitizer name => component ids
   private var sanitizerEnabledForComponent = Map.empty[String, Set[String]]
 
+  // Filtered once, because hasComponentId logs a warning for each class it leaves out.
+  private val annotatedComponentClasses = componentClasses.filter(hasComponentId)
+
   // component id => role, for every agent of this service. An evaluator binds agents by role, and it can be
   // scanned before the agents it binds, so the roles are read up front.
   private val agentRolesByComponentId: Map[String, Option[String]] =
-    componentClasses
-      .filter(hasComponentId)
-      .collect {
-        case clz if Reflect.isAgent(clz) || Reflect.isAutonomousAgent(clz) =>
-          Reflect.readComponentId(clz) -> Reflect.readAgentRole(clz)
-      }
-      .toMap
+    annotatedComponentClasses.collect {
+      case clz if Reflect.isAgent(clz) || Reflect.isAutonomousAgent(clz) =>
+        Reflect.readComponentId(clz) -> Reflect.readAgentRole(clz)
+    }.toMap
 
   // An entry that names neither agents nor agent-roles applies to every agent, so it is accumulated for
   // each of them.
@@ -868,8 +868,7 @@ private final class Sdk(
     ComponentLocator.providedComponents.contains(clz)
   }
 
-  componentClasses
-    .filter(hasComponentId)
+  annotatedComponentClasses
     .foreach {
       case clz if Reflect.isEventSourcedEntity(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -1107,7 +1106,7 @@ private final class Sdk(
 
         // Unlike a guardrail, a sanitizer bound by agent-roles also binds an autonomous agent, so the role
         // is read for both kinds of agent.
-        accumulateSanitizers(componentId, Reflect.readAgentRole(autonomousAgentClass))
+        accumulateSanitizers(componentId, agentRolesByComponentId(componentId))
 
         // Throwaway instance to read definition() — uses scan-time injects so
         // ComponentClient injection cannot force agentCapabilityConverter mid-scan.
@@ -1197,7 +1196,7 @@ private final class Sdk(
         val componentId = Reflect.readComponentId(clz)
         val agentClass = clz.asInstanceOf[Class[Agent]]
 
-        val agentRoleOptValue = Reflect.readAgentRole(agentClass)
+        val agentRoleOptValue = agentRolesByComponentId(componentId)
         val agentGuardrails = guardrailProvider.agentGuardrails(componentId, agentRoleOptValue)
         agentGuardrails.entries.foreach { entry =>
           val guardrailName = entry.configuredGuardrail.name
