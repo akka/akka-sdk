@@ -32,7 +32,7 @@ object Dependencies {
   val LogbackContribVersion = "0.1.5"
   val JUnitVersion = "4.13.2"
   val JUnitInterfaceVersion = "0.11"
-  val JUnitJupiterVersion = "5.10.5"
+  val JUnitJupiterVersion = "5.14.4"
   val OpenTelemetryVersion = "1.64.0"
   val OpenTelemetrySemConv = "1.40.0"
 
@@ -83,6 +83,10 @@ object Dependencies {
   val munitScalaCheck = "org.scalameta" %% "munit-scalacheck" % MunitVersion
   val junit4 = "junit" % "junit" % JUnitVersion
   val junit5 = "org.junit.jupiter" % "junit-jupiter" % JUnitJupiterVersion
+  // JUnit 5's Platform uses major version 1 with the same minor/patch as Jupiter.
+  // Align the launcher supplied by jupiter-interface with the engine used by our tests.
+  val junitPlatformLauncher = "org.junit.platform" % "junit-platform-launcher" %
+    JUnitJupiterVersion.replaceFirst("^5\\.", "1.")
   val junit5Vintage = "org.junit.vintage" % "junit-vintage-engine" % JUnitJupiterVersion
 
   val opentelemetryApi = "io.opentelemetry" % "opentelemetry-api" % OpenTelemetryVersion
@@ -136,6 +140,7 @@ object Dependencies {
     akkaDependency("akka-actor-typed") % Provided,
     "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
     junit5 % Test,
+    junitPlatformLauncher % Test,
     "org.assertj" % "assertj-core" % AssertJVersion % Test)
 
   val javaSdkTestKit =
@@ -156,6 +161,7 @@ object Dependencies {
         "org.assertj" % "assertj-core" % AssertJVersion,
         // for the tests of the testkit itself
         "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
+        junitPlatformLauncher % Test,
         scalaTest % Test)
 
   val tests =
@@ -167,6 +173,7 @@ object Dependencies {
       akkaDependency("akka-testkit"),
       // These are for the test of the testkit
       "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
+      junitPlatformLauncher % Test,
       scalaTest % Test,
       akkaDependency("akka-actor-testkit-typed") % Test)
 
