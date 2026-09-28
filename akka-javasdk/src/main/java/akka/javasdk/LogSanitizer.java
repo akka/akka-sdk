@@ -7,9 +7,9 @@ package akka.javasdk;
 /**
  * A log sanitizer masks the sensitive parts of a log message.
  *
- * <p>The runtime calls it for every log line of the service, including the runtime's own.
- * Keep an * implementation fast and self-contained: a pure function of the message and its
- * configuration. Do not log from it.
+ * <p>The runtime calls it for every log line of the service, including the runtime's own. Keep an *
+ * implementation fast and self-contained: a pure function of the message and its configuration. Do
+ * not log from it.
  *
  * <p>An implementation has one public constructor, which takes no parameter or a {@link
  * SanitizerContext} for the sanitizer's configured name and config section.
