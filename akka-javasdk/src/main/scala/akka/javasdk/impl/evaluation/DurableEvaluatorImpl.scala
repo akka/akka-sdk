@@ -263,7 +263,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
   private def toSpiResult(outcome: Outcome): SpiEvaluator.Result =
     outcome.kind() match {
       case Outcome.Kind.COMPLETED =>
-        new SpiEvaluator.CompletedResult(outcome.evaluations().asScala.toSeq.map(toSpiEvaluation))
+        new SpiEvaluator.CompletedResult(toSpiEvaluation(outcome.evaluation()))
       case Outcome.Kind.INCONCLUSIVE => new SpiEvaluator.InconclusiveResult(outcome.reason())
       case Outcome.Kind.FAILED       => new SpiEvaluator.FailedResult(outcome.reason())
     }
@@ -320,8 +320,8 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
             s"[${declaringClass.getName}], which is not allowed.")
         }
         new SpiWorkflow.StepTransition(stepName, input.map(serializer.toBytes))
-      case CompleteTransition(evaluations) =>
-        new SpiWorkflow.StepTransition(RecordStepName, Some(serializer.toBytes(Outcome.completed(evaluations.asJava))))
+      case CompleteTransition(evaluation) =>
+        new SpiWorkflow.StepTransition(RecordStepName, Some(serializer.toBytes(Outcome.completed(evaluation))))
       case InconclusiveTransition(reason) =>
         new SpiWorkflow.StepTransition(RecordStepName, Some(serializer.toBytes(Outcome.inconclusive(reason))))
     }

@@ -6,7 +6,7 @@ package akka.javasdk.ledger;
 
 import akka.javasdk.evaluation.Evaluation;
 import java.time.Instant;
-import java.util.List;
+import java.util.Optional;
 
 /**
  * The record of a single evaluation, as fetched from the ledger.
@@ -43,8 +43,8 @@ public record EvaluationRecord(
   /** The terminal outcome of an evaluation. */
   public sealed interface Outcome {
 
-    /** The evaluation reached a verdict: one or more evaluations. */
-    record Verdict(List<Evaluation> evaluations) implements Outcome {}
+    /** The evaluation reached a verdict. */
+    record Verdict(Evaluation evaluation) implements Outcome {}
 
     /** The evaluation ran but could not reach a verdict — a deliberate, expected outcome. */
     record Inconclusive(String reason) implements Outcome {}
@@ -53,11 +53,10 @@ public record EvaluationRecord(
     record Failed(String reason) implements Outcome {}
   }
 
-  /**
-   * The evaluations of the verdict this evaluation reached, or an empty list for an inconclusive or
-   * failed evaluation.
-   */
-  public List<Evaluation> evaluations() {
-    return outcome instanceof Outcome.Verdict verdict ? verdict.evaluations() : List.of();
+  /** The verdict this evaluation reached, or empty for an inconclusive or failed evaluation. */
+  public Optional<Evaluation> evaluation() {
+    return outcome instanceof Outcome.Verdict verdict
+        ? Optional.of(verdict.evaluation())
+        : Optional.empty();
   }
 }

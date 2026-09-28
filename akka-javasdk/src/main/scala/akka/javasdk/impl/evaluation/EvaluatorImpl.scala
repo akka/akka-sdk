@@ -85,8 +85,8 @@ private[impl] final class EvaluatorImpl[E <: Evaluator](factory: () => E, evalua
 
   private def toSpiEffect(effect: Evaluator.Effect): Future[SpiEvaluator.Effect] =
     effect match {
-      case CompleteEffect(evaluations) =>
-        Future.successful(new SpiEvaluator.CompleteEffect(evaluations.map(toSpiEvaluation)))
+      case CompleteEffect(evaluation) =>
+        Future.successful(new SpiEvaluator.CompleteEffect(toSpiEvaluation(evaluation)))
       case InconclusiveEffect(reason) =>
         Future.successful(new SpiEvaluator.InconclusiveEffect(reason))
       case unknown =>

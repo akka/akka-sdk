@@ -30,8 +30,7 @@ public class SimpleEvaluatorTest {
     assertTrue(result.isComplete());
     assertFalse(result.isInconclusive());
 
-    assertEquals(1, result.getEvaluations().size());
-    Evaluation evaluation = result.getEvaluations().get(0);
+    Evaluation evaluation = result.getEvaluation();
     assertTrue(evaluation.passed());
     assertEquals(0.9, evaluation.score().orElseThrow());
     assertEquals("good", evaluation.label().orElseThrow());
@@ -55,6 +54,6 @@ public class SimpleEvaluatorTest {
     EvaluatorResult result = testKit.evaluate(flow);
 
     assertTrue(result.isComplete());
-    assertEquals("support-agent", result.getEvaluations().get(0).attributes().get("agent"));
+    assertEquals("support-agent", result.getEvaluation().attributes().get("agent"));
   }
 }

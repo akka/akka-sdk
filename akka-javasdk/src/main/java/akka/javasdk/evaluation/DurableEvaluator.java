@@ -7,7 +7,6 @@ package akka.javasdk.evaluation;
 import akka.annotation.InternalApi;
 import akka.javasdk.impl.evaluation.DurableEvaluatorEffects;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -131,7 +130,7 @@ public abstract class DurableEvaluator<S> {
    * <ul>
    *   <li>update the state of the evaluation
    *   <li>transition to the next step
-   *   <li>complete the evaluation with one or more {@link Evaluation}s (the verdict)
+   *   <li>complete the evaluation with an {@link Evaluation} (the verdict)
    *   <li>report that the evaluation was inconclusive — it ran but reached no verdict
    * </ul>
    *
@@ -179,17 +178,8 @@ public abstract class DurableEvaluator<S> {
        * instance is cleaned up.
        *
        * @param evaluation the evaluation outcome
-       * @param more additional evaluation outcomes, for composed evaluations
        */
-      Effect complete(Evaluation evaluation, Evaluation... more);
-
-      /**
-       * Complete the evaluation with its verdicts. The outcome is recorded and the evaluation
-       * instance is cleaned up.
-       *
-       * @param evaluations the evaluation outcomes (must not be empty)
-       */
-      Effect complete(List<Evaluation> evaluations);
+      Effect complete(Evaluation evaluation);
 
       /**
        * Report that the evaluation was inconclusive — it ran but could not reach a verdict, for
@@ -228,17 +218,8 @@ public abstract class DurableEvaluator<S> {
        * instance is cleaned up.
        *
        * @param evaluation the evaluation outcome
-       * @param more additional evaluation outcomes, for composed evaluations
        */
-      Effect complete(Evaluation evaluation, Evaluation... more);
-
-      /**
-       * Complete the evaluation with its verdicts. The outcome is recorded and the evaluation
-       * instance is cleaned up.
-       *
-       * @param evaluations the evaluation outcomes (must not be empty)
-       */
-      Effect complete(List<Evaluation> evaluations);
+      Effect complete(Evaluation evaluation);
 
       /**
        * Report that the evaluation was inconclusive — it ran but could not reach a verdict.
