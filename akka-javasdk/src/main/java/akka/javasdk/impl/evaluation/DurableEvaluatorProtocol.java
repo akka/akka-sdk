@@ -8,6 +8,7 @@ import akka.annotation.InternalApi;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.Subject;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * INTERNAL API
@@ -37,9 +38,7 @@ public final class DurableEvaluatorProtocol {
       String userStateContentType) {
 
     public Subject getSubject() {
-      if (flowId != null)
-        return new Subject.FlowInteraction(flowId, agentComponentId, interactionId);
-      else return new Subject.AgentInteraction(agentComponentId, interactionId);
+      return new Subject.Interaction(interactionId, agentComponentId, Optional.ofNullable(flowId));
     }
 
     public static StateEnvelope of(
@@ -48,20 +47,12 @@ public final class DurableEvaluatorProtocol {
         byte[] userState,
         String userStateContentType) {
       return switch (subject) {
-        case Subject.FlowInteraction flow ->
+        case Subject.Interaction interaction ->
             new StateEnvelope(
                 triggerSource,
-                flow.flowId(),
-                flow.agentComponentId(),
-                flow.interactionId(),
-                userState,
-                userStateContentType);
-        case Subject.AgentInteraction agent ->
-            new StateEnvelope(
-                triggerSource,
-                null,
-                agent.agentComponentId(),
-                agent.interactionId(),
+                interaction.flowId().orElse(null),
+                interaction.agentComponentId(),
+                interaction.interactionId(),
                 userState,
                 userStateContentType);
       };

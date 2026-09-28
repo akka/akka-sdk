@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters.JavaDurationOps
-import scala.jdk.OptionConverters.RichOptional
+import scala.jdk.OptionConverters._
 
 import akka.Done
 import akka.annotation.InternalApi
@@ -59,18 +59,17 @@ private[javasdk] object DurableEvaluatorImpl {
 
   private def toSdkSubject(subject: SpiEvaluator.Subject): Subject =
     subject match {
-      case flow: SpiEvaluator.FlowInteraction =>
-        new Subject.FlowInteraction(flow.flowId, flow.agentComponentId, flow.interactionId)
-      case agent: SpiEvaluator.AgentInteraction =>
-        new Subject.AgentInteraction(agent.agentComponentId, agent.interactionId)
+      case interaction: SpiEvaluator.Interaction =>
+        new Subject.Interaction(interaction.interactionId, interaction.agentComponentId, interaction.flowId.toJava)
     }
 
   private def toSpiSubject(subject: Subject): SpiEvaluator.Subject =
     subject match {
-      case flow: Subject.FlowInteraction =>
-        new SpiEvaluator.FlowInteraction(flow.flowId(), flow.agentComponentId(), flow.interactionId())
-      case agent: Subject.AgentInteraction =>
-        new SpiEvaluator.AgentInteraction(agent.agentComponentId(), agent.interactionId())
+      case interaction: Subject.Interaction =>
+        new SpiEvaluator.Interaction(
+          interaction.interactionId(),
+          interaction.agentComponentId(),
+          interaction.flowId().toScala)
     }
 
   private def toProtocolTriggerSource(source: SpiEvaluator.TriggerSource): TriggerSource =

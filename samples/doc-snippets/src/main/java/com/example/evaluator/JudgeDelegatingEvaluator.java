@@ -5,6 +5,7 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
+import akka.javasdk.evaluation.Subject;
 
 @Component(id = "judge-delegating-evaluator")
 public class JudgeDelegatingEvaluator extends Evaluator {
@@ -17,7 +18,7 @@ public class JudgeDelegatingEvaluator extends Evaluator {
 
   @Override
   public Effect evaluate(EvaluationContext context) {
-    String transcript = context.subject().interactionId();
+    String transcript = ((Subject.Interaction) context.subject()).interactionId();
     // tag::delegate[]
     QualityJudge.Verdict verdict = componentClient
       .forAgent()

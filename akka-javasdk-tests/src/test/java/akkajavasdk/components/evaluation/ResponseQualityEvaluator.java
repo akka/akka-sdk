@@ -9,6 +9,7 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
+import akka.javasdk.evaluation.Subject;
 import akka.javasdk.ledger.LedgerClient;
 
 /**
@@ -29,7 +30,8 @@ public class ResponseQualityEvaluator extends Evaluator {
 
   @Override
   public Effect evaluate(EvaluationContext context) {
-    var interaction = ledger.getInteraction(context.subject().interactionId());
+    var interaction =
+        ledger.getInteraction(((Subject.Interaction) context.subject()).interactionId());
 
     // run the judge in its own session, derived from the evaluation id and isolated from the
     // subject's session

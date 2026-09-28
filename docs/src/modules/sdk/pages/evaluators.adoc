@@ -33,7 +33,7 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/InteractionQua
 <1> An evaluator is a component and needs a `@Component` id. The id is how the evaluator is referred to in configuration.
 <2> Extend `Evaluator`.
 <3> A `LedgerClient` is injected to fetch the interaction under evaluation.
-<4> `EvaluationContext.subject().interactionId()` identifies the interaction; fetch its record from the ledger.
+<4> The subject is a `Subject.Interaction` whose `interactionId()` identifies the interaction; fetch its record from the ledger.
 <5> `inconclusive` reports that the evaluator ran but reached no verdict — distinct from a failing verdict.
 <6> `complete` with an `Evaluation` records the verdict.
 <7> An `Evaluation` can carry a score, a label, and arbitrary attributes for downstream analysis.
@@ -41,8 +41,7 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/InteractionQua
 === The evaluation subject
 
 link:{attachmentsdir}/api/akka/javasdk/evaluation/EvaluationContext.html[`EvaluationContext`] exposes the link:{attachmentsdir}/api/akka/javasdk/evaluation/Subject.html[`Subject`] being evaluated and the `evaluationId()` of this evaluation.
-A `Subject` identifies a single interaction by its stable `interactionId()`, together with the `agentComponentId()` that produced it.
-It is one of two kinds: an `AgentInteraction` produced directly by an agent, or a `FlowInteraction` produced by an agent running as part of an autonomous-agent flow (which additionally carries the `flowId`).
+A `Subject` names what is evaluated. The one kind today is `Subject.Interaction`: a single interaction identified by its stable `interactionId()`, together with the `agentComponentId()` that produced it and, when the agent ran as part of an autonomous-agent flow, the `flowId()`.
 
 === Recording the verdict
 
@@ -141,7 +140,7 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.ja
 ----
 <1> The evaluations recorded about that interaction, newest first. An evaluation is recorded when it terminates, so one that is still running is not in the list, and an interaction without evaluations returns an empty list.
 
-The id to pass comes from `AgentReply.interactionId()`, which a call made with `withDetailedReply()` returns, or from `EvaluationContext.subject().interactionId()` inside an evaluator.
+The id to pass comes from `AgentReply.interactionId()`, which a call made with `withDetailedReply()` returns, or from the `Subject.Interaction` of `EvaluationContext.subject()` inside an evaluator.
 
 === The interaction record
 
