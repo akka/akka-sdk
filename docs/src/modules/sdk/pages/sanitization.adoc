@@ -136,7 +136,7 @@ The constructor of a `TextSanitizer` can take an `akka.javasdk.SanitizerContext`
 include::example$doc-snippets/src/main/java/com/example/sanitizer/TokenLogSanitizer.java[tag=all]
 ----
 
-The runtime calls a `LogSanitizer` for every log line of the service, including its own, while it writes the log event, and the thread writing the event waits for the masked text. Its constructor takes no parameter or an `akka.javasdk.SanitizerContext`, and nothing else. Keep it a fast function of the message and its configuration, and do not log from it. The SDK constructs a class that implements both interfaces as a `LogSanitizer`.
+The runtime calls a `LogSanitizer` for every log line of the service, including its own. Its constructor can optionally take an `akka.javasdk.SanitizerContext`, but no other dependency injection. Keep it a fast function of the message and its configuration, and do not log from it. The SDK constructs a class that implements both interfaces as a `LogSanitizer`.
 
 == Performance considerations
 
