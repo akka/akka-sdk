@@ -167,6 +167,7 @@ lazy val akkaJavaSdkEnforcer =
         "org.apache.maven" % "maven-core" % "3.9.9" % Provided,
         "javax.inject" % "javax.inject" % "1" % Provided,
         Dependencies.junit5 % Test,
+        Dependencies.junitPlatformLauncher % Test,
         "net.aichler" % "jupiter-interface" % net.aichler.jupiter.sbt.Import.JupiterKeys.jupiterVersion.value % Test))
 
 lazy val akkaJavaSdkParent =
