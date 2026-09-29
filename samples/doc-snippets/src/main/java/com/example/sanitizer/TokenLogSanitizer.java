@@ -20,8 +20,8 @@ public class TokenLogSanitizer implements LogSanitizer {
   public String sanitize(String message) {
     // keeps the key and masks the value, for example token=****
     return keyValue
-        .matcher(message)
-        .replaceAll(m -> Matcher.quoteReplacement(key + "=" + "*".repeat(m.group(1).length())));
+      .matcher(message)
+      .replaceAll(m -> Matcher.quoteReplacement(key + "=" + "*".repeat(m.group(1).length())));
   }
 }
 // end::all[]
