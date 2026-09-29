@@ -48,7 +48,7 @@ AAO uses four roles:
 | SRE | Identical to the Deployment role, for emergency response or upkeep | You
 |===
 
-The exact IAM actions for each role are created and managed by `akka-bootstrap` and are the source of truth. Review the permission reference the utility generates rather than a copy here, so the permissions you grant always match what Akka runs. Within Kubernetes, Akka uses least-privilege access scoped to the Akka-managed namespaces and takes no access to customer-owned Kubernetes resources.
+The exact IAM actions for each role are created and managed by `akka-bootstrap` and are the source of truth. Review the permission reference the utility generates rather than a copy here, so the permissions you grant always match what Akka runs. Within Kubernetes, Akka uses least-privilege access scoped to the Akka-managed namespaces and limits its access to customer-owned Kubernetes resources.
 
 == Installation
 

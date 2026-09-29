@@ -59,7 +59,7 @@ Seed the connection credentials (username, password, host, database name) as Kub
 
 === Access
 
-Akka's access to a customer-provisioned cluster is restricted to least-privilege permissions, scoped to the Akka-managed namespaces.
+Within a customer-provisioned cluster, Akka uses least-privilege permissions scoped to the Akka-managed namespaces and limits its access to customer-owned Kubernetes resources.
 
 == Capacity planning
 

@@ -71,7 +71,7 @@ AAO uses four roles across all clouds:
 | SRE | Identical to the Deployment role, for emergency response or upkeep | You
 |===
 
-Within Kubernetes, Akka uses least-privilege access scoped to the Akka-managed namespaces and takes no access to customer-owned Kubernetes resources.
+Within Kubernetes, Akka uses least-privilege access scoped to the Akka-managed namespaces and limits its access to customer-owned Kubernetes resources.
 
 == Choose your cloud
 
