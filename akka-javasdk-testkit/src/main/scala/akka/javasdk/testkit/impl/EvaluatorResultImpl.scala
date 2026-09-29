@@ -4,8 +4,6 @@
 
 package akka.javasdk.testkit.impl
 
-import scala.jdk.CollectionConverters._
-
 import akka.annotation.InternalApi
 import akka.javasdk.evaluation.Evaluation
 import akka.javasdk.evaluation.Evaluator
@@ -23,8 +21,8 @@ private[testkit] final class EvaluatorResultImpl(effect: EvaluatorEffectImpl.Pri
 
   override def isInconclusive(): Boolean = effect.isInstanceOf[EvaluatorEffectImpl.InconclusiveEffect]
 
-  override def getEvaluations(): java.util.List[Evaluation] =
-    getEffectOfType(classOf[EvaluatorEffectImpl.CompleteEffect]).evaluations.asJava
+  override def getEvaluation(): Evaluation =
+    getEffectOfType(classOf[EvaluatorEffectImpl.CompleteEffect]).evaluation
 
   override def getInconclusiveReason(): String =
     getEffectOfType(classOf[EvaluatorEffectImpl.InconclusiveEffect]).reason

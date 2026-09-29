@@ -122,7 +122,7 @@ private[ledger] object LedgerClientImpl {
   private def toEvaluationOutcome(outcome: SpiLedger.EvaluationOutcome): EvaluationRecord.Outcome =
     outcome match {
       case verdict: SpiLedger.EvaluationVerdict =>
-        new EvaluationRecord.Outcome.Verdict(verdict.evaluations.map(toEvaluation).asJava)
+        new EvaluationRecord.Outcome.Verdict(toEvaluation(verdict.evaluation))
       case inconclusive: SpiLedger.EvaluationInconclusive =>
         new EvaluationRecord.Outcome.Inconclusive(inconclusive.reason)
       case failure: SpiLedger.EvaluationFailure =>

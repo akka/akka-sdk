@@ -5,7 +5,6 @@
 package akka.javasdk.evaluation;
 
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl;
-import java.util.List;
 
 /**
  * An Evaluator is a stateless component that evaluates agent interactions.
@@ -14,7 +13,7 @@ import java.util.List;
  * akka.javasdk.evaluation.evaluators}, keyed by the evaluator's component id. The runtime invokes
  * {@link #evaluate(EvaluationContext)} for each interaction of a bound agent, passing an {@link
  * EvaluationContext} that identifies the interaction to evaluate. The handler returns an {@link
- * Effect} describing the outcome — the recorded evaluations or an inconclusive result.
+ * Effect} describing the outcome — the recorded evaluation or an inconclusive result.
  *
  * <p>Blocking calls made from {@link #evaluate(EvaluationContext)} run on virtual threads. For an
  * evaluation that runs in several steps and must survive restarts, extend {@link DurableEvaluator}
@@ -55,7 +54,7 @@ public abstract class Evaluator {
    * <p>An Evaluator Effect can either:
    *
    * <ul>
-   *   <li>complete with one or more {@link Evaluation}s (the verdict)
+   *   <li>complete with an {@link Evaluation} (the verdict)
    *   <li>report that the evaluation was inconclusive — it ran but reached no verdict
    * </ul>
    */
@@ -71,18 +70,9 @@ public abstract class Evaluator {
        * Complete the evaluation with its verdict.
        *
        * @param evaluation the evaluation outcome
-       * @param more additional evaluation outcomes
        * @return the complete effect
        */
-      Effect complete(Evaluation evaluation, Evaluation... more);
-
-      /**
-       * Complete the evaluation with its verdicts.
-       *
-       * @param evaluations the evaluation outcomes (must not be empty)
-       * @return the complete effect
-       */
-      Effect complete(List<Evaluation> evaluations);
+      Effect complete(Evaluation evaluation);
 
       /**
        * Report that the evaluation was inconclusive.

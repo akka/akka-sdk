@@ -8,8 +8,7 @@ object Dependencies {
     val ProtocolVersionMinor = 1
   }
 
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.17-71-c3e8c9bb-SNAPSHOT")
-
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.17-74-4b603141-SNAPSHOT")
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment

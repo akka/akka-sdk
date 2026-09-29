@@ -12,6 +12,7 @@ import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.Subject;
 import akka.javasdk.testkit.EvaluatorResult;
 import akka.javasdk.testkit.EvaluatorTestKit;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 public class SimpleEvaluatorTest {
@@ -20,7 +21,7 @@ public class SimpleEvaluatorTest {
       EvaluatorTestKit.of(SimpleEvaluator::new);
 
   private Subject agentInteraction(String interactionId) {
-    return new Subject.AgentInteraction("support-agent", interactionId);
+    return new Subject.Interaction(interactionId, "support-agent", Optional.empty());
   }
 
   @Test
@@ -30,8 +31,7 @@ public class SimpleEvaluatorTest {
     assertTrue(result.isComplete());
     assertFalse(result.isInconclusive());
 
-    assertEquals(1, result.getEvaluations().size());
-    Evaluation evaluation = result.getEvaluations().get(0);
+    Evaluation evaluation = result.getEvaluation();
     assertTrue(evaluation.passed());
     assertEquals(0.9, evaluation.score().orElseThrow());
     assertEquals("good", evaluation.label().orElseThrow());
@@ -49,12 +49,13 @@ public class SimpleEvaluatorTest {
   }
 
   @Test
-  public void worksWithFlowInteractionSubject() {
-    Subject flow = new Subject.FlowInteraction("flow-1", "support-agent", "interaction-1");
+  public void worksWithInteractionInFlow() {
+    Subject subject =
+        new Subject.Interaction("interaction-1", "support-agent", Optional.of("flow-1"));
 
-    EvaluatorResult result = testKit.evaluate(flow);
+    EvaluatorResult result = testKit.evaluate(subject);
 
     assertTrue(result.isComplete());
-    assertEquals("support-agent", result.getEvaluations().get(0).attributes().get("agent"));
+    assertEquals("support-agent", result.getEvaluation().attributes().get("agent"));
   }
 }

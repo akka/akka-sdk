@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters.JavaDurationOps
-import scala.jdk.OptionConverters.RichOptional
+import scala.jdk.OptionConverters._
 
 import akka.Done
 import akka.annotation.InternalApi
@@ -56,22 +56,6 @@ private[javasdk] object DurableEvaluatorImpl {
     override def subject(): Subject = evaluationSubject
     override def evaluationId(): String = id
   }
-
-  private def toSdkSubject(subject: SpiEvaluator.Subject): Subject =
-    subject match {
-      case flow: SpiEvaluator.FlowInteraction =>
-        new Subject.FlowInteraction(flow.flowId, flow.agentComponentId, flow.interactionId)
-      case agent: SpiEvaluator.AgentInteraction =>
-        new Subject.AgentInteraction(agent.agentComponentId, agent.interactionId)
-    }
-
-  private def toSpiSubject(subject: Subject): SpiEvaluator.Subject =
-    subject match {
-      case flow: Subject.FlowInteraction =>
-        new SpiEvaluator.FlowInteraction(flow.flowId(), flow.agentComponentId(), flow.interactionId())
-      case agent: Subject.AgentInteraction =>
-        new SpiEvaluator.AgentInteraction(agent.agentComponentId(), agent.interactionId())
-    }
 
   private def toProtocolTriggerSource(source: SpiEvaluator.TriggerSource): TriggerSource =
     source match {
@@ -165,7 +149,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
       // at-least-once delivery from the trigger projection: ack the duplicate start so it can advance
       Future.successful(new SpiWorkflow.ReadOnlyEffect(ack, SpiMetadata.empty))
     } else {
-      val subject = toSdkSubject(trigger.subject)
+      val subject = EvaluationConversions.toSdkSubject(trigger.subject)
       val triggerSource = toProtocolTriggerSource(trigger.source)
       Future {
         val evaluator = factory()
@@ -251,7 +235,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
     val trigger = new SpiEvaluator.Trigger(
       workflowId,
       toSpiTriggerSource(envelope.triggerSource()),
-      toSpiSubject(envelope.getSubject))
+      EvaluationConversions.toSpiSubject(envelope.getSubject))
     // recording is idempotent on the evaluation id: this step is retried until it succeeds
     recorder.recordResult(trigger, toSpiResult(outcome)).map { _ =>
       log.debug("Evaluation [{}] finished with [{}]", workflowId, outcome.kind())
@@ -263,7 +247,9 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
   private def toSpiResult(outcome: Outcome): SpiEvaluator.Result =
     outcome.kind() match {
       case Outcome.Kind.COMPLETED =>
-        new SpiEvaluator.CompletedResult(outcome.evaluations().asScala.toSeq.map(toSpiEvaluation))
+        if (outcome.evaluation() == null)
+          throw new IllegalStateException(s"Completed outcome of evaluation [$workflowId] carries no evaluation")
+        new SpiEvaluator.CompletedResult(toSpiEvaluation(outcome.evaluation()))
       case Outcome.Kind.INCONCLUSIVE => new SpiEvaluator.InconclusiveResult(outcome.reason())
       case Outcome.Kind.FAILED       => new SpiEvaluator.FailedResult(outcome.reason())
     }
@@ -320,8 +306,8 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
             s"[${declaringClass.getName}], which is not allowed.")
         }
         new SpiWorkflow.StepTransition(stepName, input.map(serializer.toBytes))
-      case CompleteTransition(evaluations) =>
-        new SpiWorkflow.StepTransition(RecordStepName, Some(serializer.toBytes(Outcome.completed(evaluations.asJava))))
+      case CompleteTransition(evaluation) =>
+        new SpiWorkflow.StepTransition(RecordStepName, Some(serializer.toBytes(Outcome.completed(evaluation))))
       case InconclusiveTransition(reason) =>
         new SpiWorkflow.StepTransition(RecordStepName, Some(serializer.toBytes(Outcome.inconclusive(reason))))
     }

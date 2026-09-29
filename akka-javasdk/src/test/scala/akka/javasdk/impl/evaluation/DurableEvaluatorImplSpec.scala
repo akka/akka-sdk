@@ -53,7 +53,7 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
     new SpiEvaluator.Trigger(
       evaluationId,
       SpiEvaluator.TriggerSource.OnInteraction,
-      new SpiEvaluator.AgentInteraction("my-agent", interactionId))
+      new SpiEvaluator.Interaction(interactionId, "my-agent", None))
 
   private def stepCommand(stepName: String, input: Option[BytesPayload] = None) =
     new SpiWorkflow.StepCommand(stepName, input, SpiMetadata.empty, null)
@@ -141,8 +141,7 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
 
       val outcome = serializer.fromBytes(classOf[Outcome], transition.input.get)
       outcome.kind() shouldBe Outcome.Kind.COMPLETED
-      outcome.evaluations().size() shouldBe 1
-      outcome.evaluations().get(0).passed() shouldBe true
+      outcome.evaluation().passed() shouldBe true
     }
 
     "report inconclusive by transitioning to the built-in record step" in {
@@ -187,7 +186,7 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       val (recordedTrigger, recordedResult) = recorder.recorded.value
       recordedTrigger.id shouldBe evaluationId
       recordedTrigger.source shouldBe SpiEvaluator.TriggerSource.OnInteraction
-      recordedTrigger.subject.asInstanceOf[SpiEvaluator.AgentInteraction].interactionId shouldBe "interaction-1"
+      recordedTrigger.subject.asInstanceOf[SpiEvaluator.Interaction].interactionId shouldBe "interaction-1"
       recordedResult shouldBe a[spi.SpiEvaluator.InconclusiveResult]
       recordedResult.asInstanceOf[spi.SpiEvaluator.InconclusiveResult].reason shouldBe "no verdict"
     }
@@ -214,8 +213,7 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       val (recordedTrigger, recordedResult) = recorder.recorded.value
       recordedTrigger.id shouldBe evaluationId
       val completed = recordedResult.asInstanceOf[spi.SpiEvaluator.CompletedResult]
-      completed.evaluations should have size 1
-      completed.evaluations.head.passed shouldBe true
+      completed.evaluation.passed shouldBe true
     }
 
     "reject all commands, command handling is built in" in {

@@ -7,8 +7,8 @@ package akka.javasdk.impl.evaluation;
 import akka.annotation.InternalApi;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.Subject;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * INTERNAL API
@@ -38,9 +38,7 @@ public final class DurableEvaluatorProtocol {
       String userStateContentType) {
 
     public Subject getSubject() {
-      if (flowId != null)
-        return new Subject.FlowInteraction(flowId, agentComponentId, interactionId);
-      else return new Subject.AgentInteraction(agentComponentId, interactionId);
+      return new Subject.Interaction(interactionId, agentComponentId, Optional.ofNullable(flowId));
     }
 
     public static StateEnvelope of(
@@ -48,21 +46,14 @@ public final class DurableEvaluatorProtocol {
         Subject subject,
         byte[] userState,
         String userStateContentType) {
+      // Exhaustive over Subject: a new subject kind does not compile until it is mapped here.
       return switch (subject) {
-        case Subject.FlowInteraction flow ->
+        case Subject.Interaction interaction ->
             new StateEnvelope(
                 triggerSource,
-                flow.flowId(),
-                flow.agentComponentId(),
-                flow.interactionId(),
-                userState,
-                userStateContentType);
-        case Subject.AgentInteraction agent ->
-            new StateEnvelope(
-                triggerSource,
-                null,
-                agent.agentComponentId(),
-                agent.interactionId(),
+                interaction.flowId().orElse(null),
+                interaction.agentComponentId(),
+                interaction.interactionId(),
                 userState,
                 userStateContentType);
       };
@@ -70,7 +61,7 @@ public final class DurableEvaluatorProtocol {
   }
 
   /** The terminal outcome of an evaluation, input to the built-in record step. */
-  public record Outcome(Kind kind, List<EvaluationData> evaluations, String reason) {
+  public record Outcome(Kind kind, EvaluationData evaluation, String reason) {
 
     public enum Kind {
       COMPLETED,
@@ -78,17 +69,16 @@ public final class DurableEvaluatorProtocol {
       FAILED
     }
 
-    public static Outcome completed(List<Evaluation> evaluations) {
-      return new Outcome(
-          Kind.COMPLETED, evaluations.stream().map(EvaluationData::from).toList(), null);
+    public static Outcome completed(Evaluation evaluation) {
+      return new Outcome(Kind.COMPLETED, EvaluationData.from(evaluation), null);
     }
 
     public static Outcome inconclusive(String reason) {
-      return new Outcome(Kind.INCONCLUSIVE, List.of(), reason);
+      return new Outcome(Kind.INCONCLUSIVE, null, reason);
     }
 
     public static Outcome failed(String reason) {
-      return new Outcome(Kind.FAILED, List.of(), reason);
+      return new Outcome(Kind.FAILED, null, reason);
     }
   }
 
