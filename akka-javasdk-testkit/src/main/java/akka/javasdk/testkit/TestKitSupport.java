@@ -7,6 +7,7 @@ package akka.javasdk.testkit;
 import akka.grpc.javadsl.AkkaGrpcClient;
 import akka.javasdk.Principal;
 import akka.javasdk.Sanitizer;
+import akka.javasdk.SanitizerClient;
 import akka.javasdk.agent.ClassifierClient;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpClient;
@@ -112,12 +113,26 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
   }
 
   /**
-   * @return The configured sanitizer for the service, for test assertions that the expected
-   *     anonymization is applied. Will always return an instance, if no sanitization rules are
-   *     configured, the returned sanitizer will return all text fed to it as is.
+   * @return The sanitizer that applies every configured pattern and predefined rule of the service,
+   *     for test assertions that the expected anonymization is applied. Will always return an
+   *     instance, if no sanitization rules are configured, the returned sanitizer will return all
+   *     text fed to it as is.
+   * @deprecated Use {@link #getSanitizerClient()}, which masks with one configured sanitizer by
+   *     name.
    */
+  @Deprecated(since = "3.7.0", forRemoval = true)
+  @SuppressWarnings("removal")
   public Sanitizer getSanitizer() {
     return testKit.getSanitizer();
+  }
+
+  /**
+   * @return The sanitizer client for the service, for test assertions that the expected
+   *     anonymization is applied, and for masking with a configured sanitizer directly without
+   *     going through a component.
+   */
+  public SanitizerClient getSanitizerClient() {
+    return testKit.getSanitizerClient();
   }
 
   /**

@@ -10,6 +10,7 @@ import akka.http.javadsl.model.HttpEntity.Strict;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.Sanitizer;
+import akka.javasdk.SanitizerClient;
 import akka.javasdk.agent.ClassifierClient;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
@@ -33,17 +34,23 @@ import java.util.List;
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class TestEndpoint extends AbstractHttpEndpoint {
 
+  @SuppressWarnings("removal")
   private final Sanitizer sanitizer;
+
+  private final SanitizerClient sanitizerClient;
   private final ClassifierClient classifierClient;
   private final ComponentClient componentClient;
   private final ObjectStorageProvider objectStorageProvider;
 
+  @SuppressWarnings("removal")
   public TestEndpoint(
       Sanitizer sanitizer,
+      SanitizerClient sanitizerClient,
       ClassifierClient classifierClient,
       ComponentClient componentClient,
       ObjectStorageProvider objectStorageProvider) {
     this.sanitizer = sanitizer;
+    this.sanitizerClient = sanitizerClient;
     this.classifierClient = classifierClient;
     this.componentClient = componentClient;
     this.objectStorageProvider = objectStorageProvider;
@@ -75,6 +82,11 @@ public class TestEndpoint extends AbstractHttpEndpoint {
   @Get("/sanitized")
   public String sanitized() {
     return sanitizer.sanitize("Here's a string to sanitize: sanitizesanitizesanitize");
+  }
+
+  @Get("/sanitize/{name}/{text}")
+  public String sanitizeByName(String name, String text) {
+    return sanitizerClient.sanitize(name, text);
   }
 
   @Get("/classify/{text}")

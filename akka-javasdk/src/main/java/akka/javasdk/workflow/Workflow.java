@@ -48,7 +48,7 @@ import java.util.concurrent.CompletionStage;
  *   <li>{@link com.typesafe.config.Config}
  *   <li>{@link akka.javasdk.workflow.WorkflowContext}
  *   <li>{@link akka.javasdk.agent.AgentRegistry}
- *   <li>{@link akka.javasdk.Sanitizer}
+ *   <li>{@link akka.javasdk.SanitizerClient} - for masking text with a configured sanitizer
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup
  * </ul>
  *
