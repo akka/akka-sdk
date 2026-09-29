@@ -57,21 +57,6 @@ private[javasdk] object DurableEvaluatorImpl {
     override def evaluationId(): String = id
   }
 
-  private def toSdkSubject(subject: SpiEvaluator.Subject): Subject =
-    subject match {
-      case interaction: SpiEvaluator.Interaction =>
-        new Subject.Interaction(interaction.interactionId, interaction.agentComponentId, interaction.flowId.toJava)
-    }
-
-  private def toSpiSubject(subject: Subject): SpiEvaluator.Subject =
-    subject match {
-      case interaction: Subject.Interaction =>
-        new SpiEvaluator.Interaction(
-          interaction.interactionId(),
-          interaction.agentComponentId(),
-          interaction.flowId().toScala)
-    }
-
   private def toProtocolTriggerSource(source: SpiEvaluator.TriggerSource): TriggerSource =
     source match {
       case SpiEvaluator.TriggerSource.Manual        => TriggerSource.MANUAL
@@ -164,7 +149,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
       // at-least-once delivery from the trigger projection: ack the duplicate start so it can advance
       Future.successful(new SpiWorkflow.ReadOnlyEffect(ack, SpiMetadata.empty))
     } else {
-      val subject = toSdkSubject(trigger.subject)
+      val subject = EvaluationConversions.toSdkSubject(trigger.subject)
       val triggerSource = toProtocolTriggerSource(trigger.source)
       Future {
         val evaluator = factory()
@@ -250,7 +235,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
     val trigger = new SpiEvaluator.Trigger(
       workflowId,
       toSpiTriggerSource(envelope.triggerSource()),
-      toSpiSubject(envelope.getSubject))
+      EvaluationConversions.toSpiSubject(envelope.getSubject))
     // recording is idempotent on the evaluation id: this step is retried until it succeeds
     recorder.recordResult(trigger, toSpiResult(outcome)).map { _ =>
       log.debug("Evaluation [{}] finished with [{}]", workflowId, outcome.kind())
@@ -262,6 +247,8 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
   private def toSpiResult(outcome: Outcome): SpiEvaluator.Result =
     outcome.kind() match {
       case Outcome.Kind.COMPLETED =>
+        if (outcome.evaluation() == null)
+          throw new IllegalStateException(s"Completed outcome of evaluation [$workflowId] carries no evaluation")
         new SpiEvaluator.CompletedResult(toSpiEvaluation(outcome.evaluation()))
       case Outcome.Kind.INCONCLUSIVE => new SpiEvaluator.InconclusiveResult(outcome.reason())
       case Outcome.Kind.FAILED       => new SpiEvaluator.FailedResult(outcome.reason())

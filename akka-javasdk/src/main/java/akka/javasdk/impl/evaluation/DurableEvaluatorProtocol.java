@@ -46,6 +46,7 @@ public final class DurableEvaluatorProtocol {
         Subject subject,
         byte[] userState,
         String userStateContentType) {
+      // Exhaustive over Subject: a new subject kind does not compile until it is mapped here.
       return switch (subject) {
         case Subject.Interaction interaction ->
             new StateEnvelope(

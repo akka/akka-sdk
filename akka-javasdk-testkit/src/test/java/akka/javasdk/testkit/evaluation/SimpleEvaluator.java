@@ -17,7 +17,7 @@ public class SimpleEvaluator extends Evaluator {
 
   @Override
   public Effect evaluate(EvaluationContext context) {
-    var subject = (Subject.Interaction) context.subject();
+    Subject subject = context.subject();
 
     return switch (subject.interactionId()) {
       case "inconclusive" ->

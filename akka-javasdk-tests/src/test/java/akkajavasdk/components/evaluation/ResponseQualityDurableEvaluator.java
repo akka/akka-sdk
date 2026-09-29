@@ -11,7 +11,6 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.evaluation.DurableEvaluator;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
-import akka.javasdk.evaluation.Subject;
 
 /**
  * A durable evaluator running a multi-step evaluation: fetch the transcript in one step, judge it
@@ -44,7 +43,7 @@ public class ResponseQualityDurableEvaluator
   }
 
   private Effect fetchTranscript() {
-    var subject = (Subject.Interaction) evaluationContext().subject();
+    var subject = evaluationContext().subject();
     // a real evaluator would fetch the transcript via the interaction log
     String transcript =
         "interaction " + subject.interactionId() + " of agent " + subject.agentComponentId();

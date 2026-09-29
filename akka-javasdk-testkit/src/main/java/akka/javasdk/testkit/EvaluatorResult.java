@@ -24,7 +24,7 @@ public interface EvaluatorResult {
   boolean isInconclusive();
 
   /**
-   * @return the evaluation the evaluation completed with, or throws if it was not complete
+   * @return the verdict the evaluation completed with, or throws if it was not complete
    */
   Evaluation getEvaluation();
 

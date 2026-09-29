@@ -6,6 +6,7 @@ package akka.javasdk.ledger;
 
 import akka.javasdk.evaluation.Evaluation;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -44,7 +45,11 @@ public record EvaluationRecord(
   public sealed interface Outcome {
 
     /** The evaluation reached a verdict. */
-    record Verdict(Evaluation evaluation) implements Outcome {}
+    record Verdict(Evaluation evaluation) implements Outcome {
+      public Verdict {
+        Objects.requireNonNull(evaluation, "evaluation must not be null");
+      }
+    }
 
     /** The evaluation ran but could not reach a verdict — a deliberate, expected outcome. */
     record Inconclusive(String reason) implements Outcome {}

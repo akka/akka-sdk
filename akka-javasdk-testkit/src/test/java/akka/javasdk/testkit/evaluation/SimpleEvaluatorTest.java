@@ -49,10 +49,11 @@ public class SimpleEvaluatorTest {
   }
 
   @Test
-  public void worksWithFlowInteractionSubject() {
-    Subject flow = new Subject.Interaction("interaction-1", "support-agent", Optional.of("flow-1"));
+  public void worksWithInteractionInFlow() {
+    Subject subject =
+        new Subject.Interaction("interaction-1", "support-agent", Optional.of("flow-1"));
 
-    EvaluatorResult result = testKit.evaluate(flow);
+    EvaluatorResult result = testKit.evaluate(subject);
 
     assertTrue(result.isComplete());
     assertEquals("support-agent", result.getEvaluation().attributes().get("agent"));

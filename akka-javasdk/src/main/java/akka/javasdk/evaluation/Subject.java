@@ -7,10 +7,24 @@ package akka.javasdk.evaluation;
 import java.util.Optional;
 
 /**
- * What an evaluation evaluates. A subject names the thing under evaluation by its stable id; the
- * content is fetched from the ledger.
+ * The subject of an evaluation. A subject names what is evaluated by its stable id. The evaluator
+ * fetches the content from the ledger.
  */
 public sealed interface Subject {
+
+  /**
+   * The stable id of the interaction being evaluated.
+   *
+   * @return the interaction id
+   */
+  String interactionId();
+
+  /**
+   * The component id of the agent that produced the interaction.
+   *
+   * @return the agent component id
+   */
+  String agentComponentId();
 
   /**
    * One agent interaction, on its own or as part of a flow.

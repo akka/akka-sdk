@@ -5,7 +5,6 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
-import akka.javasdk.evaluation.Subject;
 import akka.javasdk.ledger.InteractionRecord;
 import akka.javasdk.ledger.LedgerClient;
 
@@ -20,7 +19,7 @@ public class InteractionQualityEvaluator extends Evaluator { // <2>
 
   @Override
   public Effect evaluate(EvaluationContext context) {
-    InteractionRecord interaction = ledger.getInteraction(((Subject.Interaction) context.subject()).interactionId()); // <4>
+    InteractionRecord interaction = ledger.getInteraction(context.subject().interactionId()); // <4>
 
     if (interaction.failed()) {
       return effects().inconclusive("interaction failed, nothing to evaluate"); // <5>

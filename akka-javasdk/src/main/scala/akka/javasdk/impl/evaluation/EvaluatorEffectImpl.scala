@@ -19,10 +19,9 @@ private[javasdk] object EvaluatorEffectImpl {
 
   final case class InconclusiveEffect(reason: String) extends PrimaryEffect {}
 
-  class Builder extends Evaluator.Effect.Builder {
+  final class Builder extends Evaluator.Effect.Builder {
     override def complete(evaluation: Evaluation): Evaluator.Effect = {
-      if (evaluation == null)
-        throw new IllegalArgumentException("complete requires an evaluation")
+      require(evaluation != null, "Evaluation must not be null")
       CompleteEffect(evaluation)
     }
 

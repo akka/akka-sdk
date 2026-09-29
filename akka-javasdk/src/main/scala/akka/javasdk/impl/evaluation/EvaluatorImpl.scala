@@ -5,12 +5,9 @@
 package akka.javasdk.impl.evaluation
 
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters._
-import scala.jdk.OptionConverters._
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
-import akka.javasdk.evaluation.Evaluation
 import akka.javasdk.evaluation.EvaluationContext
 import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.evaluation.Subject
@@ -33,24 +30,11 @@ private[impl] object EvaluatorImpl {
    */
   final class EvaluationContextImpl(spiContext: SpiEvaluator.EvaluationContext) extends EvaluationContext {
 
-    override def subject(): Subject = toSdkSubject(spiContext.subject)
+    override def subject(): Subject = EvaluationConversions.toSdkSubject(spiContext.subject)
 
     override def evaluationId(): String = spiContext.evaluationId
   }
 
-  private def toSdkSubject(spiSubject: SpiEvaluator.Subject): Subject =
-    spiSubject match {
-      case interaction: SpiEvaluator.Interaction =>
-        new Subject.Interaction(interaction.interactionId, interaction.agentComponentId, interaction.flowId.toJava)
-    }
-
-  private def toSpiEvaluation(evaluation: Evaluation): SpiEvaluator.Evaluation =
-    new SpiEvaluator.Evaluation(
-      passed = evaluation.passed(),
-      explanation = evaluation.explanation(),
-      score = evaluation.score().toScala.map(_.doubleValue()),
-      label = evaluation.label().toScala,
-      attributes = evaluation.attributes().asScala.toMap)
 }
 
 /**
@@ -84,7 +68,7 @@ private[impl] final class EvaluatorImpl[E <: Evaluator](factory: () => E, evalua
   private def toSpiEffect(effect: Evaluator.Effect): Future[SpiEvaluator.Effect] =
     effect match {
       case CompleteEffect(evaluation) =>
-        Future.successful(new SpiEvaluator.CompleteEffect(toSpiEvaluation(evaluation)))
+        Future.successful(new SpiEvaluator.CompleteEffect(EvaluationConversions.toSpiEvaluation(evaluation)))
       case InconclusiveEffect(reason) =>
         Future.successful(new SpiEvaluator.InconclusiveEffect(reason))
       case unknown =>
