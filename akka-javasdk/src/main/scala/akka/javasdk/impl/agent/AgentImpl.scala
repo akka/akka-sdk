@@ -751,7 +751,8 @@ private[impl] final class AgentImpl(
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
-              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
+              onSuccessAsSent = (sentUserMessage, results) =>
+                onSuccess(sessionMemoryClient, sentUserMessage, userMessageAt, agentRole, results),
               boundGuardrails = guardrails.boundGuardrails,
               contentLoader = spiContentLoader,
               callToolFunction = request => Future(toolExecutor.executeMultimodal(request))(sdkExecutionContext))
@@ -843,9 +844,11 @@ private[impl] final class AgentImpl(
     }
   }
 
+  // The runtime hands back the user message and the tool results as the model was sent them, and the model output
+  // as the model produced it, so each message is stored as sanitized.
   private def onSuccess(
       sessionMemoryClient: SessionMemory,
-      userMessage: agent.UserMessage,
+      sentUserMessage: SpiAgent.UserMessage,
       userMessageAt: Instant,
       agentRole: Option[String],
       responses: Seq[SpiAgent.Response]): Unit = {
@@ -865,7 +868,8 @@ private[impl] final class AgentImpl(
             requests,
             res.thinking.toJava,
             new TokenUsage(res.inputTokenCount, res.outputTokenCount),
-            res.attributes.asJava)
+            res.attributes.asJava,
+            true)
 
         case res: SpiAgent.ToolCallResponse =>
           AgentImpl.toSessionToolCallResponse(
@@ -874,44 +878,20 @@ private[impl] final class AgentImpl(
             res.id,
             res.name,
             res.contents,
-            sanitized = false)
+            sanitized = true)
       }
 
-    if (userMessage.isTextOnly) {
+    if (sentUserMessage.textOnly) {
       sessionMemoryClient.addInteraction(
         sessionId,
-        new UserMessage(userMessageAt, userMessage.text(), componentId),
+        new UserMessage(userMessageAt, sentUserMessage.textContent.getOrElse(""), componentId, true),
         responseMessages.asJava)
     } else {
-      val contents = userMessage
-        .contents()
-        .asScala
-        .map(s => toSessionMemoryContent(s))
-        .asJava
+      val contents = sentUserMessage.contents.map(AgentImpl.toSessionMemoryContent).asJava
       sessionMemoryClient.addInteraction(
         sessionId,
-        new MultimodalUserMessage(userMessageAt, contents, componentId),
+        new MultimodalUserMessage(userMessageAt, contents, componentId, true),
         responseMessages.asJava)
-    }
-  }
-
-  private def toSessionMemoryContent(messageContent: MessageContent): SessionMessage.MessageContent = {
-    messageContent match {
-      case content: MessageContent.TextMessageContent =>
-        new SessionMessage.MessageContent.TextMessageContent(content.text)
-      case content: ImageUrlMessageContent =>
-        new SessionMessage.MessageContent.ImageUriMessageContent(
-          content.uri().toString,
-          content.detailLevel(),
-          content.mimeType())
-      case content: PdfUrlMessageContent =>
-        new SessionMessage.MessageContent.PdfUriMessageContent(content.uri().toString)
-      // Inline bytes are not persisted to session memory; record a placeholder instead.
-      // (Consistent with the autonomous agent path in AutonomousAgentImpl.)
-      case _: MessageContent.ImageDataMessageContent =>
-        new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.IMAGE_PLACEHOLDER)
-      case _: MessageContent.PdfDataMessageContent =>
-        new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.PDF_PLACEHOLDER)
     }
   }
 

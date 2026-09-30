@@ -363,26 +363,7 @@ private[impl] final class AutonomousAgentImpl(
               toSessionMessages(now, messages.tail, tokenUsage).asJava)
 
           case u: SpiAgent.ContextMessage.UserMessage =>
-            val contents: Seq[SessionMessage.MessageContent] = u.contents.map {
-              case t: SpiAgent.TextMessageContent =>
-                new SessionMessage.MessageContent.TextMessageContent(t.text)
-
-              case img: SpiAgent.ImageUriMessageContent =>
-                new SessionMessage.MessageContent.ImageUriMessageContent(
-                  img.uri.toString,
-                  fromSpiDetailLevel(img.detailLevel),
-                  img.mimeType.toJava)
-
-              case pdf: SpiAgent.PdfUriMessageContent =>
-                new SessionMessage.MessageContent.PdfUriMessageContent(pdf.uri.toString)
-
-              case _: SpiAgent.ImageBytesMessageContent =>
-                new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.IMAGE_PLACEHOLDER)
-
-              case _: SpiAgent.PdfBytesMessageContent =>
-                new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.PDF_PLACEHOLDER)
-            }
-
+            val contents = u.contents.map(AgentImpl.toSessionMemoryContent)
             sessionMemoryClient.addInteraction(
               sessionId,
               new MultimodalUserMessage(now, contents.asJava, componentId, u.sanitized),
