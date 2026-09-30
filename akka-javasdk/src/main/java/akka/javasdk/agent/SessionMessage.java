@@ -81,10 +81,10 @@ public sealed interface SessionMessage {
   /**
    * A multimodal user message, e.g. text combined with an image or PDF.
    *
-   * @param sanitized true when the message holds the text the model was sent, with the configured
-   *     sanitizers applied. The runtime sends such a message to the model as it is. For a message
-   *     with false, the runtime masks the text with the current sanitizers before it sends it.
-   *     Leave it false in a message that you build.
+   * @param sanitized true when the message holds the text that the runtime sent to the model, with
+   *     the configured sanitizers applied. The runtime sends such a message to the model as it is.
+   *     For a message with false, the runtime masks the text with the current sanitizers before it
+   *     sends it. Leave it false in a message that you build.
    */
   record MultimodalUserMessage(
       Instant timestamp, List<MessageContent> contents, String componentId, boolean sanitized)
@@ -124,10 +124,10 @@ public sealed interface SessionMessage {
   /**
    * A plain text user message.
    *
-   * @param sanitized true when the message holds the text the model was sent, with the configured
-   *     sanitizers applied. The runtime sends such a message to the model as it is. For a message
-   *     with false, the runtime masks the text with the current sanitizers before it sends it.
-   *     Leave it false in a message that you build.
+   * @param sanitized true when the message holds the text that the runtime sent to the model, with
+   *     the configured sanitizers applied. The runtime sends such a message to the model as it is.
+   *     For a message with false, the runtime masks the text with the current sanitizers before it
+   *     sends it. Leave it false in a message that you build.
    */
   record UserMessage(Instant timestamp, String text, String componentId, boolean sanitized)
       implements SessionMessage {
@@ -245,10 +245,10 @@ public sealed interface SessionMessage {
   /**
    * The text result of a tool call, fed back to the model as input.
    *
-   * @param sanitized true when the message holds the tool result the model was sent, with the
-   *     configured sanitizers applied. The runtime sends such a message to the model as it is. For
-   *     a message with false, the runtime masks the text with the current sanitizers before it
-   *     sends it. Leave it false in a message that you build.
+   * @param sanitized true when the message holds the tool result that the runtime sent to the
+   *     model, with the configured sanitizers applied. The runtime sends such a message to the
+   *     model as it is. For a message with false, the runtime masks the text with the current
+   *     sanitizers before it sends it. Leave it false in a message that you build.
    */
   record ToolCallResponse(
       Instant timestamp, String componentId, String id, String name, String text, boolean sanitized)
@@ -268,10 +268,10 @@ public sealed interface SessionMessage {
   /**
    * The multimodal result of a tool call, fed back to the model as input.
    *
-   * @param sanitized true when the message holds the tool result the model was sent, with the
-   *     configured sanitizers applied. The runtime sends such a message to the model as it is. For
-   *     a message with false, the runtime masks the text with the current sanitizers before it
-   *     sends it. Leave it false in a message that you build.
+   * @param sanitized true when the message holds the tool result that the runtime sent to the
+   *     model, with the configured sanitizers applied. The runtime sends such a message to the
+   *     model as it is. For a message with false, the runtime masks the text with the current
+   *     sanitizers before it sends it. Leave it false in a message that you build.
    */
   record MultimodalToolCallResponse(
       Instant timestamp,
