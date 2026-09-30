@@ -29,7 +29,7 @@ image::operations:aao-gcp-architecture.svg[AAO on GCP]
 AAO on GCP uses these Google Cloud services (from the `akka-bootstrap` `modules/google` module):
 
 * Cloud IAM and Cloud Resource Manager (service account, custom roles, and bindings)
-* Compute Engine networking (VPC network, one subnet per region with secondary ranges for pods and services, Cloud NAT, external IP, Cloud Load Balancing)
+* Compute Engine networking (VPC, subnets, Cloud NAT, external IP, Cloud Load Balancing)
 * Google Kubernetes Engine (GKE)
 * Cloud SQL for PostgreSQL
 * Service Networking (private services access for the database)
