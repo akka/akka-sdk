@@ -19,7 +19,10 @@ public class TranscriptJudgeDurableEvaluator
   private final LedgerClient ledger;
   private final ComponentClient componentClient;
 
-  public TranscriptJudgeDurableEvaluator(LedgerClient ledger, ComponentClient componentClient) {
+  public TranscriptJudgeDurableEvaluator(
+    LedgerClient ledger,
+    ComponentClient componentClient
+  ) {
     this.ledger = ledger;
     this.componentClient = componentClient;
   }
