@@ -238,7 +238,7 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
       "Evaluator [conversation-quality] must define [control-id] as a string, but defines [BOOLEAN]"
     }
 
-    "be held together with the bindings" in {
+    "be handed to the runtime with the bindings, on the descriptor of an evaluator and of a durable evaluator" in {
       val config = load("""
         akka.javasdk.evaluation.evaluators.conversation-quality {
           control-id = "AI-EV-01"
@@ -246,8 +246,26 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
         }
         """)
       val configured = EvaluatorSettings.configuredEvaluator(config, "conversation-quality", NoAgentRoles)
-      agentBindingIds(configured.bindings) shouldBe Seq("support-agent")
-      configured.controlId shouldBe Some("AI-EV-01")
+
+      val evaluator = configured.evaluatorDescriptor(
+        "conversation-quality",
+        classOf[SomeEvaluator].getName,
+        name = None,
+        description = None,
+        instanceFactory = _ => throw new UnsupportedOperationException,
+        provided = false)
+      agentBindingIds(evaluator.bindings) shouldBe Seq("support-agent")
+      evaluator.controlId shouldBe Some("AI-EV-01")
+
+      val durable = configured.workflowEvaluatorDescriptor(
+        "conversation-quality",
+        classOf[SomeEvaluator].getName,
+        name = None,
+        description = None,
+        instanceFactory = _ => throw new UnsupportedOperationException,
+        provided = false)
+      agentBindingIds(durable.bindings) shouldBe Seq("support-agent")
+      durable.controlId shouldBe Some("AI-EV-01")
     }
   }
 }

@@ -8,7 +8,10 @@ import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
 import akka.javasdk.impl.ControlId
+import akka.runtime.sdk.spi.EvaluatorDescriptor
 import akka.runtime.sdk.spi.SpiEvaluator
+import akka.runtime.sdk.spi.SpiWorkflowEvaluator
+import akka.runtime.sdk.spi.WorkflowEvaluatorDescriptor
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigObject
@@ -137,4 +140,41 @@ private[impl] object EvaluatorSettings {
  * What the runtime needs from the configuration of one evaluator.
  */
 @InternalApi
-private[impl] final case class ConfiguredEvaluator(bindings: Seq[SpiEvaluator.Binding], controlId: Option[String])
+private[impl] final case class ConfiguredEvaluator(bindings: Seq[SpiEvaluator.Binding], controlId: Option[String]) {
+
+  /** The descriptor to hand to the runtime for an evaluator, with the bindings and the control id of this entry. */
+  def evaluatorDescriptor(
+      componentId: String,
+      implementationName: String,
+      name: Option[String],
+      description: Option[String],
+      instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator,
+      provided: Boolean): EvaluatorDescriptor =
+    new EvaluatorDescriptor(
+      componentId,
+      implementationName,
+      name = name,
+      description = description,
+      bindings = bindings,
+      instanceFactory = instanceFactory,
+      provided = provided,
+      controlId = controlId)
+
+  /** As [[evaluatorDescriptor]], for a durable evaluator. */
+  def workflowEvaluatorDescriptor(
+      componentId: String,
+      implementationName: String,
+      name: Option[String],
+      description: Option[String],
+      instanceFactory: SpiWorkflowEvaluator.FactoryContext => SpiWorkflowEvaluator,
+      provided: Boolean): WorkflowEvaluatorDescriptor =
+    new WorkflowEvaluatorDescriptor(
+      componentId,
+      implementationName,
+      name = name,
+      description = description,
+      bindings = bindings,
+      instanceFactory = instanceFactory,
+      provided = provided,
+      controlId = controlId)
+}

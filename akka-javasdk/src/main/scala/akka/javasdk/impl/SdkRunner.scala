@@ -1262,15 +1262,13 @@ private final class Sdk(
         }
 
         evaluatorDescriptors :+=
-          new EvaluatorDescriptor(
+          configured.evaluatorDescriptor(
             componentId,
             clz.getName,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            bindings = configured.bindings,
             instanceFactory = instanceFactory,
-            provided = isProvided(clz),
-            controlId = configured.controlId)
+            provided = isProvided(clz))
 
       case clz if Reflect.isDurableEvaluator(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -1281,12 +1279,11 @@ private final class Sdk(
         val configured = EvaluatorSettings.configuredEvaluator(applicationConfig, componentId, agentRolesByComponentId)
 
         durableEvaluatorDescriptors :+=
-          new WorkflowEvaluatorDescriptor(
+          configured.workflowEvaluatorDescriptor(
             componentId,
             clz.getName,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            bindings = configured.bindings,
             instanceFactory = { factoryContext =>
               val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
               new DurableEvaluatorImpl[Nothing, DurableEvaluator[Nothing]](
@@ -1299,8 +1296,7 @@ private final class Sdk(
                 serializer,
                 sdkExecutionContext)
             },
-            provided = false,
-            controlId = configured.controlId)
+            provided = false)
 
       case clz if Reflect.isView(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
