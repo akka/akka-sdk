@@ -59,7 +59,7 @@
   <path d="M165 150 L230 150 L230 120 L375 120" fill="none" stroke="#1e7e37" stroke-width="1.6" marker-end="url(#ag)"/>
 
   <!-- Flows: actors -> Application (observability/import-export/service ops/agent deploy) -->
-  <text x="330" y="472" text-anchor="end" font-size="12" fill="#1e7e37">observability</text>
+  <text x="330" y="472" text-anchor="end" font-size="12" fill="#1e7e37">observability config</text>
   <text x="330" y="490" text-anchor="end" font-size="12" fill="#1e7e37">import/export</text>
   <text x="330" y="508" text-anchor="end" font-size="12" fill="#1e7e37">service ops</text>
   <text x="330" y="526" text-anchor="end" font-size="12" fill="#1e7e37">agent deploy</text>
@@ -78,6 +78,13 @@
   <text x="1005" y="488" text-anchor="middle" font-size="12" fill="#1e7e37">regions</text>
   <path d="M845 400 L970 400 L970 360 L1095 360" fill="none" stroke="#1e7e37" stroke-width="1.6" marker-end="url(#ag)"/>
   <path d="M1095 560 L970 560 L970 520 L845 520" fill="none" stroke="#1e7e37" stroke-width="1.6" marker-end="url(#ag)"/>
+
+  <!-- Flow: Application -> your observability (export to Grafana etc.) -->
+  <rect x="950" y="624" width="240" height="56" rx="10" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="1070" y="649" text-anchor="middle" font-size="13" fill="#1a1a1a">Your observability</text>
+  <text x="1070" y="668" text-anchor="middle" font-size="11" fill="#5f6b73">Grafana, etc.</text>
+  <text x="925" y="592" text-anchor="middle" font-size="11" fill="#1e7e37">observability export</text>
+  <path d="M820 535 L820 600 L1030 600 L1030 624" fill="none" stroke="#1e7e37" stroke-width="1.6" marker-end="url(#ag)"/>
 
   <!-- Flow: end users -> exposed routes -> Application -->
   <path d="M610 634 L610 602" fill="none" stroke="#1a1a1a" stroke-width="1.6" marker-end="url(#ak)"/>
