@@ -179,6 +179,23 @@ object SanitizerProviderSpec {
     """)
     .withFallback(ConfigFactory.load())
 
+  // Every entry masks at an agent point and at log messages, so each is on both lists handed to the runtime.
+  private val controlIdConfig = ConfigFactory
+    .parseString(s"""
+    akka.javasdk.sanitization.sanitizers {
+      "implemented" {
+        class = "akka.javasdk.impl.SanitizerProviderSpec$$BothWaysSanitizer"
+        control-id = "AI-SAN-01"
+      }
+      "declarative" {
+        predefined = CREDIT_CARD
+        control-id = "AI-SAN-02"
+      }
+      "no-id" { pattern = "(secret)" }
+    }
+    """)
+    .withFallback(ConfigFactory.load())
+
   class ThrowingSanitizer extends TextSanitizer {
     override def sanitize(text: String): String = throw new IllegalStateException("kaboom")
   }
@@ -498,6 +515,15 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       provider.validate()
       ConstructionCount.get() shouldEqual 0
     }
+
+    "carry the control id of a class entry and of a declarative entry" in {
+      val (provider, _) = newProvider(system, controlIdConfig)
+
+      provider.spiSanitizers(_ => Set.empty).map(entry => entry.name -> entry.controlId).toMap shouldEqual Map(
+        "implemented" -> Some("AI-SAN-01"),
+        "declarative" -> Some("AI-SAN-02"),
+        "no-id" -> None)
+    }
   }
 
   "The log sanitizers handed to the runtime" should {
@@ -620,6 +646,15 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
           SpiDataSanitizer.ApplyAt.ToolResult), Set.empty),
         "agent-scoped" -> (Set(SpiDataSanitizer.ApplyAt.ModelCall, SpiDataSanitizer.ApplyAt.ToolResult),
         Set("some-agent")))
+    }
+
+    "carry the control id of a class entry and of a declarative entry" in {
+      val (provider, _) = newProvider(system, controlIdConfig)
+
+      provider.spiLogSanitizers.map(entry => entry.name -> entry.controlId).toMap shouldEqual Map(
+        "implemented" -> Some("AI-SAN-01"),
+        "declarative" -> Some("AI-SAN-02"),
+        "no-id" -> None)
     }
   }
 }

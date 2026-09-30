@@ -371,6 +371,20 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         case regex: SpiDataSanitizer.Regex if regex.name == "warm-colors" => regex.pattern.regex
       }.value shouldEqual "(?i)(red|orange|yellow)"
     }
+
+    "carry the control id on the data sanitizer and on the log sanitizer of a pattern and a predefined entry" in {
+      val settings = Sanitization.loadSettings(ConfigFactory.load(ConfigFactory.parseString("""
+        akka.javasdk.sanitization.sanitizers {
+          "account-ids" { pattern = "ACC-[0-9]+", control-id = "AI-SAN-01" }
+          "credit-card" { predefined = CREDIT_CARD, control-id = "AI-SAN-02" }
+          "no-id" { pattern = "a" }
+        }
+        """)))
+
+      val expected = Map("account-ids" -> Some("AI-SAN-01"), "credit-card" -> Some("AI-SAN-02"), "no-id" -> None)
+      settings.sanitizers.map(entry => entry.name -> entry.controlId).toMap shouldEqual expected
+      settings.logSanitizers.map(entry => entry.name -> entry.controlId).toMap shouldEqual expected
+    }
   }
 
   "The settings the runtime reads at startup" should {

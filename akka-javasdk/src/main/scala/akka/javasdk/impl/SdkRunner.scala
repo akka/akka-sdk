@@ -149,7 +149,6 @@ import akka.runtime.sdk.spi.SpiAutonomousAgent
 import akka.runtime.sdk.spi.SpiClassifierClient
 import akka.runtime.sdk.spi.SpiClassifierSetup
 import akka.runtime.sdk.spi.SpiComponents
-import akka.runtime.sdk.spi.SpiConfiguredGuardrail
 import akka.runtime.sdk.spi.SpiConsumer
 import akka.runtime.sdk.spi.SpiDeployedEventingSettings
 import akka.runtime.sdk.spi.SpiDevModeSettings
@@ -1251,7 +1250,7 @@ private final class Sdk(
       case clz if Reflect.isEvaluator(clz) =>
         val componentId = Reflect.readComponentId(clz)
         val evaluatorClass = clz.asInstanceOf[Class[Evaluator]]
-        val bindings = EvaluatorSettings.agentBindings(applicationConfig, componentId, agentRolesByComponentId)
+        val configured = EvaluatorSettings.configuredEvaluator(applicationConfig, componentId, agentRolesByComponentId)
 
         val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { factoryContext =>
           val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
@@ -1268,9 +1267,10 @@ private final class Sdk(
             clz.getName,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            bindings = bindings,
+            bindings = configured.bindings,
             instanceFactory = instanceFactory,
-            provided = isProvided(clz))
+            provided = isProvided(clz),
+            controlId = configured.controlId)
 
       case clz if Reflect.isDurableEvaluator(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -1278,8 +1278,7 @@ private final class Sdk(
         val stateType = Reflect.durableEvaluatorStateType(clz).asInstanceOf[Class[Nothing]]
         serializer.registerTypeHints(stateType)
 
-        val durableEvaluatorBindings =
-          EvaluatorSettings.agentBindings(applicationConfig, componentId, agentRolesByComponentId)
+        val configured = EvaluatorSettings.configuredEvaluator(applicationConfig, componentId, agentRolesByComponentId)
 
         durableEvaluatorDescriptors :+=
           new WorkflowEvaluatorDescriptor(
@@ -1287,7 +1286,7 @@ private final class Sdk(
             clz.getName,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            bindings = durableEvaluatorBindings,
+            bindings = configured.bindings,
             instanceFactory = { factoryContext =>
               val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
               new DurableEvaluatorImpl[Nothing, DurableEvaluator[Nothing]](
@@ -1300,7 +1299,8 @@ private final class Sdk(
                 serializer,
                 sdkExecutionContext)
             },
-            provided = false)
+            provided = false,
+            controlId = configured.controlId)
 
       case clz if Reflect.isView(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
@@ -1524,15 +1524,8 @@ private final class Sdk(
       }
     unhandledExceptionReporterFn = onUnhandledException
 
-    val guardrailSetup = new SpiGuardrailSetup(guardrailProvider.configuredGuardrails.map { g =>
-      new SpiConfiguredGuardrail(
-        name = g.name,
-        implementationClass = g.implementationClass,
-        enabledForComponents = guardrailEnabledForComponent.getOrElse(g.name, Set.empty),
-        reportOnly = g.reportOnly,
-        useFor = g.useFor.map(_.toString),
-        config = g.config)
-    })
+    val guardrailSetup = new SpiGuardrailSetup(
+      guardrailProvider.spiGuardrails(name => guardrailEnabledForComponent.getOrElse(name, Set.empty)))
 
     val classifierSetup = new SpiClassifierSetup(classifierProvider.spiConfiguredClassifiers)
 

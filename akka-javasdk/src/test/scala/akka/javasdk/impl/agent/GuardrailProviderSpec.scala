@@ -1044,6 +1044,28 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       descriptors.head.requestGuardrails.map(_.name) shouldBe Seq("tool guard")
     }
 
+    "hand each guardrail to the runtime with its control id and the agents it applies to" in {
+      val cfg = ConfigFactory
+        .parseString("""
+          akka.javasdk.agent.guardrails."my guard".control-id = "AI-GR-01"
+        """)
+        .withFallback(config)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      val entries = provider.spiGuardrails {
+        case "my guard" => Set("worker-agent")
+        case _          => Set.empty
+      }
+
+      entries.map(g => g.name -> (g.controlId, g.enabledForComponents)).toMap shouldBe Map(
+        "request prompt injection" -> (None, Set.empty),
+        "my guard" -> (Some("AI-GR-01"), Set("worker-agent")))
+      val myGuard = entries.find(_.name == "my guard").get
+      myGuard.implementationClass shouldBe classOf[MyGuard].getName
+      myGuard.reportOnly shouldBe true
+      myGuard.config.getString("control-id") shouldBe "AI-GR-01"
+    }
+
   }
 
 }
