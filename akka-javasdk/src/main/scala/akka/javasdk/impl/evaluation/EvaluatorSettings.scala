@@ -7,6 +7,7 @@ package akka.javasdk.impl.evaluation
 import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
+import akka.javasdk.impl.ControlId
 import akka.runtime.sdk.spi.SpiEvaluator
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -81,6 +82,25 @@ private[impl] object EvaluatorSettings {
     }
   }
 
+  /**
+   * The `control-id` of the given evaluator, or `None` when it has no entry or the entry has none. It is read whether
+   * or not the evaluator is enabled.
+   */
+  def controlId(config: Config, evaluatorComponentId: String): Option[String] =
+    configAt(config, EvaluatorsPath).root().asScala.get(evaluatorComponentId) match {
+      case Some(evaluator: ConfigObject) => ControlId.read(evaluator.toConfig, s"Evaluator [$evaluatorComponentId]")
+      case _                             => None
+    }
+
+  /** The agent bindings and the control id of the given evaluator, see [[agentBindings]] and [[controlId]]. */
+  def configuredEvaluator(
+      config: Config,
+      evaluatorComponentId: String,
+      agentRoles: Map[String, Option[String]]): ConfiguredEvaluator =
+    ConfiguredEvaluator(
+      bindings = agentBindings(config, evaluatorComponentId, agentRoles),
+      controlId = controlId(config, evaluatorComponentId))
+
   /** The trigger of each entry under `path`, or `None` for a disabled entry. */
   private def bindingEvents(
       evaluatorConfig: Config,
@@ -110,3 +130,11 @@ private[impl] object EvaluatorSettings {
         .toMap
     }
 }
+
+/**
+ * INTERNAL API
+ *
+ * What the runtime needs from the configuration of one evaluator.
+ */
+@InternalApi
+private[impl] final case class ConfiguredEvaluator(bindings: Seq[SpiEvaluator.Binding], controlId: Option[String])

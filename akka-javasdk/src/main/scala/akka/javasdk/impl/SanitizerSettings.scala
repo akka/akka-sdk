@@ -138,7 +138,8 @@ import com.typesafe.config.ConfigValueType
       applyAt = readApplyAt(name, config, scoped, kind, interfacesOf),
       agents = agents,
       agentRoles = agentRoles,
-      config = config)
+      config = config,
+      controlId = ControlId.read(config, s"Sanitizer [$name]"))
   }
 
   private def readKind(name: String, config: Config): SanitizerKind = {
@@ -256,7 +257,8 @@ import com.typesafe.config.ConfigValueType
     applyAt: Set[ApplyAt],
     agents: Set[String],
     agentRoles: Set[String],
-    config: Config) {
+    config: Config,
+    controlId: Option[String]) {
   require(!name.isBlank, "name must be defined for sanitizer")
 
   def scoped: Boolean = agents.nonEmpty || agentRoles.nonEmpty
