@@ -362,7 +362,7 @@ private[impl] final class AutonomousAgentImpl(
             val text = u.contents.collect { case t: SpiAgent.TextMessageContent => t.text }.mkString(" ")
             sessionMemoryClient.addInteraction(
               sessionId,
-              new UserMessage(now, text, componentId),
+              new UserMessage(now, text, componentId, u.sanitized),
               toSessionMessages(now, messages.tail, tokenUsage).asJava)
 
           case u: SpiAgent.ContextMessage.UserMessage =>
@@ -388,7 +388,7 @@ private[impl] final class AutonomousAgentImpl(
 
             sessionMemoryClient.addInteraction(
               sessionId,
-              new MultimodalUserMessage(now, contents.asJava, componentId),
+              new MultimodalUserMessage(now, contents.asJava, componentId, u.sanitized),
               toSessionMessages(now, messages.tail, tokenUsage).asJava)
 
           case _ =>
@@ -520,10 +520,18 @@ private[impl] final class AutonomousAgentImpl(
         val toolCallRequests = m.toolRequests.map { req =>
           new ToolCallRequest(req.id, req.name, req.arguments)
         }.asJava
-        new AiMessage(now, m.content, componentId, toolCallRequests, m.thinking.toJava, tokenUsage, m.attributes.asJava)
+        new AiMessage(
+          now,
+          m.content,
+          componentId,
+          toolCallRequests,
+          m.thinking.toJava,
+          tokenUsage,
+          m.attributes.asJava,
+          true)
 
       case m: SpiAgent.ContextMessage.ToolCallResponseMessage =>
-        AgentImpl.toSessionToolCallResponse(now, componentId, m.id, m.name, m.contents)
+        AgentImpl.toSessionToolCallResponse(now, componentId, m.id, m.name, m.contents, m.sanitized)
     }
 
 }

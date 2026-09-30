@@ -535,13 +535,14 @@ private[impl] object AgentImpl {
       componentId: String,
       id: String,
       name: String,
-      spiContents: Seq[SpiAgent.MessageContent]): SessionMessage = {
+      spiContents: Seq[SpiAgent.MessageContent],
+      sanitized: Boolean): SessionMessage = {
     val contents = spiContents.map(toSessionMemoryContent)
     contents match {
       case Seq(t: SessionMessage.MessageContent.TextMessageContent) =>
-        new SessionMessage.ToolCallResponse(timestamp, componentId, id, name, t.text())
+        new SessionMessage.ToolCallResponse(timestamp, componentId, id, name, t.text(), sanitized)
       case _ =>
-        new SessionMessage.MultimodalToolCallResponse(timestamp, componentId, id, name, contents.asJava)
+        new SessionMessage.MultimodalToolCallResponse(timestamp, componentId, id, name, contents.asJava, sanitized)
     }
   }
 
@@ -587,21 +588,20 @@ private[impl] object AgentImpl {
             toolRequests,
             m.thinking().toScala,
             m.attributes().asScala.toMap)
-        // FIXME session memory does not record whether a message is sanitized
         case m: UserMessage =>
-          new SpiAgent.ContextMessage.UserMessage(Seq(new SpiAgent.TextMessageContent(m.text())), sanitized = false)
+          new SpiAgent.ContextMessage.UserMessage(Seq(new SpiAgent.TextMessageContent(m.text())), m.sanitized())
         case m: MultimodalUserMessage =>
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
-          new SpiAgent.ContextMessage.UserMessage(contents, sanitized = false)
+          new SpiAgent.ContextMessage.UserMessage(contents, m.sanitized())
         case m: ToolCallResponse =>
           new ContextMessage.ToolCallResponseMessage(
             m.id(),
             m.name(),
             Seq(new SpiAgent.TextMessageContent(m.text())),
-            sanitized = false)
+            m.sanitized())
         case m: SessionMessage.MultimodalToolCallResponse =>
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
-          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents, sanitized = false)
+          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents, m.sanitized())
         case m =>
           throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
       }
@@ -897,7 +897,13 @@ private[impl] final class AgentImpl(
             res.attributes.asJava)
 
         case res: SpiAgent.ToolCallResponse =>
-          AgentImpl.toSessionToolCallResponse(res.timestamp, componentId, res.id, res.name, res.contents)
+          AgentImpl.toSessionToolCallResponse(
+            res.timestamp,
+            componentId,
+            res.id,
+            res.name,
+            res.contents,
+            sanitized = false)
       }
 
     if (userMessage.isTextOnly) {
