@@ -16,11 +16,12 @@ public class SessionMessageConverter {
 
   public static SessionMessage apply(SessionMemoryEntity.Event.MultimodalUserMessageAdded event) {
     return new SessionMessage.MultimodalUserMessage(
-        event.timestamp(), event.contents(), event.componentId());
+        event.timestamp(), event.contents(), event.componentId(), event.sanitized());
   }
 
   public static SessionMessage apply(SessionMemoryEntity.Event.UserMessageAdded event) {
-    return new SessionMessage.UserMessage(event.timestamp(), event.message(), event.componentId());
+    return new SessionMessage.UserMessage(
+        event.timestamp(), event.message(), event.componentId(), event.sanitized());
   }
 
   public static SessionMessage apply(SessionMemoryEntity.Event.AiMessageAdded event) {
@@ -31,18 +32,29 @@ public class SessionMessageConverter {
         event.toolCallRequests(),
         event.thinking(),
         event.tokenUsage().orElse(SessionMessage.TokenUsage.EMPTY),
-        event.attributes());
+        event.attributes(),
+        event.sanitized());
   }
 
   public static SessionMessage apply(SessionMemoryEntity.Event.ToolResponseMessageAdded event) {
     return new SessionMessage.ToolCallResponse(
-        event.timestamp(), event.componentId(), event.id(), event.name(), event.content());
+        event.timestamp(),
+        event.componentId(),
+        event.id(),
+        event.name(),
+        event.content(),
+        event.sanitized());
   }
 
   public static SessionMessage apply(
       SessionMemoryEntity.Event.MultimodalToolResponseMessageAdded event) {
     return new SessionMessage.MultimodalToolCallResponse(
-        event.timestamp(), event.componentId(), event.id(), event.name(), event.contents());
+        event.timestamp(),
+        event.componentId(),
+        event.id(),
+        event.name(),
+        event.contents(),
+        event.sanitized());
   }
 
   public static SessionMessage apply(SessionMemoryEntity.Event.Message event) {

@@ -51,7 +51,7 @@ object SessionMemoryClientSpec {
   private val ts: Instant = Instant.parse("2026-01-01T00:00:00Z")
 
   private def userEvent(componentId: String, text: String): SessionMemoryEntity.Event =
-    new SessionMemoryEntity.Event.UserMessageAdded(ts, componentId, text, text.length)
+    new SessionMemoryEntity.Event.UserMessageAdded(ts, componentId, text, text.length, false)
 
   private def aiEvent(componentId: String, text: String): SessionMemoryEntity.Event =
     new SessionMemoryEntity.Event.AiMessageAdded(
@@ -63,7 +63,8 @@ object SessionMemoryClientSpec {
       java.util.Collections.emptyList(),
       Optional.empty(),
       Optional.of(TokenUsage.EMPTY),
-      java.util.Collections.emptyMap())
+      java.util.Collections.emptyMap(),
+      false)
 }
 
 class SessionMemoryClientSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matchers {
