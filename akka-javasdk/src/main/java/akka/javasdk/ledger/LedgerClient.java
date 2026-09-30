@@ -9,11 +9,12 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Client for fetching records from the ledger — the log of recorded agent interactions.
+ * Client for fetching records from the ledger, the log of recorded agent interactions and their
+ * evaluations.
  *
  * <p>A {@code LedgerClient} can be injected into any component. An {@link
- * akka.javasdk.evaluation.Evaluator} is the primary consumer: it fetches the interaction referenced
- * by its {@link akka.javasdk.evaluation.Subject#interactionId()} to evaluate it.
+ * akka.javasdk.evaluation.Evaluator} uses it to fetch the interaction referenced by its {@link
+ * akka.javasdk.evaluation.Subject#interactionId()}.
  *
  * <p>Not for user extension.
  */
@@ -72,8 +73,7 @@ public interface LedgerClient {
    *
    * @param interactionId the id of the evaluated interaction, as carried by {@link
    *     akka.javasdk.agent.Agent.AgentReply#interactionId()}
-   * @return the evaluations of that interaction, or empty list if no there aren't any evaluations
-   *     associated with the passed interactionId
+   * @return the evaluations of that interaction, or an empty list when none are recorded
    */
   List<EvaluationRecord> getEvaluations(String interactionId);
 
