@@ -871,8 +871,8 @@ private[impl] final class AgentImpl(
     }
   }
 
-  // The runtime hands back the user message and the tool results as the model was sent them, and the model output
-  // as the model produced it, so each message is stored as sanitized.
+  // The runtime hands back the user message and the tool results as it sent them to the model, and the model output
+  // as the model produced it, so onSuccess stores each message as sanitized.
   private def onSuccess(
       sessionMemoryClient: SessionMemory,
       sentUserMessage: SpiAgent.UserMessage,

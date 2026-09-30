@@ -46,7 +46,7 @@ Before being written in logs or passed to agent models.
 
 xref:sdk:agents/memory.adoc[Session memory] holds the text that the runtime sent to the model. The runtime stores a user message and a tool result masked, and stores the model output as the model produced it. The runtime sends these messages to the model as they are. When application code, a compaction or an earlier Akka SDK version stored a message, the runtime masks it with the current sanitizers before it sends it.
 
-The xref:sdk:evaluators.adoc#_the_ledger_client[ledger] records the text that each model call was sent.
+The xref:sdk:evaluators.adoc#_the_ledger_client[ledger] records the text that the runtime sent in each model call.
 
 === Ad hoc sanitization
 

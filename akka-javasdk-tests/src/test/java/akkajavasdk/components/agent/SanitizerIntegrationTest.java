@@ -313,12 +313,12 @@ public class SanitizerIntegrationTest extends TestKitSupport {
 
     // model-call-only masks the question, tool-result-only leaves it alone
     assertThat(capturedUserMessage.get()).contains("mind *********** and toolsecret");
-    // the model is sent the tool result too, so both entries mask it
+    // the runtime sends the tool result to the model too, so both entries mask it
     assertThat(capturedToolResult.get()).contains("acme: ********** and *********** and");
   }
 
   @Test
-  public void shouldStoreTheHistoryAsTheModelWasSentItAndSendItAsStored() {
+  public void shouldStoreTheHistoryAsTheRuntimeSentItAndSendItAsStored() {
     var sessionId = newSessionId();
     var firstUserMessage = new AtomicReference<String>();
     var firstToolResult = new AtomicReference<String>();
@@ -356,13 +356,13 @@ public class SanitizerIntegrationTest extends TestKitSupport {
     assertThat(messagesOf(secondTurn, ToolExecutionResultMessage.class))
         .map(ToolExecutionResultMessage::text)
         .containsExactly(firstToolResult.get());
-    // model output is sent as the model produced it
+    // the runtime sends model output as the model produced it
     assertThat(messagesOf(secondTurn, dev.langchain4j.data.message.AiMessage.class))
         .map(dev.langchain4j.data.message.AiMessage::text)
         .contains("the notes mention modelsecret");
     assertThat(RecordingSanitizer.seen()).containsExactly("anything else?");
 
-    // the history holds the text the model was sent on the first turn
+    // the history holds the text that the runtime sent to the model on the first turn
     var history = storedHistory(sessionId);
     assertThat(history).hasSize(6);
     var userMessage = (UserMessage) history.get(0);
