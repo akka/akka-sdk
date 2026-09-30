@@ -54,6 +54,8 @@ The link:{attachmentsdir}/api/akka/javasdk/agent/MemoryProvider.html[`MemoryProv
   ** Apply **filters** to selectively include or exclude messages based on agent component ID or role.
 * `MemoryProvider.custom()` - Allows you to provide a custom implementation for the `SessionMemory` interface and store the session memory externally in a database / service of your preference.
 
+In a custom `SessionMemory`, store the `sanitized` value of each `SessionMessage` and return it with the message. When a custom `SessionMemory` returns a message without the value, the runtime masks the message again before it sends it to the model, see xref:sdk:sanitization.adoc#_masked_text_in_session_memory[Masked text in session memory].
+
 === Filtering memory
 
 In multi-agent scenarios, you may want to control which messages from the session history are visible to specific agents. The link:{attachmentsdir}/api/akka/javasdk/agent/MemoryFilter.html[`MemoryFilter`] API allows you to filter messages based on the agent component ID or role that produced them.
@@ -182,6 +184,8 @@ include::example$doc-snippets/src/main/java/com/example/application/SessionMemor
 ----
 
 This can be useful for more granular control over token usage but also to allow external integrations and analytics over these details.
+
+With xref:sdk:sanitization.adoc[sanitizers] configured, the history holds user messages and tool results masked.
 
 == Session memory compaction
 
