@@ -225,7 +225,11 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     @TypeName("akka-memory-deleted")
     record Deleted(Instant timestamp) implements Event {}
 
-    /* marker interface to distinguish message events as opposed to lifecycle events */
+    /**
+     * An event that adds a message to the history, as opposed to a lifecycle event. Its {@code
+     * sanitized} component holds the {@code sanitized} value of the {@link SessionMessage} that it
+     * adds. A stored event without the component reads as false.
+     */
     sealed interface Message {}
 
     @TypeName("akka-memory-user-message-added")
