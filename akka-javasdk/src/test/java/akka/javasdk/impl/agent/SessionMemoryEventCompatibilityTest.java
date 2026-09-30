@@ -6,6 +6,7 @@ package akka.javasdk.impl.agent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMemoryEntity.Event;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.agent.SessionMessageConverter;
@@ -13,14 +14,15 @@ import akka.javasdk.impl.serialization.Serializer;
 import akka.runtime.sdk.spi.BytesPayload;
 import akka.util.ByteString;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /**
- * The {@code sanitized} field of the session memory message events: events written before the field
- * existed, events that carry it, and the constructors without it.
+ * The {@code sanitized} field of session memory events and snapshots: events and snapshots written
+ * before the field existed, events that carry it, and the event constructors without it.
  */
 public class SessionMemoryEventCompatibilityTest {
 
@@ -195,6 +197,63 @@ public class SessionMemoryEventCompatibilityTest {
             new Event.MultimodalToolResponseMessageAdded(ts, "agent", "id", "n", contents, 0)
                 .sanitized())
         .isFalse();
+  }
+
+  @Test
+  public void shouldReadTheMessagesOfASnapshotWithoutTheFlagAsNotSanitized() {
+    var ts = Instant.parse("2026-01-01T00:00:00Z");
+    var contents =
+        List.<SessionMessage.MessageContent>of(
+            new SessionMessage.MessageContent.TextMessageContent("text"));
+    var messages =
+        new ArrayList<SessionMessage>(
+            List.of(
+                new SessionMessage.UserMessage(ts, "hello", "agent", true),
+                new SessionMessage.MultimodalUserMessage(ts, contents, "agent", true),
+                new SessionMessage.AiMessage(
+                    ts,
+                    "hi",
+                    "agent",
+                    List.of(),
+                    Optional.empty(),
+                    SessionMessage.TokenUsage.EMPTY,
+                    Map.of(),
+                    true),
+                new SessionMessage.ToolCallResponse(
+                    ts, "agent", "call-1", "search", "result", true),
+                new SessionMessage.MultimodalToolCallResponse(
+                    ts, "agent", "call-1", "render", contents, true)));
+    var json =
+        serializer
+            .toBytes(new SessionMemoryEntity.State("session", 10000, 0, messages))
+            .bytes()
+            .utf8String();
+    assertThat(json.split("\"sanitized\":true", -1)).hasSize(6);
+    // the snapshot in the form it has without the field
+    var withoutFlag = json.replace(",\"sanitized\":true", "");
+    assertThat(withoutFlag).doesNotContain("sanitized");
+
+    var state =
+        serializer.fromBytes(
+            SessionMemoryEntity.State.class,
+            new BytesPayload(
+                ByteString.fromString(withoutFlag),
+                serializer.contentTypeFor(SessionMemoryEntity.State.class)));
+
+    assertThat(state.messages()).hasSize(5);
+    assertThat(state.messages())
+        .map(SessionMemoryEventCompatibilityTest::sanitized)
+        .containsOnly(false);
+  }
+
+  private static boolean sanitized(SessionMessage message) {
+    return switch (message) {
+      case SessionMessage.UserMessage m -> m.sanitized();
+      case SessionMessage.MultimodalUserMessage m -> m.sanitized();
+      case SessionMessage.AiMessage m -> m.sanitized();
+      case SessionMessage.ToolCallResponse m -> m.sanitized();
+      case SessionMessage.MultimodalToolCallResponse m -> m.sanitized();
+    };
   }
 
   /** {@link Event.UserMessageAdded} without the {@code sanitized} component. */
