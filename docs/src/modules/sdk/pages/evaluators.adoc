@@ -69,7 +69,7 @@ The `Effect` returned by `evaluate` is one of:
 * `effects().inconclusive(reason)`: the evaluator ran but reached no verdict, for example there was no transcript or the interaction was not applicable.
 
 An exception thrown from `evaluate` is a failure, not an inconclusive result. The runtime logs the exception and records a failed evaluation.
-Every evaluation therefore ends in one of three recorded outcomes: a verdict, inconclusive, or failed. The xref:_the_evaluation_record[evaluation record] carries which one.
+Every evaluation therefore ends in one of three recorded outcomes: a verdict, inconclusive, or failed.
 
 An evaluator records one verdict per evaluation.
 When one evaluator judges several criteria, combine them into one `Evaluation`: `passed` is the overall verdict, and the explanation and the attributes carry the result per criterion.

@@ -56,7 +56,10 @@ public class TranscriptJudgeEvaluatorIntegrationTest extends TestKitSupport {
 
     List<EvaluationRecord> records = Awaitility.await()
       .atMost(30, TimeUnit.SECONDS)
-      .until(() -> getLedgerClient().getEvaluations(interactionId), found -> !found.isEmpty()); // <2>
+      .until(
+        () -> getLedgerClient().getEvaluations(interactionId),
+        found -> !found.isEmpty()
+      ); // <2>
 
     var evaluation = records.getFirst().evaluation().orElseThrow(); // <3>
     assertThat(evaluation.passed()).isTrue();
