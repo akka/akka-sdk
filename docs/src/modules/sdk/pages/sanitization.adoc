@@ -4,6 +4,9 @@
 :page-related: xref:sdk:agents/guardrails.adoc[]
 :page-prerequisites: An Akka service with `application.conf` configured; familiarity with xref:setup-and-dependency-injection.adoc[dependency injection].
 :page-persona: governance-compliance, governance-infosec, developer
+:page-banner: governance
+
+include::ROOT:partial$include.adoc[]
 
 == Overview
 
