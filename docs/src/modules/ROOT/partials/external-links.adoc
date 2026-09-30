@@ -16,6 +16,7 @@
 :url-akka-how-it-works: https://akka.io/how-akka-works
 :url-akka-pricing: https://akka.io/pricing
 :url-akka-trust-center: https://trust.akka.io
+:url-external-secrets: https://external-secrets.io
 :url-akka-professional-services: https://akka.io/professional-services
 :url-akka-specify-plugin: https://akka.io/blog/introducing-akka-specify
 :url-libraries-docs: https://doc.akka.io/libraries/

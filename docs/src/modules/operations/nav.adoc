@@ -5,6 +5,17 @@
 *** xref:operations:akka-platform.adoc[Akka Automated Operations]
 
 **** xref:operations:technical-overview.adoc[Technical Overview]
+***** BYOC
+****** xref:operations:technical-overview/byoc.adoc[Getting started]
+****** xref:operations:technical-overview/byoc-aws.adoc[AWS]
+****** xref:operations:technical-overview/byoc-azure.adoc[Azure]
+****** xref:operations:technical-overview/byoc-gcp.adoc[GCP]
+***** BYOK8s
+****** xref:operations:technical-overview/byok8s-requirements.adoc[Getting started]
+****** xref:operations:technical-overview/byok8s-aws.adoc[AWS]
+****** xref:operations:technical-overview/byok8s-azure.adoc[Azure]
+****** xref:operations:technical-overview/byok8s-gcp.adoc[GCP]
+***** xref:operations:technical-overview/data-flows.adoc[Data flows]
 
 **** xref:operations:organizations/index.adoc[]
 ***** xref:operations:organizations/manage-users.adoc[Manage users]
