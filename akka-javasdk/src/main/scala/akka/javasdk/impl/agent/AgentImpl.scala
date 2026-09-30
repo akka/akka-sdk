@@ -533,13 +533,14 @@ private[impl] object AgentImpl {
       componentId: String,
       id: String,
       name: String,
-      spiContents: Seq[SpiAgent.MessageContent]): SessionMessage = {
+      spiContents: Seq[SpiAgent.MessageContent],
+      sanitized: Boolean): SessionMessage = {
     val contents = spiContents.map(toSessionMemoryContent)
     contents match {
       case Seq(t: SessionMessage.MessageContent.TextMessageContent) =>
-        new SessionMessage.ToolCallResponse(timestamp, componentId, id, name, t.text())
+        new SessionMessage.ToolCallResponse(timestamp, componentId, id, name, t.text(), sanitized)
       case _ =>
-        new SessionMessage.MultimodalToolCallResponse(timestamp, componentId, id, name, contents.asJava)
+        new SessionMessage.MultimodalToolCallResponse(timestamp, componentId, id, name, contents.asJava, sanitized)
     }
   }
 
@@ -584,17 +585,22 @@ private[impl] object AgentImpl {
             m.text(),
             toolRequests,
             m.thinking().toScala,
-            m.attributes().asScala.toMap)
+            m.attributes().asScala.toMap,
+            m.sanitized())
         case m: UserMessage =>
-          new SpiAgent.ContextMessage.UserMessage(m.text())
+          new SpiAgent.ContextMessage.UserMessage(Seq(new SpiAgent.TextMessageContent(m.text())), m.sanitized())
         case m: MultimodalUserMessage =>
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
-          new SpiAgent.ContextMessage.UserMessage(contents)
+          new SpiAgent.ContextMessage.UserMessage(contents, m.sanitized())
         case m: ToolCallResponse =>
-          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), m.text())
+          new ContextMessage.ToolCallResponseMessage(
+            m.id(),
+            m.name(),
+            Seq(new SpiAgent.TextMessageContent(m.text())),
+            m.sanitized())
         case m: SessionMessage.MultimodalToolCallResponse =>
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
-          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents)
+          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents, m.sanitized())
         case m =>
           throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
       }
@@ -745,7 +751,8 @@ private[impl] final class AgentImpl(
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
-              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
+              onSuccessAsSent = (sentUserMessage, results) =>
+                onSuccess(sessionMemoryClient, sentUserMessage, userMessageAt, agentRole, results),
               boundGuardrails = guardrails.boundGuardrails,
               contentLoader = spiContentLoader,
               callToolFunction = request => Future(toolExecutor.executeMultimodal(request))(sdkExecutionContext))
@@ -837,9 +844,11 @@ private[impl] final class AgentImpl(
     }
   }
 
+  // The runtime hands back the user message and the tool results as it sent them to the model, and the model output
+  // as the model produced it, so onSuccess stores each message as sanitized.
   private def onSuccess(
       sessionMemoryClient: SessionMemory,
-      userMessage: agent.UserMessage,
+      sentUserMessage: SpiAgent.UserMessage,
       userMessageAt: Instant,
       agentRole: Option[String],
       responses: Seq[SpiAgent.Response]): Unit = {
@@ -859,47 +868,30 @@ private[impl] final class AgentImpl(
             requests,
             res.thinking.toJava,
             new TokenUsage(res.inputTokenCount, res.outputTokenCount),
-            res.attributes.asJava)
+            res.attributes.asJava,
+            true)
 
         case res: SpiAgent.ToolCallResponse =>
-          AgentImpl.toSessionToolCallResponse(res.timestamp, componentId, res.id, res.name, res.contents)
+          AgentImpl.toSessionToolCallResponse(
+            res.timestamp,
+            componentId,
+            res.id,
+            res.name,
+            res.contents,
+            sanitized = true)
       }
 
-    if (userMessage.isTextOnly) {
+    if (sentUserMessage.textOnly) {
       sessionMemoryClient.addInteraction(
         sessionId,
-        new UserMessage(userMessageAt, userMessage.text(), componentId),
+        new UserMessage(userMessageAt, sentUserMessage.textContent.getOrElse(""), componentId, true),
         responseMessages.asJava)
     } else {
-      val contents = userMessage
-        .contents()
-        .asScala
-        .map(s => toSessionMemoryContent(s))
-        .asJava
+      val contents = sentUserMessage.contents.map(AgentImpl.toSessionMemoryContent).asJava
       sessionMemoryClient.addInteraction(
         sessionId,
-        new MultimodalUserMessage(userMessageAt, contents, componentId),
+        new MultimodalUserMessage(userMessageAt, contents, componentId, true),
         responseMessages.asJava)
-    }
-  }
-
-  private def toSessionMemoryContent(messageContent: MessageContent): SessionMessage.MessageContent = {
-    messageContent match {
-      case content: MessageContent.TextMessageContent =>
-        new SessionMessage.MessageContent.TextMessageContent(content.text)
-      case content: ImageUrlMessageContent =>
-        new SessionMessage.MessageContent.ImageUriMessageContent(
-          content.uri().toString,
-          content.detailLevel(),
-          content.mimeType())
-      case content: PdfUrlMessageContent =>
-        new SessionMessage.MessageContent.PdfUriMessageContent(content.uri().toString)
-      // Inline bytes are not persisted to session memory; record a placeholder instead.
-      // (Consistent with the autonomous agent path in AutonomousAgentImpl.)
-      case _: MessageContent.ImageDataMessageContent =>
-        new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.IMAGE_PLACEHOLDER)
-      case _: MessageContent.PdfDataMessageContent =>
-        new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.PDF_PLACEHOLDER)
     }
   }
 

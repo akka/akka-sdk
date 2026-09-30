@@ -162,13 +162,18 @@ object GuardrailProviderSpec {
 
   // One tool round: the user question, the model's tool request, and the tool result.
   private val toolRoundMessages: Seq[SpiAgent.ContextMessage] = Seq(
-    new SpiAgent.ContextMessage.UserMessage("first question"),
+    new SpiAgent.ContextMessage.UserMessage(Seq(new SpiAgent.TextMessageContent("first question")), sanitized = false),
     new SpiAgent.ContextMessage.AiMessage(
       "calling tool",
       Seq(new SpiAgent.ToolCallRequest("id-1", "search", "{}")),
       None,
-      Map.empty),
-    new SpiAgent.ContextMessage.ToolCallResponseMessage("id-1", "search", "tool result text"))
+      Map.empty,
+      sanitized = false),
+    new SpiAgent.ContextMessage.ToolCallResponseMessage(
+      "id-1",
+      "search",
+      Seq(new SpiAgent.TextMessageContent("tool result text")),
+      sanitized = false))
 
   // Holds the per-call context captured by the guard.
   @volatile var capturedModelCallContext: ModelCallGuardrail.CallContext = _
@@ -564,7 +569,10 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       val spiGuardrail = provider.agentGuardrails("model-agent", role = None).beforeModelCallGuardrails.head
 
-      val messages = Seq(new SpiAgent.ContextMessage.UserMessage("first question"))
+      val messages = Seq(
+        new SpiAgent.ContextMessage.UserMessage(
+          Seq(new SpiAgent.TextMessageContent("first question")),
+          sanitized = false))
       Await.result(spiGuardrail.evaluate(modelCallContent(messages)), 3.seconds).passed shouldBe true
 
       val conversation = capturedModelCallContext
@@ -591,16 +599,27 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val spiGuardrail = provider.agentGuardrails("model-agent", role = None).beforeModelCallGuardrails.head
 
       val messages = Seq(
-        new SpiAgent.ContextMessage.UserMessage("weather in Lisbon and Porto?"),
+        new SpiAgent.ContextMessage.UserMessage(
+          Seq(new SpiAgent.TextMessageContent("weather in Lisbon and Porto?")),
+          sanitized = false),
         new SpiAgent.ContextMessage.AiMessage(
           "",
           Seq(
             new SpiAgent.ToolCallRequest("id-1", "weather", """{"city":"Lisbon"}"""),
             new SpiAgent.ToolCallRequest("id-2", "weather", """{"city":"Porto"}""")),
           None,
-          Map.empty),
-        new SpiAgent.ContextMessage.ToolCallResponseMessage("id-1", "weather", "Lisbon: 22C"),
-        new SpiAgent.ContextMessage.ToolCallResponseMessage("id-2", "weather", "Porto: 18C"))
+          Map.empty,
+          sanitized = false),
+        new SpiAgent.ContextMessage.ToolCallResponseMessage(
+          "id-1",
+          "weather",
+          Seq(new SpiAgent.TextMessageContent("Lisbon: 22C")),
+          sanitized = false),
+        new SpiAgent.ContextMessage.ToolCallResponseMessage(
+          "id-2",
+          "weather",
+          Seq(new SpiAgent.TextMessageContent("Porto: 18C")),
+          sanitized = false))
 
       Await.result(spiGuardrail.evaluate(modelCallContent(messages)), 3.seconds).passed shouldBe true
 

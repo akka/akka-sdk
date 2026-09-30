@@ -11,6 +11,11 @@ package akka.javasdk.agent;
  * memory. Each method has an identity default that returns the message unchanged, so
  * implementations only need to override the variant(s) they want to transform.
  *
+ * <p>The SDK stores the {@code sanitized} value of the message that the interceptor returns. Leave
+ * it false in a message that the interceptor builds, because that message no longer holds the text
+ * that the runtime sent to the model. The constructors without a {@code sanitized} parameter do
+ * that.
+ *
  * <p>Hooks are provided for each top-level {@link SessionMessage} variant: user messages (text and
  * multimodal), AI replies, and tool call responses (text and multimodal). Tool requests are nested
  * inside {@link SessionMessage.AiMessage} and are not exposed as a dedicated hook; rewrite them by

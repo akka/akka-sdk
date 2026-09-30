@@ -29,6 +29,7 @@ class InterceptingSessionMemorySpec extends AnyWordSpec with Matchers {
   /** Records every call made to it for inspection in assertions. */
   class RecordingSessionMemory extends SessionMemory {
     val calls: mutable.Buffer[String] = mutable.Buffer.empty
+    var lastUserMessage: SessionMessage = _
     var lastMessages: util.List[SessionMessage] = util.List.of()
 
     override def addInteraction(
@@ -36,6 +37,7 @@ class InterceptingSessionMemorySpec extends AnyWordSpec with Matchers {
         userMessage: UserMessage,
         messages: util.List[SessionMessage]): Unit = {
       calls += s"text:$sessionId:[${userMessage.text()}]"
+      lastUserMessage = userMessage
       lastMessages = messages
     }
 
@@ -50,6 +52,7 @@ class InterceptingSessionMemorySpec extends AnyWordSpec with Matchers {
           .map(c => c.asInstanceOf[TextMessageContent].text())
           .mkString("|")
       calls += s"multimodal:$sessionId:[$texts]"
+      lastUserMessage = userMessage
       lastMessages = messages
     }
 
@@ -66,6 +69,33 @@ class InterceptingSessionMemorySpec extends AnyWordSpec with Matchers {
     new MultimodalUserMessage(Instant.EPOCH, util.List.of(new TextMessageContent("hi")), "test-component")
 
   "InterceptingSessionMemory" should {
+
+    "keep the sanitized flag of the messages that the identity interceptor returns" in {
+      val delegate = new RecordingSessionMemory
+      val memory = new InterceptingSessionMemory(delegate, new SessionMemoryInterceptor {})
+      val toolResponse = new ToolCallResponse(Instant.EPOCH, "agent", "id1", "search", "result", true)
+
+      memory.addInteraction(
+        "s1",
+        new UserMessage(Instant.EPOCH, "hello", "test-component", true),
+        util.List.of(toolResponse))
+
+      delegate.lastUserMessage.asInstanceOf[UserMessage].sanitized() shouldBe true
+      delegate.lastMessages.get(0).asInstanceOf[ToolCallResponse].sanitized() shouldBe true
+    }
+
+    "store a message that an interceptor builds without the flag as not sanitized" in {
+      val delegate = new RecordingSessionMemory
+      val interceptor = new SessionMemoryInterceptor {
+        override def beforeWrite(sessionId: String, userMessage: UserMessage): UserMessage =
+          new UserMessage(userMessage.timestamp(), "redacted", userMessage.componentId())
+      }
+      val memory = new InterceptingSessionMemory(delegate, interceptor)
+
+      memory.addInteraction("s1", new UserMessage(Instant.EPOCH, "hello", "test-component", true), util.List.of())
+
+      delegate.lastUserMessage.asInstanceOf[UserMessage].sanitized() shouldBe false
+    }
 
     "pass through both overloads with identity interceptor" in {
       val delegate = new RecordingSessionMemory
