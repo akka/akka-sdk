@@ -46,7 +46,7 @@ These pieces play different roles and work together:
 [#control-ids]
 A control matrix lists the obligations of a service and the mechanism that meets each one, and gives each of these controls an id.
 Name the control that a guardrail, sanitizer or evaluator implements with a `control-id` key in its configuration entry.
-When the service starts, the runtime records each active control with its control id and its configuration in the ledger.
+When the service starts, the runtime records the guardrails, sanitizers and evaluators of the service in the ledger, each with its control id and its configuration.
 
 == Compliance Certifications
 
