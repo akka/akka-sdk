@@ -14,11 +14,13 @@ import akka.runtime.sdk.spi.BytesPayload;
 import akka.util.ByteString;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /**
- * Reads session memory message events in the JSON form they have without the {@code sanitized}
- * field, as events written before the field existed.
+ * The {@code sanitized} field of the session memory message events: events written before the field
+ * existed, events that carry it, and the constructors without it.
  */
 public class SessionMemoryEventCompatibilityTest {
 
@@ -131,6 +133,66 @@ public class SessionMemoryEventCompatibilityTest {
     assertThat(event.sanitized()).isFalse();
     assertThat(
             ((SessionMessage.MultimodalToolCallResponse) SessionMessageConverter.apply(event))
+                .sanitized())
+        .isFalse();
+  }
+
+  @Test
+  public void shouldKeepTheFlagOfEachEventThroughSerialization() {
+    var ts = Instant.parse("2026-01-01T00:00:00Z");
+    var contents =
+        List.<SessionMessage.MessageContent>of(
+            new SessionMessage.MessageContent.TextMessageContent("text"));
+    var events =
+        List.<Event.Message>of(
+            new Event.UserMessageAdded(ts, "agent", "hello", 5, true),
+            new Event.MultimodalUserMessageAdded(ts, "agent", contents, 4, true),
+            new Event.AiMessageAdded(
+                ts,
+                "agent",
+                "hi",
+                2,
+                7,
+                List.of(),
+                Optional.empty(),
+                Optional.empty(),
+                Map.of(),
+                true),
+            new Event.ToolResponseMessageAdded(ts, "agent", "call-1", "search", "result", 6, true),
+            new Event.MultimodalToolResponseMessageAdded(
+                ts, "agent", "call-1", "render", contents, 4, true));
+
+    for (var event : events) {
+      var read = serializer.fromBytes(serializer.toBytes(event));
+      assertThat(read).isEqualTo(event);
+    }
+  }
+
+  @Test
+  public void shouldLeaveTheFlagFalseWithTheConstructorsWithoutIt() {
+    var ts = Instant.parse("2026-01-01T00:00:00Z");
+    List<SessionMessage.MessageContent> contents = List.of();
+
+    assertThat(new Event.UserMessageAdded(ts, "agent", "hello", 5).sanitized()).isFalse();
+    assertThat(new Event.MultimodalUserMessageAdded(ts, "agent", contents, 0).sanitized())
+        .isFalse();
+    assertThat(
+            new Event.AiMessageAdded(
+                    ts,
+                    "agent",
+                    "hi",
+                    2,
+                    7,
+                    List.of(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Map.of())
+                .sanitized())
+        .isFalse();
+    assertThat(new Event.ToolResponseMessageAdded(ts, "agent", "id", "n", "r", 1).sanitized())
+        .isFalse();
+    assertThat(
+            new Event.MultimodalToolResponseMessageAdded(ts, "agent", "id", "n", contents, 0)
                 .sanitized())
         .isFalse();
   }

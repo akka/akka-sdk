@@ -231,7 +231,13 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     @TypeName("akka-memory-user-message-added")
     record UserMessageAdded(
         Instant timestamp, String componentId, String message, int sizeInBytes, boolean sanitized)
-        implements Event, Message {}
+        implements Event, Message {
+
+      public UserMessageAdded(
+          Instant timestamp, String componentId, String message, int sizeInBytes) {
+        this(timestamp, componentId, message, sizeInBytes, false);
+      }
+    }
 
     @TypeName("akka-memory-multimodal-user-message-added")
     record MultimodalUserMessageAdded(
@@ -240,7 +246,16 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         List<SessionMessage.MessageContent> contents,
         int sizeInBytes,
         boolean sanitized)
-        implements Event, Message {}
+        implements Event, Message {
+
+      public MultimodalUserMessageAdded(
+          Instant timestamp,
+          String componentId,
+          List<SessionMessage.MessageContent> contents,
+          int sizeInBytes) {
+        this(timestamp, componentId, contents, sizeInBytes, false);
+      }
+    }
 
     @TypeName("akka-memory-ai-message-added")
     record AiMessageAdded(
@@ -255,6 +270,29 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         Map<String, Object> attributes,
         boolean sanitized)
         implements Event, Message {
+
+      public AiMessageAdded(
+          Instant timestamp,
+          String componentId,
+          String message,
+          int sizeInBytes,
+          long historySizeInBytes,
+          List<SessionMessage.ToolCallRequest> toolCallRequests,
+          Optional<String> thinking,
+          Optional<TokenUsage> tokenUsage,
+          Map<String, Object> attributes) {
+        this(
+            timestamp,
+            componentId,
+            message,
+            sizeInBytes,
+            historySizeInBytes,
+            toolCallRequests,
+            thinking,
+            tokenUsage,
+            attributes,
+            false);
+      }
 
       AiMessageAdded withHistorySizeInBytes(long newSize) {
         return new AiMessageAdded(
@@ -280,7 +318,18 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         String content,
         int sizeInBytes,
         boolean sanitized)
-        implements Event, Message {}
+        implements Event, Message {
+
+      public ToolResponseMessageAdded(
+          Instant timestamp,
+          String componentId,
+          String id,
+          String name,
+          String content,
+          int sizeInBytes) {
+        this(timestamp, componentId, id, name, content, sizeInBytes, false);
+      }
+    }
 
     @TypeName("akka-memory-multimodal-tool-response-message-added")
     record MultimodalToolResponseMessageAdded(
@@ -291,7 +340,18 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         List<SessionMessage.MessageContent> contents,
         int sizeInBytes,
         boolean sanitized)
-        implements Event, Message {}
+        implements Event, Message {
+
+      public MultimodalToolResponseMessageAdded(
+          Instant timestamp,
+          String componentId,
+          String id,
+          String name,
+          List<SessionMessage.MessageContent> contents,
+          int sizeInBytes) {
+        this(timestamp, componentId, id, name, contents, sizeInBytes, false);
+      }
+    }
   }
 
   // Request commands
