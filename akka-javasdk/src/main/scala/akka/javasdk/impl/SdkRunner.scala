@@ -202,6 +202,7 @@ object SdkRunner {
 
     val devModeSettings =
       Option.when(applicationConf.getBoolean("akka.javasdk.dev-mode.enabled")) {
+        RuntimeVersionCheck.checkAsync(BuildInfo.runtimeVersion)
         val backofficeSettings = BackofficeSettingsLoader.loadBackofficeSettings(applicationConf)
         val objectStorageBuckets =
           extractDevObjectStorageBuckets(applicationConf.getConfig("akka.javasdk.dev-mode.object-storage"))
