@@ -8,6 +8,12 @@ import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.comple
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import akka.javasdk.agent.ModelProvider;
+import akka.javasdk.agent.SessionMemoryEntity;
+import akka.javasdk.agent.SessionMessage;
+import akka.javasdk.agent.SessionMessage.AiMessage;
+import akka.javasdk.agent.SessionMessage.ToolCallResponse;
+import akka.javasdk.agent.SessionMessage.UserMessage;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -16,7 +22,18 @@ import akka.javasdk.testkit.TestModelProvider.ToolInvocationRequest;
 import akkajavasdk.Junit5LogCapturing;
 import akkajavasdk.components.agent.autonomous.SanitizerAutonomousTestAgent;
 import akkajavasdk.components.agent.autonomous.TestTasks;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
+import java.time.Instant;
+import java.util.List;
+import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,13 +43,66 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * Covers which agent and which application point each configured sanitizer masks at, for the
- * sanitizers in the test application.conf.
+ * Covers which agent and which application point each configured sanitizer masks at, and what
+ * session memory stores, for the sanitizers in the test application.conf.
  */
 @ExtendWith(Junit5LogCapturing.class)
 public class SanitizerIntegrationTest extends TestKitSupport {
 
+  /**
+   * Replies with a {@link TestModelProvider}, and records the messages of each request, history
+   * included, which the {@link TestModelProvider} does not show.
+   */
+  private static final class RequestRecordingModelProvider implements ModelProvider.Custom {
+
+    private final TestModelProvider replies;
+    private final Queue<List<ChatMessage>> requests = new ConcurrentLinkedQueue<>();
+
+    RequestRecordingModelProvider(TestModelProvider replies) {
+      this.replies = replies;
+    }
+
+    List<ChatMessage> lastRequest() {
+      return List.copyOf(requests).getLast();
+    }
+
+    void reset() {
+      requests.clear();
+    }
+
+    @Override
+    public String modelName() {
+      return replies.modelName();
+    }
+
+    @Override
+    public Object createChatModel() {
+      var model = (ChatModel) replies.createChatModel();
+      return new ChatModel() {
+        @Override
+        public ChatResponse doChat(ChatRequest request) {
+          requests.add(request.messages());
+          return model.doChat(request);
+        }
+      };
+    }
+
+    @Override
+    public Object createStreamingChatModel() {
+      var model = (StreamingChatModel) replies.createStreamingChatModel();
+      return new StreamingChatModel() {
+        @Override
+        public void doChat(ChatRequest request, StreamingChatResponseHandler handler) {
+          requests.add(request.messages());
+          model.doChat(request, handler);
+        }
+      };
+    }
+  }
+
   private final TestModelProvider scopedAgentModel = new TestModelProvider();
+  private final RequestRecordingModelProvider scopedAgentRequests =
+      new RequestRecordingModelProvider(scopedAgentModel);
   private final TestModelProvider otherAgentModel = new TestModelProvider();
   private final TestModelProvider roleAgentModel = new TestModelProvider();
   private final TestModelProvider autonomousAgentModel = new TestModelProvider();
@@ -40,7 +110,7 @@ public class SanitizerIntegrationTest extends TestKitSupport {
   @Override
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
-        .withModelProvider(SanitizerTestAgent.class, scopedAgentModel)
+        .withModelProvider(SanitizerTestAgent.class, scopedAgentRequests)
         .withModelProvider(SanitizerOtherTestAgent.class, otherAgentModel)
         .withModelProvider(SanitizerRoleTestAgent.class, roleAgentModel)
         .withModelProvider(SanitizerAutonomousTestAgent.class, autonomousAgentModel);
@@ -49,6 +119,7 @@ public class SanitizerIntegrationTest extends TestKitSupport {
   @AfterEach
   public void afterEach() {
     scopedAgentModel.reset();
+    scopedAgentRequests.reset();
     otherAgentModel.reset();
     roleAgentModel.reset();
     autonomousAgentModel.reset();
@@ -71,11 +142,28 @@ public class SanitizerIntegrationTest extends TestKitSupport {
   }
 
   private void askScopedAgent(String question) {
+    askScopedAgent(newSessionId(), question);
+  }
+
+  private void askScopedAgent(String sessionId, String question) {
     componentClient
         .forAgent()
-        .inSession(newSessionId())
+        .inSession(sessionId)
         .method(SanitizerTestAgent::query)
         .invoke(question);
+  }
+
+  private List<SessionMessage> storedHistory(String sessionId) {
+    return componentClient
+        .forEventSourcedEntity(sessionId)
+        .method(SessionMemoryEntity::getHistory)
+        .invoke(new SessionMemoryEntity.GetHistoryCmd())
+        .messages();
+  }
+
+  private static <T extends ChatMessage> List<T> messagesOf(
+      List<ChatMessage> request, Class<T> type) {
+    return request.stream().filter(type::isInstance).map(type::cast).toList();
   }
 
   private void askOtherAgent(String question) {
@@ -146,10 +234,16 @@ public class SanitizerIntegrationTest extends TestKitSupport {
           return new AiResponse(completeTask("done"));
         });
 
+    runAutonomousTask(newSessionId(), "look into rolesecret");
+
+    assertThat(captured.get()).contains("look into **********");
+  }
+
+  private void runAutonomousTask(String agentId, String instructions) {
     var taskId =
         componentClient
-            .forAutonomousAgent(SanitizerAutonomousTestAgent.class, newSessionId())
-            .runSingleTask(TestTasks.STRING_TASK.instructions("look into rolesecret"));
+            .forAutonomousAgent(SanitizerAutonomousTestAgent.class, agentId)
+            .runSingleTask(TestTasks.STRING_TASK.instructions(instructions));
 
     Awaitility.await()
         .ignoreExceptions()
@@ -158,12 +252,42 @@ public class SanitizerIntegrationTest extends TestKitSupport {
             () ->
                 assertThat(componentClient.forTask(taskId).get(TestTasks.STRING_TASK).result())
                     .isPresent());
-
-    assertThat(captured.get()).contains("look into **********");
   }
 
   @Test
-  public void shouldMaskEachApplicationPointWithItsOwnEntries() {
+  public void shouldStoreTheHistoryOfAnAutonomousAgentMaskedAndSanitized() {
+    autonomousAgentModel.fixedResponse(new AiResponse(completeTask("done")));
+    var agentId = newSessionId();
+
+    runAutonomousTask(agentId, "look into rolesecret");
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var history = storedHistory(agentId);
+              assertThat(history)
+                  .filteredOn(UserMessage.class::isInstance)
+                  .map(message -> ((UserMessage) message).text())
+                  .anyMatch(text -> text.contains("look into **********"))
+                  .noneMatch(text -> text.contains("rolesecret"));
+              assertThat(history).allMatch(SanitizerIntegrationTest::isSanitized);
+            });
+  }
+
+  private static boolean isSanitized(SessionMessage message) {
+    return switch (message) {
+      case UserMessage m -> m.sanitized();
+      case SessionMessage.MultimodalUserMessage m -> m.sanitized();
+      case AiMessage m -> m.sanitized();
+      case ToolCallResponse m -> m.sanitized();
+      case SessionMessage.MultimodalToolCallResponse m -> m.sanitized();
+    };
+  }
+
+  @Test
+  public void shouldMaskAUserMessageWithModelCallEntriesAndAToolResultWithBoth() {
     var capturedUserMessage = new AtomicReference<String>();
     var capturedToolResult = new AtomicReference<String>();
 
@@ -189,8 +313,90 @@ public class SanitizerIntegrationTest extends TestKitSupport {
 
     // model-call-only masks the question, tool-result-only leaves it alone
     assertThat(capturedUserMessage.get()).contains("mind *********** and toolsecret");
-    // tool-result-only masks what the tool returned, model-call-only leaves it alone
-    assertThat(capturedToolResult.get()).contains("********** and modelsecret");
+    // the model is sent the tool result too, so both entries mask it
+    assertThat(capturedToolResult.get()).contains("acme: ********** and *********** and");
+  }
+
+  @Test
+  public void shouldStoreTheHistoryAsTheModelWasSentItAndSendItAsStored() {
+    var sessionId = newSessionId();
+    var firstUserMessage = new AtomicReference<String>();
+    var firstToolResult = new AtomicReference<String>();
+
+    scopedAgentModel
+        .whenMessage(message -> message.contains("notes for acme"))
+        .reply(
+            message -> {
+              firstUserMessage.set(message.content());
+              return new AiResponse(
+                  new ToolInvocationRequest(
+                      "SanitizerTestAgent_getNotes", "{ \"customer\" : \"acme\" }"));
+            });
+    scopedAgentModel
+        .whenToolResult(result -> result.name().equals("SanitizerTestAgent_getNotes"))
+        .thenReply(
+            result -> {
+              firstToolResult.set(result.content());
+              return new AiResponse("the notes mention modelsecret");
+            });
+    scopedAgentModel.whenMessage(message -> message.contains("anything else")).reply("no");
+
+    askScopedAgent(sessionId, "notes for acme, mind modelsecret");
+    assertThat(firstUserMessage.get()).contains("mind ***********");
+    assertThat(firstToolResult.get()).contains("acme: **********");
+
+    RecordingSanitizer.reset();
+    askScopedAgent(sessionId, "anything else?");
+
+    // the runtime sends the history as stored, and masks only the new user message
+    var secondTurn = scopedAgentRequests.lastRequest();
+    assertThat(messagesOf(secondTurn, dev.langchain4j.data.message.UserMessage.class))
+        .map(dev.langchain4j.data.message.UserMessage::singleText)
+        .containsExactly(firstUserMessage.get(), "anything else?");
+    assertThat(messagesOf(secondTurn, ToolExecutionResultMessage.class))
+        .map(ToolExecutionResultMessage::text)
+        .containsExactly(firstToolResult.get());
+    // model output is sent as the model produced it
+    assertThat(messagesOf(secondTurn, dev.langchain4j.data.message.AiMessage.class))
+        .map(dev.langchain4j.data.message.AiMessage::text)
+        .contains("the notes mention modelsecret");
+    assertThat(RecordingSanitizer.seen()).containsExactly("anything else?");
+
+    // the history holds the text the model was sent on the first turn
+    var history = storedHistory(sessionId);
+    assertThat(history).hasSize(6);
+    var userMessage = (UserMessage) history.get(0);
+    assertThat(userMessage.text()).isEqualTo(firstUserMessage.get());
+    assertThat(userMessage.sanitized()).isTrue();
+    var toolResult = (ToolCallResponse) history.get(2);
+    assertThat(toolResult.text()).isEqualTo(firstToolResult.get());
+    assertThat(toolResult.sanitized()).isTrue();
+    var aiMessage = (AiMessage) history.get(3);
+    assertThat(aiMessage.text()).isEqualTo("the notes mention modelsecret");
+    assertThat(aiMessage.sanitized()).isTrue();
+  }
+
+  @Test
+  public void shouldMaskAStoredMessageThatIsNotSanitized() {
+    var sessionId = newSessionId();
+    var now = Instant.now();
+    componentClient
+        .forEventSourcedEntity(sessionId)
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(
+            new SessionMemoryEntity.AddInteractionCmd(
+                new UserMessage(now, "earlier I said scopedsecret", "sanitizer-test-agent"),
+                new AiMessage(now, "noted", "sanitizer-test-agent")));
+    captureUserMessage(scopedAgentModel);
+
+    askScopedAgent(sessionId, "what did I say?");
+
+    assertThat(
+            messagesOf(
+                scopedAgentRequests.lastRequest(), dev.langchain4j.data.message.UserMessage.class))
+        .map(dev.langchain4j.data.message.UserMessage::singleText)
+        .containsExactly("earlier I said ************", "what did I say?");
+    assertThat(RecordingSanitizer.seen()).anyMatch(text -> text.contains("earlier I said"));
   }
 
   @Test
