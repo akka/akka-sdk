@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
 /**
  * The full record of a single agent interaction, as fetched from the ledger.
  *
- * <p>Beyond the raw fields, this type offers pure convenience accessors — {@link #inputText()},
- * {@link #finalResponseText()}, {@link #toolCalls()}, token totals, {@link #failureSummary()} — and
+ * <p>Beyond the raw fields, this type offers pure convenience accessors ({@link #inputText()},
+ * {@link #finalResponseText()}, {@link #toolCalls()}, token totals, {@link #failureSummary()}) and
  * a flattened {@link #transcript()} rendering, for use when evaluating an interaction.
  *
  * @param interactionId the globally unique id of the interaction
