@@ -523,7 +523,7 @@ private[javasdk] object Sdk {
       runUserCallback(setup, "onShutdown()", rethrow = false) {
         setup.onShutdown()
       }
-      SdkRunner.userServiceLog.info(
+      SdkRunner.userServiceLog.debug(
         "onShutdown lifecycle hook completed in [{}] ms",
         (System.nanoTime() - started) / 1000000)
       Done
