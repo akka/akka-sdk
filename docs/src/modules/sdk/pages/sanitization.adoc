@@ -1,5 +1,4 @@
 = Data sanitization
-include::ROOT:partial$include.adoc[]
 :page-summary: Runtime-level PII scrubbing that enforces data governance as a built-in property of your Akka service, not an afterthought.
 :page-when-to-use: When your service handles user-generated content containing personally identifiable information (PII) and you need automated, consistent sanitization across logs and agent interactions.
 :page-related: xref:sdk:agents/guardrails.adoc[]
@@ -14,7 +13,7 @@ This matters because protecting personally identifiable information is simultane
 
 By shifting sanitization from application logic into the runtime, you gain:
 
-* **Consistency** — every code path an entry applies to is covered by the same policy, with nothing to remember at the call site.
+* **Consistency**: the same policy covers every code path an entry applies to, with nothing to remember at the call site.
 * **Auditability** — governance and infosec teams can inspect a single configuration to verify what categories of PII are masked.
 * **Reduced attack surface** — in the event of a breach, masked data limits exposure.
 
