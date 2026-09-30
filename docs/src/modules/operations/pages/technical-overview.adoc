@@ -137,7 +137,7 @@ Akka adheres to a range of compliance standards. Full certification detail lives
 
 == Networking and ports
 
-The default network configuration is a VPC with three subnets per region plus load balancers. By default, connectivity between the region and your environment traverses the internet. Private connectivity options are available per cloud and are described on each cloud page.
+The default network configuration is a VPC with per-region subnets plus load balancers; the exact subnet layout differs by cloud and is described on each cloud page. By default, connectivity between the region and your environment traverses the internet. Private connectivity options are available per cloud.
 
 Each flow below is inbound (ingress) or outbound (egress) relative to the region. All use TLS on port 443, except the infrastructure identity platform, which also uses ports 3023, 3024, and 3026.
 

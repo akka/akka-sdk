@@ -1,38 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="820" height="420" viewBox="0 0 820 420" font-family="'Instrument Sans',-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="Akka Automated Operations on GCP">
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="440" viewBox="0 0 820 440" font-family="'Instrument Sans',-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="Akka Automated Operations on GCP">
   <!-- Recreated as a themed SVG from the akka-bootstrap modules/google model and the original whitepaper style. Light figure; dark-mode theming is a follow-up. -->
-  <rect x="0" y="0" width="820" height="420" fill="#ffffff"/>
+  <rect x="0" y="0" width="820" height="440" fill="#ffffff"/>
   <text x="410" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#1a1a1a">Akka Automated Operations on GCP</text>
 
   <!-- Project boundary -->
-  <rect x="40" y="56" width="740" height="330" rx="12" fill="none" stroke="#34a853" stroke-width="2" stroke-dasharray="7 5"/>
+  <rect x="40" y="56" width="740" height="360" rx="12" fill="none" stroke="#34a853" stroke-width="2" stroke-dasharray="7 5"/>
   <text x="60" y="80" font-size="13" font-weight="700" fill="#1e7e37" letter-spacing="1">YOUR GCP PROJECT</text>
 
   <!-- VPC -->
-  <rect x="70" y="96" width="470" height="270" rx="10" fill="#f3f8ff" stroke="#4285f4" stroke-width="1.5"/>
-  <text x="88" y="120" font-size="13" font-weight="700" fill="#2a5bd7">VPC network (3 subnets per region)</text>
+  <rect x="70" y="96" width="470" height="300" rx="10" fill="#f3f8ff" stroke="#4285f4" stroke-width="1.5"/>
+  <text x="88" y="118" font-size="13" font-weight="700" fill="#2a5bd7">VPC network</text>
+  <text x="88" y="136" font-size="11" fill="#5f6b73">one subnet per region</text>
+  <text x="88" y="150" font-size="10" fill="#5f6b73">primary range for nodes; secondary ranges for pods and services</text>
 
   <!-- GKE -->
-  <rect x="92" y="136" width="200" height="150" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
-  <text x="192" y="158" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1a1a">GKE</text>
-  <text x="192" y="180" text-anchor="middle" font-size="11" fill="#5f6b73">Application Plane region</text>
-  <text x="192" y="200" text-anchor="middle" font-size="11" fill="#5f6b73">nodes across zones</text>
-  <text x="192" y="224" text-anchor="middle" font-size="11" fill="#5f6b73">Akka operators, Linkerd</text>
-  <text x="192" y="244" text-anchor="middle" font-size="11" fill="#5f6b73">encrypted event store</text>
+  <rect x="92" y="164" width="200" height="128" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
+  <text x="192" y="186" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1a1a">GKE</text>
+  <text x="192" y="206" text-anchor="middle" font-size="11" fill="#5f6b73">Application Plane region</text>
+  <text x="192" y="226" text-anchor="middle" font-size="11" fill="#5f6b73">nodes across zones</text>
+  <text x="192" y="250" text-anchor="middle" font-size="11" fill="#5f6b73">Akka operators, Linkerd</text>
 
   <!-- data services -->
-  <rect x="312" y="136" width="200" height="44" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
-  <text x="412" y="158" text-anchor="middle" font-size="12" fill="#1a1a1a">Cloud SQL for PostgreSQL</text>
-  <text x="412" y="172" text-anchor="middle" font-size="10" fill="#5f6b73">private services access</text>
-  <rect x="312" y="188" width="200" height="44" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
-  <text x="412" y="215" text-anchor="middle" font-size="12" fill="#1a1a1a">Cloud Load Balancing + NAT</text>
-  <rect x="312" y="240" width="200" height="46" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
-  <text x="412" y="262" text-anchor="middle" font-size="11" fill="#1a1a1a">Cloud Storage &#183; Cloud DNS &#183; KMS</text>
-  <text x="412" y="278" text-anchor="middle" font-size="11" fill="#5f6b73">roles via akka-bootstrap</text>
+  <rect x="312" y="164" width="200" height="52" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
+  <text x="412" y="184" text-anchor="middle" font-size="12" fill="#1a1a1a">Cloud SQL for PostgreSQL</text>
+  <text x="412" y="200" text-anchor="middle" font-size="10" fill="#5f6b73">event store &#183; private services access</text>
+  <rect x="312" y="224" width="200" height="44" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
+  <text x="412" y="250" text-anchor="middle" font-size="12" fill="#1a1a1a">Cloud Load Balancing + NAT</text>
+  <rect x="312" y="276" width="200" height="46" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
+  <text x="412" y="298" text-anchor="middle" font-size="11" fill="#1a1a1a">Cloud Storage &#183; Cloud DNS &#183; KMS</text>
+  <text x="412" y="314" text-anchor="middle" font-size="10" fill="#5f6b73">roles via akka-bootstrap</text>
+
+  <!-- apps write events to Cloud SQL -->
+  <text x="302" y="182" text-anchor="middle" font-size="9" fill="#1e7e37">events</text>
+  <line x1="292" y1="190" x2="312" y2="190" stroke="#1a1a1a" stroke-width="1.4" marker-end="url(#gk)"/>
 
   <!-- private connectivity -->
-  <rect x="92" y="300" width="420" height="50" rx="8" fill="#fff8e6" stroke="#f5b60b"/>
-  <text x="302" y="322" text-anchor="middle" font-size="12" font-weight="600" fill="#8a6d0b">VPC Peering (optional private connectivity)</text>
-  <text x="302" y="340" text-anchor="middle" font-size="11" fill="#5f6b73">keeps region-to-internal traffic off the public internet</text>
+  <rect x="92" y="334" width="420" height="48" rx="8" fill="#fff8e6" stroke="#f5b60b"/>
+  <text x="302" y="356" text-anchor="middle" font-size="12" font-weight="600" fill="#8a6d0b">VPC Peering (optional private connectivity)</text>
+  <text x="302" y="374" text-anchor="middle" font-size="10" fill="#5f6b73">keeps region-to-internal traffic off the public internet</text>
 
   <!-- Service account -->
   <rect x="576" y="96" width="180" height="70" rx="10" fill="#eef6ef" stroke="#34a853" stroke-width="1.5"/>
@@ -41,19 +46,22 @@
   <text x="666" y="158" text-anchor="middle" font-size="10" fill="#5f6b73">exported keys</text>
 
   <!-- Federation plane -->
-  <rect x="576" y="188" width="180" height="98" rx="10" fill="#e6f6f6" stroke="#02a4a7" stroke-width="2"/>
-  <text x="666" y="218" text-anchor="middle" font-size="13" font-weight="700" fill="#0b6d6f">Akka Federation</text>
-  <text x="666" y="236" text-anchor="middle" font-size="13" font-weight="700" fill="#0b6d6f">Plane</text>
-  <text x="666" y="258" text-anchor="middle" font-size="10" fill="#5f6b73">impersonates SA</text>
-  <text x="666" y="272" text-anchor="middle" font-size="10" fill="#5f6b73">TLS 443</text>
+  <rect x="576" y="196" width="180" height="98" rx="10" fill="#e6f6f6" stroke="#02a4a7" stroke-width="2"/>
+  <text x="666" y="226" text-anchor="middle" font-size="13" font-weight="700" fill="#0b6d6f">Akka Federation</text>
+  <text x="666" y="244" text-anchor="middle" font-size="13" font-weight="700" fill="#0b6d6f">Plane</text>
+  <text x="666" y="266" text-anchor="middle" font-size="10" fill="#5f6b73">impersonates SA</text>
+  <text x="666" y="280" text-anchor="middle" font-size="10" fill="#5f6b73">TLS 443</text>
 
-  <line x1="666" y1="166" x2="666" y2="188" stroke="#34a853" stroke-width="1.6" marker-end="url(#gc)"/>
-  <line x1="540" y1="220" x2="576" y2="220" stroke="#02a4a7" stroke-width="2" marker-end="url(#gc)"/>
-  <line x1="576" y1="240" x2="540" y2="240" stroke="#02a4a7" stroke-width="2" marker-end="url(#gc)"/>
+  <line x1="666" y1="166" x2="666" y2="196" stroke="#34a853" stroke-width="1.6" marker-end="url(#gc)"/>
+  <line x1="540" y1="230" x2="576" y2="230" stroke="#02a4a7" stroke-width="2" marker-end="url(#gc)"/>
+  <line x1="576" y1="250" x2="540" y2="250" stroke="#02a4a7" stroke-width="2" marker-end="url(#gc)"/>
 
   <defs>
     <marker id="gc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#02a4a7"/>
+    </marker>
+    <marker id="gk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a1a1a"/>
     </marker>
   </defs>
 </svg>
