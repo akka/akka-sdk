@@ -94,6 +94,8 @@ Under `agent-roles`, use `*` to bind every agent that has a role. The most speci
 Both an evaluator and an individual binding may set `enabled` (default `true`); set it to `false` to disable the whole evaluator or a single binding.
 Defaults applied to every evaluator and agent binding live under `akka.javasdk.evaluation.defaults`; change a default there to affect all bindings, or set the same key on an individual entry to override only that one.
 
+Set `control-id` on the evaluator, not on a binding, to name the control that the evaluator implements, see xref:concepts:governance-and-the-runtime.adoc#control-ids[control ids].
+
 NOTE: Evaluators typically use an LLM and therefore have a cost and overhead. You may want to enable them in test or staging environments and keep them disabled, or sampled, in high-volume production. Toggling a binding's `enabled` per deployment is the mechanism for that.
 
 == Dependency injection

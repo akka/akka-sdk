@@ -163,6 +163,8 @@ This role is defined in the `@AgentRole` annotation.
 
 The name and the category are reported in logs, metrics, and traces. The `category` should classify the type of validation. It can be any value, but a few recommended categories are JAILBREAK, PROMPT_INJECTION, PII, TOXIC, HALLUCINATED, NSFW, FORMAT.
 
+Set `control-id` to name the control that the guardrail implements, see xref:concepts:governance-and-the-runtime.adoc#control-ids[control ids].
+
 === Configuring a deprecated TextGuardrail
 
 A `TextGuardrail`, including the built-in `SimilarityGuard`, requires the `use-for` property.

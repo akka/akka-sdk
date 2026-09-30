@@ -43,6 +43,11 @@ These pieces play different roles and work together:
 * xref:sdk:evaluators.adoc[Evaluators] run after each interaction, out of band, to record a verdict.
 * The xref:sdk:evaluators.adoc#_the_ledger_client[ledger] records every interaction immutably, and evaluators read from it.
 
+[#control-ids]
+A control matrix lists the obligations of a service and the mechanism that meets each one, and gives each of these controls an id.
+Name the control that a guardrail, sanitizer or evaluator implements with a `control-id` key in its configuration entry.
+When the service starts, the runtime records each active control with its control id and its configuration in the ledger.
+
 == Compliance Certifications
 
 Akka holds more than 19 compliance certifications including:
