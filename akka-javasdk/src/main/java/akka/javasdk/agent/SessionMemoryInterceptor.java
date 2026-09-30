@@ -9,8 +9,12 @@ package akka.javasdk.agent;
  *
  * <p>An interceptor transforms session messages immediately before they are persisted to session
  * memory. Each method has an identity default that returns the message unchanged, so
- * implementations only need to override the variant(s) they want to transform. A message that the
- * interceptor returns keeps its {@code sanitized} value only if the interceptor passes it on.
+ * implementations only need to override the variant(s) they want to transform.
+ *
+ * <p>The SDK stores the {@code sanitized} value of the message that the interceptor returns. Leave
+ * it false in a message that the interceptor builds, because that message no longer holds the text
+ * that the runtime sent to the model. The constructors without a {@code sanitized} parameter do
+ * that.
  *
  * <p>Hooks are provided for each top-level {@link SessionMessage} variant: user messages (text and
  * multimodal), AI replies, and tool call responses (text and multimodal). Tool requests are nested
@@ -37,8 +41,7 @@ package akka.javasdk.agent;
  *     return new SessionMessage.UserMessage(
  *         userMessage.timestamp(),
  *         redact(userMessage.text()),
- *         userMessage.componentId(),
- *         userMessage.sanitized());
+ *         userMessage.componentId());
  *   }
  * });
  * }</pre>
