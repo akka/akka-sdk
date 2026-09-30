@@ -47,7 +47,7 @@ AAO uses four roles: Deployment (created by `akka-bootstrap`), and Editor, Viewe
 
 == Google GKE
 
-Managed Kubernetes hosts the Application Plane, with instances spread topologically across zones. The event store is Cloud SQL for PostgreSQL, which applications write their events to. It does not run in the GKE cluster.
+Managed Kubernetes hosts the Application Plane, with instances spread topologically across zones. The event store is Cloud SQL for PostgreSQL.
 
 == Installation
 
