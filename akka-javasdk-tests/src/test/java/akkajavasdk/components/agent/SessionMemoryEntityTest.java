@@ -437,6 +437,71 @@ public class SessionMemoryEntityTest {
     assertThat(m4.tokenUsage()).isEqualTo(TokenUsage.EMPTY);
   }
 
+  private static AiMessage sanitizedAiMessage(Instant timestamp, String text) {
+    return new AiMessage(
+        timestamp,
+        text,
+        COMPONENT_ID,
+        List.of(),
+        Optional.empty(),
+        TokenUsage.EMPTY,
+        Map.of(),
+        true);
+  }
+
+  @Test
+  public void shouldStoreTheCompactionSummaryUnflaggedAndKeepTheFlagOfTheMessagesAfterIt() {
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(
+            new AddInteractionCmd(
+                new UserMessage(timestamp, "Hello", COMPONENT_ID, true),
+                sanitizedAiMessage(timestamp, "Hi there!")));
+    var sequenceNumber =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .sequenceNumber();
+
+    // written after the history that the summary replaces
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(
+            new AddInteractionCmd(
+                new UserMessage(timestamp, "I'm Alice", COMPONENT_ID, true),
+                sanitizedAiMessage(timestamp, "Hi Alice")));
+
+    // when the summary messages are flagged
+    var cmd =
+        new SessionMemoryEntity.CompactionCmd(
+            new UserMessage(timestamp, "Summary", COMPONENT_ID, true),
+            sanitizedAiMessage(timestamp, "Summary reply"),
+            sequenceNumber);
+    testKit.method(SessionMemoryEntity::compactHistory).invoke(cmd);
+
+    // then
+    var messages =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .messages();
+    assertThat(messages).hasSize(4);
+    assertThat(((UserMessage) messages.get(0)).text()).isEqualTo("Summary");
+    assertThat(((UserMessage) messages.get(0)).sanitized()).isFalse();
+    assertThat(((AiMessage) messages.get(1)).sanitized()).isFalse();
+    assertThat(((UserMessage) messages.get(2)).text()).isEqualTo("I'm Alice");
+    assertThat(((UserMessage) messages.get(2)).sanitized()).isTrue();
+    assertThat(((AiMessage) messages.get(3)).sanitized()).isTrue();
+  }
+
   @Test
   public void shouldBeDeletable() {
     // given
