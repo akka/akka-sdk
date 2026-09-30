@@ -5,6 +5,7 @@
 :page-related: xref:sdk:agents/llm_eval.adoc[], xref:sdk:agents.adoc[], xref:concepts:governance-and-the-runtime.adoc[]
 :page-prerequisites: An Akka project with at least one agent defined.
 :page-persona: developer, governance-compliance
+:page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
