@@ -56,7 +56,7 @@ akka.javasdk.agent.classifiers {
 }
 ----
 <1> The name the classifier is looked up by. This is the string passed to `ClassifierClient.classify`.
-<2> Implementation class. It must be public and have exactly one public constructor.
+<2> Implementation class. It must be public and have exactly one constructor, and that constructor must be public.
 <3> An application-specific property, read by the classifier from `ClassifierContext.config()`.
 
 A classifier configuration has no `agents`, `agent-roles`, or `category`: a classifier is not scoped to a boundary or a set of agents.
@@ -121,7 +121,7 @@ See xref:sdk:agents/testing.adoc#_classifiers[Testing classifiers].
 
 == See also
 
-* xref:sdk:agents/guardrails.adoc[] — Checks that can consult a classifier to reach a decision.
-* xref:sdk:evaluators.adoc[] — Evaluators can call classifiers as part of assessing an interaction.
-* xref:sdk:sanitization.adoc[] — A sanitizer can mask what a classifier detects.
-* xref:concepts:governance-and-the-runtime.adoc[] — Where classifiers fit in Akka's governance model.
+* xref:sdk:agents/guardrails.adoc[]: checks that can consult a classifier to reach a decision.
+* xref:sdk:evaluators.adoc[]: evaluators can call classifiers as part of assessing an interaction.
+* xref:sdk:sanitization.adoc[]: a sanitizer can mask what a classifier detects.
+* xref:concepts:governance-and-the-runtime.adoc[]: where classifiers fit in Akka's governance model.

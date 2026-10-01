@@ -27,19 +27,6 @@ import java.util.Optional;
  * evaluation terminates with a recorded outcome, including step failures that exhaust their
  * retries.
  *
- * <p>Concrete classes can accept the following types to the constructor:
- *
- * <ul>
- *   <li>{@link akka.javasdk.client.ComponentClient}
- *   <li>{@link akka.javasdk.http.HttpClientProvider}
- *   <li>{@link akka.javasdk.timer.TimerScheduler}
- *   <li>{@link akka.stream.Materializer}
- *   <li>{@link com.typesafe.config.Config}
- *   <li>{@link akka.javasdk.agent.AgentRegistry}
- *   <li>{@link akka.javasdk.ledger.LedgerClient}
- *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup
- * </ul>
- *
  * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.Component}.
  *
  * @param <S> The type of the state accumulated across the steps of this evaluation.

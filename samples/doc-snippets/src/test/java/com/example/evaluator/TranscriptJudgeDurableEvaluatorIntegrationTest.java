@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
-public class TranscriptJudgeEvaluatorIntegrationTest extends TestKitSupport {
+public class TranscriptJudgeDurableEvaluatorIntegrationTest extends TestKitSupport {
 
   // tag::settings[]
   private final TestModelProvider agentModel = new TestModelProvider();
@@ -61,7 +61,9 @@ public class TranscriptJudgeEvaluatorIntegrationTest extends TestKitSupport {
         found -> !found.isEmpty()
       ); // <2>
 
-    var evaluation = records.getFirst().evaluation().orElseThrow(); // <3>
+    EvaluationRecord record = records.getFirst();
+    assertThat(record.outcome()).isInstanceOf(EvaluationRecord.Outcome.Verdict.class); // <3>
+    var evaluation = record.evaluation().orElseThrow();
     assertThat(evaluation.passed()).isTrue();
     assertThat(evaluation.score()).hasValue(0.9);
     // end::test[]

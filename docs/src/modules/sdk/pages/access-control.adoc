@@ -94,7 +94,7 @@ include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[ta
 
 == Component-level access with SPIFFE
 
-WARNING: Component-level access control is part of the Governance feature set. Contact Akka support for access. This functionality evolves quickly, and the behavior and APIs might change between releases without further notice.
+WARNING: Component-level access control is part of the Governance feature set. Its behavior and API might change between releases without notice.
 
 The `service` matcher controls access for a whole service. Use the `spiffe` matcher for finer rules, for example
 "only the `checkout` workflow may call this endpoint" or "any agent may call this endpoint". The `spiffe`

@@ -10,7 +10,7 @@ include::ROOT:partial$include.adoc[]
 == Overview
 
 Guardrails are runtime-enforced checks that validate what goes into and comes out of your agents.
-They protect against harmful inputs — such as jailbreak attempts and prompt injection — and damaging outputs — such as toxic language, hallucinated claims, or accidental disclosure of a competitor's product.
+They protect against harmful inputs, such as jailbreak attempts and prompt injection, and damaging outputs, such as toxic language, hallucinated claims, or accidental disclosure of a competitor's product.
 A guardrail can also intercept a tool call and reject it before it runs.
 
 Unlike external validation layers that sit outside your application, Akka guardrails are **part of the runtime itself**.
@@ -244,4 +244,4 @@ Guardrails run in integration tests the same way they run in production. Configu
 
 * xref:sdk:agents/classifiers.adoc[]: classifiers score or label text, and a guardrail can consult one to reach a decision.
 * xref:concepts:governance-and-the-runtime.adoc[]: why governance runs in the runtime.
-* xref:sdk:sanitization.adoc[] — Complementary PII protection through input and output sanitization.
+* xref:sdk:sanitization.adoc[]: PII protection through input and output sanitization.
