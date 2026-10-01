@@ -94,9 +94,11 @@ include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[ta
 
 == Component-level access with SPIFFE
 
-The `service` matcher controls access at the granularity of a whole service. To express finer-grained rules — for
-example "only the `checkout` workflow may call this endpoint", or "any agent may call this endpoint" — use the `spiffe`
-matcher. It matches on the calling component's https://spiffe.io[SPIFFE] identity, which encodes the calling service,
+WARNING: Component-level access control is part of the Governance feature set. Its behavior and API might change between releases without notice.
+
+The `service` matcher controls access for a whole service. Use the `spiffe` matcher for finer rules, for example
+"only the `checkout` workflow may call this endpoint" or "any agent may call this endpoint". The `spiffe`
+matcher matches on the calling component's link:{url-ext-spiffe}[SPIFFE, window="new"] identity, which encodes the calling service,
 the component type, and the component id.
 
 The pattern is matched against the component-path suffix of the caller's SPIFFE id, of the form
@@ -132,8 +134,8 @@ honestly.
 === Inspecting the caller's identity
 
 Beyond matching in an `@Acl`, an HTTP, gRPC, or MCP endpoint can read the SPIFFE identity of its caller
-programmatically. The request context — `akka.javasdk.http.RequestContext`, `akka.javasdk.grpc.GrpcRequestContext`,
-or `akka.javasdk.mcp.McpRequestContext` — exposes `getSpiffeContext()`, which returns an
+programmatically. The request context (`akka.javasdk.http.RequestContext`, `akka.javasdk.grpc.GrpcRequestContext`,
+or `akka.javasdk.mcp.McpRequestContext`) exposes `getSpiffeContext()`, which returns an
 `akka.javasdk.SpiffeContext` when SPIFFE is enabled:
 
 [source,java,indent=0]
@@ -148,7 +150,7 @@ requestContext.getSpiffeContext().ifPresent(spiffe -> {
 ----
 
 `getSpiffeContext()` is empty when SPIFFE is disabled. The caller context (`akka.javasdk.CallerSpiffeContext`) is
-present only when the request came from another Akka service in the same project — it is empty for external and
+present only when the request came from another Akka service in the same project. It is empty for external and
 internet callers. The service-level part of the caller's identity is attested by the service mesh; use this to make
 authorization or routing decisions that go beyond what a static `@Acl` matcher can express.
 

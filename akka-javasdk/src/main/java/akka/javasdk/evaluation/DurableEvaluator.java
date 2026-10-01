@@ -14,29 +14,18 @@ import java.util.Optional;
  * with durable execution across those steps.
  *
  * <p>Use a DurableEvaluator instead of an {@link Evaluator} when the evaluation is long-running or
- * needs durable, multi-step execution — for example composed evaluations that accumulate state
+ * needs durable, multi-step execution, for example composed evaluations that accumulate state
  * across several judge calls, or evaluations that wait on human review. Each evaluation runs as its
  * own durable instance: if it is stopped for any reason, it resumes from the last completed step.
  *
  * <p>Like an {@link Evaluator}, a DurableEvaluator is bound to one or more agents through
  * configuration under {@code akka.javasdk.evaluation.evaluators}, keyed by the evaluator's
  * component id. The runtime invokes {@link #onEvaluation(EvaluationContext)} for each interaction
- * of a bound agent. The evaluation then progresses through steps — methods returning {@link Effect}
- * — until it finishes with {@link Effect.Builder#complete} or {@link Effect.Builder#inconclusive},
+ * of a bound agent. The evaluation then progresses through steps, methods returning {@link Effect},
+ * until it finishes with {@link Effect.Builder#complete} or {@link Effect.Builder#inconclusive},
  * which records the outcome and cleans up the instance. There is no other way to finish: every
  * evaluation terminates with a recorded outcome, including step failures that exhaust their
  * retries.
- *
- * <p>Concrete classes can accept the following types to the constructor:
- *
- * <ul>
- *   <li>{@link akka.javasdk.client.ComponentClient}
- *   <li>{@link akka.javasdk.http.HttpClientProvider}
- *   <li>{@link akka.stream.Materializer}
- *   <li>{@link com.typesafe.config.Config}
- *   <li>{@link akka.javasdk.agent.AgentRegistry}
- *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup
- * </ul>
  *
  * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.Component}.
  *
@@ -85,7 +74,7 @@ public abstract class DurableEvaluator<S> {
   }
 
   /**
-   * The evaluation being run — the subject under evaluation and the evaluation id. Available in
+   * The evaluation being run: the subject under evaluation and the evaluation id. Available in
    * {@link #onEvaluation} and in every step method.
    *
    * @throws IllegalStateException if accessed outside a handler method
@@ -131,7 +120,7 @@ public abstract class DurableEvaluator<S> {
    *   <li>update the state of the evaluation
    *   <li>transition to the next step
    *   <li>complete the evaluation with an {@link Evaluation} (the verdict)
-   *   <li>report that the evaluation was inconclusive — it ran but reached no verdict
+   *   <li>report that the evaluation was inconclusive: it ran but reached no verdict
    * </ul>
    *
    * <p>Completing (or reporting inconclusive) records the outcome and cleans up the evaluation
@@ -182,7 +171,7 @@ public abstract class DurableEvaluator<S> {
       Effect complete(Evaluation evaluation);
 
       /**
-       * Report that the evaluation was inconclusive — it ran but could not reach a verdict, for
+       * Report that the evaluation was inconclusive: it ran but could not reach a verdict, for
        * example there was no transcript or the interaction was not applicable.
        *
        * @param reason why the evaluation was inconclusive
@@ -222,7 +211,7 @@ public abstract class DurableEvaluator<S> {
       Effect complete(Evaluation evaluation);
 
       /**
-       * Report that the evaluation was inconclusive — it ran but could not reach a verdict.
+       * Report that the evaluation was inconclusive: it ran but could not reach a verdict.
        *
        * @param reason why the evaluation was inconclusive
        */

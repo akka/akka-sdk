@@ -92,7 +92,7 @@ The following types can be injected in all component types:
 | Allows creating custom Open Telemetry metrics, see xref:sdk:metric.adoc[]
 |===
 
-The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpoints, Agents, Consumers, Timed Actions, and Workflows:
+The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpoints, Agents, Consumers, Timed Actions, Workflows, and Evaluators:
 
 [options="header" cols="1,1"]
 |===
