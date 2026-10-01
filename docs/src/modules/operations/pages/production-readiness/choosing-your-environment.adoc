@@ -75,7 +75,7 @@ Discuss your workload with your Akka account team, or contact mailto:security@ak
 | Term | Meaning
 
 | High availability (HA)
-| An HA system keeps running when a component fails. Zones provide this by default, so HA does not require multi-region.
+| An HA system keeps running when a component fails. Zones provide this by default, so you can have HA without multi-region.
 
 | Disaster recovery (DR)
 | DR is how you recover from a large failure. In one region you restore from backup. With multiple regions you can also move to another region.
