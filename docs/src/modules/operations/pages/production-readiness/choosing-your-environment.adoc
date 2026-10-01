@@ -34,7 +34,7 @@ These are starting points your Akka account team selects and tunes with you, not
 
 A region is a geographic area, such as Ireland or northern Virginia. An availability zone is one physically separate data center within it. The Prod, Stage, and Balanced shapes run across three zones, so the failure of one data center (power, hardware, fire) recovers automatically in seconds with no data loss. For most workloads, this is enough on its own.
 
-This is what many teams mean by high availability. You do not need a second region to survive the loss of a data center.
+This is what many teams mean by high availability. You do not need a second region to survive the loss of a data center. The full Akka availability guarantee, however, requires multi-region.
 
 A single region is also not a region without disaster recovery. Single-region databases and Kubernetes resources are backed up and recoverable. The persistence recovery point objective is 5 minutes and the recovery time objective is 24 hours. See xref:operations:technical-overview.adoc[] for the full figures. What a single region does not have is a second live region to move to.
 
@@ -42,9 +42,11 @@ A single region is also not a region without disaster recovery. Single-region da
 
 Multi-region spreads your environment across two or more regions, with data replicated between them. It is the option to choose for disaster recovery across regions and for active-active operation, where more than one region accepts requests. It protects against a full-region outage: rare, but one that can last hours if it happens.
 
+Multi-region is required for the full Akka availability guarantee. It applies to services deployed in two or more regions with replication and HA/DR active. See the Availability Guarantee Policy on the https://trust.akka.io[Akka Trust Center] for its conditions.
+
 Multi-region also roughly doubles infrastructure cost, adds cross-region latency, and requires your application to tolerate short data-sync delays. Moving traffic away from a failed region is an operator action with the Akka CLI, not an automatic switch. See xref:concepts:multi-region.adoc[] for how Akka replicates data across regions, and xref:operations:regions/setup.adoc[] for adding a region to a project.
 
-Whether this matters depends on your workload. If you can tolerate an occasional full-region outage, zones alone are enough. If you cannot, or your compliance requirements demand geographic redundancy, multi-region is worth the added cost.
+Whether this matters depends on your workload. If you can tolerate an occasional full-region outage and do not need the full availability guarantee, zones alone are enough. If you cannot, or your compliance requirements or contract demand geographic redundancy, multi-region is worth the added cost.
 
 You do not have to decide on day one. Start with zones in one region and add a region later when your needs grow.
 
@@ -62,14 +64,13 @@ AWS, Google, and Microsoft act as sub-processors, running the underlying data ce
 
 * How much downtime is acceptable? Zones alone typically recover in seconds. Multi-region protects against a full-region outage, a much rarer event, but one that can last many hours if it happens.
 * Can you tolerate a region-wide outage at all? If occasionally, zones alone are enough. If never, you need multi-region.
+* Do you need the full availability guarantee? It requires multi-region.
 * Where must your data live? Choose the region that matches your regulatory and customer commitments. This is separate from how available the environment needs to be.
 * Does the added cost hold up? Multi-region roughly doubles the infrastructure bill and adds inter-region network charges.
 
 Discuss your workload with your Akka account team, or contact mailto:security@akka.io[security@akka.io] for data residency and compliance questions.
 
-== Terms you may hear
-
-Proposals and questionnaires use these terms in different ways. This table maps each one to the choices above.
+== Glossary
 
 [cols="1,3", options="header"]
 |===
