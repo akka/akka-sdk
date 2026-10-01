@@ -11,10 +11,7 @@ import akka.javasdk.ledger.LedgerClient;
 import java.time.Duration;
 
 @Component(id = "transcript-judge-durable-evaluator")
-public class TranscriptJudgeDurableEvaluator
-  extends DurableEvaluator<TranscriptJudgeDurableEvaluator.State> { // <1>
-
-  public record State(String transcript) {} // <2>
+public class TranscriptJudgeDurableEvaluator extends DurableEvaluator<Void> { // <1>
 
   private final LedgerClient ledger;
   private final ComponentClient componentClient;
@@ -28,7 +25,7 @@ public class TranscriptJudgeDurableEvaluator
   }
 
   @Override
-  public Settings settings() { // <3>
+  public Settings settings() { // <2>
     return Settings.defaults()
       .withEvaluationTimeout(Duration.ofMinutes(5))
       .withDefaultStepTimeout(Duration.ofSeconds(30))
@@ -36,31 +33,26 @@ public class TranscriptJudgeDurableEvaluator
   }
 
   @Override
-  public Effect onEvaluation(EvaluationContext context) { // <4>
-    return effects().transitionTo(TranscriptJudgeDurableEvaluator::fetchTranscript);
+  public Effect onEvaluation(EvaluationContext context) { // <3>
+    return effects().transitionTo(TranscriptJudgeDurableEvaluator::judge);
   }
 
-  private Effect fetchTranscript() { // <5>
+  private Effect judge() { // <4>
     InteractionRecord interaction = ledger.getInteraction(
       evaluationContext().subject().interactionId()
     );
     if (interaction.failed()) {
       return effects().inconclusive("interaction failed, nothing to evaluate");
     }
-    return effects()
-      .updateState(new State(interaction.transcript())) // <6>
-      .transitionTo(TranscriptJudgeDurableEvaluator::judge);
-  }
 
-  private Effect judge() {
     QualityJudge.Verdict verdict = componentClient
       .forAgent()
-      .inSession(evaluationContext().evaluationId() + "-quality-judge")
+      .inSession(evaluationContext().evaluationId() + "-quality-judge") // <5>
       .method(QualityJudge::evaluate)
-      .invoke(currentState().transcript()); // <7>
+      .invoke(interaction.transcript());
 
     return effects()
-      .complete(Evaluation.of(verdict.passed(), verdict.reason()).withScore(verdict.score())); // <8>
+      .complete(Evaluation.of(verdict.passed(), verdict.reason()).withScore(verdict.score())); // <6>
   }
 }
 // end::all[]

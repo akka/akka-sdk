@@ -16,8 +16,8 @@ You bind it to one or more agents in configuration, and the runtime then invokes
 The evaluator returns a verdict, pass or fail, optionally with a score, a label, and attributes.
 The runtime records the verdict in the ledger and exposes it in metrics and traces.
 
-Without an Evaluator, you evaluate interactions yourself: you write a Consumer that listens for task completions, fetches the result, and calls a judge agent, as shown in xref:sdk:agents/llm_eval.adoc[LLM evaluation].
-That code is specific to one agent and one event source, and you repeat it for every agent you want evaluated.
+Without an Evaluator, you evaluate interactions yourself. For an autonomous agent, you write a Consumer that listens for task completions and calls a judge agent, as shown in xref:sdk:agents/llm_eval.adoc[LLM evaluation]. A request-based agent has no such event source, so you call the judge from the code that called the agent.
+In both cases the code is specific to one agent, and you repeat it for every agent you want evaluated.
 An Evaluator replaces that wiring with configuration.
 You implement the evaluation once and bind it to agents or agent roles in `application.conf`. The runtime then triggers it for every interaction of those agents.
 
@@ -28,7 +28,7 @@ Two kinds of evaluator exist:
 
 Both kinds are bound to agents the same way and record the same kind of result.
 
-NOTE: An Evaluator runs after the interaction has completed, in the background. It does not delay the agent's response, and its verdict cannot change what the agent does next.
+NOTE: An Evaluator runs after the interaction has completed, in the background. It does not delay the agent's response, and its verdict cannot change what the agent does next. If the agent or workflow must react to the verdict, for example retry a step that failed the evaluation, call the judge agent directly from the agent or workflow, as described in xref:sdk:agents/llm_eval.adoc[LLM evaluation].
 
 == Implementing an evaluator
 
@@ -79,7 +79,7 @@ Each evaluator bound to an agent adds one trigger and one ledger record per inte
 == Binding evaluators to agents
 
 Evaluators are bound to agents under `akka.javasdk.evaluation.evaluators`, keyed by the evaluator's `@Component` id.
-Each binding declares a `trigger`. Currently, the only supported value is `interaction`, meaning the evaluator runs for each interaction of the bound agent:
+Each binding declares a `trigger`. The supported value is `interaction`, meaning the evaluator runs for each interaction of the bound agent:
 
 [source,conf,indent=0]
 .src/main/resources/application.conf
@@ -103,6 +103,8 @@ akka.javasdk.evaluation.evaluators {
 
 Under `agent-roles`, the key `*` binds every agent that has any role.
 
+WARNING: A `*` binding also binds a judge agent that has an `@AgentRole`. The evaluator's own call to the judge is then an interaction of a bound agent, which triggers the evaluator again, without end. Give judge agents no role, or add an entry with `enabled = false` for them under `agents`.
+
 When an agent matches more than one entry, the runtime uses one of them, in this order:
 
 . The entry for the agent under `agents`.
@@ -115,7 +117,7 @@ The `enabled` setting defaults to `true`. Set `enabled = false` on an evaluator 
 
 The default values for all evaluator entries and bindings are under `akka.javasdk.evaluation.defaults`. A value set on an individual entry overrides the default for that entry.
 
-The same configuration binds a xref:_durable_evaluators[durable evaluator], the key is its `@Component` id.
+The same configuration binds a xref:_durable_evaluators[durable evaluator]. The key is its `@Component` id.
 
 NOTE: Evaluators typically use an LLM and therefore have a cost and overhead. You may want to enable them in test or staging environments and keep them disabled, or sampled, in high-volume production. Toggling a binding's `enabled` per deployment is the mechanism for that.
 
@@ -127,23 +129,22 @@ For an evaluation that runs in several steps and must survive restarts, extend l
 Each evaluation runs as its own durable instance. The instance keeps a state of your choice across its steps and, if it is stopped for any reason, resumes from the last completed step.
 Use it for composed evaluations that accumulate results from several judge calls, or for evaluations that wait on an external party such as human review.
 
-=== Steps and transitions
-
-A durable evaluator starts in `onEvaluation(EvaluationContext)` and progresses through step methods. Each step is a method that returns `Effect`, and an effect either transitions to the next step or finishes the evaluation:
+A durable evaluator starts in `onEvaluation(EvaluationContext)` and progresses through step methods. Each step is a method that returns `Effect`, and an effect either transitions to the next step or finishes the evaluation.
+The example has one step, which judges the interaction:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/TranscriptJudgeDurableEvaluator.java[TranscriptJudgeDurableEvaluator.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/evaluator/TranscriptJudgeDurableEvaluator.java[tag=all]
 ----
-<1> Extend `DurableEvaluator` with the state type as the type parameter.
-<2> The state kept across steps. It must be serializable with Jackson, in the same way as workflow state.
-<3> Override `settings()` to set the evaluation timeout, the default step timeout, and the number of step retries.
-<4> `onEvaluation` is the entry point. Here it transitions to the first step without changing the state.
-<5> A step method takes no parameters, or one input parameter, and returns `Effect`.
-<6> `updateState` persists the new state before the transition, so the next step reads it with `currentState()` even after a restart.
-<7> The judge runs in a session derived from the evaluation id, separate from the evaluated agent's session.
-<8> `complete` records the verdict and removes the evaluation instance.
+<1> Extend `DurableEvaluator` with the state type as the type parameter. This evaluator keeps no state, so it uses `Void`.
+<2> Override `settings()` to set the evaluation timeout, the default step timeout, and the number of step retries. Without `settings()`, the runtime defaults apply and a failed step is not retried.
+<3> `onEvaluation` is the entry point. It transitions to the first step.
+<4> A step method takes no parameters, or one input parameter, and returns `Effect`. `evaluationContext()` gives the subject and the evaluation id in every step. The step fetches the interaction from the ledger by id instead of receiving it.
+<5> The judge runs in a session derived from the evaluation id, separate from the evaluated agent's session. The judge agent uses `MemoryProvider.none()`, so a retried step does not see the earlier attempt and no session memory remains after the evaluation.
+<6> `complete` records the verdict and removes the evaluation instance.
+
+Like a workflow, a durable evaluator can chain any number of steps. A step transitions to the next one with `effects().transitionTo(step)`, passes a value into a step that takes a parameter with `withInput(value)`, and keeps a state across steps with `updateState(newState)`, which the next step reads with `currentState()`. The state must be serializable with Jackson, in the same way as workflow state. Keep it small: the interaction itself stays in the ledger, and each step fetches it by id. Use the state for results that steps accumulate, for example the verdicts of several judge calls that a final step combines.
 
 The `Effect` of `onEvaluation` and of every step is one of:
 
@@ -183,18 +184,18 @@ An integration test runs the service in the local runtime, so the runtime trigge
 The test extends `TestKitSupport` and has three parts. First, bind the evaluator to the agent in the testkit configuration and replace the models with `TestModelProvider`. Second, call the agent with `withDetailedReply()` to get the interaction id. Third, read the recorded evaluation from the ledger with `getLedgerClient()`. The evaluation runs after the agent has replied, so the test polls until the record appears.
 
 [source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/test/java/com/example/evaluator/TranscriptJudgeEvaluatorIntegrationTest.java[TranscriptJudgeEvaluatorIntegrationTest.java]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/evaluator/TranscriptJudgeDurableEvaluatorIntegrationTest.java[TranscriptJudgeDurableEvaluatorIntegrationTest.java]
 ----
-include::example$doc-snippets/src/test/java/com/example/evaluator/TranscriptJudgeEvaluatorIntegrationTest.java[tag=settings]
+include::example$doc-snippets/src/test/java/com/example/evaluator/TranscriptJudgeDurableEvaluatorIntegrationTest.java[tag=settings]
 ----
 <1> Bind the evaluator to the agent with `withAdditionalConfig`, and replace both the agent's and the judge's model with a `TestModelProvider`.
 
 [source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/test/java/com/example/evaluator/TranscriptJudgeEvaluatorIntegrationTest.java[TranscriptJudgeEvaluatorIntegrationTest.java]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/evaluator/TranscriptJudgeDurableEvaluatorIntegrationTest.java[TranscriptJudgeDurableEvaluatorIntegrationTest.java]
 ----
-include::example$doc-snippets/src/test/java/com/example/evaluator/TranscriptJudgeEvaluatorIntegrationTest.java[tag=test]
+include::example$doc-snippets/src/test/java/com/example/evaluator/TranscriptJudgeDurableEvaluatorIntegrationTest.java[tag=test]
 ----
 <1> Call the agent with `withDetailedReply()` to get the interaction id.
-<2> The evaluation runs out of band, so poll `getLedgerClient().getEvaluations(interactionId)` until the record appears.
-<3> Assert on the recorded `Evaluation`.
+<2> The evaluation runs in the background, so poll `getLedgerClient().getEvaluations(interactionId)` until the record appears.
+<3> Check that the outcome is a verdict before reading the `Evaluation`. A failed or inconclusive evaluation has no `Evaluation`.
 
