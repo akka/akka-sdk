@@ -72,25 +72,25 @@ Discuss your workload with your Akka account team, or contact mailto:security@ak
 
 [cols="1,3", options="header"]
 |===
-| Term | What it means here
+| Term | Meaning
 
 | High availability (HA)
-| The environment keeps running when a component fails. Zones provide this by default. HA does not by itself mean multi-region.
+| An HA system keeps running when a component fails. Zones provide this by default, so HA does not require multi-region.
 
 | Disaster recovery (DR)
-| Recovering after a large failure. In a single region this is backup and restore. With multi-region it also includes moving to a second region.
+| DR is how you recover from a large failure. In one region you restore from backup. With multiple regions you can also move to another region.
 
 | Failover
-| Switching from a failed component to a healthy copy. Between zones this is automatic. Between regions it is an operator action.
+| Failover switches work from a failed component to a healthy copy. It is automatic between zones and an operator action between regions.
 
 | Multi-zone
-| Spread across availability zones inside one region. The default.
+| A multi-zone environment spreads across availability zones in one region. This is the default.
 
 | Multi-region
-| Spread across two or more regions, with data replicated between them. Optional.
+| A multi-region environment spreads across two or more regions and replicates data between them. This is optional.
 
 | Data sovereignty
-| The country whose laws apply to the data. In Akka, the region you select sets it.
+| Data sovereignty means the laws of one country apply to your data. In Akka, the region you select sets that country.
 |===
 
 == Related documentation
