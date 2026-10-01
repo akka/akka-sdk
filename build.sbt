@@ -16,6 +16,15 @@ Global / initialize := {
     throw new MessageOnlyException(s"JDK 21 or higher is required, found: $specificationVersion")
 }
 
+ThisBuild / makeBomIncludeDependencies := true
+
+// hold Jackson at the version akka resolves, against the newer one langchain4j asks for,
+// see Dependencies.jacksonModules
+ThisBuild / dependencyOverrides ++= Dependencies.jacksonModules
+
+lazy val checkRuntimeDependencyAlignment =
+  taskKey[Unit]("Verify direct dependency versions against the versions the Akka Runtime resolves")
+
 lazy val `akka-javasdk-root` = project
   .in(file("."))
   .aggregate(
@@ -49,7 +58,7 @@ lazy val akkaJavaSdkValidations =
 lazy val akkaJavaSdk =
   Project(id = "akka-javasdk", base = file("akka-javasdk"))
     .dependsOn(akkaJavaSdkValidations)
-    .enablePlugins(BuildInfoPlugin, Publish, AkkaGrpcPlugin)
+    .enablePlugins(BuildInfoPlugin, Publish, AkkaGrpcPlugin, ArtifactBomPlugin)
     .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
     .settings(
       name := "akka-javasdk",
@@ -73,7 +82,7 @@ lazy val akkaJavaSdk =
 lazy val akkaJavaSdkTestKit =
   Project(id = "akka-javasdk-testkit", base = file("akka-javasdk-testkit"))
     .dependsOn(akkaJavaSdk)
-    .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish)
+    .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish, ArtifactBomPlugin)
     .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
     .settings(
       name := "akka-javasdk-testkit",
@@ -154,10 +163,11 @@ lazy val akkaJavaSdkEnforcer =
       autoScalaLibrary := false, // pure Java, no Scala dependency
       Compile / javacOptions ++= Seq("-encoding", "UTF-8", "--release", "11"),
       libraryDependencies ++= Seq(
-        "org.apache.maven.enforcer" % "enforcer-api" % "3.5.0" % Provided,
-        "org.apache.maven" % "maven-core" % "3.9.9" % Provided,
+        "org.apache.maven.enforcer" % "enforcer-api" % "3.6.3" % Provided,
+        "org.apache.maven" % "maven-core" % "3.9.16" % Provided,
         "javax.inject" % "javax.inject" % "1" % Provided,
         Dependencies.junit5 % Test,
+        Dependencies.junitPlatformLauncher % Test,
         "net.aichler" % "jupiter-interface" % net.aichler.jupiter.sbt.Import.JupiterKeys.jupiterVersion.value % Test))
 
 lazy val akkaJavaSdkParent =
@@ -175,15 +185,26 @@ lazy val akkaJavaSdkParent =
         // completely replace with our pom.xml
         val pom = scala.xml.XML.loadFile(baseDirectory.value / "pom.xml")
         // but use the current version
-        updatePomVersion(pom, version.value, AkkaRuntimeVersion, AkkaGrpcVersion, GoogleProtobufVersion)
+        updatePomVersion(
+          pom,
+          version.value,
+          AkkaRuntimeVersion,
+          s"${Kalix.ProtocolVersionMajor}.${Kalix.ProtocolVersionMinor}",
+          AkkaGrpcVersion,
+          GoogleProtobufVersion,
+          Dependencies.JacksonVersion,
+          Dependencies.JacksonAnnotationsVersion)
       })
 
 def updatePomVersion(
     node: Elem,
     v: String,
     runtimeVersion: String,
+    protocolVersion: String,
     akkaGrpcVersion: String,
-    googleProtobufVersion: String): Elem = {
+    googleProtobufVersion: String,
+    jacksonVersion: String,
+    jacksonAnnotationsVersion: String): Elem = {
   def updateElements(seq: Seq[Node]): Seq[Node] = {
     seq.map {
       case version @ <version>{_}</version> =>
@@ -195,10 +216,16 @@ def updatePomVersion(
               <akka-runtime.version>{runtimeVersion}</akka-runtime.version>
             case <akka-javasdk.version>{_}</akka-javasdk.version> =>
               <akka-javasdk.version>{v}</akka-javasdk.version>
+            case <akka-protocol.version>{_}</akka-protocol.version> =>
+              <akka-protocol.version>{protocolVersion}</akka-protocol.version>
             case <akka.grpc.version>{_}</akka.grpc.version> =>
               <akka.grpc.version>{akkaGrpcVersion}</akka.grpc.version>
             case <protobuf-java.version>{_}</protobuf-java.version> =>
               <protobuf-java.version>{googleProtobufVersion}</protobuf-java.version>
+            case <jackson.version>{_}</jackson.version> =>
+              <jackson.version>{jacksonVersion}</jackson.version>
+            case <jackson-annotations.version>{_}</jackson-annotations.version> =>
+              <jackson-annotations.version>{jacksonAnnotationsVersion}</jackson-annotations.version>
             case other =>
               other
           }
@@ -215,6 +242,15 @@ def updatePomVersion(
       other
   }
 }
+
+checkRuntimeDependencyAlignment := RuntimeDependencyCheck.check(
+  (akkaJavaSdk / dependencyResolution).value,
+  (akkaJavaSdk / scalaModuleInfo).value,
+  (akkaJavaSdk / libraryDependencies).value ++ (akkaJavaSdkTestKit / libraryDependencies).value,
+  (akkaJavaSdk / scalaVersion).value,
+  (akkaJavaSdk / scalaBinaryVersion).value,
+  (LocalRootProject / baseDirectory).value,
+  streams.value.log)
 
 addCommandAlias("formatAll", "scalafmtAll; javafmtAll")
 

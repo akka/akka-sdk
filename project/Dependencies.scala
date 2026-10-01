@@ -8,13 +8,13 @@ object Dependencies {
     val ProtocolVersionMinor = 1
   }
 
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.15")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.17")
 
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
-  val AkkaVersion = "2.10.20"
-  val AkkaHttpVersion = "10.7.4" // Note: should at least the Akka HTTP version required by Akka gRPC
+  val AkkaVersion = "2.10.22"
+  val AkkaHttpVersion = "10.7.5" // Note: should at least the Akka HTTP version required by Akka gRPC
   val AkkaGrpcVersion = akka.grpc.gen.BuildInfo.version
   val GoogleProtobufVersion = akka.grpc.gen.BuildInfo.googleProtobufVersion
 
@@ -22,22 +22,24 @@ object Dependencies {
   val ScalaVersion = "2.13.18"
   val CrossScalaVersions = Seq(ScalaVersion)
 
-  val ScalaTestVersion = "3.2.14"
+  val ScalaTestVersion = "3.2.20"
   // https://github.com/akka/akka/blob/main/project/Dependencies.scala#L31
   val JacksonVersion = "2.21.5"
   val JacksonDatabindVersion = JacksonVersion
   val JacksonAnnotationsVersion = "2.21"
-  val Langchain4jVersion = "1.15.0"
-  val LogbackVersion = "1.5.38"
+  val Langchain4jVersion = "1.18.1"
+  val LogbackVersion = "1.6.3"
   val LogbackContribVersion = "0.1.5"
   val JUnitVersion = "4.13.2"
   val JUnitInterfaceVersion = "0.11"
-  val JUnitJupiterVersion = "5.10.1"
+  val JUnitJupiterVersion = "5.14.4"
   val OpenTelemetryVersion = "1.64.0"
   val OpenTelemetrySemConv = "1.40.0"
 
   val CommonsIoVersion = "2.11.0"
   val MunitVersion = "0.7.29"
+
+  val AssertJVersion = "3.27.7"
 
   val kalixTestkitProtocol = "io.akka" % "kalix-testkit-protocol" % AkkaRuntimeVersion
   val akkaSdkSpi = "io.akka" %% "akka-sdk-spi" % AkkaRuntimeVersion
@@ -60,6 +62,20 @@ object Dependencies {
   val jacksonParameterNames = "com.fasterxml.jackson.module" % "jackson-module-parameter-names" % JacksonVersion
   val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonVersion
 
+  // TODO advance Jackson to 2.22.x. langchain4j 1.18.x depends on 2.22.1, and coursier resolves the
+  // higher version unless every module is held down together: jackson-module-scala refuses to load
+  // against a databind from a different minor. Held at the version akka resolves until the whole
+  // build, and the runtime, can move.
+  val jacksonModules: Seq[ModuleID] =
+    Seq(
+      jacksonAnnotations,
+      jacksonCore,
+      jacksonDatabind,
+      jacksonJdk8,
+      jacksonJsr310,
+      jacksonParameterNames,
+      jacksonScala)
+
   val langchain4j = "dev.langchain4j" % "langchain4j" % Langchain4jVersion
 
   val scalaTest = "org.scalatest" %% "scalatest" % ScalaTestVersion
@@ -67,6 +83,10 @@ object Dependencies {
   val munitScalaCheck = "org.scalameta" %% "munit-scalacheck" % MunitVersion
   val junit4 = "junit" % "junit" % JUnitVersion
   val junit5 = "org.junit.jupiter" % "junit-jupiter" % JUnitJupiterVersion
+  // JUnit 5's Platform uses major version 1 with the same minor/patch as Jupiter.
+  // Align the launcher supplied by jupiter-interface with the engine used by our tests.
+  val junitPlatformLauncher = "org.junit.platform" % "junit-platform-launcher" %
+    JUnitJupiterVersion.replaceFirst("^5\\.", "1.")
   val junit5Vintage = "org.junit.vintage" % "junit-vintage-engine" % JUnitJupiterVersion
 
   val opentelemetryApi = "io.opentelemetry" % "opentelemetry-api" % OpenTelemetryVersion
@@ -120,7 +140,8 @@ object Dependencies {
     akkaDependency("akka-actor-typed") % Provided,
     "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
     junit5 % Test,
-    "org.assertj" % "assertj-core" % "3.24.2" % Test)
+    junitPlatformLauncher % Test,
+    "org.assertj" % "assertj-core" % AssertJVersion % Test)
 
   val javaSdkTestKit =
     deps ++=
@@ -136,21 +157,23 @@ object Dependencies {
         // user will interface with these
         junit5,
         // convenience-transitive dependencies for user assertions and async interactions
-        "org.awaitility" % "awaitility" % "4.2.1",
-        "org.assertj" % "assertj-core" % "3.24.2",
+        "org.awaitility" % "awaitility" % "4.2.2",
+        "org.assertj" % "assertj-core" % AssertJVersion,
         // for the tests of the testkit itself
         "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
+        junitPlatformLauncher % Test,
         scalaTest % Test)
 
   val tests =
     deps ++= Seq(
       // FIXME why doesn't these two come along transitively from the testkit?
-      "org.assertj" % "assertj-core" % "3.24.2" % Test,
+      "org.assertj" % "assertj-core" % AssertJVersion % Test,
       "org.awaitility" % "awaitility" % "4.2.1" % Test,
       AkkaDevRuntime % Test,
       akkaDependency("akka-testkit"),
       // These are for the test of the testkit
       "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
+      junitPlatformLauncher % Test,
       scalaTest % Test,
       akkaDependency("akka-actor-testkit-typed") % Test)
 

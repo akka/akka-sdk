@@ -1,0 +1,102 @@
+= Choosing your environment
+:page-summary: How to size an Akka environment, how much availability to build in, and where your data is allowed to live, three independent decisions you make when setting it up.
+:page-when-to-use: Use this before or during onboarding, to decide what your workload actually needs rather than defaulting to the most expensive option.
+:page-related: xref:operations:production-readiness/index.adoc[], xref:operations:services/instance-sizing.adoc[], xref:concepts:multi-region.adoc[], xref:operations:regions/setup.adoc[], xref:operations:technical-overview.adoc[]
+:page-persona: operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+Setting up an Akka environment means making three independent decisions: how you size it, how available it needs to be, and where your data is allowed to live. They are not sequential steps, and not every workload needs to weigh all three equally. This page explains each one so you can choose what yours actually needs, rather than defaulting to the most expensive option.
+
+== Sizing your environment
+
+Every environment has a fixed platform layer (orchestration, gateways, security, observability) that runs regardless of what you deploy, plus a variable service layer that scales with what you run. Platform cost does not drop as you remove services; it is the minimum cost of the environment itself. Low utilization during normal operation is expected: an environment is sized for spikes and failures, not for continuous high load.
+
+Akka provisions a new environment from one of four starting shapes:
+
+[cols="1,1,1,1,1,2", options="header"]
+|===
+| Starting shape | Relative cost | Zones | Platform replicas | Compute | Best for
+
+| Prod | Highest | 3 | 3 | On-Demand | Production workloads, full redundancy
+| Stage | High | 3 | 2 | On-Demand | Staging and pre-production
+| Balanced | Moderate | 3 | 2 | Spot | Development with reduced disruption
+| Minimal | Lowest | 1 active (of 3) | 1 | Spot | Throwaway dev and test
+|===
+
+These are starting points your Akka account team selects and tunes with you, not settings you configure yourself. This covers the platform infrastructure only. Sizing an individual service, its instance type, instance count, and autoscaling, is a separate, self-service setting; see xref:operations:services/instance-sizing.adoc[].
+
+== Choosing your availability level
+
+=== Zones, the default
+
+A region is a geographic area, such as Ireland or northern Virginia. An availability zone is one physically separate data center within it. The Prod, Stage, and Balanced shapes run across three zones, so the failure of one data center (power, hardware, fire) recovers automatically in seconds with no data loss. For most workloads, this is enough on its own.
+
+This is what many teams mean by high availability. You do not need a second region to survive the loss of a data center. The full Akka availability guarantee, however, requires multi-region.
+
+You can still recover from a disaster in a single region. Databases and Kubernetes resources are backed up, with a persistence recovery point of 5 minutes and a recovery time of 24 hours (see xref:operations:technical-overview.adoc[]). If the whole region is lost, you restore from backup rather than multi-region's more immediate move to another region that already holds your data.
+
+=== Multi-region, optional
+
+Multi-region spreads your environment across two or more regions, with data replicated between them. It is the option to choose for disaster recovery across regions and for serving requests from more than one region. It protects against a full-region outage: rare, but one that can last hours if it happens.
+
+Multi-region is required for the full Akka availability guarantee. It applies to services deployed in two or more regions with replication and HA/DR active. See the https://trust.akka.io/policies/Akka%20Availability%20Guarantee%20Policy.pdf[Availability Guarantee Policy] for its conditions.
+
+Multi-region also roughly doubles infrastructure cost, adds cross-region latency, and requires your application to tolerate short data-sync delays. Moving traffic away from a failed region is an operator action with the Akka CLI, not an automatic switch. See xref:concepts:multi-region.adoc[] for how Akka replicates data across regions, and xref:operations:regions/setup.adoc[] for adding a region to a project.
+
+Whether this matters depends on your workload. If you can tolerate an occasional full-region outage and do not need the full availability guarantee, zones alone are enough. If you cannot, or your compliance requirements or contract demand geographic redundancy, multi-region is worth the added cost.
+
+You do not have to decide on day one. Start with zones in one region and add a region later when your needs grow.
+
+== Data sovereignty and region choice
+
+Every region is also a legal jurisdiction: your application data (what your services store) stays inside the regions you explicitly select for it, and those regions' laws apply. An Ireland region means EU law. This holds whether you use one region or several: adding a second region under multi-region replication puts your data in both regions you selected, never in one you did not choose. If you must stay under a single regulatory regime, choose a second region inside it, such as Ireland plus Frankfurt for EU-only, not Ireland plus Virginia.
+
+A region chosen for sovereignty is a different decision from a region chosen for resilience. If you operate in several countries, you may need one region per country because each country's regulations apply to its own data. That does not mean the regions replicate to each other. A region can stand alone, with its data pinned there, and you add replication only if you also want resilience across regions.
+
+Each environment has its own region choice. A development environment follows the same residency rules as production only if it holds the same data.
+
+AWS, Google, and Microsoft act as sub-processors, running the underlying data centers and enforcing each region's boundary. Akka does not move your data into a region you have not selected. This applies to your application data specifically; see xref:operations:technical-overview.adoc[] for how it relates to the separate, globally-run Federation Plane.
+
+== Deciding what matters for your workload
+
+* How much downtime is acceptable? Zones alone typically recover in seconds. Multi-region protects against a full-region outage, a much rarer event, but one that can last many hours if it happens.
+* Can you tolerate a region-wide outage at all? If occasionally, zones alone are enough. If never, you need multi-region.
+* Do you need the full availability guarantee? It requires multi-region.
+* Where must your data live? Choose the region that matches your regulatory and customer commitments. This is separate from how available the environment needs to be.
+* Does the added cost hold up? Multi-region roughly doubles the infrastructure bill and adds inter-region network charges.
+
+Discuss your workload with your Akka account team, or contact mailto:security@akka.io[security@akka.io] for data residency and compliance questions.
+
+== Glossary
+
+[cols="1,3", options="header"]
+|===
+| Term | Meaning
+
+| High availability (HA)
+| An HA system keeps running when a component fails. Zones provide this by default, so you can have HA without multi-region.
+
+| Disaster recovery (DR)
+| DR is how you recover from a large failure. In one region you restore from backup. With multiple regions you can also move to another region.
+
+| Failover
+| Failover switches work from a failed component to a healthy copy. It is automatic between zones and an operator action between regions.
+
+| Multi-zone
+| A multi-zone environment spreads across availability zones in one region. This is the default.
+
+| Multi-region
+| A multi-region environment spreads across two or more regions and replicates data between them. This is optional.
+
+| Data sovereignty
+| Data sovereignty means the laws of one country apply to your data. In Akka, the region you select sets that country.
+|===
+
+== Related documentation
+
+- xref:operations:production-readiness/index.adoc[Production readiness]
+- xref:operations:services/instance-sizing.adoc[Instance sizing]
+- xref:concepts:multi-region.adoc[Multi-region operations]
+- xref:operations:regions/setup.adoc[Multi-region setup]
+- xref:operations:technical-overview.adoc[AAO technical overview]

@@ -68,6 +68,7 @@
         <!-- These are dependent on runtime environment and cannot be customized by users -->
         <maven.compiler.release>21</maven.compiler.release>
         <akka-runtime.version>REPLACED_BY_BUILD</akka-runtime.version>
+        <akka-protocol.version>REPLACED_BY_BUILD</akka-protocol.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skip.deploy>true</skip.deploy>
@@ -83,6 +84,8 @@
         <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
 
         <protobuf-java.version>REPLACED_BY_BUILD</protobuf-java.version>
+        <jackson.version>REPLACED_BY_BUILD</jackson.version>
+        <jackson-annotations.version>REPLACED_BY_BUILD</jackson-annotations.version>
     </properties>
 
     <build>
@@ -146,6 +149,12 @@
                                         <!-- tag for generated image -->
                                         <tag>${docker.tag}</tag>
                                     </tags>
+                                    <!-- image metadata for SDK and runtime compatibility checks -->
+                                    <labels>
+                                        <io.akka.sdk.version>${akka-javasdk.version}</io.akka.sdk.version>
+                                        <io.akka.sdk.expected-runtime>${akka-runtime.version}</io.akka.sdk.expected-runtime>
+                                        <io.akka.sdk.protocol>${akka-protocol.version}</io.akka.sdk.protocol>
+                                    </labels>
                                     <assembly>
                                         <inline>
                                             <dependencySets>
@@ -477,7 +486,7 @@
                                 </goals>
                                 <configuration>
                                     <source>
-                                        log.warn('The 'it' profile is deprecated. It will be removed in future versions. Integration tests only need `mvn verify` to run.')
+                                        log.warn('The \'it\' profile is deprecated. It will be removed in future versions. Integration tests only need `mvn verify` to run.')
                                     </source>
                                 </configuration>
                             </execution>
@@ -683,6 +692,12 @@
                                                 <!-- tag for generated image -->
                                                 <tag>${docker.tag}</tag>
                                             </tags>
+                                            <!-- image metadata for SDK and runtime compatibility checks -->
+                                            <labels>
+                                                <io.akka.sdk.version>${akka-javasdk.version}</io.akka.sdk.version>
+                                                <io.akka.sdk.expected-runtime>${akka-runtime.version}</io.akka.sdk.expected-runtime>
+                                                <io.akka.sdk.protocol>${akka-protocol.version}</io.akka.sdk.protocol>
+                                            </labels>
                                             <entryPoint>
                                                 <exec>
                                                     <arg>java</arg>
@@ -755,6 +770,45 @@
                 <groupId>io.akka</groupId>
                 <artifactId>akka-runtime-dev_2.13</artifactId>
                 <version>${akka-runtime.version}</version>
+            </dependency>
+            <!-- The runtime provides Jackson, and its version takes precedence on the deployed
+                 classpath. Hold the whole module family at that version so that a transitive
+                 dependency, such as a langchain4j model provider, cannot pull a service onto a
+                 newer Jackson than the runtime can load. -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson-annotations.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-parameter-names</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-scala_2.13</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

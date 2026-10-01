@@ -5,6 +5,17 @@
 *** xref:operations:akka-platform.adoc[Akka Automated Operations]
 
 **** xref:operations:technical-overview.adoc[Technical Overview]
+***** BYOC
+****** xref:operations:technical-overview/byoc.adoc[Getting started]
+****** xref:operations:technical-overview/byoc-aws.adoc[AWS]
+****** xref:operations:technical-overview/byoc-azure.adoc[Azure]
+****** xref:operations:technical-overview/byoc-gcp.adoc[GCP]
+***** BYOK8s
+****** xref:operations:technical-overview/byok8s-requirements.adoc[Getting started]
+****** xref:operations:technical-overview/byok8s-aws.adoc[AWS]
+****** xref:operations:technical-overview/byok8s-azure.adoc[Azure]
+****** xref:operations:technical-overview/byok8s-gcp.adoc[GCP]
+***** xref:operations:technical-overview/data-flows.adoc[Data flows]
 
 **** xref:operations:organizations/index.adoc[]
 ***** xref:operations:organizations/manage-users.adoc[Manage users]
@@ -24,6 +35,7 @@
 ****** xref:operations:projects/broker-azure-eventhubs.adoc[Azure Event Hubs]
 ***** xref:operations:projects/secrets.adoc[]
 ***** xref:operations:projects/external-secrets.adoc[]
+***** xref:operations:projects/network-policies.adoc[]
 
 **** xref:operations:services/index.adoc[]
 ***** xref:operations:services/deploy-service.adoc[]
@@ -62,6 +74,7 @@
 
 *** xref:operations:operator-best-practices.adoc[]
 *** xref:operations:production-readiness/index.adoc[]
+**** xref:operations:production-readiness/choosing-your-environment.adoc[]
 **** Dedicated
 ***** xref:operations:production-readiness/dedicated/shared-responsibility.adoc[]
 ***** xref:operations:production-readiness/dedicated/raci.adoc[]

@@ -127,7 +127,7 @@ private[javasdk] final case class AgentClientImpl(
                   .map { reply =>
                     reply.exceptionPayload match {
                       case Some(value) =>
-                        //rethrowing to catch it on the component client invocation level
+                        // rethrowing to catch it on the component client invocation level
                         throw serializer.json.exceptionFromBytes(value)
                       case None =>
                         // Note: not Kalix JSON encoded here, regular/normal utf8 bytes

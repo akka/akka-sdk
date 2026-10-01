@@ -331,7 +331,7 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
     }
 
     "add version number to contentType" in {
-      //new codec to avoid collision with SimpleClass
+      // new codec to avoid collision with SimpleClass
       val encoded = new JsonSerializer().toBytes(SimpleClassUpdated("abc", 10, 123))
       encoded.contentType shouldBe jsonContentTypeWith(
         "akka.javasdk.impl.serialization.JsonSerializationSpec$SimpleClassUpdated#1")
@@ -353,7 +353,7 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
     }
 
     "fail with the same type name" in {
-      //fill the cache
+      // fill the cache
       serializer.toBytes(Dog("abc"))
       assertThrows[IllegalStateException] {
         // both have the same type name "animal"
@@ -394,11 +394,11 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
     }
 
     "decode message with new version" in {
-      //old schema
+      // old schema
       val value = SimpleClass("abc", 10)
       val encoded = new JsonSerializer().toBytes(value)
 
-      //new schema, simulating restart
+      // new schema, simulating restart
       val messageCodecAfterRestart = new JsonSerializer()
       messageCodecAfterRestart.contentTypeFor(classOf[SimpleClassUpdated])
       val decoded = messageCodecAfterRestart.fromBytes(encoded)

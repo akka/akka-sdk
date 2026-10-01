@@ -7,6 +7,7 @@ package akka.javasdk.impl
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.net.InetSocketAddress
 import java.time.Instant
 import java.util
 import java.util.Locale
@@ -28,6 +29,7 @@ import scala.util.control.NonFatal
 import akka.Done
 import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
+import akka.actor.typed.DispatcherSelector
 import akka.annotation.InternalApi
 import akka.grpc.internal.JavaMetadataImpl
 import akka.grpc.javadsl.AkkaGrpcClient
@@ -137,10 +139,13 @@ import akka.runtime.sdk.spi.SpiDevObjectStorageFilesystemBucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsBucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsNativeCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsServiceAccountKeyCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3AccessStyle
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3PathAccessStyle
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3VirtualHostAccessStyle
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup
@@ -179,6 +184,7 @@ object SdkRunner {
 
   val FutureDone: Future[Done] = Future.successful(Done)
 
+  @nowarn("msg=deprecated")
   def extractSpiSettings(applicationConf: Config): SpiSettings = {
     val eventSourcedEntitySnapshotEvery = applicationConf.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
     val cleanupDeletedEntityAfter =
@@ -196,23 +202,24 @@ object SdkRunner {
     val sanitizationSettings = Sanitization.loadSettings(applicationConf)
 
     val devModeSettings =
-      if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled")) {
+      Option.when(applicationConf.getBoolean("akka.javasdk.dev-mode.enabled")) {
         val backofficeSettings = BackofficeSettingsLoader.loadBackofficeSettings(applicationConf)
         val objectStorageBuckets =
           extractDevObjectStorageBuckets(applicationConf.getConfig("akka.javasdk.dev-mode.object-storage"))
-        Some(
-          new SpiDevModeSettings(
-            httpPort = applicationConf.getInt("akka.javasdk.dev-mode.http-port"),
-            aclEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.acl.enabled"),
-            persistenceEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.persistence.enabled"),
-            serviceName = applicationConf.getString("akka.javasdk.dev-mode.service-name"),
-            eventingSupport = extractBrokerConfig(applicationConf.getConfig("akka.javasdk.dev-mode.eventing")),
-            mockedEventing = SpiMockedEventingSettings.empty,
-            testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
-            selfServiceName = None,
-            backoffice = backofficeSettings,
-            objectStorageBuckets = objectStorageBuckets))
-      } else None
+        new SpiDevModeSettings(
+          httpPort = applicationConf.getInt("akka.javasdk.dev-mode.http-port"),
+          aclEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.acl.enabled"),
+          persistenceEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.persistence.enabled"),
+          serviceName = applicationConf.getString("akka.javasdk.dev-mode.service-name"),
+          eventingSupport = extractBrokerConfig(applicationConf.getConfig("akka.javasdk.dev-mode.eventing")),
+          mockedEventing = SpiMockedEventingSettings.empty,
+          testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
+          selfServiceName = None,
+          backoffice = backofficeSettings,
+          objectStorageBuckets = objectStorageBuckets,
+          // running locally binds the configured port; only the testkit asks for an assigned one
+          ephemeralHttpPort = false)
+      }
 
     val agentInteractionLogEnabled =
       devModeSettings.isDefined || // always enabled in dev mode
@@ -239,11 +246,28 @@ object SdkRunner {
         val name = c.getString("name")
         c.getString("provider") match {
           case "filesystem" =>
-            val directory = if (c.hasPath("directory")) Some(c.getString("directory")) else None
+            val directory = Option.when(c.hasPath("directory")) {
+              c.getString("directory")
+            }
             new SpiDevObjectStorageFilesystemBucketConfig(name, directory)
           case "s3" =>
             val creds = parseDevS3Credentials(name, c)
-            new SpiDevObjectStorageS3BucketConfig(name, c.getString("bucket"), c.getString("region"), creds)
+            // endpoint-url is the address of an S3-compatible service (e.g. MinIO). Without it the
+            // endpoint comes from the region, which addresses Amazon S3.
+            val endpointUrl = Option.when(c.hasPath("endpoint-url")) {
+              c.getString("endpoint-url")
+            }
+            val accessStyle =
+              Option.when(c.hasPath("access-style")) {
+                parseDevS3AccessStyle(name, c.getString("access-style"))
+              }
+            new SpiDevObjectStorageS3BucketConfig(
+              name,
+              c.getString("bucket"),
+              c.getString("region"),
+              creds,
+              endpointUrl,
+              accessStyle)
           case "gcs" =>
             val creds = parseDevGcsCredentials(name, c)
             new SpiDevObjectStorageGcsBucketConfig(name, c.getString("bucket"), creds)
@@ -256,6 +280,15 @@ object SdkRunner {
           s"Expected object in akka.javasdk.dev-mode.object-storage.buckets, got [$other]")
     }
   }
+
+  private def parseDevS3AccessStyle(bucketName: String, accessStyle: String): SpiDevObjectStorageS3AccessStyle =
+    accessStyle match {
+      case "virtual" => SpiDevObjectStorageS3VirtualHostAccessStyle
+      case "path"    => SpiDevObjectStorageS3PathAccessStyle
+      case other =>
+        throw new IllegalArgumentException(
+          s"Unknown S3 access style [$other] for dev bucket [$bucketName]. Valid: virtual, path")
+    }
 
   private def parseDevS3Credentials(bucketName: String, c: com.typesafe.config.Config) = {
     if (!c.hasPath("credentials") || c.getValue("credentials").unwrapped() == "workload-identity")
@@ -395,7 +428,8 @@ class SdkRunner private (
         startContext.sanitizer,
         httpMockLookup,
         grpcMockLookup,
-        startContext.inMemorySpanExporter)
+        startContext.inMemorySpanExporter,
+        startContext.httpEndpointBound)
       Future.successful(app.spiComponents)
     } catch {
       case NonFatal(ex) =>
@@ -446,7 +480,11 @@ private[javasdk] object Sdk {
       overrideModelProvider: OverrideModelProvider,
       serializer: Serializer,
       sanitizer: Sanitizer,
-      inMemorySpanExporter: Option[InMemorySpanExporter])
+      inMemorySpanExporter: Option[InMemorySpanExporter],
+      // Completed by the runtime with the address its HTTP endpoint was bound to, see StartContext. Carried
+      // here for the testkit, which awaits it from the thread that started the testkit. Nothing in the SDK
+      // awaits it, because the runtime binds the endpoint only after preStart has returned.
+      httpEndpointBound: Future[InetSocketAddress])
 
   private val platformManagedDependency = Set[Class[_]](
     classOf[ComponentClient],
@@ -474,6 +512,23 @@ private[javasdk] object Sdk {
         if (rethrow) throw ex
         else null.asInstanceOf[T]
     }
+
+  // CoordinatedShutdown calls task functions inline and starts the phase timeout only once every task has
+  // returned its Future. The user hook therefore runs on a blocking dispatcher, so a hook that blocks
+  // delays the service-stop phase at most until its timeout instead of stalling all later phases.
+  private[impl] def onShutdownTask(setup: ServiceSetup, blockingEc: ExecutionContext): () => Future[Done] = { () =>
+    SdkRunner.userServiceLog.info("Running onShutdown lifecycle hook")
+    val started = System.nanoTime()
+    Future {
+      runUserCallback(setup, "onShutdown()", rethrow = false) {
+        setup.onShutdown()
+      }
+      SdkRunner.userServiceLog.debug(
+        "onShutdown lifecycle hook completed in [{}] ms",
+        (System.nanoTime() - started) / 1000000)
+      Done
+    }(blockingEc)
+  }
 }
 
 /**
@@ -499,7 +554,8 @@ private final class Sdk(
     httpMockLookup: String => Option[
       java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
     grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient],
-    inMemorySpanExporter: Option[InMemorySpanExporter]) {
+    inMemorySpanExporter: Option[InMemorySpanExporter],
+    httpEndpointBound: Future[InetSocketAddress]) {
 
   import Sdk._
 
@@ -585,11 +641,11 @@ private final class Sdk(
     if (clz.hasAnnotation[Component]) {
       true
     } else {
-      //additional check to skip logging for endpoints
+      // additional check to skip logging for endpoints
       if (!clz.hasAnnotation[HttpEndpoint] && !clz.hasAnnotation[GrpcEndpoint] && !clz.hasAnnotation[McpEndpoint]) {
-        //this could happen when we remove the @Component annotation from the class,
-        //the file descriptor generated by annotation processor might still have this class entry,
-        //for instance when working with IDE and incremental compilation (without clean)
+        // this could happen when we remove the @Component annotation from the class,
+        // the file descriptor generated by annotation processor might still have this class entry,
+        // for instance when working with IDE and incremental compilation (without clean)
         logger.warn("Ignoring component [{}] as it does not have the @Component annotation", clz.getName)
       }
       false
@@ -1129,7 +1185,7 @@ private final class Sdk(
             sideEffectingComponentInjects(None)))
 
       case Some(serviceClassClass) =>
-        //just wiring the class
+        // just wiring the class
         wiredInstance[Any]("Service Setup", serviceClassClass.asInstanceOf[Class[Any]])(
           sideEffectingComponentInjects(None))
         None
@@ -1183,7 +1239,8 @@ private final class Sdk(
               overrideModelProvider,
               serializer,
               sanitizer,
-              inMemorySpanExporter))
+              inMemorySpanExporter,
+              httpEndpointBound))
           Future.successful(Done)
         case Some(setup) =>
           if (dependencyProviderOpt.nonEmpty) {
@@ -1199,15 +1256,8 @@ private final class Sdk(
           val onShutdownOverridden =
             setup.getClass.getMethod("onShutdown").getDeclaringClass != classOf[ServiceSetup]
           if (onShutdownOverridden) {
-            CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceStop, "user-service-on-shutdown") {
-              () =>
-                SdkRunner.userServiceLog.info("Running onShutdown lifecycle hook")
-                // do not fail the shutdown phase
-                runUserCallback(setup, "onShutdown()", rethrow = false) {
-                  setup.onShutdown()
-                }
-                SdkRunner.FutureDone
-            }
+            CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceStop, "user-service-on-shutdown")(
+              onShutdownTask(setup, system.dispatchers.lookup(DispatcherSelector.blocking())))
           }
           startedPromise.trySuccess(
             StartupContext(
@@ -1221,7 +1271,8 @@ private final class Sdk(
               overrideModelProvider,
               serializer,
               sanitizer,
-              inMemorySpanExporter))
+              inMemorySpanExporter,
+              httpEndpointBound))
           Future.successful(Done)
       }
     }
