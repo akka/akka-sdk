@@ -38,7 +38,7 @@ You can still recover from a disaster in a single region. Databases and Kubernet
 
 === Multi-region, optional
 
-Multi-region spreads your environment across two or more regions, with data replicated between them. It is the option to choose for disaster recovery across regions and for active-active operation, where more than one region accepts requests. It protects against a full-region outage: rare, but one that can last hours if it happens.
+Multi-region spreads your environment across two or more regions, with data replicated between them. It is the option to choose for disaster recovery across regions and for serving requests from more than one region. It protects against a full-region outage: rare, but one that can last hours if it happens.
 
 Multi-region is required for the full Akka availability guarantee. It applies to services deployed in two or more regions with replication and HA/DR active. See the https://trust.akka.io/policies/Akka%20Availability%20Guarantee%20Policy.pdf[Availability Guarantee Policy] for its conditions.
 
@@ -82,9 +82,6 @@ Discuss your workload with your Akka account team, or contact mailto:security@ak
 
 | Failover
 | Switching from a failed component to a healthy copy. Between zones this is automatic. Between regions it is an operator action.
-
-| Active-active
-| More than one region accepts requests for the same data. This is a multi-region mode.
 
 | Multi-zone
 | Spread across availability zones inside one region. The default.
