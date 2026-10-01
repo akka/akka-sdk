@@ -34,7 +34,7 @@ A region is a geographic area, such as Ireland or northern Virginia. An availabi
 
 This is what many teams mean by high availability. You do not need a second region to survive the loss of a data center. The full Akka availability guarantee, however, requires multi-region.
 
-A single region still has disaster recovery. Databases and Kubernetes resources are backed up, with a persistence recovery point of 5 minutes and a recovery time of 24 hours (see xref:operations:technical-overview.adoc[]). If the whole region is lost, you restore from backup rather than moving to a second region that already holds your data.
+You can still recover from a disaster in a single region. Databases and Kubernetes resources are backed up, with a persistence recovery point of 5 minutes and a recovery time of 24 hours (see xref:operations:technical-overview.adoc[]). If the whole region is lost, you restore from backup rather than moving to a second region that already holds your data.
 
 === Multi-region, optional
 
