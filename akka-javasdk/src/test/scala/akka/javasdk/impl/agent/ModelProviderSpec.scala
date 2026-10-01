@@ -4,7 +4,11 @@
 
 package akka.javasdk.impl.agent
 
+import scala.jdk.CollectionConverters._
+
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
+import akka.http.javadsl.model.HttpHeader
+import akka.http.javadsl.model.headers.RawHeader
 import akka.javasdk.agent.ModelProvider
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
@@ -30,6 +34,11 @@ object ModelProviderSpec {
         gpt-o3 {
           model-name = "o3"
           max-completion-tokens = 200000
+        }
+
+        gateway-openai = $${akka.javasdk.agent.openai}
+        gateway-openai {
+          additional-model-request-headers = ["Authorization:Bearer configured-token"]
         }
       }
     }
@@ -229,6 +238,62 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
       provider.modelName() shouldBe "no-config-model-name"
     }
 
+  }
+
+  "Additional model request headers" should {
+
+    def spiHeaders(modelProvider: ModelProvider): Seq[(String, String)] =
+      AgentImpl
+        .toSpiModelProvider(modelProvider, config, "myagent")
+        .modelSettings
+        .additionalModelRequestHeaders
+        .map(h => h.name -> h.value)
+
+    def fromConfigWith(headers: HttpHeader*): ModelProvider =
+      ModelProvider.fromConfig("gateway-openai").withAdditionalModelRequestHeaders(headers.toList.asJava)
+
+    "keep the configured headers when fromConfig states another one" in {
+      spiHeaders(fromConfigWith(RawHeader.create("X-Request-Id", "r-1"))) shouldBe Seq(
+        "Authorization" -> "Bearer configured-token",
+        "X-Request-Id" -> "r-1")
+    }
+
+    "keep the configured headers when fromConfig states none" in {
+      spiHeaders(ModelProvider.fromConfig("gateway-openai")) shouldBe Seq("Authorization" -> "Bearer configured-token")
+    }
+
+    "let a header stated in code replace the configured one with the same name" in {
+      spiHeaders(fromConfigWith(RawHeader.create("Authorization", "Bearer from-code"))) shouldBe Seq(
+        "Authorization" -> "Bearer from-code")
+    }
+
+    "compare header names ignoring case" in {
+      spiHeaders(fromConfigWith(RawHeader.create("AUTHORIZATION", "Bearer from-code"))) shouldBe Seq(
+        "AUTHORIZATION" -> "Bearer from-code")
+      spiHeaders(fromConfigWith(RawHeader.create("authorization", "Bearer from-code"))) shouldBe Seq(
+        "authorization" -> "Bearer from-code")
+    }
+
+    "replace the configured headers for a provider built in code" in {
+      val provider = ModelProvider.OpenAi
+        .fromConfig(config.getConfig("akka.javasdk.agent.gateway-openai"))
+        .withAdditionalModelRequestHeaders(List[HttpHeader](RawHeader.create("X-Request-Id", "r-1")).asJava)
+      spiHeaders(provider) shouldBe Seq("X-Request-Id" -> "r-1")
+    }
+
+    "tell a custom provider to override the wither" in {
+      val exc = intercept[UnsupportedOperationException] {
+        new NoConfigMyModelProvider().withAdditionalModelRequestHeaders(
+          List[HttpHeader](RawHeader.create("X-Request-Id", "r-1")).asJava)
+      }
+      exc.getMessage should include("builds its own chat model")
+    }
+
+    "keep the constructor taking only a config path" in {
+      val provider = new ModelProvider.FromConfig("gateway-openai")
+      provider.additionalModelRequestHeaders() shouldBe empty
+      spiHeaders(provider) shouldBe Seq("Authorization" -> "Bearer configured-token")
+    }
   }
 
 }
