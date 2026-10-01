@@ -24,8 +24,6 @@ Akka provisions a new environment from one of four starting shapes:
 | Minimal | Lowest | 1 active (of 3) | 1 | Spot | Throwaway dev and test
 |===
 
-Prod and Stage differ in the number of platform replicas. Minimal runs a single active zone, so use it only for work you can lose.
-
 These are starting points your Akka account team selects and tunes with you, not settings you configure yourself. This covers the platform infrastructure only. Sizing an individual service, its instance type, instance count, and autoscaling, is a separate, self-service setting; see xref:operations:services/instance-sizing.adoc[].
 
 == Choosing your availability level
@@ -42,7 +40,7 @@ A single region is also not a region without disaster recovery. Single-region da
 
 Multi-region spreads your environment across two or more regions, with data replicated between them. It is the option to choose for disaster recovery across regions and for active-active operation, where more than one region accepts requests. It protects against a full-region outage: rare, but one that can last hours if it happens.
 
-Multi-region is required for the full Akka availability guarantee. It applies to services deployed in two or more regions with replication and HA/DR active. See the Availability Guarantee Policy on the https://trust.akka.io[Akka Trust Center] for its conditions.
+Multi-region is required for the full Akka availability guarantee. It applies to services deployed in two or more regions with replication and HA/DR active. Ask your Akka account team for the Availability Guarantee Policy and its conditions.
 
 Multi-region also roughly doubles infrastructure cost, adds cross-region latency, and requires your application to tolerate short data-sync delays. Moving traffic away from a failed region is an operator action with the Akka CLI, not an automatic switch. See xref:concepts:multi-region.adoc[] for how Akka replicates data across regions, and xref:operations:regions/setup.adoc[] for adding a region to a project.
 
