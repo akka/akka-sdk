@@ -15,7 +15,7 @@ object SamplesCompilationProject {
   private val LangChain4JVersion = "1.1.0"
   private val additionalDeps = Map(
     "doc-snippets" -> Seq("com.google.api.grpc" % "proto-google-common-protos" % "2.77.0" % "protobuf"),
-    "spring-dependency-injection" -> Seq("org.springframework" % "spring-context" % "6.2.19"),
+    "spring-dependency-injection" -> Seq("org.springframework" % "spring-context" % "7.0.9"),
     "ask-akka-agent" -> Seq(
       "dev.langchain4j" % "langchain4j-open-ai" % LangChain4JVersion,
       "dev.langchain4j" % "langchain4j" % LangChain4JVersion,
