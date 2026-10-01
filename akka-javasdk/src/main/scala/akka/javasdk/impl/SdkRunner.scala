@@ -29,6 +29,7 @@ import scala.util.control.NonFatal
 import akka.Done
 import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
+import akka.actor.typed.DispatcherSelector
 import akka.annotation.InternalApi
 import akka.grpc.internal.JavaMetadataImpl
 import akka.grpc.javadsl.AkkaGrpcClient
@@ -511,6 +512,23 @@ private[javasdk] object Sdk {
         if (rethrow) throw ex
         else null.asInstanceOf[T]
     }
+
+  // CoordinatedShutdown calls task functions inline and starts the phase timeout only once every task has
+  // returned its Future. The user hook therefore runs on a blocking dispatcher, so a hook that blocks
+  // delays the service-stop phase at most until its timeout instead of stalling all later phases.
+  private[impl] def onShutdownTask(setup: ServiceSetup, blockingEc: ExecutionContext): () => Future[Done] = { () =>
+    SdkRunner.userServiceLog.info("Running onShutdown lifecycle hook")
+    val started = System.nanoTime()
+    Future {
+      runUserCallback(setup, "onShutdown()", rethrow = false) {
+        setup.onShutdown()
+      }
+      SdkRunner.userServiceLog.debug(
+        "onShutdown lifecycle hook completed in [{}] ms",
+        (System.nanoTime() - started) / 1000000)
+      Done
+    }(blockingEc)
+  }
 }
 
 /**
@@ -1238,15 +1256,8 @@ private final class Sdk(
           val onShutdownOverridden =
             setup.getClass.getMethod("onShutdown").getDeclaringClass != classOf[ServiceSetup]
           if (onShutdownOverridden) {
-            CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceStop, "user-service-on-shutdown") {
-              () =>
-                SdkRunner.userServiceLog.info("Running onShutdown lifecycle hook")
-                // do not fail the shutdown phase
-                runUserCallback(setup, "onShutdown()", rethrow = false) {
-                  setup.onShutdown()
-                }
-                SdkRunner.FutureDone
-            }
+            CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceStop, "user-service-on-shutdown")(
+              onShutdownTask(setup, system.dispatchers.lookup(DispatcherSelector.blocking())))
           }
           startedPromise.trySuccess(
             StartupContext(
