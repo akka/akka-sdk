@@ -6,6 +6,7 @@ package akka.javasdk.testkit.eval;
 
 import akka.japi.function.Function2;
 import akka.javasdk.agent.Agent;
+import akka.javasdk.testkit.AgentTrace;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.eval.Evaluator.EvalResult;
 import java.io.IOException;
@@ -331,14 +332,14 @@ public final class ExperimentRunner {
       try {
         outcome = target.call(turn);
       } catch (RuntimeException e) {
-        outcome = EvalTarget.Outcome.failed(e, List.of());
+        outcome = EvalTarget.Outcome.failed(e, AgentTrace.NONE);
       }
 
       return switch (outcome) {
         case EvalTarget.Outcome.Failed failed ->
             new CaseResult(
                 evalCase.id(),
-                new Interaction(evalCase.commandText(), "", failed.toolCalls()),
+                new Interaction(evalCase.commandText(), "", failed.trace()),
                 List.of(EvalResult.fail(failed.reason()).attributedTo(Evaluators.TARGET)));
         case EvalTarget.Outcome.Answered answered -> {
           var interaction = answered.interaction();
