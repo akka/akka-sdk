@@ -44,9 +44,14 @@ These pieces play different roles and work together:
 * The xref:sdk:evaluators.adoc#_the_ledger_client[ledger] records every interaction immutably, and evaluators read from it.
 
 [#control-ids]
-A control matrix lists the obligations of a service and the mechanism that meets each one, and gives each of these controls an id.
+=== Control IDs
+
+A control matrix lists the controls of a service. A control is an obligation and the mechanism that meets it. Each control has an id.
 Name the control that a guardrail, sanitizer or evaluator implements with a `control-id` key in its configuration entry.
-When the service starts, the runtime records the guardrails, sanitizers and evaluators of the service in the ledger, each with its control id and its configuration.
+
+When a node of the service starts, the runtime writes one ledger record that lists the controls the node runs: each sanitizer, each guardrail that an agent uses, and each evaluator.
+Each control in the record has its control id.
+A guardrail or a sanitizer also has its configuration, masked by the log sanitizers.
 
 == Compliance Certifications
 

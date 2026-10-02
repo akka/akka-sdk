@@ -179,7 +179,7 @@ object SanitizerProviderSpec {
     """)
     .withFallback(ConfigFactory.load())
 
-  // Every entry masks at an agent point and at log messages, so each is on both lists handed to the runtime.
+  // Every entry masks at an agent point and at log messages, so the SDK hands each one to the runtime on both lists.
   private val controlIdConfig = ConfigFactory
     .parseString(s"""
     akka.javasdk.sanitization.sanitizers {

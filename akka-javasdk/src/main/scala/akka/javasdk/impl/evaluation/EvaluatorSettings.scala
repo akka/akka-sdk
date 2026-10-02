@@ -162,7 +162,7 @@ private[impl] object EvaluatorSettings {
 /**
  * INTERNAL API
  *
- * What the runtime needs from the configuration of one evaluator.
+ * The agent bindings and the control id of one evaluator.
  */
 @InternalApi
 private[impl] final case class ConfiguredEvaluator(bindings: Seq[SpiEvaluator.Binding], controlId: Option[String]) {
