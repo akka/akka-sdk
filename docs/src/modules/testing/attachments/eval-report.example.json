@@ -1,0 +1,122 @@
+{
+  "format": "akka-eval-report",
+  "formatVersion": 1,
+  "name": "support-agent-quality",
+  "startedAt": "2026-10-01T10:15:30.123Z",
+  "finishedAt": "2026-10-01T10:16:02.456Z",
+  "gate": {
+    "passed": false,
+    "detail": "pass rate 0.50 over 2 cases, required 0.90"
+  },
+  "summary": {
+    "cases": 2,
+    "passedCases": 1,
+    "failedCases": 1,
+    "passRate": 0.5
+  },
+  "evaluators": [
+    { "evaluator": "tools", "passed": 1, "failed": 0, "inconclusive": 0 },
+    { "evaluator": "reply-contains", "passed": 1, "failed": 0, "inconclusive": 0 },
+    { "evaluator": "tool-arguments", "passed": 0, "failed": 1, "inconclusive": 0 },
+    { "evaluator": "tool-results", "passed": 0, "failed": 0, "inconclusive": 1 }
+  ],
+  "spend": {
+    "casesWithEvidence": 2,
+    "modelCalls": 2,
+    "inputTokens": 200,
+    "outputTokens": 40,
+    "latencyMs": 90
+  },
+  "cases": [
+    {
+      "id": "shipped",
+      "passed": true,
+      "interaction": {
+        "input": "Where is o_42?",
+        "userMessage": "Where is o_42?",
+        "reply": "Order o_42 is shipped.",
+        "finalModelText": "Order o_42 is shipped.",
+        "latencyMs": 45,
+        "inputTokens": 100,
+        "outputTokens": 20,
+        "blocked": false,
+        "toolCalls": [
+          {
+            "name": "getOrder",
+            "arguments": { "orderId": "o_42" },
+            "result": "{\"status\":\"shipped\"}",
+            "error": null
+          }
+        ],
+        "modelCalls": [
+          {
+            "model": "gpt-4o",
+            "provider": "openai",
+            "finishReasons": ["STOP"],
+            "inputTokens": 100,
+            "outputTokens": 20,
+            "durationMs": 40,
+            "inputMessages": "[SystemMessage: You are a support agent...] [UserMessage: Where is o_42?]",
+            "outputMessages": "[AiMessage: Order o_42 is shipped.]"
+          }
+        ],
+        "guardrails": [
+          { "name": "pii", "category": "privacy", "passed": true, "explanation": "" }
+        ]
+      },
+      "results": [
+        { "evaluator": "tools", "verdict": "PASS", "detail": "" },
+        { "evaluator": "reply-contains", "verdict": "PASS", "detail": "" }
+      ]
+    },
+    {
+      "id": "wrong-order",
+      "passed": false,
+      "interaction": {
+        "input": "Where is o_43?",
+        "userMessage": "Where is o_43?",
+        "reply": "Order o_42 is shipped.",
+        "finalModelText": "Order o_42 is shipped.",
+        "latencyMs": 45,
+        "inputTokens": 100,
+        "outputTokens": 20,
+        "blocked": false,
+        "toolCalls": [
+          {
+            "name": "getOrder",
+            "arguments": { "orderId": "o_42" },
+            "result": "{\"status\":\"shipped\"}",
+            "error": null
+          }
+        ],
+        "modelCalls": [
+          {
+            "model": "gpt-4o",
+            "provider": "openai",
+            "finishReasons": ["STOP"],
+            "inputTokens": 100,
+            "outputTokens": 20,
+            "durationMs": 40,
+            "inputMessages": "[SystemMessage: You are a support agent...] [UserMessage: Where is o_43?]",
+            "outputMessages": "[AiMessage: Order o_42 is shipped.]"
+          }
+        ],
+        "guardrails": [
+          { "name": "pii", "category": "privacy", "passed": true, "explanation": "" }
+        ]
+      },
+      "results": [
+        {
+          "evaluator": "tool-arguments",
+          "verdict": "FAIL",
+          "detail": "getOrder(orderId) expected o_43, was [o_42]"
+        },
+        {
+          "evaluator": "tool-results",
+          "verdict": "INCONCLUSIVE",
+          "detail": "issueRefund: no recorded result"
+        }
+      ]
+    }
+  ]
+}

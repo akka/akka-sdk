@@ -63,7 +63,7 @@ Assert on the report, and use the rendered report as the failure message.
 | The report as text.
 
 | `reportFile()`
-| The JSON file `run()` wrote, see <<json-report>>. Empty when the experiment was run with `withoutReportFile()` or the file could not be written.
+| The JSON file `run()` wrote to `target/eval-reports/<name>.json`, with every case and its evidence, for tools that render their own reports. See the xref:attachment$eval-report.example.json[example report]. `reportDirectory(path)` on the experiment changes the directory, `withoutReportFile()` writes none. Empty when no file was written.
 |===
 
 A rendered report of a passing batch:
@@ -113,114 +113,6 @@ case wrong-order FAILED
 A failed case prints the reply, the tool calls with their arguments, the model spend, and every result with its detail.
 When the agent mapped the model's text into the reply, a `model text:` line shows the model's own text as well.
 The reply is cut to one line of at most 200 characters.
-
-[#json-report]
-== The JSON report
-
-`run()` writes the run as one JSON document to `target/eval-reports/<name>.json`, for tools that collect runs or render their own reports.
-The path is relative to the working directory, which is the module directory under Maven.
-The report is named after the test method and the start time, or after the name given with `name(...)`.
-`reportDirectory(path)` writes the file somewhere else, `withoutReportFile()` writes none.
-A file that cannot be written is logged as a warning and does not fail the run.
-
-[source,java]
-----
-var report =
-    experimentRunner
-        .cases(cases)
-        .agent(SupportAgent::ask)
-        .name("support-agent-quality")
-        .gate(Gate.passRateShouldBeAtLeast(0.9))
-        .run();
-assertThat(report.passed()).withFailMessage(report::render).isTrue();
-----
-
-The document has the format `akka-eval-report`, version 1.
-Every property is always present.
-Absent evidence is an empty string, an empty array, or `null` for a tool result or error.
-Durations are integer milliseconds, timestamps are ISO-8601 in UTC.
-A reader ignores properties it does not know.
-`formatVersion` increments when a property changes meaning or is removed.
-The testkit jar carries the JSON Schema at `akka/javasdk/testkit/eval/eval-report.schema.json`.
-
-[source,json]
-----
-{
-  "format": "akka-eval-report",
-  "formatVersion": 1,
-  "name": "support-agent-quality",
-  "startedAt": "2026-10-01T10:15:30.123Z",
-  "finishedAt": "2026-10-01T10:16:02.456Z",
-  "gate": { "passed": false, "detail": "pass rate 0.50 over 2 cases, required 0.90" },
-  "summary": { "cases": 2, "passedCases": 1, "failedCases": 1, "passRate": 0.5 },
-  "evaluators": [
-    { "evaluator": "tools", "passed": 1, "failed": 0, "inconclusive": 0 },
-    { "evaluator": "tool-arguments", "passed": 0, "failed": 1, "inconclusive": 0 }
-  ],
-  "spend": {
-    "casesWithEvidence": 2, "modelCalls": 2,
-    "inputTokens": 200, "outputTokens": 40, "latencyMs": 90
-  },
-  "cases": [
-    {
-      "id": "wrong-order",
-      "passed": false,
-      "interaction": {
-        "input": "Where is o_43?",
-        "userMessage": "Where is o_43?",
-        "reply": "Order o_42 is shipped.",
-        "finalModelText": "Order o_42 is shipped.",
-        "latencyMs": 45, "inputTokens": 100, "outputTokens": 20, "blocked": false,
-        "toolCalls": [
-          { "name": "getOrder", "arguments": { "orderId": "o_42" },
-            "result": "{\"status\":\"shipped\"}", "error": null }
-        ],
-        "modelCalls": [
-          { "model": "gpt-4o", "provider": "openai", "finishReasons": ["STOP"],
-            "inputTokens": 100, "outputTokens": 20, "durationMs": 40,
-            "inputMessages": "...", "outputMessages": "..." }
-        ],
-        "guardrails": [
-          { "name": "pii", "category": "privacy", "passed": true, "explanation": "" }
-        ]
-      },
-      "results": [
-        { "evaluator": "tool-arguments", "verdict": "FAIL",
-          "detail": "getOrder(orderId) expected o_43, was [o_42]" }
-      ]
-    }
-  ]
-}
-----
-
-[cols="1,3"]
-|===
-| Property | Content
-
-| `name`
-| The name given with `name(...)`, or the test method and the start time.
-
-| `startedAt`, `finishedAt`
-| When the run started and when the last case was evaluated.
-
-| `gate`
-| The gate verdict and its detail, the same text `render()` prints. A combined gate joins the detail of each part with a semicolon.
-
-| `summary`
-| The case counts and the pass rate.
-
-| `evaluators`
-| One entry per evaluator label, in the order the labels first appear in the cases, with the counts of passed, failed and inconclusive results. The labels are the ones the text report uses, including `target` and `setup` for a case that did not reach evaluation.
-
-| `spend`
-| Model calls, tokens and latency summed over the cases whose evidence carries model calls. All zero when no case does.
-
-| `cases`
-| One entry per case, in the order the cases were given. `interaction` carries the input, the user message the agent sent the model, the reply, the model's final text, the latency, the token sums, whether a guardrail blocked the turn, and the traced tool calls, model calls and guardrail evaluations. `results` carries one entry per evaluator with the verdict `PASS`, `FAIL` or `INCONCLUSIVE` and the detail.
-|===
-
-A case whose agent call failed has an empty reply, the tool calls made before the failure, and a single `target` result with the verdict `FAIL`.
-`modelCalls[].inputMessages` and `outputMessages` carry the full rendered messages, so the file grows with the length of the conversation.
 
 == See also
 
