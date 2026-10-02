@@ -8,6 +8,12 @@ import akka.japi.function.Function2;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.eval.Evaluator.EvalResult;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -15,9 +21,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Runs cases against an agent and collects the results. Sequential and in-process, nothing is
@@ -33,6 +42,9 @@ import java.util.stream.Collectors;
  * Experiment#run}. Without a gate every case must pass, which suits a mocked model. With a real
  * model gate on rates instead.
  *
+ * <p>{@link Experiment#run} writes the report as JSON to {@code target/eval-reports/<name>.json},
+ * see {@link EvalReport#reportFile}.
+ *
  * <p>The cases carry the command the agent's command handler takes, so the handler's own type is
  * passed through unchanged.
  *
@@ -45,6 +57,11 @@ import java.util.stream.Collectors;
  * }</pre>
  */
 public final class ExperimentRunner {
+
+  private static final Logger log = LoggerFactory.getLogger(ExperimentRunner.class);
+
+  /** Where {@link Experiment#run} writes the report file unless the experiment names another. */
+  public static final Path DEFAULT_REPORT_DIRECTORY = Path.of("target", "eval-reports");
 
   private final TestKit testKit;
 
@@ -90,9 +107,10 @@ public final class ExperimentRunner {
     return new Cases<>(testKit, List.copyOf(cases), List.of(), ToolBindings.none());
   }
 
-  // For the runner's own tests: the cases run against a scripted target instead of an agent.
+  // For the runner's own tests: the cases run against a scripted target instead of an agent, and
+  // write no report file unless the test names a directory.
   static <C> Experiment against(ExperimentCases<C> cases, EvalTarget<C> target) {
-    return ((Cases<C>) cases).target(target);
+    return ((Cases<C>) cases).target(target).withoutReportFile();
   }
 
   private record Cases<C>(
@@ -130,7 +148,14 @@ public final class ExperimentRunner {
       if (target == null) throw new IllegalArgumentException("target required");
       requireDistinctLabels();
       requireBindingsForRecordedTools();
-      return new Ready<>(cases, evaluators, bindings, target, Gate.allCasesShouldPass());
+      return new Ready<>(
+          cases,
+          evaluators,
+          bindings,
+          target,
+          Gate.allCasesShouldPass(),
+          "",
+          Optional.of(DEFAULT_REPORT_DIRECTORY));
     }
 
     private void requireDistinctLabels() {
@@ -196,19 +221,90 @@ public final class ExperimentRunner {
       List<Evaluator> evaluators,
       ToolBindings bindings,
       EvalTarget<C> target,
-      Gate gate)
+      Gate gate,
+      String name,
+      Optional<Path> reportDirectory)
       implements Experiment {
 
     @Override
     public Experiment gate(Gate gate) {
       if (gate == null) throw new IllegalArgumentException("gate required");
-      return new Ready<>(cases, evaluators, bindings, target, gate);
+      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory);
+    }
+
+    @Override
+    public Experiment name(String name) {
+      if (name == null || name.isBlank()) throw new IllegalArgumentException("name required");
+      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory);
+    }
+
+    @Override
+    public Experiment reportDirectory(Path directory) {
+      if (directory == null) throw new IllegalArgumentException("directory required");
+      return new Ready<>(cases, evaluators, bindings, target, gate, name, Optional.of(directory));
+    }
+
+    @Override
+    public Experiment withoutReportFile() {
+      return new Ready<>(cases, evaluators, bindings, target, gate, name, Optional.empty());
     }
 
     @Override
     public EvalReport run() {
+      var startedAt = Instant.now();
+      var reportName = name.isEmpty() ? defaultName(startedAt) : name;
       var results = cases.stream().map(this::evaluate).toList();
-      return new Report(results, gate.check(results));
+      var report =
+          new Report(
+              reportName, startedAt, Instant.now(), results, gate.check(results), Optional.empty());
+      return reportDirectory
+          .map(directory -> report.withReportFile(write(report, directory)))
+          .orElse(report);
+    }
+
+    // A report file that cannot be written is logged, the report itself still returns.
+    private static Optional<Path> write(Report report, Path directory) {
+      var file = directory.resolve(report.name() + ".json");
+      try {
+        Files.createDirectories(directory);
+        Files.writeString(file, EvalReportJson.render(report));
+        log.info("Eval report written to {}", file.toAbsolutePath());
+        return Optional.of(file);
+      } catch (IOException | RuntimeException e) {
+        log.warn("Eval report could not be written to {}: {}", file.toAbsolutePath(), e.toString());
+        return Optional.empty();
+      }
+    }
+
+    // The test method is the first caller outside the runner that carries a test annotation;
+    // without one, the first caller outside the runner, such as a helper in the test class.
+    private static String defaultName(Instant startedAt) {
+      var callers =
+          StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+              .walk(frames -> frames.filter(f -> !isRunnerFrame(f)).limit(64).toList());
+      var caller =
+          callers.stream()
+              .filter(Ready::isTestMethod)
+              .findFirst()
+              .or(() -> callers.stream().findFirst())
+              .map(f -> f.getDeclaringClass().getSimpleName() + "." + f.getMethodName())
+              .orElse("experiment");
+      return caller + "-" + TIMESTAMP.format(startedAt);
+    }
+
+    private static boolean isRunnerFrame(StackWalker.StackFrame frame) {
+      var runner = ExperimentRunner.class.getName();
+      return frame.getClassName().equals(runner) || frame.getClassName().startsWith(runner + "$");
+    }
+
+    private static boolean isTestMethod(StackWalker.StackFrame frame) {
+      for (var method : frame.getDeclaringClass().getDeclaredMethods()) {
+        if (!method.getName().equals(frame.getMethodName())) continue;
+        for (var annotation : method.getAnnotations()) {
+          if (TEST_ANNOTATIONS.contains(annotation.annotationType().getSimpleName())) return true;
+        }
+      }
+      return false;
     }
 
     private CaseResult evaluate(EvalCase<C> evalCase) {
@@ -268,6 +364,12 @@ public final class ExperimentRunner {
       return result.attributedTo(label);
     }
   }
+
+  private static final Set<String> TEST_ANNOTATIONS =
+      Set.of("Test", "ParameterizedTest", "RepeatedTest", "TestFactory", "TestTemplate");
+
+  private static final DateTimeFormatter TIMESTAMP =
+      DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS").withZone(ZoneOffset.UTC);
 
   private static String describe(RuntimeException e) {
     return e.getClass().getSimpleName() + (e.getMessage() == null ? "" : ": " + e.getMessage());
@@ -350,6 +452,21 @@ public final class ExperimentRunner {
   /** The batch outcome: per-case results and the gate's verdict. */
   public interface EvalReport {
 
+    /**
+     * The name given with {@link Experiment#name}, or the test method that ran the experiment and
+     * the start time, for example {@code SupportAgentEvalTest.qualityGate-20261001-101530-123}.
+     */
+    String name();
+
+    /**
+     * The file {@link Experiment#run} wrote the report to: {@code <name>.json} in the report
+     * directory, as JSON in the {@code akka-eval-report} format for tools that collect runs or
+     * render their own reports. The format is described by {@code
+     * akka/javasdk/testkit/eval/eval-report.schema.json} on the testkit classpath. Empty when the
+     * experiment was run {@link Experiment#withoutReportFile} or the file could not be written.
+     */
+    Optional<Path> reportFile();
+
     /** Whether the gate passed. */
     boolean passed();
 
@@ -363,7 +480,18 @@ public final class ExperimentRunner {
     String render();
   }
 
-  private record Report(List<CaseResult> results, Gate.Verdict verdict) implements EvalReport {
+  record Report(
+      String name,
+      Instant startedAt,
+      Instant finishedAt,
+      List<CaseResult> results,
+      Gate.Verdict verdict,
+      Optional<Path> reportFile)
+      implements EvalReport {
+
+    private Report withReportFile(Optional<Path> file) {
+      return new Report(name, startedAt, finishedAt, results, verdict, file);
+    }
 
     @Override
     public boolean passed() {
@@ -394,7 +522,8 @@ public final class ExperimentRunner {
       rates()
           .forEach(
               (evaluator, rate) -> text.append("  ").append(rate.render(evaluator)).append('\n'));
-      spend().ifPresent(line -> text.append(line).append('\n'));
+      var spend = spend();
+      if (spend.casesWithEvidence() > 0) text.append(spend.render(results.size())).append('\n');
       results.stream()
           .filter(result -> !result.passed())
           .forEach(result -> text.append(result.describe()));
@@ -402,32 +531,23 @@ public final class ExperimentRunner {
     }
 
     /** Model calls, tokens and latency summed over the cases with model calls in the evidence. */
-    private Optional<String> spend() {
+    Spend spend() {
       var traced = results.stream().filter(c -> !c.interaction().modelCalls().isEmpty()).toList();
-      if (traced.isEmpty()) return Optional.empty();
-      var modelCalls = traced.stream().mapToInt(c -> c.interaction().modelCalls().size()).sum();
-      var tokensIn = traced.stream().mapToLong(c -> c.interaction().inputTokens()).sum();
-      var tokensOut = traced.stream().mapToLong(c -> c.interaction().outputTokens()).sum();
-      var latencyTotal = traced.stream().mapToLong(c -> c.interaction().latency().toMillis()).sum();
+      if (traced.isEmpty()) return Spend.NONE;
       var slowest =
           traced.stream().max(Comparator.comparing(c -> c.interaction().latency())).orElseThrow();
-      return Optional.of(
-          String.format(
-              Locale.ROOT,
-              "spend: %d model calls, %d tokens in, %d out, %d ms in total, slowest %s at %d ms,"
-                  + " over %d/%d cases with evidence",
-              modelCalls,
-              tokensIn,
-              tokensOut,
-              latencyTotal,
-              slowest.caseId(),
-              slowest.interaction().latency().toMillis(),
-              traced.size(),
-              results.size()));
+      return new Spend(
+          traced.size(),
+          traced.stream().mapToInt(c -> c.interaction().modelCalls().size()).sum(),
+          traced.stream().mapToLong(c -> c.interaction().inputTokens()).sum(),
+          traced.stream().mapToLong(c -> c.interaction().outputTokens()).sum(),
+          traced.stream().mapToLong(c -> c.interaction().latency().toMillis()).sum(),
+          slowest.caseId(),
+          slowest.interaction().latency().toMillis());
     }
 
     /** Pass counts per evaluator, over the cases where it was conclusive. */
-    private Map<String, Rate> rates() {
+    Map<String, Rate> rates() {
       var rates = new LinkedHashMap<String, Rate>();
       for (var result : results) {
         for (var evalResult : result.evalResults()) {
@@ -440,25 +560,65 @@ public final class ExperimentRunner {
     }
   }
 
-  private static final class Rate {
+  /**
+   * The model calls, tokens and latency summed over the cases whose evidence carries model calls.
+   */
+  record Spend(
+      int casesWithEvidence,
+      int modelCalls,
+      long inputTokens,
+      long outputTokens,
+      long latencyMs,
+      String slowestCaseId,
+      long slowestLatencyMs) {
+
+    static final Spend NONE = new Spend(0, 0, 0, 0, 0, "", 0);
+
+    private String render(int cases) {
+      return String.format(
+          Locale.ROOT,
+          "spend: %d model calls, %d tokens in, %d out, %d ms in total, slowest %s at %d ms,"
+              + " over %d/%d cases with evidence",
+          modelCalls,
+          inputTokens,
+          outputTokens,
+          latencyMs,
+          slowestCaseId,
+          slowestLatencyMs,
+          casesWithEvidence,
+          cases);
+    }
+  }
+
+  /** One evaluator's verdict counts over the cases. */
+  static final class Rate {
     private int passed;
-    private int judged;
+    private int failed;
     private int inconclusive;
 
     private void count(EvalResult.Verdict verdict) {
       switch (verdict) {
-        case PASS -> {
-          passed++;
-          judged++;
-        }
-        case FAIL -> judged++;
+        case PASS -> passed++;
+        case FAIL -> failed++;
         case INCONCLUSIVE -> inconclusive++;
       }
     }
 
+    int passed() {
+      return passed;
+    }
+
+    int failed() {
+      return failed;
+    }
+
+    int inconclusive() {
+      return inconclusive;
+    }
+
     private String render(String evaluator) {
       var undecided = inconclusive == 0 ? "" : " (" + inconclusive + " inconclusive)";
-      return evaluator + " " + passed + "/" + judged + undecided;
+      return evaluator + " " + passed + "/" + (passed + failed) + undecided;
     }
   }
 }
