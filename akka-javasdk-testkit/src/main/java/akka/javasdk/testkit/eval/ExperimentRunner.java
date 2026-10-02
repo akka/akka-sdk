@@ -267,7 +267,7 @@ public final class ExperimentRunner {
       var file = directory.resolve(report.name() + ".json");
       try {
         Files.createDirectories(directory);
-        Files.writeString(file, EvalReportJson.render(report));
+        Files.writeString(file, EvalReportJson.render(report.document()));
         log.info("Eval report written to {}", file.toAbsolutePath());
         return Optional.of(file);
       } catch (IOException | RuntimeException e) {
@@ -460,12 +460,16 @@ public final class ExperimentRunner {
 
     /**
      * The file {@link Experiment#run} wrote the report to: {@code <name>.json} in the report
-     * directory, as JSON in the {@code akka-eval-report} format for tools that collect runs or
-     * render their own reports. The format is described by {@code
-     * akka/javasdk/testkit/eval/eval-report.schema.json} on the testkit classpath. Empty when the
-     * experiment was run {@link Experiment#withoutReportFile} or the file could not be written.
+     * directory, holding {@link #document()} as JSON. Empty when the experiment was run {@link
+     * Experiment#withoutReportFile} or the file could not be written.
      */
     Optional<Path> reportFile();
+
+    /**
+     * The report as data, for tools that collect runs or render their own reports. This is what
+     * {@link #reportFile()} holds, and what {@link ReportDocument#read} gives back.
+     */
+    ReportDocument document();
 
     /** Whether the gate passed. */
     boolean passed();
@@ -491,6 +495,11 @@ public final class ExperimentRunner {
 
     private Report withReportFile(Optional<Path> file) {
       return new Report(name, startedAt, finishedAt, results, verdict, file);
+    }
+
+    @Override
+    public ReportDocument document() {
+      return EvalReportJson.document(this);
     }
 
     @Override

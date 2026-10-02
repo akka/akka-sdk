@@ -972,6 +972,27 @@ class ExperimentRunnerTest {
   }
 
   @Test
+  void theReportFileReadsBackAsTheDocumentTheReportExposes(@TempDir Path dir) {
+    var report =
+        experiment(
+                fullyTracedThat("Order o_42 is shipped."),
+                EvalCase.of("shipped", "Where is o_42?", Evaluators.shouldCallTool("getOrder")))
+            .name("order-agent")
+            .reportDirectory(dir)
+            .run();
+
+    var document = ReportDocument.read(report.reportFile().orElseThrow());
+
+    assertThat(document).isEqualTo(report.document());
+    assertThat(document.format()).isEqualTo(ReportDocument.FORMAT);
+    assertThat(document.name()).isEqualTo("order-agent");
+    assertThat(document.cases().getFirst().interaction().toolCalls().getFirst().result())
+        .contains("{\"status\":\"shipped\"}");
+    assertThat(document.cases().getFirst().results().getFirst().verdict())
+        .isEqualTo(EvalResult.Verdict.PASS);
+  }
+
+  @Test
   void withoutAReportFileNothingIsWritten(@TempDir Path dir) throws Exception {
     var report =
         experiment(targetThat("done"), EvalCase.of("c", "a question"))
