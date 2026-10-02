@@ -8,12 +8,12 @@ object Dependencies {
     val ProtocolVersionMinor = 1
   }
 
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.17-74-4b603141-SNAPSHOT")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.6.17-113-756afd3f-SNAPSHOT")
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
-  val AkkaVersion = "2.10.22"
-  val AkkaHttpVersion = "10.7.5" // Note: should at least the Akka HTTP version required by Akka gRPC
+  val AkkaVersion = "2.10.23"
+  val AkkaHttpVersion = "10.7.6" // Note: should at least the Akka HTTP version required by Akka gRPC
   val AkkaGrpcVersion = akka.grpc.gen.BuildInfo.version
   val GoogleProtobufVersion = akka.grpc.gen.BuildInfo.googleProtobufVersion
 
@@ -23,10 +23,10 @@ object Dependencies {
 
   val ScalaTestVersion = "3.2.20"
   // https://github.com/akka/akka/blob/main/project/Dependencies.scala#L31
-  val JacksonVersion = "2.21.5"
+  val JacksonVersion = "2.22.3"
   val JacksonDatabindVersion = JacksonVersion
-  val JacksonAnnotationsVersion = "2.21"
-  val Langchain4jVersion = "1.18.1"
+  val JacksonAnnotationsVersion = "2.22"
+  val Langchain4jVersion = "1.20.2"
   val LogbackVersion = "1.6.3"
   val LogbackContribVersion = "0.1.5"
   val JUnitVersion = "4.13.2"
@@ -89,7 +89,7 @@ object Dependencies {
   val opentelemetryContext = "io.opentelemetry" % "opentelemetry-context" % OpenTelemetryVersion
   val opentelemetrySemConv = "io.opentelemetry.semconv" % "opentelemetry-semconv" % OpenTelemetrySemConv
 
-  val typesafeConfig = "com.typesafe" % "config" % "1.4.8"
+  val typesafeConfig = "com.typesafe" % "config" % "1.4.9"
   val protobufJavaUtil = "com.google.protobuf" % "protobuf-java-util" % GoogleProtobufVersion
 
   private val deps = libraryDependencies

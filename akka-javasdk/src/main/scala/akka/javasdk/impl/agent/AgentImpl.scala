@@ -585,16 +585,21 @@ private[impl] object AgentImpl {
             toolRequests,
             m.thinking().toScala,
             m.attributes().asScala.toMap)
+        // FIXME session memory does not record whether a message is sanitized
         case m: UserMessage =>
-          new SpiAgent.ContextMessage.UserMessage(m.text())
+          new SpiAgent.ContextMessage.UserMessage(Seq(new SpiAgent.TextMessageContent(m.text())), sanitized = false)
         case m: MultimodalUserMessage =>
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
-          new SpiAgent.ContextMessage.UserMessage(contents)
+          new SpiAgent.ContextMessage.UserMessage(contents, sanitized = false)
         case m: ToolCallResponse =>
-          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), m.text())
+          new ContextMessage.ToolCallResponseMessage(
+            m.id(),
+            m.name(),
+            Seq(new SpiAgent.TextMessageContent(m.text())),
+            sanitized = false)
         case m: SessionMessage.MultimodalToolCallResponse =>
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
-          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents)
+          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents, sanitized = false)
         case m =>
           throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
       }
@@ -745,7 +750,9 @@ private[impl] final class AgentImpl(
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
-              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
+              // FIXME the SDK ignores the user message as sent to the model and stores the original one
+              onSuccessAsSent = (_: SpiAgent.UserMessage, results: Seq[SpiAgent.Response]) =>
+                onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
               boundGuardrails = guardrails.boundGuardrails,
               contentLoader = spiContentLoader,
               callToolFunction = request => Future(toolExecutor.executeMultimodal(request))(sdkExecutionContext))

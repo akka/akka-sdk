@@ -163,7 +163,7 @@ public class SanitizerIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldMaskEachApplicationPointWithItsOwnEntries() {
+  public void shouldMaskAUserMessageWithModelCallEntriesAndAToolResultWithBoth() {
     var capturedUserMessage = new AtomicReference<String>();
     var capturedToolResult = new AtomicReference<String>();
 
@@ -189,8 +189,8 @@ public class SanitizerIntegrationTest extends TestKitSupport {
 
     // model-call-only masks the question, tool-result-only leaves it alone
     assertThat(capturedUserMessage.get()).contains("mind *********** and toolsecret");
-    // tool-result-only masks what the tool returned, model-call-only leaves it alone
-    assertThat(capturedToolResult.get()).contains("********** and modelsecret");
+    // the runtime sends the tool result to the model too, so both entries mask it
+    assertThat(capturedToolResult.get()).contains("acme: ********** and *********** and");
   }
 
   @Test
