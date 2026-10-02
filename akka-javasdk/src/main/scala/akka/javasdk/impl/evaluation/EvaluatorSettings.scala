@@ -86,13 +86,38 @@ private[impl] object EvaluatorSettings {
   }
 
   /**
-   * The `control-id` of the given evaluator, or `None` when it has no entry or the entry has none. It is read whether
-   * or not the evaluator is enabled.
+   * The `control-id` of the given evaluator, or `None` when it has no entry or the entry has none. This method reads it
+   * even when the evaluator is disabled.
+   *
+   * @throws IllegalArgumentException
+   *   if `control-id` is in a binding of the evaluator or under `akka.javasdk.evaluation.defaults`
    */
-  def controlId(config: Config, evaluatorComponentId: String): Option[String] =
-    configAt(config, EvaluatorsPath).root().asScala.get(evaluatorComponentId) match {
-      case Some(evaluator: ConfigObject) => ControlId.read(evaluator.toConfig, s"Evaluator [$evaluatorComponentId]")
-      case _                             => None
+  def controlId(config: Config, evaluatorComponentId: String): Option[String] = {
+    val entry = s"Evaluator [$evaluatorComponentId]"
+    val evaluator = configAt(config, EvaluatorsPath).root().asScala.get(evaluatorComponentId).collect {
+      case evaluator: ConfigObject => evaluator.toConfig
+    }
+
+    // the SDK reads the id only from the entry of the evaluator, so an id anywhere else would be lost
+    val misplaced = Seq(EvaluatorDefaultsPath, AgentDefaultsPath).filter(configAt(config, _).hasPath(ControlId.Key)) ++
+      evaluator.toSeq.flatMap(bindingsWithControlId)
+    misplaced.headOption.foreach { path =>
+      throw new IllegalArgumentException(s"$entry must define [${ControlId.Key}] on the evaluator, not in [$path]")
+    }
+
+    evaluator.flatMap(ControlId.read(_, entry))
+  }
+
+  /** The path of each binding under `agents` and `agent-roles` that defines `control-id`. */
+  private def bindingsWithControlId(evaluator: Config): Seq[String] =
+    Seq("agents", "agent-roles").flatMap { path =>
+      evaluator.root().get(path) match {
+        case bindings: ConfigObject =>
+          bindings.asScala.toSeq.collect {
+            case (key, binding: ConfigObject) if binding.toConfig.hasPath(ControlId.Key) => s"$path.$key"
+          }.sorted
+        case _ => Nil
+      }
     }
 
   /** The agent bindings and the control id of the given evaluator, see [[agentBindings]] and [[controlId]]. */

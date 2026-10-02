@@ -238,6 +238,39 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
       "Evaluator [conversation-quality] must define [control-id] as a string, but defines [BOOLEAN]"
     }
 
+    Seq(
+      "agents.support-agent" -> """agents.support-agent { trigger = interaction, control-id = "AI-EV-01" }""",
+      "agent-roles.*" -> """agent-roles."*" { trigger = interaction, control-id = "AI-EV-01" }""").foreach {
+      case (path, binding) =>
+        s"reject a control id in the binding $path, also when the evaluator is disabled" in {
+          Seq(true, false).foreach { enabled =>
+            val config = load(s"""
+              akka.javasdk.evaluation.evaluators.conversation-quality {
+                enabled = $enabled
+                $binding
+              }
+              """)
+            intercept[IllegalArgumentException] {
+              EvaluatorSettings.controlId(config, "conversation-quality")
+            }.getMessage shouldBe
+            s"Evaluator [conversation-quality] must define [control-id] on the evaluator, not in [$path]"
+          }
+        }
+    }
+
+    Seq("akka.javasdk.evaluation.defaults.evaluator", "akka.javasdk.evaluation.defaults.agent").foreach { path =>
+      s"reject a control id in $path" in {
+        val config = load(s"""
+          $path.control-id = "AI-EV-01"
+          akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+          """)
+        intercept[IllegalArgumentException] {
+          EvaluatorSettings.controlId(config, "conversation-quality")
+        }.getMessage shouldBe
+        s"Evaluator [conversation-quality] must define [control-id] on the evaluator, not in [$path]"
+      }
+    }
+
     "be handed to the runtime with the bindings, on the descriptor of an evaluator and of a durable evaluator" in {
       val config = load("""
         akka.javasdk.evaluation.evaluators.conversation-quality {
