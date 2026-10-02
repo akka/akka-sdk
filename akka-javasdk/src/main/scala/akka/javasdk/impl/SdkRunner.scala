@@ -90,6 +90,8 @@ import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.HttpRequestContextImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
+import akka.javasdk.impl.judgment.JudgmentClientImpl
+import akka.javasdk.impl.judgment.OverrideJudgmentModelProvider
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
 import akka.javasdk.impl.objectstorage.ObjectStorageProviderImpl
 import akka.javasdk.impl.reflection.Reflect
@@ -102,6 +104,7 @@ import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.impl.view.ViewDescriptorFactory
 import akka.javasdk.impl.workflow.WorkflowContextImpl
 import akka.javasdk.impl.workflow.WorkflowImpl
+import akka.javasdk.judgment.JudgmentClient
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.javasdk.mcp.AbstractMcpEndpoint
@@ -478,6 +481,7 @@ private[javasdk] object Sdk {
       agentRegistry: AgentRegistryImpl,
       agentCapabilityConverter: CapabilityConverter,
       overrideModelProvider: OverrideModelProvider,
+      overrideJudgmentModelProvider: OverrideJudgmentModelProvider,
       serializer: Serializer,
       sanitizer: Sanitizer,
       inMemorySpanExporter: Option[InMemorySpanExporter],
@@ -500,7 +504,8 @@ private[javasdk] object Sdk {
     classOf[Retries],
     classOf[AgentContext],
     classOf[AgentRegistry],
-    classOf[ObjectStorageProvider])
+    classOf[ObjectStorageProvider],
+    classOf[JudgmentClient])
 
   // Run a user-supplied callback, logging any failure on the user component's own logger so it reaches the user.
   // Rethrows by default; pass rethrow = false where a failing callback must not abort the surrounding flow.
@@ -610,6 +615,8 @@ private final class Sdk(
     grpcMockLookup)
 
   private lazy val overrideModelProvider = new OverrideModelProvider
+
+  private lazy val overrideJudgmentModelProvider = new OverrideJudgmentModelProvider
 
   // validate service classes before instantiating
   private val validation = componentClasses.foldLeft(Valid.instance().asInstanceOf[Validation]) {
@@ -1172,6 +1179,7 @@ private final class Sdk(
     case s if s == classOf[Meter]     => sdkMeter
     case o if o == classOf[ObjectStorageProvider] =>
       objectStorageProvider(telemetryContext)
+    case j if j == classOf[JudgmentClient] => judgmentClient(telemetryContext)
   }
 
   val spiComponents: SpiComponents = {
@@ -1237,6 +1245,7 @@ private final class Sdk(
               agentRegistry,
               agentCapabilityConverter,
               overrideModelProvider,
+              overrideJudgmentModelProvider,
               serializer,
               sanitizer,
               inMemorySpanExporter,
@@ -1269,6 +1278,7 @@ private final class Sdk(
               agentRegistry,
               agentCapabilityConverter,
               overrideModelProvider,
+              overrideJudgmentModelProvider,
               serializer,
               sanitizer,
               inMemorySpanExporter,
@@ -1549,6 +1559,21 @@ private final class Sdk(
     telemetryContext match {
       case None          => objectStorageProvider
       case Some(context) => objectStorageProvider.withTelemetryContext(context)
+    }
+
+  private lazy val judgmentClient: JudgmentClientImpl =
+    new JudgmentClientImpl(
+      runtimeComponentClients.judgmentClient,
+      serializer.json,
+      applicationConfig,
+      overrideJudgmentModelProvider,
+      provider = None,
+      telemetryContext = None)(sdkExecutionContext)
+
+  private def judgmentClient(telemetryContext: Option[OtelContext]): JudgmentClient =
+    telemetryContext match {
+      case None          => judgmentClient
+      case Some(context) => judgmentClient.withTelemetryContext(context)
     }
 
   private def grpcClientProvider(telemetryContext: Option[OtelContext]): GrpcClientProvider =

@@ -147,6 +147,7 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       override def agentClient: AgentClient = null
       override def autonomousAgentClient: AutonomousAgentClient = null
       override def objectStorage: SpiObjectStorage = null
+      override def judgmentClient: SpiJudgmentClient = null
     }
 
   private def createClient(entityClient: EntityClient): TaskClientImpl =

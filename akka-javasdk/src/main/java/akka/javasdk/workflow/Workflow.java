@@ -43,6 +43,7 @@ import java.util.concurrent.CompletionStage;
  * <ul>
  *   <li>{@link ComponentClient}
  *   <li>{@link akka.javasdk.http.HttpClientProvider}
+ *   <li>{@link akka.javasdk.judgment.JudgmentClient}
  *   <li>{@link akka.javasdk.timer.TimerScheduler}
  *   <li>{@link akka.stream.Materializer}
  *   <li>{@link com.typesafe.config.Config}
