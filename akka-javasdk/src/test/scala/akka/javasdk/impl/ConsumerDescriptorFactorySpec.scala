@@ -15,6 +15,8 @@ import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTy
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTypeLevelCombined
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityTypeLevel
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityWithDeletes
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SystemFeatureStreamConsumer
+import akka.runtime.sdk.spi.ConsumerSource
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import protoconsumer.EventsForConsumer
@@ -92,6 +94,16 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
     "generate mappings for service to service subscription " in {
       val desc = ComponentDescriptor.descriptorFor(classOf[EventStreamSubscriptionConsumer], new Serializer)
       desc.methodInvokers should have size 3
+    }
+
+    "create a service stream source without system feature for a service in the project" in {
+      ComponentDescriptorFactory.consumerSource(classOf[EventStreamSubscriptionConsumer]) shouldBe
+      new ConsumerSource.ServiceStreamSource("employee_service", "employee_events", "", None)
+    }
+
+    "create a service stream source with the system feature of the producing service" in {
+      ComponentDescriptorFactory.consumerSource(classOf[SystemFeatureStreamConsumer]) shouldBe
+      new ConsumerSource.ServiceStreamSource("feature-service", "feature-events", "", Some("my-feature"))
     }
 
     "generate mappings for service to service subscription with protobuf events, for Kalix interop" in {

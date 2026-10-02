@@ -147,12 +147,27 @@ public class TestEndpoints {
     public String thisAndThat() {
       return "this-and-that";
     }
+
+    @Get("/project-services")
+    @Acl(allow = @Acl.Matcher(service = "*", scope = Acl.Scope.PROJECT))
+    public String projectServices() {
+      return "project-services";
+    }
   }
 
   @HttpEndpoint("invalid-acl")
   public static class TestEndpointInvalidAcl {
     @Get("/invalid")
     @Acl(allow = @Acl.Matcher(service = "*", principal = Acl.Principal.INTERNET))
+    public String invalid() {
+      return "invalid matcher";
+    }
+  }
+
+  @HttpEndpoint("invalid-acl-scope")
+  public static class TestEndpointInvalidAclScope {
+    @Get("/invalid")
+    @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET, scope = Acl.Scope.PROJECT))
     public String invalid() {
       return "invalid matcher";
     }

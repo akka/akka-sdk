@@ -22,8 +22,10 @@ import akka.http.scaladsl.settings.ClientConnectionSettings
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.javasdk.http.HttpClient
 import akka.javasdk.http.HttpClientProvider
+import akka.javasdk.impl.ServiceAddress
 import akka.javasdk.impl.Settings
 import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
+import akka.runtime.sdk.spi.DeploymentInfo
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
@@ -37,10 +39,13 @@ private[akka] final class HttpClientProviderImpl(
     telemetryContext: Option[OtelContext],
     remoteIdentificationHeader: Option[RawHeader],
     settings: Settings,
+    deploymentInfo: DeploymentInfo,
     sdkExecutor: Executor,
     connectionPoolSettings: Option[ConnectionPoolSettings] = None,
     // Only populated by the testkit; production and dev-mode runners use the default no-op lookup.
-    httpMockLookup: String => Option[java.util.function.Function[HttpRequest, HttpResponse]] = _ => None)
+    httpMockLookup: String => Option[java.util.function.Function[HttpRequest, HttpResponse]] = _ => None,
+    // Set by forSystemFeature, service names are then resolved in that system feature
+    systemFeature: Option[String] = None)
     extends HttpClientProvider {
 
   private val log = LoggerFactory.getLogger(classOf[HttpClientProvider])
@@ -76,6 +81,7 @@ private[akka] final class HttpClientProviderImpl(
       if (nameIsService) {
         settings.devModeSettings match {
           case Some(devModeSettings) =>
+            // Note: system features do not exist in dev mode, a service in a system feature is looked up by name only
             devModeSettings.backoffice.services.get(name) match {
               case Some(backofficeSettings) =>
                 (s"https://${backofficeSettings.backofficeProxyHost}", None)
@@ -115,7 +121,7 @@ private[akka] final class HttpClientProviderImpl(
             }
           case None =>
             // production, request to other service, service mesh manages TLS
-            (s"http://$name", None)
+            (s"http://${ServiceAddress.hostFor(name, deploymentInfo, systemFeature)}", None)
         }
       } else {
         // if it isn't a service, we expect it is arbitrary http or https server including the protocol part
@@ -157,8 +163,24 @@ private[akka] final class HttpClientProviderImpl(
       Some(telemetryContext),
       remoteIdentificationHeader,
       settings,
+      deploymentInfo,
       sdkExecutor,
       connectionPoolSettings,
-      httpMockLookup)
+      httpMockLookup,
+      systemFeature)
+
+  override def forSystemFeature(systemFeature: String): HttpClientProvider = {
+    require(systemFeature != null && systemFeature.nonEmpty, "systemFeature must not be empty")
+    new HttpClientProviderImpl(
+      system,
+      telemetryContext,
+      remoteIdentificationHeader,
+      settings,
+      deploymentInfo,
+      sdkExecutor,
+      connectionPoolSettings,
+      httpMockLookup,
+      Some(systemFeature))
+  }
 
 }

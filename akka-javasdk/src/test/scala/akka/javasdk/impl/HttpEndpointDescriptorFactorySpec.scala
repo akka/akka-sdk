@@ -15,6 +15,7 @@ import akka.runtime.sdk.spi.ClaimPattern
 import akka.runtime.sdk.spi.ClaimValues
 import akka.runtime.sdk.spi.HttpEndpointMethodSpec
 import akka.runtime.sdk.spi.Internet
+import akka.runtime.sdk.spi.ProjectServiceNamePattern
 import akka.runtime.sdk.spi.ServiceNamePattern
 import akka.runtime.sdk.spi.SpiJsonSchema
 import akka.runtime.sdk.spi.StaticClaim
@@ -203,7 +204,7 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       val descriptor = HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointAcls], _ => null)
 
       descriptor.mainPath should ===(Some("/acls/"))
-      descriptor.methods should have size 3
+      descriptor.methods should have size 4
 
       descriptor.componentOptions.aclOpt should not be empty
       descriptor.componentOptions.aclOpt.get.deny shouldBe List(All)
@@ -228,6 +229,12 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
         "that")
       thisAndThat.methodOptions.acl.get.deny shouldBe empty
       thisAndThat.methodOptions.acl.get.denyHttpCode should contain(Forbidden)
+
+      val projectServices = byMethodName("projectServices")
+      projectServices.methodOptions.acl.get.allow.collect { case p: ProjectServiceNamePattern =>
+        p.pattern
+      } shouldBe Seq("*")
+      projectServices.methodOptions.acl.get.allow.collect { case p: ServiceNamePattern => p.pattern } shouldBe empty
     }
 
     "throw error if annotations are not valid" in {
@@ -239,6 +246,11 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
         HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointInvalidAclDenyCode], _ => null)
       }
       caught.getMessage should include("Invalid HTTP status code: 123123")
+
+      val scopeCaught = intercept[IllegalArgumentException] {
+        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointInvalidAclScope], _ => null)
+      }
+      scopeCaught.getMessage shouldBe AclDescriptorFactory.invalidScopeUsage
     }
 
     // Utility to compare StaticClaim to avoid creating `equals` in the original.

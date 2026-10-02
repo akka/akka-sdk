@@ -253,7 +253,11 @@ private[impl] object ViewDescriptorFactory {
     new TableDescriptor(
       tableName,
       tableType,
-      new ConsumerSource.ServiceStreamSource(annotation.service(), annotation.id(), annotation.consumerGroup()),
+      new ConsumerSource.ServiceStreamSource(
+        annotation.service(),
+        annotation.id(),
+        annotation.consumerGroup(),
+        Option(annotation.systemFeature()).filter(_.nonEmpty)),
       Option.when(updateHandlerMethods.nonEmpty)(
         UpdateHandlerImpl(
           componentId,
