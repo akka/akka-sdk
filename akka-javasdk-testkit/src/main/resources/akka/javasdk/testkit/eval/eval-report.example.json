@@ -114,7 +114,7 @@
         {
           "evaluator": "tool-results",
           "verdict": "INCONCLUSIVE",
-          "detail": "issueRefund: no recorded result"
+          "detail": "issueRefund was never called; called [getOrder]; make sure the evaluated name is the registered tool name, which is <Class>_<method> unless @FunctionTool sets a name"
         }
       ]
     }

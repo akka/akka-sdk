@@ -1056,6 +1056,107 @@ class ExperimentRunnerTest {
   }
 
   @Test
+  void aNameThatCannotBeWrittenLeavesTheReportWithoutAFile(@TempDir Path dir) {
+    var report =
+        experiment(targetThat("done"), EvalCase.of("c", "a question"))
+            .name("nul\0name")
+            .reportDirectory(dir)
+            .run();
+
+    assertThat(report.reportFile()).isEmpty();
+    assertThat(report.passed()).isTrue();
+  }
+
+  @Test
+  void aNameWithAPathSeparatorIsRejected() {
+    var experiment = experiment(targetThat("done"), EvalCase.of("c", "a question"));
+
+    assertThatThrownBy(() -> experiment.name("../escape"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("path separator");
+    assertThatThrownBy(() -> experiment.name("sub\\dir"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("path separator");
+  }
+
+  /** The target the example report in the testkit resources was produced with. */
+  private static EvalTarget<String> exampleTarget() {
+    var toolCall =
+        new ToolCall(
+            "getOrder",
+            Map.of("orderId", "o_42"),
+            Optional.of("{\"status\":\"shipped\"}"),
+            Optional.empty());
+    var guardrail = new GuardrailResult("pii", "privacy", true, "");
+    return turn -> {
+      var modelCall =
+          new ModelCall(
+              "gpt-4o",
+              "openai",
+              List.of("STOP"),
+              100,
+              20,
+              Duration.ofMillis(40),
+              "[SystemMessage: You are a support agent...] [UserMessage: " + turn.command() + "]",
+              "[AiMessage: Order o_42 is shipped.]");
+      return EvalTarget.Outcome.answered(
+          new Interaction(
+              turn.command(),
+              turn.command(),
+              "Order o_42 is shipped.",
+              List.of(toolCall),
+              List.of(modelCall),
+              List.of(guardrail),
+              Duration.ofMillis(45),
+              "Order o_42 is shipped."));
+    };
+  }
+
+  @Test
+  void theExampleReportIsWhatTheRunnerProduces() throws Exception {
+    var example =
+        ReportDocument.read(
+            Path.of(
+                ExperimentRunnerTest.class
+                    .getResource("/akka/javasdk/testkit/eval/eval-report.example.json")
+                    .toURI()));
+
+    var produced =
+        experiment(
+                exampleTarget(),
+                EvalCase.of(
+                    "shipped",
+                    "Where is o_42?",
+                    Evaluators.shouldCallTool("getOrder"),
+                    Evaluators.replyShouldContain("shipped")),
+                EvalCase.of(
+                    "wrong-order",
+                    "Where is o_43?",
+                    Evaluators.shouldCallToolWith("getOrder", "orderId", "o_43"),
+                    Evaluators.toolResultShouldContain("issueRefund", "ok")))
+            .name("support-agent-quality")
+            .gate(Gate.passRateShouldBeAtLeast(0.9))
+            .run()
+            .document();
+
+    assertThat(withTimesOf(produced, example)).isEqualTo(example);
+  }
+
+  private static ReportDocument withTimesOf(ReportDocument document, ReportDocument times) {
+    return new ReportDocument(
+        document.format(),
+        document.formatVersion(),
+        document.name(),
+        times.startedAt(),
+        times.finishedAt(),
+        document.gate(),
+        document.summary(),
+        document.evaluators(),
+        document.spend(),
+        document.cases());
+  }
+
+  @Test
   void aBlankNameIsRejected() {
     var experiment = experiment(targetThat("done"), EvalCase.of("c", "a question"));
 

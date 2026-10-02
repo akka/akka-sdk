@@ -29,8 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Runs cases against an agent and collects the results. Sequential and in-process, nothing is
- * persisted.
+ * Runs cases against an agent and collects the results. Sequential and in-process; the only output
+ * is the report file written at the end of the run.
  *
  * <p>Per case: load the recorded tool calls, if any, into the bound stubs, call the agent in a
  * fresh session, read the evidence the runtime traced for that session, and evaluate the
@@ -235,6 +235,9 @@ public final class ExperimentRunner {
     @Override
     public Experiment name(String name) {
       if (name == null || name.isBlank()) throw new IllegalArgumentException("name required");
+      if (name.contains("/") || name.contains("\\"))
+        throw new IllegalArgumentException(
+            "name must not contain a path separator, it names the report file: " + name);
       return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory);
     }
 
@@ -264,14 +267,19 @@ public final class ExperimentRunner {
 
     // A report file that cannot be written is logged, the report itself still returns.
     private static Optional<Path> write(Report report, Path directory) {
-      var file = directory.resolve(report.name() + ".json");
+      var fileName = report.name() + ".json";
       try {
+        var file = directory.resolve(fileName);
         Files.createDirectories(directory);
         Files.writeString(file, EvalReportJson.render(report.document()));
         log.info("Eval report written to {}", file.toAbsolutePath());
         return Optional.of(file);
       } catch (IOException | RuntimeException e) {
-        log.warn("Eval report could not be written to {}: {}", file.toAbsolutePath(), e.toString());
+        log.warn(
+            "Eval report could not be written to {} in {}: {}",
+            fileName,
+            directory.toAbsolutePath(),
+            e.toString());
         return Optional.empty();
       }
     }
