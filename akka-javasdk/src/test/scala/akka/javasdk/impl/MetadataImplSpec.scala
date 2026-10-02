@@ -9,6 +9,12 @@ import scala.jdk.OptionConverters._
 
 import akka.javasdk.Metadata
 import akka.runtime.sdk.spi.SpiMetadataEntry
+import io.opentelemetry.api.baggage.Baggage
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanContext
+import io.opentelemetry.api.trace.TraceFlags
+import io.opentelemetry.api.trace.TraceState
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -38,6 +44,32 @@ class MetadataImplSpec extends AnyWordSpec with Matchers with OptionValues {
       merged.getAll("foobar").asScala shouldBe expectedEntries
       merged.get("foobar").toScala.value shouldBe "raboof" // first
       merged.getLast("foobar").toScala.value shouldBe "foobar"
+    }
+
+    "carry the trace context and the baggage of a telemetry context" in {
+      val spanContext = SpanContext.create(
+        "4bf92f3577b34da6a3ce929d0e0e4736",
+        "00f067aa0ba902b7",
+        TraceFlags.getSampled,
+        TraceState.getDefault)
+      val context = OtelContext
+        .root()
+        .`with`(Span.wrap(spanContext))
+        .`with`(Baggage.builder().put("akka.evaluation.id", "evaluation-1").build())
+
+      val withContext = MetadataImpl.Empty.withTelemetryContext(context)
+
+      withContext.get("traceparent").toScala.value should include(spanContext.getTraceId)
+      withContext.get("baggage").toScala.value shouldBe "akka.evaluation.id=evaluation-1"
+    }
+
+    "carry the baggage of a telemetry context without a span" in {
+      val context = OtelContext.root().`with`(Baggage.builder().put("akka.evaluation.id", "evaluation-1").build())
+
+      val withContext = MetadataImpl.Empty.withTelemetryContext(context)
+
+      withContext.get("traceparent").toScala shouldBe None
+      withContext.get("baggage").toScala.value shouldBe "akka.evaluation.id=evaluation-1"
     }
   }
 

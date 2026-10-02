@@ -22,9 +22,11 @@ import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.telemetry.Telemetry.metadataGetter
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiMetadataEntry
+import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
+import io.opentelemetry.context.propagation.TextMapPropagator
 
 /**
  * INTERNAL API
@@ -54,7 +56,7 @@ private[javasdk] class MetadataImpl private (val entries: Seq[SpiMetadataEntry])
   def withTelemetryContext(context: OtelContext): MetadataImpl = {
     val builder = Vector.newBuilder[SpiMetadataEntry]
     builder.addAll(entries)
-    W3CTraceContextPropagator.getInstance.inject(context, builder, Telemetry.builderSetter)
+    MetadataImpl.TelemetryContextPropagator.inject(context, builder, Telemetry.builderSetter)
     MetadataImpl.of(builder.result())
   }
 
@@ -225,6 +227,11 @@ private[javasdk] class MetadataImpl private (val entries: Seq[SpiMetadataEntry])
 }
 
 object MetadataImpl {
+
+  /** Propagates the trace context and the baggage of a telemetry context in metadata. */
+  private val TelemetryContextPropagator: TextMapPropagator =
+    TextMapPropagator.composite(W3CTraceContextPropagator.getInstance, W3CBaggagePropagator.getInstance)
+
   val CeSpecversion = "ce-specversion"
   val CeSpecversionValue = "1.0"
   val CeId = "ce-id"
