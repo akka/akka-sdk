@@ -8,7 +8,12 @@ import java.net.JarURLConnection
 
 import scala.jdk.CollectionConverters._
 
+import akka.actor.ReflectiveDynamicAccess
 import akka.javasdk.impl.ComponentLocator._
+import akka.javasdk.testmodels.EndpointsTestModels.GetHelloEndpoint
+import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EmployeeEntity
+import akka.javasdk.testmodels.keyvalueentity.Counter
+import akka.javasdk.testmodels.view.ViewTestModels.UserByEmailWithGet
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -264,6 +269,134 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
 
       // Must not throw java.lang.IllegalStateException: zip file closed.
       priorHandle.entries().asScala.size should be > 0
+    }
+  }
+
+  "ComponentLocator.loadLibraryComponents" should {
+    val dynamicAccess = new ReflectiveDynamicAccess(getClass.getClassLoader)
+
+    "return nothing when config has no library components" in {
+      ComponentLocator.loadLibraryComponents(ConfigFactory.empty(), dynamicAccess, Set.empty) shouldBe empty
+      val emptyBlock = ConfigFactory.parseString("akka.javasdk.library.components {}")
+      ComponentLocator.loadLibraryComponents(emptyBlock, dynamicAccess, Set.empty) shouldBe empty
+      val referenceDefaults = ConfigFactory.defaultReference()
+      ComponentLocator.loadLibraryComponents(referenceDefaults, dynamicAccess, Set.empty) shouldBe empty
+    }
+
+    "load listed classes" in {
+      val config = ConfigFactory.parseString(s"""
+          |akka.javasdk.library.components {
+          |  key-value-entity = ["${classOf[Counter].getName}"]
+          |  event-sourced-entity = ["${classOf[EmployeeEntity].getName}"]
+          |  view = ["${classOf[UserByEmailWithGet].getName}"]
+          |  http-endpoint = ["${classOf[GetHelloEndpoint].getName}"]
+          |}
+          |""".stripMargin)
+
+      val result = ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+
+      result should contain theSameElementsAs Seq(
+        classOf[EmployeeEntity],
+        classOf[Counter],
+        classOf[UserByEmailWithGet],
+        classOf[GetHelloEndpoint])
+    }
+
+    "skip classes already located through descriptors" in {
+      val config = ConfigFactory.parseString(s"""
+          |akka.javasdk.library.components {
+          |  key-value-entity = ["${classOf[Counter].getName}"]
+          |  event-sourced-entity = ["${classOf[EmployeeEntity].getName}"]
+          |}
+          |""".stripMargin)
+
+      val result = ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set(classOf[EmployeeEntity]))
+
+      result shouldBe Seq(classOf[Counter])
+    }
+
+    "fail on class listed more than once" in {
+      val config = ConfigFactory.parseString(s"""
+          |akka.javasdk.library.components {
+          |  key-value-entity = ["${classOf[Counter].getName}"]
+          |  view = ["${classOf[Counter].getName}"]
+          |}
+          |""".stripMargin)
+
+      val exception = intercept[IllegalStateException] {
+        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+      }
+      exception.getMessage should include(s"Duplicate library component(s) [${classOf[Counter].getName}]")
+    }
+
+    "fail on unknown component type" in {
+      val config = ConfigFactory.parseString("""
+          |akka.javasdk.library.components {
+          |  entity = ["com.example.SomeEntity"]
+          |}
+          |""".stripMargin)
+
+      val exception = intercept[IllegalStateException] {
+        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+      }
+      exception.getMessage should include("Unknown component type(s) [entity]")
+      exception.getMessage should include(LibraryComponentsConfigPath)
+    }
+
+    "fail on class that cannot be loaded" in {
+      val config = ConfigFactory.parseString("""
+          |akka.javasdk.library.components {
+          |  view = ["com.example.MissingView"]
+          |}
+          |""".stripMargin)
+
+      val exception = intercept[IllegalStateException] {
+        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+      }
+      exception.getMessage should include("Could not load library component class [com.example.MissingView]")
+      exception.getMessage should include(s"$LibraryComponentsConfigPath.view")
+    }
+
+    "fail on class listed under the wrong component type" in {
+      val config = ConfigFactory.parseString(s"""
+          |akka.javasdk.library.components {
+          |  event-sourced-entity = ["${classOf[Counter].getName}"]
+          |}
+          |""".stripMargin)
+
+      val exception = intercept[IllegalStateException] {
+        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+      }
+      exception.getMessage should include(s"Library component class [${classOf[Counter].getName}]")
+      exception.getMessage should include(
+        "is not a event-sourced-entity component, expected a class extending akka.javasdk.eventsourcedentity.EventSourcedEntity")
+    }
+
+    "fail on class listed as view that does not extend View" in {
+      val config = ConfigFactory.parseString(s"""
+          |akka.javasdk.library.components {
+          |  view = ["${classOf[Counter].getName}"]
+          |}
+          |""".stripMargin)
+
+      val exception = intercept[IllegalStateException] {
+        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+      }
+      exception.getMessage should include("is not a view component, expected a class extending akka.javasdk.view.View")
+    }
+
+    "fail on class listed as endpoint without the endpoint annotation" in {
+      val config = ConfigFactory.parseString(s"""
+          |akka.javasdk.library.components {
+          |  grpc-endpoint = ["${classOf[GetHelloEndpoint].getName}"]
+          |}
+          |""".stripMargin)
+
+      val exception = intercept[IllegalStateException] {
+        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+      }
+      exception.getMessage should include(
+        "is not a grpc-endpoint component, expected a class annotated with @GrpcEndpoint")
     }
   }
 
