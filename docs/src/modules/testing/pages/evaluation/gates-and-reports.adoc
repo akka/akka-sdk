@@ -47,6 +47,9 @@ Assert on the report, and use the rendered report as the failure message.
 |===
 | Accessor | Content
 
+| `name()`
+| The name given with `name(...)`, or the test method that ran the experiment and the start time, for example `SupportAgentEvalTest.qualityGate-20261001-101530-123`.
+
 | `passed()`
 | Whether the gate passed.
 
@@ -58,6 +61,12 @@ Assert on the report, and use the rendered report as the failure message.
 
 | `render()`
 | The report as text.
+
+| `document()`
+| The report as data, a `ReportDocument` with every case and its evidence, for tools that render their own reports.
+
+| `reportFile()`
+| The JSON file `run()` wrote to `target/eval-reports/<name>.json`, holding `document()`. See the link:{attachmentsdir}/eval-report.example.json[example report]. `ReportDocument.read(path)` reads it back. `reportDirectory(path)` on the experiment changes the directory, `withoutReportFile()` writes none. Empty when no file was written.
 |===
 
 A rendered report of a passing batch:
