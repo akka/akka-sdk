@@ -154,7 +154,10 @@ public sealed interface ModelProvider {
        * apply to streaming agents
        */
       Duration responseTimeout,
-      /** If the request fails, retry this many times. */
+      /**
+       * If the request fails with a rate limit, a server error, a timeout or a connection failure,
+       * retry this many times.
+       */
       int maxRetries,
       /** A maximum number of tokens to spend on thinking, use 0 to disable thinking */
       int thinkingBudgetTokens,
@@ -1965,7 +1968,10 @@ public sealed interface ModelProvider {
        * apply to streaming agents
        */
       Duration responseTimeout,
-      /** If the request fails, retry this many times. */
+      /**
+       * If the request fails with a rate limit, a server error, a timeout or a connection failure,
+       * retry this many times.
+       */
       int maxRetries,
       /** Additional HTTP headers to include in each request to the model API */
       List<HttpHeader> additionalModelRequestHeaders)
@@ -2303,7 +2309,10 @@ public sealed interface ModelProvider {
        * apply to streaming agents
        */
       Duration responseTimeout,
-      /** If the request fails, retry this many times. */
+      /**
+       * If the request fails with a rate limit, a server error, a timeout or a connection failure,
+       * retry this many times.
+       */
       int maxRetries,
       /** Additional HTTP headers to include in each request to the model API */
       List<HttpHeader> additionalModelRequestHeaders)
@@ -2754,6 +2763,7 @@ public sealed interface ModelProvider {
       double topP,
       int maxTokens,
       Duration responseTimeout,
+      /** Not used. Bedrock requests are retried by the AWS SDK with its default retry strategy. */
       int maxRetries,
       /** Additional HTTP headers to include in each request to the model API */
       List<HttpHeader> additionalModelRequestHeaders,
@@ -3056,6 +3066,11 @@ public sealed interface ModelProvider {
           this.promptCaching);
     }
 
+    /**
+     * @deprecated Not used. Bedrock requests are retried by the AWS SDK with its default retry
+     *     strategy.
+     */
+    @Deprecated(since = "3.6.4")
     public Bedrock withMaxRetries(int maxRetries) {
       return new Bedrock(
           this.region,

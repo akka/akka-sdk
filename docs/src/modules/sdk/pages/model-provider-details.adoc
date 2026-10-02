@@ -39,6 +39,26 @@ at the price of tokens used for the thought process.
 For models that support thinking, it is enabled through model-specific configuration, either by setting a thinking token budget, or
 by a toggle. Thinking is disabled for all models by default.
 
+=== Retries
+Akka retries a request to the model when it fails with a rate limit (HTTP 429), a request timeout (HTTP 408), a server error (HTTP 5xx), a timeout or a connection failure. Other failures, such as an invalid request or an authentication error, are not retried. The `max-retries` setting of the model provider defines the maximum number of retries.
+
+The delay before a retry is:
+
+* The delay that the model provider asks for, if any. Akka reads it from the `Retry-After` or `retry-after-ms` response header, or from the `RetryInfo` detail of a Gemini error response. A random delay of up to 20%, and at least up to 500 milliseconds, is added, so that agents that are rate limited at the same time do not retry at the same time. If the model provider asks for a delay longer than 60 seconds, the request fails without a retry.
+* Otherwise, an exponential backoff. The first delay is 500 milliseconds and each following delay is 1.5 times longer, with a random delay of up to 20% added. The delay is at most 30 seconds.
+
+The total time spent waiting between retries of a request is at most the `response-timeout` of the model provider. A retry that would wait longer than that is not done. With the default response timeout of 1 minute, a delay of more than 50 seconds asked for by the model provider can fail the request without a retry, because of the added random delay.
+
+A streaming request is only retried if it fails before any part of the response has been streamed. A failure after that fails the agent request.
+
+Some model providers retry in a different way:
+
+* Vertex AI: the Google client library retries the request, with `max-retries` + 1 attempts and an exponential backoff that starts at 1 second. It does not use the delay that the model provider asks for.
+* Bedrock: Akka does not retry the request. The AWS SDK retries it with its default retry strategy, with up to 3 attempts. The `max-retries` setting is not used.
+* Custom model providers: Akka does not retry the request. Retries are up to the custom model implementation.
+
+To retry an agent request for a longer time, for example for a rate limit that lasts several minutes, call the agent from a workflow with a recovery strategy. See xref:agents/calling.adoc#_drive_the_agent_from_a_workflow[Drive the agent from a workflow].
+
 == Model configuration
 The following is a list of all natively supported model configurations. Remember that if you do not see your model or model format here, you can always create your own custom configuration and still use all of the Agent-related components.
 
@@ -90,7 +110,7 @@ The following is a list of all natively supported model configurations. Remember
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | thinking-budget-tokens
 | Integer
@@ -185,7 +205,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`M
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | additional-model-request-headers
 | List of String
@@ -248,7 +268,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.AzureOpenAi.html[
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | prompt-caching
 | String
@@ -306,7 +326,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Bedrock.html[`Mod
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Not used. Bedrock requests are retried by the AWS SDK. See <<_retries>>.
 
 | thinking-budget
 | Integer
@@ -376,7 +396,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.ht
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | thinking
 | Boolean
@@ -496,7 +516,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.LocalAI.html[`Mod
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | additional-model-request-headers
 | List of String
@@ -542,7 +562,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.MistralAi.html[`M
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | think
 | Boolean
@@ -604,7 +624,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | thinking
 | Boolean
@@ -678,7 +698,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`Mode
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | additional-model-request-headers
 | List of String
