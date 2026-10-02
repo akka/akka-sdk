@@ -35,6 +35,7 @@ import akka.javasdk.agent.ToolCallGuardrail
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiConfiguredGuardrail
 import com.typesafe.config.Config
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -456,6 +457,24 @@ import org.slf4j.LoggerFactory
     guardrailsByComponentId
     guardrailsByRole
   }
+
+  /**
+   * The entries to hand to the runtime.
+   *
+   * @param enabledForComponents
+   *   the component ids of the agents that a guardrail applies to, by guardrail name
+   */
+  def spiGuardrails(enabledForComponents: String => Set[String]): Seq[SpiConfiguredGuardrail] =
+    configuredGuardrails.map { g =>
+      new SpiConfiguredGuardrail(
+        name = g.name,
+        implementationClass = g.implementationClass,
+        enabledForComponents = enabledForComponents(g.name),
+        reportOnly = g.reportOnly,
+        useFor = g.useFor.map(_.toString),
+        config = g.config,
+        controlId = g.controlId)
+    }
 
   /**
    * The guardrails for a specific agent component.

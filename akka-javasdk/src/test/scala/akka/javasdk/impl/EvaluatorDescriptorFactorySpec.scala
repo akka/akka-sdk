@@ -186,4 +186,119 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
           .agentBindings(config, "conversation-quality", NoAgentRoles)) should contain only "support-agent"
     }
   }
+
+  "Evaluator control id" should {
+
+    "be read from the entry of the evaluator" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          control-id = "AI-EV-01"
+          agents.support-agent { trigger = interaction }
+        }
+        """)
+      EvaluatorSettings.controlId(config, "conversation-quality") shouldBe Some("AI-EV-01")
+    }
+
+    "be read from a disabled evaluator" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          enabled = false
+          control-id = "AI-EV-01"
+        }
+        """)
+      EvaluatorSettings.controlId(config, "conversation-quality") shouldBe Some("AI-EV-01")
+    }
+
+    "be None when the evaluator has no entry, or its entry has no control id" in {
+      EvaluatorSettings.controlId(load(""), "conversation-quality") shouldBe None
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+        """)
+      EvaluatorSettings.controlId(config, "conversation-quality") shouldBe None
+    }
+
+    Seq("\"\"", "\" \"").foreach { blank =>
+      s"reject control-id = $blank" in {
+        val config = load(s"""
+          akka.javasdk.evaluation.evaluators.conversation-quality.control-id = $blank
+          """)
+        intercept[IllegalArgumentException] {
+          EvaluatorSettings.controlId(config, "conversation-quality")
+        }.getMessage shouldBe "Evaluator [conversation-quality] must define a non blank [control-id]"
+      }
+    }
+
+    "reject a control id that is not a string" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.control-id = true
+        """)
+      intercept[IllegalArgumentException] {
+        EvaluatorSettings.controlId(config, "conversation-quality")
+      }.getMessage shouldBe
+      "Evaluator [conversation-quality] must define [control-id] as a string, but defines [BOOLEAN]"
+    }
+
+    Seq(
+      "agents.support-agent" -> """agents.support-agent { trigger = interaction, control-id = "AI-EV-01" }""",
+      "agent-roles.*" -> """agent-roles."*" { trigger = interaction, control-id = "AI-EV-01" }""").foreach {
+      case (path, binding) =>
+        s"reject a control id in the binding $path, also when the evaluator is disabled" in {
+          Seq(true, false).foreach { enabled =>
+            val config = load(s"""
+              akka.javasdk.evaluation.evaluators.conversation-quality {
+                enabled = $enabled
+                $binding
+              }
+              """)
+            intercept[IllegalArgumentException] {
+              EvaluatorSettings.controlId(config, "conversation-quality")
+            }.getMessage shouldBe
+            s"Evaluator [conversation-quality] must define [control-id] on the evaluator, not in [$path]"
+          }
+        }
+    }
+
+    Seq("akka.javasdk.evaluation.defaults.evaluator", "akka.javasdk.evaluation.defaults.agent").foreach { path =>
+      s"reject a control id in $path" in {
+        val config = load(s"""
+          $path.control-id = "AI-EV-01"
+          akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+          """)
+        intercept[IllegalArgumentException] {
+          EvaluatorSettings.controlId(config, "conversation-quality")
+        }.getMessage shouldBe
+        s"Evaluator [conversation-quality] must define [control-id] on the evaluator, not in [$path]"
+      }
+    }
+
+    "be handed to the runtime with the bindings, on the descriptor of an evaluator and of a durable evaluator" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          control-id = "AI-EV-01"
+          agents.support-agent { trigger = interaction }
+        }
+        """)
+      val configured = EvaluatorSettings.configuredEvaluator(config, "conversation-quality", NoAgentRoles)
+
+      val evaluator = configured.evaluatorDescriptor(
+        "conversation-quality",
+        classOf[SomeEvaluator].getName,
+        name = None,
+        description = None,
+        instanceFactory = _ => throw new UnsupportedOperationException,
+        provided = false)
+      agentBindingIds(evaluator.bindings) shouldBe Seq("support-agent")
+      evaluator.controlId shouldBe Some("AI-EV-01")
+
+      val durable = configured.workflowEvaluatorDescriptor(
+        "conversation-quality",
+        classOf[SomeEvaluator].getName,
+        name = None,
+        description = None,
+        instanceFactory = _ => throw new UnsupportedOperationException,
+        provided = false)
+      agentBindingIds(durable.bindings) shouldBe Seq("support-agent")
+      durable.controlId shouldBe Some("AI-EV-01")
+    }
+  }
 }
