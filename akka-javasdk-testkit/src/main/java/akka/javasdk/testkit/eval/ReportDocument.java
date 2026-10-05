@@ -21,7 +21,7 @@ import java.util.Optional;
  * akka/javasdk/testkit/eval/eval-report.schema.json} on the testkit classpath. A reader ignores
  * properties it does not know.
  *
- * <p>A turn is one case in one run. Without {@link Experiment#runs} every case has one turn.
+ * <p>A turn is one case in one run. Without {@link Experiment#repeat} every case has one turn.
  *
  * @param format always {@value #FORMAT}
  * @param formatVersion {@value #FORMAT_VERSION}; increments when a property changes meaning or is

@@ -11,7 +11,7 @@
     "name": { "type": "string", "description": "The name given with Experiment.name, or the test method that ran the experiment, for example SupportAgentEvalTest.qualityGate. The same name over several runs." },
     "startedAt": { "type": "string", "format": "date-time", "description": "When the run started, UTC." },
     "finishedAt": { "type": "string", "format": "date-time", "description": "When the run finished, after the last turn was evaluated, UTC." },
-    "runs": { "type": "integer", "minimum": 1, "description": "How many times every case ran. 1 unless the experiment set Experiment.runs." },
+    "runs": { "type": "integer", "minimum": 1, "description": "How many times every case ran. 1 unless the experiment set Experiment.repeat." },
     "gate": {
       "type": "object",
       "required": ["passed", "detail"],

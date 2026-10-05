@@ -36,14 +36,14 @@ public interface Experiment {
   Experiment withoutReportFile();
 
   /**
-   * Runs every case this many times, each time in a fresh session. One by default. The gate, the
-   * rates and the spend count every turn, so {@link Gate#allCasesShouldPass} passes only when every
-   * case passed in every run. The report names the cases that passed in some runs and failed in
-   * others, see {@link EvalReport#cases}.
+   * Runs every case this many times in total, each time in a fresh session. Once by default. The
+   * gate, the rates and the spend count every turn, so {@link Gate#allCasesShouldPass} passes only
+   * when every case passed in every run. The report names the cases that passed in some runs and
+   * failed in others, see {@link EvalReport#cases}.
    *
-   * @param runs at least 1
+   * @param times at least 1
    */
-  Experiment runs(int runs);
+  Experiment repeat(int times);
 
   /**
    * Runs all cases, checks the gate and writes the report file. Does not throw on a failed gate;

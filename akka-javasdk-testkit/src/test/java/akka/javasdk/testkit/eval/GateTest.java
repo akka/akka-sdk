@@ -116,7 +116,7 @@ class GateTest {
   private ExperimentRunner.EvalReport runRepeated(
       Gate gate, EvalTarget<String> target, int runs, List<EvalCase<String>> cases) {
     return ExperimentRunner.against(new ExperimentRunner().cases(cases), target)
-        .runs(runs)
+        .repeat(runs)
         .gate(gate)
         .run();
   }

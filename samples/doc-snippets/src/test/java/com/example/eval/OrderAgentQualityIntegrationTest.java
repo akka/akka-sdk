@@ -136,7 +136,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
     var report = new ExperimentRunner(testKit)
       .cases(curated())
       .agent(OrderAgent::ask)
-      .runs(3) // <1>
+      .repeat(3) // <1>
       .gate(Gate.passRateShouldBeAtLeast(0.9)) // <2>
       .run();
 

@@ -1356,7 +1356,7 @@ class ExperimentRunnerTest {
           return EvalTarget.Outcome.answered(Interaction.of(turn.command(), "done"));
         };
 
-    var report = experiment(target, EvalCase.of("c1", "q"), EvalCase.of("c2", "q")).runs(3).run();
+    var report = experiment(target, EvalCase.of("c1", "q"), EvalCase.of("c2", "q")).repeat(3).run();
 
     assertThat(order).containsExactly("c1", "c2", "c1", "c2", "c1", "c2");
     assertThat(sessions).doesNotHaveDuplicates();
@@ -1385,7 +1385,7 @@ class ExperimentRunnerTest {
                 failingOnCall(4),
                 EvalCase.of("steady", "q", Evaluators.replyShouldContain("done")),
                 EvalCase.of("flaky", "q", Evaluators.replyShouldContain("done")))
-            .runs(3)
+            .repeat(3)
             .run();
 
     assertThat(report.passed()).isFalse();
@@ -1413,7 +1413,7 @@ class ExperimentRunnerTest {
     var report =
         experiment(
                 targetThat("sorry"), EvalCase.of("c", "q", Evaluators.replyShouldContain("done")))
-            .runs(2)
+            .repeat(2)
             .run();
 
     assertThat(report.cases().getFirst().outcome())
@@ -1433,7 +1433,7 @@ class ExperimentRunnerTest {
         turn ->
             tracedThat("done", 1, 100, Duration.ofMillis(10L * calls.incrementAndGet())).call(turn);
 
-    var report = experiment(target, EvalCase.of("c", "q")).runs(3).run();
+    var report = experiment(target, EvalCase.of("c", "q")).repeat(3).run();
 
     assertThat(report.render())
         .contains(
@@ -1458,7 +1458,7 @@ class ExperimentRunnerTest {
         };
 
     ExperimentRunner.against(new ExperimentRunner().cases(evalCase).bindings(bindings), target)
-        .runs(2)
+        .repeat(2)
         .run();
 
     assertThat(order).containsExactly("load", "turn", "load", "turn");
@@ -1469,7 +1469,7 @@ class ExperimentRunnerTest {
     var report =
         experiment(
                 failingOnCall(2), EvalCase.of("flaky", "q", Evaluators.replyShouldContain("done")))
-            .runs(3)
+            .repeat(3)
             .reportDirectory(dir)
             .run();
 
@@ -1508,11 +1508,11 @@ class ExperimentRunnerTest {
   }
 
   @Test
-  void runsMustBeAtLeastOne() {
+  void repeatNeedsAtLeastOne() {
     var experiment = experiment(targetThat("done"), EvalCase.of("c", "q"));
 
-    assertThatThrownBy(() -> experiment.runs(0))
+    assertThatThrownBy(() -> experiment.repeat(0))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("runs must be at least 1");
+        .hasMessageContaining("repeat needs at least 1");
   }
 }

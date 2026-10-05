@@ -15,7 +15,7 @@ import java.util.function.Predicate;
 
 /**
  * What a batch run must satisfy, checked over all turns. A turn is one case in one run, so with
- * {@link Experiment#runs} every gate counts each case once per run.
+ * {@link Experiment#repeat} every gate counts each case once per run.
  *
  * <p>A real model is not deterministic, so a batch asserts on rates rather than on every case. With
  * a mocked model leave the gate out: without one every case must pass.

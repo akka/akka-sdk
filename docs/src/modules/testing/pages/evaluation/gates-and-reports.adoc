@@ -36,9 +36,9 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is wha
 |===
 
 The gates count turns, not cases.
-A turn is one execution of one case, so an experiment with `runs(3)` has three turns per case.
+A turn is one execution of one case, so an experiment with `repeat(3)` has three turns per case.
 `Gate.allCasesShouldPass()` then requires every case to pass in every run, and a pass rate is the share of all turns that passed.
-Without `runs(n)` a case has one turn and the gates read as the table states.
+Without `repeat(n)` a case has one turn and the gates read as the table states.
 See <<repeated-runs>>.
 
 A failed gate does not throw.
@@ -100,7 +100,7 @@ spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-sta
 
 Line by line:
 
-. The cases, the runs, and the turns with no failed result with their share. A turn is one case in one run, so without `runs(n)` on the experiment the turns are the cases.
+. The cases, the runs, and the turns with no failed result with their share. A turn is one case in one run, so without `repeat(n)` on the experiment the turns are the cases.
 . The gate's verdict and its detail. A combined gate lists the detail of each part.
 . One line per evaluator, under its xref:testing:evaluation/eval-cases.adoc#evaluator-labels[label]: the turns it passed over the turns it judged. An evaluator that was inconclusive on some turns shows the count in brackets, for example `token-budget 0/0 (2 inconclusive)`.
 . The spend: model calls, tokens and latency summed over the turns whose trace carried model calls, and the slowest turn. The line is absent when no turn carried model calls.
@@ -134,7 +134,7 @@ The reply is cut to one line of at most 200 characters.
 == Running every case several times
 
 One run of a case against a real model is one sample, and a case that passes once may fail on the next run with the same input.
-`runs(n)` on the experiment runs every case `n` times, each time in a fresh session.
+`repeat(n)` on the experiment runs every case `n` times in total, each time in a fresh session.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]

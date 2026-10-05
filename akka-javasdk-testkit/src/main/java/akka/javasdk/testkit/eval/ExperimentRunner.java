@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
  * Experiment#run}. Without a gate every case must pass, which suits a mocked model. With a real
  * model gate on rates instead.
  *
- * <p>{@link Experiment#runs} runs every case several times. One execution of one case is a turn,
+ * <p>{@link Experiment#repeat} runs every case several times. One execution of one case is a turn,
  * and the gate, the rates and the spend count turns. The report names the cases that passed in some
  * runs and failed in others.
  *
@@ -259,9 +259,9 @@ public final class ExperimentRunner {
     }
 
     @Override
-    public Experiment runs(int runs) {
-      if (runs < 1) throw new IllegalArgumentException("runs must be at least 1, was " + runs);
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory, runs);
+    public Experiment repeat(int times) {
+      if (times < 1) throw new IllegalArgumentException("repeat needs at least 1, was " + times);
+      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory, times);
     }
 
     // Run-major: every case once, then every case again. The results are listed case-major, each
@@ -444,7 +444,7 @@ public final class ExperimentRunner {
   /**
    * One turn: one case's evidence and results from one run.
    *
-   * @param run the run the turn belongs to, from 1; always 1 without {@link Experiment#runs}
+   * @param run the run the turn belongs to, from 1; always 1 without {@link Experiment#repeat}
    */
   public record CaseResult(
       String caseId, int run, Interaction interaction, List<EvalResult> evalResults) {
@@ -607,7 +607,7 @@ public final class ExperimentRunner {
      */
     String name();
 
-    /** How many times every case ran, see {@link Experiment#runs}. */
+    /** How many times every case ran, see {@link Experiment#repeat}. */
     int runs();
 
     /**
@@ -633,7 +633,7 @@ public final class ExperimentRunner {
 
     /**
      * One result per turn: every case in the order the cases were given, its runs ascending. One
-     * result per case without {@link Experiment#runs}.
+     * result per case without {@link Experiment#repeat}.
      */
     List<CaseResult> results();
 
