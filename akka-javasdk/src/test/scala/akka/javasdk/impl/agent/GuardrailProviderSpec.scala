@@ -160,15 +160,25 @@ object GuardrailProviderSpec {
       modelName = "test-model",
       telemetryContext = Context.root())
 
+  private def spiUserMessage(text: String): SpiAgent.ContextMessage =
+    new SpiAgent.ContextMessage.UserMessage(Seq(new SpiAgent.TextMessageContent(text)), sanitized = false)
+
+  private def spiToolCallResponse(id: String, name: String, text: String): SpiAgent.ContextMessage =
+    new SpiAgent.ContextMessage.ToolCallResponseMessage(
+      id,
+      name,
+      Seq(new SpiAgent.TextMessageContent(text)),
+      sanitized = false)
+
   // One tool round: the user question, the model's tool request, and the tool result.
   private val toolRoundMessages: Seq[SpiAgent.ContextMessage] = Seq(
-    new SpiAgent.ContextMessage.UserMessage("first question"),
+    spiUserMessage("first question"),
     new SpiAgent.ContextMessage.AiMessage(
       "calling tool",
       Seq(new SpiAgent.ToolCallRequest("id-1", "search", "{}")),
       None,
       Map.empty),
-    new SpiAgent.ContextMessage.ToolCallResponseMessage("id-1", "search", "tool result text"))
+    spiToolCallResponse("id-1", "search", "tool result text"))
 
   // Holds the per-call context captured by the guard.
   @volatile var capturedModelCallContext: ModelCallGuardrail.CallContext = _
@@ -564,7 +574,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       val spiGuardrail = provider.agentGuardrails("model-agent", role = None).beforeModelCallGuardrails.head
 
-      val messages = Seq(new SpiAgent.ContextMessage.UserMessage("first question"))
+      val messages = Seq(spiUserMessage("first question"))
       Await.result(spiGuardrail.evaluate(modelCallContent(messages)), 3.seconds).passed shouldBe true
 
       val conversation = capturedModelCallContext
@@ -591,7 +601,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val spiGuardrail = provider.agentGuardrails("model-agent", role = None).beforeModelCallGuardrails.head
 
       val messages = Seq(
-        new SpiAgent.ContextMessage.UserMessage("weather in Lisbon and Porto?"),
+        spiUserMessage("weather in Lisbon and Porto?"),
         new SpiAgent.ContextMessage.AiMessage(
           "",
           Seq(
@@ -599,8 +609,8 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
             new SpiAgent.ToolCallRequest("id-2", "weather", """{"city":"Porto"}""")),
           None,
           Map.empty),
-        new SpiAgent.ContextMessage.ToolCallResponseMessage("id-1", "weather", "Lisbon: 22C"),
-        new SpiAgent.ContextMessage.ToolCallResponseMessage("id-2", "weather", "Porto: 18C"))
+        spiToolCallResponse("id-1", "weather", "Lisbon: 22C"),
+        spiToolCallResponse("id-2", "weather", "Porto: 18C"))
 
       Await.result(spiGuardrail.evaluate(modelCallContent(messages)), 3.seconds).passed shouldBe true
 
@@ -1032,6 +1042,28 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
 
       val descriptors = g.withToolGuardrails(Seq(toolDescriptor("some-tool")))
       descriptors.head.requestGuardrails.map(_.name) shouldBe Seq("tool guard")
+    }
+
+    "hand each guardrail to the runtime with its control id and the agents it applies to" in {
+      val cfg = ConfigFactory
+        .parseString("""
+          akka.javasdk.agent.guardrails."my guard".control-id = "AI-GR-01"
+        """)
+        .withFallback(config)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      val entries = provider.spiGuardrails {
+        case "my guard" => Set("worker-agent")
+        case _          => Set.empty
+      }
+
+      entries.map(g => g.name -> (g.controlId, g.enabledForComponents)).toMap shouldBe Map(
+        "request prompt injection" -> (None, Set.empty),
+        "my guard" -> (Some("AI-GR-01"), Set("worker-agent")))
+      val myGuard = entries.find(_.name == "my guard").get
+      myGuard.implementationClass shouldBe classOf[MyGuard].getName
+      myGuard.reportOnly shouldBe true
+      myGuard.config.getString("control-id") shouldBe "AI-GR-01"
     }
 
   }

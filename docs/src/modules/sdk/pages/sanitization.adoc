@@ -69,6 +69,7 @@ Each entry can also state where and for which agents it masks:
 * `agents`: the component ids of the agents to mask for. Use `*` for every agent.
 * `agent-roles`: the roles of the agents to mask for. Use `*` for every agent that has a role.
 * `enabled`: set it to `false` to drop the entry. A dropped entry masks nothing and constructs nothing.
+* `control-id`: the id of the control that the entry implements, see xref:concepts:governance-and-the-runtime.adoc#control-ids[control ids].
 
 An entry that defines neither `agents` nor `agent-roles` masks for every agent. An entry that defines both masks for an agent that matches either one.
 

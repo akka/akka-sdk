@@ -9,6 +9,7 @@ import java.util.Locale
 import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
+import akka.javasdk.impl.ControlId
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigObject
@@ -92,7 +93,8 @@ import com.typesafe.config.ConfigObject
       useFor = useFor,
       // Optional tool-name filter for a ToolCallGuardrail; empty means "all tools on the agent".
       tools = config.getOptionalStringSet("tools"),
-      config = config)
+      config = config,
+      controlId = ControlId.read(config, s"Guardrail [$name]"))
   }
 }
 
@@ -108,7 +110,8 @@ import com.typesafe.config.ConfigObject
     reportOnly: Boolean,
     useFor: Set[UseFor],
     tools: Set[String],
-    config: Config) {
+    config: Config,
+    controlId: Option[String]) {
   require(!name.isBlank, s"name must be defined for guardrail")
   require(!implementationClass.isBlank, s"implementation-class must be defined for guardrail [$name]")
 }

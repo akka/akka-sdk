@@ -59,9 +59,23 @@ private[javasdk] object Sanitization {
       enabledForComponents: Set[String]): Option[SpiDataSanitizer] =
     sanitizer.kind match {
       case SanitizerKind.Pattern(regex) =>
-        Some(new SpiDataSanitizer.Regex(sanitizer.name, regex, applyAt, enabledForComponents, sanitizer.config))
+        Some(
+          new SpiDataSanitizer.Regex(
+            sanitizer.name,
+            regex,
+            applyAt,
+            enabledForComponents,
+            sanitizer.config,
+            sanitizer.controlId))
       case SanitizerKind.Predefined(group) =>
-        Some(new SpiDataSanitizer.Predefined(sanitizer.name, group, applyAt, enabledForComponents, sanitizer.config))
+        Some(
+          new SpiDataSanitizer.Predefined(
+            sanitizer.name,
+            group,
+            applyAt,
+            enabledForComponents,
+            sanitizer.config,
+            sanitizer.controlId))
       case _: SanitizerKind.Implementation => None
     }
 
@@ -73,9 +87,9 @@ private[javasdk] object Sanitization {
   def declarativeSpiLogSanitizer(sanitizer: ConfiguredSanitizer): Option[SpiLogSanitizer] =
     sanitizer.kind match {
       case SanitizerKind.Pattern(regex) =>
-        Some(new SpiLogSanitizer.Regex(sanitizer.name, regex, sanitizer.config))
+        Some(new SpiLogSanitizer.Regex(sanitizer.name, regex, sanitizer.config, sanitizer.controlId))
       case SanitizerKind.Predefined(group) =>
-        Some(new SpiLogSanitizer.Predefined(sanitizer.name, group, sanitizer.config))
+        Some(new SpiLogSanitizer.Predefined(sanitizer.name, group, sanitizer.config, sanitizer.controlId))
       case _: SanitizerKind.Implementation => None
     }
 
