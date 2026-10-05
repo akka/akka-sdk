@@ -20,9 +20,12 @@ public interface Experiment {
   Experiment gate(Gate gate);
 
   /**
-   * The name the report carries, see {@link EvalReport#name}. Not blank and without a path
-   * separator, as it names the report file. Without a name the report is named after the test
-   * method that called {@link #run}, for example {@code SupportAgentEvalTest.qualityGate}.
+   * The name the report carries, see {@link EvalReport#name}. It names the report file, so it must
+   * be usable as a file name on every platform: not blank, at most 200 characters, and without
+   * {@code < > : " / \ | ? *} or control characters. Without a name the report is named after the
+   * test method that called {@link #run}, for example {@code SupportAgentEvalTest.qualityGate}.
+   *
+   * @throws IllegalArgumentException when the name is not usable as a file name
    */
   Experiment name(String name);
 

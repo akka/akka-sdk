@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -235,10 +236,7 @@ public final class ExperimentRunner {
 
     @Override
     public Experiment name(String name) {
-      if (name == null || name.isBlank()) throw new IllegalArgumentException("name required");
-      if (name.contains("/") || name.contains("\\"))
-        throw new IllegalArgumentException(
-            "name must not contain a path separator, it names the report file: " + name);
+      requireFileName(name);
       return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory);
     }
 
@@ -370,6 +368,35 @@ public final class ExperimentRunner {
       }
       return result.attributedTo(label);
     }
+  }
+
+  /** The characters no common file system accepts in a file name, and the control characters. */
+  private static final Pattern NOT_IN_A_FILE_NAME = Pattern.compile("[<>:\"/\\\\|?*\\p{Cntrl}]");
+
+  /** Leaves room for the start time and the extension within a 255 character file name. */
+  private static final int MAX_NAME_LENGTH = 200;
+
+  /** The name must be usable as a file name on every platform. */
+  static void requireFileName(String name) {
+    if (name == null || name.isBlank()) throw new IllegalArgumentException("name required");
+    if (name.length() > MAX_NAME_LENGTH)
+      throw new IllegalArgumentException(
+          "name must be at most " + MAX_NAME_LENGTH + " characters, it names the report file");
+    var illegal = NOT_IN_A_FILE_NAME.matcher(name);
+    if (illegal.find())
+      throw new IllegalArgumentException(
+          "name must not contain "
+              + describe(illegal.group())
+              + ", it names the report file and < > : \" / \\ | ? * and control characters are"
+              + " not portable: "
+              + name);
+  }
+
+  private static String describe(String character) {
+    var code = character.codePointAt(0);
+    return Character.isISOControl(code)
+        ? String.format(Locale.ROOT, "the control character U+%04X", code)
+        : "'" + character + "'";
   }
 
   private static final Set<String> TEST_ANNOTATIONS =

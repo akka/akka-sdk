@@ -1101,27 +1101,44 @@ class ExperimentRunnerTest {
   }
 
   @Test
-  void aNameThatCannotBeWrittenLeavesTheReportWithoutAFile(@TempDir Path dir) {
-    var report =
-        experiment(targetThat("done"), EvalCase.of("c", "a question"))
-            .name("nul\0name")
-            .reportDirectory(dir)
-            .run();
+  void aNameThatIsNotAPortableFileNameIsRejected() {
+    var experiment = experiment(targetThat("done"), EvalCase.of("c", "a question"));
 
-    assertThat(report.reportFile()).isEmpty();
-    assertThat(report.passed()).isTrue();
+    for (var name :
+        List.of(
+            "../escape",
+            "sub\\dir",
+            "drive:name",
+            "a*b",
+            "a?b",
+            "a|b",
+            "a<b>",
+            "say \"hi\"",
+            "tab\tname",
+            "nul\0name")) {
+      assertThatThrownBy(() -> experiment.name(name), name)
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("names the report file");
+    }
+
+    assertThatThrownBy(() -> experiment.name("x".repeat(201)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("at most 200 characters");
+
+    assertThatThrownBy(() -> experiment.name("tab\tname"))
+        .hasMessageContaining("the control character U+0009");
   }
 
   @Test
-  void aNameWithAPathSeparatorIsRejected() {
-    var experiment = experiment(targetThat("done"), EvalCase.of("c", "a question"));
+  void aPortableNameIsAcceptedAndWritten(@TempDir Path dir) {
+    var report =
+        experiment(targetThat("done"), EvalCase.of("c", "a question"))
+            .name("Support agent, quality (v2) & more.")
+            .reportDirectory(dir)
+            .run();
 
-    assertThatThrownBy(() -> experiment.name("../escape"))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("path separator");
-    assertThatThrownBy(() -> experiment.name("sub\\dir"))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("path separator");
+    assertThat(report.reportFile()).isPresent();
+    assertThat(report.name()).isEqualTo("Support agent, quality (v2) & more.");
   }
 
   /** The target the example report in the testkit resources was produced with. */
