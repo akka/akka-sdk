@@ -28,6 +28,7 @@ import akka.javasdk.agent.Guardrail.Message
 import akka.javasdk.agent.Guardrail.Message.AiMessage
 import akka.javasdk.agent.GuardrailContext
 import akka.javasdk.agent.ModelCallGuardrail
+import akka.javasdk.agent.ModelCallSimilarityGuard
 import akka.javasdk.agent.SimilarityGuard
 import akka.javasdk.agent.TextGuardrail
 import akka.javasdk.agent.ToolCallGuardrail
@@ -127,8 +128,11 @@ import org.slf4j.LoggerFactory
 
     val guardrails: SpiAgentGuardrails =
       new SpiAgentGuardrails(
-        modelCallGuardrails = entries.collect { case GuardrailEntry(configured, g: ModelCallGuardrail) =>
-          new ModelCallGuardrailAdapter(toSettings(configured), g, tracerFactory)
+        modelCallGuardrails = entries.collect {
+          case GuardrailEntry(configured, g: ModelCallSimilarityGuard) =>
+            new SpiGuardrail.SimilarityGuard(toSettings(configured), g.badExamplesResourceDir, g.threshold)
+          case GuardrailEntry(configured, g: ModelCallGuardrail) =>
+            new ModelCallGuardrailAdapter(toSettings(configured), g, tracerFactory)
         },
         agentResponseGuardrails = entries.collect { case GuardrailEntry(configured, g: AgentResponseGuardrail) =>
           new AgentResponseGuardrailAdapter(toSettings(configured), g, tracerFactory)
@@ -262,6 +266,7 @@ import org.slf4j.LoggerFactory
       case g                  => new TextGuardrailAdapter(entry, g)
     }
 
+  @nowarn("cat=deprecation")
   private def toSpiSimilarityGuard(g: SimilarityGuard, c: ConfiguredGuardrail): SpiAgent.SimilarityGuard =
     new SpiAgent.SimilarityGuard(c.name, c.category, c.reportOnly, g.badExamplesResourceDir, g.threshold)
 
@@ -332,7 +337,7 @@ import org.slf4j.LoggerFactory
 
     instance match {
       case _: TextGuardrail =>
-        warnOnDeprecatedUseFor(c)
+        warnOnDeprecatedUseFor(c, instance)
         val expanded = expandWildcard(c)
         validateTextGuardrailUseFor(expanded)
         GuardrailEntry(expanded, instance)
@@ -366,16 +371,40 @@ import org.slf4j.LoggerFactory
 
   // Runs on the DECLARED use-for set (before wildcard expansion) so a "*" declaration
   // does not trigger the warning.
-  private def warnOnDeprecatedUseFor(c: ConfiguredGuardrail): Unit = {
-    val deprecated = c.useFor.intersect(Set[UseFor](UseFor.ModelRequest, UseFor.ModelResponse))
+  @nowarn("cat=deprecation")
+  private def warnOnDeprecatedUseFor(c: ConfiguredGuardrail, instance: Guardrail): Unit =
+    instance match {
+      // FIXME: warn about mcp-tool-request and mcp-tool-response once an MCP replacement for SimilarityGuard exists.
+      case _: SimilarityGuard =>
+        if (c.useFor.contains(UseFor.ModelRequest))
+          log.warn(
+            "Guardrail [{}] uses deprecated akka.javasdk.agent.SimilarityGuard with use-for [model-request]. " +
+            "Use akka.javasdk.agent.ModelCallSimilarityGuard without use-for instead.",
+            c.name)
+        if (c.useFor.contains(UseFor.ModelResponse))
+          warnImplementNewInterface(c.name, Set[UseFor](UseFor.ModelResponse))
+
+      case _ =>
+        warnImplementNewInterface(c.name, c.useFor.intersect(Set[UseFor](UseFor.ModelRequest, UseFor.ModelResponse)))
+    }
+
+  private def warnImplementNewInterface(guardrailName: String, deprecated: Set[UseFor]): Unit =
     if (deprecated.nonEmpty)
       log.warn(
         "Guardrail [{}] uses deprecated use-for value(s) [{}]. Implement " +
         "akka.javasdk.agent.ModelCallGuardrail (for model-request) or " +
         "akka.javasdk.agent.AgentResponseGuardrail (for model-response) instead.",
-        c.name,
-        deprecated.mkString(", "))
-  }
+        guardrailName,
+        deprecated.map(configName).mkString(", "))
+
+  private def configName(useFor: UseFor): String =
+    useFor match {
+      case UseFor.ModelRequest    => "model-request"
+      case UseFor.ModelResponse   => "model-response"
+      case UseFor.McpToolRequest  => "mcp-tool-request"
+      case UseFor.McpToolResponse => "mcp-tool-response"
+      case UseFor.Wildcard        => "*"
+    }
 
   private def validateTextGuardrailUseFor(c: ConfiguredGuardrail): Unit =
     if (c.useFor.isEmpty)
@@ -437,7 +466,27 @@ import org.slf4j.LoggerFactory
         else
           acc.updated(name, entry)
       }
+
+    warnOnBothSimilarityGuards(componentId, deduplicated.values.toSeq)
+
     new AgentGuardrails(deduplicated.values.toVector, tracerFactory)
+  }
+
+  @nowarn("cat=deprecation")
+  private def warnOnBothSimilarityGuards(componentId: String, entries: Seq[GuardrailEntry]): Unit = {
+    // FIXME: count the MCP use-for values once an MCP replacement for SimilarityGuard exists.
+    val legacyNames = entries.collect {
+      case GuardrailEntry(c, _: SimilarityGuard) if c.useFor.contains(UseFor.ModelRequest) => c.name
+    }
+    val modelCallNames = entries.collect { case GuardrailEntry(c, _: ModelCallSimilarityGuard) => c.name }
+
+    if (legacyNames.nonEmpty && modelCallNames.nonEmpty)
+      log.warn(
+        "Agent [{}] has both the deprecated SimilarityGuard [{}] with use-for [model-request] and the " +
+        "ModelCallSimilarityGuard [{}]. Both check the user message and the tool results. Keep only one.",
+        componentId,
+        legacyNames.sorted.mkString(", "),
+        modelCallNames.sorted.mkString(", "))
   }
 
 }
