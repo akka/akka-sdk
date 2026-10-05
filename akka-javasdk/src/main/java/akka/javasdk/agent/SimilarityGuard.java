@@ -8,7 +8,7 @@ package akka.javasdk.agent;
  * The SimilarityGuard evaluates the text by making a similarity search in a dataset of "bad
  * examples". If the similarity reaches the threshold, SimilarityGuard blocks the result.
  *
- * @deprecated If this class uses {@code use-for = ["model-request"]}, use {@link
+ * @deprecated For a guardrail configured with {@code use-for = ["model-request"]}, use {@link
  *     ModelCallSimilarityGuard} instead. {@code mcp-tool-request} and {@code mcp-tool-response}
  *     have no replacement.
  */

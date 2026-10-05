@@ -53,34 +53,32 @@ import com.typesafe.config.ConfigObject
     }
   }
 
-  sealed trait UseFor
+  sealed abstract class UseFor(val configName: String)
   final object UseFor {
-    final case object ModelRequest extends UseFor
-    final case object ModelResponse extends UseFor
-    final case object McpToolRequest extends UseFor
-    final case object McpToolResponse extends UseFor
+    final case object ModelRequest extends UseFor("model-request")
+    final case object ModelResponse extends UseFor("model-response")
+    final case object McpToolRequest extends UseFor("mcp-tool-request")
+    final case object McpToolResponse extends UseFor("mcp-tool-response")
 
     // Placeholder for a "*" declaration. It expands to all four values above.
-    final case object Wildcard extends UseFor {
+    final case object Wildcard extends UseFor("*") {
       override def toString: String = "*"
     }
+
+    val values: Seq[UseFor] = Seq(ModelRequest, ModelResponse, McpToolRequest, McpToolResponse, Wildcard)
   }
 
   def apply(name: String, config: Config): ConfiguredGuardrail = {
     val useFor: Set[UseFor] = config
       .getOptionalStringSet("use-for")
       .map(_.toLowerCase(Locale.ROOT))
-      .map {
-        case "model-request"     => UseFor.ModelRequest
-        case "model-response"    => UseFor.ModelResponse
-        case "mcp-tool-request"  => UseFor.McpToolRequest
-        case "mcp-tool-response" => UseFor.McpToolResponse
-        case "*"                 => UseFor.Wildcard
-        case other =>
+      .map { value =>
+        UseFor.values.find(_.configName == value).getOrElse {
           throw new IllegalArgumentException(
-            s"Unknown use-for [$other] in guardrail configuration [$name]. use-for applies only to the " +
+            s"Unknown use-for [$value] in guardrail configuration [$name]. use-for applies only to the " +
             "deprecated TextGuardrail. ToolCallGuardrail, ModelCallGuardrail and AgentResponseGuardrail " +
             "bind to their boundary by type and take no use-for.")
+        }
       }
 
     new ConfiguredGuardrail(

@@ -14,12 +14,25 @@ public final class ModelCallSimilarityGuard implements ModelCallGuardrail {
   private final String badExamplesResourceDir;
   private final double threshold;
 
-  /** Reads {@code bad-examples-resource-dir} and {@code threshold} from the guardrail's config. */
+  /**
+   * Reads {@code bad-examples-resource-dir} and {@code threshold} from the guardrail's config.
+   *
+   * @throws IllegalArgumentException if {@code threshold} is not in (0, 1], or if {@code
+   *     bad-examples-resource-dir} is not on the classpath
+   */
   public ModelCallSimilarityGuard(GuardrailContext context) {
     this.badExamplesResourceDir = context.config().getString("bad-examples-resource-dir");
     this.threshold = context.config().getDouble("threshold");
 
-    if (threshold <= 0.0 || threshold > 1.0)
+    if (getClass().getClassLoader().getResource(badExamplesResourceDir) == null)
+      throw new IllegalArgumentException(
+          "Guardrail ["
+              + context.name()
+              + "] bad-examples-resource-dir ["
+              + badExamplesResourceDir
+              + "] not found on the classpath");
+
+    if (!(threshold > 0.0 && threshold <= 1.0))
       throw new IllegalArgumentException(
           "Guardrail ["
               + context.name()

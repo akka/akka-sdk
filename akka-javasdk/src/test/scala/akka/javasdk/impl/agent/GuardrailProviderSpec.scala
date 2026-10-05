@@ -1158,7 +1158,43 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       spiGuard.threshold shouldBe 0.8
     }
 
-    Seq("0", "1.5").foreach { threshold =>
+    "bind a ModelCallSimilarityGuard and a custom ModelCallGuardrail on the same agent" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "model call jailbreak" {
+              class = "akka.javasdk.agent.ModelCallSimilarityGuard"
+              agents = ["similarity-agent"]
+              category = JAILBREAK
+              threshold = 0.8
+              bad-examples-resource-dir = "guardrail/jailbreak"
+            }
+            "custom model call" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyModelCallGuard"
+              agents = ["similarity-agent"]
+              category = MODEL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val bySettingsName =
+        provider
+          .agentGuardrails("similarity-agent", role = None)
+          .guardrails
+          .modelCallGuardrails
+          .map { g =>
+            g.settings.name -> g.getClass
+          }
+          .toMap
+
+      bySettingsName shouldBe Map(
+        "model call jailbreak" -> classOf[SpiGuardrail.SimilarityGuard],
+        "custom model call" -> classOf[GuardrailProvider.ModelCallGuardrailAdapter])
+    }
+
+    Seq("0", "-0.1", "1.5", "\"NaN\"").foreach { threshold =>
       s"throw from validate when a ModelCallSimilarityGuard has threshold $threshold" in {
         val cfg = ConfigFactory.parseString(s"""
             akka.javasdk.agent.guardrails {
@@ -1177,6 +1213,51 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
           provider.validate()
         }.getMessage should include("Guardrail [model call jailbreak] threshold must be greater than 0 and at most 1")
       }
+    }
+
+    "accept a ModelCallSimilarityGuard with threshold 1" in {
+      val cfg = ConfigFactory.parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "model call jailbreak" {
+              class = "akka.javasdk.agent.ModelCallSimilarityGuard"
+              agents = ["similarity-agent"]
+              category = JAILBREAK
+              threshold = 1
+              bad-examples-resource-dir = "guardrail/jailbreak"
+            }
+          }
+        """)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      provider.validate()
+
+      val spiGuard = provider
+        .agentGuardrails("similarity-agent", role = None)
+        .guardrails
+        .modelCallGuardrails
+        .head
+        .asInstanceOf[SpiGuardrail.SimilarityGuard]
+      spiGuard.threshold shouldBe 1.0
+    }
+
+    "throw from validate when a ModelCallSimilarityGuard has a bad-examples-resource-dir that does not exist" in {
+      val cfg = ConfigFactory.parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "model call jailbreak" {
+              class = "akka.javasdk.agent.ModelCallSimilarityGuard"
+              agents = ["similarity-agent"]
+              category = JAILBREAK
+              threshold = 0.8
+              bad-examples-resource-dir = "guardrail/no-such-dir"
+            }
+          }
+        """)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      intercept[IllegalArgumentException] {
+        provider.validate()
+      }.getMessage shouldBe
+      "Guardrail [model call jailbreak] bad-examples-resource-dir [guardrail/no-such-dir] not found on the classpath"
     }
 
     "throw from validate when a ModelCallSimilarityGuard defines use-for" in {
@@ -1220,6 +1301,41 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
           new GuardrailProvider(system, cfg, testTracerFactory).validate()
         }
       }
+    }
+
+    "warn that a SimilarityGuard on use-for [*] is replaced by ModelCallSimilarityGuard" in {
+      val cfg = ConfigFactory.parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "legacy jailbreak" {
+              class = "akka.javasdk.agent.SimilarityGuard"
+              agents = ["legacy-agent"]
+              category = JAILBREAK
+              use-for = ["*"]
+              threshold = 0.75
+              bad-examples-resource-dir = "guardrail/jailbreak"
+            }
+          }
+        """)
+
+      LoggingTestKit.warn("Use akka.javasdk.agent.ModelCallSimilarityGuard without use-for instead").expect {
+        LoggingTestKit.warn("Implement akka.javasdk.agent.ModelCallGuardrail").withOccurrences(0).expect {
+          new GuardrailProvider(system, cfg, testTracerFactory).validate()
+        }
+      }
+    }
+
+    "warn that the built-in \"default jailbreak\" is replaced by \"default model-call jailbreak\"" in {
+      val cfg = ConfigFactory
+        .parseString("""akka.javasdk.agent.guardrails."default jailbreak".agents = ["legacy-agent"]""")
+        .withFallback(ConfigFactory.defaultReference())
+
+      LoggingTestKit
+        .warn("Enable \"default model-call jailbreak\" and remove \"default jailbreak\" from your agents instead.")
+        .expect {
+          LoggingTestKit.warn("Use akka.javasdk.agent.ModelCallSimilarityGuard").withOccurrences(0).expect {
+            new GuardrailProvider(system, cfg, testTracerFactory).validate()
+          }
+        }
     }
 
     "warn once for model-request and once for model-response when a SimilarityGuard uses both" in {
@@ -1279,9 +1395,34 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val provider = new GuardrailProvider(system, cfg, testTracerFactory)
 
       val g = LoggingTestKit
-        .warn("Agent [jailbreak-agent] has both the deprecated SimilarityGuard [default jailbreak]")
+        .warn(
+          "Agent [jailbreak-agent] has both the deprecated SimilarityGuard [default jailbreak] with use-for " +
+          "[model-request] and the ModelCallSimilarityGuard [default model-call jailbreak]. Both check the user " +
+          "message and the tool results. Keep only one.")
         .expect {
           provider.agentGuardrails("jailbreak-agent", role = None)
+        }
+
+      g.legacyModelRequestGuardrails.map(_.name) shouldBe Seq("default jailbreak")
+      g.guardrails.modelCallGuardrails.map(_.settings.name) shouldBe Seq("default model-call jailbreak")
+    }
+
+    "warn and keep both when the model-call similarity guard comes from agent-roles" in {
+      val cfg = ConfigFactory
+        .parseString("""
+          akka.javasdk.agent.guardrails."default jailbreak".agents = ["jailbreak-agent"]
+          akka.javasdk.agent.guardrails."default model-call jailbreak".agent-roles = ["*"]
+        """)
+        .withFallback(ConfigFactory.defaultReference())
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      val g = LoggingTestKit
+        .warn(
+          "Agent [jailbreak-agent] has both the deprecated SimilarityGuard [default jailbreak] with use-for " +
+          "[model-request] and the ModelCallSimilarityGuard [default model-call jailbreak]. Both check the user " +
+          "message and the tool results. Keep only one.")
+        .expect {
+          provider.agentGuardrails("jailbreak-agent", role = Some("worker"))
         }
 
       g.legacyModelRequestGuardrails.map(_.name) shouldBe Seq("default jailbreak")
