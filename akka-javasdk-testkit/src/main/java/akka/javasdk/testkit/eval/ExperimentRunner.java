@@ -256,7 +256,7 @@ public final class ExperimentRunner {
     @Override
     public EvalReport run() {
       var startedAt = Instant.now();
-      var reportName = name.isEmpty() ? defaultName(startedAt) : name;
+      var reportName = name.isEmpty() ? defaultName() : name;
       var results = cases.stream().map(this::evaluate).toList();
       var report =
           new Report(
@@ -268,7 +268,7 @@ public final class ExperimentRunner {
 
     // A report file that cannot be written is logged, the report itself still returns.
     private static Optional<Path> write(Report report, Path directory) {
-      var fileName = report.name() + ".json";
+      var fileName = report.name() + "-" + TIMESTAMP.format(report.startedAt()) + ".json";
       try {
         var file = directory.resolve(fileName);
         Files.createDirectories(directory);
@@ -287,18 +287,16 @@ public final class ExperimentRunner {
 
     // The test method is the first caller outside the runner that carries a test annotation;
     // without one, the first caller outside the runner, such as a helper in the test class.
-    private static String defaultName(Instant startedAt) {
+    private static String defaultName() {
       var callers =
           StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
               .walk(frames -> frames.filter(f -> !isRunnerFrame(f)).limit(64).toList());
-      var caller =
-          callers.stream()
-              .filter(Ready::isTestMethod)
-              .findFirst()
-              .or(() -> callers.stream().findFirst())
-              .map(f -> f.getDeclaringClass().getSimpleName() + "." + f.getMethodName())
-              .orElse("experiment");
-      return caller + "-" + TIMESTAMP.format(startedAt);
+      return callers.stream()
+          .filter(Ready::isTestMethod)
+          .findFirst()
+          .or(() -> callers.stream().findFirst())
+          .map(f -> f.getDeclaringClass().getSimpleName() + "." + f.getMethodName())
+          .orElse("experiment");
     }
 
     private static boolean isRunnerFrame(StackWalker.StackFrame frame) {
@@ -462,15 +460,17 @@ public final class ExperimentRunner {
   public interface EvalReport {
 
     /**
-     * The name given with {@link Experiment#name}, or the test method that ran the experiment and
-     * the start time, for example {@code SupportAgentEvalTest.qualityGate-20261001-101530-123}.
+     * The name given with {@link Experiment#name}, or the test method that ran the experiment, for
+     * example {@code SupportAgentEvalTest.qualityGate}.
      */
     String name();
 
     /**
-     * The file {@link Experiment#run} wrote the report to: {@code <name>.json} in the report
-     * directory, holding {@link #document()} as JSON. Empty when the experiment was run {@link
-     * Experiment#withoutReportFile} or the file could not be written.
+     * The file {@link Experiment#run} wrote the report to: {@code <name>-<start time>.json} in the
+     * report directory, for example {@code
+     * SupportAgentEvalTest.qualityGate-20261001-101530-123.json}, holding {@link #document()} as
+     * JSON. Empty when the experiment was run {@link Experiment#withoutReportFile} or the file
+     * could not be written.
      */
     Optional<Path> reportFile();
 

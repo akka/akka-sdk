@@ -8,7 +8,7 @@
   "properties": {
     "format": { "const": "akka-eval-report" },
     "formatVersion": { "const": 1 },
-    "name": { "type": "string", "description": "The name given with Experiment.name, or the test method that ran the experiment and the start time, for example SupportAgentEvalTest.qualityGate-20261001-101530-123." },
+    "name": { "type": "string", "description": "The name given with Experiment.name, or the test method that ran the experiment, for example SupportAgentEvalTest.qualityGate. The same name over several runs." },
     "startedAt": { "type": "string", "format": "date-time", "description": "When the run started, UTC." },
     "finishedAt": { "type": "string", "format": "date-time", "description": "When the run finished, after the last case was evaluated, UTC." },
     "gate": {

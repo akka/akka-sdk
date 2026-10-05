@@ -949,24 +949,24 @@ class ExperimentRunnerTest {
   }
 
   @Test
-  void aRunWithoutANameIsNamedAfterTheTestMethodAndTheStartTime() {
+  void aRunWithoutANameIsNamedAfterTheTestMethod() {
     var report = runThroughAHelper();
 
     assertThat(report.name())
-        .matches(
-            "ExperimentRunnerTest\\.aRunWithoutANameIsNamedAfterTheTestMethodAndTheStartTime"
-                + "-\\d{8}-\\d{6}-\\d{3}");
+        .isEqualTo("ExperimentRunnerTest.aRunWithoutANameIsNamedAfterTheTestMethod");
   }
 
   @Test
-  void theReportIsWrittenToTheReportDirectoryUnderItsName(@TempDir Path dir) throws Exception {
+  void theReportFileCarriesTheNameAndTheStartTime(@TempDir Path dir) throws Exception {
     var report =
         experiment(targetThat("done"), EvalCase.of("c", "a question"))
+            .name("order-agent")
             .reportDirectory(dir.resolve("reports/nested"))
             .run();
 
-    assertThat(report.reportFile())
-        .contains(dir.resolve("reports/nested/" + report.name() + ".json"));
+    var file = report.reportFile().orElseThrow();
+    assertThat(file.getParent()).isEqualTo(dir.resolve("reports/nested"));
+    assertThat(file.getFileName().toString()).matches("order-agent-\\d{8}-\\d{6}-\\d{3}\\.json");
     var json = new ObjectMapper().readTree(report.reportFile().orElseThrow().toFile());
     assertThat(json.get("format").asText()).isEqualTo("akka-eval-report");
     assertThat(json.get("name").asText()).isEqualTo(report.name());

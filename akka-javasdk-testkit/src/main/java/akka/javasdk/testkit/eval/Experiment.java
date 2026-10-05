@@ -22,8 +22,7 @@ public interface Experiment {
   /**
    * The name the report carries, see {@link EvalReport#name}. Not blank and without a path
    * separator, as it names the report file. Without a name the report is named after the test
-   * method that called {@link #run} and the time the run started, for example {@code
-   * SupportAgentEvalTest.qualityGate-20261001-101530-123}.
+   * method that called {@link #run}, for example {@code SupportAgentEvalTest.qualityGate}.
    */
   Experiment name(String name);
 

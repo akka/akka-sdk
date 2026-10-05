@@ -24,7 +24,7 @@ import java.util.Optional;
  * @param formatVersion {@value #FORMAT_VERSION}; increments when a property changes meaning or is
  *     removed
  * @param name the name given with {@link Experiment#name}, or the test method that ran the
- *     experiment and the start time
+ *     experiment
  * @param startedAt when the run started
  * @param finishedAt when the last case was evaluated
  * @param gate the gate verdict
