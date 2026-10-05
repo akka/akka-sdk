@@ -113,6 +113,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 A single case against a real model is not a reliable check.
 The model may formulate the reply differently on another run, or call a tool it did not call before, and the case fails on that run.
 The next step runs a set of cases and requires a minimum pass rate over all of them instead.
+xref:testing:evaluation/gates-and-reports.adoc#repeated-runs[Running every case several times] names the cases that do not hold on every run.
 
 == A batch behind a gate
 
@@ -140,8 +141,8 @@ A rendered report of this batch:
 
 [listing]
 ----
-3/3 cases passed (100%)
-gate: passed — pass rate 1.00 over 3 cases, required 0.90; tool-arguments rate 1.00 over 2 judged cases, required 1.00; no target failures
+3 cases, 1 run: 3/3 turns passed (100%)
+gate: passed — pass rate 1.00 over 3 turns (3 cases, 1 run), required 0.90; tool-arguments rate 1.00 over 2 judged turns, required 1.00; no target failures
   tools 1/1
   tool-arguments 2/2
   forbidden-tools 2/2
@@ -150,7 +151,7 @@ gate: passed — pass rate 1.00 over 3 cases, required 0.90; tool-arguments rate
   reply-matches 1/1
   tool-call-budget 1/1
   model-call-budget 1/1
-spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status at 489 ms, over 3/3 cases with evidence
+spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status run 1 at 489 ms, over 3/3 turns with evidence
 ----
 
 The second line is the gate's verdict, with the detail of each of the three gates.

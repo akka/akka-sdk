@@ -350,8 +350,8 @@ class ExperimentRunnerTest {
 
     assertThat(report.render())
         .contains(
-            "spend: 4 model calls, 700 tokens in, 0 out, 940 ms in total, slowest slow at 900 ms,"
-                + " over 2/3 cases with evidence");
+            "spend: 4 model calls, 700 tokens in, 0 out, 940 ms in total, slowest slow run 1 at 900"
+                + " ms, over 2/3 turns with evidence");
   }
 
   @Test
@@ -616,7 +616,7 @@ class ExperimentRunnerTest {
     assertThat(report.passRate()).isEqualTo(0.5);
     assertThat(report.render())
         .contains("custom-eval:no-apology 1/2")
-        .contains("case apologetic FAILED");
+        .contains("case apologetic run 1 FAILED");
   }
 
   @Test
@@ -733,7 +733,7 @@ class ExperimentRunnerTest {
             .run();
 
     assertThat(report.passed()).isFalse();
-    assertThat(report.render()).contains("gate: FAILED").contains("failed cases [bad]");
+    assertThat(report.render()).contains("gate: FAILED").contains("failed cases [bad (run 1)]");
   }
 
   @Test
@@ -744,7 +744,7 @@ class ExperimentRunnerTest {
             Evaluators.replyShouldContain("Ada Lovelace"));
 
     assertThat(run.result().describe())
-        .contains("case c FAILED")
+        .contains("case c run 1 FAILED")
         .contains("reply: I could not find them.")
         .contains("getCustomer{customerId=cust_9}")
         .contains("FAIL reply-contains");
@@ -876,10 +876,15 @@ class ExperimentRunnerTest {
     assertThat(json.get("gate").get("passed").asBoolean()).isFalse();
     assertThat(json.get("gate").get("detail").asText()).contains("pass rate 0.50");
 
+    assertThat(json.get("runs").asInt()).isEqualTo(1);
     var summary = json.get("summary");
     assertThat(summary.get("cases").asInt()).isEqualTo(2);
     assertThat(summary.get("passedCases").asInt()).isEqualTo(1);
     assertThat(summary.get("failedCases").asInt()).isEqualTo(1);
+    assertThat(summary.get("inconsistentCases").asInt()).isZero();
+    assertThat(summary.get("turns").asInt()).isEqualTo(2);
+    assertThat(summary.get("passedTurns").asInt()).isEqualTo(1);
+    assertThat(summary.get("failedTurns").asInt()).isEqualTo(1);
     assertThat(summary.get("passRate").asDouble()).isEqualTo(0.5);
 
     var evaluators = json.get("evaluators");
@@ -892,7 +897,7 @@ class ExperimentRunnerTest {
     assertThat(toolResults.get("inconclusive").asInt()).isEqualTo(1);
 
     var spend = json.get("spend");
-    assertThat(spend.get("casesWithEvidence").asInt()).isEqualTo(2);
+    assertThat(spend.get("turnsWithEvidence").asInt()).isEqualTo(2);
     assertThat(spend.get("modelCalls").asInt()).isEqualTo(2);
     assertThat(spend.get("inputTokens").asLong()).isEqualTo(200);
     assertThat(spend.get("outputTokens").asLong()).isEqualTo(40);
@@ -900,8 +905,21 @@ class ExperimentRunnerTest {
 
     var cases = json.get("cases");
     assertThat(cases).hasSize(2);
-    var failed = cases.get(1);
+    var failedCase = cases.get(1);
+    assertThat(failedCase.get("id").asText()).isEqualTo("wrong-order");
+    assertThat(failedCase.get("outcome").asText()).isEqualTo("FAILED_EVERY_RUN");
+    assertThat(failedCase.get("passedRuns").asInt()).isZero();
+    assertThat(failedCase.get("failedRuns").asInt()).isEqualTo(1);
+    assertThat(failedCase.get("evaluators"))
+        .extracting(e -> e.get("evaluator").asText())
+        .containsExactly("tool-arguments", "tool-results");
+    assertThat(failedCase.get("evaluators").get(0).get("failed").asInt()).isEqualTo(1);
+
+    var turns = json.get("turns");
+    assertThat(turns).hasSize(2);
+    var failed = turns.get(1);
     assertThat(failed.get("id").asText()).isEqualTo("wrong-order");
+    assertThat(failed.get("run").asInt()).isEqualTo(1);
     assertThat(failed.get("passed").asBoolean()).isFalse();
 
     var interaction = failed.get("interaction");
@@ -987,9 +1005,9 @@ class ExperimentRunnerTest {
     assertThat(document).isEqualTo(report.document());
     assertThat(document.format()).isEqualTo(ReportDocument.FORMAT);
     assertThat(document.name()).isEqualTo("order-agent");
-    assertThat(document.cases().getFirst().interaction().toolCalls().getFirst().result())
+    assertThat(document.turns().getFirst().interaction().toolCalls().getFirst().result())
         .contains("{\"status\":\"shipped\"}");
-    assertThat(document.cases().getFirst().results().getFirst().verdict())
+    assertThat(document.turns().getFirst().results().getFirst().verdict())
         .isEqualTo(EvalResult.Verdict.PASS);
   }
 
@@ -1031,13 +1049,13 @@ class ExperimentRunnerTest {
 
     assertThat(json.get("gate").get("passed").asBoolean()).isTrue();
     assertThat(json.get("evaluators")).isEmpty();
-    assertThat(json.get("spend").get("casesWithEvidence").asInt()).isZero();
+    assertThat(json.get("spend").get("turnsWithEvidence").asInt()).isZero();
     assertThat(json.get("spend").get("modelCalls").asInt()).isZero();
-    var interaction = json.get("cases").get(0).get("interaction");
+    var interaction = json.get("turns").get(0).get("interaction");
     assertThat(interaction.get("toolCalls")).isEmpty();
     assertThat(interaction.get("modelCalls")).isEmpty();
     assertThat(interaction.get("guardrails")).isEmpty();
-    assertThat(json.get("cases").get(0).get("results")).isEmpty();
+    assertThat(json.get("turns").get(0).get("results")).isEmpty();
   }
 
   @Test
@@ -1071,16 +1089,16 @@ class ExperimentRunnerTest {
         .contains("guardrails: jailbreak blocked: prompt injection")
         .contains("model: 1 calls")
         .contains("FAIL target: GuardrailException: blocked by jailbreak");
-    assertThat(report.render()).contains("over 1/1 cases with evidence");
+    assertThat(report.render()).contains("over 1/1 turns with evidence");
 
     var json = json(report);
-    var interaction = json.get("cases").get(0).get("interaction");
+    var interaction = json.get("turns").get(0).get("interaction");
     assertThat(interaction.get("blocked").asBoolean()).isTrue();
     assertThat(interaction.get("guardrails").get(0).get("explanation").asText())
         .isEqualTo("prompt injection");
     assertThat(interaction.get("modelCalls")).hasSize(1);
     assertThat(interaction.get("latencyMs").asLong()).isEqualTo(60);
-    assertThat(json.get("spend").get("casesWithEvidence").asInt()).isEqualTo(1);
+    assertThat(json.get("spend").get("turnsWithEvidence").asInt()).isEqualTo(1);
     assertThat(json.get("spend").get("modelCalls").asInt()).isEqualTo(1);
   }
 
@@ -1090,7 +1108,7 @@ class ExperimentRunnerTest {
         turn -> EvalTarget.Outcome.failed("timeout", List.of(ToolCall.of("getOrder")));
     var json = json(experiment(failing, EvalCase.of("c", "a question")).reportDirectory(dir).run());
 
-    var evalCase = json.get("cases").get(0);
+    var evalCase = json.get("turns").get(0);
     assertThat(evalCase.get("passed").asBoolean()).isFalse();
     assertThat(evalCase.get("interaction").get("reply").asText()).isEmpty();
     assertThat(evalCase.get("interaction").get("toolCalls").get(0).get("name").asText())
@@ -1211,11 +1229,13 @@ class ExperimentRunnerTest {
         document.name(),
         times.startedAt(),
         times.finishedAt(),
+        document.runs(),
         document.gate(),
         document.summary(),
         document.evaluators(),
         document.spend(),
-        document.cases());
+        document.cases(),
+        document.turns());
   }
 
   @Test
@@ -1314,5 +1334,185 @@ class ExperimentRunnerTest {
     assertThatThrownBy(() -> EvalCase.of("c", "  "))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("command required");
+  }
+
+  /** Answers "done", except "sorry" on the given call to it, counting calls over all cases. */
+  private static EvalTarget<String> failingOnCall(int failingCall) {
+    var calls = new java.util.concurrent.atomic.AtomicInteger();
+    return turn ->
+        EvalTarget.Outcome.answered(
+            Interaction.of(
+                turn.command(), calls.incrementAndGet() == failingCall ? "sorry" : "done"));
+  }
+
+  @Test
+  void everyCaseRunsTheGivenNumberOfTimesEachInAFreshSession() {
+    var sessions = new java.util.ArrayList<String>();
+    var order = new java.util.ArrayList<String>();
+    EvalTarget<String> target =
+        turn -> {
+          sessions.add(turn.sessionId());
+          order.add(turn.caseId());
+          return EvalTarget.Outcome.answered(Interaction.of(turn.command(), "done"));
+        };
+
+    var report = experiment(target, EvalCase.of("c1", "q"), EvalCase.of("c2", "q")).runs(3).run();
+
+    assertThat(order).containsExactly("c1", "c2", "c1", "c2", "c1", "c2");
+    assertThat(sessions).doesNotHaveDuplicates();
+    assertThat(report.runs()).isEqualTo(3);
+    assertThat(report.results())
+        .extracting(r -> r.caseId() + " run " + r.run())
+        .containsExactly("c1 run 1", "c1 run 2", "c1 run 3", "c2 run 1", "c2 run 2", "c2 run 3");
+    assertThat(report.cases())
+        .extracting(ExperimentRunner.CaseSummary::outcome)
+        .containsExactly(
+            ExperimentRunner.CaseSummary.Outcome.PASSED_EVERY_RUN,
+            ExperimentRunner.CaseSummary.Outcome.PASSED_EVERY_RUN);
+    assertThat(report.passed()).isTrue();
+    assertThat(report.render())
+        .startsWith(
+            "2 cases, 3 runs: 6/6 turns passed (100%)\n"
+                + "gate: passed — all 6 turns (2 cases, 3 runs) passed\n")
+        .doesNotContain("inconsistent");
+  }
+
+  @Test
+  void aCaseThatPassesInSomeRunsAndFailsInOthersIsInconsistent() {
+    // The fourth call is the second run of "flaky": run 1 calls steady then flaky, run 2 again.
+    var report =
+        experiment(
+                failingOnCall(4),
+                EvalCase.of("steady", "q", Evaluators.replyShouldContain("done")),
+                EvalCase.of("flaky", "q", Evaluators.replyShouldContain("done")))
+            .runs(3)
+            .run();
+
+    assertThat(report.passed()).isFalse();
+    assertThat(report.passRate()).isEqualTo(5.0 / 6);
+    var flaky = report.cases().get(1);
+    assertThat(flaky.caseId()).isEqualTo("flaky");
+    assertThat(flaky.outcome()).isEqualTo(ExperimentRunner.CaseSummary.Outcome.INCONSISTENT);
+    assertThat(flaky.passedRuns()).isEqualTo(2);
+    assertThat(flaky.failedRuns()).isEqualTo(1);
+    assertThat(flaky.turns()).extracting(ExperimentRunner.CaseResult::run).containsExactly(1, 2, 3);
+    assertThat(flaky.turns().get(1).passed()).isFalse();
+    assertThat(report.cases().get(0).outcome())
+        .isEqualTo(ExperimentRunner.CaseSummary.Outcome.PASSED_EVERY_RUN);
+    assertThat(report.render())
+        .startsWith("2 cases, 3 runs: 5/6 turns passed (83%)\n")
+        .contains("gate: FAILED — failed cases [flaky (run 2)]\n")
+        .contains("  reply-contains 5/6\n")
+        .contains(
+            "inconsistent across runs:\n  flaky passed 2/3 runs: reply-contains failed in run 2\n")
+        .contains("case flaky run 2 FAILED\n");
+  }
+
+  @Test
+  void aCaseThatFailsInEveryRunIsNotInconsistent() {
+    var report =
+        experiment(
+                targetThat("sorry"), EvalCase.of("c", "q", Evaluators.replyShouldContain("done")))
+            .runs(2)
+            .run();
+
+    assertThat(report.cases().getFirst().outcome())
+        .isEqualTo(ExperimentRunner.CaseSummary.Outcome.FAILED_EVERY_RUN);
+    assertThat(report.render())
+        .startsWith("1 case, 2 runs: 0/2 turns passed (0%)\n")
+        .contains("failed cases [c (runs 1, 2)]")
+        .doesNotContain("inconsistent")
+        .contains("case c run 1 FAILED\n")
+        .contains("case c run 2 FAILED\n");
+  }
+
+  @Test
+  void theSpendOfARepeatedRunCountsEveryTurn() {
+    var calls = new java.util.concurrent.atomic.AtomicInteger();
+    EvalTarget<String> target =
+        turn ->
+            tracedThat("done", 1, 100, Duration.ofMillis(10L * calls.incrementAndGet())).call(turn);
+
+    var report = experiment(target, EvalCase.of("c", "q")).runs(3).run();
+
+    assertThat(report.render())
+        .contains(
+            "spend: 3 model calls, 300 tokens in, 0 out, 60 ms in total, slowest c run 3 at 30 ms,"
+                + " over 3/3 turns with evidence");
+  }
+
+  @Test
+  void recordedCallsAreLoadedAgainBeforeEveryRun() {
+    var order = new java.util.ArrayList<String>();
+    var bindings = ToolBindings.builder().bind("getCustomer", call -> order.add("load")).build();
+    var evalCase =
+        new EvalCase<>(
+            "c",
+            "q",
+            List.of(new RecordedCall("getCustomer", Map.of("customerId", "cust_1"), "\"Ada\"")),
+            List.of());
+    EvalTarget<String> target =
+        turn -> {
+          order.add("turn");
+          return EvalTarget.Outcome.answered(Interaction.of(turn.command(), "done"));
+        };
+
+    ExperimentRunner.against(new ExperimentRunner().cases(evalCase).bindings(bindings), target)
+        .runs(2)
+        .run();
+
+    assertThat(order).containsExactly("load", "turn", "load", "turn");
+  }
+
+  @Test
+  void theJsonReportOfARepeatedRunCarriesEveryTurnAndTheOutcomePerCase(@TempDir Path dir) {
+    var report =
+        experiment(
+                failingOnCall(2), EvalCase.of("flaky", "q", Evaluators.replyShouldContain("done")))
+            .runs(3)
+            .reportDirectory(dir)
+            .run();
+
+    var json = json(report);
+
+    assertThat(json.get("runs").asInt()).isEqualTo(3);
+    var summary = json.get("summary");
+    assertThat(summary.get("cases").asInt()).isEqualTo(1);
+    assertThat(summary.get("passedCases").asInt()).isZero();
+    assertThat(summary.get("failedCases").asInt()).isZero();
+    assertThat(summary.get("inconsistentCases").asInt()).isEqualTo(1);
+    assertThat(summary.get("turns").asInt()).isEqualTo(3);
+    assertThat(summary.get("passedTurns").asInt()).isEqualTo(2);
+    assertThat(summary.get("failedTurns").asInt()).isEqualTo(1);
+    assertThat(summary.get("passRate").asDouble()).isEqualTo(2.0 / 3);
+
+    var evaluator = json.get("evaluators").get(0);
+    assertThat(evaluator.get("evaluator").asText()).isEqualTo("reply-contains");
+    assertThat(evaluator.get("passed").asInt()).isEqualTo(2);
+    assertThat(evaluator.get("failed").asInt()).isEqualTo(1);
+
+    var evalCase = json.get("cases").get(0);
+    assertThat(evalCase.get("id").asText()).isEqualTo("flaky");
+    assertThat(evalCase.get("outcome").asText()).isEqualTo("INCONSISTENT");
+    assertThat(evalCase.get("passedRuns").asInt()).isEqualTo(2);
+    assertThat(evalCase.get("failedRuns").asInt()).isEqualTo(1);
+    assertThat(evalCase.get("evaluators").get(0).get("failed").asInt()).isEqualTo(1);
+
+    var turns = json.get("turns");
+    assertThat(turns).extracting(t -> t.get("run").asInt()).containsExactly(1, 2, 3);
+    assertThat(turns).extracting(t -> t.get("id").asText()).containsOnly("flaky");
+    assertThat(turns.get(1).get("passed").asBoolean()).isFalse();
+    assertThat(turns.get(1).get("interaction").get("reply").asText()).isEqualTo("sorry");
+
+    assertThat(ReportDocument.read(report.reportFile().orElseThrow())).isEqualTo(report.document());
+  }
+
+  @Test
+  void runsMustBeAtLeastOne() {
+    var experiment = experiment(targetThat("done"), EvalCase.of("c", "q"));
+
+    assertThatThrownBy(() -> experiment.runs(0))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("runs must be at least 1");
   }
 }

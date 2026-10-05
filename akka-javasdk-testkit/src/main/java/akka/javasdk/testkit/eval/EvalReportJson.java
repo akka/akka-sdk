@@ -6,8 +6,12 @@ package akka.javasdk.testkit.eval;
 
 import akka.javasdk.JsonSupport;
 import akka.javasdk.testkit.eval.ExperimentRunner.CaseResult;
+import akka.javasdk.testkit.eval.ExperimentRunner.CaseSummary;
+import akka.javasdk.testkit.eval.ExperimentRunner.Rate;
 import akka.javasdk.testkit.eval.ExperimentRunner.Report;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
+import java.util.Map;
 
 /** Turns a {@link Report} into its {@link ReportDocument} and renders the document as JSON. */
 final class EvalReportJson {
@@ -25,7 +29,8 @@ final class EvalReportJson {
   }
 
   static ReportDocument document(Report report) {
-    var passed = (int) report.results().stream().filter(CaseResult::passed).count();
+    var cases = report.cases();
+    var passedTurns = (int) report.results().stream().filter(CaseResult::passed).count();
     var spend = report.spend();
     return new ReportDocument(
         ReportDocument.FORMAT,
@@ -33,30 +38,57 @@ final class EvalReportJson {
         report.name(),
         report.startedAt(),
         report.finishedAt(),
+        report.runs(),
         new ReportDocument.Gate(report.verdict().passed(), report.verdict().detail()),
         new ReportDocument.Summary(
-            report.results().size(), passed, report.results().size() - passed, report.passRate()),
-        report.rates().entrySet().stream()
-            .map(
-                e ->
-                    new ReportDocument.EvaluatorCounts(
-                        e.getKey(),
-                        e.getValue().passed(),
-                        e.getValue().failed(),
-                        e.getValue().inconclusive()))
-            .toList(),
+            cases.size(),
+            count(cases, CaseSummary.Outcome.PASSED_EVERY_RUN),
+            count(cases, CaseSummary.Outcome.FAILED_EVERY_RUN),
+            count(cases, CaseSummary.Outcome.INCONSISTENT),
+            report.results().size(),
+            passedTurns,
+            report.results().size() - passedTurns,
+            report.passRate()),
+        evaluatorCounts(Report.rates(report.results())),
         new ReportDocument.Spend(
-            spend.casesWithEvidence(),
+            spend.turnsWithEvidence(),
             spend.modelCalls(),
             spend.inputTokens(),
             spend.outputTokens(),
             spend.latencyMs()),
-        report.results().stream().map(EvalReportJson::evalCase).toList());
+        cases.stream().map(EvalReportJson::evalCase).toList(),
+        report.results().stream().map(EvalReportJson::turn).toList());
   }
 
-  private static ReportDocument.Case evalCase(CaseResult result) {
+  private static int count(List<CaseSummary> cases, CaseSummary.Outcome outcome) {
+    return (int) cases.stream().filter(c -> c.outcome() == outcome).count();
+  }
+
+  private static List<ReportDocument.EvaluatorCounts> evaluatorCounts(Map<String, Rate> rates) {
+    return rates.entrySet().stream()
+        .map(
+            e ->
+                new ReportDocument.EvaluatorCounts(
+                    e.getKey(),
+                    e.getValue().passed(),
+                    e.getValue().failed(),
+                    e.getValue().inconclusive()))
+        .toList();
+  }
+
+  private static ReportDocument.Case evalCase(CaseSummary summary) {
     return new ReportDocument.Case(
+        summary.caseId(),
+        summary.outcome(),
+        summary.passedRuns(),
+        summary.failedRuns(),
+        evaluatorCounts(Report.rates(summary.turns())));
+  }
+
+  private static ReportDocument.Turn turn(CaseResult result) {
+    return new ReportDocument.Turn(
         result.caseId(),
+        result.run(),
         result.passed(),
         interaction(result.interaction()),
         result.evalResults().stream()

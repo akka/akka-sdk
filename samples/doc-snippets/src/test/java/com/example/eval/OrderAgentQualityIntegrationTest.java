@@ -130,6 +130,21 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
 
   // end::batch[]
 
+  // tag::repeated-runs[]
+  @Test
+  public void qualityGateOverRepeatedRuns() {
+    var report = new ExperimentRunner(testKit)
+      .cases(curated())
+      .agent(OrderAgent::ask)
+      .runs(3) // <1>
+      .gate(Gate.passRateShouldBeAtLeast(0.9)) // <2>
+      .run();
+
+    assertThat(report.passed()).withFailMessage(report::render).isTrue();
+  }
+
+  // end::repeated-runs[]
+
   // tag::case-evaluator[]
   @Test
   public void aRefundNeverExceedsTheOrderTotal() {

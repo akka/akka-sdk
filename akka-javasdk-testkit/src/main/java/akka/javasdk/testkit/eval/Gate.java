@@ -7,12 +7,15 @@ package akka.javasdk.testkit.eval;
 import akka.javasdk.testkit.eval.Evaluator.EvalResult;
 import akka.javasdk.testkit.eval.ExperimentRunner.CaseResult;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
- * What a batch run must satisfy, checked over all case results.
+ * What a batch run must satisfy, checked over all turns. A turn is one case in one run, so with
+ * {@link Experiment#runs} every gate counts each case once per run.
  *
  * <p>A real model is not deterministic, so a batch asserts on rates rather than on every case. With
  * a mocked model leave the gate out: without one every case must pass.
@@ -37,18 +40,18 @@ public final class Gate {
     this.condition = condition;
   }
 
-  /** Every case must pass. The gate that applies when none is given. */
+  /** Every case must pass, in every run. The gate that applies when none is given. */
   public static Gate allCasesShouldPass() {
     return new Gate(
         results -> {
-          var failed = results.stream().filter(r -> !r.passed()).map(CaseResult::caseId).toList();
+          var failed = failedCases(results, r -> !r.passed());
           return failed.isEmpty()
-              ? Verdict.pass("all " + results.size() + " cases passed")
+              ? Verdict.pass("all " + turns(results) + " passed")
               : Verdict.fail("failed cases " + failed);
         });
   }
 
-  /** The share of cases with no failed result must be at least {@code minimumRate}. */
+  /** The share of turns with no failed result must be at least {@code minimumRate}. */
   public static Gate passRateShouldBeAtLeast(double minimumRate) {
     return new Gate(
         results -> {
@@ -57,17 +60,17 @@ public final class Gate {
           var summary =
               String.format(
                   Locale.ROOT,
-                  "pass rate %.2f over %d cases, required %.2f",
+                  "pass rate %.2f over %s, required %.2f",
                   actual,
-                  results.size(),
+                  turns(results),
                   minimumRate);
           return actual >= minimumRate ? Verdict.pass(summary) : Verdict.fail(summary);
         });
   }
 
   /**
-   * The pass rate of one evaluator, over the cases where it was conclusive, must be at least {@code
-   * minimumRate}. Fails when the evaluator judged no case.
+   * The pass rate of one evaluator, over the turns where it was conclusive, must be at least {@code
+   * minimumRate}. Fails when the evaluator judged no turn.
    *
    * @param evaluator the evaluator's class. The built-ins are nested in {@link Evaluators}, for
    *     example {@code Evaluators.ToolArgument.class}
@@ -94,7 +97,7 @@ public final class Gate {
           var summary =
               String.format(
                   Locale.ROOT,
-                  "%s rate %.2f over %d judged cases, required %.2f",
+                  "%s rate %.2f over %d judged turns, required %.2f",
                   label,
                   actual,
                   evalResults.size(),
@@ -103,22 +106,20 @@ public final class Gate {
         });
   }
 
-  /** No case may fail while its recorded calls are loaded or in the agent call. */
+  /** No turn may fail while its recorded calls are loaded or in the agent call. */
   public static Gate targetShouldNotFail() {
     return new Gate(
         results -> {
           var failed =
-              results.stream()
-                  .filter(
-                      result ->
-                          result.evalResults().stream()
-                              .anyMatch(
-                                  evalResult ->
-                                      evalResult.verdict() == EvalResult.Verdict.FAIL
-                                          && (evalResult.evaluator().equals(Evaluators.TARGET)
-                                              || evalResult.evaluator().equals(Evaluators.SETUP))))
-                  .map(CaseResult::caseId)
-                  .toList();
+              failedCases(
+                  results,
+                  result ->
+                      result.evalResults().stream()
+                          .anyMatch(
+                              evalResult ->
+                                  evalResult.verdict() == EvalResult.Verdict.FAIL
+                                      && (evalResult.evaluator().equals(Evaluators.TARGET)
+                                          || evalResult.evaluator().equals(Evaluators.SETUP))));
           return failed.isEmpty()
               ? Verdict.pass("no target failures")
               : Verdict.fail("target failed on " + failed);
@@ -145,5 +146,36 @@ public final class Gate {
   Verdict check(List<CaseResult> results) {
     if (results.isEmpty()) return Verdict.fail("no cases ran");
     return condition.apply(results);
+  }
+
+  private static int runs(List<CaseResult> results) {
+    return results.stream().mapToInt(CaseResult::run).max().orElse(1);
+  }
+
+  /** {@code 9 turns (3 cases, 3 runs)}. */
+  private static String turns(List<CaseResult> results) {
+    var runs = runs(results);
+    return results.size()
+        + " turns ("
+        + ExperimentRunner.count(results.size() / runs, "case")
+        + ", "
+        + ExperimentRunner.count(runs, "run")
+        + ")";
+  }
+
+  /**
+   * The ids of the cases with a turn that matches, in order, each with the runs that matched:
+   * {@code refund (runs 1, 3)}.
+   */
+  private static List<String> failedCases(List<CaseResult> results, Predicate<CaseResult> failed) {
+    var runsByCase = new LinkedHashMap<String, List<Integer>>();
+    for (var result : results) {
+      if (failed.test(result)) {
+        runsByCase.computeIfAbsent(result.caseId(), id -> new ArrayList<>()).add(result.run());
+      }
+    }
+    return runsByCase.entrySet().stream()
+        .map(e -> e.getKey() + " (" + ExperimentRunner.runs(e.getValue()) + ")")
+        .toList();
   }
 }

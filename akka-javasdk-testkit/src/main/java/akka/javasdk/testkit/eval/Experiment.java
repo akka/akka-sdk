@@ -20,12 +20,9 @@ public interface Experiment {
   Experiment gate(Gate gate);
 
   /**
-   * The name the report carries, see {@link EvalReport#name}. It names the report file, so it must
-   * be usable as a file name on every platform: not blank, at most 200 characters, and without
-   * {@code < > : " / \ | ? *} or control characters. Without a name the report is named after the
-   * test method that called {@link #run}, for example {@code SupportAgentEvalTest.qualityGate}.
-   *
-   * @throws IllegalArgumentException when the name is not usable as a file name
+   * The name the report carries, see {@link EvalReport#name}. Not blank and without a path
+   * separator, as it names the report file. Without a name the report is named after the test
+   * method that called {@link #run}, for example {@code SupportAgentEvalTest.qualityGate}.
    */
   Experiment name(String name);
 
@@ -37,6 +34,16 @@ public interface Experiment {
 
   /** {@link #run} writes no report file. */
   Experiment withoutReportFile();
+
+  /**
+   * Runs every case this many times, each time in a fresh session. One by default. The gate, the
+   * rates and the spend count every turn, so {@link Gate#allCasesShouldPass} passes only when every
+   * case passed in every run. The report names the cases that passed in some runs and failed in
+   * others, see {@link EvalReport#cases}.
+   *
+   * @param runs at least 1
+   */
+  Experiment runs(int runs);
 
   /**
    * Runs all cases, checks the gate and writes the report file. Does not throw on a failed gate;

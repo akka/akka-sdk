@@ -160,15 +160,15 @@ Its report under the mocked model:
 
 [listing]
 ----
-5/5 cases passed (100%)
-gate: passed — pass rate 1.00 over 5 cases, required 0.90
+5 cases, 1 run: 5/5 turns passed (100%)
+gate: passed — pass rate 1.00 over 5 turns (5 cases, 1 run), required 0.90
   tools 3/3
   tool-order 3/3
   tool-arguments 5/5
   model-call-budget 2/2
   token-budget 0/0 (2 inconclusive)
   latency-budget 2/2
-spend: 9 model calls, 0 tokens in, 0 out, 30 ms in total, slowest prod-2 at 7 ms, over 5/5 cases with evidence
+spend: 9 model calls, 0 tokens in, 0 out, 30 ms in total, slowest prod-2 run 1 at 7 ms, over 5/5 turns with evidence
 ----
 
 Three recordings name tools, so three cases have `tools` and `tool-order` results, and their five recorded arguments give five `tool-arguments` results.

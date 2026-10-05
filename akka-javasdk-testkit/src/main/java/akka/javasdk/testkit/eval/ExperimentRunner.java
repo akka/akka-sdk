@@ -44,6 +44,10 @@ import org.slf4j.LoggerFactory;
  * Experiment#run}. Without a gate every case must pass, which suits a mocked model. With a real
  * model gate on rates instead.
  *
+ * <p>{@link Experiment#runs} runs every case several times. One execution of one case is a turn,
+ * and the gate, the rates and the spend count turns. The report names the cases that passed in some
+ * runs and failed in others.
+ *
  * <p>{@link Experiment#run} writes the report as JSON to {@code target/eval-reports/<name>-<start
  * time>.json}, see {@link EvalReport#reportFile}.
  *
@@ -157,7 +161,8 @@ public final class ExperimentRunner {
           target,
           Gate.allCasesShouldPass(),
           "",
-          Optional.of(DEFAULT_REPORT_DIRECTORY));
+          Optional.of(DEFAULT_REPORT_DIRECTORY),
+          1);
     }
 
     private void requireDistinctLabels() {
@@ -225,40 +230,65 @@ public final class ExperimentRunner {
       EvalTarget<C> target,
       Gate gate,
       String name,
-      Optional<Path> reportDirectory)
+      Optional<Path> reportDirectory,
+      int runs)
       implements Experiment {
 
     @Override
     public Experiment gate(Gate gate) {
       if (gate == null) throw new IllegalArgumentException("gate required");
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory);
+      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory, runs);
     }
 
     @Override
     public Experiment name(String name) {
       requireFileName(name);
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory);
+      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory, runs);
     }
 
     @Override
     public Experiment reportDirectory(Path directory) {
       if (directory == null) throw new IllegalArgumentException("directory required");
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, Optional.of(directory));
+      return new Ready<>(
+          cases, evaluators, bindings, target, gate, name, Optional.of(directory), runs);
     }
 
     @Override
     public Experiment withoutReportFile() {
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, Optional.empty());
+      return new Ready<>(cases, evaluators, bindings, target, gate, name, Optional.empty(), runs);
     }
 
+    @Override
+    public Experiment runs(int runs) {
+      if (runs < 1) throw new IllegalArgumentException("runs must be at least 1, was " + runs);
+      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory, runs);
+    }
+
+    // Run-major: every case once, then every case again. The results are listed case-major, each
+    // case's runs ascending.
     @Override
     public EvalReport run() {
       var startedAt = Instant.now();
       var reportName = name.isEmpty() ? defaultName() : name;
-      var results = cases.stream().map(this::evaluate).toList();
+      var turnsByCase = new ArrayList<List<CaseResult>>();
+      for (var ignored : cases) turnsByCase.add(new ArrayList<>());
+      for (var run = 1; run <= runs; run++) {
+        for (var i = 0; i < cases.size(); i++) {
+          var evalCase = cases.get(i);
+          log.info("Eval case {} ({}/{}) run {}/{}", evalCase.id(), i + 1, cases.size(), run, runs);
+          turnsByCase.get(i).add(evaluate(evalCase, run));
+        }
+      }
+      var results = turnsByCase.stream().flatMap(List::stream).toList();
       var report =
           new Report(
-              reportName, startedAt, Instant.now(), results, gate.check(results), Optional.empty());
+              reportName,
+              startedAt,
+              Instant.now(),
+              runs,
+              results,
+              gate.check(results),
+              Optional.empty());
       return reportDirectory
           .map(directory -> report.withReportFile(write(report, directory)))
           .orElse(report);
@@ -312,12 +342,13 @@ public final class ExperimentRunner {
       return false;
     }
 
-    private CaseResult evaluate(EvalCase<C> evalCase) {
+    private CaseResult evaluate(EvalCase<C> evalCase, int run) {
       try {
         bindings.load(evalCase.recordedCalls());
       } catch (RuntimeException e) {
         return new CaseResult(
             evalCase.id(),
+            run,
             Interaction.of(evalCase.commandText(), ""),
             List.of(EvalResult.fail(describe(e)).attributedTo(Evaluators.SETUP)));
       }
@@ -335,6 +366,7 @@ public final class ExperimentRunner {
         case EvalTarget.Outcome.Failed failed ->
             new CaseResult(
                 evalCase.id(),
+                run,
                 new Interaction(evalCase.commandText(), "", failed.trace()),
                 List.of(EvalResult.fail(failed.reason()).attributedTo(Evaluators.TARGET)));
         case EvalTarget.Outcome.Answered answered -> {
@@ -346,7 +378,7 @@ public final class ExperimentRunner {
           for (var evaluator : evaluators) {
             results.add(evaluate(evaluator, evalCase, interaction));
           }
-          yield new CaseResult(evalCase.id(), interaction, List.copyOf(results));
+          yield new CaseResult(evalCase.id(), run, interaction, List.copyOf(results));
         }
       };
     }
@@ -409,8 +441,17 @@ public final class ExperimentRunner {
     return e.getClass().getSimpleName() + (e.getMessage() == null ? "" : ": " + e.getMessage());
   }
 
-  /** One case's evidence and results. */
-  public record CaseResult(String caseId, Interaction interaction, List<EvalResult> evalResults) {
+  /**
+   * One turn: one case's evidence and results from one run.
+   *
+   * @param run the run the turn belongs to, from 1; always 1 without {@link Experiment#runs}
+   */
+  public record CaseResult(
+      String caseId, int run, Interaction interaction, List<EvalResult> evalResults) {
+
+    public CaseResult {
+      if (run < 1) throw new IllegalArgumentException("run must be at least 1, was " + run);
+    }
 
     /** No failed result. A failed load of the recorded calls or a failed agent call is one. */
     public boolean passed() {
@@ -420,7 +461,12 @@ public final class ExperimentRunner {
     /** The evidence and the results as text, for a failed test's output. */
     public String describe() {
       var text = new StringBuilder();
-      text.append("case ").append(caseId).append(passed() ? " passed" : " FAILED").append('\n');
+      text.append("case ")
+          .append(caseId)
+          .append(" run ")
+          .append(run)
+          .append(passed() ? " passed" : " FAILED")
+          .append('\n');
       text.append("  reply: ").append(oneLine(interaction.reply())).append('\n');
       if (!interaction.finalModelText().isEmpty()
           && !interaction.finalModelText().equals(interaction.reply())) {
@@ -483,6 +529,75 @@ public final class ExperimentRunner {
     }
   }
 
+  /**
+   * One case over all its runs.
+   *
+   * @param caseId the case id
+   * @param outcome whether the case passed in every run, failed in every run, or both
+   * @param turns the case's results, one per run, runs ascending
+   */
+  public record CaseSummary(String caseId, Outcome outcome, List<CaseResult> turns) {
+
+    /** The case's outcome over all runs. */
+    public enum Outcome {
+      PASSED_EVERY_RUN,
+      FAILED_EVERY_RUN,
+      /** Passed in some runs and failed in others. */
+      INCONSISTENT
+    }
+
+    static CaseSummary of(List<CaseResult> turns) {
+      var passed = turns.stream().filter(CaseResult::passed).count();
+      var outcome =
+          passed == turns.size()
+              ? Outcome.PASSED_EVERY_RUN
+              : passed == 0 ? Outcome.FAILED_EVERY_RUN : Outcome.INCONSISTENT;
+      return new CaseSummary(turns.getFirst().caseId(), outcome, List.copyOf(turns));
+    }
+
+    /** Runs with no failed result. */
+    public int passedRuns() {
+      return (int) turns.stream().filter(CaseResult::passed).count();
+    }
+
+    /** Runs with a failed result. */
+    public int failedRuns() {
+      return turns.size() - passedRuns();
+    }
+
+    // The evaluators that failed, each with the runs it failed in.
+    private String failures() {
+      var runsByEvaluator = new LinkedHashMap<String, List<Integer>>();
+      for (var turn : turns) {
+        for (var evalResult : turn.evalResults()) {
+          if (evalResult.verdict() == EvalResult.Verdict.FAIL) {
+            runsByEvaluator
+                .computeIfAbsent(evalResult.evaluator(), e -> new ArrayList<>())
+                .add(turn.run());
+          }
+        }
+      }
+      return runsByEvaluator.entrySet().stream()
+          .map(e -> e.getKey() + " failed in " + runs(e.getValue()))
+          .collect(Collectors.joining(", "));
+    }
+
+    private String render() {
+      return caseId + " passed " + passedRuns() + "/" + turns.size() + " runs: " + failures();
+    }
+  }
+
+  /** {@code 1 case} or {@code 3 cases}. */
+  static String count(long n, String noun) {
+    return n + " " + noun + (n == 1 ? "" : "s");
+  }
+
+  /** {@code run 2} or {@code runs 1, 3}. */
+  static String runs(List<Integer> runs) {
+    return (runs.size() == 1 ? "run " : "runs ")
+        + runs.stream().map(String::valueOf).collect(Collectors.joining(", "));
+  }
+
   /** The batch outcome: per-case results and the gate's verdict. */
   public interface EvalReport {
 
@@ -491,6 +606,9 @@ public final class ExperimentRunner {
      * example {@code SupportAgentEvalTest.qualityGate}.
      */
     String name();
+
+    /** How many times every case ran, see {@link Experiment#runs}. */
+    int runs();
 
     /**
      * The file {@link Experiment#run} wrote the report to: {@code <name>-<start time>.json} in the
@@ -510,13 +628,22 @@ public final class ExperimentRunner {
     /** Whether the gate passed. */
     boolean passed();
 
-    /** The share of cases with no failed result. */
+    /** The share of turns with no failed result. */
     double passRate();
 
-    /** One result per case, in the order the cases were given. */
+    /**
+     * One result per turn: every case in the order the cases were given, its runs ascending. One
+     * result per case without {@link Experiment#runs}.
+     */
     List<CaseResult> results();
 
-    /** The run as text: the gate verdict, rates per evaluator, and failed cases with evidence. */
+    /** One summary per case, in the order the cases were given, with its outcome over all runs. */
+    List<CaseSummary> cases();
+
+    /**
+     * The run as text: the gate verdict, rates per evaluator, the cases that passed in some runs
+     * and failed in others, and failed turns with evidence.
+     */
     String render();
   }
 
@@ -524,13 +651,14 @@ public final class ExperimentRunner {
       String name,
       Instant startedAt,
       Instant finishedAt,
+      int runs,
       List<CaseResult> results,
       Gate.Verdict verdict,
       Optional<Path> reportFile)
       implements EvalReport {
 
     private Report withReportFile(Optional<Path> file) {
-      return new Report(name, startedAt, finishedAt, results, verdict, file);
+      return new Report(name, startedAt, finishedAt, runs, results, verdict, file);
     }
 
     @Override
@@ -549,33 +677,51 @@ public final class ExperimentRunner {
       return (double) results.stream().filter(CaseResult::passed).count() / results.size();
     }
 
+    // The results are listed case-major, so each case's turns are one slice of them.
+    @Override
+    public List<CaseSummary> cases() {
+      var summaries = new ArrayList<CaseSummary>();
+      for (var from = 0; from < results.size(); from += runs) {
+        summaries.add(CaseSummary.of(results.subList(from, from + runs)));
+      }
+      return List.copyOf(summaries);
+    }
+
     @Override
     public String render() {
-      var passedCases = results.stream().filter(CaseResult::passed).count();
+      var passedTurns = results.stream().filter(CaseResult::passed).count();
       var text = new StringBuilder();
       text.append(
           String.format(
               Locale.ROOT,
-              "%d/%d cases passed (%.0f%%)%n",
-              passedCases,
+              "%s, %s: %d/%d turns passed (%.0f%%)%n",
+              count(results.size() / runs, "case"),
+              count(runs, "run"),
+              passedTurns,
               results.size(),
               passRate() * 100));
       text.append("gate: ")
           .append(verdict.passed() ? "passed" : "FAILED")
           .append(verdict.detail().isEmpty() ? "" : " — " + verdict.detail())
           .append('\n');
-      rates()
+      rates(results)
           .forEach(
               (evaluator, rate) -> text.append("  ").append(rate.render(evaluator)).append('\n'));
       var spend = spend();
-      if (spend.casesWithEvidence() > 0) text.append(spend.render(results.size())).append('\n');
+      if (spend.turnsWithEvidence() > 0) text.append(spend.render(results.size())).append('\n');
+      var inconsistent =
+          cases().stream().filter(c -> c.outcome() == CaseSummary.Outcome.INCONSISTENT).toList();
+      if (!inconsistent.isEmpty()) {
+        text.append("inconsistent across runs:\n");
+        inconsistent.forEach(c -> text.append("  ").append(c.render()).append('\n'));
+      }
       results.stream()
           .filter(result -> !result.passed())
           .forEach(result -> text.append(result.describe()));
       return text.toString();
     }
 
-    /** Model calls, tokens and latency summed over the cases with model calls in the evidence. */
+    /** Model calls, tokens and latency summed over the turns with model calls in the evidence. */
     Spend spend() {
       var traced = results.stream().filter(c -> !c.interaction().modelCalls().isEmpty()).toList();
       if (traced.isEmpty()) return Spend.NONE;
@@ -588,14 +734,15 @@ public final class ExperimentRunner {
           traced.stream().mapToLong(c -> c.interaction().outputTokens()).sum(),
           traced.stream().mapToLong(c -> c.interaction().latency().toMillis()).sum(),
           slowest.caseId(),
+          slowest.run(),
           slowest.interaction().latency().toMillis());
     }
 
-    /** Pass counts per evaluator, over the cases where it was conclusive. */
-    Map<String, Rate> rates() {
+    /** Pass counts per evaluator, over the turns where it was conclusive. */
+    static Map<String, Rate> rates(List<CaseResult> turns) {
       var rates = new LinkedHashMap<String, Rate>();
-      for (var result : results) {
-        for (var evalResult : result.evalResults()) {
+      for (var turn : turns) {
+        for (var evalResult : turn.evalResults()) {
           rates
               .computeIfAbsent(evalResult.evaluator(), name -> new Rate())
               .count(evalResult.verdict());
@@ -606,36 +753,38 @@ public final class ExperimentRunner {
   }
 
   /**
-   * The model calls, tokens and latency summed over the cases whose evidence carries model calls.
+   * The model calls, tokens and latency summed over the turns whose evidence carries model calls.
    */
   record Spend(
-      int casesWithEvidence,
+      int turnsWithEvidence,
       int modelCalls,
       long inputTokens,
       long outputTokens,
       long latencyMs,
       String slowestCaseId,
+      int slowestRun,
       long slowestLatencyMs) {
 
-    static final Spend NONE = new Spend(0, 0, 0, 0, 0, "", 0);
+    static final Spend NONE = new Spend(0, 0, 0, 0, 0, "", 1, 0);
 
-    private String render(int cases) {
+    private String render(int turns) {
       return String.format(
           Locale.ROOT,
-          "spend: %d model calls, %d tokens in, %d out, %d ms in total, slowest %s at %d ms,"
-              + " over %d/%d cases with evidence",
+          "spend: %d model calls, %d tokens in, %d out, %d ms in total, slowest %s run %d at %d ms,"
+              + " over %d/%d turns with evidence",
           modelCalls,
           inputTokens,
           outputTokens,
           latencyMs,
           slowestCaseId,
+          slowestRun,
           slowestLatencyMs,
-          casesWithEvidence,
-          cases);
+          turnsWithEvidence,
+          turns);
     }
   }
 
-  /** One evaluator's verdict counts over the cases. */
+  /** One evaluator's verdict counts over the turns. */
   static final class Rate {
     private int passed;
     private int failed;

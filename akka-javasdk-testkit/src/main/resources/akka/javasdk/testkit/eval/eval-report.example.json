@@ -4,14 +4,19 @@
   "name": "support-agent-quality",
   "startedAt": "2026-10-01T10:15:30.123Z",
   "finishedAt": "2026-10-01T10:16:02.456Z",
+  "runs": 1,
   "gate": {
     "passed": false,
-    "detail": "pass rate 0.50 over 2 cases, required 0.90"
+    "detail": "pass rate 0.50 over 2 turns (2 cases, 1 run), required 0.90"
   },
   "summary": {
     "cases": 2,
     "passedCases": 1,
     "failedCases": 1,
+    "inconsistentCases": 0,
+    "turns": 2,
+    "passedTurns": 1,
+    "failedTurns": 1,
     "passRate": 0.5
   },
   "evaluators": [
@@ -21,7 +26,7 @@
     { "evaluator": "tool-results", "passed": 0, "failed": 0, "inconclusive": 1 }
   ],
   "spend": {
-    "casesWithEvidence": 2,
+    "turnsWithEvidence": 2,
     "modelCalls": 2,
     "inputTokens": 200,
     "outputTokens": 40,
@@ -30,6 +35,29 @@
   "cases": [
     {
       "id": "shipped",
+      "outcome": "PASSED_EVERY_RUN",
+      "passedRuns": 1,
+      "failedRuns": 0,
+      "evaluators": [
+        { "evaluator": "tools", "passed": 1, "failed": 0, "inconclusive": 0 },
+        { "evaluator": "reply-contains", "passed": 1, "failed": 0, "inconclusive": 0 }
+      ]
+    },
+    {
+      "id": "wrong-order",
+      "outcome": "FAILED_EVERY_RUN",
+      "passedRuns": 0,
+      "failedRuns": 1,
+      "evaluators": [
+        { "evaluator": "tool-arguments", "passed": 0, "failed": 1, "inconclusive": 0 },
+        { "evaluator": "tool-results", "passed": 0, "failed": 0, "inconclusive": 1 }
+      ]
+    }
+  ],
+  "turns": [
+    {
+      "id": "shipped",
+      "run": 1,
       "passed": true,
       "interaction": {
         "input": "Where is o_42?",
@@ -71,6 +99,7 @@
     },
     {
       "id": "wrong-order",
+      "run": 1,
       "passed": false,
       "interaction": {
         "input": "Where is o_43?",

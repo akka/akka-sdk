@@ -90,7 +90,7 @@ class GateTest {
 
     assertThat(report.passRate()).isEqualTo(0.5);
     assertThat(report.passed()).isFalse();
-    assertThat(report.render()).contains("target failed on [c2]");
+    assertThat(report.render()).contains("target failed on [c2 (run 1)]");
   }
 
   @Test
@@ -100,6 +100,80 @@ class GateTest {
             .run();
 
     assertThat(report.passed()).isTrue();
-    assertThat(report.render()).contains("1/1 cases passed (100%)");
+    assertThat(report.render()).contains("1 case, 1 run: 1/1 turns passed (100%)");
+  }
+
+  /** Answers with the case id, except "wrong" on the given calls to it, counting over all cases. */
+  private static EvalTarget<String> wrongOnCalls(Integer... wrongCalls) {
+    var wrong = List.of(wrongCalls);
+    var calls = new java.util.concurrent.atomic.AtomicInteger();
+    return turn ->
+        EvalTarget.Outcome.answered(
+            Interaction.of(
+                turn.command(), wrong.contains(calls.incrementAndGet()) ? "wrong" : turn.caseId()));
+  }
+
+  private ExperimentRunner.EvalReport runRepeated(
+      Gate gate, EvalTarget<String> target, int runs, List<EvalCase<String>> cases) {
+    return ExperimentRunner.against(new ExperimentRunner().cases(cases), target)
+        .runs(runs)
+        .gate(gate)
+        .run();
+  }
+
+  @Test
+  void aPassRateCountsEveryTurnOfARepeatedRun() {
+    var cases = List.of(expectingReply("c1", "c1"));
+
+    var passing = runRepeated(Gate.passRateShouldBeAtLeast(0.75), wrongOnCalls(4), 4, cases);
+    assertThat(passing.passed()).isTrue();
+    assertThat(passing.render())
+        .contains("pass rate 0.75 over 4 turns (1 case, 4 runs), required 0.75");
+
+    var failing = runRepeated(Gate.passRateShouldBeAtLeast(0.8), wrongOnCalls(4), 4, cases);
+    assertThat(failing.passed()).isFalse();
+  }
+
+  @Test
+  void allCasesShouldPassNamesTheRunsACaseFailedIn() {
+    var cases = List.of(expectingReply("c1", "c1"), expectingReply("c2", "c2"));
+
+    // Calls 2 and 6 are c2 in runs 1 and 3.
+    var report = runRepeated(Gate.allCasesShouldPass(), wrongOnCalls(2, 6), 3, cases);
+
+    assertThat(report.passed()).isFalse();
+    assertThat(report.render()).contains("failed cases [c2 (runs 1, 3)]");
+  }
+
+  @Test
+  void anEvaluatorIsRatedOverEveryTurnOfARepeatedRun() {
+    var cases = List.of(expectingReply("c1", "c1"));
+
+    var report =
+        runRepeated(
+            Gate.passRateShouldBeAtLeast(Evaluators.ReplyContains.class, 0.5),
+            wrongOnCalls(1),
+            2,
+            cases);
+
+    assertThat(report.passed()).isTrue();
+    assertThat(report.render())
+        .contains("reply-contains rate 0.50 over 2 judged turns, required 0.50");
+  }
+
+  @Test
+  void aTargetFailureInOneRunFailsTheTargetGate() {
+    var calls = new java.util.concurrent.atomic.AtomicInteger();
+    EvalTarget<String> throwing =
+        turn -> {
+          if (calls.incrementAndGet() == 2) throw new IllegalStateException("model unavailable");
+          return EvalTarget.Outcome.answered(Interaction.of(turn.command(), turn.caseId()));
+        };
+
+    var report =
+        runRepeated(Gate.targetShouldNotFail(), throwing, 2, List.of(expectingReply("c1", "c1")));
+
+    assertThat(report.passed()).isFalse();
+    assertThat(report.render()).contains("target failed on [c1 (run 2)]");
   }
 }
