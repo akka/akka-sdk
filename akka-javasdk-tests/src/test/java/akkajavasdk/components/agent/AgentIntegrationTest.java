@@ -73,6 +73,10 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(ClassifierBackedGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(BeforeModelCallGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(NonBlockingGuardrailsTestAgent.class, testModelProvider)
+        .withModelProvider(MixedGuardrailsTestAgent.class, testModelProvider)
+        .withModelProvider(ToolCallGuardrailTestAgent.class, testModelProvider)
+        .withModelProvider(ThrowingGuardrailTestAgent.class, testModelProvider)
+        .withModelProvider(ReportOnlyThrowingGuardrailTestAgent.class, testModelProvider)
         .withDependencyProvider(depsProvider);
   }
 
@@ -644,6 +648,47 @@ public class AgentIntegrationTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldRunAgentResponseGuardrailNextToLegacyGuardrail() {
+    // given
+    testModelProvider.whenMessage(s -> s.equals("hello")).reply("anything");
+
+    // when
+    MixedGuardrailsTestAgent.SomeResponse result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(MixedGuardrailsTestAgent::ask)
+            .invoke("hello");
+
+    // then
+    assertThat(result.response()).contains("blocked by mixed response guard");
+  }
+
+  @Test
+  public void shouldDenyToolCallWithToolCallGuardrail() {
+    // given
+    testModelProvider
+        .whenMessage(s -> s.equals("what day is it?"))
+        .reply(new ToolInvocationRequest("ToolCallGuardrailTestAgent_getDateOfToday", ""));
+    testModelProvider
+        .whenToolResult(result -> true)
+        .thenReply(result -> new AiResponse("Today is " + result.content()));
+
+    // when
+    ToolCallGuardrailTestAgent.SomeResponse result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(ToolCallGuardrailTestAgent::ask)
+            .invoke("what day is it?");
+
+    // then
+    assertThat(result.response())
+        .contains("denied by test tool guard [ToolCallGuardrailTestAgent_getDateOfToday]");
+    assertThat(ToolCallGuardrailTestAgent.toolCalls.get()).isZero();
+  }
+
+  @Test
   public void shouldFireBeforeModelCallGuardrailWithConversation() {
     // given
     testModelProvider.whenMessage(s -> s.equals("hello")).reply("never reached");
@@ -698,6 +743,42 @@ public class AgentIntegrationTest extends TestKitSupport {
             .forAgent()
             .inSession(newSessionId())
             .method(NonBlockingGuardrailsTestAgent::ask)
+            .invoke("say hi");
+
+    // then
+    assertThat(result.response()).isEqualTo("hi");
+  }
+
+  @Test
+  public void shouldFailInteractionWhenResponseGuardrailThrows() {
+    // given
+    testModelProvider.whenMessage(s -> s.equals("hello")).reply("anything");
+
+    // when
+    var result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(ThrowingGuardrailTestAgent::ask)
+            .invoke("hello");
+
+    // then
+    assertThat(result.response()).contains("thrown by test response guard");
+    assertThat(result.cause())
+        .isEqualTo("java.lang.IllegalStateException: thrown by test response guard");
+  }
+
+  @Test
+  public void shouldReturnReplyWhenReportOnlyResponseGuardrailThrows() {
+    // given
+    testModelProvider.whenMessage(s -> s.equals("say hi")).reply("hi");
+
+    // when
+    var result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(ReportOnlyThrowingGuardrailTestAgent::ask)
             .invoke("say hi");
 
     // then

@@ -748,7 +748,6 @@ private[impl] final class AgentImpl(
             val callToolFunction = (request: SpiAgent.ToolCallCommand) =>
               Future(toolExecutor.executeMultimodal(request))(sdkExecutionContext)
 
-            // See the removal plan on SpiAgent.RequestModelEffect.
             if (guardrails.hasLegacyModelGuardrails)
               new SpiAgent.RequestModelEffect(
                 modelProvider = spiModelProvider,
@@ -960,7 +959,7 @@ private[impl] final class AgentImpl(
               new McpToolCallExecutionException(exc.getMessage, reason.toolName, reason.endpoint, exc.cause)
 
             case reason: GuardrailFailure =>
-              new Guardrail.GuardrailException(reason.explanation)
+              new Guardrail.GuardrailException(reason.explanation, exc.cause)
 
             case _: ImageLoadingFailure =>
               new RuntimeException(exc.getMessage, exc.cause)

@@ -83,7 +83,7 @@ object GuardrailProviderSpec {
 
   class AllowingToolGuard extends ToolCallGuardrail {
     override def decide(ctx: ToolCallGuardrail.CallContext): Decision =
-      new Decision.Allow()
+      new Decision.Allow("tool call looks fine")
   }
 
   // Echoes every context field into the deny reason so a test can assert the full mapping.
@@ -416,7 +416,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         "componentId and role wildcard guard")
     }
 
-    "register a ToolCallGuardrail and attach it at the before-tool-call boundary" in {
+    "register a ToolCallGuardrail and attach it to the tool descriptor" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -447,7 +447,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       reasonOf(decision) shouldBe "my tool guard says no"
     }
 
-    "populate the ToolCallGuardrailContext from the tool call content" in {
+    "populate the ToolCallGuardrail.CallContext from the tool call context" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -470,7 +470,36 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       reasonOf(decision) shouldBe "tool-agent|some-tool|call-1|{}|session-1"
     }
 
-    "let a tool call proceed when the before-tool-call ToolCallGuardrail allows it" in {
+    "give the ToolCallGuardrail an empty tool call id when the context has none" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "echoing tool guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$EchoingToolGuard"
+              agents = ["tool-agent"]
+              category = TOOL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val g = provider.agentGuardrails("tool-agent", role = None)
+      val spiGuardrail = g.withToolGuardrails(Seq(toolDescriptor("some-tool"))).head.toolCallGuardrails.head
+
+      val withoutId = new SpiGuardrail.ToolCallContext(
+        toolName = "some-tool",
+        toolCallId = null,
+        arguments = "{}",
+        agentId = "tool-agent",
+        sessionId = "session-1",
+        telemetryContext = Context.root())
+
+      val decision = Await.result(spiGuardrail.decide(withoutId), 3.seconds)
+      reasonOf(decision) shouldBe "tool-agent|some-tool||{}|session-1"
+    }
+
+    "let a tool call proceed when the ToolCallGuardrail allows it" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -488,10 +517,12 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val descriptors = g.withToolGuardrails(Seq(toolDescriptor("some-tool")))
 
       val spiGuardrail = descriptors.head.toolCallGuardrails.head
-      Await.result(spiGuardrail.decide(toolCallContext("some-tool")), 3.seconds) shouldBe a[SpiGuardrail.Allow]
+      val decision = Await.result(spiGuardrail.decide(toolCallContext("some-tool")), 3.seconds)
+      decision shouldBe a[SpiGuardrail.Allow]
+      reasonOf(decision) shouldBe "tool call looks fine"
     }
 
-    "attach a before-tool-call ToolCallGuardrail to every tool when no tool filter is configured" in {
+    "attach a ToolCallGuardrail to every tool when no tool filter is configured" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -511,7 +542,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       descriptors.map(_.toolCallGuardrails.size) shouldBe Seq(1, 1)
     }
 
-    "attach a before-tool-call ToolCallGuardrail only to the named tools when a tool filter is configured" in {
+    "attach a ToolCallGuardrail only to the named tools when a tool filter is configured" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -535,7 +566,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       byName("other-tool") shouldBe 0
     }
 
-    "register a ModelCallGuardrail at before-model-call and expose the newest frame via CallContext" in {
+    "register a ModelCallGuardrail and expose the newest frame via CallContext" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -624,7 +655,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       userMessage.contents().get(0).asInstanceOf[MessageContent.TextMessageContent].text() shouldBe "first question"
     }
 
-    "expose each parallel tool result as its own new message at before-model-call" in {
+    "expose each parallel tool result as its own new message to a ModelCallGuardrail" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -754,6 +785,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val spiGuardrail = provider.agentGuardrails("failing-agent", role = None).guardrails.agentResponseGuardrails.head
 
       val decision = Await.result(spiGuardrail.decide(agentResponseContext("anything")), 3.seconds)
+      decision shouldBe a[SpiGuardrail.Fail]
       val fail = decision.asInstanceOf[SpiGuardrail.Fail]
       fail.reason shouldBe "could not decide"
       fail.cause.map(_.getMessage) shouldBe Some("upstream classifier unreachable")
@@ -776,6 +808,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val spiGuardrail = provider.agentGuardrails("failing-agent", role = None).guardrails.agentResponseGuardrails.head
 
       val decision = Await.result(spiGuardrail.decide(agentResponseContext("anything")), 3.seconds)
+      decision shouldBe a[SpiGuardrail.Fail]
       decision.asInstanceOf[SpiGuardrail.Fail].cause shouldBe None
     }
 
@@ -802,7 +835,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       failure.getMessage shouldBe "stage blew up"
     }
 
-    "throw when an AgentResponseGuardrail returns a null CompletionStage" in {
+    "fail the Future when an AgentResponseGuardrail returns a null CompletionStage" in {
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
@@ -819,9 +852,10 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       val spiGuardrail =
         provider.agentGuardrails("null-stage-agent", role = None).guardrails.agentResponseGuardrails.head
 
-      intercept[NullPointerException] {
-        spiGuardrail.decide(agentResponseContext("anything"))
+      val failure = intercept[NullPointerException] {
+        Await.result(spiGuardrail.decide(agentResponseContext("anything")), 3.seconds)
       }
+      failure.getMessage shouldBe "Guardrail returned a null CompletionStage"
     }
 
     "return a null decision when an AgentResponseGuardrail returns a null Decision" in {

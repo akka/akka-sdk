@@ -106,9 +106,11 @@ import org.slf4j.LoggerFactory
   final case class GuardrailEntry(configuredGuardrail: ConfiguredGuardrail, guardrail: Guardrail)
 
   final class AgentGuardrails(val entries: Seq[GuardrailEntry], tracerFactory: () => Tracer) {
+    @nowarn("cat=deprecation")
     private def collectLegacyGuardrails(useFor: UseFor): Seq[SpiAgent.Guardrail] =
       entries.collect {
-        case entry if entry.configuredGuardrail.useFor.contains(useFor) => toLegacySpiGuardrail(entry)
+        case entry @ GuardrailEntry(configured, g: TextGuardrail) if configured.useFor.contains(useFor) =>
+          toLegacySpiGuardrail(entry, g)
       }
 
     val legacyModelRequestGuardrails: Seq[SpiAgent.Guardrail] =
@@ -181,7 +183,7 @@ import org.slf4j.LoggerFactory
           new ToolCallGuardrailCallContextImpl(
             ctx.agentId,
             ctx.toolName,
-            ctx.toolCallId,
+            Option(ctx.toolCallId).getOrElse(""),
             ctx.arguments,
             ctx.sessionId,
             Option(ctx.telemetryContext),
@@ -240,33 +242,30 @@ import org.slf4j.LoggerFactory
     }
 
   private def toSpiDecision(decision: CompletionStage[Decision]): Future[SpiGuardrail.Decision] =
-    decision.asScala.map {
-      case allow: Allow => new SpiGuardrail.Allow(allow.reason)
-      case deny: Deny   => new SpiGuardrail.Deny(deny.reason)
-      case fail: Fail   => new SpiGuardrail.Fail(fail.reason, Option(fail.cause))
-      case null         => null
-    }(ExecutionContext.parasitic)
+    if (decision == null)
+      Future.failed(new NullPointerException("Guardrail returned a null CompletionStage"))
+    else
+      decision.asScala.map {
+        case allow: Allow => new SpiGuardrail.Allow(allow.reason)
+        case deny: Deny   => new SpiGuardrail.Deny(deny.reason)
+        case fail: Fail   => new SpiGuardrail.Fail(fail.reason, Option(fail.cause))
+        case null         => null
+      }(ExecutionContext.parasitic)
 
   private def toSettings(c: ConfiguredGuardrail): SpiGuardrail.Settings =
     new SpiGuardrail.Settings(c.name, c.category, c.reportOnly)
 
   @nowarn("cat=deprecation")
-  private def toLegacySpiGuardrail(entry: GuardrailEntry): SpiAgent.Guardrail =
-    entry.guardrail match {
+  private def toLegacySpiGuardrail(entry: GuardrailEntry, guardrail: TextGuardrail): SpiAgent.Guardrail =
+    guardrail match {
       case g: SimilarityGuard => toSpiSimilarityGuard(g, entry.configuredGuardrail)
-      case g: TextGuardrail   => new TextGuardrailAdapter(entry, g)
-      case other =>
-        throw new IllegalStateException(
-          s"Guardrail [${entry.configuredGuardrail.name}] of type [${other.getClass.getName}] is not a legacy guardrail")
+      case g                  => new TextGuardrailAdapter(entry, g)
     }
 
   private def toSpiSimilarityGuard(g: SimilarityGuard, c: ConfiguredGuardrail): SpiAgent.SimilarityGuard =
     new SpiAgent.SimilarityGuard(c.name, c.category, c.reportOnly, g.badExamplesResourceDir, g.threshold)
 
   // The use-for values a TextGuardrail can bind to. "*" expands to all of them.
-  // FIXME: extend ToolCallGuardrail to the MCP tool request/response boundaries (MCP-as-tool-call
-  // unification is a separate issue). That requires ToolCallGuardrailAdapter to build a
-  // ToolCallGuardrail.CallContext from the MCP TextContent.
   private val TextGuardrailUseFor: Set[UseFor] =
     Set(UseFor.ModelRequest, UseFor.ModelResponse, UseFor.McpToolRequest, UseFor.McpToolResponse)
 

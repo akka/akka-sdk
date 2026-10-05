@@ -235,7 +235,6 @@ object FunctionTools {
         else
           JsonSchema.jsonSchemaFor(method)
 
-      // AgentGuardrails.withToolGuardrails attaches the tool-call guardrails.
       new SpiAgent.ToolDescriptor(name, toolAnno.description(), schema = objSchema, toolCallGuardrails = Nil)
 
     }.toSeq
