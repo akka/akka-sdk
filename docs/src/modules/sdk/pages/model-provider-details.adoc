@@ -44,15 +44,12 @@ Akka retries a request to the model when it fails with a rate limit (HTTP 429), 
 
 The delay before a retry is:
 
-* The delay that the model provider asks for, if any. Akka reads it from the `Retry-After` or `retry-after-ms` response header, or from the `RetryInfo` detail of a Gemini error response. A random delay of up to 20%, and at least up to 500 milliseconds, is added, so that agents that are rate limited at the same time do not retry at the same time. If the model provider asks for a delay longer than 60 seconds, the request fails without a retry.
+* The delay that the model provider asks for, if any. Akka reads it from the `Retry-After` or `retry-after-ms` response header, or from the `RetryInfo` detail of a Gemini error response. A random delay of up to 20%, and at least up to 500 milliseconds, is added, so that agents that are rate limited at the same time do not retry at the same time.
 * Otherwise, an exponential backoff. The first delay is 500 milliseconds and each following delay is 1.5 times longer, with a random delay of up to 20% added. The delay is at most 30 seconds.
 
 A streaming request is only retried if it fails before any part of the response has been streamed. A failure after that fails the agent request.
 
-Some model providers retry in a different way:
-
-* Vertex AI: the Google client library retries the request, with `max-retries` + 1 attempts and an exponential backoff that starts at 1 second. It does not use the delay that the model provider asks for.
-* Custom model providers: Akka does not retry the request. Retries are up to the custom model implementation.
+Akka does not retry a request to a custom model provider. Retries are up to the custom model implementation.
 
 To retry an agent request for a longer time, for example for a rate limit that lasts several minutes, call the agent from a workflow with a recovery strategy. See xref:agents/calling.adoc#_drive_the_agent_from_a_workflow[Drive the agent from a workflow].
 
