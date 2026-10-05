@@ -7,6 +7,7 @@ package akka.javasdk.impl.agent
 import java.time.Instant
 import java.util.UUID
 
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
@@ -34,6 +35,7 @@ import akka.javasdk.agent.task.TaskStatus
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.agent.GuardrailProvider.AgentGuardrails
 import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
 import akka.javasdk.impl.agent.task.BacklogEntity
 import akka.javasdk.impl.agent.task.BacklogNotification
@@ -45,6 +47,7 @@ import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiAgentGuardrails
 import akka.runtime.sdk.spi.SpiAutonomousAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgentMultimodalTools
 import akka.runtime.sdk.spi.SpiBacklog
@@ -83,19 +86,19 @@ private[impl] final class AutonomousAgentImpl(
     override val modelProvider: SpiAgent.ModelProvider,
     override val toolDescriptors: Seq[SpiAgent.ToolDescriptor],
     override val mcpClientDescriptors: Seq[SpiAgent.McpToolEndpointDescriptor],
-    override val guardrails: SpiAgent.BoundGuardrails,
+    agentGuardrails: AgentGuardrails,
     override val capabilities: Seq[SpiAutonomousAgent.Capability])
     extends SpiAutonomousAgent
     with SpiAutonomousAgentMultimodalTools {
   import AgentImpl._
 
-  // Still abstract on the SPI trait for compatibility with older SDKs; derived from the
-  // grouped guardrails so there is a single source of truth.
-  override def requestGuardrails: Seq[SpiAgent.Guardrail] =
-    guardrails.boundTo(SpiAgent.GuardrailBoundary.ModelRequest)
+  override val guardrails: SpiAgentGuardrails = agentGuardrails.guardrails
 
-  override def responseGuardrails: Seq[SpiAgent.Guardrail] =
-    guardrails.boundTo(SpiAgent.GuardrailBoundary.ModelResponse)
+  @nowarn("cat=deprecation")
+  override def requestGuardrails: Seq[SpiAgent.Guardrail] = agentGuardrails.legacyModelRequestGuardrails
+
+  @nowarn("cat=deprecation")
+  override def responseGuardrails: Seq[SpiAgent.Guardrail] = agentGuardrails.legacyModelResponseGuardrails
 
   implicit val system: ActorSystem[_] = _system
   private val materializer: Materializer = SystemMaterializer(system).materializer

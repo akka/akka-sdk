@@ -1176,7 +1176,7 @@ private final class Sdk(
             modelProvider = spiModelProvider,
             toolDescriptors = spiToolDescriptors,
             mcpClientDescriptors = spiMcpDescriptors,
-            guardrails = agentGuardrails.boundGuardrails,
+            agentGuardrails = agentGuardrails,
             capabilities = spiCapabilities)
         }
 
