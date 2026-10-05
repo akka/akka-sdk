@@ -45,6 +45,8 @@ docker-image:
 prepare:
 	mkdir -p "${src_managed}"
 	cp docs/src/antora.yml "${src_managed}"
+	mkdir -p "${java_managed_attachments}"
+	cp akka-javasdk-testkit/src/main/resources/akka/javasdk/testkit/eval/eval-report.example.json "${java_managed_attachments}/"
 
 managed: prepare attributes apidocs examples bundles
 

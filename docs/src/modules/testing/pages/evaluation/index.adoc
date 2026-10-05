@@ -15,7 +15,8 @@ Evaluation is part of the Akka TestKit: the `akka.javasdk.testkit.eval` package 
 An evaluation is a JUnit test that extends `TestKitSupport`.
 The agent runs in the in-process runtime with its tools, session memory and guardrails.
 The runtime traces every model call and tool call, and the evaluation reads that trace as evidence.
-Nothing is persisted and nothing leaves the test JVM.
+Nothing leaves the test JVM.
+The run writes its report to a JSON file under `target/eval-reports`, see xref:testing:evaluation/gates-and-reports.adoc#reading-the-report[Reading the report].
 
 Use evaluation for three purposes.
 
