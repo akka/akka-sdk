@@ -7,16 +7,16 @@
   "runs": 1,
   "gate": {
     "passed": false,
-    "detail": "pass rate 0.50 over 2 turns (2 cases, 1 run), required 0.90"
+    "detail": "pass rate 0.50 over 2 attempts (2 cases, 1 run), required 0.90"
   },
   "summary": {
     "cases": 2,
     "passedCases": 1,
     "failedCases": 1,
     "inconsistentCases": 0,
-    "turns": 2,
-    "passedTurns": 1,
-    "failedTurns": 1,
+    "attempts": 2,
+    "passedAttempts": 1,
+    "failedAttempts": 1,
     "passRate": 0.5
   },
   "evaluators": [
@@ -26,7 +26,7 @@
     { "evaluator": "tool-results", "passed": 0, "failed": 0, "inconclusive": 1 }
   ],
   "spend": {
-    "turnsWithEvidence": 2,
+    "attemptsWithEvidence": 2,
     "modelCalls": 2,
     "inputTokens": 200,
     "outputTokens": 40,
@@ -54,7 +54,7 @@
       ]
     }
   ],
-  "turns": [
+  "attempts": [
     {
       "id": "shipped",
       "run": 1,

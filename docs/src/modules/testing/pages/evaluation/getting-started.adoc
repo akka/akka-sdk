@@ -141,8 +141,8 @@ A rendered report of this batch:
 
 [listing]
 ----
-3 cases, 1 run: 3/3 turns passed (100%)
-gate: passed — pass rate 1.00 over 3 turns (3 cases, 1 run), required 0.90; tool-arguments rate 1.00 over 2 judged turns, required 1.00; no target failures
+3 cases, 1 run: 3/3 attempts passed (100%)
+gate: passed — pass rate 1.00 over 3 attempts (3 cases, 1 run), required 0.90; tool-arguments rate 1.00 over 2 judged attempts, required 1.00; no target failures
   tools 1/1
   tool-arguments 2/2
   forbidden-tools 2/2
@@ -151,7 +151,7 @@ gate: passed — pass rate 1.00 over 3 turns (3 cases, 1 run), required 0.90; to
   reply-matches 1/1
   tool-call-budget 1/1
   model-call-budget 1/1
-spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status run 1 at 489 ms, over 3/3 turns with evidence
+spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status run 1 at 489 ms, over 3/3 attempts with evidence
 ----
 
 The second line is the gate's verdict, with the detail of each of the three gates.

@@ -20,25 +20,25 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is wha
 | Gate | Passes when
 
 | `Gate.allCasesShouldPass()`
-| No turn has a failed result. This is the gate that applies when none is given.
+| No attempt has a failed result. This is the gate that applies when none is given.
 
 | `Gate.passRateShouldBeAtLeast(minimumRate)`
-| The share of turns with no failed result is at least `minimumRate`.
+| The share of attempts with no failed result is at least `minimumRate`.
 
 | `Gate.passRateShouldBeAtLeast(evaluatorClass, minimumRate)`
 | The share of the evaluator's results that passed is at least `minimumRate`. Inconclusive results are left out of the count. The gate fails when the evaluator has no result to count. The class is a built-in nested in `Evaluators`, for example `Evaluators.ToolArgument.class`, or your own evaluator class.
 
 | `Gate.targetShouldNotFail()`
-| No turn failed while loading its recorded calls or in the agent call.
+| No attempt failed while loading its recorded calls or in the agent call.
 
 | `gate.and(other)`
 | Both gates hold. The verdict lists both details.
 |===
 
-The gates count turns, not cases.
-A turn is one execution of one case, so an experiment with `repeat(3)` has three turns per case.
-`Gate.allCasesShouldPass()` then requires every case to pass in every run, and a pass rate is the share of all turns that passed.
-Without `repeat(n)` a case has one turn and the gates read as the table states.
+The gates count attempts, not cases.
+An attempt is one execution of one case, so an experiment with `repeat(3)` has three attempts per case.
+`Gate.allCasesShouldPass()` then requires every case to pass in every run, and a pass rate is the share of all attempts that passed.
+Without `repeat(n)` a case has one attempt and the gates read as the table states.
 See <<repeated-runs>>.
 
 A failed gate does not throw.
@@ -60,22 +60,22 @@ Assert on the report, and use the rendered report as the failure message.
 | Whether the gate passed.
 
 | `passRate()`
-| The share of turns with no failed result.
+| The share of attempts with no failed result.
 
 | `runs()`
 | How many times every case ran, see <<repeated-runs>>.
 
 | `results()`
-| One `CaseResult` per turn: every case in the order the cases were given, its runs ascending. A `CaseResult` carries the case id, the run, the `Interaction` and the results. `describe()` renders one turn as in the report.
+| One `CaseResult` per attempt: every case in the order the cases were given, its runs ascending. A `CaseResult` carries the case id, the run, the `Interaction` and the results. `describe()` renders one attempt as in the report.
 
 | `cases()`
-| One `CaseSummary` per case, in the order the cases were given: the outcome over all runs, the passed and failed run counts, and the case's turns. The outcome is `PASSED_EVERY_RUN`, `FAILED_EVERY_RUN` or `INCONSISTENT`.
+| One `CaseSummary` per case, in the order the cases were given: the outcome over all runs, the passed and failed run counts, and the case's attempts. The outcome is `PASSED_EVERY_RUN`, `FAILED_EVERY_RUN` or `INCONSISTENT`.
 
 | `render()`
 | The report as text.
 
 | `document()`
-| The report as data, a `ReportDocument` with every case, every turn and its evidence, for tools that render their own reports.
+| The report as data, a `ReportDocument` with every case, every attempt and its evidence, for tools that render their own reports.
 
 | `reportFile()`
 | The JSON file `run()` wrote to `target/eval-reports/<name>-<start time>.json`, for example `SupportAgentEvalTest.qualityGate-20261001-101530-123.json`, holding `document()`. Every run keeps its own file. See the xref:sdk:attachment$eval-report.example.json[example report]. `ReportDocument.read(path)` reads it back. `reportDirectory(path)` on the experiment changes the directory, `withoutReportFile()` writes none. Empty when no file was written.
@@ -85,8 +85,8 @@ A rendered report of a passing batch:
 
 [listing]
 ----
-3 cases, 1 run: 3/3 turns passed (100%)
-gate: passed — pass rate 1.00 over 3 turns (3 cases, 1 run), required 0.90; tool-arguments rate 1.00 over 2 judged turns, required 1.00; no target failures
+3 cases, 1 run: 3/3 attempts passed (100%)
+gate: passed — pass rate 1.00 over 3 attempts (3 cases, 1 run), required 0.90; tool-arguments rate 1.00 over 2 judged attempts, required 1.00; no target failures
   tools 1/1
   tool-arguments 2/2
   forbidden-tools 2/2
@@ -95,30 +95,30 @@ gate: passed — pass rate 1.00 over 3 turns (3 cases, 1 run), required 0.90; to
   reply-matches 1/1
   tool-call-budget 1/1
   model-call-budget 1/1
-spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status run 1 at 489 ms, over 3/3 turns with evidence
+spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status run 1 at 489 ms, over 3/3 attempts with evidence
 ----
 
 Line by line:
 
-. The cases, the runs, and the turns with no failed result with their share. A turn is one case in one run, so without `repeat(n)` on the experiment the turns are the cases.
+. The cases, the runs, and the attempts with no failed result with their share. An attempt is one case in one run, so without `repeat(n)` on the experiment the attempts are the cases.
 . The gate's verdict and its detail. A combined gate lists the detail of each part.
-. One line per evaluator, under its xref:testing:evaluation/eval-cases.adoc#evaluator-labels[label]: the turns it passed over the turns it judged. An evaluator that was inconclusive on some turns shows the count in brackets, for example `token-budget 0/0 (2 inconclusive)`.
-. The spend: model calls, tokens and latency summed over the turns whose trace carried model calls, and the slowest turn. The line is absent when no turn carried model calls.
+. One line per evaluator, under its xref:testing:evaluation/eval-cases.adoc#evaluator-labels[label]: the attempts it passed over the attempts it judged. An evaluator that was inconclusive on some attempts shows the count in brackets, for example `token-budget 0/0 (2 inconclusive)`.
+. The spend: model calls, tokens and latency summed over the attempts whose trace carried model calls, and the slowest attempt. The line is absent when no attempt carried model calls.
 . `inconsistent across runs`, only when a case passed in some runs and failed in others: one line per such case with the evaluators that failed and the runs they failed in, for example `order-status passed 2/3 runs: tool-arguments failed in run 2`. A case that failed in every run is not listed here. See <<repeated-runs>>.
-. After these lines, every failed turn with its evidence, see <<reading-a-failed-case>>.
+. After these lines, every failed attempt with its evidence, see <<reading-a-failed-case>>.
 
 [#reading-a-failed-case]
 == Reading a failed case
 
-The rendered report ends with every failed turn and its evidence.
+The rendered report ends with every failed attempt and its evidence.
 This report is from a case that asks where order o_42 is, with an evaluator that expects `getOrder` to be called with `o_43`:
 
 [listing]
 ----
-1 case, 1 run: 0/1 turns passed (0%)
+1 case, 1 run: 0/1 attempts passed (0%)
 gate: FAILED — failed cases [wrong-order (run 1)]
   tool-arguments 0/1
-spend: 2 model calls, 123 tokens in, 321 out, 6 ms in total, slowest wrong-order run 1 at 6 ms, over 1/1 turns with evidence
+spend: 2 model calls, 123 tokens in, 321 out, 6 ms in total, slowest wrong-order run 1 at 6 ms, over 1/1 attempts with evidence
 case wrong-order run 1 FAILED
   reply: Order o_42 is shipped.
   tools: getOrder{orderId=o_42}
@@ -126,7 +126,7 @@ case wrong-order run 1 FAILED
   FAIL tool-arguments: getOrder(orderId) expected o_43, was [o_42]
 ----
 
-A failed turn is named by its case and its run, and prints the reply, the tool calls with their arguments, the model spend, and every result with its detail.
+A failed attempt is named by its case and its run, and prints the reply, the tool calls with their arguments, the model spend, and every result with its detail.
 When the agent mapped the model's text into the reply, a `model text:` line shows the model's own text as well.
 The reply is cut to one line of at most 200 characters.
 
@@ -142,7 +142,7 @@ One run of a case against a real model is one sample, and a case that passes onc
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=repeated-runs]
 ----
 <1> Every case runs three times. The runner runs every case once, then every case again, so consecutive calls of one case do not follow each other.
-<2> The gate counts turns: nine with three cases, and at least 90% of them must pass.
+<2> The gate counts attempts: nine with three cases, and at least 90% of them must pass.
 
 The report lists the cases that passed in some runs and failed in others under `inconsistent across runs`, see <<reading-the-report>>, and `cases()` carries the outcome of every case over all runs.
 The stubs the agent's tools call serve every run, and a replayed case has its recorded results loaded again before each run.

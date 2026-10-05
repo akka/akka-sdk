@@ -37,9 +37,9 @@ public interface Experiment {
 
   /**
    * Runs every case this many times in total, each time in a fresh session. Once by default. The
-   * gate, the rates and the spend count every turn, so {@link Gate#allCasesShouldPass} passes only
-   * when every case passed in every run. The report names the cases that passed in some runs and
-   * failed in others, see {@link EvalReport#cases}.
+   * gate, the rates and the spend count every attempt, so {@link Gate#allCasesShouldPass} passes
+   * only when every case passed in every run. The report names the cases that passed in some runs
+   * and failed in others, see {@link EvalReport#cases}.
    *
    * @param times at least 1
    */

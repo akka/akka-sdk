@@ -100,7 +100,7 @@ class GateTest {
             .run();
 
     assertThat(report.passed()).isTrue();
-    assertThat(report.render()).contains("1 case, 1 run: 1/1 turns passed (100%)");
+    assertThat(report.render()).contains("1 case, 1 run: 1/1 attempts passed (100%)");
   }
 
   /** Answers with the case id, except "wrong" on the given calls to it, counting over all cases. */
@@ -122,13 +122,13 @@ class GateTest {
   }
 
   @Test
-  void aPassRateCountsEveryTurnOfARepeatedRun() {
+  void aPassRateCountsEveryAttemptOfARepeatedRun() {
     var cases = List.of(expectingReply("c1", "c1"));
 
     var passing = runRepeated(Gate.passRateShouldBeAtLeast(0.75), wrongOnCalls(4), 4, cases);
     assertThat(passing.passed()).isTrue();
     assertThat(passing.render())
-        .contains("pass rate 0.75 over 4 turns (1 case, 4 runs), required 0.75");
+        .contains("pass rate 0.75 over 4 attempts (1 case, 4 runs), required 0.75");
 
     var failing = runRepeated(Gate.passRateShouldBeAtLeast(0.8), wrongOnCalls(4), 4, cases);
     assertThat(failing.passed()).isFalse();
@@ -146,7 +146,7 @@ class GateTest {
   }
 
   @Test
-  void anEvaluatorIsRatedOverEveryTurnOfARepeatedRun() {
+  void anEvaluatorIsRatedOverEveryAttemptOfARepeatedRun() {
     var cases = List.of(expectingReply("c1", "c1"));
 
     var report =
@@ -158,7 +158,7 @@ class GateTest {
 
     assertThat(report.passed()).isTrue();
     assertThat(report.render())
-        .contains("reply-contains rate 0.50 over 2 judged turns, required 0.50");
+        .contains("reply-contains rate 0.50 over 2 judged attempts, required 0.50");
   }
 
   @Test

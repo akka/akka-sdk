@@ -21,7 +21,8 @@ import java.util.Optional;
  * akka/javasdk/testkit/eval/eval-report.schema.json} on the testkit classpath. A reader ignores
  * properties it does not know.
  *
- * <p>A turn is one case in one run. Without {@link Experiment#repeat} every case has one turn.
+ * <p>An attempt is one case in one run. Without {@link Experiment#repeat} every case has one
+ * attempt.
  *
  * @param format always {@value #FORMAT}
  * @param formatVersion {@value #FORMAT_VERSION}; increments when a property changes meaning or is
@@ -29,17 +30,18 @@ import java.util.Optional;
  * @param name the name given with {@link Experiment#name}, or the test method that ran the
  *     experiment
  * @param startedAt when the run started
- * @param finishedAt when the last turn was evaluated
+ * @param finishedAt when the last attempt was evaluated
  * @param runs how many times every case ran
  * @param gate the gate verdict
- * @param summary the case and turn counts and the pass rate
+ * @param summary the case and attempt counts and the pass rate
  * @param evaluators one entry per evaluator label, in the order the labels first appear in the
- *     turns, counting every turn
- * @param spend model calls, tokens and latency summed over the turns whose evidence carries model
- *     calls
+ *     attempts, counting every attempt
+ * @param spend model calls, tokens and latency summed over the attempts whose evidence carries
+ *     model calls
  * @param cases one entry per case, in the order the cases were given, with its outcome over all
  *     runs
- * @param turns one entry per turn: every case in the order the cases were given, its runs ascending
+ * @param attempts one entry per attempt: every case in the order the cases were given, its runs
+ *     ascending
  */
 public record ReportDocument(
     String format,
@@ -53,7 +55,7 @@ public record ReportDocument(
     List<EvaluatorCounts> evaluators,
     Spend spend,
     List<Case> cases,
-    List<Turn> turns) {
+    List<Attempt> attempts) {
 
   public static final String FORMAT = "akka-eval-report";
   public static final int FORMAT_VERSION = 1;
@@ -80,25 +82,25 @@ public record ReportDocument(
    * @param passedCases cases with no failed result in any run
    * @param failedCases cases with a failed result in every run
    * @param inconsistentCases cases that passed in some runs and failed in others; zero with one run
-   * @param turns {@code cases} times {@code runs}
-   * @param passedTurns turns with no failed result
-   * @param failedTurns turns with a failed result
-   * @param passRate {@code passedTurns} over {@code turns}
+   * @param attempts {@code cases} times {@code runs}
+   * @param passedAttempts attempts with no failed result
+   * @param failedAttempts attempts with a failed result
+   * @param passRate {@code passedAttempts} over {@code attempts}
    */
   public record Summary(
       int cases,
       int passedCases,
       int failedCases,
       int inconsistentCases,
-      int turns,
-      int passedTurns,
-      int failedTurns,
+      int attempts,
+      int passedAttempts,
+      int failedAttempts,
       double passRate) {}
 
   /**
    * @param evaluator the evaluator label; a custom evaluator carries the {@link
    *     Evaluators#CUSTOM_PREFIX}, and {@link Evaluators#TARGET} and {@link Evaluators#SETUP} are
-   *     reported by the runner when a turn did not reach evaluation
+   *     reported by the runner when an attempt did not reach evaluation
    * @param passed results with the verdict PASS
    * @param failed results with the verdict FAIL
    * @param inconclusive results with the verdict INCONCLUSIVE
@@ -106,16 +108,20 @@ public record ReportDocument(
   public record EvaluatorCounts(String evaluator, int passed, int failed, int inconclusive) {}
 
   /**
-   * All zero when no turn carries model calls.
+   * All zero when no attempt carries model calls.
    *
-   * @param turnsWithEvidence turns whose evidence carries model calls
-   * @param modelCalls summed over those turns
-   * @param inputTokens summed over those turns
-   * @param outputTokens summed over those turns
-   * @param latencyMs summed over those turns
+   * @param attemptsWithEvidence attempts whose evidence carries model calls
+   * @param modelCalls summed over those attempts
+   * @param inputTokens summed over those attempts
+   * @param outputTokens summed over those attempts
+   * @param latencyMs summed over those attempts
    */
   public record Spend(
-      int turnsWithEvidence, int modelCalls, long inputTokens, long outputTokens, long latencyMs) {}
+      int attemptsWithEvidence,
+      int modelCalls,
+      long inputTokens,
+      long outputTokens,
+      long latencyMs) {}
 
   /**
    * One case over all its runs.
@@ -125,7 +131,7 @@ public record ReportDocument(
    * @param passedRuns runs with no failed result
    * @param failedRuns runs with a failed result
    * @param evaluators one entry per evaluator label that reported on the case, in the order the
-   *     labels first appear in its turns, counting every run
+   *     labels first appear in its attempts, counting every run
    */
   public record Case(
       String id,
@@ -143,7 +149,7 @@ public record ReportDocument(
    * @param interaction the input, the reply and the traced evidence
    * @param results one entry per evaluator
    */
-  public record Turn(
+  public record Attempt(
       String id, int run, boolean passed, Interaction interaction, List<Result> results) {}
 
   /**

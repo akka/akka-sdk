@@ -30,7 +30,7 @@ final class EvalReportJson {
 
   static ReportDocument document(Report report) {
     var cases = report.cases();
-    var passedTurns = (int) report.results().stream().filter(CaseResult::passed).count();
+    var passedAttempts = (int) report.results().stream().filter(CaseResult::passed).count();
     var spend = report.spend();
     return new ReportDocument(
         ReportDocument.FORMAT,
@@ -46,18 +46,18 @@ final class EvalReportJson {
             count(cases, CaseSummary.Outcome.FAILED_EVERY_RUN),
             count(cases, CaseSummary.Outcome.INCONSISTENT),
             report.results().size(),
-            passedTurns,
-            report.results().size() - passedTurns,
+            passedAttempts,
+            report.results().size() - passedAttempts,
             report.passRate()),
         evaluatorCounts(Report.rates(report.results())),
         new ReportDocument.Spend(
-            spend.turnsWithEvidence(),
+            spend.attemptsWithEvidence(),
             spend.modelCalls(),
             spend.inputTokens(),
             spend.outputTokens(),
             spend.latencyMs()),
         cases.stream().map(EvalReportJson::evalCase).toList(),
-        report.results().stream().map(EvalReportJson::turn).toList());
+        report.results().stream().map(EvalReportJson::attempt).toList());
   }
 
   private static int count(List<CaseSummary> cases, CaseSummary.Outcome outcome) {
@@ -82,11 +82,11 @@ final class EvalReportJson {
         summary.outcome(),
         summary.passedRuns(),
         summary.failedRuns(),
-        evaluatorCounts(Report.rates(summary.turns())));
+        evaluatorCounts(Report.rates(summary.attempts())));
   }
 
-  private static ReportDocument.Turn turn(CaseResult result) {
-    return new ReportDocument.Turn(
+  private static ReportDocument.Attempt attempt(CaseResult result) {
+    return new ReportDocument.Attempt(
         result.caseId(),
         result.run(),
         result.passed(),
