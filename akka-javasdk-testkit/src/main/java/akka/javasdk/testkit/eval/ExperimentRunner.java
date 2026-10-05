@@ -44,8 +44,8 @@ import org.slf4j.LoggerFactory;
  * Experiment#run}. Without a gate every case must pass, which suits a mocked model. With a real
  * model gate on rates instead.
  *
- * <p>{@link Experiment#run} writes the report as JSON to {@code target/eval-reports/<name>.json},
- * see {@link EvalReport#reportFile}.
+ * <p>{@link Experiment#run} writes the report as JSON to {@code target/eval-reports/<name>-<start
+ * time>.json}, see {@link EvalReport#reportFile}.
  *
  * <p>The cases carry the command the agent's command handler takes, so the handler's own type is
  * passed through unchanged.

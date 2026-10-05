@@ -45,6 +45,8 @@ docker-image:
 prepare:
 	mkdir -p "${src_managed}"
 	cp docs/src/antora.yml "${src_managed}"
+	mkdir -p "${java_managed_attachments}"
+	cp akka-javasdk-testkit/src/main/resources/akka/javasdk/testkit/eval/eval-report.example.json "${java_managed_attachments}/"
 
 managed: prepare attributes apidocs examples bundles
 
@@ -73,7 +75,6 @@ apidocs: prepare
 	sbt akka-javasdk/doc akka-javasdk-testkit/doc
 	rsync -a akka-javasdk/target/api/ "${java_managed_attachments}/api/"
 	rsync -a akka-javasdk-testkit/target/api/ "${java_managed_attachments}/testkit/"
-	cp akka-javasdk-testkit/src/main/resources/akka/javasdk/testkit/eval/eval-report.example.json "${java_managed_attachments}/"
 	docs/bin/version.sh > "${java_managed_attachments}/latest-version.txt"
 	# also keep version in previous location for the Runtime version check (Runtimes < 1.5.21)
 	mkdir -p "${src_managed}/modules/java/attachments"

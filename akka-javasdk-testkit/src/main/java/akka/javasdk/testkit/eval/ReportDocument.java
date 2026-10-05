@@ -15,8 +15,8 @@ import java.util.Optional;
 
 /**
  * The report file as data: what {@link Experiment#run} writes to {@code
- * target/eval-reports/<name>.json}, and what {@link #read} gives back. The file is this record as
- * JSON, in the {@code akka-eval-report} format described by {@code
+ * target/eval-reports/<name>-<start time>.json}, and what {@link #read} gives back. The file is
+ * this record as JSON, in the {@code akka-eval-report} format described by {@code
  * akka/javasdk/testkit/eval/eval-report.schema.json} on the testkit classpath. A reader ignores
  * properties it does not know.
  *
