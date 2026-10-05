@@ -2707,7 +2707,6 @@ public sealed interface ModelProvider {
       double topP,
       int maxTokens,
       Duration responseTimeout,
-      /** Not used. Bedrock requests are retried by the AWS SDK with its default retry strategy. */
       int maxRetries,
       /** Additional HTTP headers to include in each request to the model API */
       List<HttpHeader> additionalModelRequestHeaders,
@@ -3010,11 +3009,6 @@ public sealed interface ModelProvider {
           this.promptCaching);
     }
 
-    /**
-     * @deprecated Not used. Bedrock requests are retried by the AWS SDK with its default retry
-     *     strategy.
-     */
-    @Deprecated(since = "3.6.4")
     public Bedrock withMaxRetries(int maxRetries) {
       return new Bedrock(
           this.region,
