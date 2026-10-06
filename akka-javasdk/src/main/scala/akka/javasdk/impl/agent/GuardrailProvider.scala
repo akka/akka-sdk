@@ -107,6 +107,18 @@ import org.slf4j.LoggerFactory
 
   final case class GuardrailEntry(configuredGuardrail: ConfiguredGuardrail, guardrail: Guardrail)
 
+  /** The startup error for an agent that streams its reply and binds blocking response guardrails. */
+  def streamingResponseGuardrailError(
+      componentId: String,
+      streaming: Boolean,
+      blockingGuardrailLabels: Seq[String]): Option[String] =
+    Option.when(streaming && blockingGuardrailLabels.nonEmpty) {
+      s"Agent [$componentId] streams its reply, so it cannot use the blocking response " +
+      s"guardrail(s): ${blockingGuardrailLabels.mkString("; ")}. Give the agent a command handler that returns " +
+      "Agent.Effect, bind the guardrail to this agent through a separate report-only entry, or stop binding " +
+      "it to this agent. Marking the existing entry report-only stops it blocking on every agent bound to it."
+    }
+
   final class AgentGuardrails(val entries: Seq[GuardrailEntry], tracerFactory: () => Tracer) {
     @nowarn("cat=deprecation")
     private def collectLegacyGuardrails(useFor: UseFor): Seq[SpiAgent.Guardrail] =
@@ -141,6 +153,19 @@ import org.slf4j.LoggerFactory
         agentResponseGuardrails = entries.collect { case GuardrailEntry(configured, g: AgentResponseGuardrail) =>
           new AgentResponseGuardrailAdapter(toSettings(configured), g, tracerFactory)
         })
+
+    // The category and name of each blocking guardrail at before-agent-response or
+    // model-response.
+    val blockingResponseGuardrailLabels: Seq[String] = {
+      val agentResponse =
+        guardrails.agentResponseGuardrails.map(_.settings).filterNot(_.reportOnly).map(s => (s.category, s.name))
+      val legacyModelResponse =
+        legacyModelResponseGuardrails.filterNot(_.reportOnly).map(g => (g.category, g.name))
+
+      (agentResponse ++ legacyModelResponse).map { case (category, name) =>
+        s"category [$category], name [$name]"
+      }
+    }
 
     // The ToolCallGuardrails applicable to the given tool. An entry with an empty `tools` set
     // applies to every tool on the agent; otherwise only to the named tools.

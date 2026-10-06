@@ -87,6 +87,7 @@ import akka.javasdk.impl.agent.AutonomousAgentImpl
 import akka.javasdk.impl.agent.ClassifierProvider
 import akka.javasdk.impl.agent.FunctionTools
 import akka.javasdk.impl.agent.GuardrailProvider
+import akka.javasdk.impl.agent.GuardrailProvider.AgentGuardrails
 import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.impl.agent.PromptTemplateClient
 import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
@@ -730,6 +731,21 @@ private final class Sdk(
         throw exc
     }
 
+  // Fails startup when a streaming agent has a blocking response guardrail bound to it.
+  private def validateStreamingResponseGuardrails(
+      componentId: String,
+      agentClass: Class[_],
+      agentGuardrails: AgentGuardrails): Unit =
+    GuardrailProvider
+      .streamingResponseGuardrailError(
+        componentId,
+        Reflect.isStreamingAgent(agentClass),
+        agentGuardrails.blockingResponseGuardrailLabels)
+      .foreach { message =>
+        logger.error("Invalid guardrails: {}", message)
+        throw new IllegalArgumentException(message)
+      }
+
   lazy private val sanitizer = SanitizerImpl(runtimeSanitizer)
   // The injected handle is deprecated in favour of SanitizerClient, so the class reference is held here
   // rather than repeated at each injection site.
@@ -1251,6 +1267,7 @@ private final class Sdk(
         }
 
         accumulateSanitizers(componentId, agentRoleOptValue)
+        validateStreamingResponseGuardrails(componentId, agentClass, agentGuardrails)
 
         val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
           val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)

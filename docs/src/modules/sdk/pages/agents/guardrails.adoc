@@ -34,7 +34,14 @@ A guardrail implements one of three interfaces. The interface sets where the run
 A guardrail class implements exactly one of these interfaces.
 To check several points, write one class per interface.
 
-NOTE: The runtime does not evaluate `ModelCallGuardrail` or `AgentResponseGuardrail` for an agent that streams its reply with a `StreamEffect`.
+[NOTE]
+====
+An agent that streams its reply with a `StreamEffect` sends the reply before the runtime evaluates a response guardrail. A response guardrail cannot block that reply.
+Such an agent fails startup when you bind a blocking `AgentResponseGuardrail` to it.
+Mark the guardrail as report-only to observe the reply without blocking it.
+
+`ModelCallGuardrail` is unaffected. The runtime evaluates it before each model call on the streaming path too. It can block the call.
+====
 
 All three return a link:{attachmentsdir}/api/akka/javasdk/agent/Decision.html[`Decision`]:
 
