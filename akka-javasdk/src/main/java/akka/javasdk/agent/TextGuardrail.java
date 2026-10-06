@@ -15,8 +15,7 @@ package akka.javasdk.agent;
  *
  * @deprecated Implement {@link ToolCallGuardrail}, {@link ModelCallGuardrail} or {@link
  *     AgentResponseGuardrail} instead. The new interfaces return a {@link Decision} ({@code Allow}
- *     / {@code Deny} / {@code Fail}) and receive a per-call context. For MCP tool calls, {@code
- *     TextGuardrail} is still the only guardrail type.
+ *     / {@code Deny} / {@code Fail}) and receive a per-call context.
  */
 @Deprecated(since = "3.6.0", forRemoval = true)
 @SuppressWarnings("removal")

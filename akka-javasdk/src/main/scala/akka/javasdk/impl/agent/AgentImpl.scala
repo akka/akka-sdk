@@ -449,8 +449,6 @@ private[impl] object AgentImpl {
       sdkExecutionContext: ExecutionContext): Seq[SpiAgent.McpToolEndpointDescriptor] =
     remoteMcpTools.map {
       case remoteMcp: RemoteMcpToolsImpl =>
-        // FIXME: MCP tool calls run only legacy guardrails,
-        //  https://github.com/lightbend/akka-runtime/issues/5382
         new SpiAgent.McpToolEndpointDescriptor(
           mcpEndpoint = remoteMcp.serverUri,
           additionalClientHeaders = remoteMcp.additionalClientHeaders.map(_.asInstanceOf[HttpHeader]),
@@ -480,8 +478,7 @@ private[impl] object AgentImpl {
             else Some(remoteMcp.timeout),
           requestGuardrails = guardrails.legacyMcpToolRequestGuardrails,
           responseGuardrails = guardrails.legacyMcpToolResponseGuardrails,
-          // FIXME: pass the tool-call guardrails for MCP tools
-          toolCallGuardrails = (_: String) => Nil)
+          toolCallGuardrails = guardrails.toolCallGuardrails)
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 

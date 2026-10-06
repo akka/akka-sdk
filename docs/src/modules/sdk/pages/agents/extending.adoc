@@ -124,6 +124,7 @@ the agent. By default, all tools provided by each added remote MCP server are in
 available tools from each server based on their name.
 
 It is also possible to intercept, modify, or deny MCP tool requests, or their responses by defining a `RemoteMcpTools.ToolInterceptor`.
+To allow or deny MCP tool calls through configuration, use a `ToolCallGuardrail`. See xref:sdk:agents/guardrails.adoc[Guardrails].
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/application/RemoteMcpWeatherAgent.java[RemoteMcpWeatherAgent.java]

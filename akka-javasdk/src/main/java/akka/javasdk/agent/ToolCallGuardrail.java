@@ -34,7 +34,7 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
     /** The id of the agent performing the tool call. */
     String agentId();
 
-    /** The name of the tool about to be called. */
+    /** The name of the tool about to be called. For an MCP tool, the name on the MCP server. */
     String toolName();
 
     /**
@@ -43,7 +43,10 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
      */
     String toolCallId();
 
-    /** The raw JSON arguments the model produced for the tool call. */
+    /**
+     * The raw JSON arguments the model produced for the tool call. For an MCP tool, the arguments
+     * after the {@link RemoteMcpTools.ToolInterceptor}.
+     */
     String arguments();
 
     /** The session id of the interaction. */
