@@ -46,6 +46,16 @@ private[impl] object EvaluatorSettings {
   private def configAt(config: Config, path: String): Config =
     if (config.hasPath(path)) config.getConfig(path) else ConfigFactory.empty()
 
+  /** The `sampling-ratio` of the given config, where `entry` names the config for the error. */
+  private def samplingRatio(config: Config, entry: String): Double = {
+    val ratio = config.getDouble(SamplingRatioKey)
+    // the runtime treats a ratio above 1.0 as 1.0, so a percentage would evaluate every interaction
+    if (!(ratio >= 0.0 && ratio <= 1.0))
+      throw new IllegalArgumentException(
+        s"$entry must define [$SamplingRatioKey] between 0.0 and 1.0, but defines [$ratio]")
+    ratio
+  }
+
   private def agentBindingEvent(trigger: String): SpiEvaluator.AgentBindingEvent =
     trigger.toLowerCase match {
       case "interaction" => SpiEvaluator.AgentBindingEvent.Interaction
@@ -69,6 +79,8 @@ private[impl] object EvaluatorSettings {
     val evaluators = configAt(config, EvaluatorsPath)
     val evaluatorDefaults = configAt(config, EvaluatorDefaultsPath)
     val agentDefaults = configAt(config, AgentDefaultsPath)
+    // checked on its own, so that the error for a binding is about a value that the binding defines
+    samplingRatio(agentDefaults, s"Evaluator defaults [$AgentDefaultsPath]")
 
     evaluators.root().asScala.get(evaluatorComponentId) match {
       case Some(evaluator: ConfigObject) =>
@@ -83,8 +95,9 @@ private[impl] object EvaluatorSettings {
 
         if (!evaluatorConfig.getBoolean("enabled")) Seq.empty
         else {
-          val byAgent = bindingSettings(evaluatorConfig, "agents", agentDefaults, "agent binding")
-          val byRole = bindingSettings(evaluatorConfig, "agent-roles", agentDefaults, "agent role binding")
+          val byAgent = bindingSettings(evaluatorComponentId, evaluatorConfig, "agents", agentDefaults, "agent binding")
+          val byRole =
+            bindingSettings(evaluatorComponentId, evaluatorConfig, "agent-roles", agentDefaults, "agent role binding")
 
           val boundByAgent = byAgent.collect { case (agentComponentId, Some(settings)) =>
             agentComponentId -> settings
@@ -157,6 +170,7 @@ private[impl] object EvaluatorSettings {
    * The trigger, the sampling ratio and the failure flag of each entry under `path`, or `None` for a disabled entry.
    */
   private def bindingSettings(
+      evaluatorComponentId: String,
       evaluatorConfig: Config,
       path: String,
       defaults: Config,
@@ -180,13 +194,8 @@ private[impl] object EvaluatorSettings {
                 s"Evaluator $kind [$key] must specify 'trigger' (supported: [interaction])")
             else {
               val event = agentBindingEvent(entryConfig.getString("trigger"))
-              // the runtime treats a ratio above 1.0 as 1.0, so a percentage would evaluate every interaction
-              val samplingRatio = entryConfig.getDouble(SamplingRatioKey)
-              if (!(samplingRatio >= 0.0 && samplingRatio <= 1.0))
-                throw new IllegalArgumentException(
-                  s"Evaluator $kind [$key] must define [$SamplingRatioKey] between 0.0 and 1.0, " +
-                  s"but defines [$samplingRatio]")
-              Some(BindingSettings(event, samplingRatio, entryConfig.getBoolean(TriggerOnFailureKey)))
+              val ratio = samplingRatio(entryConfig, s"Evaluator [$evaluatorComponentId] $kind [$key]")
+              Some(BindingSettings(event, ratio, entryConfig.getBoolean(TriggerOnFailureKey)))
             }
           key -> settings
         }
