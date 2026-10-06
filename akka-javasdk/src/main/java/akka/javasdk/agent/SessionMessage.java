@@ -78,9 +78,22 @@ public sealed interface SessionMessage {
     record PdfUriMessageContent(String uri) implements MessageContent {}
   }
 
-  /** A multimodal user message, e.g. text combined with an image or PDF. */
-  record MultimodalUserMessage(Instant timestamp, List<MessageContent> contents, String componentId)
+  /**
+   * A multimodal user message, e.g. text combined with an image or PDF.
+   *
+   * @param sanitized true when the message holds the text that the runtime sent to the model, with
+   *     the configured sanitizers applied. The runtime sends such a message to the model as it is.
+   *     For a message with false, the runtime masks the text with the current sanitizers before it
+   *     sends it. Leave it false in a message that you build.
+   */
+  record MultimodalUserMessage(
+      Instant timestamp, List<MessageContent> contents, String componentId, boolean sanitized)
       implements SessionMessage {
+
+    public MultimodalUserMessage(
+        Instant timestamp, List<MessageContent> contents, String componentId) {
+      this(timestamp, contents, componentId, false);
+    }
 
     /** returns text from the first MessageContent.TextMessageContent */
     public Optional<String> text() {
@@ -108,11 +121,23 @@ public sealed interface SessionMessage {
     }
   }
 
-  /** A plain text user message. */
-  record UserMessage(Instant timestamp, String text, String componentId) implements SessionMessage {
+  /**
+   * A plain text user message.
+   *
+   * @param sanitized true when the message holds the text that the runtime sent to the model, with
+   *     the configured sanitizers applied. The runtime sends such a message to the model as it is.
+   *     For a message with false, the runtime masks the text with the current sanitizers before it
+   *     sends it. Leave it false in a message that you build.
+   */
+  record UserMessage(Instant timestamp, String text, String componentId, boolean sanitized)
+      implements SessionMessage {
+
+    public UserMessage(Instant timestamp, String text, String componentId) {
+      this(timestamp, text, componentId, false);
+    }
 
     public UserMessage(Instant now, String text) {
-      this(now, text, "");
+      this(now, text, "", false);
     }
 
     @Override
@@ -198,20 +223,54 @@ public sealed interface SessionMessage {
     }
   }
 
-  /** The text result of a tool call, fed back to the model as input. */
+  /**
+   * The text result of a tool call, fed back to the model as input.
+   *
+   * @param sanitized true when the message holds the tool result that the runtime sent to the
+   *     model, with the configured sanitizers applied. The runtime sends such a message to the
+   *     model as it is. For a message with false, the runtime masks the text with the current
+   *     sanitizers before it sends it. Leave it false in a message that you build.
+   */
   record ToolCallResponse(
-      Instant timestamp, String componentId, String id, String name, String text)
+      Instant timestamp, String componentId, String id, String name, String text, boolean sanitized)
       implements SessionMessage {
+
+    public ToolCallResponse(
+        Instant timestamp, String componentId, String id, String name, String text) {
+      this(timestamp, componentId, id, name, text, false);
+    }
+
     @Override
     public int size() {
       return SessionMessage.sizeInBytes(text);
     }
   }
 
-  /** The multimodal result of a tool call, fed back to the model as input. */
+  /**
+   * The multimodal result of a tool call, fed back to the model as input.
+   *
+   * @param sanitized true when the message holds the tool result that the runtime sent to the
+   *     model, with the configured sanitizers applied. The runtime sends such a message to the
+   *     model as it is. For a message with false, the runtime masks the text with the current
+   *     sanitizers before it sends it. Leave it false in a message that you build.
+   */
   record MultimodalToolCallResponse(
-      Instant timestamp, String componentId, String id, String name, List<MessageContent> contents)
+      Instant timestamp,
+      String componentId,
+      String id,
+      String name,
+      List<MessageContent> contents,
+      boolean sanitized)
       implements SessionMessage {
+
+    public MultimodalToolCallResponse(
+        Instant timestamp,
+        String componentId,
+        String id,
+        String name,
+        List<MessageContent> contents) {
+      this(timestamp, componentId, id, name, contents, false);
+    }
 
     @Override
     public int size() {

@@ -183,6 +183,8 @@ include::example$doc-snippets/src/main/java/com/example/application/SessionMemor
 
 This can be useful for more granular control over token usage but also to allow external integrations and analytics over these details.
 
+With xref:sdk:sanitization.adoc[sanitizers] configured, the history holds user messages and tool results masked.
+
 == Session memory compaction
 
 You can update the session memory to reduce the size of the history. One technique is to let an LLM summarize the interaction history and use the new summary instead of the full history. Such agent can look like this:

@@ -438,6 +438,57 @@ public class SessionMemoryEntityTest {
   }
 
   @Test
+  public void shouldStoreTheCompactionSummaryUnflaggedAndKeepTheFlagOfTheMessagesAfterIt() {
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(
+            new AddInteractionCmd(
+                new UserMessage(timestamp, "Hello", COMPONENT_ID, true),
+                new AiMessage(timestamp, "Hi there!", COMPONENT_ID)));
+    var sequenceNumber =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .sequenceNumber();
+
+    // written after the history that the summary replaces
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(
+            new AddInteractionCmd(
+                new UserMessage(timestamp, "I'm Alice", COMPONENT_ID, true),
+                new AiMessage(timestamp, "Hi Alice", COMPONENT_ID)));
+
+    // when the summary user message is flagged
+    var cmd =
+        new SessionMemoryEntity.CompactionCmd(
+            new UserMessage(timestamp, "Summary", COMPONENT_ID, true),
+            new AiMessage(timestamp, "Summary reply", COMPONENT_ID),
+            sequenceNumber);
+    testKit.method(SessionMemoryEntity::compactHistory).invoke(cmd);
+
+    // then
+    var messages =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .messages();
+    assertThat(messages).hasSize(4);
+    assertThat(((UserMessage) messages.get(0)).text()).isEqualTo("Summary");
+    assertThat(((UserMessage) messages.get(0)).sanitized()).isFalse();
+    assertThat(((UserMessage) messages.get(2)).text()).isEqualTo("I'm Alice");
+    assertThat(((UserMessage) messages.get(2)).sanitized()).isTrue();
+  }
+
+  @Test
   public void shouldBeDeletable() {
     // given
     var testKit =
