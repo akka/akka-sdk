@@ -71,8 +71,9 @@ public record InteractionRecord(
   }
 
   /**
-   * The text content of the last model response that produced any, or an empty string if the model
-   * produced no text (for example an interaction that only made tool calls, or that failed).
+   * The text of the last model response that has text, or an empty string when no model response
+   * has text. The method returns this text also for a failed interaction, so check {@link
+   * #failed()} first.
    */
   public String finalResponseText() {
     for (int i = modelResponses.size() - 1; i >= 0; i--) {
@@ -112,7 +113,8 @@ public record InteractionRecord(
   /**
    * A flattened, ordered, readable transcript of the interaction: the system message, the input
    * message, each model response (including any thinking and tool calls), and the tool call
-   * responses the model saw as input.
+   * responses the model saw as input. For a failed interaction, the last line is {@code Failure: }
+   * followed by the text that {@link #failureSummary()} returns.
    *
    * <p>Pure rendering over this record; intended for feeding an interaction to an LLM-as-judge or
    * for logging.
@@ -155,6 +157,7 @@ public record InteractionRecord(
           .append(contents)
           .append("\n");
     }
+    failureSummary().ifPresent(summary -> sb.append("Failure: ").append(summary).append("\n"));
     return sb.toString();
   }
 
