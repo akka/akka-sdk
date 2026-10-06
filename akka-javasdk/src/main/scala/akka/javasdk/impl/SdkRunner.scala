@@ -736,7 +736,7 @@ private final class Sdk(
       agentClass: Class[_],
       agentGuardrails: AgentGuardrails): Unit =
     agentGuardrails
-      .streamingResponseGuardrailError(componentId, agentClass)
+      .streamingResponseGuardrailError(componentId, Reflect.isStreamingAgent(agentClass))
       .foreach { message =>
         logger.error("Invalid guardrails: {}", message)
         throw new IllegalArgumentException(message)

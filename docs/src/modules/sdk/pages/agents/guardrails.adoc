@@ -37,12 +37,20 @@ To check several points, write one class per interface.
 [NOTE]
 ====
 An agent that streams its reply with a `StreamEffect` sends the reply before the runtime evaluates a response guardrail. A response guardrail cannot block that reply.
-Such an agent fails startup when you bind a blocking `AgentResponseGuardrail` to it.
-A blocking `TextGuardrail` with `use-for` set to `model-response` or `*` fails startup the same way.
-Bind the guardrail to the agent in a separate entry with `report-only = true`. The guardrail then observes the reply without blocking it.
-Setting `report-only` on an existing entry stops blocking on every agent that entry binds. Add a new entry instead.
 
-The startup check does not apply to `ModelCallGuardrail`. The runtime evaluates it before each model call on the streaming path too. It can block the call.
+The service fails to start when such an agent has an `AgentResponseGuardrail` entry without `report-only = true`.
+Fix the startup failure in one of these ways:
+
+* Change the agent's command handler to return `Agent.Effect`.
+* Remove the agent from the `agents` or `agent-roles` list of the entry. If the entry binds agents through `*` or an agent role, list the other agents by name instead.
+* Remove the agent from the entry as above. Then add a separate entry for this agent with `report-only = true`. This entry observes the reply without blocking it. The stream completes after that entry's guardrail returns.
+
+Do not set `report-only` on the existing entry: it stops blocking for every agent that entry binds.
+
+The startup check does not apply to `ModelCallGuardrail`. The runtime also evaluates it before each model call of a streaming agent.
+A deny fails the stream. See <<Handling a denied interaction>>.
+
+The startup check does not apply to a `TextGuardrail` entry. See <<Configuring a deprecated TextGuardrail>>.
 ====
 
 All three return a link:{attachmentsdir}/api/akka/javasdk/agent/Decision.html[`Decision`]:
@@ -185,6 +193,9 @@ The `model-request` and `model-response` values are deprecated. A `model-request
 The `mcp-tool-request` and `mcp-tool-response` values are not deprecated. A `TextGuardrail` is the only guardrail type that the runtime evaluates for MCP tool calls.
 To move a `SimilarityGuard`, see xref:reference:migration-guide.adoc#migrating-from-similarity-guard[Migrating from SimilarityGuard].
 
+For an agent that returns `StreamEffect`, the runtime evaluates `model-request`, `mcp-tool-request`, and `mcp-tool-response` entries the same way as for any other agent.
+The runtime skips a `model-response` entry without `report-only = true` and logs warning `AK-01208`.
+
 == Classifier-backed guardrails
 
 A guardrail can delegate its decision to a xref:sdk:agents/classifiers.adoc[classifier], resolved by name through `GuardrailContext.classifierClient()`.
@@ -212,6 +223,11 @@ When a `ModelCallGuardrail` or an `AgentResponseGuardrail` returns `Decision.Den
 ----
 include::example$doc-snippets/src/main/java/com/example/guardrail/GuardedAgent.java[tag=on-failure]
 ----
+
+An agent that returns `StreamEffect` has no `onFailure`.
+For such an agent, a deny fails the stream.
+The error message names the guardrail, its category, and the reason.
+The error type is not `Guardrail.GuardrailException`.
 
 With `report-only = true`, a `Deny` is recorded in logs, metrics, and traces but the interaction continues.
 A `Decision.Fail` with `report-only = true` lets the interaction continue. The runtime logs a warning and records the error.
