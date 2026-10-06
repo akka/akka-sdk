@@ -116,21 +116,20 @@ The judge appends `ModelBasedJudge.REPLY_FORMAT` to the system message, which as
 
 `ModelBasedJudge.defaultUserMessage(criterion, interaction)` is the default rendering in <<what-the-judge-sees>>. A custom rendering must carry what the system message asks the model to judge.
 
-== When the judge is inconclusive
+== When the judge cannot judge
 
 The `judge` evaluator is inconclusive when the reply is empty or blank, so there is nothing to judge.
-The result does not fail the case. When it is the only result, the attempt is inconclusive and does not pass.
+The result does not fail the case, but an attempt with an inconclusive result does not pass either, see xref:testing:evaluation/eval-cases.adoc#inconclusive[Inconclusive results].
 The inconclusive result appears in the report as `INCONCLUSIVE judge:` followed by the criterion and the reason.
-xref:testing:evaluation/eval-cases.adoc#inconclusive[Inconclusive results] describes how the report and the gates count inconclusive results.
 
 The `judge` evaluator fails the case when:
 
-* the reply is empty or blank, so there is nothing to judge;
 * the judge throws, for example because the model is unavailable;
+* the judge gives no verdict;
 * the score is not between 0 and 1.
 
-The inconclusive result carries the reason and appears in the report as `INCONCLUSIVE judge:` followed by the criterion and the reason.
-xref:testing:evaluation/eval-cases.adoc#inconclusive[Inconclusive results] describes how the report and the gates count inconclusive results.
+A judge that cannot answer is a problem with the run, not absent evidence, so it counts against the pass rate.
+The failed result carries the reason and appears in the report as `FAIL judge:` followed by the criterion and the reason.
 
 [#gating-a-judged-batch]
 == Gating a judged batch

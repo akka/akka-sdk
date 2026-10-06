@@ -102,17 +102,18 @@ class JudgeTest {
   }
 
   @Test
-  void aScoreOffTheScaleIsInconclusiveRatherThanFailingTheCase() {
+  void aScoreOffTheScaleFailsTheCase() {
     Judge judge = (criterion, interaction) -> Judge.Verdict.of(7, "seven out of ten");
 
     var result = judged(judge, "an answer", judge.shouldSatisfy(CRITERION));
 
-    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
-    assertThat(result.passed()).isTrue();
+    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.FAIL);
+    assertThat(resultOf(result).detail()).contains("not a share");
+    assertThat(result.passed()).isFalse();
   }
 
   @Test
-  void aJudgeThatThrowsIsInconclusiveAndSaysSo() {
+  void aJudgeThatThrowsFailsTheCaseAndSaysSo() {
     Judge judge =
         (criterion, interaction) -> {
           throw new IllegalStateException("the judge's provider is not configured");
@@ -120,8 +121,9 @@ class JudgeTest {
 
     var result = judged(judge, "an answer", judge.shouldSatisfy(CRITERION));
 
-    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
+    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(resultOf(result).detail()).contains("provider is not configured");
+    assertThat(result.passed()).isFalse();
   }
 
   @Test
@@ -174,14 +176,14 @@ class JudgeTest {
   }
 
   @Test
-  void aJudgeThatGivesNoVerdictIsInconclusive() {
+  void aJudgeThatGivesNoVerdictFailsTheCase() {
     Judge judge = (criterion, interaction) -> null;
 
     var result = judged(judge, "an answer", judge.shouldSatisfy(CRITERION));
 
-    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
+    assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.FAIL);
     assertThat(resultOf(result).detail()).contains("no verdict");
-    assertThat(result.passed()).isTrue();
+    assertThat(result.passed()).isFalse();
   }
 
   @Test
