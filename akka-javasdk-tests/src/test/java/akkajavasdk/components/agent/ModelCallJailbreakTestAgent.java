@@ -7,6 +7,7 @@ package akkajavasdk.components.agent;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.Guardrail;
 import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.FunctionTool;
 
 @Component(id = "model-call-jailbreak-test-agent")
 public class ModelCallJailbreakTestAgent extends Agent {
@@ -26,5 +27,10 @@ public class ModelCallJailbreakTestAgent extends Agent {
               };
             })
         .thenReply();
+  }
+
+  @FunctionTool(description = "Returns the user's document")
+  public String getDocument() {
+    return AgentIntegrationTest.SAMPLE_JAILBREAK_PROMPT;
   }
 }

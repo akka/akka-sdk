@@ -4,6 +4,8 @@
 
 package akka.javasdk.agent;
 
+import java.util.concurrent.CompletionStage;
+
 /**
  * Built-in {@link ModelCallGuardrail}. Denies a model call when a user message or tool result
  * matches a "bad example" at or above the {@code threshold}.
@@ -11,8 +13,6 @@ package akka.javasdk.agent;
  * <p>Its config must not define {@code use-for}.
  */
 public final class ModelCallSimilarityGuard implements ModelCallGuardrail {
-  private final String badExamplesResourceDir;
-  private final double threshold;
 
   /**
    * Reads {@code bad-examples-resource-dir} and {@code threshold} from the guardrail's config.
@@ -21,8 +21,8 @@ public final class ModelCallSimilarityGuard implements ModelCallGuardrail {
    *     bad-examples-resource-dir} is not on the classpath
    */
   public ModelCallSimilarityGuard(GuardrailContext context) {
-    this.badExamplesResourceDir = context.config().getString("bad-examples-resource-dir");
-    this.threshold = context.config().getDouble("threshold");
+    String badExamplesResourceDir = context.config().getString("bad-examples-resource-dir");
+    double threshold = context.config().getDouble("threshold");
 
     if (getClass().getClassLoader().getResource(badExamplesResourceDir) == null)
       throw new IllegalArgumentException(
@@ -41,20 +41,17 @@ public final class ModelCallSimilarityGuard implements ModelCallGuardrail {
               + "]");
   }
 
-  /** The similarity score at or above which the runtime denies a model call. */
-  public double threshold() {
-    return threshold;
-  }
-
-  /** The classpath resource directory holding the "bad examples" dataset. */
-  public String badExamplesResourceDir() {
-    return badExamplesResourceDir;
-  }
-
-  /** Always throws; not meant to be called directly. */
+  /** Not supported. Throws {@link IllegalStateException}. */
   @Override
   public Decision decide(CallContext ctx) {
     throw new IllegalStateException(
         "ModelCallSimilarityGuard is evaluated by the runtime and does not support decide");
+  }
+
+  /** Not supported. Throws {@link IllegalStateException}. */
+  @Override
+  public CompletionStage<Decision> decideAsync(CallContext ctx) {
+    throw new IllegalStateException(
+        "ModelCallSimilarityGuard is evaluated by the runtime and does not support decideAsync");
   }
 }

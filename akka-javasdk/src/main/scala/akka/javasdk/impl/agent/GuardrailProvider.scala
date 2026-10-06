@@ -130,8 +130,11 @@ import org.slf4j.LoggerFactory
     val guardrails: SpiAgentGuardrails =
       new SpiAgentGuardrails(
         modelCallGuardrails = entries.collect {
-          case GuardrailEntry(configured, g: ModelCallSimilarityGuard) =>
-            new SpiGuardrail.SimilarityGuard(toSettings(configured), g.badExamplesResourceDir, g.threshold)
+          case GuardrailEntry(configured, _: ModelCallSimilarityGuard) =>
+            new SpiGuardrail.SimilarityGuard(
+              toSettings(configured),
+              configured.config.getString("bad-examples-resource-dir"),
+              configured.config.getDouble("threshold"))
           case GuardrailEntry(configured, g: ModelCallGuardrail) =>
             new ModelCallGuardrailAdapter(toSettings(configured), g, tracerFactory)
         },
@@ -309,18 +312,22 @@ import org.slf4j.LoggerFactory
     GuardrailSettings(applicationConfig.getConfig("akka.javasdk.agent.guardrails")).configuredGuardrails
   }
 
+  // One instance per enabled guardrail.
+  private lazy val enabledEntries: Seq[GuardrailEntry] =
+    configuredGuardrails.filter(c => c.agents.nonEmpty || c.agentRoles.nonEmpty).map(createGuardrail)
+
   private lazy val guardrailsByComponentId: Map[String, Seq[GuardrailEntry]] = {
-    configuredGuardrails.foldLeft(Map.empty[String, Vector[GuardrailEntry]]) { case (acc, config) =>
-      config.agents.foldLeft(acc) { case (acc2, componentId) =>
-        acc2.updated(componentId, acc2.getOrElse(componentId, Vector.empty) :+ createGuardrail(config))
+    enabledEntries.foldLeft(Map.empty[String, Vector[GuardrailEntry]]) { case (acc, entry) =>
+      entry.configuredGuardrail.agents.foldLeft(acc) { case (acc2, componentId) =>
+        acc2.updated(componentId, acc2.getOrElse(componentId, Vector.empty) :+ entry)
       }
     }
   }
 
   private lazy val guardrailsByRole: Map[String, Seq[GuardrailEntry]] = {
-    configuredGuardrails.foldLeft(Map.empty[String, Vector[GuardrailEntry]]) { case (acc, config) =>
-      config.agentRoles.foldLeft(acc) { case (acc2, role) =>
-        acc2.updated(role, acc2.getOrElse(role, Vector.empty) :+ createGuardrail(config))
+    enabledEntries.foldLeft(Map.empty[String, Vector[GuardrailEntry]]) { case (acc, entry) =>
+      entry.configuredGuardrail.agentRoles.foldLeft(acc) { case (acc2, role) =>
+        acc2.updated(role, acc2.getOrElse(role, Vector.empty) :+ entry)
       }
     }
   }
@@ -376,11 +383,12 @@ import org.slf4j.LoggerFactory
     if (!c.useFor.contains(UseFor.Wildcard)) c
     else c.copy(useFor = c.useFor - UseFor.Wildcard ++ TextGuardrailUseFor)
 
-  // Runs on the DECLARED use-for set (before wildcard expansion).
+  // Expects the declared use-for set.
   @nowarn("cat=deprecation")
   private def warnOnDeprecatedUseFor(c: ConfiguredGuardrail, instance: TextGuardrail): Unit =
     instance match {
-      // FIXME: warn about mcp-tool-request and mcp-tool-response once an MCP replacement for SimilarityGuard exists.
+      // FIXME: warn about mcp-tool-request and mcp-tool-response once an MCP replacement for SimilarityGuard exists,
+      //  https://github.com/lightbend/akka-runtime/issues/5382
       case _: SimilarityGuard =>
         val expanded = expandWildcard(c)
         val deprecated = Seq[UseFor](UseFor.ModelRequest, UseFor.ModelResponse).filter(expanded.useFor.contains)
@@ -456,11 +464,18 @@ import org.slf4j.LoggerFactory
 
   // ToolCallGuardrail, ModelCallGuardrail and AgentResponseGuardrail bind to their boundary by type.
   private def rejectUseFor(c: ConfiguredGuardrail, instance: Guardrail): Unit =
-    if (c.config.hasPath("use-for"))
+    if (c.config.hasPath("use-for")) {
+      val defaultJailbreakHint =
+        if (c.name == DefaultJailbreak)
+          s" The use-for of [$DefaultJailbreak] comes from reference.conf. To use " +
+          s"akka.javasdk.agent.ModelCallSimilarityGuard, enable \"$DefaultModelCallJailbreak\" instead."
+        else ""
+
       throw new IllegalArgumentException(
         s"Guardrail [${c.name}] must not define use-for. [${instance.getClass.getName}] binds to its " +
         "boundary by type: ToolCallGuardrail before each tool call, ModelCallGuardrail before each " +
-        "model call, and AgentResponseGuardrail on the final agent reply.")
+        "model call, and AgentResponseGuardrail on the final agent reply." + defaultJailbreakHint)
+    }
 
   def validate(): Unit = {
     guardrailsByComponentId
@@ -516,7 +531,8 @@ import org.slf4j.LoggerFactory
 
   @nowarn("cat=deprecation")
   private def warnOnBothSimilarityGuards(componentId: String, entries: Seq[GuardrailEntry]): Unit = {
-    // FIXME: count the MCP use-for values once an MCP replacement for SimilarityGuard exists.
+    // FIXME: count the MCP use-for values once an MCP replacement for SimilarityGuard exists,
+    //  https://github.com/lightbend/akka-runtime/issues/5382
     val legacy = entries
       .collect {
         case GuardrailEntry(c, _: SimilarityGuard) if c.useFor.contains(UseFor.ModelRequest) => c
