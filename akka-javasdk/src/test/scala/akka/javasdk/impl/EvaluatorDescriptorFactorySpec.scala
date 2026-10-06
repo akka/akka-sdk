@@ -292,7 +292,8 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
     Seq(
       "agent binding [support-agent]" -> "agents.support-agent",
-      "agent role binding [customer-facing]" -> "agent-roles.customer-facing").foreach { case (binding, path) =>
+      "agent role binding [customer-facing]" -> "agent-roles.customer-facing",
+      "agent role binding [*]" -> "agent-roles.\"*\"").foreach { case (binding, path) =>
       s"accept a sampling ratio of 0.0 and 1.0 on the $binding" in {
         Seq(0.0, 1.0).foreach { ratio =>
           val config = load(s"""
@@ -317,9 +318,22 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
           intercept[IllegalArgumentException] {
             EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)
           }.getMessage shouldBe
-          s"Evaluator $binding must define [sampling-ratio] between 0.0 and 1.0, but defines [$shown]"
+          s"Evaluator [conversation-quality] $binding must define [sampling-ratio] between 0.0 and 1.0, " +
+          s"but defines [$shown]"
         }
       }
+    }
+
+    "reject a sampling ratio out of range in the agent defaults, with an error that names the defaults" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.agent.sampling-ratio = 50
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+        """)
+      intercept[IllegalArgumentException] {
+        EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles)
+      }.getMessage shouldBe
+      "Evaluator defaults [akka.javasdk.evaluation.defaults.agent] must define [sampling-ratio] between 0.0 and 1.0, " +
+      "but defines [50.0]"
     }
 
     "not validate the sampling ratio of a disabled binding" in {
