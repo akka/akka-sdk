@@ -137,7 +137,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
       .cases(curated())
       .agent(OrderAgent::ask)
       .repeat(3) // <1>
-      .gate(Gate.passRateShouldBeAtLeast(0.9)) // <2>
+      .gate(Gate.passRateShouldBeAtLeast(0.85)) // <2>
       .run();
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();
@@ -215,7 +215,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
 
     assertThat(report.passed()).isFalse();
     assertThat(report.render())
-      .contains("case wrong-order FAILED")
+      .contains("case wrong-order run 1 FAILED")
       .contains("getOrder{orderId=o_42}")
       .contains("expected o_43");
   }

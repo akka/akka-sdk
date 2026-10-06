@@ -43,7 +43,7 @@ When the trace has no user message, the judge is asked about the case's command 
 
 The stubs the agent's tools call are prepared before the experiment runs, in the test, for example in a JUnit `@BeforeEach`.
 Every case of a run reads the same stubs, so a stub holds the answers of all cases at once and keys them by the tool's arguments: an order by its id, the routes by their destination.
-The same stubs serve every run when the experiment repeats its cases with `repeat(n)`, see xref:testing:evaluation/gates-and-reports.adoc#repeated-runs[Running every case several times].
+The same stubs serve every run when the experiment repeats its cases with `repeat(n)`, and nothing resets them between runs, so a stub must not depend on state an attempt writes. See xref:testing:evaluation/gates-and-reports.adoc#repeated-runs[Running every case several times].
 State that lives in the runtime, such as an entity a tool reads, is seeded the same way, through the component client before the run.
 A replayed case is the exception: its recorded results are loaded per case, see xref:testing:evaluation/replay.adoc#tool-bindings[Binding tools to stubs].
 

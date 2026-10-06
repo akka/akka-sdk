@@ -22,12 +22,13 @@
     },
     "summary": {
       "type": "object",
-      "required": ["cases", "passedCases", "failedCases", "inconsistentCases", "attempts", "passedAttempts", "failedAttempts", "passRate"],
+      "required": ["cases", "passedCases", "failedCases", "inconsistentCases", "inconsistentRequirements", "attempts", "passedAttempts", "failedAttempts", "passRate"],
       "properties": {
         "cases": { "type": "integer", "minimum": 0 },
         "passedCases": { "type": "integer", "minimum": 0, "description": "Cases with no failed result in any run." },
         "failedCases": { "type": "integer", "minimum": 0, "description": "Cases with a failed result in every run." },
         "inconsistentCases": { "type": "integer", "minimum": 0, "description": "Cases that passed in some runs and failed in others. Zero with one run." },
+        "inconsistentRequirements": { "type": "integer", "minimum": 0, "description": "Requirements that passed in some runs and failed in others, over all cases. Zero with one run." },
         "attempts": { "type": "integer", "minimum": 0, "description": "cases times runs." },
         "passedAttempts": { "type": "integer", "minimum": 0, "description": "Attempts with no failed result." },
         "failedAttempts": { "type": "integer", "minimum": 0 },
@@ -53,7 +54,7 @@
     },
     "cases": {
       "type": "array",
-      "description": "One entry per case, in the order the cases were given, with its outcome over all runs.",
+      "description": "One entry per case, in the order the cases were given, with its outcome and its requirements over all runs.",
       "items": { "$ref": "#/$defs/case" }
     },
     "attempts": {
@@ -75,13 +76,25 @@
     },
     "case": {
       "type": "object",
-      "required": ["id", "outcome", "passedRuns", "failedRuns", "evaluators"],
+      "required": ["id", "outcome", "passedRuns", "failedRuns", "requirements"],
       "properties": {
         "id": { "type": "string" },
-        "outcome": { "enum": ["PASSED_EVERY_RUN", "FAILED_EVERY_RUN", "INCONSISTENT"], "description": "INCONSISTENT when the case passed in some runs and failed in others." },
+        "outcome": { "enum": ["PASSED", "FAILED", "INCONSISTENT"], "description": "PASSED in every run, FAILED in every run, or INCONSISTENT when the case passed in some runs and failed in others." },
         "passedRuns": { "type": "integer", "minimum": 0, "description": "Runs with no failed result." },
         "failedRuns": { "type": "integer", "minimum": 0, "description": "Runs with a failed result." },
-        "evaluators": { "type": "array", "description": "One entry per evaluator label that reported on the case, in the order the labels first appear in its attempts, counting every run.", "items": { "$ref": "#/$defs/evaluatorCounts" } }
+        "requirements": { "type": "array", "description": "One entry per evaluator at one position in the results of the case's attempts, in the order the results first appear. The runner's target and setup results are requirements too.", "items": { "$ref": "#/$defs/requirement" } }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "required": ["index", "evaluator", "outcome", "passedIn", "failedIn", "inconclusiveIn"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 0, "description": "The position of the result in the attempt, from 0." },
+        "evaluator": { "type": "string", "description": "The evaluator label." },
+        "outcome": { "enum": ["PASSED", "FAILED", "INCONSISTENT", "INCONCLUSIVE"], "description": "Over the runs where the requirement was conclusive. INCONSISTENT when it passed in some runs and failed in others, INCONCLUSIVE when it was conclusive in no run." },
+        "passedIn": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "description": "The runs with the verdict PASS, ascending." },
+        "failedIn": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "description": "The runs with the verdict FAIL, ascending." },
+        "inconclusiveIn": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "description": "The runs with the verdict INCONCLUSIVE, ascending." }
       }
     },
     "attempt": {

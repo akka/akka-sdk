@@ -7,8 +7,10 @@ package akka.javasdk.testkit.eval;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.testkit.eval.ExperimentRunner.CaseResult;
 import akka.javasdk.testkit.eval.ExperimentRunner.CaseSummary;
+import akka.javasdk.testkit.eval.ExperimentRunner.Outcome;
 import akka.javasdk.testkit.eval.ExperimentRunner.Rate;
 import akka.javasdk.testkit.eval.ExperimentRunner.Report;
+import akka.javasdk.testkit.eval.ExperimentRunner.RequirementSummary;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
@@ -42,9 +44,14 @@ final class EvalReportJson {
         new ReportDocument.Gate(report.verdict().passed(), report.verdict().detail()),
         new ReportDocument.Summary(
             cases.size(),
-            count(cases, CaseSummary.Outcome.PASSED_EVERY_RUN),
-            count(cases, CaseSummary.Outcome.FAILED_EVERY_RUN),
-            count(cases, CaseSummary.Outcome.INCONSISTENT),
+            count(cases, Outcome.PASSED),
+            count(cases, Outcome.FAILED),
+            count(cases, Outcome.INCONSISTENT),
+            (int)
+                cases.stream()
+                    .flatMap(c -> c.requirements().stream())
+                    .filter(r -> r.outcome() == Outcome.INCONSISTENT)
+                    .count(),
             report.results().size(),
             passedAttempts,
             report.results().size() - passedAttempts,
@@ -60,7 +67,7 @@ final class EvalReportJson {
         report.results().stream().map(EvalReportJson::attempt).toList());
   }
 
-  private static int count(List<CaseSummary> cases, CaseSummary.Outcome outcome) {
+  private static int count(List<CaseSummary> cases, Outcome outcome) {
     return (int) cases.stream().filter(c -> c.outcome() == outcome).count();
   }
 
@@ -82,7 +89,17 @@ final class EvalReportJson {
         summary.outcome(),
         summary.passedRuns(),
         summary.failedRuns(),
-        evaluatorCounts(Report.rates(summary.attempts())));
+        summary.requirements().stream().map(EvalReportJson::requirement).toList());
+  }
+
+  private static ReportDocument.Requirement requirement(RequirementSummary requirement) {
+    return new ReportDocument.Requirement(
+        requirement.index(),
+        requirement.evaluator(),
+        requirement.outcome(),
+        requirement.passedIn(),
+        requirement.failedIn(),
+        requirement.inconclusiveIn());
   }
 
   private static ReportDocument.Attempt attempt(CaseResult result) {

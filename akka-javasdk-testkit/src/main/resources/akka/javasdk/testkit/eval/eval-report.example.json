@@ -14,6 +14,7 @@
     "passedCases": 1,
     "failedCases": 1,
     "inconsistentCases": 0,
+    "inconsistentRequirements": 0,
     "attempts": 2,
     "passedAttempts": 1,
     "failedAttempts": 1,
@@ -35,22 +36,22 @@
   "cases": [
     {
       "id": "shipped",
-      "outcome": "PASSED_EVERY_RUN",
+      "outcome": "PASSED",
       "passedRuns": 1,
       "failedRuns": 0,
-      "evaluators": [
-        { "evaluator": "tools", "passed": 1, "failed": 0, "inconclusive": 0 },
-        { "evaluator": "reply-contains", "passed": 1, "failed": 0, "inconclusive": 0 }
+      "requirements": [
+        { "index": 0, "evaluator": "tools", "outcome": "PASSED", "passedIn": [1], "failedIn": [], "inconclusiveIn": [] },
+        { "index": 1, "evaluator": "reply-contains", "outcome": "PASSED", "passedIn": [1], "failedIn": [], "inconclusiveIn": [] }
       ]
     },
     {
       "id": "wrong-order",
-      "outcome": "FAILED_EVERY_RUN",
+      "outcome": "FAILED",
       "passedRuns": 0,
       "failedRuns": 1,
-      "evaluators": [
-        { "evaluator": "tool-arguments", "passed": 0, "failed": 1, "inconclusive": 0 },
-        { "evaluator": "tool-results", "passed": 0, "failed": 0, "inconclusive": 1 }
+      "requirements": [
+        { "index": 0, "evaluator": "tool-arguments", "outcome": "FAILED", "passedIn": [], "failedIn": [1], "inconclusiveIn": [] },
+        { "index": 1, "evaluator": "tool-results", "outcome": "INCONCLUSIVE", "passedIn": [], "failedIn": [], "inconclusiveIn": [1] }
       ]
     }
   ],

@@ -39,6 +39,7 @@ The gates count attempts, not cases.
 An attempt is one execution of one case, so an experiment with `repeat(3)` has three attempts per case.
 `Gate.allCasesShouldPass()` then requires every case to pass in every run, and a pass rate is the share of all attempts that passed.
 Without `repeat(n)` a case has one attempt and the gates read as the table states.
+A pass rate pools the attempts of all cases: one case that fails in every run and three cases that each fail once give the same rate.
 See <<repeated-runs>>.
 
 A failed gate does not throw.
@@ -69,7 +70,7 @@ Assert on the report, and use the rendered report as the failure message.
 | One `CaseResult` per attempt: every case in the order the cases were given, its runs ascending. A `CaseResult` carries the case id, the run, the `Interaction` and the results. `describe()` renders one attempt as in the report.
 
 | `cases()`
-| One `CaseSummary` per case, in the order the cases were given: the outcome over all runs, the passed and failed run counts, and the case's attempts. The outcome is `PASSED_EVERY_RUN`, `FAILED_EVERY_RUN` or `INCONSISTENT`.
+| One `CaseSummary` per case, in the order the cases were given: the outcome over all runs, the passed and failed run counts, the case's attempts, and its requirements. The outcome is `PASSED`, `FAILED` or `INCONSISTENT`. A `RequirementSummary` is one evaluator at one position in the case's results, with the runs it passed, failed and was inconclusive in, and its outcome over the conclusive runs.
 
 | `render()`
 | The report as text.
@@ -101,10 +102,10 @@ spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-sta
 Line by line:
 
 . The cases, the runs, and the attempts with no failed result with their share. An attempt is one case in one run, so without `repeat(n)` on the experiment the attempts are the cases.
-. The gate's verdict and its detail. A combined gate lists the detail of each part.
+. The gate's verdict and its detail. A combined gate lists the detail of each part. The detail counts attempts and names the runs a case failed in: `failed cases [order-status (run 2)]`.
 . One line per evaluator, under its xref:testing:evaluation/eval-cases.adoc#evaluator-labels[label]: the attempts it passed over the attempts it judged. An evaluator that was inconclusive on some attempts shows the count in brackets, for example `token-budget 0/0 (2 inconclusive)`.
 . The spend: model calls, tokens and latency summed over the attempts whose trace carried model calls, and the slowest attempt. The line is absent when no attempt carried model calls.
-. `inconsistent across runs`, only when a case passed in some runs and failed in others: one line per such case with the evaluators that failed and the runs they failed in, for example `order-status passed 2/3 runs: tool-arguments failed in run 2`. A case that failed in every run is not listed here. See <<repeated-runs>>.
+. `inconsistent across runs`, only when a requirement passed in some runs and failed in others: one line per such requirement with the runs it passed, failed and was inconclusive in, for example `order-status tool-arguments: passed in runs 1, 3, failed in run 2`. A requirement that failed in every run is not listed here. See <<repeated-runs>>.
 . After these lines, every failed attempt with its evidence, see <<reading-a-failed-case>>.
 
 [#reading-a-failed-case]
@@ -141,12 +142,22 @@ One run of a case against a real model is one sample, and a case that passes onc
 ----
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=repeated-runs]
 ----
-<1> Every case runs three times. The runner runs every case once, then every case again, so consecutive calls of one case do not follow each other.
-<2> The gate counts attempts: nine with three cases, and at least 90% of them must pass.
+<1> Every case runs three times. The runner runs every case once, then every case again, so the attempts of one case are spread over the batch rather than sent to the model within the same seconds.
+<2> The gate counts attempts: nine with three cases. 0.85 tolerates one failed attempt. 0.9 would require all nine.
 
-The report lists the cases that passed in some runs and failed in others under `inconsistent across runs`, see <<reading-the-report>>, and `cases()` carries the outcome of every case over all runs.
-The stubs the agent's tools call serve every run, and a replayed case has its recorded results loaded again before each run.
-The spend grows with the number of runs.
+The report lists the requirements that passed in some runs and failed in others under `inconsistent across runs`, see <<reading-the-report>>.
+`cases()` carries the outcome of every case and of every requirement over all runs.
+A requirement is one evaluator of one case, so a case whose evaluators fail in different runs is a case that failed in every run with two inconsistent requirements.
+
+Three passes out of three do not show that a case always passes.
+`n` runs cannot show a failure rate below one in `n`, and a case that fails one time in four still passes three runs out of three about four times in ten.
+Choose `n` by the failure rate you need to detect, and gate on a rate rather than on a clean sweep when the model is real.
+
+Nothing is reset between runs.
+The stubs the agent's tools call serve every run, a `@BeforeEach` runs once per experiment, and state that a tool writes to an entity is still there in the next run.
+A stub or an evaluator must not depend on state an attempt writes, or a side effect of run 1 reads as a failure of every later run.
+A replayed case has its recorded results loaded again before each run.
+The wall clock time and the model spend grow with the number of runs, and judge calls are not part of the spend line.
 
 == See also
 

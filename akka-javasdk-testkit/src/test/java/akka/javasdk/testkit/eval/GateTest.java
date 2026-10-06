@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import akka.javasdk.testkit.ToolCall;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 /** Gates over case results arranged by a scripted target. */
@@ -103,14 +104,12 @@ class GateTest {
     assertThat(report.render()).contains("1 case, 1 run: 1/1 attempts passed (100%)");
   }
 
-  /** Answers with the case id, except "wrong" on the given calls to it, counting over all cases. */
+  /**
+   * Answers with the case id, except "wrong" on the given calls, counted over all cases and runs.
+   */
   private static EvalTarget<String> wrongOnCalls(Integer... wrongCalls) {
     var wrong = List.of(wrongCalls);
-    var calls = new java.util.concurrent.atomic.AtomicInteger();
-    return turn ->
-        EvalTarget.Outcome.answered(
-            Interaction.of(
-                turn.command(), wrong.contains(calls.incrementAndGet()) ? "wrong" : turn.caseId()));
+    return Targets.replyingByCall((call, caseId) -> wrong.contains(call) ? "wrong" : caseId);
   }
 
   private ExperimentRunner.EvalReport runRepeated(
@@ -163,7 +162,7 @@ class GateTest {
 
   @Test
   void aTargetFailureInOneRunFailsTheTargetGate() {
-    var calls = new java.util.concurrent.atomic.AtomicInteger();
+    var calls = new AtomicInteger();
     EvalTarget<String> throwing =
         turn -> {
           if (calls.incrementAndGet() == 2) throw new IllegalStateException("model unavailable");

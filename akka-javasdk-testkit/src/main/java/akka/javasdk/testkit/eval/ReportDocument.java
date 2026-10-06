@@ -5,7 +5,7 @@
 package akka.javasdk.testkit.eval;
 
 import akka.javasdk.JsonSupport;
-import akka.javasdk.testkit.eval.ExperimentRunner.CaseSummary;
+import akka.javasdk.testkit.eval.ExperimentRunner.Outcome;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
@@ -38,8 +38,8 @@ import java.util.Optional;
  *     attempts, counting every attempt
  * @param spend model calls, tokens and latency summed over the attempts whose evidence carries
  *     model calls
- * @param cases one entry per case, in the order the cases were given, with its outcome over all
- *     runs
+ * @param cases one entry per case, in the order the cases were given, with its outcome and its
+ *     requirements over all runs
  * @param attempts one entry per attempt: every case in the order the cases were given, its runs
  *     ascending
  */
@@ -82,6 +82,8 @@ public record ReportDocument(
    * @param passedCases cases with no failed result in any run
    * @param failedCases cases with a failed result in every run
    * @param inconsistentCases cases that passed in some runs and failed in others; zero with one run
+   * @param inconsistentRequirements requirements that passed in some runs and failed in others,
+   *     over all cases; zero with one run
    * @param attempts {@code cases} times {@code runs}
    * @param passedAttempts attempts with no failed result
    * @param failedAttempts attempts with a failed result
@@ -92,6 +94,7 @@ public record ReportDocument(
       int passedCases,
       int failedCases,
       int inconsistentCases,
+      int inconsistentRequirements,
       int attempts,
       int passedAttempts,
       int failedAttempts,
@@ -127,18 +130,36 @@ public record ReportDocument(
    * One case over all its runs.
    *
    * @param id the case id
-   * @param outcome whether the case passed in every run, failed in every run, or both
+   * @param outcome PASSED in every run, FAILED in every run, or INCONSISTENT when the case passed
+   *     in some runs and failed in others
    * @param passedRuns runs with no failed result
    * @param failedRuns runs with a failed result
-   * @param evaluators one entry per evaluator label that reported on the case, in the order the
-   *     labels first appear in its attempts, counting every run
+   * @param requirements one entry per evaluator at one position in the results of the case's
+   *     attempts, in the order the results first appear; the runner's target and setup results are
+   *     requirements too
    */
   public record Case(
-      String id,
-      CaseSummary.Outcome outcome,
-      int passedRuns,
-      int failedRuns,
-      List<EvaluatorCounts> evaluators) {}
+      String id, Outcome outcome, int passedRuns, int failedRuns, List<Requirement> requirements) {}
+
+  /**
+   * One requirement of a case over all runs.
+   *
+   * @param index the position of the result in the attempt, from 0
+   * @param evaluator the evaluator label
+   * @param outcome over the runs where the requirement was conclusive: PASSED, FAILED, INCONSISTENT
+   *     when it passed in some runs and failed in others, or INCONCLUSIVE when it was conclusive in
+   *     no run
+   * @param passedIn the runs with the verdict PASS, ascending
+   * @param failedIn the runs with the verdict FAIL, ascending
+   * @param inconclusiveIn the runs with the verdict INCONCLUSIVE, ascending
+   */
+  public record Requirement(
+      int index,
+      String evaluator,
+      Outcome outcome,
+      List<Integer> passedIn,
+      List<Integer> failedIn,
+      List<Integer> inconclusiveIn) {}
 
   /**
    * One case in one run.

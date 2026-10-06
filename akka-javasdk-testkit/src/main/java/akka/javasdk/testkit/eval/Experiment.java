@@ -20,9 +20,12 @@ public interface Experiment {
   Experiment gate(Gate gate);
 
   /**
-   * The name the report carries, see {@link EvalReport#name}. Not blank and without a path
-   * separator, as it names the report file. Without a name the report is named after the test
-   * method that called {@link #run}, for example {@code SupportAgentEvalTest.qualityGate}.
+   * The name the report carries, see {@link EvalReport#name}. It names the report file, so it must
+   * be usable as a file name on every platform: not blank, at most 200 characters, and without
+   * {@code < > : " / \ | ? *} or control characters. Without a name the report is named after the
+   * test method that called {@link #run}, for example {@code SupportAgentEvalTest.qualityGate}.
+   *
+   * @throws IllegalArgumentException when the name is not usable as a file name
    */
   Experiment name(String name);
 
@@ -38,8 +41,12 @@ public interface Experiment {
   /**
    * Runs every case this many times in total, each time in a fresh session. Once by default. The
    * gate, the rates and the spend count every attempt, so {@link Gate#allCasesShouldPass} passes
-   * only when every case passed in every run. The report names the cases that passed in some runs
-   * and failed in others, see {@link EvalReport#cases}.
+   * only when every case passed in every run. The report names the requirements that passed in some
+   * runs and failed in others, see {@link EvalReport#cases}.
+   *
+   * <p>A case that passes in every run is not shown to always pass: {@code times} runs cannot show
+   * a failure rate below one in {@code times}. The stubs and the runtime are not reset between
+   * runs, so a stub or an evaluator must not depend on state an attempt writes.
    *
    * @param times at least 1
    */

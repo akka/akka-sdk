@@ -383,7 +383,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
         .contains("latency-budget 3/3")
         .contains("token-budget 0/0 (3 inconclusive)")
         .contains("spend: ")
-        .contains("over 6/6 cases with evidence");
+        .contains("over 6/6 attempts with evidence");
   }
 
   /** The captures, from the test classpath rather than a path relative to the working dir. */
@@ -473,7 +473,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
     assertThat(result.passed()).isFalse();
     assertThat(result.describe())
-        .contains("case wrong-customer FAILED")
+        .contains("case wrong-customer run 1 FAILED")
         .contains("getCustomer{customerId=cust_1}")
         .contains("expected cust_2");
   }
