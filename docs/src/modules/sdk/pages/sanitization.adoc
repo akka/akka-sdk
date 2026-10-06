@@ -44,7 +44,7 @@ Before being written in logs or passed to agent models.
 
 === Masked text in session memory
 
-xref:sdk:agents/memory.adoc[Session memory] holds the text that the runtime sent to the model. The runtime stores a user message and a tool result masked, and stores the model output as the model produced it. The runtime sends these messages to the model as they are. When application code, a compaction or an earlier Akka SDK version stored a user message or a tool result, the runtime masks it with the current sanitizers before it sends it. The runtime does not mask an AI message from session memory.
+xref:sdk:agents/memory.adoc[Session memory] holds the text that the runtime sent to the model. The runtime stores a user message and a tool result masked, and stores the model output as the model produced it. The runtime sends these messages to the model as they are. A sanitizer that you add or change later does not mask them. When application code, a compaction or an earlier Akka SDK version stored a user message or a tool result, the runtime masks it with the current sanitizers before it sends it. The runtime does not mask an AI message from session memory.
 
 The xref:sdk:evaluators.adoc#_the_ledger_client[ledger] records the text that the runtime sent in each model call.
 
