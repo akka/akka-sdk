@@ -218,9 +218,13 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 
 An evaluator reads only what it names and is inconclusive when that evidence is absent or does not support a verdict.
 A tool that was never called fails `tools` and makes `tool-order` and `tool-arguments` inconclusive, so one missing call is reported once.
-An inconclusive result is neither a pass nor a fail.
-A case with inconclusive results and no failed result passes.
-The report counts inconclusive results per evaluator label, and `Gate.passRateShouldBeAtLeast(evaluatorClass, minimumRate)` rates an evaluator over its conclusive results.
+An inconclusive result is neither a pass nor a fail of that evaluator.
+
+An attempt passes when at least one result passed and none failed, so a passed result next to an inconclusive one is a pass.
+An attempt whose results are all inconclusive, or that has no result because the case declares no evaluator, is inconclusive.
+An inconclusive attempt never counts as passed: it fails `Gate.allCasesShouldPass()` and counts against the rate of `Gate.passRateShouldBeAtLeast(minimumRate)`.
+The report counts inconclusive attempts and cases, and inconclusive results per evaluator label.
+`Gate.passRateShouldBeAtLeast(evaluatorClass, minimumRate)` rates an evaluator over its conclusive results.
 
 == See also
 

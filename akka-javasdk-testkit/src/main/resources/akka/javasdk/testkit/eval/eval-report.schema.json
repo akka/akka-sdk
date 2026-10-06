@@ -22,16 +22,18 @@
     },
     "summary": {
       "type": "object",
-      "required": ["cases", "passedCases", "failedCases", "inconsistentCases", "inconsistentRequirements", "attempts", "passedAttempts", "failedAttempts", "passRate"],
+      "required": ["cases", "passedCases", "failedCases", "inconsistentCases", "inconclusiveCases", "inconsistentRequirements", "attempts", "passedAttempts", "failedAttempts", "inconclusiveAttempts", "passRate"],
       "properties": {
         "cases": { "type": "integer", "minimum": 0 },
-        "passedCases": { "type": "integer", "minimum": 0, "description": "Cases with no failed result in any run." },
-        "failedCases": { "type": "integer", "minimum": 0, "description": "Cases with a failed result in every run." },
-        "inconsistentCases": { "type": "integer", "minimum": 0, "description": "Cases that passed in some runs and failed in others. Zero with one run." },
+        "passedCases": { "type": "integer", "minimum": 0, "description": "Cases with the outcome PASSED." },
+        "failedCases": { "type": "integer", "minimum": 0, "description": "Cases with the outcome FAILED." },
+        "inconsistentCases": { "type": "integer", "minimum": 0, "description": "Cases with the outcome INCONSISTENT. Zero with one run." },
+        "inconclusiveCases": { "type": "integer", "minimum": 0, "description": "Cases with the outcome INCONCLUSIVE." },
         "inconsistentRequirements": { "type": "integer", "minimum": 0, "description": "Requirements that passed in some runs and failed in others, over all cases. Zero with one run." },
         "attempts": { "type": "integer", "minimum": 0, "description": "cases times runs." },
-        "passedAttempts": { "type": "integer", "minimum": 0, "description": "Attempts with no failed result." },
-        "failedAttempts": { "type": "integer", "minimum": 0 },
+        "passedAttempts": { "type": "integer", "minimum": 0, "description": "Attempts with the verdict PASS." },
+        "failedAttempts": { "type": "integer", "minimum": 0, "description": "Attempts with the verdict FAIL." },
+        "inconclusiveAttempts": { "type": "integer", "minimum": 0, "description": "Attempts with the verdict INCONCLUSIVE." },
         "passRate": { "type": "number", "minimum": 0, "maximum": 1, "description": "passedAttempts over attempts." }
       }
     },
@@ -76,12 +78,13 @@
     },
     "case": {
       "type": "object",
-      "required": ["id", "outcome", "passedRuns", "failedRuns", "requirements"],
+      "required": ["id", "outcome", "passedRuns", "failedRuns", "inconclusiveRuns", "requirements"],
       "properties": {
         "id": { "type": "string" },
-        "outcome": { "enum": ["PASSED", "FAILED", "INCONSISTENT"], "description": "PASSED in every run, FAILED in every run, or INCONSISTENT when the case passed in some runs and failed in others." },
-        "passedRuns": { "type": "integer", "minimum": 0, "description": "Runs with no failed result." },
-        "failedRuns": { "type": "integer", "minimum": 0, "description": "Runs with a failed result." },
+        "outcome": { "enum": ["PASSED", "FAILED", "INCONSISTENT", "INCONCLUSIVE"], "description": "Over the runs where the case was conclusive. INCONSISTENT when it passed in some runs and failed in others, INCONCLUSIVE when it was conclusive in no run." },
+        "passedRuns": { "type": "integer", "minimum": 0, "description": "Runs with the verdict PASS." },
+        "failedRuns": { "type": "integer", "minimum": 0, "description": "Runs with the verdict FAIL." },
+        "inconclusiveRuns": { "type": "integer", "minimum": 0, "description": "Runs with the verdict INCONCLUSIVE." },
         "requirements": { "type": "array", "description": "One entry per evaluator at one position in the results of the case's attempts, in the order the results first appear. The runner's target and setup results are requirements too.", "items": { "$ref": "#/$defs/requirement" } }
       }
     },
@@ -99,11 +102,11 @@
     },
     "attempt": {
       "type": "object",
-      "required": ["id", "run", "passed", "interaction", "results"],
+      "required": ["id", "run", "verdict", "interaction", "results"],
       "properties": {
         "id": { "type": "string", "description": "The case id." },
         "run": { "type": "integer", "minimum": 1, "description": "The run, from 1." },
-        "passed": { "type": "boolean", "description": "No result has the verdict FAIL." },
+        "verdict": { "enum": ["PASS", "FAIL", "INCONCLUSIVE"], "description": "PASS when a result passed and none failed, FAIL when a result failed, INCONCLUSIVE when no result is conclusive." },
         "interaction": { "$ref": "#/$defs/interaction" },
         "results": { "type": "array", "items": { "$ref": "#/$defs/result" } }
       }

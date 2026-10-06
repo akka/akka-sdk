@@ -14,10 +14,12 @@
     "passedCases": 1,
     "failedCases": 1,
     "inconsistentCases": 0,
+    "inconclusiveCases": 0,
     "inconsistentRequirements": 0,
     "attempts": 2,
     "passedAttempts": 1,
     "failedAttempts": 1,
+    "inconclusiveAttempts": 0,
     "passRate": 0.5
   },
   "evaluators": [
@@ -39,6 +41,7 @@
       "outcome": "PASSED",
       "passedRuns": 1,
       "failedRuns": 0,
+      "inconclusiveRuns": 0,
       "requirements": [
         { "index": 0, "evaluator": "tools", "outcome": "PASSED", "passedIn": [1], "failedIn": [], "inconclusiveIn": [] },
         { "index": 1, "evaluator": "reply-contains", "outcome": "PASSED", "passedIn": [1], "failedIn": [], "inconclusiveIn": [] }
@@ -49,6 +52,7 @@
       "outcome": "FAILED",
       "passedRuns": 0,
       "failedRuns": 1,
+      "inconclusiveRuns": 0,
       "requirements": [
         { "index": 0, "evaluator": "tool-arguments", "outcome": "FAILED", "passedIn": [], "failedIn": [1], "inconclusiveIn": [] },
         { "index": 1, "evaluator": "tool-results", "outcome": "INCONCLUSIVE", "passedIn": [], "failedIn": [], "inconclusiveIn": [1] }
@@ -59,7 +63,7 @@
     {
       "id": "shipped",
       "run": 1,
-      "passed": true,
+      "verdict": "PASS",
       "interaction": {
         "input": "Where is o_42?",
         "userMessage": "Where is o_42?",
@@ -101,7 +105,7 @@
     {
       "id": "wrong-order",
       "run": 1,
-      "passed": false,
+      "verdict": "FAIL",
       "interaction": {
         "input": "Where is o_43?",
         "userMessage": "Where is o_43?",

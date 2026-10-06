@@ -118,7 +118,12 @@ The judge appends `ModelBasedJudge.REPLY_FORMAT` to the system message, which as
 
 == When the judge is inconclusive
 
-The `judge` evaluator is inconclusive, and the case is not failed, when:
+The `judge` evaluator is inconclusive when the reply is empty or blank, so there is nothing to judge.
+The result does not fail the case. When it is the only result, the attempt is inconclusive and does not pass.
+The inconclusive result appears in the report as `INCONCLUSIVE judge:` followed by the criterion and the reason.
+xref:testing:evaluation/eval-cases.adoc#inconclusive[Inconclusive results] describes how the report and the gates count inconclusive results.
+
+The `judge` evaluator fails the case when:
 
 * the reply is empty or blank, so there is nothing to judge;
 * the judge throws, for example because the model is unavailable;

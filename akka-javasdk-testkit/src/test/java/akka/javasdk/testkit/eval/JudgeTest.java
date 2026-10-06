@@ -137,6 +137,7 @@ class JudgeTest {
             EvalCase.of("c", "a question", judge.shouldSatisfy(CRITERION)));
 
     assertThat(resultOf(result).verdict()).isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
+    assertThat(result.inconclusive()).isTrue();
   }
 
   @Test
