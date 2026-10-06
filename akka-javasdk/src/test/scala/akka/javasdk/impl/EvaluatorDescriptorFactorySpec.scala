@@ -244,6 +244,27 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
       Seq(("billing-agent", 1.0, false), ("support-agent", 0.1, true))
     }
 
+    "take the sampling ratio and the failure flag from the entry for the role, not from the role wildcard" in {
+      val wildcardSetsBoth = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agent-roles {
+          customer-facing { trigger = interaction }
+          "*" { trigger = interaction, sampling-ratio = 0.2, trigger-on-failure = true }
+        }
+        """)
+      agentBindingSettings(
+        EvaluatorSettings.agentBindings(wildcardSetsBoth, "conversation-quality", agentRoles)) shouldBe
+      Seq(("audit-agent", 0.2, true), ("billing-agent", 1.0, false), ("support-agent", 1.0, false))
+
+      val roleSetsBoth = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agent-roles {
+          customer-facing { trigger = interaction, sampling-ratio = 0.1, trigger-on-failure = true }
+          "*" { trigger = interaction }
+        }
+        """)
+      agentBindingSettings(EvaluatorSettings.agentBindings(roleSetsBoth, "conversation-quality", agentRoles)) shouldBe
+      Seq(("audit-agent", 1.0, false), ("billing-agent", 0.1, true), ("support-agent", 0.1, true))
+    }
+
     "take the sampling ratio and the failure flag from the agent defaults when a binding does not set them" in {
       val config = load("""
         akka.javasdk.evaluation.defaults.agent {
