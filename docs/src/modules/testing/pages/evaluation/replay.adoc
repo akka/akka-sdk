@@ -41,8 +41,8 @@ include::sdk:example$doc-snippets/src/test/resources/eval/replies.jsonl[lines=1]
 | Nothing. The reply is kept for the reader; the parser does not check it, because a reply worded differently is not a regression.
 |===
 
-A case made from these fields alone has no evaluators.
-It runs, collects the reply and the trace, and appears in the report, but nothing can fail.
+A case made from these fields alone has no evaluator.
+It runs, collects the reply and the trace, and appears in the report, but its attempt is inconclusive and does not pass.
 Add the evaluators yourself: give an evaluator to the runner with `evaluator(...)` to run it on every parsed case, or to one case with `withEvaluators(...)`.
 
 [source,java,indent=0]
@@ -70,7 +70,7 @@ include::sdk:example$doc-snippets/src/test/resources/eval/captures.jsonl[lines=2
 
 `toolCalls` lists the calls in the order production made them.
 Each call has a `name`, `arguments` as an object, and the `result` as recorded JSON.
-An empty array records a turn without tool calls.
+An empty array records a turn without tool calls, and the case then expects none.
 The parser keeps each call on the case as a `RecordedCall`, in `EvalCase.recordedCalls()`.
 The parser does not touch the stubs; the runner does, through the bindings described next.
 
@@ -101,9 +101,10 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/StubOrderServic
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=replay]
 ----
 <1> The cases, with their recorded calls as data.
-<2> One binding per tool the recordings name.
-<3> The runner loads each case's recorded calls through the bindings before the agent is called.
-<4> The replayed batch runs like a curated one, with a gate for a real model.
+<2> The mocked model reports no tokens, so the token budget would leave every attempt inconclusive. Against a real model keep it.
+<3> One binding per tool the recordings name.
+<4> The runner loads each case's recorded calls through the bindings before the agent is called.
+<5> The replayed batch runs like a curated one, with a gate for a real model.
 
 === What the tool calls assert
 
@@ -114,6 +115,7 @@ They are a baseline, not a statement of correctness.
 * `Evaluators.shouldCallTools`: every recorded tool is called.
 * `Evaluators.shouldCallToolsInOrder`: in the recorded relative order.
 * `Evaluators.shouldCallToolWith`: one per recorded argument, which must arrive with its recorded value.
+* `Evaluators.shouldMakeAtMostToolCalls(0)`: when `toolCalls` is an empty array, no tool is called.
 
 For the recording of `prod-2` the case gets `shouldCallTools("getOrder", "issueRefund")`, `shouldCallToolsInOrder("getOrder", "issueRefund")`, and three `shouldCallToolWith` evaluators: `orderId` on `getOrder`, and `orderId` and `amountCents` on `issueRefund`.
 
@@ -144,7 +146,8 @@ Each field present becomes a budget evaluator on the case.
 A rerun almost never spends the same as the recording, so the token and latency budgets allow more than the recorded figures.
 `EvalCaseParser.parse(path)` uses `EvalCaseParser.DEFAULT_TOLERANCE`, which is 1.5.
 `parse(path, tolerance)` sets another tolerance; `1.0` holds a case to exactly what was recorded, and a value below `1.0` is rejected.
-Under a `TestModelProvider` the token budget is inconclusive, because a mocked model reports no tokens.
+A mocked model reports no tokens, so under a `TestModelProvider` the token budget is inconclusive and the attempt does not pass.
+Drop it from the parsed cases with `withoutEvaluators(Evaluators.TokenBudget.class)`.
 
 == The replayed batch
 
@@ -165,14 +168,15 @@ gate: passed — pass rate 1.00 over 5 attempts (5 cases, 1 run), required 0.90
   tools 3/3
   tool-order 3/3
   tool-arguments 5/5
+  tool-call-budget 2/2
   model-call-budget 2/2
-  token-budget 0/0 (2 inconclusive)
   latency-budget 2/2
 spend: 9 model calls, 0 tokens in, 0 out, 30 ms in total, slowest prod-2 run 1 at 7 ms, over 5/5 attempts with evidence
 ----
 
 Three recordings name tools, so three cases have `tools` and `tool-order` results, and their five recorded arguments give five `tool-arguments` results.
-Two recordings carry spend figures, so two cases have budgets, and their token budgets were inconclusive.
+Two recordings have an empty `toolCalls`, so two cases expect no tool call.
+Two recordings carry spend figures, so two cases have budgets; the test dropped their token budgets because the mocked model reports no tokens.
 
 == See also
 

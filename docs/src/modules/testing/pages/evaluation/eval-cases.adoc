@@ -27,7 +27,7 @@ link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/EvalCase.html[EvalCase] 
 | The tool calls a recording carried, as data. The runner loads their results into the stubs through the `ToolBindings` given to it, see xref:testing:evaluation/replay.adoc#tool-bindings[Binding tools to stubs]. Empty for a case written by hand. `EvalCase.of(id, command, evaluators...)` creates such a case.
 
 | `evaluators`
-| The checks the turn must pass, as a list or as trailing arguments. Empty when the case only collects evidence. `withEvaluators(...)` returns the same case with more evaluators.
+| The checks the turn must pass, as a list or as trailing arguments. Empty when the case only collects evidence. `withEvaluators(...)` returns the same case with more evaluators, and `withoutEvaluators(...)` the same case without the evaluators of the given classes.
 |===
 
 A case that throws while its recorded calls are loaded fails with a result labeled `setup`.
@@ -220,9 +220,11 @@ An evaluator reads only what it names and is inconclusive when that evidence is 
 A tool that was never called fails `tools` and makes `tool-order` and `tool-arguments` inconclusive, so one missing call is reported once.
 An inconclusive result is neither a pass nor a fail of that evaluator.
 
-An attempt passes when at least one result passed and none failed, so a passed result next to an inconclusive one is a pass.
-An attempt whose results are all inconclusive, or that has no result because the case declares no evaluator, is inconclusive.
-An inconclusive attempt never counts as passed: it fails `Gate.allCasesShouldPass()` and counts against the rate of `Gate.passRateShouldBeAtLeast(minimumRate)`.
+An attempt passes only when every result passed.
+An attempt with a failed result fails.
+Any other attempt is inconclusive: one with an inconclusive result next to passed ones, and one with no result because the case declares no evaluator.
+An inconclusive attempt never counts as passed: it fails `Gate.allCasesShouldPass()`, counts against the rate of `Gate.passRateShouldBeAtLeast(minimumRate)`, and is printed with its evidence at the end of the report.
+A case whose outcome rests on a requirement that nobody checked is therefore visible, not silently passed.
 The report counts inconclusive attempts and cases, and inconclusive results per evaluator label.
 `Gate.passRateShouldBeAtLeast(evaluatorClass, minimumRate)` rates an evaluator over its conclusive results.
 

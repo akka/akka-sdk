@@ -38,8 +38,8 @@ import java.util.Optional;
  *     attempts, counting every attempt
  * @param spend model calls, tokens and latency summed over the attempts whose evidence carries
  *     model calls
- * @param cases one entry per case, in the order the cases were given, with its outcome and its
- *     requirements over all runs
+ * @param cases one entry per case, in the order the cases were given, with its outcome over all
+ *     runs and its requirements
  * @param attempts one entry per attempt: every case in the order the cases were given, its runs
  *     ascending
  */
@@ -58,7 +58,7 @@ public record ReportDocument(
     List<Attempt> attempts) {
 
   public static final String FORMAT = "akka-eval-report";
-  public static final int FORMAT_VERSION = 1;
+  public static final int FORMAT_VERSION = 2;
 
   /** Reads a report file written by {@link Experiment#run}. */
   public static ReportDocument read(Path file) {
@@ -134,9 +134,8 @@ public record ReportDocument(
    * One case over all its runs.
    *
    * @param id the case id
-   * @param outcome over the runs where the case was conclusive: PASSED, FAILED, INCONSISTENT when
-   *     the case passed in some runs and failed in others, or INCONCLUSIVE when it was conclusive
-   *     in no run
+   * @param outcome over all runs: PASSED when every run passed, FAILED when every run failed,
+   *     INCONCLUSIVE when every run was inconclusive, INCONSISTENT otherwise
    * @param passedRuns runs with the verdict PASS
    * @param failedRuns runs with the verdict FAIL
    * @param inconclusiveRuns runs with the verdict INCONCLUSIVE
@@ -177,8 +176,8 @@ public record ReportDocument(
    *
    * @param id the case id
    * @param run the run, from 1
-   * @param verdict PASS when a result passed and none failed, FAIL when a result failed,
-   *     INCONCLUSIVE when no result is conclusive
+   * @param verdict PASS when every result passed, FAIL when a result failed, INCONCLUSIVE when no
+   *     result failed and a result is inconclusive or there is none
    * @param interaction the input, the reply and the traced evidence
    * @param results one entry per evaluator
    */

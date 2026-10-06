@@ -872,7 +872,7 @@ class ExperimentRunnerTest {
     var json = json(report);
 
     assertThat(json.get("format").asText()).isEqualTo("akka-eval-report");
-    assertThat(json.get("formatVersion").asInt()).isEqualTo(1);
+    assertThat(json.get("formatVersion").asInt()).isEqualTo(2);
     assertThat(json.get("name").asText()).isEqualTo("order-agent");
     assertThat(report.name()).isEqualTo("order-agent");
     assertThat(Instant.parse(json.get("startedAt").asText())).isAfterOrEqualTo(before);
@@ -1234,6 +1234,10 @@ class ExperimentRunnerTest {
                     "wrong-order",
                     "Where is o_43?",
                     Evaluators.shouldCallToolWith("getOrder", "orderId", "o_43"),
+                    Evaluators.toolResultShouldContain("issueRefund", "ok")),
+                EvalCase.of(
+                    "closing",
+                    "Thanks, that is all.",
                     Evaluators.toolResultShouldContain("issueRefund", "ok")))
             .name("support-agent-quality")
             .gate(Gate.passRateShouldBeAtLeast(0.9))
@@ -1288,8 +1292,8 @@ class ExperimentRunnerTest {
     assertRequiredPresent(schema, schema, json);
   }
 
-  // The test module has no JSON Schema validator; this checks the required properties and the
-  // nesting the schema declares, which is what a reader relies on.
+  // The test module has no JSON Schema validator; this checks the required properties, the enum
+  // values and the nesting the schema declares, which is what a reader relies on.
   private static void assertRequiredPresent(JsonNode root, JsonNode schema, JsonNode value) {
     if (schema.has("$ref")) {
       var path = schema.get("$ref").asText().substring("#/".length()).split("/");
@@ -1302,6 +1306,11 @@ class ExperimentRunnerTest {
       for (var name : schema.get("required")) {
         assertThat(value.has(name.asText())).as("property %s", name.asText()).isTrue();
       }
+    }
+    if (schema.has("enum")) {
+      var allowed = new ArrayList<String>();
+      for (var constant : schema.get("enum")) allowed.add(constant.asText());
+      assertThat(allowed).as("enum value %s", value.asText()).contains(value.asText());
     }
     if (schema.has("properties")) {
       schema
@@ -1508,8 +1517,10 @@ class ExperimentRunnerTest {
     var summary = report.document().summary();
     assertThat(summary.inconclusiveCases()).isEqualTo(1);
     assertThat(summary.passedCases()).isZero();
+    assertThat(summary.failedCases()).isZero();
     assertThat(summary.inconclusiveAttempts()).isEqualTo(1);
     assertThat(summary.passedAttempts()).isZero();
+    assertThat(summary.failedAttempts()).isZero();
     assertThat(report.document().attempts().getFirst().verdict())
         .isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
     assertThat(report.document().cases().getFirst().inconclusiveRuns()).isEqualTo(1);
@@ -1525,18 +1536,43 @@ class ExperimentRunnerTest {
   }
 
   @Test
-  void anAttemptWithAPassedAndAnInconclusiveResultPasses() {
-    var result =
-        single(
-            targetThat("done"),
-            EvalCase.of(
-                "c",
-                "q",
-                Evaluators.replyShouldContain("done"),
-                Evaluators.toolResultShouldContain("getOrder", "ok")));
+  void anInconclusiveResultNextToAPassedOneLeavesTheAttemptInconclusive() {
+    var report =
+        experiment(
+                targetThat("done"),
+                EvalCase.of(
+                    "c",
+                    "q",
+                    Evaluators.replyShouldContain("done"),
+                    Evaluators.toolResultShouldContain("getOrder", "ok")))
+            .run();
+    var result = report.results().getFirst();
 
-    assertThat(result.verdict()).isEqualTo(EvalResult.Verdict.PASS);
-    assertThat(result.passed()).isTrue();
+    assertThat(result.verdict()).isEqualTo(EvalResult.Verdict.INCONCLUSIVE);
+    assertThat(result.passed()).isFalse();
+    assertThat(report.passed()).isFalse();
+    assertThat(report.render())
+        .contains("gate: FAILED — inconclusive cases [c (run 1)]\n")
+        .contains("case c run 1 INCONCLUSIVE\n")
+        .contains("  PASS reply-contains")
+        .contains("  INCONCLUSIVE tool-results");
+  }
+
+  @Test
+  void withoutEvaluatorsDropsTheEvaluatorsOfTheGivenClasses() {
+    var evalCase =
+        EvalCase.of(
+            "c",
+            "q",
+            Evaluators.replyShouldContain("done"),
+            Evaluators.shouldUseAtMostTokens(10),
+            Evaluators.shouldReplyWithin(Duration.ofSeconds(1)));
+
+    var trimmed =
+        evalCase.withoutEvaluators(Evaluators.TokenBudget.class, Evaluators.LatencyBudget.class);
+
+    assertThat(trimmed.evaluators()).singleElement().isInstanceOf(Evaluators.ReplyContains.class);
+    assertThat(evalCase.evaluators()).hasSize(3);
   }
 
   @Test
@@ -1572,9 +1608,11 @@ class ExperimentRunnerTest {
     assertThat(fails.outcome()).isEqualTo(Outcome.FAILED);
     assertThat(fails.failedIn()).containsExactly(1);
     assertThat(fails.inconclusiveIn()).containsExactly(2, 3);
-    assertThat(report.cases().get(0).outcome()).isEqualTo(Outcome.PASSED);
+    assertThat(report.cases().get(0).outcome()).isEqualTo(Outcome.INCONSISTENT);
+    assertThat(report.cases().get(0).passedRuns()).isEqualTo(1);
     assertThat(report.cases().get(0).inconclusiveRuns()).isEqualTo(2);
-    assertThat(report.cases().get(1).outcome()).isEqualTo(Outcome.FAILED);
+    assertThat(report.cases().get(1).outcome()).isEqualTo(Outcome.INCONSISTENT);
+    assertThat(report.cases().get(1).failedRuns()).isEqualTo(1);
     assertThat(report.render())
         .startsWith("2 cases, 3 runs: 1/6 attempts passed (17%), 4 inconclusive\n")
         .contains("  tool-results 1/2 (4 inconclusive)\n")

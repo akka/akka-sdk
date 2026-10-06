@@ -20,8 +20,9 @@ import java.util.function.Predicate;
  * <p>A real model is not deterministic, so a batch asserts on rates rather than on every case. With
  * a mocked model leave the gate out: without one every case must pass.
  *
- * <p>An attempt with no conclusive result is inconclusive. It never passes: it fails {@link
- * #allCasesShouldPass} and counts against the rate of {@link #passRateShouldBeAtLeast(double)}.
+ * <p>An attempt passes only when every result passed. An attempt with an inconclusive result, or
+ * with no result, is inconclusive. It never passes: it fails {@link #allCasesShouldPass} and counts
+ * against the rate of {@link #passRateShouldBeAtLeast(double)}.
  */
 public final class Gate {
 
@@ -44,8 +45,8 @@ public final class Gate {
   }
 
   /**
-   * Every case must pass, in every run. An inconclusive attempt fails the gate. The gate that
-   * applies when none is given.
+   * Every case must pass in every run, with every result passed. An inconclusive attempt fails the
+   * gate. The gate that applies when none is given.
    */
   public static Gate allCasesShouldPass() {
     return new Gate(
