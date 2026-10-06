@@ -12,6 +12,9 @@ content:
   - url: ./../
     branches: [HEAD]
     start_paths: [docs/src,docs/src-managed]
+  - url: /nexus
+    branches: [HEAD]
+    start_paths: [optimize-docs/src,optimize-docs/src-managed]
 
 ui:
   bundle:
@@ -27,6 +30,7 @@ asciidoc:
   extensions:
   - '@asciidoctor/tabs'
   attributes:
+    cli: akka
     # the following two attributes cause review and todo notes to display
     review: ''
     todo: ''

@@ -1,0 +1,16 @@
+name: Checkout Nexus documentation
+description: Check out the Nexus revision used by the SDK documentation build.
+inputs:
+  token:
+    description: Token with read access to akka/nexus.
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v6
+      with:
+        repository: akka/nexus
+        ref: v0.7.1
+        path: nexus
+        fetch-depth: 0
+        token: ${{ inputs.token }}
