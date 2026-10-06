@@ -398,14 +398,13 @@ private[impl] object AgentImpl {
     }
   }
 
+  @nowarn("msg=deprecated")
   private[impl] def toSpiMcpEndpoints(
       remoteMcpTools: Seq[RemoteMcpTools],
       guardrails: AgentGuardrails,
       sdkExecutionContext: ExecutionContext): Seq[SpiAgent.McpToolEndpointDescriptor] =
     remoteMcpTools.map {
       case remoteMcp: RemoteMcpToolsImpl =>
-        // FIXME: MCP tool calls run only legacy guardrails,
-        //  https://github.com/lightbend/akka-runtime/issues/5382
         new SpiAgent.McpToolEndpointDescriptor(
           mcpEndpoint = remoteMcp.serverUri,
           additionalClientHeaders = remoteMcp.additionalClientHeaders.map(_.asInstanceOf[HttpHeader]),
@@ -434,7 +433,8 @@ private[impl] object AgentImpl {
             if (remoteMcp.timeout == Duration.Zero) None
             else Some(remoteMcp.timeout),
           requestGuardrails = guardrails.legacyMcpToolRequestGuardrails,
-          responseGuardrails = guardrails.legacyMcpToolResponseGuardrails)
+          responseGuardrails = guardrails.legacyMcpToolResponseGuardrails,
+          toolCallGuardrails = guardrails.toolCallGuardrails)
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 

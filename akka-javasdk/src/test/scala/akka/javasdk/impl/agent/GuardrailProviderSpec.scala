@@ -577,6 +577,97 @@ class GuardrailProviderSpec
       byName("other-tool") shouldBe 0
     }
 
+    "give an MCP endpoint the ToolCallGuardrails of each tool by name" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "named tool guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyToolGuard"
+              agents = ["tool-agent"]
+              category = TOOL_POLICY
+              tools = ["allowed-tool"]
+            }
+            "all tools guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$AllowingToolGuard"
+              agents = ["tool-agent"]
+              category = TOOL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val g = provider.agentGuardrails("tool-agent", role = None)
+
+      val endpoint =
+        AgentImpl
+          .toSpiMcpEndpoints(Seq(new RemoteMcpToolsImpl("http://example.com/mcp")), g, system.executionContext)
+          .head
+
+      endpoint.toolCallGuardrails("allowed-tool").map(_.settings.name) should contain theSameElementsAs Seq(
+        "named tool guard",
+        "all tools guard")
+      endpoint.toolCallGuardrails("other-tool").map(_.settings.name) shouldBe Seq("all tools guard")
+
+      val decision =
+        Await.result(
+          endpoint
+            .toolCallGuardrails("allowed-tool")
+            .find(_.settings.name == "named tool guard")
+            .get
+            .decide(toolCallContext("allowed-tool")),
+          3.seconds)
+      reasonOf(decision) shouldBe "named tool guard says no"
+    }
+
+    "warn when a TextGuardrail uses an MCP use-for value" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "mcp text guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agents = ["new-agent"]
+              category = TOXIC
+              use-for = ["mcp-tool-request", "mcp-tool-response"]
+            }
+          }
+        """)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn(
+          "Guardrail [mcp text guard] uses deprecated use-for values. Instead, " +
+          "implement akka.javasdk.agent.ToolCallGuardrail for mcp-tool-request, " +
+          "implement akka.javasdk.agent.ModelCallGuardrail for mcp-tool-response.")
+        .expect(provider.validate())
+    }
+
+    "warn for every use-for value when a TextGuardrail uses the wildcard" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "wildcard text guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agents = ["new-agent"]
+              category = TOXIC
+              use-for = ["*"]
+            }
+          }
+        """)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn(
+          "Guardrail [wildcard text guard] uses deprecated use-for values. Instead, " +
+          "implement akka.javasdk.agent.ModelCallGuardrail for model-request, " +
+          "implement akka.javasdk.agent.AgentResponseGuardrail for model-response, " +
+          "implement akka.javasdk.agent.ToolCallGuardrail for mcp-tool-request, " +
+          "implement akka.javasdk.agent.ModelCallGuardrail for mcp-tool-response.")
+        .expect(provider.validate())
+    }
+
     "register a ModelCallGuardrail and expose the newest frame via CallContext" in {
       val cfg = ConfigFactory
         .parseString(s"""
