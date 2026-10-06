@@ -230,26 +230,6 @@ Here, it is using predefined examples of jailbreak prompts in `guardrail/jailbre
 
 You can use this for other things than jailbreak attempt detection.
 
-The SDK includes this guardrail as the built-in `"default model-call jailbreak"`, with no agents selected by default. To enable it, set `agents` or `agent-roles`:
-
-[source,conf,indent=0]
-.src/main/resources/application.conf
-----
-akka.javasdk.agent.guardrails {
-  "default model-call jailbreak" {
-    agents = ["planner-agent", "weather-agent"]
-  }
-}
-----
-
-[NOTE]
-====
-The link:{attachmentsdir}/api/akka/javasdk/agent/SimilarityGuard.html[`SimilarityGuard`] class and the built-in `"default jailbreak"` guardrail are deprecated.
-They still work with `use-for`. See <<_configuring_a_deprecated_textguardrail,Configuring a deprecated TextGuardrail>>.
-For `use-for = ["model-request"]`, use `ModelCallSimilarityGuard` or `"default model-call jailbreak"` instead.
-`SimilarityGuard` has no replacement for `mcp-tool-request` and `mcp-tool-response`. Keep using it for those values.
-To replace `"default jailbreak"`, enable `"default model-call jailbreak"` and remove `"default jailbreak"` from your agents. Do not change the `class` of `"default jailbreak"`, because it takes `use-for` from the SDK defaults. Do not set `use-for` on a `ModelCallSimilarityGuard`.
-====
 
 == Testing
 
