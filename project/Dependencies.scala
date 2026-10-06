@@ -8,7 +8,8 @@ object Dependencies {
     val ProtocolVersionMinor = 1
   }
 
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.7.0")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.7.1")
+
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
@@ -27,7 +28,7 @@ object Dependencies {
   val JacksonDatabindVersion = JacksonVersion
   val JacksonAnnotationsVersion = "2.22"
   val Langchain4jVersion = "1.20.2"
-  val LogbackVersion = "1.6.3"
+  val LogbackVersion = "1.6.4"
   val LogbackContribVersion = "0.1.5"
   val JUnitVersion = "4.13.2"
   val JUnitInterfaceVersion = "0.11"
@@ -51,7 +52,7 @@ object Dependencies {
   val logbackJson = "ch.qos.logback.contrib" % "logback-json-classic" % LogbackContribVersion
   val logbackJackson = "ch.qos.logback.contrib" % "logback-jackson" % LogbackContribVersion
 
-  val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.19"
+  val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.20"
 
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % JacksonVersion
   val jacksonAnnotations = "com.fasterxml.jackson.core" % "jackson-annotations" % JacksonAnnotationsVersion
