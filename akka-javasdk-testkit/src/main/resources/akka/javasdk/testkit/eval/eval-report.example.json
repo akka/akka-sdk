@@ -4,14 +4,20 @@
   "name": "support-agent-quality",
   "startedAt": "2026-10-01T10:15:30.123Z",
   "finishedAt": "2026-10-01T10:16:02.456Z",
+  "runs": 1,
   "gate": {
     "passed": false,
-    "detail": "pass rate 0.50 over 2 cases, required 0.90"
+    "detail": "pass rate 0.50 over 2 attempts (2 cases, 1 run), required 0.90"
   },
   "summary": {
     "cases": 2,
     "passedCases": 1,
     "failedCases": 1,
+    "inconsistentCases": 0,
+    "inconsistentRequirements": 0,
+    "attempts": 2,
+    "passedAttempts": 1,
+    "failedAttempts": 1,
     "passRate": 0.5
   },
   "evaluators": [
@@ -21,7 +27,7 @@
     { "evaluator": "tool-results", "passed": 0, "failed": 0, "inconclusive": 1 }
   ],
   "spend": {
-    "casesWithEvidence": 2,
+    "attemptsWithEvidence": 2,
     "modelCalls": 2,
     "inputTokens": 200,
     "outputTokens": 40,
@@ -30,6 +36,29 @@
   "cases": [
     {
       "id": "shipped",
+      "outcome": "PASSED",
+      "passedRuns": 1,
+      "failedRuns": 0,
+      "requirements": [
+        { "index": 0, "evaluator": "tools", "outcome": "PASSED", "passedIn": [1], "failedIn": [], "inconclusiveIn": [] },
+        { "index": 1, "evaluator": "reply-contains", "outcome": "PASSED", "passedIn": [1], "failedIn": [], "inconclusiveIn": [] }
+      ]
+    },
+    {
+      "id": "wrong-order",
+      "outcome": "FAILED",
+      "passedRuns": 0,
+      "failedRuns": 1,
+      "requirements": [
+        { "index": 0, "evaluator": "tool-arguments", "outcome": "FAILED", "passedIn": [], "failedIn": [1], "inconclusiveIn": [] },
+        { "index": 1, "evaluator": "tool-results", "outcome": "INCONCLUSIVE", "passedIn": [], "failedIn": [], "inconclusiveIn": [1] }
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "id": "shipped",
+      "run": 1,
       "passed": true,
       "interaction": {
         "input": "Where is o_42?",
@@ -71,6 +100,7 @@
     },
     {
       "id": "wrong-order",
+      "run": 1,
       "passed": false,
       "interaction": {
         "input": "Where is o_43?",

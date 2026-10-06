@@ -20,20 +20,27 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is wha
 | Gate | Passes when
 
 | `Gate.allCasesShouldPass()`
-| No case has a failed result. This is the gate that applies when none is given.
+| No attempt has a failed result. This is the gate that applies when none is given.
 
 | `Gate.passRateShouldBeAtLeast(minimumRate)`
-| The share of cases with no failed result is at least `minimumRate`.
+| The share of attempts with no failed result is at least `minimumRate`.
 
 | `Gate.passRateShouldBeAtLeast(evaluatorClass, minimumRate)`
 | The share of the evaluator's results that passed is at least `minimumRate`. Inconclusive results are left out of the count. The gate fails when the evaluator has no result to count. The class is a built-in nested in `Evaluators`, for example `Evaluators.ToolArgument.class`, or your own evaluator class.
 
 | `Gate.targetShouldNotFail()`
-| No case failed while loading its recorded calls or in the agent call.
+| No attempt failed while loading its recorded calls or in the agent call.
 
 | `gate.and(other)`
 | Both gates hold. The verdict lists both details.
 |===
+
+The gates count attempts, not cases.
+An attempt is one execution of one case, so an experiment with `repeat(3)` has three attempts per case.
+`Gate.allCasesShouldPass()` then requires every case to pass in every run, and a pass rate is the share of all attempts that passed.
+Without `repeat(n)` a case has one attempt and the gates read as the table states.
+A pass rate pools the attempts of all cases: one case that fails in every run and three cases that each fail once give the same rate.
+See <<repeated-runs>>.
 
 A failed gate does not throw.
 Assert on the report, and use the rendered report as the failure message.
@@ -54,16 +61,22 @@ Assert on the report, and use the rendered report as the failure message.
 | Whether the gate passed.
 
 | `passRate()`
-| The share of cases with no failed result.
+| The share of attempts with no failed result.
+
+| `runs()`
+| How many times every case ran, see <<repeated-runs>>.
 
 | `results()`
-| One `CaseResult` per case, in the order the cases were given: the case id, the `Interaction` and the results. `describe()` renders one case as in the report.
+| One `CaseResult` per attempt: every case in the order the cases were given, its runs ascending. A `CaseResult` carries the case id, the run, the `Interaction` and the results. `describe()` renders one attempt as in the report.
+
+| `cases()`
+| One `CaseSummary` per case, in the order the cases were given: the outcome over all runs, the passed and failed run counts, the case's attempts, and its requirements. The outcome is `PASSED`, `FAILED` or `INCONSISTENT`. A `RequirementSummary` is one evaluator at one position in the case's results, with the runs it passed, failed and was inconclusive in, and its outcome over the conclusive runs.
 
 | `render()`
 | The report as text.
 
 | `document()`
-| The report as data, a `ReportDocument` with every case and its evidence, for tools that render their own reports.
+| The report as data, a `ReportDocument` with every case, every attempt and its evidence, for tools that render their own reports.
 
 | `reportFile()`
 | The JSON file `run()` wrote to `target/eval-reports/<name>-<start time>.json`, for example `SupportAgentEvalTest.qualityGate-20261001-101530-123.json`, holding `document()`. Every run keeps its own file. See the xref:sdk:attachment$eval-report.example.json[example report]. `ReportDocument.read(path)` reads it back. `reportDirectory(path)` on the experiment changes the directory, `withoutReportFile()` writes none. Empty when no file was written.
@@ -73,8 +86,8 @@ A rendered report of a passing batch:
 
 [listing]
 ----
-3/3 cases passed (100%)
-gate: passed — pass rate 1.00 over 3 cases, required 0.90; tool-arguments rate 1.00 over 2 judged cases, required 1.00; no target failures
+3 cases, 1 run: 3/3 attempts passed (100%)
+gate: passed — pass rate 1.00 over 3 attempts (3 cases, 1 run), required 0.90; tool-arguments rate 1.00 over 2 judged attempts, required 1.00; no target failures
   tools 1/1
   tool-arguments 2/2
   forbidden-tools 2/2
@@ -83,39 +96,68 @@ gate: passed — pass rate 1.00 over 3 cases, required 0.90; tool-arguments rate
   reply-matches 1/1
   tool-call-budget 1/1
   model-call-budget 1/1
-spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status at 489 ms, over 3/3 cases with evidence
+spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status run 1 at 489 ms, over 3/3 attempts with evidence
 ----
 
 Line by line:
 
-. The cases with no failed result, and the pass rate.
-. The gate's verdict and its detail. A combined gate lists the detail of each part.
-. One line per evaluator, under its xref:testing:evaluation/eval-cases.adoc#evaluator-labels[label]: the cases it passed over the cases it judged. An evaluator that was inconclusive on some cases shows the count in brackets, for example `token-budget 0/0 (2 inconclusive)`.
-. The spend: model calls, tokens and latency summed over the cases whose trace carried model calls, and the slowest case. The line is absent when no case carried model calls.
-. After these lines, every failed case with its evidence, see <<reading-a-failed-case>>.
+. The cases, the runs, and the attempts with no failed result with their share. An attempt is one case in one run, so without `repeat(n)` on the experiment the attempts are the cases.
+. The gate's verdict and its detail. A combined gate lists the detail of each part. The detail counts attempts and names the runs a case failed in: `failed cases [order-status (run 2)]`.
+. One line per evaluator, under its xref:testing:evaluation/eval-cases.adoc#evaluator-labels[label]: the attempts it passed over the attempts it judged. An evaluator that was inconclusive on some attempts shows the count in brackets, for example `token-budget 0/0 (2 inconclusive)`.
+. The spend: model calls, tokens and latency summed over the attempts whose trace carried model calls, and the slowest attempt. The line is absent when no attempt carried model calls.
+. `inconsistent across runs`, only when a requirement passed in some runs and failed in others: one line per such requirement with the runs it passed, failed and was inconclusive in, for example `order-status tool-arguments: passed in runs 1, 3, failed in run 2`. A requirement that failed in every run is not listed here. See <<repeated-runs>>.
+. After these lines, every failed attempt with its evidence, see <<reading-a-failed-case>>.
 
 [#reading-a-failed-case]
 == Reading a failed case
 
-The rendered report ends with every failed case and its evidence.
+The rendered report ends with every failed attempt and its evidence.
 This report is from a case that asks where order o_42 is, with an evaluator that expects `getOrder` to be called with `o_43`:
 
 [listing]
 ----
-0/1 cases passed (0%)
-gate: FAILED — failed cases [wrong-order]
+1 case, 1 run: 0/1 attempts passed (0%)
+gate: FAILED — failed cases [wrong-order (run 1)]
   tool-arguments 0/1
-spend: 2 model calls, 123 tokens in, 321 out, 6 ms in total, slowest wrong-order at 6 ms, over 1/1 cases with evidence
-case wrong-order FAILED
+spend: 2 model calls, 123 tokens in, 321 out, 6 ms in total, slowest wrong-order run 1 at 6 ms, over 1/1 attempts with evidence
+case wrong-order run 1 FAILED
   reply: Order o_42 is shipped.
   tools: getOrder{orderId=o_42}
   model: 2 calls, 123 tokens in, 321 out, 6 ms
   FAIL tool-arguments: getOrder(orderId) expected o_43, was [o_42]
 ----
 
-A failed case prints the reply, the tool calls with their arguments, the model spend, and every result with its detail.
+A failed attempt is named by its case and its run, and prints the reply, the tool calls with their arguments, the model spend, and every result with its detail.
 When the agent mapped the model's text into the reply, a `model text:` line shows the model's own text as well.
 The reply is cut to one line of at most 200 characters.
+
+[#repeated-runs]
+== Running every case several times
+
+One run of a case against a real model is one sample, and a case that passes once may fail on the next run with the same input.
+`repeat(n)` on the experiment runs every case `n` times in total, each time in a fresh session.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=repeated-runs]
+----
+<1> Every case runs three times. The runner runs every case once, then every case again, so the attempts of one case are spread over the batch rather than sent to the model within the same seconds.
+<2> The gate counts attempts: nine with three cases. 0.85 tolerates one failed attempt. 0.9 would require all nine.
+
+The report lists the requirements that passed in some runs and failed in others under `inconsistent across runs`, see <<reading-the-report>>.
+`cases()` carries the outcome of every case and of every requirement over all runs.
+A requirement is one evaluator of one case, so a case whose evaluators fail in different runs is a case that failed in every run with two inconsistent requirements.
+
+Three passes out of three do not show that a case always passes.
+`n` runs cannot show a failure rate below one in `n`, and a case that fails one time in four still passes three runs out of three about four times in ten.
+Choose `n` by the failure rate you need to detect, and gate on a rate rather than on a clean sweep when the model is real.
+
+Nothing is reset between runs.
+The stubs the agent's tools call serve every run, a `@BeforeEach` runs once per experiment, and state that a tool writes to an entity is still there in the next run.
+A stub or an evaluator must not depend on state an attempt writes, or a side effect of run 1 reads as a failure of every later run.
+A replayed case has its recorded results loaded again before each run.
+The wall clock time and the model spend grow with the number of runs, and judge calls are not part of the spend line.
 
 == See also
 

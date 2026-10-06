@@ -7,12 +7,15 @@ package akka.javasdk.testkit.eval;
 import akka.javasdk.testkit.eval.Evaluator.EvalResult;
 import akka.javasdk.testkit.eval.ExperimentRunner.CaseResult;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.Function;
+import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 /**
- * What a batch run must satisfy, checked over all case results.
+ * What a batch run must satisfy, checked over all attempts. An attempt is one case in one run, so
+ * with {@link Experiment#repeat} every gate counts each case once per run.
  *
  * <p>A real model is not deterministic, so a batch asserts on rates rather than on every case. With
  * a mocked model leave the gate out: without one every case must pass.
@@ -31,43 +34,43 @@ public final class Gate {
     }
   }
 
-  private final Function<List<CaseResult>, Verdict> condition;
+  private final BiFunction<List<CaseResult>, Integer, Verdict> condition;
 
-  private Gate(Function<List<CaseResult>, Verdict> condition) {
+  private Gate(BiFunction<List<CaseResult>, Integer, Verdict> condition) {
     this.condition = condition;
   }
 
-  /** Every case must pass. The gate that applies when none is given. */
+  /** Every case must pass, in every run. The gate that applies when none is given. */
   public static Gate allCasesShouldPass() {
     return new Gate(
-        results -> {
-          var failed = results.stream().filter(r -> !r.passed()).map(CaseResult::caseId).toList();
+        (results, runs) -> {
+          var failed = failedCases(results, runs, r -> !r.passed());
           return failed.isEmpty()
-              ? Verdict.pass("all " + results.size() + " cases passed")
+              ? Verdict.pass("all " + attempts(results, runs) + " passed")
               : Verdict.fail("failed cases " + failed);
         });
   }
 
-  /** The share of cases with no failed result must be at least {@code minimumRate}. */
+  /** The share of attempts with no failed result must be at least {@code minimumRate}. */
   public static Gate passRateShouldBeAtLeast(double minimumRate) {
     return new Gate(
-        results -> {
+        (results, runs) -> {
           var passed = results.stream().filter(CaseResult::passed).count();
           var actual = (double) passed / results.size();
           var summary =
               String.format(
                   Locale.ROOT,
-                  "pass rate %.2f over %d cases, required %.2f",
+                  "pass rate %.2f over %s, required %.2f",
                   actual,
-                  results.size(),
+                  attempts(results, runs),
                   minimumRate);
           return actual >= minimumRate ? Verdict.pass(summary) : Verdict.fail(summary);
         });
   }
 
   /**
-   * The pass rate of one evaluator, over the cases where it was conclusive, must be at least {@code
-   * minimumRate}. Fails when the evaluator judged no case.
+   * The pass rate of one evaluator, over the attempts where it was conclusive, must be at least
+   * {@code minimumRate}. Fails when the evaluator judged no attempt.
    *
    * @param evaluator the evaluator's class. The built-ins are nested in {@link Evaluators}, for
    *     example {@code Evaluators.ToolArgument.class}
@@ -78,7 +81,7 @@ public final class Gate {
     var label = Evaluators.label(evaluator);
 
     return new Gate(
-        results -> {
+        (results, runs) -> {
           var evalResults =
               results.stream()
                   .flatMap(result -> result.evalResults().stream())
@@ -94,7 +97,7 @@ public final class Gate {
           var summary =
               String.format(
                   Locale.ROOT,
-                  "%s rate %.2f over %d judged cases, required %.2f",
+                  "%s rate %.2f over %d judged attempts, required %.2f",
                   label,
                   actual,
                   evalResults.size(),
@@ -103,22 +106,21 @@ public final class Gate {
         });
   }
 
-  /** No case may fail while its recorded calls are loaded or in the agent call. */
+  /** No attempt may fail while its recorded calls are loaded or in the agent call. */
   public static Gate targetShouldNotFail() {
     return new Gate(
-        results -> {
+        (results, runs) -> {
           var failed =
-              results.stream()
-                  .filter(
-                      result ->
-                          result.evalResults().stream()
-                              .anyMatch(
-                                  evalResult ->
-                                      evalResult.verdict() == EvalResult.Verdict.FAIL
-                                          && (evalResult.evaluator().equals(Evaluators.TARGET)
-                                              || evalResult.evaluator().equals(Evaluators.SETUP))))
-                  .map(CaseResult::caseId)
-                  .toList();
+              failedCases(
+                  results,
+                  runs,
+                  result ->
+                      result.evalResults().stream()
+                          .anyMatch(
+                              evalResult ->
+                                  evalResult.verdict() == EvalResult.Verdict.FAIL
+                                      && (evalResult.evaluator().equals(Evaluators.TARGET)
+                                          || evalResult.evaluator().equals(Evaluators.SETUP))));
           return failed.isEmpty()
               ? Verdict.pass("no target failures")
               : Verdict.fail("target failed on " + failed);
@@ -129,8 +131,9 @@ public final class Gate {
   public Gate and(Gate other) {
     if (other == null) throw new IllegalArgumentException("gate required");
     return new Gate(
-        results -> {
-          var verdicts = List.of(condition.apply(results), other.condition.apply(results));
+        (results, runs) -> {
+          var verdicts =
+              List.of(condition.apply(results, runs), other.condition.apply(results, runs));
           var details = new ArrayList<String>();
           var failed = false;
           for (var verdict : verdicts) {
@@ -142,8 +145,39 @@ public final class Gate {
         });
   }
 
-  Verdict check(List<CaseResult> results) {
+  /**
+   * @param results one per attempt
+   * @param runs how many times every case ran
+   */
+  Verdict check(List<CaseResult> results, int runs) {
     if (results.isEmpty()) return Verdict.fail("no cases ran");
-    return condition.apply(results);
+    return condition.apply(results, runs);
+  }
+
+  /** {@code 9 attempts (3 cases, 3 runs)}. */
+  private static String attempts(List<CaseResult> results, int runs) {
+    return results.size()
+        + " attempts ("
+        + ExperimentRunner.plural(results.size() / runs, "case")
+        + ", "
+        + ExperimentRunner.plural(runs, "run")
+        + ")";
+  }
+
+  /**
+   * The ids of the cases with an attempt that matches, in order, each with the runs that matched:
+   * {@code refund (runs 1, 3)}.
+   */
+  private static List<String> failedCases(
+      List<CaseResult> results, int runs, Predicate<CaseResult> failed) {
+    var runsByCase = new LinkedHashMap<String, List<Integer>>();
+    for (var result : results) {
+      if (failed.test(result)) {
+        runsByCase.computeIfAbsent(result.caseId(), id -> new ArrayList<>()).add(result.run());
+      }
+    }
+    return runsByCase.entrySet().stream()
+        .map(e -> e.getKey() + " (" + ExperimentRunner.describeRuns(e.getValue()) + ")")
+        .toList();
   }
 }

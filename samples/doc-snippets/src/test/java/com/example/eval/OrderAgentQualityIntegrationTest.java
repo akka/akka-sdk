@@ -130,6 +130,21 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
 
   // end::batch[]
 
+  // tag::repeated-runs[]
+  @Test
+  public void qualityGateOverRepeatedRuns() {
+    var report = new ExperimentRunner(testKit)
+      .cases(curated())
+      .agent(OrderAgent::ask)
+      .repeat(3) // <1>
+      .gate(Gate.passRateShouldBeAtLeast(0.85)) // <2>
+      .run();
+
+    assertThat(report.passed()).withFailMessage(report::render).isTrue();
+  }
+
+  // end::repeated-runs[]
+
   // tag::case-evaluator[]
   @Test
   public void aRefundNeverExceedsTheOrderTotal() {
@@ -200,7 +215,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
 
     assertThat(report.passed()).isFalse();
     assertThat(report.render())
-      .contains("case wrong-order FAILED")
+      .contains("case wrong-order run 1 FAILED")
       .contains("getOrder{orderId=o_42}")
       .contains("expected o_43");
   }
