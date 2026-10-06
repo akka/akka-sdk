@@ -731,16 +731,12 @@ private final class Sdk(
         throw exc
     }
 
-  // Fails startup when a streaming agent has a blocking response guardrail bound to it.
   private def validateStreamingResponseGuardrails(
       componentId: String,
       agentClass: Class[_],
       agentGuardrails: AgentGuardrails): Unit =
-    GuardrailProvider
-      .streamingResponseGuardrailError(
-        componentId,
-        Reflect.isStreamingAgent(agentClass),
-        agentGuardrails.blockingResponseGuardrailLabels)
+    agentGuardrails
+      .streamingResponseGuardrailError(componentId, agentClass)
       .foreach { message =>
         logger.error("Invalid guardrails: {}", message)
         throw new IllegalArgumentException(message)

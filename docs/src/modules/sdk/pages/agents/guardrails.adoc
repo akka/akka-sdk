@@ -38,9 +38,11 @@ To check several points, write one class per interface.
 ====
 An agent that streams its reply with a `StreamEffect` sends the reply before the runtime evaluates a response guardrail. A response guardrail cannot block that reply.
 Such an agent fails startup when you bind a blocking `AgentResponseGuardrail` to it.
-Mark the guardrail as report-only to observe the reply without blocking it.
+A blocking `TextGuardrail` with `use-for` set to `model-response` or `*` fails startup the same way.
+Bind the guardrail to the agent in a separate entry with `report-only = true`. The guardrail then observes the reply without blocking it.
+Setting `report-only` on an existing entry stops blocking on every agent that entry binds. Add a new entry instead.
 
-`ModelCallGuardrail` is unaffected. The runtime evaluates it before each model call on the streaming path too. It can block the call.
+The startup check does not apply to `ModelCallGuardrail`. The runtime evaluates it before each model call on the streaming path too. It can block the call.
 ====
 
 All three return a link:{attachmentsdir}/api/akka/javasdk/agent/Decision.html[`Decision`]:

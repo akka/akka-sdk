@@ -33,6 +33,7 @@ import akka.javasdk.agent.SimilarityGuard
 import akka.javasdk.agent.TextGuardrail
 import akka.javasdk.agent.ToolCallGuardrail
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
+import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAgentGuardrails
@@ -107,18 +108,6 @@ import org.slf4j.LoggerFactory
 
   final case class GuardrailEntry(configuredGuardrail: ConfiguredGuardrail, guardrail: Guardrail)
 
-  /** The startup error for an agent that streams its reply and binds blocking response guardrails. */
-  def streamingResponseGuardrailError(
-      componentId: String,
-      streaming: Boolean,
-      blockingGuardrailLabels: Seq[String]): Option[String] =
-    Option.when(streaming && blockingGuardrailLabels.nonEmpty) {
-      s"Agent [$componentId] streams its reply, so it cannot use the blocking response " +
-      s"guardrail(s): ${blockingGuardrailLabels.mkString("; ")}. Give the agent a command handler that returns " +
-      "Agent.Effect, bind the guardrail to this agent through a separate report-only entry, or stop binding " +
-      "it to this agent. Marking the existing entry report-only stops it blocking on every agent bound to it."
-    }
-
   final class AgentGuardrails(val entries: Seq[GuardrailEntry], tracerFactory: () => Tracer) {
     @nowarn("cat=deprecation")
     private def collectLegacyGuardrails(useFor: UseFor): Seq[SpiAgent.Guardrail] =
@@ -154,8 +143,8 @@ import org.slf4j.LoggerFactory
           new AgentResponseGuardrailAdapter(toSettings(configured), g, tracerFactory)
         })
 
-    // The category and name of each blocking guardrail at before-agent-response or
-    // model-response.
+    // The label of each blocking guardrail at the before-agent-response boundary
+    // or the legacy model-response boundary.
     val blockingResponseGuardrailLabels: Seq[String] = {
       val agentResponse =
         guardrails.agentResponseGuardrails.map(_.settings).filterNot(_.reportOnly).map(s => (s.category, s.name))
@@ -166,6 +155,16 @@ import org.slf4j.LoggerFactory
         s"category [$category], name [$name]"
       }
     }
+
+    /** The startup error for an agent that streams its reply and binds blocking response guardrails. */
+    def streamingResponseGuardrailError(componentId: String, agentClass: Class[_]): Option[String] =
+      Option.when(Reflect.isStreamingAgent(agentClass) && blockingResponseGuardrailLabels.nonEmpty) {
+        s"Agent [$componentId] streams its reply, so it cannot use the blocking response " +
+        s"guardrail(s): ${blockingResponseGuardrailLabels.mkString("; ")}. Change the agent's command handler to " +
+        "return Agent.Effect, bind each guardrail to this agent through a separate report-only entry, or remove " +
+        "this agent from the `agents` or `agent-roles` of each guardrail. Marking an existing entry report-only " +
+        "stops it blocking on every agent bound to it."
+      }
 
     // The ToolCallGuardrails applicable to the given tool. An entry with an empty `tools` set
     // applies to every tool on the agent; otherwise only to the named tools.
