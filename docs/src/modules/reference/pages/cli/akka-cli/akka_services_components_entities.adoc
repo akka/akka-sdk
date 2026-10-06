@@ -1,0 +1,41 @@
+= akka services components entities
+
+Manage entity components.
+
+== Synopsis
+
+The `akka service components entities` commands manage individual entity instances of a service.
+
+== Options
+
+----
+  -h, --help   help for entities
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_services_components.html[akka services components]	 - Inspect components of a service.
+* link:akka_services_components_entities_delete-snapshot.html[akka services components entities delete-snapshot]	 - Delete the stored state snapshot of a single entity instance.
+* link:akka_services_components_entities_force-snapshot.html[akka services components entities force-snapshot]	 - Create a state snapshot of a single entity instance now.
+* link:akka_services_components_entities_get-state.html[akka services components entities get-state]	 - Get the state for the given service, entity component and id.
+* link:akka_services_components_entities_list-events.html[akka services components entities list-events]	 - List events from the event journal for the given service, entity component and id.
+* link:akka_services_components_entities_list-ids.html[akka services components entities list-ids]	 - List recently active IDs for the given entity component served by this service within specified time window (24h by default).
+
+[discrete]
+

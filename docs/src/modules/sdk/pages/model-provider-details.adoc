@@ -714,7 +714,11 @@ The API key can be defined with an environment variable, `OPENAI_API_KEY` or `AN
 
 == Additional model request headers
 
-All built in model providers support attaching extra HTTP headers to every request sent to the model API. This is useful for passing authentication tokens to an AI gateway or proxy, adding routing or tracing headers, or meeting any other header requirements imposed by the endpoint.
+All built in model providers except Local AI support attaching extra HTTP headers to every request sent to the model API. This is useful for passing authentication tokens to an AI gateway or proxy, adding routing or tracing headers, or meeting any other header requirements imposed by the endpoint.
+
+Local AI drops the headers. Use the OpenAI provider with a base URL to reach an OpenAI-compatible server with headers.
+
+A custom provider builds its own chat model. Override `withAdditionalModelRequestHeaders` to take the headers and add them where the chat model is created.
 
 === Configuration
 
@@ -773,9 +777,9 @@ For example, to set a header only for Anthropic requests:
 ADDITIONAL_ANTHROPIC_REQUEST_HEADERS_0="Authorization:Bearer mytoken"
 ----
 
-=== Programmatic override
+=== Headers set in code
 
-Headers can also be set directly in code, which overrides any configuration value for that model:
+Set headers on a model provider built in code. They replace any configuration value for that provider:
 
 [source,java,indent=0]
 ----
@@ -784,6 +788,25 @@ ModelProvider.openAi()
     .withAdditionalModelRequestHeaders(
         List.of(RawHeader.create("Authorization", "Bearer mygatewaytoken")));
 ----
+
+Set headers on `ModelProvider.fromConfig` when the value is only known at request time, such as a token
+the agent reads from its own context. The provider still comes from configuration, so you do not repeat
+the model name or the API key:
+
+[source,java,indent=0]
+----
+ModelProvider.fromConfig()
+    .withAdditionalModelRequestHeaders(
+        List.of(RawHeader.create("X-Tenant", tenantId)));
+----
+
+Headers set on `fromConfig` are added to the headers of the provider that the configuration resolves to,
+so a gateway token set in configuration survives. A header name set in both keeps the value from code, and
+the configured one is dropped. Header names are compared ignoring case.
+
+Use the provider on one interaction with `effects().model(...)`, or on a whole autonomous agent with
+`modelProvider(...)` on its definition. An autonomous agent reads its definition once at startup, so the
+headers are the same for every instance of that agent.
 
 == Reference configurations
 The following is a list of the various reference configurations for each of the AI models

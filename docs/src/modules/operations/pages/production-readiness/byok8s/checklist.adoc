@@ -422,7 +422,7 @@ These fall between teams and are the most commonly skipped. They are baseline at
 [discrete]
 ==== Runbook coverage
 
-Every plausible failure needs a runbook. Confirm runbooks exist for at least:
+Walk the alert list and the dependency list; every plausible failure should have a runbook. Confirm runbooks exist for at least:
 
 * [ ] Prod-region cold rebuild
 * [ ] Broker outage
@@ -574,7 +574,7 @@ In BYOK8s you operate the cluster, database, and networking in every region, so 
 Before flipping prod traffic on:
 
 .*Required sign-offs*
-Gather the sign-offs your application and organization require: architecture, security (CISO / InfoSec), compliance (if regulated), SRE / platform (runbook tested, on-call ready), FinOps (cost forecast accepted), the product owner (accepting the SLOs and recovery window), and the DR tabletop plus its live simulation (or the cross-region failover drill at Business Continuity).
+Gather the sign-offs your application and organization require, commonly architecture, security (CISO / InfoSec), compliance (if regulated), SRE / platform (runbook tested, on-call ready), FinOps (cost forecast accepted), the product owner (accepting the SLOs and recovery window), and the DR tabletop plus its live simulation (or the cross-region failover drill at Business Continuity). Which apply depends on the application and the organization.
 
 * [ ] *Final go/no-go verification:* the named go/no-go owner confirms every item on this checklist is satisfied, and Akka reviews and confirms that readiness with them before production traffic is enabled
 

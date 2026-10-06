@@ -9,6 +9,8 @@ In addition to the built-in metrics, you can define custom application-level met
 
 NOTE: Custom Metrics are available from version `3.6.0` of the akka-sdk.
 
+Custom metrics carry the same resource attributes as the runtime metrics, including any xref:operations:observability-and-monitoring/observability-exports.adoc#custom_resource_attributes[custom resource attributes] declared for the service.
+
 The OpenTelemetry `Meter` interface can be xref:setup-and-dependency-injection.adoc#_dependency_injection[injected] directly into any Akka component, but the recommended approach is to encapsulate metrics definitions in a dedicated class. This keeps metric names, descriptions, and units in one place and provides a convenient API for the rest of your application. It is recommended to follow Open Telemetry https://opentelemetry.io/docs/specs/semconv/general/metrics/[Semantic conventions].
 
 [source,java,indent=0]

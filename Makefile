@@ -45,6 +45,8 @@ docker-image:
 prepare:
 	mkdir -p "${src_managed}"
 	cp docs/src/antora.yml "${src_managed}"
+	mkdir -p "${java_managed_attachments}"
+	cp akka-javasdk-testkit/src/main/resources/akka/javasdk/testkit/eval/eval-report.example.json "${java_managed_attachments}/"
 
 managed: prepare attributes apidocs examples bundles
 
@@ -56,7 +58,7 @@ attributes: prepare
 		> "${managed_partials}/attributes.adoc"
 	echo ":akka-runtime-version: $$(docs/bin/runtime-version-from-sbt.sh)" \
 		>> "${managed_partials}/attributes.adoc"
-	echo ":akka-cli-version: 3.0.75" >> "${managed_partials}/attributes.adoc"
+	echo ":akka-cli-version: 3.0.76" >> "${managed_partials}/attributes.adoc"
 	echo ":akka-cli-min-version: 3.0.4" >> "${managed_partials}/attributes.adoc"
 	# see https://adoptium.net/marketplace/
 	echo ":java-version: 25" \
@@ -104,7 +106,7 @@ whitepapers:
 	    echo ">> Installing white paper render tooling (Playwright + Chromium), first run only..."; \
 	    (cd docs/bin/whitepaper && npm install && npx playwright install chromium); \
 	  fi; \
-	  node docs/bin/whitepaper/render-pdf.mjs "${TARGET_DIR}" operations/technical-overview.html "${TARGET_DIR}/operations/_attachments/whitepapers/aao-technical-overview.pdf"; \
+	  node docs/bin/whitepaper/render-pdf.mjs "${TARGET_DIR}"; \
 	fi
 
 done:

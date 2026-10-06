@@ -2,7 +2,99 @@
 
 include::ROOT:partial$include.adoc[]
 
-Akka development projects can be integrated into a Continuous Integration/Continuous Delivery (CI/CD) process using the Akka CLI. To use the Akka CLI in your CI/CD workflow, you will need a service token. A service token is a token tied to a single project, that allows authenticating and performing actions on that project. Service tokens have the following permissions on the project they are created for:
+Akka development projects can be integrated into a Continuous Integration/Continuous Delivery (CI/CD) process using the Akka CLI. The CLI needs a credential to authenticate against the Akka platform API. Two mechanisms are available:
+
+Workload identity with OpenID Connect (OIDC):: Your CI/CD system exchanges a short-lived identity token it already issues, such as a GitHub Actions OIDC token, for an Akka access token. No Akka credential is stored anywhere.
+Service tokens:: A long-lived refresh token, tied to a single project, that you generate up front and store as a secret in your CI/CD system.
+
+== Choose an authentication mechanism
+
+Workload identity with OIDC is the preferred mechanism. It has two advantages over service tokens:
+
+- No shared credential is stored in your CI/CD system. Your CI/CD provider issues a short-lived identity token for each run, and Akka verifies it directly against the provider, so there is no long-lived secret that can leak or need rotation.
+- A workload identity can be granted any role, and roles on more than one project or organization. A service token only ever holds the developer role, and only on the single project it was created for.
+
+Use workload identity with OIDC unless your CI/CD system cannot issue OIDC tokens, or another constraint requires a stored credential. The rest of this page documents workload identity with OIDC first, followed by service tokens.
+
+[#workload-identity-oidc]
+== Workload identity with OIDC
+
+To authenticate a CI/CD pipeline with workload identity, you configure Akka to trust the OIDC tokens your CI/CD system issues, grant a role to the identities described by those tokens, then configure the Akka CLI to exchange an OIDC token for an Akka access token on each run.
+
+For background on Akka workload identity, see xref:services/workload-identity.adoc[]. That page covers Akka services authenticating with other systems; this section covers the reverse direction, an external CI/CD system authenticating with Akka.
+
+=== 1. Configure an OIDC identity provider
+
+Register your CI/CD system's OIDC issuer as a trusted identity provider on your Akka organization, using `akka organizations identity-providers add oauth`:
+
+[source, command line]
+----
+akka organizations identity-providers add oauth PROVIDER-ID \
+  --organization <your-organization> \
+  --issuer <issuer-url> \
+  --subject-claim <claim-name>
+----
+
+Akka performs OpenID discovery against the issuer URL and verifies that a valid JWKS keyset is reachable, so the issuer must be a standards-compliant OIDC token issuer. `PROVIDER-ID` is a name you choose for the provider, for example `github-actions`. The `--subject-claim` flag selects which claim of the incoming JWT is treated as the workload identity subject. If a single claim is not enough to identify the workload you want to grant a role to, use `--claim-mapping` instead, or in addition, to map further claims to named attributes on the principal.
+
+For the full set of options, see xref:reference:cli/akka-cli/akka_organizations_identity-providers_add_oauth.adoc[akka organizations identity-providers add oauth]. To list, show, or remove configured providers, see the other xref:reference:cli/akka-cli/akka_organizations_identity-providers.adoc[akka organizations identity-providers] commands.
+
+=== 2. Grant a role to the workload identity
+
+Once the identity provider is configured, grant a role to the workloads it authenticates, identified by their subject claim or a mapped claim. Do this the same way you grant a role to a user or an Akka service, using the `--identity-provider`, `--workload-identity-subject`, and `--workload-identity-claim` flags.
+
+To grant a project role, use `akka roles add-binding`:
+
+[source, command line]
+----
+akka roles add-binding \
+  --identity-provider <provider-id> \
+  --identity-provider-org <your-organization> \
+  --workload-identity-subject <subject-value> \
+  --role developer
+----
+
+To grant an organization role, use `akka organizations users add-binding`:
+
+[source, command line]
+----
+akka organizations users add-binding --organization <your-organization> \
+  --identity-provider <provider-id> \
+  --identity-provider-org <your-organization> \
+  --workload-identity-subject <subject-value> \
+  --role member
+----
+
+`--identity-provider-org` is only needed when the identity provider belongs to a different organization than the one the role binding is being added to. Use `--workload-identity-claim claim-name=claim-value` in place of `--workload-identity-subject` when you granted the role based on a mapped claim rather than the subject claim.
+
+For the full set of options, see xref:reference:cli/akka-cli/akka_roles_add-binding.adoc[akka roles add-binding], xref:reference:cli/akka-cli/akka_organizations_users_add-binding.adoc[akka organizations users add-binding], xref:projects/manage-project-access.adoc[Managing project users], and xref:organizations/manage-users.adoc[Managing organization users].
+
+=== 3. Configure the Akka CLI
+
+The Akka CLI reads the same environment variables as the platform API Java client, described in xref:platform-api.adoc#_configuring_the_client[Configuring the client]. Configure the CLI in your CI/CD environment with:
+
+- `AKKA_OAUTH_TOKEN`, or `AKKA_OAUTH_TOKEN_FILE` to point to a file containing the token: the identity token your CI/CD system issues, for example a GitHub Actions OIDC token.
+- `AKKA_OAUTH_TOKEN_AUDIENCE`: the resource name of the identity provider you configured in step 1, in the form `organizations/<org-id>/identityproviders/<identity-provider-id>`.
+
+[source, command line]
+----
+export AKKA_OAUTH_TOKEN="<identity-token>"
+export AKKA_OAUTH_TOKEN_AUDIENCE="organizations/<org-id>/identityproviders/<provider-id>"
+----
+
+The CLI also reads `AKKA_PROJECT` and `AKKA_ORGANIZATION`, to select the project and organization to operate on. Both accept either the resource ID or the friendly name.
+
+[source, command line]
+----
+export AKKA_PROJECT=<project-id-or-name>
+export AKKA_ORGANIZATION=<organization-id-or-name>
+----
+
+How your CI/CD system obtains an OIDC token and sets these environment variables is specific to that system. For GitHub Actions, see xref:integrating-cicd/github-actions.adoc[], which documents a GitHub Action that automates this exchange.
+
+== Service tokens
+
+A service token is a refresh token tied to a single project, that allows authenticating and performing actions on that project. Service tokens have the following permissions on the project they are created for:
 
 [cols="1,1"]
 |===
@@ -16,9 +108,9 @@ Akka development projects can be integrated into a Continuous Integration/Contin
 |===
 
 [#create_a_service_token]
-== Create a service token
+=== Create a service token
 
-You will need an Akka authentication token to set up any CI/CD process. To create the service token, run the command below:
+To create the service token, run the command below:
 
 [source,command line]
 ----
@@ -37,7 +129,7 @@ Copy and paste the token to a safe location. You will not be able to view the to
 
 A token may be restricted to certain scopes with the `--scopes` flag. The available scopes are `all`, `container_registry`, `execution`, and `projects`.
 
-== Configure `akka` in a CI/CD process
+=== Configure `akka` in a CI/CD process
 
 The basic steps to configure the Akka CLI to run in your CI/CD environment are:
 
@@ -53,7 +145,7 @@ To install the Akka CLI in your CI/CD environment, configure the environment to 
 curl -sL https://doc.akka.io/install-cli.sh | bash
 ----
 
-== Managing service tokens
+=== Managing service tokens
 
 You can view a list of all the service tokens for a project using the `akka project tokens list` command:
 

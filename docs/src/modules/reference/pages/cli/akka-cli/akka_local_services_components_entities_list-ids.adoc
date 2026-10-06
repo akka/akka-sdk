@@ -1,13 +1,13 @@
-= akka local services components list-ids
+= akka local services components entities list-ids
 
-List recently active IDs for the given stateful component served by this service within specified time window (24h by default).
+List recently active IDs for the given entity component served by this service within specified time window (24h by default).
 
 == Synopsis
 
-The `akka local service components list-ids` command lists ids for the given stateful component in this service.
+The `akka local service components entities list-ids` command lists ids for the given entity component in this service.
 
 ----
-akka local services components list-ids SERVICE_NAME COMPONENT_ID [flags]
+akka local services components entities list-ids SERVICE_NAME COMPONENT_ID [flags]
 ----
 
 == Options
@@ -39,7 +39,7 @@ akka local services components list-ids SERVICE_NAME COMPONENT_ID [flags]
 
 == SEE ALSO
 
-* link:akka_local_services_components.html[akka local services components]	 - Inspect components of a service.
+* link:akka_local_services_components_entities.html[akka local services components entities]	 - Manage entity components.
 
 [discrete]
 
