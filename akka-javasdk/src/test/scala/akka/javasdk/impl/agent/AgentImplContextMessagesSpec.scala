@@ -31,14 +31,12 @@ class AgentImplContextMessagesSpec extends AnyWordSpec with Matchers {
           java.util.List.of(),
           Optional.empty(),
           TokenUsage.EMPTY,
-          java.util.Map.of(),
-          sanitized),
+          java.util.Map.of()),
         new SessionMessage.ToolCallResponse(ts, "agent", "id1", "search", "result", sanitized),
         new SessionMessage.MultimodalToolCallResponse(ts, "agent", "id2", "render", contents, sanitized)),
       0L)
   }
 
-  // an AI message has no flag in the SPI
   private def sanitizedFlags(messages: Vector[ContextMessage]): Vector[Boolean] =
     messages.collect {
       case m: ContextMessage.UserMessage             => m.sanitized

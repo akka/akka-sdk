@@ -32,8 +32,7 @@ public class SessionMessageConverter {
         event.toolCallRequests(),
         event.thinking(),
         event.tokenUsage().orElse(SessionMessage.TokenUsage.EMPTY),
-        event.attributes(),
-        event.sanitized());
+        event.attributes());
   }
 
   public static SessionMessage apply(SessionMemoryEntity.Event.ToolResponseMessageAdded event) {

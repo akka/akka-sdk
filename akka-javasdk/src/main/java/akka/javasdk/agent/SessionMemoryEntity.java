@@ -226,9 +226,10 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     record Deleted(Instant timestamp) implements Event {}
 
     /**
-     * An event that adds a message to the history, as opposed to a lifecycle event. Its {@code
-     * sanitized} component holds the {@code sanitized} value of the {@link SessionMessage} that it
-     * adds. A stored event without the component reads as false.
+     * An event that adds a message to the history, as opposed to a lifecycle event. The {@code
+     * sanitized} component of a user message or a tool response event holds the {@code sanitized}
+     * value of the {@link SessionMessage} that it adds. A stored event without the component reads
+     * as false.
      */
     sealed interface Message {}
 
@@ -271,32 +272,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         List<SessionMessage.ToolCallRequest> toolCallRequests,
         Optional<String> thinking,
         Optional<TokenUsage> tokenUsage,
-        Map<String, Object> attributes,
-        boolean sanitized)
+        Map<String, Object> attributes)
         implements Event, Message {
-
-      public AiMessageAdded(
-          Instant timestamp,
-          String componentId,
-          String message,
-          int sizeInBytes,
-          long historySizeInBytes,
-          List<SessionMessage.ToolCallRequest> toolCallRequests,
-          Optional<String> thinking,
-          Optional<TokenUsage> tokenUsage,
-          Map<String, Object> attributes) {
-        this(
-            timestamp,
-            componentId,
-            message,
-            sizeInBytes,
-            historySizeInBytes,
-            toolCallRequests,
-            thinking,
-            tokenUsage,
-            attributes,
-            false);
-      }
 
       AiMessageAdded withHistorySizeInBytes(long newSize) {
         return new AiMessageAdded(
@@ -308,8 +285,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
             toolCallRequests,
             thinking,
             tokenUsage,
-            attributes,
-            sanitized);
+            attributes);
       }
     }
 
@@ -455,8 +431,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               aiMessage.toolCallRequests(),
                               aiMessage.thinking(),
                               Optional.of(aiMessage.tokenUsage()),
-                              aiMessage.attributes(),
-                              aiMessage.sanitized());
+                              aiMessage.attributes());
 
                       case ToolCallResponse toolCallResponse ->
                           new Event.ToolResponseMessageAdded(
@@ -581,7 +556,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       return effects().error("componentId in userMessage must be the same as in the aiMessage");
     var componentId = cmd.userMessage.componentId();
 
-    // Application code wrote the summary, so the runtime masks it when it sends it.
+    // Application code wrote the summary user message, so the runtime masks it when it sends it.
     var events = new ArrayList<Event>();
     events.add(new Event.HistoryCleared());
     events.add(
@@ -601,8 +576,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
             Collections.emptyList(),
             cmd.aiMessage.thinking(),
             Optional.of(cmd.aiMessage.tokenUsage()),
-            cmd.aiMessage.attributes(),
-            false));
+            cmd.aiMessage.attributes()));
 
     if (commandContext().sequenceNumber() > cmd.sequenceNumber
         && !currentState().messages.isEmpty()) {
@@ -644,8 +618,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               aiMessage.toolCallRequests(),
                               aiMessage.thinking(),
                               Optional.empty(),
-                              aiMessage.attributes(),
-                              aiMessage.sanitized()));
+                              aiMessage.attributes()));
 
                   case MultimodalUserMessage multimodalUserMessage ->
                       events.add(

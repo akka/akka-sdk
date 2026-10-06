@@ -161,14 +161,7 @@ public sealed interface SessionMessage {
     }
   }
 
-  /**
-   * The model's reply, with any tool calls it requested and the token usage it incurred.
-   *
-   * @param sanitized true when the message holds the model output as the model produced it. The
-   *     runtime sends such a message to the model as it is. For a message with false, the runtime
-   *     masks the text with the current sanitizers before it sends it. Leave it false in a message
-   *     that you build.
-   */
+  /** The model's reply, with any tool calls it requested and the token usage it incurred. */
   record AiMessage(
       Instant timestamp,
       String text,
@@ -176,20 +169,8 @@ public sealed interface SessionMessage {
       List<ToolCallRequest> toolCallRequests,
       Optional<String> thinking,
       TokenUsage tokenUsage,
-      @JsonSetter(nulls = Nulls.AS_EMPTY) Map<String, Object> attributes,
-      boolean sanitized)
+      @JsonSetter(nulls = Nulls.AS_EMPTY) Map<String, Object> attributes)
       implements SessionMessage {
-
-    public AiMessage(
-        Instant timestamp,
-        String text,
-        String componentId,
-        List<ToolCallRequest> toolCallRequests,
-        Optional<String> thinking,
-        TokenUsage tokenUsage,
-        Map<String, Object> attributes) {
-      this(timestamp, text, componentId, toolCallRequests, thinking, tokenUsage, attributes, false);
-    }
 
     public AiMessage(
         Instant timestamp,

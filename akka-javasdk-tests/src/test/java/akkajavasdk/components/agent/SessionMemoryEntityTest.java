@@ -437,18 +437,6 @@ public class SessionMemoryEntityTest {
     assertThat(m4.tokenUsage()).isEqualTo(TokenUsage.EMPTY);
   }
 
-  private static AiMessage sanitizedAiMessage(Instant timestamp, String text) {
-    return new AiMessage(
-        timestamp,
-        text,
-        COMPONENT_ID,
-        List.of(),
-        Optional.empty(),
-        TokenUsage.EMPTY,
-        Map.of(),
-        true);
-  }
-
   @Test
   public void shouldStoreTheCompactionSummaryUnflaggedAndKeepTheFlagOfTheMessagesAfterIt() {
     // given
@@ -462,7 +450,7 @@ public class SessionMemoryEntityTest {
         .invoke(
             new AddInteractionCmd(
                 new UserMessage(timestamp, "Hello", COMPONENT_ID, true),
-                sanitizedAiMessage(timestamp, "Hi there!")));
+                new AiMessage(timestamp, "Hi there!", COMPONENT_ID)));
     var sequenceNumber =
         testKit
             .method(SessionMemoryEntity::getHistory)
@@ -476,13 +464,13 @@ public class SessionMemoryEntityTest {
         .invoke(
             new AddInteractionCmd(
                 new UserMessage(timestamp, "I'm Alice", COMPONENT_ID, true),
-                sanitizedAiMessage(timestamp, "Hi Alice")));
+                new AiMessage(timestamp, "Hi Alice", COMPONENT_ID)));
 
-    // when the summary messages are flagged
+    // when the summary user message is flagged
     var cmd =
         new SessionMemoryEntity.CompactionCmd(
             new UserMessage(timestamp, "Summary", COMPONENT_ID, true),
-            sanitizedAiMessage(timestamp, "Summary reply"),
+            new AiMessage(timestamp, "Summary reply", COMPONENT_ID),
             sequenceNumber);
     testKit.method(SessionMemoryEntity::compactHistory).invoke(cmd);
 
@@ -496,10 +484,8 @@ public class SessionMemoryEntityTest {
     assertThat(messages).hasSize(4);
     assertThat(((UserMessage) messages.get(0)).text()).isEqualTo("Summary");
     assertThat(((UserMessage) messages.get(0)).sanitized()).isFalse();
-    assertThat(((AiMessage) messages.get(1)).sanitized()).isFalse();
     assertThat(((UserMessage) messages.get(2)).text()).isEqualTo("I'm Alice");
     assertThat(((UserMessage) messages.get(2)).sanitized()).isTrue();
-    assertThat(((AiMessage) messages.get(3)).sanitized()).isTrue();
   }
 
   @Test

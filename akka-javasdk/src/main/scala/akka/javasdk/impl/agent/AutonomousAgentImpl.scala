@@ -501,15 +501,7 @@ private[impl] final class AutonomousAgentImpl(
         val toolCallRequests = m.toolRequests.map { req =>
           new ToolCallRequest(req.id, req.name, req.arguments)
         }.asJava
-        new AiMessage(
-          now,
-          m.content,
-          componentId,
-          toolCallRequests,
-          m.thinking.toJava,
-          tokenUsage,
-          m.attributes.asJava,
-          true)
+        new AiMessage(now, m.content, componentId, toolCallRequests, m.thinking.toJava, tokenUsage, m.attributes.asJava)
 
       case m: SpiAgent.ContextMessage.ToolCallResponseMessage =>
         AgentImpl.toSessionToolCallResponse(now, componentId, m.id, m.name, m.contents, m.sanitized)

@@ -871,8 +871,8 @@ private[impl] final class AgentImpl(
     }
   }
 
-  // The runtime hands back the user message and the tool results as it sent them to the model, and the model output
-  // as the model produced it, so onSuccess stores each message as sanitized.
+  // The runtime hands back the user message and the tool results as it sent them to the model, so onSuccess stores
+  // them as sanitized.
   private def onSuccess(
       sessionMemoryClient: SessionMemory,
       sentUserMessage: SpiAgent.UserMessage,
@@ -895,8 +895,7 @@ private[impl] final class AgentImpl(
             requests,
             res.thinking.toJava,
             new TokenUsage(res.inputTokenCount, res.outputTokenCount),
-            res.attributes.asJava,
-            true)
+            res.attributes.asJava)
 
         case res: SpiAgent.ToolCallResponse =>
           AgentImpl.toSessionToolCallResponse(
