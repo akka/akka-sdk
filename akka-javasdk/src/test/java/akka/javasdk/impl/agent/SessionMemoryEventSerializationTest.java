@@ -9,6 +9,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import akka.javasdk.agent.SessionMemoryEntity.Event;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.impl.serialization.Serializer;
+import akka.runtime.sdk.spi.BytesPayload;
+import akka.util.ByteString;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -46,5 +48,24 @@ public class SessionMemoryEventSerializationTest {
       var read = serializer.fromBytes(serializer.toBytes(event));
       assertThat(read).isEqualTo(event);
     }
+  }
+
+  // events stored before the flag existed have no field, the mapper must read it as false
+  @Test
+  public void shouldReadAnEventWithoutTheFlagAsNotSanitized() {
+    var json =
+        """
+        {"timestamp":"2026-01-01T00:00:00Z","componentId":"agent","message":"hello","sizeInBytes":5}\
+        """;
+
+    var read =
+        serializer.fromBytes(
+            new BytesPayload(
+                ByteString.fromString(json), "json.akka.io/akka-memory-user-message-added"));
+
+    assertThat(read)
+        .isEqualTo(
+            new Event.UserMessageAdded(
+                Instant.parse("2026-01-01T00:00:00Z"), "agent", "hello", 5, false));
   }
 }
