@@ -25,7 +25,7 @@ import com.typesafe.config.ConfigObject
  * value is a (possibly empty) config object for the settings of that binding. Each evaluator and binding config is
  * merged (as a fallback) with the defaults under `akka.javasdk.evaluation.defaults`, so settings such as `enabled`
  * always resolve; disabled evaluators and bindings produce no bindings. A binding, not an evaluator, may set
- * `sampling-ratio`, the share of the interactions of the agent that the evaluator evaluates, and `trigger-on-failure`,
+ * `sampling-ratio`, the probability that the evaluator evaluates an interaction of the agent, and `trigger-on-failure`,
  * whether the evaluator also evaluates failed interactions.
  */
 @InternalApi
