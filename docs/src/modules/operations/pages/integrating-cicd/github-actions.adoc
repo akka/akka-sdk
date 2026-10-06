@@ -1,16 +1,123 @@
 = CI/CD with GitHub Actions
 include::ROOT:partial$include.adoc[]
 
-Use the Akka https://github.com/akka/setup-akka-cli-action[setup-akka-cli-action, window="new"] GitHub Action to use GitHub Actions with your Akka project. The action supports commands for installing, authenticating, and invoking the Akka CLI. Releases are tracked https://github.com/lightbend/setup-akka-action/releases[on the GitHub releases page].
+Use the Akka https://github.com/akka/setup-akka-cli-action[setup-akka-cli-action, window="new"] GitHub Action to use GitHub Actions with your Akka project. The action installs and configures the Akka CLI. After running this action, the `akka` command is available in the workflow. Releases are tracked https://github.com/akka/setup-akka-cli-action/releases[on the GitHub releases page].
 
-== Prerequisites
+Use version `v1.1.0` or later of the action. This version adds support for authenticating with workload identity, described below.
 
-To use the Akka GitHub Action, you will need to:
+The action supports two authentication mechanisms, described in xref:integrating-cicd/index.adoc[Integrating with CI/CD tools]: workload identity with OIDC, and service tokens. Workload identity with OIDC is preferred, because it requires no stored credential in GitHub.
 
-- Create a xref:operations:integrating-cicd/index.adoc#create_a_service_token[service token] for your project
-- Get the UUID of your project, which can be obtained by running `akka projects list`
+== Authenticate with workload identity
 
-== Configure variables
+GitHub's OIDC provider issues a short-lived identity token for each workflow run, which Akka's identity provider trusts. This requires no secrets to be stored in GitHub for authentication.
+
+=== Prerequisites
+
+Before a workflow can authenticate with workload identity, configure Akka to trust GitHub as an identity provider, and grant your repository a role. Do this once, ahead of running any workflow, with the Akka CLI authenticated as an organization admin. These steps are not part of the GitHub Actions workflow itself.
+
+==== 1. Add GitHub Actions as an identity provider
+
+Add GitHub's OIDC issuer as a workload identity provider on your organization, using xref:reference:cli/akka-cli/akka_organizations_identity-providers_add_oauth.adoc[akka organizations identity-providers add oauth]. GitHub's OIDC tokens include a `repository` claim, for example `my-org/my-repo`, which is generally what you want to grant access based on. Map it either as the workload identity subject:
+
+[source, command line]
+----
+akka organizations identity-providers add oauth github-actions \
+  --organization <your-organization> \
+  --issuer https://token.actions.githubusercontent.com \
+  --subject-claim repository
+----
+
+or, to keep the default `sub` claim as the subject, which also encodes the branch or ref, for example `repo:my-org/my-repo:ref:refs/heads/main`, map `repository` as an additional claim instead:
+
+[source, command line]
+----
+akka organizations identity-providers add oauth github-actions \
+  --organization <your-organization> \
+  --issuer https://token.actions.githubusercontent.com \
+  --claim-mapping repository=repository
+----
+
+`github-actions` here is the identity provider ID, used as the `oauth-provider-name` input to the action, and `<your-organization>` is the `oauth-provider-organization-id` input.
+
+==== 2. Grant the repository a role
+
+Grant the repository's workload identity a role, usually `developer`, on the project you want the workflow to access, using xref:reference:cli/akka-cli/akka_roles_add-binding.adoc[akka roles add-binding]. Use `--workload-identity-subject` if you mapped `repository` as the subject claim above:
+
+[source, command line]
+----
+akka roles add-binding \
+  --identity-provider github-actions \
+  --identity-provider-org <your-organization> \
+  --workload-identity-subject my-org/my-repo \
+  --role developer
+----
+
+or `--workload-identity-claim` if you mapped it with `--claim-mapping` instead:
+
+[source, command line]
+----
+akka roles add-binding \
+  --identity-provider github-actions \
+  --identity-provider-org <your-organization> \
+  --workload-identity-claim repository=my-org/my-repo \
+  --role developer
+----
+
+=== Configure variables
+
+Set the Akka project as a repository https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository[secret, window="new"], either `AKKA_PROJECT_ID` or `AKKA_PROJECT`, holding the project ID or friendly name.
+
+=== Create a workflow
+
+The workflow needs `permissions: id-token: write`, to let GitHub issue the OIDC token, and the following action inputs:
+
+- `oauth-provider-organization-id`: the Akka organization that owns the identity provider.
+- `oauth-provider-name`: the identity provider ID, `github-actions` in the example above.
+- Exactly one of `project-id` or `project`.
+
+Alternatively, set `oauth-audience` directly to `organizations/<oauth-provider-organization-id>/identityproviders/<oauth-provider-name>`, instead of `oauth-provider-organization-id` and `oauth-provider-name`.
+
+. Create a folder named `.github/workflows` at the root of the project folder.
+
+. Create a file named `akka.yml` in the `.github/workflows` folder.
+
+. Open `akka.yml` for editing and add:
++
+[source, yaml]
+----
+name: akka
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Akka CLI
+        uses: akka/setup-akka-cli-action@v1.1.0
+        with:
+          oauth-provider-organization-id: <your-organization> <1>
+          oauth-provider-name: github-actions <2>
+          project-id: ${{ secrets.AKKA_PROJECT_ID }} <3>
+      - name: List services <4>
+        run: akka service list <5>
+----
+<1> The Akka organization that owns the `github-actions` identity provider.
+<2> The identity provider ID configured in the prerequisites.
+<3> The UUID of the project to which the service belongs.
+<4> A unique name for this workflow step. The example lists Akka services.
+<5> The command to execute.
+
+== Authenticate with a service token
+
+To use a service token instead, create one as described in xref:integrating-cicd/index.adoc#create_a_service_token[Create a service token], and configure it as a repository secret.
+
+=== Configure variables
 
 The GitHub Action uses two required variables to authenticate and set the project you want to work on correctly:
 
@@ -19,19 +126,18 @@ The GitHub Action uses two required variables to authenticate and set the projec
 
 These variables should be configured as https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository[secrets, window="new"] for your repository.
 
-== Create a workflow
+=== Create a workflow
 
 Follow these steps to create a workflow to invoke the GitHub Action for your project:
 
-. Create a folder named `.github` at the root of the project folder.
+. Create a folder named `.github/workflows` at the root of the project folder.
 
-. Create a file named `config.yml` in the `.github` folder.
+. Create a file named `akka.yml` in the `.github/workflows` folder.
 
-. Open `config.yml` for editing and add:
+. Open `akka.yml` for editing and add:
 +
 [source, yaml]
 ----
-
 name: akka
 
 on:
@@ -43,7 +149,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install Akka CLI
-        uses: akka/setup-akka-cli-action@v1
+        uses: akka/setup-akka-cli-action@v1.1.0
         with:
           token: ${{ secrets.AKKA_TOKEN }} <1>
           project-id: ${{ secrets.AKKA_PROJECT_ID }} <2>
@@ -54,3 +160,9 @@ jobs:
 <2> The UUID of the project to which the service belongs.
 <3> A unique name for this workflow step. The example lists Akka services.
 <4> The command to execute.
+
+== See also
+
+- xref:integrating-cicd/index.adoc[Integrating with CI/CD tools]
+- xref:reference:cli/akka-cli/akka_organizations_identity-providers_add_oauth.adoc[akka organizations identity-providers add oauth]
+- xref:reference:cli/akka-cli/akka_roles_add-binding.adoc[akka roles add-binding]

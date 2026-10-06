@@ -111,6 +111,13 @@ The xref:reference:cli/akka-cli/akka_services.adoc[akka services] command includ
 
 <AKKA_SERVICES_CMD>
 
+== Inspect service components
+The `akka services components` commands let you inspect the state of components.
+
+The xref:reference:cli/akka-cli/akka_services_components.adoc[akka services components] command includes the following options:
+
+<AKKA_SERVICES_COMPONENTS_CMD>
+
 == Configure services
 The `akka service-configs` commands allow configuring services.
 

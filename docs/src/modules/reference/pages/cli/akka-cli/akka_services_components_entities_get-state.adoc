@@ -1,25 +1,23 @@
-= akka local services components list-events
+= akka services components entities get-state
 
-List events from the Event Sourced Entity for the given service, component and entity id.
+Get the state for the given service, entity component and id.
 
 == Synopsis
 
-The `akka local service components list-events` command lists events from the Event Sourced Entity for the given service, component and entity id
+The `akka service components entities get-state` command gets the state for the given ID of the entity.
 
 ----
-akka local services components list-events SERVICE_NAME COMPONENT_ID ENTITY_ID [flags]
+akka services components entities get-state SERVICE_NAME COMPONENT_ID ENTITY_ID [flags]
 ----
 
 == Options
 
 ----
-  -h, --help                      help for list-events
-      --include-internal-events   Whether to include internal events in the list.
-      --include-state             Whether events should include the state of the entity after each event has been applied.
-      --owner string              the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string            project to use if not using the default configured project
-      --raw                       Use to specify that messages should not be decoded, but should be a raw format.
-      --region string             region to use if project has more than one region
+  -h, --help             help for get-state
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
+      --raw              Use to specify that messages should not be decoded, but should be a raw format.
+      --region string    region to use if project has more than one region
 ----
 
 == Options inherited from parent commands
@@ -40,7 +38,7 @@ akka local services components list-events SERVICE_NAME COMPONENT_ID ENTITY_ID [
 
 == SEE ALSO
 
-* link:akka_local_services_components.html[akka local services components]	 - Inspect components of a service.
+* link:akka_services_components_entities.html[akka services components entities]	 - Manage entity components.
 
 [discrete]
 

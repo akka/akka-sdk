@@ -4,6 +4,8 @@ Akka can collect traces for observing the runtime behavior of your services.
 
 These trace spans are available for xref:operations:observability-and-monitoring/observability-exports.adoc[export] to external monitoring systems.
 
+This reference covers span attributes. A span also carries the resource attributes of its service, which you can extend with xref:operations:observability-and-monitoring/observability-exports.adoc#custom_resource_attributes[custom resource attributes].
+
 
 == HTTP Endpoints
 

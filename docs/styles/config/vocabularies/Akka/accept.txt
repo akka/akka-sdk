@@ -5,6 +5,7 @@ ACLs
 ACRs
 [Aa]ccessors
 actuals
+addons?
 Adoptium
 ADRs
 Agentgateway
@@ -19,6 +20,7 @@ Aiven
 Akkademy
 allowedAlgorithms
 allowlist
+[Aa]llowlist(ed|ing)?
 allowlisting
 [Aa]llowlists?
 allowMethods
@@ -26,9 +28,9 @@ allowOrigins
 [Aa]lpakka
 anonymized
 [Aa]nthropic
+Antigravity
 [Aa]ntora
 (?i)API
-Antigravity
 APIs
 [Aa]rchitecting
 artifactId
@@ -144,8 +146,8 @@ Docstrings
 docstrings
 Doctolib
 downscaling
-Droid
 [Dd]rillable
+Droid
 DSRs
 DTDs
 Dynatrace
@@ -167,8 +169,8 @@ expirationSeconds
 [Ee]xplainability
 externalSecret
 facto
-[Ff]ailback
 Factory
+[Ff]ailback
 failover
 Failsafe
 fanout
@@ -407,6 +409,7 @@ repoint
 repos
 reputational
 reshard
+resourceAttributes
 resourceVersion
 rethrow
 retryable
@@ -417,8 +420,8 @@ roleplay
 Rollout
 rollout
 rollup
-(?i)RPC
 Roo
+(?i)RPC
 ruleset
 [Rr]ulesets?
 runbook
@@ -431,8 +434,8 @@ runtimes
 [Ss]anitization
 SAST
 sbt
-(?i)Scala
 [Ss]caffolded
+(?i)Scala
 schema
 scrypt
 SDKs

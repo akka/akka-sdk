@@ -1,13 +1,13 @@
-= akka services components list-events
+= akka services components entities list-events
 
-List events from the Event Sourced Entity for the given service, component and entity id.
+List events from the event journal for the given service, entity component and id.
 
 == Synopsis
 
-The `akka service components list-events` command lists events from the Event Sourced Entity for the given service, component and entity id
+The `akka service components entities list-events` command lists events from the event journal for the given service, entity component and id
 
 ----
-akka services components list-events SERVICE_NAME COMPONENT_ID ENTITY_ID [flags]
+akka services components entities list-events SERVICE_NAME COMPONENT_ID ENTITY_ID [flags]
 ----
 
 == Options
@@ -40,7 +40,7 @@ akka services components list-events SERVICE_NAME COMPONENT_ID ENTITY_ID [flags]
 
 == SEE ALSO
 
-* link:akka_services_components.html[akka services components]	 - Inspect components of a service.
+* link:akka_services_components_entities.html[akka services components entities]	 - Manage entity components.
 
 [discrete]
 

@@ -35,6 +35,17 @@ You can see the Akka Runtime version on prod [on grafana](https://app.groundcove
 - [ ] Run https://github.com/akka/akka-sdk/actions/workflows/pr-akka-samples.yml from the release tag `v$VERSION$`
 - [ ] Merge auto-PRs in akka-samples https://github.com/orgs/akka-samples/repositories?q=sort%3Aname-asc
   - Easiest is to use `.github/akka-sample-sdk-bump-prs.sh` script to collect all PR links or do it manually from "Open PR with changes" in https://github.com/akka/akka-sdk/actions/workflows/pr-akka-samples.yml
+  - Pass the run id to open all PRs in the browser for manual review and merge:
+    ```
+    .github/akka-sample-sdk-bump-prs.sh <run-id>
+    ```
+  - As an alternative to manual review, let the script approve and squash-merge each open PR where all checks pass.
+    Use `--dry-run` first to list the status of each PR and the planned action without changing anything:
+    ```
+    .github/akka-sample-sdk-bump-prs.sh --merge --dry-run <run-id>
+    .github/akka-sample-sdk-bump-prs.sh --merge <run-id>
+    ```
+    The script skips PRs with failing, pending or missing checks, and lists each one with the reason. Merge those manually.
 - [ ] Bump runtime SDK projects 
  
 ### Announcements

@@ -1,0 +1,30 @@
+= Akka Automated Operations on Azure with your own Kubernetes
+:page-summary: The complete BYOK8s-on-Azure setup: the shared Kubernetes requirements plus the Azure specifics (resource providers, EncryptionAtHost, PostgreSQL flexible server).
+:page-when-to-use: Use this when you provision and operate your own AKS cluster and Akka installs the platform into it.
+:page-related: xref:operations:technical-overview/byoc-azure.adoc[], xref:operations:technical-overview/byok8s-requirements.adoc[], xref:operations:technical-overview/data-flows.adoc[]
+:page-persona: operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+Run Akka Automated Operations (AAO) on an AKS cluster you provision and operate. This page is the complete BYOK8s-on-Azure path: the shared requirements first, then the Azure specifics.
+
+[NOTE]
+====
+Download link:../_attachments/whitepapers/aao-byok8s-azure.pdf[BYOK8s on Azure as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
+====
+
+include::operations:partial$byok8s-requirements.adoc[]
+
+== Azure specifics
+
+Apply these Azure additions to the requirements above.
+
+* *Resource providers*: register the resource providers and enable EncryptionAtHost as described on the xref:operations:technical-overview/byoc-azure.adoc[BYOC on Azure page].
+* *Database*: use Azure Database for PostgreSQL flexible server.
+* *Secrets*: use the Azure secrets-store CSI driver provider.
+
+== See also
+
+* xref:operations:technical-overview/byoc-azure.adoc[BYOC on Azure]: the Azure resource inventory and identity model
+* xref:operations:production-readiness/byok8s/checklist.adoc[BYOK8s production readiness]
+* xref:operations:technical-overview/data-flows.adoc[Data flows]

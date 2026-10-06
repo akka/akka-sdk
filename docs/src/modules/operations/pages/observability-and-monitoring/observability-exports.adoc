@@ -126,6 +126,39 @@ spec:
 
 With this configuration, 2% of the traces are sent while the 98% are filtered. More on how much sampling https://opentelemetry.io/docs/concepts/sampling/#when-to-sample[here, window="new"].
 
+[#custom_resource_attributes]
+=== Adding custom resource attributes
+
+Resource attributes describe the service that produced a metric, a log record, or a trace span. Akka sets a standard set of them, such as `service.name` and `akka.region`. You can add attributes of your own, such as the owning team or a support contact, and then filter and group by them in your monitoring backend.
+
+Setting a custom resource attribute takes two steps in the service descriptor. First, set the value as a service label or annotation. Then list its key under `telemetry/resourceAttributes`:
+
+[source,yaml]
+----
+name: <<service-name>>
+service:
+  image: <<docker-image>>
+  labels:
+    owner: platform-team
+  annotations:
+    contact: platform-team@example.com
+  telemetry:
+    resourceAttributes:
+      - owner
+      - contact
+----
+
+xref:operations:services/deploy-service.adoc#apply[Deploy the service with the descriptor]. Akka applies the change with a rolling restart of the service.
+
+Akka adds the attributes to the metrics, logs, and traces of that service, and sends them to every exporter configured for the project. Declare the same key in several services to group their telemetry by that value.
+
+When you apply the descriptor, Akka rejects the configuration if:
+
+* A key is not declared in `labels` or `annotations`, or is declared in both.
+* A key starts with `service.`, `telemetry.`, `otel.`, `k8s.`, `process.`, or `akka.`. Akka reserves those prefixes for the attributes it sets itself.
+
+NOTE: Labels and annotations are disabled by default and are enabled per organization. Contact support to enable them.
+
 === Exporting runtime logs
 
 Besides the logs your application produces, the Akka runtime emits its own logs, identified by the `origin: runtime` attribute on the log record. By default, runtime logs with severity `warn` or higher are exported to your configured log exporters, alongside your application logs. Logs produced by your application are always exported in full, regardless of this setting.
@@ -720,5 +753,6 @@ This will show the observability agent logs for all instances of the service. An
 == See also
 
 - xref:reference:descriptors/observability-descriptor.adoc[]
+- xref:reference:descriptors/service-descriptor.adoc[]
 - xref:reference:cli/akka-cli/akka_projects_observability.adoc#_see_also[`akka project observability` commands]
 - xref:reference:telemetry/metrics.adoc[Exported metrics reference]

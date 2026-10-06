@@ -71,11 +71,13 @@ EOM
   AKKA_ROLES_CMD=`grep "akka_roles_" temp-cli-index.txt`
   AKKA_ROUTES_CMD=`grep "akka_routes_" temp-cli-index.txt`
   AKKA_SECRETS_CMD=`grep "akka_secrets_" temp-cli-index.txt`
+  AKKA_SERVICES_COMPONENTS_CMD=`grep "akka_services_components_" temp-cli-index.txt`
   AKKA_SERVICE_CONFIGS_CMD=`grep "akka_service-configs_" temp-cli-index.txt`
   AKKA_SERVICES_CMD=`grep "akka_services_" temp-cli-index.txt`
   AKKA_SPECIFY_CMD=`grep "akka_specify_" temp-cli-index.txt`
 
   perl -pi.bak -e "s|<AKKA_AUTH_CMD>|${AKKA_AUTH_CMD}|" cli-index.adoc
+  perl -pi.bak -e "s|<AKKA_SERVICES_COMPONENTS_CMD>|${AKKA_SERVICES_COMPONENTS_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_CONFIG_CMD>|${AKKA_CONFIG_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_CODE_CMD>|${AKKA_CODE_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_CONTAINER_REGISTRY_CMD>|${AKKA_CONTAINER_REGISTRY_CMD}|" cli-index.adoc

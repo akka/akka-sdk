@@ -348,6 +348,7 @@ Telemetry configuration for the service.
 |Field       |Type                  |Description
 
 |*tracing*   |[]<<ServiceTracing>>    |Tracing configuration for the service
+|*resourceAttributes* |[]string |Keys from *labels* and *annotations* whose values are exported as OpenTelemetry resource attributes on the metrics, logs, and traces of the service. Each key must be declared in either *labels* or *annotations*, and in only one of the two. See xref:operations:observability-and-monitoring/observability-exports.adoc#custom_resource_attributes[Adding custom resource attributes].
 |===
 
 === ServiceTracing
