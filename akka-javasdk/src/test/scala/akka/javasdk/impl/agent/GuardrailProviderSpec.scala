@@ -104,15 +104,22 @@ object GuardrailProviderSpec {
   private def toolDescriptor(name: String): SpiAgent.ToolDescriptor =
     new SpiAgent.ToolDescriptor(name, s"$name description", emptySchema, toolCallGuardrails = Nil)
 
-  private def toolCallContext(toolName: String): SpiGuardrail.ToolCallContext =
+  private def toolCallContext(
+      toolName: String,
+      origin: SpiGuardrail.ToolOrigin = SpiGuardrail.ToolOrigin.FunctionTool): SpiGuardrail.ToolCallContext =
     new SpiGuardrail.ToolCallContext(
       toolName = toolName,
       toolCallId = "call-1",
       arguments = "{}",
       agentId = "tool-agent",
       sessionId = "session-1",
-      origin = SpiGuardrail.ToolOrigin.FunctionTool,
+      origin = origin,
       telemetryContext = Context.root())
+
+  class OriginEchoingToolGuard extends ToolCallGuardrail {
+    override def decide(ctx: ToolCallGuardrail.CallContext): Decision =
+      new Decision.Deny(ctx.origin.toString)
+  }
 
   private def reasonOf(decision: SpiGuardrail.Decision): String =
     decision match {
@@ -580,6 +587,32 @@ class GuardrailProviderSpec
       byName("other-tool") shouldBe 0
     }
 
+    "give the ToolCallGuardrail the origin of the tool" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "origin guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$OriginEchoingToolGuard"
+              agents = ["tool-agent"]
+              category = TOOL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("tool-agent", role = None).toolCallGuardrails("some-tool").head
+
+      val functionTool = Await.result(spiGuardrail.decide(toolCallContext("some-tool")), 3.seconds)
+      reasonOf(functionTool) shouldBe new ToolCallGuardrail.ToolOrigin.FunctionTool().toString
+
+      val remoteMcp = Await.result(
+        spiGuardrail.decide(
+          toolCallContext("some-tool", new SpiGuardrail.ToolOrigin.RemoteMcp("http://example.com/mcp"))),
+        3.seconds)
+      reasonOf(remoteMcp) shouldBe new ToolCallGuardrail.ToolOrigin.RemoteMcp("http://example.com/mcp").toString
+    }
+
     "give an MCP endpoint the ToolCallGuardrails of each tool by name" in {
       val cfg = ConfigFactory
         .parseString(s"""
@@ -668,6 +701,28 @@ class GuardrailProviderSpec
           "implement akka.javasdk.agent.AgentResponseGuardrail for model-response, " +
           "implement akka.javasdk.agent.ToolCallGuardrail for mcp-tool-request, " +
           "implement akka.javasdk.agent.ModelCallGuardrail for mcp-tool-response.")
+        .expect(provider.validate())
+    }
+
+    "warn once when a TextGuardrail applies to several agents and roles" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "shared text guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agents = ["agent-a", "agent-b"]
+              agent-roles = ["worker"]
+              category = TOXIC
+              use-for = ["model-request"]
+            }
+          }
+        """)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn("Guardrail [shared text guard] uses deprecated use-for values.")
+        .withOccurrences(1)
         .expect(provider.validate())
     }
 
