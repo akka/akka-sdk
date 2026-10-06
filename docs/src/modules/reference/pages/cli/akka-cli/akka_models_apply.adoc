@@ -1,0 +1,58 @@
+= akka models apply
+
+Apply a model descriptor to the project's region.
+
+== Synopsis
+
+Applies the resources of a model descriptor: multi-document YAML, each document carrying resource, resourceVersion: v1, metadata.name and a spec in the platform's own schema.
+Today the descriptor holds AcceleratorAllocation resources;
+Model and ModelEndpoint follow.
+
+Apply is create-or-update by name.
+The region admits every change - device fit against the pool is decided there, not here - so --dry-run runs the server's full admission without persisting anything.
+
+----
+akka models apply [flags]
+----
+
+== Examples
+
+----
+akka models apply -f allocation.yaml
+akka models apply -f allocation.yaml --region aws-us-east-2 --dry-run
+cat allocation.yaml | akka models apply
+----
+
+== Options
+
+----
+      --dry-run          Run the region's admission without persisting anything.
+  -f, --file string      The descriptor file; stdin when omitted.
+  -h, --help             help for apply
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
+      --region string    region to use if project has more than one region
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_models.html[akka models]	 - Deploy and serve models in Akka's inference regions.
+
+[discrete]
+

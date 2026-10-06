@@ -1,0 +1,72 @@
+= akka optimize training runs tree
+
+Display a tree of runs branched from a root run
+
+== Synopsis
+
+Display the tree of descendant runs branched from ROOT across all generations.
+
+Unlike "training runs branches", which lists only direct child runs, this command traverses the full branch hierarchy and indents each child run beneath its parent.
+
+SOURCE STEP indicates the checkpoint step of the parent run where the branch began.
+It does not reflect the current step or progress of the child run, which counts updates starting from zero.
+
+Use --depth to restrict traversal to a specific number of generations below ROOT.
+By default, all generations are traversed.
+
+Results are populated from asynchronous run projections;
+recently created runs may take a moment to appear.
+
+----
+akka optimize training runs tree ROOT [flags]
+----
+
+== Examples
+
+----
+  # Display the branch tree below a run
+  akka-optimize training runs tree 7d496e82c3a15f04
+
+  # Restrict traversal to direct children
+  akka-optimize training runs tree 7d496e82c3a15f04 --depth 1
+
+  # Extract all run IDs using jq
+  akka-optimize training runs tree 7d496e82c3a15f04 --jq '.. | .runId? // empty'
+----
+
+== Options
+
+----
+      --depth int   Number of generations below ROOT to traverse (0 traverses all generations)
+  -h, --help        help for tree
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_runs.html[akka optimize training runs]	 - Manage training runs, snapshots and child runs
+
+[discrete]
+

@@ -1,0 +1,52 @@
+= akka optimize eval
+
+Datasets, experiments and the evaluators that score them
+
+== Synopsis
+
+An experiment is one execution of one dataset version against one target with one set of evaluators.
+
+An evaluator never turns a failure into a low score: it reports inconclusive when it has nothing to read, and neither that nor its own breakage enters a pass rate.
+
+== Options
+
+----
+  -h, --help   help for eval
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize.html[akka optimize]	 - Own your intelligence: cost, models, training and routing
+* link:akka_optimize_eval_datasets.html[akka optimize eval datasets]	 - Test cases, versioned at import
+* link:akka_optimize_eval_evaluators.html[akka optimize eval evaluators]	 - What can score an answer, and what each one needs to read
+* link:akka_optimize_eval_experiments.html[akka optimize eval experiments]	 - One dataset version, one target, one set of evaluators
+* link:akka_optimize_eval_init.html[akka optimize eval init]	 - Add the eval source root to a project
+* link:akka_optimize_eval_report.html[akka optimize eval report]	 - Open the rendered report for a run
+* link:akka_optimize_eval_rules.html[akka optimize eval rules]	 - Rules declared across the project's eval campaigns
+* link:akka_optimize_eval_run.html[akka optimize eval run]	 - Run the local eval campaigns (wraps `mvn verify -Deval=true`)
+
+[discrete]
+

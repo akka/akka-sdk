@@ -1,0 +1,82 @@
+= akka optimize training comparisons create
+
+Start evaluations comparing a source snapshot with branch models
+
+== Synopsis
+
+Start a durable branch comparison.
+
+Specify branch models to evaluate using --candidate, --branch, or --all-branches.
+At least one of these flags is required, and they can be combined:   --candidate: specifies a candidate model ID directly.
+--branch: specifies a run ID, evaluating the model registered by that run.
+--all-branches: specifies a parent run ID, evaluating every completed child run that branched from     --source.
+Child runs still in progress are omitted.
+
+Child runs are resolved from an asynchronous projection, so a run that completed moments earlier may be omitted from the fan, and nothing adds it after the comparison is created.
+The Fan line reports how many child runs the listing contained;
+compare it against the number of branches the parent is expected to have.
+
+Each identifier may be a complete ID or an unambiguous prefix.
+The dataset may be a hash or name;
+the service resolves it once and records the hash.
+The service accepts SFT, TRL and verl snapshot candidates.
+The command returns after the comparison is durable;
+use training comparisons get until it reaches a terminal phase.
+
+----
+akka optimize training comparisons create --source SNAPSHOT --branch RUN --dataset DATASET [flags]
+----
+
+== Examples
+
+----
+  akka-optimize training comparisons create \
+    --source 3f2a9c71bd04f6504a2f9306b8e465c7d336e4ca12d27f8872944655d455aa66 \
+    --branch 7d496e82c3a15f04b1c6d0e8a34f29b7e5c81d0a6f3b249e7c05a8d1f6b32e40 \
+    --all-branches b7c2d1e0a94f3b6188aa0c5d7e2f4a9134e8c07b52d6193fa0c84e7b51d2960f \
+    --dataset branch-eval --grader json-label-match
+----
+
+== Options
+
+----
+      --all-branches string         Prefix or complete ID of a parent run whose completed children branched from --source will be evaluated
+      --branch strings              Prefix or complete ID of a branch run whose registered model will be evaluated; repeat for multiple runs
+      --candidate strings           Prefix or complete ID of a candidate model to evaluate; repeat for multiple models
+      --dataset string              Evaluation dataset hash or name
+      --grader string               Grader specification: json-label-match, model:MODEL, or http:URL
+  -h, --help                        help for create
+      --max-completion-tokens int   Maximum completion tokens per sample; zero leaves completions uncapped
+      --source string               Prefix or complete ID of the source snapshot to compare against
+      --submission-id string        Submission token to reuse after an uncertain response
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_comparisons.html[akka optimize training comparisons]	 - Compare a source snapshot with selected branch models
+
+[discrete]
+

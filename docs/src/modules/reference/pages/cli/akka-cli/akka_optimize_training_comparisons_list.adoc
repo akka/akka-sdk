@@ -1,0 +1,72 @@
+= akka optimize training comparisons list
+
+List comparisons
+
+== Synopsis
+
+List comparisons, newest first.
+
+A comparison ID is derived from its source snapshot and its submission token rather than assigned, so an ID that has been lost is otherwise only reachable by repeating the submission that created it.
+
+MODELS counts what is being compared, the source among them.
+How each one scored belongs to its own evaluation;
+read it with "comparisons get".
+
+--limit bounds how many are listed, a hundred by default.
+Nothing deletes a comparison, so a deployment that has made thousands would otherwise print all of them.
+--source lists one snapshot's comparisons whole.
+
+----
+akka optimize training comparisons list [flags]
+----
+
+== Examples
+
+----
+  # List the hundred newest comparisons
+  akka-optimize training comparisons list
+
+  # List more of them
+  akka-optimize training comparisons list --limit 250
+
+  # List the comparisons of one source snapshot
+  akka-optimize training comparisons list --source 3f2a9c71bd04
+----
+
+== Options
+
+----
+  -h, --help            help for list
+      --limit int       How many comparisons to list, newest first; the service's default is 100
+      --source string   List only the comparisons of one source snapshot, by ID or an unambiguous prefix
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_comparisons.html[akka optimize training comparisons]	 - Compare a source snapshot with selected branch models
+
+[discrete]
+
