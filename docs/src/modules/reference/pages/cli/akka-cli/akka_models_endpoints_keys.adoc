@@ -1,0 +1,44 @@
+= akka models endpoints keys
+
+Manage an endpoint's API keys.
+
+== Synopsis
+
+Keys live as entries of the secret the endpoint's apiKeySecret names, one entry per client.
+Rotation is add-then-remove: add a key for the new name, move the client over, remove the old one.
+There is no cutover moment.
+
+== Options
+
+----
+  -h, --help   help for keys
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_models_endpoints.html[akka models endpoints]	 - Manage the endpoints that serve models through the gateway.
+* link:akka_models_endpoints_keys_add.html[akka models endpoints keys add]	 - Add an API key for a client;
+the key prints exactly once.
+* link:akka_models_endpoints_keys_list.html[akka models endpoints keys list]	 - List the clients that hold keys;
+never the key material.
+* link:akka_models_endpoints_keys_remove.html[akka models endpoints keys remove]	 - Remove a client's key;
+the secret stays, so requests fail closed.
+
+[discrete]
+

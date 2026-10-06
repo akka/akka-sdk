@@ -1,0 +1,109 @@
+= akka optimize training runs sweep
+
+Submit one child run for each point of a parameter grid
+
+== Synopsis
+
+Submit one child run of PARENT for each point of a parameter grid, all from a single source snapshot.
+
+Use --grid to specify a document of axes.
+The points are the product of those axes, with the last axis varying fastest, and each point becomes the change document that one child run trains under:
+
+ axes:
+   - path: hyperparams.optimizer.learningRate
+     values: [1.0e-5, 5.0e-5, 2.0e-4]
+   - path: hyperparams.lora.rank
+     values: [8, 16]
+
+A path specifies the same field that a hand-written --overrides document specifies, and each value retains the type the document gave it.
+Two axes cannot specify the same field, and neither may specify a field nested inside the other.
+Every child run inherits the parent run's workload, base model, devices, and grader, and is labelled with the values its point sets.
+
+Every point is validated against the service before any of them is submitted, so a grid the service would refuse costs nothing.
+Use --dry-run to stop at that stage and report what each point resolved to.
+
+A single comparison scores at most 50 branch models, and the fan it scores is every child run of PARENT that branched from --snapshot.
+The validation pass counts the branches PARENT already carries and refuses a grid whose points would exceed that limit, so a sweep that could not be compared is refused before any training begins.
+
+Use --compare to wait for every child run to finish and then score the source snapshot against the whole fan, which is equivalent to "training comparisons create --all-branches PARENT".
+It requires --dataset.
+Without --compare, the sweep ends once the fan is submitted and reports the command to run later.
+
+The command generates a token for each invocation.
+Passing --submission-id with the token from an earlier attempt reaches whatever that attempt created: a point whose values are unchanged reaches its existing child run rather than starting a second one, and a point added to the grid since then is submitted.
+
+A child run's ID is derived from that token, so the IDs --dry-run shows are the ones a submission under the same token would create.
+A dry run reports its token for that reason.
+
+----
+akka optimize training runs sweep PARENT --snapshot SNAPSHOT --steps N --grid GRID [flags]
+----
+
+== Examples
+
+----
+  # Preview the fan without submitting it
+  akka-optimize training runs sweep 7d496e82c3a15f04 \
+    --snapshot 3f2a9c71bd04 --steps 200 --grid learning-rates.yaml --dry-run
+
+  # Submit the fan
+  akka-optimize training runs sweep 7d496e82c3a15f04 \
+    --snapshot 3f2a9c71bd04 --steps 200 --grid learning-rates.yaml
+
+  # Submit it, wait for every child run, and score the source against the fan
+  akka-optimize training runs sweep 7d496e82c3a15f04 \
+    --snapshot 3f2a9c71bd04 --steps 200 --grid learning-rates.yaml \
+    --compare --dataset support-triage-eval --grader json-label-match
+
+  # List the child runs the sweep started using jq
+  akka-optimize training runs sweep 7d496e82c3a15f04 \
+    --snapshot 3f2a9c71bd04 --steps 200 --grid learning-rates.yaml \
+    --force --jq '.points[].childRunId'
+----
+
+== Options
+
+----
+      --compare                     Wait for every child run, then score the source snapshot against the fan
+      --dataset string              Evaluation dataset hash or name; requires --compare
+      --description string          Description applied to every child run
+      --dry-run                     Resolve every point without submitting any of them
+      --grader string               Grader specification: json-label-match, model:MODEL, or http:URL; requires --compare
+  -g, --grid string                 Path to the parameter grid document, or '-' to read standard input
+  -h, --help                        help for sweep
+      --max-completion-tokens int   Maximum completion tokens per sample; zero leaves completions uncapped
+      --restore string              Snapshot artifact to restore, either weights or trainingState (default "weights")
+      --snapshot string             Prefix or complete ID of the source snapshot shared by every child run
+      --steps int                   Number of additional optimizer updates allowed for each child run
+      --submission-id string        Submission token to reuse after an uncertain response
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_runs.html[akka optimize training runs]	 - Manage training runs, snapshots and child runs
+
+[discrete]
+

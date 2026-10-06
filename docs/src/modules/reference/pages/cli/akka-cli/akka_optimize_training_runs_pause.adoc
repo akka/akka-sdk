@@ -1,0 +1,80 @@
+= akka optimize training runs pause
+
+Pause a run at a selected checkpoint
+
+== Synopsis
+
+Pause an active training run and release its compute devices and evaluation resources.
+
+The run preserves its ID, metrics, cost accounting, and dataset progress.
+When resumed, execution restarts from the checkpoint the pause stopped against.
+
+--checkpoint states which checkpoint that is, and is required:
+
+ latest  stop against progress the run has already confirmed, discarding the steps trained
+         since that save. Refused once the run has trained without restorable state, because
+         accepting it would silently restart from the base model.
+ save    ask the worker to save at its next optimizer boundary and wait for that snapshot to be
+         committed before it stops.
+
+The command returns after the pause request is accepted.
+Saving and device release continue, and "training runs get" reports the pause lifecycle, acknowledged saved step and whether the devices have been released.
+A save that timed out or failed records its reason and never reports as successful.
+
+Backend support for save differs by training method and profile.
+An unsupported combination is refused rather than quietly downgraded to latest.
+Resuming requires the same GPU device count as the run was allocated.
+
+----
+akka optimize training runs pause RUN --checkpoint latest|save [flags]
+----
+
+== Examples
+
+----
+  # Pause against the newest confirmed checkpoint
+  akka-optimize training runs pause 7d496e82c3a15f04 --checkpoint latest
+
+  # Save at the next optimizer boundary, then stop
+  akka-optimize training runs pause 7d496e82c3a15f04 --checkpoint save
+
+  # Resume the paused run
+  akka-optimize training runs resume 7d496e82c3a15f04
+----
+
+== Options
+
+----
+      --checkpoint string   Which checkpoint to stop against: latest or save
+  -h, --help                help for pause
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_runs.html[akka optimize training runs]	 - Manage training runs, snapshots and child runs
+
+[discrete]
+

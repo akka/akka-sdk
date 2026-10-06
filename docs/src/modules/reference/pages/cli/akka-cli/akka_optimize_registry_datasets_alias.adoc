@@ -1,0 +1,50 @@
+= akka optimize registry datasets alias
+
+The movable pointers into a named dataset
+
+== Synopsis
+
+An alias points at one version of its named dataset, moves to another, and keeps every version it has pointed at.
+Moving an alias changes no version.
+
+'latest' is the registry's own alias.
+It always points at the newest version, and no command sets or removes it.
+
+== Options
+
+----
+  -h, --help   help for alias
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_registry_datasets.html[akka optimize registry datasets]	 - Named datasets, their versions and their aliases
+* link:akka_optimize_registry_datasets_alias_get.html[akka optimize registry datasets alias get]	 - One alias: the version it points at, and its history
+* link:akka_optimize_registry_datasets_alias_rm.html[akka optimize registry datasets alias rm]	 - Remove an alias
+* link:akka_optimize_registry_datasets_alias_set.html[akka optimize registry datasets alias set]	 - Point an alias at a version, or move it to another
+
+[discrete]
+
