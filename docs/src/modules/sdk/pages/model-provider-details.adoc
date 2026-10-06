@@ -662,7 +662,11 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`Mode
 
 | thinking-budget
 | Integer
-| Tokens to spend on thinking (0 to disable thinking)
+| Tokens to spend on thinking for Gemini 2.5 models (0 to disable thinking). Must be 0 for Gemini 3 models
+
+| thinking-level
+| String
+| Control thinking for Gemini 3 models, exact values depend on the specific model chosen, must be empty for 2.5 models. See Vertex AI docs for more details: https://docs.cloud.google.com/vertex-ai/generative-ai/docs/thinking
 
 | max-output-tokens
 | Integer

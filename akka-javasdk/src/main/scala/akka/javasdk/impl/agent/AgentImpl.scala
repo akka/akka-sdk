@@ -343,7 +343,8 @@ private[impl] object AgentImpl {
           temperature = p.temperature,
           topP = p.topP,
           thinkingBudget = p.thinkingBudget,
-          maxOutputTokens = p.maxOutputTokens)
+          maxOutputTokens = p.maxOutputTokens,
+          thinkingLevel = p.thinkingLevel)
       case p: ModelProvider.Custom =>
         new SpiAgent.ModelProvider.Custom(
           providerName = p.getClass.getName,
