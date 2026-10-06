@@ -39,6 +39,7 @@ import akka.runtime.sdk.spi.SpiAgentGuardrails
 import akka.runtime.sdk.spi.SpiConfiguredGuardrail
 import akka.runtime.sdk.spi.SpiGuardrail
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigRenderOptions
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
@@ -274,6 +275,12 @@ import org.slf4j.LoggerFactory
   private val TextGuardrailUseFor: Set[UseFor] =
     Set(UseFor.ModelRequest, UseFor.ModelResponse, UseFor.McpToolRequest, UseFor.McpToolResponse)
 
+  private val DefaultJailbreak = "default jailbreak"
+  private val DefaultModelCallJailbreak = "default model-call jailbreak"
+
+  // The similarity settings shared by SimilarityGuard and ModelCallSimilarityGuard.
+  private val SimilarityGuardSettings = Seq("category", "threshold", "report-only", "bad-examples-resource-dir")
+
   // Default classifierClient for call sites (and tests) that don't supply one; any call fails
   // descriptively instead of silently returning something.
   private val NoClassifiersConfigured: ClassifierClient = new ClassifierClient {
@@ -375,24 +382,62 @@ import org.slf4j.LoggerFactory
     instance match {
       // FIXME: warn about mcp-tool-request and mcp-tool-response once an MCP replacement for SimilarityGuard exists.
       case _: SimilarityGuard =>
-        if (c.useFor.contains(UseFor.ModelRequest) || c.useFor.contains(UseFor.Wildcard)) {
-          if (c.name == "default jailbreak")
-            log.warn(
-              "Guardrail [default jailbreak] uses deprecated akka.javasdk.agent.SimilarityGuard with use-for " +
-              "[model-request]. Enable \"default model-call jailbreak\" and remove \"default jailbreak\" " +
-              "from your agents instead.")
-          else
-            log.warn(
-              "Guardrail [{}] uses deprecated akka.javasdk.agent.SimilarityGuard with use-for [model-request]. " +
-              "Use akka.javasdk.agent.ModelCallSimilarityGuard without use-for instead.",
-              c.name)
-        }
-        if (c.useFor.contains(UseFor.ModelResponse))
-          warnImplementNewInterface(c.name, Set[UseFor](UseFor.ModelResponse))
+        val expanded = expandWildcard(c)
+        val deprecated = Seq[UseFor](UseFor.ModelRequest, UseFor.ModelResponse).filter(expanded.useFor.contains)
+        if (deprecated.nonEmpty)
+          log.warn(similarityGuardDeprecation(expanded, deprecated))
 
       case _ =>
         warnImplementNewInterface(c.name, c.useFor.intersect(Set[UseFor](UseFor.ModelRequest, UseFor.ModelResponse)))
     }
+
+  // Expects the expanded use-for set.
+  private def similarityGuardDeprecation(c: ConfiguredGuardrail, deprecated: Seq[UseFor]): String = {
+    val lines = Vector.newBuilder[String]
+
+    lines += s"Guardrail [${c.name}] uses akka.javasdk.agent.SimilarityGuard for " +
+    s"[${deprecated.map(_.configName).mkString(", ")}]."
+    lines += "This usage is deprecated. SimilarityGuard will support only mcp-tool-request and mcp-tool-response."
+
+    if (deprecated.contains(UseFor.ModelRequest)) {
+      if (c.name == DefaultJailbreak) {
+        lines += s"For model-request, enable \"$DefaultModelCallJailbreak\" for the same agents and agent roles."
+        val changed = changedDefaultJailbreakSettings(c)
+        if (changed.nonEmpty)
+          lines += s"To keep your current settings, set ${changed.mkString(", ")} on \"$DefaultModelCallJailbreak\"."
+      } else
+        lines += "For model-request, use akka.javasdk.agent.ModelCallSimilarityGuard. " +
+        "It does not take a use-for setting."
+    }
+
+    if (deprecated.contains(UseFor.ModelResponse))
+      lines += "The SDK has no replacement for model-response."
+
+    lines += s"Then ${similarityGuardRemoval(c)}."
+    lines.result().mkString(" ")
+  }
+
+  // The settings of "default jailbreak" that differ from "default model-call jailbreak", as `key = value`.
+  private def changedDefaultJailbreakSettings(c: ConfiguredGuardrail): Seq[String] = {
+    val guardrailsConfig = applicationConfig.getConfig("akka.javasdk.agent.guardrails")
+    val modelCallPath = s"\"$DefaultModelCallJailbreak\""
+    if (!guardrailsConfig.hasPath(modelCallPath)) Seq.empty
+    else {
+      val modelCall = guardrailsConfig.getConfig(modelCallPath)
+      SimilarityGuardSettings.flatMap { key =>
+        val current = Option.when(c.config.hasPath(key))(c.config.getValue(key).render(ConfigRenderOptions.concise()))
+        val target = Option.when(modelCall.hasPath(key))(modelCall.getValue(key).render(ConfigRenderOptions.concise()))
+        current.filterNot(target.contains).map(value => s"$key = $value")
+      }
+    }
+  }
+
+  // Expects the expanded use-for set.
+  private def similarityGuardRemoval(c: ConfiguredGuardrail): String = {
+    val mcp = Seq[UseFor](UseFor.McpToolRequest, UseFor.McpToolResponse).filter(c.useFor.contains)
+    if (mcp.isEmpty) s"remove the agents and agent roles from [${c.name}]"
+    else s"set use-for on [${c.name}] to [${mcp.map(_.configName).mkString(", ")}]"
+  }
 
   private def warnImplementNewInterface(guardrailName: String, deprecated: Set[UseFor]): Unit =
     if (deprecated.nonEmpty)
@@ -472,18 +517,21 @@ import org.slf4j.LoggerFactory
   @nowarn("cat=deprecation")
   private def warnOnBothSimilarityGuards(componentId: String, entries: Seq[GuardrailEntry]): Unit = {
     // FIXME: count the MCP use-for values once an MCP replacement for SimilarityGuard exists.
-    val legacyNames = entries.collect {
-      case GuardrailEntry(c, _: SimilarityGuard) if c.useFor.contains(UseFor.ModelRequest) => c.name
-    }
+    val legacy = entries
+      .collect {
+        case GuardrailEntry(c, _: SimilarityGuard) if c.useFor.contains(UseFor.ModelRequest) => c
+      }
+      .sortBy(_.name)
     val modelCallNames = entries.collect { case GuardrailEntry(c, _: ModelCallSimilarityGuard) => c.name }
 
-    if (legacyNames.nonEmpty && modelCallNames.nonEmpty)
+    if (legacy.nonEmpty && modelCallNames.nonEmpty)
       log.warn(
         "Agent [{}] has both the deprecated SimilarityGuard [{}] with use-for [model-request] and the " +
-        "ModelCallSimilarityGuard [{}]. Both check the user message and the tool results. Keep only one.",
+        "ModelCallSimilarityGuard [{}]. Both check the user message and the tool results. {}",
         componentId,
-        legacyNames.sorted.mkString(", "),
-        modelCallNames.sorted.mkString(", "))
+        legacy.map(_.name).mkString(", "),
+        modelCallNames.sorted.mkString(", "),
+        legacy.map(c => similarityGuardRemoval(c).capitalize + ".").mkString(" "))
   }
 
 }

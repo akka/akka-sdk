@@ -1296,14 +1296,20 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
           }
         """)
 
-      LoggingTestKit.warn("Use akka.javasdk.agent.ModelCallSimilarityGuard without use-for instead").expect {
-        LoggingTestKit.warn("Implement akka.javasdk.agent.ModelCallGuardrail").withOccurrences(0).expect {
-          new GuardrailProvider(system, cfg, testTracerFactory).validate()
+      LoggingTestKit
+        .warn(
+          "Guardrail [legacy jailbreak] uses akka.javasdk.agent.SimilarityGuard for [model-request]. " +
+          "This usage is deprecated. SimilarityGuard will support only mcp-tool-request and mcp-tool-response. " +
+          "For model-request, use akka.javasdk.agent.ModelCallSimilarityGuard. It does not take a use-for setting. " +
+          "Then remove the agents and agent roles from [legacy jailbreak].")
+        .expect {
+          LoggingTestKit.warn("Implement akka.javasdk.agent.ModelCallGuardrail").withOccurrences(0).expect {
+            new GuardrailProvider(system, cfg, testTracerFactory).validate()
+          }
         }
-      }
     }
 
-    "warn that a SimilarityGuard on use-for [*] is replaced by ModelCallSimilarityGuard" in {
+    "warn that a SimilarityGuard on use-for [*] keeps only the MCP uses" in {
       val cfg = ConfigFactory.parseString(s"""
           akka.javasdk.agent.guardrails {
             "legacy jailbreak" {
@@ -1317,11 +1323,43 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
           }
         """)
 
-      LoggingTestKit.warn("Use akka.javasdk.agent.ModelCallSimilarityGuard without use-for instead").expect {
-        LoggingTestKit.warn("Implement akka.javasdk.agent.ModelCallGuardrail").withOccurrences(0).expect {
+      LoggingTestKit
+        .warn(
+          "Guardrail [legacy jailbreak] uses akka.javasdk.agent.SimilarityGuard for [model-request, model-response]. " +
+          "This usage is deprecated. SimilarityGuard will support only mcp-tool-request and mcp-tool-response. " +
+          "For model-request, use akka.javasdk.agent.ModelCallSimilarityGuard. It does not take a use-for setting. " +
+          "The SDK has no replacement for model-response. " +
+          "Then set use-for on [legacy jailbreak] to [mcp-tool-request, mcp-tool-response].")
+        .expect {
+          LoggingTestKit.warn("Implement akka.javasdk.agent.ModelCallGuardrail").withOccurrences(0).expect {
+            new GuardrailProvider(system, cfg, testTracerFactory).validate()
+          }
+        }
+    }
+
+    "warn that a SimilarityGuard on model-request and mcp-tool-request keeps only the MCP use" in {
+      val cfg = ConfigFactory.parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "legacy jailbreak" {
+              class = "akka.javasdk.agent.SimilarityGuard"
+              agents = ["legacy-agent"]
+              category = JAILBREAK
+              use-for = ["model-request", "mcp-tool-request"]
+              threshold = 0.75
+              bad-examples-resource-dir = "guardrail/jailbreak"
+            }
+          }
+        """)
+
+      LoggingTestKit
+        .warn(
+          "Guardrail [legacy jailbreak] uses akka.javasdk.agent.SimilarityGuard for [model-request]. " +
+          "This usage is deprecated. SimilarityGuard will support only mcp-tool-request and mcp-tool-response. " +
+          "For model-request, use akka.javasdk.agent.ModelCallSimilarityGuard. It does not take a use-for setting. " +
+          "Then set use-for on [legacy jailbreak] to [mcp-tool-request].")
+        .expect {
           new GuardrailProvider(system, cfg, testTracerFactory).validate()
         }
-      }
     }
 
     "warn that the built-in \"default jailbreak\" is replaced by \"default model-call jailbreak\"" in {
@@ -1330,15 +1368,42 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         .withFallback(ConfigFactory.defaultReference())
 
       LoggingTestKit
-        .warn("Enable \"default model-call jailbreak\" and remove \"default jailbreak\" from your agents instead.")
+        .warn(
+          "Guardrail [default jailbreak] uses akka.javasdk.agent.SimilarityGuard for [model-request]. " +
+          "This usage is deprecated. SimilarityGuard will support only mcp-tool-request and mcp-tool-response. " +
+          "For model-request, enable \"default model-call jailbreak\" for the same agents and agent roles. " +
+          "Then remove the agents and agent roles from [default jailbreak].")
         .expect {
-          LoggingTestKit.warn("Use akka.javasdk.agent.ModelCallSimilarityGuard").withOccurrences(0).expect {
+          LoggingTestKit.warn("To keep your current settings").withOccurrences(0).expect {
             new GuardrailProvider(system, cfg, testTracerFactory).validate()
           }
         }
     }
 
-    "warn once for model-request and once for model-response when a SimilarityGuard uses both" in {
+    "warn with the settings to copy when the built-in \"default jailbreak\" has overrides" in {
+      val cfg = ConfigFactory
+        .parseString("""
+          akka.javasdk.agent.guardrails."default jailbreak" {
+            agents = ["legacy-agent"]
+            report-only = true
+            threshold = 0.9
+            bad-examples-resource-dir = "my/own"
+          }
+        """)
+        .withFallback(ConfigFactory.defaultReference())
+
+      LoggingTestKit
+        .warn(
+          "For model-request, enable \"default model-call jailbreak\" for the same agents and agent roles. " +
+          "To keep your current settings, set threshold = 0.9, report-only = true, " +
+          "bad-examples-resource-dir = \"my/own\" on \"default model-call jailbreak\". " +
+          "Then remove the agents and agent roles from [default jailbreak].")
+        .expect {
+          new GuardrailProvider(system, cfg, testTracerFactory).validate()
+        }
+    }
+
+    "warn once when a SimilarityGuard uses model-request and model-response" in {
       val cfg = ConfigFactory.parseString(s"""
           akka.javasdk.agent.guardrails {
             "legacy jailbreak" {
@@ -1354,13 +1419,11 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
 
       LoggingTestKit
         .warn(
-          "Guardrail [legacy jailbreak] uses deprecated akka.javasdk.agent.SimilarityGuard with use-for [model-request].")
+          "Guardrail [legacy jailbreak] uses akka.javasdk.agent.SimilarityGuard for [model-request, model-response].")
         .expect {
-          LoggingTestKit
-            .warn("Guardrail [legacy jailbreak] uses deprecated use-for value(s) [model-response].")
-            .expect {
-              new GuardrailProvider(system, cfg, testTracerFactory).validate()
-            }
+          LoggingTestKit.warn("uses deprecated use-for value(s)").withOccurrences(0).expect {
+            new GuardrailProvider(system, cfg, testTracerFactory).validate()
+          }
         }
     }
 
@@ -1398,7 +1461,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         .warn(
           "Agent [jailbreak-agent] has both the deprecated SimilarityGuard [default jailbreak] with use-for " +
           "[model-request] and the ModelCallSimilarityGuard [default model-call jailbreak]. Both check the user " +
-          "message and the tool results. Keep only one.")
+          "message and the tool results. Remove the agents and agent roles from [default jailbreak].")
         .expect {
           provider.agentGuardrails("jailbreak-agent", role = None)
         }
@@ -1420,7 +1483,7 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         .warn(
           "Agent [jailbreak-agent] has both the deprecated SimilarityGuard [default jailbreak] with use-for " +
           "[model-request] and the ModelCallSimilarityGuard [default model-call jailbreak]. Both check the user " +
-          "message and the tool results. Keep only one.")
+          "message and the tool results. Remove the agents and agent roles from [default jailbreak].")
         .expect {
           provider.agentGuardrails("jailbreak-agent", role = Some("worker"))
         }
