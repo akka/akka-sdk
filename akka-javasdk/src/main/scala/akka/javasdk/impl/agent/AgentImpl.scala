@@ -360,6 +360,8 @@ private[impl] object AgentImpl {
       sdkExecutionContext: ExecutionContext): Seq[SpiAgent.McpToolEndpointDescriptor] =
     remoteMcpTools.map {
       case remoteMcp: RemoteMcpToolsImpl =>
+        // FIXME: MCP tool calls run only legacy guardrails,
+        //  https://github.com/lightbend/akka-runtime/issues/5382
         new SpiAgent.McpToolEndpointDescriptor(
           mcpEndpoint = remoteMcp.serverUri,
           additionalClientHeaders = remoteMcp.additionalClientHeaders.map(_.asInstanceOf[HttpHeader]),
@@ -387,8 +389,8 @@ private[impl] object AgentImpl {
           toolTimeout =
             if (remoteMcp.timeout == Duration.Zero) None
             else Some(remoteMcp.timeout),
-          requestGuardrails = guardrails.mcpToolRequestGuardrails,
-          responseGuardrails = guardrails.mcpToolResponseGuardrails)
+          requestGuardrails = guardrails.legacyMcpToolRequestGuardrails,
+          responseGuardrails = guardrails.legacyMcpToolResponseGuardrails)
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
@@ -738,24 +740,50 @@ private[impl] final class AgentImpl(
 
             val agentRole = Reflect.readAgentRole(agent.getClass)
             val spiContentLoader = req.contentLoader.map(toSpiContentLoader)
-            new SpiAgent.RequestModelEffect(
-              modelProvider = spiModelProvider,
-              systemMessage = systemMessage,
-              userMessage = toSpiUserMessage(req.userMessage),
-              additionalContext = additionalContext,
-              toolDescriptors = toolDescriptors,
-              mcpClientDescriptors = mcpToolEndpoints,
-              responseType = req.responseType,
-              responseSchema = responseSchema,
-              responseMapping = req.responseMapping,
-              failureMapping = req.failureMapping.map(mapSpiAgentException),
-              replyMetadata = metadata,
-              // FIXME the SDK ignores the user message as sent to the model and stores the original one
-              onSuccessAsSent = (_: SpiAgent.UserMessage, results: Seq[SpiAgent.Response]) =>
-                onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
-              boundGuardrails = guardrails.boundGuardrails,
-              contentLoader = spiContentLoader,
-              callToolFunction = request => Future(toolExecutor.executeMultimodal(request))(sdkExecutionContext))
+            val spiUserMessage = toSpiUserMessage(req.userMessage)
+            val failureMapping = req.failureMapping.map(mapSpiAgentException)
+            // FIXME the SDK ignores the user message as sent to the model and stores the original one
+            val onSuccessAsSent = (_: SpiAgent.UserMessage, results: Seq[SpiAgent.Response]) =>
+              onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results)
+            val callToolFunction = (request: SpiAgent.ToolCallCommand) =>
+              Future(toolExecutor.executeMultimodal(request))(sdkExecutionContext)
+
+            if (guardrails.hasLegacyModelGuardrails)
+              new SpiAgent.RequestModelEffect(
+                modelProvider = spiModelProvider,
+                systemMessage = systemMessage,
+                userMessage = spiUserMessage,
+                additionalContext = additionalContext,
+                toolDescriptors = toolDescriptors,
+                mcpClientDescriptors = mcpToolEndpoints,
+                responseType = req.responseType,
+                responseSchema = responseSchema,
+                responseMapping = req.responseMapping,
+                failureMapping = failureMapping,
+                replyMetadata = metadata,
+                onSuccessAsSent = onSuccessAsSent,
+                requestGuardrails = guardrails.legacyModelRequestGuardrails,
+                responseGuardrails = guardrails.legacyModelResponseGuardrails,
+                guardrails = guardrails.guardrails,
+                contentLoader = spiContentLoader,
+                callToolFunction = callToolFunction)
+            else
+              new SpiAgent.RequestModelEffect(
+                modelProvider = spiModelProvider,
+                systemMessage = systemMessage,
+                userMessage = spiUserMessage,
+                additionalContext = additionalContext,
+                toolDescriptors = toolDescriptors,
+                mcpClientDescriptors = mcpToolEndpoints,
+                responseType = req.responseType,
+                responseSchema = responseSchema,
+                responseMapping = req.responseMapping,
+                failureMapping = failureMapping,
+                replyMetadata = metadata,
+                onSuccessAsSent = onSuccessAsSent,
+                guardrails = guardrails.guardrails,
+                contentLoader = spiContentLoader,
+                callToolFunction = callToolFunction)
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -931,7 +959,7 @@ private[impl] final class AgentImpl(
               new McpToolCallExecutionException(exc.getMessage, reason.toolName, reason.endpoint, exc.cause)
 
             case reason: GuardrailFailure =>
-              new Guardrail.GuardrailException(reason.explanation)
+              new Guardrail.GuardrailException(reason.explanation, exc.cause)
 
             case _: ImageLoadingFailure =>
               new RuntimeException(exc.getMessage, exc.cause)

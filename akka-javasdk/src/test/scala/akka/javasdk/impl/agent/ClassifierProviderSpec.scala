@@ -396,7 +396,7 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
         """)
       val guardrailProvider = new GuardrailProvider(system, guardrailCfg, testTracerFactory)
       guardrailProvider.validate()
-      guardrailProvider.agentGuardrails("some-agent", role = None).beforeAgentResponseGuardrails.size shouldBe 1
+      guardrailProvider.agentGuardrails("some-agent", role = None).guardrails.agentResponseGuardrails.size shouldBe 1
     }
   }
 }

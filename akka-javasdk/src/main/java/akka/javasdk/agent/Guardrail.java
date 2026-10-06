@@ -41,6 +41,11 @@ public sealed interface Guardrail
     public GuardrailException(String message) {
       super(message);
     }
+
+    /** The cause is the error of a guardrail that failed, or {@code null} for a denial. */
+    public GuardrailException(String message, Throwable cause) {
+      super(message, cause);
+    }
   }
 
   /**

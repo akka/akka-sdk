@@ -40,7 +40,10 @@ All three return a link:{attachmentsdir}/api/akka/javasdk/agent/Decision.html[`D
 
 * `Decision.Allow` — the guardrail saw nothing wrong; the call proceeds.
 * `Decision.Deny` — the call must not proceed. The `reason` is surfaced to the user as the failure message. Whether the interaction is aborted or merely recorded is governed by `report-only` (see <<_configuring_guardrails>>).
-* `Decision.Fail` — evaluation itself failed and reached no verdict. The `reason` and optional `cause` are propagated to the interaction's failure handling. Throwing from `decide` is equivalent to returning `Decision.Fail`.
+* `Decision.Fail` — evaluation itself failed and reached no verdict. The runtime passes the `reason` and the `cause` to the interaction's failure handling, as the message and the cause of a `Guardrail.GuardrailException`. The runtime treats three cases as `Decision.Fail`: throwing from `decide`, returning a failed `CompletionStage` from `decideAsync`, and returning `null`.
+
+The runtime reports a `Deny` or `Fail` with a null or blank `reason` as "no reason given".
+The runtime applies no timeout to a guardrail. An interaction waits forever if its guardrail never completes.
 
 [NOTE]
 ====
@@ -201,7 +204,7 @@ include::example$doc-snippets/src/main/java/com/example/guardrail/GuardedAgent.j
 ----
 
 With `report-only = true`, a `Deny` is recorded in logs, metrics, and traces but the interaction continues.
-A `Decision.Fail` is always propagated as a failure regardless of `report-only`, since the guardrail reached no verdict.
+A `Decision.Fail` with `report-only = true` lets the interaction continue. The runtime logs a warning and records the error.
 
 == Similarity guardrail
 

@@ -12,7 +12,6 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
 import scala.util.Failure
-import scala.util.control.NonFatal
 
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -35,7 +34,9 @@ import akka.javasdk.agent.ToolCallGuardrail
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiAgentGuardrails
 import akka.runtime.sdk.spi.SpiConfiguredGuardrail
+import akka.runtime.sdk.spi.SpiGuardrail
 import com.typesafe.config.Config
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -105,51 +106,47 @@ import org.slf4j.LoggerFactory
   final case class GuardrailEntry(configuredGuardrail: ConfiguredGuardrail, guardrail: Guardrail)
 
   final class AgentGuardrails(val entries: Seq[GuardrailEntry], tracerFactory: () => Tracer) {
-    private def collectGuardrails(useFor: UseFor): Seq[SpiAgent.Guardrail] =
+    @nowarn("cat=deprecation")
+    private def collectLegacyGuardrails(useFor: UseFor): Seq[SpiAgent.Guardrail] =
       entries.collect {
-        case entry if entry.configuredGuardrail.useFor.contains(useFor) => toSpiGuardrail(entry, tracerFactory)
+        case entry @ GuardrailEntry(configured, g: TextGuardrail) if configured.useFor.contains(useFor) =>
+          toLegacySpiGuardrail(entry, g)
       }
 
-    val modelRequestGuardrails: Seq[SpiAgent.Guardrail] =
-      collectGuardrails(UseFor.ModelRequest)
-    val modelResponseGuardrails: Seq[SpiAgent.Guardrail] =
-      collectGuardrails(UseFor.ModelResponse)
-    val mcpToolRequestGuardrails: Seq[SpiAgent.Guardrail] =
-      collectGuardrails(UseFor.McpToolRequest)
-    val mcpToolResponseGuardrails: Seq[SpiAgent.Guardrail] =
-      collectGuardrails(UseFor.McpToolResponse)
-    val beforeModelCallGuardrails: Seq[SpiAgent.Guardrail] =
-      entries.collect { case entry @ GuardrailEntry(_, _: ModelCallGuardrail) =>
-        toSpiGuardrail(entry, tracerFactory)
-      }
-    val beforeAgentResponseGuardrails: Seq[SpiAgent.Guardrail] =
-      entries.collect { case entry @ GuardrailEntry(_, _: AgentResponseGuardrail) =>
-        toSpiGuardrail(entry, tracerFactory)
-      }
+    val legacyModelRequestGuardrails: Seq[SpiAgent.Guardrail] =
+      collectLegacyGuardrails(UseFor.ModelRequest)
+    val legacyModelResponseGuardrails: Seq[SpiAgent.Guardrail] =
+      collectLegacyGuardrails(UseFor.ModelResponse)
+    val hasLegacyModelGuardrails: Boolean =
+      legacyModelRequestGuardrails.nonEmpty || legacyModelResponseGuardrails.nonEmpty
 
-    // The model-side guardrails grouped by their SPI boundaries, as handed to the runtime.
-    // MCP and before-tool-call guardrails travel on their descriptors instead.
-    val boundGuardrails: SpiAgent.BoundGuardrails =
-      SpiAgent.BoundGuardrails
-        .add(SpiAgent.GuardrailBoundary.ModelRequest, modelRequestGuardrails)
-        .add(SpiAgent.GuardrailBoundary.ModelResponse, modelResponseGuardrails)
-        .add(SpiAgent.GuardrailBoundary.BeforeModelCall, beforeModelCallGuardrails)
-        .add(SpiAgent.GuardrailBoundary.BeforeAgentResponse, beforeAgentResponseGuardrails)
+    val legacyMcpToolRequestGuardrails: Seq[SpiAgent.Guardrail] =
+      collectLegacyGuardrails(UseFor.McpToolRequest)
+    val legacyMcpToolResponseGuardrails: Seq[SpiAgent.Guardrail] =
+      collectLegacyGuardrails(UseFor.McpToolResponse)
+
+    val guardrails: SpiAgentGuardrails =
+      new SpiAgentGuardrails(
+        modelCallGuardrails = entries.collect { case GuardrailEntry(configured, g: ModelCallGuardrail) =>
+          new ModelCallGuardrailAdapter(toSettings(configured), g, tracerFactory)
+        },
+        agentResponseGuardrails = entries.collect { case GuardrailEntry(configured, g: AgentResponseGuardrail) =>
+          new AgentResponseGuardrailAdapter(toSettings(configured), g, tracerFactory)
+        })
 
     // The ToolCallGuardrails applicable to the given tool. An entry with an empty `tools` set
     // applies to every tool on the agent; otherwise only to the named tools.
-    private def beforeToolCallGuardrails(toolName: String): Seq[SpiAgent.Guardrail] =
+    private def toolCallGuardrails(toolName: String): Seq[SpiGuardrail.ToolCall] =
       entries.collect {
-        case entry @ GuardrailEntry(configured, _: ToolCallGuardrail)
+        case GuardrailEntry(configured, g: ToolCallGuardrail)
             if configured.tools.isEmpty || configured.tools.contains(toolName) =>
-          toSpiGuardrail(entry, tracerFactory)
+          new ToolCallGuardrailAdapter(toSettings(configured), g, tracerFactory)
       }
 
-    // Returns the given tool descriptors with their applicable before-tool-call guardrails attached.
-    // The runtime evaluates these at the before-tool-call boundary for in-process function tools.
+    /** The given tool descriptors with their tool-call guardrails attached. */
     def withToolGuardrails(toolDescriptors: Seq[SpiAgent.ToolDescriptor]): Seq[SpiAgent.ToolDescriptor] =
       toolDescriptors.map { descriptor =>
-        val guardrails = beforeToolCallGuardrails(descriptor.name)
+        val guardrails = toolCallGuardrails(descriptor.name)
         if (guardrails.isEmpty) descriptor
         else new SpiAgent.ToolDescriptor(descriptor.name, descriptor.description, descriptor.schema, guardrails)
       }
@@ -174,96 +171,60 @@ import org.slf4j.LoggerFactory
     override val reportOnly: Boolean = entry.configuredGuardrail.reportOnly
   }
 
-  final class ToolCallGuardrailAdapter(entry: GuardrailEntry, guardrail: ToolCallGuardrail, tracerFactory: () => Tracer)
-      extends SpiAgent.Guardrail {
+  final class ToolCallGuardrailAdapter(
+      override val settings: SpiGuardrail.Settings,
+      guardrail: ToolCallGuardrail,
+      tracerFactory: () => Tracer)
+      extends SpiGuardrail.ToolCall {
 
-    override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
-      content match {
-        case toolCall: SpiAgent.Guardrail.ToolCallContent =>
-          decideSafely(
-            guardrail.decideAsync(
-              new ToolCallGuardrailCallContextImpl(
-                toolCall.agentId,
-                toolCall.toolName,
-                Option(toolCall.toolCallId).getOrElse(""),
-                toolCall.arguments,
-                toolCall.sessionId,
-                Option(toolCall.telemetryContext),
-                tracerFactory)))
-        case other =>
-          Future.failed(
-            new IllegalArgumentException(s"Only tool call content is supported, but was [${other.getClass.getName}]"))
-      }
-
-    override val name: String = entry.configuredGuardrail.name
-    override val category: String = entry.configuredGuardrail.category
-    override val reportOnly: Boolean = entry.configuredGuardrail.reportOnly
+    override def decide(ctx: SpiGuardrail.ToolCallContext): Future[SpiGuardrail.Decision] =
+      toSpiDecision(
+        guardrail.decideAsync(
+          new ToolCallGuardrailCallContextImpl(
+            ctx.agentId,
+            ctx.toolName,
+            Option(ctx.toolCallId).getOrElse(""),
+            ctx.arguments,
+            ctx.sessionId,
+            Option(ctx.telemetryContext),
+            tracerFactory)))
   }
 
   final class ModelCallGuardrailAdapter(
-      entry: GuardrailEntry,
+      override val settings: SpiGuardrail.Settings,
       guardrail: ModelCallGuardrail,
       tracerFactory: () => Tracer)
-      extends SpiAgent.Guardrail {
+      extends SpiGuardrail.ModelCall {
 
-    override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
-      content match {
-        case modelCall: SpiAgent.Guardrail.ModelCallContent =>
-          decideSafely(
-            guardrail.decideAsync(
-              new ModelCallGuardrailCallContextImpl(
-                modelCall.systemMessage,
-                modelCall.messages,
-                modelCall.agentId,
-                modelCall.sessionId,
-                modelCall.modelName,
-                Option(modelCall.telemetryContext),
-                tracerFactory)))
-        case other =>
-          Future.failed(
-            new IllegalArgumentException(s"Only model call content is supported, but was [${other.getClass.getName}]"))
-      }
-
-    override val name: String = entry.configuredGuardrail.name
-    override val category: String = entry.configuredGuardrail.category
-    override val reportOnly: Boolean = entry.configuredGuardrail.reportOnly
+    override def decide(ctx: SpiGuardrail.ModelCallContext): Future[SpiGuardrail.Decision] =
+      toSpiDecision(
+        guardrail.decideAsync(
+          new ModelCallGuardrailCallContextImpl(
+            ctx.systemMessage,
+            ctx.messages,
+            ctx.agentId,
+            ctx.sessionId,
+            ctx.modelName,
+            Option(ctx.telemetryContext),
+            tracerFactory)))
   }
 
   final class AgentResponseGuardrailAdapter(
-      entry: GuardrailEntry,
+      override val settings: SpiGuardrail.Settings,
       guardrail: AgentResponseGuardrail,
       tracerFactory: () => Tracer)
-      extends SpiAgent.Guardrail {
+      extends SpiGuardrail.AgentResponse {
 
-    override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] =
-      content match {
-        case agentResponse: SpiAgent.Guardrail.AgentResponseContent =>
-          agentResponse.content match {
-            case text: SpiAgent.TextMessageContent =>
-              val reply = new Message.AiMessage(text.text, java.util.List.of())
-              decideSafely(
-                guardrail.decideAsync(
-                  new AgentResponseGuardrailCallContextImpl(
-                    reply,
-                    agentResponse.agentId,
-                    agentResponse.sessionId,
-                    agentResponse.modelName,
-                    Option(agentResponse.telemetryContext),
-                    tracerFactory)))
-            case other =>
-              Future.failed(
-                new IllegalArgumentException(
-                  s"Only a text agent response is supported, but was [${other.getClass.getName}]"))
-          }
-        case other =>
-          Future.failed(
-            new IllegalArgumentException(
-              s"Only agent response content is supported, but was [${other.getClass.getName}]"))
-      }
-
-    override val name: String = entry.configuredGuardrail.name
-    override val category: String = entry.configuredGuardrail.category
-    override val reportOnly: Boolean = entry.configuredGuardrail.reportOnly
+    override def decide(ctx: SpiGuardrail.AgentResponseContext): Future[SpiGuardrail.Decision] =
+      toSpiDecision(
+        guardrail.decideAsync(
+          new AgentResponseGuardrailCallContextImpl(
+            new Message.AiMessage(ctx.response, java.util.List.of()),
+            ctx.agentId,
+            ctx.sessionId,
+            ctx.modelName,
+            Option(ctx.telemetryContext),
+            tracerFactory)))
   }
 
   // Maps a conversation entry from its SPI representation onto the public guardrail-facing ADT,
@@ -280,53 +241,31 @@ import org.slf4j.LoggerFactory
         new Message.ToolCallResponse(t.id, t.name, t.contents.map(AgentImpl.fromSpiMessageContent).asJava)
     }
 
-  // A guardrail can fail to reach a verdict in three ways: throw from decide(...), return a failed
-  // CompletionStage, or complete with an explicit Decision.Fail. All three are treated as if it had
-  // returned new Decision.Fail(message, throwable). A null stage NPEs here and lands on the same path.
-  // decisionToSpiResult rejects a null Decision.
-  //
-  // TODO: thrown exceptions and explicit new Decision.Fail(...) currently collapse onto the same
-  // failed-Future path. Pending an internal decision on fail-closed (thrown) vs configurable
-  // fail-closed/fail-open (explicit error) — keep them separable when that lands.
-  private def decideSafely(decide: => CompletionStage[Decision]): Future[SpiAgent.Guardrail.Result] = {
-    val decision =
-      try decide.asScala
-      catch { case NonFatal(t) => Future.failed(t) }
+  private def toSpiDecision(decision: CompletionStage[Decision]): Future[SpiGuardrail.Decision] =
+    if (decision == null)
+      Future.failed(new NullPointerException("Guardrail returned a null CompletionStage"))
+    else
+      decision.asScala.map {
+        case allow: Allow => new SpiGuardrail.Allow(allow.reason)
+        case deny: Deny   => new SpiGuardrail.Deny(deny.reason)
+        case fail: Fail   => new SpiGuardrail.Fail(fail.reason, Option(fail.cause))
+        case null         => null
+      }(ExecutionContext.parasitic)
 
-    decision
-      .recover { case NonFatal(t) => new Decision.Fail(Option(t.getMessage).getOrElse(t.getClass.getName), t) }(
-        ExecutionContext.parasitic)
-      .flatMap(decisionToSpiResult)(ExecutionContext.parasitic)
-  }
-
-  // Decision.Fail becomes a failed Future so the cause Throwable flows through the runtime's
-  // existing handling in AgentGuardrailInteractions, where it ends up as the cause of the
-  // AgentException reaching the user's onFailure mapper.
-  private def decisionToSpiResult(decision: Decision): Future[SpiAgent.Guardrail.Result] =
-    decision match {
-      case a: Allow => Future.successful(new SpiAgent.Guardrail.Result(true, a.reason))
-      case d: Deny  => Future.successful(new SpiAgent.Guardrail.Result(false, d.reason))
-      case e: Fail  => Future.failed(new RuntimeException(e.reason, e.cause))
-      case null     => Future.failed(new NullPointerException("Guardrail returned a null Decision"))
-    }
+  private def toSettings(c: ConfiguredGuardrail): SpiGuardrail.Settings =
+    new SpiGuardrail.Settings(c.name, c.category, c.reportOnly)
 
   @nowarn("cat=deprecation")
-  private def toSpiGuardrail(entry: GuardrailEntry, tracerFactory: () => Tracer): SpiAgent.Guardrail =
-    entry.guardrail match {
-      case g: SimilarityGuard        => toSpiSimilarityGuard(g, entry.configuredGuardrail)
-      case g: TextGuardrail          => new TextGuardrailAdapter(entry, g)
-      case g: ToolCallGuardrail      => new ToolCallGuardrailAdapter(entry, g, tracerFactory)
-      case g: ModelCallGuardrail     => new ModelCallGuardrailAdapter(entry, g, tracerFactory)
-      case g: AgentResponseGuardrail => new AgentResponseGuardrailAdapter(entry, g, tracerFactory)
+  private def toLegacySpiGuardrail(entry: GuardrailEntry, guardrail: TextGuardrail): SpiAgent.Guardrail =
+    guardrail match {
+      case g: SimilarityGuard => toSpiSimilarityGuard(g, entry.configuredGuardrail)
+      case g                  => new TextGuardrailAdapter(entry, g)
     }
 
   private def toSpiSimilarityGuard(g: SimilarityGuard, c: ConfiguredGuardrail): SpiAgent.SimilarityGuard =
     new SpiAgent.SimilarityGuard(c.name, c.category, c.reportOnly, g.badExamplesResourceDir, g.threshold)
 
   // The use-for values a TextGuardrail can bind to. "*" expands to all of them.
-  // FIXME: extend ToolCallGuardrail to the MCP tool request/response boundaries (MCP-as-tool-call
-  // unification is a separate issue). That requires ToolCallGuardrailAdapter to build a
-  // ToolCallGuardrail.CallContext from the MCP TextContent.
   private val TextGuardrailUseFor: Set[UseFor] =
     Set(UseFor.ModelRequest, UseFor.ModelResponse, UseFor.McpToolRequest, UseFor.McpToolResponse)
 
@@ -405,7 +344,6 @@ import org.slf4j.LoggerFactory
   }
 
   // Fails when the instance implements more than one guardrail interface.
-  // toSpiGuardrail maps each instance to exactly one adapter.
   @nowarn("cat=deprecation")
   private def validateSingleInterface(guardrailName: String, instance: Guardrail): Unit = {
     val implemented = Seq(
