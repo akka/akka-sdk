@@ -105,6 +105,7 @@ private[ledger] object LedgerClientImpl {
     new EvaluationRecord(
       record.evaluationId,
       record.evaluatorComponentId,
+      record.controlId.toJava,
       toEvaluationTrigger(record.trigger),
       subject.interactionId,
       subject.agentComponentId,

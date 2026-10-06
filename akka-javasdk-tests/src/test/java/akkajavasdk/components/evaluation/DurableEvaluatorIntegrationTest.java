@@ -69,6 +69,7 @@ public class DurableEvaluatorIntegrationTest extends TestKitSupport {
     EvaluationRecord record = evaluationFor("How do I reset my password?");
 
     assertThat(record.evaluatorComponentId()).isEqualTo("response-quality-durable-evaluator");
+    assertThat(record.controlId()).hasValue("TEST-EV-02");
     assertThat(record.agentComponentId()).isEqualTo("wf-evaluated-agent");
     assertThat(record.interactionId()).isNotBlank();
     assertThat(record.trigger()).isEqualTo(EvaluationRecord.Trigger.ON_INTERACTION);

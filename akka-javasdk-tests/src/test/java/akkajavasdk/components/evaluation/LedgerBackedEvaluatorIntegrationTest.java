@@ -6,12 +6,14 @@ package akkajavasdk.components.evaluation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.javasdk.ledger.EvaluationRecord;
 import akka.javasdk.ledger.InteractionRecord;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akkajavasdk.Junit5LogCapturing;
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
@@ -77,5 +79,14 @@ public class LedgerBackedEvaluatorIntegrationTest extends TestKitSupport {
     assertThat(record.isFlowInteraction()).isFalse();
     assertThat(record.failed()).isFalse();
     assertThat(record.transcript()).contains("Response: The answer is 4.");
+
+    // the runtime records the evaluation after the handler returns
+    List<EvaluationRecord> evaluations =
+        Awaitility.await()
+            .atMost(Duration.ofSeconds(30))
+            .until(
+                () -> getLedgerClient().getEvaluations(record.interactionId()),
+                found -> !found.isEmpty());
+    assertThat(evaluations.getFirst().controlId()).hasValue("TEST-EV-01");
   }
 }
