@@ -57,6 +57,7 @@ import org.slf4j.LoggerFactory
       override val toolCallId: String,
       override val arguments: String,
       override val sessionId: String,
+      override val origin: ToolCallGuardrail.ToolOrigin,
       telemetryContext: Option[OtelContext],
       tracerFactory: () => Tracer)
       extends ToolCallGuardrail.CallContext {
@@ -212,9 +213,16 @@ import org.slf4j.LoggerFactory
             Option(ctx.toolCallId).getOrElse(""),
             ctx.arguments,
             ctx.sessionId,
+            toToolOrigin(ctx.origin),
             Option(ctx.telemetryContext),
             tracerFactory)))
   }
+
+  private def toToolOrigin(origin: SpiGuardrail.ToolOrigin): ToolCallGuardrail.ToolOrigin =
+    origin match {
+      case SpiGuardrail.ToolOrigin.FunctionTool   => new ToolCallGuardrail.ToolOrigin.FunctionTool()
+      case mcp: SpiGuardrail.ToolOrigin.RemoteMcp => new ToolCallGuardrail.ToolOrigin.RemoteMcp(mcp.endpoint)
+    }
 
   final class ModelCallGuardrailAdapter(
       override val settings: SpiGuardrail.Settings,
@@ -299,7 +307,7 @@ import org.slf4j.LoggerFactory
   private val DefaultJailbreak = "default jailbreak"
   private val DefaultModelCallJailbreak = "default model-call jailbreak"
 
-  // Maps each deprecated use-for value to its replacement guardrail type.
+  // Maps each deprecated use-for value to its replacement advice.
   private val DeprecatedUseFor: Seq[(UseFor, String)] =
     Seq(
       UseFor.ModelRequest -> "implement akka.javasdk.agent.ModelCallGuardrail for model-request",
@@ -376,7 +384,6 @@ import org.slf4j.LoggerFactory
       case _: TextGuardrail =>
         val expanded = expandWildcard(c)
         validateTextGuardrailUseFor(expanded)
-        warnOnDeprecatedUseFor(expanded)
         GuardrailEntry(expanded, instance)
 
       case _ =>
@@ -443,9 +450,15 @@ import org.slf4j.LoggerFactory
         "model call, and AgentResponseGuardrail on the final agent reply." + defaultJailbreakHint)
     }
 
+  @nowarn("cat=deprecation")
   def validate(): Unit = {
-    guardrailsByComponentId
-    guardrailsByRole
+    val entries = guardrailsByComponentId.values.flatten ++ guardrailsByRole.values.flatten
+
+    entries
+      .collect { case GuardrailEntry(c, _: TextGuardrail) => c }
+      .toSeq
+      .distinctBy(_.name)
+      .foreach(warnOnDeprecatedUseFor)
   }
 
   /**

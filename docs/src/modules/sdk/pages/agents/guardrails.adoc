@@ -101,7 +101,7 @@ include::example$doc-snippets/src/main/java/com/example/guardrail/ToolResultInje
 == Implementing a tool call guardrail
 
 A `ToolCallGuardrail` evaluates a function tool call or an MCP tool call before the runtime runs the tool.
-Its `CallContext` exposes the calling `agentId()`, the `toolName()`, the `toolCallId()`, and the raw JSON `arguments()` the model produced:
+Its `CallContext` exposes the calling `agentId()`, the `sessionId()`, the `toolName()`, the `toolCallId()`, the `origin()` of the tool, and the raw JSON `arguments()` the model produced:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/guardrail/PaymentToolGuard.java[PaymentToolGuard.java]
@@ -113,8 +113,11 @@ include::example$doc-snippets/src/main/java/com/example/guardrail/PaymentToolGua
 <3> The runtime delivers the arguments as the raw JSON string the model produced.
 <4> Return `Decision.Deny` to block the tool call before the runtime runs the tool.
 
+The `origin()` method returns where the tool runs.
+For a function tool, it returns a `ToolOrigin.FunctionTool`.
+For an MCP tool, it returns a `ToolOrigin.RemoteMcp` that holds the `endpoint()` of the MCP server.
 For an MCP tool, `toolName()` returns the name of the tool on the MCP server.
-If the agent defines a `RemoteMcpTools.ToolInterceptor`, the runtime evaluates the guardrail after `interceptRequest`.
+If the `RemoteMcpTools` has a `ToolInterceptor`, the runtime evaluates the guardrail after `interceptRequest`.
 The guardrail then sees the arguments that the interceptor returns.
 
 == Configuring guardrails
@@ -155,7 +158,7 @@ akka.javasdk.agent.guardrails {
 <5> The type of validation, such as PII and TOXIC.
 <6> If the guardrail denies, the runtime either aborts the interaction or lets it continue. In both cases, the runtime records the result in logs, metrics, and traces.
 <7> An application-specific property, read by the guardrail from its `GuardrailContext`.
-<8> Optional, for a `ToolCallGuardrail` only. Restricts the guardrail to the named tools. Without it, the guardrail sees every tool call on the selected agents. For an MCP tool, use the name on the MCP server.
+<8> Optional, for a `ToolCallGuardrail` only. Restricts the guardrail to the named tools. Without it, the guardrail sees every tool call on the selected agents. For an MCP tool, use the name on the MCP server. The filter matches by name only, so it also matches a tool with the same name from another origin. Use `origin()` to tell them apart.
 
 The `class` property sets the implementation class. The class must implement `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail`, be public, and have a public constructor. The constructor may take a link:{attachmentsdir}/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which holds the name and the config section of the guardrail. The `ProfanityResponseGuard` example reads its `search-for` property this way.
 
