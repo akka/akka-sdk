@@ -9,12 +9,12 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.6.3</version>
+                <version>1.6.4</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
-                <version>1.6.3</version>
+                <version>1.6.4</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback.contrib</groupId>
@@ -204,7 +204,7 @@
             <dependency>
                 <groupId>io.akka</groupId>
                 <artifactId>akka-sdk-spi_2.13</artifactId>
-                <version>1.7.0</version>
+                <version>1.7.1</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
@@ -342,12 +342,12 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.6.3</version>
+            <version>1.6.4</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
-            <version>1.6.3</version>
+            <version>1.6.4</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback.contrib</groupId>
@@ -537,7 +537,7 @@
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-sdk-spi_2.13</artifactId>
-            <version>1.7.0</version>
+            <version>1.7.1</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
