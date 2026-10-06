@@ -1697,6 +1697,6 @@ class ExperimentRunnerTest {
     assertThatThrownBy(
             () -> new ExperimentRunner().cases(EvalCase.of("c", "q"), EvalCase.of("c", "q")))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("two cases have the id c");
+        .hasMessageContaining("Two cases have the id c");
   }
 }
