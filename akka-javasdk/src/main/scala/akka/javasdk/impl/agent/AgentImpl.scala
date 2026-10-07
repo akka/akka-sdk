@@ -133,9 +133,12 @@ private[impl] object AgentImpl {
   }
 
   def modelProviderFromConfig(config: Config, configPath: String, componentId: String)(implicit
-      system: ActorSystem[_]): ModelProvider = {
-    val resolvedConfigPath = resolveModelProviderConfigPath(config, configPath)
+      system: ActorSystem[_]): ModelProvider =
+    modelProviderFromResolvedConfig(config, resolveModelProviderConfigPath(config, configPath), componentId)
 
+  /** Builds the provider from the section at `resolvedConfigPath`, a path from `resolveModelProviderConfigPath`. */
+  private def modelProviderFromResolvedConfig(config: Config, resolvedConfigPath: String, componentId: String)(implicit
+      system: ActorSystem[_]): ModelProvider = {
     try {
       log.debug("Model provider from config [{}]", resolvedConfigPath)
       val providerConfig = config.getConfig(resolvedConfigPath)
@@ -241,7 +244,7 @@ private[impl] object AgentImpl {
     modelProvider match {
       case p: ModelProvider.FromConfig =>
         val resolvedConfigPath = resolveModelProviderConfigPath(config, p.configPath())
-        val resolved = modelProviderFromConfig(config, resolvedConfigPath, componentId)
+        val resolved = modelProviderFromResolvedConfig(config, resolvedConfigPath, componentId)
         val statedInCode = p.additionalModelRequestHeaders().asScala.toSeq
         val withHeaders =
           if (statedInCode.isEmpty) resolved
