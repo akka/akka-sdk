@@ -11,6 +11,10 @@ include::ROOT:partial$include.adoc[]
 
 * For `model-request`, implement `ModelCallGuardrail`.
 * For `model-response`, implement `AgentResponseGuardrail`.
+* For `mcp-tool-request`, implement `ToolCallGuardrail`.
+* For `mcp-tool-response`, implement `ModelCallGuardrail`. It sees the MCP tool result as a `ToolCallResponse` in `newMessages()` before the model does. A `ToolCallResponse` does not say where the tool runs, so the guardrail sees function tool results and MCP tool results alike. If the `RemoteMcpTools` has a `ToolInterceptor`, the guardrail sees the result that `interceptResponse` returns.
+
+All `use-for` values are deprecated. At startup, the runtime logs a warning for each guardrail that uses them.
 
 For the built-in `SimilarityGuard`, see <<migrating-from-similarity-guard,Migrating from SimilarityGuard>>.
 
