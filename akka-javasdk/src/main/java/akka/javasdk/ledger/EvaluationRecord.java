@@ -32,8 +32,14 @@ public record EvaluationRecord(
     Outcome outcome,
     Instant timestamp) {
 
-  /** What caused an evaluation to run. */
+  /**
+   * What caused an evaluation to run.
+   *
+   * <p>A later SDK version can add values, so a {@code switch} over this enum needs a {@code
+   * default} branch.
+   */
   public enum Trigger {
+    /** The runtime did not report the trigger, or this version of the SDK does not know it. */
     UNSPECIFIED,
     /** Created manually, for example via a client or the console. */
     MANUAL,
