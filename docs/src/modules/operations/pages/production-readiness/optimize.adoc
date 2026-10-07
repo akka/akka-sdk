@@ -6,7 +6,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-This checklist covers the items that are specific to Akka Optimize: serving models with Inference and training models with the Trainer. It adds to the xref:operations:production-readiness/index.adoc[general readiness areas] and to the checklist for your deployment model, which also apply.
+This checklist covers the items that are specific to Akka Optimize: serving models with Inference and training models with the Trainer. It adds to the xref:operations:production-readiness/index.adoc[general readiness areas] and to the checklist for your deployment model, which also apply: xref:operations:production-readiness/dedicated/checklist.adoc[Dedicated], xref:operations:production-readiness/byoc/checklist.adoc[BYOC], or xref:operations:production-readiness/byok8s/checklist.adoc[BYOK8s].
 
 include::inference:partial$aao-inference-notice.adoc[]
 
@@ -40,7 +40,7 @@ The page is a guideline. Walk it with your Akka team before you send production 
 
 * [ ] Production traffic goes to a `ModelEndpoint` that a project route exposes on a hostname, not to a Trainer endpoint
 * [ ] Trainer endpoints are used for model testing only
-* [ ] Trainer endpoints are deleted when testing ends, so their reserved devices return to the workload quota
+* [ ] Trainer endpoints are deleted when testing ends, because a deleted endpoint stops and releases its devices
 
 [discrete]
 ==== Hostname
@@ -101,7 +101,7 @@ The page is a guideline. Walk it with your Akka team before you send production 
 [cols="1,3", options="header"]
 |===
 | Role | Responsibility
-| Customer | Sizes the allocation, sets the context length, and tracks quota use across endpoints, runs, and evaluations.
+| Customer | Sizes the allocation, sets the context length, and tracks the GPU quota of the training project.
 | Akka | The region admits or refuses an allocation against the pool.
 |===
 
@@ -113,14 +113,15 @@ The page is a guideline. Walk it with your Akka team before you send production 
 
 * [ ] `akka models apply --dry-run` run against the production region, so the region checks that the requested devices fit the pool
 * [ ] `serving.contextLength` set for every model, because the checkpoint maximum can exceed the device memory
-* [ ] The number of devices for production agreed with your Akka team
+* [ ] The number of devices your project can draw confirmed with your Akka team, because the region decides this when it admits the allocation
 
 [discrete]
 ==== After you apply
 
 * [ ] Each allocation shows `Ready` as `True` and the `DEVICES` and `BOUND` values agree
 * [ ] The model reports ready with `akka models get --wait`
-* [ ] The behavior of a new endpoint in `AWAITING_CAPACITY` is understood, because endpoints, training runs, and evaluations share the same devices
+* [ ] The GPU quota of the training project checked before you create a Trainer endpoint, because the endpoint's devices count against it and the trainer rejects a request that would exceed it
+* [ ] A plan for a Trainer endpoint in `AWAITING_CAPACITY`, where it is queued until devices free up
 =====
 
 == Training run recovery
@@ -129,7 +130,7 @@ The page is a guideline. Walk it with your Akka team before you send production 
 |===
 | Role | Responsibility
 | Customer | Sets the checkpoint interval, keeps the device count available for a resume, and decides when to resume.
-| Akka | Verifies each snapshot before the catalog lists it.
+| Akka | Lists only committed snapshots in the catalog.
 |===
 
 .*Detailed checklist*
@@ -139,14 +140,14 @@ The page is a guideline. Walk it with your Akka team before you send production 
 ==== Checkpoints
 
 * [ ] `execution.saveEvery` set for every run, because a run without it saves a snapshot only at the end
-* [ ] The cost of repeating the updates since the last checkpoint accepted, because a resumed run repeats them
+* [ ] The pause policy chosen for each run, because a `latest` pause stops at the newest committed checkpoint and the resumed run repeats the updates after it
 
 [discrete]
 ==== Resume
 
 * [ ] The same number of devices as the original allocation is available if you need to resume
 * [ ] A resume rehearsed from a committed snapshot, because an interrupted upload cannot be restored
-* [ ] A plan for a run that made progress without restorable state, because that run fails and does not restart from the base model
+* [ ] A plan for a run that made progress without restorable state, because that run fails instead of restarting from the base model
 =====
 
 == Removing a deployment
@@ -163,7 +164,6 @@ The page is a guideline. Walk it with your Akka team before you send production 
 =====
 * [ ] The route deleted before the resources, with `akka routes delete`
 * [ ] The key secret deleted or its keys removed, because `akka models delete` does not delete secrets and the keys stay valid for any endpoint that names the same secret
-* [ ] The cache decision made: cached weights survive by default, and `--include-cache` removes them
 =====
 
 == See also
