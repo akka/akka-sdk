@@ -92,7 +92,7 @@ object ModelProviderSpec {
    * A provider kind, by the simple name of its `ModelProvider` type, the reference.conf section that configures it, and
    * an instance built in code.
    */
-  final case class ProviderKind(name: String, configSection: Option[String], provider: ModelProvider)
+  private final case class ProviderKind(name: String, configSection: Option[String], provider: ModelProvider)
 
   /** Every provider kind that the SDK passes model settings for. */
   private val providersCarryingModelSettings: Seq[ProviderKind] = Seq(
