@@ -228,7 +228,7 @@ A session is a raw conversation corpus. A curation judges raw sessions into a tr
 | `akka optimize eval datasets items ID --version V`
 | The items in one version of a dataset.
 
-| `akka optimize eval imports get ID`
+| `akka optimize eval datasets imports get ID`
 | How far an import has got.
 
 | `akka optimize eval experiments apply -f FILE`
