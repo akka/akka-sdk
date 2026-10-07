@@ -23,6 +23,8 @@ Each item is yours to verify. Akka recommends not advancing to production until 
 
 Items split across two levels. *Region-level* items are established once for the region and shared by every application running on it (disaster recovery, backups, baseline platform alerting). *Application-level* items are handled per service (sizing, application observability, rollback paths). This page lists both; your Akka team's tailored checklist assigns each item to the right level, so region-level work is not repeated per application, though it still recurs on its own cadence.
 
+If you serve or train models with Akka Optimize, also walk xref:operations:production-readiness/optimize.adoc[].
+
 Akka operates the full stack beneath your applications: the cloud account, the in-region network, account security monitoring, the runtime, region installation, scaling, patching, platform observability, backups, and the operational rituals around them. The items on this page are the customer-side complement. Your FDE walks the principal items before go-live.
 
 This page targets the *Day 2 Ops* engagement (1 dev region + 1 prod region, single prod region with cold-rebuild DR (Disaster Recovery)). The final section covers the additional requirements for the *Business Continuity* tier (multi-region with cross-region failover).
