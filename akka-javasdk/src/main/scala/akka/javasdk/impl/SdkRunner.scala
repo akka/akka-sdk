@@ -31,6 +31,7 @@ import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.DispatcherSelector
 import akka.annotation.InternalApi
+import akka.grpc.GrpcClientSettings
 import akka.grpc.internal.JavaMetadataImpl
 import akka.grpc.javadsl.AkkaGrpcClient
 import akka.grpc.javadsl.Metadata
@@ -577,7 +578,9 @@ private final class Sdk(
         case _                 => (devMode.backoffice.apiServer, 443)
       }
       BackofficeAccessTokenCache(system)
-        .init(apiServerHost, apiServerPort, devMode.backoffice.refreshToken)
+        .init(
+          GrpcClientSettings.connectToServiceAt(apiServerHost, apiServerPort)(system),
+          devMode.backoffice.refreshToken)
     }
   }
 

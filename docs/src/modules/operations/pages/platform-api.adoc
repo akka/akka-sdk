@@ -231,7 +231,7 @@ The federation plane protobuf schemas are in link:{url-platform-api-schemas-fede
 All requests require a short-lived access token. Exchange your refresh token for one by calling `CreateAccessToken` on the Auth service (`api.kalix.io:443`, TLS):
 
 ----
-Service:  kalix.api.auth.v1alpha.Auth
+Service:  kalix.api.auth.v1.Auth
 Method:   CreateAccessToken
 Request:  CreateAccessTokenRequest {}   (empty body)
 Header:   Authorization: Bearer <refresh-token>
@@ -246,7 +246,7 @@ To authenticate an Akka service that calls the Platform API using its own identi
 Control plane REST requests must be directed to the region-specific endpoint for the project, not to `api.kalix.io`. Discover the endpoint by calling `ListProjects` on the Projects service, authenticated with your access token:
 
 ----
-Service:  kalix.api.projects.v1alpha.Projects
+Service:  kalix.api.projects.v1.Projects
 Method:   ListProjects
 Request:  ListProjectsRequest {}
 Header:   Authorization: Bearer <access-token>
