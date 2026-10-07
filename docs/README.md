@@ -5,7 +5,7 @@
 ### Prerequisites
 
 - **Docker**: The documentation build process uses Docker to run the Antora build inside a container. You can [download and install Docker](https://docs.docker.com/get-docker/) from the official site.
-- **Nexus checkout**: Clone `akka/nexus` beside `akka-sdk`, or set `NEXUS_DIR` to its checkout path. The GitHub workflows use `.github/actions/checkout-nexus-docs/action.yml` to select the Nexus revision and check it out under `akka-sdk/nexus`.
+- **Optimize checkout**: Clone `akka/nexus` beside `akka-sdk`, or set `NEXUS_DIR` to its checkout path. The GitHub workflows use `.github/actions/checkout-optimize-docs/action.yml` to select the Nexus revision and check it out under `akka-sdk/nexus`.
 
 If `akka/nexus` is private, configure a `NEXUS_READ_TOKEN` secret with read access to that repository in `akka-sdk`. The documentation workflows use it for the Nexus checkout.
 
