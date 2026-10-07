@@ -109,8 +109,9 @@ public class InteractionRecordTest {
 
   @Test
   public void transcriptOfFailedInteractionEndsWithTheFailure() {
+    // a guardrail blocked the last reply, and the record keeps it
     var transcript =
-        record(Optional.of(new Failure(Failure.FailureReason.TOOL_CALL, "calc exploded")))
+        record(Optional.of(new Failure(Failure.FailureReason.GUARDRAIL, "reply blocked")))
             .transcript();
 
     var expected =
@@ -121,7 +122,7 @@ public class InteractionRecordTest {
         Tool call calc({"expr":"2+2"}) -> 4
         Response: The answer is 4.
         Tool response calc: 4
-        Failure: TOOL_CALL: calc exploded
+        Failure: GUARDRAIL: reply blocked
         """;
     assertThat(transcript).isEqualTo(expected);
   }
