@@ -2,7 +2,7 @@
 # Run `make prod` first
 
 # abort script if a command fails
-set -e
+set -euo pipefail
 
 find target/site \
   -type d -name support -prune -o \
@@ -17,7 +17,7 @@ find target/site \
   -name "404.html" -prune -o \
   -name "*.adoc\[\].html" -prune -o \
   -type f -name "*.html" \
-  -exec sh -c 'npx -y d2m@latest -e -i "$1" -o "$1.md"' sh {} \;
+  -print0 | node docs/bin/docs2markdown.mjs
 
 # replace numbered references in code snippets
 # Only match callout numbers at end of line (preceded by space) to avoid
