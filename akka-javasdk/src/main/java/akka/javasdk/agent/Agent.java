@@ -66,10 +66,43 @@ public abstract class Agent implements AgentDelegationWorker {
   /**
    * The number of tokens consumed by a model interaction.
    *
-   * @param inputTokens tokens in the request sent to the model
+   * <p>Providers differ on whether {@code inputTokens} includes cached prompt tokens. Use {@code
+   * totalInputTokens} for a count that does not depend on the provider.
+   *
+   * <p>{@code totalInputTokens} counts cached prompt tokens at full weight. It is not weighted by
+   * cost, and providers bill cache reads and cache writes at rates that differ from regular input
+   * tokens.
+   *
+   * <p>A {@code totalInputTokens} of 0 is replaced by {@code inputTokens}. This also applies to
+   * JSON that was written before the field existed.
+   *
+   * @param inputTokens the input token count as the provider reports it
    * @param outputTokens tokens in the response returned by the model
+   * @param cacheReadInputTokens prompt tokens served from the provider's prompt cache, or 0 when
+   *     the provider reports nothing
+   * @param cacheWriteInputTokens prompt tokens written to the provider's prompt cache, or 0 when
+   *     the provider reports nothing
+   * @param totalInputTokens every prompt token the interaction consumed, counted once, whatever the
+   *     provider
    */
-  public record TokenUsage(int inputTokens, int outputTokens) {}
+  public record TokenUsage(
+      int inputTokens,
+      int outputTokens,
+      int cacheReadInputTokens,
+      int cacheWriteInputTokens,
+      int totalInputTokens) {
+
+    public TokenUsage {
+      if (totalInputTokens == 0) {
+        totalInputTokens = inputTokens;
+      }
+    }
+
+    /** A usage with no prompt cache activity. */
+    public TokenUsage(int inputTokens, int outputTokens) {
+      this(inputTokens, outputTokens, 0, 0, inputTokens);
+    }
+  }
 
   /**
    * A detailed reply from an agent component call, containing both the result and additional
