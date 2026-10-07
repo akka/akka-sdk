@@ -1,0 +1,61 @@
+= Production readiness for Akka Optimize
+:page-summary: The readiness items for serving models and training models with Akka Optimize, and where each item is documented.
+:page-when-to-use: Use this before you send production traffic to a served model or rely on a training run.
+:page-related: xref:operations:production-readiness/index.adoc[], xref:inference:serving/getting-started.adoc[]
+:page-persona: operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+The readiness items for Akka Optimize are the checks to complete before you send production traffic to a served model or rely on a training run. It adds to the xref:operations:production-readiness/index.adoc[general readiness areas], which also apply. It covers serving models with Inference and training models with the Trainer.
+
+include::inference:partial$aao-inference-notice.adoc[]
+
+== Serve production traffic from a model endpoint
+
+Trainer endpoints are for model testing, not production traffic. Serve production traffic from a `ModelEndpoint` that a project route exposes on a hostname. See xref:inference:serving/getting-started.adoc[].
+
+== Authentication and API keys
+
+* A model endpoint refuses every request until its key secret holds a key.
+* Issue one key for each client, so that you can revoke one key without affecting the others.
+* To rotate a key, add a key under a new client name, move the client to the new key, and then remove the old key. The endpoint accepts every key in the secret until you remove it.
+* `akka models delete` does not delete the key secret. The keys stay valid for any endpoint that names the same secret. Remove the keys with `akka models endpoints keys remove`, or delete the secret.
+
+== Credentials in descriptors
+
+* Store the Hugging Face token in a project secret. The model descriptor refers to the secret by name.
+* Do not commit a descriptor that contains a credential.
+* Pin the checkpoint to a full commit SHA. The region refuses a branch or tag name.
+
+== Capacity
+
+* Run `akka models apply --dry-run` before you apply a descriptor. The region checks whether the requested devices fit the pool.
+* An allocation is usable when `Ready` is `True` and the `DEVICES` and `BOUND` values agree.
+* Set `serving.contextLength`. Without it, the engine uses the checkpoint maximum, which can exceed the device memory.
+* A Trainer endpoint reserves its devices from start until deletion, even when it is idle. The devices count against the workload GPU quota.
+* Endpoints, training runs, and evaluations share the same devices. A new endpoint can wait in `AWAITING_CAPACITY` until devices free up.
+* Delete Trainer endpoints when testing ends to free their devices.
+
+== Hostnames and certificates
+
+A model endpoint is not reachable until a route sends a hostname to it. Akka provisions the TLS certificate for the hostname.
+
+== Training runs and recovery
+
+* Set `execution.saveEvery`. Without it, a run saves a snapshot only at the end.
+* A run can resume only from a committed snapshot. An interrupted upload cannot be restored.
+* A resumed run needs the same number of devices as the original allocation.
+* A run that made progress without restorable state fails. It does not restart from the base model.
+* A resumed run repeats the updates that came after the checkpoint it resumes from.
+
+See xref:optimize:trainer/checkpoints.adoc[Checkpoints] and xref:optimize:trainer/workloads.adoc[Workloads].
+
+== Removing a deployment
+
+`akka models delete` deletes the endpoint, then the model, then the allocation. Cached weights survive unless you add `--include-cache`. Delete the route first with `akka routes delete`.
+
+== See also
+
+* xref:operations:production-readiness/index.adoc[]
+* xref:inference:serving/getting-started.adoc[]
+* xref:optimize:trainer/endpoints.adoc[Endpoints]
