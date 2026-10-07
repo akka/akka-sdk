@@ -78,28 +78,28 @@ Every outcome, including the default, has to name a declared destination. See xr
 
 [source, shell]
 ----
-akka rulesets apply commit-routing -f ruleset.json
+akka optimize rulesets apply commit-routing -f ruleset.json
 ----
 
 To write only while the ruleset is still at the revision you read, so the write fails if another author changed it in the meantime:
 
 [source, shell]
 ----
-akka rulesets apply commit-routing -f ruleset.json --if-revision 3
+akka optimize rulesets apply commit-routing -f ruleset.json --if-revision 3
 ----
 
 To read what is currently applied:
 
 [source, shell]
 ----
-akka rulesets get commit-routing
+akka optimize rulesets get commit-routing
 ----
 
 To list every ruleset with its revision and priority:
 
 [source, shell]
 ----
-akka rulesets list
+akka optimize rulesets list
 ----
 
 == Testing a ruleset before it sees traffic
@@ -108,7 +108,7 @@ To see what a ruleset decides for a sample request, with no traffic involved:
 
 [source, shell]
 ----
-akka rulesets test commit-routing -f request.json
+akka optimize rulesets test commit-routing -f request.json
 ----
 
 Run this after every change. A rule that matches nothing is not an error, and the ruleset applies successfully either way.
@@ -119,14 +119,14 @@ To add or replace a single rule without sending the rest of the ruleset:
 
 [source, shell]
 ----
-akka rulesets rules apply commit-routing commit-message -f rule.json
+akka optimize rulesets rules apply commit-routing commit-message -f rule.json
 ----
 
 To remove one:
 
 [source, shell]
 ----
-akka rulesets rules delete commit-routing commit-message
+akka optimize rulesets rules delete commit-routing commit-message
 ----
 
 == Setting the order rules are evaluated in
@@ -137,12 +137,12 @@ Rulesets are evaluated in priority order too. That priority is set through the C
 
 [source, shell]
 ----
-akka rulesets priority commit-routing --set 10
+akka optimize rulesets priority commit-routing --set 10
 ----
 
 [source, shell]
 ----
-akka rulesets priority commit-routing
+akka optimize rulesets priority commit-routing
 ----
 
 == Reading what changed
@@ -151,14 +151,14 @@ To list every change made to a ruleset, with its revision and who made it:
 
 [source, shell]
 ----
-akka rulesets history commit-routing
+akka optimize rulesets history commit-routing
 ----
 
 Retiring a ruleset does not remove that record:
 
 [source, shell]
 ----
-akka rulesets delete commit-routing
+akka optimize rulesets delete commit-routing
 ----
 
 == Deferring a decision to a classifier
@@ -169,7 +169,7 @@ Register the classifier first. Registration is immutable, so a retrained model i
 
 [source, shell]
 ----
-akka routing-classifiers apply commit-router-v4 -f classifier.json
+akka optimize routing-classifiers apply commit-router-v4 -f classifier.json
 ----
 
 Then write a rule that defers to it:
@@ -205,7 +205,7 @@ Retiring a classifier is unconditional. Nothing checks whether a rule still name
 
 [source, shell]
 ----
-akka routing-classifiers delete commit-router-v4
+akka optimize routing-classifiers delete commit-router-v4
 ----
 
 include::partial$aao-inference-notice.adoc[]
@@ -214,4 +214,4 @@ include::partial$aao-inference-notice.adoc[]
 
 * xref:inference:routing/request-meaning.adoc[Routing on request meaning]
 * xref:reference:descriptors/routing-ruleset.adoc[Routing ruleset reference]
-* xref:reference:inference-cli/routing.adoc#rulesets[`akka rulesets` command reference]
+* xref:reference:inference-cli/routing.adoc#rulesets[`akka optimize rulesets` command reference]

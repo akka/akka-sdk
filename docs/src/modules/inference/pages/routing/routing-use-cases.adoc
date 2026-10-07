@@ -23,21 +23,21 @@ To list every manifest and whether it is able to enforce:
 
 [source, shell]
 ----
-akka use-cases manifests list
+akka optimize use-cases manifests list
 ----
 
 To read one as it was frozen:
 
 [source, shell]
 ----
-akka use-cases manifests get 2026-08
+akka optimize use-cases manifests get 2026-08
 ----
 
 A manifest is fixed and the working set is not, so the two separate over time. To see how far apart they have moved:
 
 [source, shell]
 ----
-akka use-cases manifests diff 2026-08
+akka optimize use-cases manifests diff 2026-08
 ----
 
 A large difference means traffic has changed shape since the manifest was frozen, and that some current traffic is being routed by a table that no longer describes it.
@@ -48,14 +48,14 @@ Deploying a manifest makes it the routing policy and displaces the one before it
 
 [source, shell]
 ----
-akka use-cases manifests deploy 2026-09
+akka optimize use-cases manifests deploy 2026-09
 ----
 
 To withdraw a manifest from use:
 
 [source, shell]
 ----
-akka use-cases manifests delete 2026-08
+akka optimize use-cases manifests delete 2026-08
 ----
 
 xref:inference:routing/request-meaning.adoc#_getting_from_traffic_to_a_routing_policy[Getting from traffic to a routing policy] covers the steps that produce a manifest, and xref:inference:routing/request-meaning.adoc#_shifting_traffic_gradually[Shifting traffic gradually] covers moving a use case onto a new backend without replacing the manifest.
@@ -66,4 +66,4 @@ include::partial$aao-inference-notice.adoc[]
 
 * xref:inference:routing/request-meaning.adoc[Routing on request meaning]
 * xref:inference:routing/request-attributes.adoc[Routing on request attributes]
-* xref:reference:inference-cli/routing.adoc#working-set-and-manifests[`akka use-cases manifests` command reference]
+* xref:reference:inference-cli/routing.adoc#working-set-and-manifests[`akka optimize use-cases manifests` command reference]
