@@ -36,7 +36,7 @@ Backups and recovery::
 Backups and recovery for your data and cluster state, sized to your recovery objectives.
 
 Multi-region resilience::
-Replication and failover behaviour chosen per service to meet your availability needs.
+Replication and failover behavior chosen per service to meet your availability needs.
 
 Data sovereignty::
 Choosing regions so your data stays inside the legal jurisdiction it must remain in.
