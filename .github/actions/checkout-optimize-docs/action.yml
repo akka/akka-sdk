@@ -1,5 +1,5 @@
-name: Checkout Nexus documentation
-description: Check out the Nexus revision used by the SDK documentation build.
+name: Checkout Optimize documentation
+description: Check out the Optimize revision used by the SDK documentation build.
 inputs:
   token:
     description: Token with read access to akka/nexus.

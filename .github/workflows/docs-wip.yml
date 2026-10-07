@@ -36,8 +36,8 @@ jobs:
           # we don't know what commit the last tag was, it's safer to get entire repo
           fetch-depth: 0
 
-      - name: Checkout Nexus documentation
-        uses: ./.github/actions/checkout-nexus-docs
+      - name: Checkout Optimize documentation
+        uses: ./.github/actions/checkout-optimize-docs
         with:
           token: ${{ secrets.NEXUS_READ_TOKEN || github.token }}
 

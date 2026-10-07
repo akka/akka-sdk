@@ -37,8 +37,8 @@ jobs:
         # https://github.com/actions/checkout/releases
         uses: actions/checkout@v6
 
-      - name: Checkout Nexus documentation
-        uses: ./.github/actions/checkout-nexus-docs
+      - name: Checkout Optimize documentation
+        uses: ./.github/actions/checkout-optimize-docs
         with:
           token: ${{ secrets.NEXUS_READ_TOKEN || github.token }}
 

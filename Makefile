@@ -14,7 +14,8 @@ src_managed := docs/src-managed
 java_managed_attachments := ${src_managed}/modules/sdk/attachments
 java_managed_examples := ${src_managed}/modules/sdk/examples
 managed_partials := ${src_managed}/modules/ROOT/partials
-optimize_version = $(shell sed -n 's/^:akka-cli-version: //p' "${managed_partials}/attributes.adoc" 2>/dev/null)
+# Optimize CLI downloads use the release tags from its own repository.
+optimize_version = $(shell git -C "${NEXUS_DIR}" describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null | sed 's/^v//')
 
 antora_docker_image := local/antora-doc
 antora_docker_image_tag := latest
@@ -35,7 +36,7 @@ define antora_mounts
 endef
 
 .SILENT:
-.PHONY: check-nexus
+.PHONY: check-optimize
 
 build: managed local open
 
@@ -52,7 +53,7 @@ prepare:
 	mkdir -p "${java_managed_attachments}"
 	cp akka-javasdk-testkit/src/main/resources/akka/javasdk/testkit/eval/eval-report.example.json "${java_managed_attachments}/"
 
-managed: check-nexus prepare attributes apidocs examples bundles
+managed: check-optimize prepare attributes apidocs examples bundles
 
 attributes: prepare
 	mkdir -p "${managed_partials}"
@@ -119,41 +120,41 @@ done:
 open:
 	open "${TARGET_DIR}/index.html"
 
-local: check-nexus docker-image examples nexus-content antora-local whitepapers done
+local: check-optimize docker-image examples optimize-content antora-local whitepapers done
 
-prod: check-nexus docker-image managed nexus-content antora-prod done
+prod: check-optimize docker-image managed optimize-content antora-prod done
 
-check-nexus:
+check-optimize:
 	if [ ! -e "${NEXUS_DIR}/.git" ] || [ ! -f "${NEXUS_DIR}/optimize-docs/src/antora.yml" ]; then \
-		echo "Nexus documentation checkout is missing at ${NEXUS_DIR}." >&2; \
+		echo "Optimize documentation checkout is missing at ${NEXUS_DIR}." >&2; \
 		echo "Clone it beside akka-sdk: git clone git@github.com:akka/nexus.git ../nexus" >&2; \
 		echo "Or set NEXUS_DIR to the absolute path of an existing nexus checkout." >&2; \
 		exit 1; \
 	fi
 
 antora-local:
-	test -n "$(optimize_version)" || { echo "Generate ${managed_partials}/attributes.adoc with make managed before building the site." >&2; exit 1; }
+	test -n "$(optimize_version)" || { echo "No Optimize release tag found in ${NEXUS_DIR}; fetch its tags before building the site." >&2; exit 1; }
 	$(antora_mounts) \
 	docker run \
 		--user "$$(id -u):$$(id -g)" \
 		$$mounts \
-		-v "${NEXUS_DIR}:/nexus:ro" \
+		-v "${NEXUS_DIR}:/optimize:ro" \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
 		--cache-dir=.cache/antora --stacktrace --log-failure-level=warn \
 		--attribute "optimize-version=$(optimize_version)" \
 		docs/antora-playbook-local.yml
 
-nexus-content: check-nexus
-	docs/bin/prepare-nexus-docs.sh "${NEXUS_DIR}"
+optimize-content: check-optimize
+	docs/bin/prepare-optimize-docs.sh "${NEXUS_DIR}"
 
 antora-prod:
-	test -n "$(optimize_version)" || { echo "Generate ${managed_partials}/attributes.adoc with make managed before building the site." >&2; exit 1; }
+	test -n "$(optimize_version)" || { echo "No Optimize release tag found in ${NEXUS_DIR}; fetch its tags before building the site." >&2; exit 1; }
 	$(antora_mounts) \
 	docker run \
 		--user "$$(id -u):$$(id -g)" \
 		$$mounts \
-		-v "${NEXUS_DIR}:/nexus:ro" \
+		-v "${NEXUS_DIR}:/optimize:ro" \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
 		--cache-dir=.cache/antora --stacktrace --log-level error --log-failure-level=warn \
