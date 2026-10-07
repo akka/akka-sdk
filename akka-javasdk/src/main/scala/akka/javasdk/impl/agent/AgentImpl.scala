@@ -226,7 +226,7 @@ private[impl] object AgentImpl {
       configured.filterNot(h => statedNames(h.lowercaseName())) ++ statedInCode
     }
 
-  /** The global identity headers switch, which each provider section inherits. */
+  /** The global identity headers switch. */
   private def globalIdentityHeaders(config: Config): Boolean =
     config.getBoolean("akka.javasdk.agent.identity-headers")
 

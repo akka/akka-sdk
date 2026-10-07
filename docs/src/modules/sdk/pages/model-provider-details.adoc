@@ -822,6 +822,15 @@ can attribute the request:
 
 |===
 
+The runtime leaves a header out when its value is blank, longer than 1024 characters, or not a legal
+header value. The runtime still sends the request.
+
+Your application chooses the session id. When a request has no flow, the runtime sends the session id to
+the model API as `x-akka-flow-id`. With the default setting, the runtime sends it to a hosted model API
+too. A xref:sdk:sanitization.adoc[sanitizer] masks message content and not headers, so it does not mask
+the session id. Do not put personal data in a session id, or
+xref:model-provider-details.adoc#identity-headers-per-provider[turn the headers off] for that provider.
+
 Turn them off for every provider:
 
 [source,hocon,indent=0]
@@ -829,6 +838,7 @@ Turn them off for every provider:
 akka.javasdk.agent.identity-headers = off
 ----
 
+[#identity-headers-per-provider]
 Each provider section inherits the global value and can override it:
 
 [source,hocon,indent=0]
