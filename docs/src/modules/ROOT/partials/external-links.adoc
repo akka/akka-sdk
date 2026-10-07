@@ -130,6 +130,7 @@
 :url-ext-embeddings-video: https://www.youtube.com/watch?v=xJ2Jcncu4bc
 :url-ext-kmeans-centroids: https://scikit-learn.org/stable/modules/clustering.html#k-means
 :url-ext-affinity-propagation-exemplars: https://scikit-learn.org/stable/modules/clustering.html#affinity-propagation
+:url-ext-hugging-face-tokens: https://huggingface.co/settings/tokens
 
 // -- envoy ai gateway --
 :url-envoy-ai-gateway: https://aigateway.envoyproxy.io/

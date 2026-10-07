@@ -1,6 +1,7 @@
 // Inference
 * xref:inference:index.adoc[Inference]
 ** xref:inference:serving/index.adoc[Serving models]
+*** xref:inference:serving/getting-started.adoc[Serving your first model]
 *** xref:inference:serving/reviewing-hardware.adoc[Reviewing available hardware]
 *** xref:inference:serving/allocating-hardware.adoc[Allocating hardware to models]
 *** xref:inference:serving/deploying-models.adoc[Deploying models]
