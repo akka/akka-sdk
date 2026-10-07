@@ -15,12 +15,7 @@ package akka.javasdk.ledger;
  */
 public record Failure(FailureReason reason, String description) {
 
-  /**
-   * Why an interaction failed.
-   *
-   * <p>A later SDK version can add values, so a {@code switch} over this enum needs a {@code
-   * default} branch.
-   */
+  /** Why an interaction failed. A later SDK version can add values. */
   public enum FailureReason {
     /** The runtime did not report the reason, or this version of the SDK does not know it. */
     UNSPECIFIED,

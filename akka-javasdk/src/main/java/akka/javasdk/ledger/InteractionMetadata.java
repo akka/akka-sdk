@@ -24,12 +24,7 @@ public record InteractionMetadata(
     Instant callFinishedAt,
     FinishReason finishReason) {
 
-  /**
-   * Why a model call finished.
-   *
-   * <p>A later SDK version can add values, so a {@code switch} over this enum needs a {@code
-   * default} branch.
-   */
+  /** Why a model call finished. A later SDK version can add values. */
   public enum FinishReason {
     /** The runtime did not report the reason, or this version of the SDK does not know it. */
     UNSPECIFIED,
