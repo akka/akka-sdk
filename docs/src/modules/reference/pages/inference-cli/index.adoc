@@ -24,7 +24,7 @@ Model serving commands are under `akka models`. Routing, cost, training, and eva
 
 Every command takes `--help`, and most take `-o json`.
 
-Files passed with `-f FILE` are YAML for `akka models` and JSON elsewhere. Passing `-f -` reads the document from standard input.
+`akka models apply` and `akka models delete` read a YAML model descriptor, and read it from standard input when `-f` is omitted. The format other commands read with `-f FILE` depends on the command, and `--help` states it. Most `akka optimize` commands read the document from standard input when you pass `-f -`.
 
 == Where each task is described
 

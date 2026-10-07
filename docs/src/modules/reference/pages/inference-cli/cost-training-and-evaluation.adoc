@@ -1,13 +1,13 @@
 = Cost, training, and evaluation commands
-:page-summary: The complete command reference for spend, incidents, pricing, model training, dataset curation, and evaluation.
+:page-summary: The akka optimize commands for spend, incidents, pricing, model training, dataset curation, and evaluation.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 
-These commands cover what an organization spends on inference and how models are trained and scored. Every command on this page is a subcommand of `akka optimize`.
+These commands cover what an organization spends on inference and how models are trained and scored. Every command on this page is a subcommand of `akka optimize`. This page lists the commands most tasks use. See xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize] for every command and flag.
 
-Documents sent with `-f FILE` are JSON. Passing `-f -` reads the document from standard input instead.
+The format a `-f FILE` option reads depends on the command, and `--help` states it. Training plans are JSON or YAML. `eval datasets create` reads a zip or an `items.jsonl` file. `datasets create` reads chat-format JSONL. `training sessions create` reads a conversation corpus. Most commands read the document from standard input when you pass `-f -`.
 
 == Spend
 
@@ -31,6 +31,22 @@ Documents sent with `-f FILE` are JSON. Passing `-f -` reads the document from s
 | Which service is answering at this address.
 |===
 
+== Callers
+
+`akka optimize callers` holds the callers that spend figures are attributed to. The alias `caller` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka optimize callers erase VALUE --basis BASIS`
+| Remove one caller and keep every figure it is behind. `BASIS` is `declared` when the request carried the `x-optimize-caller` header, or `forwarded` when a proxy reported the address.
+
+| `akka optimize callers erase VALUE --basis BASIS --dry-run`
+| Report what the erasure would reach without writing anything.
+|===
+
 == Incidents
 
 `akka optimize incidents` is the incident feed, unioned from its sources. The alias `incident` is accepted.
@@ -46,7 +62,7 @@ Documents sent with `-f FILE` are JSON. Passing `-f -` reads the document from s
 
 == Pricing catalog
 
-`akka optimize pricing-catalog` holds per-token model prices, versioned. The aliases `pricing-catalogs`, `catalog`, and `catalogs` are accepted.
+`akka optimize pricing-catalog` holds model prices as input and output rates per million tokens for each served name. A published version is never edited. The aliases `pricing-catalogs`, `catalog`, and `catalogs` are accepted.
 
 [cols="2,3", options="header"]
 |===
@@ -291,6 +307,7 @@ include::inference:partial$aao-inference-notice.adoc[]
 
 == See also
 
+* xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize command reference]
 * xref:reference:inference-cli/models.adoc[Model commands]
 * xref:reference:inference-cli/routing.adoc[Routing commands]
 * xref:sdk:agents/llm_eval.adoc[Evaluating model responses]
