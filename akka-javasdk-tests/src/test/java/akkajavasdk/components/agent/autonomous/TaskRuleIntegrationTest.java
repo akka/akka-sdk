@@ -14,6 +14,7 @@ import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
@@ -129,6 +130,40 @@ public class TaskRuleIntegrationTest extends TestKitSupport {
               assertThat(rejected.taskName()).isEqualTo(TestTasks.VALIDATED_TASK.name());
               assertThat(rejected.reason()).contains("score must be >= 10");
             });
+  }
+
+  @Test
+  public void shouldAwaitResultAcrossRuleRejection() throws Exception {
+    // The first reply is delayed so result() is waiting before the rule rejects it.
+    agentModel
+        .whenMessage(msg -> msg.contains("Do something"))
+        .reply(
+            input -> {
+              try {
+                Thread.sleep(1000);
+              } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+              }
+              return new TestModelProvider.AiResponse(
+                  completeTask(new TestTasks.TestResult("low quality", 3)));
+            });
+
+    agentModel
+        .whenMessage(msg -> msg.contains("Reminder"))
+        .reply(completeTask(new TestTasks.TestResult("improved result", 50)));
+
+    var taskId =
+        componentClient
+            .forAutonomousAgent(ValidatedTaskAgent.class, UUID.randomUUID().toString())
+            .runSingleTask(TestTasks.VALIDATED_TASK.instructions("Do something."));
+
+    var result =
+        CompletableFuture.supplyAsync(
+                () -> componentClient.forTask(taskId).result(TestTasks.VALIDATED_TASK))
+            .get(15, TimeUnit.SECONDS);
+
+    assertThat(result.value()).isEqualTo("improved result");
+    assertThat(result.score()).isEqualTo(50);
   }
 
   @Test

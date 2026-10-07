@@ -130,8 +130,10 @@ private[javasdk] final class TaskClientImpl(
         subscribed.success(Done)
         mat
       }
-      .map { reply =>
-        val notification = serializer.fromBytes(reply.payload)
+      .map(reply => serializer.fromBytes(reply.payload))
+      // a rejected result is not terminal, the agent retries and a later notification is terminal
+      .filterNot(_.isInstanceOf[TaskNotification.ResultRejected])
+      .map { notification =>
         notification match {
           case completed: TaskNotification.Completed =>
             log.debug("resultAsync: task [{}] completed via notification", taskId)
