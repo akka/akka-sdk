@@ -472,9 +472,33 @@ public final class ExperimentRunner {
       this(caseId, 1, interaction, evalResults);
     }
 
-    /** No failed result. A failed load of the recorded calls or a failed agent call is one. */
+    /**
+     * PASS when every result passed, FAIL when a result failed, INCONCLUSIVE when no result failed
+     * and a result is inconclusive or there is no result. A failed load of the recorded calls or a
+     * failed agent call is a failed result.
+     */
+    public EvalResult.Verdict verdict() {
+      var verdicts = evalResults.stream().map(EvalResult::verdict).collect(Collectors.toSet());
+      if (verdicts.contains(EvalResult.Verdict.FAIL)) return EvalResult.Verdict.FAIL;
+      if (verdicts.contains(EvalResult.Verdict.INCONCLUSIVE) || verdicts.isEmpty()) {
+        return EvalResult.Verdict.INCONCLUSIVE;
+      }
+      return EvalResult.Verdict.PASS;
+    }
+
+    /** Every result passed. */
     public boolean passed() {
-      return evalResults.stream().noneMatch(f -> f.verdict() == EvalResult.Verdict.FAIL);
+      return verdict() == EvalResult.Verdict.PASS;
+    }
+
+    /** A failed result. */
+    public boolean failed() {
+      return verdict() == EvalResult.Verdict.FAIL;
+    }
+
+    /** No failed result, and an inconclusive result or no result at all. */
+    public boolean inconclusive() {
+      return verdict() == EvalResult.Verdict.INCONCLUSIVE;
     }
 
     /** The evidence and the results as text, for a failed test's output. */
@@ -484,7 +508,12 @@ public final class ExperimentRunner {
           .append(caseId)
           .append(" run ")
           .append(run)
-          .append(passed() ? " passed" : " FAILED")
+          .append(
+              switch (verdict()) {
+                case PASS -> " passed";
+                case FAIL -> " FAILED";
+                case INCONCLUSIVE -> " INCONCLUSIVE";
+              })
           .append('\n');
       text.append("  reply: ").append(oneLine(interaction.reply())).append('\n');
       if (!interaction.finalModelText().isEmpty()
@@ -548,15 +577,15 @@ public final class ExperimentRunner {
     }
   }
 
-  /** The outcome of a case or of a requirement over the runs. */
+  /** The outcome of a case over all its runs, or of a requirement over its conclusive runs. */
   public enum Outcome {
-    /** Passed in every run; for a requirement, in every run where it was conclusive. */
+    /** Every run passed; for a requirement, every conclusive run. */
     PASSED,
-    /** Failed in every run; for a requirement, in every run where it was conclusive. */
+    /** Every run failed; for a requirement, every conclusive run. */
     FAILED,
-    /** Passed in some runs and failed in others. */
+    /** The runs did not agree; for a requirement, it passed in some runs and failed in others. */
     INCONSISTENT,
-    /** A requirement that was conclusive in no run. */
+    /** Every run was inconclusive; for a requirement, it was conclusive in no run. */
     INCONCLUSIVE
   }
 
@@ -653,22 +682,28 @@ public final class ExperimentRunner {
       this(attempts.getFirst().caseId(), attempts);
     }
 
-    /** PASSED in every run, FAILED in every run, or INCONSISTENT when both happened. */
+    /** The outcome over all runs. */
     public Outcome outcome() {
-      var passed = passedRuns();
-      if (passed == attempts.size()) return Outcome.PASSED;
-      if (passed == 0) return Outcome.FAILED;
+      var runs = attempts.size();
+      if (passedRuns() == runs) return Outcome.PASSED;
+      if (failedRuns() == runs) return Outcome.FAILED;
+      if (inconclusiveRuns() == runs) return Outcome.INCONCLUSIVE;
       return Outcome.INCONSISTENT;
     }
 
-    /** Runs with no failed result. */
+    /** Runs with the verdict PASS. */
     public int passedRuns() {
       return (int) attempts.stream().filter(CaseResult::passed).count();
     }
 
-    /** Runs with a failed result. */
+    /** Runs with the verdict FAIL. */
     public int failedRuns() {
-      return attempts.size() - passedRuns();
+      return (int) attempts.stream().filter(CaseResult::failed).count();
+    }
+
+    /** Runs with the verdict INCONCLUSIVE. */
+    public int inconclusiveRuns() {
+      return (int) attempts.stream().filter(CaseResult::inconclusive).count();
     }
 
     /** The case's requirements over all runs, see {@link RequirementSummary}. */
@@ -738,7 +773,7 @@ public final class ExperimentRunner {
     /** Whether the gate passed. */
     boolean passed();
 
-    /** The share of attempts with no failed result. */
+    /** The share of attempts that passed. An inconclusive attempt counts against the rate. */
     double passRate();
 
     /**
@@ -752,7 +787,7 @@ public final class ExperimentRunner {
 
     /**
      * The run as text: the gate verdict, rates per evaluator, the requirements that passed in some
-     * runs and failed in others, and failed attempts with evidence.
+     * runs and failed in others, and the attempts that did not pass with their evidence.
      */
     String render();
   }
@@ -797,16 +832,21 @@ public final class ExperimentRunner {
     public String render() {
       var results = results();
       var passedAttempts = results.stream().filter(CaseResult::passed).count();
+      var inconclusiveAttempts = results.stream().filter(CaseResult::inconclusive).count();
       var text = new StringBuilder();
       text.append(
           String.format(
               Locale.ROOT,
-              "%s, %s: %d/%d attempts passed (%.0f%%)%n",
+              "%s, %s: %d/%d attempts passed (%.0f%%)",
               plural(cases.size(), "case"),
               plural(runs, "run"),
               passedAttempts,
               results.size(),
               passRate() * 100));
+      if (inconclusiveAttempts > 0) {
+        text.append(", ").append(inconclusiveAttempts).append(" inconclusive");
+      }
+      text.append('\n');
       text.append("gate: ")
           .append(verdict.passed() ? "passed" : "FAILED")
           .append(verdict.detail().isEmpty() ? "" : " — " + verdict.detail())

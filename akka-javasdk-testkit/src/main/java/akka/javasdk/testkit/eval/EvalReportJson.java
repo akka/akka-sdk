@@ -47,6 +47,7 @@ final class EvalReportJson {
             count(cases, Outcome.PASSED),
             count(cases, Outcome.FAILED),
             count(cases, Outcome.INCONSISTENT),
+            count(cases, Outcome.INCONCLUSIVE),
             (int)
                 cases.stream()
                     .flatMap(c -> c.requirements().stream())
@@ -54,7 +55,8 @@ final class EvalReportJson {
                     .count(),
             report.results().size(),
             passedAttempts,
-            report.results().size() - passedAttempts,
+            (int) report.results().stream().filter(CaseResult::failed).count(),
+            (int) report.results().stream().filter(CaseResult::inconclusive).count(),
             report.passRate()),
         evaluatorCounts(Report.rates(report.results())),
         new ReportDocument.Spend(
@@ -89,6 +91,7 @@ final class EvalReportJson {
         summary.outcome(),
         summary.passedRuns(),
         summary.failedRuns(),
+        summary.inconclusiveRuns(),
         summary.requirements().stream().map(EvalReportJson::requirement).toList());
   }
 
@@ -106,7 +109,7 @@ final class EvalReportJson {
     return new ReportDocument.Attempt(
         result.caseId(),
         result.run(),
-        result.passed(),
+        result.verdict(),
         interaction(result.interaction()),
         result.evalResults().stream()
             .map(r -> new ReportDocument.Result(r.evaluator(), r.verdict(), r.detail()))

@@ -65,6 +65,42 @@ class GateTest {
   }
 
   @Test
+  void anInconclusiveAttemptCountsAgainstThePassRate() {
+    var cases =
+        List.of(
+            expectingReply("c1", "c1"),
+            expectingReply("c2", "c2"),
+            expectingReply("c3", "wrong"),
+            EvalCase.of(
+                "c4", "a question", Evaluators.toolResultShouldContain("getCustomer", "x")));
+
+    var report = run(Gate.passRateShouldBeAtLeast(0.5), cases);
+
+    assertThat(report.passRate()).isEqualTo(0.5);
+    assertThat(report.passed()).isTrue();
+    assertThat(report.render())
+        .contains(
+            "pass rate 0.50 over 4 attempts (4 cases, 1 run) with 1 inconclusive, required 0.50");
+    assertThat(run(Gate.passRateShouldBeAtLeast(0.75), cases).passed()).isFalse();
+  }
+
+  @Test
+  void anInconclusiveAttemptFailsTheDefaultGate() {
+    var report =
+        run(
+            Gate.allCasesShouldPass(),
+            List.of(
+                expectingReply("c1", "c1"),
+                expectingReply("c2", "wrong"),
+                EvalCase.of(
+                    "c3", "a question", Evaluators.toolResultShouldContain("getCustomer", "x"))));
+
+    assertThat(report.passed()).isFalse();
+    assertThat(report.render())
+        .contains("gate: FAILED — failed cases [c2 (run 1)], inconclusive cases [c3 (run 1)]");
+  }
+
+  @Test
   void anEvaluatorThatJudgedNothingCannotBeRated() {
     var report =
         run(

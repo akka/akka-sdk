@@ -272,17 +272,20 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   // tag::replay[]
   @Test
   public void replayedTrafficStillHolds() {
-    var replayed = EvalCaseParser.parse(recording("/eval/captures.jsonl")); // <1>
-    var bindings = ToolBindings.builder() // <2>
+    var replayed = EvalCaseParser.parse(recording("/eval/captures.jsonl")) // <1>
+      .stream()
+      .map(c -> c.withoutEvaluators(Evaluators.TokenBudget.class)) // <2>
+      .toList();
+    var bindings = ToolBindings.builder() // <3>
       .bind("getOrder", orders::loadOrder)
       .bind("issueRefund", orders::loadRefund)
       .build();
 
     var report = new ExperimentRunner(testKit)
       .cases(replayed)
-      .bindings(bindings) // <3>
+      .bindings(bindings) // <4>
       .agent(OrderAgent::ask)
-      .gate(Gate.passRateShouldBeAtLeast(0.9)) // <4>
+      .gate(Gate.passRateShouldBeAtLeast(0.9)) // <5>
       .run();
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();

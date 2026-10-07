@@ -38,8 +38,8 @@ import java.util.Optional;
  *     attempts, counting every attempt
  * @param spend model calls, tokens and latency summed over the attempts whose evidence carries
  *     model calls
- * @param cases one entry per case, in the order the cases were given, with its outcome and its
- *     requirements over all runs
+ * @param cases one entry per case, in the order the cases were given, with its outcome over all
+ *     runs and its requirements
  * @param attempts one entry per attempt: every case in the order the cases were given, its runs
  *     ascending
  */
@@ -58,7 +58,7 @@ public record ReportDocument(
     List<Attempt> attempts) {
 
   public static final String FORMAT = "akka-eval-report";
-  public static final int FORMAT_VERSION = 1;
+  public static final int FORMAT_VERSION = 2;
 
   /** Reads a report file written by {@link Experiment#run}. */
   public static ReportDocument read(Path file) {
@@ -79,14 +79,16 @@ public record ReportDocument(
 
   /**
    * @param cases the number of cases
-   * @param passedCases cases with no failed result in any run
-   * @param failedCases cases with a failed result in every run
-   * @param inconsistentCases cases that passed in some runs and failed in others; zero with one run
+   * @param passedCases cases with the outcome PASSED
+   * @param failedCases cases with the outcome FAILED
+   * @param inconsistentCases cases with the outcome INCONSISTENT; zero with one run
+   * @param inconclusiveCases cases with the outcome INCONCLUSIVE
    * @param inconsistentRequirements requirements that passed in some runs and failed in others,
    *     over all cases; zero with one run
    * @param attempts {@code cases} times {@code runs}
-   * @param passedAttempts attempts with no failed result
-   * @param failedAttempts attempts with a failed result
+   * @param passedAttempts attempts with the verdict PASS
+   * @param failedAttempts attempts with the verdict FAIL
+   * @param inconclusiveAttempts attempts with the verdict INCONCLUSIVE
    * @param passRate {@code passedAttempts} over {@code attempts}
    */
   public record Summary(
@@ -94,10 +96,12 @@ public record ReportDocument(
       int passedCases,
       int failedCases,
       int inconsistentCases,
+      int inconclusiveCases,
       int inconsistentRequirements,
       int attempts,
       int passedAttempts,
       int failedAttempts,
+      int inconclusiveAttempts,
       double passRate) {}
 
   /**
@@ -130,16 +134,22 @@ public record ReportDocument(
    * One case over all its runs.
    *
    * @param id the case id
-   * @param outcome PASSED in every run, FAILED in every run, or INCONSISTENT when the case passed
-   *     in some runs and failed in others
-   * @param passedRuns runs with no failed result
-   * @param failedRuns runs with a failed result
+   * @param outcome over all runs: PASSED when every run passed, FAILED when every run failed,
+   *     INCONCLUSIVE when every run was inconclusive, INCONSISTENT otherwise
+   * @param passedRuns runs with the verdict PASS
+   * @param failedRuns runs with the verdict FAIL
+   * @param inconclusiveRuns runs with the verdict INCONCLUSIVE
    * @param requirements one entry per evaluator at one position in the results of the case's
    *     attempts, in the order the results first appear; the runner's target and setup results are
    *     requirements too
    */
   public record Case(
-      String id, Outcome outcome, int passedRuns, int failedRuns, List<Requirement> requirements) {}
+      String id,
+      Outcome outcome,
+      int passedRuns,
+      int failedRuns,
+      int inconclusiveRuns,
+      List<Requirement> requirements) {}
 
   /**
    * One requirement of a case over all runs.
@@ -166,12 +176,17 @@ public record ReportDocument(
    *
    * @param id the case id
    * @param run the run, from 1
-   * @param passed no result has the verdict FAIL
+   * @param verdict PASS when every result passed, FAIL when a result failed, INCONCLUSIVE when no
+   *     result failed and a result is inconclusive or there is none
    * @param interaction the input, the reply and the traced evidence
    * @param results one entry per evaluator
    */
   public record Attempt(
-      String id, int run, boolean passed, Interaction interaction, List<Result> results) {}
+      String id,
+      int run,
+      Evaluator.EvalResult.Verdict verdict,
+      Interaction interaction,
+      List<Result> results) {}
 
   /**
    * @param input the command sent to the agent; a String command as is, any other command as JSON

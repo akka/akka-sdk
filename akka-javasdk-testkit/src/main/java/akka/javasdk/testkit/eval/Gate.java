@@ -19,6 +19,10 @@ import java.util.function.Predicate;
  *
  * <p>A real model is not deterministic, so a batch asserts on rates rather than on every case. With
  * a mocked model leave the gate out: without one every case must pass.
+ *
+ * <p>An attempt passes only when every result passed. An attempt with an inconclusive result, or
+ * with no result, is inconclusive. It never passes: it fails {@link #allCasesShouldPass} and counts
+ * against the rate of {@link #passRateShouldBeAtLeast(double)}.
  */
 public final class Gate {
 
@@ -40,29 +44,42 @@ public final class Gate {
     this.condition = condition;
   }
 
-  /** Every case must pass, in every run. The gate that applies when none is given. */
+  /**
+   * Every case must pass in every run, with every result passed. An inconclusive attempt fails the
+   * gate. The gate that applies when none is given.
+   */
   public static Gate allCasesShouldPass() {
     return new Gate(
         (results, runs) -> {
-          var failed = failedCases(results, runs, r -> !r.passed());
-          return failed.isEmpty()
-              ? Verdict.pass("all " + attempts(results, runs) + " passed")
-              : Verdict.fail("failed cases " + failed);
+          var failed = failedCases(results, runs, CaseResult::failed);
+          var inconclusive = failedCases(results, runs, CaseResult::inconclusive);
+          if (failed.isEmpty() && inconclusive.isEmpty()) {
+            return Verdict.pass("all " + attempts(results, runs) + " passed");
+          }
+          var details = new ArrayList<String>();
+          if (!failed.isEmpty()) details.add("failed cases " + failed);
+          if (!inconclusive.isEmpty()) details.add("inconclusive cases " + inconclusive);
+          return Verdict.fail(String.join(", ", details));
         });
   }
 
-  /** The share of attempts with no failed result must be at least {@code minimumRate}. */
+  /**
+   * The share of attempts that passed must be at least {@code minimumRate}. An inconclusive attempt
+   * counts against the rate.
+   */
   public static Gate passRateShouldBeAtLeast(double minimumRate) {
     return new Gate(
         (results, runs) -> {
           var passed = results.stream().filter(CaseResult::passed).count();
+          var inconclusive = results.stream().filter(CaseResult::inconclusive).count();
           var actual = (double) passed / results.size();
           var summary =
               String.format(
                   Locale.ROOT,
-                  "pass rate %.2f over %s, required %.2f",
+                  "pass rate %.2f over %s%s, required %.2f",
                   actual,
                   attempts(results, runs),
+                  inconclusive == 0 ? "" : " with " + inconclusive + " inconclusive",
                   minimumRate);
           return actual >= minimumRate ? Verdict.pass(summary) : Verdict.fail(summary);
         });
