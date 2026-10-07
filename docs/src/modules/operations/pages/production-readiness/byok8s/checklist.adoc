@@ -17,7 +17,7 @@ Walk this page before going live: use the at-a-glance below as the quick entry p
 
 The agreement and the Federation Plane SLA Policy are the authoritative statement of what is committed. Reaching the reliability and availability of your deployment depends on working these items through with your Akka team.
 
-Each item is yours to verify. Akka recommends not advancing to production until each is covered. Engage your FDE and Akka's customer success and support teams (mailto:support@akka.io[support@akka.io]) throughout the work, or complete it independently.
+Each item is yours to verify. Akka recommends not advancing to production until each is covered. Skip an item only with a written exception that records the reason, the accountable owner, the compensating control, and a review date. A statement that you will monitor the item does not count as an exception. Engage your FDE and Akka's customer success and support teams (mailto:support@akka.io[support@akka.io]) throughout the work, or complete it independently.
 
 Items split across two levels. *Region-level* items are established once for the region and shared by every application running on it (disaster recovery, backups, baseline platform alerting). *Application-level* items are handled per service (sizing, application observability, rollback paths). This page lists both; your Akka team's tailored checklist assigns each item to the right level, so region-level work is not repeated per application, though it still recurs on its own cadence.
 
@@ -45,7 +45,7 @@ If the business requires rapid, automated cross-region failover, Day 2 Ops is no
 [NOTE]
 .*Akka's side*
 ====
-Akka runs a parallel internal pre-production validation against the platform-side commitments in the RACI: replication, observability stack, baseline regional alerts, certificate monitoring. Database backups sit on the customer side in BYOK8s and are covered in the items below rather than in Akka's parallel validation. This page is the customer-side complement; the two pair together.
+Akka runs a parallel internal pre-production validation against the platform-side commitments in the RACI: replication, observability stack, baseline regional alerts, certificate monitoring. Database backups sit on the customer side in BYOK8s and are covered in the items below rather than in Akka's parallel validation. Your FDE also confirms the database storage autogrow setting and the disk usage alerts during the readiness walk-through. This page is the customer-side complement; the two pair together.
 ====
 
 == Architecture and design review
@@ -108,6 +108,7 @@ Akka reviews your application's high-level architecture and design to understand
 * [ ] VPC CIDR has scale-out headroom; security groups and NACLs reviewed
 * [ ] Container registry in or near the prod region
 * [ ] Persistence sized; auto-scaling ceilings set
+* [ ] Database storage autogrow (or the cloud provider's equivalent storage autoscaling) enabled, with a maximum size set where the provider supports one. To opt out, record the reason, the owner, the alternative monitoring, and a review date
 * [ ] Per-service xref:operations:services/instance-sizing.adoc[instance types] chosen for each workload (defaults reviewed; pinned where a service needs a specific shape)
 * [ ] Database layout planned per project (a dedicated database per project where isolation or independent scaling is needed, versus a shared database) and sized accordingly
 * [ ] Region optimization / environment sizing reviewed with Akka, so the region and per-service configuration is right-sized for the workload before go-live
@@ -128,6 +129,7 @@ Akka reviews your application's high-level architecture and design to understand
 * [ ] Dev region at 30–50% of prod capacity with the same instance shapes (a much smaller dev region makes load-test results misleading)
 * [ ] Sizing reviewed with FDE
 * [ ] Cost forecast signed off by FinOps
+* [ ] Database storage autogrow and disk usage alerts re-verified after every database migration, upgrade, or restore, and at each periodic capacity review
 =====
 
 == Observability
@@ -170,6 +172,7 @@ Akka reviews your application's high-level architecture and design to understand
 * [ ] SLOs defined per service; alerts on burn rate, not raw thresholds
 * [ ] Multi-window multi-burn-rate alerts for primary SLOs
 * [ ] Capacity alerts (service cores, persistence, broker lag)
+* [ ] Database disk and storage usage alerts with warning and critical thresholds, routed to on-call. Required when storage autogrow is off
 * [ ] Alerts route to your on-call paging tool (e.g., PagerDuty, Opsgenie), with escalation to Akka's 24/7 incident response
 * [ ] Runbook linked from every alert
 
