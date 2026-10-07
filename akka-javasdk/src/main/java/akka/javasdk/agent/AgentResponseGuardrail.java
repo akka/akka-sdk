@@ -18,6 +18,9 @@ import java.util.concurrent.CompletionStage;
  *
  * <p>The runtime shares one instance across concurrent calls from different sessions and agents. An
  * implementation must be thread safe.
+ *
+ * <p>To bind this guardrail to an agent that returns {@link Agent.StreamEffect}, set {@code
+ * report-only = true} on the entry. Otherwise, the service fails to start.
  */
 public non-sealed interface AgentResponseGuardrail extends Guardrail {
 

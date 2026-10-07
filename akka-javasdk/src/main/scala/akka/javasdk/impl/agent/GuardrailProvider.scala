@@ -142,6 +142,25 @@ import org.slf4j.LoggerFactory
           new AgentResponseGuardrailAdapter(toSettings(configured), g, tracerFactory)
         })
 
+    // The label of each AgentResponseGuardrail entry without `report-only = true`.
+    private[agent] lazy val enforcingResponseGuardrailLabels: Seq[String] =
+      guardrails.agentResponseGuardrails
+        .map(_.settings)
+        .filterNot(_.reportOnly)
+        .map(s => s"Guardrail [${s.name}]")
+        .sorted
+
+    /**
+     * The startup error for a streaming agent bound to AgentResponseGuardrail entries without `report-only = true`.
+     */
+    def streamingResponseGuardrailError(componentId: String, isStreaming: Boolean): Option[String] =
+      Option.when(isStreaming && enforcingResponseGuardrailLabels.nonEmpty) {
+        s"Agent [$componentId] streams its reply. It cannot use an AgentResponseGuardrail entry without " +
+        s"`report-only = true`: ${enforcingResponseGuardrailLabels.mkString(", ")}. Return Agent.Effect from " +
+        "the agent's command handler, or remove the agent from each guardrail. " +
+        "See the agent guardrails documentation for the other options."
+      }
+
     // The ToolCallGuardrails applicable to the given tool. An entry with an empty `tools` set
     // applies to every tool on the agent; otherwise only to the named tools.
     private def toolCallGuardrails(toolName: String): Seq[SpiGuardrail.ToolCall] =

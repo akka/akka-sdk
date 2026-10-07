@@ -4,6 +4,20 @@ include::ROOT:partial$include.adoc[]
 
 == SDK 3.7.0
 
+[#migrating-from-text-guardrail]
+=== Migrating from TextGuardrail
+
+`TextGuardrail` is deprecated. Implement one of the guardrail interfaces that return a `Decision` instead. Choose the interface by the `use-for` value of the configuration entry:
+
+* For `model-request`, implement `ModelCallGuardrail`.
+* For `model-response`, implement `AgentResponseGuardrail`.
+
+For the built-in `SimilarityGuard`, see <<migrating-from-similarity-guard,Migrating from SimilarityGuard>>.
+
+Remove `use-for` from the entry. The service fails to start when a `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail` entry defines `use-for`.
+
+For an agent that returns `StreamEffect`, the runtime does not evaluate a `TextGuardrail` on the reply unless the entry sets `report-only = true`. The runtime logs warning `AK-01208` instead. An `AgentResponseGuardrail` works differently. The service fails to start when an `AgentResponseGuardrail` entry without `report-only = true` binds such an agent. See xref:sdk:agents/guardrails.adoc#_kinds_of_guardrail[Kinds of guardrail] for the ways to fix the startup failure.
+
 [#migrating-from-similarity-guard]
 === Migrating from SimilarityGuard
 

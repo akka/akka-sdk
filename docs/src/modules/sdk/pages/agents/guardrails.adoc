@@ -34,7 +34,22 @@ A guardrail implements one of three interfaces. The interface sets where the run
 A guardrail class implements exactly one of these interfaces.
 To check several points, write one class per interface.
 
-NOTE: The runtime does not evaluate `ModelCallGuardrail` or `AgentResponseGuardrail` for an agent that streams its reply with a `StreamEffect`.
+[NOTE]
+====
+An agent that returns `StreamEffect` streams its reply. The caller receives the reply before the runtime evaluates an `AgentResponseGuardrail`, so the guardrail cannot block that reply.
+
+The service fails to start when such an agent has an `AgentResponseGuardrail` entry without `report-only = true`.
+Fix the startup failure in one of these ways:
+
+* Change the agent's command handler to return `Agent.Effect`.
+* Remove the agent from the `agents` or `agent-roles` list of the entry. If the entry binds agents through `*` or an agent role, list the other agents by name instead.
+* Remove the agent from the entry as above. Then add a separate entry for this agent with `report-only = true`. The guardrail then observes the reply without blocking it. The stream completes after the guardrail returns.
+
+Do not set `report-only = true` on the existing entry. The guardrail would then stop blocking for every agent that the entry binds.
+
+The runtime evaluates a `ModelCallGuardrail` before each model call of a streaming agent too.
+A deny fails the stream. See <<Handling a denied interaction>>.
+====
 
 All three return a link:{attachmentsdir}/api/akka/javasdk/agent/Decision.html[`Decision`]:
 
@@ -44,13 +59,6 @@ All three return a link:{attachmentsdir}/api/akka/javasdk/agent/Decision.html[`D
 
 The runtime reports a `Deny` or `Fail` with a null or blank `reason` as "no reason given".
 The runtime applies no timeout to a guardrail. An interaction waits forever if its guardrail never completes.
-
-[NOTE]
-====
-The earlier link:{attachmentsdir}/api/akka/javasdk/agent/TextGuardrail.html[`TextGuardrail`] interface — which returns a `Guardrail.Result` (a boolean plus explanation) rather than a `Decision` — is deprecated for removal.
-Existing `TextGuardrail` implementations still run.
-New guardrails should implement `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail`.
-====
 
 == Implementing an agent response guardrail
 
@@ -145,11 +153,11 @@ akka.javasdk.agent.guardrails {
 <7> An application-specific property, read by the guardrail from its `GuardrailContext`.
 <8> Optional, for a `ToolCallGuardrail` only. Restricts the guardrail to the named tools. Without it, the guardrail sees every tool call on the selected agents.
 
-The `class` property sets the implementation class. The class must implement `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail` (or the deprecated `TextGuardrail`), be public, and have a public constructor. The constructor may take a link:{attachmentsdir}/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which holds the name and the config section of the guardrail. The `ProfanityResponseGuard` example reads its `search-for` property this way.
+The `class` property sets the implementation class. The class must implement `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail`, be public, and have a public constructor. The constructor may take a link:{attachmentsdir}/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which holds the name and the config section of the guardrail. The `ProfanityResponseGuard` example reads its `search-for` property this way.
 
 The runtime shares one guardrail instance across concurrent calls from different sessions and agents. The implementation must be thread safe.
 
-The guardrail interface sets where the runtime evaluates the guardrail, so the configuration has no boundary setting. If a `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail` defines `use-for`, the runtime fails at startup.
+The guardrail interface sets where the runtime evaluates the guardrail, so the configuration has no boundary setting.
 
 === Agent selection
 
@@ -167,14 +175,6 @@ This role is defined in the `@AgentRole` annotation.
 The name and the category are reported in logs, metrics, and traces. The `category` should classify the type of validation. It can be any value, but a few recommended categories are JAILBREAK, PROMPT_INJECTION, PII, TOXIC, HALLUCINATED, NSFW, FORMAT.
 
 Set `control-id` to name the control that the guardrail implements. See xref:concepts:governance-and-the-runtime.adoc#control-ids[control ids].
-
-=== Configuring a deprecated TextGuardrail
-
-A `TextGuardrail`, including the deprecated built-in `SimilarityGuard`, requires the `use-for` property.
-It accepts one or more of `model-request`, `model-response`, `mcp-tool-request`, and `mcp-tool-response`, or `*` for all four.
-The `model-request` and `model-response` values are deprecated. A `model-request` guardrail becomes a `ModelCallGuardrail`, and a `model-response` guardrail becomes an `AgentResponseGuardrail`.
-The `mcp-tool-request` and `mcp-tool-response` values are not deprecated. A `TextGuardrail` is the only guardrail type that the runtime evaluates for MCP tool calls.
-To move a `SimilarityGuard`, see xref:reference:migration-guide.adoc#migrating-from-similarity-guard[Migrating from SimilarityGuard].
 
 == Classifier-backed guardrails
 
@@ -203,6 +203,11 @@ When a `ModelCallGuardrail` or an `AgentResponseGuardrail` returns `Decision.Den
 ----
 include::example$doc-snippets/src/main/java/com/example/guardrail/GuardedAgent.java[tag=on-failure]
 ----
+
+An agent that returns `StreamEffect` has no `onFailure`.
+For such an agent, a deny fails the stream.
+The error message names the guardrail, its category, and the reason.
+The error type is not `Guardrail.GuardrailException`.
 
 With `report-only = true`, a `Deny` is recorded in logs, metrics, and traces but the interaction continues.
 A `Decision.Fail` with `report-only = true` lets the interaction continue. The runtime logs a warning and records the error.
