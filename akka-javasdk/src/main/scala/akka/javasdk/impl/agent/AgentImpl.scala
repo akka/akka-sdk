@@ -232,11 +232,11 @@ private[impl] object AgentImpl {
 
   private[impl] def toSpiModelProvider(modelProvider: ModelProvider, config: Config, componentId: String)(implicit
       system: ActorSystem[_]): SpiAgent.ModelProvider =
-    toSpiModelProvider(modelProvider, config, componentId, globalIdentityHeaders(config))
+    toSpiModelProviderWithIdentityHeaders(modelProvider, config, componentId, globalIdentityHeaders(config))
 
   @tailrec
   @nowarn("msg=deprecated")
-  private def toSpiModelProvider(
+  private def toSpiModelProviderWithIdentityHeaders(
       modelProvider: ModelProvider,
       config: Config,
       componentId: String,
@@ -256,7 +256,7 @@ private[impl] object AgentImpl {
         val sectionIdentityHeaders =
           if (sectionConfig.hasPath("identity-headers")) sectionConfig.getBoolean("identity-headers")
           else identityHeaders
-        toSpiModelProvider(withHeaders, config, componentId, sectionIdentityHeaders)
+        toSpiModelProviderWithIdentityHeaders(withHeaders, config, componentId, sectionIdentityHeaders)
       case p: ModelProvider.Anthropic =>
         new SpiAgent.ModelProvider.Anthropic(
           apiKey = p.apiKey,
