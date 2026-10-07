@@ -9,12 +9,16 @@ import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.time.Instant
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 
 import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.Failure
 import akka.javasdk.ledger.InteractionMetadata
 import akka.runtime.sdk.spi.SpiLedger
+import akka.runtime.sdk.spi.{ LedgerClient => SpiLedgerClient }
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.wordspec.AnyWordSpec
@@ -89,15 +93,42 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       failure = failure,
       timestamp = Instant.EPOCH)
 
-  private def spiEvaluationRecord(trigger: SpiLedger.EvaluationTrigger): SpiLedger.EvaluationRecord =
+  private def spiEvaluationRecord(
+      trigger: SpiLedger.EvaluationTrigger,
+      evaluationId: String = "evaluation-1"): SpiLedger.EvaluationRecord =
     new SpiLedger.EvaluationRecord(
-      evaluationId = "evaluation-1",
+      evaluationId = evaluationId,
       evaluatorComponentId = "quality-evaluator",
       controlId = None,
       trigger = trigger,
       subject = new SpiLedger.InteractionSubject("interaction-1", "support-agent"),
       outcome = new SpiLedger.EvaluationInconclusive("no verdict"),
       timestamp = Instant.EPOCH)
+
+  private def ledgerClient(
+      interaction: SpiLedger.InteractionRecord,
+      evaluations: Seq[SpiLedger.EvaluationRecord]): LedgerClientImpl = {
+    val spiLedgerClient = new SpiLedgerClient {
+      override def getInteraction(interactionId: String): Future[SpiLedger.InteractionRecord] =
+        Future.successful(interaction)
+
+      override def getEvaluation(evaluationId: String): Future[SpiLedger.EvaluationRecord] =
+        evaluations.find(_.evaluationId == evaluationId) match {
+          case Some(evaluation) => Future.successful(evaluation)
+          case None             => Future.failed(new NoSuchElementException(evaluationId))
+        }
+
+      override def getClassification(classificationId: String): Future[SpiLedger.ClassificationRecord] =
+        Future.failed(new NoSuchElementException(classificationId))
+
+      override def getEvaluations(
+          interactionId: String,
+          from: Option[Instant],
+          limit: Int): Future[Seq[SpiLedger.EvaluationRecord]] =
+        Future.successful(evaluations)
+    }
+    new LedgerClientImpl(spiLedgerClient, ExecutionContext.parasitic)
+  }
 
   "Mapping a ledger record" should {
 
@@ -137,6 +168,9 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       val failure = record.failure().get()
       failure.reason() shouldBe Failure.FailureReason.UNSPECIFIED
       failure.description() shouldBe "the caller cancelled the stream"
+      record shouldBe LedgerClientImpl.toInteractionRecord(
+        spiInteractionRecord(failure =
+          Some(new SpiLedger.Failure(SpiLedger.FailureReason.Unspecified, "the caller cancelled the stream"))))
     }
 
     "read a finish reason that the SDK does not know as unspecified" in {
@@ -147,6 +181,8 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
 
       record.metadata().finishReason() shouldBe InteractionMetadata.FinishReason.UNSPECIFIED
       record.metadata().modelConfig().modelName() shouldBe "gpt-4o"
+      record shouldBe LedgerClientImpl.toInteractionRecord(
+        spiInteractionRecord(finishReason = SpiLedger.FinishReason.Unspecified))
     }
 
     "read a trigger that the SDK does not know as unspecified" in {
@@ -157,6 +193,41 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
 
       record.trigger() shouldBe EvaluationRecord.Trigger.UNSPECIFIED
       record.evaluatorComponentId() shouldBe "quality-evaluator"
+      record shouldBe LedgerClientImpl.toEvaluationRecord(spiEvaluationRecord(SpiLedger.EvaluationTrigger.Unspecified))
+    }
+  }
+
+  "The ledger client" should {
+
+    "read an interaction and an evaluation that hold values the SDK does not know" in {
+      val client = ledgerClient(
+        spiInteractionRecord(
+          finishReason = unknownValue[SpiLedger.FinishReason],
+          failure = Some(new SpiLedger.Failure(unknownValue[SpiLedger.FailureReason], "failed"))),
+        Seq(spiEvaluationRecord(unknownValue[SpiLedger.EvaluationTrigger])))
+
+      val interaction = client.getInteraction("interaction-1")
+      interaction.metadata().finishReason() shouldBe InteractionMetadata.FinishReason.UNSPECIFIED
+      interaction.failure().get().reason() shouldBe Failure.FailureReason.UNSPECIFIED
+
+      client.getEvaluation("evaluation-1").trigger() shouldBe EvaluationRecord.Trigger.UNSPECIFIED
+    }
+
+    "read every evaluation of a list in which one holds a trigger that the SDK does not know" in {
+      val client = ledgerClient(
+        spiInteractionRecord(),
+        Seq(
+          spiEvaluationRecord(SpiLedger.EvaluationTrigger.OnInteraction, "evaluation-1"),
+          spiEvaluationRecord(unknownValue[SpiLedger.EvaluationTrigger], "evaluation-2"),
+          spiEvaluationRecord(SpiLedger.EvaluationTrigger.Manual, "evaluation-3")))
+
+      val evaluations = client.getEvaluations("interaction-1").asScala.toSeq
+
+      evaluations.map(_.evaluationId()) shouldBe Seq("evaluation-1", "evaluation-2", "evaluation-3")
+      evaluations.map(_.trigger()) shouldBe Seq(
+        EvaluationRecord.Trigger.ON_INTERACTION,
+        EvaluationRecord.Trigger.UNSPECIFIED,
+        EvaluationRecord.Trigger.MANUAL)
     }
   }
 }
