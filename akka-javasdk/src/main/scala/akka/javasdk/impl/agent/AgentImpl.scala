@@ -570,6 +570,14 @@ private[impl] object AgentImpl {
         new SpiAgent.PdfUriMessageContent(URI.create(c.uri()))
     }
 
+  private[agent] def toSessionTokenUsage(usage: SpiAgent.SpiTokenUsage): TokenUsage =
+    new TokenUsage(
+      usage.inputTokenCount,
+      usage.outputTokenCount,
+      usage.cacheReadInputTokenCount,
+      usage.cacheWriteInputTokenCount,
+      usage.effectiveInputTokenCount)
+
   /**
    * A single text content yields a [[SessionMessage.ToolCallResponse]]; otherwise a
    * [[SessionMessage.MultimodalToolCallResponse]].
@@ -938,12 +946,7 @@ private[impl] final class AgentImpl(
             componentId,
             requests,
             res.thinking.toJava,
-            new TokenUsage(
-              res.tokenUsage.inputTokenCount,
-              res.tokenUsage.outputTokenCount,
-              res.tokenUsage.cacheReadInputTokens,
-              res.tokenUsage.cacheWriteInputTokens,
-              res.tokenUsage.effectiveInputTokenCount),
+            toSessionTokenUsage(res.tokenUsage),
             res.attributes.asJava)
 
         case res: SpiAgent.ToolCallResponse =>

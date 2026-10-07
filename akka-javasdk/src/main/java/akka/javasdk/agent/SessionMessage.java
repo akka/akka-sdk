@@ -152,24 +152,26 @@ public sealed interface SessionMessage {
   /**
    * Token usage for a single {@link AiMessage}.
    *
-   * <p>See {@link Agent.TokenUsage} for how the prompt cache counts relate to {@code inputTokens}.
+   * <p>See {@link Agent.TokenUsage} for the meaning of each count. A {@code totalInputTokens} of 0
+   * is replaced by {@code inputTokens}. This also applies to session memory that was written before
+   * the field existed.
+   *
+   * <p>Autonomous agents report no prompt cache counts to session memory. Their messages have 0 for
+   * both cache counts, and {@code totalInputTokens} equals {@code inputTokens}.
    */
   record TokenUsage(
       int inputTokens,
       int outputTokens,
       int cacheReadInputTokens,
       int cacheWriteInputTokens,
-      int effectiveInputTokens) {
+      int totalInputTokens) {
 
     /** No tokens consumed. */
-    public static final TokenUsage EMPTY = new TokenUsage(0, 0, 0, 0, 0);
+    public static final TokenUsage EMPTY = new TokenUsage(0, 0);
 
     public TokenUsage {
-      // Session memory written before effectiveInputTokens existed deserializes it as 0, which is
-      // never valid for a call that consumed input: the effective count is at least inputTokens.
-      // Those messages predate the cache counts too, so inputTokens is the effective count.
-      if (effectiveInputTokens == 0) {
-        effectiveInputTokens = inputTokens;
+      if (totalInputTokens == 0) {
+        totalInputTokens = inputTokens;
       }
     }
 
@@ -178,14 +180,31 @@ public sealed interface SessionMessage {
       this(inputTokens, outputTokens, 0, 0, inputTokens);
     }
 
-    /** The sum of this and another usage. */
+    /** The token usage of an agent reply, as stored in session memory. */
+    public static TokenUsage from(Agent.TokenUsage tokenUsage) {
+      return new TokenUsage(
+          tokenUsage.inputTokens(),
+          tokenUsage.outputTokens(),
+          tokenUsage.cacheReadInputTokens(),
+          tokenUsage.cacheWriteInputTokens(),
+          tokenUsage.totalInputTokens());
+    }
+
+    /**
+     * The sum of this and another usage. Each count stops at {@link Integer#MAX_VALUE} instead of
+     * overflowing.
+     */
     public TokenUsage add(TokenUsage tokenUsage) {
       return new TokenUsage(
-          inputTokens + tokenUsage.inputTokens,
-          outputTokens + tokenUsage.outputTokens,
-          cacheReadInputTokens + tokenUsage.cacheReadInputTokens,
-          cacheWriteInputTokens + tokenUsage.cacheWriteInputTokens,
-          effectiveInputTokens + tokenUsage.effectiveInputTokens);
+          saturatedAdd(inputTokens, tokenUsage.inputTokens),
+          saturatedAdd(outputTokens, tokenUsage.outputTokens),
+          saturatedAdd(cacheReadInputTokens, tokenUsage.cacheReadInputTokens),
+          saturatedAdd(cacheWriteInputTokens, tokenUsage.cacheWriteInputTokens),
+          saturatedAdd(totalInputTokens, tokenUsage.totalInputTokens));
+    }
+
+    private static int saturatedAdd(int a, int b) {
+      return (int) Math.min((long) a + b, Integer.MAX_VALUE);
     }
   }
 

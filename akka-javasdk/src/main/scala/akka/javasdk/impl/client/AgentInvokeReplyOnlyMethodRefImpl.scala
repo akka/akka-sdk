@@ -38,7 +38,7 @@ private[impl] case class AgentInvokeReplyOnlyMethodRefImpl[A1, R](componentMetho
     componentMethodRefImpl.callComponent().thenApply { callResult =>
       new Agent.AgentReply[R](
         callResult.value,
-        toTokenUsage(callResult.metadata),
+        AgentInvokeReplyOnlyMethodRefImpl.toTokenUsage(callResult.metadata),
         callResult.metadata.get(SpiAgent.AgentInteractionIdKey))
     }
   }
@@ -47,20 +47,25 @@ private[impl] case class AgentInvokeReplyOnlyMethodRefImpl[A1, R](componentMetho
     componentMethodRefImpl.callComponent(arg).thenApply { callResult =>
       new Agent.AgentReply[R](
         callResult.value,
-        toTokenUsage(callResult.metadata),
+        AgentInvokeReplyOnlyMethodRefImpl.toTokenUsage(callResult.metadata),
         callResult.metadata.get(SpiAgent.AgentInteractionIdKey))
     }
   }
+}
 
-  private def toTokenUsage(metadata: Metadata): Agent.TokenUsage = {
-    val input = metadata.get(SpiAgent.AgentInputTokensKey).map[Integer](_.toInt).orElse(0)
-    val output = metadata.get(SpiAgent.AgentOutputTokensKey).map[Integer](_.toInt).orElse(0)
-    // Absent when running against a runtime older than the one that added these keys. An older
-    // runtime reports no cache activity, so the input count is the effective count.
-    val cacheRead = metadata.get(SpiAgent.AgentCacheReadTokensKey).map[Integer](_.toInt).orElse(0)
-    val cacheWrite = metadata.get(SpiAgent.AgentCacheWriteTokensKey).map[Integer](_.toInt).orElse(0)
-    val effectiveInput =
-      metadata.get(SpiAgent.AgentEffectiveInputTokensKey).map[Integer](_.toInt).orElse(input)
-    new Agent.TokenUsage(input, output, cacheRead, cacheWrite, effectiveInput)
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object AgentInvokeReplyOnlyMethodRefImpl {
+
+  def toTokenUsage(metadata: Metadata): Agent.TokenUsage = {
+    def count(key: String): Int = metadata.get(key).map[Integer](_.toInt).orElse(0)
+    new Agent.TokenUsage(
+      count(SpiAgent.AgentInputTokensKey),
+      count(SpiAgent.AgentOutputTokensKey),
+      count(SpiAgent.AgentCacheReadTokensKey),
+      count(SpiAgent.AgentCacheWriteTokensKey),
+      count(SpiAgent.AgentEffectiveInputTokensKey))
   }
 }

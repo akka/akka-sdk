@@ -66,26 +66,37 @@ public abstract class Agent implements AgentDelegationWorker {
   /**
    * The number of tokens consumed by a model interaction.
    *
-   * <p>{@code inputTokens} and the two cache counts are raw provider numbers, and providers
-   * disagree on how they compose: Anthropic and Bedrock report the cache counts outside {@code
-   * inputTokens}, OpenAI and Gemini report cache reads within it. Use {@code effectiveInputTokens}
-   * rather than adding them up yourself, which only works if you know which provider produced them.
+   * <p>Providers differ on whether {@code inputTokens} includes cached prompt tokens. Use {@code
+   * totalInputTokens} for a count that does not depend on the provider.
    *
-   * @param inputTokens tokens in the request sent to the model
+   * <p>{@code totalInputTokens} counts cached prompt tokens at full weight. It is not weighted by
+   * cost, and providers bill cache reads and cache writes at rates that differ from regular input
+   * tokens.
+   *
+   * <p>A {@code totalInputTokens} of 0 is replaced by {@code inputTokens}. This also applies to
+   * JSON that was written before the field existed.
+   *
+   * @param inputTokens the input token count as the provider reports it
    * @param outputTokens tokens in the response returned by the model
    * @param cacheReadInputTokens prompt tokens served from the provider's prompt cache, or 0 when
    *     the provider reports nothing
    * @param cacheWriteInputTokens prompt tokens written to the provider's prompt cache, or 0 when
    *     the provider reports nothing
-   * @param effectiveInputTokens every prompt token the interaction consumed, counted once, whatever
-   *     the provider
+   * @param totalInputTokens every prompt token the interaction consumed, counted once, whatever the
+   *     provider
    */
   public record TokenUsage(
       int inputTokens,
       int outputTokens,
       int cacheReadInputTokens,
       int cacheWriteInputTokens,
-      int effectiveInputTokens) {
+      int totalInputTokens) {
+
+    public TokenUsage {
+      if (totalInputTokens == 0) {
+        totalInputTokens = inputTokens;
+      }
+    }
 
     /** A usage with no prompt cache activity. */
     public TokenUsage(int inputTokens, int outputTokens) {

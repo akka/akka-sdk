@@ -111,6 +111,8 @@ public class AgentIntegrationTest extends TestKitSupport {
     assertThat(result.value().response()).isEqualTo("123456");
     assertThat(result.tokenUsage().inputTokens()).isEqualTo(123);
     assertThat(result.tokenUsage().outputTokens()).isEqualTo(321);
+    assertThat(result.tokenUsage().cacheReadInputTokens()).isZero();
+    assertThat(result.tokenUsage().totalInputTokens()).isEqualTo(123);
   }
 
   /** The detailed reply carries the id of the ledger record written for the interaction. */
