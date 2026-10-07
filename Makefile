@@ -2,6 +2,8 @@
 SHELL_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 ROOT_DIR := ${SHELL_DIR}
 TARGET_DIR := ${ROOT_DIR}/target/site
+NEXUS_DIR ?= ${ROOT_DIR}/../nexus
+AKKA_CLI_VERSION := 3.0.77
 
 upstream := akka/akka-sdk
 branch   := docs/current
@@ -12,6 +14,7 @@ src_managed := docs/src-managed
 java_managed_attachments := ${src_managed}/modules/sdk/attachments
 java_managed_examples := ${src_managed}/modules/sdk/examples
 managed_partials := ${src_managed}/modules/ROOT/partials
+optimize_version = $(shell sed -n 's/^:akka-cli-version: //p' "${managed_partials}/attributes.adoc" 2>/dev/null)
 
 antora_docker_image := local/antora-doc
 antora_docker_image_tag := latest
@@ -32,6 +35,7 @@ define antora_mounts
 endef
 
 .SILENT:
+.PHONY: check-nexus
 
 build: managed local open
 
@@ -48,7 +52,7 @@ prepare:
 	mkdir -p "${java_managed_attachments}"
 	cp akka-javasdk-testkit/src/main/resources/akka/javasdk/testkit/eval/eval-report.example.json "${java_managed_attachments}/"
 
-managed: prepare attributes apidocs examples bundles
+managed: check-nexus prepare attributes apidocs examples bundles
 
 attributes: prepare
 	mkdir -p "${managed_partials}"
@@ -58,7 +62,7 @@ attributes: prepare
 		> "${managed_partials}/attributes.adoc"
 	echo ":akka-runtime-version: $$(docs/bin/runtime-version-from-sbt.sh)" \
 		>> "${managed_partials}/attributes.adoc"
-	echo ":akka-cli-version: 3.0.77" >> "${managed_partials}/attributes.adoc"
+	echo ":akka-cli-version: ${AKKA_CLI_VERSION}" >> "${managed_partials}/attributes.adoc"
 	echo ":akka-cli-min-version: 3.0.4" >> "${managed_partials}/attributes.adoc"
 	# see https://adoptium.net/marketplace/
 	echo ":java-version: 25" \
@@ -115,28 +119,45 @@ done:
 open:
 	open "${TARGET_DIR}/index.html"
 
-local: docker-image examples antora-local whitepapers done
+local: check-nexus docker-image examples nexus-content antora-local whitepapers done
 
-prod: docker-image managed antora-prod done
+prod: check-nexus docker-image managed nexus-content antora-prod done
+
+check-nexus:
+	if [ ! -e "${NEXUS_DIR}/.git" ] || [ ! -f "${NEXUS_DIR}/optimize-docs/src/antora.yml" ]; then \
+		echo "Nexus documentation checkout is missing at ${NEXUS_DIR}." >&2; \
+		echo "Clone it beside akka-sdk: git clone git@github.com:akka/nexus.git ../nexus" >&2; \
+		echo "Or set NEXUS_DIR to the absolute path of an existing nexus checkout." >&2; \
+		exit 1; \
+	fi
 
 antora-local:
+	test -n "$(optimize_version)" || { echo "Generate ${managed_partials}/attributes.adoc with make managed before building the site." >&2; exit 1; }
 	$(antora_mounts) \
 	docker run \
 		--user "$$(id -u):$$(id -g)" \
 		$$mounts \
+		-v "${NEXUS_DIR}:/nexus:ro" \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
 		--cache-dir=.cache/antora --stacktrace --log-failure-level=warn \
+		--attribute "optimize-version=$(optimize_version)" \
 		docs/antora-playbook-local.yml
 
+nexus-content: check-nexus
+	docs/bin/prepare-nexus-docs.sh "${NEXUS_DIR}"
+
 antora-prod:
+	test -n "$(optimize_version)" || { echo "Generate ${managed_partials}/attributes.adoc with make managed before building the site." >&2; exit 1; }
 	$(antora_mounts) \
 	docker run \
 		--user "$$(id -u):$$(id -g)" \
 		$$mounts \
+		-v "${NEXUS_DIR}:/nexus:ro" \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
 		--cache-dir=.cache/antora --stacktrace --log-level error --log-failure-level=warn \
+		--attribute "optimize-version=$(optimize_version)" \
 		docs/antora-playbook-prod.yml
 
 validate-links:

@@ -9,5 +9,6 @@ nav:
 - modules/testing/nav.adoc
 - modules/operations/nav.adoc
 - modules/inference/nav.adoc
+- modules/optimize/nav.adoc
 - modules/reference/nav.adoc
 - modules/libraries/nav.adoc
