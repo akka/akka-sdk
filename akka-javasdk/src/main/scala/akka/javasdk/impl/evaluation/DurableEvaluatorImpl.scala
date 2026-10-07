@@ -37,6 +37,7 @@ import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.SpiWorkflowEvaluator
 import akka.util.ByteString
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
 
 /**
@@ -82,7 +83,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
     workflowId: String,
     evaluatorClass: Class[E],
     stateClass: Class[S],
-    factory: () => E,
+    factory: Option[OtelContext] => E,
     recorder: SpiEvaluator.EvaluationRecorder,
     serializer: Serializer,
     sdkExecutionContext: ExecutionContext)
@@ -115,7 +116,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
     serializer.toBytes(Outcome.failed("Evaluation failed"))
 
   override def configuration: SpiWorkflow.WorkflowConfig = {
-    val settings = factory().settings()
+    val settings = factory(None).settings()
 
     // a step that exhausts its retries fails over to the record step, so the failure is recorded
     // and the instance cleaned up rather than the workflow staying failed forever
@@ -143,7 +144,8 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
 
   override def handleEvaluationStart(
       state: Option[SpiWorkflow.State],
-      trigger: SpiEvaluator.Trigger): Future[SpiWorkflow.CommandEffect] = {
+      trigger: SpiEvaluator.Trigger,
+      telemetryContext: OtelContext): Future[SpiWorkflow.CommandEffect] = {
     val ack = serializer.toBytes(Done.getInstance())
     if (state.exists(_.nonEmpty)) {
       // at-least-once delivery from the trigger projection: ack the duplicate start so it can advance
@@ -152,7 +154,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
       val subject = EvaluationConversions.toSdkSubject(trigger.subject)
       val triggerSource = toProtocolTriggerSource(trigger.source)
       Future {
-        val evaluator = factory()
+        val evaluator = factory(Option(telemetryContext))
         val context = new EvaluationContextImpl(workflowId, subject)
         evaluator._internalSetup(evaluator.emptyState(), context)
         val effect = evaluator.onEvaluation(context)
@@ -202,7 +204,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
           s"known steps: [${stepMethods.keys.mkString(", ")}]"))
 
       Future {
-        val evaluator = factory()
+        val evaluator = factory(Option(stepCommand.telemetryContext))
         val subject = envelope.getSubject
         evaluator._internalSetup(decodeUserState(envelope), new EvaluationContextImpl(workflowId, subject))
         val effect =
@@ -318,7 +320,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
     }
 
   private def decodeUserState(envelope: StateEnvelope): S =
-    if (envelope.userState() == null) factory().emptyState()
+    if (envelope.userState() == null) factory(None).emptyState()
     else
       serializer.fromBytes(
         stateClass,

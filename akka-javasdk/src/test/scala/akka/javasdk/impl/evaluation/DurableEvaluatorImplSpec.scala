@@ -21,6 +21,8 @@ import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
+import io.opentelemetry.context.{ Context => OtelContext }
+import io.opentelemetry.context.ContextKey
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -39,12 +41,17 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
     }
   }
 
-  private def newImpl(recorder: SpiEvaluator.EvaluationRecorder = new RecorderProbe) =
+  private def newImpl(
+      recorder: SpiEvaluator.EvaluationRecorder = new RecorderProbe,
+      onCreate: Option[OtelContext] => Unit = _ => ()) =
     new DurableEvaluatorImpl[TranscriptQualityEvaluator.State, TranscriptQualityEvaluator](
       evaluationId,
       classOf[TranscriptQualityEvaluator],
       classOf[TranscriptQualityEvaluator.State],
-      () => new TranscriptQualityEvaluator,
+      context => {
+        onCreate(context)
+        new TranscriptQualityEvaluator
+      },
       recorder,
       serializer,
       ExecutionContext.global)
@@ -55,8 +62,11 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       SpiEvaluator.TriggerSource.OnInteraction,
       new SpiEvaluator.Interaction(interactionId, "my-agent", None))
 
-  private def stepCommand(stepName: String, input: Option[BytesPayload] = None) =
-    new SpiWorkflow.StepCommand(stepName, input, SpiMetadata.empty, null)
+  private def stepCommand(
+      stepName: String,
+      input: Option[BytesPayload] = None,
+      telemetryContext: OtelContext = null) =
+    new SpiWorkflow.StepCommand(stepName, input, SpiMetadata.empty, telemetryContext)
 
   private def await[T](future: Future[T]): T = Await.result(future, 3.seconds)
 
@@ -68,7 +78,7 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
   "DurableEvaluatorImpl" should {
 
     "start the evaluation with the structured trigger and persist the subject envelope" in {
-      val effect = await(newImpl().handleEvaluationStart(None, trigger()))
+      val effect = await(newImpl().handleEvaluationStart(None, trigger(), null))
 
       effect shouldBe a[SpiWorkflow.CommandTransitionalEffect]
       val transitional = effect.asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
@@ -82,22 +92,51 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       transitional.transition.asInstanceOf[SpiWorkflow.StepTransition].stepName shouldBe "fetchTranscript"
     }
 
+    "create the evaluator for the start with the telemetry context of the start" in {
+      val key = ContextKey.named[String]("test")
+      val telemetryContext = OtelContext.root().`with`(key, "evaluation-1")
+      var startContexts = Vector.empty[Option[OtelContext]]
+      val impl = newImpl(onCreate = context => startContexts :+= context)
+
+      await(impl.handleEvaluationStart(None, trigger(), telemetryContext))
+
+      startContexts.flatten.map(_.get(key)) should contain("evaluation-1")
+    }
+
+    "create the evaluator for a step with the telemetry context of the step" in {
+      val key = ContextKey.named[String]("test")
+      val telemetryContext = OtelContext.root().`with`(key, "evaluation-1")
+      var stepContexts = Vector.empty[Option[OtelContext]]
+      val impl = newImpl(onCreate = context => stepContexts :+= context)
+      val started = await(impl.handleEvaluationStart(None, trigger(), null))
+      val persistedState = started
+        .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
+        .persistence
+        .asInstanceOf[SpiWorkflow.UpdateState]
+        .newState
+      stepContexts = Vector.empty
+
+      await(impl.invokeStep(Some(persistedState), stepCommand("fetchTranscript", telemetryContext = telemetryContext)))
+
+      stepContexts.flatten.map(_.get(key)) should contain("evaluation-1")
+    }
+
     "ack a duplicate start without re-running the evaluation" in {
       val impl = newImpl()
-      val started = await(impl.handleEvaluationStart(None, trigger()))
+      val started = await(impl.handleEvaluationStart(None, trigger(), null))
       val persistedState = started
         .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
         .persistence
         .asInstanceOf[SpiWorkflow.UpdateState]
         .newState
 
-      val effect = await(impl.handleEvaluationStart(Some(persistedState), trigger()))
+      val effect = await(impl.handleEvaluationStart(Some(persistedState), trigger(), null))
       effect shouldBe a[SpiWorkflow.ReadOnlyEffect]
     }
 
     "run a step that updates state and transitions with input" in {
       val impl = newImpl()
-      val started = await(impl.handleEvaluationStart(None, trigger()))
+      val started = await(impl.handleEvaluationStart(None, trigger(), null))
       val persistedState = started
         .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
         .persistence
@@ -122,7 +161,7 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
 
     "complete the evaluation by transitioning to the built-in record step" in {
       val impl = newImpl()
-      val started = await(impl.handleEvaluationStart(None, trigger()))
+      val started = await(impl.handleEvaluationStart(None, trigger(), null))
       val startState = started
         .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
         .persistence
@@ -147,7 +186,7 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
     "report inconclusive by transitioning to the built-in record step" in {
       val impl = newImpl()
       val started =
-        await(impl.handleEvaluationStart(None, trigger(TranscriptQualityEvaluator.EMPTY_INTERACTION_ID)))
+        await(impl.handleEvaluationStart(None, trigger(TranscriptQualityEvaluator.EMPTY_INTERACTION_ID), null))
       val startState = started
         .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
         .persistence
@@ -169,7 +208,7 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       val recorder = new RecorderProbe
       val impl = newImpl(recorder)
       // the record step rebuilds the trigger from the envelope persisted on start
-      val started = await(impl.handleEvaluationStart(None, trigger()))
+      val started = await(impl.handleEvaluationStart(None, trigger(), null))
       val startState = started
         .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
         .persistence
@@ -194,7 +233,7 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
     "record a completed outcome with its evaluations" in {
       val recorder = new RecorderProbe
       val impl = newImpl(recorder)
-      val started = await(impl.handleEvaluationStart(None, trigger()))
+      val started = await(impl.handleEvaluationStart(None, trigger(), null))
       val startState = started
         .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
         .persistence
