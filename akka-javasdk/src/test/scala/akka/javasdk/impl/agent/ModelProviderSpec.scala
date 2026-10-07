@@ -92,7 +92,7 @@ object ModelProviderSpec {
    */
   final case class ProviderKind(name: String, configSection: Option[String], provider: ModelProvider)
 
-  /** Every provider kind that reaches the runtime with model settings. */
+  /** Every provider kind that the SDK passes model settings for. */
   private val providersCarryingModelSettings: Seq[ProviderKind] = Seq(
     ProviderKind("Anthropic", Some("anthropic"), ModelProvider.anthropic()),
     ProviderKind("GoogleAIGemini", Some("googleai-gemini"), ModelProvider.googleAiGemini()),
@@ -104,7 +104,10 @@ object ModelProviderSpec {
     ProviderKind("Bedrock", Some("bedrock"), ModelProvider.bedrock()),
     ProviderKind("MistralAi", Some("mistral-ai"), ModelProvider.mistralAi()))
 
-  /** The SPI gives these two the default model settings, where the identity headers are off. */
+  /**
+   * The SDK passes no model settings for these two. The SPI gives them the default ones, where the identity headers are
+   * off.
+   */
   private val providersWithoutModelSettings: Seq[ProviderKind] = Seq(
     ProviderKind("LocalAI", Some("local-ai"), ModelProvider.localAI()),
     ProviderKind("Custom", None, new NoConfigMyModelProvider()))
