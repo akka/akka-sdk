@@ -968,4 +968,12 @@ include::sdk:example$doc-snippets/src/main/java/com/example/application/MyModelP
 <2> Return an instance of `dev.langchain4j.model.chat.ChatModel`.
 <3> Return an instance of `dev.langchain4j.model.chat.StreamingChatModel`, or throw an exception if streaming is not needed.
 
+==== Custom models and Autonomous Agents
+
+An Autonomous Agent calls `createChatModel()` once per iteration. It uses that model for every model call and tool round of the iteration, and it never calls `createStreamingChatModel()`. The runtime passes no agent or session identifier to the provider.
+
+The runtime does not apply the `max-retries` and `response-timeout` settings to a custom model. Your implementation sets its own retries and timeout. The runtime does not interrupt a running `chat(...)` call when the agent stops.
+
+If `chat(...)` throws, the iteration fails and the runtime starts a new iteration after a short delay. The new iteration calls `createChatModel()` and `chat(...)` again. The same happens when the agent restarts while a model call is running. If your model publishes output outside the runtime, such as partial text, that output is not withdrawn after a failed call. Your application must expect the same model call to run more than once.
+
 
