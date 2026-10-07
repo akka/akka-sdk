@@ -259,7 +259,11 @@ private[impl] object ComponentDescriptorFactory {
       new ConsumerSource.TopicSource(topicName, consumerGroup)
     } else if (hasStreamSubscription(clazz)) {
       val streamAnn = streamSubscription(clazz).get
-      new ConsumerSource.ServiceStreamSource(streamAnn.service(), streamAnn.id(), streamAnn.consumerGroup())
+      new ConsumerSource.ServiceStreamSource(
+        streamAnn.service(),
+        streamAnn.id(),
+        streamAnn.consumerGroup(),
+        Option(streamAnn.systemFeature()).filter(_.nonEmpty))
     } else {
       throw new IllegalArgumentException(s"Component [$clazz] is missing a @Consume annotation")
     }

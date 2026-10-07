@@ -23,9 +23,11 @@ import akka.grpc.GrpcClientSettings
 import akka.grpc.javadsl.AkkaGrpcClient
 import akka.javasdk.grpc.GrpcClientProvider
 import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
+import akka.javasdk.impl.ServiceAddress
 import akka.javasdk.impl.Settings
 import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl.AuthHeaders
+import akka.runtime.sdk.spi.DeploymentInfo
 import akka.runtime.sdk.spi.SpiBackofficeServiceSettings
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -43,7 +45,7 @@ import org.slf4j.LoggerFactory
 @InternalApi
 private[akka] object GrpcClientProviderImpl {
   final case class AuthHeaders(headerName: String, headerValue: String)
-  final case class ClientKey(clientClass: Class[_], serviceName: String)
+  final case class ClientKey(clientClass: Class[_], serviceName: String, systemFeature: Option[String] = None)
 
   private def isAkkaService(serviceName: String): Boolean = !(serviceName.contains('.') || serviceName.contains(':'))
 
@@ -92,6 +94,7 @@ private[akka] final class GrpcClientProviderImpl(
     system: ActorSystem[_],
     settings: Settings,
     userServiceConfig: Config,
+    deploymentInfo: DeploymentInfo,
     remoteIdentificationHeader: Option[AuthHeaders],
     // Only populated by the testkit; production and dev-mode runners use the default no-op lookup.
     grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient] = _ => None)
@@ -131,16 +134,49 @@ private[akka] final class GrpcClientProviderImpl(
       .traverse(clients.values().asScala)(_.close().asScala)
       .map(_ => Done))
 
-  override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T = {
-    val clientKey = ClientKey(serviceClass, serviceName)
-    grpcMockLookup(clientKey) match {
-      case Some(mock) => mock.asInstanceOf[T]
+  override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T =
+    grpcClientFor(serviceClass, serviceName, systemFeature = None, traceHeaders = Vector.empty)
+
+  override def forSystemFeature(systemFeature: String): GrpcClientProvider =
+    new ScopedProvider(Some(validSystemFeature(systemFeature)), Vector.empty)
+
+  private def validSystemFeature(systemFeature: String): String = {
+    require(systemFeature != null && systemFeature.nonEmpty, "systemFeature must not be empty")
+    systemFeature
+  }
+
+  /**
+   * The provider handed to user code when scoped to a system feature, or carrying trace headers for the current
+   * request, or both. Clients come from the shared cache of the enclosing provider.
+   */
+  private final class ScopedProvider(systemFeature: Option[String], traceHeaders: Vector[(String, String)])
+      extends GrpcClientProvider {
+
+    override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T =
+      GrpcClientProviderImpl.this.grpcClientFor(serviceClass, serviceName, systemFeature, traceHeaders)
+
+    override def forSystemFeature(systemFeature: String): GrpcClientProvider =
+      new ScopedProvider(Some(validSystemFeature(systemFeature)), traceHeaders)
+  }
+
+  private def grpcClientFor[T <: AkkaGrpcClient](
+      serviceClass: Class[T],
+      serviceName: String,
+      systemFeature: Option[String],
+      traceHeaders: Vector[(String, String)]): T = {
+    // mocks are registered by service name only, and apply to a service in a system feature as well
+    grpcMockLookup(ClientKey(serviceClass, serviceName)) match {
+      case Some(mock) =>
+        // Skip header propagation for mocked clients — user-provided mock subclasses don't
+        // typically implement addRequestHeader and would throw or return a non-mock instance.
+        mock.asInstanceOf[T]
       case None =>
-        clients
+        val clientKey = ClientKey(serviceClass, serviceName, systemFeature)
+        val client = clients
           .computeIfAbsent(
             clientKey,
             { _ =>
-              val client = createNewClientFor(serviceClass, serviceName)
+              val client = createNewClientFor(serviceClass, serviceName, systemFeature)
               client.closed().asScala.foreach { _ =>
                 // user should not close client, but just to be sure we don't keep it around if they do
                 clients.remove(clientKey, client)
@@ -148,15 +184,22 @@ private[akka] final class GrpcClientProviderImpl(
               client
             })
           .asInstanceOf[T]
+        traceHeaders.foldLeft(client) { case (acc, (key, value)) =>
+          acc.addRequestHeader(key, value).asInstanceOf[T]
+        }
     }
   }
 
-  private[akka] def createNewClientFor[T <: AkkaGrpcClient](clientClass: Class[T], serviceName: String): T = {
+  private[akka] def createNewClientFor[T <: AkkaGrpcClient](
+      clientClass: Class[T],
+      serviceName: String,
+      systemFeature: Option[String] = None): T = {
     val clientSettings = {
       if (isAkkaService(serviceName)) {
         // special cases in dev mode:
         settings.devModeSettings match {
           case Some(devModeSettings) =>
+            // Note: system features do not exist in dev mode, a service in a system feature is looked up by name only
             // First check for dev backoffice config
             devModeSettings.backoffice.services.get(serviceName) match {
               case Some(backofficeServiceSettings) =>
@@ -178,9 +221,9 @@ private[akka] final class GrpcClientProviderImpl(
                 s"Configuration override for [${serviceName}] found in 'application.conf'. This is not supported and is ignored.")
             }
 
-            log.debug("Creating gRPC client for Akka service [{}]", serviceName)
+            log.debug("Creating gRPC client for Akka service [{}], system feature [{}]", serviceName, systemFeature)
             GrpcClientSettings
-              .connectToServiceAt(serviceName, 80)(system)
+              .connectToServiceAt(ServiceAddress.hostFor(serviceName, deploymentInfo, systemFeature), 80)(system)
               // (TLS is handled for us by Kalix infra)
               .withTls(false)
         }
@@ -285,18 +328,6 @@ private[akka] final class GrpcClientProviderImpl(
       builder.result()
     }
     if (otelTraceHeaders.isEmpty) this
-    else
-      new GrpcClientProvider {
-        override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T = {
-          val client = GrpcClientProviderImpl.this.grpcClientFor(serviceClass, serviceName)
-          // Skip header propagation for mocked clients — user-provided mock subclasses don't
-          // typically implement addRequestHeader and would throw or return a non-mock instance.
-          if (grpcMockLookup(ClientKey(serviceClass, serviceName)).isDefined) client
-          else
-            otelTraceHeaders.foldLeft(client) { case (acc, (key, value)) =>
-              acc.addRequestHeader(key, value).asInstanceOf[T]
-            }
-        }
-      }
+    else new ScopedProvider(systemFeature = None, otelTraceHeaders)
   }
 }
