@@ -119,7 +119,7 @@ The default values for all evaluator entries and bindings are under `akka.javasd
 
 The same configuration binds a xref:_durable_evaluators[durable evaluator]. The key is its `@Component` id.
 
-Set `control-id` on the evaluator, not on a binding, to name the control that the evaluator implements. See xref:concepts:governance-and-the-runtime.adoc#control-ids[control ids].
+Set `control-id` on the evaluator, not on a binding, to name the control that the evaluator implements. See xref:concepts:governance-and-the-runtime.adoc#control-ids[control ids]. The runtime records the control id on each evaluation that the evaluator runs, and link:{attachmentsdir}/api/akka/javasdk/ledger/EvaluationRecord.html[`EvaluationRecord.controlId()`] returns it.
 
 NOTE: Evaluators typically use an LLM and therefore have a cost and overhead. You may want to enable them in test or staging environments and keep them disabled, or sampled, in high-volume production. Toggling a binding's `enabled` per deployment is the mechanism for that.
 
