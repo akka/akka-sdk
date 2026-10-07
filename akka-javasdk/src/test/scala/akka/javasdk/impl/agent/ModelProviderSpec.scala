@@ -69,16 +69,30 @@ object ModelProviderSpec {
     }
     """))
 
+  private val identityHeadersOnInSectionConfig =
+    ConfigFactory.load(ConfigFactory.parseString(s"""
+    akka.javasdk.agent {
+      identity-headers = off
+
+      gateway-openai = $${akka.javasdk.agent.openai}
+      gateway-openai {
+        identity-headers = on
+      }
+    }
+    """))
+
+  private val identityHeadersOffInOpenAiConfig =
+    ConfigFactory.load(ConfigFactory.parseString("""
+    akka.javasdk.agent.openai.identity-headers = off
+    """))
+
   /**
    * A provider kind, by the simple name of its `ModelProvider` type, the reference.conf section that configures it, and
    * an instance built in code.
    */
   final case class ProviderKind(name: String, configSection: Option[String], provider: ModelProvider)
 
-  /**
-   * Every provider kind that reaches the runtime with model settings. Adding a kind without adding it here fails `cover
-   * every model provider kind`.
-   */
+  /** Every provider kind that reaches the runtime with model settings. */
   private val providersCarryingModelSettings: Seq[ProviderKind] = Seq(
     ProviderKind("Anthropic", Some("anthropic"), ModelProvider.anthropic()),
     ProviderKind("GoogleAIGemini", Some("googleai-gemini"), ModelProvider.googleAiGemini()),
@@ -90,7 +104,7 @@ object ModelProviderSpec {
     ProviderKind("Bedrock", Some("bedrock"), ModelProvider.bedrock()),
     ProviderKind("MistralAi", Some("mistral-ai"), ModelProvider.mistralAi()))
 
-  /** The SPI has no model settings for these two, so they never carry the switch. */
+  /** The SPI gives these two the default model settings, where the identity headers are off. */
   private val providersWithoutModelSettings: Seq[ProviderKind] = Seq(
     ProviderKind("LocalAI", Some("local-ai"), ModelProvider.localAI()),
     ProviderKind("Custom", None, new NoConfigMyModelProvider()))
@@ -99,6 +113,8 @@ object ModelProviderSpec {
 class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matchers {
   import ModelProviderSpec.config
   import ModelProviderSpec.identityHeadersOffConfig
+  import ModelProviderSpec.identityHeadersOffInOpenAiConfig
+  import ModelProviderSpec.identityHeadersOnInSectionConfig
   import ModelProviderSpec.providersCarryingModelSettings
   import ModelProviderSpec.providersWithoutModelSettings
 
@@ -412,6 +428,16 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
       identityHeaders(ModelProvider.fromConfig(""), cfg) shouldBe false
       // a sibling section is unaffected
       identityHeaders(ModelProvider.fromConfig("gateway-openai"), config) shouldBe true
+    }
+
+    "let the resolved section turn the switch on when the global switch is off" in {
+      identityHeaders(ModelProvider.fromConfig("gateway-openai"), identityHeadersOnInSectionConfig) shouldBe true
+      identityHeaders(ModelProvider.fromConfig("openai"), identityHeadersOnInSectionConfig) shouldBe false
+    }
+
+    "ignore the provider section for a provider built in code" in {
+      identityHeaders(ModelProvider.openAi(), identityHeadersOffInOpenAiConfig) shouldBe true
+      identityHeaders(ModelProvider.fromConfig("openai"), identityHeadersOffInOpenAiConfig) shouldBe false
     }
 
     "never carry the switch for a provider without model settings" in {
