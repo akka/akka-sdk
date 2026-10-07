@@ -630,7 +630,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`Mode
 
 | model-name
 | String
-| The name of the model to use, e.g. "gemini-2.0-flash-001". See vendor documentation for a list of available models
+| The name of the model to use, e.g. "gemini-3.8-flash". See vendor documentation for a list of available models
 
 | api-key
 | String
@@ -642,7 +642,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`Mode
 
 | location
 | String
-| Google Cloud region, e.g. "us-central1". Used together with `project-id`
+| Google Cloud location, e.g. "global", or "us" or "eu" for the multi-region endpoints. Used together with `project-id`
 
 | base-url
 | Url
@@ -662,7 +662,11 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`Mode
 
 | thinking-budget
 | Integer
-| Tokens to spend on thinking (0 to disable thinking)
+| Tokens to spend on thinking for Gemini 2.5 models (0 to disable thinking). Must be 0 for Gemini 3 models
+
+| thinking-level
+| String
+| Control thinking for Gemini 3 models, exact values depend on the specific model chosen, must be empty for 2.5 models. See Vertex AI docs for more details: https://docs.cloud.google.com/vertex-ai/generative-ai/docs/thinking
 
 | max-output-tokens
 | Integer
@@ -685,6 +689,16 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`Mode
 | Additional HTTP headers to include in each request to the model API, as a list of `"name:value"` strings. Can also be set via `ADDITIONAL_VERTEX_AI_REQUEST_HEADERS_N` environment variables
 
 |===
+
+Example configuration for a Gemini 3 model, using application default credentials and a thinking level:
+
+[source,json,indent=0]
+.src/main/resources/application.conf
+----
+include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=agent-model-config-vertex-ai]
+----
+
+Gemini 2.5 models use `thinking-budget` instead of `thinking-level`.
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.VertexAi.html[`ModelProvider.VertexAi`] for programmatic settings.
 
