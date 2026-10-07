@@ -46,6 +46,45 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
       }
     }
 
+    "pick up a table updater update handler inherited from a base TableUpdater" in {
+      assertDescriptor[ViewWithInheritedUpdaterMethod] { desc =>
+        val table = desc.tables.find(_.tableName == "users").get
+        table.updateHandler shouldBe defined
+      }
+    }
+
+    "pick up a TableUpdater declared on a base View class" in {
+      assertDescriptor[ViewInheritingTableUpdater] { desc =>
+        val table = desc.tables.find(_.tableName == "users").get
+        table.updateHandler shouldBe defined
+        table.consumerSource shouldBe a[ConsumerSource.KeyValueEntitySource]
+      }
+    }
+
+    "let a view's own TableUpdater override an inherited one for the same table" in {
+      assertDescriptor[ViewOverridingTableUpdater] { desc =>
+        // exactly one table, using the overriding updater which has no delete handler
+        desc.tables.map(_.tableName) shouldBe Seq("users")
+        val table = desc.tables.find(_.tableName == "users").get
+        table.updateHandler shouldBe defined
+        table.deleteHandler shouldBe empty
+      }
+    }
+
+    "keep a table for an inherited updater even when no query references that table" in {
+      assertDescriptor[ViewWithUnqueriedInheritedTable] { desc =>
+        desc.tables.map(_.tableName).toSet shouldBe Set("users", "orders")
+        desc.queries.map(_.name) shouldBe Seq("getOrder")
+      }
+    }
+
+    "allow a query inherited from a base class that references a table with no updater" in {
+      assertDescriptor[ViewInheritingQueryWithoutUpdater] { desc =>
+        desc.tables.map(_.tableName).toSet shouldBe Set("users", "orders")
+        desc.queries.map(_.name).toSet shouldBe Set("getUser", "getGhost")
+      }
+    }
+
     "allow View query with quoted table name" in {
       assertDescriptor[ViewWithQuotedTableName] { desc =>
         desc.tables.map(_.tableName) shouldBe Seq("üsérs tåble")
