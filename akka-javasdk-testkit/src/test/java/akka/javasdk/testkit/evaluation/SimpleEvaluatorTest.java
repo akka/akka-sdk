@@ -1,0 +1,61 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.testkit.evaluation;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import akka.javasdk.evaluation.Evaluation;
+import akka.javasdk.evaluation.Subject;
+import akka.javasdk.testkit.EvaluatorResult;
+import akka.javasdk.testkit.EvaluatorTestKit;
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
+
+public class SimpleEvaluatorTest {
+
+  private final EvaluatorTestKit<SimpleEvaluator> testKit =
+      EvaluatorTestKit.of(SimpleEvaluator::new);
+
+  private Subject agentInteraction(String interactionId) {
+    return new Subject.Interaction(interactionId, "support-agent", Optional.empty());
+  }
+
+  @Test
+  public void completesEvaluation() {
+    EvaluatorResult result = testKit.evaluate(agentInteraction("interaction-1"), "eval-42");
+
+    assertTrue(result.isComplete());
+    assertFalse(result.isInconclusive());
+
+    Evaluation evaluation = result.getEvaluation();
+    assertTrue(evaluation.passed());
+    assertEquals(0.9, evaluation.score().orElseThrow());
+    assertEquals("good", evaluation.label().orElseThrow());
+    assertEquals("support-agent", evaluation.attributes().get("agent"));
+    assertTrue(evaluation.explanation().contains("eval-42"));
+  }
+
+  @Test
+  public void reportsInconclusive() {
+    EvaluatorResult result = testKit.evaluate(agentInteraction("inconclusive"));
+
+    assertTrue(result.isInconclusive());
+    assertFalse(result.isComplete());
+    assertEquals("cannot evaluate interaction inconclusive", result.getInconclusiveReason());
+  }
+
+  @Test
+  public void worksWithInteractionInFlow() {
+    Subject subject =
+        new Subject.Interaction("interaction-1", "support-agent", Optional.of("flow-1"));
+
+    EvaluatorResult result = testKit.evaluate(subject);
+
+    assertTrue(result.isComplete());
+    assertEquals("support-agent", result.getEvaluation().attributes().get("agent"));
+  }
+}

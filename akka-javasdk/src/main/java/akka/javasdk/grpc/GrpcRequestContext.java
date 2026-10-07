@@ -9,7 +9,9 @@ import akka.grpc.javadsl.Metadata;
 import akka.javasdk.Context;
 import akka.javasdk.JwtClaims;
 import akka.javasdk.Principals;
+import akka.javasdk.SpiffeContext;
 import akka.javasdk.Tracing;
+import java.util.Optional;
 
 /**
  * Not for user extension, can be injected as constructor parameter into gRPC endpoint components
@@ -36,4 +38,10 @@ public interface GrpcRequestContext extends Context {
 
   /** Access to tracing for custom app specific tracing. */
   Tracing tracing();
+
+  /**
+   * The SPIFFE context for this endpoint, including the caller's identity if the request came from
+   * another Akka service in the same project. Empty when SPIFFE is disabled.
+   */
+  Optional<SpiffeContext> getSpiffeContext();
 }

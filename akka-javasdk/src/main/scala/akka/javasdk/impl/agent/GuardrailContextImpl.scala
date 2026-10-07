@@ -5,11 +5,15 @@
 package akka.javasdk.impl.agent
 
 import akka.annotation.InternalApi
+import akka.javasdk.agent.ClassifierClient
 import akka.javasdk.agent.GuardrailContext
 import com.typesafe.config.Config
 
 /**
  * INTERNAL API
  */
-@InternalApi private[javasdk] final class GuardrailContextImpl(override val name: String, override val config: Config)
+@InternalApi private[javasdk] final class GuardrailContextImpl(
+    override val name: String,
+    override val config: Config,
+    override val classifierClient: ClassifierClient)
     extends GuardrailContext

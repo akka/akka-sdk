@@ -1,0 +1,203 @@
+= Evaluators
+:page-component-type: evaluator
+:page-summary: A component the runtime triggers for each interaction of a bound agent, to assess it and record a verdict.
+:page-when-to-use: When you want agent interactions assessed automatically as they happen, for quality tracking, regression detection, or compliance, without adding evaluation calls to the agents themselves.
+:page-related: xref:sdk:agents/llm_eval.adoc[], xref:sdk:agents.adoc[], xref:concepts:governance-and-the-runtime.adoc[]
+:page-prerequisites: An Akka project with at least one agent defined.
+:page-persona: developer, governance-compliance
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
+
+== Overview
+
+An link:{attachmentsdir}/api/akka/javasdk/evaluation/Evaluator.html[`Evaluator`] is a component that assesses agent interactions.
+You bind it to one or more agents in configuration, and the runtime then invokes it once for each interaction of a bound agent, passing the interaction to evaluate.
+The evaluator returns a verdict, pass or fail, optionally with a score, a label, and attributes.
+The runtime records the verdict in the ledger and exposes it in metrics and traces.
+
+Without an Evaluator, you evaluate interactions yourself. For an autonomous agent, you write a Consumer that listens for task completions and calls a judge agent, as shown in xref:sdk:agents/llm_eval.adoc[LLM evaluation]. A request-based agent has no such event source, so you call the judge from the code that called the agent.
+In both cases the code is specific to one agent, and you repeat it for every agent you want evaluated.
+An Evaluator replaces that wiring with configuration.
+You implement the evaluation once and bind it to agents or agent roles in `application.conf`. The runtime then triggers it for every interaction of those agents.
+
+Two kinds of evaluator exist:
+
+* `Evaluator` handles one interaction in a single `evaluate` call. Use it when the evaluation completes in one step, for example a single judge call.
+* xref:_durable_evaluators[`DurableEvaluator`] runs the evaluation as a sequence of steps with durable state, and resumes from the last completed step after a restart. Use it when the evaluation needs several calls or waits on an external party.
+
+Both kinds are bound to agents the same way and record the same kind of result.
+
+NOTE: An Evaluator runs after the interaction has completed, in the background. It does not delay the agent's response, and its verdict cannot change what the agent does next. If the agent or workflow must react to the verdict, for example retry a step that failed the evaluation, call the judge agent directly from the agent or workflow, as described in xref:sdk:agents/llm_eval.adoc[LLM evaluation].
+
+== Implementing an evaluator
+
+An evaluator extends `Evaluator`, is annotated with `@Component`, and implements `evaluate(EvaluationContext)`.
+The context identifies the interaction to assess; the evaluator fetches that interaction from the xref:_the_ledger_client[ledger], reaches a verdict, and returns it through the `Effect` builder:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/InteractionQualityEvaluator.java[InteractionQualityEvaluator.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/InteractionQualityEvaluator.java[tag=all]
+----
+<1> An evaluator is a component and needs a `@Component` id. The id is how the evaluator is referred to in configuration.
+<2> Extend `Evaluator`.
+<3> A `LedgerClient` is injected to fetch the interaction under evaluation.
+<4> `EvaluationContext.subject().interactionId()` identifies the interaction; fetch its record from the ledger.
+<5> `inconclusive` reports that the evaluator ran but reached no verdict, which is distinct from a failing verdict.
+<6> `complete` with an `Evaluation` records the verdict.
+<7> An `Evaluation` can carry a score, a label, and arbitrary attributes for downstream analysis.
+
+The runtime creates a new evaluator instance for each evaluation, so the evaluator holds no state between interactions.
+
+The link:{attachmentsdir}/api/akka/javasdk/evaluation/Subject.html[`Subject`] in the link:{attachmentsdir}/api/akka/javasdk/evaluation/EvaluationContext.html[`EvaluationContext`] also carries `agentComponentId()`, useful when one evaluator is bound to several agents, and `flowId()` when the agent ran inside an autonomous-agent flow.
+
+=== Recording the verdict
+
+The link:{attachmentsdir}/api/akka/javasdk/evaluation/Evaluation.html[`Evaluation`] captures whether the interaction passed, an explanation, and optional quantitative (`score`) and categorical (`label`) results, plus arbitrary `attributes`.
+Build one with the fluent factories:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/EvaluationBuilding.java[EvaluationBuilding.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/EvaluationBuilding.java[tag=build]
+----
+
+The `Effect` returned by `evaluate` is one of:
+
+* `effects().complete(evaluation)`: the evaluation completed with its verdict.
+* `effects().inconclusive(reason)`: the evaluator ran but reached no verdict, for example there was no transcript or the interaction was not applicable.
+
+An exception thrown from `evaluate` is a failure, not an inconclusive result. The runtime logs the exception and records a failed evaluation.
+Every evaluation therefore ends in one of three recorded outcomes: a verdict, inconclusive, or failed.
+
+An evaluator records one verdict per evaluation.
+When one evaluator judges several criteria, combine them into one `Evaluation`: `passed` is the overall verdict, and the explanation and the attributes carry the result per criterion.
+Use one evaluator per criterion when the criteria do not combine into one verdict.
+Each evaluator bound to an agent adds one trigger and one ledger record per interaction.
+
+== Binding evaluators to agents
+
+Evaluators are bound to agents under `akka.javasdk.evaluation.evaluators`, keyed by the evaluator's `@Component` id.
+Each binding declares a `trigger`. The supported value is `interaction`, meaning the evaluator runs for each interaction of the bound agent:
+
+[source,conf,indent=0]
+.src/main/resources/application.conf
+----
+akka.javasdk.evaluation.evaluators {
+  interaction-quality-evaluator {                 // <1>
+    agents {
+      support-agent { trigger = interaction }     // <2>
+      billing-agent { trigger = interaction, enabled = false } // <3>
+    }
+    agent-roles {
+      customer-facing { trigger = interaction }   // <4>
+    }
+  }
+}
+----
+<1> The evaluator's `@Component` id.
+<2> Bind the evaluator to `support-agent`. It runs for each of that agent's interactions.
+<3> A binding can be disabled, for example in a deployment override, with `enabled = false`.
+<4> Bind the evaluator to every agent annotated with `@AgentRole("customer-facing")`.
+
+Under `agent-roles`, the key `*` binds every agent that has any role.
+
+WARNING: A `*` binding also binds a judge agent that has an `@AgentRole`. The evaluator's own call to the judge is then an interaction of a bound agent, which triggers the evaluator again, without end. Give judge agents no role, or add an entry with `enabled = false` for them under `agents`.
+
+When an agent matches more than one entry, the runtime uses one of them, in this order:
+
+. The entry for the agent under `agents`.
+. The entry for the agent's role under `agent-roles`.
+. The `*` entry under `agent-roles`.
+
+In the example, `billing-agent` has its own entry under `agents`, and that entry is disabled. The runtime does not evaluate `billing-agent`, even though it has the `customer-facing` role.
+
+The `enabled` setting defaults to `true`. Set `enabled = false` on an evaluator entry to disable the evaluator for all agents. Set it on a single binding to disable only that binding.
+
+The default values for all evaluator entries and bindings are under `akka.javasdk.evaluation.defaults`. A value set on an individual entry overrides the default for that entry.
+
+The same configuration binds a xref:_durable_evaluators[durable evaluator]. The key is its `@Component` id.
+
+Set `control-id` on the evaluator, not on a binding, to name the control that the evaluator implements. See xref:concepts:governance-and-the-runtime.adoc#control-ids[control ids].
+
+NOTE: Evaluators typically use an LLM and therefore have a cost and overhead. You may want to enable them in test or staging environments and keep them disabled, or sampled, in high-volume production. Toggling a binding's `enabled` per deployment is the mechanism for that.
+
+
+[#_durable_evaluators]
+== Durable evaluators
+
+For an evaluation that runs in several steps and must survive restarts, extend link:{attachmentsdir}/api/akka/javasdk/evaluation/DurableEvaluator.html[`DurableEvaluator`] instead of `Evaluator`.
+Each evaluation runs as its own durable instance. The instance keeps a state of your choice across its steps and, if it is stopped for any reason, resumes from the last completed step.
+Use it for composed evaluations that accumulate results from several judge calls, or for evaluations that wait on an external party such as human review.
+
+A durable evaluator starts in `onEvaluation(EvaluationContext)` and progresses through step methods. Each step is a method that returns `Effect`, and an effect either transitions to the next step or finishes the evaluation.
+The example has one step, which judges the interaction:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/TranscriptJudgeDurableEvaluator.java[TranscriptJudgeDurableEvaluator.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/TranscriptJudgeDurableEvaluator.java[tag=all]
+----
+<1> Extend `DurableEvaluator` with the state type as the type parameter. This evaluator keeps no state, so it uses `Void`.
+<2> Override `settings()` to set the evaluation timeout, the default step timeout, and the number of step retries. Without `settings()`, the runtime defaults apply and a failed step is not retried.
+<3> `onEvaluation` is the entry point. It transitions to the first step.
+<4> A step method takes no parameters, or one input parameter, and returns `Effect`. `evaluationContext()` gives the subject and the evaluation id in every step. The step fetches the interaction from the ledger by id instead of receiving it.
+<5> The judge runs in a session derived from the evaluation id, separate from the evaluated agent's session. The judge agent uses `MemoryProvider.none()`, so a retried step does not see the earlier attempt and no session memory remains after the evaluation.
+<6> `complete` records the verdict and removes the evaluation instance.
+
+Like a workflow, a durable evaluator can chain any number of steps. A step transitions to the next one with `effects().transitionTo(step)`, passes a value into a step that takes a parameter with `withInput(value)`, and keeps a state across steps with `updateState(newState)`, which the next step reads with `currentState()`. The state must be serializable with Jackson, in the same way as workflow state. Keep it small: the interaction itself stays in the ledger, and each step fetches it by id. Use the state for results that steps accumulate, for example the verdicts of several judge calls that a final step combines.
+
+The `Effect` of `onEvaluation` and of every step is one of:
+
+* `effects().transitionTo(step)`, optionally preceded by `updateState(newState)`: continue with the given step.
+* `effects().complete(evaluation)`: record the verdict and remove the instance.
+* `effects().inconclusive(reason)`: record that no verdict was reached and remove the instance.
+
+There is no other way to finish. When a step exhausts its retries or the evaluation timeout expires, the runtime records a failed evaluation and removes the instance.
+An evaluation that has completed cannot transition further.
+
+[#_the_ledger_client]
+== The ledger client
+
+The ledger is the log of recorded agent interactions and their evaluations. It is also used for console visibility and auditing.
+A link:{attachmentsdir}/api/akka/javasdk/ledger/LedgerClient.html[`LedgerClient`] fetches records from it. It can be injected into any component, but in practice it is mainly evaluators that use it.
+
+== Testing
+
+=== Unit testing an evaluator
+
+Use link:{attachmentsdir}/testkit/akka/javasdk/testkit/EvaluatorTestKit.html[`EvaluatorTestKit`] to run an evaluator's `evaluate` handler over a chosen `Subject` and assert on the outcome, supplying whatever dependencies the evaluator needs through the factory. For an evaluator that reads from the ledger, seed a link:{attachmentsdir}/testkit/akka/javasdk/testkit/TestLedgerClient.html[`TestLedgerClient`] with the interaction records it should fetch, instead of running a real ledger:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[EvaluatorTestKitSample.java]
+----
+include::example$doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[tag=test]
+----
+<1> `TestLedgerClient.create().seed(...)` builds an in-memory `LedgerClient` holding the given records, keyed by interaction id.
+
+=== Integration testing with the runtime
+
+An integration test runs the service in the local runtime, so the runtime triggers the evaluator the same way it does in production. Use it in two cases:
+
+* To test a durable evaluator. `EvaluatorTestKit` covers only `Evaluator`; there is no unit testkit for `DurableEvaluator`.
+* To test that an evaluator is bound to the right agent, because the binding is read from configuration and a unit test does not see it.
+
+The test extends `TestKitSupport` and has three parts. First, bind the evaluator to the agent in the testkit configuration and replace the models with `TestModelProvider`. Second, call the agent with `withDetailedReply()` to get the interaction id. Third, read the recorded evaluation from the ledger with `getLedgerClient()`. The evaluation runs after the agent has replied, so the test polls until the record appears.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/evaluator/TranscriptJudgeDurableEvaluatorIntegrationTest.java[TranscriptJudgeDurableEvaluatorIntegrationTest.java]
+----
+include::example$doc-snippets/src/test/java/com/example/evaluator/TranscriptJudgeDurableEvaluatorIntegrationTest.java[tag=settings]
+----
+<1> Bind the evaluator to the agent with `withAdditionalConfig`, and replace both the agent's and the judge's model with a `TestModelProvider`.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/evaluator/TranscriptJudgeDurableEvaluatorIntegrationTest.java[TranscriptJudgeDurableEvaluatorIntegrationTest.java]
+----
+include::example$doc-snippets/src/test/java/com/example/evaluator/TranscriptJudgeDurableEvaluatorIntegrationTest.java[tag=test]
+----
+<1> Call the agent with `withDetailedReply()` to get the interaction id.
+<2> The evaluation runs in the background, so poll `getLedgerClient().getEvaluations(interactionId)` until the record appears.
+<3> Check that the outcome is a verdict before reading the `Evaluation`. A failed or inconclusive evaluation has no `Evaluation`.
+

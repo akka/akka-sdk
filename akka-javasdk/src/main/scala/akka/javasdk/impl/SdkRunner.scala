@@ -43,13 +43,20 @@ import akka.javasdk.NotificationPublisher
 import akka.javasdk.Principals
 import akka.javasdk.Retries
 import akka.javasdk.Sanitizer
+import akka.javasdk.SanitizerClient
+import akka.javasdk.SanitizerContext
 import akka.javasdk.ServiceSetup
+import akka.javasdk.SpiffeContext
+import akka.javasdk.TextSanitizer
 import akka.javasdk.Tracing
 import akka.javasdk.UnhandledExceptionContext
 import akka.javasdk.UnhandledExceptionHandler
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.AgentRegistry
+import akka.javasdk.agent.Classifier
+import akka.javasdk.agent.ClassifierClient
+import akka.javasdk.agent.ClassifierContext
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.annotations.Component
@@ -58,6 +65,8 @@ import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
+import akka.javasdk.evaluation.DurableEvaluator
+import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.grpc.AbstractGrpcEndpoint
@@ -70,12 +79,15 @@ import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
 import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.SdkRunner.extractSpiSettings
+import akka.javasdk.impl.SpiffeContextImpl
 import akka.javasdk.impl.agent.AgentImpl
 import akka.javasdk.impl.agent.AgentImpl.AgentContextImpl
 import akka.javasdk.impl.agent.AgentRegistryImpl
 import akka.javasdk.impl.agent.AutonomousAgentImpl
+import akka.javasdk.impl.agent.ClassifierProvider
 import akka.javasdk.impl.agent.FunctionTools
 import akka.javasdk.impl.agent.GuardrailProvider
+import akka.javasdk.impl.agent.GuardrailProvider.AgentGuardrails
 import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.impl.agent.PromptTemplateClient
 import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
@@ -85,12 +97,16 @@ import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.consumer.MessageContextImpl
+import akka.javasdk.impl.evaluation.DurableEvaluatorImpl
+import akka.javasdk.impl.evaluation.EvaluatorImpl
+import akka.javasdk.impl.evaluation.EvaluatorSettings
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.HttpRequestContextImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
+import akka.javasdk.impl.ledger.LedgerClientImpl
 import akka.javasdk.impl.objectstorage.ObjectStorageProviderImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
@@ -104,6 +120,7 @@ import akka.javasdk.impl.workflow.WorkflowContextImpl
 import akka.javasdk.impl.workflow.WorkflowImpl
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
+import akka.javasdk.ledger.LedgerClient
 import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
 import akka.javasdk.objectstorage.ObjectStorageProvider
@@ -121,6 +138,7 @@ import akka.runtime.sdk.spi.AgentDescriptor
 import akka.runtime.sdk.spi.AutonomousAgentDescriptor
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.ConsumerDescriptor
+import akka.runtime.sdk.spi.EvaluatorDescriptor
 import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
 import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
@@ -130,8 +148,10 @@ import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgent
+import akka.runtime.sdk.spi.SpiClassifierClient
+import akka.runtime.sdk.spi.SpiClassifierSetup
 import akka.runtime.sdk.spi.SpiComponents
-import akka.runtime.sdk.spi.SpiConfiguredGuardrail
+import akka.runtime.sdk.spi.SpiConsumer
 import akka.runtime.sdk.spi.SpiDeployedEventingSettings
 import akka.runtime.sdk.spi.SpiDevModeSettings
 import akka.runtime.sdk.spi.SpiDevObjectStorageBucketConfig
@@ -146,15 +166,20 @@ import akka.runtime.sdk.spi.SpiDevObjectStorageS3PathAccessStyle
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3VirtualHostAccessStyle
+import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
+import akka.runtime.sdk.spi.SpiSanitizerClient
 import akka.runtime.sdk.spi.SpiSanitizerEngine
+import akka.runtime.sdk.spi.SpiSanitizerSetup
 import akka.runtime.sdk.spi.SpiServiceInfo
 import akka.runtime.sdk.spi.SpiSettings
+import akka.runtime.sdk.spi.SpiSpiffeContext
 import akka.runtime.sdk.spi.SpiTask
 import akka.runtime.sdk.spi.SpiTestSettings
+import akka.runtime.sdk.spi.SpiTimedAction
 import akka.runtime.sdk.spi.SpiUnhandledException
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.StartContext
@@ -162,7 +187,9 @@ import akka.runtime.sdk.spi.TimedActionDescriptor
 import akka.runtime.sdk.spi.UserFunctionError
 import akka.runtime.sdk.spi.ViewDescriptor
 import akka.runtime.sdk.spi.WorkflowDescriptor
+import akka.runtime.sdk.spi.WorkflowEvaluatorDescriptor
 import akka.runtime.sdk.spi.tracing.InMemorySpanExporter
+import akka.runtime.sdk.spi.{ LedgerClient => SpiLedgerClient }
 import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import com.typesafe.config.Config
@@ -416,6 +443,7 @@ class SdkRunner private (
         startContext.materializer,
         startContext.componentClients,
         startContext.eventLogClient,
+        startContext.ledgerClient,
         startContext.remoteIdentification,
         startContext.tracerFactory,
         startContext.sdkMeter,
@@ -426,6 +454,8 @@ class SdkRunner private (
         startedPromise,
         getSettings,
         startContext.sanitizer,
+        startContext.classifierClient,
+        startContext.sanitizerClient,
         httpMockLookup,
         grpcMockLookup,
         startContext.inMemorySpanExporter,
@@ -462,6 +492,8 @@ private object ComponentType {
   val View = "view"
   val Agent = "agent"
   val AutonomousAgent = "autonomous-agent"
+  val Evaluator = "evaluator"
+  val DurableEvaluator = "durable-evaluator"
 }
 
 /**
@@ -469,6 +501,7 @@ private object ComponentType {
  */
 @InternalApi
 private[javasdk] object Sdk {
+  @nowarn("msg=deprecated")
   final case class StartupContext(
       componentClients: ComponentClients,
       eventLogClient: EventLogClient,
@@ -480,6 +513,9 @@ private[javasdk] object Sdk {
       overrideModelProvider: OverrideModelProvider,
       serializer: Serializer,
       sanitizer: Sanitizer,
+      classifierClient: ClassifierClient,
+      sanitizerClient: SanitizerClient,
+      ledgerClient: LedgerClient,
       inMemorySpanExporter: Option[InMemorySpanExporter],
       // Completed by the runtime with the address its HTTP endpoint was bound to, see StartContext. Carried
       // here for the testkit, which awaits it from the thread that started the testkit. Nothing in the SDK
@@ -500,7 +536,8 @@ private[javasdk] object Sdk {
     classOf[Retries],
     classOf[AgentContext],
     classOf[AgentRegistry],
-    classOf[ObjectStorageProvider])
+    classOf[ObjectStorageProvider],
+    classOf[LedgerClient])
 
   // Run a user-supplied callback, logging any failure on the user component's own logger so it reaches the user.
   // Rethrows by default; pass rethrow = false where a failing callback must not abort the surrounding flow.
@@ -541,6 +578,7 @@ private final class Sdk(
     sdkMaterializer: Materializer,
     runtimeComponentClients: ComponentClients,
     eventLogClient: EventLogClient,
+    spiLedgerClient: SpiLedgerClient,
     remoteIdentification: Option[RemoteIdentification],
     tracerFactory: String => Tracer,
     sdkMeter: Meter,
@@ -551,6 +589,8 @@ private final class Sdk(
     startedPromise: Promise[StartupContext],
     spiSettings: SpiSettings,
     runtimeSanitizer: SpiSanitizerEngine,
+    runtimeClassifierClient: SpiClassifierClient,
+    runtimeSanitizerClient: SpiSanitizerClient,
     httpMockLookup: String => Option[
       java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
     grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient],
@@ -626,7 +666,18 @@ private final class Sdk(
       invalid.throwFailureSummary()
   }
 
-  private val guardrailProvider = new GuardrailProvider(system, applicationConfig)
+  // Constructed before the GuardrailProvider, whose guardrails may need to invoke a classifier.
+  // Deliberately NOT validated here: validateClassifiers() runs from preStart instead (see below),
+  // after ServiceSetup's createDependencyProvider(), so a classifier constructor can depend on the
+  // user's DependencyProvider. Guardrail construction stays eager (agent descriptor building needs
+  // concrete bindings from guardrailProvider.agentGuardrails(...) below), so a classifier reached
+  // only from inside a guardrail's constructor is still constructed here, early -- guardrails
+  // themselves are out of scope for this deferral.
+  private val classifierProvider =
+    new ClassifierProvider(system, applicationConfig, runtimeClassifierClient, wireClassifier)
+
+  private val guardrailProvider =
+    new GuardrailProvider(system, applicationConfig, sdkTracerFactory, classifierProvider.client)
   try {
     guardrailProvider.validate()
   } catch {
@@ -635,7 +686,79 @@ private final class Sdk(
       throw exc
   }
 
+  // Constructed after the ClassifierProvider so a sanitizer's constructor can take a ClassifierClient.
+  // Validated from preStart, like the classifiers, so a sanitizer constructor can depend on the user's
+  // DependencyProvider.
+  private val sanitizerProvider =
+    new SanitizerProvider(system, applicationConfig, runtimeSanitizerClient, wireSanitizer)
+
+  // Routes classifier construction through the general DI mechanism (classifiers only --
+  // guardrails are left to the separate enhanced-guardrail work), so a classifier's constructor
+  // can declare any of the platform-managed dependencies (HttpClientProvider, ComponentClient,
+  // ...) alongside/instead of ClassifierContext.
+  private def wireClassifier(clz: Class[Classifier], context: ClassifierContext): Classifier =
+    wiredInstance[Classifier]("Classifier", clz) {
+      sideEffectingComponentInjects(None, callerSpiffe = None).orElse {
+        case c if c == classOf[ClassifierContext] =>
+          context
+      }
+    }
+
+  private def wireSanitizer(clz: Class[TextSanitizer], context: SanitizerContext): TextSanitizer =
+    wiredInstance[TextSanitizer]("Sanitizer", clz) {
+      sideEffectingComponentInjects(None, callerSpiffe = None).orElse {
+        case c if c == classOf[SanitizerContext] =>
+          context
+      }
+    }
+
+  // Called from preStart, after dependencyProviderOpt is finalized for this service, so a
+  // classifier constructor needing a user-DependencyProvider-supplied dependency can resolve it.
+  private def validateClassifiers(): Unit =
+    try classifierProvider.validate()
+    catch {
+      case NonFatal(exc) =>
+        logger.error("Invalid classifiers: {}", exc.getMessage, exc)
+        throw exc
+    }
+
+  // Called from preStart for the same reason as validateClassifiers().
+  private def validateSanitizers(): Unit =
+    try sanitizerProvider.validate()
+    catch {
+      case NonFatal(exc) =>
+        logger.error("Invalid sanitizers: {}", exc.getMessage, exc)
+        throw exc
+    }
+
+  private def validateStreamingResponseGuardrails(
+      componentId: String,
+      agentClass: Class[_],
+      agentGuardrails: AgentGuardrails): Unit =
+    agentGuardrails
+      .streamingResponseGuardrailError(componentId, Reflect.isStreamingAgent(agentClass))
+      .foreach { message =>
+        logger.error("Invalid guardrails: {}", message)
+        throw new IllegalArgumentException(message)
+      }
+
   lazy private val sanitizer = SanitizerImpl(runtimeSanitizer)
+  // The injected handle is deprecated in favour of SanitizerClient, so the class reference is held here
+  // rather than repeated at each injection site.
+  @nowarn("msg=deprecated")
+  private val deprecatedSanitizerClass: Class[_] = classOf[Sanitizer]
+  // Root-context handle for callers with no per-call telemetryContext (StartupContext/testkit);
+  // components get a per-injection handle via classifierClient(telemetryContext) below.
+  lazy private val classifierClient: ClassifierClient = classifierProvider.client
+  lazy private val sanitizerClient: SanitizerClient = sanitizerProvider.client
+
+  private def classifierClient(telemetryContext: Option[OtelContext]): ClassifierClient =
+    telemetryContext match {
+      case None          => classifierClient
+      case Some(context) => classifierProvider.clientFor(context)
+    }
+
+  private lazy val ledgerClient: LedgerClient = new LedgerClientImpl(spiLedgerClient, sdkExecutionContext)
 
   private def hasComponentId(clz: Class[_]): Boolean = {
     if (clz.hasAnnotation[Component]) {
@@ -681,18 +804,19 @@ private final class Sdk(
       regionInfo,
       runtimeComponentClients,
       { context =>
-
+        val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
         val workflow = wiredInstance("Workflow", clz) {
-          sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].telemetryContext).orElse {
-            // remember to update component type API doc and docs if changing the set of injectables
-            case p if p == classOf[WorkflowContext] => context
-            case p if p == classOf[NotificationPublisher[_]] =>
-              new NotificationPublisher[Any] {
-                override def publish(msg: Any): Unit = {
-                  factoryContext.publishToTopic.apply(serializer.toBytes(msg))
+          sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].telemetryContext, callerSpiffe)
+            .orElse {
+              // remember to update component type API doc and docs if changing the set of injectables
+              case p if p == classOf[WorkflowContext] => context
+              case p if p == classOf[NotificationPublisher[_]] =>
+                new NotificationPublisher[Any] {
+                  override def publish(msg: Any): Unit = {
+                    factoryContext.publishToTopic.apply(serializer.toBytes(msg))
+                  }
                 }
-              }
-          }
+            }
         }
         workflow
       })(system)
@@ -727,6 +851,8 @@ private final class Sdk(
   private var viewDescriptors = Vector.empty[ViewDescriptor]
   private var agentDescriptors = Vector.empty[AgentDescriptor]
   private var autonomousAgentDescriptors = Vector.empty[AutonomousAgentDescriptor]
+  private var evaluatorDescriptors = Vector.empty[EvaluatorDescriptor]
+  private var durableEvaluatorDescriptors = Vector.empty[WorkflowEvaluatorDescriptor]
   // Populated during scanning: componentId → (agentDefinition, spiTaskDefinitions)
   // Used by delegation wiring inside instanceFactory (called lazily after all agents registered)
   private var autonomousAgentDefinitionMap =
@@ -734,6 +860,27 @@ private final class Sdk(
   private var agentRegistryInfo = Vector.empty[AgentRegistryImpl.AgentDetails]
   // guardrail name => component ids
   private var guardrailEnabledForComponent = Map.empty[String, Set[String]]
+  // sanitizer name => component ids
+  private var sanitizerEnabledForComponent = Map.empty[String, Set[String]]
+
+  // Filtered once, because hasComponentId logs a warning for each class it leaves out.
+  private val annotatedComponentClasses = componentClasses.filter(hasComponentId)
+
+  // component id => role, for every agent of this service. An evaluator binds agents by role, and it can be
+  // scanned before the agents it binds, so the roles are read up front.
+  private val agentRolesByComponentId: Map[String, Option[String]] =
+    annotatedComponentClasses.collect {
+      case clz if Reflect.isAgent(clz) || Reflect.isAutonomousAgent(clz) =>
+        Reflect.readComponentId(clz) -> Reflect.readAgentRole(clz)
+    }.toMap
+
+  // An entry that names neither agents nor agent-roles applies to every agent, so it is accumulated for
+  // each of them.
+  private def accumulateSanitizers(componentId: String, role: Option[String]): Unit =
+    sanitizerProvider.agentSanitizers(componentId, role).foreach { sanitizer =>
+      sanitizerEnabledForComponent = sanitizerEnabledForComponent
+        .updated(sanitizer.name, sanitizerEnabledForComponent.getOrElse(sanitizer.name, Set.empty) + componentId)
+    }
 
   // Set once `spiComponents` below is computed (after this scanning loop). Consumers and timed
   // actions are constructed during the loop but only read this lazily, when handling a message,
@@ -770,7 +917,7 @@ private final class Sdk(
       case p if p == classOf[ComponentClient] => scanTimeComponentClient
       case r if r == classOf[AgentRegistry]   => scanTimeAgentRegistry
     }
-    overrides.orElse(sideEffectingComponentInjects(None))
+    overrides.orElse(sideEffectingComponentInjects(None, callerSpiffe = None))
   }
 
   private def isProvided(clz: Class[_]): Boolean = {
@@ -778,8 +925,7 @@ private final class Sdk(
     ComponentLocator.providedComponents.contains(clz)
   }
 
-  componentClasses
-    .filter(hasComponentId)
+  annotatedComponentClasses
     .foreach {
       case clz if Reflect.isEventSourcedEntity(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -824,7 +970,7 @@ private final class Sdk(
               wiredInstance("Event Sourced Entity", clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[EventSourcedEntityContext] => context
-                case s if s == classOf[Sanitizer]                 => sanitizer
+                case s if s == deprecatedSanitizerClass           => sanitizer
                 case r if r == classOf[AgentRegistry]             => agentRegistry
                 case p if p == classOf[NotificationPublisher[_]] =>
                   new NotificationPublisher[Any] {
@@ -877,7 +1023,7 @@ private final class Sdk(
               wiredInstance("Key Value Entity", clz.asInstanceOf[Class[KeyValueEntity[AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[KeyValueEntityContext] => context
-                case s if s == classOf[Sanitizer]             => sanitizer
+                case s if s == deprecatedSanitizerClass       => sanitizer
                 case r if r == classOf[AgentRegistry]         => agentRegistry
                 case p if p == classOf[NotificationPublisher[_]] =>
                   new NotificationPublisher[Any] {
@@ -933,13 +1079,15 @@ private final class Sdk(
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)
         val timedActionClass = clz.asInstanceOf[Class[TimedAction]]
-        val timedActionSpi =
+        val timedActionInstanceFactory: SpiTimedAction.FactoryContext => SpiTimedAction = { factoryContext =>
+          val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
           new TimedActionImpl[TimedAction](
             componentId,
             context =>
               wiredInstance("Timed Action", timedActionClass)(
                 sideEffectingComponentInjects(
-                  context.asInstanceOf[TimedActionImpl.CommandContextImpl].telemetryContext)),
+                  context.asInstanceOf[TimedActionImpl.CommandContextImpl].telemetryContext,
+                  callerSpiffe)),
             timedActionClass,
             system.classicSystem,
             runtimeComponentClients.timerClient,
@@ -949,15 +1097,18 @@ private final class Sdk(
             regionInfo,
             ComponentDescriptor.descriptorFor(timedActionClass, serializer),
             () => unhandledExceptionReporterFn)
+        }
         timedActionDescriptors :+=
-          new TimedActionDescriptor(
+          (new TimedActionDescriptor(
             componentId,
             clz.getName,
-            timedActionSpi,
+            timedActionInstanceFactory,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = Reflect.protoCommandHandlerInputTimedAction(clz.asInstanceOf[Class[TimedAction]]))
+            protobufDescriptors =
+              Reflect.protoCommandHandlerInputTimedAction(clz.asInstanceOf[Class[TimedAction]])): @nowarn(
+            "msg=deprecated"))
 
       case clz if Reflect.isConsumer(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -965,12 +1116,13 @@ private final class Sdk(
         val consumerDest = consumerDestination(consumerClass)
         val consumerSrc = consumerSource(consumerClass)
         val componentDescriptor = ComponentDescriptor.descriptorFor(consumerClass, serializer)
-        val consumerSpi =
+        val consumerInstanceFactory: SpiConsumer.FactoryContext => SpiConsumer = { factoryContext =>
+          val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
           new ConsumerImpl[Consumer](
             componentId,
             context =>
               wiredInstance("Consumer", consumerClass)(
-                sideEffectingComponentInjects(context.asInstanceOf[MessageContextImpl].telemetryContext)),
+                sideEffectingComponentInjects(context.asInstanceOf[MessageContextImpl].telemetryContext, callerSpiffe)),
             consumerClass,
             consumerSrc,
             consumerDest,
@@ -983,17 +1135,19 @@ private final class Sdk(
             componentDescriptor,
             regionInfo,
             () => unhandledExceptionReporterFn)
+        }
         consumerDescriptors :+=
-          new ConsumerDescriptor(
+          (new ConsumerDescriptor(
             componentId,
             clz.getName,
             consumerSrc,
             consumerDestination(consumerClass),
-            consumerSpi,
+            consumerInstanceFactory,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor))
+            protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor)): @nowarn(
+            "msg=deprecated"))
 
       case clz if Reflect.isAutonomousAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -1006,6 +1160,10 @@ private final class Sdk(
             guardrailName,
             guardrailEnabledForComponent.getOrElse(guardrailName, Set.empty) + componentId)
         }
+
+        // Unlike a guardrail, a sanitizer bound by agent-roles also binds an autonomous agent, so the role
+        // is read for both kinds of agent.
+        accumulateSanitizers(componentId, agentRolesByComponentId(componentId))
 
         // Throwaway instance to read definition() — uses scan-time injects so
         // ComponentClient injection cannot force agentCapabilityConverter mid-scan.
@@ -1045,19 +1203,21 @@ private final class Sdk(
             case any           => any.getClass
           }.toSeq
           val spiToolDescriptors =
-            FunctionTools.descriptorsFor(autonomousAgentClass) ++ toolClasses.flatMap(FunctionTools.descriptorsFor)
+            agentGuardrails.withToolGuardrails(
+              FunctionTools.descriptorsFor(autonomousAgentClass) ++ toolClasses.flatMap(FunctionTools.descriptorsFor))
           val spiMcpDescriptors =
             AgentImpl.toSpiMcpEndpoints(agentDefinition.mcpTools.asScala.toSeq, agentGuardrails, sdkExecutionContext)
 
           // Build SPI capabilities from SDK capabilities
           val spiCapabilities = agentCapabilityConverter.toSpiCapabilities(agentDefinition.capabilities)
 
+          val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
           new AutonomousAgentImpl(
             componentId,
             factoryContext.instanceId,
             context =>
               wiredInstance("AutonomousAgent", autonomousAgentClass) {
-                sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)
+                sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext, callerSpiffe)
               },
             sdkExecutionContext,
             sdkTracerFactory,
@@ -1074,8 +1234,7 @@ private final class Sdk(
             modelProvider = spiModelProvider,
             toolDescriptors = spiToolDescriptors,
             mcpClientDescriptors = spiMcpDescriptors,
-            requestGuardrails = agentGuardrails.modelRequestGuardrails,
-            responseGuardrails = agentGuardrails.modelResponseGuardrails,
+            agentGuardrails = agentGuardrails,
             capabilities = spiCapabilities)
         }
 
@@ -1094,7 +1253,7 @@ private final class Sdk(
         val componentId = Reflect.readComponentId(clz)
         val agentClass = clz.asInstanceOf[Class[Agent]]
 
-        val agentRoleOptValue = Reflect.readAgentRole(agentClass)
+        val agentRoleOptValue = agentRolesByComponentId(componentId)
         val agentGuardrails = guardrailProvider.agentGuardrails(componentId, agentRoleOptValue)
         agentGuardrails.entries.foreach { entry =>
           val guardrailName = entry.configuredGuardrail.name
@@ -1103,16 +1262,21 @@ private final class Sdk(
             guardrailEnabledForComponent.getOrElse(guardrailName, Set.empty) + componentId)
         }
 
+        accumulateSanitizers(componentId, agentRoleOptValue)
+        validateStreamingResponseGuardrails(componentId, agentClass, agentGuardrails)
+
         val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
+          val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
           new AgentImpl(
             componentId,
             factoryContext.sessionId,
             context =>
               wiredInstance("Agent", agentClass) {
-                sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext).orElse {
-                  // remember to update component type API doc and docs if changing the set of injectables
-                  case p if p == classOf[AgentContext] => context
-                }
+                sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext, callerSpiffe)
+                  .orElse {
+                    // remember to update component type API doc and docs if changing the set of injectables
+                    case p if p == classOf[AgentContext] => context
+                  }
               },
             sdkExecutionContext,
             sdkTracerFactory,
@@ -1142,6 +1306,57 @@ private final class Sdk(
 
         agentRegistryInfo :+= AgentRegistryImpl.agentDetailsFor(agentClass)
 
+      case clz if Reflect.isEvaluator(clz) =>
+        val componentId = Reflect.readComponentId(clz)
+        val evaluatorClass = clz.asInstanceOf[Class[Evaluator]]
+        val configured = EvaluatorSettings.configuredEvaluator(applicationConfig, componentId, agentRolesByComponentId)
+
+        val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { factoryContext =>
+          val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
+          new EvaluatorImpl[Evaluator](
+            // the runtime sets OTel baggage akka.evaluation.id around evaluate, so the wired
+            // ComponentClient inherits it from the ambient context for judge-call correlation
+            () => wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(None, callerSpiffe)),
+            evaluatorClass)
+        }
+
+        evaluatorDescriptors :+=
+          configured.evaluatorDescriptor(
+            componentId,
+            clz.getName,
+            name = Reflect.readComponentName(clz),
+            description = Reflect.readComponentDescription(clz),
+            instanceFactory = instanceFactory,
+            provided = isProvided(clz))
+
+      case clz if Reflect.isDurableEvaluator(clz) =>
+        val componentId = Reflect.readComponentId(clz)
+        val evaluatorClass = clz.asInstanceOf[Class[DurableEvaluator[Nothing]]]
+        val stateType = Reflect.durableEvaluatorStateType(clz).asInstanceOf[Class[Nothing]]
+        serializer.registerTypeHints(stateType)
+
+        val configured = EvaluatorSettings.configuredEvaluator(applicationConfig, componentId, agentRolesByComponentId)
+
+        durableEvaluatorDescriptors :+=
+          configured.workflowEvaluatorDescriptor(
+            componentId,
+            clz.getName,
+            name = Reflect.readComponentName(clz),
+            description = Reflect.readComponentDescription(clz),
+            instanceFactory = { factoryContext =>
+              val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
+              new DurableEvaluatorImpl[Nothing, DurableEvaluator[Nothing]](
+                factoryContext.evaluationId,
+                evaluatorClass,
+                stateType,
+                () =>
+                  wiredInstance("Durable Evaluator", evaluatorClass)(sideEffectingComponentInjects(None, callerSpiffe)),
+                factoryContext.recorder,
+                serializer,
+                sdkExecutionContext)
+            },
+            provided = false)
+
       case clz if Reflect.isView(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
 
@@ -1156,11 +1371,25 @@ private final class Sdk(
   // these are available for injecting in all kinds of component that are primarily
   // for side effects
   // Note: config is also always available through the combination with user DI way down below
-  private def sideEffectingComponentInjects(telemetryContext: Option[OtelContext]): PartialFunction[Class[_], Any] = {
+  private def callerSpiffeHeaderValue(spiffeContext: Option[SpiSpiffeContext]): Option[String] =
+    spiffeContext.flatMap { ctx =>
+      if (remoteIdentification.isDefined)
+        // Local dev: no l5d to establish service identity, send the full SPIFFE ID
+        Some(ctx.spiffeId)
+      else
+        // Production: service prefix is established by the service mesh; send only the component path
+        ctx.componentPath
+    }
+
+  // callerSpiffe deliberately has no default: every component factory must decide whether outbound
+  // calls carry the component's SPIFFE identity (None only where there is no component identity)
+  private def sideEffectingComponentInjects(
+      telemetryContext: Option[OtelContext],
+      callerSpiffe: Option[String]): PartialFunction[Class[_], Any] = {
     // remember to update component type API doc and docs if changing the set of injectables
     case p if p == classOf[ComponentClient]    => componentClient(telemetryContext)
-    case h if h == classOf[HttpClientProvider] => httpClientProvider(telemetryContext)
-    case g if g == classOf[GrpcClientProvider] => grpcClientProvider(telemetryContext)
+    case h if h == classOf[HttpClientProvider] => httpClientProvider(telemetryContext, callerSpiffe)
+    case g if g == classOf[GrpcClientProvider] => grpcClientProvider(telemetryContext, callerSpiffe)
     case t if t == classOf[TimerScheduler]     => timerScheduler(telemetryContext)
     case m if m == classOf[Materializer]       => sdkMaterializer
     case a if a == classOf[Retries]            => retries
@@ -1168,8 +1397,11 @@ private final class Sdk(
     case e if e == classOf[Executor]           =>
       // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
       sdkExecutionContext.asInstanceOf[Executor]
-    case s if s == classOf[Sanitizer] => sanitizer
-    case s if s == classOf[Meter]     => sdkMeter
+    case s if s == deprecatedSanitizerClass  => sanitizer
+    case c if c == classOf[ClassifierClient] => classifierClient(telemetryContext)
+    case s if s == classOf[SanitizerClient]  => sanitizerClient
+    case l if l == classOf[LedgerClient]     => ledgerClient
+    case s if s == classOf[Meter]            => sdkMeter
     case o if o == classOf[ObjectStorageProvider] =>
       objectStorageProvider(telemetryContext)
   }
@@ -1182,12 +1414,12 @@ private final class Sdk(
         //        pass auth headers with the runner startup context from the runtime
         Some(
           wiredInstance[ServiceSetup]("Service Setup", serviceClassClass.asInstanceOf[Class[ServiceSetup]])(
-            sideEffectingComponentInjects(None)))
+            sideEffectingComponentInjects(None, callerSpiffe = None)))
 
       case Some(serviceClassClass) =>
         // just wiring the class
         wiredInstance[Any]("Service Setup", serviceClassClass.asInstanceOf[Class[Any]])(
-          sideEffectingComponentInjects(None))
+          sideEffectingComponentInjects(None, callerSpiffe = None))
         None
       case _ => None
     }
@@ -1221,12 +1453,16 @@ private final class Sdk(
         workflowDescriptors ++
         agentDescriptors ++
         autonomousAgentDescriptors ++
+        evaluatorDescriptors ++
+        durableEvaluatorDescriptors ++
         mcpEndpoints)
         .filterNot(isDisabled(combinedDisabledComponents))
 
     val preStart = { (system: ActorSystem[_]) =>
       serviceSetup match {
         case None =>
+          validateClassifiers()
+          validateSanitizers()
           startedPromise.trySuccess(
             StartupContext(
               runtimeComponentClients,
@@ -1239,6 +1475,9 @@ private final class Sdk(
               overrideModelProvider,
               serializer,
               sanitizer,
+              classifierClient,
+              sanitizerClient,
+              ledgerClient,
               inMemorySpanExporter,
               httpEndpointBound))
           Future.successful(Done)
@@ -1251,6 +1490,8 @@ private final class Sdk(
               dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
             }
           }
+          validateClassifiers()
+          validateSanitizers()
           // Only register the shutdown task if the user actually overrode onShutdown,
           // otherwise we'd add a no-op task to coordinated shutdown for every service.
           val onShutdownOverridden =
@@ -1271,6 +1512,9 @@ private final class Sdk(
               overrideModelProvider,
               serializer,
               sanitizer,
+              classifierClient,
+              sanitizerClient,
+              ledgerClient,
               inMemorySpanExporter,
               httpEndpointBound))
           Future.successful(Done)
@@ -1328,15 +1572,14 @@ private final class Sdk(
       }
     unhandledExceptionReporterFn = onUnhandledException
 
-    val guardrailSetup = new SpiGuardrailSetup(guardrailProvider.configuredGuardrails.map { g =>
-      new SpiConfiguredGuardrail(
-        name = g.name,
-        implementationClass = g.implementationClass,
-        enabledForComponents = guardrailEnabledForComponent.getOrElse(g.name, Set.empty),
-        reportOnly = g.reportOnly,
-        useFor = g.useFor.map(_.toString),
-        config = g.config)
-    })
+    val guardrailSetup = new SpiGuardrailSetup(
+      guardrailProvider.spiGuardrails(name => guardrailEnabledForComponent.getOrElse(name, Set.empty)))
+
+    val classifierSetup = new SpiClassifierSetup(classifierProvider.spiConfiguredClassifiers)
+
+    val sanitizerSetup = new SpiSanitizerSetup(
+      sanitizerProvider.spiSanitizers(sanitizer => sanitizerEnabledForComponent.getOrElse(sanitizer.name, Set.empty)),
+      sanitizerProvider.spiLogSanitizers)
 
     val serviceNameOverride = sdkSettings.devModeSettings.map(_.serviceName)
 
@@ -1348,12 +1591,14 @@ private final class Sdk(
         protocolMajorVersion = BuildInfo.protocolMajorVersion,
         protocolMinorVersion = BuildInfo.protocolMinorVersion),
       componentDescriptors = descriptors,
-      guardrailSetup,
+      guardrailSetup = guardrailSetup,
+      classifierSetup = classifierSetup,
+      sanitizerSetup = sanitizerSetup,
       preStart = preStart,
       onStart = onStart,
       reportError = reportError,
-      healthCheck = () => SdkRunner.FutureDone,
-      onUnhandledException = onUnhandledException)
+      onUnhandledException = onUnhandledException,
+      healthCheck = () => SdkRunner.FutureDone)
   }
 
   private lazy val agentRegistry =
@@ -1372,8 +1617,9 @@ private final class Sdk(
     (context: HttpEndpointConstructionContext) =>
       lazy val requestContext = new HttpRequestContextImpl(context, sdkTracerFactory, regionInfo)(
         SystemMaterializer(system).materializer)
+      val callerSpiffe = callerSpiffeHeaderValue(context.spiffeContext)
       val instance = wiredInstance("HTTP Endpoint", httpEndpointClass) {
-        sideEffectingComponentInjects(Option(context.telemetryContext)).orElse {
+        sideEffectingComponentInjects(Option(context.telemetryContext), callerSpiffe).orElse {
           case p if p == classOf[RequestContext] => requestContext
         }
       }
@@ -1386,6 +1632,7 @@ private final class Sdk(
 
   private def grpcEndpointFactory[E](grpcEndpointClass: Class[E]): GrpcEndpointRequestConstructionContext => E =
     (context: GrpcEndpointRequestConstructionContext) => {
+      val callerSpiffe = callerSpiffeHeaderValue(context.spiffeContext)
 
       lazy val grpcRequestContext = new GrpcRequestContext {
         override def getPrincipals: Principals =
@@ -1404,10 +1651,13 @@ private final class Sdk(
         override def tracing(): Tracing = new SpanTracingImpl(Option(context.telemetryContext), sdkTracerFactory)
 
         override def selfRegion(): String = regionInfo.selfRegion
+
+        override def getSpiffeContext(): java.util.Optional[SpiffeContext] =
+          SpiffeContextImpl.fromSpiOpt(context.spiffeContext)
       }
 
       val instance = wiredInstance("gRPC Endpoint", grpcEndpointClass) {
-        sideEffectingComponentInjects(Option(context.telemetryContext)).orElse {
+        sideEffectingComponentInjects(Option(context.telemetryContext), callerSpiffe).orElse {
           case p if p == classOf[GrpcRequestContext] => grpcRequestContext
         }
       }
@@ -1422,6 +1672,7 @@ private final class Sdk(
     (context: McpEndpointConstructionContext) =>
 
       val telemetryContext = Option(context.telemetryContext)
+      val callerSpiffe = callerSpiffeHeaderValue(context.spiffeContext)
 
       lazy val mcpRequestContext = new McpRequestContext {
         override def getPrincipals: Principals =
@@ -1445,11 +1696,14 @@ private final class Sdk(
           // Note: force cast to Java header model
           context.requestHeaders.allHeaders.asInstanceOf[Seq[HttpHeader]].asJava
 
+        override def getSpiffeContext(): Optional[SpiffeContext] =
+          SpiffeContextImpl.fromSpiOpt(context.spiffeContext)
+
       }
 
       val instance = wiredInstance("MCP Endpoint", mcpEndpointClass) {
-        sideEffectingComponentInjects(telemetryContext).orElse {
-          case p if p == classOf[GrpcRequestContext] => mcpRequestContext
+        sideEffectingComponentInjects(telemetryContext, callerSpiffe).orElse {
+          case p if p == classOf[McpRequestContext] => mcpRequestContext
         }
       }
       instance match {
@@ -1539,11 +1793,12 @@ private final class Sdk(
     new TimerSchedulerImpl(runtimeComponentClients.timerClient, metadata)
   }
 
-  private def httpClientProvider(telemetryContext: Option[OtelContext]): HttpClientProvider =
-    telemetryContext match {
-      case None          => httpClientProvider
-      case Some(context) => httpClientProvider.withTelemetryContext(context)
-    }
+  private def httpClientProvider(
+      telemetryContext: Option[OtelContext],
+      callerSpiffe: Option[String]): HttpClientProvider = {
+    val withSpiffe = callerSpiffe.fold(httpClientProvider)(httpClientProvider.withCallerSpiffeHeader)
+    telemetryContext.fold(withSpiffe: HttpClientProvider)(withSpiffe.withTelemetryContext)
+  }
 
   private def objectStorageProvider(telemetryContext: Option[OtelContext]): ObjectStorageProvider =
     telemetryContext match {
@@ -1551,9 +1806,8 @@ private final class Sdk(
       case Some(context) => objectStorageProvider.withTelemetryContext(context)
     }
 
-  private def grpcClientProvider(telemetryContext: Option[OtelContext]): GrpcClientProvider =
-    telemetryContext match {
-      case None          => grpcClientProvider
-      case Some(context) => grpcClientProvider.withTelemetryContext(context)
-    }
+  private def grpcClientProvider(
+      telemetryContext: Option[OtelContext],
+      callerSpiffe: Option[String]): GrpcClientProvider =
+    grpcClientProvider.withCallContext(telemetryContext, callerSpiffe)
 }

@@ -22,6 +22,10 @@ service TestGrpcService {
   rpc ReadMetadata(In) returns (Out) {};
   rpc DelegateToAkkaService(In) returns (Out) {};
   rpc DelegateToExternal(In) returns (Out) {};
+  // returns the caller's SPIFFE id as seen via the request context (empty if none)
+  rpc EchoCallerSpiffe(In) returns (Out) {};
+  // makes a cross-service gRPC call to EchoCallerSpiffe and returns its result
+  rpc DelegateEchoCallerSpiffe(In) returns (Out) {};
   rpc CustomStatus(In) returns (Out) {};
   rpc AclPublic(In) returns (Out) {};
   rpc AclService(In) returns (Out) {};

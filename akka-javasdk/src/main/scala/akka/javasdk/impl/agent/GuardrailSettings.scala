@@ -9,6 +9,7 @@ import java.util.Locale
 import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
+import akka.javasdk.impl.ControlId
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigObject
@@ -52,32 +53,33 @@ import com.typesafe.config.ConfigObject
     }
   }
 
-  sealed trait UseFor
+  sealed abstract class UseFor(val configName: String)
   final object UseFor {
-    final case object ModelRequest extends UseFor
-    final case object ModelResponse extends UseFor
-    final case object McpToolRequest extends UseFor
-    final case object McpToolResponse extends UseFor
+    final case object ModelRequest extends UseFor("model-request")
+    final case object ModelResponse extends UseFor("model-response")
+    final case object McpToolRequest extends UseFor("mcp-tool-request")
+    final case object McpToolResponse extends UseFor("mcp-tool-response")
 
-    val all: Seq[UseFor] = ModelRequest :: ModelResponse :: McpToolRequest :: McpToolResponse :: Nil
+    // Placeholder for a "*" declaration. It expands to all four values above.
+    final case object Wildcard extends UseFor("*") {
+      override def toString: String = "*"
+    }
+
+    val values: Seq[UseFor] = Seq(ModelRequest, ModelResponse, McpToolRequest, McpToolResponse, Wildcard)
   }
 
   def apply(name: String, config: Config): ConfiguredGuardrail = {
-    val useFor = config
-      .getStringList("use-for")
-      .iterator
-      .asScala
+    val useFor: Set[UseFor] = config
+      .getOptionalStringSet("use-for")
       .map(_.toLowerCase(Locale.ROOT))
-      .flatMap {
-        case "model-request"     => UseFor.ModelRequest :: Nil
-        case "model-response"    => UseFor.ModelResponse :: Nil
-        case "mcp-tool-request"  => UseFor.McpToolRequest :: Nil
-        case "mcp-tool-response" => UseFor.McpToolResponse :: Nil
-        case "*"                 => UseFor.all
-        case other =>
-          throw new IllegalArgumentException(s"Unknown use-for [$other] in guardrail configuration [$name]")
+      .map { value =>
+        UseFor.values.find(_.configName == value).getOrElse {
+          throw new IllegalArgumentException(
+            s"Unknown use-for [$value] in guardrail configuration [$name]. use-for applies only to the " +
+            "deprecated TextGuardrail. ToolCallGuardrail, ModelCallGuardrail and AgentResponseGuardrail " +
+            "bind to their boundary by type and take no use-for.")
+        }
       }
-      .toSet
 
     new ConfiguredGuardrail(
       name = name,
@@ -87,7 +89,10 @@ import com.typesafe.config.ConfigObject
       category = config.getString("category"),
       reportOnly = config.getOptionalBoolean("report-only"),
       useFor = useFor,
-      config = config)
+      // Optional tool-name filter for a ToolCallGuardrail; empty means "all tools on the agent".
+      tools = config.getOptionalStringSet("tools"),
+      config = config,
+      controlId = ControlId.read(config, s"Guardrail [$name]"))
   }
 }
 
@@ -102,7 +107,9 @@ import com.typesafe.config.ConfigObject
     category: String,
     reportOnly: Boolean,
     useFor: Set[UseFor],
-    config: Config) {
+    tools: Set[String],
+    config: Config,
+    controlId: Option[String]) {
   require(!name.isBlank, s"name must be defined for guardrail")
   require(!implementationClass.isBlank, s"implementation-class must be defined for guardrail [$name]")
 }

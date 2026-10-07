@@ -404,6 +404,8 @@ private[impl] object AgentImpl {
       sdkExecutionContext: ExecutionContext): Seq[SpiAgent.McpToolEndpointDescriptor] =
     remoteMcpTools.map {
       case remoteMcp: RemoteMcpToolsImpl =>
+        // FIXME: MCP tool calls run only legacy guardrails,
+        //  https://github.com/lightbend/akka-runtime/issues/5382
         new SpiAgent.McpToolEndpointDescriptor(
           mcpEndpoint = remoteMcp.serverUri,
           additionalClientHeaders = remoteMcp.additionalClientHeaders.map(_.asInstanceOf[HttpHeader]),
@@ -431,8 +433,8 @@ private[impl] object AgentImpl {
           toolTimeout =
             if (remoteMcp.timeout == Duration.Zero) None
             else Some(remoteMcp.timeout),
-          requestGuardrails = guardrails.mcpToolRequestGuardrails,
-          responseGuardrails = guardrails.mcpToolResponseGuardrails)
+          requestGuardrails = guardrails.legacyMcpToolRequestGuardrails,
+          responseGuardrails = guardrails.legacyMcpToolResponseGuardrails)
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
@@ -577,13 +579,14 @@ private[impl] object AgentImpl {
       componentId: String,
       id: String,
       name: String,
-      spiContents: Seq[SpiAgent.MessageContent]): SessionMessage = {
+      spiContents: Seq[SpiAgent.MessageContent],
+      sanitized: Boolean): SessionMessage = {
     val contents = spiContents.map(toSessionMemoryContent)
     contents match {
       case Seq(t: SessionMessage.MessageContent.TextMessageContent) =>
-        new SessionMessage.ToolCallResponse(timestamp, componentId, id, name, t.text())
+        new SessionMessage.ToolCallResponse(timestamp, componentId, id, name, t.text(), sanitized)
       case _ =>
-        new SessionMessage.MultimodalToolCallResponse(timestamp, componentId, id, name, contents.asJava)
+        new SessionMessage.MultimodalToolCallResponse(timestamp, componentId, id, name, contents.asJava, sanitized)
     }
   }
 
@@ -630,15 +633,19 @@ private[impl] object AgentImpl {
             m.thinking().toScala,
             m.attributes().asScala.toMap)
         case m: UserMessage =>
-          new SpiAgent.ContextMessage.UserMessage(m.text())
+          new SpiAgent.ContextMessage.UserMessage(Seq(new SpiAgent.TextMessageContent(m.text())), m.sanitized())
         case m: MultimodalUserMessage =>
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
-          new SpiAgent.ContextMessage.UserMessage(contents)
+          new SpiAgent.ContextMessage.UserMessage(contents, m.sanitized())
         case m: ToolCallResponse =>
-          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), m.text())
+          new ContextMessage.ToolCallResponseMessage(
+            m.id(),
+            m.name(),
+            Seq(new SpiAgent.TextMessageContent(m.text())),
+            m.sanitized())
         case m: SessionMessage.MultimodalToolCallResponse =>
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
-          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents)
+          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents, m.sanitized())
         case m =>
           throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
       }
@@ -682,6 +689,7 @@ private[impl] final class AgentImpl(
       serializer)
   }
 
+  @nowarn("msg=deprecated")
   override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] =
     Future {
 
@@ -753,7 +761,7 @@ private[impl] final class AgentImpl(
             FunctionTools.validateNames(allToolClasses)
 
             val toolDescriptors =
-              allToolClasses.flatMap(FunctionTools.descriptorsFor)
+              guardrails.withToolGuardrails(allToolClasses.flatMap(FunctionTools.descriptorsFor))
 
             val functionTools =
               FunctionTools.toolInvokersFor(agent) ++
@@ -776,23 +784,49 @@ private[impl] final class AgentImpl(
 
             val agentRole = Reflect.readAgentRole(agent.getClass)
             val spiContentLoader = req.contentLoader.map(toSpiContentLoader)
-            new SpiAgent.RequestModelEffect(
-              modelProvider = spiModelProvider,
-              systemMessage = systemMessage,
-              userMessage = toSpiUserMessage(req.userMessage),
-              additionalContext = additionalContext,
-              toolDescriptors = toolDescriptors,
-              mcpClientDescriptors = mcpToolEndpoints,
-              responseType = req.responseType,
-              responseSchema = responseSchema,
-              responseMapping = req.responseMapping,
-              failureMapping = req.failureMapping.map(mapSpiAgentException),
-              replyMetadata = metadata,
-              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
-              requestGuardrails = guardrails.modelRequestGuardrails,
-              responseGuardrails = guardrails.modelResponseGuardrails,
-              contentLoader = spiContentLoader,
-              callToolFunction = request => Future(toolExecutor.executeMultimodal(request))(sdkExecutionContext))
+            val spiUserMessage = toSpiUserMessage(req.userMessage)
+            val failureMapping = req.failureMapping.map(mapSpiAgentException)
+            val onSuccessAsSent = (sentUserMessage: SpiAgent.UserMessage, results: Seq[SpiAgent.Response]) =>
+              onSuccess(sessionMemoryClient, sentUserMessage, userMessageAt, agentRole, results)
+            val callToolFunction = (request: SpiAgent.ToolCallCommand) =>
+              Future(toolExecutor.executeMultimodal(request))(sdkExecutionContext)
+
+            if (guardrails.hasLegacyModelGuardrails)
+              new SpiAgent.RequestModelEffect(
+                modelProvider = spiModelProvider,
+                systemMessage = systemMessage,
+                userMessage = spiUserMessage,
+                additionalContext = additionalContext,
+                toolDescriptors = toolDescriptors,
+                mcpClientDescriptors = mcpToolEndpoints,
+                responseType = req.responseType,
+                responseSchema = responseSchema,
+                responseMapping = req.responseMapping,
+                failureMapping = failureMapping,
+                replyMetadata = metadata,
+                onSuccessAsSent = onSuccessAsSent,
+                requestGuardrails = guardrails.legacyModelRequestGuardrails,
+                responseGuardrails = guardrails.legacyModelResponseGuardrails,
+                guardrails = guardrails.guardrails,
+                contentLoader = spiContentLoader,
+                callToolFunction = callToolFunction)
+            else
+              new SpiAgent.RequestModelEffect(
+                modelProvider = spiModelProvider,
+                systemMessage = systemMessage,
+                userMessage = spiUserMessage,
+                additionalContext = additionalContext,
+                toolDescriptors = toolDescriptors,
+                mcpClientDescriptors = mcpToolEndpoints,
+                responseType = req.responseType,
+                responseSchema = responseSchema,
+                responseMapping = req.responseMapping,
+                failureMapping = failureMapping,
+                replyMetadata = metadata,
+                onSuccessAsSent = onSuccessAsSent,
+                guardrails = guardrails.guardrails,
+                contentLoader = spiContentLoader,
+                callToolFunction = callToolFunction)
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -881,9 +915,11 @@ private[impl] final class AgentImpl(
     }
   }
 
+  // The runtime hands back the user message and the tool results as it sent them to the model, so onSuccess stores
+  // them as sanitized.
   private def onSuccess(
       sessionMemoryClient: SessionMemory,
-      userMessage: agent.UserMessage,
+      sentUserMessage: SpiAgent.UserMessage,
       userMessageAt: Instant,
       agentRole: Option[String],
       responses: Seq[SpiAgent.Response]): Unit = {
@@ -906,44 +942,26 @@ private[impl] final class AgentImpl(
             res.attributes.asJava)
 
         case res: SpiAgent.ToolCallResponse =>
-          AgentImpl.toSessionToolCallResponse(res.timestamp, componentId, res.id, res.name, res.contents)
+          AgentImpl.toSessionToolCallResponse(
+            res.timestamp,
+            componentId,
+            res.id,
+            res.name,
+            res.contents,
+            sanitized = true)
       }
 
-    if (userMessage.isTextOnly) {
+    if (sentUserMessage.textOnly) {
       sessionMemoryClient.addInteraction(
         sessionId,
-        new UserMessage(userMessageAt, userMessage.text(), componentId),
+        new UserMessage(userMessageAt, sentUserMessage.textContent.getOrElse(""), componentId, true),
         responseMessages.asJava)
     } else {
-      val contents = userMessage
-        .contents()
-        .asScala
-        .map(s => toSessionMemoryContent(s))
-        .asJava
+      val contents = sentUserMessage.contents.map(AgentImpl.toSessionMemoryContent).asJava
       sessionMemoryClient.addInteraction(
         sessionId,
-        new MultimodalUserMessage(userMessageAt, contents, componentId),
+        new MultimodalUserMessage(userMessageAt, contents, componentId, true),
         responseMessages.asJava)
-    }
-  }
-
-  private def toSessionMemoryContent(messageContent: MessageContent): SessionMessage.MessageContent = {
-    messageContent match {
-      case content: MessageContent.TextMessageContent =>
-        new SessionMessage.MessageContent.TextMessageContent(content.text)
-      case content: ImageUrlMessageContent =>
-        new SessionMessage.MessageContent.ImageUriMessageContent(
-          content.uri().toString,
-          content.detailLevel(),
-          content.mimeType())
-      case content: PdfUrlMessageContent =>
-        new SessionMessage.MessageContent.PdfUriMessageContent(content.uri().toString)
-      // Inline bytes are not persisted to session memory; record a placeholder instead.
-      // (Consistent with the autonomous agent path in AutonomousAgentImpl.)
-      case _: MessageContent.ImageDataMessageContent =>
-        new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.IMAGE_PLACEHOLDER)
-      case _: MessageContent.PdfDataMessageContent =>
-        new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.PDF_PLACEHOLDER)
     }
   }
 
@@ -968,7 +986,7 @@ private[impl] final class AgentImpl(
               new McpToolCallExecutionException(exc.getMessage, reason.toolName, reason.endpoint, exc.cause)
 
             case reason: GuardrailFailure =>
-              new Guardrail.GuardrailException(reason.explanation)
+              new Guardrail.GuardrailException(reason.explanation, exc.cause)
 
             case _: ImageLoadingFailure =>
               new RuntimeException(exc.getMessage, exc.cause)

@@ -1,30 +1,33 @@
 = Data sanitization
-include::ROOT:partial$include.adoc[]
 :page-summary: Runtime-level PII scrubbing that enforces data governance as a built-in property of your Akka service, not an afterthought.
 :page-when-to-use: When your service handles user-generated content containing personally identifiable information (PII) and you need automated, consistent sanitization across logs and agent interactions.
 :page-related: xref:sdk:agents/guardrails.adoc[]
 :page-prerequisites: An Akka service with `application.conf` configured; familiarity with xref:setup-and-dependency-injection.adoc[dependency injection].
 :page-persona: governance-compliance, governance-infosec, developer
 
+include::ROOT:partial$include.adoc[]
+
 == Overview
 
-Data sanitization is a runtime-level governance capability built into Akka. Rather than relying on application code to remember to scrub PII at every integration point, you declare your sanitization policy once and the runtime enforces it automatically — across logs, agent model inputs, and tool outputs.
+Data sanitization is a runtime-level governance capability built into Akka. Rather than relying on application code to remember to scrub PII at every integration point, you declare your sanitization policy once and the runtime enforces it across logs, agent model inputs, and tool outputs.
 
-This matters because protecting personally identifiable information is simultaneously a legal obligation and a trust imperative. Regulations such as GDPR, CCPA, and HIPAA mandate careful handling of personal data. The EU AI Act goes further: when AI systems process personal data, organizations must be able to explain what data was used and how it was protected. Runtime-level PII scrubbing gives you a verifiable, auditable answer — sensitive information is masked before it ever reaches a model, satisfying both the right to erasure and the right to explanation.
+This matters because protecting personally identifiable information is simultaneously a legal obligation and a trust imperative. Regulations such as GDPR, CCPA, and HIPAA mandate careful handling of personal data. The EU AI Act goes further: when AI systems process personal data, organizations must be able to explain what data was used and how it was protected. Runtime-level PII scrubbing gives you a verifiable, auditable answer: sensitive information is masked before it reaches a model, which satisfies both the right to erasure and the right to explanation.
 
 By shifting sanitization from application logic into the runtime, you gain:
 
-* **Consistency** — every code path that emits logs or feeds data to an agent is covered by the same policy.
-* **Auditability** — governance and infosec teams can inspect a single configuration to verify what categories of PII are masked.
-* **Reduced attack surface** — in the event of a breach, masked data limits exposure.
+* **Consistency**: the same policy covers every code path an entry applies to, with nothing to remember at the call site.
+* **Auditability**: governance and infosec teams can inspect a single configuration to verify what categories of PII are masked.
+* **Reduced attack surface**: in the event of a breach, masked data limits exposure.
 
 Sanitization is disabled by default. You enable it selectively through configuration, choosing exactly which categories of sensitive data to mask.
 
-When enabled, sanitization is automatically applied to text that is:
+A sanitizer masks at one or more application points:
 
-* written to logs
-* passed to agent models from agent requests
-* passed to agent models from local tool or MCP tool output
+* `logs`: text written to logs
+* `model-call`: text passed to the model in each model call of an agent, tool results included
+* `tool-result`: only the output of local tools and MCP tools, which a `model-call` entry masks as well
+
+Each sanitizer can name the points it masks at, and the agents it masks for. See <<Configuring sanitizers>>.
 
 Text matched by a sanitizer is replaced by a mask of `*` containing the same number of characters as the original matched string.
 
@@ -40,9 +43,17 @@ I'm having problems using my credit card *******************
 
 Before being written in logs or passed to agent models.
 
+=== Masked text in session memory
+
+xref:sdk:agents/memory.adoc[Session memory] holds the text that the runtime sent to the model. The runtime stores a user message and a tool result masked, and stores the model output as the model produced it. The runtime sends these messages to the model as they are. A sanitizer that you add or change later does not mask them. When application code, a compaction or an earlier Akka SDK version stored a user message or a tool result, the runtime masks it with the current sanitizers before it sends it. The runtime does not mask an AI message from session memory.
+
+The xref:sdk:evaluators.adoc#_the_ledger_client[ledger] records the text that the runtime sent in each model call.
+
 === Ad hoc sanitization
 
-You can also apply sanitization programmatically in any component where it makes sense for a specific business case — for example, before sending text to a third-party API or before writing text into the state of an entity. To do this, xref:setup-and-dependency-injection.adoc[inject] an `akka.javasdk.Sanitizer` in the component constructor and then call `akka.javasdk.Sanitizer#sanitize` on the text.
+You can also mask text programmatically where it makes sense for a specific business case, for example before sending text to a third-party API or before passing it to an entity to store. To do this, xref:setup-and-dependency-injection.adoc[inject] an `akka.javasdk.SanitizerClient` into a component and call `sanitize` with the name of a configured sanitizer and the text.
+
+A sanitizer scoped to an agent or to an application point masks the text you pass here as well. The name selects which sanitizer runs, and nothing else does. For a sanitizer that only application code uses, define `apply-at = ["client"]`, so that the runtime does not apply it anywhere on its own.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/SanitizingEndpoint.java[SanitizingEndpoint.java]
@@ -51,13 +62,53 @@ include::example$doc-snippets/src/main/java/com/example/api/SanitizingEndpoint.j
 ----
 
 
-== Sanitizer types
+== Configuring sanitizers
 
-Two types of sanitizers are available, and you can combine predefined and custom sanitizers in the same service.
+You configure sanitizers as named entries of `akka.javasdk.sanitization.sanitizers`. The name is how application code reaches the sanitizer, and how it is reported. Each entry defines exactly one of:
 
-=== Predefined
+* `pattern`: a Java regular expression matching the text to mask
+* `predefined`: a built-in group of patterns, see <<Predefined groups>>
+* `class`: an implementation class, see <<Sanitizer implementations>>
 
-A small set of common sanitizers is built into the Akka runtime. You enable them by name in your configuration:
+Each entry can also state where and for which agents it masks:
+
+* `apply-at`: the application points to mask at, any of `model-call`, `tool-result`, `logs` and `client`.
+* `agents`: the component ids of the agents to mask for. Use `*` for every agent.
+* `agent-roles`: the roles of the agents to mask for. Use `*` for every agent that has a role.
+* `enabled`: set it to `false` to drop the entry. A dropped entry masks nothing and constructs nothing.
+* `control-id`: the id of the control that the entry implements, see xref:concepts:governance-and-the-runtime.adoc#control-ids[control ids].
+
+An entry that defines neither `agents` nor `agent-roles` masks for every agent. An entry that defines both masks for an agent that matches either one.
+
+An entry that defines no `apply-at`, or defines `*`, masks at:
+
+* `model-call`, `tool-result` and `logs` for a `pattern` or `predefined` entry.
+* every point its class can mask at for a `class` entry, see <<Sanitizer implementations>>.
+* `model-call` and `tool-result` for an entry with `agents` or `agent-roles`.
+
+The `logs` and `client` application points are global and cannot be combined with `agents` or `agent-roles`, but you can define the sanitizer twice with different names to enable it for all logs and for specific agents. An entry with `client` masks nothing on its own, and application code calls it by name, see <<Ad hoc sanitization>>.
+
+[source,json,indent=0]
+.{sample-base-url}/doc-snippets/src/main/resources/application.conf[application.conf]
+----
+include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=sanitizers]
+----
+
+The `customer-ids` entry above masks a hypothetical customer ID in the form S0123456789, so that text like:
+
+[literal]
+Customer S0847362951 reported an issue with their order
+
+Is written to logs as:
+
+[literal]
+Customer *********** reported an issue with their order
+
+Any other key of an entry is specific configuration for that sanitizer. An implementation reads it from the `SanitizerContext` constructor parameter, see <<Sanitizer implementations>>.
+
+=== Predefined groups
+
+A small set of common sanitizers is built into the Akka runtime. You select one with `predefined`:
 
 [options="header" cols="1,1"]
 |===
@@ -70,50 +121,39 @@ A small set of common sanitizers is built into the Akka runtime. You enable them
 |`IP_ADDRESS`| ipv4 and ipv6 network addresses
 |===
 
-Enable one or more of these in your service `application.conf` file like this:
+=== Sanitizer implementations
 
-[source,hocon,indent=0]
+When a regular expression cannot express what to mask, implement a class and configure it with `class`. The interface of the class decides where it can mask:
+
+* `akka.javasdk.TextSanitizer` masks the text of agents, at `model-call` and `tool-result`.
+* `akka.javasdk.LogSanitizer` masks log messages, at `logs`.
+
+A class can implement both. Return the text unchanged when there is nothing to mask.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/sanitizer/AccountSanitizer.java[AccountSanitizer.java]
 ----
-akka.javasdk.sanitization {
-  predefined-sanitizers = ["IBAN", "CREDIT_CARD"]
-}
-----
-
-=== Custom
-
-In many cases you need sanitizers specific to your application and business domain. Custom sanitizers let you define regular expressions that identify character sequences to mask.
-
-You define custom sanitizers by adding a config block `akka.javasdk.sanitization.regex-sanitizers` with a name for each sanitizer, followed by a config block containing a single `pattern` key whose value is a valid Java regular expression matching the text to mask.
-
-This example masks a hypothetical customer ID in the form S0123456789:
-
-[source,hocon,indent=0]
-----
-akka.javasdk.sanitization.regex-sanitizers = {
-  "CUSTOMER_IDS" = { pattern = "S\\d{10}" }
-}
+include::example$doc-snippets/src/main/java/com/example/sanitizer/AccountSanitizer.java[tag=all]
 ----
 
-This would cause text like:
+The constructor of a `TextSanitizer` can take an `akka.javasdk.SanitizerContext`, which gives access to the entry name and its configuration, and any other injectable type, such as an `akka.javasdk.agent.ClassifierClient` to mask what a configured classifier detects.
 
-[literal]
-Customer S0847362951 reported an issue with their order
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/sanitizer/TokenLogSanitizer.java[TokenLogSanitizer.java]
+----
+include::example$doc-snippets/src/main/java/com/example/sanitizer/TokenLogSanitizer.java[tag=all]
+----
 
-To be masked to:
-
-[literal]
-Customer *********** reported an issue with their order
-
-Before being written in logs or passed to agent models.
+The runtime calls a `LogSanitizer` for every log line of the service, including its own. Its constructor can optionally take an `akka.javasdk.SanitizerContext`, but no other dependency injection. Keep it a fast function of the message and its configuration, and do not log from it. The SDK constructs a class that implements both interfaces as a `LogSanitizer`.
 
 == Performance considerations
 
-Sanitization is applied to every log entry. In high-throughput applications, numerous sanitization rules or complex regular expressions may impact performance. You should monitor application performance and optimize regex patterns if necessary.
+An entry that masks at the `logs` application point is applied to every log entry. In high-throughput applications, numerous sanitization rules or complex regular expressions may impact performance. You should monitor application performance and optimize regex patterns if necessary.
 
 == Testing sanitization
 
-In tests you can access the sanitizer directly from the `getSanitizer` method in `TestKit` or `TestKitSupport` to assert that expected texts are masked given your service sanitizer configuration.
+In tests you can access the sanitizer client from the `getSanitizerClient` method in `TestKit` or `TestKitSupport`, and mask with a configured sanitizer by name to assert that expected texts are masked given your service sanitizer configuration.
 
 == See also
 
-* xref:sdk:agents/guardrails.adoc[] — Input and output guardrails that complement data sanitization for responsible AI.
+* xref:sdk:agents/guardrails.adoc[]: input and output guardrails that complement data sanitization.

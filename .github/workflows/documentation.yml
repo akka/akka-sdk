@@ -40,6 +40,10 @@ jobs:
       - name: Cache Coursier cache
         # https://github.com/coursier/cache-action/releases
         uses: coursier/cache-action@v8.1.0
+        with:
+          # enables invalidating stale caches (bump extraKey)
+          extraKey: "v2"
+          disableFallback: true
 
       - name: Set up JDK 21
         # https://github.com/coursier/setup-action/releases

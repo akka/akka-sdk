@@ -6,6 +6,7 @@ package akka.javasdk.impl.reflection
 
 import scala.concurrent.ExecutionContext
 
+import akka.javasdk.agent.Agent
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.client.ComponentClientImpl
@@ -31,6 +32,14 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import protoconsumer.EventsForConsumer.EventForConsumer1
 import protoconsumer.EventsForConsumer.EventForConsumer2
+
+class UnaryTestAgent extends Agent {
+  def ask(question: String): Agent.Effect[String] = effects().reply(question)
+}
+
+class StreamingTestAgent extends Agent {
+  def ask(question: String): Agent.StreamEffect = streamEffects().reply(question)
+}
 
 class SomeClass {
   def a(): Unit = {}
@@ -60,6 +69,12 @@ class ReflectSpec extends AnyWordSpec with Matchers {
         ("c", List("String")) ::
         ("c", List("String", "int")) :: Nil
       )
+    }
+
+    "detect an agent whose command handler returns a StreamEffect" in {
+      Reflect.isStreamingAgent(classOf[StreamingTestAgent]) shouldBe true
+      Reflect.isStreamingAgent(classOf[UnaryTestAgent]) shouldBe false
+      Reflect.isStreamingAgent(classOf[SomeClass]) shouldBe false
     }
 
     "lookup component client instances" in {

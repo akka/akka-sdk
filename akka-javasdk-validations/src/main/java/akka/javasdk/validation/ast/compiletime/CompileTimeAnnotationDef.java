@@ -6,6 +6,7 @@ package akka.javasdk.validation.ast.compiletime;
 
 import akka.javasdk.validation.ast.AnnotationDef;
 import akka.javasdk.validation.ast.TypeRefDef;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.lang.model.element.AnnotationMirror;
@@ -48,6 +49,24 @@ public record CompileTimeAnnotationDef(AnnotationMirror annotationMirror) implem
         .filter(v -> v instanceof TypeMirror)
         .map(v -> (TypeMirror) v)
         .map(CompileTimeTypeRefDef::new);
+  }
+
+  @Override
+  public List<AnnotationDef> getAnnotationArrayValue(String attributeName) {
+    return getAttributeValue(attributeName)
+        .map(AnnotationValue::getValue)
+        .filter(v -> v instanceof List)
+        .map(v -> (List<?>) v)
+        .map(
+            list ->
+                list.stream()
+                    .filter(e -> e instanceof AnnotationValue)
+                    .map(e -> ((AnnotationValue) e).getValue())
+                    .filter(val -> val instanceof AnnotationMirror)
+                    .map(
+                        val -> (AnnotationDef) new CompileTimeAnnotationDef((AnnotationMirror) val))
+                    .toList())
+        .orElse(List.of());
   }
 
   /**
