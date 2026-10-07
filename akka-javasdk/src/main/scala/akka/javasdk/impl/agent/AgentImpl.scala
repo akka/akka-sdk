@@ -159,11 +159,15 @@ private[impl] object AgentImpl {
           throw new IllegalArgumentException(
             s"Unknown model provider [$other] in config [$resolvedConfigPath]. If you are trying to load a custom class implementation, make sure you are using the right full-qualified class name.")
       }
-    } catch {
-      case exc: ConfigException =>
-        log.error("Invalid model provider configuration at [{}] for agent [{}].", resolvedConfigPath, componentId, exc)
-        throw exc
-    }
+    } catch logInvalidModelProviderConfig(resolvedConfigPath, componentId)
+  }
+
+  /** Logs a configuration error in the provider section at `resolvedConfigPath` and rethrows it. */
+  private def logInvalidModelProviderConfig(
+      resolvedConfigPath: String,
+      componentId: String): PartialFunction[Throwable, Nothing] = { case exc: ConfigException =>
+    log.error("Invalid model provider configuration at [{}] for agent [{}].", resolvedConfigPath, componentId, exc)
+    throw exc
   }
 
   private def isFqcn(fqcn: String): Boolean = {
@@ -252,10 +256,12 @@ private[impl] object AgentImpl {
             resolved.withAdditionalModelRequestHeaders(
               mergeAdditionalModelRequestHeaders(additionalModelRequestHeaders(resolved), statedInCode).asJava)
         // the section the provider resolved to may override the global switch
-        val sectionConfig = config.getConfig(resolvedConfigPath)
         val sectionIdentityHeaders =
-          if (sectionConfig.hasPath("identity-headers")) sectionConfig.getBoolean("identity-headers")
-          else identityHeaders
+          try {
+            val sectionConfig = config.getConfig(resolvedConfigPath)
+            if (sectionConfig.hasPath("identity-headers")) sectionConfig.getBoolean("identity-headers")
+            else identityHeaders
+          } catch logInvalidModelProviderConfig(resolvedConfigPath, componentId)
         toSpiModelProviderWithIdentityHeaders(withHeaders, config, componentId, sectionIdentityHeaders)
       case p: ModelProvider.Anthropic =>
         new SpiAgent.ModelProvider.Anthropic(

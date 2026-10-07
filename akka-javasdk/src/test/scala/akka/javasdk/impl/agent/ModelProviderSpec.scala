@@ -6,11 +6,13 @@ package akka.javasdk.impl.agent
 
 import scala.jdk.CollectionConverters._
 
+import akka.actor.testkit.typed.scaladsl.LoggingTestKit
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.javadsl.model.HttpHeader
 import akka.http.javadsl.model.headers.RawHeader
 import akka.javasdk.agent.ModelProvider
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigException
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -441,6 +443,22 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
     "ignore the provider section for a provider built in code" in {
       identityHeaders(ModelProvider.openAi(), identityHeadersOffInOpenAiConfig) shouldBe true
       identityHeaders(ModelProvider.fromConfig("openai"), identityHeadersOffInOpenAiConfig) shouldBe false
+    }
+
+    "log an invalid section value with the section and the agent" in {
+      val cfg = ConfigFactory.load(ConfigFactory.parseString(s"""
+        akka.javasdk.agent {
+          maybe-openai = $${akka.javasdk.agent.openai}
+          maybe-openai.identity-headers = maybe
+        }
+        """))
+      LoggingTestKit
+        .error("Invalid model provider configuration at [akka.javasdk.agent.maybe-openai] for agent [myagent].")
+        .expect {
+          intercept[ConfigException.WrongType] {
+            identityHeaders(ModelProvider.fromConfig("maybe-openai"), cfg)
+          }
+        }
     }
 
     "never carry the switch for a provider without model settings" in {
