@@ -235,7 +235,7 @@ object FunctionTools {
         else
           JsonSchema.jsonSchemaFor(method)
 
-      new SpiAgent.ToolDescriptor(name, toolAnno.description(), schema = objSchema)
+      new SpiAgent.ToolDescriptor(name, toolAnno.description(), schema = objSchema, toolCallGuardrails = Nil)
 
     }.toSeq
   }

@@ -1,0 +1,71 @@
+= akka optimize training snapshots register
+
+Register snapshot weights as a candidate model
+
+== Synopsis
+
+Register a committed snapshot's weights as a candidate model.
+
+The command outputs a model ID that "training evaluations start --model" scores like any other model.
+Registering does not alter the run that produced the snapshot and does not duplicate its weights in the catalog.
+
+The model ID is derived from the snapshot, so registering the same snapshot again returns that same ID.
+SNAPSHOT may be a complete snapshot ID or an unambiguous prefix.
+
+A snapshot holding only training state is refused.
+It can be resumed and branched from, but no adapter has been exported from it.
+
+Registration is prepared in durable steps and is accepted before it completes.
+Use "training snapshots candidate" to check its progress.
+Registration retains the source only while it copies the weights, after which the source is swept under the run's own keep counts.
+Use "training snapshots pin" to retain a source you intend to branch from later.
+
+----
+akka optimize training snapshots register SNAPSHOT [flags]
+----
+
+== Examples
+
+----
+  # Register a snapshot as a candidate model
+  akka-optimize training snapshots register 3f2a9c71bd04e5a2...
+
+  # Extract the registered model ID using jq
+  akka-optimize training snapshots register 3f2a9c71bd04e5a2... --jq .modelId
+----
+
+== Options
+
+----
+  -h, --help   help for register
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_snapshots.html[akka optimize training snapshots]	 - Inspect snapshots and candidate registration
+
+[discrete]
+

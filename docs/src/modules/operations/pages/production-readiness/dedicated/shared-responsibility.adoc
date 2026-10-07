@@ -447,6 +447,7 @@ Some enterprises require that Kubernetes API servers have no public endpoint. Ak
 
 * No public Kubernetes API endpoints, API servers remain entirely private.
 * Reverse tunnels, Teleport agents in each region initiate outbound connections to the Teleport proxy; the Federation Plane never connects directly into the region.
+* No long-lived credentials, the Federation Plane authenticates through workload identity and receives short-lived certificates.
 * Complete audit trail, all authentication and API calls are logged. Audit logs are available to the customer on request.
 * Cloud-portable, works across AWS, GCP, Azure, and on-premises.
 ====

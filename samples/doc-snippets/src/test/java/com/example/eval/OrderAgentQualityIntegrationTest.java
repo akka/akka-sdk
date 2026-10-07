@@ -130,6 +130,21 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
 
   // end::batch[]
 
+  // tag::repeated-runs[]
+  @Test
+  public void qualityGateOverRepeatedRuns() {
+    var report = new ExperimentRunner(testKit)
+      .cases(curated())
+      .agent(OrderAgent::ask)
+      .repeat(3) // <1>
+      .gate(Gate.passRateShouldBeAtLeast(0.85)) // <2>
+      .run();
+
+    assertThat(report.passed()).withFailMessage(report::render).isTrue();
+  }
+
+  // end::repeated-runs[]
+
   // tag::case-evaluator[]
   @Test
   public void aRefundNeverExceedsTheOrderTotal() {
@@ -200,7 +215,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
 
     assertThat(report.passed()).isFalse();
     assertThat(report.render())
-      .contains("case wrong-order FAILED")
+      .contains("case wrong-order run 1 FAILED")
       .contains("getOrder{orderId=o_42}")
       .contains("expected o_43");
   }
@@ -257,17 +272,20 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
   // tag::replay[]
   @Test
   public void replayedTrafficStillHolds() {
-    var replayed = EvalCaseParser.parse(recording("/eval/captures.jsonl")); // <1>
-    var bindings = ToolBindings.builder() // <2>
+    var replayed = EvalCaseParser.parse(recording("/eval/captures.jsonl")) // <1>
+      .stream()
+      .map(c -> c.withoutEvaluators(Evaluators.TokenBudget.class)) // <2>
+      .toList();
+    var bindings = ToolBindings.builder() // <3>
       .bind("getOrder", orders::loadOrder)
       .bind("issueRefund", orders::loadRefund)
       .build();
 
     var report = new ExperimentRunner(testKit)
       .cases(replayed)
-      .bindings(bindings) // <3>
+      .bindings(bindings) // <4>
       .agent(OrderAgent::ask)
-      .gate(Gate.passRateShouldBeAtLeast(0.9)) // <4>
+      .gate(Gate.passRateShouldBeAtLeast(0.9)) // <5>
       .run();
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();

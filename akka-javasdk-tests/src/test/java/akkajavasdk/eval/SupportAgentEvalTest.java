@@ -87,7 +87,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
       @Override
       public <T> T getDependency(Class<T> type) {
         if (type == CrmClient.class) return (T) crm;
-        throw new IllegalArgumentException("no such dependency: " + type);
+        return null;
       }
     };
   }
@@ -360,9 +360,12 @@ public class SupportAgentEvalTest extends TestKitSupport {
   @Test
   public void replayBaseline() {
     // The captures carry production's spend too, so each case is held to its model call count
-    // and to its recorded latency times the tolerance; the token budget is inconclusive under the
-    // scripted model.
-    var replayed = EvalCaseParser.parse(captures());
+    // and to its recorded latency times the tolerance. The scripted model reports no tokens, so
+    // the token budget is dropped.
+    var replayed =
+        EvalCaseParser.parse(captures()).stream()
+            .map(c -> c.withoutEvaluators(Evaluators.TokenBudget.class))
+            .toList();
     var bindings =
         ToolBindings.builder()
             .bind("getCustomer", crm::loadCustomer)
@@ -379,11 +382,12 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();
     assertThat(report.render())
+        .contains("tool-call-budget 2/2")
         .contains("model-call-budget 3/3")
         .contains("latency-budget 3/3")
-        .contains("token-budget 0/0 (3 inconclusive)")
+        .doesNotContain("token-budget")
         .contains("spend: ")
-        .contains("over 6/6 cases with evidence");
+        .contains("over 6/6 attempts with evidence");
   }
 
   /** The captures, from the test classpath rather than a path relative to the working dir. */
@@ -447,7 +451,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
   }
 
   @Test
-  public void aJudgeThatWillNotScoreIsInconclusiveInsteadOfFailingTheCase() {
+  public void aJudgeThatWillNotScoreFailsTheCase() {
     judgeModel.fixedResponse(
         JsonSupport.encodeToString(new Judge.Verdict(-1, "I cannot judge this")));
     var judge = Judge.modelBased(testKit);
@@ -457,8 +461,8 @@ public class SupportAgentEvalTest extends TestKitSupport {
             EvalCase.of(
                 "unjudgeable", "Who is cust_1?", judge.shouldSatisfy("the reply is helpful")));
 
-    assertThat(result.passed()).isTrue();
-    assertThat(result.describe()).contains("INCONCLUSIVE judge");
+    assertThat(result.passed()).isFalse();
+    assertThat(result.describe()).contains("FAIL judge").contains("not a share");
   }
 
   @Test
@@ -473,7 +477,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
     assertThat(result.passed()).isFalse();
     assertThat(result.describe())
-        .contains("case wrong-customer FAILED")
+        .contains("case wrong-customer run 1 FAILED")
         .contains("getCustomer{customerId=cust_1}")
         .contains("expected cust_2");
   }

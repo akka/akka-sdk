@@ -1,0 +1,80 @@
+= akka optimize registry models register
+
+Register a base model, an adapter or model weights under a named model
+
+== Synopsis
+
+Register a model version from a JSON or YAML descriptor.
+
+ { "servingModel": { "variant": "BASE", "baseModel": "Qwen/Qwen3-0.6B" } }
+
+The variant is BASE, ADAPTER or WEIGHTS:
+
+* BASE:    the repository in baseModel, and an optional revision.
+A request with no          revision is pinned to the repository's current head.
+* ADAPTER: an explicit registered baseModel version, adapterRank, and artifact ref.
+* WEIGHTS: an explicit registered baseModel version and artifact ref.
+
+For trained models, include exactly one model/base lineage parent matching baseModel.
+Register the base separately first and reuse its version on retries.
+Omit revision on the trained descriptor.
+
+The registry derives the version's digest from the descriptor and the artifact record, so registering an identical descriptor returns the version that is already there and appends nothing.
+--alias points an alias at the result in the same request.
+
+The named model and its namespace are created by the first registration into them.
+
+----
+akka optimize registry models register NS/NAME -f FILE [flags]
+----
+
+== Examples
+
+----
+  # Register a base model to score as a baseline
+  akka-optimize registry models register qwen/qwen3-0.6b -f base-model.json
+
+  # Register a trained adapter and point an alias at it
+  akka-optimize registry models register triage/classifier -f adapter.json --alias candidate
+
+  # Keep the reference the registration returned
+  REF="$(akka-optimize registry models register triage/classifier -f adapter.json --jq .reference)"
+----
+
+== Options
+
+----
+      --alias string   Point this alias of the named model at the registered version
+  -f, --file string    Path to the model descriptor file. Use '-' to read from standard input
+  -h, --help           help for register
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_registry_models.html[akka optimize registry models]	 - Named models, their versions and their aliases
+
+[discrete]
+

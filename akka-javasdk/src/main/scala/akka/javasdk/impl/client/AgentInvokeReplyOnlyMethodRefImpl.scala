@@ -36,19 +36,36 @@ private[impl] case class AgentInvokeReplyOnlyMethodRefImpl[A1, R](componentMetho
 
   override def invokeAsync(): CompletionStage[Agent.AgentReply[R]] = {
     componentMethodRefImpl.callComponent().thenApply { callResult =>
-      new Agent.AgentReply[R](callResult.value, toTokenUsage(callResult.metadata))
+      new Agent.AgentReply[R](
+        callResult.value,
+        AgentInvokeReplyOnlyMethodRefImpl.toTokenUsage(callResult.metadata),
+        callResult.metadata.get(SpiAgent.AgentInteractionIdKey))
     }
   }
 
   override def invokeAsync(arg: A1): CompletionStage[Agent.AgentReply[R]] = {
     componentMethodRefImpl.callComponent(arg).thenApply { callResult =>
-      new Agent.AgentReply[R](callResult.value, toTokenUsage(callResult.metadata))
+      new Agent.AgentReply[R](
+        callResult.value,
+        AgentInvokeReplyOnlyMethodRefImpl.toTokenUsage(callResult.metadata),
+        callResult.metadata.get(SpiAgent.AgentInteractionIdKey))
     }
   }
+}
 
-  private def toTokenUsage(metadata: Metadata): Agent.TokenUsage = {
-    val input = metadata.get(SpiAgent.AgentInputTokensKey).map[Integer](_.toInt).orElse(0)
-    val output = metadata.get(SpiAgent.AgentOutputTokensKey).map[Integer](_.toInt).orElse(0)
-    new Agent.TokenUsage(input, output)
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object AgentInvokeReplyOnlyMethodRefImpl {
+
+  def toTokenUsage(metadata: Metadata): Agent.TokenUsage = {
+    def count(key: String): Int = metadata.get(key).map[Integer](_.toInt).orElse(0)
+    new Agent.TokenUsage(
+      count(SpiAgent.AgentInputTokensKey),
+      count(SpiAgent.AgentOutputTokensKey),
+      count(SpiAgent.AgentCacheReadTokensKey),
+      count(SpiAgent.AgentCacheWriteTokensKey),
+      count(SpiAgent.AgentEffectiveInputTokensKey))
   }
 }

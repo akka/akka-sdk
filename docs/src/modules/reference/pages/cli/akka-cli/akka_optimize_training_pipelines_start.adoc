@@ -1,0 +1,79 @@
+= akka optimize training pipelines start
+
+Start a training pipeline from a plan file
+
+== Synopsis
+
+Start a training pipeline from a JSON or YAML plan file.
+
+The plan descriptor defines the ordered stages of the pipeline:
+
+ { "kind": "pipeline", "stages": [ ... ] }
+
+Stages can reference existing datasets by name or hash, or reference outputs from earlier stages using "@stageName".
+
+Each submission provisions compute resources and initiates a new pipeline.
+Confirmation is requested before starting the pipeline unless --force is specified.
+
+--show-resolved, with --dry-run, also prints each train stage's config and execution with every default filled in, for a stage whose dataset is already registered.
+
+----
+akka optimize training pipelines start -f PLAN [flags]
+----
+
+== Examples
+
+----
+  # Start a pipeline from a plan file
+  akka-optimize training pipelines start -f pipeline.json
+
+  # Start a pipeline and wait for completion
+  akka-optimize training pipelines start -f pipeline.json --wait --exit-status
+
+  # Validate the plan against the service without starting anything
+  akka-optimize training pipelines start -f pipeline.json --dry-run
+
+  # See what each train stage resolves to, with every default filled in
+  akka-optimize training pipelines start -f pipeline.json --dry-run --show-resolved
+----
+
+== Options
+
+----
+      --dry-run         Validate the plan against the service without starting anything
+      --exit-status     Exit with a non-zero status if execution fails or is cancelled. Requires --wait
+  -f, --file string     Path to the plan file. Use '-' to read from standard input
+  -h, --help            help for start
+      --show-resolved   With --dry-run, also display each train stage's resolved config and execution
+      --wait            Wait for execution to finish
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_pipelines.html[akka optimize training pipelines]	 - Manage training pipelines
+
+[discrete]
+

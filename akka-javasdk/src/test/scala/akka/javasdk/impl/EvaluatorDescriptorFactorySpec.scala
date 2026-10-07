@@ -1,0 +1,304 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.impl
+
+import akka.javasdk.impl.evaluation.EvaluatorSettings
+import akka.javasdk.impl.reflection.Reflect
+import akka.javasdk.impl.serialization.Serializer
+import akka.javasdk.testmodels.evaluation.EvaluatorTestModels.SomeEvaluator
+import akka.runtime.sdk.spi.SpiEvaluator
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+
+class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
+
+  private def agentBindingIds(bindings: Seq[SpiEvaluator.Binding]): Seq[String] =
+    bindings.collect { case ab: SpiEvaluator.AgentBinding => ab.agentComponentId }
+
+  // load the config over reference.conf, the same way an application.conf is loaded
+  private def load(config: String): Config =
+    ConfigFactory.load(ConfigFactory.parseString(config))
+
+  private val NoAgentRoles = Map.empty[String, Option[String]]
+
+  // the agents of the service, by component id, with their role
+  private val agentRoles = Map(
+    "support-agent" -> Some("customer-facing"),
+    "billing-agent" -> Some("customer-facing"),
+    "audit-agent" -> Some("internal"),
+    "plain-agent" -> None)
+
+  "Evaluator descriptor factory" should {
+
+    "be selected for evaluator components" in {
+      Reflect.isEvaluator(classOf[SomeEvaluator]) shouldBe true
+      ComponentDescriptorFactory.getFactoryFor(classOf[SomeEvaluator]) shouldBe EvaluatorDescriptorFactory
+    }
+
+    "produce an empty component descriptor (single abstract handler, no command routing)" in {
+      val desc = ComponentDescriptor.descriptorFor(classOf[SomeEvaluator], new Serializer)
+      desc.methodInvokers shouldBe empty
+    }
+  }
+
+  "Evaluator config bindings" should {
+
+    "read the agents bound to an evaluator from config" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators {
+          conversation-quality {
+            agents {
+              support-agent { trigger = interaction }
+              billing-agent { trigger = interaction }
+            }
+          }
+        }
+        """)
+      val bindings = EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles)
+      bindings should have size 2
+      agentBindingIds(bindings) should contain theSameElementsAs Seq("support-agent", "billing-agent")
+      bindings.head.asInstanceOf[SpiEvaluator.AgentBinding].event shouldBe SpiEvaluator.AgentBindingEvent.Interaction
+    }
+
+    "read a single bound agent" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+        """)
+      agentBindingIds(
+        EvaluatorSettings
+          .agentBindings(config, "conversation-quality", NoAgentRoles)) should contain only "support-agent"
+    }
+
+    "produce no bindings when the evaluator is not configured" in {
+      EvaluatorSettings.agentBindings(load(""), "conversation-quality", NoAgentRoles) shouldBe empty
+    }
+
+    "produce no bindings when the evaluator has no agents configured" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {}
+        """)
+      EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles) shouldBe empty
+    }
+
+    "produce no bindings when the evaluator is disabled" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          enabled = false
+          agents {
+            support-agent {}
+          }
+        }
+        """)
+      EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles) shouldBe empty
+    }
+
+    "require a trigger on an enabled binding" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent {}
+        """)
+      val ex = intercept[IllegalArgumentException] {
+        EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles)
+      }
+      ex.getMessage should include("trigger")
+    }
+
+    "reject an unknown binding trigger" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = nonsense }
+        """)
+      val ex = intercept[IllegalArgumentException] {
+        EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles)
+      }
+      ex.getMessage should include("nonsense")
+    }
+
+    "bind the agents that have a role" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agent-roles {
+          customer-facing { trigger = interaction }
+        }
+        """)
+      val bindings = EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)
+      agentBindingIds(bindings) shouldBe Seq("billing-agent", "support-agent")
+      bindings.head.asInstanceOf[SpiEvaluator.AgentBinding].event shouldBe SpiEvaluator.AgentBindingEvent.Interaction
+    }
+
+    "bind every agent that has a role for the role wildcard" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agent-roles {
+          "*" { trigger = interaction }
+        }
+        """)
+      agentBindingIds(EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)) shouldBe
+      Seq("audit-agent", "billing-agent", "support-agent")
+    }
+
+    "let the entry for the agent decide over the entry for its role" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          agents {
+            billing-agent { enabled = false }
+            plain-agent { trigger = interaction }
+          }
+          agent-roles {
+            customer-facing { trigger = interaction }
+          }
+        }
+        """)
+      agentBindingIds(EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)) shouldBe
+      Seq("plain-agent", "support-agent")
+    }
+
+    "let the entry for a role decide over the role wildcard" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agent-roles {
+          "*" { trigger = interaction }
+          internal { enabled = false }
+        }
+        """)
+      agentBindingIds(EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)) shouldBe
+      Seq("billing-agent", "support-agent")
+    }
+
+    "require a trigger on an enabled role binding" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agent-roles.customer-facing {}
+        """)
+      val ex = intercept[IllegalArgumentException] {
+        EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)
+      }
+      ex.getMessage should include("Evaluator agent role binding [customer-facing] must specify 'trigger'")
+    }
+
+    "exclude agents whose binding is disabled" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents {
+          support-agent { trigger = interaction }
+          billing-agent { enabled = false }
+        }
+        """)
+      agentBindingIds(
+        EvaluatorSettings
+          .agentBindings(config, "conversation-quality", NoAgentRoles)) should contain only "support-agent"
+    }
+  }
+
+  "Evaluator control id" should {
+
+    "be read from the entry of the evaluator" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          control-id = "AI-EV-01"
+          agents.support-agent { trigger = interaction }
+        }
+        """)
+      EvaluatorSettings.controlId(config, "conversation-quality") shouldBe Some("AI-EV-01")
+    }
+
+    "be read from a disabled evaluator" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          enabled = false
+          control-id = "AI-EV-01"
+        }
+        """)
+      EvaluatorSettings.controlId(config, "conversation-quality") shouldBe Some("AI-EV-01")
+    }
+
+    "be None when the evaluator has no entry, or its entry has no control id" in {
+      EvaluatorSettings.controlId(load(""), "conversation-quality") shouldBe None
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+        """)
+      EvaluatorSettings.controlId(config, "conversation-quality") shouldBe None
+    }
+
+    Seq("\"\"", "\" \"").foreach { blank =>
+      s"reject control-id = $blank" in {
+        val config = load(s"""
+          akka.javasdk.evaluation.evaluators.conversation-quality.control-id = $blank
+          """)
+        intercept[IllegalArgumentException] {
+          EvaluatorSettings.controlId(config, "conversation-quality")
+        }.getMessage shouldBe "Evaluator [conversation-quality] must define a non blank [control-id]"
+      }
+    }
+
+    "reject a control id that is not a string" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.control-id = true
+        """)
+      intercept[IllegalArgumentException] {
+        EvaluatorSettings.controlId(config, "conversation-quality")
+      }.getMessage shouldBe
+      "Evaluator [conversation-quality] must define [control-id] as a string, but defines [BOOLEAN]"
+    }
+
+    Seq(
+      "agents.support-agent" -> """agents.support-agent { trigger = interaction, control-id = "AI-EV-01" }""",
+      "agent-roles.*" -> """agent-roles."*" { trigger = interaction, control-id = "AI-EV-01" }""").foreach {
+      case (path, binding) =>
+        s"reject a control id in the binding $path, also when the evaluator is disabled" in {
+          Seq(true, false).foreach { enabled =>
+            val config = load(s"""
+              akka.javasdk.evaluation.evaluators.conversation-quality {
+                enabled = $enabled
+                $binding
+              }
+              """)
+            intercept[IllegalArgumentException] {
+              EvaluatorSettings.controlId(config, "conversation-quality")
+            }.getMessage shouldBe
+            s"Evaluator [conversation-quality] must define [control-id] on the evaluator, not in [$path]"
+          }
+        }
+    }
+
+    Seq("akka.javasdk.evaluation.defaults.evaluator", "akka.javasdk.evaluation.defaults.agent").foreach { path =>
+      s"reject a control id in $path" in {
+        val config = load(s"""
+          $path.control-id = "AI-EV-01"
+          akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+          """)
+        intercept[IllegalArgumentException] {
+          EvaluatorSettings.controlId(config, "conversation-quality")
+        }.getMessage shouldBe
+        s"Evaluator [conversation-quality] must define [control-id] on the evaluator, not in [$path]"
+      }
+    }
+
+    "be handed to the runtime with the bindings, on the descriptor of an evaluator and of a durable evaluator" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          control-id = "AI-EV-01"
+          agents.support-agent { trigger = interaction }
+        }
+        """)
+      val configured = EvaluatorSettings.configuredEvaluator(config, "conversation-quality", NoAgentRoles)
+
+      val evaluator = configured.evaluatorDescriptor(
+        "conversation-quality",
+        classOf[SomeEvaluator].getName,
+        name = None,
+        description = None,
+        instanceFactory = _ => throw new UnsupportedOperationException,
+        provided = false)
+      agentBindingIds(evaluator.bindings) shouldBe Seq("support-agent")
+      evaluator.controlId shouldBe Some("AI-EV-01")
+
+      val durable = configured.workflowEvaluatorDescriptor(
+        "conversation-quality",
+        classOf[SomeEvaluator].getName,
+        name = None,
+        description = None,
+        instanceFactory = _ => throw new UnsupportedOperationException,
+        provided = false)
+      agentBindingIds(durable.bindings) shouldBe Seq("support-agent")
+      durable.controlId shouldBe Some("AI-EV-01")
+    }
+  }
+}

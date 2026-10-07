@@ -7,6 +7,7 @@ package akka.javasdk.impl.agent
 import java.time.Instant
 import java.util.UUID
 
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
@@ -34,6 +35,7 @@ import akka.javasdk.agent.task.TaskStatus
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.agent.GuardrailProvider.AgentGuardrails
 import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
 import akka.javasdk.impl.agent.task.BacklogEntity
 import akka.javasdk.impl.agent.task.BacklogNotification
@@ -45,6 +47,7 @@ import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiAgentGuardrails
 import akka.runtime.sdk.spi.SpiAutonomousAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgentMultimodalTools
 import akka.runtime.sdk.spi.SpiBacklog
@@ -83,12 +86,19 @@ private[impl] final class AutonomousAgentImpl(
     override val modelProvider: SpiAgent.ModelProvider,
     override val toolDescriptors: Seq[SpiAgent.ToolDescriptor],
     override val mcpClientDescriptors: Seq[SpiAgent.McpToolEndpointDescriptor],
-    override val requestGuardrails: Seq[SpiAgent.Guardrail],
-    override val responseGuardrails: Seq[SpiAgent.Guardrail],
+    agentGuardrails: AgentGuardrails,
     override val capabilities: Seq[SpiAutonomousAgent.Capability])
     extends SpiAutonomousAgent
     with SpiAutonomousAgentMultimodalTools {
   import AgentImpl._
+
+  override val guardrails: SpiAgentGuardrails = agentGuardrails.guardrails
+
+  @nowarn("cat=deprecation")
+  override def requestGuardrails: Seq[SpiAgent.Guardrail] = agentGuardrails.legacyModelRequestGuardrails
+
+  @nowarn("cat=deprecation")
+  override def responseGuardrails: Seq[SpiAgent.Guardrail] = agentGuardrails.legacyModelResponseGuardrails
 
   implicit val system: ActorSystem[_] = _system
   private val materializer: Materializer = SystemMaterializer(system).materializer
@@ -352,33 +362,14 @@ private[impl] final class AutonomousAgentImpl(
             val text = u.contents.collect { case t: SpiAgent.TextMessageContent => t.text }.mkString(" ")
             sessionMemoryClient.addInteraction(
               sessionId,
-              new UserMessage(now, text, componentId),
+              new UserMessage(now, text, componentId, u.sanitized),
               toSessionMessages(now, messages.tail, tokenUsage).asJava)
 
           case u: SpiAgent.ContextMessage.UserMessage =>
-            val contents: Seq[SessionMessage.MessageContent] = u.contents.map {
-              case t: SpiAgent.TextMessageContent =>
-                new SessionMessage.MessageContent.TextMessageContent(t.text)
-
-              case img: SpiAgent.ImageUriMessageContent =>
-                new SessionMessage.MessageContent.ImageUriMessageContent(
-                  img.uri.toString,
-                  fromSpiDetailLevel(img.detailLevel),
-                  img.mimeType.toJava)
-
-              case pdf: SpiAgent.PdfUriMessageContent =>
-                new SessionMessage.MessageContent.PdfUriMessageContent(pdf.uri.toString)
-
-              case _: SpiAgent.ImageBytesMessageContent =>
-                new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.IMAGE_PLACEHOLDER)
-
-              case _: SpiAgent.PdfBytesMessageContent =>
-                new SessionMessage.MessageContent.TextMessageContent(SessionMessage.MessageContent.PDF_PLACEHOLDER)
-            }
-
+            val contents = u.contents.map(AgentImpl.toSessionMemoryContent)
             sessionMemoryClient.addInteraction(
               sessionId,
-              new MultimodalUserMessage(now, contents.asJava, componentId),
+              new MultimodalUserMessage(now, contents.asJava, componentId, u.sanitized),
               toSessionMessages(now, messages.tail, tokenUsage).asJava)
 
           case _ =>
@@ -513,7 +504,7 @@ private[impl] final class AutonomousAgentImpl(
         new AiMessage(now, m.content, componentId, toolCallRequests, m.thinking.toJava, tokenUsage, m.attributes.asJava)
 
       case m: SpiAgent.ContextMessage.ToolCallResponseMessage =>
-        AgentImpl.toSessionToolCallResponse(now, componentId, m.id, m.name, m.contents)
+        AgentImpl.toSessionToolCallResponse(now, componentId, m.id, m.name, m.contents, m.sanitized)
     }
 
 }

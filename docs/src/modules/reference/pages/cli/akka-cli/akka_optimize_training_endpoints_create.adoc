@@ -1,0 +1,78 @@
+= akka optimize training endpoints create
+
+Make a model answerable at an endpoint
+
+== Synopsis
+
+Bring up an endpoint for a model, or attach the model to the endpoint already serving its base model.
+
+--model takes a selected base model or a candidate.
+--workload is what the endpoint's devices count against, and defaults to the workload the model names.
+A candidate names the workload it was trained for, so it needs no --workload;
+a base model names none, so serving one takes the flag.
+Given for a candidate, it must be the workload the candidate already names.
+
+Where nothing is serving the base model yet, this claims devices and the endpoint reports STARTING until the process answers.
+Where something is, the model attaches to it and is answerable at once.
+
+The command returns straight away.
+Use --wait to return once the endpoint answers, which is what a script needs before it sends anything.
+
+--timeout bounds that wait and leaves the endpoint alone when it expires, and zero waits without a deadline.
+It means nothing without --wait, so giving it alone is refused.
+
+----
+akka optimize training endpoints create --model MODEL [--workload WORKLOAD] [flags]
+----
+
+== Examples
+
+----
+  # Serve a base model, which belongs to no workload
+  akka-optimize training endpoints create --model Qwen/Qwen3-8B --workload triage
+
+  # Serve a candidate over the same base model, under the workload it was trained for
+  akka-optimize training endpoints create --model triage-candidate
+
+  # Return once it answers
+  akka-optimize training endpoints create --model triage-candidate --wait
+----
+
+== Options
+
+----
+  -h, --help               help for create
+      --model string       Selected base model or candidate to serve
+      --timeout duration   Maximum time to wait for the endpoint; zero waits without a deadline; requires --wait (default 15m0s)
+      --wait               Wait until the endpoint answers
+      --workload string    Workload whose GPU quota the endpoint's devices count against. Defaults to the workload the model names, and must agree with it when given
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_endpoints.html[akka optimize training endpoints]	 - Serve a base model or a candidate to try it by hand
+
+[discrete]
+

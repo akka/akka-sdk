@@ -42,8 +42,7 @@ public interface Judge {
   /**
    * The judge's answer.
    *
-   * @param score between 0 and 1. Any other value, {@code NaN} included, makes the evaluator
-   *     inconclusive
+   * @param score between 0 and 1. Any other value, {@code NaN} included, fails the evaluator
    * @param reason one line, printed under a failed case. Empty when the model gave none
    */
   record Verdict(double score, String reason) {
@@ -59,8 +58,8 @@ public interface Judge {
   }
 
   /**
-   * The criterion must score at least {@code threshold}. Inconclusive when there is no reply, when
-   * the judge throws or gives no verdict, or when the score is not between 0 and 1.
+   * The criterion must score at least {@code threshold}. Inconclusive when there is no reply. Fails
+   * when the judge throws or gives no verdict, or when the score is not between 0 and 1.
    */
   default Evaluator shouldScoreAtLeast(String criterion, double threshold) {
     return new Evaluators.JudgeEvaluator(this, criterion, threshold);

@@ -1,0 +1,68 @@
+= akka optimize training base-models candidates
+
+List an author's repositories and what this deployment would make of each
+
+== Synopsis
+
+List the repositories an author publishes, with the verdict on each.
+
+The verdict is the one admission reaches: whether the pinned engines support the architecture, whether a device profile holds a model that size, and whether it can be served with LoRA.
+Nothing is allowed or selected by asking.
+
+--match is a glob over the repository name, applied to what the hub returned rather than passed to it: the hub's search is ranked rather than exact, and asking it for gemma-3 answers with gemma-4 models too.
+
+--catalog prints the entries to paste into a region's catalog.conf, pinned to the commits this resolved.
+Envelopes are not written: an envelope is a measurement, and each entry says so until somebody has made it.
+
+----
+akka optimize training base-models candidates --author AUTHOR [--match GLOB] [flags]
+----
+
+== Examples
+
+----
+  # What the Gemma 4 family offers, and which members this deployment could train
+  akka-optimize training base-models candidates --author google --match 'gemma-4-*'
+
+  # The catalog entries for the ones it could
+  akka-optimize training base-models candidates --author google --match 'gemma-4-E4B*' --catalog
+----
+
+== Options
+
+----
+      --author string   The hub account that publishes the repositories
+      --catalog         Print catalog.conf entries for the admissible candidates instead of a table
+  -h, --help            help for candidates
+      --match string    Glob over the repository name, such as 'gemma-4-*'. Every repository by default
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_base-models.html[akka optimize training base-models]	 - See which base models this deployment allows, and select one to use
+
+[discrete]
+

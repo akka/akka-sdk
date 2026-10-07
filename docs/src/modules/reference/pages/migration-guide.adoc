@@ -2,6 +2,34 @@
 
 include::ROOT:partial$include.adoc[]
 
+== SDK 3.7.0
+
+[#migrating-from-text-guardrail]
+=== Migrating from TextGuardrail
+
+`TextGuardrail` is deprecated. Implement one of the guardrail interfaces that return a `Decision` instead. Choose the interface by the `use-for` value of the configuration entry:
+
+* For `model-request`, implement `ModelCallGuardrail`.
+* For `model-response`, implement `AgentResponseGuardrail`.
+
+For the built-in `SimilarityGuard`, see <<migrating-from-similarity-guard,Migrating from SimilarityGuard>>.
+
+Remove `use-for` from the entry. The service fails to start when a `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail` entry defines `use-for`.
+
+For an agent that returns `StreamEffect`, the runtime does not evaluate a `TextGuardrail` on the reply unless the entry sets `report-only = true`. The runtime logs warning `AK-01208` instead. An `AgentResponseGuardrail` works differently. The service fails to start when an `AgentResponseGuardrail` entry without `report-only = true` binds such an agent. See xref:sdk:agents/guardrails.adoc#_kinds_of_guardrail[Kinds of guardrail] for the ways to fix the startup failure.
+
+[#migrating-from-similarity-guard]
+=== Migrating from SimilarityGuard
+
+Using `SimilarityGuard` for `model-request` or `model-response` is deprecated. `SimilarityGuard` will support only `mcp-tool-request` and `mcp-tool-response`. For `model-request`, use `ModelCallSimilarityGuard`. The SDK has no replacement for `model-response`. See xref:sdk:agents/guardrails.adoc#_similarity_guardrail[Similarity guardrail] for the `ModelCallSimilarityGuard` configuration.
+
+To move the built-in guard entry, enable `"default model-call jailbreak"` for the same agents and agent roles. Copy any settings that you changed on `"default jailbreak"`, such as `threshold` or `report-only`. Then remove the agents and agent roles from `"default jailbreak"`.
+
+`ModelCallSimilarityGuard` behaves differently from `SimilarityGuard` with `use-for = ["model-request"]`:
+
+* It checks the user message after the model-call sanitizers have masked it.
+* The service fails at startup if `bad-examples-resource-dir` is not on the classpath. It also fails if `threshold` is not greater than 0 and at most 1.
+
 == SDK 3.5.5
 
 Akka SDK 3.5.5 deprecates the `@AgentDescription` annotation in favor of using `@Component` for agent metadata (name and description) and the new `@AgentRole` annotation for specifying agent roles. This change aligns agent configuration with other component types and provides a more consistent API.

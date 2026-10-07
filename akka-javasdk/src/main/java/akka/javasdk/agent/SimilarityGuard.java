@@ -6,8 +6,15 @@ package akka.javasdk.agent;
 
 /**
  * The SimilarityGuard evaluates the text by making a similarity search in a dataset of "bad
- * examples". If the similarity exceeds a threshold, the result is flagged as blocked.
+ * examples". If the similarity reaches the threshold, SimilarityGuard blocks the result.
+ *
+ * @deprecated Using SimilarityGuard for {@code model-request} or {@code model-response} is
+ *     deprecated. SimilarityGuard will support only {@code mcp-tool-request} and {@code
+ *     mcp-tool-response}. For {@code model-request}, use {@link ModelCallSimilarityGuard}. The SDK
+ *     has no replacement for {@code model-response}.
  */
+@Deprecated(since = "3.7.0", forRemoval = true)
+@SuppressWarnings("removal")
 public final class SimilarityGuard implements TextGuardrail {
   private final String badExamplesResourceDir;
   private final double threshold;
@@ -18,7 +25,7 @@ public final class SimilarityGuard implements TextGuardrail {
     this.threshold = context.config().getDouble("threshold");
   }
 
-  /** The similarity score above which text is flagged as blocked. */
+  /** SimilarityGuard blocks text at or above this score. */
   public double threshold() {
     return threshold;
   }

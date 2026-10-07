@@ -35,6 +35,11 @@ jobs:
           # we don't know what commit the last tag was, it's safer to get entire repo
           fetch-depth: 0
 
+      - name: Checkout Optimize documentation
+        uses: ./.github/actions/checkout-optimize-docs
+        with:
+          token: ${{ secrets.NEXUS_READ_TOKEN || github.token }}
+
       - name: Coursier cache
         # https://github.com/coursier/cache-action/releases
         uses: coursier/cache-action@v8.1.0
@@ -46,6 +51,8 @@ jobs:
           jvm: temurin:1.21
 
       - name: Downloads, Antora
+        env:
+          NEXUS_DIR: ${{ github.workspace }}/nexus
         run: |
           make managed prod
 

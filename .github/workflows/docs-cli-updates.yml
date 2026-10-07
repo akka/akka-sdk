@@ -39,8 +39,9 @@ jobs:
         docs/src-static/install-cli.sh --force --prefix=${CLI_INSTALL_PATH}
         CLI_VERSION=$(akka version)
         echo "setting CLI version to ${CLI_VERSION}"
-        sed -i.bak "s/\(echo \":akka-cli-version: \)[^\"]*/\1${CLI_VERSION}/" Makefile
+        sed -i.bak -E "s/^AKKA_CLI_VERSION := .*/AKKA_CLI_VERSION := ${CLI_VERSION}/" Makefile
         rm Makefile.bak
+        grep -Fqx "AKKA_CLI_VERSION := ${CLI_VERSION}" Makefile
         gem install kramdown-asciidoc
         ./docs/bin/generate_cli_docs.sh gen-index
 

@@ -1,0 +1,71 @@
+= akka optimize training base-models wait
+
+Wait for a base model to finish being prepared
+
+== Synopsis
+
+Wait until an entry is admitted and its selection has settled.
+
+BASE_MODEL takes the repository, the entry ID, the model ID a run names, or an unambiguous prefix of either ID.
+
+The wait ends once the selection reads READY, which it reaches whether the weights were cached or not: a model whose weights could not be warmed is still usable and its first job pays the download.
+What actually happened is in the record this prints, under Weights.
+
+An entry admission refused, and an entry nobody has selected, both end the wait as a failure.
+Neither is being prepared, so waiting on either would never finish.
+
+Ctrl-C stops watching.
+Preparation continues in the cluster.
+
+--timeout bounds the wait.
+By default there is no deadline.
+
+----
+akka optimize training base-models wait BASE_MODEL [flags]
+----
+
+== Examples
+
+----
+  # Wait for a selection to settle
+  akka-optimize training base-models wait Qwen/Qwen3-8B
+
+  # Give up watching after ten minutes
+  akka-optimize training base-models wait Qwen/Qwen3-8B --timeout 10m
+----
+
+== Options
+
+----
+  -h, --help               help for wait
+      --timeout duration   Maximum time to wait for the entry; zero waits without a deadline
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_base-models.html[akka optimize training base-models]	 - See which base models this deployment allows, and select one to use
+
+[discrete]
+

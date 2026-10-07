@@ -37,17 +37,88 @@ public class Validations {
    * @return a Validation result indicating success or failure with error messages
    */
   public static Validation validate(TypeDef typeDef) {
+    // @Acl (with its SPIFFE patterns) can appear on any endpoint kind and on @Produce.ServiceStream
+    // consumers, so validate its patterns regardless of which branch handles the rest.
+    Validation aclPatterns = spiffeAclPatternValidation(typeDef);
     if (typeDef.hasAnnotation(HTTP_ENDPOINT_ANNOTATION)) {
-      return HttpEndpointValidations.validate(typeDef);
+      return HttpEndpointValidations.validate(typeDef).combine(aclPatterns);
     } else if (typeDef.hasAnnotation(GRPC_ENDPOINT_ANNOTATION)) {
-      // no specific validations for grpc endpoint
-      return Validation.Valid.instance();
+      // no specific validations for grpc endpoint beyond ACL patterns
+      return aclPatterns;
     } else if (typeDef.hasAnnotation(MCP_ENDPOINT_ANNOTATION)) {
-      // no specific validations for mcp endpoint
-      return Validation.Valid.instance();
+      // no specific validations for mcp endpoint beyond ACL patterns
+      return aclPatterns;
     } else {
-      return validateComponent(typeDef);
+      return validateComponent(typeDef).combine(aclPatterns);
     }
+  }
+
+  /**
+   * Validates the SPIFFE glob patterns of any {@code @Acl} matchers on the class and its methods. A
+   * {@code **} (cross-segment wildcard) is only valid as the final token of a pattern; mirrors the
+   * runtime glob compiler in akka-runtime's {@code PrincipalMatcher.compileSegmentGlob}.
+   *
+   * @param typeDef the class to validate
+   * @return a Validation result indicating success or failure
+   */
+  public static Validation spiffeAclPatternValidation(TypeDef typeDef) {
+    List<String> errors = new ArrayList<>();
+
+    typeDef
+        .findAnnotation(ACL_ANNOTATION)
+        .ifPresent(
+            acl ->
+                invalidSpiffePatterns(acl)
+                    .forEach(
+                        bad -> errors.add(errorMessage(typeDef, badSpiffePatternMessage(bad)))));
+
+    for (MethodDef method : typeDef.getMethods()) {
+      method
+          .findAnnotation(ACL_ANNOTATION)
+          .ifPresent(
+              acl ->
+                  invalidSpiffePatterns(acl)
+                      .forEach(
+                          bad -> errors.add(errorMessage(method, badSpiffePatternMessage(bad)))));
+    }
+
+    return Validation.of(errors);
+  }
+
+  private static List<String> invalidSpiffePatterns(AnnotationDef aclAnnotation) {
+    List<String> invalid = new ArrayList<>();
+    List<AnnotationDef> matchers = new ArrayList<>();
+    matchers.addAll(aclAnnotation.getAnnotationArrayValue("allow"));
+    matchers.addAll(aclAnnotation.getAnnotationArrayValue("deny"));
+    for (AnnotationDef matcher : matchers) {
+      String spiffe = matcher.getStringValue("spiffe").orElse("");
+      if (!spiffe.isEmpty() && !isValidSpiffePattern(spiffe)) {
+        invalid.add(spiffe);
+      }
+    }
+    return invalid;
+  }
+
+  /** A {@code **} (cross-segment wildcard) is only valid as the final token of the pattern. */
+  public static boolean isValidSpiffePattern(String pattern) {
+    int i = 0;
+    while (i < pattern.length()) {
+      if (pattern.charAt(i) == '*' && i + 1 < pattern.length() && pattern.charAt(i + 1) == '*') {
+        if (i + 2 != pattern.length()) {
+          return false;
+        }
+        i += 2;
+      } else {
+        i++;
+      }
+    }
+    return true;
+  }
+
+  private static String badSpiffePatternMessage(String pattern) {
+    return "Invalid SPIFFE ACL pattern ["
+        + pattern
+        + "]: `**` is only allowed as the final token (matches everything below).";
   }
 
   private static Validation validateComponent(TypeDef typeDef) {

@@ -41,6 +41,7 @@ When other inference calls are used to judge the first inferences, this number c
 
 == In this section
 
+* xref:inference:serving/getting-started.adoc[*Serving your first model*]: A tutorial that deploys a model in an Akka region and calls it.
 * xref:inference:serving/index.adoc[*Serving models*]: Running a model on hardware in your project and exposing it on a hostname clients can call.
 * xref:inference:routing/index.adoc[*Routing requests to models*]: Deciding which model provider serves a request.
 

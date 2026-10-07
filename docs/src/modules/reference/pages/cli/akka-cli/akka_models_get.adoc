@@ -1,0 +1,56 @@
+= akka models get
+
+Describe one model;
+--wait blocks until it is Ready.
+
+== Synopsis
+
+Shows the model and, when it is not ready, the Ready condition's own reason: an engine that is still pulling weights, a device that will not bind, or an entitlement that was revoked each name themselves.
+
+--wait polls until Ready is True or --wait-timeout passes.
+The first deployment of a model pulls the engine image and the checkpoint, so minutes are normal.
+
+----
+akka models get NAME [flags]
+----
+
+== Examples
+
+----
+akka models get docs
+akka models get docs --wait --wait-timeout 15m
+----
+
+== Options
+
+----
+  -h, --help                    help for get
+      --owner string            the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string          project to use if not using the default configured project
+      --region string           region to use if project has more than one region
+      --wait                    Wait until the model is Ready.
+      --wait-timeout duration   How long --wait waits. (default 10m0s)
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_models.html[akka models]	 - Deploy and serve models in Akka's inference regions.
+
+[discrete]
+

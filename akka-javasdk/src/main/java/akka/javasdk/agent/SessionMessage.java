@@ -78,9 +78,22 @@ public sealed interface SessionMessage {
     record PdfUriMessageContent(String uri) implements MessageContent {}
   }
 
-  /** A multimodal user message, e.g. text combined with an image or PDF. */
-  record MultimodalUserMessage(Instant timestamp, List<MessageContent> contents, String componentId)
+  /**
+   * A multimodal user message, e.g. text combined with an image or PDF.
+   *
+   * @param sanitized true when the message holds the text that the runtime sent to the model, with
+   *     the configured sanitizers applied. The runtime sends such a message to the model as it is.
+   *     For a message with false, the runtime masks the text with the current sanitizers before it
+   *     sends it. Leave it false in a message that you build.
+   */
+  record MultimodalUserMessage(
+      Instant timestamp, List<MessageContent> contents, String componentId, boolean sanitized)
       implements SessionMessage {
+
+    public MultimodalUserMessage(
+        Instant timestamp, List<MessageContent> contents, String componentId) {
+      this(timestamp, contents, componentId, false);
+    }
 
     /** returns text from the first MessageContent.TextMessageContent */
     public Optional<String> text() {
@@ -108,11 +121,23 @@ public sealed interface SessionMessage {
     }
   }
 
-  /** A plain text user message. */
-  record UserMessage(Instant timestamp, String text, String componentId) implements SessionMessage {
+  /**
+   * A plain text user message.
+   *
+   * @param sanitized true when the message holds the text that the runtime sent to the model, with
+   *     the configured sanitizers applied. The runtime sends such a message to the model as it is.
+   *     For a message with false, the runtime masks the text with the current sanitizers before it
+   *     sends it. Leave it false in a message that you build.
+   */
+  record UserMessage(Instant timestamp, String text, String componentId, boolean sanitized)
+      implements SessionMessage {
+
+    public UserMessage(Instant timestamp, String text, String componentId) {
+      this(timestamp, text, componentId, false);
+    }
 
     public UserMessage(Instant now, String text) {
-      this(now, text, "");
+      this(now, text, "", false);
     }
 
     @Override
@@ -124,15 +149,62 @@ public sealed interface SessionMessage {
   /** A tool call requested by the model as part of an {@link AiMessage}. */
   record ToolCallRequest(String id, String name, String arguments) {}
 
-  /** Token usage for a single {@link AiMessage}. */
-  record TokenUsage(int inputTokens, int outputTokens) {
+  /**
+   * Token usage for a single {@link AiMessage}.
+   *
+   * <p>See {@link Agent.TokenUsage} for the meaning of each count. A {@code totalInputTokens} of 0
+   * is replaced by {@code inputTokens}. This also applies to session memory that was written before
+   * the field existed.
+   *
+   * <p>Autonomous agents report no prompt cache counts to session memory. Their messages have 0 for
+   * both cache counts, and {@code totalInputTokens} equals {@code inputTokens}.
+   */
+  record TokenUsage(
+      int inputTokens,
+      int outputTokens,
+      int cacheReadInputTokens,
+      int cacheWriteInputTokens,
+      int totalInputTokens) {
+
     /** No tokens consumed. */
     public static final TokenUsage EMPTY = new TokenUsage(0, 0);
 
-    /** The sum of this and another usage. */
+    public TokenUsage {
+      if (totalInputTokens == 0) {
+        totalInputTokens = inputTokens;
+      }
+    }
+
+    /** A usage with no prompt cache activity. */
+    public TokenUsage(int inputTokens, int outputTokens) {
+      this(inputTokens, outputTokens, 0, 0, inputTokens);
+    }
+
+    /** The token usage of an agent reply, as stored in session memory. */
+    public static TokenUsage from(Agent.TokenUsage tokenUsage) {
+      return new TokenUsage(
+          tokenUsage.inputTokens(),
+          tokenUsage.outputTokens(),
+          tokenUsage.cacheReadInputTokens(),
+          tokenUsage.cacheWriteInputTokens(),
+          tokenUsage.totalInputTokens());
+    }
+
+    /**
+     * The sum of this and another usage. Each count stops at {@link Integer#MAX_VALUE} instead of
+     * overflowing.
+     */
     public TokenUsage add(TokenUsage tokenUsage) {
       return new TokenUsage(
-          inputTokens + tokenUsage.inputTokens, outputTokens + tokenUsage.outputTokens);
+          saturatedAdd(inputTokens, tokenUsage.inputTokens),
+          saturatedAdd(outputTokens, tokenUsage.outputTokens),
+          saturatedAdd(cacheReadInputTokens, tokenUsage.cacheReadInputTokens),
+          saturatedAdd(cacheWriteInputTokens, tokenUsage.cacheWriteInputTokens),
+          saturatedAdd(totalInputTokens, tokenUsage.totalInputTokens));
+    }
+
+    private static int saturatedAdd(int a, int b) {
+      return (int) Math.min((long) a + b, Integer.MAX_VALUE);
     }
   }
 
@@ -198,20 +270,54 @@ public sealed interface SessionMessage {
     }
   }
 
-  /** The text result of a tool call, fed back to the model as input. */
+  /**
+   * The text result of a tool call, fed back to the model as input.
+   *
+   * @param sanitized true when the message holds the tool result that the runtime sent to the
+   *     model, with the configured sanitizers applied. The runtime sends such a message to the
+   *     model as it is. For a message with false, the runtime masks the text with the current
+   *     sanitizers before it sends it. Leave it false in a message that you build.
+   */
   record ToolCallResponse(
-      Instant timestamp, String componentId, String id, String name, String text)
+      Instant timestamp, String componentId, String id, String name, String text, boolean sanitized)
       implements SessionMessage {
+
+    public ToolCallResponse(
+        Instant timestamp, String componentId, String id, String name, String text) {
+      this(timestamp, componentId, id, name, text, false);
+    }
+
     @Override
     public int size() {
       return SessionMessage.sizeInBytes(text);
     }
   }
 
-  /** The multimodal result of a tool call, fed back to the model as input. */
+  /**
+   * The multimodal result of a tool call, fed back to the model as input.
+   *
+   * @param sanitized true when the message holds the tool result that the runtime sent to the
+   *     model, with the configured sanitizers applied. The runtime sends such a message to the
+   *     model as it is. For a message with false, the runtime masks the text with the current
+   *     sanitizers before it sends it. Leave it false in a message that you build.
+   */
   record MultimodalToolCallResponse(
-      Instant timestamp, String componentId, String id, String name, List<MessageContent> contents)
+      Instant timestamp,
+      String componentId,
+      String id,
+      String name,
+      List<MessageContent> contents,
+      boolean sanitized)
       implements SessionMessage {
+
+    public MultimodalToolCallResponse(
+        Instant timestamp,
+        String componentId,
+        String id,
+        String name,
+        List<MessageContent> contents) {
+      this(timestamp, componentId, id, name, contents, false);
+    }
 
     @Override
     public int size() {

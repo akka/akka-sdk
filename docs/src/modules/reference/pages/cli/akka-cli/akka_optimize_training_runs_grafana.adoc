@@ -1,0 +1,80 @@
+= akka optimize training runs grafana
+
+Print a run's Grafana dashboard URL
+
+== Synopsis
+
+Build a login-token URL to the run's Grafana dashboard.
+
+The URL is a credential: it carries a token good for viewing the project's Grafana until the expiry this command prints, to anyone who has it.
+Do not paste it into a ticket or a chat;
+open it yourself, or hand it to someone you would hand the project itself to.
+It needs no separate Grafana login.
+
+The platform project addressed is not necessarily the one the run trained in: it comes from --project, or else AKKA_PROJECT, or else the akka CLI's own login (~/.akka/config.yaml, the context --context names or the current one) and its own default project, which a later "akka auth login" can silently change.
+A wrong one is not refused here, only by Grafana, as "Dashboard not found".
+The project actually used is always printed.
+--grafana-region names the project's region when it has more than one;
+default is the first that has a Grafana metrics endpoint.
+
+The dashboard has an "attempt" variable of its own, for a run resubmitted after a failure.
+Pass --attempt to set it;
+left unset, the dashboard's own default applies.
+
+The URL's time range spans the run itself: its start to its end, or to now while it is still training, rather than a trailing window that would show nothing for a run that finished outside it.
+
+----
+akka optimize training runs grafana RUN [flags]
+----
+
+== Examples
+
+----
+  # Print the dashboard URL for a run
+  akka-optimize training runs grafana 7d496e82c3a15f04
+
+  # Open it directly
+  open "$(akka-optimize training runs grafana 7d496e82c3a15f04 -o json | jq -r .url)"
+
+  # Address a specific attempt, in a project other than the akka CLI's default
+  akka-optimize training runs grafana 7d496e82c3a15f04 --attempt 2 --project be525454-1078-4fae-a8ea-1e27a406970e
+----
+
+== Options
+
+----
+      --attempt string          the dashboard's attempt variable; default is the dashboard's own default
+      --grafana-region string   the project's region to address, for a project with more than one; default is its first with a Grafana metrics endpoint
+  -h, --help                    help for grafana
+      --project string          the platform project id to address; default is AKKA_PROJECT, or the akka CLI login's own default project
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_runs.html[akka optimize training runs]	 - Manage training runs, snapshots and child runs
+
+[discrete]
+

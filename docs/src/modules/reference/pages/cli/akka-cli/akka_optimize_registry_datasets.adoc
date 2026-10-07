@@ -1,0 +1,68 @@
+= akka optimize registry datasets
+
+Named datasets, their versions and their aliases
+
+== Synopsis
+
+A dataset version is a fixed set of objects in one format, with a digest derived from the object listing.
+Uploading the same objects under the same name returns the version that is already there, and changing the examples appends a version.
+
+A reference is one string: NS/NAME for the named artifact, NS/NAME:v2 for a version, NS/NAME:serving for the version an alias points at, and NS/NAME@sha256:...
+for a version by digest.
+NS/NAME where a version is wanted is the newest version.
+
+== Examples
+
+----
+  # Upload examples and point an alias at the version
+  akka-optimize registry datasets register triage/train -f examples.jsonl --alias candidate
+
+  # Read the named dataset
+  akka-optimize registry datasets get triage/train
+
+  # Read the version an alias points at
+  akka-optimize registry datasets get triage/train:candidate
+----
+
+== Options
+
+----
+  -h, --help   help for datasets
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_registry.html[akka optimize registry]	 - The artifact registry: named models, datasets and bundles
+* link:akka_optimize_registry_datasets_alias.html[akka optimize registry datasets alias]	 - The movable pointers into a named dataset
+* link:akka_optimize_registry_datasets_annotate.html[akka optimize registry datasets annotate]	 - Set or clear the description of a dataset version
+* link:akka_optimize_registry_datasets_get.html[akka optimize registry datasets get]	 - One named dataset, or one of its versions
+* link:akka_optimize_registry_datasets_list.html[akka optimize registry datasets list]	 - Every named dataset, narrowed by namespace
+* link:akka_optimize_registry_datasets_object.html[akka optimize registry datasets object]	 - The bytes of one object of a version, written to standard output
+* link:akka_optimize_registry_datasets_register.html[akka optimize registry datasets register]	 - Upload a dataset version under a named dataset
+* link:akka_optimize_registry_datasets_versions.html[akka optimize registry datasets versions]	 - One named dataset's versions, newest first
+
+[discrete]
+

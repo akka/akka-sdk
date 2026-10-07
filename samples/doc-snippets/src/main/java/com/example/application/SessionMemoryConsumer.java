@@ -56,10 +56,7 @@ public class SessionMemoryConsumer extends Consumer {
             .invoke(history);
 
           var now = Instant.now();
-          var tokenUsage = new SessionMessage.TokenUsage(
-            summaryReply.tokenUsage().inputTokens(),
-            summaryReply.tokenUsage().outputTokens()
-          );
+          var tokenUsage = SessionMessage.TokenUsage.from(summaryReply.tokenUsage());
 
           componentClient
             .forEventSourcedEntity(sessionId)

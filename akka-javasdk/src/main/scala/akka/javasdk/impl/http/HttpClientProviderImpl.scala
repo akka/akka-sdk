@@ -24,6 +24,7 @@ import akka.javasdk.http.HttpClient
 import akka.javasdk.http.HttpClientProvider
 import akka.javasdk.impl.Settings
 import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
+import akka.runtime.sdk.spi.SpiSpiffeContext
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
@@ -40,7 +41,8 @@ private[akka] final class HttpClientProviderImpl(
     sdkExecutor: Executor,
     connectionPoolSettings: Option[ConnectionPoolSettings] = None,
     // Only populated by the testkit; production and dev-mode runners use the default no-op lookup.
-    httpMockLookup: String => Option[java.util.function.Function[HttpRequest, HttpResponse]] = _ => None)
+    httpMockLookup: String => Option[java.util.function.Function[HttpRequest, HttpResponse]] = _ => None,
+    callerSpiffeHeader: Option[RawHeader] = None)
     extends HttpClientProvider {
 
   private val log = LoggerFactory.getLogger(classOf[HttpClientProvider])
@@ -130,8 +132,8 @@ private[akka] final class HttpClientProviderImpl(
 
     val defaultHeaders =
       if (nameIsService)
-        // cross service request, include auth
-        otelTraceHeaders ++ remoteIdentificationHeader
+        // cross service request, include auth and caller identity
+        otelTraceHeaders ++ remoteIdentificationHeader ++ callerSpiffeHeader
       else
         // arbitrary http request
         otelTraceHeaders
@@ -159,6 +161,18 @@ private[akka] final class HttpClientProviderImpl(
       settings,
       sdkExecutor,
       connectionPoolSettings,
-      httpMockLookup)
+      httpMockLookup,
+      callerSpiffeHeader)
+
+  def withCallerSpiffeHeader(headerValue: String): HttpClientProviderImpl =
+    new HttpClientProviderImpl(
+      system,
+      telemetryContext,
+      remoteIdentificationHeader,
+      settings,
+      sdkExecutor,
+      connectionPoolSettings,
+      httpMockLookup,
+      Some(RawHeader.create(SpiSpiffeContext.CallerSpiffeHeaderName, headerValue)))
 
 }

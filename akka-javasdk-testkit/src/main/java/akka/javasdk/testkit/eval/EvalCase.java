@@ -7,6 +7,7 @@ package akka.javasdk.testkit.eval;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * One evaluation case: the command sent to the agent and the evaluators to run against the agent's
@@ -82,6 +83,17 @@ public record EvalCase<C>(
   public EvalCase<C> withEvaluators(Evaluator... more) {
     var next = new ArrayList<>(evaluators);
     next.addAll(List.of(more));
+    return new EvalCase<>(id, command, recordedCalls, next);
+  }
+
+  /**
+   * The same case without the evaluators of these classes, for example {@code
+   * Evaluators.TokenBudget.class} under a mocked model that reports no tokens.
+   */
+  @SafeVarargs
+  public final EvalCase<C> withoutEvaluators(Class<? extends Evaluator>... types) {
+    var dropped = Set.of(types);
+    var next = evaluators.stream().filter(e -> !dropped.contains(e.getClass())).toList();
     return new EvalCase<>(id, command, recordedCalls, next);
   }
 }

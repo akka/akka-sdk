@@ -12,6 +12,10 @@ Current versions
 
 == October 2026
 
+* Akka CLI 3.0.77
+- Routes apply command added
+- Akka model and akka optimize support added
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.6.6[Akka SDK 3.6.6]
 - Runtime 1.6.17
 - EvalKit in the TestKit for evaluation tests of agents, see xref:testing:evaluation/getting-started.adoc[Getting started with evaluation]
