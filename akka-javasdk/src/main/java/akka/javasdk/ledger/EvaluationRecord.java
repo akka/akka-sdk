@@ -51,7 +51,7 @@ public record EvaluationRecord(
       }
     }
 
-    /** The evaluation ran but could not reach a verdict — a deliberate, expected outcome. */
+    /** The evaluation ran but could not reach a verdict. This is a deliberate, expected outcome. */
     record Inconclusive(String reason) implements Outcome {}
 
     /** The evaluation failed, as opposed to reporting an inconclusive outcome. */
