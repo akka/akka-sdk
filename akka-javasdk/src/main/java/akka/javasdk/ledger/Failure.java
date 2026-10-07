@@ -15,9 +15,9 @@ package akka.javasdk.ledger;
  */
 public record Failure(FailureReason reason, String description) {
 
-  /** Why an interaction failed. */
+  /** Why an interaction failed. A later SDK version can add values. */
   public enum FailureReason {
-    /** The failure reason was not reported. */
+    /** The runtime did not report the reason, or this version of the SDK does not know it. */
     UNSPECIFIED,
     /** The model call itself failed. */
     MODEL,

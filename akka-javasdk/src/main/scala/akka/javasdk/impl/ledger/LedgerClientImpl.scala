@@ -113,10 +113,12 @@ private[ledger] object LedgerClientImpl {
   }
 
   private def toEvaluationTrigger(trigger: SpiLedger.EvaluationTrigger): EvaluationRecord.Trigger =
-    trigger match {
-      case SpiLedger.EvaluationTrigger.Unspecified   => EvaluationRecord.Trigger.UNSPECIFIED
-      case SpiLedger.EvaluationTrigger.Manual        => EvaluationRecord.Trigger.MANUAL
-      case SpiLedger.EvaluationTrigger.OnInteraction => EvaluationRecord.Trigger.ON_INTERACTION
+    knownOr(EvaluationRecord.Trigger.UNSPECIFIED) {
+      trigger match {
+        case SpiLedger.EvaluationTrigger.Unspecified   => EvaluationRecord.Trigger.UNSPECIFIED
+        case SpiLedger.EvaluationTrigger.Manual        => EvaluationRecord.Trigger.MANUAL
+        case SpiLedger.EvaluationTrigger.OnInteraction => EvaluationRecord.Trigger.ON_INTERACTION
+      }
     }
 
   private def toEvaluationOutcome(outcome: SpiLedger.EvaluationOutcome): EvaluationRecord.Outcome =
@@ -155,10 +157,12 @@ private[ledger] object LedgerClientImpl {
       config.maxTokens)
 
   private def toFinishReason(reason: SpiLedger.FinishReason): InteractionMetadata.FinishReason =
-    reason match {
-      case SpiLedger.FinishReason.Unspecified => InteractionMetadata.FinishReason.UNSPECIFIED
-      case SpiLedger.FinishReason.Stop        => InteractionMetadata.FinishReason.STOP
-      case SpiLedger.FinishReason.Length      => InteractionMetadata.FinishReason.LENGTH
+    knownOr(InteractionMetadata.FinishReason.UNSPECIFIED) {
+      reason match {
+        case SpiLedger.FinishReason.Unspecified => InteractionMetadata.FinishReason.UNSPECIFIED
+        case SpiLedger.FinishReason.Stop        => InteractionMetadata.FinishReason.STOP
+        case SpiLedger.FinishReason.Length      => InteractionMetadata.FinishReason.LENGTH
+      }
     }
 
   private def toModelResponse(response: SpiLedger.ModelResponse): ModelResponse =
@@ -213,17 +217,27 @@ private[ledger] object LedgerClientImpl {
     new Failure(toFailureReason(failure.reason), failure.description)
 
   private def toFailureReason(reason: SpiLedger.FailureReason): Failure.FailureReason =
-    reason match {
-      case SpiLedger.FailureReason.Unspecified        => Failure.FailureReason.UNSPECIFIED
-      case SpiLedger.FailureReason.Model              => Failure.FailureReason.MODEL
-      case SpiLedger.FailureReason.RateLimit          => Failure.FailureReason.RATE_LIMIT
-      case SpiLedger.FailureReason.Timeout            => Failure.FailureReason.TIMEOUT
-      case SpiLedger.FailureReason.UnsupportedFeature => Failure.FailureReason.UNSUPPORTED_FEATURE
-      case SpiLedger.FailureReason.Internal           => Failure.FailureReason.INTERNAL
-      case SpiLedger.FailureReason.OutputParsing      => Failure.FailureReason.OUTPUT_PARSING
-      case SpiLedger.FailureReason.ToolCall           => Failure.FailureReason.TOOL_CALL
-      case SpiLedger.FailureReason.McpToolCall        => Failure.FailureReason.MCP_TOOL_CALL
-      case SpiLedger.FailureReason.Guardrail          => Failure.FailureReason.GUARDRAIL
-      case SpiLedger.FailureReason.ContentLoading     => Failure.FailureReason.CONTENT_LOADING
+    knownOr(Failure.FailureReason.UNSPECIFIED) {
+      reason match {
+        case SpiLedger.FailureReason.Unspecified        => Failure.FailureReason.UNSPECIFIED
+        case SpiLedger.FailureReason.Model              => Failure.FailureReason.MODEL
+        case SpiLedger.FailureReason.RateLimit          => Failure.FailureReason.RATE_LIMIT
+        case SpiLedger.FailureReason.Timeout            => Failure.FailureReason.TIMEOUT
+        case SpiLedger.FailureReason.UnsupportedFeature => Failure.FailureReason.UNSUPPORTED_FEATURE
+        case SpiLedger.FailureReason.Internal           => Failure.FailureReason.INTERNAL
+        case SpiLedger.FailureReason.OutputParsing      => Failure.FailureReason.OUTPUT_PARSING
+        case SpiLedger.FailureReason.ToolCall           => Failure.FailureReason.TOOL_CALL
+        case SpiLedger.FailureReason.McpToolCall        => Failure.FailureReason.MCP_TOOL_CALL
+        case SpiLedger.FailureReason.Guardrail          => Failure.FailureReason.GUARDRAIL
+        case SpiLedger.FailureReason.ContentLoading     => Failure.FailureReason.CONTENT_LOADING
+      }
     }
+
+  // A runtime that is newer than this SDK can hand over a value that this SDK does not know. Such a value
+  // reads as `unknown`. A `null` also reads as `unknown`, because it fails the match too. The matches have no
+  // default case, so that the compiler reports a value that the SPI adds when the SDK is built against that
+  // runtime.
+  private def knownOr[T](unknown: T)(known: => T): T =
+    try known
+    catch { case _: MatchError => unknown }
 }
