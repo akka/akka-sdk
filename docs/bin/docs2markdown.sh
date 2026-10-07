@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run `make prod` first
+# Run `make prod` and `npm ci --prefix docs/bin/markdown` first.
 
 # abort script if a command fails
 set -euo pipefail
@@ -17,7 +17,7 @@ find target/site \
   -name "404.html" -prune -o \
   -name "*.adoc\[\].html" -prune -o \
   -type f -name "*.html" \
-  -print0 | node docs/bin/docs2markdown.mjs
+  -print0 | node docs/bin/markdown/convert.mjs
 
 # replace numbered references in code snippets
 # Only match callout numbers at end of line (preceded by space) to avoid
