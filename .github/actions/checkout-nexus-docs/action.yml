@@ -13,4 +13,7 @@ runs:
         ref: v0.7.1
         path: nexus
         fetch-depth: 0
+        sparse-checkout: |
+          optimize-docs
+          trainer/examples/spider-sql
         token: ${{ inputs.token }}
