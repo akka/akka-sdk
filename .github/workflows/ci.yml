@@ -47,18 +47,23 @@ jobs:
           git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
           git checkout scratch
 
-      - name: Restore Coursier cache
+      # This job saves the Coursier cache. It resolves the scalafix plugin and the test
+      # dependencies, which the publish-local job does not resolve. The other sbt jobs only
+      # restore the cache.
+      # The coursier-v2- restore key matches the caches of the previous key version.
+      - name: Cache Coursier cache
         # https://github.com/actions/cache/releases
-        uses: actions/cache/restore@v5
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/coursier
             ~/.sbt
             ~/.ivy2/cache
-          key: coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+          key: coursier-v3-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
           restore-keys: |
-            coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
-            coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-v3-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+            coursier-v3-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-v3-
             coursier-v2-
 
       - name: Set up JDK 21
@@ -142,18 +147,19 @@ jobs:
           git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
           git checkout scratch
 
-      - name: Cache Coursier cache
+      - name: Restore Coursier cache
         # https://github.com/actions/cache/releases
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         with:
           path: |
             ~/.cache/coursier
             ~/.sbt
             ~/.ivy2/cache
-          key: coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+          key: coursier-v3-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
           restore-keys: |
-            coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
-            coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-v3-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+            coursier-v3-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-v3-
             coursier-v2-
 
       - name: Set up JDK 21
@@ -161,15 +167,6 @@ jobs:
         uses: coursier/setup-action@v3.0.0
         with:
           jvm: temurin:1.21
-
-      - name: Cache Maven repository
-        # https://github.com/actions/cache/releases
-        uses: actions/cache@v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('akka-javasdk-parent/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
 
       - name: Build and publish artifacts and plugins
         id: build_sdk
@@ -230,10 +227,11 @@ jobs:
             ~/.cache/coursier
             ~/.sbt
             ~/.ivy2/cache
-          key: coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+          key: coursier-v3-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
           restore-keys: |
-            coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
-            coursier-v2-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-v3-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+            coursier-v3-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-v3-
             coursier-v2-
 
       - name: Set up JDK 21
@@ -290,15 +288,18 @@ jobs:
         uses: coursier/setup-action@v3.0.0
         with:
           jvm: temurin:1.21
+          # This job only runs Maven. Do not install the default sbtn app.
+          apps: ''
 
-      - name: Cache Maven repository
+      # The maven-samples job saves this cache.
+      - name: Restore Maven repository cache
         # https://github.com/actions/cache/releases
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('akka-javasdk-parent/pom.xml') }}
+          key: ${{ runner.os }}-maven-samples-${{ hashFiles('akka-javasdk-parent/pom.xml') }}
           restore-keys: |
-            ${{ runner.os }}-maven-
+            ${{ runner.os }}-maven-samples-
 
       - name: Download io.akka dependencies
         # https://github.com/actions/download-artifact/releases
@@ -402,15 +403,18 @@ jobs:
         uses: coursier/setup-action@v3.0.0
         with:
           jvm: temurin:1.21
+          # This job only runs Maven. Do not install the default sbtn app.
+          apps: ''
 
-      - name: Cache Maven repository
+      - name: Restore Maven repository cache
+        id: maven-cache
         # https://github.com/actions/cache/releases
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('akka-javasdk-parent/pom.xml') }}
+          key: ${{ runner.os }}-maven-samples-${{ hashFiles('akka-javasdk-parent/pom.xml') }}
           restore-keys: |
-            ${{ runner.os }}-maven-
+            ${{ runner.os }}-maven-samples-
 
       # The prettier plugin downloads its own node from nodejs.org. This cache key does not
       # depend on the parent pom, so a parent pom change does not force a fresh download.
@@ -492,3 +496,13 @@ jobs:
           echo "==== Verifying that generated unmanaged sources compile ===="
           rm -rf src/main/java src/test/java
           mvn test-compile --no-transfer-progress
+
+      # One matrix job saves the Maven repository, after its build has downloaded the plugins
+      # and dependencies. The samples share most of them.
+      - name: Save Maven repository cache
+        if: matrix.sample == 'shopping-cart-quickstart' && steps.maven-cache.outputs.cache-hit != 'true'
+        # https://github.com/actions/cache/releases
+        uses: actions/cache/save@v5
+        with:
+          path: ~/.m2/repository
+          key: ${{ steps.maven-cache.outputs.cache-primary-key }}
