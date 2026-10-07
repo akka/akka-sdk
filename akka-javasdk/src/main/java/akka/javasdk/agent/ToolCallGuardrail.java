@@ -30,8 +30,9 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
     /**
      * A tool on a remote MCP server.
      *
-     * @param endpoint the URI of the MCP server, as set by {@link RemoteMcpTools#fromServer} or
-     *     {@link RemoteMcpTools#fromService}
+     * @param endpoint the URI of the MCP server. For {@link RemoteMcpTools#fromServer} it is the
+     *     URI you pass. For {@link RemoteMcpTools#fromService} it is {@code
+     *     http://<service-name>/mcp}.
      */
     record RemoteMcp(String endpoint) implements ToolOrigin {}
   }

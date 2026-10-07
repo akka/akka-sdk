@@ -116,9 +116,13 @@ object GuardrailProviderSpec {
       origin = origin,
       telemetryContext = Context.root())
 
-  class OriginEchoingToolGuard extends ToolCallGuardrail {
-    override def decide(ctx: ToolCallGuardrail.CallContext): Decision =
-      new Decision.Deny(ctx.origin.toString)
+  @volatile var recordedOrigin: ToolCallGuardrail.ToolOrigin = _
+
+  class OriginRecordingToolGuard extends ToolCallGuardrail {
+    override def decide(ctx: ToolCallGuardrail.CallContext): Decision = {
+      recordedOrigin = ctx.origin
+      new Decision.Allow()
+    }
   }
 
   private def reasonOf(decision: SpiGuardrail.Decision): String =
@@ -592,7 +596,7 @@ class GuardrailProviderSpec
         .parseString(s"""
           akka.javasdk.agent.guardrails {
             "origin guard" {
-              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$OriginEchoingToolGuard"
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$OriginRecordingToolGuard"
               agents = ["tool-agent"]
               category = TOOL_POLICY
             }
@@ -603,14 +607,14 @@ class GuardrailProviderSpec
       val provider = new GuardrailProvider(system, cfg, testTracerFactory)
       val spiGuardrail = provider.agentGuardrails("tool-agent", role = None).toolCallGuardrails("some-tool").head
 
-      val functionTool = Await.result(spiGuardrail.decide(toolCallContext("some-tool")), 3.seconds)
-      reasonOf(functionTool) shouldBe new ToolCallGuardrail.ToolOrigin.FunctionTool().toString
+      Await.result(spiGuardrail.decide(toolCallContext("some-tool")), 3.seconds)
+      recordedOrigin shouldBe new ToolCallGuardrail.ToolOrigin.FunctionTool()
 
-      val remoteMcp = Await.result(
+      Await.result(
         spiGuardrail.decide(
           toolCallContext("some-tool", new SpiGuardrail.ToolOrigin.RemoteMcp("http://example.com/mcp"))),
         3.seconds)
-      reasonOf(remoteMcp) shouldBe new ToolCallGuardrail.ToolOrigin.RemoteMcp("http://example.com/mcp").toString
+      recordedOrigin shouldBe new ToolCallGuardrail.ToolOrigin.RemoteMcp("http://example.com/mcp")
     }
 
     "give an MCP endpoint the ToolCallGuardrails of each tool by name" in {
@@ -628,6 +632,12 @@ class GuardrailProviderSpec
               agents = ["tool-agent"]
               category = TOOL_POLICY
             }
+            "legacy mcp guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agents = ["tool-agent"]
+              category = TOXIC
+              use-for = ["mcp-tool-request"]
+            }
           }
         """)
         .withFallback(config)
@@ -639,6 +649,9 @@ class GuardrailProviderSpec
         AgentImpl
           .toSpiMcpEndpoints(Seq(new RemoteMcpToolsImpl("http://example.com/mcp")), g, system.executionContext)
           .head
+
+      endpoint.requestGuardrails.map(_.name) shouldBe Seq("legacy mcp guard")
+      endpoint.responseGuardrails shouldBe empty
 
       endpoint.toolCallGuardrails("allowed-tool").map(_.settings.name) should contain theSameElementsAs Seq(
         "named tool guard",
@@ -722,6 +735,28 @@ class GuardrailProviderSpec
 
       LoggingTestKit
         .warn("Guardrail [shared text guard] uses deprecated use-for values.")
+        .withOccurrences(1)
+        .expect(provider.validate())
+    }
+
+    "warn when a TextGuardrail applies only to agent roles" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "role text guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agent-roles = ["worker"]
+              category = TOXIC
+              use-for = ["model-response"]
+            }
+          }
+        """)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn("Guardrail [role text guard] uses deprecated use-for values. Instead, " +
+        "implement akka.javasdk.agent.AgentResponseGuardrail for model-response.")
         .withOccurrences(1)
         .expect(provider.validate())
     }

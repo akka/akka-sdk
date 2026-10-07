@@ -300,10 +300,6 @@ import org.slf4j.LoggerFactory
   private def toSpiSimilarityGuard(g: SimilarityGuard, c: ConfiguredGuardrail): SpiAgent.SimilarityGuard =
     new SpiAgent.SimilarityGuard(c.name, c.category, c.reportOnly, g.badExamplesResourceDir, g.threshold)
 
-  // The use-for values a TextGuardrail can bind to. "*" expands to all of them.
-  private val TextGuardrailUseFor: Set[UseFor] =
-    Set(UseFor.ModelRequest, UseFor.ModelResponse, UseFor.McpToolRequest, UseFor.McpToolResponse)
-
   private val DefaultJailbreak = "default jailbreak"
   private val DefaultModelCallJailbreak = "default model-call jailbreak"
 
@@ -314,6 +310,9 @@ import org.slf4j.LoggerFactory
       UseFor.ModelResponse -> "implement akka.javasdk.agent.AgentResponseGuardrail for model-response",
       UseFor.McpToolRequest -> "implement akka.javasdk.agent.ToolCallGuardrail for mcp-tool-request",
       UseFor.McpToolResponse -> "implement akka.javasdk.agent.ModelCallGuardrail for mcp-tool-response")
+
+  // The use-for values a TextGuardrail can bind to. "*" expands to all of them.
+  private val TextGuardrailUseFor: Set[UseFor] = DeprecatedUseFor.map(_._1).toSet
 
   // Default classifierClient for call sites (and tests) that don't supply one; any call fails
   // descriptively instead of silently returning something.
@@ -413,7 +412,6 @@ import org.slf4j.LoggerFactory
     if (!c.useFor.contains(UseFor.Wildcard)) c
     else c.copy(useFor = c.useFor - UseFor.Wildcard ++ TextGuardrailUseFor)
 
-  // Logs a warning when the guardrail uses a deprecated use-for value.
   private def warnOnDeprecatedUseFor(c: ConfiguredGuardrail): Unit = {
     val replacements =
       DeprecatedUseFor.collect { case (useFor, replacement) if c.useFor.contains(useFor) => replacement }
