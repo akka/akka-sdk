@@ -13,7 +13,7 @@ Model serving commands are under `akka models`. Routing, cost, training, and eva
 | Covers
 
 | xref:reference:inference-cli/models.adoc[Model commands]
-| `akka models`: deployments, the devices and accelerators they run on, the hostnames that expose them, the API keys that authorize requests, and the governance record.
+| `akka models`: accelerator pools and allocations, models, the endpoints that serve them, and their API keys. `akka optimize models`: the governance record.
 
 | xref:reference:inference-cli/routing.adoc[Routing commands]
 | `akka optimize rulesets`, `akka optimize routing-classifiers`, `akka optimize use-cases`, and `akka optimize routing-policies`: choosing which provider serves a request.
