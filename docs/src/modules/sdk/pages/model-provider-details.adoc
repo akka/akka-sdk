@@ -808,6 +808,60 @@ Use the provider on one interaction with `effects().model(...)`, or on a whole a
 `modelProvider(...)` on its definition. An autonomous agent reads its definition once at startup, so the
 headers are the same for every instance of that agent.
 
+== Identity headers
+
+By default, the runtime adds two headers to each model request, so that a gateway or proxy in front of the
+model API can attribute the request:
+
+[cols="1m,3"]
+|===
+| Header | Value
+
+| x-akka-agent-id | The component id of the agent that made the request
+| x-akka-flow-id | The flow the request belongs to. When the request has no flow, the session id, or the instance id for an autonomous agent
+
+|===
+
+The runtime leaves a header out when its value is blank, longer than 1024 characters, or not a legal
+header value. The runtime still sends the request.
+
+A request has a flow when the agent runs inside an autonomous-agent flow. For any other request, such as
+one from an agent that an endpoint or a workflow calls, `x-akka-flow-id` holds the session id or the
+instance id. Your application chooses both ids. With the default setting, the runtime sends them to a
+hosted model API too. A xref:sdk:sanitization.adoc[sanitizer] masks message content and not headers, so
+it does not mask these ids. Do not put personal data in a session id or an instance id, or
+xref:model-provider-details.adoc#identity-headers-per-provider[turn the headers off] for that provider.
+
+Do not set `x-akka-agent-id` or `x-akka-flow-id` as an
+xref:model-provider-details.adoc#_additional_model_request_headers[additional model request header] while
+the identity headers are on. Depending on the provider, the request then carries both values or only the
+value from the runtime.
+
+Turn them off for every provider:
+
+[source,hocon,indent=0]
+----
+akka.javasdk.agent.identity-headers = off
+----
+
+[#identity-headers-per-provider]
+Each provider section inherits the global value and can override it:
+
+[source,hocon,indent=0]
+----
+akka.javasdk.agent.openai.identity-headers = off
+----
+
+A section that copies another section, such as `+my-gateway = ${akka.javasdk.agent.openai}+`, also copies
+its `identity-headers` value, including the override above. Set `identity-headers` in `my-gateway` to give
+that section its own value.
+
+A provider named in configuration takes the value from the section it resolves to. A provider built in code
+takes the global value, because it has no section.
+
+Local AI does not send these headers. A custom provider builds its own chat model, so the runtime does not
+add these headers to its requests.
+
 == Reference configurations
 The following is a list of the various reference configurations for each of the AI models
 
