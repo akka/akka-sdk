@@ -17,6 +17,7 @@ import java.util.Optional;
  *
  * @param evaluationId the globally unique id of the evaluation
  * @param evaluatorComponentId the component id of the evaluator that ran the evaluation
+ * @param controlId the control id that the evaluator declares, or empty when it declares none
  * @param trigger what caused the evaluation to run
  * @param interactionId the id of the interaction that was evaluated
  * @param agentComponentId the component id of the agent whose interaction was evaluated
@@ -26,6 +27,7 @@ import java.util.Optional;
 public record EvaluationRecord(
     String evaluationId,
     String evaluatorComponentId,
+    Optional<String> controlId,
     Trigger trigger,
     String interactionId,
     String agentComponentId,
