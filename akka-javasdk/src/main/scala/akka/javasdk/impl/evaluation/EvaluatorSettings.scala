@@ -24,7 +24,9 @@ import com.typesafe.config.ConfigObject
  * evaluator evaluates, and each key under `agent-roles` is an agent role, where `*` is every agent that has a role. The
  * value is a (possibly empty) config object for the settings of that binding. Each evaluator and binding config is
  * merged (as a fallback) with the defaults under `akka.javasdk.evaluation.defaults`, so settings such as `enabled`
- * always resolve; disabled evaluators and bindings produce no bindings.
+ * always resolve; disabled evaluators and bindings produce no bindings. A binding, not an evaluator, may set
+ * `sampling-ratio`, the probability that the evaluator evaluates an interaction of the agent, and `trigger-on-failure`,
+ * whether the evaluator also evaluates failed interactions.
  */
 @InternalApi
 private[impl] object EvaluatorSettings {
@@ -32,9 +34,27 @@ private[impl] object EvaluatorSettings {
   private val EvaluatorsPath = "akka.javasdk.evaluation.evaluators"
   private val EvaluatorDefaultsPath = "akka.javasdk.evaluation.defaults.evaluator"
   private val AgentDefaultsPath = "akka.javasdk.evaluation.defaults.agent"
+  private val SamplingRatioKey = "sampling-ratio"
+  private val TriggerOnFailureKey = "trigger-on-failure"
+
+  /** The settings of an enabled binding entry. */
+  private final case class BindingSettings(
+      event: SpiEvaluator.AgentBindingEvent,
+      samplingRatio: Double,
+      triggerOnFailure: Boolean)
 
   private def configAt(config: Config, path: String): Config =
     if (config.hasPath(path)) config.getConfig(path) else ConfigFactory.empty()
+
+  /** The `sampling-ratio` of the given config, where `entry` names the config for the error. */
+  private def samplingRatio(config: Config, entry: String): Double = {
+    val ratio = config.getDouble(SamplingRatioKey)
+    // the runtime treats a ratio above 1.0 as 1.0, so a percentage would evaluate every interaction
+    if (!(ratio >= 0.0 && ratio <= 1.0))
+      throw new IllegalArgumentException(
+        s"$entry must define [$SamplingRatioKey] between 0.0 and 1.0, but defines [$ratio]")
+    ratio
+  }
 
   private def agentBindingEvent(trigger: String): SpiEvaluator.AgentBindingEvent =
     trigger.toLowerCase match {
@@ -59,25 +79,42 @@ private[impl] object EvaluatorSettings {
     val evaluators = configAt(config, EvaluatorsPath)
     val evaluatorDefaults = configAt(config, EvaluatorDefaultsPath)
     val agentDefaults = configAt(config, AgentDefaultsPath)
+    // checked on its own, so that the error for a binding is about a value that the binding defines
+    samplingRatio(agentDefaults, s"Evaluator defaults [$AgentDefaultsPath]")
 
     evaluators.root().asScala.get(evaluatorComponentId) match {
       case Some(evaluator: ConfigObject) =>
         val evaluatorConfig = evaluator.toConfig.withFallback(evaluatorDefaults)
+
+        // the SDK reads these keys only from a binding, so on the evaluator they would be lost
+        Seq(SamplingRatioKey, TriggerOnFailureKey).find(evaluatorConfig.hasPath).foreach { key =>
+          throw new IllegalArgumentException(
+            s"Evaluator [$evaluatorComponentId] must define [$key] in a binding or in [$AgentDefaultsPath], " +
+            s"not on the evaluator or in [$EvaluatorDefaultsPath]")
+        }
+
         if (!evaluatorConfig.getBoolean("enabled")) Seq.empty
         else {
-          val byAgent = bindingEvents(evaluatorConfig, "agents", agentDefaults, "agent binding")
-          val byRole = bindingEvents(evaluatorConfig, "agent-roles", agentDefaults, "agent role binding")
+          val byAgent = bindingSettings(evaluatorComponentId, evaluatorConfig, "agents", agentDefaults, "agent binding")
+          val byRole =
+            bindingSettings(evaluatorComponentId, evaluatorConfig, "agent-roles", agentDefaults, "agent role binding")
 
-          val boundByAgent = byAgent.collect { case (agentComponentId, Some(event)) => agentComponentId -> event }
+          val boundByAgent = byAgent.collect { case (agentComponentId, Some(settings)) =>
+            agentComponentId -> settings
+          }
           val boundByRole = agentRoles
             .collect {
               case (agentComponentId, Some(role)) if !byAgent.contains(agentComponentId) =>
                 agentComponentId -> byRole.get(role).orElse(byRole.get("*")).flatten
             }
-            .collect { case (agentComponentId, Some(event)) => agentComponentId -> event }
+            .collect { case (agentComponentId, Some(settings)) => agentComponentId -> settings }
 
-          (boundByAgent ++ boundByRole).toSeq.sortBy(_._1).map { case (agentComponentId, event) =>
-            new SpiEvaluator.AgentBinding(agentComponentId, event)
+          (boundByAgent ++ boundByRole).toSeq.sortBy(_._1).map { case (agentComponentId, settings) =>
+            new SpiEvaluator.AgentBinding(
+              agentComponentId,
+              settings.event,
+              settings.samplingRatio,
+              settings.triggerOnFailure)
           }
         }
       case _ =>
@@ -129,12 +166,15 @@ private[impl] object EvaluatorSettings {
       bindings = agentBindings(config, evaluatorComponentId, agentRoles),
       controlId = controlId(config, evaluatorComponentId))
 
-  /** The trigger of each entry under `path`, or `None` for a disabled entry. */
-  private def bindingEvents(
+  /**
+   * The trigger, the sampling ratio and the failure flag of each entry under `path`, or `None` for a disabled entry.
+   */
+  private def bindingSettings(
+      evaluatorComponentId: String,
       evaluatorConfig: Config,
       path: String,
       defaults: Config,
-      kind: String): Map[String, Option[SpiEvaluator.AgentBindingEvent]] =
+      kind: String): Map[String, Option[BindingSettings]] =
     if (!evaluatorConfig.hasPath(path)) Map.empty
     else {
       val entries = evaluatorConfig.getObject(path)
@@ -147,13 +187,17 @@ private[impl] object EvaluatorSettings {
             case _                   => ConfigFactory.empty()
           }).withFallback(defaults)
 
-          val event =
+          val settings =
             if (!entryConfig.getBoolean("enabled")) None
             else if (!entryConfig.hasPath("trigger"))
               throw new IllegalArgumentException(
                 s"Evaluator $kind [$key] must specify 'trigger' (supported: [interaction])")
-            else Some(agentBindingEvent(entryConfig.getString("trigger")))
-          key -> event
+            else {
+              val event = agentBindingEvent(entryConfig.getString("trigger"))
+              val ratio = samplingRatio(entryConfig, s"Evaluator [$evaluatorComponentId] $kind [$key]")
+              Some(BindingSettings(event, ratio, entryConfig.getBoolean(TriggerOnFailureKey)))
+            }
+          key -> settings
         }
         .toMap
     }
