@@ -259,7 +259,9 @@ docsApi / aggregate := false
 docsApi := {
   (akkaJavaSdk / Compile / doc).value
   (akkaJavaSdkTestKit / Compile / doc).value
-  IO.write(file("target/docs-runtime-version.txt"), (akkaJavaSdk / akkaRuntimeVersion).value + "\n")
+  IO.write(
+    (LocalRootProject / baseDirectory).value / "target/docs-runtime-version.txt",
+    (akkaJavaSdk / akkaRuntimeVersion).value + "\n")
 }
 
 addCommandAlias("formatAll", "scalafmtAll; javafmtAll")
