@@ -35,7 +35,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 <3> Inject the `ComponentClient`, which will be used when calling the agent.
 <4> This workflow only has two command handler methods. One that starts the workflow with the initial user request,
 <5> and one to retrieve the final answer.
-<6> Define the workflow configuration.
+<6> Define the workflow configuration. A 60 second timeout applies to the step that calls the agent, and the recover strategy retries the failing step twice before it continues with the `error` step.
 <7> The step that calls the `ActivityAgent`
 <8> Call the agent with the `ComponentClient`
 <9> Store the result from the agent.
@@ -43,19 +43,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 
 The workflow itself will be instantiated by making a call to the `start` method from an endpoint or a consumer.
 
-Keep in mind that AI requests are typically slow (many seconds), and you need to define the workflow timeouts accordingly. This is specified in the workflow step definition with:
-
-[source,java,indent=0]
-----
-.stepConfig(ActivityAgentManager::suggestActivities, ofSeconds(60))
-----
-
-Additionally, you should define a workflow recovery strategy so that it does not retry failing requests infinitely. This is specified in the workflow definition with:
-
-[source,java,indent=0]
-----
-.defaultStepRecovery(RecoverStrategy.maxRetries(2).failoverTo(ActivityAgentManager::error))
-----
+AI requests are typically slow, often taking many seconds, so set the step timeouts to match. Without a recover strategy, the workflow retries a failing request without limit, so set one in the same `settings` method that the example above shows.
 
 More details in xref:workflows.adoc#_error_handling[Workflow timeouts and recovery strategy].
 
