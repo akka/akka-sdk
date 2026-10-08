@@ -1,0 +1,202 @@
+= Data migration setup on GCP
+include::ROOT:partial$include.adoc[]
+
+This page describes how to prepare a GCP project for xref:data-management.adoc[data migration]. You create a GCS bucket, grant Akka access to it, and then run exports and imports against it.
+
+You can give Akka access to the bucket in two ways:
+
+* <<_workload_identity,Workload identity>> (recommended). Akka authenticates using a short-lived token through GCP Workload Identity Federation. You do not create or store any long-lived credentials.
+* <<_service_account_key,Service account key>>. You create a service account key and store it in an Akka secret.
+
+== Create a GCS bucket
+
+Create the GCS bucket in the same region as the Akka region that your service runs in. If you already have a bucket that you want to use, you can skip this step. The examples on this page call the bucket `my-akka-bucket`.
+
+Instructions for creating a bucket in GCS are in the https://cloud.google.com/storage/docs/creating-buckets[GCP documentation, window="new"].
+
+== Bucket roles
+
+Both authentication options need a role on the bucket. For exports, grant Storage Object Admin (`roles/storage.objectAdmin`). For imports, Storage Object Viewer (`roles/storage.objectViewer`) is enough. Instructions for managing IAM policies for buckets are in the https://cloud.google.com/storage/docs/access-control/using-iam-permissions[GCP documentation, window="new"].
+
+[#_workload_identity]
+== Workload identity
+
+With workload identity, the data management tool presents an OIDC token issued by Akka to a GCP workload identity pool. GCP exchanges the token for a Google access token. For background, see xref:workload-identity.adoc[].
+
+The token identifies the data management tool with this subject:
+
+[source]
+----
+system:serviceaccount:<project-id>:data-management
+----
+
+The `<project-id>` is the UUID of your Akka project. You can get it with `akka project get`. The subject is the same for every service in the project. It is not the subject of your service, which has the `klx-` prefix.
+
+There are two ways to set up workload identity on GCP:
+
+* <<_akka_workload_identity_pool,Akka workload identity pool>>. Akka already manages a workload identity pool for the region. You grant access to the data management identity in that pool. This option needs less setup.
+* <<_your_own_workload_identity_pool,Your own workload identity pool>>. You create a pool and an OIDC provider in your GCP project that trust the Akka issuer.
+
+Run this command to get the values for your region:
+
+[source,command window]
+----
+akka projects regions workload-identity-info
+----
+
+If your project has more than one region, use the `--region` flag. The examples set `AKKA_PROJECT_ID` to the UUID of your Akka project:
+
+[source,command window]
+----
+export AKKA_PROJECT_ID=bc16cf0c-909f-402d-bbb0-88ea1d582854
+----
+
+[#_akka_workload_identity_pool]
+=== Akka workload identity pool
+
+The output of `akka projects regions workload-identity-info` includes the workload identity pool of the region, for example:
+
+[source]
+----
+//iam.googleapis.com/projects/877157063114/locations/global/workloadIdentityPools/kalix-prod.svc.id.goog
+----
+
+The output also includes a principal for a service. The principal has the form `principal://iam.googleapis.com/projects/<number>/locations/global/workloadIdentityPools/<pool>/subject/ns/<akka-project-id>/sa/klx-<service>`. To grant access to the data management tool, copy the principal and replace `klx-<service>` with `data-management`.
+
+Grant the principal a role on the bucket:
+
+[source,command window]
+----
+gcloud storage buckets add-iam-policy-binding gs://my-akka-bucket \
+  --role=roles/storage.objectAdmin \
+  --member="principal://iam.googleapis.com/projects/877157063114/locations/global/workloadIdentityPools/kalix-prod.svc.id.goog/subject/ns/${AKKA_PROJECT_ID}/sa/data-management"
+----
+
+Use `roles/storage.objectViewer` if you only run imports.
+
+Run the export or import with the workload identity pool as the audience:
+
+[source,bash]
+----
+akka service data export assets \
+  --gcs-workload-identity \
+  --gcs-audience //iam.googleapis.com/projects/877157063114/locations/global/workloadIdentityPools/kalix-prod.svc.id.goog \
+  --gcs-bucket my-akka-bucket \
+  --include-event-sourced-entities
+----
+
+The `akka service data import` command takes the same flags.
+
+[#_your_own_workload_identity_pool]
+=== Your own workload identity pool
+
+Set the environment variables:
+
+[source,command window]
+----
+export GCP_PROJECT_ID=my-gcp-project
+export GCP_PROJECT_NUMBER=123456789012
+export AKKA_OIDC_ISSUER=$(akka projects regions workload-identity-info -o go-template='{{(index .Items 0).WorkloadIdentity.Gcp.OidcIssuer}}')
+----
+
+Create a workload identity pool and an OIDC provider that trusts the Akka issuer. If you already created a pool and provider for Akka in this GCP project, you can reuse them.
+
+[source,command window]
+----
+gcloud iam workload-identity-pools create akka \
+  --project=$GCP_PROJECT_ID --location=global
+
+gcloud iam workload-identity-pools providers create-oidc akka-region \
+  --project=$GCP_PROJECT_ID --location=global \
+  --workload-identity-pool=akka \
+  --issuer-uri=$AKKA_OIDC_ISSUER \
+  --attribute-mapping="google.subject=assertion.sub" \
+  --attribute-condition="assertion.sub.endsWith(':data-management')"
+----
+
+The attribute condition limits this provider to the data management identity. Remove the condition if you also use the provider for other Akka identities.
+
+The audience that you pass to the CLI is the full resource name of the provider:
+
+[source]
+----
+//iam.googleapis.com/projects/<project-number>/locations/global/workloadIdentityPools/akka/providers/akka-region
+----
+
+Grant the data management identity a role on the bucket. The principal is built from the pool and the subject:
+
+[source,command window]
+----
+gcloud storage buckets add-iam-policy-binding gs://my-akka-bucket \
+  --role=roles/storage.objectAdmin \
+  --member="principal://iam.googleapis.com/projects/${GCP_PROJECT_NUMBER}/locations/global/workloadIdentityPools/akka/subject/system:serviceaccount:${AKKA_PROJECT_ID}:data-management"
+----
+
+Use `roles/storage.objectViewer` if you only run imports.
+
+Pass `--gcs-workload-identity` and the audience of your provider:
+
+[source,bash]
+----
+akka service data export assets \
+  --gcs-workload-identity \
+  --gcs-audience //iam.googleapis.com/projects/123456789012/locations/global/workloadIdentityPools/akka/providers/akka-region \
+  --gcs-bucket my-akka-bucket \
+  --include-event-sourced-entities
+----
+
+The `akka service data import` command takes the same flags.
+
+=== Impersonate a service account (optional)
+
+Instead of granting the bucket role to the federated principal, you can grant it to a Google service account, and let the data management identity impersonate that service account. Grant the principal the Workload Identity User role on the service account. The example uses the principal from your own pool. With the Akka pool, use the Akka principal instead.
+
+[source,command window]
+----
+gcloud iam service-accounts add-iam-policy-binding \
+  my-akka-service-account@${GCP_PROJECT_ID}.iam.gserviceaccount.com \
+  --role=roles/iam.workloadIdentityUser \
+  --member="principal://iam.googleapis.com/projects/${GCP_PROJECT_NUMBER}/locations/global/workloadIdentityPools/akka/subject/system:serviceaccount:${AKKA_PROJECT_ID}:data-management"
+----
+
+Then pass the service account email with the `--gcs-impersonate-service-account` flag. This works with both pool options. Grant the bucket role to the service account instead of the principal.
+
+[#_service_account_key]
+== Service account key
+
+With this option, you create a service account, create a key for it, and store the key in an Akka secret.
+
+=== Create a service account
+
+Create a service account for Akka to use. The examples call it `my-akka-service-account`. Instructions are in the https://cloud.google.com/iam/docs/service-accounts-create[GCP documentation, window="new"].
+
+=== Grant access to the bucket
+
+Grant the service account the <<_bucket_roles,bucket role>> that you need.
+
+=== Create the key
+
+Create a JSON key for the service account by following the https://cloud.google.com/iam/docs/keys-create-delete[GCP instructions, window="new"]. Save the key in a file called `key.json`.
+
+=== Create an Akka secret
+
+Store the key in an Akka secret. The examples call the secret `my-credentials`. The name of the file in the secret can be anything, but `key.json` is the default that the data management tool expects.
+
+[source,bash]
+----
+akka secrets create generic my-credentials --from-file key.json=path/to/key.json
+----
+
+If you use a different name, set it with the `--gcs-secret-key` flag.
+
+=== Run an export or import
+
+[source,bash]
+----
+akka service data export assets \
+  --gcs-secret my-credentials \
+  --gcs-bucket my-akka-bucket \
+  --include-event-sourced-entities
+----
+
+The `akka service data import` command takes the same flags.
