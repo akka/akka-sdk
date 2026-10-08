@@ -84,7 +84,7 @@ Make sure that you download the latest documentation regularly to make use of do
 akka code context-update .
 ----
 
-The `akka-context` documentation bundle is also available as link:../sdk/_attachments/akka-docs-md.zip[akka-docs-md.zip] if you prefer that.
+The `akka-context` documentation bundle is also available as link:{url-akka-docs-md}[akka-docs-md.zip] if you prefer that.
 
 Add `akka-context` to your `.gitignore` file, if you use git.
 

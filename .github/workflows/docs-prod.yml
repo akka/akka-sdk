@@ -50,7 +50,7 @@ jobs:
         with:
           jvm: temurin:1.21
 
-      - name: Downloads, Antora
+      - name: Build API docs and Antora site
         env:
           NEXUS_DIR: ${{ github.workspace }}/nexus
         run: |
@@ -62,16 +62,10 @@ jobs:
           node-version: 24
 
       - name: Render white paper PDFs
-        run: |
-          (cd docs/bin/whitepaper && npm install && npx playwright install --with-deps chromium)
-          node docs/bin/whitepaper/render-pdf.mjs
-
-      - name: Install Markdown converter
-        run: npm ci --prefix docs/bin/markdown
+        run: make whitepapers-ci
 
       - name: LLM friendly markdown
-        run: |
-          sudo ./docs/bin/docs2markdown.sh
+        run: make markdown
 
       - name: rsync
         run: |
