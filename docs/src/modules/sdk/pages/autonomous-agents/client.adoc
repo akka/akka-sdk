@@ -30,7 +30,9 @@ For more control over multiple tasks, pipelines, or long-lived agents, create ta
 include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=create-task]
 ----
 
-Creating a task with an id that already exists succeeds and returns the same id. The existing task does not change, and the call does not check that the new definition matches the existing one. This makes it safe to repeat `create` with an id that you stored before the call, for example after a crash.
+Creating a task with an id that already exists succeeds and returns the same id. The existing task does not change. The call does not compare the new definition with the existing one: the name, description, instructions and result type of the new definition are all discarded. A caller that declares a different result type receives the id of a task that keeps the original result type, without an error.
+
+This makes it safe to repeat `create` with an id that you stored before the call, for example after a crash. Use ids that are unique to one task definition, and do not share an id between callers that declare different definitions.
 
 *Assign tasks to an agent:*
 
