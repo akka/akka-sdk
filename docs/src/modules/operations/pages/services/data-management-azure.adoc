@@ -1,0 +1,156 @@
+= Data migration setup on Azure
+include::ROOT:partial$include.adoc[]
+
+This page describes how to prepare an Azure subscription for xref:data-management.adoc[data migration]. You create a storage account and a blob container, grant Akka access to the container, and then run exports and imports against it.
+
+You can give Akka access to the container in two ways:
+
+* <<_workload_identity,Workload identity>> (recommended). Akka authenticates as a Microsoft Entra application using a federated identity credential. You do not create or store any client secret.
+* <<_client_secret,Client secret>>. You create a client secret for a Microsoft Entra application and store it in an Akka secret.
+
+== Create a storage account and container
+
+Create the storage account in the same region as the Akka region that your service runs in. If you already have a storage account and container that you want to use, you can skip this step. The examples on this page call the storage account `myakkastorage` and the container `my-akka-container`.
+
+Instructions for creating a storage account are in the https://learn.microsoft.com/azure/storage/common/storage-account-create[Azure documentation], and for creating a blob container in the https://learn.microsoft.com/azure/storage/blobs/blob-containers-portal[Azure documentation].
+
+== Container role
+
+Both authentication options need a role on the container for the Microsoft Entra application. For exports, assign the *Storage Blob Data Contributor* role, which grants read, write, and delete permissions. For imports, the *Storage Blob Data Reader* role is enough. You can assign roles at the container, storage account, or resource group scope. Scope the role to the container for least privilege.
+
+Instructions for assigning Azure roles are in the https://learn.microsoft.com/azure/role-based-access-control/role-assignments-portal[Azure documentation].
+
+[#_workload_identity]
+== Workload identity
+
+With workload identity, the data management tool presents an OIDC token issued by Akka to Microsoft Entra. Microsoft Entra exchanges the token for an access token for your application. For background, see xref:workload-identity.adoc[].
+
+The token identifies the data management tool with this subject:
+
+[source]
+----
+system:serviceaccount:<project-id>:data-management
+----
+
+The `<project-id>` is the UUID of your Akka project. You can get it with `akka project get`. The subject is the same for every service in the project. It is not the subject of your service, which has the `klx-` prefix.
+
+=== Set the environment variables
+
+[source,command window]
+----
+export AKKA_PROJECT_ID=bc16cf0c-909f-402d-bbb0-88ea1d582854
+export AKKA_OIDC_ISSUER=$(akka projects regions workload-identity-info -o go-template='{{(index .Items 0).WorkloadIdentity.Azure.OidcIssuer}}')
+export APPLICATION_NAME=my-akka-data-management
+----
+
+If your project has more than one region, copy the issuer for the correct region from the output of `akka projects regions workload-identity-info`.
+
+=== Create an application
+
+Create a Microsoft Entra application and service principal. Note the application client ID and the tenant ID.
+
+[source,command window]
+----
+az ad sp create-for-rbac --name "${APPLICATION_NAME}"
+export APPLICATION_CLIENT_ID=$(az ad sp list --display-name ${APPLICATION_NAME} --query '[0].appId' -otsv)
+export APPLICATION_OBJECT_ID=$(az ad app show --id ${APPLICATION_CLIENT_ID} --query id -otsv)
+export AZURE_TENANT_ID=$(az account show --query tenantId -otsv)
+----
+
+=== Create a federated identity credential
+
+Create a federated credential that trusts tokens issued by Akka for the data management identity of your project:
+
+[source,command window]
+----
+cat <<EOF > params.json
+{
+  "name": "akka-data-management",
+  "issuer": "${AKKA_OIDC_ISSUER}",
+  "subject": "system:serviceaccount:${AKKA_PROJECT_ID}:data-management",
+  "description": "Akka data management",
+  "audiences": [
+    "api://AzureADTokenExchange"
+  ]
+}
+EOF
+
+az ad app federated-credential create --id "${APPLICATION_OBJECT_ID}" --parameters @params.json
+----
+
+=== Assign a role
+
+Assign the <<_container_role,container role>> to the application. For example, to allow exports:
+
+[source,command window]
+----
+az role assignment create \
+  --assignee ${APPLICATION_CLIENT_ID} \
+  --role "Storage Blob Data Contributor" \
+  --scope /subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.Storage/storageAccounts/myakkastorage/blobServices/default/containers/my-akka-container
+----
+
+=== Run an export or import
+
+Pass `--abs-workload-identity` with the tenant ID and the client ID:
+
+[source,bash]
+----
+akka service data export assets \
+  --abs-workload-identity \
+  --abs-tenant-id <tenant-id> \
+  --abs-client-id <application-client-id> \
+  --abs-container my-akka-container \
+  --abs-endpoint-url https://myakkastorage.blob.core.windows.net \
+  --include-event-sourced-entities
+----
+
+If the federated credential uses an audience other than `api://AzureADTokenExchange`, set it with `--abs-audience`.
+
+The `akka service data import` command takes the same flags.
+
+[#_client_secret]
+== Client secret
+
+With this option, you register an application, create a client secret for it, and store the secret in an Akka secret.
+
+=== Register an application
+
+Register a Microsoft Entra application. The examples call it `my-akka-app`. Registering an application creates a service principal that Akka authenticates as. Instructions are in the https://learn.microsoft.com/entra/identity-platform/quickstart-register-app[Azure documentation].
+
+Note the *Application (client) ID* and the *Directory (tenant) ID* from the overview page of the application.
+
+=== Create a client secret
+
+Create a client secret for the application. Instructions are in the https://learn.microsoft.com/entra/identity-platform/quickstart-register-app#add-credentials[Azure documentation]. Copy the secret *Value* when Azure creates it. You cannot retrieve it again.
+
+=== Assign a role
+
+Assign the <<_container_role,container role>> to the service principal of the application.
+
+=== Create an Akka secret
+
+Store the service principal credentials in an Akka secret. The examples call the secret `my-credentials`:
+
+[source,bash]
+----
+akka secrets create generic my-credentials \
+  --literal tenant-id=<directory-tenant-id> \
+  --literal client-id=<application-client-id> \
+  --literal client-secret=<client-secret-value>
+----
+
+The keys `tenant-id`, `client-id`, and `client-secret` are the defaults that the data management tool expects. You can use other names, and then set them with the `--abs-tenant-id-key`, `--abs-client-id-key`, and `--abs-client-secret-key` flags.
+
+=== Run an export or import
+
+[source,bash]
+----
+akka service data export assets \
+  --abs-secret my-credentials \
+  --abs-container my-akka-container \
+  --abs-endpoint-url https://myakkastorage.blob.core.windows.net \
+  --include-event-sourced-entities
+----
+
+The `akka service data import` command takes the same flags.
