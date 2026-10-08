@@ -136,12 +136,13 @@ public class TaskRuleIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldAwaitResultAcrossRuleRejection() throws Exception {
-    // The first reply is delayed so result() is waiting before the rule rejects it.
+    var resultRequested = new CompletableFuture<Void>().orTimeout(10, TimeUnit.SECONDS);
+
     agentModel
         .whenMessage(msg -> msg.contains("Do something"))
         .reply(
             input -> {
-              Awaitility.await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
+              resultRequested.join(); // released after the test has requested the result
               return new TestModelProvider.AiResponse(
                   completeTask(new TestTasks.TestResult("low quality", 3)));
             });
@@ -155,10 +156,10 @@ public class TaskRuleIntegrationTest extends TestKitSupport {
             .forAutonomousAgent(ValidatedTaskAgent.class, UUID.randomUUID().toString())
             .runSingleTask(TestTasks.VALIDATED_TASK.instructions("Do something."));
 
-    var result =
-        CompletableFuture.supplyAsync(
-                () -> componentClient.forTask(taskId).result(TestTasks.VALIDATED_TASK))
-            .get(15, TimeUnit.SECONDS);
+    var resultFuture = componentClient.forTask(taskId).resultAsync(TestTasks.VALIDATED_TASK);
+    resultRequested.complete(null);
+
+    var result = resultFuture.toCompletableFuture().get(15, TimeUnit.SECONDS);
 
     assertThat(result.value()).isEqualTo("improved result");
     assertThat(result.score()).isEqualTo(50);
@@ -173,8 +174,11 @@ public class TaskRuleIntegrationTest extends TestKitSupport {
             .forAutonomousAgent(ValidatedTaskAgent.class, UUID.randomUUID().toString())
             .runSingleTask(TestTasks.VALIDATED_TASK.instructions("Do something poorly."));
 
-    assertThatThrownBy(() -> componentClient.forTask(taskId).result(TestTasks.VALIDATED_TASK))
-        .isInstanceOf(TaskException.Failed.class)
+    var resultFuture =
+        componentClient.forTask(taskId).resultAsync(TestTasks.VALIDATED_TASK).toCompletableFuture();
+
+    assertThatThrownBy(() -> resultFuture.get(15, TimeUnit.SECONDS))
+        .hasCauseInstanceOf(TaskException.Failed.class)
         .hasMessageContaining("Max iterations");
   }
 

@@ -137,21 +137,18 @@ private[javasdk] final class TaskClientImpl(
           false
         case _ => true
       }
-      .map { notification =>
-        notification match {
-          case completed: TaskNotification.Completed =>
-            log.debug("resultAsync: task [{}] completed via notification", taskId)
-            deserializeResultFromString(completed.result(), taskDefinition)
-          case failed: TaskNotification.Failed =>
-            log.debug("resultAsync: task [{}] failed via notification: {}", taskId, failed.reason())
-            throw new TaskException.Failed(taskId, failed.reason())
-          case cancelled: TaskNotification.Cancelled =>
-            log.debug("resultAsync: task [{}] cancelled via notification: {}", taskId, cancelled.reason())
-            throw new TaskException.Cancelled(taskId, cancelled.reason())
-          case other =>
-            throw new IllegalStateException(
-              s"Unexpected notification type for task [$taskId]: ${other.getClass.getName}")
-        }
+      .map {
+        case completed: TaskNotification.Completed =>
+          log.debug("resultAsync: task [{}] completed via notification", taskId)
+          deserializeResultFromString(completed.result(), taskDefinition)
+        case failed: TaskNotification.Failed =>
+          log.debug("resultAsync: task [{}] failed via notification: {}", taskId, failed.reason())
+          throw new TaskException.Failed(taskId, failed.reason())
+        case cancelled: TaskNotification.Cancelled =>
+          log.debug("resultAsync: task [{}] cancelled via notification: {}", taskId, cancelled.reason())
+          throw new TaskException.Cancelled(taskId, cancelled.reason())
+        case other =>
+          throw new IllegalStateException(s"Unexpected notification type for task [$taskId]: ${other.getClass.getName}")
       }
       .take(1)
       .runWith(Sink.head)(materializer)
