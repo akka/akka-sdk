@@ -57,6 +57,14 @@ jobs:
         run: |
           make managed local
 
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install Markdown converter
+        run: npm ci --prefix docs/bin/markdown
+
       - name: LLM friendly markdown
         run: |
           sudo ./docs/bin/docs2markdown.sh

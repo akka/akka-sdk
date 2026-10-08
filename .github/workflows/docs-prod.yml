@@ -57,14 +57,17 @@ jobs:
           make managed prod
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Render white paper PDFs
         run: |
           (cd docs/bin/whitepaper && npm install && npx playwright install --with-deps chromium)
           node docs/bin/whitepaper/render-pdf.mjs
+
+      - name: Install Markdown converter
+        run: npm ci --prefix docs/bin/markdown
 
       - name: LLM friendly markdown
         run: |

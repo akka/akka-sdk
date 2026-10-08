@@ -1,0 +1,9 @@
+{
+  "name": "akka-docs-markdown",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "dom-to-semantic-markdown": "1.5.0",
+    "jsdom": "26.1.0"
+  }
+}
