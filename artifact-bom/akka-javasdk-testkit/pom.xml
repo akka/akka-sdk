@@ -1228,7 +1228,7 @@
             <dependency>
                 <groupId>org.awaitility</groupId>
                 <artifactId>awaitility</artifactId>
-                <version>4.2.2</version>
+                <version>4.3.0</version>
             </dependency>
             <dependency>
                 <groupId>org.bitbucket.b_c</groupId>
@@ -2765,7 +2765,7 @@
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
-            <version>4.2.2</version>
+            <version>4.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.bitbucket.b_c</groupId>
