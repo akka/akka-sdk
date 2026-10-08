@@ -6,8 +6,10 @@ package akkajavasdk.components.agent.autonomous;
 
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import akka.javasdk.agent.autonomous.Notification;
+import akka.javasdk.agent.task.TaskException;
 import akka.javasdk.agent.task.TaskStatus;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
@@ -139,11 +141,7 @@ public class TaskRuleIntegrationTest extends TestKitSupport {
         .whenMessage(msg -> msg.contains("Do something"))
         .reply(
             input -> {
-              try {
-                Thread.sleep(1000);
-              } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-              }
+              Awaitility.await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
               return new TestModelProvider.AiResponse(
                   completeTask(new TestTasks.TestResult("low quality", 3)));
             });
@@ -164,6 +162,20 @@ public class TaskRuleIntegrationTest extends TestKitSupport {
 
     assertThat(result.value()).isEqualTo("improved result");
     assertThat(result.score()).isEqualTo(50);
+  }
+
+  @Test
+  public void shouldFailResultAfterRepeatedRuleRejections() {
+    agentModel.fixedResponse(completeTask(new TestTasks.TestResult("low quality", 3)));
+
+    var taskId =
+        componentClient
+            .forAutonomousAgent(ValidatedTaskAgent.class, UUID.randomUUID().toString())
+            .runSingleTask(TestTasks.VALIDATED_TASK.instructions("Do something poorly."));
+
+    assertThatThrownBy(() -> componentClient.forTask(taskId).result(TestTasks.VALIDATED_TASK))
+        .isInstanceOf(TaskException.Failed.class)
+        .hasMessageContaining("Max iterations");
   }
 
   @Test
