@@ -35,7 +35,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 <3> Inject the `ComponentClient`, which will be used when calling the agent.
 <4> This workflow only has two command handler methods. One that starts the workflow with the initial user request,
 <5> and one to retrieve the final answer.
-<6> Define the workflow configuration.
+<6> Define the workflow configuration: a 60 second timeout for the step that calls the agent, and a recover strategy that retries the failing step twice and then continues with the `error` step.
 <7> The step that calls the `ActivityAgent`
 <8> Call the agent with the `ComponentClient`
 <9> Store the result from the agent.
