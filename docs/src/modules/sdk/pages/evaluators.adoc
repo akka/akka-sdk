@@ -1,6 +1,6 @@
 = Evaluators
 :page-component-type: evaluator
-:page-summary: A component the runtime triggers for each interaction of a bound agent, to assess it and record a verdict.
+:page-summary: A component the runtime triggers for the interactions of a bound agent, to assess them and record a verdict.
 :page-when-to-use: When you want agent interactions assessed automatically as they happen, for quality tracking, regression detection, or compliance, without adding evaluation calls to the agents themselves.
 :page-related: xref:sdk:agents/llm_eval.adoc[], xref:sdk:agents.adoc[], xref:concepts:governance-and-the-runtime.adoc[]
 :page-prerequisites: An Akka project with at least one agent defined.
@@ -12,14 +12,15 @@ include::ROOT:partial$include.adoc[]
 == Overview
 
 An link:{attachmentsdir}/api/akka/javasdk/evaluation/Evaluator.html[`Evaluator`] is a component that assesses agent interactions.
-You bind it to one or more agents in configuration, and the runtime then invokes it once for each interaction of a bound agent, passing the interaction to evaluate.
+You bind it to one or more agents in configuration, and the runtime then invokes it for the interactions of a bound agent.
+Each invocation receives one interaction to evaluate.
 The evaluator returns a verdict, pass or fail, optionally with a score, a label, and attributes.
 The runtime records the verdict in the ledger and exposes it in metrics and traces.
 
 Without an Evaluator, you evaluate interactions yourself. For an autonomous agent, you write a Consumer that listens for task completions and calls a judge agent, as shown in xref:sdk:agents/llm_eval.adoc[LLM evaluation]. A request-based agent has no such event source, so you call the judge from the code that called the agent.
 In both cases the code is specific to one agent, and you repeat it for every agent you want evaluated.
 An Evaluator replaces that wiring with configuration.
-You implement the evaluation once and bind it to agents or agent roles in `application.conf`. The runtime then triggers it for every interaction of those agents.
+You implement the evaluation once and bind it to agents or agent roles in `application.conf`. The runtime then triggers it for the interactions of those agents.
 
 Two kinds of evaluator exist:
 
@@ -74,12 +75,12 @@ Every evaluation therefore ends in one of three recorded outcomes: a verdict, in
 An evaluator records one verdict per evaluation.
 When one evaluator judges several criteria, combine them into one `Evaluation`: `passed` is the overall verdict, and the explanation and the attributes carry the result per criterion.
 Use one evaluator per criterion when the criteria do not combine into one verdict.
-Each evaluator bound to an agent adds one trigger and one ledger record per interaction.
+Each evaluator bound to an agent adds one trigger and one ledger record for each interaction that it evaluates.
 
 == Binding evaluators to agents
 
 Evaluators are bound to agents under `akka.javasdk.evaluation.evaluators`, keyed by the evaluator's `@Component` id.
-Each binding declares a `trigger`. The supported value is `interaction`, meaning the evaluator runs for each interaction of the bound agent:
+Each binding declares a `trigger`. The supported value is `interaction`, meaning the runtime triggers the evaluator for the interactions of the bound agent:
 
 [source,conf,indent=0]
 .src/main/resources/application.conf
@@ -115,13 +116,17 @@ In the example, `billing-agent` has its own entry under `agents`, and that entry
 
 The `enabled` setting defaults to `true`. Set `enabled = false` on an evaluator entry to disable the evaluator for all agents. Set it on a single binding to disable only that binding.
 
+A binding can set `sampling-ratio`, a number from 0.0 to 1.0. For each interaction of the agent, the runtime triggers the evaluator with that probability, so the evaluator evaluates about that share of the interactions. A binding can set `trigger-on-failure = true`. The evaluator then also evaluates the failed interactions of the agent, and the sampling ratio applies to them as well. The defaults are `sampling-ratio = 1.0` and `trigger-on-failure = false`. Set both keys on a binding or under `akka.javasdk.evaluation.defaults.agent`, not on the evaluator entry.
+
+With `trigger-on-failure`, the evaluator also receives interactions that ended in a failure. The record of such an interaction can still hold model text, for example a reply that a guardrail blocked. In the evaluator, check link:{attachmentsdir}/api/akka/javasdk/ledger/InteractionRecord.html[`InteractionRecord.failed()`] before you judge the reply, and read the reason from `failureSummary()`.
+
 The default values for all evaluator entries and bindings are under `akka.javasdk.evaluation.defaults`. A value set on an individual entry overrides the default for that entry.
 
 The same configuration binds a xref:_durable_evaluators[durable evaluator]. The key is its `@Component` id.
 
 Set `control-id` on the evaluator, not on a binding, to name the control that the evaluator implements. See xref:concepts:governance-and-the-runtime.adoc#control-ids[control ids]. The runtime records the control id on each evaluation that the evaluator runs, and link:{attachmentsdir}/api/akka/javasdk/ledger/EvaluationRecord.html[`EvaluationRecord.controlId()`] returns it.
 
-NOTE: Evaluators typically use an LLM and therefore have a cost and overhead. You may want to enable them in test or staging environments and keep them disabled, or sampled, in high-volume production. Toggling a binding's `enabled` per deployment is the mechanism for that.
+NOTE: Evaluators typically use an LLM, so each evaluation has a cost. In a high-volume deployment, use a deployment override to set a lower `sampling-ratio`, which evaluates a smaller share of the interactions, or to set `enabled = false`, which turns a binding off.
 
 
 [#_durable_evaluators]
