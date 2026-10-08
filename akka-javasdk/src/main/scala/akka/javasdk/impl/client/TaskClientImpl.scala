@@ -131,8 +131,13 @@ private[javasdk] final class TaskClientImpl(
         mat
       }
       .map(reply => serializer.fromBytes(reply.payload))
-      // a rejected result is not terminal, the agent retries and a later notification is terminal
-      .filterNot(_.isInstanceOf[TaskNotification.ResultRejected])
+      .filter {
+        case rejected: TaskNotification.ResultRejected =>
+          // not terminal: the agent retries, and a later notification is terminal
+          log.debug("resultAsync: task [{}] result rejected by [{}], waiting", taskId, rejected.ruleClassName())
+          false
+        case _ => true
+      }
       .map { notification =>
         notification match {
           case completed: TaskNotification.Completed =>
