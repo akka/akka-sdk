@@ -38,7 +38,8 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
     (SpiLedger.FailureReason.McpToolCall, Failure.FailureReason.MCP_TOOL_CALL),
     (SpiLedger.FailureReason.Guardrail, Failure.FailureReason.GUARDRAIL),
     (SpiLedger.FailureReason.ContentLoading, Failure.FailureReason.CONTENT_LOADING),
-    (SpiLedger.FailureReason.Sanitizer, Failure.FailureReason.SANITIZER))
+    (SpiLedger.FailureReason.Sanitizer, Failure.FailureReason.SANITIZER),
+    (SpiLedger.FailureReason.Cancelled, Failure.FailureReason.CANCELLED))
 
   private val finishReasons = Table[SpiLedger.FinishReason, InteractionMetadata.FinishReason](
     ("spi", "public"),
