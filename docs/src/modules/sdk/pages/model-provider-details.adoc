@@ -970,10 +970,10 @@ include::sdk:example$doc-snippets/src/main/java/com/example/application/MyModelP
 
 ==== Custom models and Autonomous Agents
 
-An Autonomous Agent calls `createChatModel()` once per iteration and uses that model for every model call and tool round in the iteration. It never calls `createStreamingChatModel()`, and the runtime passes no agent or session identifier to the provider.
+An Autonomous Agent uses only the blocking `ChatModel`, so it never calls `createStreamingChatModel()`. The runtime asks your provider for a model for each iteration and passes it no agent or session identifier.
 
-The runtime does not apply the `max-retries` and `response-timeout` settings to a custom model, so your implementation sets its own retries and timeout. The runtime also does not interrupt a running `chat(...)` call when the agent stops.
+The runtime does not apply the `max-retries` and `response-timeout` settings to a custom model, so your implementation sets its own retries and timeout. It also does not interrupt a running `chat(...)` call when the agent stops.
 
-If `chat(...)` throws, the iteration fails and the runtime starts a new iteration after a short delay, which calls `createChatModel()` and `chat(...)` again. A restart of the agent during a model call also calls `chat(...)` again. Output that your model published outside the runtime, such as partial text, is not withdrawn, so your application must expect the same model call to run more than once.
+If `chat(...)` throws, the iteration fails and the runtime starts a new iteration after a short delay, which calls your model again. An agent restart during a model call also runs the call again. Output that your model published outside the runtime, such as partial text, is not withdrawn, so your application must expect the same model call to run more than once.
 
 
