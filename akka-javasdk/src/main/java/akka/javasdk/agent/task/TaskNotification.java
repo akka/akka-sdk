@@ -7,9 +7,8 @@ package akka.javasdk.agent.task;
 import akka.javasdk.annotations.TypeName;
 
 /**
- * Notifications published by task entities. {@link ResultRejected} is not terminal: the agent
- * retries after a rule rejects its result. {@link Completed}, {@link Failed} and {@link Cancelled}
- * are terminal.
+ * Notifications published by task entities. {@link ResultRejected} is not terminal, because the
+ * agent retries after a rule rejects its result. The other notifications mark a terminal state.
  */
 public sealed interface TaskNotification {
 
