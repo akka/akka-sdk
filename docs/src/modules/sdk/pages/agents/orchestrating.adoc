@@ -68,6 +68,8 @@ See xref:sdk:autonomous-agents.adoc[] for more details and the other coordinatio
 
 The two approaches are not mutually exclusive. A workflow can invoke an xref:sdk:autonomous-agents.adoc[Autonomous Agent] from any of its steps, the same way it invokes a request-based Agent. This fits scenarios where the overall sequence is fixed but a particular stage benefits from model-driven coordination. For example, a research stage where a coordinator delegates to several specialists, or a review stage that runs as a team or a moderated conversation. The workflow keeps the durable state machine across stages, while the Autonomous Agent handles the elaboration within a stage.
 
+A step that waits for an Autonomous Agent is subject to the step timeout, and a timed-out step does not stop the agent. If the agent can run longer than the step timeout, start the task in the step, store the task id in the workflow state, and end the step. A Consumer that subscribes to the task events with `@Consume.FromEventSourcedEntity(TaskEntity.class)` can then send the result to the workflow when the task completes. Do not terminate the agent from a step that can time out. A stopped agent instance id cannot be reused, so commit the instance id for a retry to the workflow state in a step that runs before the step that starts the agent.
+
 == See also
 
 * xref:sdk:workflows.adoc[Workflows]

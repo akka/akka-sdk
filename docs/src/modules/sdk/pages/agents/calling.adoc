@@ -43,19 +43,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 
 The workflow itself will be instantiated by making a call to the `start` method from an endpoint or a consumer.
 
-Keep in mind that AI requests are typically slow (many seconds), and you need to define the workflow timeouts accordingly. This is specified in the workflow step definition with:
-
-[source,java,indent=0]
-----
-.stepConfig(ActivityAgentManager::suggestActivities, ofSeconds(60))
-----
-
-Additionally, you should define a workflow recovery strategy so that it does not retry failing requests infinitely. This is specified in the workflow definition with:
-
-[source,java,indent=0]
-----
-.defaultStepRecovery(RecoverStrategy.maxRetries(2).failoverTo(ActivityAgentManager::error))
-----
+AI requests are typically slow (many seconds), so set the workflow step timeouts accordingly. Also set a recover strategy so that the workflow does not retry a failing request without limit. Both are configured in the `settings` method of the example above.
 
 More details in xref:workflows.adoc#_error_handling[Workflow timeouts and recovery strategy].
 
