@@ -19,10 +19,9 @@ import java.util.function.Supplier;
  *
  * <p>To test a TimedAction create a testkit instance by calling one of the available {@code
  * TimedActionTestkit.of} methods. The returned testkit can be used as many times as you want. It
- * doesn't preserve any state between invocations.
+ * does not preserve any state between invocations.
  *
- * <p>Pass a command handler method reference to {@code method}, and call {@code invoke} on the
- * result.
+ * <p>Use the {@code method} methods to interact with the testkit.
  */
 public class TimedActionTestkit<A extends TimedAction> {
 
