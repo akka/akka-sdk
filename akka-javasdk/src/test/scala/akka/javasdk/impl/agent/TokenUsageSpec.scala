@@ -12,8 +12,10 @@ import akka.javasdk.JsonSupport
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.SessionMemoryEntity
 import akka.javasdk.agent.SessionMessage
+import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.client.AgentInvokeReplyOnlyMethodRefImpl
+import akka.javasdk.impl.client.AutonomousAgentClientImpl
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiMetadataEntry
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -81,6 +83,22 @@ class TokenUsageSpec extends AnyWordSpec with Matchers {
     "map all counts of the runtime token usage" in {
       AgentImpl.toSessionTokenUsage(new SpiAgent.SpiTokenUsage(100, 20, 11, 22, 133)) shouldBe
       new SessionMessage.TokenUsage(100, 20, 11, 22, 133)
+    }
+  }
+
+  "AutonomousAgent.TokenUsage" should {
+
+    "default totalInputTokens to inputTokens" in {
+      new AutonomousAgent.TokenUsage(100, 20) shouldBe new AutonomousAgent.TokenUsage(100, 20, 0, 0, 100)
+      new AutonomousAgent.TokenUsage(100, 20, 0, 0, 0) shouldBe new AutonomousAgent.TokenUsage(100, 20, 0, 0, 100)
+    }
+  }
+
+  "AutonomousAgentClientImpl.toTokenUsage" should {
+
+    "map all counts of the runtime token usage" in {
+      AutonomousAgentClientImpl.toTokenUsage(new SpiAgent.SpiTokenUsage(100, 20, 11, 22, 133)) shouldBe
+      new AutonomousAgent.TokenUsage(100, 20, 11, 22, 133)
     }
   }
 

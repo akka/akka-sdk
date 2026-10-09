@@ -27,8 +27,36 @@ import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl;
  */
 public abstract class AutonomousAgent implements akka.javasdk.agent.AgentDelegationWorker {
 
-  /** Token usage statistics for an autonomous agent. */
-  public record TokenUsage(int inputTokens, int outputTokens) {}
+  /**
+   * Token usage statistics for an autonomous agent.
+   *
+   * <p>See {@link akka.javasdk.agent.Agent.TokenUsage} for the meaning of each count. A {@code
+   * totalInputTokens} of 0 is replaced by {@code inputTokens}.
+   *
+   * @param inputTokens the input token count as the provider reports it
+   * @param outputTokens tokens in the responses returned by the model
+   * @param cacheReadInputTokens prompt tokens served from the provider's prompt cache
+   * @param cacheWriteInputTokens prompt tokens written to the provider's prompt cache
+   * @param totalInputTokens every prompt token consumed, counted once, whatever the provider
+   */
+  public record TokenUsage(
+      int inputTokens,
+      int outputTokens,
+      int cacheReadInputTokens,
+      int cacheWriteInputTokens,
+      int totalInputTokens) {
+
+    public TokenUsage {
+      if (totalInputTokens == 0) {
+        totalInputTokens = inputTokens;
+      }
+    }
+
+    /** A usage with no prompt cache activity. */
+    public TokenUsage(int inputTokens, int outputTokens) {
+      this(inputTokens, outputTokens, 0, 0, inputTokens);
+    }
+  }
 
   /**
    * Define this autonomous agent. The definition configures the agent's tools, model provider,
