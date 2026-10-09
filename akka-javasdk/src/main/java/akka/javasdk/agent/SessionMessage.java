@@ -155,9 +155,6 @@ public sealed interface SessionMessage {
    * <p>See {@link Agent.TokenUsage} for the meaning of each count. A {@code totalInputTokens} of 0
    * is replaced by {@code inputTokens}. This also applies to session memory that was written before
    * the field existed.
-   *
-   * <p>Autonomous agents report no prompt cache counts to session memory. Their messages have 0 for
-   * both cache counts, and {@code totalInputTokens} equals {@code inputTokens}.
    */
   record TokenUsage(
       int inputTokens,
