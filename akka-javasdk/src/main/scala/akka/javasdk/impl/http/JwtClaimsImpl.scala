@@ -52,7 +52,8 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
   /**
    * Get the string claim with the given name.
    *
-   * <p>Note that if the claim with the given name is not a string claim, this will return the JSON encoding of it.
+   * <p>If the claim is not a string claim, this returns the JSON encoding of it. E.g. "42" for a numeric claim, or
+   * "[\"a\",\"b\"]" for an array claim.
    *
    * @param name
    *   The name of the claim.
@@ -60,7 +61,33 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   The string claim, if present.
    */
   override def getString(name: String): Optional[String] =
-    jwtClaims.getStringClaim(name).toJava
+    jwtClaims.getStringClaim(name).orElse(jwtClaims.getRawClaim(name)).toJava
+
+  private def claimNode(name: String): Option[JsonNode] =
+    jwtClaims.getRawClaim(name).flatMap { raw =>
+      try Some(JsonSupport.getObjectMapper.readTree(raw))
+      catch {
+        case _: JsonProcessingException => None
+      }
+    }
+
+  // String claims are accepted too, so that a claim such as "42" still parses as a number.
+  private def scalarClaim(name: String): Optional[String] =
+    claimNode(name).filter(node => node.isTextual || node.isNumber || node.isBoolean).map(_.asText).toJava
+
+  private def listClaim[T](name: String, elementClass: Class[T]): Optional[util.List[T]] =
+    jwtClaims
+      .getRawClaim(name)
+      .flatMap { raw =>
+        try Some(
+          JsonSupport.getObjectMapper.readValue[util.List[T]](
+            raw,
+            TypeFactory.defaultInstance.constructCollectionType(classOf[util.List[_]], elementClass)))
+        catch {
+          case _: JsonProcessingException => None
+        }
+      }
+      .toJava
 
   /**
    * Does this request have any claims that have been validated?
@@ -148,7 +175,7 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    * @return
    *   The integer claim, if present. Returns empty if the claim is not an integer or can't be parsed as an integer.
    */
-  def getInteger(name: String): Optional[lang.Integer] = getString(name).flatMap((value: String) => {
+  def getInteger(name: String): Optional[lang.Integer] = scalarClaim(name).flatMap((value: String) => {
     try Optional.of(value.toInt)
     catch {
       case e: NumberFormatException =>
@@ -165,7 +192,7 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    * @return
    *   The long claim, if present. Returns empty if the claim is not a long or can't be parsed as an long.
    */
-  def getLong(name: String): Optional[lang.Long] = getString(name).flatMap((value: String) => {
+  def getLong(name: String): Optional[lang.Long] = scalarClaim(name).flatMap((value: String) => {
     try Optional.of(lang.Long.parseLong(value))
     catch {
       case e: NumberFormatException =>
@@ -182,7 +209,7 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    * @return
    *   The double claim, if present. Returns empty if the claim is not a double or can't be parsed as an double.
    */
-  def getDouble(name: String): Optional[lang.Double] = getString(name).flatMap((value: String) => {
+  def getDouble(name: String): Optional[lang.Double] = scalarClaim(name).flatMap((value: String) => {
     try Optional.of(value.toDouble)
     catch {
       case e: NumberFormatException =>
@@ -199,10 +226,10 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    * @return
    *   The boolean claim, if present. Returns empty if the claim is not a boolean or can't be parsed as a boolean.
    */
-  def getBoolean(name: String): Optional[lang.Boolean] = getString(name).flatMap((value: String) => {
+  def getBoolean(name: String): Optional[lang.Boolean] = scalarClaim(name).flatMap((value: String) => {
     if (value.equalsIgnoreCase("true")) Optional.of(lang.Boolean.TRUE)
     else if (value.equalsIgnoreCase("false")) Optional.of(lang.Boolean.FALSE)
-    Optional.empty
+    else Optional.empty
   })
 
   /**
@@ -230,15 +257,7 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    * @return
    *   The object claim, if present. Returns empty if the claim is not an object or can't be parsed as an object.
    */
-  def getObject(name: String): Optional[JsonNode] = getString(name).flatMap((value: String) => {
-    // FIXME should this be the internal JsonSerialization rather?
-    try Optional.of(JsonSupport.getObjectMapper.readTree(value))
-    catch {
-      case e: JsonProcessingException =>
-        Optional.empty
-    }
-
-  })
+  def getObject(name: String): Optional[JsonNode] = claimNode(name).filter(_.isObject).toJava
 
   /**
    * Get the string list claim with the given name.
@@ -249,16 +268,8 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   The string list claim, if present. Returns empty if the claim is not a JSON array of strings or cannot be parsed
    *   as a JSON array of strings.
    */
-  def getStringList(name: String): Optional[util.List[String]] = getString(name).flatMap((value: String) => {
-    try Optional.of(
-      JsonSupport.getObjectMapper
-        .readValue(value, TypeFactory.defaultInstance.constructCollectionType(classOf[util.List[_]], classOf[String])))
-    catch {
-      case e: JsonProcessingException =>
-        Optional.empty
-    }
-
-  })
+  def getStringList(name: String): Optional[util.List[String]] =
+    listClaim(name, classOf[String])
 
   /**
    * Get the integer list claim with the given name.
@@ -269,16 +280,8 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   The integer list claim, if present. Returns empty if the claim is not a JSON array of integers or cannot be
    *   parsed as a JSON array of integers.
    */
-  def getIntegerList(name: String): Optional[util.List[Integer]] = getString(name).flatMap((value: String) => {
-    try Optional.of(
-      JsonSupport.getObjectMapper
-        .readValue(value, TypeFactory.defaultInstance.constructCollectionType(classOf[util.List[_]], classOf[Integer])))
-    catch {
-      case e: JsonProcessingException =>
-        Optional.empty
-    }
-
-  })
+  def getIntegerList(name: String): Optional[util.List[Integer]] =
+    listClaim(name, classOf[Integer])
 
   /**
    * Get the long list claim with the given name.
@@ -289,15 +292,8 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   The long list claim, if present. Returns empty if the claim is not a JSON array of longs or cannot be parsed as a
    *   JSON array of longs.
    */
-  def getLongList(name: String): Optional[util.List[lang.Long]] = getString(name).flatMap((value: String) => {
-    try Optional.of(JsonSupport.getObjectMapper
-      .readValue(value, TypeFactory.defaultInstance.constructCollectionType(classOf[util.List[_]], classOf[lang.Long])))
-    catch {
-      case e: JsonProcessingException =>
-        Optional.empty
-    }
-
-  })
+  def getLongList(name: String): Optional[util.List[lang.Long]] =
+    listClaim(name, classOf[lang.Long])
 
   /**
    * Get the double list claim with the given name.
@@ -308,17 +304,8 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   The double list claim, if present. Returns empty if the claim is not a JSON array of doubles or cannot be parsed
    *   as a JSON array of doubles.
    */
-  def getDoubleList(name: String): Optional[util.List[lang.Double]] = getString(name).flatMap((value: String) => {
-    try Optional.of(
-      JsonSupport.getObjectMapper.readValue(
-        value,
-        TypeFactory.defaultInstance.constructCollectionType(classOf[util.List[_]], classOf[lang.Double])))
-    catch {
-      case e: JsonProcessingException =>
-        Optional.empty
-    }
-
-  })
+  def getDoubleList(name: String): Optional[util.List[lang.Double]] =
+    listClaim(name, classOf[lang.Double])
 
   /**
    * Get the boolean list claim with the given name.
@@ -329,17 +316,8 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   The boolean list claim, if present. Returns empty if the claim is not a JSON array of booleans or cannot be
    *   parsed as a JSON array of booleans.
    */
-  def getBooleanList(name: String): Optional[util.List[lang.Boolean]] = getString(name).flatMap((value: String) => {
-    try Optional.of(
-      JsonSupport.getObjectMapper.readValue(
-        value,
-        TypeFactory.defaultInstance.constructCollectionType(classOf[util.List[_]], classOf[lang.Boolean])))
-    catch {
-      case e: JsonProcessingException =>
-        Optional.empty
-    }
-
-  })
+  def getBooleanList(name: String): Optional[util.List[lang.Boolean]] =
+    listClaim(name, classOf[lang.Boolean])
 
   /**
    * Get the numeric date list claim with the given name.
@@ -363,13 +341,6 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   The object list claim, if present. Returns empty if the claim is not a JSON array of objects or cannot be parsed
    *   as a JSON array of objects.
    */
-  def getObjectList(name: String): Optional[util.List[JsonNode]] = getString(name).flatMap((value: String) => {
-    try Optional.of(JsonSupport.getObjectMapper
-      .readValue(value, TypeFactory.defaultInstance.constructCollectionType(classOf[util.List[_]], classOf[JsonNode])))
-    catch {
-      case e: JsonProcessingException =>
-        Optional.empty
-    }
-
-  })
+  def getObjectList(name: String): Optional[util.List[JsonNode]] =
+    listClaim(name, classOf[JsonNode])
 }

@@ -107,8 +107,8 @@ public interface JwtClaims {
   /**
    * Get the string claim with the given name.
    *
-   * <p>Note that if the claim with the given name is not a string claim, this will return the JSON
-   * encoding of it.
+   * <p>If the claim is not a string claim, this returns the JSON encoding of it. E.g. "42" for a
+   * numeric claim, or "[\"a\",\"b\"]" for an array claim.
    *
    * @param name The name of the claim.
    * @return The string claim, if present.

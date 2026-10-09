@@ -13,11 +13,13 @@ import akka.grpc.javadsl.SingleBlockingResponseRequestBuilder;
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.http.StrictResponse;
 import akka.javasdk.testkit.TestKitSupport;
+import akkajavasdk.components.jwt.ClaimsJwtEndpoint;
 import akkajavasdk.protocol.TestGrpcServiceOuterClass;
 import akkajavasdk.protocol.TestJwtsGrpcServiceClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
@@ -93,6 +95,58 @@ public class JwtEndpointTest extends TestKitSupport {
             });
   }
 
+  @Test
+  public void shouldReturnTypedClaims() {
+    long exp = 4102444800L;
+    long iat = 1700000000L;
+    var token =
+        bearerTokenWith(
+            Map.of(
+                "iss",
+                "my-issuer-123",
+                "exp",
+                exp,
+                "iat",
+                iat,
+                "count",
+                42,
+                "ratio",
+                0.5,
+                "admin",
+                true,
+                "roles",
+                List.of("reader", "writer"),
+                "levels",
+                List.of(1, 2, 3),
+                "dates",
+                List.of(iat, exp),
+                "address",
+                Map.of("city", "Lisbon")));
+
+    var claims =
+        httpClient
+            .GET("/jwt-claims")
+            .addHeader("Authorization", token)
+            .responseBodyAs(ClaimsJwtEndpoint.Claims.class)
+            .invoke()
+            .body();
+
+    assertThat(claims.expirationTime()).isEqualTo(exp);
+    assertThat(claims.issuedAt()).isEqualTo(iat);
+    assertThat(claims.count()).isEqualTo(42);
+    assertThat(claims.countAsLong()).isEqualTo(42L);
+    assertThat(claims.ratio()).isEqualTo(0.5);
+    assertThat(claims.admin()).isTrue();
+    assertThat(claims.countAsString()).isEqualTo("42");
+    assertThat(claims.rolesAsString()).isEqualTo("[\"reader\",\"writer\"]");
+    assertThat(claims.roles()).containsExactly("reader", "writer");
+    assertThat(claims.levels()).containsExactly(1, 2, 3);
+    assertThat(claims.dates()).containsExactly(iat, exp);
+    assertThat(claims.address()).isEqualTo("{\"city\":\"Lisbon\"}");
+    assertThat(claims.issAsInteger()).isNull();
+    assertThat(claims.countAsBoolean()).isNull();
+  }
+
   // from here down, JWT validation tests for gRPC endpoints
   TestGrpcServiceOuterClass.In request =
       TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
@@ -166,7 +220,7 @@ public class JwtEndpointTest extends TestKitSupport {
     expectFailWith(correctSub.jwtInherited(), "UNAUTHENTICATED: Bearer token from wrong issuer");
   }
 
-  private String bearerTokenWith(Map<String, String> claims) {
+  private String bearerTokenWith(Map<String, ?> claims) {
     try {
       // setting algorithm to none
       String alg = Base64.getEncoder().encodeToString("{\"alg\": \"none\"}".getBytes());
