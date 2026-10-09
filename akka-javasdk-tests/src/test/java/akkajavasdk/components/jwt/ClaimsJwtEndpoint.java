@@ -18,41 +18,49 @@ import java.util.List;
 public class ClaimsJwtEndpoint extends AbstractHttpEndpoint {
 
   public record Claims(
-      Long expirationTime,
-      Long issuedAt,
+      String expirationTime,
+      String issuedAt,
+      String notBefore,
       Integer count,
       Long countAsLong,
-      Double ratio,
-      Boolean admin,
       String countAsString,
-      String rolesAsString,
-      List<String> roles,
-      List<Integer> levels,
-      List<Long> dates,
-      String address,
+      Boolean countAsBoolean,
+      Double ratio,
+      String ratioAsString,
+      List<Double> ratioAsList,
+      Boolean admin,
       Integer issAsInteger,
-      Boolean countAsBoolean) {}
+      List<String> roles,
+      String rolesAsString,
+      String rolesAsObject,
+      List<Integer> levels,
+      List<String> dates,
+      String address) {}
 
   @Get("/")
   public Claims claims() {
     var claims = requestContext().getJwtClaims();
     return new Claims(
-        claims.expirationTime().map(Instant::getEpochSecond).orElse(null),
-        claims.issuedAt().map(Instant::getEpochSecond).orElse(null),
+        claims.expirationTime().map(Instant::toString).orElse(null),
+        claims.issuedAt().map(Instant::toString).orElse(null),
+        claims.notBefore().map(Instant::toString).orElse(null),
         claims.getInteger("count").orElse(null),
         claims.getLong("count").orElse(null),
-        claims.getDouble("ratio").orElse(null),
-        claims.getBoolean("admin").orElse(null),
         claims.getString("count").orElse(null),
-        claims.getString("roles").orElse(null),
+        claims.getBoolean("count").orElse(null),
+        claims.getDouble("ratio").orElse(null),
+        claims.getString("ratio").orElse(null),
+        claims.getDoubleList("ratio").orElse(null),
+        claims.getBoolean("admin").orElse(null),
+        claims.getInteger("iss").orElse(null),
         claims.getStringList("roles").orElse(null),
+        claims.getString("roles").orElse(null),
+        claims.getObject("roles").map(Object::toString).orElse(null),
         claims.getIntegerList("levels").orElse(null),
         claims
             .getNumericDateList("dates")
-            .map(dates -> dates.stream().map(Instant::getEpochSecond).toList())
+            .map(dates -> dates.stream().map(Instant::toString).toList())
             .orElse(null),
-        claims.getObject("address").map(Object::toString).orElse(null),
-        claims.getInteger("iss").orElse(null),
-        claims.getBoolean("count").orElse(null));
+        claims.getObject("address").map(Object::toString).orElse(null));
   }
 }

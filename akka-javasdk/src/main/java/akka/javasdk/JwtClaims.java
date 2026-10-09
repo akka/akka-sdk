@@ -61,7 +61,8 @@ public interface JwtClaims {
   /**
    * Get the audience, that is, the <tt>aud</tt> claim, as described in RFC 7519 section 4.1.3.
    *
-   * @return the audience, if present.
+   * @return the audience, if present. If the claim is an array, this returns its JSON encoding. Use
+   *     {@code getStringList("aud")} to read an array.
    * @see <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.3">RFC 7519 section
    *     4.1.3</a>
    */
@@ -111,7 +112,7 @@ public interface JwtClaims {
    * numeric claim, or "[\"a\",\"b\"]" for an array claim.
    *
    * @param name The name of the claim.
-   * @return The string claim, if present.
+   * @return The string claim, if present. Returns empty if the claim is JSON null.
    */
   Optional<String> getString(String name);
 
@@ -155,7 +156,7 @@ public interface JwtClaims {
    * Get the numeric data claim with the given name.
    *
    * <p>Numeric dates are expressed as a number of seconds since epoch, as described in RFC 7519
-   * section 2.
+   * section 2. The number can have a fractional part.
    *
    * @param name The name of the claim.
    * @return The numeric date claim, if present. Returns empty if the claim is not a numeric date or

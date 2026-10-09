@@ -5,14 +5,16 @@
 package akka.javasdk.impl.http
 
 import java.lang
+import java.math.RoundingMode
+import java.time.DateTimeException
 import java.time.Instant
 import java.util
 import java.util.Optional
-import java.util.stream.Collectors
 
 import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters.RichOption
 
+import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.JwtClaims
 import akka.runtime.sdk.spi.{ JwtClaims => RuntimeJwtClaims }
@@ -20,7 +22,11 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.`type`.TypeFactory
 
-class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[akka] final class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
 
   /**
    * Returns the names of all the claims in this request.
@@ -58,36 +64,9 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    * @param name
    *   The name of the claim.
    * @return
-   *   The string claim, if present.
+   *   The string claim, if present. Returns empty if the claim is JSON null.
    */
-  override def getString(name: String): Optional[String] =
-    jwtClaims.getStringClaim(name).orElse(jwtClaims.getRawClaim(name)).toJava
-
-  private def claimNode(name: String): Option[JsonNode] =
-    jwtClaims.getRawClaim(name).flatMap { raw =>
-      try Some(JsonSupport.getObjectMapper.readTree(raw))
-      catch {
-        case _: JsonProcessingException => None
-      }
-    }
-
-  // String claims are accepted too, so that a claim such as "42" still parses as a number.
-  private def scalarClaim(name: String): Optional[String] =
-    claimNode(name).filter(node => node.isTextual || node.isNumber || node.isBoolean).map(_.asText).toJava
-
-  private def listClaim[T](name: String, elementClass: Class[T]): Optional[util.List[T]] =
-    jwtClaims
-      .getRawClaim(name)
-      .flatMap { raw =>
-        try Some(
-          JsonSupport.getObjectMapper.readValue[util.List[T]](
-            raw,
-            TypeFactory.defaultInstance.constructCollectionType(classOf[util.List[_]], elementClass)))
-        catch {
-          case _: JsonProcessingException => None
-        }
-      }
-      .toJava
+  override def getString(name: String): Optional[String] = stringClaim(name).toJava
 
   /**
    * Does this request have any claims that have been validated?
@@ -121,7 +100,8 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    * Get the audience, that is, the <tt>aud</tt> claim, as described in RFC 7519 section 4.1.3.
    *
    * @return
-   *   the audience, if present.
+   *   the audience, if present. If the claim is an array, this returns its JSON encoding. Use `getStringList("aud")` to
+   *   read an array.
    * @see
    *   <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.3">RFC 7519 section 4.1.3</a>
    */
@@ -175,14 +155,8 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    * @return
    *   The integer claim, if present. Returns empty if the claim is not an integer or can't be parsed as an integer.
    */
-  def getInteger(name: String): Optional[lang.Integer] = scalarClaim(name).flatMap((value: String) => {
-    try Optional.of(value.toInt)
-    catch {
-      case e: NumberFormatException =>
-        Optional.empty
-    }
-
-  })
+  def getInteger(name: String): Optional[lang.Integer] =
+    scalarClaim(name).flatMap(_.toIntOption).map(Int.box).toJava
 
   /**
    * Get the long claim with the given name.
@@ -192,14 +166,8 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    * @return
    *   The long claim, if present. Returns empty if the claim is not a long or can't be parsed as an long.
    */
-  def getLong(name: String): Optional[lang.Long] = scalarClaim(name).flatMap((value: String) => {
-    try Optional.of(lang.Long.parseLong(value))
-    catch {
-      case e: NumberFormatException =>
-        Optional.empty
-    }
-
-  })
+  def getLong(name: String): Optional[lang.Long] =
+    scalarClaim(name).flatMap(_.toLongOption).map(Long.box).toJava
 
   /**
    * Get the double claim with the given name.
@@ -209,14 +177,8 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    * @return
    *   The double claim, if present. Returns empty if the claim is not a double or can't be parsed as an double.
    */
-  def getDouble(name: String): Optional[lang.Double] = scalarClaim(name).flatMap((value: String) => {
-    try Optional.of(value.toDouble)
-    catch {
-      case e: NumberFormatException =>
-        Optional.empty
-    }
-
-  })
+  def getDouble(name: String): Optional[lang.Double] =
+    scalarClaim(name).flatMap(_.toDoubleOption).map(Double.box).toJava
 
   /**
    * Get the boolean claim with the given name.
@@ -226,16 +188,14 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    * @return
    *   The boolean claim, if present. Returns empty if the claim is not a boolean or can't be parsed as a boolean.
    */
-  def getBoolean(name: String): Optional[lang.Boolean] = scalarClaim(name).flatMap((value: String) => {
-    if (value.equalsIgnoreCase("true")) Optional.of(lang.Boolean.TRUE)
-    else if (value.equalsIgnoreCase("false")) Optional.of(lang.Boolean.FALSE)
-    else Optional.empty
-  })
+  def getBoolean(name: String): Optional[lang.Boolean] =
+    scalarClaim(name).flatMap(_.toBooleanOption).map(Boolean.box).toJava
 
   /**
    * Get the numeric data claim with the given name.
    *
-   * <p>Numeric dates are expressed as a number of seconds since epoch, as described in RFC 7519 section 2.
+   * <p>Numeric dates are expressed as a number of seconds since epoch, as described in RFC 7519 section 2. The number
+   * can have a fractional part.
    *
    * @param name
    *   The name of the claim.
@@ -245,7 +205,8 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    * @see
    *   <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-2">RFC 7519 section 2</a>
    */
-  def getNumericDate(name: String): Optional[Instant] = getLong(name).map(Instant.ofEpochSecond(_))
+  def getNumericDate(name: String): Optional[Instant] =
+    scalarClaim(name).flatMap(parseDecimal).flatMap(numericDate).toJava
 
   /**
    * Get the object claim with the given name.
@@ -257,7 +218,8 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    * @return
    *   The object claim, if present. Returns empty if the claim is not an object or can't be parsed as an object.
    */
-  def getObject(name: String): Optional[JsonNode] = claimNode(name).filter(_.isObject).toJava
+  def getObject(name: String): Optional[JsonNode] =
+    jsonClaim(name).filter(_.isObject).toJava
 
   /**
    * Get the string list claim with the given name.
@@ -269,7 +231,7 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   as a JSON array of strings.
    */
   def getStringList(name: String): Optional[util.List[String]] =
-    listClaim(name, classOf[String])
+    listClaim(name, classOf[String]).toJava
 
   /**
    * Get the integer list claim with the given name.
@@ -281,7 +243,7 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   parsed as a JSON array of integers.
    */
   def getIntegerList(name: String): Optional[util.List[Integer]] =
-    listClaim(name, classOf[Integer])
+    listClaim(name, classOf[Integer]).toJava
 
   /**
    * Get the long list claim with the given name.
@@ -293,7 +255,7 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   JSON array of longs.
    */
   def getLongList(name: String): Optional[util.List[lang.Long]] =
-    listClaim(name, classOf[lang.Long])
+    listClaim(name, classOf[lang.Long]).toJava
 
   /**
    * Get the double list claim with the given name.
@@ -305,7 +267,7 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   as a JSON array of doubles.
    */
   def getDoubleList(name: String): Optional[util.List[lang.Double]] =
-    listClaim(name, classOf[lang.Double])
+    listClaim(name, classOf[lang.Double]).toJava
 
   /**
    * Get the boolean list claim with the given name.
@@ -317,7 +279,7 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   parsed as a JSON array of booleans.
    */
   def getBooleanList(name: String): Optional[util.List[lang.Boolean]] =
-    listClaim(name, classOf[lang.Boolean])
+    listClaim(name, classOf[lang.Boolean]).toJava
 
   /**
    * Get the numeric date list claim with the given name.
@@ -329,8 +291,10 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   cannot be parsed as a JSON array of numeric dates.
    */
   def getNumericDateList(name: String): Optional[util.List[Instant]] =
-    getLongList(name).map((v: util.List[lang.Long]) =>
-      v.stream.map(Instant.ofEpochSecond(_)).collect(Collectors.toList[Instant]))
+    listClaim(name, classOf[java.math.BigDecimal]).flatMap { dates =>
+      val instants = dates.asScala.flatMap(date => Option(date).flatMap(numericDate))
+      if (instants.size == dates.size) Some(instants.asJava) else None
+    }.toJava
 
   /**
    * Get the object list claim with the given name.
@@ -342,5 +306,55 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   as a JSON array of objects.
    */
   def getObjectList(name: String): Optional[util.List[JsonNode]] =
-    listClaim(name, classOf[JsonNode])
+    listClaim(name, classOf[JsonNode]).toJava
+
+  private def parseJson(json: String): Option[JsonNode] =
+    try Some(JsonSupport.getObjectMapper.readTree(json))
+    catch {
+      case _: JsonProcessingException => None
+    }
+
+  // JSON null claims are treated as absent.
+  private def claimNode(name: String): Option[JsonNode] =
+    jwtClaims.getRawClaim(name).flatMap(parseJson).filterNot(_.isNull)
+
+  // Non-string claims keep the runtime's JSON text, so that numbers are not reformatted.
+  private def stringClaim(name: String): Option[String] =
+    jwtClaims.getRawClaim(name).flatMap { raw =>
+      parseJson(raw).filterNot(_.isNull).map(node => if (node.isTextual) node.textValue else raw)
+    }
+
+  // String claims are accepted too, so that a claim such as "42" still parses as a number.
+  private def scalarClaim(name: String): Option[String] =
+    claimNode(name).filter(node => node.isTextual || node.isNumber || node.isBoolean).map(_.asText)
+
+  // The text of a string claim is parsed as JSON, so that a claim such as "{\"a\":1}" still parses as an object.
+  private def jsonClaim(name: String): Option[JsonNode] =
+    claimNode(name).flatMap(node => if (node.isTextual) parseJson(node.textValue) else Some(node))
+
+  private def listClaim[T](name: String, elementClass: Class[T]): Option[util.List[T]] =
+    jsonClaim(name).filter(_.isArray).flatMap { node =>
+      try Option(
+        JsonSupport.getObjectMapper.convertValue[util.List[T]](
+          node,
+          TypeFactory.defaultInstance.constructCollectionType(classOf[util.List[_]], elementClass)))
+      catch {
+        case _: IllegalArgumentException => None
+      }
+    }
+
+  private def parseDecimal(value: String): Option[java.math.BigDecimal] =
+    try Some(new java.math.BigDecimal(value))
+    catch {
+      case _: NumberFormatException => None
+    }
+
+  private def numericDate(seconds: java.math.BigDecimal): Option[Instant] =
+    try {
+      val wholeSeconds = seconds.setScale(0, RoundingMode.FLOOR)
+      val nanos = seconds.subtract(wholeSeconds).movePointRight(9).intValue
+      Some(Instant.ofEpochSecond(wholeSeconds.longValueExact, nanos))
+    } catch {
+      case _: ArithmeticException | _: DateTimeException => None
+    }
 }
