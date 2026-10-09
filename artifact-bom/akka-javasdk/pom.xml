@@ -154,12 +154,12 @@
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-actor_2.13</artifactId>
-                <version>2.10.23</version>
+                <version>2.10.24</version>
             </dependency>
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-discovery_2.13</artifactId>
-                <version>2.10.23</version>
+                <version>2.10.24</version>
             </dependency>
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
@@ -179,17 +179,17 @@
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-pki_2.13</artifactId>
-                <version>2.10.23</version>
+                <version>2.10.24</version>
             </dependency>
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-protobuf-v3_2.13</artifactId>
-                <version>2.10.23</version>
+                <version>2.10.24</version>
             </dependency>
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-stream_2.13</artifactId>
-                <version>2.10.23</version>
+                <version>2.10.24</version>
             </dependency>
             <dependency>
                 <groupId>dev.langchain4j</groupId>
@@ -487,12 +487,12 @@
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-actor_2.13</artifactId>
-            <version>2.10.23</version>
+            <version>2.10.24</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-discovery_2.13</artifactId>
-            <version>2.10.23</version>
+            <version>2.10.24</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
@@ -512,17 +512,17 @@
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-pki_2.13</artifactId>
-            <version>2.10.23</version>
+            <version>2.10.24</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-protobuf-v3_2.13</artifactId>
-            <version>2.10.23</version>
+            <version>2.10.24</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-stream_2.13</artifactId>
-            <version>2.10.23</version>
+            <version>2.10.24</version>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
