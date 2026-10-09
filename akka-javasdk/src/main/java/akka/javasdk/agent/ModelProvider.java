@@ -172,40 +172,6 @@ public sealed interface ModelProvider {
       boolean cacheTools)
       implements ModelProvider {
 
-    /**
-     * @deprecated Use constructor with prompt caching settings
-     */
-    @Deprecated(since = "3.5.19", forRemoval = true)
-    public Anthropic(
-        String apiKey,
-        String modelName,
-        String baseUrl,
-        double temperature,
-        double topP,
-        int topK,
-        int maxTokens,
-        Duration connectionTimeout,
-        Duration responseTimeout,
-        int maxRetries,
-        int thinkingBudgetTokens,
-        List<HttpHeader> additionalModelRequestHeaders) {
-      this(
-          apiKey,
-          modelName,
-          baseUrl,
-          temperature,
-          topP,
-          topK,
-          maxTokens,
-          connectionTimeout,
-          responseTimeout,
-          maxRetries,
-          thinkingBudgetTokens,
-          additionalModelRequestHeaders,
-          false,
-          false);
-    }
-
     public static Anthropic fromConfig(Config config) {
       return new Anthropic(
           config.getString("api-key"),
@@ -515,37 +481,6 @@ public sealed interface ModelProvider {
       /** Additional HTTP headers to include in each request to the model API */
       List<HttpHeader> additionalModelRequestHeaders)
       implements ModelProvider {
-
-    /**
-     * @deprecated Use constructor with baseUrl parameter, or the static factory method and {@code
-     *     with} methods.
-     */
-    @Deprecated(since = "3.5.11", forRemoval = true)
-    public GoogleAIGemini(
-        String apiKey,
-        String modelName,
-        Double temperature,
-        Double topP,
-        int maxOutputTokens,
-        Duration connectionTimeout,
-        Duration responseTimeout,
-        int maxRetries) {
-      this(
-          apiKey,
-          modelName,
-          temperature,
-          topP,
-          maxOutputTokens,
-          connectionTimeout,
-          responseTimeout,
-          maxRetries,
-          "",
-          Optional.empty(),
-          "",
-          "MEDIA_RESOLUTION_UNSPECIFIED",
-          false,
-          List.of());
-    }
 
     public static GoogleAIGemini fromConfig(Config config) {
       final Optional<Integer> thinkingBudget =
@@ -2763,43 +2698,6 @@ public sealed interface ModelProvider {
        */
       Optional<BedrockPromptCachePlacement> promptCaching)
       implements ModelProvider {
-
-    /**
-     * @deprecated Use constructor with prompt caching settings
-     */
-    @Deprecated(since = "3.5.19", forRemoval = true)
-    public Bedrock(
-        String region,
-        String modelId,
-        boolean returnThinking,
-        boolean sendThinking,
-        int maxOutputTokens,
-        int reasoningTokenBudget,
-        Map<String, Object> additionalModelRequestFields,
-        String accessToken,
-        double temperature,
-        double topP,
-        int maxTokens,
-        Duration responseTimeout,
-        int maxRetries,
-        List<HttpHeader> additionalModelRequestHeaders) {
-      this(
-          region,
-          modelId,
-          returnThinking,
-          sendThinking,
-          maxOutputTokens,
-          reasoningTokenBudget,
-          additionalModelRequestFields,
-          accessToken,
-          temperature,
-          topP,
-          maxTokens,
-          responseTimeout,
-          maxRetries,
-          additionalModelRequestHeaders,
-          Optional.empty());
-    }
 
     public static Bedrock fromConfig(Config config) {
       String promptCachingStr = config.getString("prompt-caching");
