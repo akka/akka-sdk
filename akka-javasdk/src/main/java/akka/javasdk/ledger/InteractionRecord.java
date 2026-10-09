@@ -4,6 +4,7 @@
 
 package akka.javasdk.ledger;
 
+import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.MessageContent.DataMessageContent;
 import akka.javasdk.agent.MessageContent.ImageUrlMessageContent;
@@ -92,9 +93,13 @@ public record InteractionRecord(
         .collect(Collectors.toList());
   }
 
-  /** The total number of input tokens across all model calls of the interaction. */
+  /**
+   * The total number of input tokens across all model calls of the interaction, including prompt
+   * tokens read from or written to the provider's prompt cache. See {@link
+   * Agent.TokenUsage#totalInputTokens()}.
+   */
   public int totalInputTokens() {
-    return modelResponses.stream().mapToInt(ModelResponse::inputTokenCount).sum();
+    return modelResponses.stream().mapToInt(r -> r.tokenUsage().totalInputTokens()).sum();
   }
 
   /** The total number of output tokens across all model calls of the interaction. */

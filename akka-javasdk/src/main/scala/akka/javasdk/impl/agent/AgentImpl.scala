@@ -692,10 +692,11 @@ private[impl] object AgentImpl {
             m.id(),
             m.name(),
             Seq(new SpiAgent.TextMessageContent(m.text())),
-            m.sanitized())
+            m.sanitized(),
+            isError = false)
         case m: SessionMessage.MultimodalToolCallResponse =>
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
-          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents, m.sanitized())
+          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents, m.sanitized(), isError = false)
         case m =>
           throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
       }
