@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class McpToolCallGuardrailTestAgent extends Agent {
   public record SomeResponse(String response) {}
 
-  public static final String MCP_ENDPOINT = "http://localhost:39391/mcp";
+  public static final String MCP_ENDPOINT = "http://localhost:19391/mcp";
   public static final String INTERCEPTED_ARGUMENTS = "{\"echo\":\"intercepted\"}";
 
   public static final AtomicInteger toolResponses = new AtomicInteger();

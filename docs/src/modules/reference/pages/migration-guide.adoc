@@ -14,7 +14,9 @@ include::ROOT:partial$include.adoc[]
 * For `mcp-tool-request`, implement `ToolCallGuardrail`.
 * For `mcp-tool-response`, implement `ModelCallGuardrail`. It sees the MCP tool result as a `ToolCallResponse` in `newMessages()` before the model does. A `ToolCallResponse` does not say where the tool runs, so the guardrail sees function tool results and MCP tool results alike. If the `RemoteMcpTools` has a `ToolInterceptor`, the guardrail sees the result that `interceptResponse` returns.
 
-All `use-for` values are deprecated. At startup, the runtime logs a warning for each guardrail that uses them.
+A `ToolCallGuardrail` entry now runs on MCP tool calls as well as function tool calls. An existing entry that does not set the `tools` config key sees every MCP tool call of its agents. To run the guardrail on some tools only, list their names in `tools`. The `tools` key matches by name only. To tell a function tool from an MCP tool, check `origin()` on the `CallContext`. See xref:sdk:agents/guardrails.adoc[Guardrails] for the entry configuration.
+
+All `use-for` values are deprecated. At startup, the SDK logs a warning for each enabled guardrail that uses them.
 
 For the built-in `SimilarityGuard`, see <<migrating-from-similarity-guard,Migrating from SimilarityGuard>>.
 
@@ -25,7 +27,7 @@ For an agent that returns `StreamEffect`, the runtime does not evaluate a `TextG
 [#migrating-from-similarity-guard]
 === Migrating from SimilarityGuard
 
-Using `SimilarityGuard` for `model-request` or `model-response` is deprecated. `SimilarityGuard` will support only `mcp-tool-request` and `mcp-tool-response`. For `model-request`, use `ModelCallSimilarityGuard`. The SDK has no replacement for `model-response`. See xref:sdk:agents/guardrails.adoc#_similarity_guardrail[Similarity guardrail] for the `ModelCallSimilarityGuard` configuration.
+`SimilarityGuard` is deprecated for every `use-for` value. For `model-request` and `mcp-tool-response`, use `ModelCallSimilarityGuard`. It checks the user message and the tool results before each model call. The SDK has no built-in replacement for `model-response` or `mcp-tool-request`. For `mcp-tool-request`, implement a `ToolCallGuardrail`. See xref:sdk:agents/guardrails.adoc#_similarity_guardrail[Similarity guardrail] for the `ModelCallSimilarityGuard` configuration.
 
 To move the built-in guard entry, enable `"default model-call jailbreak"` for the same agents and agent roles. Copy any settings that you changed on `"default jailbreak"`, such as `threshold` or `report-only`. Then remove the agents and agent roles from `"default jailbreak"`.
 

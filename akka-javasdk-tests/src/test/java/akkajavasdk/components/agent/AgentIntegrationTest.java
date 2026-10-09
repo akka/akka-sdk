@@ -79,6 +79,7 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(MixedGuardrailsTestAgent.class, testModelProvider)
         .withModelProvider(ToolCallGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(McpToolCallGuardrailTestAgent.class, testModelProvider)
+        .withModelProvider(McpToolCallAllowedTestAgent.class, testModelProvider)
         .withModelProvider(ThrowingGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(ReportOnlyThrowingGuardrailTestAgent.class, testModelProvider)
         .withDependencyProvider(depsProvider);
@@ -697,6 +698,8 @@ public class AgentIntegrationTest extends TestKitSupport {
   @Test
   public void shouldDenyMcpToolCallWithToolCallGuardrail() {
     // given
+    McpToolCallGuardrailTestAgent.toolResponses.set(0);
+    RecordingDenyingToolGuard.lastCall.set(null);
     testModelProvider
         .whenMessage(s -> s.equals("echo hi"))
         .reply(new ToolInvocationRequest("echo", "{\"echo\":\"hi\"}"));
@@ -713,12 +716,48 @@ public class AgentIntegrationTest extends TestKitSupport {
             .invoke("echo hi");
 
     // then
-    assertThat(result.response()).contains("denied by mcp tool guard [echo]");
+    assertThat(result.response())
+        .contains("denied by mcp tool guard [echo]")
+        .doesNotStartWith("Echoed");
     assertThat(McpToolCallGuardrailTestAgent.toolResponses.get()).isZero();
 
     var recorded = RecordingDenyingToolGuard.lastCall.get();
+    assertThat(recorded).isNotNull();
     assertThat(recorded.toolName()).isEqualTo("echo");
     assertThat(recorded.arguments()).isEqualTo(McpToolCallGuardrailTestAgent.INTERCEPTED_ARGUMENTS);
+    assertThat(recorded.origin())
+        .isEqualTo(
+            new ToolCallGuardrail.ToolOrigin.RemoteMcp(McpToolCallGuardrailTestAgent.MCP_ENDPOINT));
+  }
+
+  @Test
+  public void shouldCallMcpToolWhenToolCallGuardrailAllows() {
+    // given
+    McpToolCallAllowedTestAgent.toolResponses.set(0);
+    RecordingAllowingToolGuard.lastCall.set(null);
+    testModelProvider
+        .whenMessage(s -> s.equals("echo allowed"))
+        .reply(new ToolInvocationRequest("echo", "{\"echo\":\"allowed\"}"));
+    testModelProvider
+        .whenToolResult(result -> true)
+        .thenReply(result -> new AiResponse("Echoed " + result.content()));
+
+    // when
+    McpToolCallAllowedTestAgent.SomeResponse result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(McpToolCallAllowedTestAgent::ask)
+            .invoke("echo allowed");
+
+    // then
+    assertThat(result.response()).startsWith("Echoed").contains("allowed");
+    assertThat(result.response()).doesNotContain("denied by the guard for another tool");
+    assertThat(McpToolCallAllowedTestAgent.toolResponses.get()).isEqualTo(1);
+
+    var recorded = RecordingAllowingToolGuard.lastCall.get();
+    assertThat(recorded).isNotNull();
+    assertThat(recorded.toolName()).isEqualTo("echo");
     assertThat(recorded.origin())
         .isEqualTo(
             new ToolCallGuardrail.ToolOrigin.RemoteMcp(McpToolCallGuardrailTestAgent.MCP_ENDPOINT));

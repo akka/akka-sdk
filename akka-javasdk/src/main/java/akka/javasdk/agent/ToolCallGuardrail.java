@@ -4,7 +4,9 @@
 
 package akka.javasdk.agent;
 
+import akka.annotation.DoNotInherit;
 import akka.javasdk.Tracing;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -34,7 +36,11 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
      *     URI you pass. For {@link RemoteMcpTools#fromService} it is {@code
      *     http://<service-name>/mcp}.
      */
-    record RemoteMcp(String endpoint) implements ToolOrigin {}
+    record RemoteMcp(String endpoint) implements ToolOrigin {
+      public RemoteMcp {
+        Objects.requireNonNull(endpoint, "endpoint");
+      }
+    }
   }
 
   /**
@@ -45,6 +51,7 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
    * <p>For construction-time data that doesn't change per call (the guardrail's configured name and
    * its config section) accept a {@link GuardrailContext} parameter in the constructor.
    */
+  @DoNotInherit
   public interface CallContext {
 
     /** The id of the agent performing the tool call. */

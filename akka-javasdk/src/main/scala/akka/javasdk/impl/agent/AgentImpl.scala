@@ -19,6 +19,7 @@ import scala.jdk.DurationConverters.JavaDurationOps
 import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.util.Failure
+import scala.util.Try
 import scala.util.control.NonFatal
 
 import akka.actor.typed.ActorSystem
@@ -445,8 +446,7 @@ private[impl] object AgentImpl {
   @nowarn("msg=deprecated")
   private[impl] def toSpiMcpEndpoints(
       remoteMcpTools: Seq[RemoteMcpTools],
-      guardrails: AgentGuardrails,
-      sdkExecutionContext: ExecutionContext): Seq[SpiAgent.McpToolEndpointDescriptor] =
+      guardrails: AgentGuardrails): Seq[SpiAgent.McpToolEndpointDescriptor] =
     remoteMcpTools.map {
       case remoteMcp: RemoteMcpToolsImpl =>
         new SpiAgent.McpToolEndpointDescriptor(
@@ -456,23 +456,7 @@ private[impl] object AgentImpl {
             case Some(predicate) => predicate.test
             case None            => (_: String) => true
           },
-          toolInterceptor = remoteMcp.interceptor.map {
-            javaInterceptor =>
-              (toolCallRequest: SpiAgent.ToolCallRequest, toolCall: SpiAgent.ToolCallRequest => Future[String]) =>
-                {
-                  val interceptorContext = new RemoteMcpTools.ToolInterceptorContext {
-                    override def toolName(): String = toolCallRequest.name
-                  }
-                  val newRequestPayload =
-                    javaInterceptor.interceptRequest(interceptorContext, toolCallRequest.arguments)
-                  val newRequest =
-                    if (newRequestPayload eq toolCallRequest.arguments) toolCallRequest
-                    else new SpiAgent.ToolCallRequest(toolCallRequest.id, toolCallRequest.name, newRequestPayload)
-                  toolCall(newRequest).map(result =>
-                    javaInterceptor.interceptResponse(interceptorContext, newRequestPayload, result))(
-                    sdkExecutionContext)
-                }
-          },
+          toolInterceptor = remoteMcp.interceptor.map(new McpToolCallHooksAdapter(_)),
           toolTimeout =
             if (remoteMcp.timeout == Duration.Zero) None
             else Some(remoteMcp.timeout),
@@ -481,6 +465,27 @@ private[impl] object AgentImpl {
           toolCallGuardrails = guardrails.toolCallGuardrails)
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
+
+  private final class McpToolCallHooksAdapter(javaInterceptor: RemoteMcpTools.ToolInterceptor)
+      extends SpiAgent.McpToolCallHooks {
+
+    override def interceptRequest(toolCallRequest: SpiAgent.ToolCallRequest): Future[String] =
+      Future.fromTry(Try(javaInterceptor.interceptRequest(contextFor(toolCallRequest), toolCallRequest.arguments)))
+
+    override def interceptResponse(
+        toolCallRequest: SpiAgent.ToolCallRequest,
+        arguments: String,
+        result: SpiAgent.McpToolCallResult): Future[SpiAgent.McpToolCallResult] =
+      Future.fromTry(Try {
+        val text = javaInterceptor.interceptResponse(contextFor(toolCallRequest), arguments, result.text)
+        new SpiAgent.McpToolCallResult(text, result.isError)
+      })
+
+    private def contextFor(toolCallRequest: SpiAgent.ToolCallRequest): RemoteMcpTools.ToolInterceptorContext =
+      new RemoteMcpTools.ToolInterceptorContext {
+        override def toolName(): String = toolCallRequest.name
+      }
+  }
 
   private[agent] def toSpiDetailLevel(
       level: ImageMessageContent.DetailLevel): SpiAgent.ImageMessageContent.DetailLevel =
@@ -689,6 +694,7 @@ private[impl] object AgentImpl {
         case m: MultimodalUserMessage =>
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
           new SpiAgent.ContextMessage.UserMessage(contents, m.sanitized())
+        // FIXME: SessionMessage does not keep the isError flag of a tool result.
         case m: ToolCallResponse =>
           // FIXME: keep track of tool call errors in session memory and pass isError
           new ContextMessage.ToolCallResponseMessage(
@@ -699,7 +705,6 @@ private[impl] object AgentImpl {
             isError = false)
         case m: SessionMessage.MultimodalToolCallResponse =>
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
-          // FIXME: keep track of tool call errors in session memory and pass isError
           new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents, m.sanitized(), isError = false)
         case m =>
           throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
@@ -921,7 +926,7 @@ private[impl] final class AgentImpl(
     AgentImpl.toSpiContentLoader(javaImageLoader, sdkExecutionContext)
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
-    AgentImpl.toSpiMcpEndpoints(remoteMcpTools, guardrails, sdkExecutionContext)
+    AgentImpl.toSpiMcpEndpoints(remoteMcpTools, guardrails)
 
   private def deriveSessionMemoryClient(
       memoryProvider: MemoryProvider,
