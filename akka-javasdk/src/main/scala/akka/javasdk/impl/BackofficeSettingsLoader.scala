@@ -21,11 +21,12 @@ import akka.runtime.sdk.spi.SpiBackofficeServiceSettings
 import akka.runtime.sdk.spi.SpiBackofficeSettings
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import kalix.api.projects.v1alpha.projects.ListProjectsRequest
-import kalix.api.projects.v1alpha.projects.ListRegionsRequest
-import kalix.api.projects.v1alpha.projects.Project
-import kalix.api.projects.v1alpha.projects.ProjectsClient
-import kalix.api.projects.v1alpha.projects.Region
+import kalix.api.projects.v1.projects.ListProjectsRequest
+import kalix.api.projects.v1.projects.ListRegionsRequest
+import kalix.api.projects.v1.projects.OrganizationOwner
+import kalix.api.projects.v1.projects.Project
+import kalix.api.projects.v1.projects.ProjectsClient
+import kalix.api.projects.v1.projects.Region
 import org.slf4j.LoggerFactory
 
 /**
@@ -83,87 +84,13 @@ private[impl] object BackofficeSettingsLoader {
         ActorSystem[Nothing](Behaviors.empty, "backoffice-settings-loader", ConfigFactory.defaultReference())
 
       try {
+        val grpcSettings = GrpcClientSettings.connectToServiceAt(apiServerHost, apiServerPort)
         val accessTokenCache = BackofficeAccessTokenCache(system)
-        accessTokenCache.init(apiServerHost, apiServerPort, refreshToken)
+        accessTokenCache.init(grpcSettings, refreshToken)
         val accessToken = Await.result(accessTokenCache.accessToken(), requestTimeout)
-        val projectsClient = ProjectsClient(GrpcClientSettings.connectToServiceAt(apiServerHost, apiServerPort))
-
-        // Only load projects if we need them
-        lazy val projects = loadProjects(projectsClient, accessToken, requestTimeout)
-        var projectRegions = Map.empty[String, Seq[Region]]
-
-        val servicesSettings = servicesConfig
-          .keySet()
-          .asScala
-          .map { service =>
-            val serviceConfig = config.getConfig("services").getConfig(service)
-            val projectIdOrFriendlyName = serviceConfig.getString("project")
-            val projectName = if (isUuid(projectIdOrFriendlyName)) {
-              s"projects/$projectIdOrFriendlyName"
-            } else {
-              projects.filter(_.friendlyName == projectIdOrFriendlyName) match {
-                case Nil =>
-                  sys.error(s"Could not find project with friendly name $projectIdOrFriendlyName")
-                case Seq(single) =>
-                  single.name
-                case multiple =>
-                  val orgIdOrFriendlyName = getOpt(serviceConfig, "organization")
-                    .getOrElse(sys.error(
-                      s"organization is needed for backoffice service $service because there are multiple projects with a friendly name of $projectIdOrFriendlyName"))
-                  multiple.find(_.owner.organizationOwner.exists(org =>
-                    org.id == orgIdOrFriendlyName || org.friendlyName == orgIdOrFriendlyName)) match {
-                    case Some(project) => project.name
-                    case None =>
-                      sys.error(
-                        s"Could not find project with friendly name $projectIdOrFriendlyName owned by organization $orgIdOrFriendlyName")
-                  }
-              }
-
-            }
-            val regions = projectRegions.get(projectName) match {
-              case Some(regions) =>
-                regions
-              case None =>
-                val regions = loadRegions(projectsClient, accessToken, requestTimeout, projectName)
-                projectRegions = projectRegions.updated(projectName, regions)
-                regions
-            }
-
-            val region = regions match {
-              case Nil =>
-                sys.error(s"Project $projectIdOrFriendlyName has no regions")
-              case Seq(region) =>
-                region
-              case multiple =>
-                getOpt(serviceConfig, "region") match {
-                  case None =>
-                    regions.find(_.primary).getOrElse {
-                      sys.error(s"Project $projectIdOrFriendlyName has no primary region")
-                    }
-                  case Some(regionName) =>
-                    val name = s"$projectName/regions/$regionName"
-                    multiple.find(_.name == name) match {
-                      case None =>
-                        sys.error(s"Region $regionName not found for project $projectIdOrFriendlyName")
-                      case Some(region) =>
-                        region
-                    }
-                }
-            }
-
-            val regionName = region.name.stripPrefix(s"$projectName/regions/")
-            val serviceName = getOpt(serviceConfig, "service-name").getOrElse(service)
-            val projectId = projectName.stripPrefix("projects/")
-
-            log.info(s"Resolved service $service to use service $service in project $projectId in region $regionName")
-
-            service -> new SpiBackofficeServiceSettings(
-              serviceName = serviceName,
-              projectId = projectId,
-              regionName = regionName,
-              backofficeProxyHost = region.backofficeProxyHostname)
-          }
-          .toMap
+        val projectsClient = ProjectsClient(grpcSettings)
+        val servicesSettings =
+          resolveServices(projectsClient, accessToken, requestTimeout, config.getConfig("services"))
 
         new SpiBackofficeSettings(apiServer = apiServer, refreshToken = refreshToken, services = servicesSettings)
       } finally {
@@ -175,7 +102,105 @@ private[impl] object BackofficeSettingsLoader {
     }
   }
 
-  private val UuidRegex = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$".r
+  /**
+   * Resolves each configured backoffice service to the project, region and backoffice proxy host that serves it.
+   *
+   * @param servicesConfig
+   *   the `services` config object, with one entry per service
+   */
+  private[impl] def resolveServices(
+      projectsClient: ProjectsClient,
+      accessToken: String,
+      requestTimeout: FiniteDuration,
+      servicesConfig: Config): Map[String, SpiBackofficeServiceSettings] = {
+    // Only load projects if we need them
+    lazy val projects = loadProjects(projectsClient, accessToken, requestTimeout)
+    var projectRegions = Map.empty[String, Seq[Region]]
+
+    servicesConfig
+      .root()
+      .keySet()
+      .asScala
+      .map { service =>
+        val serviceConfig = servicesConfig.getConfig(service)
+        val projectIdOrFriendlyName = serviceConfig.getString("project")
+        val (projectName, regionsFromListProjects) = if (isUuid(projectIdOrFriendlyName)) {
+          (s"projects/$projectIdOrFriendlyName", Nil)
+        } else {
+          projects.filter(_.friendlyName == projectIdOrFriendlyName) match {
+            case Nil =>
+              sys.error(s"Could not find project with friendly name $projectIdOrFriendlyName")
+            case Seq(single) =>
+              (single.name, single.regions)
+            case multiple =>
+              val orgIdOrFriendlyName = getOpt(serviceConfig, "organization")
+                .getOrElse(sys.error(
+                  s"organization is needed for backoffice service $service because there are multiple projects with a friendly name of $projectIdOrFriendlyName"))
+              val orgMatcher: OrganizationOwner => Boolean = if (isUuid(orgIdOrFriendlyName)) {
+                val orgName = s"organizations/$orgIdOrFriendlyName"
+                org => org.name == orgName
+              } else { org =>
+                org.friendlyName == orgIdOrFriendlyName
+              }
+              multiple.find(_.owner.exists(orgMatcher)) match {
+                case Some(project) => (project.name, project.regions)
+                case None =>
+                  sys.error(
+                    s"Could not find project with friendly name $projectIdOrFriendlyName owned by organization $orgIdOrFriendlyName")
+              }
+          }
+        }
+        val regions = (projectRegions.get(projectName), regionsFromListProjects) match {
+          case (Some(regions), _) =>
+            regions
+          case (None, Nil) =>
+            val regions = loadRegions(projectsClient, accessToken, requestTimeout, projectName)
+            projectRegions = projectRegions.updated(projectName, regions)
+            regions
+          case (None, someRegions) =>
+            projectRegions = projectRegions.updated(projectName, someRegions)
+            someRegions
+        }
+
+        val region = regions match {
+          case Nil =>
+            sys.error(s"Project $projectIdOrFriendlyName has no regions")
+          case Seq(region) =>
+            region
+          case multiple =>
+            getOpt(serviceConfig, "region") match {
+              case None =>
+                regions.find(_.primary).getOrElse {
+                  sys.error(s"Project $projectIdOrFriendlyName has no primary region")
+                }
+              case Some(regionName) =>
+                val name = s"$projectName/regions/$regionName"
+                multiple.find(_.name == name) match {
+                  case None =>
+                    sys.error(s"Region $regionName not found for project $projectIdOrFriendlyName")
+                  case Some(region) =>
+                    region
+                }
+            }
+        }
+
+        val regionName = region.name.stripPrefix(s"$projectName/regions/")
+        val serviceName = getOpt(serviceConfig, "service-name").getOrElse(service)
+        val projectId = projectName.stripPrefix("projects/")
+
+        log.info(s"Resolved service $service to use service $serviceName in project $projectId in region $regionName")
+
+        service -> new SpiBackofficeServiceSettings(
+          serviceName = serviceName,
+          projectId = projectId,
+          regionName = regionName,
+          backofficeProxyHost = region.backofficeProxyHostname)
+      }
+      .toMap
+  }
+
+  // Matches any UUID version, so that new UUID versions keep working.
+  private val UuidRegex = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$".r
   private def isUuid(value: String) =
     UuidRegex.matches(value)
 

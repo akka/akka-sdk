@@ -22,8 +22,8 @@ import akka.annotation.InternalApi
 import akka.grpc.GrpcClientSettings
 import akka.pattern.StatusReply
 import akka.util.Timeout
-import kalix.api.auth.v1alpha.auth.AuthClient
-import kalix.api.auth.v1alpha.auth.CreateAccessTokenRequest
+import kalix.api.auth.v1.auth.AuthClient
+import kalix.api.auth.v1.auth.CreateAccessTokenRequest
 import org.slf4j.LoggerFactory
 
 /**
@@ -40,7 +40,7 @@ private[impl] object BackofficeAccessTokenCache extends ExtensionId[BackofficeAc
   def get(system: ActorSystem[_]): BackofficeAccessTokenCache = apply(system)
 
   private sealed trait Protocol
-  private case class Init(apiServerHost: String, apiServerPort: Int, refreshToken: String) extends Protocol
+  private case class Init(settings: GrpcClientSettings, refreshToken: String) extends Protocol
   private case class GetAccessToken(replyTo: ActorRef[StatusReply[String]]) extends Protocol
   private case class AccessToken(token: String, expiry: Instant) extends Protocol
   private case class GetFailed(exception: Throwable) extends Protocol
@@ -60,8 +60,8 @@ private[impl] class BackofficeAccessTokenCache private (requestTimeout: FiniteDu
   private implicit val askTimeout: Timeout = Timeout(requestTimeout.plus(100.millis))
   private implicit val scheduler: Scheduler = sys.scheduler
 
-  def init(apiServerHost: String, apiServerPort: Int, refreshToken: String): Unit = {
-    actor ! Init(apiServerHost, apiServerPort, refreshToken)
+  def init(settings: GrpcClientSettings, refreshToken: String): Unit = {
+    actor ! Init(settings, refreshToken)
   }
 
   def accessToken(): Future[String] = {
@@ -69,15 +69,15 @@ private[impl] class BackofficeAccessTokenCache private (requestTimeout: FiniteDu
   }
 
   private def awaitingInit: Behavior[Protocol] = Behaviors.receiveMessage {
-    case Init(apiServerHost, apiServerPort, refreshToken) =>
+    case Init(settings, refreshToken) =>
       // We log the first 4 characters of the refresh token, which is not sensitive, it should be "kxr_", this will
       // verify that it is a refresh token.
       log.debug(
-        s"BackofficeAccessTokenCache initialized with refresh token starting with {}... using server {}:{}",
+        "BackofficeAccessTokenCache initialized with refresh token starting with {}... using server {}:{}",
         refreshToken.take(4),
-        apiServerHost,
-        apiServerPort)
-      val authClient = AuthClient(GrpcClientSettings.connectToServiceAt(apiServerHost, apiServerPort))
+        settings.serviceName,
+        settings.defaultPort)
+      val authClient = AuthClient(settings)
       new Initialized(authClient, refreshToken).idle
 
     case GetAccessToken(replyTo) =>
