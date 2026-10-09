@@ -912,8 +912,8 @@ private[impl] final class AgentImpl(
   private def toSpiMessageContent(messageContent: MessageContent): SpiAgent.MessageContent =
     AgentImpl.toSpiMessageContent(messageContent)
 
-  private def toSpiContentLoader(javaImageLoader: ContentLoader): SpiAgent.SpiContentLoader =
-    AgentImpl.toSpiContentLoader(javaImageLoader, sdkExecutionContext)
+  private def toSpiContentLoader(javaContentLoader: ContentLoader): SpiAgent.SpiContentLoader =
+    AgentImpl.toSpiContentLoader(javaContentLoader, sdkExecutionContext)
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
     AgentImpl.toSpiMcpEndpoints(remoteMcpTools, guardrails, sdkExecutionContext)

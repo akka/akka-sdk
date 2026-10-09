@@ -289,34 +289,6 @@ public abstract class Agent implements AgentDelegationWorker {
       Builder mcpTools(List<RemoteMcpTools> tools);
 
       /**
-       * Sets a custom image loader for loading images from URIs.
-       *
-       * <p>When multimodal messages contain image references, they are normally automatically
-       * fetched, this however requires that they are public and can be fetched by any HTTP client.
-       * Defining a custom loader makes it possible to load images from custom sources such as cloud
-       * storage, databases, or authenticated endpoints.
-       *
-       * <p>Example:
-       *
-       * <pre>{@code
-       * return effects()
-       *     .imageLoader(new MyImageLoader())
-       *     .userMessage(UserMessage.from(
-       *         MessageContent.TextMessageContent.from("Describe this image"),
-       *         MessageContent.ImageMessageContent.fromUri(imageUri)))
-       *     .thenReply();
-       * }</pre>
-       *
-       * @param imageLoader The image loader implementation
-       * @return this builder for method chaining
-       * @see ImageLoader
-       * @deprecated use contentLoader
-       */
-      @Deprecated(since = "3.5.15", forRemoval = true)
-      @SuppressWarnings("removal")
-      Builder imageLoader(ImageLoader imageLoader);
-
-      /**
        * Sets a custom content loader.
        *
        * <p>When multimodal messages contain image, PDF references, they are normally automatically
@@ -675,33 +647,6 @@ public abstract class Agent implements AgentDelegationWorker {
        * <p>Construct instances using {@link RemoteMcpTools#fromServer(String)}
        */
       Builder mcpTools(List<RemoteMcpTools> tools);
-
-      /**
-       * Sets a custom image loader for loading images from URIs.
-       *
-       * <p>When multimodal messages contain image references, they are normally automatically
-       * fetched, this however requires that they are public and can be fetched by any HTTP client.
-       * Defining a custom loader makes it possible to load images from custom sources such as cloud
-       * storage, databases, or authenticated endpoints.
-       *
-       * <p>Example:
-       *
-       * <pre>{@code
-       * return streamEffects()
-       *     .imageLoader(new MyImageLoader())
-       *     .userMessage(UserMessage.from(
-       *         MessageContent.TextMessageContent.from("Describe this image"),
-       *         MessageContent.ImageMessageContent.fromUri(imageUri)))
-       *     .thenReply();
-       * }</pre>
-       *
-       * @param imageLoader The image loader implementation
-       * @return this builder for method chaining
-       * @deprecated use contentLoader
-       */
-      @Deprecated(since = "3.5.18", forRemoval = true)
-      @SuppressWarnings("removal")
-      Builder imageLoader(ImageLoader imageLoader);
 
       /**
        * Sets a custom content loader.
