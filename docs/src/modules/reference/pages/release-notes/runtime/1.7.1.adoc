@@ -1,0 +1,45 @@
+= Akka Runtime 1.7.1
+:page-summary: Runtime 1.7.1 adds the governance features: the ledger, guardrails for model calls, agent responses and tool calls, evaluators, classifiers, scoped sanitizers, and SPIFFE identities for components.
+
+include::ROOT:partial$include.adoc[]
+
+Released 2026-10-15.
+
+== Governance features
+
+The governance features evolves quickly, the behavior and APIs might change between releases without further notice. See xref:concepts:governance-and-the-runtime.adoc[].
+
+* Ledger: the runtime records agent interactions, tool calls, guardrail decisions, classifications, evaluations, and the control configuration. Each record includes the SPIFFE id, the trace id, and the span id. The xref:sdk:evaluators.adoc#_the_ledger_client[ledger client] fetches the records. The runtime writes the ledger in local development and tests. For a deployed service, the ledger is off by default.
+* Guardrails: the runtime evaluates xref:sdk:agents/guardrails.adoc[guardrails] before each model call, on the final reply of the agent, and before a function tool call. A guardrail receives multimodal content. The runtime also evaluates the guardrails for autonomous agents.
+* Evaluators: the runtime runs an xref:sdk:evaluators.adoc[evaluator] after each interaction of a bound agent and records the evaluation. A durable evaluator runs in several steps and resumes after a restart.
+* Classifiers: the runtime records the result of each xref:sdk:agents/classifiers.adoc[classifier] call in the ledger.
+* Sanitizers: each xref:sdk:sanitization.adoc[sanitizer] is a named entry that can define where it masks and for which agents. The runtime masks the text that it stores in session memory and in the ledger.
+* SPIFFE identities: every component has a SPIFFE identity. An endpoint can read the identity of its caller, and an xref:sdk:access-control.adoc#_component_level_access_with_spiffe[access control list] can match it.
+
+== Other changes
+
+* Agents: the runtime adds agent id and flow id headers to each model request, see xref:sdk:model-provider-details.adoc#_identity_headers[Identity headers].
+* Agents: the token usage includes the prompt cache read and write counts.
+* Agents: cancelling an agent stream cancels the model stream that is in progress.
+* Agents: the runtime sends parallel tool results to Vertex AI as one content.
+* Agents: the runtime closes the MCP client that lists the tools when the listing fails.
+* Autonomous agents: terminating an autonomous agent stops its model loop before the next model call.
+* MCP endpoints: a tool can return structured output.
+* Access control: a `service` matcher with a trailing wildcard, such as `prefix-*`, matches.
+* Service startup: the readiness check reports not ready until `onStartup` has completed. If `onStartup` throws, the runtime logs the error and terminates the instance.
+* Workflows: a command that is pending when the workflow stops gets a reply.
+* Service to service eventing: several producer event transforms can run in parallel.
+* Object storage: S3 supports EKS web identity credentials.
+* Metrics: the cached token usage metric is available for Gemini.
+
+== Noteworthy dependency updates
+
+* Akka core 2.10.23
+* Akka HTTP 10.7.6
+* Akka Projection 1.6.24
+* Akka Management 1.6.5
+* Alpakka Kafka 8.1.0
+* Langchain4j 1.20.2
+* Jackson 2.22.3
+* Netty 4.1.138.Final
+* AWS SDK 2.55.5

@@ -12,6 +12,35 @@ Current versions
 
 == October 2026
 
+[sidebar]
+****
+
+**Akka Verify**
+
+The Akka runtime enforces governance while it executes each agent interaction, see xref:concepts:governance-and-the-runtime.adoc[Governance and the runtime]. xref:sdk:agents/guardrails.adoc[Guardrails] run before each model call, on the final reply of the agent, or before a function tool call, and can deny it. xref:sdk:sanitization.adoc[Sanitizers] mask personal data in model calls, tool results, and logs, and each sanitizer can define where it masks and for which agents. xref:sdk:agents/classifiers.adoc[Classifiers] map text to a score or a label for a guardrail, an evaluator, a sanitizer, or application code to act on. xref:sdk:access-control.adoc#_component_level_access_with_spiffe[Access control lists] can match the SPIFFE identity of the caller, to allow a single component instead of a whole service.
+
+The ledger records every agent interaction with its model calls, tool calls, token usage, and outcome. The new xref:sdk:evaluators.adoc[Evaluator] component assesses the interactions of the agents that you bind it to. The runtime runs an evaluator in the background after each interaction and records the verdict in the ledger.
+
+This functionality evolves quickly, the behavior and APIs might change between releases without further notice.
+
+****
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.7.0-M1[Akka SDK 3.7.0-M1]
+- Runtime 1.7.1
+- Guardrails for model calls, agent responses, and tool calls
+- Classifiers
+- Evaluator component and ledger client
+- Configurable and scoped sanitizers, with custom implementations
+- Component-level access control with SPIFFE identities
+- EvalKit runs every case several times and writes each report as a JSON file, see xref:testing:evaluation/gates-and-reports.adoc#repeated-runs[Running every case several times]
+- Agent id and flow id headers in model requests, see xref:sdk:model-provider-details.adoc#_identity_headers[Identity headers]
+- Prompt cache token counts in the token usage
+- `TextGuardrail`, `Sanitizer`, and `SimilarityGuard` for model requests and model responses are deprecated, see xref:reference:migration-guide.adoc[Migration guide]
+- The `regex-sanitizers` and `predefined-sanitizers` configuration keys are removed. Configure each sanitizer as a named entry of `akka.javasdk.sanitization.sanitizers`
+
+* xref:release-notes/runtime/1.7.1.adoc[Akka Runtime 1.7.1]
+- Governance features: the ledger, guardrails, evaluators, classifiers, scoped sanitizers, and SPIFFE identities for components
+
 * Akka CLI 3.0.77
 - Routes apply command added
 - Akka model and akka optimize support added
