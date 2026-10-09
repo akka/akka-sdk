@@ -85,7 +85,8 @@ Reaching the reliability and availability your deployment is built for depends o
 | Platform observability | Akka | Akka monitors the platform and publishes uptime reports on request.
 | Application observability | Customer | Customer exports app telemetry to their own observability stack.
 | Database and K8s backups | Akka | Akka provides database point-in-time recovery, performs restore tests, owns Velero.
-| Disaster recovery exercises | Shared | Annual or as-agreed joint exercises.
+| Platform disaster recovery validation | Akka | Akka validates disaster recovery for the platform it operates and summarizes the results on request.
+| Application recovery rehearsal | Customer | Customer rehearses recovery of its own applications and data. Akka joins as agreed.
 | Multi-region failover | Akka | Akka operates the failover tooling and runbooks; customer is consulted before failover.
 | Akka console and CLI identity | Customer | Customer's identity provider (IdP) authenticates console/CLI users with MFA.
 | Akka platform-side privileged access | Akka | Teleport-mediated, session-recorded; logs available to customer on request.
