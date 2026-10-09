@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl
 
+import java.time.Duration
+
 import akka.runtime.sdk.spi.SpiDeployedEventingSettings
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3PathAccessStyle
@@ -94,6 +96,42 @@ class SpiSettingsSpec extends AnyWordSpec with Matchers with OptionValues {
       ex.getMessage should include("Unknown S3 access style")
       ex.getMessage should include("sideways")
       ex.getMessage should include("datasets")
+    }
+
+    "use 7 days for cleanup of deleted entities by default" in {
+      SdkRunner.extractSpiSettings(ConfigFactory.load()).cleanupDeletedEntityAfter shouldBe Duration.ofDays(7)
+    }
+
+    "use the configured cleanup of deleted entities" in {
+      val config = ConfigFactory
+        .parseString("akka.javasdk.entity.cleanup-deleted-after = 3 days")
+        .withFallback(ConfigFactory.load())
+      SdkRunner.extractSpiSettings(config).cleanupDeletedEntityAfter shouldBe Duration.ofDays(3)
+    }
+
+    "fail on the unsupported event-sourced-entity.cleanup-deleted-after setting" in {
+      val config = ConfigFactory
+        .parseString("akka.javasdk.event-sourced-entity.cleanup-deleted-after = 3 days")
+        .withFallback(ConfigFactory.load())
+      val ex = intercept[IllegalArgumentException] {
+        SdkRunner.extractSpiSettings(config)
+      }
+      ex.getMessage should include("akka.javasdk.event-sourced-entity.cleanup-deleted-after")
+      ex.getMessage should include("akka.javasdk.entity.cleanup-deleted-after")
+    }
+
+    "fail on the unsupported event-sourced-entity.cleanup-deleted-after setting when both settings are defined" in {
+      val config = ConfigFactory
+        .parseString("""
+          akka.javasdk.entity.cleanup-deleted-after = 3 days
+          akka.javasdk.event-sourced-entity.cleanup-deleted-after = 3 days
+        """)
+        .withFallback(ConfigFactory.load())
+      val ex = intercept[IllegalArgumentException] {
+        SdkRunner.extractSpiSettings(config)
+      }
+      ex.getMessage should include("akka.javasdk.event-sourced-entity.cleanup-deleted-after")
+      ex.getMessage should include("akka.javasdk.entity.cleanup-deleted-after")
     }
   }
 
