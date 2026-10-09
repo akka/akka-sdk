@@ -36,7 +36,7 @@ define antora_mounts
 endef
 
 .SILENT:
-.PHONY: check-optimize
+.PHONY: check-optimize markdown whitepapers whitepapers-ci
 
 build: managed local open
 
@@ -53,15 +53,16 @@ prepare:
 	mkdir -p "${java_managed_attachments}"
 	cp akka-javasdk-testkit/src/main/resources/akka/javasdk/testkit/eval/eval-report.example.json "${java_managed_attachments}/"
 
-managed: check-optimize prepare attributes apidocs examples bundles
+managed: check-optimize prepare apidocs attributes examples bundles
 
-attributes: prepare
+attributes: apidocs
+	test -s target/docs-runtime-version.txt
 	mkdir -p "${managed_partials}"
 	echo "// generated from Makefile" \
 		> "${managed_partials}/attributes.adoc"
 	docs/bin/version.sh | xargs -0  printf ":akka-javasdk-version: %s" \
 		> "${managed_partials}/attributes.adoc"
-	echo ":akka-runtime-version: $$(docs/bin/runtime-version-from-sbt.sh)" \
+	echo ":akka-runtime-version: $$(cat target/docs-runtime-version.txt)" \
 		>> "${managed_partials}/attributes.adoc"
 	echo ":akka-cli-version: ${AKKA_CLI_VERSION}" >> "${managed_partials}/attributes.adoc"
 	echo ":akka-cli-min-version: 3.0.4" >> "${managed_partials}/attributes.adoc"
@@ -77,7 +78,7 @@ attributes: prepare
 
 apidocs: prepare
 	mkdir -p "${java_managed_attachments}"
-	sbt akka-javasdk/doc akka-javasdk-testkit/doc
+	sbt docsApi
 	rsync -a akka-javasdk/target/api/ "${java_managed_attachments}/api/"
 	rsync -a akka-javasdk-testkit/target/api/ "${java_managed_attachments}/testkit/"
 	docs/bin/version.sh > "${java_managed_attachments}/latest-version.txt"
@@ -103,16 +104,30 @@ bundles:
 	./docs/bin/bundle.sh --zip "${java_managed_attachments}/choreography-saga-quickstart.zip" samples/choreography-saga-quickstart
 	./docs/bin/bundle.sh --zip "${java_managed_attachments}/workflow-quickstart.zip" samples/transfer-workflow-compensation
 
+# CI must install browser system dependencies and fail when Node.js is unavailable.
+whitepapers-ci: WHITEPAPERS_REQUIRED := 1
+whitepapers-ci: WHITEPAPERS_INSTALL := 1
+whitepapers-ci: PLAYWRIGHT_INSTALL_FLAGS := --with-deps
+whitepapers-ci: whitepapers
+
 whitepapers:
 	if ! command -v node >/dev/null 2>&1; then \
+	  if [ "$(WHITEPAPERS_REQUIRED)" = 1 ]; then \
+	    echo "Node.js is required to render white paper PDFs." >&2; exit 1; \
+	  fi; \
 	  echo ">> Skipping white paper PDF: Node.js not found (install Node to render it locally)."; \
 	else \
-	  if [ ! -d docs/bin/whitepaper/node_modules ]; then \
-	    echo ">> Installing white paper render tooling (Playwright + Chromium), first run only..."; \
-	    (cd docs/bin/whitepaper && npm install && npx playwright install chromium); \
+	  if [ "$(WHITEPAPERS_INSTALL)" = 1 ] || [ ! -d docs/bin/whitepaper/node_modules ]; then \
+	    echo ">> Installing white paper render tooling (Playwright + Chromium)..."; \
+	    (cd docs/bin/whitepaper && npm install && npx playwright install $(PLAYWRIGHT_INSTALL_FLAGS) chromium --only-shell) || exit 1; \
 	  fi; \
 	  node docs/bin/whitepaper/render-pdf.mjs "${TARGET_DIR}"; \
 	fi
+
+markdown:
+	test -d "${TARGET_DIR}"
+	npm ci --prefix docs/bin/markdown
+	./docs/bin/docs2markdown.sh
 
 done:
 	@echo "Generated docs at ${TARGET_DIR}/index.html"

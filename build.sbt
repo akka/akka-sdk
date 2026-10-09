@@ -25,6 +25,8 @@ ThisBuild / dependencyOverrides ++= Dependencies.jacksonModules
 lazy val checkRuntimeDependencyAlignment =
   taskKey[Unit]("Verify direct dependency versions against the versions the Akka Runtime resolves")
 
+lazy val docsApi = taskKey[Unit]("Generate API documentation and record the Akka Runtime version for the docs")
+
 lazy val `akka-javasdk-root` = project
   .in(file("."))
   .aggregate(
@@ -251,6 +253,16 @@ checkRuntimeDependencyAlignment := RuntimeDependencyCheck.check(
   (akkaJavaSdk / scalaBinaryVersion).value,
   (LocalRootProject / baseDirectory).value,
   streams.value.log)
+
+// The root aggregates all projects; this task schedules only the two published API references.
+docsApi / aggregate := false
+docsApi := {
+  (akkaJavaSdk / Compile / doc).value
+  (akkaJavaSdkTestKit / Compile / doc).value
+  IO.write(
+    (LocalRootProject / baseDirectory).value / "target/docs-runtime-version.txt",
+    (akkaJavaSdk / akkaRuntimeVersion).value + "\n")
+}
 
 addCommandAlias("formatAll", "scalafmtAll; javafmtAll")
 

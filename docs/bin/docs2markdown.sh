@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run `make prod` and `npm ci --prefix docs/bin/markdown` first.
+# Run `make markdown` after building the site.
 
 # abort script if a command fails
 set -euo pipefail
