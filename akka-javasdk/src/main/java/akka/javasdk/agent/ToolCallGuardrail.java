@@ -21,6 +21,22 @@ import java.util.concurrent.CompletionStage;
  */
 public non-sealed interface ToolCallGuardrail extends Guardrail {
 
+  /** Where the called tool runs: {@link FunctionTool} or {@link RemoteMcp}. */
+  sealed interface ToolOrigin {
+
+    /** A function tool of the agent. */
+    record FunctionTool() implements ToolOrigin {}
+
+    /**
+     * A tool on a remote MCP server.
+     *
+     * @param endpoint the URI of the MCP server. For {@link RemoteMcpTools#fromServer} it is the
+     *     URI you pass. For {@link RemoteMcpTools#fromService} it is {@code
+     *     http://<service-name>/mcp}.
+     */
+    record RemoteMcp(String endpoint) implements ToolOrigin {}
+  }
+
   /**
    * Per-call context passed to a {@link ToolCallGuardrail} during {@link ToolCallGuardrail#decide}.
    *
@@ -34,7 +50,7 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
     /** The id of the agent performing the tool call. */
     String agentId();
 
-    /** The name of the tool about to be called. */
+    /** The name of the tool about to be called. For an MCP tool, the name on the MCP server. */
     String toolName();
 
     /**
@@ -43,11 +59,17 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
      */
     String toolCallId();
 
-    /** The raw JSON arguments the model produced for the tool call. */
+    /**
+     * The raw JSON arguments the model produced for the tool call. For an MCP tool, the arguments
+     * after {@link RemoteMcpTools.ToolInterceptor#interceptRequest}.
+     */
     String arguments();
 
     /** The session id of the interaction. */
     String sessionId();
+
+    /** Where the called tool runs. */
+    ToolOrigin origin();
 
     /**
      * Provides access to tracing for custom application-specific tracing.
