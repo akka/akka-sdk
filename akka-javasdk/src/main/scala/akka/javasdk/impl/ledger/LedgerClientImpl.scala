@@ -231,6 +231,7 @@ private[ledger] object LedgerClientImpl {
         case SpiLedger.FailureReason.McpToolCall        => Failure.FailureReason.MCP_TOOL_CALL
         case SpiLedger.FailureReason.Guardrail          => Failure.FailureReason.GUARDRAIL
         case SpiLedger.FailureReason.ContentLoading     => Failure.FailureReason.CONTENT_LOADING
+        case SpiLedger.FailureReason.Cancelled          => Failure.FailureReason.CANCELLED
       }
     }
 

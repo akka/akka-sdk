@@ -38,6 +38,11 @@ public record Failure(FailureReason reason, String description) {
     /** A guardrail rejected the interaction. */
     GUARDRAIL,
     /** Referenced content (for example an image or PDF) could not be loaded. */
-    CONTENT_LOADING
+    CONTENT_LOADING,
+    /**
+     * The caller cancelled the request or stopped reading a streamed reply, or the agent was
+     * stopped.
+     */
+    CANCELLED
   }
 }
