@@ -15,6 +15,7 @@ import scala.jdk.FutureConverters._
 import scala.jdk.OptionConverters._
 
 import akka.annotation.InternalApi
+import akka.javasdk.agent.Agent
 import akka.javasdk.agent.MessageContent
 import akka.javasdk.evaluation.Evaluation
 import akka.javasdk.impl.ErrorHandling
@@ -170,8 +171,12 @@ private[ledger] object LedgerClientImpl {
     new ModelResponse(
       response.id,
       response.content,
-      response.inputTokenCount,
-      response.outputTokenCount,
+      new Agent.TokenUsage(
+        response.tokenUsage.inputTokenCount,
+        response.tokenUsage.outputTokenCount,
+        response.tokenUsage.cacheReadInputTokenCount,
+        response.tokenUsage.cacheWriteInputTokenCount,
+        response.tokenUsage.effectiveInputTokenCount),
       response.thinking,
       response.toolCalls.map(toToolCall).asJava)
 
@@ -219,7 +224,8 @@ private[ledger] object LedgerClientImpl {
 
   private def toFailureReason(reason: SpiLedger.FailureReason): Failure.FailureReason =
     knownOr(Failure.FailureReason.UNSPECIFIED) {
-      reason match {
+      // FIXME temporary until akka/akka-sdk#2026 maps Cancelled
+      (reason: @unchecked) match {
         case SpiLedger.FailureReason.Unspecified        => Failure.FailureReason.UNSPECIFIED
         case SpiLedger.FailureReason.Model              => Failure.FailureReason.MODEL
         case SpiLedger.FailureReason.RateLimit          => Failure.FailureReason.RATE_LIMIT
