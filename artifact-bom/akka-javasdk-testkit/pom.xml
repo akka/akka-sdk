@@ -24,12 +24,12 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.6.4</version>
+                <version>1.6.5</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
-                <version>1.6.4</version>
+                <version>1.6.5</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback.contrib</groupId>
@@ -725,17 +725,17 @@
             <dependency>
                 <groupId>io.akka</groupId>
                 <artifactId>akka-runtime-core_2.13</artifactId>
-                <version>1.7.1-4-061a4588-dev-SNAPSHOT</version>
+                <version>1.7.1-12-e287cc36-dev-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.akka</groupId>
                 <artifactId>akka-runtime-dev_2.13</artifactId>
-                <version>1.7.1-4-061a4588-dev-SNAPSHOT</version>
+                <version>1.7.1-12-e287cc36-dev-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.akka</groupId>
                 <artifactId>akka-sdk-spi_2.13</artifactId>
-                <version>1.7.1-4-061a4588-dev-SNAPSHOT</version>
+                <version>1.7.1-12-e287cc36-dev-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
@@ -1561,12 +1561,12 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.6.4</version>
+            <version>1.6.5</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
-            <version>1.6.4</version>
+            <version>1.6.5</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback.contrib</groupId>
@@ -2262,17 +2262,17 @@
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-runtime-core_2.13</artifactId>
-            <version>1.7.1-4-061a4588-dev-SNAPSHOT</version>
+            <version>1.7.1-12-e287cc36-dev-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-runtime-dev_2.13</artifactId>
-            <version>1.7.1-4-061a4588-dev-SNAPSHOT</version>
+            <version>1.7.1-12-e287cc36-dev-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-sdk-spi_2.13</artifactId>
-            <version>1.7.1-4-061a4588-dev-SNAPSHOT</version>
+            <version>1.7.1-12-e287cc36-dev-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
