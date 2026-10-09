@@ -28,7 +28,7 @@ public sealed interface Guardrail
    * @deprecated Use {@link Decision} from {@link ToolCallGuardrail}, {@link ModelCallGuardrail} or
    *     {@link AgentResponseGuardrail}.
    */
-  @Deprecated(since = "3.6.0", forRemoval = true)
+  @Deprecated(since = "3.7.0", forRemoval = true)
   record Result(boolean passed, String explanation) {
     public static final Result OK = new Result(true, "");
   }

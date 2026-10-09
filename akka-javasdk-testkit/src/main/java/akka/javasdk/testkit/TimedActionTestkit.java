@@ -19,9 +19,9 @@ import java.util.function.Supplier;
  *
  * <p>To test a TimedAction create a testkit instance by calling one of the available {@code
  * TimedActionTestkit.of} methods. The returned testkit can be used as many times as you want. It
- * doesn't preserve any state between invocations.
+ * does not preserve any state between invocations.
  *
- * <p>Use the {@code call or stream} methods to interact with the testkit.
+ * <p>Use the {@code method} methods to interact with the testkit.
  */
 public class TimedActionTestkit<A extends TimedAction> {
 
@@ -91,33 +91,7 @@ public class TimedActionTestkit<A extends TimedAction> {
     return action;
   }
 
-  /**
-   * The {@code call} method can be used to simulate a unary call to the Action. The passed java
-   * lambda should return an Action.Effect. The Effect is interpreted into an ActionResult that can
-   * be used in test assertions.
-   *
-   * @param func A function from Action to Action.Effect
-   * @return an ActionResult
-   * @deprecated Use "method(MyTimedAction::myCommandHandler).invoke()" instead
-   */
-  @Deprecated(since = "3.5.5", forRemoval = true)
-  public TimedActionResult call(akka.japi.function.Function<A, TimedAction.Effect> func) {
-    return call(func, Metadata.EMPTY);
-  }
-
-  /**
-   * The {@code call} method can be used to simulate a unary call to the Action. The passed java
-   * lambda should return an Action.Effect. The Effect is interpreted into an ActionResult that can
-   * be used in test assertions.
-   *
-   * @param func A function from Action to Action.Effect
-   * @param metadata A metadata passed as a call context
-   * @return an ActionResult
-   * @deprecated Use "method(MyTimedAction::myCommandHandler).withMetadata(metadata).invoke()"
-   *     instead
-   */
-  @Deprecated(since = "3.5.5", forRemoval = true)
-  public TimedActionResult call(
+  private TimedActionResult call(
       akka.japi.function.Function<A, TimedAction.Effect> func, Metadata metadata) {
     TestKitCommandContextTimed context =
         new TestKitCommandContextTimed(metadata, MockRegistry.EMPTY);

@@ -4,7 +4,6 @@
 
 package akka.javasdk.impl.agent
 
-import scala.annotation.nowarn
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 import akka.annotation.InternalApi
@@ -12,7 +11,6 @@ import akka.javasdk.CommandException
 import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent.StreamEffect
 import akka.javasdk.agent.ContentLoader
-import akka.javasdk.agent.ImageLoader
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.RemoteMcpTools
@@ -122,12 +120,6 @@ private[javasdk] final class AgentStreamEffectImpl
 
   override def tools(toolInstancesOrClasses: java.util.List[AnyRef]): StreamEffect.Builder = {
     updateRequestModel(_.addTools(toolInstancesOrClasses.asScala.toSeq))
-    this
-  }
-
-  @nowarn("msg=deprecated")
-  override def imageLoader(loader: ImageLoader): StreamEffect.Builder = {
-    updateRequestModel(_.withContentLoader(loader))
     this
   }
 
