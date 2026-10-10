@@ -15,161 +15,35 @@ The export format can either be protobuf or line separated JSON.
 
 == Prepare
 
-Before you can perform an export or import, you will need access to an object store. In regions where Akka has configured a platform-managed object store for your organization, no setup is required — you can pass the `--platform-managed` flag directly to export and import commands. Otherwise, you will need to set up your own object store as described in the sections below.
+Before you can perform an export or import, you need an object store that Akka can access, and you need to give Akka permission to use it. Set up the object store on the cloud provider that your Akka region runs on:
 
-=== Preparing on AWS
+* xref:data-management-aws.adoc[AWS: S3]
+* xref:data-management-gcp.adoc[GCP: Google Cloud Storage]
+* xref:data-management-azure.adoc[Azure: Blob Storage]
 
-On AWS, you will need to:
+=== Authentication options
 
-1. Create an S3 bucket for the export/import to be written to or read from.
-2. Create a user for Akka to use to perform operations on S3.
-3. Create an IAM policy that grants allow permission for operations on the S3 bucket and objects in that bucket.
-4. Attach the IAM policy to user created in step 2.
-5. Create an access key for the user created in step 2.
-6. Place the access key created in step 5 in an Akka secret.
+Akka supports these ways to authenticate to the object store:
 
-==== Create an S3 bucket
+Workload identity (recommended)::
+Akka presents a short-lived OIDC token to the cloud provider, and the cloud provider exchanges it for temporary credentials. You do not create, store, or rotate any long-lived credentials. For background, see xref:workload-identity.adoc[]. Use this option unless you have a reason not to.
 
-We recommend creating an S3 bucket in the same region as the Akka region your service is running in. If you already have a bucket that you would like to use for this, you can skip this step. For the purposes of these instructions, we are going to call the bucket `my-akka-bucket`.
+Credentials in an Akka secret::
+You create a user, service account, or application on the cloud provider, and store its credentials in an Akka secret. You have to rotate these credentials yourself.
 
-Instructions for creating a bucket in AWS can be found https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-bucket-overview.html[here, window="new"].
+Platform managed store::
+In a small number of regions, Akka can provision an object store for specific customers. This option is not generally available. If it does not apply to your organization, use one of the options above. See <<_platform_managed_store,Platform managed store>>.
 
-==== Create a user
+=== Workload identity subject
 
-For the purposes of these instructions, we are going to call the user `my-akka-user`. Instructions for creating users in AWS can be found https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html[here, window="new"].
+The data management tool authenticates with its own identity, which is separate from the identities of your services. The OIDC token that Akka issues has this `sub` claim:
 
-==== Create an IAM policy
-
-For imports, the IAM policy must grant `ListBucket` permissions on the bucket, and `GetObject` permissions on the object paths you wish to export to. For exports, `PutObject` and `DeleteObject` will also be needed on the object paths. Here is an example policy:
-
-[source,json]
+[source]
 ----
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "VisualEditor0",
-            "Effect": "Allow",
-            "Action": [
-                "s3:PutObject",
-                "s3:GetObject",
-                "s3:ListBucket",
-                "s3:DeleteObject"
-            ],
-            "Resource": [
-                "arn:aws:s3:::my-akka-bucket",
-                "arn:aws:s3:::my-akka-bucket/*"
-            ]
-        }
-    ]
-}
+system:serviceaccount:<project-id>:data-management
 ----
 
-Instructions for creating IAM policies in AWS can be found https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_create-console.html[here, window="new"].
-
-==== Attach IAM policy to user
-
-Having created the policy, you can now attach the policy to the user you created earlier. Instructions for doing that can be found https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-attach-detach.html[here, window="new"].
-
-==== Create an access key
-
-Now that the user has the right permissions, you need to create an access key for that user. Instructions for doing this can be found https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html[here, window="new"]. Copy the access key ID and secret access key for use in the next step.
-
-==== Create an Akka secret with the access key
-
-Now the access key that you created needs to be given to Akka. This can be done by creating an Akka secret. We are going to call this secret `my-credentials`:
-
-[source,bash]
-----
-akka secrets create generic my-credentials \
-  --literal access-key-id=C2VJCMV0IHNLY3JLDCBZZWNYZXQK \
-  --literal secret-access-key=dGhpcyBpcyB2ZXJ5IHNlY3JldCBpcyBpdCBub3QK
-----
-
-Note that the keys `access-key-id` and `secret-access-key` can be called by other names, but these are the default names that the data management tool expects, so using these names will require less configuration later on.
-
-=== Preparing on GCP
-
-On GCP, you will need to:
-
-1. Create an GCS bucket for the export/import to be written to or read from.
-2. Create a service account for Akka to use to perform operations on GCS.
-3. Grant the service account access to the GCS bucket.
-4. Create service account key for the service account.
-5. Place the service account key JSON in an Akka secret.
-
-==== Create a GCS bucket
-
-We recommend creating a GCS bucket in the same region as the Akka service is running. If you already have a bucket that you would like to use for this, you can skip this step. For the purposes of these instructions, we are going to call the bucket `my-akka-bucket`.
-
-Instructions for creating a bucket in GCS can be found https://cloud.google.com/storage/docs/creating-buckets[here, window="new"].
-
-==== Create a service account
-
-For the purposes of these instructions, we are going to call the user `my-akka-service-account`. Instructions for creating service accounts in GCP can be found https://cloud.google.com/iam/docs/service-accounts-create[here, window="new"].
-
-==== Granting access
-
-For exports, you will need to grant the service account the Storage Object Admin role to the bucket (`roles/storage.objectAdmin`). For imports, you will need to grant the service account the Storage Object Viewer role to the bucket (`roles/storage.objectViewer`). Instructions for managing IAM policies for buckets can be found https://cloud.google.com/storage/docs/access-control/using-iam-permissions[here, window="new"].
-
-==== Create the service account key
-
-You will need to create a JSON service account key for the `my-akka-service-account` for Akka to use to access the bucket. This can be done by following https://cloud.google.com/iam/docs/keys-create-delete[these instructions, window="new"]. Once the key is created, place it in a file called `key.json`.
-
-==== Create an Akka secret
-
-You now need to place the previously created key in an Akka secret. For the purpose of these instructions, we are going to call this secret `my-credentials`. While the name of the file in the secret can be anything, we recommend `key.json` as this is the default that subsequent commands will use.
-
-[source,bash]
-----
-akka secrets create generic my-credentials --from-file key.json=path/to/key.json
-----
-
-=== Preparing on Azure
-
-On Azure, you will need to:
-
-. Create an Azure Storage account and a blob container for the export/import to be written to or read from.
-. Register a Microsoft Entra application (service principal) for Akka to use to perform operations on the container.
-. Create a client secret for the application.
-. Assign the service principal a role granting access to the container.
-. Place the service principal credentials in an Akka secret.
-
-==== Create a storage account and container
-
-We recommend creating the storage account in the same region as the Akka region your service is running in. If you already have a storage account and container that you would like to use for this, you can skip this step. For the purposes of these instructions, we're going to call the storage account `myakkastorage` and the container `my-akka-container`.
-
-Instructions for creating a storage account can be found https://learn.microsoft.com/azure/storage/common/storage-account-create[here], and for creating a blob container https://learn.microsoft.com/azure/storage/blobs/blob-containers-portal[here].
-
-==== Register an application
-
-For the purposes of these instructions, we're going to call the application `my-akka-app`. Registering an application creates an associated service principal that Akka will authenticate as. Instructions for registering an application in Microsoft Entra ID can be found https://learn.microsoft.com/entra/identity-platform/quickstart-register-app[here].
-
-Once registered, note the *Application (client) ID* and the *Directory (tenant) ID* from the application's overview page — these are needed later.
-
-==== Create a client secret
-
-You will need to create a client secret for `my-akka-app` for Akka to use to authenticate. Instructions for doing this can be found https://learn.microsoft.com/entra/identity-platform/quickstart-register-app#add-credentials[here]. Copy the secret *Value* when it is created — it cannot be retrieved again afterwards.
-
-==== Assign a role
-
-For exports, you will need to assign the service principal the *Storage Blob Data Contributor* role on the container, which grants read, write, and delete permissions. For imports, the *Storage Blob Data Reader* role is sufficient. Roles can be assigned at the container, storage account, or resource group scope; we recommend scoping to the container for least privilege.
-
-Instructions for assigning Azure roles to a service principal can be found https://learn.microsoft.com/azure/role-based-access-control/role-assignments-portal[here].
-
-==== Create an Akka secret
-
-You now need to place the service principal credentials in an Akka secret. For the purpose of these instructions, we're going to call this secret `my-credentials`:
-
-[source,bash]
-----
-akka secrets create generic my-credentials \
-  --literal tenant-id=<directory-tenant-id> \
-  --literal client-id=<application-client-id> \
-  --literal client-secret=<client-secret-value>
-----
-
-Note that the keys `tenant-id`, `client-id`, and `client-secret` can be called by other names, but these are the default names that the data management tool expects, so using these names will require less configuration later on.
+The `<project-id>` is the UUID of your Akka project, which you can get with `akka project get`. The name of the service account is `data-management`, without the `klx-` prefix that services use. The same identity is used for every export and import in the project. You grant this identity access to the object store in your cloud provider, using the steps on the setup page for your provider.
 
 == Data format
 
@@ -292,51 +166,58 @@ The `--include-event-sourced-entities` flag is required. The export command fail
 
 By default, the export will be run synchronously, displaying the progress of the export as it runs. Cancelling the export command will not stop the export, it will continue to run in the background. The export command can be run asynchronously by passing the `--async` flag.
 
-=== Exporting to the platform-managed store
-
-If Akka has provisioned a platform-managed object store for your organization in your region, you can export to it without any bucket or credential setup:
-
-[source,bash]
-----
-akka service data export assets --platform-managed --include-event-sourced-entities
-----
-
-An optional prefix can be prepended to the exported object names using the `--platform-managed-object-prefix` argument, which is useful for organizing multiple exports:
-
-[source,bash]
-----
-akka service data export assets --platform-managed \
-  --platform-managed-object-prefix my-export/ \
-  --include-event-sourced-entities
-----
-
 === Exporting to AWS S3
 
-To export to S3, you must supply the S3 credentials secret via the `--s3-secret` argument. You also need to supply the bucket name using the `--s3-bucket` argument, and if that bucket does not live in the same region as your service is running, you must supply the region name with the `--s3-region` argument.
+To export to S3 using workload identity, pass `--s3-workload-identity`, the ARN of the IAM role to assume with `--s3-role-arn`, and the bucket name with `--s3-bucket`:
+
+[source,bash]
+----
+akka service data export assets --s3-workload-identity \
+  --s3-role-arn arn:aws:iam::123456789012:role/akka-data-management \
+  --s3-bucket my-akka-bucket --include-event-sourced-entities
+----
+
+To use credentials in an Akka secret instead, pass the secret with `--s3-secret` in place of the workload identity flags. If the bucket does not live in the same region as your service, supply the region name with `--s3-region`.
 
 An optional prefix can be prepended to the names of the files that get exported, this can be specified using the `--s3-object-prefix` argument.
 
+See xref:data-management-aws.adoc[] for how to set up the role and the bucket.
+
 === Exporting to GCS
 
-To export to GCS, you must supply the GCS credentials secret via the `--gcs-secret` argument. You also need to supply the bucket name using the `--gcs-bucket` argument.
-
-An optional prefix can be prepended to the names of the files that get exported, this can be specified using the `--gcs-object-prefix` argument.
-
-=== Exporting to Azure Blob Storage
-
-To export to Azure Blob Storage, you must supply the credentials secret via the `--abs-secret` argument. You also need to supply the container name using the `--abs-container` argument, and the storage account endpoint using the `--abs-endpoint-url` argument (for example, `https://myakkastorage.blob.core.windows.net`).
+To export to GCS using workload identity, pass `--gcs-workload-identity`, the audience with `--gcs-audience`, and the bucket name with `--gcs-bucket`:
 
 [source,bash]
 ----
-akka service data export assets --abs-secret my-credentials \
+akka service data export assets --gcs-workload-identity \
+  --gcs-audience //iam.googleapis.com/projects/791645197608/locations/global/workloadIdentityPools/kalix-dev.svc.id.goog \
+  --gcs-bucket my-akka-bucket --include-event-sourced-entities
+----
+
+To impersonate a Google service account after the token exchange, also pass `--gcs-impersonate-service-account`. To use a service account key in an Akka secret instead, pass the secret with `--gcs-secret` in place of the workload identity flags.
+
+An optional prefix can be prepended to the names of the files that get exported, this can be specified using the `--gcs-object-prefix` argument.
+
+The audience is the workload identity pool printed by `akka projects regions workload-identity-info`, or the provider in your own pool. See xref:data-management-gcp.adoc[] for how to set up access and the bucket.
+
+=== Exporting to Azure Blob Storage
+
+To export to Azure Blob Storage using workload identity, pass `--abs-workload-identity`, the Microsoft Entra tenant ID with `--abs-tenant-id`, the application client ID with `--abs-client-id`, the container name with `--abs-container`, and the storage account endpoint with `--abs-endpoint-url` (for example, `https://myakkastorage.blob.core.windows.net`):
+
+[source,bash]
+----
+akka service data export assets --abs-workload-identity \
+  --abs-tenant-id <tenant-id> --abs-client-id <client-id> \
   --abs-container my-akka-container \
   --abs-endpoint-url https://myakkastorage.blob.core.windows.net \
   --include-event-sourced-entities
 ----
 
-If the keys inside the secret use names other than the defaults (`tenant-id`, `client-id`, `client-secret`), supply them with the `--abs-tenant-id-key`, `--abs-client-id-key`, and `--abs-client-secret-key` arguments respectively.
+To use a client secret in an Akka secret instead, pass the secret with `--abs-secret` in place of the workload identity flags. If the keys inside the secret use names other than the defaults (`tenant-id`, `client-id`, `client-secret`), supply them with the `--abs-tenant-id-key`, `--abs-client-id-key`, and `--abs-client-secret-key` arguments respectively.
 
 An optional prefix can be prepended to the names of the files that get exported, this can be specified using the `--abs-object-prefix` argument.
+
+See xref:data-management-azure.adoc[] for how to set up the application and the container.
 
 == Running imports
 
@@ -352,29 +233,11 @@ When importing to a service, the first thing Akka will do is pause that service.
 
 If you wish to clear the services database before importing, use the `--truncate` flag. This will delete all existing data in the service.
 
-=== Importing from the platform-managed store
-
-If Akka has provisioned a platform-managed object store for your organization in your region, you can import from it without any bucket or credential setup:
-
-[source,bash]
-----
-akka service data import assets --platform-managed --include-event-sourced-entities
-----
-
-If the export was created with a `--platform-managed-object-prefix`, supply the same prefix when importing:
-
-[source,bash]
-----
-akka service data import assets --platform-managed \
-  --platform-managed-object-prefix my-export/ \
-  --include-event-sourced-entities
-----
-
 === Importing from S3, GCS or Azure Blob Storage
 
 The names of the files to import can either be specified explicitly, by passing `--event-sourced-entity-object` and `--event-sourced-entity-snapshot-object` flags, or Akka can use the default filenames that it selects when creating an export. In the latter case, the `--include-event-sourced-entities` flag is required, so Akka knows to look for the default event sourced entity object. `--s3-object-prefix`, `--gcs-object-prefix`, and `--abs-object-prefix` can be used to prepend a prefix to those default filenames.
 
-The flags for specifying credentials and object names specific to S3, GCS, and Azure Blob Storage are the same as for exporting.
+The flags for specifying credentials and object names specific to S3, GCS, and Azure Blob Storage are the same as for exporting. When you use workload identity, the role or application needs read access only. See the setup page for your cloud provider.
 
 == Managing tasks
 
@@ -384,6 +247,25 @@ If a task fails, Akka will attempt to re-run it, using an exponential back-off. 
 
 If you wish to watch a task that is running, you can use `akka service data watch`.
 
+== Platform managed store
+
+In a small number of regions, Akka can provision an object store for specific customers. If this applies to your organization, you do not need to set up a bucket or credentials, and you can pass the `--platform-managed` flag to the export and import commands:
+
+[source,bash]
+----
+akka service data export assets --platform-managed --include-event-sourced-entities
+----
+
+Use `--platform-managed-object-prefix` to prepend a prefix to the object names. If you export with a prefix, supply the same prefix when you import:
+
+[source,bash]
+----
+akka service data import assets --platform-managed \
+  --platform-managed-object-prefix my-export/ \
+  --include-event-sourced-entities
+----
+
 == See also
 
+- xref:workload-identity.adoc[]
 - xref:reference:cli/akka-cli/akka_services_data.adoc#_see_also[`akka service data` commands]
