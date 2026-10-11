@@ -24,7 +24,7 @@ The `onFailure` method can handle the following types of exceptions:
   ** `JsonParsingException` - Response parsing failures (as shown in structured responses)
 
 * **Sanitizer exceptions:**
-  ** `SanitizerException` - A sanitizer class failed
+  ** `akka.javasdk.SanitizerException` - A sanitizer class failed
 
 * **Unknown exceptions:**
   ** `RuntimeException` - For any unexpected errors that do not fall into the above categories
