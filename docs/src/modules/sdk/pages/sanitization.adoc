@@ -146,6 +146,8 @@ include::example$doc-snippets/src/main/java/com/example/sanitizer/TokenLogSaniti
 
 The runtime calls a `LogSanitizer` for every log line of the service, including its own. Its constructor can optionally take an `akka.javasdk.SanitizerContext`, but no other dependency injection. Keep it a fast function of the message and its configuration, and do not log from it. The SDK constructs a class that implements both interfaces as a `LogSanitizer`.
 
+A `TextSanitizer` that throws an exception fails the agent request, so the runtime does not send the text on. The function that the agent gives to `onFailure` receives a `SanitizerException` with the name of the sanitizer, see xref:sdk:agents/failures.adoc[Failure handling].
+
 == Performance considerations
 
 An entry that masks at the `logs` application point is applied to every log entry. In high-throughput applications, numerous sanitization rules or complex regular expressions may impact performance. You should monitor application performance and optimize regex patterns if necessary.

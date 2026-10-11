@@ -28,6 +28,7 @@ import akka.http.scaladsl.model.HttpHeader
 import akka.javasdk.CommandException
 import akka.javasdk.DependencyProvider
 import akka.javasdk.Metadata
+import akka.javasdk.SanitizerException
 import akka.javasdk.Tracing
 import akka.javasdk.agent
 import akka.javasdk.agent.MessageContent.ImageMessageContent
@@ -1045,6 +1046,9 @@ private[impl] final class AgentImpl(
 
             case reason: GuardrailFailure =>
               new Guardrail.GuardrailException(reason.explanation, exc.cause)
+
+            case reason: SanitizerFailure =>
+              new SanitizerException(exc.getMessage, reason.sanitizerName, exc.cause)
 
             case _: ImageLoadingFailure =>
               new RuntimeException(exc.getMessage, exc.cause)

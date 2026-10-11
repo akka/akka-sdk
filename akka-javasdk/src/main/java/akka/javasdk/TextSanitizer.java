@@ -34,7 +34,8 @@ public interface TextSanitizer {
    * threads. The text can be of any size, from a single tool result to a whole model request.
    *
    * <p>A thrown exception fails the call the text was masked for, so unmasked text is never passed
-   * on.
+   * on. For an agent, the function given to {@code onFailure} receives a {@link
+   * SanitizerException}.
    *
    * @return the masked text
    */

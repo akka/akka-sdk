@@ -8,6 +8,7 @@ import akka.annotation.InternalApi;
 import akka.javasdk.CommandException;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
+import akka.javasdk.SanitizerException;
 import akka.javasdk.agent.Guardrail.GuardrailException;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
@@ -466,6 +467,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
        *   <li>{@link McpToolCallExecutionException} - MCP tool execution errors
        *   <li>{@link GuardrailException} - Guardrail violations
+       *   <li>{@link SanitizerException} - A sanitizer class failed
        * </ul>
        */
       FailureBuilder<String> onFailure(Function<Throwable, String> exceptionHandler);
@@ -506,6 +508,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
        *   <li>{@link McpToolCallExecutionException} - MCP tool execution errors
        *   <li>{@link GuardrailException} - Guardrail violations
+       *   <li>{@link SanitizerException} - A sanitizer class failed
        * </ul>
        */
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
@@ -543,6 +546,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
        *   <li>{@link McpToolCallExecutionException} - MCP tool execution errors
        *   <li>{@link GuardrailException} - Guardrail violations
+       *   <li>{@link SanitizerException} - A sanitizer class failed
        * </ul>
        */
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
