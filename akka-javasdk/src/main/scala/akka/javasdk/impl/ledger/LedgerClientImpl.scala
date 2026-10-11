@@ -383,7 +383,19 @@ private[ledger] object LedgerClientImpl {
       response.toolCalls.map(toToolCall).asJava)
 
   private def toToolCall(toolCall: SpiLedger.ToolCall): ToolCall =
-    new ToolCall(toolCall.id, toolCall.name, toolCall.arguments, toolCall.response)
+    new ToolCall(toolCall.id, toolCall.name, toolCall.arguments, toolCall.response, toToolCallStatus(toolCall.status))
+
+  private def toToolCallStatus(status: SpiLedger.ToolCallStatus): ToolCall.Status =
+    knownOr(ToolCall.Status.UNSPECIFIED) {
+      status match {
+        case SpiLedger.ToolCallStatus.Unspecified => ToolCall.Status.UNSPECIFIED
+        case SpiLedger.ToolCallStatus.Completed   => ToolCall.Status.COMPLETED
+        case SpiLedger.ToolCallStatus.Failed      => ToolCall.Status.FAILED
+        case SpiLedger.ToolCallStatus.NotRun      => ToolCall.Status.NOT_RUN
+        case SpiLedger.ToolCallStatus.Pending     => ToolCall.Status.PENDING
+        case SpiLedger.ToolCallStatus.NoResult    => ToolCall.Status.NO_RESULT
+      }
+    }
 
   private def toToolCallResponse(response: SpiLedger.ToolCallResponse): ToolCallResponse =
     new ToolCallResponse(response.id, response.name, response.contents.flatMap(toMessageContent).asJava)
