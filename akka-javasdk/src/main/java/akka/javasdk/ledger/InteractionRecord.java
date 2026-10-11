@@ -128,9 +128,11 @@ public record InteractionRecord(
   /**
    * A flattened, ordered, readable transcript of the interaction: the system message, the input
    * message, each model response (including any thinking and tool calls), and the tool call
-   * responses the model saw as input. For a failed interaction, the last line is {@code Failure: }
-   * followed by the text that {@link #failureSummary()} returns. The transcript of a failed
-   * interaction can include content that a guardrail blocked.
+   * responses the model saw as input. A tool call line ends with the result of the call, or with
+   * the status of a call that did not complete: {@code failed}, followed by the error text when
+   * there is one, {@code not run}, {@code pending} or {@code no result}. For a failed interaction,
+   * the last line is {@code Failure: } followed by the text that {@link #failureSummary()} returns.
+   * The transcript of a failed interaction can include content that a guardrail blocked.
    *
    * <p>Pure rendering over this record; intended for feeding an interaction to an LLM-as-judge or
    * for logging.
@@ -158,7 +160,7 @@ public record InteractionRecord(
             .append("(")
             .append(toolCall.arguments())
             .append(") -> ")
-            .append(toolCall.response())
+            .append(renderResult(toolCall))
             .append("\n");
       }
     }
@@ -175,6 +177,18 @@ public record InteractionRecord(
     }
     failureSummary().ifPresent(summary -> sb.append("Failure: ").append(summary).append("\n"));
     return sb.toString();
+  }
+
+  private static String renderResult(ToolCall toolCall) {
+    var response = toolCall.response();
+    var status = toolCall.status() == null ? ToolCall.Status.UNSPECIFIED : toolCall.status();
+    return switch (status) {
+      case COMPLETED, UNSPECIFIED -> response;
+      case FAILED -> response == null || response.isEmpty() ? "failed" : "failed: " + response;
+      case NOT_RUN -> "not run";
+      case PENDING -> "pending";
+      case NO_RESULT -> "no result";
+    };
   }
 
   private static String render(MessageContent content) {

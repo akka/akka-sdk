@@ -19,6 +19,8 @@ import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.Failure
 import akka.javasdk.ledger.GuardrailDecisionRecord
 import akka.javasdk.ledger.InteractionMetadata
+import akka.javasdk.ledger.ToolCall
+import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiLedger
 import akka.runtime.sdk.spi.{ LedgerClient => SpiLedgerClient }
 import org.scalatest.matchers.should.Matchers
@@ -83,6 +85,15 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       new SpiLedger.ToolOrigin.RemoteMcp("https://mcp.example.com"),
       new GuardrailDecisionRecord.ToolOrigin.RemoteMcp("https://mcp.example.com")))
 
+  private val toolCallStatuses = Table[SpiLedger.ToolCallStatus, ToolCall.Status](
+    ("spi", "public"),
+    (SpiLedger.ToolCallStatus.Unspecified, ToolCall.Status.UNSPECIFIED),
+    (SpiLedger.ToolCallStatus.Completed, ToolCall.Status.COMPLETED),
+    (SpiLedger.ToolCallStatus.Failed, ToolCall.Status.FAILED),
+    (SpiLedger.ToolCallStatus.NotRun, ToolCall.Status.NOT_RUN),
+    (SpiLedger.ToolCallStatus.Pending, ToolCall.Status.PENDING),
+    (SpiLedger.ToolCallStatus.NoResult, ToolCall.Status.NO_RESULT))
+
   // The SPI traits are sealed, so the spec cannot extend them. Each one compiles to an interface, and the only
   // abstract method, the explanation of a decision, reads as empty.
   private def unknownValue[T <: AnyRef](implicit tag: ClassTag[T]): T = {
@@ -100,7 +111,8 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
 
   private def spiInteractionRecord(
       finishReason: SpiLedger.FinishReason = SpiLedger.FinishReason.Stop,
-      failure: Option[SpiLedger.Failure] = None): SpiLedger.InteractionRecord =
+      failure: Option[SpiLedger.Failure] = None,
+      modelResponses: Seq[SpiLedger.ModelResponse] = Seq.empty): SpiLedger.InteractionRecord =
     new SpiLedger.InteractionRecord(
       interactionId = "interaction-1",
       sessionId = "session-1",
@@ -121,11 +133,25 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
         finishReason = finishReason),
       systemMessage = "",
       userMessage = Seq.empty,
-      modelResponses = Seq.empty,
+      modelResponses = modelResponses,
       toolCallResponses = Seq.empty,
       taskContext = None,
       failure = failure,
       timestamp = Instant.EPOCH)
+
+  private def spiModelResponse(toolCallStatus: SpiLedger.ToolCallStatus): SpiLedger.ModelResponse =
+    new SpiLedger.ModelResponse(
+      id = "m1",
+      content = "",
+      tokenUsage = new SpiAgent.SpiTokenUsage(10, 5),
+      thinking = "",
+      toolCalls = Seq(
+        new SpiLedger.ToolCall(
+          id = "t1",
+          name = "calc",
+          arguments = """{"expr":"2+2"}""",
+          response = "4",
+          status = toolCallStatus)))
 
   private def spiEvaluationRecord(
       trigger: SpiLedger.EvaluationTrigger,
@@ -271,6 +297,15 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       }
     }
 
+    "keep the mapping of every known tool call status" in {
+      toolCallStatuses.map(_._2).toSet shouldBe ToolCall.Status.values().toSet
+      forAll(toolCallStatuses) { (spiStatus, publicStatus) =>
+        val record =
+          LedgerClientImpl.toInteractionRecord(spiInteractionRecord(modelResponses = Seq(spiModelResponse(spiStatus))))
+        record.toolCalls().get(0).status() shouldBe publicStatus
+      }
+    }
+
     "read a failure reason that the SDK does not know as unspecified" in {
       val unknown = unknownValue[SpiLedger.FailureReason]
       forAll(failureReasons) { (known, _) => unknown should not be known }
@@ -338,6 +373,23 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
           failMode = SpiLedger.GuardrailFailMode.Unspecified,
           toolOrigin = SpiLedger.ToolOrigin.Unspecified))
     }
+
+    "read a tool call status that the SDK does not know as unspecified" in {
+      val unknown = unknownValue[SpiLedger.ToolCallStatus]
+      forAll(toolCallStatuses) { (known, _) => unknown should not be known }
+
+      val record =
+        LedgerClientImpl.toInteractionRecord(spiInteractionRecord(modelResponses = Seq(spiModelResponse(unknown))))
+
+      val toolCall = record.toolCalls().get(0)
+      toolCall.status() shouldBe ToolCall.Status.UNSPECIFIED
+      toolCall.id() shouldBe "t1"
+      toolCall.name() shouldBe "calc"
+      toolCall.arguments() shouldBe """{"expr":"2+2"}"""
+      toolCall.response() shouldBe "4"
+      record shouldBe LedgerClientImpl.toInteractionRecord(
+        spiInteractionRecord(modelResponses = Seq(spiModelResponse(SpiLedger.ToolCallStatus.Unspecified))))
+    }
   }
 
   "The ledger client" should {
@@ -365,12 +417,14 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       val client = ledgerClient(
         spiInteractionRecord(
           finishReason = unknownValue[SpiLedger.FinishReason],
-          failure = Some(new SpiLedger.Failure(unknownValue[SpiLedger.FailureReason], "failed"))),
+          failure = Some(new SpiLedger.Failure(unknownValue[SpiLedger.FailureReason], "failed")),
+          modelResponses = Seq(spiModelResponse(unknownValue[SpiLedger.ToolCallStatus]))),
         Seq(spiEvaluationRecord(unknownValue[SpiLedger.EvaluationTrigger])))
 
       val interaction = client.getInteraction("interaction-1")
       interaction.metadata().finishReason() shouldBe InteractionMetadata.FinishReason.UNSPECIFIED
       interaction.failure().get().reason() shouldBe Failure.FailureReason.UNSPECIFIED
+      interaction.toolCalls().get(0).status() shouldBe ToolCall.Status.UNSPECIFIED
 
       client.getEvaluation("evaluation-1").trigger() shouldBe EvaluationRecord.Trigger.UNSPECIFIED
     }
