@@ -438,6 +438,8 @@ public class SanitizerIntegrationTest extends TestKitSupport {
 
     var result = askFailureAgent("tell me about failsanitizer");
 
+    // the message names the sanitizer only, the cause can hold the text that it was masking
+    assertThat(result.response()).isEqualTo("Sanitizer [failing] failed");
     assertThat(result.sanitizerName()).isEqualTo("failing");
     assertThat(result.cause()).isEqualTo("java.lang.IllegalStateException: cannot mask");
     assertThat(failureAgentRequests.requests()).isEmpty();
@@ -456,6 +458,7 @@ public class SanitizerIntegrationTest extends TestKitSupport {
 
     var result = askFailureAgent("notes for acme");
 
+    assertThat(result.response()).isEqualTo("Sanitizer [failing] failed");
     assertThat(result.sanitizerName()).isEqualTo("failing");
     assertThat(result.cause()).isEqualTo("java.lang.IllegalStateException: cannot mask");
     // the model got the request that asked for the tool, and no request with the tool result
