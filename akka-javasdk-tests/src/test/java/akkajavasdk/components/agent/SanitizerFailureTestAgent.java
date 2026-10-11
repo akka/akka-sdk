@@ -8,6 +8,7 @@ import akka.javasdk.SanitizerException;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
+import java.util.Objects;
 
 /** Bound by component id to the "failing" sanitizer, see test application.conf. */
 @Component(id = "sanitizer-failure-test-agent")
@@ -24,7 +25,7 @@ public class SanitizerFailureTestAgent extends Agent {
               return switch (cause) {
                 case SanitizerException e ->
                     new SomeResponse(
-                        e.getMessage(), e.getSanitizerName(), String.valueOf(e.getCause()));
+                        e.getMessage(), e.getSanitizerName(), Objects.toString(e.getCause(), null));
                 case RuntimeException e -> throw e;
                 default -> throw new RuntimeException(cause);
               };

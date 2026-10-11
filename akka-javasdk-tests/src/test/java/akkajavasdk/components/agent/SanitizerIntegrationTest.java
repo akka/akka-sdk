@@ -446,6 +446,18 @@ public class SanitizerIntegrationTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldFailTheRequestWithoutACauseWhenASanitizerReturnsNull() {
+    failureAgentModel.fixedResponse("done");
+
+    var result = askFailureAgent("tell me about nullsanitizer");
+
+    assertThat(result.response()).isEqualTo("Sanitizer [failing] returned null");
+    assertThat(result.sanitizerName()).isEqualTo("failing");
+    assertThat(result.cause()).isNull();
+    assertThat(failureAgentRequests.requests()).isEmpty();
+  }
+
+  @Test
   public void shouldFailTheRequestWhenASanitizerFailsOnAToolResult() {
     failureAgentModel
         .whenMessage(message -> message.contains("notes for acme"))
