@@ -38,6 +38,8 @@ public record Failure(FailureReason reason, String description) {
     /** A guardrail rejected the interaction. */
     GUARDRAIL,
     /** Referenced content (for example an image or PDF) could not be loaded. */
-    CONTENT_LOADING
+    CONTENT_LOADING,
+    /** A sanitizer failed. The text it was masking was not passed on. */
+    SANITIZER
   }
 }
