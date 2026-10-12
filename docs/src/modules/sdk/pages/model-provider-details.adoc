@@ -49,13 +49,13 @@ The delay before a retry is:
 * The delay that the model provider asks for, if any. Akka reads it from the `Retry-After` or `retry-after-ms` response header, from the `RetryInfo` detail of a Gemini error response, or from the `x-amz-retry-after` header of a Bedrock error. A random delay of up to 20%, and at least up to 500 milliseconds, is added, so that agents that are rate limited at the same time do not retry at the same time. LocalAI uses the exponential backoff only.
 * Otherwise, an exponential backoff. The first delay is 500 milliseconds and each following delay is 1.5 times longer, up to 30 seconds. A random delay of up to 20% is added.
 
-Akka waits for the delay that the model provider asks for, however long it is. A rate limited agent request can therefore take a long time.
+Akka waits for the delay that the model provider asks for, up to one day. A rate limited agent request can therefore take a long time.
 
 Blocking and streaming requests are retried in the same way, with the same `max-retries` setting. A streaming request is only retried if it fails before any part of the response has been streamed. A failure after that fails the agent request.
 
 Akka does not retry a request to a custom model provider. Retries are up to the custom model implementation.
 
-When a workflow step calls the agent, the step timeout must cover the retries of the agent request and the delays between them. Otherwise the step times out while the agent request still waits, and the recovery strategy of the workflow runs the step again. See xref:workflows.adoc#_timeouts[Timeouts].
+When a workflow step calls the agent, the step timeout must cover the retries of the agent request and the delays between them. Otherwise the step times out while the agent request still waits, and the recovery strategy of the workflow runs the step again. See xref:workflows.adoc#_error_handling[Workflow timeouts and recovery strategy].
 
 == Model configuration
 The following is a list of all natively supported model configurations. Remember that if you do not see your model or model format here, you can always create your own custom configuration and still use all of the Agent-related components.
