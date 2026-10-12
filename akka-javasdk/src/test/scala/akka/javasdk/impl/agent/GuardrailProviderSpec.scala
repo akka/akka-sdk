@@ -111,6 +111,7 @@ object GuardrailProviderSpec {
       arguments = "{}",
       agentId = "tool-agent",
       sessionId = "session-1",
+      origin = SpiGuardrail.ToolOrigin.FunctionTool,
       telemetryContext = Context.root())
 
   private def reasonOf(decision: SpiGuardrail.Decision): String =
@@ -181,7 +182,8 @@ object GuardrailProviderSpec {
       id,
       name,
       Seq(new SpiAgent.TextMessageContent(text)),
-      sanitized = false)
+      sanitized = false,
+      isError = false)
 
   // One tool round: the user question, the model's tool request, and the tool result.
   private val toolRoundMessages: Seq[SpiAgent.ContextMessage] = Seq(
@@ -504,6 +506,7 @@ class GuardrailProviderSpec
         arguments = "{}",
         agentId = "tool-agent",
         sessionId = "session-1",
+        origin = SpiGuardrail.ToolOrigin.FunctionTool,
         telemetryContext = Context.root())
 
       val decision = Await.result(spiGuardrail.decide(withoutId), 3.seconds)

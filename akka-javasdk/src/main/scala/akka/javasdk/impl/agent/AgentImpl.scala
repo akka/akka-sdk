@@ -74,6 +74,7 @@ import akka.runtime.sdk.spi.SpiAgent.McpToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ModelFailure
 import akka.runtime.sdk.spi.SpiAgent.OutputParsingFailure
 import akka.runtime.sdk.spi.SpiAgent.RateLimitFailure
+import akka.runtime.sdk.spi.SpiAgent.SanitizerFailure
 import akka.runtime.sdk.spi.SpiAgent.TimeoutFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallLimitReachedFailure
@@ -440,6 +441,8 @@ private[impl] object AgentImpl {
     }
   }
 
+  // legacy MCP guardrails are still in use, see FIXME below
+  @nowarn("msg=deprecated")
   private[impl] def toSpiMcpEndpoints(
       remoteMcpTools: Seq[RemoteMcpTools],
       guardrails: AgentGuardrails,
@@ -476,7 +479,9 @@ private[impl] object AgentImpl {
             if (remoteMcp.timeout == Duration.Zero) None
             else Some(remoteMcp.timeout),
           requestGuardrails = guardrails.legacyMcpToolRequestGuardrails,
-          responseGuardrails = guardrails.legacyMcpToolResponseGuardrails)
+          responseGuardrails = guardrails.legacyMcpToolResponseGuardrails,
+          // FIXME: pass the tool-call guardrails for MCP tools
+          toolCallGuardrails = (_: String) => Nil)
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
@@ -688,14 +693,17 @@ private[impl] object AgentImpl {
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
           new SpiAgent.ContextMessage.UserMessage(contents, m.sanitized())
         case m: ToolCallResponse =>
+          // FIXME: keep track of tool call errors in session memory and pass isError
           new ContextMessage.ToolCallResponseMessage(
             m.id(),
             m.name(),
             Seq(new SpiAgent.TextMessageContent(m.text())),
-            m.sanitized())
+            m.sanitized(),
+            isError = false)
         case m: SessionMessage.MultimodalToolCallResponse =>
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
-          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents, m.sanitized())
+          // FIXME: keep track of tool call errors in session memory and pass isError
+          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents, m.sanitized(), isError = false)
         case m =>
           throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
       }
@@ -1042,6 +1050,10 @@ private[impl] final class AgentImpl(
               new RuntimeException(exc.getMessage, exc.cause)
 
             case _: ContentLoadingFailure =>
+              new RuntimeException(exc.getMessage, exc.cause)
+
+            // FIXME: map to a specific SDK exception
+            case _: SanitizerFailure =>
               new RuntimeException(exc.getMessage, exc.cause)
 
             // this is expected to be a JsonParsingException, we give it as is to users
