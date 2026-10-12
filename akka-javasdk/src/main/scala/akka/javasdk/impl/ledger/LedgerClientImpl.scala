@@ -231,6 +231,9 @@ private[ledger] object LedgerClientImpl {
         case SpiLedger.FailureReason.McpToolCall        => Failure.FailureReason.MCP_TOOL_CALL
         case SpiLedger.FailureReason.Guardrail          => Failure.FailureReason.GUARDRAIL
         case SpiLedger.FailureReason.ContentLoading     => Failure.FailureReason.CONTENT_LOADING
+        // FIXME: add CANCELLED and SANITIZER to Failure.FailureReason
+        case SpiLedger.FailureReason.Cancelled => Failure.FailureReason.UNSPECIFIED
+        case SpiLedger.FailureReason.Sanitizer => Failure.FailureReason.UNSPECIFIED
       }
     }
 

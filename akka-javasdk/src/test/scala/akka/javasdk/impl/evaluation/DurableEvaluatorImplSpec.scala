@@ -21,6 +21,7 @@ import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
+import io.opentelemetry.context.Context
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -33,7 +34,10 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
   private final class RecorderProbe extends spi.SpiEvaluator.EvaluationRecorder {
     var recorded: Option[(SpiEvaluator.Trigger, SpiEvaluator.Result)] = None
 
-    override def recordResult(trigger: SpiEvaluator.Trigger, result: SpiEvaluator.Result): Future[Done] = {
+    override def recordResult(
+        trigger: SpiEvaluator.Trigger,
+        result: SpiEvaluator.Result,
+        telemetryContext: Context): Future[Done] = {
       recorded = Some((trigger, result))
       Future.successful(Done)
     }
