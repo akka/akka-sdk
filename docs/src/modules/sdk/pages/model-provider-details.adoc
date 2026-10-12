@@ -40,18 +40,22 @@ For models that support thinking, it is enabled through model-specific configura
 by a toggle. Thinking is disabled for all models by default.
 
 === Retries
-Akka retries a request to the model when it fails with a rate limit (HTTP 429), a request timeout (HTTP 408), a server error (HTTP 5xx), a timeout or a connection failure. Other failures, such as an invalid request or an authentication error, are not retried. The `max-retries` setting of the model provider defines the maximum number of retries.
+Akka retries a request to the model when it fails with a rate limit (HTTP 429), a request timeout (HTTP 408), a server error (HTTP 5xx), a timeout or a connection failure. Other failures are not retried. Examples are an invalid request, an authentication error, a response that cannot be parsed and a response that is larger than the maximum response size.
+
+The `max-retries` setting of the model provider defines the maximum number of retries. It applies to each request to the model. An agent request that calls tools makes one request to the model for each round of tool calls, and each of these requests has its own retries.
 
 The delay before a retry is:
 
-* The delay that the model provider asks for, if any. Akka reads it from the `Retry-After` or `retry-after-ms` response header, or from the `RetryInfo` detail of a Gemini error response. A random delay of up to 20%, and at least up to 500 milliseconds, is added, so that agents that are rate limited at the same time do not retry at the same time.
-* Otherwise, an exponential backoff. The first delay is 500 milliseconds and each following delay is 1.5 times longer, with a random delay of up to 20% added. The delay is at most 30 seconds.
+* The delay that the model provider asks for, if any. Akka reads it from the `Retry-After` or `retry-after-ms` response header, from the `RetryInfo` detail of a Gemini error response, or from the `x-amz-retry-after` header of a Bedrock error. A random delay of up to 20%, and at least up to 500 milliseconds, is added, so that agents that are rate limited at the same time do not retry at the same time. LocalAI uses the exponential backoff only.
+* Otherwise, an exponential backoff. The first delay is 500 milliseconds and each following delay is 1.5 times longer, up to 30 seconds. A random delay of up to 20% is added.
 
-A streaming request is only retried if it fails before any part of the response has been streamed. A failure after that fails the agent request.
+Akka waits for the delay that the model provider asks for, however long it is. A rate limited agent request can therefore take a long time.
+
+Blocking and streaming requests are retried in the same way, with the same `max-retries` setting. A streaming request is only retried if it fails before any part of the response has been streamed. A failure after that fails the agent request.
 
 Akka does not retry a request to a custom model provider. Retries are up to the custom model implementation.
 
-To retry an agent request for a longer time, for example for a rate limit that lasts several minutes, call the agent from a workflow with a recovery strategy. See xref:agents/calling.adoc#_drive_the_agent_from_a_workflow[Drive the agent from a workflow].
+When a workflow step calls the agent, the step timeout must cover the retries of the agent request and the delays between them. Otherwise the step times out while the agent request still waits, and the recovery strategy of the workflow runs the step again. See xref:workflows.adoc#_timeouts[Timeouts].
 
 == Model configuration
 The following is a list of all natively supported model configurations. Remember that if you do not see your model or model format here, you can always create your own custom configuration and still use all of the Agent-related components.
