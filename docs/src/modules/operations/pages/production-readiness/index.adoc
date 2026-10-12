@@ -51,7 +51,7 @@ A single named owner (an individual or a designated body such as a go-live board
 
 Akka behaves identically across xref:concepts:deployment-model.adoc[deployment models]. What changes is how much of the operational surface you run:
 
-* *Dedicated*: Akka hosts and operates the platform and connects to you over a private data link, leaving your team the least to run. Akka owns and operates the environment end to end, so disaster recovery exercises are run internally by Akka rather than as a joint customer-facing tabletop.
+* *Dedicated*: Akka hosts and operates the platform and connects to you over a private data link, leaving your team the least to run. Akka owns and operates the environment end to end, so Akka validates disaster recovery for the platform itself. You rehearse recovery of your own applications and data.
 +
 ** xref:operations:production-readiness/dedicated/shared-responsibility.adoc[Shared Responsibility Model]
 ** xref:operations:production-readiness/dedicated/checklist.adoc[Production Readiness Checklist]

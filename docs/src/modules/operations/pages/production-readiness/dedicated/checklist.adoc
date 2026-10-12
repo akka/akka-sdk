@@ -40,14 +40,14 @@ If the business requires rapid, automated cross-region failover, Day 2 Ops is no
 . *Wire your observability.* Logs, metrics, and traces flow to your enterprise platform via the Akka-supplied exporter. Akka cannot see your application data, so observability is yours; it is what lets your team and on-call answer "is the system healthy?".
 . *Make CI/CD routine, including rollback.* Image rollback is the most commonly rehearsed path. Descriptor changes, JWT (JSON Web Token) rotations, and partial migrations need rehearsed rollback paths too.
 . *Test under stress, not just happy path.* Run load, soak, spike, and chaos tests against a realistically-sized dev region before production traffic.
-. *Rehearse recovery.* DR is a two-session exercise: a tabletop covering scenarios, then a live simulation of the scenarios the customer and Akka agree matter most. Business Continuity adds cross-region failover and failback drills.
+. *Rehearse recovery.* Akka validates DR for the platform. You review that validation and rehearse recovery of your own applications and data in two sessions: a tabletop covering scenarios, then a live test of the scenarios that matter most. Business Continuity adds cross-region failover and failback drills.
 . *Sign off explicitly.* A single named owner (an individual or a designated body such as a go-live board) declares the application production-ready.
 ====
 
 [NOTE]
 .*Akka's side*
 ====
-Akka runs a parallel internal pre-production validation against the platform-side commitments in the RACI: backups, replication, observability stack, baseline regional alerts, certificate monitoring, cloud-account audit logging, and security monitoring. This page is the customer-side complement; the two pair together.
+Akka runs a parallel internal pre-production validation against the platform-side commitments in the RACI: backups, disaster recovery, replication, observability stack, baseline regional alerts, certificate monitoring, cloud-account audit logging, and security monitoring. This page is the customer-side complement; the two pair together.
 ====
 
 == Architecture and design review
@@ -337,8 +337,8 @@ Run these against the dev region, sized realistically. Without realistic sizing,
 [cols="1,3", options="header"]
 |===
 | Role | Responsibility
-| Customer | Owns the application-side DR runbook, schedules and runs the drills, rehearses every rollback path (image, descriptor, schema, data, config), and measures time-to-rollback.
-| Shared | Annual disaster-recovery exercise jointly run by Akka and the customer; Akka's 24/7 incident procedure is part of the DR runbook.
+| Customer | Owns the application-side DR runbook, reviews Akka's DR validation summary, schedules and runs the application recovery drills, rehearses every rollback path (image, descriptor, schema, data, config), and measures time-to-rollback.
+| Akka | Validates disaster recovery for the platform it operates and summarizes the results on request. Joins an application recovery exercise as agreed. Akka's 24/7 incident procedure is part of the DR runbook.
 |===
 
 .*Detailed checklist*
@@ -353,7 +353,8 @@ A DR rehearsal is worth as much for what it surfaces as for the recovery itself.
 
 Start with a tabletop: walk failure scenarios end-to-end, confirm who does what, capture prerequisites and gaps. Then exercise the scenarios that matter most live.
 
-* [ ] DR tabletop run with Akka: scenarios walked end-to-end, ownership of each step confirmed, prerequisites and gaps captured (network/firewall changes, data-export destinations, access, and the like)
+* [ ] Akka's platform DR validation summary reviewed with your FDE: recovery scope, recovery time and point objectives, and the assumptions your applications must meet
+* [ ] Application recovery tabletop, with your FDE as agreed: scenarios walked end-to-end, ownership of each step confirmed, prerequisites and gaps captured (network/firewall changes, data-export destinations, access, and the like)
 * [ ] The most important scenarios from the tabletop exercised live, with gaps fed back and re-tests scheduled
 * [ ] DR runbook captured from the exercise: declaration criteria, data restore, region rebuild, cutover, verification
 
@@ -554,7 +555,7 @@ Single-region (not replicated) has no cross-region failover; recovery is a cold 
 Before flipping prod traffic on:
 
 .*Required sign-offs*
-Gather the sign-offs your application and organization require, commonly architecture, security (CISO / InfoSec), compliance (if regulated), SRE / platform (runbook tested, on-call ready), FinOps (cost forecast accepted), the product owner (accepting the SLOs and recovery window), and the DR tabletop plus its live simulation (or the cross-region failover drill at Business Continuity). Which apply depends on the application and the organization.
+Gather the sign-offs your application and organization require, commonly architecture, security (CISO / InfoSec), compliance (if regulated), SRE / platform (runbook tested, on-call ready), FinOps (cost forecast accepted), the product owner (accepting the SLOs and recovery window), and the application recovery tabletop plus its live test (or the cross-region failover drill at Business Continuity). Which apply depends on the application and the organization.
 
 * [ ] *Final go/no-go verification:* the named go/no-go owner confirms every item on this checklist is satisfied, and Akka reviews and confirms that readiness with them before production traffic is enabled
 
