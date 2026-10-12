@@ -27,7 +27,7 @@ object Dependencies {
   val JacksonVersion = "2.22.3"
   val JacksonDatabindVersion = JacksonVersion
   val JacksonAnnotationsVersion = "2.22"
-  val Langchain4jVersion = "1.20.2"
+  val Langchain4jVersion = "1.21.0"
   val LogbackVersion = "1.6.4"
   val LogbackContribVersion = "0.1.5"
   val JUnitVersion = "4.13.2"
