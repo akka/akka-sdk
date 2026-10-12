@@ -442,7 +442,6 @@ private[impl] object AgentImpl {
     }
   }
 
-  // legacy MCP guardrails are still in use, see FIXME below
   @nowarn("msg=deprecated")
   private[impl] def toSpiMcpEndpoints(
       remoteMcpTools: Seq[RemoteMcpTools],

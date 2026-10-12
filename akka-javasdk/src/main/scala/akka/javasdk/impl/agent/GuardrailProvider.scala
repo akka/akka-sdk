@@ -306,6 +306,10 @@ import org.slf4j.LoggerFactory
   private def toSpiSimilarityGuard(g: SimilarityGuard, c: ConfiguredGuardrail): SpiAgent.SimilarityGuard =
     new SpiAgent.SimilarityGuard(c.name, c.category, c.reportOnly, g.badExamplesResourceDir, g.threshold)
 
+  // The use-for values a TextGuardrail can bind to. "*" expands to all of them.
+  private val TextGuardrailUseFor: Set[UseFor] =
+    Set(UseFor.ModelRequest, UseFor.ModelResponse, UseFor.McpToolRequest, UseFor.McpToolResponse)
+
   private val DefaultJailbreak = "default jailbreak"
   private val DefaultModelCallJailbreak = "default model-call jailbreak"
 
@@ -327,10 +331,6 @@ import org.slf4j.LoggerFactory
 
   // The similarity settings shared by SimilarityGuard and ModelCallSimilarityGuard.
   private val SimilarityGuardSettings = Seq("category", "threshold", "report-only", "bad-examples-resource-dir")
-
-  // The use-for values a TextGuardrail can bind to. "*" expands to all of them.
-  private val TextGuardrailUseFor: Set[UseFor] =
-    Set(UseFor.ModelRequest, UseFor.ModelResponse, UseFor.McpToolRequest, UseFor.McpToolResponse)
 
   // Default classifierClient for call sites (and tests) that don't supply one; any call fails
   // descriptively instead of silently returning something.
@@ -435,23 +435,21 @@ import org.slf4j.LoggerFactory
     val c = entry.configuredGuardrail
     val adviceByUseFor = entry.guardrail match {
       case _: SimilarityGuard => similarityGuardAdvice(c)
-      case _                  => DeprecatedUseFor
+      case _: TextGuardrail   => DeprecatedUseFor
+      case _                  => Nil
     }
 
-    val replacements =
-      adviceByUseFor.collect { case (useFor, replacement) if c.useFor.contains(useFor) => replacement }
+    val advice = adviceByUseFor.collect { case (useFor, text) if c.useFor.contains(useFor) => text }
 
-    if (replacements.nonEmpty)
-      log.warn("Guardrail [{}] uses deprecated use-for values. Instead, {}.", c.name, replacements.mkString(", "))
+    if (advice.nonEmpty)
+      log.warn("Guardrail [{}] uses deprecated use-for values. Instead, {}.", c.name, advice.mkString("; "))
   }
 
   private def similarityGuardAdvice(c: ConfiguredGuardrail): Seq[(UseFor, String)] =
-    if (c.name != DefaultJailbreak) DeprecatedSimilarityGuardUseFor
-    else
-      DeprecatedSimilarityGuardUseFor.map {
-        case (UseFor.ModelRequest, _) => UseFor.ModelRequest -> defaultJailbreakAdvice(c)
-        case other                    => other
-      }
+    DeprecatedSimilarityGuardUseFor.map {
+      case (UseFor.ModelRequest, _) if c.name == DefaultJailbreak => UseFor.ModelRequest -> defaultJailbreakAdvice(c)
+      case other                                                  => other
+    }
 
   private def defaultJailbreakAdvice(c: ConfiguredGuardrail): String = {
     val changed = changedDefaultJailbreakSettings(c)
@@ -468,13 +466,8 @@ import org.slf4j.LoggerFactory
     else {
       val modelCall = guardrailsConfig.getConfig(modelCallPath)
       SimilarityGuardSettings.flatMap { key =>
-        val current = Option.when(c.config.hasPath(key)) {
-          c.config.getValue(key).render(ConfigRenderOptions.concise())
-        }
-
-        val target = Option.when(modelCall.hasPath(key)) {
-          modelCall.getValue(key).render(ConfigRenderOptions.concise())
-        }
+        val current = Option.when(c.config.hasPath(key))(c.config.getValue(key).render(ConfigRenderOptions.concise()))
+        val target = Option.when(modelCall.hasPath(key))(modelCall.getValue(key).render(ConfigRenderOptions.concise()))
         current.filterNot(target.contains).map(value => s"$key = $value")
       }
     }
@@ -501,11 +494,8 @@ import org.slf4j.LoggerFactory
         "model call, and AgentResponseGuardrail on the final agent reply." + defaultJailbreakHint)
     }
 
-  @nowarn("cat=deprecation")
   def validate(): Unit =
-    enabledEntries
-      .collect { case entry @ GuardrailEntry(_, _: TextGuardrail) => entry }
-      .foreach(warnOnDeprecatedUseFor)
+    enabledEntries.foreach(warnOnDeprecatedUseFor)
 
   /**
    * The entries to hand to the runtime.

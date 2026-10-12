@@ -11,9 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class RecordingDenyingToolGuard implements ToolCallGuardrail {
 
-  public record Recorded(String toolName, String arguments, ToolOrigin origin) {}
-
-  public static final AtomicReference<Recorded> lastCall = new AtomicReference<>();
+  public static final AtomicReference<CallContext> lastCall = new AtomicReference<>();
 
   private final String denyReason;
 
@@ -23,7 +21,7 @@ public class RecordingDenyingToolGuard implements ToolCallGuardrail {
 
   @Override
   public Decision decide(CallContext ctx) {
-    lastCall.set(new Recorded(ctx.toolName(), ctx.arguments(), ctx.origin()));
+    lastCall.set(ctx);
     return new Decision.Deny(denyReason + " [" + ctx.toolName() + "]");
   }
 }

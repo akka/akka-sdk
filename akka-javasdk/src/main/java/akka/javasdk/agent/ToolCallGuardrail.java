@@ -6,6 +6,8 @@ package akka.javasdk.agent;
 
 import akka.annotation.DoNotInherit;
 import akka.javasdk.Tracing;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -34,11 +36,28 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
      *
      * @param endpoint the URI of the MCP server. For {@link RemoteMcpTools#fromServer} it is the
      *     URI you pass. For {@link RemoteMcpTools#fromService} it is {@code
-     *     http://<service-name>/mcp}.
+     *     http://<service-name>/mcp}. {@link #toString} leaves out the user info and the query
+     *     string.
      */
     record RemoteMcp(String endpoint) implements ToolOrigin {
       public RemoteMcp {
         Objects.requireNonNull(endpoint, "endpoint");
+      }
+
+      @Override
+      public String toString() {
+        return "RemoteMcp[endpoint=" + withoutCredentials(endpoint) + "]";
+      }
+
+      private static String withoutCredentials(String endpoint) {
+        try {
+          URI uri = new URI(endpoint);
+          return new URI(
+                  uri.getScheme(), null, uri.getHost(), uri.getPort(), uri.getPath(), null, null)
+              .toString();
+        } catch (URISyntaxException e) {
+          return "<invalid URI>";
+        }
       }
     }
 
@@ -70,8 +89,9 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
     String toolCallId();
 
     /**
-     * The raw JSON arguments the model produced for the tool call. For an MCP tool, the arguments
-     * after {@link RemoteMcpTools.ToolInterceptor#interceptRequest}.
+     * The raw JSON arguments of the tool call. For an MCP tool with a {@link
+     * RemoteMcpTools.ToolInterceptor}, the arguments that {@link
+     * RemoteMcpTools.ToolInterceptor#interceptRequest} returns.
      */
     String arguments();
 

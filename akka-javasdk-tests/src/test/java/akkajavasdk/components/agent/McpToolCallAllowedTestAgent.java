@@ -8,12 +8,16 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.RemoteMcpTools;
 import akka.javasdk.annotations.Component;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Component(id = "mcp-tool-call-allowed-test-agent")
 public class McpToolCallAllowedTestAgent extends Agent {
   public record SomeResponse(String response) {}
 
+  public static final String REWRITTEN_ARGUMENTS = "{\"echo\":\"rewritten\"}";
+
   public static final AtomicInteger toolResponses = new AtomicInteger();
+  public static final AtomicReference<String> responseArguments = new AtomicReference<>();
 
   public Effect<SomeResponse> ask(String question) {
     return effects()
@@ -27,7 +31,7 @@ public class McpToolCallAllowedTestAgent extends Agent {
                       public String interceptRequest(
                           RemoteMcpTools.ToolInterceptorContext context,
                           String requestPayloadJson) {
-                        return requestPayloadJson;
+                        return REWRITTEN_ARGUMENTS;
                       }
 
                       @Override
@@ -36,7 +40,8 @@ public class McpToolCallAllowedTestAgent extends Agent {
                           String requestPayloadJson,
                           String responsePayload) {
                         toolResponses.incrementAndGet();
-                        return responsePayload;
+                        responseArguments.set(requestPayloadJson);
+                        return "intercepted " + responsePayload;
                       }
                     }))
         .userMessage(question)

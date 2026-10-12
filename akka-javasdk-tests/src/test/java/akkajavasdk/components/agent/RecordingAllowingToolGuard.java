@@ -10,13 +10,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class RecordingAllowingToolGuard implements ToolCallGuardrail {
 
-  public static final AtomicReference<RecordingDenyingToolGuard.Recorded> lastCall =
-      new AtomicReference<>();
+  public static final AtomicReference<CallContext> lastCall = new AtomicReference<>();
 
   @Override
   public Decision decide(CallContext ctx) {
-    lastCall.set(
-        new RecordingDenyingToolGuard.Recorded(ctx.toolName(), ctx.arguments(), ctx.origin()));
+    lastCall.set(ctx);
     return new Decision.Allow();
   }
 }
