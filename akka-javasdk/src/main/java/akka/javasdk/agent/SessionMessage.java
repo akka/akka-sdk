@@ -277,14 +277,32 @@ public sealed interface SessionMessage {
    *     model, with the configured sanitizers applied. The runtime sends such a message to the
    *     model as it is. For a message with false, the runtime masks the text with the current
    *     sanitizers before it sends it. Leave it false in a message that you build.
+   * @param isError true when the tool reported the result as an error. The runtime sends such a
+   *     result to the model as an error result.
    */
   record ToolCallResponse(
-      Instant timestamp, String componentId, String id, String name, String text, boolean sanitized)
+      Instant timestamp,
+      String componentId,
+      String id,
+      String name,
+      String text,
+      boolean sanitized,
+      boolean isError)
       implements SessionMessage {
 
     public ToolCallResponse(
         Instant timestamp, String componentId, String id, String name, String text) {
-      this(timestamp, componentId, id, name, text, false);
+      this(timestamp, componentId, id, name, text, false, false);
+    }
+
+    public ToolCallResponse(
+        Instant timestamp,
+        String componentId,
+        String id,
+        String name,
+        String text,
+        boolean sanitized) {
+      this(timestamp, componentId, id, name, text, sanitized, false);
     }
 
     @Override
@@ -300,6 +318,8 @@ public sealed interface SessionMessage {
    *     model, with the configured sanitizers applied. The runtime sends such a message to the
    *     model as it is. For a message with false, the runtime masks the text with the current
    *     sanitizers before it sends it. Leave it false in a message that you build.
+   * @param isError true when the tool reported the result as an error. The runtime sends such a
+   *     result to the model as an error result.
    */
   record MultimodalToolCallResponse(
       Instant timestamp,
@@ -307,7 +327,8 @@ public sealed interface SessionMessage {
       String id,
       String name,
       List<MessageContent> contents,
-      boolean sanitized)
+      boolean sanitized,
+      boolean isError)
       implements SessionMessage {
 
     public MultimodalToolCallResponse(
@@ -316,7 +337,17 @@ public sealed interface SessionMessage {
         String id,
         String name,
         List<MessageContent> contents) {
-      this(timestamp, componentId, id, name, contents, false);
+      this(timestamp, componentId, id, name, contents, false, false);
+    }
+
+    public MultimodalToolCallResponse(
+        Instant timestamp,
+        String componentId,
+        String id,
+        String name,
+        List<MessageContent> contents,
+        boolean sanitized) {
+      this(timestamp, componentId, id, name, contents, sanitized, false);
     }
 
     @Override

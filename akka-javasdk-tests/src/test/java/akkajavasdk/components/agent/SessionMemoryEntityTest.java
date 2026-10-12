@@ -260,6 +260,71 @@ public class SessionMemoryEntityTest {
   }
 
   @Test
+  public void shouldKeepTheErrorFlagOfToolResponsesInHistoryAndThroughCompaction() {
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+    var contents = List.<SessionMessage.MessageContent>of(new TextMessageContent("no chart"));
+    var toolResponse =
+        new SessionMessage.ToolCallResponse(
+            timestamp, COMPONENT_ID, "call-1", "search", "service unavailable", true, true);
+    var multimodalToolResponse =
+        new MultimodalToolCallResponse(
+            timestamp, COMPONENT_ID, "call-2", "renderChart", contents, false, true);
+    var sequenceNumber =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .sequenceNumber();
+
+    // when
+    var result =
+        testKit
+            .method(SessionMemoryEntity::addInteraction)
+            .invoke(
+                new AddInteractionCmd(
+                    new UserMessage(timestamp, "search", COMPONENT_ID),
+                    List.of(toolResponse, multimodalToolResponse)));
+
+    // then
+    var events = result.getAllEvents();
+    assertThat(((SessionMemoryEntity.Event.ToolResponseMessageAdded) events.get(1)).isError())
+        .isTrue();
+    assertThat(
+            ((SessionMemoryEntity.Event.MultimodalToolResponseMessageAdded) events.get(2))
+                .isError())
+        .isTrue();
+    var messages =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .messages();
+    assertThat(messages.subList(1, 3)).containsExactly(toolResponse, multimodalToolResponse);
+
+    // when compacting the history before the interaction
+    testKit
+        .method(SessionMemoryEntity::compactHistory)
+        .invoke(
+            new SessionMemoryEntity.CompactionCmd(
+                new UserMessage(timestamp, "Summary", COMPONENT_ID),
+                new AiMessage(timestamp, "Summary reply", COMPONENT_ID),
+                sequenceNumber));
+
+    // then the tool responses after the summary keep the flag
+    var compacted =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .messages();
+    assertThat(compacted).contains(toolResponse, multimodalToolResponse);
+  }
+
+  @Test
   public void shouldAddMultipleMessagesToHistory() {
     // given
     var testKit =

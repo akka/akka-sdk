@@ -125,12 +125,19 @@ public final class TestModelProvider implements ModelProvider.Custom {
    * {@code @FunctionTool} returns image bytes); inspect {@link #contents()} to assert on what the
    * model received. {@link #content()} returns the text-only view (text parts joined, image/PDF
    * omitted).
+   *
+   * @param isError true when the tool result was sent to the model as an error result.
    */
-  public record ToolResult(String name, List<MessageContent> contents) implements InputMessage {
+  public record ToolResult(String name, List<MessageContent> contents, boolean isError)
+      implements InputMessage {
+
+    public ToolResult(String name, List<MessageContent> contents) {
+      this(name, contents, false);
+    }
 
     /** Text-only tool result. */
     public ToolResult(String name, String content) {
-      this(name, List.of(MessageContent.TextMessageContent.from(content)));
+      this(name, List.of(MessageContent.TextMessageContent.from(content)), false);
     }
 
     @Override
@@ -321,7 +328,8 @@ public final class TestModelProvider implements ModelProvider.Custom {
       // content part rather than calling toolResult.text(), which throws on non-text results.
       return new ToolResult(
           toolResult.toolName(),
-          toolResult.contents().stream().map(this::toMessageContent).toList());
+          toolResult.contents().stream().map(this::toMessageContent).toList(),
+          Boolean.TRUE.equals(toolResult.isError()));
     }
     return null;
   }

@@ -228,8 +228,9 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     /**
      * An event that adds a message to the history, as opposed to a lifecycle event. The {@code
      * sanitized} component of a user message or a tool response event holds the {@code sanitized}
-     * value of the {@link SessionMessage} that it adds. A stored event without the component reads
-     * as false.
+     * value of the {@link SessionMessage} that it adds. The {@code isError} component of a tool
+     * response event holds the {@code isError} value of the tool response. A stored event without
+     * one of these components reads it as false.
      */
     sealed interface Message {}
 
@@ -297,7 +298,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         String name,
         String content,
         int sizeInBytes,
-        boolean sanitized)
+        boolean sanitized,
+        boolean isError)
         implements Event, Message {
 
       public ToolResponseMessageAdded(
@@ -307,7 +309,18 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           String name,
           String content,
           int sizeInBytes) {
-        this(timestamp, componentId, id, name, content, sizeInBytes, false);
+        this(timestamp, componentId, id, name, content, sizeInBytes, false, false);
+      }
+
+      public ToolResponseMessageAdded(
+          Instant timestamp,
+          String componentId,
+          String id,
+          String name,
+          String content,
+          int sizeInBytes,
+          boolean sanitized) {
+        this(timestamp, componentId, id, name, content, sizeInBytes, sanitized, false);
       }
     }
 
@@ -319,7 +332,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         String name,
         List<SessionMessage.MessageContent> contents,
         int sizeInBytes,
-        boolean sanitized)
+        boolean sanitized,
+        boolean isError)
         implements Event, Message {
 
       public MultimodalToolResponseMessageAdded(
@@ -329,7 +343,18 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           String name,
           List<SessionMessage.MessageContent> contents,
           int sizeInBytes) {
-        this(timestamp, componentId, id, name, contents, sizeInBytes, false);
+        this(timestamp, componentId, id, name, contents, sizeInBytes, false, false);
+      }
+
+      public MultimodalToolResponseMessageAdded(
+          Instant timestamp,
+          String componentId,
+          String id,
+          String name,
+          List<SessionMessage.MessageContent> contents,
+          int sizeInBytes,
+          boolean sanitized) {
+        this(timestamp, componentId, id, name, contents, sizeInBytes, sanitized, false);
       }
     }
   }
@@ -441,7 +466,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               toolCallResponse.name(),
                               toolCallResponse.text(),
                               toolCallResponse.size(),
-                              toolCallResponse.sanitized());
+                              toolCallResponse.sanitized(),
+                              toolCallResponse.isError());
 
                       case MultimodalToolCallResponse multimodalToolCallResponse ->
                           new Event.MultimodalToolResponseMessageAdded(
@@ -451,7 +477,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               multimodalToolCallResponse.name(),
                               multimodalToolCallResponse.contents(),
                               multimodalToolCallResponse.size(),
-                              multimodalToolCallResponse.sanitized());
+                              multimodalToolCallResponse.sanitized(),
+                              multimodalToolCallResponse.isError());
 
                       default -> throw new IllegalArgumentException("Unsupported message: " + msg);
                     })
@@ -605,7 +632,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               toolCallResponse.name(),
                               toolCallResponse.text(),
                               toolCallResponse.size(),
-                              toolCallResponse.sanitized()));
+                              toolCallResponse.sanitized(),
+                              toolCallResponse.isError()));
 
                   case AiMessage aiMessage ->
                       events.add(
@@ -638,7 +666,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               multimodalToolCallResponse.name(),
                               multimodalToolCallResponse.contents(),
                               multimodalToolCallResponse.size(),
-                              multimodalToolCallResponse.sanitized()));
+                              multimodalToolCallResponse.sanitized(),
+                              multimodalToolCallResponse.isError()));
                 }
               });
     }

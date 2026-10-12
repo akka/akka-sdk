@@ -49,5 +49,22 @@ class AgentImplContextMessagesSpec extends AnyWordSpec with Matchers {
       sanitizedFlags(AgentImpl.toSpiContextMessages(history(sanitized = true))) shouldBe Vector.fill(4)(true)
       sanitizedFlags(AgentImpl.toSpiContextMessages(history(sanitized = false))) shouldBe Vector.fill(4)(false)
     }
+
+    "pass the error flag of each tool response to the runtime" in {
+      val ts = Instant.EPOCH
+      val contents = java.util.List.of[SessionMessage.MessageContent](new TextMessageContent("text"))
+      def errorFlags(isError: Boolean): Vector[Boolean] =
+        AgentImpl
+          .toSpiContextMessages(
+            new SessionHistory(
+              java.util.List.of[SessionMessage](
+                new SessionMessage.ToolCallResponse(ts, "agent", "id1", "search", "failed", true, isError),
+                new SessionMessage.MultimodalToolCallResponse(ts, "agent", "id2", "render", contents, true, isError)),
+              0L))
+          .collect { case m: ContextMessage.ToolCallResponseMessage => m.isError }
+
+      errorFlags(isError = true) shouldBe Vector(true, true)
+      errorFlags(isError = false) shouldBe Vector(false, false)
+    }
   }
 }

@@ -466,26 +466,33 @@ private[impl] object AgentImpl {
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
+  // The runtime calls the hooks with the tool name on the MCP server.
   private final class McpToolCallHooksAdapter(javaInterceptor: RemoteMcpTools.ToolInterceptor)
       extends SpiAgent.McpToolCallHooks {
 
     override def interceptRequest(toolCallRequest: SpiAgent.ToolCallRequest): Future[String] =
-      Future.fromTry(Try(javaInterceptor.interceptRequest(contextFor(toolCallRequest), toolCallRequest.arguments)))
+      Future.fromTry(
+        Try(
+          javaInterceptor
+            .interceptRequest(
+              new McpToolInterceptorContext(toolCallRequest.name, isError = false),
+              toolCallRequest.arguments)))
 
     override def interceptResponse(
         toolCallRequest: SpiAgent.ToolCallRequest,
         arguments: String,
         result: SpiAgent.McpToolCallResult): Future[SpiAgent.McpToolCallResult] =
       Future.fromTry(Try {
-        val text = javaInterceptor.interceptResponse(contextFor(toolCallRequest), arguments, result.text)
-        new SpiAgent.McpToolCallResult(text, result.isError)
+        val text = javaInterceptor.interceptResponse(
+          new McpToolInterceptorContext(toolCallRequest.name, result.isError),
+          arguments,
+          result.text)
+        if (text eq result.text) result else new SpiAgent.McpToolCallResult(text, result.isError)
       })
-
-    private def contextFor(toolCallRequest: SpiAgent.ToolCallRequest): RemoteMcpTools.ToolInterceptorContext =
-      new RemoteMcpTools.ToolInterceptorContext {
-        override def toolName(): String = toolCallRequest.name
-      }
   }
+
+  private final class McpToolInterceptorContext(override val toolName: String, override val isError: Boolean)
+      extends RemoteMcpTools.ToolInterceptorContext
 
   private[agent] def toSpiDetailLevel(
       level: ImageMessageContent.DetailLevel): SpiAgent.ImageMessageContent.DetailLevel =
@@ -637,13 +644,21 @@ private[impl] object AgentImpl {
       id: String,
       name: String,
       spiContents: Seq[SpiAgent.MessageContent],
-      sanitized: Boolean): SessionMessage = {
+      sanitized: Boolean,
+      isError: Boolean): SessionMessage = {
     val contents = spiContents.map(toSessionMemoryContent)
     contents match {
       case Seq(t: SessionMessage.MessageContent.TextMessageContent) =>
-        new SessionMessage.ToolCallResponse(timestamp, componentId, id, name, t.text(), sanitized)
+        new SessionMessage.ToolCallResponse(timestamp, componentId, id, name, t.text(), sanitized, isError)
       case _ =>
-        new SessionMessage.MultimodalToolCallResponse(timestamp, componentId, id, name, contents.asJava, sanitized)
+        new SessionMessage.MultimodalToolCallResponse(
+          timestamp,
+          componentId,
+          id,
+          name,
+          contents.asJava,
+          sanitized,
+          isError)
     }
   }
 
@@ -694,18 +709,16 @@ private[impl] object AgentImpl {
         case m: MultimodalUserMessage =>
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
           new SpiAgent.ContextMessage.UserMessage(contents, m.sanitized())
-        // FIXME: SessionMessage does not keep the isError flag of a tool result.
         case m: ToolCallResponse =>
-          // FIXME: keep track of tool call errors in session memory and pass isError
           new ContextMessage.ToolCallResponseMessage(
             m.id(),
             m.name(),
             Seq(new SpiAgent.TextMessageContent(m.text())),
             m.sanitized(),
-            isError = false)
+            m.isError())
         case m: SessionMessage.MultimodalToolCallResponse =>
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
-          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents, m.sanitized(), isError = false)
+          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents, m.sanitized(), m.isError())
         case m =>
           throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
       }
@@ -1008,7 +1021,8 @@ private[impl] final class AgentImpl(
             res.id,
             res.name,
             res.contents,
-            sanitized = true)
+            sanitized = true,
+            isError = res.isError)
       }
 
     if (sentUserMessage.textOnly) {

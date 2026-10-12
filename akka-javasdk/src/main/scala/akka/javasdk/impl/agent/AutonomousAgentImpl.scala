@@ -504,7 +504,7 @@ private[impl] final class AutonomousAgentImpl(
         new AiMessage(now, m.content, componentId, toolCallRequests, m.thinking.toJava, tokenUsage, m.attributes.asJava)
 
       case m: SpiAgent.ContextMessage.ToolCallResponseMessage =>
-        AgentImpl.toSessionToolCallResponse(now, componentId, m.id, m.name, m.contents, m.sanitized)
+        AgentImpl.toSessionToolCallResponse(now, componentId, m.id, m.name, m.contents, m.sanitized, m.isError)
     }
 
 }
