@@ -219,10 +219,15 @@ import org.slf4j.LoggerFactory
             tracerFactory)))
   }
 
+  // An origin that this SDK does not know, or a null, maps to ToolOrigin.Unknown.
   private def toToolOrigin(origin: SpiGuardrail.ToolOrigin): ToolCallGuardrail.ToolOrigin =
-    origin match {
-      case SpiGuardrail.ToolOrigin.FunctionTool   => new ToolCallGuardrail.ToolOrigin.FunctionTool()
-      case mcp: SpiGuardrail.ToolOrigin.RemoteMcp => new ToolCallGuardrail.ToolOrigin.RemoteMcp(mcp.endpoint)
+    try {
+      origin match {
+        case SpiGuardrail.ToolOrigin.FunctionTool   => new ToolCallGuardrail.ToolOrigin.FunctionTool()
+        case mcp: SpiGuardrail.ToolOrigin.RemoteMcp => new ToolCallGuardrail.ToolOrigin.RemoteMcp(mcp.endpoint)
+      }
+    } catch {
+      case _: MatchError => new ToolCallGuardrail.ToolOrigin.Unknown()
     }
 
   final class ModelCallGuardrailAdapter(

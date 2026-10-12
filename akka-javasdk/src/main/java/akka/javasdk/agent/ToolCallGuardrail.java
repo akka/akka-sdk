@@ -23,7 +23,7 @@ import java.util.concurrent.CompletionStage;
  */
 public non-sealed interface ToolCallGuardrail extends Guardrail {
 
-  /** Where the called tool runs: {@link FunctionTool} or {@link RemoteMcp}. */
+  /** Where the called tool runs: {@link FunctionTool}, {@link RemoteMcp} or {@link Unknown}. */
   sealed interface ToolOrigin {
 
     /** A function tool of the agent. */
@@ -41,6 +41,9 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
         Objects.requireNonNull(endpoint, "endpoint");
       }
     }
+
+    /** An origin that this version of the SDK does not know. */
+    record Unknown() implements ToolOrigin {}
   }
 
   /**

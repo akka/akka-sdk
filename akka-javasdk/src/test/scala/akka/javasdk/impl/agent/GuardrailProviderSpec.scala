@@ -4,6 +4,9 @@
 
 package akka.javasdk.impl.agent
 
+import java.lang.reflect.InvocationHandler
+import java.lang.reflect.Method
+import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.CountDownLatch
@@ -116,6 +119,24 @@ object GuardrailProviderSpec {
       sessionId = "session-1",
       origin = origin,
       telemetryContext = Context.root())
+
+  // A ToolOrigin that this SDK does not know.
+  private def unknownToolOrigin: SpiGuardrail.ToolOrigin = {
+    val handler: InvocationHandler = (proxy: AnyRef, method: Method, args: Array[AnyRef]) =>
+      method.getName match {
+        case "equals"   => Boolean.box(proxy eq args(0))
+        case "hashCode" => Int.box(System.identityHashCode(proxy))
+        case "toString" => "unknown ToolOrigin"
+        case other      => throw new UnsupportedOperationException(other)
+      }
+
+    Proxy
+      .newProxyInstance(
+        classOf[SpiGuardrail.ToolOrigin].getClassLoader,
+        Array(classOf[SpiGuardrail.ToolOrigin]),
+        handler)
+      .asInstanceOf[SpiGuardrail.ToolOrigin]
+  }
 
   val recordedOrigin = new AtomicReference[ToolCallGuardrail.ToolOrigin]()
 
@@ -618,6 +639,31 @@ class GuardrailProviderSpec
           toolCallContext("some-tool", new SpiGuardrail.ToolOrigin.RemoteMcp("http://example.com/mcp"))),
         3.seconds)
       recordedOrigin.get shouldBe new ToolCallGuardrail.ToolOrigin.RemoteMcp("http://example.com/mcp")
+    }
+
+    "give the ToolCallGuardrail an Unknown origin for an origin that the SDK does not know" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "origin guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$OriginRecordingToolGuard"
+              agents = ["tool-agent"]
+              category = TOOL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("tool-agent", role = None).toolCallGuardrails("some-tool").head
+
+      recordedOrigin.set(null)
+      Await.result(spiGuardrail.decide(toolCallContext("some-tool", unknownToolOrigin)), 3.seconds)
+      recordedOrigin.get shouldBe new ToolCallGuardrail.ToolOrigin.Unknown()
+
+      recordedOrigin.set(null)
+      Await.result(spiGuardrail.decide(toolCallContext("some-tool", origin = null)), 3.seconds)
+      recordedOrigin.get shouldBe new ToolCallGuardrail.ToolOrigin.Unknown()
     }
 
     "give an MCP endpoint the ToolCallGuardrails of each tool by name" in {
