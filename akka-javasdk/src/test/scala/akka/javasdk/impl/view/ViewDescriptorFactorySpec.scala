@@ -11,8 +11,8 @@ import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.view.ViewTestModels
 import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.Principal
-import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.ProjectServiceNamePattern
+import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.ServiceNamePattern
 import akka.runtime.sdk.spi.SpiSchema.SpiClass
 import akka.runtime.sdk.spi.SpiSchema.SpiInteger

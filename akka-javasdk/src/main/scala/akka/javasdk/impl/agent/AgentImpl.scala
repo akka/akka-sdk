@@ -65,7 +65,6 @@ import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAgent.ContentLoadingFailure
-import akka.runtime.sdk.spi.SpiAgent.SanitizerFailure
 import akka.runtime.sdk.spi.SpiAgent.ContextMessage
 import akka.runtime.sdk.spi.SpiAgent.GuardrailFailure
 import akka.runtime.sdk.spi.SpiAgent.ImageLoadingFailure
@@ -75,6 +74,7 @@ import akka.runtime.sdk.spi.SpiAgent.McpToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ModelFailure
 import akka.runtime.sdk.spi.SpiAgent.OutputParsingFailure
 import akka.runtime.sdk.spi.SpiAgent.RateLimitFailure
+import akka.runtime.sdk.spi.SpiAgent.SanitizerFailure
 import akka.runtime.sdk.spi.SpiAgent.TimeoutFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallLimitReachedFailure
