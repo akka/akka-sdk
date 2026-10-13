@@ -8,11 +8,6 @@ To find the command group for a task, see the xref:reference:cli/command-map.ado
 == Log in to Akka
 Log in only to deploy to or manage a remote Akka Platform environment, whether it runs at akka.io or is installed in your enterprise. See xref:getting-started:log-in.adoc[].
 
-By default, `akka auth login` will launch your web browser and take you to the proper URL to enter your credentials. The command-line client will print "Waiting for UI login..." and pause while this happens, and then resume with a message once it receives the authorization token from the Akka server.
-
-You can, optionally, provide the `--no-launch-browser` flag with the `akka auth` command (e.g. `akka auth login --no-launch-browser auth`), in which case
-the command-line client will simply display the URL you can use for the authorization. This option is helpful if, for some reason, the command-line client is unable to launch your browser for you. The Akka CLI will wait until you complete the login before continuing.
-
 The xref:reference:cli/akka-cli/akka_auth.adoc[] command offers these options:
 
 <AKKA_AUTH_CMD>
