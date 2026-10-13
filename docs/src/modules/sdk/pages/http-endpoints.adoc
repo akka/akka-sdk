@@ -509,6 +509,10 @@ include::example$doc-snippets/src/test/java/com/example/api/ExampleWebSocketTest
 <5> Expect and verify the received message
 <6> Complete the connection
 
+To include HTTP headers in the upgrade request, for example an `Authorization` header for a JWT protected endpoint, pass a list of `akka.http.javadsl.model.HttpHeader` to `wsTextConnection` or `wsBinaryConnection`.
+
+When the service rejects the upgrade request, the tester throws `akka.javasdk.testkit.WebSocketUpgradeFailedException`. Use `status()` on the exception to assert the response status, for example `403 Forbidden` for a JWT that does not match the `@JWT` requirements.
+
 == See also
 
 - xref:sdk:access-control.adoc[]

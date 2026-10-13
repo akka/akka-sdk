@@ -5,6 +5,7 @@
 package akkajavasdk;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchException;
 
 import akka.http.javadsl.Http;
@@ -13,6 +14,7 @@ import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.model.headers.RawHeader;
 import akka.javasdk.testkit.TestKitSupport;
+import akka.javasdk.testkit.WebSocketUpgradeFailedException;
 import akka.stream.javadsl.Sink;
 import akka.util.ByteString;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
@@ -392,6 +394,49 @@ public class HttpEndpointTest extends TestKitSupport {
 
     publisher.sendComplete();
     subscriber.expectComplete();
+  }
+
+  @Test
+  void shouldPassHeadersInWebSocketUpgradeRequest() {
+    var probes =
+        testKit
+            .getSelfWebSocketRouteTester()
+            .wsTextConnection(
+                "/websocket-header", List.of(RawHeader.create("X-Greeting", "hello")));
+
+    probes.subscriber().request(1);
+    probes.publisher().expectRequest();
+    probes.publisher().sendNext("websocket");
+
+    assertThat(probes.subscriber().expectNext()).isEqualTo("hello websocket");
+
+    probes.publisher().sendComplete();
+    probes.subscriber().expectComplete();
+  }
+
+  @Test
+  void shouldFailWithStatusWhenWebSocketUpgradeIsRejected() {
+    var webSocketRouteTester = testKit.getSelfWebSocketRouteTester();
+
+    assertThatThrownBy(() -> webSocketRouteTester.wsTextConnection("/websocket-does-not-exist"))
+        .isInstanceOfSatisfying(
+            WebSocketUpgradeFailedException.class,
+            e -> {
+              assertThat(e.status()).isEqualTo(StatusCodes.NOT_FOUND);
+              assertThat(e.uri()).endsWith("/websocket-does-not-exist");
+              assertThat(e.getMessage()).contains("/websocket-does-not-exist").contains("404");
+            });
+  }
+
+  @Test
+  void shouldFailWithStatusWhenWebSocketEndpointRejectsUpgrade() {
+    var webSocketRouteTester = testKit.getSelfWebSocketRouteTester();
+
+    // endpoint method throws HttpException.badRequest when the header is missing
+    assertThatThrownBy(() -> webSocketRouteTester.wsTextConnection("/websocket-header"))
+        .isInstanceOfSatisfying(
+            WebSocketUpgradeFailedException.class,
+            e -> assertThat(e.status()).isEqualTo(StatusCodes.BAD_REQUEST));
   }
 
   @Test
