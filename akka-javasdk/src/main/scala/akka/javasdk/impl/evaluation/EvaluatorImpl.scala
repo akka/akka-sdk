@@ -14,6 +14,7 @@ import akka.javasdk.evaluation.Subject
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.CompleteEffect
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.InconclusiveEffect
 import akka.runtime.sdk.spi.SpiEvaluator
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -44,7 +45,7 @@ private[impl] object EvaluatorImpl {
  * by the descriptor's instance factory.
  */
 @InternalApi
-private[impl] final class EvaluatorImpl[E <: Evaluator](factory: () => E, evaluatorClass: Class[E])
+private[impl] final class EvaluatorImpl[E <: Evaluator](factory: Option[OtelContext] => E, evaluatorClass: Class[E])
     extends SpiEvaluator {
   import EvaluatorImpl._
 
@@ -53,7 +54,7 @@ private[impl] final class EvaluatorImpl[E <: Evaluator](factory: () => E, evalua
   override def evaluate(spiContext: SpiEvaluator.EvaluationContext): Future[SpiEvaluator.Effect] = {
     val context = new EvaluationContextImpl(spiContext)
     try {
-      val evaluator = factory()
+      val evaluator = factory(Option(spiContext.telemetryContext))
       val effect = evaluator.evaluate(context)
       toSpiEffect(effect)
     } catch {
