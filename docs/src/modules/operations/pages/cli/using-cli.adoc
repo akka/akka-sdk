@@ -11,7 +11,7 @@ For a full reference of all available commands, see the xref:reference:cli/akka-
 [#log-in]
 == Logging In
 
-To deploy to Akka or work with projects and services, authenticate the CLI with your Akka account. Local development does not need it. To initiate the login process, run:
+Log in only to deploy to or manage a remote Akka Platform environment, whether it runs at akka.io or is installed in your enterprise. Building, testing, and running locally need no login. To initiate the login process, run:
 
 [source, shell]
 ----
