@@ -34,7 +34,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 ## Getting Started
 
 - [Getting started](https://doc.akka.io/getting-started/index.html.md): Install the Akka plugin, set up your environment, and run your first specification
-- [Set up your dev env](https://doc.akka.io/getting-started/set-up-dev-env.html.md): Three self-contained setup paths — with an AI harness, without AI, or in a container
+- [Set up your env](https://doc.akka.io/getting-started/set-up-env.html.md): Four self-contained setup paths — install using your AI harness, manually set up your AI harness, manually set up your env without AI, or use a container
 - [Spec-Driven Development](https://doc.akka.io/sdk/spec-driven-development.html.md): The primary development approach — describe requirements, Akka generates the system
 - [Spec-first hello agent](https://doc.akka.io/getting-started/spec-your-first-agent.html.md): Build your first agent with spec-driven development
 - [Code-first hello agent](https://doc.akka.io/getting-started/author-your-first-service.html.md): Build the same agent by hand in Java

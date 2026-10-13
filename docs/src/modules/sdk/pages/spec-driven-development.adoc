@@ -35,7 +35,7 @@ Akka Specify runs in one of two modes. The mode decides whether you get a defini
 
 == Getting started with SDD
 
-Before you start, xref:getting-started:set-up-dev-env.adoc[set up your dev env] -- install the Akka Specify plugin in your AI coding assistant and run `/akka:setup` to configure the CLI, Java, Maven, and your Akka download token. The rest of this page assumes your environment is ready.
+Before you start, xref:getting-started:set-up-ai-install.adoc[install using your AI harness]. It installs the Akka Specify plugin and configures the CLI, Java, Maven, and your Akka download token. The rest of this page assumes your environment is ready.
 
 === The project constitution
 

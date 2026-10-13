@@ -1,0 +1,39 @@
+= Install using your AI harness
+:page-summary: Give your AI coding assistant one instruction and it installs Akka and everything it needs, including the Akka CLI.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+This is the recommended way to set up. You give your AI coding assistant one instruction, and it follows the install steps published at https://akka.ai[akka.ai, window="new"].
+
+== Give your AI harness this instruction
+
+Open your AI coding assistant and enter:
+
+[source]
+----
+Go to https://akka.ai and follow its instructions to install Akka.
+----
+
+== What happens next
+
+The assistant reads akka.ai, then:
+
+. Tells you which AI harness it is running in and picks the install path for that harness.
+. Shows you the plan and asks for your approval before it runs each command.
+. Installs what Akka needs: the Akka CLI, Java and Maven if they are missing, the Akka Specify Plugin and its MCP server where your harness supports them, and the SDK documentation in an `akka-context` folder in your project.
+. Scaffolds a starter project in an empty folder that you name.
+
+You do not need to get an Akka download token. The installation retrieves it for you.
+
+When the installation finishes, the assistant asks for an API key for the AI model provider you want to use, such as Anthropic, OpenAI, or Google Gemini. It keeps the key in an environment variable and asks before it writes the key to any file.
+
+[NOTE]
+====
+akka.ai lists the AI harnesses it supports. If yours is not on the list, use xref:getting-started:set-up-no-ai.adoc[Manually set up your env without AI].
+====
+
+== Next steps
+
+* xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent] -- build your first agent.
+* xref:getting-started:set-up-harness.adoc[Manually set up your AI harness] -- install the plugin yourself instead of asking your assistant to do it.

@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-The Akka CLI ships an MCP server that exposes Akka's build, test, deploy, spec-driven-development, and runtime-inspection tools to any MCP-capable AI coding harness. If your harness has a first-class Akka install (see xref:getting-started:set-up-dev-env.adoc#_harness_support_matrix[harness support matrix]), that install registers the server for you.
+The Akka CLI ships an MCP server that exposes Akka's build, test, deploy, spec-driven-development, and runtime-inspection tools to any MCP-capable AI coding harness. If your harness has a first-class Akka install (see xref:getting-started:set-up-harness.adoc#_harness_support_matrix[harness support matrix]), that install registers the server for you.
 
 NOTE: Use this page for harnesses whose MCP config is not a project file the Akka CLI can write. `akka specify init --agent <name>` writes `AGENTS.md` for AGENTS.md-native harnesses (Warp, Jules, Zed, Copilot coding agent, Codex) but leaves MCP registration to you — the register step below completes the setup. Also applies to any harness with no CLI profile at all (Aider, Sourcegraph Cody, Claude.ai chat).
 
@@ -103,6 +103,6 @@ Consult your harness documentation for the exact settings file and key name. Onc
 
 == See also
 
-* xref:getting-started:set-up-dev-env.adoc[Set up your dev env]
+* xref:getting-started:set-up-env.adoc[Set up your env]
 * xref:sdk:ai-coding-assistant.adoc[Using an AI coding assistant]
 * xref:sdk:spec-driven-development.adoc[Spec-driven development]

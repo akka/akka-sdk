@@ -1,0 +1,15 @@
+= Set up your env
+:page-aliases: getting-started:set-up-dev-env.adoc, getting-started:dev-container.adoc
+:page-summary: Four ways to set up an Akka environment: install using your AI harness, manually set up your AI harness, manually set up your env without AI, or use a container.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+There are four ways to set up an Akka environment. Each is self-contained and lists its own prerequisites. Every tutorial and sample links back to the setup it needs.
+
+* xref:getting-started:set-up-ai-install.adoc[Install using your AI harness] -- recommended. Give your AI coding assistant one instruction and it installs Akka for you.
+* xref:getting-started:set-up-harness.adoc[Manually set up your AI harness] -- install the Akka Specify Plugin in your AI coding assistant yourself.
+* xref:getting-started:set-up-no-ai.adoc[Manually set up your env without AI] -- install the Akka CLI, Java, and Maven directly.
+* xref:getting-started:set-up-container.adoc[Containerized env] -- run everything in a Docker container, with no local Java, Maven, or CLI install.
+
+To install or update only the Akka CLI, see xref:getting-started:install-cli.adoc[].
