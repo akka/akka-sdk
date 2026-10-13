@@ -27,7 +27,7 @@ To create a new project, use either the Akka CLI or the https://console.akka.io[
 --
 CLI::
 +
-. If you have not done so yet, xref:getting-started:install-cli.adoc[install the Akka CLI] and log into your account:
+. If you have not done so yet, xref:getting-started:install-cli.adoc[install the Akka CLI] and xref:getting-started:log-in.adoc[log in to your account]:
 +
 [source,command window]
 ----

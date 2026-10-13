@@ -8,7 +8,7 @@ You have built and tried the service locally, it is time to run it on the Akka A
 
 . If you have not already done so, xref:getting-started:install-cli.adoc[install the Akka CLI].
 
-. Authenticate the CLI with your Akka account. For login options and proxy settings, see xref:getting-started:log-in.adoc[]:
+. Log in to Akka. For login options and proxy settings, see xref:getting-started:log-in.adoc[]:
 +
 [source, command line]
 ----
