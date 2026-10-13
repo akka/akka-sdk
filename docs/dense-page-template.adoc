@@ -1,0 +1,30 @@
+// Template for a full-screen grid page. Copy it next to the page that links to it.
+//
+// Use a grid for reference content that a reviewer filters and cross-checks, such as
+// data flows, integration points, or component versions. The page shows the site
+// header and the table only, and the table uses the whole window. Keep the page
+// that links to it for the prose.
+//
+// Name the file <topic>-grid.adoc. It is not in the nav, so the breadcrumb is stated
+// here; copy the trail the linking page shows, ending with its title.
+= Page title
+:page-layout: dense
+:page-breadcrumb: Akka / Section / Subsection / Page title
+:page-summary: One sentence on what the table lists.
+
+// cols= sets the column proportions. Rows are one line each where the widths allow.
+// A row with one spanning header cell, as below, names a group of rows.
+[.dense, cols="2,5,2,2,4", options="header"]
+|===
+| Group | Item | From | To | Connectivity
+
+5+h| First group
+
+| First | Item one | Source | Target | [.conn-private]#Private# (peering)
+| First | Item two | Source | Target | [.conn-public]#Public# (allowlisted)
+|===
+
+// On the page that links to the grid, put this line where the table was. It renders
+// as a large icon card and opens the grid in a new tab:
+//
+// xref:module:path/to/topic-grid.adoc[Open the <topic> as a full-screen grid,role=open-grid,window=_blank]

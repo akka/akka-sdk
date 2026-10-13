@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+{{> head defaultPageTitle='Untitled'}}
+    <link rel="stylesheet" href="{{{uiRootPath}}}/css/dense-tables.css">
+  </head>
+  <body class="bg-white text-akka-black dark:bg-black dark:text-white article dense-page">
+{{> header-scripts}}
+{{> header-content showNotification=false}}
+    <main class="dense-page-main">
+      <article class="doc prose-akka">
+        {{!-- The page is not in the nav tree, so it states its own trail. --}}
+        {{#with page.attributes.breadcrumb}}
+        <h1 class="page">{{{this}}}</h1>
+        {{else}}
+        {{#with page.title}}
+        <h1 class="page">{{{this}}}</h1>
+        {{/with}}
+        {{/with}}
+        {{{page.contents}}}
+      </article>
+    </main>
+{{> footer-scripts}}
+    <script src="{{{uiRootPath}}}/js/dense-tables.js"></script>
+  </body>
+</html>

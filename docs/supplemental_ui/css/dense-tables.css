@@ -1,0 +1,227 @@
+/*
+ * Full-screen grid for dense reference tables.
+ *
+ * A page opts in with `:page-layout: dense` (layouts/dense.hbs): the site header
+ * and the table, with no navigation, breadcrumb bar or outline. Its table carries
+ * the `dense` role. dense-tables.js adds the filter, sort and CSV download.
+ * Pages that link to a grid use the `open-grid` role on the link.
+ */
+
+:root {
+  --akka-dense-rule: rgba(0, 0, 0, 0.16);
+  --akka-dense-head: #f3f3f3;
+  --akka-dense-group: #8a5a00;
+  --akka-dense-hover: #fff6d6;
+  --akka-dense-bg: #fff;
+  --akka-dense-muted: #6b6b6b;
+  --akka-dense-public: #d70023;
+  --akka-dense-private: #3f9c2c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --akka-dense-rule: rgba(255, 255, 255, 0.14);
+    --akka-dense-head: #161616;
+    --akka-dense-group: #ffce4a;
+    --akka-dense-hover: #2a2410;
+    --akka-dense-bg: #000;
+    --akka-dense-muted: #8a8a8a;
+    --akka-dense-public: #ff3355;
+    --akka-dense-private: #72d35b;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Page
+   ------------------------------------------------------------------ */
+
+.dense-page-main {
+  padding: calc(var(--navbarHeight, 84px) + 1.5rem) 1rem 2rem;
+}
+
+.dense-page .doc {
+  max-width: none;
+}
+
+.dense-breakout {
+  margin-top: 1rem;
+}
+
+.dense-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--akka-dense-muted);
+}
+
+.dense-toolbar input {
+  width: 18rem;
+  max-width: 100%;
+  padding: 0.3rem 0.5rem;
+  font: inherit;
+  color: inherit;
+  background: var(--akka-dense-bg);
+  border: 1px solid var(--akka-dense-rule);
+}
+
+/* overflow-x: clip, unlike auto, does not make this a scroll container, so the
+   header row sticks to the page scroll instead of an inner scroller. */
+.dense-scroll {
+  overflow-x: clip;
+  border: 1px solid var(--akka-dense-rule);
+  background: var(--akka-dense-bg);
+}
+
+/* ------------------------------------------------------------------
+   Table
+   ------------------------------------------------------------------ */
+
+.doc table.tableblock.dense {
+  /* The theme clips tables with overflow: hidden, which would make the table the
+     scroll container for its sticky header. */
+  overflow: visible;
+  /* Column widths come from the cols= proportions on the table. */
+  table-layout: fixed;
+  width: 100%;
+  margin: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+.doc table.tableblock.dense th.tableblock,
+.doc table.tableblock.dense td.tableblock {
+  padding: 0.22rem 0.5rem !important;
+  border: 0;
+  border-right: 1px solid var(--akka-dense-rule);
+  border-bottom: 1px solid var(--akka-dense-rule);
+  background: var(--akka-dense-bg);
+  vertical-align: top;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.doc table.tableblock.dense th.tableblock:last-child,
+.doc table.tableblock.dense td.tableblock:last-child {
+  border-right: 0;
+}
+
+.doc table.tableblock.dense p.tableblock {
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.doc table.tableblock.dense thead th.tableblock {
+  position: sticky;
+  top: calc(var(--navbarHeight, 84px) + 1px);
+  z-index: 2;
+  background: var(--akka-dense-head);
+  color: var(--akka-dense-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.doc table.tableblock.dense thead th.tableblock[aria-sort="ascending"]::after { content: " \25B2"; }
+.doc table.tableblock.dense thead th.tableblock[aria-sort="descending"]::after { content: " \25BC"; }
+
+/* The first column stays visible when the table scrolls sideways. */
+.doc table.tableblock.dense tbody td.tableblock:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  font-weight: 600;
+}
+
+.doc table.tableblock.dense thead th.tableblock:first-child {
+  left: 0;
+  z-index: 3;
+}
+
+/* A row with one spanning header cell names the group of rows below it. */
+.doc table.tableblock.dense tbody tr.dense-group > th.tableblock {
+  position: static;
+  padding-top: 0.45rem !important;
+  background: var(--akka-dense-head);
+  color: var(--akka-dense-group);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.doc table.tableblock.dense tbody tr:not(.dense-group):hover > td.tableblock {
+  background: var(--akka-dense-hover);
+}
+
+.doc table.tableblock.dense .conn-public,
+.doc table.tableblock.dense .conn-private {
+  padding: 0 0.35rem;
+  border: 1px solid;
+  border-radius: 3px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.doc table.tableblock.dense .conn-public { border-color: var(--akka-dense-public); }
+.doc table.tableblock.dense .conn-private { border-color: var(--akka-dense-private); }
+
+/* Below this width the table keeps a readable minimum and scrolls inside its own
+   frame. */
+@media (max-width: 1100px) {
+  .dense-scroll {
+    max-height: 75vh;
+    overflow: auto;
+  }
+
+  .doc table.tableblock.dense {
+    min-width: 1000px;
+  }
+
+  .doc table.tableblock.dense thead th.tableblock {
+    top: 0;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Link from a regular docs page
+   ------------------------------------------------------------------ */
+
+/* The grid replaces the table on the linking page, so the link is a large
+   target rather than a text link. */
+.doc a.open-grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 2.5rem 2rem;
+  border: 2px solid var(--akka-dense-group);
+  border-radius: 8px;
+  color: var(--akka-dense-group);
+  font-size: 1.375rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.doc a.open-grid:hover {
+  background: var(--akka-dense-hover);
+}
+
+.doc a.open-grid::before {
+  content: "";
+  flex: none;
+  width: 3.5rem;
+  height: 3.5rem;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 5h18v14H3V5zm2 2v3h6V7H5zm8 0v3h6V7h-6zm-8 5v3h6v-3H5zm8 0v3h6v-3h-6z' fill-rule='evenodd'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 5h18v14H3V5zm2 2v3h6V7H5zm8 0v3h6V7h-6zm-8 5v3h6v-3H5zm8 0v3h6v-3h-6z' fill-rule='evenodd'/%3E%3C/svg%3E") center / contain no-repeat;
+}
