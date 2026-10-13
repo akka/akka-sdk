@@ -455,6 +455,23 @@ public class SanitizerIntegrationTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldFailTheRequestWithTheCauseWhenTheStageOfASanitizerFails() {
+    failureAgentModel.fixedResponse("done");
+
+    var result = askFailureAgent("tell me about failasyncsanitizer");
+
+    assertThat(result.response())
+        .contains("Sanitizer [failing]")
+        .doesNotContain("failasyncsanitizer");
+    assertThat(result.sanitizerName()).isEqualTo("failing");
+    // the cause is the exception of the sanitizer, not the CompletionException around it
+    assertThat(result.cause())
+        .startsWith("java.lang.IllegalStateException: cannot mask")
+        .contains("failasyncsanitizer");
+    assertThat(failureAgentRequests.requests()).isEmpty();
+  }
+
+  @Test
   public void shouldFailTheRequestWithoutACauseWhenASanitizerReturnsNull() {
     failureAgentModel.fixedResponse("done");
 

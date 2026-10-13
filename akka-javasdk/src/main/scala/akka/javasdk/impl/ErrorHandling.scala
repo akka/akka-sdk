@@ -7,8 +7,13 @@ package akka.javasdk.impl
 import java.lang.reflect.InvocationTargetException
 import java.util.UUID
 import java.util.concurrent.CompletionException
+import java.util.concurrent.CompletionStage
 import java.util.concurrent.ExecutionException
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.FutureConverters._
+import scala.util.Failure
 import scala.util.control.Exception.Catcher
 
 import akka.annotation.InternalApi
@@ -68,6 +73,16 @@ private[javasdk] object ErrorHandling {
       case other               => new RuntimeException(other)
     }
   }
+
+  /**
+   * For Scala. Converts a stage of user code to a Future that fails with the exception of the user code. A stage of
+   * [[java.util.concurrent.CompletableFuture#supplyAsync]] fails with a [[CompletionException]] around it.
+   */
+  def asScalaUnwrapped[T](stage: CompletionStage[T]): Future[T] =
+    stage.asScala.transform {
+      case Failure(exc: CompletionException) if exc.getCause != null => Failure(exc.getCause)
+      case other                                                     => other
+    }(ExecutionContext.parasitic)
 
   /**
    * For Scala
