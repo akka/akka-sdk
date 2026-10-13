@@ -237,7 +237,7 @@ The diagram shows how a request reaches a model. A client outside the cluster ca
 .How a request reaches a model
 [mermaid]
 ----
-include::operations:partial$model-request-diagram.adoc[]
+include::operations:partial$model-request-diagram.mmd[]
 ----
 
 xref:operations:technical-overview-model-request-image.adoc[View the full-size model request diagram,role=open-image,window=_blank]

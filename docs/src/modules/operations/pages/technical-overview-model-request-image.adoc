@@ -6,5 +6,5 @@
 
 [mermaid.dense-mermaid]
 ----
-include::operations:partial$model-request-diagram.adoc[]
+include::operations:partial$model-request-diagram.mmd[]
 ----
