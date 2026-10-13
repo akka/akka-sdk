@@ -3,14 +3,11 @@
 :page-when-to-use: Routing, triage, scoring, and yes-or-no decisions that need a probability, not generated text
 :page-related: sdk:agents.adoc, sdk:integrations/ai-and-models.adoc, sdk:model-provider-details.adoc
 :page-persona: builder-developer, builder-ai-ml
-// TODO decide whether decision models are a gated feature set. If so, set :page-banner:
-// and extend supplemental_ui/partials/page-banner.hbs with a decision value.
-// TODO the code blocks are inline drafts. Move them to compiled snippets in
-// samples/doc-snippets and include them by tag before the PR.
+
 
 include::ROOT:partial$include.adoc[]
 
-A decision model answers a fixed set of questions about some state with probabilities instead of generated text. You interact with decision (also called _judgment_) models through the `DecisionModelClient` class, which is injectable into any component capable of producing side-effects.
+A decision model answers a fixed set of questions about some state with probabilities instead of generated text. You interact with decision models through the `DecisionModelClient` class, which is injectable into any component capable of producing side-effects.
 
 == Overview
 
@@ -18,7 +15,7 @@ The most common use case for interacting with a large language model (LLM) is to
 
 Sometimes we want the model to return structured data, so we include the schema of our expected output inside the prompt. Akka's model integrations support strongly-typed interactions. Constraining a model interaction to a fixed schema can produce more reliable results because the inference target is so much narrower.
 
-An even more narrow use cases is when we just want to ask specific questions about the input. In these cases, the model doesn't make tool calls and doesn't utilize any of the heavyweight features of an LLM. It just answers the user's question about a given input with a set of possible answers and their associated probabilities.
+An even more narrow use case is when we just want to ask specific questions about the input. In these cases, the model doesn't make tool calls and doesn't utilize any of the heavyweight features of an LLM. It just answers the user's question about a given input with a set of possible answers and their associated probabilities.
 
 This kind of state interrogation happens a lot in agentic applications. The problem with this is that we end up using expensive models to perform tasks that could be done with far simpler, and even locally hosted, models. A _decision model_ is a small model trained specifically to take user intent and provide ranked answers at a fraction of the cost of a full LLM, both in terms of tokens and compute resources.
 
@@ -165,8 +162,17 @@ testDecisionModel
 
 The most recently added rule that matches the request answers it. A request that matches no rule, or asks a question that the matching rule does not answer, fails with `MissingDecisionResponseException`. Use `always()` for a rule that matches every request, and `reset()` to remove all rules between tests.
 
+== Decisions vs Judgments
+The AI community has very specific definitions for a _decision_ model versus using an "LLM as a judge". Akka's naming conventions conform to the generally accepted AI community definitions.
+
+An LLM judge is a generative language model that reads an output and a rubric to write natural language critiques and scores token-by-token, while a decision model is a specialized, closed-set classification model that directly outputs calibrated probability distributions over a fixed, predefined list of answers without generating free-form text.
+
+All that is to say that an LLM judge is slow, deliberative reasoning (similar to System 2 thinking) while decision models are fast, bounded, intuitive classifications (similar to System 1 thinking). Decision models are cheaper and faster than LLM judges. This is why Jev's decision API is called "System One".
+
+
 == See also
 
 * xref:sdk:agents.adoc[Agents] — generated text and tool calls, where a decision model does not fit
 * xref:sdk:integrations/ai-and-models.adoc[AI & models] — the SDK's model integrations
 * xref:sdk:model-provider-details.adoc[Model provider details] — configuration reference for model providers
+* https://thedecisionlab.com/reference-guide/philosophy/system-1-and-system-2-thinking[System 1 and System 2 thinking] - A high-level summary of Kahneman's _"Thinking, Fast and Slow"_
