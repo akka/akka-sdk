@@ -72,24 +72,21 @@ echo "generate docs..."
 akka generate-markdown-docs .
 
 echo "convert docs to asciidoc format..."
-# Each page converts independently; run up to eight kramdoc processes at once.
+# The CLI's index.md is a flat command list; keep the curated index.adoc intact.
+# Each command page converts independently, so run up to eight kramdoc processes at once.
 workers=$(getconf NPROCESSORS_ONLN 2>/dev/null || echo 4)
 if [ "$workers" -gt 8 ]; then workers=8; fi
-find . -maxdepth 1 -name '*.md' -type f -print0 |
+find . -maxdepth 1 -name 'akka*.md' -type f -print0 |
   xargs -0 -n 1 -P "$workers" sh -c 'kramdoc --format=GFM --wrap=ventilate --output="$1.adoc" "$1"' _ || exit 1
 
-# remove md files
-rm *.md
-rm -f index.adoc
-
-# rename *.mod.adoc to *.adoc
+# rename *.md.adoc to *.adoc
 for file in *.md.adoc; do mv "$file" "${file%.md.adoc}.adoc"; done
 
-# use `./scripts/generate_cli_docs.sh gen-index` to re-generate
-# the raw command index page
+# gen-index fills the curated template with links from the CLI's flat index.
 if [ "$1" = "gen-index" ]; then
+  kramdoc --format=GFM --wrap=ventilate --output=cli-raw-index.adoc index.md || exit 1
   # extract links to a temp file
-  grep "^* xref" index.adoc > temp-cli-index.txt
+  grep "^* xref" cli-raw-index.adoc > temp-cli-index.txt
 
   # generate cli-index.adoc header
   cat > cli-index.adoc <<- EOM
@@ -140,11 +137,13 @@ EOM
   perl -pi.bak -e "s|<AKKA_SPECIFY_CMD>|${AKKA_SPECIFY_CMD}|" cli-index.adoc
 
   echo "patch adoc reference path in cli-index.adoc ..."
-  # replace links from "* xref:" to "* xref:reference:akka/" and write it to index.adoc
+  # Give command links their Antora module path in the curated index.
   awk '{gsub(/^\* xref:/,"* xref:reference:cli/akka-cli/"); print}' cli-index.adoc > index.adoc
-  rm temp-cli-index.txt cli-index.adoc cli-index.adoc.bak
+  rm temp-cli-index.txt cli-index.adoc cli-index.adoc.bak cli-raw-index.adoc
 
 fi
+
+rm -f ./*.md
 
 # change header level
 for file in akka*.adoc; do
