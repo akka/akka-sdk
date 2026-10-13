@@ -85,3 +85,4 @@
 ***** xref:operations:production-readiness/byok8s/raci.adoc[]
 ***** xref:operations:production-readiness/byok8s/checklist.adoc[]
 ***** xref:operations:production-readiness/byok8s/disaster-recovery.adoc[]
+**** xref:operations:production-readiness/optimize.adoc[Akka Optimize]
