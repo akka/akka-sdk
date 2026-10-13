@@ -23,6 +23,11 @@ public class TestMcpEndpoint extends AbstractMcpEndpoint {
     return echo;
   }
 
+  @McpTool(description = "A method that always fails")
+  public String fail(@Description("the reason to fail with") String reason) {
+    throw new IllegalStateException("failed: " + reason);
+  }
+
   @McpResource(
       name = "example text",
       uri = "file:///example.txt",

@@ -98,9 +98,18 @@ public interface RemoteMcpTools {
   @DoNotInherit
   interface ToolInterceptorContext {
     /**
-     * @return The name of the tool on the MCP server.
+     * @return The name of the tool on the MCP server. When the runtime renames a tool for the model
+     *     because of a name clash, this is still the name on the MCP server.
      */
     String toolName();
+
+    /**
+     * @return true when the MCP server reported the tool call result as an error. Always false in
+     *     {@link ToolInterceptor#interceptRequest(ToolInterceptorContext, String)}.
+     */
+    default boolean isError() {
+      return false;
+    }
   }
 
   interface ToolInterceptor {
@@ -124,6 +133,12 @@ public interface RemoteMcpTools {
      * Intercept responses from MCP tools, disallowing the call based on the result can be done by
      * throwing an exception, modifying the result is also possible. When modifying the result, you
      * need to make sure the payload still is something the model will understand.
+     *
+     * <p>The runtime calls this method for each result that the MCP server returns, including an
+     * error result. {@link ToolInterceptorContext#isError()} is true for an error result. The
+     * returned text keeps the error flag of the original result, and the interceptor cannot change
+     * the flag. A tool call that fails without a result, for example on a timeout, does not reach
+     * this method.
      *
      * <p>Returning {@code null} fails the tool call.
      *

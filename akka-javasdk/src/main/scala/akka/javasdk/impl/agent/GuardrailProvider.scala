@@ -277,7 +277,7 @@ import org.slf4j.LoggerFactory
           Option(a.content).getOrElse(""),
           a.toolRequests.map(tr => new AiMessage.ToolCallRequest(tr.id, tr.name, tr.arguments)).asJava)
       case t: SpiAgent.ContextMessage.ToolCallResponseMessage =>
-        new Message.ToolCallResponse(t.id, t.name, t.contents.map(AgentImpl.fromSpiMessageContent).asJava)
+        new Message.ToolCallResponse(t.id, t.name, t.contents.map(AgentImpl.fromSpiMessageContent).asJava, t.isError)
     }
 
   private def toSpiDecision(decision: CompletionStage[Decision]): Future[SpiGuardrail.Decision] =

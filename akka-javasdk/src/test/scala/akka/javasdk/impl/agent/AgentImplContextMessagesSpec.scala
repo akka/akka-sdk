@@ -17,7 +17,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class AgentImplContextMessagesSpec extends AnyWordSpec with Matchers {
 
-  private def history(sanitized: Boolean): SessionHistory = {
+  private def history(sanitized: Boolean, isError: Boolean = false): SessionHistory = {
     val ts = Instant.EPOCH
     val contents = java.util.List.of[SessionMessage.MessageContent](new TextMessageContent("text"))
     new SessionHistory(
@@ -32,8 +32,8 @@ class AgentImplContextMessagesSpec extends AnyWordSpec with Matchers {
           Optional.empty(),
           TokenUsage.EMPTY,
           java.util.Map.of()),
-        new SessionMessage.ToolCallResponse(ts, "agent", "id1", "search", "result", sanitized),
-        new SessionMessage.MultimodalToolCallResponse(ts, "agent", "id2", "render", contents, sanitized)),
+        new SessionMessage.ToolCallResponse(ts, "agent", "id1", "search", "result", sanitized, isError),
+        new SessionMessage.MultimodalToolCallResponse(ts, "agent", "id2", "render", contents, sanitized, isError)),
       0L)
   }
 
@@ -48,6 +48,16 @@ class AgentImplContextMessagesSpec extends AnyWordSpec with Matchers {
     "pass the sanitized flag of each user message and tool response to the runtime" in {
       sanitizedFlags(AgentImpl.toSpiContextMessages(history(sanitized = true))) shouldBe Vector.fill(4)(true)
       sanitizedFlags(AgentImpl.toSpiContextMessages(history(sanitized = false))) shouldBe Vector.fill(4)(false)
+    }
+
+    "pass the error flag of each tool response to the runtime" in {
+      def errorFlags(isError: Boolean): Vector[Boolean] =
+        AgentImpl.toSpiContextMessages(history(sanitized = true, isError)).collect {
+          case m: ContextMessage.ToolCallResponseMessage => m.isError
+        }
+
+      errorFlags(isError = true) shouldBe Vector(true, true)
+      errorFlags(isError = false) shouldBe Vector(false, false)
     }
   }
 }

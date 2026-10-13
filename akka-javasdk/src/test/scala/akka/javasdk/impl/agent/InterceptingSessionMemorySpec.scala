@@ -73,7 +73,7 @@ class InterceptingSessionMemorySpec extends AnyWordSpec with Matchers {
     "keep the sanitized flag of the messages that the identity interceptor returns" in {
       val delegate = new RecordingSessionMemory
       val memory = new InterceptingSessionMemory(delegate, new SessionMemoryInterceptor {})
-      val toolResponse = new ToolCallResponse(Instant.EPOCH, "agent", "id1", "search", "result", true)
+      val toolResponse = new ToolCallResponse(Instant.EPOCH, "agent", "id1", "search", "result", true, false)
 
       memory.addInteraction(
         "s1",
@@ -168,19 +168,63 @@ class InterceptingSessionMemorySpec extends AnyWordSpec with Matchers {
       val delegate = new RecordingSessionMemory
       val interceptor = new SessionMemoryInterceptor {
         override def beforeWrite(sessionId: String, tcr: ToolCallResponse): ToolCallResponse =
-          new ToolCallResponse(tcr.timestamp(), tcr.componentId(), tcr.id(), tcr.name(), "this is a short one")
+          tcr.withText("this is a short one")
       }
       val memory = new InterceptingSessionMemory(delegate, interceptor)
 
-      val tcr = new ToolCallResponse(Instant.EPOCH, "agent", "id1", "search", "this is a long response")
+      val tcr = new ToolCallResponse(Instant.EPOCH, "agent", "id1", "search", "this is a long response", true, true)
       memory.addInteraction("s1", userMessage("hi"), util.List.of(tcr))
 
       delegate.lastMessages.size() shouldBe 1
       val seen = delegate.lastMessages.get(0).asInstanceOf[ToolCallResponse]
       seen.text() shouldBe "this is a short one"
+      seen.isError() shouldBe true
+      seen.sanitized() shouldBe false
     }
 
     "reflect multimodal tool call response transform in messages list" in {
+      val delegate = new RecordingSessionMemory
+      val interceptor = new SessionMemoryInterceptor {
+        override def beforeWrite(sessionId: String, mtcr: MultimodalToolCallResponse): MultimodalToolCallResponse =
+          mtcr.withContents(util.List.of(new TextMessageContent("redacted")))
+      }
+      val memory = new InterceptingSessionMemory(delegate, interceptor)
+
+      val mtcr = new MultimodalToolCallResponse(
+        Instant.EPOCH,
+        "agent",
+        "id1",
+        "render_chart",
+        util.List.of(new TextMessageContent("caption"), new TextMessageContent("more")),
+        true,
+        true)
+      memory.addInteraction("s1", userMessage("hi"), util.List.of(mtcr))
+
+      delegate.lastMessages.size() shouldBe 1
+      val seen = delegate.lastMessages.get(0).asInstanceOf[MultimodalToolCallResponse]
+      seen.contents().asScala.map(_.asInstanceOf[TextMessageContent].text()).toList shouldBe List("redacted")
+      seen.isError() shouldBe true
+      seen.sanitized() shouldBe false
+    }
+
+    "keep the error flag when the interceptor builds a new tool call response" in {
+      val delegate = new RecordingSessionMemory
+      val interceptor = new SessionMemoryInterceptor {
+        override def beforeWrite(sessionId: String, tcr: ToolCallResponse): ToolCallResponse =
+          new ToolCallResponse(tcr.timestamp(), tcr.componentId(), tcr.id(), tcr.name(), "redacted")
+      }
+      val memory = new InterceptingSessionMemory(delegate, interceptor)
+
+      val tcr = new ToolCallResponse(Instant.EPOCH, "agent", "id1", "search", "secret", true, true)
+      memory.addInteraction("s1", userMessage("hi"), util.List.of(tcr))
+
+      val seen = delegate.lastMessages.get(0).asInstanceOf[ToolCallResponse]
+      seen.text() shouldBe "redacted"
+      seen.isError() shouldBe true
+      seen.sanitized() shouldBe false
+    }
+
+    "keep the error flag when the interceptor builds a new multimodal tool call response" in {
       val delegate = new RecordingSessionMemory
       val interceptor = new SessionMemoryInterceptor {
         override def beforeWrite(sessionId: String, mtcr: MultimodalToolCallResponse): MultimodalToolCallResponse =
@@ -198,12 +242,31 @@ class InterceptingSessionMemorySpec extends AnyWordSpec with Matchers {
         "agent",
         "id1",
         "render_chart",
-        util.List.of(new TextMessageContent("caption"), new TextMessageContent("more")))
+        util.List.of(new TextMessageContent("secret")),
+        true,
+        true)
       memory.addInteraction("s1", userMessage("hi"), util.List.of(mtcr))
 
-      delegate.lastMessages.size() shouldBe 1
       val seen = delegate.lastMessages.get(0).asInstanceOf[MultimodalToolCallResponse]
       seen.contents().asScala.map(_.asInstanceOf[TextMessageContent].text()).toList shouldBe List("redacted")
+      seen.isError() shouldBe true
+      seen.sanitized() shouldBe false
+    }
+
+    "not set the error flag on a tool call response with another id" in {
+      val delegate = new RecordingSessionMemory
+      val interceptor = new SessionMemoryInterceptor {
+        override def beforeWrite(sessionId: String, tcr: ToolCallResponse): ToolCallResponse =
+          new ToolCallResponse(tcr.timestamp(), tcr.componentId(), "other-id", tcr.name(), "replaced")
+      }
+      val memory = new InterceptingSessionMemory(delegate, interceptor)
+
+      val tcr = new ToolCallResponse(Instant.EPOCH, "agent", "id1", "search", "failed", true, true)
+      memory.addInteraction("s1", userMessage("hi"), util.List.of(tcr))
+
+      val seen = delegate.lastMessages.get(0).asInstanceOf[ToolCallResponse]
+      seen.id() shouldBe "other-id"
+      seen.isError() shouldBe false
     }
   }
 }

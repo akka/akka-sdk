@@ -127,6 +127,7 @@ It is also possible to intercept, modify, or deny MCP tool requests, or their re
 `ToolInterceptorContext.toolName()` returns the name of the tool on the MCP server, also when the model uses another name for the tool.
 The ledger records the arguments that `interceptRequest` returns as the arguments of the tool call.
 A `null` from `interceptRequest` or `interceptResponse` fails the tool call.
+In `interceptResponse`, `context.isError()` is true when the MCP server reported the result as an error. The result keeps that error flag when the interceptor changes the text.
 To allow or deny MCP tool calls through configuration, use a `ToolCallGuardrail`. See xref:sdk:agents/guardrails.adoc[Guardrails].
 
 [source,java,indent=0]

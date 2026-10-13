@@ -201,13 +201,17 @@ object GuardrailProviderSpec {
   private def spiUserMessage(text: String): SpiAgent.ContextMessage =
     new SpiAgent.ContextMessage.UserMessage(Seq(new SpiAgent.TextMessageContent(text)), sanitized = false)
 
-  private def spiToolCallResponse(id: String, name: String, text: String): SpiAgent.ContextMessage =
+  private def spiToolCallResponse(
+      id: String,
+      name: String,
+      text: String,
+      isError: Boolean = false): SpiAgent.ContextMessage =
     new SpiAgent.ContextMessage.ToolCallResponseMessage(
       id,
       name,
       Seq(new SpiAgent.TextMessageContent(text)),
       sanitized = false,
-      isError = false)
+      isError = isError)
 
   // One tool round: the user question, the model's tool request, and the tool result.
   private val toolRoundMessages: Seq[SpiAgent.ContextMessage] = Seq(
@@ -940,7 +944,7 @@ class GuardrailProviderSpec
           None,
           Map.empty),
         spiToolCallResponse("id-1", "weather", "Lisbon: 22C"),
-        spiToolCallResponse("id-2", "weather", "Porto: 18C"))
+        spiToolCallResponse("id-2", "weather", "weather service unavailable", isError = true))
 
       Await.result(spiGuardrail.decide(modelCallContext(messages)), 3.seconds) shouldBe a[SpiGuardrail.Allow]
 
@@ -948,7 +952,8 @@ class GuardrailProviderSpec
       val results = conversation.newMessages().asScala.toSeq.map(_.asInstanceOf[Message.ToolCallResponse])
       results.map(_.id()) shouldBe Seq("id-1", "id-2")
       results.map(r => r.contents().get(0).asInstanceOf[MessageContent.TextMessageContent].text()) shouldBe
-      Seq("Lisbon: 22C", "Porto: 18C")
+      Seq("Lisbon: 22C", "weather service unavailable")
+      results.map(_.isError()) shouldBe Seq(false, true)
     }
 
     "report a startup error only for a streaming agent with a blocking response guardrail" in {

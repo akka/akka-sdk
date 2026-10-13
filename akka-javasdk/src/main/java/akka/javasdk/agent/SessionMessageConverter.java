@@ -42,7 +42,8 @@ public class SessionMessageConverter {
         event.id(),
         event.name(),
         event.content(),
-        event.sanitized());
+        event.sanitized(),
+        event.isError());
   }
 
   public static SessionMessage apply(
@@ -53,7 +54,8 @@ public class SessionMessageConverter {
         event.id(),
         event.name(),
         event.contents(),
-        event.sanitized());
+        event.sanitized(),
+        event.isError());
   }
 
   public static SessionMessage apply(SessionMemoryEntity.Event.Message event) {

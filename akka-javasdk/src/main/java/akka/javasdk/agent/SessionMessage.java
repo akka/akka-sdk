@@ -277,14 +277,41 @@ public sealed interface SessionMessage {
    *     model, with the configured sanitizers applied. The runtime sends such a message to the
    *     model as it is. For a message with false, the runtime masks the text with the current
    *     sanitizers before it sends it. Leave it false in a message that you build.
+   * @param isError true when the MCP server reported the result as an error, or when the runtime
+   *     turned a failed tool call into an error result for the model. The runtime passes the flag
+   *     to the model provider. Not all model providers send the flag to the model.
    */
   record ToolCallResponse(
-      Instant timestamp, String componentId, String id, String name, String text, boolean sanitized)
+      Instant timestamp,
+      String componentId,
+      String id,
+      String name,
+      String text,
+      boolean sanitized,
+      boolean isError)
       implements SessionMessage {
 
     public ToolCallResponse(
         Instant timestamp, String componentId, String id, String name, String text) {
-      this(timestamp, componentId, id, name, text, false);
+      this(timestamp, componentId, id, name, text, false, false);
+    }
+
+    public ToolCallResponse(
+        Instant timestamp,
+        String componentId,
+        String id,
+        String name,
+        String text,
+        boolean sanitized) {
+      this(timestamp, componentId, id, name, text, sanitized, false);
+    }
+
+    /**
+     * A copy of this response with another text. The copy keeps {@code isError} and has {@code
+     * sanitized} false, because it no longer holds the text that the runtime sent to the model.
+     */
+    public ToolCallResponse withText(String text) {
+      return new ToolCallResponse(timestamp, componentId, id, name, text, false, isError);
     }
 
     @Override
@@ -300,6 +327,9 @@ public sealed interface SessionMessage {
    *     model, with the configured sanitizers applied. The runtime sends such a message to the
    *     model as it is. For a message with false, the runtime masks the text with the current
    *     sanitizers before it sends it. Leave it false in a message that you build.
+   * @param isError true when the MCP server reported the result as an error, or when the runtime
+   *     turned a failed tool call into an error result for the model. The runtime passes the flag
+   *     to the model provider. Not all model providers send the flag to the model.
    */
   record MultimodalToolCallResponse(
       Instant timestamp,
@@ -307,7 +337,8 @@ public sealed interface SessionMessage {
       String id,
       String name,
       List<MessageContent> contents,
-      boolean sanitized)
+      boolean sanitized,
+      boolean isError)
       implements SessionMessage {
 
     public MultimodalToolCallResponse(
@@ -316,7 +347,26 @@ public sealed interface SessionMessage {
         String id,
         String name,
         List<MessageContent> contents) {
-      this(timestamp, componentId, id, name, contents, false);
+      this(timestamp, componentId, id, name, contents, false, false);
+    }
+
+    public MultimodalToolCallResponse(
+        Instant timestamp,
+        String componentId,
+        String id,
+        String name,
+        List<MessageContent> contents,
+        boolean sanitized) {
+      this(timestamp, componentId, id, name, contents, sanitized, false);
+    }
+
+    /**
+     * A copy of this response with other contents. The copy keeps {@code isError} and has {@code
+     * sanitized} false, because it no longer holds the contents that the runtime sent to the model.
+     */
+    public MultimodalToolCallResponse withContents(List<MessageContent> contents) {
+      return new MultimodalToolCallResponse(
+          timestamp, componentId, id, name, contents, false, isError);
     }
 
     @Override

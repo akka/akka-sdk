@@ -86,6 +86,7 @@ On the first model call, `newMessages()` holds the user message.
 On each later call, it holds the tool results that the runtime sends back to the model.
 
 Each message is a `Guardrail.Message` that keeps its origin: a `UserMessage`, an `AiMessage`, or a `ToolCallResponse`.
+`ToolCallResponse.isError()` is true when the MCP server reported the result as an error, or when the runtime turned a failed tool call into an error result.
 When the model calls several tools at once, each result is a separate `ToolCallResponse`:
 
 [source,java,indent=0]

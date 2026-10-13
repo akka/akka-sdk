@@ -5,10 +5,10 @@
 package akkajavasdk.components.agent;
 
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
+import static akkajavasdk.components.agent.RequestRecordingModelProvider.messagesOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.agent.SessionMessage.AiMessage;
@@ -22,18 +22,10 @@ import akka.javasdk.testkit.TestModelProvider.ToolInvocationRequest;
 import akkajavasdk.Junit5LogCapturing;
 import akkajavasdk.components.agent.autonomous.SanitizerAutonomousTestAgent;
 import akkajavasdk.components.agent.autonomous.TestTasks;
-import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
-import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.model.chat.StreamingChatModel;
-import dev.langchain4j.model.chat.request.ChatRequest;
-import dev.langchain4j.model.chat.response.ChatResponse;
-import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import java.time.Instant;
 import java.util.List;
-import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -48,61 +40,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
  */
 @ExtendWith(Junit5LogCapturing.class)
 public class SanitizerIntegrationTest extends TestKitSupport {
-
-  /**
-   * Replies with a {@link TestModelProvider}, and records the messages of each request, history
-   * included, which the {@link TestModelProvider} does not show.
-   */
-  private static final class RequestRecordingModelProvider implements ModelProvider.Custom {
-
-    private final TestModelProvider replies;
-    private final Queue<List<ChatMessage>> requests = new ConcurrentLinkedQueue<>();
-
-    RequestRecordingModelProvider(TestModelProvider replies) {
-      this.replies = replies;
-    }
-
-    List<List<ChatMessage>> requests() {
-      return List.copyOf(requests);
-    }
-
-    List<ChatMessage> lastRequest() {
-      return requests().getLast();
-    }
-
-    void reset() {
-      requests.clear();
-    }
-
-    @Override
-    public String modelName() {
-      return replies.modelName();
-    }
-
-    @Override
-    public Object createChatModel() {
-      var model = (ChatModel) replies.createChatModel();
-      return new ChatModel() {
-        @Override
-        public ChatResponse doChat(ChatRequest request) {
-          requests.add(request.messages());
-          return model.doChat(request);
-        }
-      };
-    }
-
-    @Override
-    public Object createStreamingChatModel() {
-      var model = (StreamingChatModel) replies.createStreamingChatModel();
-      return new StreamingChatModel() {
-        @Override
-        public void doChat(ChatRequest request, StreamingChatResponseHandler handler) {
-          requests.add(request.messages());
-          model.doChat(request, handler);
-        }
-      };
-    }
-  }
 
   private final TestModelProvider scopedAgentModel = new TestModelProvider();
   private final RequestRecordingModelProvider scopedAgentRequests =
@@ -169,11 +106,6 @@ public class SanitizerIntegrationTest extends TestKitSupport {
         .method(SessionMemoryEntity::getHistory)
         .invoke(new SessionMemoryEntity.GetHistoryCmd())
         .messages();
-  }
-
-  private static <T extends ChatMessage> List<T> messagesOf(
-      List<ChatMessage> request, Class<T> type) {
-    return request.stream().filter(type::isInstance).map(type::cast).toList();
   }
 
   private void askOtherAgent(String question) {
