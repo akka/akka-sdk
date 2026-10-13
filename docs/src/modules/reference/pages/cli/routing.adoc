@@ -6,7 +6,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-These commands govern how the gateway router chooses a model provider for a request. See xref:inference:routing/index.adoc[Routing requests to models] for the tasks they support.
+These commands govern how the gateway router chooses a model provider for a request. See xref:inference:routing.adoc[Routing requests to models] for the tasks they support.
 
 Every command on this page is a subcommand of `akka optimize`. Documents sent with `-f FILE` are JSON. Passing `-f -` reads the document from standard input instead.
 
@@ -166,12 +166,12 @@ akka optimize routing-classifiers history ID
 [#use-cases]
 == Semantic routing
 
-The commands in this section govern the use cases a semantic router recognizes and what serves each one. See xref:inference:routing/request-meaning.adoc[Routing on request meaning] for how the routing itself works.
+The commands in this section govern the use cases a semantic router recognizes and what serves each one. See xref:inference:routing.adoc#request-meaning[Routing on request meaning] for how the routing itself works.
 
 [#working-set-and-manifests]
 === The working set and its manifests
 
-`akka optimize use-cases` covers the use cases discovered in traffic. The aliases `use-case` and `uc` are accepted. Discovery runs against live traffic. The working set is what has been discovered so far, and a manifest fixes that set so it can enforce routing. See xref:inference:routing/defining-use-cases.adoc[Defining use cases] for what a use case is and how one is discovered.
+`akka optimize use-cases` covers the use cases discovered in traffic. The aliases `use-case` and `uc` are accepted. Discovery runs against live traffic. The working set is what has been discovered so far, and a manifest fixes that set so it can enforce routing. See xref:inference:routing.adoc#_defining_use_cases[Defining use cases] for what a use case is and how one is discovered.
 
 [cols="2,3", options="header"]
 |===
@@ -239,7 +239,7 @@ include::inference:partial$aao-inference-notice.adoc[]
 
 == See also
 
-* xref:inference:routing/request-attributes.adoc[Routing on request attributes]
-* xref:inference:routing/request-meaning.adoc[Routing on request meaning]
+* xref:inference:routing.adoc#request-attributes[Routing on request attributes]
+* xref:inference:routing.adoc#request-meaning[Routing on request meaning]
 * xref:reference:descriptors/routing-ruleset.adoc[Routing ruleset reference]
 * xref:reference:cli/models.adoc[Model commands]

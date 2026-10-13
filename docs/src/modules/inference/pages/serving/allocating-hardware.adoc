@@ -1,107 +1,157 @@
 = Allocating hardware to models
-:page-summary: An accelerator claims a slice of the device inventory, and a model deployment is placed on an accelerator rather than on a device.
+:page-aliases: inference:serving/reviewing-hardware.adoc
+:page-summary: An accelerator allocation claims whole devices from a pool for your project, and a model is placed on a device of an allocation. Listing the pools shows what you can allocate.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 
-An accelerator claims a slice of the device inventory described in xref:inference:serving/reviewing-hardware.adoc[Reviewing available hardware]. A model deployment is placed on an accelerator, never on a device, so an accelerator has to exist before a model can run.
+An accelerator allocation claims whole devices from the pools described in <<_reviewing_the_available_pools,Reviewing the available pools>>. A model is placed on a device of an allocation, never on a pool, so an allocation has to exist before a model can run.
 
-An accelerator states which device it claims and whether one model gets the card to itself.
+== Reviewing the available pools
 
-== Reviewing the accelerators you have
+Every inference-capable region declares pools of accelerator devices. Pools are inventory rather than something you create, so the first question before you deploy a model is which pools exist and what hardware each one holds.
 
-[source, shell]
-----
-akka models accelerators list
-----
+=== Listing the pools
 
 [source, shell]
 ----
-NAME       DEVICE   TENANCY     CARDS/REPLICA   MEMORY/MODEL   IN USE   CAN PLACE   READY
-standard   l4       Dedicated   1               23034Mi        0        1           True
+akka models pools list
 ----
 
-`CAN PLACE` is the column that answers whether another model will fit. This accelerator holds the region's one card and has not been deployed to yet, so it has a slot free. `READY` only says the accelerator itself is healthy.
-
-To read the same information for one accelerator as a single line:
+The command lists the pools of every region that your organization can access. To list the pools of one region, pass `--region`. Repeat the flag to list several regions:
 
 [source, shell]
 ----
-akka models accelerators get standard
+akka models pools list --region REGION
 ----
-
-[WARNING]
-====
-Creating an accelerator does not check that the hardware behind it is free. An accelerator created against a fully allocated card reports `READY True` and `CAN PLACE 0`: it looks healthy and can never place a model. Check `CAN PLACE` before deploying against a new accelerator.
-====
-
-== Choosing a tenancy
-
-Tenancy decides whether a model gets whole cards or shares one.
 
 [cols="1,3", options="header"]
 |===
-| Tenancy
-| Behavior
+| Column
+| Value
 
-| `dedicated`
-| Each model gets whole devices. This is the default.
+| `REGION`
+| The region that declares the pool.
 
-| `shared`
-| Several models split the memory of one device.
+| `NAME`
+| The pool name. This is the value an allocation gives as `acceleratorPool`.
+
+| `PRODUCT`
+| The device that the pool holds.
+
+| `MEMORY/DEVICE`
+| Memory on one device. A model has to fit inside this at the context length that you configure.
+
+| `MIG PROFILE`
+| The partition of a device that the pool offers, or `-` when the pool offers whole devices.
 |===
 
-Dedicated tenancy is the choice for a model that has to hold its latency under load, because nothing else competes for the card's memory. Set `devicesPerReplica` above 1 to give one replica several cards. That requires a node holding that many cards, and the deployment's parallelism factors have to multiply to exactly that number.
+When no region in the listing offers a pool, the command prints that no accessible region advertises one. Regions without the inference capability never do.
 
-Shared tenancy fits several small models onto one card. Every model on a shared accelerator has to state `engine.memoryPercent`, because a model that does not declare its share is sized against the whole card and runs out of memory once the weights finish downloading. A shared accelerator splits a single device, so it cannot set `devicesPerReplica` above 1.
+=== Comparing hardware across regions
 
-== Creating an accelerator
+A pool name is a regional identifier and nothing more. Two regions can name the same hardware differently, and one name can mean different hardware in different regions. Compare the `PRODUCT` and `MIG PROFILE` columns, not the name, when you compare hardware across regions.
 
-Declare the accelerator in the model descriptor when you want it version controlled alongside the models that use it:
+A model is not placed on a pool directly. The listing is discovery only: how many devices your project can draw from a pool is decided by the region when it admits an allocation.
+
+== Declaring an allocation
+
+Declare the allocation in the model descriptor, so that you can keep it under version control next to the models that use it:
 
 [source, yaml]
 ----
-resource: Accelerator
+resource: AcceleratorAllocation
 resourceVersion: v1
 metadata:
-  name: l4-dedicated
+  name: tutorial
 spec:
-  device: l4
-  tenancy: dedicated
+  allocations:
+    - name: gpu # <1>
+      acceleratorPool: POOL_NAME # <2>
+      devices: 1 # <3>
 ----
+<1> The entry name. A model places onto an entry by this name, so keep the same name in every region.
+<2> The pool to draw from. Replace `POOL_NAME` with a pool name from `akka models pools list`. A pool name is specific to a region, so this is the line that changes between regions.
+<3> The number of whole devices to claim from the pool. The minimum is 1.
 
-Applying the descriptor creates it. See xref:reference:descriptors/model-descriptor.adoc#accelerator[Accelerator] for every field.
+An allocation can hold several entries. Two entries can draw on the same pool under different names, which is how a project holds a large and a small claim on the same hardware. Entry names must be unique across every allocation in the descriptor.
 
-To create one directly instead:
+Each allocated device becomes one standing claim. A device is allocated to exactly one project, so projects cannot share a device. A model refers to a device by its index in the entry, starting at `0`. See xref:reference:descriptors/model-descriptor.adoc#accelerator-allocation[AcceleratorAllocation] for every field.
+
+== Applying an allocation
+
+Run the region's admission checks without persisting anything:
 
 [source, shell]
 ----
-akka models accelerators create fast --device l4
+akka models apply -f models.yaml --dry-run
 ----
 
-To split one card between two models:
+The CLI checks the shape of the descriptor first and reports every problem at once. The region then checks whether the devices fit the pool. The region refuses an allocation that exceeds what the project can draw.
+
+Apply the descriptor:
 
 [source, shell]
 ----
-akka models accelerators create small --device l4 --tenancy Shared --max-models 2
+akka models apply -f models.yaml
 ----
 
-An accelerator is immutable once it exists. Re-applying a descriptor leaves an existing accelerator alone rather than reshaping it, so changing a tenancy means deleting the accelerator and creating it again.
+`apply` creates or updates each resource by name, so it is safe to run again.
+
+== Reviewing the allocations you have
+
+[source, shell]
+----
+akka models allocations list
+----
+
+[cols="1,3", options="header"]
+|===
+| Column
+| Value
+
+| `NAME`
+| The allocation name.
+
+| `ENTRIES`
+| The number of entries in the allocation.
+
+| `DEVICES`
+| The number of devices that the entries ask for.
+
+| `BOUND`
+| The number of devices that the region has bound to claims.
+
+| `READY`
+| `True` when every claim is bound to a device.
+
+| `AGE`
+| How long the allocation has existed.
+|===
+
+To read one allocation entry by entry:
+
+[source, shell]
+----
+akka models allocations get NAME
+----
+
+The output lists, for each entry, the pool and the `DEVICES` and `BOUND` counts. An allocation is usable when `Ready` is `True` and `DEVICES` and `BOUND` agree. While a claim waits for a device, `Ready` is `False` with the reason `WaitingForDevices` and a message that says how many claims are bound.
+
+== Placing several models on one device
+
+A model chooses an allocation entry and the index of a device in it. Models that give the same entry and index share the physical device. Each of those models sets `placement.memoryGiB` to bound its share of the device memory. See xref:inference:serving/deploying-models.adoc#_sharing_a_device_between_models[Sharing a device between models].
 
 == Releasing capacity
 
-[source, shell]
-----
-akka models accelerators delete fast
-----
-
-Deleting an accelerator releases the capacity it held. Delete the deployments placed on it first, otherwise they have nowhere to run.
+Deleting an allocation releases the devices that it held. Delete the models placed on it first. `akka models delete -f` does this in order: it deletes the endpoints, then the models, then the allocations that the descriptor names. See xref:inference:serving/deploying-models.adoc#_removing_models[Removing models].
 
 include::partial$aao-inference-notice.adoc[]
 
 == See also
 
 * xref:inference:serving/deploying-models.adoc[Deploying models]
-* xref:reference:descriptors/model-descriptor.adoc#accelerator[Accelerator descriptor reference]
+* xref:reference:descriptors/model-descriptor.adoc#accelerator-allocation[AcceleratorAllocation descriptor reference]
+* xref:reference:cli/models.adoc#pools[`akka models pools` command reference]
 * xref:reference:cli/models.adoc#allocations[`akka models allocations` command reference]

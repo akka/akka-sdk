@@ -121,11 +121,11 @@ These commands serve models and decide which model serves a request. They are an
 
 | xref:reference:cli/models.adoc[`akka models`]
 | Accelerator pools and allocations, models, the endpoints that serve them, and their API keys.
-| xref:inference:serving/index.adoc[]
+| xref:inference:index.adoc#serving[Serving models]
 
 | xref:reference:cli/routing.adoc[`akka optimize rulesets`, `routing-classifiers`, `use-cases`, and `routing-policies`]
 | The rules and policies that choose which provider serves a request.
-| xref:inference:routing/index.adoc[]
+| xref:inference:routing.adoc[]
 
 | xref:reference:cli/cost-and-traffic.adoc[`akka optimize spend`, `callers`, `incidents`, `pricing-catalog`, and `captures`]
 | What an organization spends on inference, and the traffic behind it.
