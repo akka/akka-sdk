@@ -169,6 +169,7 @@ Use this page as a guideline: review it with your Akka team before you send prod
 == See also
 
 * xref:operations:production-readiness/index.adoc[]
+* xref:operations:technical-overview.adoc#_akka_optimize_add_on[Akka Optimize add-on]
 * xref:inference:serving/getting-started.adoc[]
 * xref:optimize:trainer/endpoints.adoc[Endpoints]
 * xref:optimize:trainer/checkpoints.adoc[Checkpoints]
