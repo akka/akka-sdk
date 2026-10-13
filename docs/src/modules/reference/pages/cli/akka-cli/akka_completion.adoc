@@ -15,7 +15,7 @@ To load completions:
 
 == Bash
 
-[,bash]
+[source,bash]
 ----
 $ source <(akka completion bash)
 
@@ -28,7 +28,7 @@ $ akka completion bash > /usr/local/etc/bash_completion.d/akka
 
 == Zsh
 
-[,zsh]
+[source,zsh]
 ----
 # If shell completion is not already enabled in your environment,
 # you will need to enable it.  You can execute the following once:
@@ -45,7 +45,7 @@ $ akka completion zsh | sudo tee "${fpath[1]}/_akka" >/dev/null
 
 == fish
 
-[,fish]
+[source,fish]
 ----
 $ akka completion fish | source
 
@@ -55,7 +55,7 @@ $ akka completion fish > ~/.config/fish/completions/akka.fish
 
 == PowerShell
 
-[,powershell]
+[source,powershell]
 ----
 PS> akka completion powershell | Out-String | Invoke-Expression
 

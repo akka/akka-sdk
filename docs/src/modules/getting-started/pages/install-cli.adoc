@@ -1,5 +1,5 @@
 = Install the Akka CLI
-:page-aliases: operations:cli/installation.adoc, reference:cli/installation.adoc, getting-started:quick-install-cli.adoc, operations:cli/command-completion.adoc, reference:cli/command-completion.adoc, operations:cli/system-config.adoc
+:page-aliases: operations:cli/index.adoc, reference:cli/index.adoc, operations:cli/installation.adoc, reference:cli/installation.adoc, getting-started:quick-install-cli.adoc, operations:cli/command-completion.adoc, reference:cli/command-completion.adoc, operations:cli/system-config.adoc
 
 include::ROOT:partial$include.adoc[]
 

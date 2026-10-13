@@ -36,5 +36,5 @@ include::partial$aao-inference-notice.adoc[]
 == See also
 
 * xref:inference:serving/index.adoc[Serving models]
-* xref:reference:inference-cli/routing.adoc[Routing commands]
+* xref:reference:cli/routing.adoc[Routing commands]
 * xref:sdk:model-provider-details.adoc[AI model provider configuration]

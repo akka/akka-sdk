@@ -1,83 +1,14 @@
-= Cost, training, and evaluation commands
-:page-summary: The akka optimize commands for spend, incidents, pricing, model training, dataset curation, and evaluation.
+= Training and evaluation commands
+:page-aliases: reference:inference-cli/cost-training-and-evaluation.adoc
+:page-summary: The akka optimize commands for model training, dataset curation, and evaluation.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 
-These commands cover what an organization spends on inference and how models are trained and scored. Every command on this page is a subcommand of `akka optimize`. This page lists the commands most tasks use. See xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize] for every command and flag.
+These commands cover how models are trained and scored. Every command on this page is a subcommand of `akka optimize`. This page lists the commands most tasks use. See xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize] for every command and flag. The tasks they support are in the xref:optimize:index.adoc[Training] section.
 
 The format a `-f FILE` option reads depends on the command, and `--help` states it. Training plans are JSON or YAML. `eval datasets create` reads a zip or an `items.jsonl` file. `datasets create` reads chat-format JSONL. `training sessions create` reads a conversation corpus. Most commands read the document from standard input when you pass `-f -`.
-
-== Spend
-
-`akka optimize spend` reports what a period consumed, what it cost, and what one conversation cost. The alias `spends` is accepted.
-
-[cols="2,3", options="header"]
-|===
-| Command
-| Description
-
-| `akka optimize spend get --from INSTANT --to INSTANT`
-| What a period consumed and cost, divided as asked.
-
-| `akka optimize spend compare --from INSTANT --to INSTANT --against-from INSTANT --against-to INSTANT`
-| Two periods, and the difference between them.
-
-| `akka optimize spend conversations list --from INSTANT --to INSTANT`
-| The conversations of a period that cost the most.
-
-| `akka optimize spend info`
-| Which service is answering at this address.
-|===
-
-== Callers
-
-`akka optimize callers` holds the callers that spend figures are attributed to. The alias `caller` is accepted.
-
-[cols="2,3", options="header"]
-|===
-| Command
-| Description
-
-| `akka optimize callers erase VALUE --basis BASIS`
-| Remove one caller and keep every figure it is behind. `BASIS` is `declared` when the request carried the `x-optimize-caller` header, or `forwarded` when a proxy reported the address.
-
-| `akka optimize callers erase VALUE --basis BASIS --dry-run`
-| Report what the erasure would reach without writing anything.
-|===
-
-== Incidents
-
-`akka optimize incidents` is the incident feed, unioned from its sources. The alias `incident` is accepted.
-
-[cols="2,3", options="header"]
-|===
-| Command
-| Description
-
-| `akka optimize incidents list`
-| The incident feed: anomalies, blocked requests and scrub failures.
-|===
-
-== Pricing catalog
-
-`akka optimize pricing-catalog` holds model prices as input and output rates per million tokens for each served name. A published version is never edited. The aliases `pricing-catalogs`, `catalog`, and `catalogs` are accepted.
-
-[cols="2,3", options="header"]
-|===
-| Command
-| Description
-
-| `akka optimize pricing-catalog get`
-| The version in force now, or at an instant.
-
-| `akka optimize pricing-catalog apply -f FILE`
-| Publish a catalog version, or check one.
-
-| `akka optimize pricing-catalog versions list`
-| Every published version, newest first.
-|===
 
 == Training runs
 
@@ -269,29 +200,6 @@ A session is a raw conversation corpus. A curation judges raw sessions into a tr
 | Registered evaluators, their kind and their version.
 |===
 
-== Captures
-
-`akka optimize captures` reads recorded interaction artifacts off a filesystem. The alias `capture` is accepted.
-
-These commands serve debugging and diagnostics. They read artifacts from a directory on disk, which is where a capture written during local development or a support investigation lands.
-
-[NOTE]
-====
-Captures recorded in production are stored in a location the CLI cannot reach in this version. The commands below read a filesystem directory only.
-====
-
-[cols="2,3", options="header"]
-|===
-| Command
-| Description
-
-| `akka optimize captures list DIRECTORY`
-| Every artifact in a directory, newest first.
-
-| `akka optimize captures show ARTIFACT`
-| One artifact, read forward.
-|===
-
 == Service status
 
 [cols="2,3", options="header"]
@@ -305,9 +213,11 @@ Captures recorded in production are stored in a location the CLI cannot reach in
 
 include::inference:partial$aao-inference-notice.adoc[]
 
+include::inference:partial$aao-inference-notice.adoc[]
+
 == See also
 
+* xref:optimize:cli.adoc[]
 * xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize command reference]
-* xref:reference:inference-cli/models.adoc[Model commands]
-* xref:reference:inference-cli/routing.adoc[Routing commands]
+* xref:reference:cli/cost-and-traffic.adoc[Cost and traffic commands]
 * xref:sdk:agents/llm_eval.adoc[Evaluating model responses]

@@ -308,6 +308,6 @@ akka secrets delete hf-token
 == See also
 
 * xref:inference:serving/index.adoc[Serving models]
-* xref:reference:inference-cli/models.adoc[Model commands]
+* xref:reference:cli/models.adoc[Model commands]
 * xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
 * xref:operations:services/invoke-service.adoc[Invoke a service]

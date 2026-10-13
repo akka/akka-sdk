@@ -16,21 +16,7 @@ The Akka CLI allows you to create, list, and configure projects.
 
 For more commands, see the xref:reference:cli/akka-cli/akka_projects.adoc[projects] page.
 
-=== Creating a New Project
-
-To create a new project within your organization:
-[source, shell]
-----
-akka projects new sample-project "An example project in Akka"
-----
-
-This creates a project named `sample-project` with the description `"An example project in Akka"`.
-
-To set this new project as your current project:
-[source, shell]
-----
-akka config set project sample-project
-----
+To create a project, see xref:projects/create-project.adoc[].
 
 === Listing Projects
 
@@ -44,25 +30,7 @@ The CLI displays a list of available projects, with the current project marked b
 
 == Managing Container Registry Credentials
 
-To allow Akka services to pull images from private Docker registries, add container registry credentials with the following command:
-[source, shell]
-----
-akka docker add-credentials \
-  --docker-server https://mydockerregistry.com \
-  --docker-username myself \
-  --docker-password secret
-----
-
-Required flags:
-* `--docker-server` (e.g., `https://mydockerregistry.com`)
-* `--docker-username` (your Docker username)
-* `--docker-password` (your Docker password)
-
-For more details, see `akka docker -h` or visit the xref:reference:cli/akka-cli/akka_docker.adoc[docker] page.
-[NOTE]
-====
-For more information about using the Akka Container Registry (ACR) or external container registries, see xref:projects/container-registries.adoc[].
-====
+To allow Akka services to pull images from private Docker registries, add container registry credentials. See xref:projects/external-container-registries.adoc[]. For the Akka Container Registry, see xref:projects/container-registries.adoc[].
 
 == Managing Services
 
@@ -80,23 +48,11 @@ The CLI displays a summary of all services, including their names and statuses.
 
 === Deploying a Service
 
-To deploy a service using a Docker image, run:
-[source, shell]
-----
-akka services deploy my-service my-container-uri/container-name:tag-name
-----
-
-Ensure you have set up your container registry credentials before deploying. For more details, see xref:projects/container-registries.adoc[container registry] page.
+To deploy a service using a Docker image, see xref:services/deploy-service.adoc[].
 
 === Exposing a route for inbound traffic
 
-To expose a service for inbound traffic:
-[source, shell]
-----
-akka services expose my-service --enable-cors
-----
-
-This command creates a route for the specified service, with the option to enable HTTP CORS using the `--enable-cors` flag.
+To expose a service for inbound traffic, see xref:services/invoke-service.adoc[].
 
 === Viewing Service Logs
 

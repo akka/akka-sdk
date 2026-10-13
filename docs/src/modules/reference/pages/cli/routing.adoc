@@ -1,4 +1,5 @@
 = Routing commands
+:page-aliases: reference:inference-cli/routing.adoc
 :page-summary: The akka optimize commands for attribute routing, classifiers, discovered use cases, and routing policies.
 :page-persona: builder-developer, builder-ai-ml, operator
 :page-banner: inference
@@ -241,4 +242,4 @@ include::inference:partial$aao-inference-notice.adoc[]
 * xref:inference:routing/request-attributes.adoc[Routing on request attributes]
 * xref:inference:routing/request-meaning.adoc[Routing on request meaning]
 * xref:reference:descriptors/routing-ruleset.adoc[Routing ruleset reference]
-* xref:reference:inference-cli/models.adoc[Model commands]
+* xref:reference:cli/models.adoc[Model commands]
