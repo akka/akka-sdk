@@ -5,14 +5,17 @@
 package akkajavasdk;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.*;
 
 import akka.grpc.GrpcServiceException;
 import akka.grpc.javadsl.SingleBlockingResponseRequestBuilder;
 import akka.http.javadsl.model.StatusCodes;
+import akka.http.javadsl.model.headers.RawHeader;
 import akka.javasdk.http.StrictResponse;
 import akka.javasdk.testkit.TestKitSupport;
+import akka.javasdk.testkit.WebSocketUpgradeFailedException;
 import akkajavasdk.components.jwt.ClaimsJwtEndpoint;
 import akkajavasdk.protocol.TestGrpcServiceOuterClass;
 import akkajavasdk.protocol.TestJwtsGrpcServiceClient;
@@ -67,6 +70,50 @@ public class JwtEndpointTest extends TestKitSupport {
     var call = httpClient.GET("/hello").addHeader("Authorization", token).invoke();
 
     assertThat(call.status()).isEqualTo(StatusCodes.FORBIDDEN);
+  }
+
+  @Test
+  public void shouldAcceptWebSocketUpgradeWithValidToken() {
+    var token = bearerTokenWith(Map.of("iss", "my-issuer-123", "sub", "my-subject-123"));
+
+    var probes =
+        testKit
+            .getSelfWebSocketRouteTester()
+            .wsTextConnection(
+                "/hello/websocket", List.of(RawHeader.create("Authorization", token)));
+
+    probes.subscriber().request(1);
+    probes.publisher().expectRequest();
+    probes.publisher().sendNext("hello");
+
+    assertThat(probes.subscriber().expectNext()).isEqualTo("hello, subject: my-subject-123");
+
+    probes.publisher().sendComplete();
+    probes.subscriber().expectComplete();
+  }
+
+  @Test
+  public void shouldRejectWebSocketUpgradeWithoutToken() {
+    assertThatThrownBy(
+            () -> testKit.getSelfWebSocketRouteTester().wsTextConnection("/hello/websocket"))
+        .isInstanceOfSatisfying(
+            WebSocketUpgradeFailedException.class,
+            e -> assertThat(e.status()).isEqualTo(StatusCodes.BAD_REQUEST));
+  }
+
+  @Test
+  public void shouldRejectWebSocketUpgradeWithWrongClaim() {
+    var token = bearerTokenWith(Map.of("iss", "my-issuer-123", "sub", "incorrect-subject"));
+
+    assertThatThrownBy(
+            () ->
+                testKit
+                    .getSelfWebSocketRouteTester()
+                    .wsTextConnection(
+                        "/hello/websocket", List.of(RawHeader.create("Authorization", token))))
+        .isInstanceOfSatisfying(
+            WebSocketUpgradeFailedException.class,
+            e -> assertThat(e.status()).isEqualTo(StatusCodes.FORBIDDEN));
   }
 
   @Test
