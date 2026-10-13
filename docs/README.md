@@ -50,6 +50,20 @@ Example path:
 open ../target/site/index.html
 ```
 
+## Full-width tables and diagrams
+
+Use a separate full-screen grid for a large reference table that readers need to filter or compare across columns. Keep the explanation on the regular docs page. Copy [dense-page-template.adoc](dense-page-template.adoc) to a `<topic>-grid.adoc` file beside that page; the grid's close control returns to `<topic>.adoc` if the browser cannot close the tab. [data-flows-grid.adoc](src/modules/operations/pages/technical-overview/data-flows-grid.adoc) is a working example.
+
+Set `:page-layout: dense` and `:page-breadcrumb:` on the grid page. Give the table the `.dense` role, `options="header"`, and `cols="..."` proportions. The layout uses the full browser width and adds a row filter, sortable column headers, and a CSV download. A spanning header cell such as `6+h| Group name` groups rows in source order; sorting removes those group headings.
+
+Link to the grid from the regular page with the `open-grid` role and `window=_blank`. This renders as a compact link row, for example:
+
+```asciidoc
+xref:operations:technical-overview/data-flows-grid.adoc[View the full data flows table,role=open-grid,window=_blank]
+```
+
+For a large diagram, keep it on the regular page and add a full-width page with `:page-layout: dense`, `:page-breadcrumb:`, and `:page-return-to:` set to the regular page's relative HTML path. Use `[.dense-image]` on an image block or `[mermaid.dense-mermaid]` on a Mermaid block. Link to it with `role=open-image,window=_blank`. The close control returns to `:page-return-to:` if the tab cannot close. [technical-overview-image.adoc](src/modules/operations/pages/technical-overview-image.adoc) and [technical-overview-model-request-image.adoc](src/modules/operations/pages/technical-overview-model-request-image.adoc) are examples.
+
 ## Maintaining `llms.txt` for AI coding assistants
 
 To help AI coding assistants like Cursor and Qodo make use of the documentation, we publish the docs in a markdown format that is easier to process. The index file is published to https://doc.akka.io/llms.txt.
