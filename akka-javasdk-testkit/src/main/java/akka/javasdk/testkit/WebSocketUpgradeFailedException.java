@@ -11,8 +11,9 @@ import java.util.List;
 
 /**
  * Thrown by {@link WebSocketRouteTester} when the service rejects the WebSocket upgrade request,
- * for example with 403 when the request does not have a valid JWT, or with the status of an {@link
- * akka.javasdk.http.HttpException} that the endpoint method throws.
+ * for example with 403 when the request has a JWT that does not match the {@code @JWT}
+ * requirements, or with the status of an {@link akka.javasdk.http.HttpException} that the endpoint
+ * method throws.
  *
  * <p>The response body of a rejected upgrade is not available, only the status and the headers.
  */
@@ -26,13 +27,7 @@ public final class WebSocketUpgradeFailedException extends RuntimeException {
   @InternalApi
   public WebSocketUpgradeFailedException(
       String uri, StatusCode status, List<HttpHeader> headers, String reason) {
-    super(
-        "WebSocket upgrade request to ["
-            + uri
-            + "] was rejected with status ["
-            + status
-            + "]: "
-            + reason);
+    super("WebSocket upgrade request was rejected: " + reason);
     this.uri = uri;
     this.status = status;
     this.headers = headers;

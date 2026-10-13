@@ -8,7 +8,6 @@ import akka.http.javadsl.model.HttpHeader;
 import akka.stream.testkit.TestPublisher;
 import akka.stream.testkit.TestSubscriber;
 import akka.util.ByteString;
-import java.util.List;
 
 public interface WebSocketRouteTester {
 
@@ -30,7 +29,7 @@ public interface WebSocketRouteTester {
    *     TestSubscriber.Probe for expecting messages from the service
    * @throws WebSocketUpgradeFailedException if the service rejects the upgrade request
    */
-  WsConnection<String> wsTextConnection(String path, List<HttpHeader> headers);
+  WsConnection<String> wsTextConnection(String path, Iterable<HttpHeader> headers);
 
   /**
    * @param path A path to a web socket endpoint in the service
@@ -48,5 +47,5 @@ public interface WebSocketRouteTester {
    *     TestSubscriber.Probe for expecting messages from the service
    * @throws WebSocketUpgradeFailedException if the service rejects the upgrade request
    */
-  WsConnection<ByteString> wsBinaryConnection(String path, List<HttpHeader> headers);
+  WsConnection<ByteString> wsBinaryConnection(String path, Iterable<HttpHeader> headers);
 }

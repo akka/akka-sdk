@@ -46,7 +46,7 @@ private[testkit] final class WebSocketRouteTesterImpl(runtimeHost: String, runti
   override def wsTextConnection(path: String): WsConnection[String] =
     wsTextConnection(path, Collections.emptyList())
 
-  override def wsTextConnection(path: String, headers: java.util.List[HttpHeader]): WsConnection[String] = {
+  override def wsTextConnection(path: String, headers: java.lang.Iterable[HttpHeader]): WsConnection[String] = {
     val (uri, wsFlow: Flow[Message, Message, CompletionStage[WebSocketUpgradeResponse]]) =
       clientFlowFor(path, headers)
 
@@ -86,7 +86,7 @@ private[testkit] final class WebSocketRouteTesterImpl(runtimeHost: String, runti
   override def wsBinaryConnection(path: String): WsConnection[ByteString] =
     wsBinaryConnection(path, Collections.emptyList())
 
-  override def wsBinaryConnection(path: String, headers: java.util.List[HttpHeader]): WsConnection[ByteString] = {
+  override def wsBinaryConnection(path: String, headers: java.lang.Iterable[HttpHeader]): WsConnection[ByteString] = {
     val (uri, wsFlow: Flow[Message, Message, CompletionStage[WebSocketUpgradeResponse]]) =
       clientFlowFor(path, headers)
 
@@ -135,7 +135,7 @@ private[testkit] final class WebSocketRouteTesterImpl(runtimeHost: String, runti
     }
   }
 
-  private def clientFlowFor(path: String, headers: java.util.List[HttpHeader]) = {
+  private def clientFlowFor(path: String, headers: java.lang.Iterable[HttpHeader]) = {
     val absolutePath = if (path.startsWith("/")) path else "/" + path
     val uri = "ws://" + runtimeHost + ":" + runtimePort + absolutePath
     val wsRequest = headers.asScala.foldLeft(WebSocketRequest.create(uri))(_.addHeader(_))
