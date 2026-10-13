@@ -74,10 +74,18 @@ object ClassifierProviderSpec {
     override def classifyAsync(input: String): CompletionStage[Classification] = null
   }
 
+  // A stage of supplyAsync fails with a CompletionException around the exception of the supplier.
+  class SupplyAsyncFailedStageClassifier extends Classifier {
+    override def classify(input: String): Classification = Classification.label("unused")
+    override def classifyAsync(input: String): CompletionStage[Classification] =
+      CompletableFuture.supplyAsync[Classification](() => throw new IllegalStateException("supplier blew up"))
+  }
+
   private val failingConfig = ConfigFactory.parseString(s"""
     akka.javasdk.agent.classifiers {
       "throwing" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$ThrowingClassifier" }
       "null-stage" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$NullStageClassifier" }
+      "supply-async" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$SupplyAsyncFailedStageClassifier" }
       "missing" { class = "com.example.NoSuchClassifier" }
     }
     """)
@@ -263,6 +271,8 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
 
       failure("throwing") shouldBe an[IllegalStateException]
       failure("null-stage").getMessage shouldEqual "Classifier.classifyAsync returned null"
+      // the exception of the supplier, not the CompletionException of its stage
+      failure("supply-async") shouldBe an[IllegalStateException]
       failure("missing").getMessage should include("Classifier [missing] implementation class")
     }
 
