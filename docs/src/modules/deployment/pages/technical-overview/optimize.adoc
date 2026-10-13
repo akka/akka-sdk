@@ -61,16 +61,6 @@ include::deployment:partial$model-request-diagram.mmd[]
 
 xref:deployment:technical-overview-model-request-image.adoc[View the full-size model request diagram,role=open-image,window=_blank]
 
-== Tools for evaluation and adversarial testing
-
-Akka provides these tools with the add-on:
-
-* evalkit, a toolkit that you download separately and that integrates with your Akka project, runs evaluation and scoring campaigns locally.
-* redkit, a toolkit that is also part of your Akka project and downloadable separately, runs adversarial testing campaigns against models.
-* Extensions to the Akka CLI manage evalkit, redkit, and your hosted environment. See xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize].
-
-For testing an agent, see xref:testing:evaluation/adversarial.adoc[].
-
 == Next steps
 
 * Before you go live, review xref:deployment:production-readiness/optimize.adoc[production readiness for served and trained models].
