@@ -5,11 +5,12 @@
 package akka.javasdk;
 
 /**
- * Exception thrown when a sanitizer fails while it masks text of an agent request. The request
- * fails, and the runtime does not pass the text on. This includes the name of the sanitizer.
+ * Exception thrown when a sanitizer fails while it masks text of an agent request. This includes
+ * the name of the sanitizer. The request fails, and the runtime does not pass the text on.
  *
- * <p>The cause is the exception that the sanitizer failed with, or {@code null} when the sanitizer
- * returned {@code null}.
+ * <p>The cause is the exception that the sanitizer failed with, or {@code null} when the masked
+ * text is {@code null}. The message of the cause can hold the text that the sanitizer was masking.
+ * Do not log the cause, and do not return its message to the caller.
  */
 public final class SanitizerException extends RuntimeException {
 

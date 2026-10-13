@@ -33,9 +33,9 @@ public interface TextSanitizer {
    * <p>This is the method to implement. It may block: sanitizers are always invoked on virtual
    * threads. The text can be of any size, from a single tool result to a whole model request.
    *
-   * <p>A thrown exception fails the call the text was masked for, so unmasked text is never passed
-   * on. For an agent, the function given to {@code onFailure} receives a {@link
-   * SanitizerException}.
+   * <p>A thrown exception or a {@code null} result fails the call the text was masked for, so
+   * unmasked text is never passed on. For an agent, the function given to {@code onFailure}
+   * receives a {@link SanitizerException}.
    *
    * @return the masked text
    */
@@ -47,6 +47,9 @@ public interface TextSanitizer {
    * <p>The default implementation delegates to {@link #sanitize}. When this method is overridden,
    * {@link #sanitize} is no longer used, and it is then safe to have it throw {@link
    * UnsupportedOperationException} or return {@code null}.
+   *
+   * <p>A failed stage, a {@code null} stage or a {@code null} result fails the call, as for {@link
+   * #sanitize}.
    *
    * @return a CompletionStage with the masked text
    */

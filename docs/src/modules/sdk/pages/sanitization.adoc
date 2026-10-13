@@ -138,7 +138,7 @@ include::example$doc-snippets/src/main/java/com/example/sanitizer/AccountSanitiz
 
 The constructor of a `TextSanitizer` can take an `akka.javasdk.SanitizerContext`, which gives access to the entry name and its configuration, and any other injectable type, such as an `akka.javasdk.agent.ClassifierClient` to mask what a configured classifier detects.
 
-A `TextSanitizer` that throws an exception fails the agent request, so the runtime does not send the text on. The function that the agent gives to `onFailure` receives an `akka.javasdk.SanitizerException` with the name of the sanitizer, see xref:sdk:agents/failures.adoc[Failure handling].
+A `TextSanitizer` that throws an exception fails the agent request, so the runtime does not pass the text on. The function that the agent gives to `onFailure` receives an `akka.javasdk.SanitizerException` with the name of the sanitizer, see xref:sdk:agents/failures.adoc[Failure handling]. An agent that returns `StreamEffect` has no `onFailure`. For such an agent, a sanitizer failure fails the stream.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/sanitizer/TokenLogSanitizer.java[TokenLogSanitizer.java]
