@@ -215,7 +215,7 @@ Now that you have built and started the shopping cart service locally, it is tim
 
 . If you have not already done so, xref:getting-started:install-cli.adoc[install the Akka CLI].
 
-. Authenticate the CLI with your Akka account:
+. Authenticate the CLI with your Akka account. For login options and proxy settings, see xref:operations:cli/using-cli.adoc#log-in[Logging In]:
 +
 [source, command line]
 ----

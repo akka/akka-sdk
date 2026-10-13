@@ -7,30 +7,54 @@ include::ROOT:partial$include.adoc[]
 The Akka command-line interface (CLI) complements the browser-based https://console.akka.io[Akka Console, window="new"] user interface (UI), allowing you to perform deployment and configuration operations directly from the command line. This page provides an overview of common commands.
 
 For a full reference of all available commands, see the xref:reference:cli/akka-cli/index.adoc[reference] page.
-[TIP]
-====
-Check regularly to ensure you have the latest version of the `akka` CLI. You can check the installed version by running:
 
-[source, shell]
-----
-akka version
-----
-
-For instructions on updating, see xref:getting-started:install-cli.adoc[installing and updating].
-====
-
-== Basic CLI Usage
-
-The general structure of an Akka CLI command is:
-[source, shell]
-----
-akka <command> [sub-command] [parameters] --[flags]
-----
-Flags, which modify command behavior, are always preceded by `--`.
-
+[#log-in]
 == Logging In
 
-To authenticate the CLI with your Akka account, see xref:getting-started:install-cli.adoc#log-in[Log in].
+To deploy to Akka or work with projects and services, authenticate the CLI with your Akka account. Local development does not need it. To initiate the login process, run:
+
+[source, shell]
+----
+akka auth login
+----
+
+This command opens the Akka console login screen in your default web browser. The CLI will display `Waiting for UI login...` while you authenticate. Once authorization is complete, the CLI returns to the command prompt.
+
+Upon successful authentication:
+
+* If you have one project, it is automatically set as the `current` project.
+* If no projects exist, you will need to create one and set it manually.
+* If you have multiple projects, you will need to specify the target project manually (see below).
+
+To set your current project:
+[source, shell]
+----
+akka config set project my-project
+----
+
+For more authentication options:
+[source, shell]
+----
+akka auth -h
+----
+You can also refer to the xref:reference:cli/akka-cli/akka_auth.adoc[auth] page.
+
+[#behind-a-proxy]
+=== Behind a corporate proxy
+
+In corporate environments with HTTP proxy servers that do not support HTTP/2, you may encounter issues since the `akka` CLI uses gRPC. To bypass these limitations, you can configure the CLI to use grpc-web, which works over HTTP/1.1 and HTTP/2.
+
+Log in with grpc-web enabled:
+[source, shell]
+----
+akka auth login --use-grpc-web
+----
+
+If you are already logged in but need to switch to grpc-web, configure it with:
+[source, shell]
+----
+akka config set api-server-use-grpc-web true
+----
 
 == Managing Projects
 

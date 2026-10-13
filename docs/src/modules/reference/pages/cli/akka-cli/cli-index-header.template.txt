@@ -1,6 +1,6 @@
 = CLI command reference
 
-The `akka` command line tool enables you to interact with your Akka projects and services using the command line. See xref:getting-started:install-cli.adoc[] for information on how to download `akka`. Use xref:reference:cli/akka-cli/akka_version.adoc[`akka version`] to check the version.
+The `akka` command line tool lets you interact with Akka projects, AI systems, local and remote Akka platform environments, governance bundles, and AI training runs. See xref:getting-started:install-cli.adoc[] for information on how to download `akka`. Use xref:reference:cli/akka-cli/akka_version.adoc[`akka version`] to check the version.
 
 The following sections list xref:reference:cli/akka-cli/akka.adoc[akka] commands and their options.
 
