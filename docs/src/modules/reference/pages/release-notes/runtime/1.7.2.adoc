@@ -7,16 +7,16 @@ Released 2026-10-15.
 
 == Changes
 
-* Agents: the runtime retries a failed model call for every built-in xref:sdk:model-provider-details.adoc[model provider], up to the `max-retries` of the model provider. It retries a rate limit response, a `408` or `5xx` response, a timeout, and a connection failure. It does not retry other failures, such as a response that it cannot parse. The runtime does not retry the calls of a custom model provider.
+* Agents: the runtime retries failed model calls for all built-in xref:sdk:model-provider-details.adoc[model providers], up to the `max-retries` of the model provider. It retries rate limit responses, server errors, timeouts, and connection failures.
 * Agents: the runtime also retries the model call of a streamed reply, when the agent has not emitted any part of the response.
-* Agents: before a retry, the runtime waits for the delay that the model provider requests, for example in a `Retry-After` header. A long requested delay makes the agent wait that long. Without a requested delay, the delay starts at 500 milliseconds and grows to at most 30 seconds.
-* Agents: `max-retries` is the only limit on the retries for Bedrock and Vertex AI. Before, the AWS client also retried on its own, and the Vertex AI model provider ignored `max-retries` and made five attempts.
-* Agents: a failed Vertex AI model call fails the agent with `RateLimitException`, `ModelTimeoutException`, or `InternalServerException`, depending on the failure. Before, it failed with `ModelException`. A throttled Bedrock call fails with `RateLimitException`. Before, it could fail with `ModelTimeoutException`. Review an `onFailure` handler that matches on these exceptions, see xref:sdk:agents/failures.adoc[Failure handling].
-* Agents: the metrics and traces report each attempt as a separate model call. The `gen_ai.client.operation.duration` metric also counts the failed attempts of a request that succeeds after a retry. The runtime logs a warning for each retry.
-* Agents: the timeout of a xref:sdk:agents/extending.adoc#mcp_tools[remote MCP tool] applies to the whole request on all transports. A tool call that takes longer than the timeout fails. This includes the legacy SSE transport, which had no timeout before. The default timeout is 20 seconds. Set another timeout with `RemoteMcpTools.withTimeout`.
-* HTTP endpoints: when a xref:sdk:http-endpoints.adoc#websocket[`@WebSocket`] method throws an `HttpException`, the runtime refuses the WebSocket upgrade with the status of the exception. Before, the status was `500`.
-* Agents: the runtime keeps the `isError` flag of an MCP tool result and gives the result to the model as an error tool result. Anthropic and Vertex AI models receive the flag. Other model providers receive only the text of the result.
-* Agents: for a streamed reply, the runtime assigns an id to a tool call when the model provider sends none, as Gemini does.
+* Agents: before a retry, the runtime waits for the delay that the model provider requests, for example in a `Retry-After` header.
+* Agents: `max-retries` also controls the retries for Bedrock and Vertex AI.
+* Agents: a failed Bedrock or Vertex AI model call can fail the agent with another exception type than before. Review an `onFailure` handler that matches on the exception type, see xref:sdk:agents/failures.adoc[Failure handling].
+* Agents: the metrics and traces report each attempt as a separate model call. The runtime logs a warning for each retry.
+* Agents: the timeout of a xref:sdk:agents/extending.adoc#mcp_tools[remote MCP tool] applies to the whole request on all transports. A tool call that takes longer than the timeout fails.
+* HTTP endpoints: when a xref:sdk:http-endpoints.adoc#websocket[`@WebSocket`] method throws an `HttpException`, the runtime responds with the status of the exception.
+* Agents: the runtime gives an MCP tool result that has the `isError` flag to the model as an error tool result.
+* Agents: for a streamed reply, the runtime assigns an id to a tool call when the model provider sends none.
 * Governance features: the ledger records an interaction for every way an agent request ends, and the sanitization of each interaction. This release also has fixes for the ledger, sanitizers, and evaluators. See xref:concepts:governance-and-the-runtime.adoc[Governance and the runtime].
 * Runtime logs: a service without views no longer logs the warning `DB storage metrics query failed`.
 
