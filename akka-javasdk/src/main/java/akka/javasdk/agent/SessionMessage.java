@@ -277,8 +277,9 @@ public sealed interface SessionMessage {
    *     model, with the configured sanitizers applied. The runtime sends such a message to the
    *     model as it is. For a message with false, the runtime masks the text with the current
    *     sanitizers before it sends it. Leave it false in a message that you build.
-   * @param isError true when the tool reported the result as an error. The runtime sends such a
-   *     result to the model as an error result.
+   * @param isError true when the MCP server reported the result as an error, or when the runtime
+   *     turned a failed tool call into an error result for the model. The runtime passes the flag
+   *     to the model provider. Not all model providers send the flag to the model.
    */
   record ToolCallResponse(
       Instant timestamp,
@@ -318,8 +319,9 @@ public sealed interface SessionMessage {
    *     model, with the configured sanitizers applied. The runtime sends such a message to the
    *     model as it is. For a message with false, the runtime masks the text with the current
    *     sanitizers before it sends it. Leave it false in a message that you build.
-   * @param isError true when the tool reported the result as an error. The runtime sends such a
-   *     result to the model as an error result.
+   * @param isError true when the MCP server reported the result as an error, or when the runtime
+   *     turned a failed tool call into an error result for the model. The runtime passes the flag
+   *     to the model provider. Not all model providers send the flag to the model.
    */
   record MultimodalToolCallResponse(
       Instant timestamp,

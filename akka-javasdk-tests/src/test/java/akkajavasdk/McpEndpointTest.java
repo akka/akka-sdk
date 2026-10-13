@@ -38,7 +38,7 @@ public class McpEndpointTest extends TestKitSupport {
     assertThat(listingResult.body().utf8String())
         .isEqualTo(
 """
-{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"echo","description":"A method that returns what is fed to it","inputSchema":{"type":"object","properties":{"echo":{"type":"string","description":"the string to echo"}},"required":["echo"]}}]}}
+{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"echo","description":"A method that returns what is fed to it","inputSchema":{"type":"object","properties":{"echo":{"type":"string","description":"the string to echo"}},"required":["echo"]}},{"name":"fail","description":"A method that always fails","inputSchema":{"type":"object","properties":{"reason":{"type":"string","description":"the reason to fail with"}},"required":["reason"]}}]}}
 """
                 .trim());
   }

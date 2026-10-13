@@ -28,8 +28,8 @@ import java.util.List;
  * message from {@link #getHistory(String)}. The runtime masks a user message or a tool response
  * that it gets back with {@code sanitized} false before it sends the message to the model, even
  * when the runtime masked the text already. Also store the {@code isError} value of each tool
- * response and return it with the message, so that the runtime sends an error result to the model
- * as an error result.
+ * response and return it with the message, so that the runtime passes the error flag of the result
+ * to the model provider.
  *
  * <p><strong>Memory Management:</strong> Session memory can be configured to limit the amount of
  * history retained, either by message count or total size, to control token usage and performance.

@@ -53,6 +53,7 @@ The link:{attachmentsdir}/api/akka/javasdk/agent/MemoryProvider.html[`MemoryProv
   ** Limit the amount of messages used as context in each interaction, i.e. use only the last N number of messages for context (good for token usage control).
   ** Apply **filters** to selectively include or exclude messages based on agent component ID or role.
 * `MemoryProvider.custom()` - Allows you to provide a custom implementation for the `SessionMemory` interface and store the session memory externally in a database / service of your preference.
+  A custom implementation must store the `sanitized` and `isError` values of each tool response and return them from `getHistory`. If it drops `isError`, the agent replays an earlier error result as a normal result.
 
 === Filtering memory
 

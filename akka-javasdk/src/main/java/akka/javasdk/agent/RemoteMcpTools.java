@@ -98,7 +98,8 @@ public interface RemoteMcpTools {
   @DoNotInherit
   interface ToolInterceptorContext {
     /**
-     * @return The name of the tool on the MCP server.
+     * @return The name of the tool on the MCP server. When the runtime renames a tool for the model
+     *     because of a name clash, this is still the name on the MCP server.
      */
     String toolName();
 
@@ -106,7 +107,9 @@ public interface RemoteMcpTools {
      * @return true when the MCP server reported the tool call result as an error. Always false in
      *     {@link ToolInterceptor#interceptRequest(ToolInterceptorContext, String)}.
      */
-    boolean isError();
+    default boolean isError() {
+      return false;
+    }
   }
 
   interface ToolInterceptor {
