@@ -65,15 +65,18 @@ fi
 
 echo "delete existing docs..."
 cd "$reference_dir/pages/cli/akka-cli" || exit 1
-rm -f akka*.adoc
+rm -f akka*.adoc ./*.md ./*.md.adoc
 
 echo "generate docs..."
 # generate CLI tool markdown(md) files
 akka generate-markdown-docs .
 
 echo "convert docs to asciidoc format..."
-# convert md files to adoc format (NOTE: the extension is changed to *.mod.adoc)
-find ./ -name "*.md" -type f -exec sh -c 'kramdoc --format=GFM --wrap=ventilate --output={}.adoc {}' \;
+# Each page converts independently; run up to eight kramdoc processes at once.
+workers=$(getconf NPROCESSORS_ONLN 2>/dev/null || echo 4)
+if [ "$workers" -gt 8 ]; then workers=8; fi
+find . -maxdepth 1 -name '*.md' -type f -print0 |
+  xargs -0 -n 1 -P "$workers" sh -c 'kramdoc --format=GFM --wrap=ventilate --output="$1.adoc" "$1"' _ || exit 1
 
 # remove md files
 rm *.md
