@@ -294,7 +294,7 @@ import org.slf4j.LoggerFactory
         }(ExecutionContext.parasitic)
 
   private def toSettings(c: ConfiguredGuardrail): SpiGuardrail.Settings =
-    new SpiGuardrail.Settings(c.name, c.category, c.reportOnly)
+    new SpiGuardrail.Settings(c.name, c.category, c.reportOnly, c.failMode)
 
   @nowarn("cat=deprecation")
   private def toLegacySpiGuardrail(entry: GuardrailEntry, guardrail: TextGuardrail): SpiAgent.Guardrail =
@@ -400,6 +400,7 @@ import org.slf4j.LoggerFactory
 
     instance match {
       case _: TextGuardrail =>
+        rejectFailMode(c)
         val expanded = expandWildcard(c)
         validateTextGuardrailUseFor(expanded)
         GuardrailEntry(expanded, instance)
@@ -495,8 +496,21 @@ import org.slf4j.LoggerFactory
         "model call, and AgentResponseGuardrail on the final agent reply." + defaultJailbreakHint)
     }
 
+  private def rejectFailMode(c: ConfiguredGuardrail): Unit =
+    if (c.config.hasPath("fail-mode"))
+      throw new IllegalArgumentException(
+        s"TextGuardrail [${c.name}] must not define fail-mode. A TextGuardrail is always " +
+        "fail-closed. Use fail-mode with ToolCallGuardrail, ModelCallGuardrail or AgentResponseGuardrail.")
+
   def validate(): Unit =
-    enabledEntries.foreach(warnOnDeprecatedUseFor)
+    enabledEntries.foreach { entry =>
+      warnOnDeprecatedUseFor(entry)
+      warnOnIgnoredFailMode(entry.configuredGuardrail)
+    }
+
+  private def warnOnIgnoredFailMode(c: ConfiguredGuardrail): Unit =
+    if (c.reportOnly && c.config.hasPath("fail-mode"))
+      log.warn("Guardrail [{}] sets fail-mode, but fail-mode has no effect while report-only is true.", c.name)
 
   /**
    * The entries to hand to the runtime.
@@ -511,6 +525,7 @@ import org.slf4j.LoggerFactory
         implementationClass = g.implementationClass,
         enabledForComponents = enabledForComponents(g.name),
         reportOnly = g.reportOnly,
+        failMode = g.failMode,
         useFor = g.useFor.map(_.toString),
         config = g.config,
         controlId = g.controlId)
