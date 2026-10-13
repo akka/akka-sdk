@@ -209,7 +209,7 @@ Akka installs open source infrastructure in the Kubernetes cluster that AAO uses
 | Schedules GPUs.
 
 | verl
-| Scores and grades training runs.
+| Runs reinforcement learning for sharded and multi-device training runs. Also scores and grades training runs.
 |===
 
 Akka also provisions the storage account (bucket) for training. Optimize stores logs and traces of AI interactions in your hyperscaler's preferred object storage service.

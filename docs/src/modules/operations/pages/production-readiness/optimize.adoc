@@ -17,7 +17,7 @@ Use this page as a guideline: review it with your Akka team before you send prod
 ====
 . *Serve production traffic from a model endpoint.* Trainer endpoints are for testing.
 . *Manage API keys per client.* Issue one key for each client, and rehearse rotation and revocation.
-. *Keep credentials out of descriptors.* Store them in project secrets and pin checkpoints to a commit.
+. *Keep credentials out of descriptors.* Store them in project secrets and pin each model revision to a commit.
 . *Check capacity before you apply.* Dry-run the descriptor and confirm the devices are bound.
 . *Save training checkpoints and plan the resume.* A resumed run needs the same device count.
 . *Rehearse removal.* Know which resources and secrets remain after you delete a deployment.
@@ -28,8 +28,8 @@ Use this page as a guideline: review it with your Akka team before you send prod
 [cols="1,3", options="header"]
 |===
 | Role | Responsibility
-| Customer | Chooses the endpoint type for each workload and deletes test endpoints when testing ends.
-| Akka | Provisions the TLS certificate for the hostname on the route.
+| Customer | Chooses the endpoint type for each workload, deletes test endpoints when testing ends, and provides a custom TLS certificate where it uses one.
+| Akka | Provisions the TLS certificate for the hostname on the route, unless you provide a custom certificate. See xref:operations:tls-certificates.adoc[].
 |===
 
 .*Detailed checklist*
@@ -82,7 +82,7 @@ Use this page as a guideline: review it with your Akka team before you send prod
 |===
 | Role | Responsibility
 | Customer | Keeps credentials out of descriptors and version control, and reviews descriptors before they are applied.
-| Akka | Validates the shape of the descriptor and the checkpoint revision when you apply it.
+| Akka | Validates the shape of the descriptor and the model revision when you apply it.
 |===
 
 .*Detailed checklist*
@@ -93,7 +93,7 @@ Use this page as a guideline: review it with your Akka team before you send prod
 
 * [ ] The Hugging Face token is stored in a project secret and the descriptor refers to it by name
 * [ ] No descriptor in version control contains a credential
-* [ ] Each checkpoint is pinned to a full commit SHA, because the region refuses a branch or tag name
+* [ ] The Hugging Face source revision of each model (`spec.source.huggingface.revision`) pinned to the full 40-character commit SHA, because the region refuses a branch or tag name
 =====
 
 == Capacity
