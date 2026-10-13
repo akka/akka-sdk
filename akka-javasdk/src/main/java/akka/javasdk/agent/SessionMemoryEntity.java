@@ -310,6 +310,17 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           int sizeInBytes) {
         this(timestamp, componentId, id, name, content, sizeInBytes, false, false);
       }
+
+      public ToolResponseMessageAdded(
+          Instant timestamp,
+          String componentId,
+          String id,
+          String name,
+          String content,
+          int sizeInBytes,
+          boolean sanitized) {
+        this(timestamp, componentId, id, name, content, sizeInBytes, sanitized, false);
+      }
     }
 
     @TypeName("akka-memory-multimodal-tool-response-message-added")
@@ -332,6 +343,17 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           List<SessionMessage.MessageContent> contents,
           int sizeInBytes) {
         this(timestamp, componentId, id, name, contents, sizeInBytes, false, false);
+      }
+
+      public MultimodalToolResponseMessageAdded(
+          Instant timestamp,
+          String componentId,
+          String id,
+          String name,
+          List<SessionMessage.MessageContent> contents,
+          int sizeInBytes,
+          boolean sanitized) {
+        this(timestamp, componentId, id, name, contents, sizeInBytes, sanitized, false);
       }
     }
   }

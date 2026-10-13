@@ -296,6 +296,16 @@ public sealed interface SessionMessage {
       this(timestamp, componentId, id, name, text, false, false);
     }
 
+    public ToolCallResponse(
+        Instant timestamp,
+        String componentId,
+        String id,
+        String name,
+        String text,
+        boolean sanitized) {
+      this(timestamp, componentId, id, name, text, sanitized, false);
+    }
+
     /**
      * A copy of this response with another text. The copy keeps {@code isError} and has {@code
      * sanitized} false, because it no longer holds the text that the runtime sent to the model.
@@ -338,6 +348,16 @@ public sealed interface SessionMessage {
         String name,
         List<MessageContent> contents) {
       this(timestamp, componentId, id, name, contents, false, false);
+    }
+
+    public MultimodalToolCallResponse(
+        Instant timestamp,
+        String componentId,
+        String id,
+        String name,
+        List<MessageContent> contents,
+        boolean sanitized) {
+      this(timestamp, componentId, id, name, contents, sanitized, false);
     }
 
     /**
