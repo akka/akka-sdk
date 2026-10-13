@@ -36,8 +36,8 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
      *
      * @param endpoint the URI of the MCP server. For {@link RemoteMcpTools#fromServer} it is the
      *     URI you pass. For {@link RemoteMcpTools#fromService} it is {@code
-     *     http://<service-name>/mcp}. {@link #toString} leaves out the user info and the query
-     *     string.
+     *     http://<service-name>/mcp}. {@link #toString} leaves out the user info, the query and the
+     *     fragment.
      */
     record RemoteMcp(String endpoint) implements ToolOrigin {
       public RemoteMcp {
@@ -52,12 +52,29 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
       private static String withoutCredentials(String endpoint) {
         try {
           URI uri = new URI(endpoint);
-          return new URI(
-                  uri.getScheme(), null, uri.getHost(), uri.getPort(), uri.getPath(), null, null)
-              .toString();
+
+          // An endpoint without a scheme, such as localhost:8080/mcp, parses as an opaque URI.
+          if (uri.isOpaque()) {
+            URI withoutScheme = new URI("//" + endpoint);
+            return hostAndPort(withoutScheme) + rawPath(withoutScheme);
+          }
+
+          String scheme = uri.getScheme() == null ? "" : uri.getScheme() + ":";
+          String authority = uri.getRawAuthority() == null ? "" : "//" + hostAndPort(uri);
+          return scheme + authority + rawPath(uri);
+
         } catch (URISyntaxException e) {
           return "<invalid URI>";
         }
+      }
+
+      private static String hostAndPort(URI uri) {
+        String authority = uri.getRawAuthority();
+        return authority == null ? "" : authority.substring(authority.lastIndexOf('@') + 1);
+      }
+
+      private static String rawPath(URI uri) {
+        return uri.getRawPath() == null ? "" : uri.getRawPath();
       }
     }
 

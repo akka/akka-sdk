@@ -666,11 +666,14 @@ class GuardrailProviderSpec
       capturedToolCallContext.origin shouldBe new ToolCallGuardrail.ToolOrigin.Unknown()
     }
 
-    "leave the user info and the query string out of the RemoteMcp toString" in {
-      val origin = new ToolCallGuardrail.ToolOrigin.RemoteMcp("https://user:secret@example.com:8443/mcp?token=abc")
+    "leave the user info, the query and the fragment out of the RemoteMcp toString" in {
+      def render(endpoint: String) = new ToolCallGuardrail.ToolOrigin.RemoteMcp(endpoint).toString
 
-      origin.toString shouldBe "RemoteMcp[endpoint=https://example.com:8443/mcp]"
-      new ToolCallGuardrail.ToolOrigin.RemoteMcp("not a uri").toString shouldBe "RemoteMcp[endpoint=<invalid URI>]"
+      render("http://my-service/mcp") shouldBe "RemoteMcp[endpoint=http://my-service/mcp]"
+      render("https://user:secret@example.com:8443/mcp/sse?api_key=abc#part") shouldBe
+      "RemoteMcp[endpoint=https://example.com:8443/mcp/sse]"
+      render("http://exa mple.com/mcp") shouldBe "RemoteMcp[endpoint=<invalid URI>]"
+      render("user:secret@localhost:8080/mcp?api_key=abc") shouldBe "RemoteMcp[endpoint=localhost:8080/mcp]"
     }
 
     "give an MCP endpoint the ToolCallGuardrails of each tool by name" in {
