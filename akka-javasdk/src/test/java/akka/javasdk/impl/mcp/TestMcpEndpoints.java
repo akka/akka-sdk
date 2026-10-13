@@ -65,4 +65,15 @@ public class TestMcpEndpoints {
       return "override";
     }
   }
+
+  @McpEndpoint(serverName = "structured")
+  public static class StructuredOutputMcpEndpoint {
+
+    public record Weather(String city, int tempC) {}
+
+    @McpTool(name = "null-weather", description = "returns null instead of a structured result")
+    public Weather nullWeather() {
+      return null;
+    }
+  }
 }

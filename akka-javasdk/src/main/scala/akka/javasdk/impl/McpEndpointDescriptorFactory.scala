@@ -44,10 +44,9 @@ import akka.runtime.sdk.spi.McpEndpointDescriptor.PromptResult
 import akka.runtime.sdk.spi.McpEndpointDescriptor.Resource
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ResourceMethodDescriptor
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ResourceTemplateMethodDescriptor
-import akka.runtime.sdk.spi.McpEndpointDescriptor.ResponseContent
-import akka.runtime.sdk.spi.McpEndpointDescriptor.StructuredToolCallResult
 import akka.runtime.sdk.spi.McpEndpointDescriptor.TextContent
 import akka.runtime.sdk.spi.McpEndpointDescriptor.TextResourceContents
+import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolCallResult
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolDescription
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolMethodDescriptor
 import akka.runtime.sdk.spi.MethodOptions
@@ -59,6 +58,7 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
+import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.module.SimpleModule
@@ -174,47 +174,42 @@ object McpEndpointDescriptorFactory {
           } catch unwrapInvocationTargetExceptionCatcher
         }
 
-        if (!isStructuredReturn) {
-          // FIXME handle/allow audio and image content types, supported by protocol, but how do we fit it in SDK API?
-          val callback = (context: McpEndpointConstructionContext, params: Map[String, Any]) =>
-            Future[ResponseContent] {
-              invoke(context, params) match {
-                case text: String => new TextContent(text)
-                case null         => new TextContent("")
-                case other        => new TextContent(other.toString)
+        val callback: (McpEndpointConstructionContext, Map[String, Any]) => Future[ToolCallResult] =
+          if (!isStructuredReturn) { (context, params) =>
+            Future {
+              // FIXME handle/allow audio and image content types, supported by protocol, but how do we fit it in SDK API?
+              val text = invoke(context, params) match {
+                case text: String => text
+                case null         => ""
+                case other        => other.toString
               }
+              new ToolCallResult(Seq(new TextContent(text)), None, isError = false)
             }
-          new ToolMethodDescriptor(
-            toolDescription = toolDescription,
-            method = callback,
-            methodOptions = new MethodOptions(None, None))
-        } else {
-          // Structured output: serialize the returned object into a Map[String, Any] for structuredContent.
-          val mapTypeRef = new com.fasterxml.jackson.core.`type`.TypeReference[java.util.Map[String, AnyRef]] {}
-          val legacyCallback = (context: McpEndpointConstructionContext, params: Map[String, Any]) =>
-            Future.failed[ResponseContent](new IllegalStateException(
-              s"Tool [$toolName] is a structured tool, structuredMethod should have been used instead"))
-          val structuredCallback = (context: McpEndpointConstructionContext, params: Map[String, Any]) =>
-            Future[StructuredToolCallResult] {
-              val returnValue = invoke(context, params)
-              val asJavaMap =
-                try objectMapper.convertValue(returnValue, mapTypeRef)
-                catch {
-                  case NonFatal(ex) =>
-                    throw new RuntimeException(
-                      s"Failed to serialize structured return value of tool [$toolName] defined in [${mcpEndpointClass.getName}.${method.getName}] to a JSON object",
-                      ex)
-                }
-              import scala.jdk.CollectionConverters._
-              val asScalaMap: Map[String, Any] = asJavaMap.asScala.toMap
-              new StructuredToolCallResult(content = Seq.empty, structuredContent = asScalaMap, isError = false)
-            }
-          new ToolMethodDescriptor(
-            toolDescription = toolDescription,
-            method = legacyCallback,
-            methodOptions = new MethodOptions(None, None),
-            structuredMethod = Some(structuredCallback))
-        }
+          } else {
+            val mapTypeRef = new TypeReference[java.util.Map[String, AnyRef]] {}
+            (context, params) =>
+              Future {
+                val returnValue = invoke(context, params)
+                if (returnValue == null)
+                  throw new IllegalStateException(
+                    s"Tool [$toolName] defined in [${mcpEndpointClass.getName}.${method.getName}] returned null, structured tool output must not be null")
+                val asJavaMap =
+                  try objectMapper.convertValue(returnValue, mapTypeRef)
+                  catch {
+                    case NonFatal(ex) =>
+                      throw new RuntimeException(
+                        s"Failed to serialize structured return value of tool [$toolName] defined in [${mcpEndpointClass.getName}.${method.getName}] to a JSON object",
+                        ex)
+                  }
+                // empty content, the runtime adds the JSON of the structured content as text content
+                new ToolCallResult(Seq.empty, Some(asJavaMap.asScala.toMap), isError = false)
+              }
+          }
+
+        new ToolMethodDescriptor(
+          toolDescription = toolDescription,
+          methodOptions = new MethodOptions(None, None),
+          call = callback)
       }
       .sortBy(_.toolDescription.name)
 

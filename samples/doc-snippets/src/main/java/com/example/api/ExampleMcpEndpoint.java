@@ -84,6 +84,22 @@ public class ExampleMcpEndpoint {
 
   // end::tool-with-class[]
 
+  // tag::tool-structured-output[]
+  public record DivisionResult(int quotient, int remainder) {} // <1>
+
+  @McpTool(
+    name = "divide",
+    description = "Divides the dividend by the divisor, returning quotient and remainder"
+  )
+  public DivisionResult divide( // <2>
+    @Description("The dividend") int dividend,
+    @Description("The divisor") int divisor
+  ) {
+    return new DivisionResult(dividend / divisor, dividend % divisor);
+  }
+
+  // end::tool-structured-output[]
+
   // tag::static-resource[]
   @McpResource(
     uri = "file:///background.png", // <1>

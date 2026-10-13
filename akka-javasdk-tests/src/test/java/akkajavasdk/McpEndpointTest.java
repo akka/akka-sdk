@@ -21,11 +21,16 @@ public class McpEndpointTest extends TestKitSupport {
 
   // MCP endpoint defined in akkajavasdk.components.mcp.TestMcpEndpoint
 
+  // structured tool output is only included for clients on MCP 2025-06-18 or later
+  private static final String PROTOCOL_VERSION_HEADER = "MCP-Protocol-Version";
+  private static final String STRUCTURED_OUTPUT_PROTOCOL_VERSION = "2025-06-18";
+
   @Test
   public void listTools() throws Exception {
     var listingResult =
         httpClient
             .POST("/mcp")
+            .addHeader(PROTOCOL_VERSION_HEADER, STRUCTURED_OUTPUT_PROTOCOL_VERSION)
             .withRequestBody(
                 ContentTypes.APPLICATION_JSON,
                 """
@@ -62,6 +67,7 @@ public class McpEndpointTest extends TestKitSupport {
     var result =
         httpClient
             .POST("/mcp")
+            .addHeader(PROTOCOL_VERSION_HEADER, STRUCTURED_OUTPUT_PROTOCOL_VERSION)
             .withRequestBody(
                 ContentTypes.APPLICATION_JSON,
 """

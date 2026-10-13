@@ -17,7 +17,8 @@ import java.lang.annotation.*;
  *
  * <ul>
  *   <li>Must be public
- *   <li>Must return a {@code String}
+ *   <li>Can return a {@code String} for plain text content, or an object type (such as a record)
+ *       for structured content, see below
  *   <li>Can accept 0 or more parameters
  *   <li>Must be in a class annotated with {@link McpEndpoint}
  * </ul>
@@ -30,6 +31,12 @@ import java.lang.annotation.*;
  * parameters unless a manual schema is provided via {@link #inputSchema()}. Use {@link
  * akka.javasdk.annotations.Description} annotations on parameters to help the LLM understand their
  * purpose.
+ *
+ * <p><strong>Return Types:</strong> A {@code String} return value is passed to the client as text
+ * content. An object type, such as a record, is advertised with an output schema generated from its
+ * fields and returned as structured content, together with its JSON serialization as text content
+ * for clients that do not support structured content. Other types, such as primitives, are returned
+ * as text content using {@code toString}.
  *
  * <p><strong>Best Practices:</strong>
  *
