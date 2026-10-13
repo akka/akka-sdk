@@ -157,7 +157,7 @@ The schema only grows. The region refuses a field that it does not implement yet
 |Field |Type |Description
 
 |*type*         |string _required_ |The model server. Only `vllm` is supported. It cannot change for the lifetime of the model.
-|*vllm*         |object _required_ when `type` is `vllm` |The vLLM settings. Every field is optional, and a field that is absent or `auto` keeps the engine default.
+|*`vllm`*       |object _required_ when `type` is `vllm` |The vLLM settings. Every field is optional, and a field that is absent or `auto` keeps the engine default.
 |*vllm.dtype*   |string |The data type of the weights and activations: `auto`, `bfloat16`, `float16`, or `float32`.
 |*vllm.quantization* |string |The weight quantization method: `fp8`, `awq`, `awq_marlin`, `gptq`, `gptq_marlin`, `compressed-tensors`, `bitsandbytes`, `modelopt`, or `gguf`. Leave it out to let the engine detect a pre-quantized checkpoint.
 |*vllm.kvCacheDtype* |string |The data type of the KV cache: `auto`, `fp8`, `fp8_e4m3`, or `fp8_e5m2`.
