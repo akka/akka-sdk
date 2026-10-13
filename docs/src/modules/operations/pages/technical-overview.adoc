@@ -214,7 +214,7 @@ Akka installs open source infrastructure in the Kubernetes cluster that AAO uses
 | Runs reinforcement learning for sharded and multi-device training runs. Also scores and grades training runs.
 |===
 
-Akka also provisions the storage account (bucket) for training. Optimize stores logs and traces of AI interactions in your hyperscaler's preferred object storage service.
+Akka also provisions the storage account (bucket) for training. Optimize stores logs and traces of AI interactions in your hyperscaler's preferred object storage service. The flows that Optimize adds are in the xref:operations:technical-overview/data-flows.adoc[data flows].
 
 === What Optimize needs from you
 
