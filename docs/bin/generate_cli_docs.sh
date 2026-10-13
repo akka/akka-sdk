@@ -98,10 +98,10 @@ EOM
   awk '{gsub(/^\* xref:/,"* xref:reference:cli/akka-cli/"); print}' cli-index.adoc > index.adoc
   rm temp-cli-index.txt cli-index.adoc cli-index.adoc.bak
 
-  # create nav entries for the top-level command groups only (akka.adoc and akka_<group>.adoc).
+  # create nav entries for the top-level command groups only (akka_<group>.adoc).
   # The reference nav lists the groups under domain headings that are arranged by hand, so
   # nav2.adoc is a reference list to compare against, not a file to paste over reference/nav.adoc.
-  ls -1 akka*.adoc | grep -E '^akka(_[a-z-]+)?\.adoc$' > ../../temp-nav.txt
+  ls -1 akka*.adoc | grep -E '^akka_[a-z-]+\.adoc$' > ../../temp-nav.txt
   sed -e 's/\(akka.*\)/*** xref:cli\/akka-cli\/\1[]/g' ../../temp-nav.txt > ../../../nav2.adoc
   while IFS= read -r group; do
     grep -q "cli/akka-cli/${group}\[\]" ../../../nav.adoc || echo "WARNING: ${group} is not listed in reference/nav.adoc"
