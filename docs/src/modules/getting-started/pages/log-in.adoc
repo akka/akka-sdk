@@ -1,0 +1,54 @@
+= Login to a remote env
+
+include::ROOT:partial$include.adoc[]
+
+Log in only to deploy to or manage a remote Akka Platform environment, whether it runs at akka.io or is installed in your enterprise. Building, testing, and running locally need no login. To initiate the login process, run:
+
+[source, shell]
+----
+akka auth login
+----
+
+This command opens the Akka console login screen in your default web browser. The CLI will display `Waiting for UI login...` while you authenticate. Once authorization is complete, the CLI returns to the command prompt.
+
+Upon successful authentication:
+
+* If you have one project, it is automatically set as the `current` project.
+* If no projects exist, you will need to create one and set it manually.
+* If you have multiple projects, you will need to specify the target project manually (see below).
+
+To set your current project:
+[source, shell]
+----
+akka config set project my-project
+----
+
+For more authentication options:
+[source, shell]
+----
+akka auth -h
+----
+You can also refer to the xref:reference:cli/akka-cli/akka_auth.adoc[auth] page.
+
+[#behind-a-proxy]
+== Behind a corporate proxy
+
+In corporate environments with HTTP proxy servers that do not support HTTP/2, you may encounter issues since the `akka` CLI uses gRPC. To bypass these limitations, you can configure the CLI to use grpc-web, which works over HTTP/1.1 and HTTP/2.
+
+Log in with grpc-web enabled:
+[source, shell]
+----
+akka auth login --use-grpc-web
+----
+
+If you are already logged in but need to switch to grpc-web, configure it with:
+[source, shell]
+----
+akka config set api-server-use-grpc-web true
+----
+
+== Related documentation
+
+- xref:getting-started:install-cli.adoc[]
+- xref:operations:cli/using-cli.adoc[]
+- xref:reference:cli/akka-cli/index.adoc[]

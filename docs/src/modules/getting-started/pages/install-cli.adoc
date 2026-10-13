@@ -127,7 +127,7 @@ Verify that the Akka CLI has been installed successfully by running the followin
 akka help
 ----
 
-You do not need to log in to use the CLI locally. Log in only to deploy to or manage a remote Akka Platform environment, whether it runs at akka.io or is installed in your enterprise. See xref:operations:cli/using-cli.adoc#log-in[Log in to a remote Akka environment].
+You do not need to log in to use the CLI locally. Log in only to deploy to or manage a remote Akka Platform environment, whether it runs at akka.io or is installed in your enterprise. See xref:getting-started:log-in.adoc[].
 
 [#check-version]
 == Check your version
@@ -377,6 +377,6 @@ Verify your YAML syntax is correct if you see this warning.
 
 == Related documentation
 
-- xref:operations:cli/using-cli.adoc#log-in[Log in to a remote Akka environment]
+- xref:getting-started:log-in.adoc[]
 - xref:operations:cli/using-cli.adoc[]
 - xref:reference:cli/akka-cli/index.adoc[]
