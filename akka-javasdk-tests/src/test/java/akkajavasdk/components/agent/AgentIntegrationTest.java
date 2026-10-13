@@ -81,6 +81,7 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(ToolCallGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(McpToolCallGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(McpToolCallAllowedTestAgent.class, testModelProvider)
+        .withModelProvider(McpToolCallNoInterceptorTestAgent.class, testModelProvider)
         .withModelProvider(ThrowingGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(ReportOnlyThrowingGuardrailTestAgent.class, testModelProvider)
         .withDependencyProvider(depsProvider);
@@ -774,6 +775,39 @@ public class AgentIntegrationTest extends TestKitSupport {
         .isEqualTo(
             new ToolCallGuardrail.ToolOrigin.RemoteMcp(McpToolCallGuardrailTestAgent.MCP_ENDPOINT));
     assertThat(RecordingDenyingToolGuard.lastCall.get()).isNull();
+  }
+
+  @Test
+  public void shouldCallMcpToolWithoutInterceptorWhenToolCallGuardrailAllows() {
+    // given
+    TestMcpEndpoint.echoCalls.set(0);
+    RecordingAllowingToolGuard.lastCall.set(null);
+    testModelProvider
+        .whenMessage(s -> s.equals("echo without interceptor"))
+        .reply(new ToolInvocationRequest("echo", "{\"echo\":\"plain\"}"));
+    testModelProvider
+        .whenToolResult(result -> true)
+        .thenReply(result -> new AiResponse("Echoed " + result.content()));
+
+    // when
+    McpToolCallNoInterceptorTestAgent.SomeResponse result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(McpToolCallNoInterceptorTestAgent::ask)
+            .invoke("echo without interceptor");
+
+    // then
+    assertThat(result.response()).isEqualTo("Echoed plain");
+    assertThat(TestMcpEndpoint.echoCalls.get()).isEqualTo(1);
+
+    var recorded = RecordingAllowingToolGuard.lastCall.get();
+    assertThat(recorded).isNotNull();
+    assertThat(recorded.toolName()).isEqualTo("echo");
+    assertThat(recorded.arguments()).isEqualTo("{\"echo\":\"plain\"}");
+    assertThat(recorded.origin())
+        .isEqualTo(
+            new ToolCallGuardrail.ToolOrigin.RemoteMcp(McpToolCallGuardrailTestAgent.MCP_ENDPOINT));
   }
 
   @Test

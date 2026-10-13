@@ -222,7 +222,7 @@ import org.slf4j.LoggerFactory
 
   // An origin that this SDK does not know, or a null, maps to ToolOrigin.Unknown.
   private def toToolOrigin(origin: SpiGuardrail.ToolOrigin): ToolCallGuardrail.ToolOrigin =
-    knownOr(new ToolCallGuardrail.ToolOrigin.Unknown()) {
+    knownOr[ToolCallGuardrail.ToolOrigin](new ToolCallGuardrail.ToolOrigin.Unknown()) {
       origin match {
         case SpiGuardrail.ToolOrigin.FunctionTool   => new ToolCallGuardrail.ToolOrigin.FunctionTool()
         case mcp: SpiGuardrail.ToolOrigin.RemoteMcp => new ToolCallGuardrail.ToolOrigin.RemoteMcp(mcp.endpoint)
@@ -545,21 +545,34 @@ import org.slf4j.LoggerFactory
 
   @nowarn("cat=deprecation")
   private def warnOnBothSimilarityGuards(componentId: String, entries: Seq[GuardrailEntry]): Unit = {
-    val legacy = entries
-      .collect {
-        case GuardrailEntry(c, _: SimilarityGuard) if c.useFor.contains(UseFor.ModelRequest) => c
-      }
-      .sortBy(_.name)
-    val modelCallNames = entries.collect { case GuardrailEntry(c, _: ModelCallSimilarityGuard) => c.name }
+    val modelCallNames = entries.collect { case GuardrailEntry(c, _: ModelCallSimilarityGuard) => c.name }.sorted
 
-    if (legacy.nonEmpty && modelCallNames.nonEmpty)
-      log.warn(
-        "Agent [{}] has both the deprecated SimilarityGuard [{}] with use-for [model-request] and the " +
-        "ModelCallSimilarityGuard [{}]. Both check the user message and the tool results. {}",
-        componentId,
-        legacy.map(_.name).mkString(", "),
-        modelCallNames.sorted.mkString(", "),
-        legacy.map(c => s"Remove the agents and agent roles from [${c.name}].").mkString(" "))
+    if (modelCallNames.nonEmpty) {
+      val legacy = entries
+        .collect { case GuardrailEntry(c, _: SimilarityGuard) => c }
+        .filter(c => overlapsModelCallSimilarityGuard(c).nonEmpty)
+        .sortBy(_.name)
+
+      legacy.foreach { c =>
+        val overlap = overlapsModelCallSimilarityGuard(c).map(_.configName)
+        val advice =
+          if (c.useFor.size == overlap.size) s"Remove the agents and agent roles from [${c.name}]."
+          else s"Remove ${overlap.mkString(", ")} from the use-for of [${c.name}]."
+
+        log.warn(
+          "Agent [{}] has both the deprecated SimilarityGuard [{}] with use-for [{}] and the " +
+          "ModelCallSimilarityGuard [{}]. Both check the user message and the tool results. {}",
+          componentId,
+          c.name,
+          overlap.mkString(", "),
+          modelCallNames.mkString(", "),
+          advice)
+      }
+    }
   }
+
+  // The use-for values of a SimilarityGuard that a ModelCallSimilarityGuard also checks.
+  private def overlapsModelCallSimilarityGuard(c: ConfiguredGuardrail): Seq[UseFor] =
+    Seq(UseFor.ModelRequest, UseFor.McpToolResponse).filter(c.useFor.contains)
 
 }

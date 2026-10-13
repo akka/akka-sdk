@@ -1921,6 +1921,87 @@ class GuardrailProviderSpec
       g.guardrails.modelCallGuardrails.map(_.settings.name) shouldBe Seq("default model-call jailbreak")
     }
 
+    "tell to remove the overlapping use-for values when the deprecated similarity guard has other uses" in {
+      val cfg = ConfigFactory
+        .parseString("""
+          akka.javasdk.agent.guardrails {
+            "old jailbreak" {
+              class = "akka.javasdk.agent.SimilarityGuard"
+              agents = ["jailbreak-agent"]
+              category = JAILBREAK
+              use-for = ["model-request", "mcp-tool-request", "mcp-tool-response"]
+              threshold = 0.75
+              bad-examples-resource-dir = "guardrail/jailbreak"
+            }
+            "default model-call jailbreak".agents = ["jailbreak-agent"]
+          }
+        """)
+        .withFallback(ConfigFactory.defaultReference())
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn(
+          "Agent [jailbreak-agent] has both the deprecated SimilarityGuard [old jailbreak] with use-for " +
+          "[model-request, mcp-tool-response] and the ModelCallSimilarityGuard [default model-call jailbreak]. " +
+          "Both check the user message and the tool results. " +
+          "Remove model-request, mcp-tool-response from the use-for of [old jailbreak].")
+        .expect {
+          provider.agentGuardrails("jailbreak-agent", role = None)
+        }
+    }
+
+    "warn about both similarity guards when the deprecated one is on mcp-tool-response only" in {
+      val cfg = ConfigFactory
+        .parseString("""
+          akka.javasdk.agent.guardrails {
+            "old jailbreak" {
+              class = "akka.javasdk.agent.SimilarityGuard"
+              agents = ["jailbreak-agent"]
+              category = JAILBREAK
+              use-for = ["mcp-tool-response"]
+              threshold = 0.75
+              bad-examples-resource-dir = "guardrail/jailbreak"
+            }
+            "default model-call jailbreak".agents = ["jailbreak-agent"]
+          }
+        """)
+        .withFallback(ConfigFactory.defaultReference())
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn(
+          "Agent [jailbreak-agent] has both the deprecated SimilarityGuard [old jailbreak] with use-for " +
+          "[mcp-tool-response] and the ModelCallSimilarityGuard [default model-call jailbreak]. " +
+          "Both check the user message and the tool results. " +
+          "Remove the agents and agent roles from [old jailbreak].")
+        .expect {
+          provider.agentGuardrails("jailbreak-agent", role = None)
+        }
+    }
+
+    "not warn about both similarity guards when the deprecated one is on mcp-tool-request only" in {
+      val cfg = ConfigFactory
+        .parseString("""
+          akka.javasdk.agent.guardrails {
+            "old jailbreak" {
+              class = "akka.javasdk.agent.SimilarityGuard"
+              agents = ["jailbreak-agent"]
+              category = JAILBREAK
+              use-for = ["mcp-tool-request"]
+              threshold = 0.75
+              bad-examples-resource-dir = "guardrail/jailbreak"
+            }
+            "default model-call jailbreak".agents = ["jailbreak-agent"]
+          }
+        """)
+        .withFallback(ConfigFactory.defaultReference())
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit.warn("has both the deprecated SimilarityGuard").withOccurrences(0).expect {
+        provider.agentGuardrails("jailbreak-agent", role = None)
+      }
+    }
+
     "not warn about both similarity guards when they are on different agents" in {
       val cfg = ConfigFactory
         .parseString("""

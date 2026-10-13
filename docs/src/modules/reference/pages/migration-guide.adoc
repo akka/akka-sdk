@@ -14,6 +14,19 @@ include::ROOT:partial$include.adoc[]
 * For `mcp-tool-request`, implement `ToolCallGuardrail`.
 * For `mcp-tool-response`, implement `ModelCallGuardrail`. It sees the MCP tool result as a `ToolCallResponse` in `newMessages()` before the model does. A `ToolCallResponse` does not say where the tool runs, so the guardrail sees function tool results and MCP tool results alike. If the `RemoteMcpTools` has a `ToolInterceptor`, the guardrail sees the result that `interceptResponse` returns.
 
+A `ModelCallGuardrail` that replaces an `mcp-tool-response` entry behaves differently:
+
+* It sees the MCP tool result after the tool-result sanitizers have masked it.
+* It runs before the next model call, after all tool calls of the round. The `TextGuardrail` ran right after each MCP tool call.
+* When it blocks, the interaction record in the ledger already holds the MCP tool result.
+* In an autonomous agent, some rounds end the iteration without another model call. This happens when the model response also calls a control tool. It also happens when a tool call of the round fails. The runtime stores such a round in session memory and the ledger before a `ModelCallGuardrail` checks it. If the task continues, the `ModelCallGuardrail` checks it before the first model call of the next iteration.
+* The failure message starts with `Before model call guardrail blocked`, not with `MCP response guardrail blocked`.
+
+A `ToolCallGuardrail` that replaces an `mcp-tool-request` entry behaves differently:
+
+* The runtime records the `ToolCallGuardrail` decision in the ledger.
+* On the same MCP tool call, the runtime evaluates `ToolCallGuardrail` entries before `TextGuardrail` entries with `mcp-tool-request`. The `TextGuardrail` entries run only when no blocking `ToolCallGuardrail` stopped the call.
+
 Remove `use-for` from the migrated entry. The service fails to start when a `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail` entry defines `use-for`.
 
 All `use-for` values are deprecated. At startup, the SDK logs a warning for each enabled `TextGuardrail` entry that sets `use-for`.
@@ -44,6 +57,15 @@ To move the built-in guard entry, enable `"default model-call jailbreak"` for th
 === ToolCallGuardrail on MCP tool calls
 
 A `ToolCallGuardrail` entry runs on MCP tool calls as well as function tool calls. An entry without the `tools` key runs on every MCP tool call of its agents. To run the entry on some tools only, list their names in `tools`. The `tools` key matches by name only. To tell a function tool from an MCP tool, check `origin()` on the `CallContext`. See xref:sdk:agents/guardrails.adoc[Guardrails] for the entry configuration.
+
+[#tool-interceptor-changes]
+=== ToolInterceptor changes
+
+A `RemoteMcpTools.ToolInterceptor` behaves differently in these cases:
+
+* `ToolInterceptorContext.toolName()` returns the name of the tool on the MCP server. When the model uses another name for the tool, the interceptor no longer gets that name.
+* The ledger records the arguments that `interceptRequest` returns as the arguments of the tool call. Before, it recorded the arguments from the model. The `ToolCall` in the interaction record still holds the arguments from the model.
+* A `null` from `interceptResponse` fails the tool call with an MCP tool call error. The agent can handle the error in `onFailure`.
 
 == SDK 3.5.5
 
