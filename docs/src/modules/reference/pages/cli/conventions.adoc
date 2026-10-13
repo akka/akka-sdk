@@ -72,7 +72,7 @@ The `akka models` and `akka optimize` commands add the flags and behavior in thi
 
 The `akka optimize` commands also have these conventions.
 
-Output:: Results go to stdout and notes go to stderr, so `-o json > FILE` writes only the document. `--jq EXPRESSION` filters JSON output, and `--json FIELDS` selects fields. `--json=` lists the fields that a command offers. `--no-color` prints without color.
+Output:: Results are written to standard output and notes to standard error, so `-o json > FILE` writes only the document. `--jq EXPRESSION` filters JSON output, and `--json FIELDS` selects fields. `--json=` lists the fields that a command offers. `--no-color` prints without color.
 
 Writes:: A write prints one sentence that says what happened and where to look. The full object is available with `-o json`.
 
