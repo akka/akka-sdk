@@ -29,12 +29,13 @@ Choose the first stage when the condition can be written down: a tenant header, 
 
 == Destinations
 
-A destination is a backend registered with the gateway proxy. Providers behind one gateway carry different characteristics: a general-purpose model offers broad capability at a higher cost per token, and a smaller model returns faster answers to simpler requests. A model you run yourself, described in xref:inference:serving/index.adoc[Serving models], is one destination a route can name.
+A destination is a backend registered with the gateway proxy. Providers behind one gateway carry different characteristics: a general-purpose model offers broad capability at a higher cost per token, and a smaller model returns faster answers to simpler requests. A model you run yourself, described in xref:inference:serving/index.adoc[Serving models], is one destination a route can name. To train a model for a task of your own, see xref:optimize:index.adoc[Training].
 
 include::partial$aao-inference-notice.adoc[]
 
 == See also
 
 * xref:inference:serving/index.adoc[Serving models]
+* xref:optimize:index.adoc[Training]
 * xref:reference:cli/routing.adoc[Routing commands]
 * xref:sdk:model-provider-details.adoc[AI model provider configuration]

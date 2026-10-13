@@ -113,13 +113,13 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 
 - [Inference](https://doc.akka.io/inference/index.html.md): Running AI models, and how an inference call differs from a function call
 - [Serving models](https://doc.akka.io/inference/serving/index.html.md): Running a model on hardware in your project and exposing it on a hostname
-- [Reviewing available hardware](https://doc.akka.io/inference/serving/reviewing-hardware.html.md): The GPU devices a region has, and how many cards are free
-- [Allocating hardware to models](https://doc.akka.io/inference/serving/allocating-hardware.html.md): Claiming device capacity with accelerators, dedicated or shared
-- [Deploying models](https://doc.akka.io/inference/serving/deploying-models.html.md): Declaring a deployment, tuning the engine, and applying the descriptor
-- [Exposing models on a hostname](https://doc.akka.io/inference/serving/exposing-models.html.md): Inference routes, and choosing between models with the model field
-- [Issuing API keys](https://doc.akka.io/inference/serving/issuing-api-keys.html.md): Per-client keys on a route, and rotating them without a cutover
-- [Calling a deployed model](https://doc.akka.io/inference/serving/calling-a-model.html.md): The OpenAI-compatible endpoint, tool calling, and the local proxy
-- [Removing deployments](https://doc.akka.io/inference/serving/removing-deployments.html.md): Exporting what is running, and tearing it down in dependency order
+- [Reviewing available hardware](https://doc.akka.io/inference/serving/reviewing-hardware.html.md): The accelerator pools a region offers
+- [Allocating hardware to models](https://doc.akka.io/inference/serving/allocating-hardware.html.md): Claiming whole devices from a pool with an accelerator allocation
+- [Deploying models](https://doc.akka.io/inference/serving/deploying-models.html.md): Declaring a model, tuning the engine, and applying the descriptor
+- [Exposing models on a hostname](https://doc.akka.io/inference/serving/exposing-models.html.md): Model endpoints, project routes, and choosing between models with the model field
+- [Issuing API keys](https://doc.akka.io/inference/serving/issuing-api-keys.html.md): Per-client keys on an endpoint, and rotating them without a cutover
+- [Calling a deployed model](https://doc.akka.io/inference/serving/calling-a-model.html.md): The OpenAI-compatible endpoint and tool calling
+- [Removing deployments](https://doc.akka.io/inference/serving/removing-deployments.html.md): Tearing down what a descriptor created in dependency order
 - [Routing requests to models](https://doc.akka.io/inference/routing/index.html.md): The AI Gateway Router pipeline and its two stages
 - [Routing on request attributes](https://doc.akka.io/inference/routing/request-attributes.html.md): Matching declared rules against protocol, model, headers, and prompt text
 - [Routing on request meaning](https://doc.akka.io/inference/routing/request-meaning.html.md): Matching a request against use cases discovered in live traffic
@@ -137,7 +137,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Routing commands](https://doc.akka.io/reference/cli/routing.html.md): akka rulesets, routing-classifiers, use-cases, and routing-policies
 - [Cost and traffic commands](https://doc.akka.io/reference/cli/cost-and-traffic.html.md): akka optimize spend, callers, incidents, pricing-catalog, and captures
 - [Training and evaluation commands](https://doc.akka.io/reference/cli/training.html.md): akka optimize training, trained-models, datasets, and eval
-- [Model descriptor](https://doc.akka.io/reference/descriptors/model-descriptor.html.md): Every field of the YAML that declares models, accelerators, secrets, and routes
+- [Model descriptor](https://doc.akka.io/reference/descriptors/model-descriptor.html.md): Every field of the YAML that declares accelerator allocations, models, and model endpoints
 - [Routing ruleset](https://doc.akka.io/reference/descriptors/routing-ruleset.html.md): Predicates, attributes, match blocks, and outcomes for attribute routing
 - [Release notes](https://doc.akka.io/reference/release-notes.html.md): Latest updates and changes
 - [Model provider details](https://doc.akka.io/sdk/model-provider-details.html.md): Anthropic, OpenAI, Google, AWS Bedrock, Ollama, and more

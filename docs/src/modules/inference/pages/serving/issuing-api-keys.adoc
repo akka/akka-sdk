@@ -1,58 +1,62 @@
 = Issuing API keys
-:page-summary: An inference route authorizes requests with API keys issued per client, so a single key can be revoked without disturbing the others.
+:page-summary: A model endpoint authorizes requests with API keys issued per client, so a single key can be revoked without disturbing the others.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 
-An inference route refuses every request until a key authorizes it. Keys are issued per client, so any one of them can be revoked without disturbing the others.
+A model endpoint refuses every request until a key authorizes it. Keys are issued per client, so any one of them can be revoked without disturbing the others.
+
+The keys are entries of the secret that the endpoint names in `apiKeySecret`, one entry per client.
 
 == Issuing a key
 
-Name the client the key is for:
+Name the endpoint and the client the key is for:
 
 [source, shell]
 ----
-akka models routes keys add models production
+akka models endpoints keys add assistant-endpoint production
 ----
+
+The command prints the key once:
 
 [source, shell]
 ----
-API key for "production" on route "models":
-
-  sk-EXAMPLE-KEY-DO-NOT-USE-xxxxxxxxxxxxxxxxxxxx
-
-This is the only time it is shown. Store it somewhere safe.
+Key for production on endpoint assistant-endpoint:
+KEY
+This is the only time it is shown.
 ----
 
-Copy the key now. Keys cannot be read back.
+Copy the key now. Keys cannot be read back. When the secret that the endpoint names does not exist yet, this command creates it. `-o json` returns the endpoint, the client, and the key as a document, so a script can capture the key from the one response that carries it.
 
 == Listing the clients that hold a key
 
 [source, shell]
 ----
-akka models routes keys list models
+akka models endpoints keys list assistant-endpoint
 ----
 
-This shows which clients hold a key, never the keys themselves.
+This shows which clients hold a key, never the keys themselves. When there are no keys, the command says so, and every request to the endpoint is refused.
 
 == Rotating a key
 
-Every key in the list works until it is removed, so a rotation has no cutover. Add the new key, move the clients across, and then remove the old one:
+Every key in the secret works until it is removed, so a rotation has no cutover. Add the new key under a new client name, move the clients across, and then remove the old one:
 
 [source, shell]
 ----
-akka models routes keys add models production-2
+akka models endpoints keys add assistant-endpoint production-2
 ----
 
 [source, shell]
 ----
-akka models routes keys remove models production
+akka models endpoints keys remove assistant-endpoint production
 ----
+
+Adding a key for a client name that already holds one fails, which is why rotation uses a new name. When the last key is removed, every request to the endpoint is refused.
 
 [WARNING]
 ====
-Deleting a route does not revoke the keys issued against it. Rebuild the route under the same name and every key ever issued to it works again. A key you meant to retire is only gone once `akka models routes keys remove` has removed it.
+Deleting an endpoint does not revoke the keys issued against it, because `akka models delete` leaves the key secret alone. An endpoint that names the same secret accepts every key in it. A key you meant to retire is gone only when `akka models endpoints keys remove` has removed it or the secret has been deleted with `akka secrets delete`.
 ====
 
 == Diagnosing a rejected request
@@ -63,10 +67,10 @@ Deleting a route does not revoke the keys issued against it. Rebuild the route u
 | Cause
 
 | `api key authentication failure: no API Key found`
-| The request carries no `Authorization` header, or the header is missing the `Bearer` prefix.
+| The request carries no `Authorization` header, or the header does not start with `Bearer`.
 
 | `api key authentication failure: invalid credentials`
-| The key is not one this route accepts. `akka models routes keys list` shows which clients hold one. Issue a fresh key if the value was lost.
+| The key is not one this endpoint accepts. `akka models endpoints keys list` shows which clients hold one. Issue a fresh key if the value was lost.
 |===
 
 include::partial$aao-inference-notice.adoc[]

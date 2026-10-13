@@ -1,87 +1,105 @@
 = Exposing models on a hostname
-:page-summary: An inference route gives a set of model deployments one hostname, and clients choose between them with the model field of the request.
+:page-summary: A model endpoint serves a set of models behind one address, and a project route puts that endpoint on a hostname. Clients choose between the models with the model field of the request.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 
-An inference route gives a set of model deployments one hostname. The unit is the hostname, not the deployment: one host serves many models, and clients choose between them with the `model` field of the request body. A single base URL therefore covers everything you run.
+A model endpoint serves a set of models behind one address. The unit is the endpoint, not the model: one endpoint serves many models, and clients choose between them with the `model` field of the request body. A single base URL therefore covers everything that the endpoint lists.
 
-== Declaring a route
+An endpoint is reachable inside the project only. A project route puts it on a hostname on the internet.
+
+== Declaring an endpoint
 
 [source, yaml]
 ----
-resource: InferenceRoute
+resource: ModelEndpoint
 resourceVersion: v1
 metadata:
-  name: models
+  name: assistant-endpoint
 spec:
-  host: models.acme.example
-  models:
-    - name: docs
+  models: # <1>
+    - name: assistant
     - name: agent
+  apiKeySecret: assistant-keys # <2>
 ----
+<1> The models that the endpoint serves, by model name. Each name must be a `Model` in the project. The names that clients can send are the served names of these models, adapters included, so one entry can expose several names.
+<2> The project secret that holds the endpoint's API keys. The field is required, because the endpoint answers anything that reaches the gateway and must never be silently open. The endpoint refuses every request until the secret holds a key. See xref:inference:serving/issuing-api-keys.adoc[Issuing API keys].
 
-Each entry names a `ModelDeployment`. The names clients may send are the deployments' own served names, adapters included, so one entry can expose several names.
+See xref:reference:descriptors/model-descriptor.adoc#model-endpoint[ModelEndpoint] for every field.
 
-Served names do not have to be globally unique. Two projects may both serve a model called `agent`, because their hostnames differ.
+A project can serve at most 64 endpoints. The region refuses the endpoint that would exceed that number.
 
-See xref:reference:descriptors/model-descriptor.adoc#inferenceroute[InferenceRoute] for every field.
-
-== Reading a route
+== Reading an endpoint
 
 [source, shell]
 ----
-akka models routes get models
+akka models endpoints get assistant-endpoint
 ----
+
+When the endpoint is not ready, the command prints the reason. The `Ready` condition of an endpoint reports on the models that it lists.
+
+To list the endpoints of the project:
 
 [source, shell]
 ----
-Name:           models
-Host:           models.acme.example
-Ready:          True
-Message:        2 model(s) on models.acme.example
-Endpoint:       https://models.acme.example/v1
-Own listener:   models
-Auth:           api-key
-Accepts:        docs, agent
-
-DEPLOYMENT      SERVES   STATE
-docs            docs     Serving
-agent           agent    Serving
+akka models endpoints list
 ----
 
-`Accepts` is the list of names clients may send as `model`. `Endpoint` is the base URL to give an OpenAI client. The endpoint is HTTPS with a real certificate, so no client needs special configuration.
+[cols="1,3", options="header"]
+|===
+| Column
+| Value
 
-To see every hostname, the models on each, and whether each requires a key:
+| `NAME`
+| The endpoint name.
+
+| `MODELS`
+| The models that the endpoint lists.
+
+| `SERVES`
+| The names that clients can send in the `model` field, or `-` while there are none.
+
+| `ENDPOINT`
+| The in-project address of the endpoint, or `-` until it has one. The gateway serves the OpenAI API for the endpoint's models at this address under `/v1`.
+
+| `READY`
+| `True` when the endpoint is serving.
+
+| `AGE`
+| How long the endpoint has existed.
+|===
+
+== Changing which models an endpoint serves
+
+Add a model to `spec.models` and apply the descriptor again to expose it. Remove it and apply again to withdraw it.
+
+== Putting the endpoint on a hostname
+
+A model endpoint is not reachable from the internet until a route sends a hostname to it. Provision a hostname for the project. Without a name, Akka generates one:
 
 [source, shell]
 ----
-akka models routes list
+akka projects hostnames add
 ----
 
-== Changing which models a hostname serves
+Create a route that sends all traffic on that hostname to the endpoint:
 
-Add a model to the route in the descriptor and apply the file again to expose it. Remove it and apply again to withdraw it. Exposure resolves continuously rather than only at apply time, so a route applied before its models still works once those models arrive.
+[source, shell]
+----
+akka routes create assistant-route --hostname HOSTNAME --path /=assistant-endpoint
+----
 
-== When a route is not ready
-
-`akka models routes get NAME` prints the reason. Two are common.
-
-A route naming a hostname your project does not own applies successfully and then sits at `Ready: False` with `host "…" is not configured on project`. The file is not at fault. Registering a hostname is a separate step, with DNS verified and a certificate issued, and the route starts serving as soon as it names a hostname you own.
-
-`no exposed model resolves` means the route names a deployment that is not deployed. Check that the names in `spec.models` match your deployments.
-
-A hostname the platform generated needs nothing further. A hostname you supplied carries its own certificate and gets its own listener, and certificate provisioning takes a minute or two after the first apply.
+Replace `HOSTNAME` with the hostname from the previous command. Akka provisions a TLS certificate for the hostname, so no client needs extra configuration. The base URL to give an OpenAI client is `+https://HOSTNAME/v1+`. See xref:operations:services/invoke-service.adoc[Invoking Akka services] for more about hostnames and routes.
 
 == Next steps
 
-The hostname refuses every request until a key authorizes it. See xref:inference:serving/issuing-api-keys.adoc[Issuing API keys].
+The endpoint refuses every request until a key authorizes it. See xref:inference:serving/issuing-api-keys.adoc[Issuing API keys].
 
 include::partial$aao-inference-notice.adoc[]
 
 == See also
 
 * xref:inference:serving/calling-a-model.adoc[Calling a deployed model]
-* xref:reference:descriptors/model-descriptor.adoc#inferenceroute[InferenceRoute descriptor reference]
+* xref:reference:descriptors/model-descriptor.adoc#model-endpoint[ModelEndpoint descriptor reference]
 * xref:reference:cli/models.adoc#endpoints[`akka models endpoints` command reference]

@@ -1,196 +1,221 @@
 = Deploying models
-:page-summary: A model deployment is one serving engine running one model on an accelerator, declared in a descriptor and created by applying it.
+:page-summary: A model is one checkpoint served by an engine on a device of an allocation, declared in a descriptor and created by applying it.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 
-A model deployment is one serving engine running one model on an accelerator. You declare the deployment in a model descriptor and apply the file, which downloads the weights and starts the engine.
+A model is one checkpoint served by an engine on a device of an allocation. You declare the model in a model descriptor and apply the file, which downloads the weights and starts the engine.
 
-== Declaring a deployment
+== Declaring a model
 
-A deployment names the checkpoint to serve, the accelerator to run it on, and the name clients use to ask for it:
+A model names the checkpoint to serve, the engine, and the allocation entry and device that it runs on:
 
 [source, yaml]
 ----
-resource: ModelDeployment
+resource: Model
 resourceVersion: v1
 metadata:
-  name: docs
+  name: assistant # <1>
 spec:
-  model: mistralai/Ministral-3-3B-Instruct-2512
-  servedModelName: docs
-  replicas: 1
-  placement:
-    accelerator: l4-dedicated
+  model: mistralai/Ministral-3-3B-Instruct-2512 # <2>
+  source:
+    type: huggingface
+    huggingface:
+      secretRef: hf-token # <3>
+      revision: COMMIT_SHA # <4>
   engine:
-    maxModelLen: 8192
-    memoryPercent: 90
+    type: vllm
+    vllm:
+      checkpointFormat: mistral
+  placement:
+    allocation: gpu # <5>
+    device: 0
+  serving:
+    contextLength: 8192 # <6>
 ----
+<1> The model name. Clients send this name in the `model` field of a request.
+<2> The checkpoint to serve, passed to the engine as it is written.
+<3> The project secret that holds the token for gated weights. See <<_supplying_a_token_for_gated_weights>>.
+<4> The full 40-character commit SHA of the checkpoint. A branch or tag name is refused, because it can change under a running model.
+<5> The name of an allocation entry. See xref:inference:serving/allocating-hardware.adoc[Allocating hardware to models].
+<6> The maximum number of tokens per sequence, prompt and completion together. Without this field, the engine uses the checkpoint's own maximum, which can exceed the device memory.
 
-`placement.accelerator` is required. There is no path that lets the scheduler choose the hardware, because the card a model lands on decides how the model performs, and a deployment placed on whatever happens to be free changes latency without anyone asking for it.
+`spec.model`, `spec.source`, `spec.engine`, and `spec.placement` are required. Only `huggingface` is a supported source and only `vllm` is a supported engine. See xref:reference:descriptors/model-descriptor.adoc#model[Model] for every field.
 
-`servedModelName` defaults to `metadata.name`. It is the name clients send in the `model` field of a request, described in xref:inference:serving/calling-a-model.adoc[Calling a deployed model].
-
-See xref:reference:descriptors/model-descriptor.adoc#modeldeployment[ModelDeployment] for every field.
+By default a model generates text. Set `spec.task` to `embed` to serve an embedding model. A model runs one replica, and the descriptor does not accept a higher count.
 
 === Tuning the engine
 
-The `engine` block decides how the model is served:
+The `spec.engine.vllm` block decides how the model is served. Every field is optional. A field that you leave out, or set to `auto`, keeps the engine default.
 
 [cols="1,3", options="header"]
 |===
 | Field
 | What it does
 
-| `maxModelLen`
-| Context length the model is served at, prompt and output combined. Larger values consume more GPU memory and lower the concurrency the card sustains.
-
-| `memoryPercent`
-| Share of the card's memory the engine may use, from 1 to 100. Required on a shared accelerator.
+| `dtype`
+| The data type of the weights and activations: `auto`, `bfloat16`, `float16`, or `float32`.
 
 | `quantization`
-| Numeric format for the weights: `none`, `fp8`, `awq`, `gptq`, or `bitsandbytes`.
+| The weight quantization method that the engine applies or expects. Leave it out to let the engine detect a pre-quantized checkpoint from its configuration. Values include `fp8`, `awq`, `gptq`, `bitsandbytes`, and `gguf`.
 
-| `textOnly`
-| Drops the vision tower from a multimodal checkpoint and returns its memory to the KV cache. The engine then rejects images entirely, so set it only for a multimodal checkpoint you use for text.
+| `kvCacheDtype`
+| The data type of the KV cache: `auto`, `fp8`, `fp8_e4m3`, or `fp8_e5m2`.
 
 | `checkpointFormat`
-| Weight format of the checkpoint being loaded, `auto` or `mistral`.
+| The checkpoint layout: `hf` for transformers, or `mistral` for consolidated Mistral-format weights, tokenizer, and configuration. Use `mistral` for a checkpoint in that layout.
 
-| `toolCalling`
-| Enables OpenAI-style tool calling.
+| `chatTemplateRef`
+| The project secret whose `template` key holds the chat template, for fine-tuned checkpoints.
+
+| `extraArgs`
+| Arguments appended to the engine command line, last and verbatim. The platform refuses flags that it owns, such as the model, port, served name, memory fraction, adapters, and parallelism.
 |===
 
-Always set `maxModelLen`. Some checkpoints declare a default of 262144, and the engine sizes a KV cache for whatever the checkpoint declares.
-
-`checkpointFormat` is never inferred from the model name. A checkpoint published in Mistral's native format needs `checkpointFormat: mistral`. Without it, the checkpoint is read along the standard path and its files are parsed incorrectly.
+`spec.serving` bounds the serving envelope in terms that do not depend on the engine: `contextLength`, `maxConcurrentRequests`, and the CPU and memory `resources` of the engine container. Always set `contextLength`, because some checkpoints declare a maximum that no single device can hold.
 
 === Enabling tool calling
+
+Set `toolCalling.parser` to the parser that matches the model family:
 
 [source, yaml]
 ----
 engine:
-  maxModelLen: 8192
-  memoryPercent: 90
-  checkpointFormat: mistral
-  toolCalling:
-    enabled: true
-    parser: mistral
+  type: vllm
+  vllm:
+    checkpointFormat: mistral
+    toolCalling:
+      parser: mistral
 ----
 
-Both sub-keys are required. `enabled` without `parser`, or `parser` without `enabled`, fails validation. Omit the block and the model serves normally but ignores the `tools` field in requests.
+The block enables OpenAI tool calls with the named parser. The region refuses a parser name that the engine does not support. It cannot check that the parser matches the model, so choose it deliberately. A wrong parser starts healthy and returns tool calls as plain text.
 
-The parser has to match the model family. Valid names come from the serving engine the platform pins rather than from the CLI, so the value is only checked for shape. Common values are `pythonic`, `mistral`, and `hermes`. Choose it deliberately: nothing verifies that a parser matches the model, and the wrong one starts healthy and returns tool calls as ordinary prose.
-
+[#_supplying_a_token_for_gated_weights]
 === Supplying a token for gated weights
 
-Checkpoints behind an account need a token, declared as a secret and referenced by the deployment:
-
-[source, yaml]
-----
-resource: Secret
-resourceVersion: v1
-metadata:
-  name: hf-token
-spec:
-  type: generic
-  data:
-    token: hf_xxxxxxxxxxxxxxxxxxxx
----
-resource: ModelDeployment
-resourceVersion: v1
-metadata:
-  name: docs
-spec:
-  model: mistralai/Ministral-3-3B-Instruct-2512
-  placement:
-    accelerator: l4-dedicated
-  source:
-    huggingFaceTokenSecret: hf-token/token
-    cache:
-      enabled: true
-      size: 100Gi
-----
-
-[CAUTION]
-====
-The token goes into the file literally. A descriptor does not interpolate environment variables, so a value written as `+${HF_TOKEN}+` is passed through as that exact string and the download fails with an authentication error.
-
-Your working copy of the descriptor therefore holds a live credential. Do not commit it. To keep the descriptor in version control, commit a copy with the token replaced by a placeholder.
-====
-
-Enabling the cache persists the weights and the compiled artifacts across restarts. Without it, every restart pays the download and compilation cost again.
-
-== Validating before you apply
-
-Validation is offline and reports every problem in the file at once. Nothing is deployed:
+A checkpoint behind an account needs a token. Store the token in a project secret under the key `token`, and name the secret in `source.huggingface.secretRef`:
 
 [source, shell]
 ----
-akka models validate -f models.yaml
+akka secrets create generic hf-token --literal token=HF_TOKEN
 ----
 
-Some rules can only be checked against the cluster, such as whether a served name collides with a deployment that is already running. To run those without persisting anything:
+Replace `HF_TOKEN` with your token. A model descriptor cannot contain a `Secret` resource, so the descriptor holds only the name of the secret and no credential.
+
+=== Persisting the weights
+
+Set `source.cache.sizeGiB` to keep the weights across restarts. Without a cache, every restart pays the download again.
+
+[source, yaml]
+----
+source:
+  type: huggingface
+  huggingface:
+    revision: COMMIT_SHA
+  cache:
+    sizeGiB: 100
+----
+
+[#_sharing_a_device_between_models]
+=== Sharing a device between models
+
+`placement.device` is the index of a device within the allocation entry. Models that give the same entry and index share the physical device. `placement.memoryGiB` is the engine's device-memory budget. Without it, a model takes the whole device less the type's headroom, so set it on every model that shares a device.
+
+[source, yaml]
+----
+placement:
+  allocation: gpu
+  device: 0
+  memoryGiB: 12
+----
+
+=== Serving LoRA adapters
+
+A LoRA adapter is served next to the base model and addressed by its own name. Each adapter states its name, its checkpoint, where the weights come from, and its LoRA rank:
+
+[source, yaml]
+----
+spec:
+  loraAdapters:
+    - name: docs-support # <1>
+      model: acme/support-adapter
+      rank: 16 # <2>
+      source:
+        type: huggingface
+        huggingface:
+          revision: COMMIT_SHA
+----
+<1> The name that clients send in the `model` field to reach the adapter. It must be unique across the project's routing table, and the region refuses a duplicate.
+<2> The rank is required. The engine computes its maximum rank from the declared ranks.
+
+An adapter can also come from object storage. Set `source.type` to `objectStorage` and give the logical name of a bucket of the project, the object `path` of the adapter directory, and the `sha256` of `adapter_model.safetensors`. The fetch fails when the weights do not match the digest.
+
+The set of adapters is static. Changing it restarts the engine.
+
+== Applying the descriptor
+
+Run the region's admission checks without persisting anything:
 
 [source, shell]
 ----
 akka models apply -f models.yaml --dry-run
 ----
 
-== Applying the descriptor
+The CLI checks the shape of every document first and reports every problem at once. The region then checks, among other things, whether the requested devices fit the pool.
+
+Apply the descriptor:
 
 [source, shell]
 ----
 akka models apply -f models.yaml
 ----
 
-Applying again is safe. It updates what changed and leaves the rest alone. Apply also provisions the TLS certificate for any hostname the file names, which takes a minute or two the first time.
+`apply` creates or updates each resource by name, so it is safe to run again after you edit the file. It applies the allocations first, then the models, then the endpoints.
 
 == Waiting for a model to become ready
 
 [source, shell]
 ----
-akka models get docs --wait
+akka models get assistant --wait
 ----
 
-The first deployment downloads the weights, so expect several minutes. If a model stays unready, the same command without `--wait` prints the reason in plain text.
+The first deployment pulls the engine image and the checkpoint, so several minutes are normal. `--wait` waits for 10 minutes by default, and `--wait-timeout` sets a different time. When the model is not ready, `akka models get` prints the reason from the `Ready` condition. A model that is still pulling weights, a device that does not bind, and a revoked entitlement each name themselves.
 
-Once every model is running:
+To list the models in the region:
 
 [source, shell]
 ----
 akka models list
 ----
 
-[source, shell]
-----
-NAME   MODEL                                    SERVES   KV TOKENS   MAX CONC   DEVICE      READY
-docs   mistralai/Ministral-3-3B-Instruct-2512   docs     143472      17.51      NVIDIA L4   True
-----
+[cols="1,3", options="header"]
+|===
+| Column
+| Value
 
-[NOTE]
-====
-`MAX CONC` is a sizing estimate, not a limit. It is the number of concurrent requests the KV cache comfortably holds at the configured context length, which makes it useful for capacity planning. Nothing enforces it. The model accepts more concurrent requests than this number and answers them, trading latency for throughput as the queue grows.
-====
+| `NAME`
+| The model name.
 
-== Serving several names from one deployment
+| `MODEL`
+| The checkpoint.
 
-A LoRA adapter is served from the base model and addressed as its own model name, so one deployment can answer to several names:
+| `SERVES`
+| The names that clients can send in the `model` field, adapters included, or `-` while there are none.
 
-[source, yaml]
-----
-spec:
-  adapters:
-    - name: docs-support
-      path: s3://acme-adapters/support/
-----
+| `ALLOCATION`
+| The allocation entry that the model is placed on.
 
-Each adapter name has to be unique and must not collide with `servedModelName`. Adapter names appear alongside the base name wherever served names are listed, including on the route described in xref:inference:serving/exposing-models.adoc[Exposing models on a hostname].
+| `READY`
+| `True` when the model is serving.
+
+| `AGE`
+| How long the model has existed.
+|===
 
 == Next steps
 
-A deployed model is not yet reachable from outside the cluster. See xref:inference:serving/exposing-models.adoc[Exposing models on a hostname].
+A deployed model is not yet reachable from outside the project. See xref:inference:serving/exposing-models.adoc[Exposing models on a hostname].
 
 include::partial$aao-inference-notice.adoc[]
 
