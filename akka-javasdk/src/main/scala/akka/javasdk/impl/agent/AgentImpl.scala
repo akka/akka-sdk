@@ -485,7 +485,7 @@ private[impl] object AgentImpl {
           new McpToolInterceptorContext(toolCallRequest.name, result.isError),
           arguments,
           result.text)
-        if (text eq result.text) result else new SpiAgent.McpToolCallResult(text, result.isError)
+        new SpiAgent.McpToolCallResult(text, result.isError)
       })
   }
 
