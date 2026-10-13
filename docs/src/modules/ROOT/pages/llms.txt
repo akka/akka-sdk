@@ -106,7 +106,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Observability](https://doc.akka.io/operations/observability-and-monitoring/index.html.md): Metrics, logs, traces, OTEL export
 - [Secrets management](https://doc.akka.io/operations/projects/secrets.html.md): Built-in secrets with Azure KeyVault integration
 - [CLI installation](https://doc.akka.io/getting-started/install-cli.html.md): Install the Akka CLI
-- [Log in to a remote Akka environment](https://doc.akka.io/getting-started/log-in.html.md): Log in to deploy to or manage a remote Akka Platform environment
+- [Login to a remote env](https://doc.akka.io/getting-started/log-in.html.md): Log in to deploy to or manage a remote Akka Platform environment
 - [CI/CD integration](https://doc.akka.io/operations/integrating-cicd/index.html.md): GitHub Actions and other CI/CD tools
 
 ## Inference

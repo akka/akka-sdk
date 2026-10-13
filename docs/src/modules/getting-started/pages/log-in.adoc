@@ -1,4 +1,4 @@
-= Log in to a remote Akka environment
+= Login to a remote env
 
 include::ROOT:partial$include.adoc[]
 
