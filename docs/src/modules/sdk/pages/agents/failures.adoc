@@ -23,6 +23,9 @@ The `onFailure` method can handle the following types of exceptions:
 * **Response processing exceptions:**
   ** `JsonParsingException` - Response parsing failures (as shown in structured responses)
 
+* **Guardrail exceptions:**
+  ** `Guardrail.GuardrailException` - Guardrail violations
+
 * **Sanitizer exceptions:**
   ** `akka.javasdk.SanitizerException` - A sanitizer class failed
 
