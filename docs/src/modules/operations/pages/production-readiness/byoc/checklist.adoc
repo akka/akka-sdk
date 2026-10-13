@@ -253,6 +253,13 @@ Akka instruments the platform with its own observability stack and runs baseline
 * [ ] *Consumers*: idempotency, redelivery, DLQ routing
 
 [discrete]
+==== Code review
+
+* [ ] Implementation reviewed before each release; with Akka Specify, `/akka:review` run and its findings resolved or recorded with a reason. See xref:sdk:spec-driven-development.adoc#_review_and_analyze[Review and analyze]
+* [ ] Logical `@TypeName` on event types, with values left unchanged once events are persisted, because the name is stored with each payload and used to deserialize it and route it to consumers and views. See xref:sdk:serialization.adoc[]
+* [ ] `applyEvent` limited to copying event data into state and never failing, with validation done before the event is persisted. See xref:sdk:ai-coding-assistant-guidelines.adoc[]
+
+[discrete]
 ==== Integration and E2E
 
 * [ ] Tests against a real broker or high-fidelity local equivalent, not pure mocks
