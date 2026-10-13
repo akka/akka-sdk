@@ -585,7 +585,7 @@ private[impl] object AgentImpl {
     case img: SpiAgent.ImageBytesMessageContent =>
       new MessageContent.ImageBytesMessageContent(
         img.bytes.toArrayUnsafe(),
-        java.util.Optional.of(img.mimeType),
+        Option(img.mimeType).filter(_.nonEmpty).toJava,
         fromSpiDetailLevel(img.detailLevel))
 
     case pdf: SpiAgent.PdfBytesMessageContent =>
