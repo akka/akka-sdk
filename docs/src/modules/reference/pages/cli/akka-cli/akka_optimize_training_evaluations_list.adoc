@@ -10,12 +10,14 @@ The filters combine, so a workload and a phase together list that workload's unf
 --workload takes a name or an id, which is what scored against a workload's quota.
 It is the same flag "evaluations start" takes.
 
+[source,shell]
 ----
 akka optimize training evaluations list [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # List all evaluations
   akka-optimize training evaluations list
@@ -36,6 +38,7 @@ akka optimize training evaluations list [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help              help for list
       --model string      Filter evaluations by model ID
@@ -45,6 +48,7 @@ akka optimize training evaluations list [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

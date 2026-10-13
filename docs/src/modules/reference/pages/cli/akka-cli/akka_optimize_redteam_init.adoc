@@ -13,12 +13,14 @@ Additive: a file already present is left alone.
 
 After init, pull adversarial corpora with `akka-optimize redteam corpora pull`.
 
+[source,shell]
 ----
 akka optimize redteam init [DIRECTORY] [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --enable-wmdp           do not warn about WMDP; the customer intends to include it
       --force                 replace files that are already there
@@ -31,6 +33,7 @@ akka optimize redteam init [DIRECTORY] [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

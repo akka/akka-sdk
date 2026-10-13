@@ -8,12 +8,14 @@ The `akka service views` commands manage the views for an Akka project, includin
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for views
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

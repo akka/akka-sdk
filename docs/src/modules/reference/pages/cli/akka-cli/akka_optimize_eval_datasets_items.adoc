@@ -2,12 +2,14 @@
 
 The items in one version of a dataset
 
+[source,shell]
 ----
 akka optimize eval datasets items ID --version V [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help             help for items
       --version string   the dataset version to read
@@ -15,6 +17,7 @@ akka optimize eval datasets items ID --version V [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

@@ -8,12 +8,14 @@ Set or update the description for a training pipeline.
 
 The description is informational and does not modify the pipeline ID, stage configuration, or execution state.
 
+[source,shell]
 ----
 akka optimize training pipelines annotate PIPELINE [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Add a description to a pipeline
   akka-optimize training pipelines annotate 3f9a21c4d08b7e56 \
@@ -22,6 +24,7 @@ akka optimize training pipelines annotate PIPELINE [flags]
 
 == Options
 
+[source,text]
 ----
       --description string   Description for the resource. Pass an empty string to clear
   -h, --help                 help for annotate
@@ -29,6 +32,7 @@ akka optimize training pipelines annotate PIPELINE [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

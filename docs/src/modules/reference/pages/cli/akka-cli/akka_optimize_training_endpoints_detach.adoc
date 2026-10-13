@@ -14,12 +14,14 @@ Detaching the last model takes the endpoint down, so a caller that detaches what
 Refused for the judge a run is still calling, naming that run.
 Anything else at the same endpoint detaches as usual.
 
+[source,shell]
 ----
 akka optimize training endpoints detach ENDPOINT MODEL [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Stop serving one candidate
   akka-optimize training endpoints detach 970076e8 triage-candidate
@@ -27,12 +29,14 @@ akka optimize training endpoints detach ENDPOINT MODEL [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for detach
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

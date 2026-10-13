@@ -2,12 +2,14 @@
 
 Delete a role binding
 
+[source,shell]
 ----
 akka organizations users delete-binding --id ROLE_BINDING_ID [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help                  help for delete-binding
       --id string             The id of the role binding to revoke
@@ -16,6 +18,7 @@ akka organizations users delete-binding --id ROLE_BINDING_ID [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

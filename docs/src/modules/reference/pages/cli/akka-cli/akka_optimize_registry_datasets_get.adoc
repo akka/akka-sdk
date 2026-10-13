@@ -12,12 +12,14 @@ A reference is one string: NS/NAME for the named artifact, NS/NAME:v2 for a vers
 for a version by digest.
 NS/NAME where a version is wanted is the newest version.
 
+[source,shell]
 ----
 akka optimize registry datasets get NS/NAME[:REF] [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Read a named dataset
   akka-optimize registry datasets get triage/train
@@ -31,12 +33,14 @@ akka optimize registry datasets get NS/NAME[:REF] [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for get
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

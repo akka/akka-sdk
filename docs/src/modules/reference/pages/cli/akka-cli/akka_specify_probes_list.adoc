@@ -2,12 +2,14 @@
 
 Show which probes can reach this system, and which cannot.
 
+[source,shell]
 ----
 akka specify probes list [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --dir string       project directory (default: current)
   -h, --help             help for list
@@ -20,6 +22,7 @@ akka specify probes list [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

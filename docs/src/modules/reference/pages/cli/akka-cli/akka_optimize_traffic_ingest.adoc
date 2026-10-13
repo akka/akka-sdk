@@ -17,12 +17,14 @@ The router answers a part once every line in it has run.
 A part that is not answered in time, because the router's request timeout or --timeout passed first, may still be running.
 Do not ingest that part again until its lines have finished.
 
+[source,shell]
 ----
 akka optimize traffic ingest -f FILE [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   akka-optimize traffic ingest -f traffic.jsonl
   akka-optimize traffic ingest -f traffic.jsonl --lines-per-request 10 -o json
@@ -30,6 +32,7 @@ akka optimize traffic ingest -f FILE [flags]
 
 == Options
 
+[source,text]
 ----
   -f, --file string             recorded exchanges, one JSON line each; - reads stdin
   -h, --help                    help for ingest
@@ -38,6 +41,7 @@ akka optimize traffic ingest -f FILE [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

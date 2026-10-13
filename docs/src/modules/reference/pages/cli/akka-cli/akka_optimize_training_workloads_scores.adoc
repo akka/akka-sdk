@@ -11,12 +11,14 @@ Cells show scores for runs evaluated under the configured dataset and grader of 
 
 Use --dataset and --grader to inspect scores recorded under previous evaluation configurations.
 
+[source,shell]
 ----
 akka optimize training workloads scores WORKLOAD [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Compare scores using default evaluation settings
   akka-optimize training workloads scores commit-router
@@ -28,6 +30,7 @@ akka optimize training workloads scores WORKLOAD [flags]
 
 == Options
 
+[source,text]
 ----
       --dataset string   Evaluation dataset name or hash to display scores for
       --grader string    Grader specification to display scores for
@@ -36,6 +39,7 @@ akka optimize training workloads scores WORKLOAD [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

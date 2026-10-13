@@ -11,12 +11,14 @@ A registration that has not reached REGISTERED has no model entry to read.
 A failed registration reports its reason here and continues to retain its source, because a step that timed out may still have succeeded.
 Once that outcome is known, release the source with "training snapshots release".
 
+[source,shell]
 ----
 akka optimize training snapshots candidate SNAPSHOT [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Read a registration
   akka-optimize training snapshots candidate 3f2a9c71bd04
@@ -27,12 +29,14 @@ akka optimize training snapshots candidate SNAPSHOT [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for candidate
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

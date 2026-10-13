@@ -2,12 +2,14 @@
 
 Record a human sign-off that closes an exit condition.
 
+[source,shell]
 ----
 akka specify signoff <condition-id> [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --dir string      project directory (default: current)
   -h, --help            help for signoff
@@ -16,6 +18,7 @@ akka specify signoff <condition-id> [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

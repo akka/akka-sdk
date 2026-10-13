@@ -9,12 +9,14 @@ They are kept apart from the ones a person wrote, so that graduating them at the
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for conditions
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

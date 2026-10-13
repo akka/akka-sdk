@@ -18,12 +18,14 @@ A run that has not reached a terminal phase, and a registration that is still co
 A paused run has not reached a terminal phase, because resuming reads its source again.
 An owner the service cannot find retains what it holds too: a branch submission retains the source before it starts the child, so an OWNER that resolves to no run may name a child that is still being started.
 
+[source,shell]
 ----
 akka optimize training snapshots release SNAPSHOT OWNER [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Release what a cancelled child run never gave back
   akka-optimize training snapshots release 3f2a9c71bd04 7d496e82c3a1
@@ -31,6 +33,7 @@ akka optimize training snapshots release SNAPSHOT OWNER [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help          help for release
       --kind string   Artifact kind to act on, either weights or trainingState. Both kinds are covered by default
@@ -38,6 +41,7 @@ akka optimize training snapshots release SNAPSHOT OWNER [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

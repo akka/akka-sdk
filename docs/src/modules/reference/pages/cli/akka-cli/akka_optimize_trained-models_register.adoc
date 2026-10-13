@@ -20,12 +20,14 @@ If omitted, revision defaults to the repository HEAD at registration time.
 This command outputs a model ID that can be evaluated using "training evaluations start --model".
 The service derives the model ID from the descriptor, so registering an identical descriptor returns the existing ID.
 
+[source,shell]
 ----
 akka optimize trained-models register -f FILE [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Register a base model descriptor
   akka-optimize trained-models register -f base-model.json
@@ -37,6 +39,7 @@ akka optimize trained-models register -f FILE [flags]
 
 == Options
 
+[source,text]
 ----
   -f, --file string   Path to the model descriptor file. Use '-' to read from standard input
   -h, --help          help for register
@@ -44,6 +47,7 @@ akka optimize trained-models register -f FILE [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

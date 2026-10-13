@@ -13,12 +13,14 @@ Prerequisites:
 * Maven installed on your system, or the Maven wrapper (mvnw) present in your project
 * Docker installed and running (used to launch Akka Persistence backed by PostgreSQL)
 
+[source,shell]
 ----
 akka local cluster [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -D, --define stringArray   Pass -D properties to Maven (e.g., -Dfoo=bar)
   -h, --help                 help for cluster
@@ -27,6 +29,7 @@ akka local cluster [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

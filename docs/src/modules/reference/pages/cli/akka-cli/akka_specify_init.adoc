@@ -27,12 +27,14 @@ Claude Code profile   cd my-service && claude
 
 akka specify init .                                # neutral install in cwd   # then open your preferred AGENTS.md-aware agent
 
+[source,shell]
 ----
 akka specify init [directory] [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --agent string             AI agent to configure (omit for AGENTS.md + .mcp.json only).
                                    Verified profiles:
@@ -52,6 +54,7 @@ akka specify init [directory] [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

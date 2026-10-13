@@ -14,12 +14,14 @@ Training spend covers whole runs and is kept separate from evaluation spend.
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for comparisons
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

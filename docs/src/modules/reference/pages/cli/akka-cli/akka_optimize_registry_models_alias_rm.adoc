@@ -8,12 +8,14 @@ Remove an alias.
 Its history stays in the journal and no version changes.
 Setting the alias again afterwards starts a history of its own.
 
+[source,shell]
 ----
 akka optimize registry models alias rm NS/NAME:ALIAS [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Stop serving a version through an alias
   akka-optimize registry models alias rm triage/classifier:serving
@@ -21,12 +23,14 @@ akka optimize registry models alias rm NS/NAME:ALIAS [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for rm
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

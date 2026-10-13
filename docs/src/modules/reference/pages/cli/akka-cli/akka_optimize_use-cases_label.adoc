@@ -10,18 +10,21 @@ A use-case already frozen into a manifest cannot be relabelled.
 Two use-cases in the working set may not share a label.
 Reusing a label from an earlier manifest is allowed, and is how the same use-case keeps its name across freezes.
 
+[source,shell]
 ----
 akka optimize use-cases label ID LABEL [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for label
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

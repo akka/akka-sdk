@@ -8,18 +8,21 @@ The working set stays live after a freeze, which is what this compares against.
 
 A rising below-threshold share has two causes -- traffic the manifest does not describe, and traffic the working set cannot admit because the cap is full -- so the cap is reported beside it.
 
+[source,shell]
 ----
 akka optimize use-cases manifests diff TAG [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for diff
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

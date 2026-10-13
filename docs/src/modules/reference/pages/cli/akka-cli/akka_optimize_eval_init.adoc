@@ -15,12 +15,14 @@ The dependency edit is idempotent -- the pom is left alone when the dependency i
 Run it again to take a newer scaffold;
 the parts you have written stay yours.
 
+[source,shell]
 ----
 akka optimize eval init [DIRECTORY] [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --force            replace files that are already there
       --from string      a scaffold archive on disk, instead of downloading one
@@ -31,6 +33,7 @@ akka optimize eval init [DIRECTORY] [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

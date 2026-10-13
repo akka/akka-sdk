@@ -2,12 +2,14 @@
 
 Record an externally-run evaluation or report
 
+[source,shell]
 ----
 akka optimize models attestations create NAME -f FILE [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --condition string   condition this attestation closes
   -f, --file string        document to send; - reads stdin
@@ -16,6 +18,7 @@ akka optimize models attestations create NAME -f FILE [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

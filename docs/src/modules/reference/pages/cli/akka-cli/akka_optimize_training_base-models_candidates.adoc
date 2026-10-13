@@ -14,12 +14,14 @@ Nothing is allowed or selected by asking.
 --catalog prints the entries to paste into a region's catalog.conf, pinned to the commits this resolved.
 Envelopes are not written: an envelope is a measurement, and each entry says so until somebody has made it.
 
+[source,shell]
 ----
 akka optimize training base-models candidates --author AUTHOR [--match GLOB] [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # What the Gemma 4 family offers, and which members this deployment could train
   akka-optimize training base-models candidates --author google --match 'gemma-4-*'
@@ -30,6 +32,7 @@ akka optimize training base-models candidates --author AUTHOR [--match GLOB] [fl
 
 == Options
 
+[source,text]
 ----
       --author string   The hub account that publishes the repositories
       --catalog         Print catalog.conf entries for the admissible candidates instead of a table
@@ -39,6 +42,7 @@ akka optimize training base-models candidates --author AUTHOR [--match GLOB] [fl
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

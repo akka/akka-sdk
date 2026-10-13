@@ -6,12 +6,14 @@ Display details, lineage, and evaluation scores for a model
 
 Display configuration, provenance lineage, GPU training costs, and recorded evaluation scores for a model entry.
 
+[source,shell]
 ----
 akka optimize trained-models get MODEL [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Display model details
   akka-optimize trained-models get 4f3a91c07b2e5d68
@@ -22,12 +24,14 @@ akka optimize trained-models get MODEL [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for get
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

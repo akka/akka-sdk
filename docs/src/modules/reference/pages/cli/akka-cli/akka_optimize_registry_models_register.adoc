@@ -24,12 +24,14 @@ The registry derives the version's digest from the descriptor and the artifact r
 
 The named model and its namespace are created by the first registration into them.
 
+[source,shell]
 ----
 akka optimize registry models register NS/NAME -f FILE [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Register a base model to score as a baseline
   akka-optimize registry models register qwen/qwen3-0.6b -f base-model.json
@@ -43,6 +45,7 @@ akka optimize registry models register NS/NAME -f FILE [flags]
 
 == Options
 
+[source,text]
 ----
       --alias string   Point this alias of the named model at the registered version
   -f, --file string    Path to the model descriptor file. Use '-' to read from standard input
@@ -51,6 +54,7 @@ akka optimize registry models register NS/NAME -f FILE [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

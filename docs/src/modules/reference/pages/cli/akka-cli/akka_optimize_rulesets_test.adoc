@@ -2,12 +2,14 @@
 
 What it would decide, with no traffic involved
 
+[source,shell]
 ----
 akka optimize rulesets test NAME -f REQUEST [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -f, --file string   the request to evaluate
   -h, --help          help for test
@@ -15,6 +17,7 @@ akka optimize rulesets test NAME -f REQUEST [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

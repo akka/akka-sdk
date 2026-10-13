@@ -2,12 +2,14 @@
 
 Every namespace, with what it holds
 
+[source,shell]
 ----
 akka optimize registry namespaces list [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # List the namespaces
   akka-optimize registry namespaces list
@@ -15,12 +17,14 @@ akka optimize registry namespaces list [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for list
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

@@ -12,12 +12,14 @@ Give both or neither.
 The narrowings are different questions, so the registry refuses a request that states both.
 A training run's producer id is the run id for the model it ended with, and runId#step for a checkpoint.
 
+[source,shell]
 ----
 akka optimize registry models versions NS/NAME [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # List every version
   akka-optimize registry models versions triage/classifier
@@ -32,6 +34,7 @@ akka optimize registry models versions NS/NAME [flags]
 
 == Options
 
+[source,text]
 ----
       --base-model string         List the versions over one base model, as a repository or a version reference
   -h, --help                      help for versions
@@ -41,6 +44,7 @@ akka optimize registry models versions NS/NAME [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

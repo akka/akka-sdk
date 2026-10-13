@@ -2,12 +2,14 @@
 
 Run one probe and print what it was asked and what it answered.
 
+[source,shell]
 ----
 akka specify probes test <probe> [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --dir string       project directory (default: current)
   -h, --help             help for test
@@ -20,6 +22,7 @@ akka specify probes test <probe> [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

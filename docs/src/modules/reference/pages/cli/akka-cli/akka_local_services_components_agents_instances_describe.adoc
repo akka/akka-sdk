@@ -6,12 +6,14 @@ Describe the current state of an autonomous agent instance.
 
 The `akka local service components agents instances describe` command shows the current state of an autonomous agent instance.
 
+[source,shell]
 ----
 akka local services components agents instances describe [SERVICE_NAME COMPONENT_ID] INSTANCE_ID [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help             help for describe
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
@@ -21,6 +23,7 @@ akka local services components agents instances describe [SERVICE_NAME COMPONENT
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

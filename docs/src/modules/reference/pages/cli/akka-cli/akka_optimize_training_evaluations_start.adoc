@@ -12,12 +12,14 @@ Each evaluation executes as a distinct job and generates an independent evaluati
 A candidate carries the workload that trained it, so it needs none, and naming a different one is refused.
 A base model belongs to no workload, so scoring one to get a baseline needs --workload to say which workload the score belongs to.
 
+[source,shell]
 ----
 akka optimize training evaluations start --model MODEL --dataset HASH [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Start an evaluation
   akka-optimize training evaluations start --model 4f3a91c07b2e5d68 \
@@ -38,6 +40,7 @@ akka optimize training evaluations start --model MODEL --dataset HASH [flags]
 
 == Options
 
+[source,text]
 ----
       --dataset string    Evaluation dataset hash, or a unique prefix of one
       --exit-status       Exit with a non-zero status if execution fails or is cancelled. Requires --wait
@@ -50,6 +53,7 @@ akka optimize training evaluations start --model MODEL --dataset HASH [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

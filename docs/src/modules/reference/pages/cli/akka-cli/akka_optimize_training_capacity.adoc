@@ -29,12 +29,14 @@ QUOTA is the devices it may hold at once, across every pool.
 --workload narrows the claims and the workloads to one workload.
 The pools stay whole, because what a workload is waiting for is the state of the pool, whoever else is holding it.
 
+[source,shell]
 ----
 akka optimize training capacity [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # What holds the pools
   akka-optimize training capacity
@@ -48,6 +50,7 @@ akka optimize training capacity [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help              help for capacity
       --workload string   Narrow the claims and the workloads to one workload, by name, ID or the start of one
@@ -55,6 +58,7 @@ akka optimize training capacity [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

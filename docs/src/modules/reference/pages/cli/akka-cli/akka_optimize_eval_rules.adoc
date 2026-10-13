@@ -2,12 +2,14 @@
 
 Rules declared across the project's eval campaigns
 
+[source,shell]
 ----
 akka optimize eval rules [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --hazard string   restrict to rules covering the named hazard, e.g. ailuminate:privacy
   -h, --help            help for rules
@@ -15,6 +17,7 @@ akka optimize eval rules [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

@@ -10,6 +10,7 @@ The command tree is written to drop into `akka optimize` unchanged, so nouns are
 
 == Options
 
+[source,text]
 ----
       --force                Skip the confirmation prompt
   -h, --help                 help for optimize
@@ -23,6 +24,7 @@ The command tree is written to drop into `akka optimize` unchanged, so nouns are
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

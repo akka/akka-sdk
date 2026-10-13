@@ -16,12 +16,14 @@ The response document also includes the parent configuration hash for comparison
 The list is eventually consistent, so a newly created child may not appear immediately.
 Use --submission to read the current preparation state directly.
 
+[source,shell]
 ----
 akka optimize training runs branches PARENT [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # List the runs started from a run's snapshots
   akka-optimize training runs branches 7d496e82c3a15f04
@@ -36,6 +38,7 @@ akka optimize training runs branches PARENT [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help                help for branches
       --limit int           Maximum number of entries to return. The service defaults to 50 and allows at most 100
@@ -45,6 +48,7 @@ akka optimize training runs branches PARENT [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

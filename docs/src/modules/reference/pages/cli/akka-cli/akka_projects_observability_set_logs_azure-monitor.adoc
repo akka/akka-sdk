@@ -2,12 +2,14 @@
 
 Set your project to export logs to Azure Monitor.
 
+[source,shell]
 ----
 akka projects observability set logs azure-monitor [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --connection-string string   The Azure Monitor connection string
       --force-global               force an existing regional resource to be configured as a global resource
@@ -20,6 +22,7 @@ akka projects observability set logs azure-monitor [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

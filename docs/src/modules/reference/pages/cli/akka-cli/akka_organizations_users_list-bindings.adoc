@@ -3,12 +3,14 @@
 List all users in the organization.
 To view users with pending invitations run `akka org invitations list`
 
+[source,shell]
 ----
 akka organizations users list-bindings [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help                  help for list-bindings
       --organization string   name or ID for organization
@@ -16,6 +18,7 @@ akka organizations users list-bindings [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

@@ -18,6 +18,7 @@ A run commits snapshots as it trains.
 
 == Examples
 
+[source,shell]
 ----
   # Submit a plan and wait for the run to finish
   akka-optimize training runs start -f plan.json --wait
@@ -37,12 +38,14 @@ A run commits snapshots as it trains.
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for runs
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

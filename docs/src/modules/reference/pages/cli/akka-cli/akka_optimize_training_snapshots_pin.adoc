@@ -16,12 +16,14 @@ Pinning an already pinned snapshot has no effect.
 "training runs snapshots" reports a pinned snapshot as held by retention.
 Release the pin with "training snapshots unpin".
 
+[source,shell]
 ----
 akka optimize training snapshots pin SNAPSHOT [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Retain a checkpoint to continue from later
   akka-optimize training snapshots pin 3f2a9c71bd04
@@ -32,6 +34,7 @@ akka optimize training snapshots pin SNAPSHOT [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help          help for pin
       --kind string   Artifact kind to act on, either weights or trainingState. Both kinds are covered by default
@@ -39,6 +42,7 @@ akka optimize training snapshots pin SNAPSHOT [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

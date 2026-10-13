@@ -110,6 +110,24 @@ for file in akka*.adoc; do
   mv $file.tmp $file
 done
 
+# render each command block as a source block, so that it gets the language label and the
+# copy button. Flag listings are plain text, and the rest (usage and examples) is shell.
+for file in akka*.adoc; do
+  awk '
+    !inblock && /^== / { section = $0 }
+    /^----$/ {
+      if (!inblock) {
+        if (previous !~ /^\[/) print (section ~ /^== Options/ ? "[source,text]" : "[source,shell]")
+        inblock = 1
+      } else {
+        inblock = 0
+      }
+    }
+    { print; previous = $0 }
+  ' "$file" > "$file.tmp"
+  mv "$file.tmp" "$file"
+done
+
 # inject page-aliases so renamed commands keep their old (bookmarked) URLs alive.
 # Mapping lives in cli-redirects.txt (survives the `rm -f akka*.adoc` above).
 # See that file for the format.
