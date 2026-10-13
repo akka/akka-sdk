@@ -120,7 +120,7 @@ A binding can set `sampling-ratio`, a number from 0.0 to 1.0. For each interacti
 
 With `trigger-on-failure`, the evaluator also receives interactions that ended in a failure. The record of such an interaction can still hold model text, for example a reply that a guardrail blocked. In the evaluator, check link:{attachmentsdir}/api/akka/javasdk/ledger/InteractionRecord.html[`InteractionRecord.failed()`] before you judge the reply, and read the reason from `failureSummary()`.
 
-The default values for all evaluator entries and bindings are under `akka.javasdk.evaluation.defaults`. A value set on an individual entry overrides the default for that entry.
+The default values for evaluator entries are under `akka.javasdk.evaluation.defaults.evaluator`, and the default values for bindings are under `akka.javasdk.evaluation.defaults.agent`. A value set on an individual entry overrides the default for that entry. The entry that the runtime uses for an agent supplies all settings of the binding. A key that this entry does not set takes the default from `akka.javasdk.evaluation.defaults.agent`, not the value of a less specific entry. For example, when the `*` entry sets `sampling-ratio = 0.1` and the entry for the agent's role sets no ratio, the binding of the agent has the default ratio of 1.0, not 0.1.
 
 The same configuration binds a xref:_durable_evaluators[durable evaluator]. The key is its `@Component` id.
 
