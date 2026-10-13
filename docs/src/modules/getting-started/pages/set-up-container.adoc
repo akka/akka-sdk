@@ -1,0 +1,68 @@
+= Containerized env
+:page-summary: Run Akka in a pre-built Docker container, with no local Java, Maven, or CLI install.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Run Akka inside a pre-built Docker container. Nothing but Docker is installed on your machine — the container bundles Java {java-version}, Maven, the Akka CLI, and pre-cached SDK dependencies.
+
+.Prerequisites
+* https://www.docker.com/products/docker-desktop/[Docker Desktop, window="new"].
+* An link:https://account.akka.io/token[Akka download token, window="new"] (free).
+
+== Set environment variables
+
+The download token is required. AI provider keys are optional and only needed for agent samples.
+
+[source,bash]
+----
+export AKKA_RESOLVER_TOKEN=<your-token>       # required
+export GOOGLE_AI_GEMINI_API_KEY=<your-key>    # optional, for agent samples
+export ANTHROPIC_API_KEY=<your-key>           # optional, for agent samples
+export OPENAI_API_KEY=<your-key>              # optional, for agent samples
+----
+
+== Create a project and start the container
+
+. Create a new project from a sample:
++
+[source,bash]
+----
+akka code init --name helloworld-agent --repo akka-samples/helloworld-agent.git
+----
+. Start the dev container with the project directory mounted:
++
+[source,bash]
+----
+docker run -d --name akka-dev \
+  -v "$(pwd)/helloworld-agent":/workspace \
+  -p 9000:9000 \
+  -p 9889:9889 \
+  -e AKKA_RESOLVER_TOKEN \
+  -e GOOGLE_AI_GEMINI_API_KEY \
+  -e ANTHROPIC_API_KEY \
+  -e OPENAI_API_KEY \
+  registry.akka.io/akka-dev-container:latest
+----
++
+This forwards `localhost:9000` for your service endpoint and `localhost:9889` for the Akka local console.
+
+== Run the service
+
+Build commands run inside the container with `docker exec`; your files stay on the host through the bind mount.
+
+[source,bash]
+----
+docker exec -w /workspace akka-dev mvn compile exec:java
+----
+
+Test it from your host:
+
+[source,bash]
+----
+curl -i -XPOST http://localhost:9000/hello \
+  --header "Content-Type: application/json" \
+  --data '{"user": "alice", "text": "Hello, I am Alice"}'
+----
+
+Start the local console with `docker exec -t -w /workspace akka-dev akka local console --bind-address 0.0.0.0`, then open http://localhost:9889[localhost:9889, window="new"].

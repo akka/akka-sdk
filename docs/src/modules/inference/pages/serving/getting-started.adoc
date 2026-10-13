@@ -32,7 +32,7 @@ A project route then exposes the endpoint on a hostname.
 
 == Prerequisites
 
-* The Akka CLI, installed and logged in. See xref:operations:cli/installation.adoc[Install the Akka CLI].
+* The Akka CLI, installed and logged in. See xref:getting-started:install-cli.adoc[Install the Akka CLI].
 * An Akka project in a region that offers accelerator pools, with the Inference feature set enabled for your organization.
 * A Hugging Face account and an access token with the Read role, created at link:{url-ext-hugging-face-tokens}[Hugging Face access tokens, window="new"]. The token is needed for gated checkpoints.
 * `curl`, to call the model.

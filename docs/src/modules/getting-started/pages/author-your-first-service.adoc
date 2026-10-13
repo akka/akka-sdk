@@ -21,14 +21,14 @@ In this guide, you will:
 
 == Prerequisites
 
-* Complete xref:getting-started:set-up-dev-env.adoc#_set_up_your_env_without_ai[Set up your env without AI] — install the Akka CLI, Java, and Maven.
+* Complete xref:getting-started:set-up-manually.adoc[Manually set up your env] — install the Akka CLI, Java, and Maven.
 * Git.
 * An https://platform.openai.com/api-keys[OpenAI API key, window="new"]. This sample uses OpenAI; sign up for free at https://platform.openai.com/api-keys[platform.openai.com/api-keys, window="new"].
 
 [#clone_sample]
 == Clone the sample project
 
-. From a command line, use the Akka CLI to create a new project. See xref:quick-install-cli.adoc[installation instructions] if you have not installed the CLI yet.
+. From a command line, use the Akka CLI to create a new project. See xref:getting-started:install-cli.adoc[installation instructions] if you have not installed the CLI yet.
 +
 [source, command line]
 ----

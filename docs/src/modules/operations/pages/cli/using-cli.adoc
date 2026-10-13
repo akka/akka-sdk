@@ -7,30 +7,11 @@ include::ROOT:partial$include.adoc[]
 The Akka command-line interface (CLI) complements the browser-based https://console.akka.io[Akka Console, window="new"] user interface (UI), allowing you to perform deployment and configuration operations directly from the command line. This page provides an overview of common commands.
 
 For a full reference of all available commands, see the xref:reference:cli/akka-cli/index.adoc[reference] page.
-[TIP]
-====
-Check regularly to ensure you have the latest version of the `akka` CLI. You can check the installed version by running:
 
-[source, shell]
-----
-akka version
-----
-
-For instructions on updating, see xref:cli/installation.adoc[installing and updating].
-====
-
-== Basic CLI Usage
-
-The general structure of an Akka CLI command is:
-[source, shell]
-----
-akka <command> [sub-command] [parameters] --[flags]
-----
-Flags, which modify command behavior, are always preceded by `--`.
-
+[#log-in]
 == Logging In
 
-Before using the `akka` CLI, you must authenticate with your Akka account. To initiate the login process, run:
+Log in only to deploy to or manage a remote Akka Platform environment, whether it runs at akka.io or is installed in your enterprise. Building, testing, and running locally need no login. To initiate the login process, run:
 
 [source, shell]
 ----
@@ -58,7 +39,8 @@ akka auth -h
 ----
 You can also refer to the xref:reference:cli/akka-cli/akka_auth.adoc[auth] page.
 
-=== Handling Proxies
+[#behind-a-proxy]
+=== Behind a corporate proxy
 
 In corporate environments with HTTP proxy servers that do not support HTTP/2, you may encounter issues since the `akka` CLI uses gRPC. To bypass these limitations, you can configure the CLI to use grpc-web, which works over HTTP/1.1 and HTTP/2.
 
@@ -211,5 +193,5 @@ More information about this command in xref:reference:cli/akka-cli/akka_services
 
 == Related documentation
 
-- xref:cli/command-completion.adoc[]
+- xref:getting-started:install-cli.adoc#command-completion[Enable CLI command completion]
 - xref:reference:cli/akka-cli/index.adoc[]

@@ -7,8 +7,7 @@ Using the Akka CLI, you control all aspects of your Akka account from your comma
 
 == Installation
 
-The Akka CLI, `akka` enables you to interact with Akka projects. To install it, follow these steps:
-xref:operations:cli/installation.adoc[]
+The Akka CLI, `akka`, lets you interact with Akka projects, AI systems, local and remote Akka platform environments, governance bundles, and AI training runs. To install it, follow these steps: xref:getting-started:install-cli.adoc[]
 
 == Using the CLI
 
@@ -18,9 +17,9 @@ This page provides an overview of common commands: xref:operations:cli/using-cli
 == Command Completion
 
 Completion allows you to hit [TAB] on a partially entered `akka` command and have the shell complete the command, subcommand or flag for you.
-To enable it, follow these steps: xref:operations:cli/command-completion.adoc[]
+To enable it, follow these steps: xref:getting-started:install-cli.adoc#command-completion[Enable command completion]
 
 == System Configuration
 
 For enterprise deployments, the CLI supports system-level configuration to customize default behavior, specify internal mirrors, or disable features.
-See xref:operations:cli/system-config.adoc[] for details.
+See xref:getting-started:install-cli.adoc#system-configuration[System configuration] for details.

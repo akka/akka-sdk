@@ -204,7 +204,7 @@ With this configured:
 * every conformance check — `akka specify status`, xref:reference:specify/conform.adoc[`conform`], and `ship`, plus the `akka_ec_*` MCP tools — applies the policy *by default*, with no flag to pass;
 * the central policy always wins: a developer can add stricter conditions with `--policy`, but can never weaken the organization's policy, and any `--policy` that tries is ignored.
 
-Because the setting lives in a file that IT controls and the developer cannot edit, the policy cannot be skipped by leaving off a flag. The `--policy` flag is for local experimentation only, and is superseded whenever a central policy is in place. This is the same managed-configuration channel that already controls other CLI defaults (such as project templates and the AI context bundle); for the full key list, file locations, and an MDM profile example, see xref:operations:cli/system-config.adoc[System Configuration].
+Because the setting lives in a file that IT controls and the developer cannot edit, the policy cannot be skipped by leaving off a flag. The `--policy` flag is for local experimentation only, and is superseded whenever a central policy is in place. This is the same managed-configuration channel that already controls other CLI defaults (such as project templates and the AI context bundle); for the full key list, file locations, and an MDM profile example, see xref:getting-started:install-cli.adoc#system-configuration[System Configuration].
 
 [NOTE]
 ====

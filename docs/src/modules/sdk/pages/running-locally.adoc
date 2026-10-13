@@ -61,7 +61,7 @@ The local console gives you insights of the services that you are running locall
 
 To run the console you need to install:
 
-* xref:operations:cli/installation.adoc[Akka CLI]
+* xref:getting-started:install-cli.adoc[Akka CLI]
 
 Start the console with the following command from a separate terminal window:
 
