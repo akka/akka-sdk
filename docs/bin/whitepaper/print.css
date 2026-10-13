@@ -87,6 +87,34 @@ article.doc, .doc{
   padding:8pt 10pt !important; vertical-align:top !important; color:var(--wp-ink) !important; }
 .doc table.tableblock tr{ page-break-inside:avoid; }
 
+/* The data flows grid occupies its own wide PDF pages after the explanatory page. */
+.wp-wide-table .dense-page-main{ padding:0 !important; }
+.wp-wide-table .dense-page-heading,.wp-wide-table .dense-toolbar{ display:none !important; }
+.wp-wide-table .dense-breakout{ margin:0 !important; }
+.wp-wide-table .dense-scroll{ overflow:visible !important; max-height:none !important;
+  border:0 !important; background:#fff !important; }
+.wp-wide-table .doc table.tableblock.dense{ min-width:0 !important; table-layout:fixed !important;
+  margin:0 !important; font-size:10pt !important; }
+.wp-wide-table .doc table.tableblock.dense thead{ display:table-header-group; }
+.wp-wide-table .doc table.tableblock.dense th.tableblock,
+.wp-wide-table .doc table.tableblock.dense td.tableblock{
+  position:static !important; padding:6pt 8pt !important;
+  border-right:1px solid var(--wp-border) !important;
+  border-bottom:1px solid var(--wp-border-strong) !important;
+  background:#fff !important; color:var(--wp-ink) !important;
+  font-size:inherit !important; letter-spacing:normal !important;
+  text-transform:none !important; white-space:normal !important; cursor:default !important;
+}
+.wp-wide-table .doc table.tableblock.dense thead th.tableblock{
+  background:var(--wp-card-bg) !important; border-bottom:2px solid var(--wp-gold-dk) !important;
+}
+.wp-wide-table .doc table.tableblock.dense tbody th[colspan]{
+  background:var(--wp-card-bg) !important; font-weight:700 !important;
+}
+.wp-wide-table .doc table.tableblock.dense tbody tr.dense-group{
+  break-after:avoid-page; page-break-after:avoid;
+}
+
 /* ---- admonitions → whitepaper "callout" ---- */
 .doc .admonitionblock{ margin:14pt 0 !important; page-break-inside:avoid; }
 .doc .admonitionblock > table, .doc .admonitionblock td.content{
