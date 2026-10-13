@@ -69,8 +69,16 @@ public sealed interface Guardrail
     /**
      * The result a tool returned for a requested tool call. The id is never null, but it is empty
      * when the model provider does not assign one.
+     *
+     * @param isError true when the MCP server reported the result as an error, or when the runtime
+     *     turned a failed tool call into an error result for the model.
      */
-    record ToolCallResponse(String id, String name, List<MessageContent> contents)
-        implements Message {}
+    record ToolCallResponse(String id, String name, List<MessageContent> contents, boolean isError)
+        implements Message {
+
+      public ToolCallResponse(String id, String name, List<MessageContent> contents) {
+        this(id, name, contents, false);
+      }
+    }
   }
 }
