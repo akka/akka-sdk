@@ -593,14 +593,14 @@ public final class Evaluators {
       try {
         verdict = judge.decide(criterion, interaction);
       } catch (RuntimeException e) {
-        return EvalResult.inconclusive(criterion + ": the judge failed: " + e.getMessage());
+        return EvalResult.fail(criterion + ": the judge failed: " + e.getMessage());
       }
       if (verdict == null) {
-        return EvalResult.inconclusive(criterion + ": the judge gave no verdict");
+        return EvalResult.fail(criterion + ": the judge gave no verdict");
       }
       var score = verdict.score();
       if (Double.isNaN(score) || score < 0 || score > 1) {
-        return EvalResult.inconclusive(
+        return EvalResult.fail(
             criterion + ": the judge scored " + score + ", which is not a share");
       }
       var detail =

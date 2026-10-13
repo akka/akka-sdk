@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.agent
 
+import akka.javasdk.impl.ControlId
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
@@ -90,6 +91,54 @@ class GuardrailSettingsSpec extends AnyWordSpec with Matchers {
           GuardrailSettings(faulty)
         }.getMessage should include(s"Unknown use-for [$boundary]")
       }
+    }
+
+    "read the control id, and keep it in the config" in {
+      val settings = GuardrailSettings(ConfigFactory.parseString("""
+        "with id" { class = "test.MyGuard", category = TOXIC, control-id = "AI-GR-01" }
+        "without id" { class = "test.MyGuard", category = TOXIC }
+        """))
+
+      settings.configuredGuardrails.map(g => g.name -> g.controlId).toMap shouldBe Map(
+        "with id" -> Some("AI-GR-01"),
+        "without id" -> None)
+      settings.configuredGuardrails.find(_.name == "with id").get.config.getString("control-id") shouldBe "AI-GR-01"
+    }
+
+    Seq("\"\"", "\" \"").foreach { blank =>
+      s"reject control-id = $blank" in {
+        intercept[IllegalArgumentException] {
+          GuardrailSettings(ConfigFactory.parseString(s"""
+            "blank id" { class = "test.MyGuard", category = TOXIC, control-id = $blank }
+            """))
+        }.getMessage shouldBe "Guardrail [blank id] must define a non blank [control-id]"
+      }
+    }
+
+    "reject a control id that is not a string" in {
+      intercept[IllegalArgumentException] {
+        GuardrailSettings(ConfigFactory.parseString("""
+          "list id" { class = "test.MyGuard", category = TOXIC, control-id = ["AI-GR-01"] }
+          """))
+      }.getMessage shouldBe "Guardrail [list id] must define [control-id] as a string, but defines [LIST]"
+    }
+
+    "accept a control id at the length bound" in {
+      val id = "C" * ControlId.MaxLength
+      val settings = GuardrailSettings(ConfigFactory.parseString(s"""
+        "long id" { class = "test.MyGuard", category = TOXIC, control-id = "$id" }
+        """))
+      settings.configuredGuardrails.find(_.name == "long id").get.controlId shouldBe Some(id)
+    }
+
+    "reject a control id longer than the length bound" in {
+      val id = "C" * (ControlId.MaxLength + 1)
+      intercept[IllegalArgumentException] {
+        GuardrailSettings(ConfigFactory.parseString(s"""
+          "long id" { class = "test.MyGuard", category = TOXIC, control-id = "$id" }
+          """))
+      }.getMessage shouldBe
+      s"Guardrail [long id] must define a [control-id] of at most [${ControlId.MaxLength}] characters, but defines one of [${ControlId.MaxLength + 1}]"
     }
 
   }

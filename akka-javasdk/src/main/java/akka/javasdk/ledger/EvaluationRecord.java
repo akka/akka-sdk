@@ -17,6 +17,7 @@ import java.util.Optional;
  *
  * @param evaluationId the globally unique id of the evaluation
  * @param evaluatorComponentId the component id of the evaluator that ran the evaluation
+ * @param controlId the control id that the evaluator declares, or empty when it declares none
  * @param trigger what caused the evaluation to run
  * @param interactionId the id of the interaction that was evaluated
  * @param agentComponentId the component id of the agent whose interaction was evaluated
@@ -26,14 +27,16 @@ import java.util.Optional;
 public record EvaluationRecord(
     String evaluationId,
     String evaluatorComponentId,
+    Optional<String> controlId,
     Trigger trigger,
     String interactionId,
     String agentComponentId,
     Outcome outcome,
     Instant timestamp) {
 
-  /** What caused an evaluation to run. */
+  /** What caused an evaluation to run. A later SDK version can add values. */
   public enum Trigger {
+    /** The runtime did not report the trigger, or this version of the SDK does not know it. */
     UNSPECIFIED,
     /** Created manually, for example via a client or the console. */
     MANUAL,
@@ -51,7 +54,7 @@ public record EvaluationRecord(
       }
     }
 
-    /** The evaluation ran but could not reach a verdict — a deliberate, expected outcome. */
+    /** The evaluation ran but could not reach a verdict. This is a deliberate, expected outcome. */
     record Inconclusive(String reason) implements Outcome {}
 
     /** The evaluation failed, as opposed to reporting an inconclusive outcome. */

@@ -50,7 +50,9 @@ public interface ServiceSetup {
    * or in {@link #onStartup()} — for example, closing a connection pool or releasing a file handle.
    *
    * <p>Runs in the {@code service-stop} phase of Akka Coordinated Shutdown. Exceptions thrown from
-   * this method are logged but do not block subsequent shutdown phases.
+   * this method are logged but do not block subsequent shutdown phases. The phase waits for this
+   * method at most until its timeout, 5 seconds by default, and then shutdown continues without it.
+   * Keep the work in this method short.
    */
   default void onShutdown() {}
 

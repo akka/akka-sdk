@@ -108,6 +108,61 @@ public class InteractionRecordTest {
   }
 
   @Test
+  public void transcriptOfFailedInteractionEndsWithTheFailure() {
+    // a guardrail blocked the last reply, and the record keeps it
+    var transcript =
+        record(Optional.of(new Failure(Failure.FailureReason.GUARDRAIL, "reply blocked")))
+            .transcript();
+
+    var expected =
+        """
+        System: You are a calculator.
+        Input: What is 2+2?
+        Thinking: let me think
+        Tool call calc({"expr":"2+2"}) -> 4
+        Response: The answer is 4.
+        Tool response calc: 4
+        Failure: GUARDRAIL: reply blocked
+        """;
+    assertThat(transcript).isEqualTo(expected);
+  }
+
+  @Test
+  public void transcriptOfFailedInteractionWithoutModelResponse() {
+    var record =
+        new InteractionRecord(
+            "interaction-3",
+            "session-1",
+            "math-agent",
+            Optional.empty(),
+            metadata(),
+            "You are a calculator.",
+            List.of(TextMessageContent.from("What is 2+2?")),
+            List.of(),
+            List.of(),
+            Optional.empty(),
+            Optional.of(new Failure(Failure.FailureReason.GUARDRAIL, "input blocked")),
+            Instant.EPOCH);
+
+    var expected =
+        """
+        System: You are a calculator.
+        Input: What is 2+2?
+        Failure: GUARDRAIL: input blocked
+        """;
+    assertThat(record.transcript()).isEqualTo(expected);
+  }
+
+  @Test
+  public void finalResponseTextOfFailedInteractionIsTheLastText() {
+    // a guardrail blocked the last reply, and the record keeps it
+    var record = record(Optional.of(new Failure(Failure.FailureReason.GUARDRAIL, "reply blocked")));
+
+    assertThat(record.failed()).isTrue();
+    assertThat(record.finalResponseText()).isEqualTo("The answer is 4.");
+  }
+
+  @Test
   public void transcriptOmitsEmptySystemMessageAndRendersNonTextContent() {
     var record =
         new InteractionRecord(

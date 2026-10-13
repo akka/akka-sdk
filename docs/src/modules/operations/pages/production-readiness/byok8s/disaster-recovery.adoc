@@ -47,7 +47,7 @@ Each scenario carries two labels: readiness (can Akka drill it today?) and recom
 | Discuss based on use case and risk tolerance.
 
 | Defer
-| Documented only. Revisit after launch.
+| Documented only, not yet meaningful to drill live. Revisit as capabilities mature.
 |===
 
 Scenario selection is a joint decision at the tabletop.

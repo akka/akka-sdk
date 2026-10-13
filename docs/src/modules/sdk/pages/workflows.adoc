@@ -338,6 +338,8 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 <1> Set a default failover transition for all steps with the maximum number of retries.
 <2> Override the step recovery strategy for the `deposit` step.
 
+A step that times out or fails does not commit its state update, so the workflow retries it with the state from before the attempt. Akka does not cancel the work that the failed attempt started. That work can still finish later, but Akka discards its result and state update. If you do not set a recover strategy, the workflow keeps retrying without limit, so set one for every step that can time out or fail. When the retries run out, the workflow runs the failover step. It starts from the last committed state and can commit a new state, for example a new attempt number, before the workflow moves on.
+
 === Compensation
 
 The idea behind the Workflow error handling is that workflows should only fail due to unknown errors during execution. In general, you should always write your workflows so that they do not fail on any known edge cases. If you expect an error, it is better to be explicit about it, possibly with your domain types. Based on this information and the flexible Workflow API you can define a compensation for any workflow step.

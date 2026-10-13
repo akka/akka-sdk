@@ -1,0 +1,54 @@
+= akka optimize eval datasets create
+
+Upload a dataset file and version it
+
+== Synopsis
+
+Uploads a dataset and imports it.
+
+FILE is a zip of dataset.json and items.jsonl, which is the form that can create a dataset: the manifest is what names it.
+A bare items.jsonl, gzipped or not, carries cases alone and adds a version to a dataset that already exists -- name it with --into, and the manifest that dataset recorded is reused.
+
+The service reads the leading bytes rather than the file name, so a .zip that is really gzip, or the other way round, still imports.
+
+----
+akka optimize eval datasets create -f FILE [flags]
+----
+
+== Options
+
+----
+  -f, --file string   the dataset to upload: a zip, an items.jsonl, or a gzipped one; - reads stdin
+  -h, --help          help for create
+      --into string   add a version to this existing dataset, reusing the manifest it recorded
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_eval_datasets.html[akka optimize eval datasets]	 - Test cases, versioned at import
+
+[discrete]
+

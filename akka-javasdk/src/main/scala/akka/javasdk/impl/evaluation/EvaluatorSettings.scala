@@ -7,7 +7,11 @@ package akka.javasdk.impl.evaluation
 import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
+import akka.javasdk.impl.ControlId
+import akka.runtime.sdk.spi.EvaluatorDescriptor
 import akka.runtime.sdk.spi.SpiEvaluator
+import akka.runtime.sdk.spi.SpiWorkflowEvaluator
+import akka.runtime.sdk.spi.WorkflowEvaluatorDescriptor
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigObject
@@ -81,6 +85,50 @@ private[impl] object EvaluatorSettings {
     }
   }
 
+  /**
+   * The `control-id` of the given evaluator, or `None` when it has no entry or the entry has none. This method reads it
+   * even when the evaluator is disabled.
+   *
+   * @throws IllegalArgumentException
+   *   if `control-id` is in a binding of the evaluator or under `akka.javasdk.evaluation.defaults`
+   */
+  def controlId(config: Config, evaluatorComponentId: String): Option[String] = {
+    val entry = s"Evaluator [$evaluatorComponentId]"
+    val evaluator = configAt(config, EvaluatorsPath).root().asScala.get(evaluatorComponentId).collect {
+      case evaluator: ConfigObject => evaluator.toConfig
+    }
+
+    // the SDK reads the id only from the entry of the evaluator, so an id anywhere else would be lost
+    val misplaced = Seq(EvaluatorDefaultsPath, AgentDefaultsPath).filter(configAt(config, _).hasPath(ControlId.Key)) ++
+      evaluator.toSeq.flatMap(bindingsWithControlId)
+    misplaced.headOption.foreach { path =>
+      throw new IllegalArgumentException(s"$entry must define [${ControlId.Key}] on the evaluator, not in [$path]")
+    }
+
+    evaluator.flatMap(ControlId.read(_, entry))
+  }
+
+  /** The path of each binding under `agents` and `agent-roles` that defines `control-id`. */
+  private def bindingsWithControlId(evaluator: Config): Seq[String] =
+    Seq("agents", "agent-roles").flatMap { path =>
+      evaluator.root().get(path) match {
+        case bindings: ConfigObject =>
+          bindings.asScala.toSeq.collect {
+            case (key, binding: ConfigObject) if binding.toConfig.hasPath(ControlId.Key) => s"$path.$key"
+          }.sorted
+        case _ => Nil
+      }
+    }
+
+  /** The agent bindings and the control id of the given evaluator, see [[agentBindings]] and [[controlId]]. */
+  def configuredEvaluator(
+      config: Config,
+      evaluatorComponentId: String,
+      agentRoles: Map[String, Option[String]]): ConfiguredEvaluator =
+    ConfiguredEvaluator(
+      bindings = agentBindings(config, evaluatorComponentId, agentRoles),
+      controlId = controlId(config, evaluatorComponentId))
+
   /** The trigger of each entry under `path`, or `None` for a disabled entry. */
   private def bindingEvents(
       evaluatorConfig: Config,
@@ -109,4 +157,49 @@ private[impl] object EvaluatorSettings {
         }
         .toMap
     }
+}
+
+/**
+ * INTERNAL API
+ *
+ * The agent bindings and the control id of one evaluator.
+ */
+@InternalApi
+private[impl] final case class ConfiguredEvaluator(bindings: Seq[SpiEvaluator.Binding], controlId: Option[String]) {
+
+  /** The descriptor to hand to the runtime for an evaluator, with the bindings and the control id of this entry. */
+  def evaluatorDescriptor(
+      componentId: String,
+      implementationName: String,
+      name: Option[String],
+      description: Option[String],
+      instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator,
+      provided: Boolean): EvaluatorDescriptor =
+    new EvaluatorDescriptor(
+      componentId,
+      implementationName,
+      name = name,
+      description = description,
+      bindings = bindings,
+      instanceFactory = instanceFactory,
+      provided = provided,
+      controlId = controlId)
+
+  /** As [[evaluatorDescriptor]], for a durable evaluator. */
+  def workflowEvaluatorDescriptor(
+      componentId: String,
+      implementationName: String,
+      name: Option[String],
+      description: Option[String],
+      instanceFactory: SpiWorkflowEvaluator.FactoryContext => SpiWorkflowEvaluator,
+      provided: Boolean): WorkflowEvaluatorDescriptor =
+    new WorkflowEvaluatorDescriptor(
+      componentId,
+      implementationName,
+      name = name,
+      description = description,
+      bindings = bindings,
+      instanceFactory = instanceFactory,
+      provided = provided,
+      controlId = controlId)
 }

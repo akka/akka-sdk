@@ -137,6 +137,36 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
         "cc-logs" -> SanitizerKind.Predefined("CREDIT_CARD"),
         "cc-model" -> SanitizerKind.Predefined("CREDIT_CARD"))
     }
+
+    "read the control id of each kind of entry, and keep it in the config" in {
+      val sanitizers = parse("""
+        "pattern-id" { pattern = "a", control-id = "AI-SAN-01" }
+        "predefined-id" { predefined = CREDIT_CARD, control-id = "AI-SAN-02" }
+        "class-id" { class = "com.example.PiiSanitizer", control-id = "AI-SAN-03" }
+        "no-id" { pattern = "a" }
+        """)
+
+      sanitizers.map(s => s.name -> s.controlId).toMap shouldEqual Map(
+        "pattern-id" -> Some("AI-SAN-01"),
+        "predefined-id" -> Some("AI-SAN-02"),
+        "class-id" -> Some("AI-SAN-03"),
+        "no-id" -> None)
+      sanitizers.find(_.name == "class-id").value.config.getString("control-id") shouldEqual "AI-SAN-03"
+    }
+
+    Seq("\"\"", "\" \"").foreach { blank =>
+      s"fail for control-id = $blank" in {
+        failure(s"""
+          "blank-id" { pattern = "a", control-id = $blank }
+          """) shouldEqual "Sanitizer [blank-id] must define a non blank [control-id]"
+      }
+    }
+
+    "fail for a control id that is not a string" in {
+      failure("""
+        "number-id" { predefined = IBAN, control-id = 42 }
+        """) shouldEqual "Sanitizer [number-id] must define [control-id] as a string, but defines [NUMBER]"
+    }
   }
 
   "The apply-at of a sanitizer" should {
@@ -340,6 +370,20 @@ class SanitizationSpec extends AnyWordSpec with Matchers with OptionValues {
       settings.sanitizers.collectFirst {
         case regex: SpiDataSanitizer.Regex if regex.name == "warm-colors" => regex.pattern.regex
       }.value shouldEqual "(?i)(red|orange|yellow)"
+    }
+
+    "carry the control id on the data sanitizer and on the log sanitizer of a pattern and a predefined entry" in {
+      val settings = Sanitization.loadSettings(ConfigFactory.load(ConfigFactory.parseString("""
+        akka.javasdk.sanitization.sanitizers {
+          "account-ids" { pattern = "ACC-[0-9]+", control-id = "AI-SAN-01" }
+          "credit-card" { predefined = CREDIT_CARD, control-id = "AI-SAN-02" }
+          "no-id" { pattern = "a" }
+        }
+        """)))
+
+      val expected = Map("account-ids" -> Some("AI-SAN-01"), "credit-card" -> Some("AI-SAN-02"), "no-id" -> None)
+      settings.sanitizers.map(entry => entry.name -> entry.controlId).toMap shouldEqual expected
+      settings.logSanitizers.map(entry => entry.name -> entry.controlId).toMap shouldEqual expected
     }
   }
 

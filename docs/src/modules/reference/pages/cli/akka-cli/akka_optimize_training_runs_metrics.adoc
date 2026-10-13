@@ -1,0 +1,76 @@
+= akka optimize training runs metrics
+
+Display step-by-step metrics recorded by a training run
+
+== Synopsis
+
+Display step-by-step metrics recorded during a training run.
+
+Metrics are reported as the run progresses.
+Supervised runs display loss.
+Reinforcement runs display the share of groups with no reward spread, the shares of rollouts scored zero and scored full, and the reward.
+
+Use --limit to display only the most recent training steps.
+
+Use --fields to add columns beyond the ones shown by default: the figures named the same whichever engine trained the run (kl, maxMemoryGb, maxMemoryReservedGb, maxDeviceMemoryGb, scoredRewardMean, trainerIdle, rolloutIdle), every number the training loop logged for the step under its own names (such as entropy or learning_rate), and each reward term's mean share, named with a "terms:" prefix (such as terms:total).
+The structured output (-o json or --jq) already carries every one of these, the named figures at the top level and the rest under "measured" and "rewardTerms", whether or not --fields names them.
+
+----
+akka optimize training runs metrics RUN [flags]
+----
+
+== Examples
+
+----
+  # Display all recorded metrics for a run
+  akka-optimize training runs metrics 7d496e82c3a15f04
+
+  # Display the last 20 steps
+  akka-optimize training runs metrics 7d496e82c3a15f04 --limit 20
+
+  # Add columns for entropy and a reward term's mean share
+  akka-optimize training runs metrics 7d496e82c3a15f04 \
+    --fields entropy,terms:total
+
+  # Extract step numbers and group variance metrics using jq
+  akka-optimize training runs metrics 7d496e82c3a15f04 \
+    --jq '.[] | [.step, .zeroVarianceGroups]'
+----
+
+== Options
+
+----
+      --fields strings   Additional columns from the named and measured figures and reward terms (prefix a term with terms:)
+  -h, --help             help for metrics
+      --limit int        Limit output to the specified number of recent steps
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_runs.html[akka optimize training runs]	 - Manage training runs, snapshots and child runs
+
+[discrete]
+

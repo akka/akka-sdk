@@ -24,6 +24,6 @@ application.conf comments, and git commit comments.
 ## PRs and commits
 - One PR should target one feature or one improvement, don't expand with unrelated work outside the original plan
 - PR branches can be stacked to keep each PR focused and easier to review
-- Conventional prefix: `fix`/`chore`/`docs`/`test`/`build`/`bump`.
+- Conventional prefix: `feat`/`fix`/`chore`/`docs`/`test`/`build`/`bump`.
 - Short commit message, state the purpose, don't restate the diff.
 - No `Co-Authored-By: Claude` or `Claude-Session`

@@ -29,7 +29,9 @@ import scala.util.control.NonFatal
 import akka.Done
 import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
+import akka.actor.typed.DispatcherSelector
 import akka.annotation.InternalApi
+import akka.grpc.GrpcClientSettings
 import akka.grpc.internal.JavaMetadataImpl
 import akka.grpc.javadsl.AkkaGrpcClient
 import akka.grpc.javadsl.Metadata
@@ -86,6 +88,7 @@ import akka.javasdk.impl.agent.AutonomousAgentImpl
 import akka.javasdk.impl.agent.ClassifierProvider
 import akka.javasdk.impl.agent.FunctionTools
 import akka.javasdk.impl.agent.GuardrailProvider
+import akka.javasdk.impl.agent.GuardrailProvider.AgentGuardrails
 import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.impl.agent.PromptTemplateClient
 import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
@@ -149,7 +152,6 @@ import akka.runtime.sdk.spi.SpiAutonomousAgent
 import akka.runtime.sdk.spi.SpiClassifierClient
 import akka.runtime.sdk.spi.SpiClassifierSetup
 import akka.runtime.sdk.spi.SpiComponents
-import akka.runtime.sdk.spi.SpiConfiguredGuardrail
 import akka.runtime.sdk.spi.SpiConsumer
 import akka.runtime.sdk.spi.SpiDeployedEventingSettings
 import akka.runtime.sdk.spi.SpiDevModeSettings
@@ -158,10 +160,13 @@ import akka.runtime.sdk.spi.SpiDevObjectStorageFilesystemBucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsBucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsNativeCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsServiceAccountKeyCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3AccessStyle
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3PathAccessStyle
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3VirtualHostAccessStyle
 import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
@@ -225,25 +230,24 @@ object SdkRunner {
     val sanitizationSettings = Sanitization.loadSettings(applicationConf)
 
     val devModeSettings =
-      if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled")) {
+      Option.when(applicationConf.getBoolean("akka.javasdk.dev-mode.enabled")) {
         val backofficeSettings = BackofficeSettingsLoader.loadBackofficeSettings(applicationConf)
         val objectStorageBuckets =
           extractDevObjectStorageBuckets(applicationConf.getConfig("akka.javasdk.dev-mode.object-storage"))
-        Some(
-          new SpiDevModeSettings(
-            httpPort = applicationConf.getInt("akka.javasdk.dev-mode.http-port"),
-            aclEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.acl.enabled"),
-            persistenceEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.persistence.enabled"),
-            serviceName = applicationConf.getString("akka.javasdk.dev-mode.service-name"),
-            eventingSupport = extractBrokerConfig(applicationConf.getConfig("akka.javasdk.dev-mode.eventing")),
-            mockedEventing = SpiMockedEventingSettings.empty,
-            testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
-            selfServiceName = None,
-            backoffice = backofficeSettings,
-            objectStorageBuckets = objectStorageBuckets,
-            // running locally binds the configured port; only the testkit asks for an assigned one
-            ephemeralHttpPort = false))
-      } else None
+        new SpiDevModeSettings(
+          httpPort = applicationConf.getInt("akka.javasdk.dev-mode.http-port"),
+          aclEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.acl.enabled"),
+          persistenceEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.persistence.enabled"),
+          serviceName = applicationConf.getString("akka.javasdk.dev-mode.service-name"),
+          eventingSupport = extractBrokerConfig(applicationConf.getConfig("akka.javasdk.dev-mode.eventing")),
+          mockedEventing = SpiMockedEventingSettings.empty,
+          testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
+          selfServiceName = None,
+          backoffice = backofficeSettings,
+          objectStorageBuckets = objectStorageBuckets,
+          // running locally binds the configured port; only the testkit asks for an assigned one
+          ephemeralHttpPort = false)
+      }
 
     val agentInteractionLogEnabled =
       devModeSettings.isDefined || // always enabled in dev mode
@@ -270,11 +274,28 @@ object SdkRunner {
         val name = c.getString("name")
         c.getString("provider") match {
           case "filesystem" =>
-            val directory = if (c.hasPath("directory")) Some(c.getString("directory")) else None
+            val directory = Option.when(c.hasPath("directory")) {
+              c.getString("directory")
+            }
             new SpiDevObjectStorageFilesystemBucketConfig(name, directory)
           case "s3" =>
             val creds = parseDevS3Credentials(name, c)
-            new SpiDevObjectStorageS3BucketConfig(name, c.getString("bucket"), c.getString("region"), creds, None, None)
+            // endpoint-url is the address of an S3-compatible service (e.g. MinIO). Without it the
+            // endpoint comes from the region, which addresses Amazon S3.
+            val endpointUrl = Option.when(c.hasPath("endpoint-url")) {
+              c.getString("endpoint-url")
+            }
+            val accessStyle =
+              Option.when(c.hasPath("access-style")) {
+                parseDevS3AccessStyle(name, c.getString("access-style"))
+              }
+            new SpiDevObjectStorageS3BucketConfig(
+              name,
+              c.getString("bucket"),
+              c.getString("region"),
+              creds,
+              endpointUrl,
+              accessStyle)
           case "gcs" =>
             val creds = parseDevGcsCredentials(name, c)
             new SpiDevObjectStorageGcsBucketConfig(name, c.getString("bucket"), creds)
@@ -287,6 +308,15 @@ object SdkRunner {
           s"Expected object in akka.javasdk.dev-mode.object-storage.buckets, got [$other]")
     }
   }
+
+  private def parseDevS3AccessStyle(bucketName: String, accessStyle: String): SpiDevObjectStorageS3AccessStyle =
+    accessStyle match {
+      case "virtual" => SpiDevObjectStorageS3VirtualHostAccessStyle
+      case "path"    => SpiDevObjectStorageS3PathAccessStyle
+      case other =>
+        throw new IllegalArgumentException(
+          s"Unknown S3 access style [$other] for dev bucket [$bucketName]. Valid: virtual, path")
+    }
 
   private def parseDevS3Credentials(bucketName: String, c: com.typesafe.config.Config) = {
     if (!c.hasPath("credentials") || c.getValue("credentials").unwrapped() == "workload-identity")
@@ -520,6 +550,23 @@ private[javasdk] object Sdk {
         if (rethrow) throw ex
         else null.asInstanceOf[T]
     }
+
+  // CoordinatedShutdown calls task functions inline and starts the phase timeout only once every task has
+  // returned its Future. The user hook therefore runs on a blocking dispatcher, so a hook that blocks
+  // delays the service-stop phase at most until its timeout instead of stalling all later phases.
+  private[impl] def onShutdownTask(setup: ServiceSetup, blockingEc: ExecutionContext): () => Future[Done] = { () =>
+    SdkRunner.userServiceLog.info("Running onShutdown lifecycle hook")
+    val started = System.nanoTime()
+    Future {
+      runUserCallback(setup, "onShutdown()", rethrow = false) {
+        setup.onShutdown()
+      }
+      SdkRunner.userServiceLog.debug(
+        "onShutdown lifecycle hook completed in [{}] ms",
+        (System.nanoTime() - started) / 1000000)
+      Done
+    }(blockingEc)
+  }
 }
 
 /**
@@ -571,7 +618,9 @@ private final class Sdk(
         case _                 => (devMode.backoffice.apiServer, 443)
       }
       BackofficeAccessTokenCache(system)
-        .init(apiServerHost, apiServerPort, devMode.backoffice.refreshToken)
+        .init(
+          GrpcClientSettings.connectToServiceAt(apiServerHost, apiServerPort)(system),
+          devMode.backoffice.refreshToken)
     }
   }
 
@@ -684,6 +733,17 @@ private final class Sdk(
         logger.error("Invalid sanitizers: {}", exc.getMessage, exc)
         throw exc
     }
+
+  private def validateStreamingResponseGuardrails(
+      componentId: String,
+      agentClass: Class[_],
+      agentGuardrails: AgentGuardrails): Unit =
+    agentGuardrails
+      .streamingResponseGuardrailError(componentId, Reflect.isStreamingAgent(agentClass))
+      .foreach { message =>
+        logger.error("Invalid guardrails: {}", message)
+        throw new IllegalArgumentException(message)
+      }
 
   lazy private val sanitizer = SanitizerImpl(runtimeSanitizer)
   // The injected handle is deprecated in favour of SanitizerClient, so the class reference is held here
@@ -1177,7 +1237,7 @@ private final class Sdk(
             modelProvider = spiModelProvider,
             toolDescriptors = spiToolDescriptors,
             mcpClientDescriptors = spiMcpDescriptors,
-            guardrails = agentGuardrails.boundGuardrails,
+            agentGuardrails = agentGuardrails,
             capabilities = spiCapabilities)
         }
 
@@ -1206,6 +1266,7 @@ private final class Sdk(
         }
 
         accumulateSanitizers(componentId, agentRoleOptValue)
+        validateStreamingResponseGuardrails(componentId, agentClass, agentGuardrails)
 
         val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
           val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
@@ -1251,7 +1312,7 @@ private final class Sdk(
       case clz if Reflect.isEvaluator(clz) =>
         val componentId = Reflect.readComponentId(clz)
         val evaluatorClass = clz.asInstanceOf[Class[Evaluator]]
-        val bindings = EvaluatorSettings.agentBindings(applicationConfig, componentId, agentRolesByComponentId)
+        val configured = EvaluatorSettings.configuredEvaluator(applicationConfig, componentId, agentRolesByComponentId)
 
         val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { factoryContext =>
           val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
@@ -1262,12 +1323,11 @@ private final class Sdk(
         }
 
         evaluatorDescriptors :+=
-          new EvaluatorDescriptor(
+          configured.evaluatorDescriptor(
             componentId,
             clz.getName,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            bindings = bindings,
             instanceFactory = instanceFactory,
             provided = isProvided(clz))
 
@@ -1277,16 +1337,14 @@ private final class Sdk(
         val stateType = Reflect.durableEvaluatorStateType(clz).asInstanceOf[Class[Nothing]]
         serializer.registerTypeHints(stateType)
 
-        val durableEvaluatorBindings =
-          EvaluatorSettings.agentBindings(applicationConfig, componentId, agentRolesByComponentId)
+        val configured = EvaluatorSettings.configuredEvaluator(applicationConfig, componentId, agentRolesByComponentId)
 
         durableEvaluatorDescriptors :+=
-          new WorkflowEvaluatorDescriptor(
+          configured.workflowEvaluatorDescriptor(
             componentId,
             clz.getName,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            bindings = durableEvaluatorBindings,
             instanceFactory = { factoryContext =>
               val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
               new DurableEvaluatorImpl[Nothing, DurableEvaluator[Nothing]](
@@ -1442,15 +1500,8 @@ private final class Sdk(
           val onShutdownOverridden =
             setup.getClass.getMethod("onShutdown").getDeclaringClass != classOf[ServiceSetup]
           if (onShutdownOverridden) {
-            CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceStop, "user-service-on-shutdown") {
-              () =>
-                SdkRunner.userServiceLog.info("Running onShutdown lifecycle hook")
-                // do not fail the shutdown phase
-                runUserCallback(setup, "onShutdown()", rethrow = false) {
-                  setup.onShutdown()
-                }
-                SdkRunner.FutureDone
-            }
+            CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceStop, "user-service-on-shutdown")(
+              onShutdownTask(setup, system.dispatchers.lookup(DispatcherSelector.blocking())))
           }
           startedPromise.trySuccess(
             StartupContext(
@@ -1524,15 +1575,8 @@ private final class Sdk(
       }
     unhandledExceptionReporterFn = onUnhandledException
 
-    val guardrailSetup = new SpiGuardrailSetup(guardrailProvider.configuredGuardrails.map { g =>
-      new SpiConfiguredGuardrail(
-        name = g.name,
-        implementationClass = g.implementationClass,
-        enabledForComponents = guardrailEnabledForComponent.getOrElse(g.name, Set.empty),
-        reportOnly = g.reportOnly,
-        useFor = g.useFor.map(_.toString),
-        config = g.config)
-    })
+    val guardrailSetup = new SpiGuardrailSetup(
+      guardrailProvider.spiGuardrails(name => guardrailEnabledForComponent.getOrElse(name, Set.empty)))
 
     val classifierSetup = new SpiClassifierSetup(classifierProvider.spiConfiguredClassifiers)
 

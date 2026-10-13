@@ -33,13 +33,15 @@ public sealed interface Guardrail
     public static final Result OK = new Result(true, "");
   }
 
-  /**
-   * Thrown when the text didn't pass the evaluation criteria, and {@code report-only} is true. Can
-   * be handled in {@code onFailure}.
-   */
+  /** Thrown when {@code report-only} is false and a guardrail denies the call or fails. */
   final class GuardrailException extends RuntimeException {
     public GuardrailException(String message) {
       super(message);
+    }
+
+    /** The cause is the error of a guardrail that failed, or {@code null} for a denial. */
+    public GuardrailException(String message, Throwable cause) {
+      super(message, cause);
     }
   }
 

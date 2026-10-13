@@ -142,7 +142,7 @@ public final class EvalCaseParser {
       recorded.add(new RecordedCall(tool, arguments(call), call.path("result").toString()));
     }
 
-    var evaluators = baseline(recorded);
+    var evaluators = baseline(recorded, interaction.has("toolCalls"));
     evaluators.addAll(budgets(interaction, tolerance));
     return new EvalCase<>(id, command, recorded, evaluators);
   }
@@ -209,10 +209,16 @@ public final class EvalCaseParser {
     return MAPPER.convertValue(argumentsNode, Map.class);
   }
 
-  /** The recorded tools, their order and their arguments, as evaluators. */
-  private static List<Evaluator> baseline(List<RecordedCall> recorded) {
+  /**
+   * The recorded tools, their order and their arguments, as evaluators. A recording with an empty
+   * {@code toolCalls} expects no tool call.
+   */
+  private static List<Evaluator> baseline(List<RecordedCall> recorded, boolean toolCallsRecorded) {
     var evaluators = new ArrayList<Evaluator>();
-    if (recorded.isEmpty()) return evaluators;
+    if (recorded.isEmpty()) {
+      if (toolCallsRecorded) evaluators.add(Evaluators.shouldMakeAtMostToolCalls(0));
+      return evaluators;
+    }
 
     var names = new LinkedHashSet<String>();
     var order = new ArrayList<String>();

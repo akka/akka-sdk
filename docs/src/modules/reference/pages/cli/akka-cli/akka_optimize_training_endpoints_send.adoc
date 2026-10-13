@@ -1,0 +1,83 @@
+= akka optimize training endpoints send
+
+Send one input to a model at an endpoint
+
+== Synopsis
+
+Send one input to a model and print its response.
+
+ENDPOINT takes an ID or an unambiguous prefix of it.
+The request goes through the training service, which authenticates it, so no separate credentials are needed.
+
+--input takes the text to send, and --file reads it from a file instead, or from standard input where the path is "-".
+--instructions says what the model should do with the input, where the model needs telling.
+
+This sends one input and keeps no history.
+To drive the model from an application or a test script, use "endpoints proxy", which opens a local address the endpoint answers at in the OpenAI format.
+
+If the endpoint serves one model, that model is used.
+If it serves several, choose one with --model.
+The value may be the displayed model name (including a shortened adapter), the model ID, or an unambiguous prefix of the ID.
+
+The answer is printed as it is produced.
+Under -o json the model, the output and the token usage are returned instead.
+
+----
+akka optimize training endpoints send ENDPOINT --input TEXT [flags]
+----
+
+== Examples
+
+----
+  # Send one input
+  akka-optimize training endpoints send 970076e8 --input "Payment failed twice, card declined."
+
+  # Say what to do with it, and take the same answer every time
+  akka-optimize training endpoints send 970076e8 --input "..." \
+    --instructions "Reply with one label." --temperature 0
+
+  # Read the input from a file, against one of several models
+  akka-optimize training endpoints send 970076e8 --file ticket.txt --model Qwen/Qwen3-8B:run-7
+----
+
+== Options
+
+----
+      --file string           Read the input from a file, or from standard input where the path is "-"
+  -h, --help                  help for send
+      --input string          Text to send to the model
+      --instructions string   What the model should do with the input
+      --max-tokens int        Maximum tokens in the answer; zero leaves it to the deployment
+      --model string          Model to use by name or ID when the endpoint serves several
+      --temperature float     Sampling temperature; unset leaves it to the deployment
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_endpoints.html[akka optimize training endpoints]	 - Serve a base model or a candidate to try it by hand
+
+[discrete]
+

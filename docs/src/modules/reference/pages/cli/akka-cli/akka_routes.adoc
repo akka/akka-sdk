@@ -45,10 +45,11 @@ For other examples, see https://doc.akka.io/operations/services/invoke-service.h
 == SEE ALSO
 
 * link:akka.html[akka]	 - Akka control
+* link:akka_routes_apply.html[akka routes apply]	 - Apply a route descriptor to the currently configured project.
 * link:akka_routes_create.html[akka routes create]	 - Create a route.
 * link:akka_routes_delete.html[akka routes delete]	 - Delete a route
 * link:akka_routes_edit.html[akka routes edit]	 - Edit a route
-* link:akka_routes_export.html[akka routes export]	 - Export a single route as YAML
+* link:akka_routes_export.html[akka routes export]	 - Export a single route as a YAML descriptor
 * link:akka_routes_get.html[akka routes get]	 - Get a single route
 * link:akka_routes_list.html[akka routes list]	 - List all routes.
 * link:akka_routes_update.html[akka routes update]	 - Update a route

@@ -195,7 +195,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
         s"Evaluation [$workflowId] has no state for step [${stepCommand.stepName}], was the evaluation started by the runtime?")
     }
     if (stepCommand.stepName == RecordStepName) {
-      recordOutcome(envelope, stepCommand.input, stepCommand.telemetryContext)
+      recordOutcome(envelope, stepCommand)
     } else {
       val stepMethod = stepMethods.getOrElse(
         stepCommand.stepName,
@@ -229,9 +229,8 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
 
   private def recordOutcome(
       envelope: StateEnvelope,
-      input: Option[BytesPayload],
-      telemetryContext: OtelContext): Future[SpiWorkflow.StepResult] = {
-    val outcome = input match {
+      stepCommand: SpiWorkflow.StepCommand): Future[SpiWorkflow.StepResult] = {
+    val outcome = stepCommand.input match {
       case Some(payload) => serializer.fromBytes(classOf[Outcome], payload)
       case None          => throw new IllegalStateException(s"Missing outcome input for [$RecordStepName] step")
     }
@@ -242,7 +241,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
       toSpiTriggerSource(envelope.triggerSource()),
       EvaluationConversions.toSpiSubject(envelope.getSubject))
     // recording is idempotent on the evaluation id: this step is retried until it succeeds
-    recorder.recordResult(trigger, toSpiResult(outcome), telemetryContext).map { _ =>
+    recorder.recordResult(trigger, toSpiResult(outcome), stepCommand.telemetryContext).map { _ =>
       log.debug("Evaluation [{}] finished with [{}]", workflowId, outcome.kind())
       // TODO end or delete or a setting for that?
       new SpiWorkflow.StepTransitionalEffect(SpiWorkflow.NoPersistence, SpiWorkflow.Delete)

@@ -13,23 +13,12 @@ import akka.javasdk.impl.evaluation.EvaluatorEffectImpl;
  * akka.javasdk.evaluation.evaluators}, keyed by the evaluator's component id. The runtime invokes
  * {@link #evaluate(EvaluationContext)} for each interaction of a bound agent, passing an {@link
  * EvaluationContext} that identifies the interaction to evaluate. The handler returns an {@link
- * Effect} describing the outcome — the recorded evaluation or an inconclusive result.
+ * Effect} describing the outcome: the recorded evaluation or an inconclusive result. An exception
+ * thrown from the handler records a failed evaluation.
  *
  * <p>Blocking calls made from {@link #evaluate(EvaluationContext)} run on virtual threads. For an
  * evaluation that runs in several steps and must survive restarts, extend {@link DurableEvaluator}
  * instead.
- *
- * <p>Concrete classes can accept the following types to the constructor:
- *
- * <ul>
- *   <li>{@link akka.javasdk.client.ComponentClient}
- *   <li>{@link akka.javasdk.http.HttpClientProvider}
- *   <li>{@link akka.javasdk.timer.TimerScheduler}
- *   <li>{@link akka.stream.Materializer}
- *   <li>{@link com.typesafe.config.Config}
- *   <li>{@link akka.javasdk.agent.AgentRegistry}
- *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup
- * </ul>
  *
  * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.Component}.
  */
@@ -55,7 +44,7 @@ public abstract class Evaluator {
    *
    * <ul>
    *   <li>complete with an {@link Evaluation} (the verdict)
-   *   <li>report that the evaluation was inconclusive — it ran but reached no verdict
+   *   <li>report that the evaluation was inconclusive: it ran but reached no verdict
    * </ul>
    */
   public interface Effect {

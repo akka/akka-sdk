@@ -6,6 +6,7 @@ package akka.javasdk.testkit.eval;
 
 import akka.annotation.DoNotInherit;
 import akka.javasdk.testkit.eval.ExperimentRunner.EvalReport;
+import java.nio.file.Path;
 
 /**
  * Cases bound to the agent under test, ready to run. Obtained from {@link ExperimentCases#agent}.
@@ -18,6 +19,42 @@ public interface Experiment {
   /** The gate {@link #run} checks. Without a gate every case must pass. */
   Experiment gate(Gate gate);
 
-  /** Runs all cases and checks the gate. Does not throw on a failed gate; assert on the report. */
+  /**
+   * The name the report carries, see {@link EvalReport#name}. It names the report file, so it must
+   * be usable as a file name on every platform: not blank, at most 200 characters, and without
+   * {@code < > : " / \ | ? *} or control characters. Without a name the report is named after the
+   * test method that called {@link #run}, for example {@code SupportAgentEvalTest.qualityGate}.
+   *
+   * @throws IllegalArgumentException when the name is not usable as a file name
+   */
+  Experiment name(String name);
+
+  /**
+   * The directory {@link #run} writes the report file to, see {@link EvalReport#reportFile}.
+   * Without one the report goes to {@code target/eval-reports} under the working directory.
+   */
+  Experiment reportDirectory(Path directory);
+
+  /** {@link #run} writes no report file. */
+  Experiment withoutReportFile();
+
+  /**
+   * Runs every case this many times in total, each time in a fresh session. Once by default. The
+   * gate, the rates and the spend count every attempt, so {@link Gate#allCasesShouldPass} passes
+   * only when every case passed in every run. The report names the requirements that passed in some
+   * runs and failed in others, see {@link EvalReport#cases}.
+   *
+   * <p>A case that passes in every run is not shown to always pass: {@code times} runs cannot show
+   * a failure rate below one in {@code times}. The stubs and the runtime are not reset between
+   * runs, so a stub or an evaluator must not depend on state an attempt writes.
+   *
+   * @param times at least 1
+   */
+  Experiment repeat(int times);
+
+  /**
+   * Runs all cases, checks the gate and writes the report file. Does not throw on a failed gate;
+   * assert on the report.
+   */
   EvalReport run();
 }

@@ -28,7 +28,8 @@ instance as it shuts down, not once for the service as a whole.
 `onShutdown` runs after the instance has stopped accepting requests and any in-flight requests have completed,
 which makes it a good place to release resources allocated in the `ServiceSetup` constructor or in `onStartup` —
 for example, closing a connection pool. Exceptions thrown from `onShutdown` are logged but do not block subsequent
-shutdown steps.
+shutdown steps. Shutdown waits for `onShutdown` at most 5 seconds and then continues without it, so keep the work
+in it short.
 
 == Handling uncaught exceptions
 
@@ -92,7 +93,7 @@ The following types can be injected in all component types:
 | Allows creating custom Open Telemetry metrics, see xref:sdk:metric.adoc[]
 |===
 
-The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpoints, Agents, Consumers, Timed Actions, and Workflows:
+The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpoints, Agents, Consumers, Timed Actions, Workflows, and Evaluators:
 
 [options="header" cols="1,1"]
 |===

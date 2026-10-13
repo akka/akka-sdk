@@ -1,23 +1,31 @@
 = Classifiers
-:page-summary: Named, config-bound classifiers that map text to a score or label, for use by guardrails, evaluators, or application code.
-:page-when-to-use: When you need to score or categorize text — for toxicity, sentiment, topic, PII likelihood, or any custom signal — and consume that result from a guardrail, an evaluator, or application code.
-:page-related: xref:sdk:agents/guardrails.adoc[], xref:sdk:agents/llm_eval.adoc[], xref:concepts:governance-and-the-runtime.adoc[]
+:page-summary: Named, config-bound classifiers that map text to a score or label, for use by guardrails, evaluators, sanitizers, or application code.
+:page-when-to-use: When you need to score or categorize text, for toxicity, sentiment, topic, PII likelihood, or any custom signal, and consume that result from a guardrail, an evaluator, a sanitizer, or application code.
+:page-related: xref:sdk:agents/guardrails.adoc[], xref:sdk:evaluators.adoc[], xref:sdk:sanitization.adoc[], xref:concepts:governance-and-the-runtime.adoc[]
 :page-prerequisites: An Akka project with at least one agent defined.
 :page-persona: governance-compliance, governance-infosec, developer
+:page-banner: governance
 
 include::ROOT:partial$include.adoc[]
 
 == Overview
 
 A classifier maps an input string to a link:{attachmentsdir}/api/akka/javasdk/agent/Classification.html[`Classification`]: a numeric score, a categorical label, or both, with optional confidence and attributes.
-You decide how it does that, for example with a regex, an embedding model, or a call to an external classification service.
+You decide how it computes that result, for example with a regex, an embedding model, or a call to an external classification service.
 
-A classifier is enabled in configuration and given a name.
-Wherever a guardrail, an evaluator, or your own code needs to score or categorize some text, it calls the classifier by that name through a link:{attachmentsdir}/api/akka/javasdk/agent/ClassifierClient.html[`ClassifierClient`].
+A classifier separates scoring from acting on the score.
+A guardrail, an evaluator, a sanitizer, and an endpoint may all need to know how toxic a text is, but each does something different with the answer: a guardrail denies the call, an evaluator records a verdict, a sanitizer masks the text, an endpoint routes the request.
+Without classifiers, each of them embeds its own scoring logic.
+With classifiers, the scoring logic lives in one place, under one name, and the callers share it.
+Because the name comes from configuration, you can swap the implementation or tune its parameters at deployment time without changing the callers.
+
+You enable a classifier in configuration and give it a name.
+A guardrail, an evaluator, a sanitizer, or your own code then calls the classifier by that name through a link:{attachmentsdir}/api/akka/javasdk/agent/ClassifierClient.html[`ClassifierClient`].
+The runtime never invokes a classifier on its own. Unlike a guardrail, a classifier is not bound to a call boundary.
 
 == Implementing a classifier
 
-A classifier implements the link:{attachmentsdir}/api/akka/javasdk/agent/Classifier.html[`Classifier`] interface: `classify` maps the input string to a `Classification`:
+A classifier implements the link:{attachmentsdir}/api/akka/javasdk/agent/Classifier.html[`Classifier`] interface. `classify` maps the input string to a `Classification`:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/classifier/ToxicityClassifier.java[ToxicityClassifier.java]
@@ -26,16 +34,16 @@ include::example$doc-snippets/src/main/java/com/example/classifier/ToxicityClass
 ----
 <1> Implement the `Classifier` interface.
 <2> An optional link:{attachmentsdir}/api/akka/javasdk/agent/ClassifierContext.html[`ClassifierContext`] constructor parameter gives access to the classifier's configured name and its config section.
-<3> `classify` may block, for example on a model or external API call: classifiers are always invoked on virtual threads. Implementations that prefer composing futures can override `classifyAsync` instead.
+<3> `classify` may block, for example on a model or external API call, because the runtime invokes classifiers on virtual threads. To compose futures instead, override `classifyAsync`. The default `classifyAsync` delegates to `classify`.
 <4> A `Classification` carries a score, a label, or both. Use the `score`, `label`, and `of` factory methods, or the full constructor to add confidence and attributes.
 
-The `Classification` record has four components — `score`, `label`, `confidence` (all `Optional`), and an `attributes` map — so a classifier can return only what it computes.
-A regex rule might return only a label; a scoring model might return only a score; an ensemble might return a score plus per-member detail in the attributes.
+The `Classification` record has four components: `score`, `label`, `confidence` (all `Optional`), and an `attributes` map. A classifier returns only what it computes.
+A regex rule might return only a label, a scoring model only a score, and an ensemble a score plus per-member detail in the attributes.
 
 == Configuring classifiers
 
-Classifiers are enabled under `akka.javasdk.agent.classifiers`.
-Each entry is a named section whose only required property is the implementation `class`; any further properties are read by the classifier from its `ClassifierContext`.
+You enable classifiers under `akka.javasdk.agent.classifiers`.
+Each entry is a named section whose only required property is the implementation `class`. The classifier reads any further properties from its `ClassifierContext`.
 
 [source,conf,indent=0]
 .src/main/resources/application.conf
@@ -48,29 +56,32 @@ akka.javasdk.agent.classifiers {
 }
 ----
 <1> The name the classifier is looked up by. This is the string passed to `ClassifierClient.classify`.
-<2> Implementation class. It must be public and have a public constructor.
+<2> Implementation class. It must be public and have exactly one constructor, and that constructor must be public.
 <3> An application-specific property, read by the classifier from `ClassifierContext.config()`.
 
 A classifier configuration has no `agents`, `agent-roles`, or `category`: a classifier is not scoped to a boundary or a set of agents.
 Callers invoke it by name where they need it.
 
+The service constructs every configured classifier at startup. It fails to start if a class cannot be loaded, does not implement `Classifier`, or its constructor throws.
+
 == Invoking a classifier
 
-A `ClassifierClient` can be injected into your components — such as a workflow or an endpoint — and into guardrails and evaluators.
-It resolves a configured classifier by name and invokes it:
+A `ClassifierClient` can be injected into your components, such as a workflow or an endpoint, and into evaluators, sanitizers, and other classifiers.
+A guardrail obtains one from its `GuardrailContext`.
+The client resolves a configured classifier by name and invokes it:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/classifier/ClassifierUsage.java[ClassifierUsage.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/classifier/ClassifierUsage.java[tag=invoke]
 ----
-<1> `classify` blocks for the result and is safe to call on a Loom virtual thread. Use `classifyAsync` for the non-blocking variant. Both throw `IllegalArgumentException` if no classifier is configured with that name.
+<1> `classify` blocks for the result. Component handlers run on virtual threads, so blocking is safe. Use `classifyAsync` for the non-blocking variant. Both throw `IllegalArgumentException` if no classifier is configured with that name.
 
-For the guardrail case — where a guardrail consults a classifier to inform its decision — see xref:sdk:agents/guardrails.adoc#_classifier_backed_guardrails[Classifier-backed guardrails].
+For a guardrail that consults a classifier to reach its decision, see xref:sdk:agents/guardrails.adoc#_classifier_backed_guardrails[Classifier-backed guardrails].
 
 == Composing classifiers
 
-Because a `ClassifierClient` can also be injected into a classifier's own constructor, one classifier can resolve and combine others by name — an ensemble built from configured members, without any of them knowing about the others:
+A `ClassifierClient` can also be injected into a classifier's own constructor. One classifier can then resolve and combine others by name. The result is an ensemble built from configured members, where no member knows about the others:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/classifier/EnsembleClassifier.java[EnsembleClassifier.java]
@@ -78,7 +89,7 @@ Because a `ClassifierClient` can also be injected into a classifier's own constr
 include::example$doc-snippets/src/main/java/com/example/classifier/EnsembleClassifier.java[tag=all]
 ----
 <1> Inject a `ClassifierClient` to call other configured classifiers.
-<2> The `ClassifierContext` supplies the ensemble's own config; here the names of its members.
+<2> The `ClassifierContext` supplies the ensemble's own config, here the names of its members.
 <3> Resolve and invoke each member by name.
 <4> Combine the members' results into a single `Classification`.
 
@@ -101,21 +112,16 @@ akka.javasdk.agent.classifiers {
   }
 }
 ----
-<1> The ensemble reads its member names from config, so the composition can be changed at deployment time without rebuilding.
-
-== Dependency injection
-
-Besides `ClassifierContext` and `ClassifierClient`, a classifier constructor can accept the platform's managed dependencies — for example `ComponentClient` or `HttpClientProvider` — and any custom type provided by the service's `DependencyProvider`.
-That lets a classifier use whatever it needs to compute a classification, such as a model client or an external HTTP service.
-See xref:sdk:setup-and-dependency-injection.adoc[].
+<1> The ensemble reads its member names from config, so you can change the composition at deployment time without rebuilding.
 
 == Testing
 
 In a test, obtain a `ClassifierClient` from the testkit with `getClassifierClient()` and invoke your configured classifiers directly.
-See xref:sdk:agents/testing.adoc#_testing_classifiers[Testing classifiers].
+See xref:sdk:agents/testing.adoc#_classifiers[Testing classifiers].
 
 == See also
 
-* xref:sdk:agents/guardrails.adoc[] — Checks that can consult a classifier to reach a decision.
-* xref:sdk:agents/llm_eval.adoc[] — Evaluators can call classifiers as part of assessing an interaction.
-* xref:concepts:governance-and-the-runtime.adoc[] — Where classifiers fit in Akka's governance model.
+* xref:sdk:agents/guardrails.adoc[]: checks that can consult a classifier to reach a decision.
+* xref:sdk:evaluators.adoc[]: evaluators can call classifiers as part of assessing an interaction.
+* xref:sdk:sanitization.adoc[]: a sanitizer can mask what a classifier detects.
+* xref:concepts:governance-and-the-runtime.adoc[]: where classifiers fit in Akka's governance model.

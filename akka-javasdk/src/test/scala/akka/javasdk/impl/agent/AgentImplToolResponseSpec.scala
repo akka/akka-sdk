@@ -16,8 +16,8 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class AgentImplToolResponseSpec extends AnyWordSpec with Matchers {
 
-  private def toSessionMessage(contents: Seq[SpiAgent.MessageContent]): SessionMessage =
-    AgentImpl.toSessionToolCallResponse(Instant.EPOCH, "agent", "id1", "render_chart", contents)
+  private def toSessionMessage(contents: Seq[SpiAgent.MessageContent], sanitized: Boolean = false): SessionMessage =
+    AgentImpl.toSessionToolCallResponse(Instant.EPOCH, "agent", "id1", "render_chart", contents, sanitized)
 
   "AgentImpl.toSessionToolCallResponse" should {
 
@@ -64,6 +64,23 @@ class AgentImplToolResponseSpec extends AnyWordSpec with Matchers {
               img.uri() shouldBe "object://bucket/chart.png"
             case other => fail(s"unexpected contents: $other")
           }
+        case other => fail(s"expected a MultimodalToolCallResponse, got [${other.getClass.getSimpleName}]")
+      }
+    }
+
+    "carry the sanitized flag to either response" in {
+      val text = new SpiAgent.TextMessageContent("caption")
+      val image = new SpiAgent.ImageUriMessageContent(
+        URI.create("object://bucket/chart.png"),
+        SpiAgent.ImageMessageContent.Auto,
+        Some("image/png"))
+
+      toSessionMessage(Seq(text), sanitized = true) match {
+        case tcr: SessionMessage.ToolCallResponse => tcr.sanitized() shouldBe true
+        case other => fail(s"expected a ToolCallResponse, got [${other.getClass.getSimpleName}]")
+      }
+      toSessionMessage(Seq(text, image), sanitized = true) match {
+        case mtcr: SessionMessage.MultimodalToolCallResponse => mtcr.sanitized() shouldBe true
         case other => fail(s"expected a MultimodalToolCallResponse, got [${other.getClass.getSimpleName}]")
       }
     }

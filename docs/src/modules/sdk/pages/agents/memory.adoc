@@ -183,6 +183,10 @@ include::example$doc-snippets/src/main/java/com/example/application/SessionMemor
 
 This can be useful for more granular control over token usage but also to allow external integrations and analytics over these details.
 
+Each `AiMessage` has a `TokenUsage` with the input and output token counts, the prompt cache read and write counts, and `totalInputTokens`. Model providers differ on whether `inputTokens` includes cached prompt tokens. For example, Anthropic and Bedrock report cached tokens outside `inputTokens`. Use `totalInputTokens` for a count that does not depend on the provider. It counts cached tokens at full weight, so it does not reflect the price of the call. Autonomous agents do not report prompt cache counts to session memory.
+
+With xref:sdk:sanitization.adoc[sanitizers] configured, the history holds user messages and tool results masked.
+
 == Session memory compaction
 
 You can update the session memory to reduce the size of the history. One technique is to let an LLM summarize the interaction history and use the new summary instead of the full history. Such agent can look like this:

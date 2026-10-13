@@ -50,6 +50,10 @@ public final class TestModelProvider implements ModelProvider.Custom {
 
   /**
    * Represents an AI response, which can include a message and/or list of tool invocation requests.
+   *
+   * <p>Only {@code inputTokens} and {@code outputTokens} of the token usage reach the agent. The
+   * agent reply reports no prompt cache tokens, and {@code totalInputTokens} equals {@code
+   * inputTokens}.
    */
   public record AiResponse(
       String message,
@@ -183,7 +187,10 @@ public final class TestModelProvider implements ModelProvider.Custom {
       reply(new AiResponse(message));
     }
 
-    /** Reply with a simple message for matching requests with defined token usage. */
+    /**
+     * Reply with a simple message for matching requests with defined token usage. The prompt cache
+     * counts of the token usage are ignored, see {@link AiResponse}.
+     */
     public void reply(String message, Agent.TokenUsage tokenUsage) {
       reply(new AiResponse(message, List.of(), Optional.of(tokenUsage)));
     }

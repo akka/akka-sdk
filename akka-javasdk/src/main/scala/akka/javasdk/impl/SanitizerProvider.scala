@@ -103,7 +103,8 @@ import org.slf4j.LoggerFactory
             instance = new SanitizerProvider.SpiSanitizerAdapter(() => getOrCreate(s.name)),
             applyAt = applyAt,
             enabledForComponents = components,
-            config = s.config)
+            config = s.config,
+            controlId = s.controlId)
         case _ =>
           Sanitization
             .declarativeSpiSanitizer(s, applyAt, components)
@@ -124,7 +125,8 @@ import org.slf4j.LoggerFactory
             s.name,
             className,
             new SanitizerProvider.SpiLogSanitizerAdapter(() => getOrCreate(s.name)),
-            s.config)
+            s.config,
+            s.controlId)
         case _ =>
           Sanitization
             .declarativeSpiLogSanitizer(s)

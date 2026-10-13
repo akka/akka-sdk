@@ -45,7 +45,7 @@ Each scenario carries two labels: readiness (can Akka drill it today?) and recom
 | Discuss based on use case and risk tolerance.
 
 | Defer
-| Documented only. Revisit after launch.
+| Documented only, not yet meaningful to drill live. Revisit as capabilities mature.
 |===
 
 Scenario selection is a joint decision at the tabletop.
@@ -118,7 +118,7 @@ Akka offers whole-database recovery via PITR. The database is single per region 
 | Notification | Shared | Standard flow.
 | Triage | Shared | Akka identifies the most recent uncorrupted PITR target and confirms backup integrity. The customer identifies which services and data are affected and which appear healthy. Together, they weigh how far back to restore (loses recent activity across every service in the region) against reconciliation cost afterward.
 | Decision | Customer | The customer authorizes the whole-database restore at the chosen timestamp, acknowledging that all services in the region revert.
-| Resolution | Akka | Akka clones the database via PITR, makes the clone the active datastore for the region, and verifies platform health.
+| Resolution | Akka | Akka clones the database via PITR, makes the clone the active datastore for the region, updates every service in the region to use it, and verifies platform health.
 | Customer-side recovery | Customer | The customer verifies data state in every affected service, reconciles activity from after the restore point, and resumes traffic.
 |===
 ====

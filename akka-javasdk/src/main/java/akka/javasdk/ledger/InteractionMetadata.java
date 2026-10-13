@@ -24,9 +24,9 @@ public record InteractionMetadata(
     Instant callFinishedAt,
     FinishReason finishReason) {
 
-  /** Why a model call finished. */
+  /** Why a model call finished. A later SDK version can add values. */
   public enum FinishReason {
-    /** The finish reason was not reported. */
+    /** The runtime did not report the reason, or this version of the SDK does not know it. */
     UNSPECIFIED,
     /** The model stopped at a natural stopping point. */
     STOP,

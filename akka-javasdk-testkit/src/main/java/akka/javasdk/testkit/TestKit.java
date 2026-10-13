@@ -55,11 +55,14 @@ import akka.runtime.sdk.spi.SpiDevObjectStorageGcsBucketConfig;
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsCredentials;
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsNativeCredentials$;
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsServiceAccountKeyCredentials;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3AccessStyle;
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig;
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3Credentials;
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials$;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3PathAccessStyle$;
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials;
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3VirtualHostAccessStyle$;
 import akka.runtime.sdk.spi.SpiEventingSupportSettings;
 import akka.runtime.sdk.spi.SpiMockedEventingSettings;
 import akka.runtime.sdk.spi.SpiSettings;
@@ -910,6 +913,14 @@ public class TestKit {
    */
   private static final Duration RUNTIME_STARTED_TIMEOUT = Duration.ofSeconds(10);
 
+  /**
+   * How long to wait for the runtime's ActorSystem to terminate. This covers the whole coordinated
+   * shutdown, whose cost is dominated by leaving the cluster and shutting down one shard region per
+   * component, so it has to be larger than the timeout of any single phase.
+   */
+  private static final FiniteDuration RUNTIME_SHUTDOWN_TIMEOUT =
+      FiniteDuration.create(20, TimeUnit.SECONDS);
+
   private final Settings settings;
 
   private EventingTestKit.MessageBuilder messageBuilder;
@@ -1206,9 +1217,7 @@ public class TestKit {
       if (runtimeActorSystem != null) {
         try {
           akka.testkit.javadsl.TestKit.shutdownActorSystem(
-              runtimeActorSystem.classicSystem(),
-              FiniteDuration.create(10, TimeUnit.SECONDS),
-              true);
+              runtimeActorSystem.classicSystem(), RUNTIME_SHUTDOWN_TIMEOUT, true);
         } catch (Exception shutdownFailure) {
           ex.addSuppressed(shutdownFailure);
         }
@@ -1496,7 +1505,21 @@ public class TestKit {
         } else {
           creds = SpiDevObjectStorageS3NativeCredentials$.MODULE$;
         }
-        result.add(new SpiDevObjectStorageS3BucketConfig(s3.name, s3.bucket, s3.region, creds));
+        SpiDevObjectStorageS3AccessStyle accessStyle = null;
+        if (s3.accessStyle.isPresent()) {
+          accessStyle =
+              s3.accessStyle.get() == ObjectStorageBucketConfig.S3AccessStyle.PATH
+                  ? SpiDevObjectStorageS3PathAccessStyle$.MODULE$
+                  : SpiDevObjectStorageS3VirtualHostAccessStyle$.MODULE$;
+        }
+        result.add(
+            new SpiDevObjectStorageS3BucketConfig(
+                s3.name,
+                s3.bucket,
+                s3.region,
+                creds,
+                scala.Option.apply(s3.endpointUrl.orElse(null)),
+                scala.Option.apply(accessStyle)));
       } else if (bucket instanceof ObjectStorageBucketConfig.Impl.Gcs) {
         ObjectStorageBucketConfig.Impl.Gcs gcs = (ObjectStorageBucketConfig.Impl.Gcs) bucket;
         SpiDevObjectStorageGcsCredentials creds;
@@ -1620,10 +1643,11 @@ public class TestKit {
    * was registered via {@link Settings#withStreamOutgoingMessages(String, String)}); the underlying
    * subscription itself is resolved against the service-under-test by {@code streamId}.
    *
-   * <p>Each call returns a handle whose subscription replays events from the beginning of the
-   * stream. In a suite that shares a single {@code TestKit} across multiple tests, call {@link
-   * EventingTestKit.OutgoingMessages#clear()} at the start of each test to drop events produced by
-   * prior tests.
+   * <p>The testkit keeps one subscription for each {@code service} and {@code streamId} pair, and
+   * every call with the same pair returns the same handle. The subscription reads the stream from
+   * the beginning and follows the rules of a consuming service. In a suite that shares a single
+   * {@code TestKit} across multiple tests, call {@link EventingTestKit.OutgoingMessages#clear()} at
+   * the start of each test to drop events produced by prior tests.
    *
    * @param service service name
    * @param streamId service stream id
@@ -1687,17 +1711,25 @@ public class TestKit {
     return ledgerClient;
   }
 
-  /** Stop the testkit and local runtime. */
+  /**
+   * Stop the testkit and local runtime, and wait for the runtime to terminate.
+   *
+   * @throws IllegalStateException if the runtime could not be stopped. Its runtime may still be
+   *     running, with its threads and the ports it bound still held.
+   */
   public void stop() {
+    int port = runtimePort;
     try {
       if (runtimeActorSystem != null) {
         akka.testkit.javadsl.TestKit.shutdownActorSystem(
-            runtimeActorSystem.classicSystem(), FiniteDuration.create(10, TimeUnit.SECONDS), true);
+            runtimeActorSystem.classicSystem(), RUNTIME_SHUTDOWN_TIMEOUT, true);
       }
     } catch (Exception e) {
-      log.error("TestKit runtime failed to terminate", e);
+      throw new IllegalStateException(
+          "TestKit runtime failed to terminate. Port [" + port + "]", e);
+    } finally {
+      started = false;
     }
-    started = false;
   }
 
   /**
@@ -1716,8 +1748,10 @@ public class TestKit {
   /**
    * A band below the range operating systems draw ephemeral ports from: 32768 and up on Linux,
    * 49152 and up on macOS and Windows.
+   *
+   * <p>The configured testkit port should be below this band, so the picker below cannot draw it.
    */
-  private static final int EVENTING_PORT_BAND_FIRST = 20000;
+  static final int EVENTING_PORT_BAND_FIRST = 20000;
 
   private static final int EVENTING_PORT_BAND_LAST = 32767;
 

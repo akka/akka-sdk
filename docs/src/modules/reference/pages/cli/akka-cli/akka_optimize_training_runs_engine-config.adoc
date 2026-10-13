@@ -1,0 +1,64 @@
+= akka optimize training runs engine-config
+
+Display the configuration a training run's engine was given
+
+== Synopsis
+
+Display what a training run's job gave its engine, and what the engine made of it.
+
+The job writes this once, before the first step.
+"requested" is what it built from the run's settings.
+"resolved" is the engine's whole configuration with its own defaults filled in, and the adapter as it was attached to the model.
+The table lists each requested setting, and marks one the engine resolved to a different value.
+The JSON output carries both parts in full.
+Not found where the job has not written it yet.
+
+----
+akka optimize training runs engine-config RUN [flags]
+----
+
+== Examples
+
+----
+  # Display what a run's engine was given
+  akka-optimize training runs engine-config 7d496e82c3a15f04
+
+  # Read one setting as the engine resolved it, defaults included
+  akka-optimize training runs engine-config 7d496e82c3a15f04 --jq .resolved.config.adam_beta1
+----
+
+== Options
+
+----
+  -h, --help   help for engine-config
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_runs.html[akka optimize training runs]	 - Manage training runs, snapshots and child runs
+
+[discrete]
+

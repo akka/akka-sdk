@@ -25,6 +25,8 @@ ThisBuild / dependencyOverrides ++= Dependencies.jacksonModules
 lazy val checkRuntimeDependencyAlignment =
   taskKey[Unit]("Verify direct dependency versions against the versions the Akka Runtime resolves")
 
+lazy val docsApi = taskKey[Unit]("Generate API documentation and record the Akka Runtime version for the docs")
+
 lazy val `akka-javasdk-root` = project
   .in(file("."))
   .aggregate(
@@ -163,10 +165,11 @@ lazy val akkaJavaSdkEnforcer =
       autoScalaLibrary := false, // pure Java, no Scala dependency
       Compile / javacOptions ++= Seq("-encoding", "UTF-8", "--release", "11"),
       libraryDependencies ++= Seq(
-        "org.apache.maven.enforcer" % "enforcer-api" % "3.5.0" % Provided,
-        "org.apache.maven" % "maven-core" % "3.9.9" % Provided,
+        "org.apache.maven.enforcer" % "enforcer-api" % "3.6.3" % Provided,
+        "org.apache.maven" % "maven-core" % "3.9.16" % Provided,
         "javax.inject" % "javax.inject" % "1" % Provided,
         Dependencies.junit5 % Test,
+        Dependencies.junitPlatformLauncher % Test,
         "net.aichler" % "jupiter-interface" % net.aichler.jupiter.sbt.Import.JupiterKeys.jupiterVersion.value % Test))
 
 lazy val akkaJavaSdkParent =
@@ -188,6 +191,7 @@ lazy val akkaJavaSdkParent =
           pom,
           version.value,
           AkkaRuntimeVersion,
+          s"${Kalix.ProtocolVersionMajor}.${Kalix.ProtocolVersionMinor}",
           AkkaGrpcVersion,
           GoogleProtobufVersion,
           Dependencies.JacksonVersion,
@@ -198,6 +202,7 @@ def updatePomVersion(
     node: Elem,
     v: String,
     runtimeVersion: String,
+    protocolVersion: String,
     akkaGrpcVersion: String,
     googleProtobufVersion: String,
     jacksonVersion: String,
@@ -213,6 +218,8 @@ def updatePomVersion(
               <akka-runtime.version>{runtimeVersion}</akka-runtime.version>
             case <akka-javasdk.version>{_}</akka-javasdk.version> =>
               <akka-javasdk.version>{v}</akka-javasdk.version>
+            case <akka-protocol.version>{_}</akka-protocol.version> =>
+              <akka-protocol.version>{protocolVersion}</akka-protocol.version>
             case <akka.grpc.version>{_}</akka.grpc.version> =>
               <akka.grpc.version>{akkaGrpcVersion}</akka.grpc.version>
             case <protobuf-java.version>{_}</protobuf-java.version> =>
@@ -246,6 +253,16 @@ checkRuntimeDependencyAlignment := RuntimeDependencyCheck.check(
   (akkaJavaSdk / scalaBinaryVersion).value,
   (LocalRootProject / baseDirectory).value,
   streams.value.log)
+
+// The root aggregates all projects; this task schedules only the two published API references.
+docsApi / aggregate := false
+docsApi := {
+  (akkaJavaSdk / Compile / doc).value
+  (akkaJavaSdkTestKit / Compile / doc).value
+  IO.write(
+    (LocalRootProject / baseDirectory).value / "target/docs-runtime-version.txt",
+    (akkaJavaSdk / akkaRuntimeVersion).value + "\n")
+}
 
 addCommandAlias("formatAll", "scalafmtAll; javafmtAll")
 

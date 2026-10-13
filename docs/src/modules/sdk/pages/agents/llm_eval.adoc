@@ -6,7 +6,7 @@ LLM evaluation verifies an agent's model interactions by judging their quality, 
 
 [NOTE]
 ====
-This page covers how to compute a verdict — implementing an LLM-as-judge as an agent, and the built-in evaluator agents.
+This page covers how to compute a verdict: implementing an LLM-as-judge as an agent, and the built-in evaluator agents.
 To have the runtime run an evaluation automatically for each interaction of an agent, bind an xref:sdk:evaluators.adoc[Evaluator component] to that agent; an Evaluator commonly delegates to one of the judge agents described here.
 ====
 

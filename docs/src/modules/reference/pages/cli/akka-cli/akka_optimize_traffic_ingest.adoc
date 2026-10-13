@@ -1,0 +1,67 @@
+= akka optimize traffic ingest
+
+Run recorded exchanges as traffic served at their recorded times
+
+== Synopsis
+
+FILE holds JSON Lines, one recorded exchange each, in the format described under "Ingesting recorded traffic" in docs/gateway-router.md.
+
+The file is sent in parts of --lines-per-request lines, one part at a time and in file order, so the turns of a conversation run in the order the file gives them.
+The router checks every line of a part before any of them runs.
+A part it refuses stops the command: the parts before it have run, and the parts after it are not sent.
+
+A line the router answers with an error did not finish.
+The lines after it still run, and the command exits non-zero once the file has been sent.
+
+The router answers a part once every line in it has run.
+A part that is not answered in time, because the router's request timeout or --timeout passed first, may still be running.
+Do not ingest that part again until its lines have finished.
+
+----
+akka optimize traffic ingest -f FILE [flags]
+----
+
+== Examples
+
+----
+  akka-optimize traffic ingest -f traffic.jsonl
+  akka-optimize traffic ingest -f traffic.jsonl --lines-per-request 10 -o json
+----
+
+== Options
+
+----
+  -f, --file string             recorded exchanges, one JSON line each; - reads stdin
+  -h, --help                    help for ingest
+      --lines-per-request int   the most lines one request carries, at most the router's gateway.ingest.max-lines-per-request; a part also stays within 8 MiB (default 30)
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_traffic.html[akka optimize traffic]	 - Recorded LLM exchanges, run through the gateway router's routing chain
+
+[discrete]
+

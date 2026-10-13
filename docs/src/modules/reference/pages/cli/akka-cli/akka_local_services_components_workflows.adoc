@@ -31,7 +31,12 @@ The `akka local service components workflows` commands let you inspect and manag
 == SEE ALSO
 
 * link:akka_local_services_components.html[akka local services components]	 - Inspect components of a service.
+* link:akka_local_services_components_workflows_delete-snapshot.html[akka local services components workflows delete-snapshot]	 - Delete the stored state snapshot of a single workflow instance.
+* link:akka_local_services_components_workflows_force-snapshot.html[akka local services components workflows force-snapshot]	 - Create a state snapshot of a single workflow instance now.
 * link:akka_local_services_components_workflows_get.html[akka local services components workflows get]	 - Get workflow execution details for the specified service, workflow component id and workflow id
+* link:akka_local_services_components_workflows_get-state.html[akka local services components workflows get-state]	 - Get the state for the given service, workflow component and id.
+* link:akka_local_services_components_workflows_list-events.html[akka local services components workflows list-events]	 - List events from the event journal for the given service, workflow component and id.
+* link:akka_local_services_components_workflows_list-ids.html[akka local services components workflows list-ids]	 - List recently active IDs for the given workflow component served by this service within specified time window (24h by default).
 * link:akka_local_services_components_workflows_resume.html[akka local services components workflows resume]	 - Resume a suspended workflow execution.
 * link:akka_local_services_components_workflows_suspend.html[akka local services components workflows suspend]	 - Suspend a running workflow execution.
 * link:akka_local_services_components_workflows_terminate.html[akka local services components workflows terminate]	 - Terminate a running workflow execution.

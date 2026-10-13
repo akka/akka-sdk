@@ -14,8 +14,10 @@ import java.util.Optional;
  * <ul>
  *   <li>{@link #filesystem(String)} / {@link #filesystem(String, String)} — local filesystem,
  *       always available without any cloud credentials.
- *   <li>{@link #s3(String, String, String, S3Credentials)} — Amazon S3 or an S3-compatible service
- *       (e.g. MinIO started via Testcontainers).
+ *   <li>{@link #s3(String, String, String, S3Credentials)} — Amazon S3, using the region to find
+ *       the endpoint.
+ *   <li>{@link #s3(String, String, String, S3Credentials, String)} — an S3-compatible service at a
+ *       given endpoint (e.g. MinIO started via Testcontainers).
  *   <li>{@link #gcs(String, String, GcsCredentials)} — Google Cloud Storage.
  * </ul>
  *
@@ -48,7 +50,7 @@ public interface ObjectStorageBucketConfig {
   }
 
   /**
-   * S3-backed bucket (Amazon S3 or S3-compatible, e.g. MinIO).
+   * S3-backed bucket on Amazon S3. The endpoint comes from the region.
    *
    * @param name logical bucket name
    * @param bucket actual S3 bucket name in the cloud / local service
@@ -57,7 +59,47 @@ public interface ObjectStorageBucketConfig {
    */
   static ObjectStorageBucketConfig s3(
       String name, String bucket, String region, S3Credentials credentials) {
-    return new Impl.S3(name, bucket, region, credentials);
+    return new Impl.S3(name, bucket, region, credentials, Optional.empty(), Optional.empty());
+  }
+
+  /**
+   * S3-backed bucket on an S3-compatible service, e.g. MinIO started via Testcontainers.
+   *
+   * <p>The bucket is addressed as a path. Subdomain addressing needs wildcard DNS, so an
+   * S3-compatible service usually requires path access style. Use {@link #s3(String, String,
+   * String, S3Credentials, String, S3AccessStyle)} to choose the access style.
+   *
+   * @param name logical bucket name
+   * @param bucket actual S3 bucket name in the cloud / local service
+   * @param region AWS region, e.g. {@code "us-east-1"}
+   * @param credentials credentials to authenticate with S3
+   * @param endpointUrl address of the service, e.g. {@code "http://localhost:9000"}
+   */
+  static ObjectStorageBucketConfig s3(
+      String name, String bucket, String region, S3Credentials credentials, String endpointUrl) {
+    return new Impl.S3(
+        name, bucket, region, credentials, Optional.of(endpointUrl), Optional.empty());
+  }
+
+  /**
+   * S3-backed bucket on an S3-compatible service, choosing how the bucket is addressed.
+   *
+   * @param name logical bucket name
+   * @param bucket actual S3 bucket name in the cloud / local service
+   * @param region AWS region, e.g. {@code "us-east-1"}
+   * @param credentials credentials to authenticate with S3
+   * @param endpointUrl address of the service, e.g. {@code "http://localhost:9000"}
+   * @param accessStyle how the bucket is addressed at the endpoint
+   */
+  static ObjectStorageBucketConfig s3(
+      String name,
+      String bucket,
+      String region,
+      S3Credentials credentials,
+      String endpointUrl,
+      S3AccessStyle accessStyle) {
+    return new Impl.S3(
+        name, bucket, region, credentials, Optional.of(endpointUrl), Optional.of(accessStyle));
   }
 
   /**
@@ -69,6 +111,19 @@ public interface ObjectStorageBucketConfig {
    */
   static ObjectStorageBucketConfig gcs(String name, String bucket, GcsCredentials credentials) {
     return new Impl.Gcs(name, bucket, credentials);
+  }
+
+  // ── S3 access style ─────────────────────────────────────────────────────────
+
+  /** How the bucket is addressed at the endpoint. */
+  enum S3AccessStyle {
+    /** Address the bucket as a path at the endpoint. */
+    PATH,
+    /**
+     * Address the bucket as a subdomain of the endpoint. Needs wildcard DNS. Substituted for a
+     * {@code {bucket}} placeholder in the endpoint url when it has one.
+     */
+    VIRTUAL_HOST
   }
 
   // ── S3 credentials ──────────────────────────────────────────────────────────
@@ -164,12 +219,22 @@ public interface ObjectStorageBucketConfig {
       public final String bucket;
       public final String region;
       public final S3Credentials credentials;
+      public final Optional<String> endpointUrl;
+      public final Optional<S3AccessStyle> accessStyle;
 
-      S3(String name, String bucket, String region, S3Credentials credentials) {
+      S3(
+          String name,
+          String bucket,
+          String region,
+          S3Credentials credentials,
+          Optional<String> endpointUrl,
+          Optional<S3AccessStyle> accessStyle) {
         this.name = name;
         this.bucket = bucket;
         this.region = region;
         this.credentials = credentials;
+        this.endpointUrl = endpointUrl;
+        this.accessStyle = accessStyle;
       }
 
       @Override

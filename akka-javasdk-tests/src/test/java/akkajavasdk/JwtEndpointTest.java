@@ -13,11 +13,15 @@ import akka.grpc.javadsl.SingleBlockingResponseRequestBuilder;
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.http.StrictResponse;
 import akka.javasdk.testkit.TestKitSupport;
+import akkajavasdk.components.jwt.ClaimsJwtEndpoint;
 import akkajavasdk.protocol.TestGrpcServiceOuterClass;
 import akkajavasdk.protocol.TestJwtsGrpcServiceClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
 import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
@@ -93,6 +97,80 @@ public class JwtEndpointTest extends TestKitSupport {
             });
   }
 
+  @Test
+  public void shouldReturnTypedClaims() {
+    var token =
+        bearerTokenWith(
+            Map.ofEntries(
+                Map.entry("iss", "my-issuer-123"),
+                Map.entry("exp", 4102444800L),
+                Map.entry("iat", 1700000000L),
+                Map.entry("nbf", 1700000000L),
+                Map.entry("count", 42),
+                Map.entry("ratio", 0.5),
+                Map.entry("admin", true),
+                Map.entry("roles", List.of("reader", "writer")),
+                Map.entry("levels", List.of(1, 2, 3)),
+                Map.entry("dates", List.of(1700000000L, 4102444800L)),
+                Map.entry("address", Map.of("city", "Lisbon"))));
+
+    var claims = getClaims(token);
+
+    assertThat(claims.expirationTime()).isEqualTo("2100-01-01T00:00:00Z");
+    assertThat(claims.issuedAt()).isEqualTo("2023-11-14T22:13:20Z");
+    assertThat(claims.notBefore()).isEqualTo("2023-11-14T22:13:20Z");
+    assertThat(claims.count()).isEqualTo(42);
+    assertThat(claims.countAsLong()).isEqualTo(42L);
+    assertThat(claims.countAsString()).isEqualTo("42");
+    assertThat(claims.countAsBoolean()).isNull();
+    assertThat(claims.ratio()).isEqualTo(0.5);
+    assertThat(claims.admin()).isTrue();
+    assertThat(claims.issAsInteger()).isNull();
+    assertThat(claims.roles()).containsExactly("reader", "writer");
+    assertThat(claims.rolesAsString()).isEqualTo("[\"reader\",\"writer\"]");
+    assertThat(claims.rolesAsObject()).isNull();
+    assertThat(claims.levels()).containsExactly(1, 2, 3);
+    assertThat(claims.dates()).containsExactly("2023-11-14T22:13:20Z", "2100-01-01T00:00:00Z");
+    assertThat(claims.address()).isEqualTo("{\"city\":\"Lisbon\"}");
+  }
+
+  @Test
+  public void shouldReturnClaimsEncodedAsStringsAndFractionalDates() {
+    var claimValues = new LinkedHashMap<String, Object>();
+    claimValues.put("iss", "my-issuer-123");
+    claimValues.put("exp", new BigDecimal("4102444800.5"));
+    claimValues.put("count", "42");
+    claimValues.put("ratio", null);
+    claimValues.put("admin", false);
+    claimValues.put("roles", "[\"reader\",\"writer\"]");
+    claimValues.put("dates", List.of(new BigDecimal("1700000000.25")));
+    claimValues.put("address", "{\"city\":\"Lisbon\"}");
+
+    var claims = getClaims(bearerTokenWith(claimValues));
+
+    assertThat(claims.expirationTime()).isEqualTo("2100-01-01T00:00:00.500Z");
+    assertThat(claims.count()).isEqualTo(42);
+    assertThat(claims.countAsLong()).isEqualTo(42L);
+    assertThat(claims.countAsString()).isEqualTo("42");
+    assertThat(claims.ratio()).isNull();
+    assertThat(claims.ratioAsString()).isNull();
+    assertThat(claims.ratioAsList()).isNull();
+    assertThat(claims.admin()).isFalse();
+    assertThat(claims.roles()).containsExactly("reader", "writer");
+    assertThat(claims.rolesAsString()).isEqualTo("[\"reader\",\"writer\"]");
+    assertThat(claims.dates()).containsExactly("2023-11-14T22:13:20.250Z");
+    assertThat(claims.address()).isEqualTo("{\"city\":\"Lisbon\"}");
+  }
+
+  private ClaimsJwtEndpoint.Claims getClaims(String token) {
+    return httpClient
+        .GET("/jwt-claims")
+        .addHeader("Authorization", token)
+        .responseBodyAs(ClaimsJwtEndpoint.Claims.class)
+        .invoke()
+        .body();
+  }
+
   // from here down, JWT validation tests for gRPC endpoints
   TestGrpcServiceOuterClass.In request =
       TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
@@ -166,7 +244,7 @@ public class JwtEndpointTest extends TestKitSupport {
     expectFailWith(correctSub.jwtInherited(), "UNAUTHENTICATED: Bearer token from wrong issuer");
   }
 
-  private String bearerTokenWith(Map<String, String> claims) {
+  private String bearerTokenWith(Map<String, ?> claims) {
     try {
       // setting algorithm to none
       String alg = Base64.getEncoder().encodeToString("{\"alg\": \"none\"}".getBytes());

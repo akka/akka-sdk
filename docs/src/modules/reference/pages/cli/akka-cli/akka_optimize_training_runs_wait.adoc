@@ -1,0 +1,80 @@
+= akka optimize training runs wait
+
+Wait for a training run to finish
+
+== Synopsis
+
+Stream status updates for a training run until it reaches a terminal phase.
+
+By default, the command exits with code 0 upon reaching COMPLETED, FAILED, or CANCELLED.
+Use --exit-status to return a non-zero exit code if the run ends in FAILED or CANCELLED, or if a smoke check fails.
+
+Use --timeout to set a maximum wait duration.
+If the timeout expires, the command exits with a non-zero status while the run continues in the background.
+
+Interrupting with Ctrl-C stops following the run without cancelling it.
+
+A dropped stream is reopened rather than reported, and so is a gateway that answers while it has nothing to reach: the wait retries eight times in a row over about two minutes, backing off between attempts.
+Past that it reports what it could not reach and exits.
+The run is unaffected either way, and another "wait" reconnects to it.
+
+When using -o json, updates are streamed to stdout as line-delimited JSON events, ending with a terminal event that includes the failure reason and any smoke verdict.
+The full run record follows the terminal event, pretty-printed.
+Use -o json-compact to keep the record on one line when a script reads the output line by line.
+
+----
+akka optimize training runs wait RUN [flags]
+----
+
+== Examples
+
+----
+  # Wait for a run to finish
+  akka-optimize training runs wait 7d496e82c3a15f04
+
+  # Wait up to 2 hours and exit with non-zero status if the run fails
+  akka-optimize training runs wait 7d496e82c3a15f04 --timeout 2h --exit-status
+
+  # Suppress intermediate progress updates
+  akka-optimize training runs wait 7d496e82c3a15f04 -q
+
+  # Stream updates as JSON
+  akka-optimize training runs wait 7d496e82c3a15f04 -o json | jq -c .
+----
+
+== Options
+
+----
+      --exit-status        Exit with a non-zero status if execution fails or is cancelled, or if a smoke check fails
+  -h, --help               help for wait
+      --timeout duration   Maximum duration to wait before timing out
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_runs.html[akka optimize training runs]	 - Manage training runs, snapshots and child runs
+
+[discrete]
+

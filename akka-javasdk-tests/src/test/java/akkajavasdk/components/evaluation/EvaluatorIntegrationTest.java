@@ -69,6 +69,8 @@ public class EvaluatorIntegrationTest extends TestKitSupport {
     EvaluationRecord record = evaluationFor("How do I reset my password?");
 
     assertThat(record.evaluatorComponentId()).isEqualTo("response-quality-evaluator");
+    // response-quality-evaluator declares no control id
+    assertThat(record.controlId()).isEmpty();
     assertThat(record.agentComponentId()).isEqualTo("stateless-evaluated-agent");
     assertThat(record.interactionId()).isNotBlank();
     assertThat(record.trigger()).isEqualTo(EvaluationRecord.Trigger.ON_INTERACTION);

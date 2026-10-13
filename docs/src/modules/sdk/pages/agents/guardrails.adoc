@@ -1,7 +1,7 @@
 = Guardrails
 :page-summary: Runtime-enforced guardrails that validate agent inputs and outputs, providing governance controls for toxicity, PII, jailbreak detection, and compliance without bolting on external tooling.
 :page-when-to-use: When you need to enforce content policies, prevent prompt injection, protect sensitive data, or satisfy regulatory requirements such as the EU AI Act across your agent fleet.
-:page-related: xref:concepts:governance-and-the-runtime.adoc[], xref:sdk:agents/classifiers.adoc[], xref:sdk:sanitization.adoc[], xref:sdk:agents/index.adoc[]
+:page-related: xref:concepts:governance-and-the-runtime.adoc[], xref:sdk:agents/classifiers.adoc[], xref:sdk:sanitization.adoc[], xref:sdk:agents.adoc[]
 :page-prerequisites: An Akka project with at least one agent defined.
 :page-persona: governance-compliance, governance-infosec, developer
 
@@ -10,11 +10,11 @@ include::ROOT:partial$include.adoc[]
 == Overview
 
 Guardrails are runtime-enforced checks that validate what goes into and comes out of your agents.
-They protect against harmful inputs — such as jailbreak attempts and prompt injection — and damaging outputs — such as toxic language, hallucinated claims, or accidental disclosure of a competitor's product.
+They protect against harmful inputs, such as jailbreak attempts and prompt injection, and damaging outputs, such as toxic language, hallucinated claims, or accidental disclosure of a competitor's product.
 A guardrail can also intercept a tool call and reject it before it runs.
 
 Unlike external validation layers that sit outside your application, Akka guardrails are **part of the runtime itself**.
-You declare them in configuration, and the runtime enforces them on every interaction — whether the request targets a model, an MCP tool, or a function tool.
+You declare them in configuration, and the runtime enforces them on every interaction, whether the request targets a model, an MCP tool, or a function tool.
 This distinction matters: bolt-on governance fails because it depends on developers remembering to call the right library at the right time.
 When governance lives in the runtime, it cannot be bypassed, forgotten, or misconfigured by individual teams.
 
@@ -34,20 +34,31 @@ A guardrail implements one of three interfaces. The interface sets where the run
 A guardrail class implements exactly one of these interfaces.
 To check several points, write one class per interface.
 
-NOTE: The runtime does not evaluate `ModelCallGuardrail` or `AgentResponseGuardrail` for an agent that streams its reply with a `StreamEffect`.
+[NOTE]
+====
+An agent that returns `StreamEffect` streams its reply. The caller receives the reply before the runtime evaluates an `AgentResponseGuardrail`, so the guardrail cannot block that reply.
+
+The service fails to start when such an agent has an `AgentResponseGuardrail` entry without `report-only = true`.
+Fix the startup failure in one of these ways:
+
+* Change the agent's command handler to return `Agent.Effect`.
+* Remove the agent from the `agents` or `agent-roles` list of the entry. If the entry binds agents through `*` or an agent role, list the other agents by name instead.
+* Remove the agent from the entry as above. Then add a separate entry for this agent with `report-only = true`. The guardrail then observes the reply without blocking it. The stream completes after the guardrail returns.
+
+Do not set `report-only = true` on the existing entry. The guardrail would then stop blocking for every agent that the entry binds.
+
+The runtime evaluates a `ModelCallGuardrail` before each model call of a streaming agent too.
+A deny fails the stream. See <<Handling a denied interaction>>.
+====
 
 All three return a link:{attachmentsdir}/api/akka/javasdk/agent/Decision.html[`Decision`]:
 
-* `Decision.Allow` — the guardrail saw nothing wrong; the call proceeds.
-* `Decision.Deny` — the call must not proceed. The `reason` is surfaced to the user as the failure message. Whether the interaction is aborted or merely recorded is governed by `report-only` (see <<_configuring_guardrails>>).
-* `Decision.Fail` — evaluation itself failed and reached no verdict. The `reason` and optional `cause` are propagated to the interaction's failure handling. Throwing from `decide` is equivalent to returning `Decision.Fail`.
+* `Decision.Allow`: the guardrail found nothing wrong and the call proceeds.
+* `Decision.Deny`: the call must not proceed. The runtime returns the `reason` to the user as the failure message. The `report-only` setting decides whether the runtime aborts the interaction or only records the denial (see <<_configuring_guardrails>>).
+* `Decision.Fail`: the evaluation itself failed and reached no verdict. The runtime passes the `reason` and the `cause` to the interaction's failure handling, as the message and the cause of a `Guardrail.GuardrailException`. The runtime treats three cases as `Decision.Fail`: throwing from `decide`, returning a failed `CompletionStage` from `decideAsync`, and returning `null`.
 
-[NOTE]
-====
-The earlier link:{attachmentsdir}/api/akka/javasdk/agent/TextGuardrail.html[`TextGuardrail`] interface — which returns a `Guardrail.Result` (a boolean plus explanation) rather than a `Decision` — is deprecated for removal.
-Existing `TextGuardrail` implementations still run, and the built-in `SimilarityGuard` (see <<_similarity_guardrail>>) is configured the same way.
-New guardrails should implement `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail`.
-====
+The runtime reports a `Deny` or `Fail` with a null or blank `reason` as "no reason given".
+The runtime applies no timeout to a guardrail. An interaction waits forever if its guardrail never completes.
 
 == Implementing an agent response guardrail
 
@@ -142,11 +153,11 @@ akka.javasdk.agent.guardrails {
 <7> An application-specific property, read by the guardrail from its `GuardrailContext`.
 <8> Optional, for a `ToolCallGuardrail` only. Restricts the guardrail to the named tools. Without it, the guardrail sees every tool call on the selected agents.
 
-The `class` property sets the implementation class. The class must implement `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail` (or the deprecated `TextGuardrail`), be public, and have a public constructor. The constructor may take a link:{attachmentsdir}/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which holds the name and the config section of the guardrail. The `ProfanityResponseGuard` example reads its `search-for` property this way.
+The `class` property sets the implementation class. The class must implement `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail`, be public, and have a public constructor. The constructor may take a link:{attachmentsdir}/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which holds the name and the config section of the guardrail. The `ProfanityResponseGuard` example reads its `search-for` property this way.
 
 The runtime shares one guardrail instance across concurrent calls from different sessions and agents. The implementation must be thread safe.
 
-The guardrail interface sets where the runtime evaluates the guardrail, so the configuration has no boundary setting. If a `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail` defines `use-for`, the runtime fails at startup.
+The guardrail interface sets where the runtime evaluates the guardrail, so the configuration has no boundary setting.
 
 === Agent selection
 
@@ -163,17 +174,12 @@ This role is defined in the `@AgentRole` annotation.
 
 The name and the category are reported in logs, metrics, and traces. The `category` should classify the type of validation. It can be any value, but a few recommended categories are JAILBREAK, PROMPT_INJECTION, PII, TOXIC, HALLUCINATED, NSFW, FORMAT.
 
-=== Configuring a deprecated TextGuardrail
-
-A `TextGuardrail`, including the built-in `SimilarityGuard`, requires the `use-for` property.
-It accepts one or more of `model-request`, `model-response`, `mcp-tool-request`, and `mcp-tool-response`, or `*` for all four.
-The `model-request` and `model-response` values are deprecated. A `model-request` guardrail becomes a `ModelCallGuardrail`, and a `model-response` guardrail becomes an `AgentResponseGuardrail`.
-The `mcp-tool-request` and `mcp-tool-response` values are not deprecated. A `TextGuardrail` is the only guardrail type that the runtime evaluates for MCP tool calls.
+Set `control-id` to name the control that the guardrail implements. See xref:concepts:governance-and-the-runtime.adoc#control-ids[control ids].
 
 == Classifier-backed guardrails
 
 A guardrail can delegate its decision to a xref:sdk:agents/classifiers.adoc[classifier], resolved by name through `GuardrailContext.classifierClient()`.
-The classifier does the scoring — how toxic the text is — and the guardrail turns that score into an allow or a deny.
+The classifier computes the score, for example how toxic the text is, and the guardrail turns that score into an allow or a deny.
 Because the classifier name comes from config, you can configure the guardrail to use a different classifier without rebuilding. The blocking `classify` call is safe here, because guardrails are evaluated on virtual threads; to compose futures instead, use `classifyAsync` and override `decideAsync`:
 
 [source,java,indent=0]
@@ -198,24 +204,28 @@ When a `ModelCallGuardrail` or an `AgentResponseGuardrail` returns `Decision.Den
 include::example$doc-snippets/src/main/java/com/example/guardrail/GuardedAgent.java[tag=on-failure]
 ----
 
+An agent that returns `StreamEffect` has no `onFailure`.
+For such an agent, a deny fails the stream.
+The error message names the guardrail, its category, and the reason.
+The error type is not `Guardrail.GuardrailException`.
+
 With `report-only = true`, a `Deny` is recorded in logs, metrics, and traces but the interaction continues.
-A `Decision.Fail` is always propagated as a failure regardless of `report-only`, since the guardrail reached no verdict.
+A `Decision.Fail` with `report-only = true` lets the interaction continue. The runtime logs a warning and records the error.
 
 == Similarity guardrail
 
-The built-in link:{attachmentsdir}/api/akka/javasdk/agent/SimilarityGuard.html[`SimilarityGuard`] evaluates the text by making a similarity search in a dataset of "bad examples". If the similarity exceeds a threshold, the result is flagged as blocked.
+The built-in link:{attachmentsdir}/api/akka/javasdk/agent/ModelCallSimilarityGuard.html[`ModelCallSimilarityGuard`] is a `ModelCallGuardrail`. Before each model call, the runtime compares the user message and tool results with a dataset of "bad examples". If the similarity reaches the threshold, the runtime denies the call.
 
-This is how to configure the `SimilarityGuard`:
+This is how to configure the `ModelCallSimilarityGuard`:
 
 [source,conf,indent=0]
 .src/main/resources/application.conf
 ----
 akka.javasdk.agent.guardrails {
   "jailbreak guard" {
-    class = "akka.javasdk.agent.SimilarityGuard"
+    class = "akka.javasdk.agent.ModelCallSimilarityGuard"
     agents = ["planner-agent", "weather-agent"]
     category = JAILBREAK
-    use-for = ["model-request"]
     threshold = 0.75
     bad-examples-resource-dir = "guardrail/jailbreak"
   }
@@ -232,6 +242,6 @@ Guardrails run in integration tests the same way they run in production. Configu
 
 == See also
 
-* xref:sdk:agents/classifiers.adoc[] — Components that score or label text, which a guardrail can consult to reach a decision.
-* xref:concepts:governance-and-the-runtime.adoc[] — Why governance must live in the runtime, not in a sidecar.
-* xref:sdk:sanitization.adoc[] — Complementary PII protection through input and output sanitization.
+* xref:sdk:agents/classifiers.adoc[]: classifiers score or label text, and a guardrail can consult one to reach a decision.
+* xref:concepts:governance-and-the-runtime.adoc[]: why governance runs in the runtime.
+* xref:sdk:sanitization.adoc[]: PII protection through input and output sanitization.
