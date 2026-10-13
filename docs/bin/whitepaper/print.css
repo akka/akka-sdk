@@ -138,3 +138,5 @@ article.doc, .doc{
 [class*="osano" i],[id*="osano" i],.cc-window,.cookie-banner,.banner,[role="dialog"]{ display:none !important; }
 
 img,svg,tr{ page-break-inside:avoid; }
+.doc .imageblock .mermaid.content{ width:100% !important; text-align:center; }
+.doc .imageblock .mermaid svg{ width:60% !important; max-width:none !important; height:auto !important; }
