@@ -538,7 +538,23 @@ public class SanitizerIntegrationTest extends TestKitSupport {
         .isInstanceOf(ExecutionException.class)
         .cause()
         .isInstanceOfSatisfying(
-            SanitizerException.class, e -> assertThat(e.getSanitizerName()).isEqualTo("failing"));
+            SanitizerException.class, e -> assertThat(e.getSanitizerName()).isEqualTo("failing"))
+        .hasMessage("Sanitizer [failing] failed")
+        .cause()
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("cannot mask: a failsanitizer here");
+  }
+
+  @Test
+  public void shouldFailByNameWithTheCauseWhenTheStageOfASanitizerFails() {
+    // the cause is the exception of the sanitizer, not the CompletionException around it
+    assertThatThrownBy(() -> getSanitizerClient().sanitize("failing", "a failasyncsanitizer here"))
+        .isInstanceOfSatisfying(
+            SanitizerException.class, e -> assertThat(e.getSanitizerName()).isEqualTo("failing"))
+        .hasMessage("Sanitizer [failing] failed")
+        .cause()
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("cannot mask: a failasyncsanitizer here");
   }
 
   @Test
