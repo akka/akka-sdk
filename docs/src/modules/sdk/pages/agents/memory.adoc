@@ -158,7 +158,7 @@ normalize whitespace, or truncate overly long input — without replacing the en
 
 `SessionMemoryInterceptor` is an interface with default identity implementations for `beforeWrite` overloads covering each top-level `SessionMessage` variant: user messages (text and multimodal), AI replies, and tool call responses. Each method receives the message about to be persisted and returns the (possibly transformed) message that will actually be written. You only need to override the overload(s) you care about; the others continue to pass the message through unchanged.
 
-To change the text of a tool response, use `ToolCallResponse.withText` or `MultimodalToolCallResponse.withContents`. These keep the `isError` flag of the original response. A tool response that you build with a constructor without an `isError` parameter is not an error result.
+To change the text of a tool response, use `ToolCallResponse.withText` or `MultimodalToolCallResponse.withContents`. When the original response is an error result, the SDK stores the returned response with the same id as an error result.
 
 [source,java,indent=0]
 ----

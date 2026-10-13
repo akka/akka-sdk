@@ -47,15 +47,43 @@ final class InterceptingSessionMemory(delegate: SessionMemory, interceptor: Sess
     case ai: SessionMessage.AiMessage =>
       requireNonNullResult(interceptor.beforeWrite(sessionId, ai), "AiMessage")
     case tcr: SessionMessage.ToolCallResponse =>
-      requireNonNullResult(interceptor.beforeWrite(sessionId, tcr), "ToolCallResponse")
+      keepError(tcr, requireNonNullResult(interceptor.beforeWrite(sessionId, tcr), "ToolCallResponse"))
     case mtcr: SessionMessage.MultimodalToolCallResponse =>
-      requireNonNullResult(interceptor.beforeWrite(sessionId, mtcr), "MultimodalToolCallResponse")
+      keepError(mtcr, requireNonNullResult(interceptor.beforeWrite(sessionId, mtcr), "MultimodalToolCallResponse"))
     // UserMessage and MultimodalUserMessage are never present in the messages list — the user
     // message is passed as a separate argument to addInteraction. These cases exist only to
     // satisfy exhaustiveness on the sealed SessionMessage interface; pass through unchanged.
     case um: SessionMessage.UserMessage            => um
     case mum: SessionMessage.MultimodalUserMessage => mum
   }
+
+  // A rewritten error result is still an error result, also when the interceptor built it with a
+  // constructor that sets isError to false.
+  private def keepError(original: SessionMessage.ToolCallResponse, result: SessionMessage.ToolCallResponse) =
+    if (original.isError && !result.isError && result.id == original.id)
+      new SessionMessage.ToolCallResponse(
+        result.timestamp,
+        result.componentId,
+        result.id,
+        result.name,
+        result.text,
+        result.sanitized,
+        true)
+    else result
+
+  private def keepError(
+      original: SessionMessage.MultimodalToolCallResponse,
+      result: SessionMessage.MultimodalToolCallResponse) =
+    if (original.isError && !result.isError && result.id == original.id)
+      new SessionMessage.MultimodalToolCallResponse(
+        result.timestamp,
+        result.componentId,
+        result.id,
+        result.name,
+        result.contents,
+        result.sanitized,
+        true)
+    else result
 
   private def requireNonNullResult[T <: SessionMessage](result: T, messageType: String): T = {
     if (result == null)
