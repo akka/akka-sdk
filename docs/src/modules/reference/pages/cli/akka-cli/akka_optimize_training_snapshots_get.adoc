@@ -9,12 +9,14 @@ Display one snapshot, by full ID or by an unambiguous prefix.
 The report covers where the snapshot came from, which artifact kinds it holds, the manifest digest identifying each kind's bytes, the engine that wrote them, and the model shape they were written for.
 A branch is checked against those values, so this is what a refused branch is read against.
 
+[source,shell]
 ----
 akka optimize training snapshots get SNAPSHOT [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Display a snapshot
   akka-optimize training snapshots get 3f2a9c71bd04
@@ -26,12 +28,14 @@ akka optimize training snapshots get SNAPSHOT [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for get
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

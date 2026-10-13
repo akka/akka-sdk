@@ -10,12 +10,14 @@ Examples where the grader cannot determine a verdict are marked as unscored rath
 
 Results are available while the evaluation is in progress.
 
+[source,shell]
 ----
 akka optimize training evaluations predictions EVALUATION [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Display the first 5 predictions
   akka-optimize training evaluations predictions 9c2e4b7a1d63f085 --limit 5
@@ -31,6 +33,7 @@ akka optimize training evaluations predictions EVALUATION [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help        help for predictions
       --limit int   Limit output to the specified number of examples
@@ -38,6 +41,7 @@ akka optimize training evaluations predictions EVALUATION [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

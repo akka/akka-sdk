@@ -14,18 +14,21 @@ It allows you to:
 
 The command will create a new directory with the selected sample in the current working directory.
 
+[source,shell]
 ----
 akka code init [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for init
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

@@ -12,12 +12,14 @@ You can annotate a run at any point during or after execution.
 The value of --config-name appears as the column header in "training workloads scores".
 If runs of the same configuration have different names, the most recently set name is used.
 
+[source,shell]
 ----
 akka optimize training runs annotate RUN [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Add a description to a run
   akka-optimize training runs annotate 7d496e82c3a15f04 --description "Baseline sweep"
@@ -28,6 +30,7 @@ akka optimize training runs annotate RUN [flags]
 
 == Options
 
+[source,text]
 ----
       --config-name string   Column header for this configuration in comparison tables. Pass an empty string to clear
       --description string   Description for the resource. Pass an empty string to clear
@@ -36,6 +39,7 @@ akka optimize training runs annotate RUN [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

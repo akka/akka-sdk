@@ -2,12 +2,14 @@
 
 The current document, or the one a revision names
 
+[source,shell]
 ----
 akka optimize rulesets get NAME [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help           help for get
       --revision int   a past revision to read
@@ -15,6 +17,7 @@ akka optimize rulesets get NAME [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

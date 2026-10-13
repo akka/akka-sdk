@@ -15,12 +15,14 @@ The client asks whether the digest is already present before uploading bytes.
 --alias points an alias at the returned version.
 The consumer owns modules, functions and scoring policy.
 
+[source,shell]
 ----
 akka optimize registry bundles register NS/NAME -f ZIP_OR_DIRECTORY [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Package a directory and register it
   akka-optimize registry bundles register spider/scoring -f ./scoring --alias candidate
@@ -31,6 +33,7 @@ akka optimize registry bundles register NS/NAME -f ZIP_OR_DIRECTORY [flags]
 
 == Options
 
+[source,text]
 ----
       --alias string   Point this alias at the registered version
   -f, --file string    Path to an exact ZIP or a directory to package
@@ -39,6 +42,7 @@ akka optimize registry bundles register NS/NAME -f ZIP_OR_DIRECTORY [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

@@ -14,12 +14,14 @@ Exits non-zero unless the verdict is READY_TO_SHIP, so it can gate CI or ship.
 
 Examples:   akka specify conform   akka specify conform --policy ./policy.yaml
 
+[source,shell]
 ----
 akka specify conform [directory] [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --dir string      project directory (default: current directory or positional arg)
   -h, --help            help for conform
@@ -28,6 +30,7 @@ akka specify conform [directory] [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

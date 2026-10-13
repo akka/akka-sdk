@@ -6,12 +6,14 @@ Display details for an evaluation
 
 Display the configuration, status, and summary score for an evaluation.
 
+[source,shell]
 ----
 akka optimize training evaluations get EVALUATION [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Display evaluation details
   akka-optimize training evaluations get 9c2e4b7a1d63f085
@@ -25,6 +27,7 @@ akka optimize training evaluations get EVALUATION [flags]
 
 == Options
 
+[source,text]
 ----
       --exit-status   Exit with a non-zero status if execution fails or is cancelled. Requires --follow
       --follow        Stream status updates until the evaluation finishes
@@ -33,6 +36,7 @@ akka optimize training evaluations get EVALUATION [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

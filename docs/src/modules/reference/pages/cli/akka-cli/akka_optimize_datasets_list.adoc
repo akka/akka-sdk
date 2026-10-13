@@ -6,12 +6,14 @@ List registered datasets
 
 List registered datasets ordered from newest to oldest.
 
+[source,shell]
 ----
 akka optimize datasets list [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # List all registered datasets
   akka-optimize datasets list
@@ -25,12 +27,14 @@ akka optimize datasets list [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for list
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

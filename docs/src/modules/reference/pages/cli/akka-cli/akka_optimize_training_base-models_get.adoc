@@ -16,12 +16,14 @@ GPU MEMORY PER GPU is the memory of each GPU.
 HOST MEMORY PER NODE is the memory of the node that holds those GPUs.
 A run outside every row is refused.
 
+[source,shell]
 ----
 akka optimize training base-models get BASE_MODEL [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Display an entry
   akka-optimize training base-models get Qwen/Qwen3-8B
@@ -32,12 +34,14 @@ akka optimize training base-models get BASE_MODEL [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for get
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

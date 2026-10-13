@@ -12,12 +12,14 @@ The conversation is not erased: it is the upstream identifier as text, on rows t
 
 A value the service holds no caller for is an answer and not an error, so it exits 0.
 
+[source,shell]
 ----
 akka optimize callers erase VALUE --basis BASIS [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --basis string   which source named the caller: declared, meaning the request carried the x-optimize-caller header, or forwarded, meaning a proxy reported the address
       --dry-run        report what the erasure would reach and write nothing
@@ -26,6 +28,7 @@ akka optimize callers erase VALUE --basis BASIS [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

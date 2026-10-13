@@ -9,12 +9,14 @@ Display the hyperparameters that decided a training run's arithmetic.
 The job writes this once at start: the run's settings, flattened, with a hash of them under "sha" so two runs over the same settings and the same data carry the same one whatever their ids are.
 Not found where the job has not written any yet.
 
+[source,shell]
 ----
 akka optimize training runs hparams RUN [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Display a run's hyperparameters
   akka-optimize training runs hparams 7d496e82c3a15f04
@@ -25,12 +27,14 @@ akka optimize training runs hparams RUN [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for hparams
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

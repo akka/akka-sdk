@@ -9,12 +9,14 @@ A resource already absent is skipped, so delete is safe to repeat.
 
 The key secret an endpoint names is deliberately left alone: keys are handed to clients, and destroying them is its own decision (`akka secrets delete`), not a side effect.
 
+[source,shell]
 ----
 akka models delete [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 akka models delete -f runner.yaml
 akka models delete -f runner.yaml --force
@@ -22,6 +24,7 @@ akka models delete -f runner.yaml --force
 
 == Options
 
+[source,text]
 ----
   -f, --file string      The descriptor file; stdin when omitted.
       --force            Delete without confirmation.
@@ -33,6 +36,7 @@ akka models delete -f runner.yaml --force
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

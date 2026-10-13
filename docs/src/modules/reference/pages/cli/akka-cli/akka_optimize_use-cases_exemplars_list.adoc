@@ -11,18 +11,21 @@ What a manifest froze is a separate read -- 'use-cases manifests get' -- because
 
 Each exemplar carries the identifier of the exchange it came from, which 'captures show' reads in full from the artifact on disk.
 
+[source,shell]
 ----
 akka optimize use-cases exemplars list ID|LABEL [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for list
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

@@ -14,12 +14,14 @@ They are owned out of band by whoever operates the gateway.
 Freezing does not route anything.
 Deploy the manifest to make it live.
 
+[source,shell]
 ----
 akka optimize use-cases freeze --as TAG --backend LABEL=BACKEND [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --as string             the tag to bind this manifest to (required, and bound once)
       --backend stringArray   LABEL=BACKEND, repeatable; one for every labelled use-case
@@ -28,6 +30,7 @@ akka optimize use-cases freeze --as TAG --backend LABEL=BACKEND [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

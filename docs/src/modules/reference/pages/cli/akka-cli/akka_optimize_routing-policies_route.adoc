@@ -3,12 +3,14 @@
 Set the shadow and canary dials;
 0 removes
 
+[source,shell]
 ----
 akka optimize routing-policies route MODEL --usecase X [--shadow N] [--canary N] [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --canary int       percent of traffic diverted to this model
   -h, --help             help for route
@@ -18,6 +20,7 @@ akka optimize routing-policies route MODEL --usecase X [--shadow N] [--canary N]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

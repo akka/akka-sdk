@@ -7,12 +7,14 @@ Attach a time-bound waiver to a still-active exit condition.
 [Incubating] A waiver is a modifier on a still-active condition: the condition stays visible with its unmet state, annotated with who/why/expiration.
 Waiving a locked floor condition requires the org WaiverPolicy to permit it (and, where required, an approver via --by).
 
+[source,shell]
 ----
 akka specify waive <condition-id> [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --by string       who authorized the waiver
       --dir string      project directory (default: current)
@@ -24,6 +26,7 @@ akka specify waive <condition-id> [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

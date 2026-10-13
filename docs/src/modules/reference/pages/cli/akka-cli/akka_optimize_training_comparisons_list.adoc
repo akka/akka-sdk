@@ -16,12 +16,14 @@ read it with "comparisons get".
 Nothing deletes a comparison, so a deployment that has made thousands would otherwise print all of them.
 --source lists one snapshot's comparisons whole.
 
+[source,shell]
 ----
 akka optimize training comparisons list [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # List the hundred newest comparisons
   akka-optimize training comparisons list
@@ -35,6 +37,7 @@ akka optimize training comparisons list [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help            help for list
       --limit int       How many comparisons to list, newest first; the service's default is 100
@@ -43,6 +46,7 @@ akka optimize training comparisons list [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

@@ -10,12 +10,14 @@ If no project name or id is supplied, the current project is displayed.
 
 TIP: Use `akka projects list` to confirm the project's _name_ or _id_.
 
+[source,shell]
 ----
 akka projects get PROJECT [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help             help for get
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
@@ -24,6 +26,7 @@ akka projects get PROJECT [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

@@ -9,12 +9,14 @@ Drop a selection, so the entry goes back to being allowed and not chosen.
 What was registered stays, because candidates trained over it name it as their parent.
 Work already queued behind the selection fails rather than waiting for weights nobody is fetching.
 
+[source,shell]
 ----
 akka optimize training base-models deselect BASE_MODEL [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Drop a selection
   akka-optimize training base-models deselect Qwen/Qwen3-8B
@@ -22,12 +24,14 @@ akka optimize training base-models deselect BASE_MODEL [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for deselect
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

@@ -18,12 +18,14 @@ An artifact kind with no holder is subject to the catalog's retention limits and
 
 Use "training snapshots get" to inspect one snapshot's manifests, producer, and model shape, and "training snapshots pin" to retain one the catalog would otherwise sweep.
 
+[source,shell]
 ----
 akka optimize training runs snapshots RUN [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # List the snapshots a run committed
   akka-optimize training runs snapshots 7d496e82c3a15f04
@@ -34,6 +36,7 @@ akka optimize training runs snapshots RUN [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help         help for snapshots
       --limit int    Maximum number of entries to return. The service defaults to 50 and allows at most 100
@@ -42,6 +45,7 @@ akka optimize training runs snapshots RUN [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

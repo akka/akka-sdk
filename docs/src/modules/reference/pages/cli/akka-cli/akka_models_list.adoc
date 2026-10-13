@@ -2,12 +2,14 @@
 
 List the project's models in the region.
 
+[source,shell]
 ----
 akka models list [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 akka models list
 akka models list --region aws-us-east-2 -o json
@@ -15,6 +17,7 @@ akka models list --region aws-us-east-2 -o json
 
 == Options
 
+[source,text]
 ----
   -h, --help             help for list
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
@@ -24,6 +27,7 @@ akka models list --region aws-us-east-2 -o json
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

@@ -10,6 +10,7 @@ For details on roles, see https://doc.akka.io/operations/projects/manage-project
 
 == Options
 
+[source,text]
 ----
   -h, --help             help for roles
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
@@ -18,6 +19,7 @@ For details on roles, see https://doc.akka.io/operations/projects/manage-project
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

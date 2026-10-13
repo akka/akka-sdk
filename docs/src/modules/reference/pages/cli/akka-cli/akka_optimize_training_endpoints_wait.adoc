@@ -17,12 +17,14 @@ The endpoint carries on coming up and keeps whatever devices it was granted, so 
 --timeout bounds the wait and leaves the endpoint alone when it expires.
 It defaults to the same deadline "endpoints create --wait" uses, and zero waits without one.
 
+[source,shell]
 ----
 akka optimize training endpoints wait ENDPOINT [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Wait for an endpoint to answer
   akka-optimize training endpoints wait 970076e8
@@ -36,6 +38,7 @@ akka optimize training endpoints wait ENDPOINT [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help               help for wait
       --timeout duration   Maximum time to wait for the endpoint; zero waits without a deadline (default 15m0s)
@@ -43,6 +46,7 @@ akka optimize training endpoints wait ENDPOINT [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

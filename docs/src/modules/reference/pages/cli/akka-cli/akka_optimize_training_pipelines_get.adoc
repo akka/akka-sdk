@@ -8,12 +8,14 @@ Display the status, outputs, and underlying training runs for each stage in a pi
 
 To monitor pipeline progress in real time, use "training pipelines wait".
 
+[source,shell]
 ----
 akka optimize training pipelines get PIPELINE [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Display pipeline status
   akka-optimize training pipelines get 3f9a21c4d08b7e56
@@ -25,12 +27,14 @@ akka optimize training pipelines get PIPELINE [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for get
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

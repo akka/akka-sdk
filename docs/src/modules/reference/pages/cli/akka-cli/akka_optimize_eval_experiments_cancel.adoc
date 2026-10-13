@@ -13,12 +13,14 @@ Its rate is over part of the dataset, and the gate answers a question about the 
 What is printed is where the run had reached when it was asked, not where it stopped.
 Read `get ID` for that.
 
+[source,shell]
 ----
 akka optimize eval experiments cancel ID [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   akka-optimize eval experiments cancel exp-ed745d2f
   akka-optimize eval experiments cancel exp-ed745d2f --force
@@ -26,12 +28,14 @@ akka optimize eval experiments cancel ID [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for cancel
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

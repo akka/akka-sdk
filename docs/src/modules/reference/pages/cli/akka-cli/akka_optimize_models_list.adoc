@@ -2,12 +2,14 @@
 
 List the portfolio
 
+[source,shell]
 ----
 akka optimize models list [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --alerting           only items with a breached condition
       --group-by string    stage or rejection
@@ -19,6 +21,7 @@ akka optimize models list [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

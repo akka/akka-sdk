@@ -17,12 +17,14 @@ That stream, not this command's text, is the contract a script should read.
 The experiment's whole record follows the terminal line once it is done, formatted like any other command's -o json output -- pretty-printed and not one line.
 Use -o json-compact, or read it with "jq -c .", if a script reads this command's stdout line by line.
 
+[source,shell]
 ----
 akka optimize eval experiments wait EXPERIMENT [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   akka-optimize eval experiments wait exp-ed745d2f
   akka-optimize eval experiments wait exp-ed745d2f --timeout 30m --exit-status
@@ -31,6 +33,7 @@ akka optimize eval experiments wait EXPERIMENT [flags]
 
 == Options
 
+[source,text]
 ----
       --exit-status        exit non-zero if it does not complete, or completes with a gate that did not hold
   -h, --help               help for wait
@@ -39,6 +42,7 @@ akka optimize eval experiments wait EXPERIMENT [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

@@ -8,12 +8,14 @@ The `akka organizations identity-providers add oauth` command adds a workload id
 
 On creation, Akka performs OpenID discovery against the supplied issuer and verifies that a valid JWKS keyset is reachable, returning an error if discovery fails or the keyset cannot be fetched.
 
+[source,shell]
 ----
 akka organizations identity-providers add oauth PROVIDER-ID [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --claim-mapping stringToString   Maps a JWT claim to a named attribute on the workload identity principal, in the form attribute=claim. May be specified multiple times. (default [])
   -h, --help                           help for oauth
@@ -24,6 +26,7 @@ akka organizations identity-providers add oauth PROVIDER-ID [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

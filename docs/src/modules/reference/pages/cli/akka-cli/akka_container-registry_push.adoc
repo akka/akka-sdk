@@ -14,12 +14,14 @@ If the current (or specified) Akka project is a multi-region project, the provid
 NOTE: You must have the source _image_ in your local Docker service image catalog for this command to function.
 If the image is not locally stored, you can pull it (via `docker pull _image_` first       before running this command.
 
+[source,shell]
 ----
 akka container-registry push IMAGE [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help             help for push
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
@@ -28,6 +30,7 @@ akka container-registry push IMAGE [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

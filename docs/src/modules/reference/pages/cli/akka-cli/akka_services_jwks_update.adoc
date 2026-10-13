@@ -9,12 +9,14 @@ The `akka service jwks update` command updates the configuration of a JWT keyset
 Identify the keyset to update using --issuer (matches by issuer field) or --index (1-based position from the list command).
 To change the source type, remove the existing keyset and add a new one.
 
+[source,shell]
 ----
 akka services jwks update [SERVICE] [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 > akka service jwks update my-service --issuer https://accounts.google.com --refresh-interval 30m
 > akka service jwks update my-service --index 2 --allowed-algorithms RS256,ES256
@@ -23,6 +25,7 @@ akka services jwks update [SERVICE] [flags]
 
 == Options
 
+[source,text]
 ----
       --allowed-algorithms stringArray   List of algorithms to allow (replaces existing list).
       --clear-allowed-algorithms         Remove all algorithm restrictions from the keyset.
@@ -43,6 +46,7 @@ akka services jwks update [SERVICE] [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

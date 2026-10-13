@@ -9,12 +9,14 @@ The history is every version it has pointed at, oldest first, with when it start
 
 'latest' has the history of the version list, since every registration moved it.
 
+[source,shell]
 ----
 akka optimize registry models alias get NS/NAME:ALIAS [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Read what an alias points at and what it pointed at before
   akka-optimize registry models alias get triage/classifier:serving
@@ -22,12 +24,14 @@ akka optimize registry models alias get NS/NAME:ALIAS [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for get
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

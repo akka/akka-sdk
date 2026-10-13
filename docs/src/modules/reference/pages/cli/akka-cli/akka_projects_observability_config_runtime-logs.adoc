@@ -9,12 +9,14 @@ The `akka project observability config runtime-logs` command configures which ru
 Runtime logs at or above the given minimum severity are exported alongside your application logs.
 Logs produced by your application are always exported, regardless of this setting.
 
+[source,shell]
 ----
 akka projects observability config runtime-logs [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --force-global          force an existing regional resource to be configured as a global resource
       --force-regional        force an existing global resource to be configured as a regional resource
@@ -27,6 +29,7 @@ akka projects observability config runtime-logs [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

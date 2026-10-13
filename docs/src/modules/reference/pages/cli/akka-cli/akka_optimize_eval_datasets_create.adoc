@@ -11,12 +11,14 @@ A bare items.jsonl, gzipped or not, carries cases alone and adds a version to a 
 
 The service reads the leading bytes rather than the file name, so a .zip that is really gzip, or the other way round, still imports.
 
+[source,shell]
 ----
 akka optimize eval datasets create -f FILE [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -f, --file string   the dataset to upload: a zip, an items.jsonl, or a gzipped one; - reads stdin
   -h, --help          help for create
@@ -25,6 +27,7 @@ akka optimize eval datasets create -f FILE [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

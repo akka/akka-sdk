@@ -12,12 +12,14 @@ Every kind the pin retains is released unless --kind specifies one.
 A snapshot that is not pinned is reported as such, rather than as a release that took place.
 Use "training snapshots release" for a reference left behind by a branch or a registration.
 
+[source,shell]
 ----
 akka optimize training snapshots unpin SNAPSHOT [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Allow a pinned checkpoint to be swept again
   akka-optimize training snapshots unpin 3f2a9c71bd04
@@ -25,6 +27,7 @@ akka optimize training snapshots unpin SNAPSHOT [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help          help for unpin
       --kind string   Artifact kind to act on, either weights or trainingState. Both kinds are covered by default
@@ -32,6 +35,7 @@ akka optimize training snapshots unpin SNAPSHOT [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

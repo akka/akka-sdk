@@ -6,12 +6,14 @@ Assign or update an alias name for a dataset
 
 Assign an alias name to an existing dataset hash, or reassign an existing name to a new dataset.
 
+[source,shell]
 ----
 akka optimize datasets name NAME DATASET [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Assign an alias name to a dataset hash
   akka-optimize datasets name commit-messages-train 4b1c2f9b2ae4
@@ -22,12 +24,14 @@ akka optimize datasets name NAME DATASET [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for name
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")
