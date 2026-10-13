@@ -148,7 +148,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
     "answer with a custom provider without calling the runtime" in {
       val spi = new FakeSpiClient(_ => Future.failed(new IllegalStateException("not expected")))
       val custom = new DecisionModelProvider.Custom {
-        override def judge(request: DecisionModelProvider.Request): Decision = {
+        override def decide(request: DecisionModelProvider.Request): Decision = {
           request.state shouldBe new Ticket("a", "b")
           new Decision("custom", Map[String, Answer]("urgent" -> new YesNoAnswer(0.3)).asJava)
         }
@@ -162,7 +162,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
       val spi = new FakeSpiClient(_ => Future.failed(new IllegalStateException("not expected")))
       val overrideProvider = new OverrideDecisionModelProvider
       overrideProvider.set(new DecisionModelProvider.Custom {
-        override def judge(request: DecisionModelProvider.Request): Decision =
+        override def decide(request: DecisionModelProvider.Request): Decision =
           new Decision("override", Map[String, Answer]("urgent" -> new YesNoAnswer(0.5)).asJava)
       })
       val decision = client(spi, overrideProvider = overrideProvider)
@@ -175,7 +175,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
 
     "fail when a custom provider does not answer every question" in {
       val custom = new DecisionModelProvider.Custom {
-        override def judge(request: DecisionModelProvider.Request): Decision =
+        override def decide(request: DecisionModelProvider.Request): Decision =
           new Decision("custom", Map[String, Answer]("urgent" -> new YesNoAnswer(0.3)).asJava)
       }
       val spi = new FakeSpiClient(_ => Future.failed(new IllegalStateException("not expected")))

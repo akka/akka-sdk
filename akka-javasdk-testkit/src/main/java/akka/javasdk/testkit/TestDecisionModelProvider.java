@@ -53,7 +53,7 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
   private final List<Rule> rules = new CopyOnWriteArrayList<>();
 
   @Override
-  public Decision judge(Request request) {
+  public Decision decide(Request request) {
     for (var rule : rules) {
       if (rule.predicate.test(request)) return rule.answer(request);
     }

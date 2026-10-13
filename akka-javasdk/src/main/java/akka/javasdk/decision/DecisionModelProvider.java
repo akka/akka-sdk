@@ -203,7 +203,7 @@ public sealed interface DecisionModelProvider
      * Answer the request. The returned decision must have an answer of the matching type for every
      * question, otherwise the client fails the request.
      */
-    Decision judge(Request request);
+    Decision decide(Request request);
   }
 
   /**

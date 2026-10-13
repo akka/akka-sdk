@@ -44,7 +44,7 @@ public class TestDecisionModelProviderTest {
         .score(SEVERITY, 1.25)
         .yesNo(URGENT, 0.9);
 
-    var decision = provider.judge(request("ticket", ROUTE, SEVERITY, URGENT));
+    var decision = provider.decide(request("ticket", ROUTE, SEVERITY, URGENT));
 
     assertThat(decision.model()).isEqualTo(TestDecisionModelProvider.MODEL_NAME);
     var route = decision.answer(ROUTE);
@@ -62,7 +62,7 @@ public class TestDecisionModelProviderTest {
   public void leaveOutAnswersForQuestionsNotAsked() {
     provider.always().choice(ROUTE, "billing").yesNo(URGENT, 0.1);
 
-    var decision = provider.judge(request("anything", URGENT));
+    var decision = provider.decide(request("anything", URGENT));
 
     assertThat(decision.answers()).containsOnlyKeys("urgent");
   }
@@ -74,9 +74,9 @@ public class TestDecisionModelProviderTest {
         .whenRequest(request -> request.state().toString().contains("today"))
         .yesNo(URGENT, 0.95);
 
-    assertThat(provider.judge(request("reply today", URGENT)).answer(URGENT).probability())
+    assertThat(provider.decide(request("reply today", URGENT)).answer(URGENT).probability())
         .isEqualTo(0.95);
-    assertThat(provider.judge(request("no rush", URGENT)).answer(URGENT).probability())
+    assertThat(provider.decide(request("no rush", URGENT)).answer(URGENT).probability())
         .isEqualTo(0.1);
   }
 
@@ -84,7 +84,7 @@ public class TestDecisionModelProviderTest {
   public void failWhenNoRuleMatches() {
     provider.whenState("ticket").yesNo(URGENT, 0.5);
 
-    assertThatThrownBy(() -> provider.judge(request("other", URGENT)))
+    assertThatThrownBy(() -> provider.decide(request("other", URGENT)))
         .isInstanceOf(TestDecisionModelProvider.MissingDecisionResponseException.class)
         .hasMessageContaining("[urgent]");
   }
@@ -93,7 +93,7 @@ public class TestDecisionModelProviderTest {
   public void failWhenTheRuleDoesNotAnswerAQuestion() {
     provider.whenState("ticket").yesNo(URGENT, 0.5);
 
-    assertThatThrownBy(() -> provider.judge(request("ticket", URGENT, ROUTE)))
+    assertThatThrownBy(() -> provider.decide(request("ticket", URGENT, ROUTE)))
         .isInstanceOf(TestDecisionModelProvider.MissingDecisionResponseException.class)
         .hasMessageContaining("[route]");
   }
@@ -102,7 +102,7 @@ public class TestDecisionModelProviderTest {
   public void failWithTheGivenException() {
     provider.whenState("ticket").failWith(new IllegalStateException("model down"));
 
-    assertThatThrownBy(() -> provider.judge(request("ticket", URGENT)))
+    assertThatThrownBy(() -> provider.decide(request("ticket", URGENT)))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("model down");
   }
@@ -122,7 +122,7 @@ public class TestDecisionModelProviderTest {
     provider.always().yesNo(URGENT, 0.5);
     provider.reset();
 
-    assertThatThrownBy(() -> provider.judge(request("ticket", URGENT)))
+    assertThatThrownBy(() -> provider.decide(request("ticket", URGENT)))
         .isInstanceOf(TestDecisionModelProvider.MissingDecisionResponseException.class);
   }
 }

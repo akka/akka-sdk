@@ -207,7 +207,7 @@ private[javasdk] final class DecisionModelClientImpl(
       overrideProvider.get.orElse(provider).getOrElse(DecisionModelProvider.fromConfig()) match {
         case p: DecisionModelProvider.Custom =>
           val request = new DecisionModelProvider.Request(state, questions.asJava)
-          Future(checkDecision(p.judge(request), questions))
+          Future(checkDecision(p.decide(request), questions))
         case p: DecisionModelProvider.SystemOne => judgeWithRuntime(p, state, questions)
         case p: DecisionModelProvider.FromConfig =>
           judgeWithRuntime(providerFromConfig(config, p.configPath), state, questions)
