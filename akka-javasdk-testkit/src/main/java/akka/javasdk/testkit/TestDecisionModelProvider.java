@@ -4,13 +4,13 @@
 
 package akka.javasdk.testkit;
 
-import akka.javasdk.judgment.Answer;
-import akka.javasdk.judgment.ChoiceAnswer;
-import akka.javasdk.judgment.Judgment;
-import akka.javasdk.judgment.JudgmentModelProvider;
-import akka.javasdk.judgment.Question;
-import akka.javasdk.judgment.ScoreAnswer;
-import akka.javasdk.judgment.YesNoAnswer;
+import akka.javasdk.decision.Answer;
+import akka.javasdk.decision.ChoiceAnswer;
+import akka.javasdk.decision.Decision;
+import akka.javasdk.decision.DecisionModelProvider;
+import akka.javasdk.decision.Question;
+import akka.javasdk.decision.ScoreAnswer;
+import akka.javasdk.decision.YesNoAnswer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -22,12 +22,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 
 /**
- * A {@link JudgmentModelProvider} for tests that answers judgment requests without a model.
- * Register it with {@link TestKit.Settings#withJudgmentModelProvider(JudgmentModelProvider)} and
+ * A {@link DecisionModelProvider} for tests that answers decision requests without a model.
+ * Register it with {@link TestKit.Settings#withDecisionModelProvider(DecisionModelProvider)} and
  * define the answers per state.
  *
  * <pre>{@code
- * testJudgmentModel
+ * testDecisionModel
  *     .whenState(ticket)
  *     .choice(ROUTE, "billing")
  *     .score(SEVERITY, 2)
@@ -36,16 +36,16 @@ import java.util.function.Predicate;
  *
  * <p>The most recently added rule that matches the request answers it. A request that matches no
  * rule, or asks a question that the matching rule does not answer, fails with {@link
- * MissingJudgmentResponseException}.
+ * MissingDecisionResponseException}.
  */
-public final class TestJudgmentModelProvider implements JudgmentModelProvider.Custom {
+public final class TestDecisionModelProvider implements DecisionModelProvider.Custom {
 
-  /** The model name in every judgment from this provider. */
-  public static final String MODEL_NAME = "test-judgment-model";
+  /** The model name in every decision from this provider. */
+  public static final String MODEL_NAME = "test-decision-model";
 
   /** Thrown when no rule answers a request. */
-  public static class MissingJudgmentResponseException extends RuntimeException {
-    public MissingJudgmentResponseException(String message) {
+  public static class MissingDecisionResponseException extends RuntimeException {
+    public MissingDecisionResponseException(String message) {
       super(message);
     }
   }
@@ -53,12 +53,12 @@ public final class TestJudgmentModelProvider implements JudgmentModelProvider.Cu
   private final List<Rule> rules = new CopyOnWriteArrayList<>();
 
   @Override
-  public Judgment judge(Request request) {
+  public Decision judge(Request request) {
     for (var rule : rules) {
       if (rule.predicate.test(request)) return rule.answer(request);
     }
-    throw new MissingJudgmentResponseException(
-        "No judgment configured for a request of type ["
+    throw new MissingDecisionResponseException(
+        "No decision configured for a request of type ["
             + request.state().getClass().getName()
             + "] with questions "
             + request.questions().stream().map(Question::key).toList());
@@ -89,7 +89,7 @@ public final class TestJudgmentModelProvider implements JudgmentModelProvider.Cu
 
   /**
    * The answers to the requests that match one predicate. Add an answer per question. Answers for
-   * questions that the request does not ask are left out of the judgment.
+   * questions that the request does not ask are left out of the decision.
    */
   public static final class Rule {
     private final Predicate<Request> predicate;
@@ -163,7 +163,7 @@ public final class TestJudgmentModelProvider implements JudgmentModelProvider.Cu
       this.failure = Objects.requireNonNull(error, "error");
     }
 
-    private Judgment answer(Request request) {
+    private Decision answer(Request request) {
       if (failure != null) throw failure;
       var result = new LinkedHashMap<String, Answer>();
       var missing = new ArrayList<String>();
@@ -173,9 +173,9 @@ public final class TestJudgmentModelProvider implements JudgmentModelProvider.Cu
         else result.put(question.key(), answer);
       }
       if (!missing.isEmpty())
-        throw new MissingJudgmentResponseException(
+        throw new MissingDecisionResponseException(
             "The matching rule has no answer for questions " + missing);
-      return new Judgment(MODEL_NAME, result);
+      return new Decision(MODEL_NAME, result);
     }
   }
 }

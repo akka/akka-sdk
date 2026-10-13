@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.impl.judgment
+package akka.javasdk.impl.decision
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -15,11 +15,11 @@ import akka.javasdk.agent.ModelException
 import akka.javasdk.agent.ModelTimeoutException
 import akka.javasdk.agent.RateLimitException
 import akka.javasdk.impl.serialization.JsonSerializer
-import akka.javasdk.judgment.Answer
-import akka.javasdk.judgment.Judgment
-import akka.javasdk.judgment.JudgmentModelProvider
-import akka.javasdk.judgment.Question
-import akka.javasdk.judgment.YesNoAnswer
+import akka.javasdk.decision.Answer
+import akka.javasdk.decision.Decision
+import akka.javasdk.decision.DecisionModelProvider
+import akka.javasdk.decision.Question
+import akka.javasdk.decision.YesNoAnswer
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiJudgment
 import akka.runtime.sdk.spi.SpiJudgmentClient
@@ -31,7 +31,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.Span
 import org.scalatest.wordspec.AnyWordSpec
 
-object JudgmentClientImplSpec {
+object DecisionModelClientImplSpec {
 
   final class FakeSpiClient(respond: SpiJudgment.Request => Future[SpiJudgment.Response]) extends SpiJudgmentClient {
     @volatile var provider: SpiJudgment.ModelProvider = _
@@ -48,20 +48,20 @@ object JudgmentClientImplSpec {
   }
 
   val config: Config = ConfigFactory.load(ConfigFactory.parseString("""
-    akka.javasdk.judgment {
+    akka.javasdk.decision {
       model-provider = system-one
       system-one {
         api-key = "test-key"
         model-name = "jev-1"
       }
-      other = ${akka.javasdk.judgment.system-one}
+      other = ${akka.javasdk.decision.system-one}
       other.model-name = "jev-2"
     }
     """))
 }
 
-class JudgmentClientImplSpec extends AnyWordSpec with Matchers with ScalaFutures {
-  import JudgmentClientImplSpec._
+class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFutures {
+  import DecisionModelClientImplSpec._
 
   implicit override val patienceConfig: PatienceConfig = PatienceConfig(timeout = Span.convertDurationToSpan(3.seconds))
   private implicit val ec: ExecutionContext = ExecutionContext.global
@@ -83,11 +83,11 @@ class JudgmentClientImplSpec extends AnyWordSpec with Matchers with ScalaFutures
 
   private def client(
       spi: SpiJudgmentClient,
-      config: Config = JudgmentClientImplSpec.config,
-      overrideProvider: OverrideJudgmentModelProvider = new OverrideJudgmentModelProvider) =
-    new JudgmentClientImpl(spi, new JsonSerializer, config, overrideProvider, None, None)
+      config: Config = DecisionModelClientImplSpec.config,
+      overrideProvider: OverrideDecisionModelProvider = new OverrideDecisionModelProvider) =
+    new DecisionModelClientImpl(spi, new JsonSerializer, config, overrideProvider, None, None)
 
-  "The judgment client" should {
+  "The decision model client" should {
 
     "send the state as JSON and the questions to the configured provider" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
@@ -119,25 +119,25 @@ class JudgmentClientImplSpec extends AnyWordSpec with Matchers with ScalaFutures
 
     "return the answers as typed answers" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
-      val judgment = client(spi).state("ticket").questions(route, severity, urgent).invoke()
+      val decision = client(spi).state("ticket").questions(route, severity, urgent).invoke()
 
-      judgment.model shouldBe "jev-1-2026"
-      val routeAnswer = judgment.answer(route)
+      decision.model shouldBe "jev-1-2026"
+      val routeAnswer = decision.answer(route)
       routeAnswer.selected shouldBe "technical"
       routeAnswer.confidence shouldBe 0.6
       routeAnswer.probabilities.asScala shouldBe Map("billing" -> 0.2, "technical" -> 0.8)
-      judgment.answer(severity).value shouldBe 1.5
-      judgment.answer(severity).probabilities.asScala.map(_.doubleValue) shouldBe Seq(0.1, 0.3, 0.6)
-      judgment.answer(urgent).probability shouldBe 0.9
+      decision.answer(severity).value shouldBe 1.5
+      decision.answer(severity).probabilities.asScala.map(_.doubleValue) shouldBe Seq(0.1, 0.3, 0.6)
+      decision.answer(urgent).probability shouldBe 0.9
     }
 
     "use the provider given to the client" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
-      client(spi).model(JudgmentModelProvider.fromConfig("other")).state("t").questions(urgent).invoke()
+      client(spi).model(DecisionModelProvider.fromConfig("other")).state("t").questions(urgent).invoke()
       spi.provider.modelName shouldBe "jev-2"
 
       client(spi)
-        .model(JudgmentModelProvider.systemOne().withModelName("jev-3").withBaseUrl("http://localhost:9999"))
+        .model(DecisionModelProvider.systemOne().withModelName("jev-3").withBaseUrl("http://localhost:9999"))
         .state("t")
         .questions(urgent)
         .invoke()
@@ -147,36 +147,36 @@ class JudgmentClientImplSpec extends AnyWordSpec with Matchers with ScalaFutures
 
     "answer with a custom provider without calling the runtime" in {
       val spi = new FakeSpiClient(_ => Future.failed(new IllegalStateException("not expected")))
-      val custom = new JudgmentModelProvider.Custom {
-        override def judge(request: JudgmentModelProvider.Request): Judgment = {
+      val custom = new DecisionModelProvider.Custom {
+        override def judge(request: DecisionModelProvider.Request): Decision = {
           request.state shouldBe new Ticket("a", "b")
-          new Judgment("custom", Map[String, Answer]("urgent" -> new YesNoAnswer(0.3)).asJava)
+          new Decision("custom", Map[String, Answer]("urgent" -> new YesNoAnswer(0.3)).asJava)
         }
       }
-      val judgment = client(spi).model(custom).state(new Ticket("a", "b")).questions(urgent).invoke()
-      judgment.answer(urgent).probability shouldBe 0.3
+      val decision = client(spi).model(custom).state(new Ticket("a", "b")).questions(urgent).invoke()
+      decision.answer(urgent).probability shouldBe 0.3
       spi.request shouldBe null
     }
 
     "use the test override before any other provider" in {
       val spi = new FakeSpiClient(_ => Future.failed(new IllegalStateException("not expected")))
-      val overrideProvider = new OverrideJudgmentModelProvider
-      overrideProvider.set(new JudgmentModelProvider.Custom {
-        override def judge(request: JudgmentModelProvider.Request): Judgment =
-          new Judgment("override", Map[String, Answer]("urgent" -> new YesNoAnswer(0.5)).asJava)
+      val overrideProvider = new OverrideDecisionModelProvider
+      overrideProvider.set(new DecisionModelProvider.Custom {
+        override def judge(request: DecisionModelProvider.Request): Decision =
+          new Decision("override", Map[String, Answer]("urgent" -> new YesNoAnswer(0.5)).asJava)
       })
-      val judgment = client(spi, overrideProvider = overrideProvider)
-        .model(JudgmentModelProvider.systemOne().withModelName("jev-3"))
+      val decision = client(spi, overrideProvider = overrideProvider)
+        .model(DecisionModelProvider.systemOne().withModelName("jev-3"))
         .state("t")
         .questions(urgent)
         .invoke()
-      judgment.model shouldBe "override"
+      decision.model shouldBe "override"
     }
 
     "fail when a custom provider does not answer every question" in {
-      val custom = new JudgmentModelProvider.Custom {
-        override def judge(request: JudgmentModelProvider.Request): Judgment =
-          new Judgment("custom", Map[String, Answer]("urgent" -> new YesNoAnswer(0.3)).asJava)
+      val custom = new DecisionModelProvider.Custom {
+        override def judge(request: DecisionModelProvider.Request): Decision =
+          new Decision("custom", Map[String, Answer]("urgent" -> new YesNoAnswer(0.3)).asJava)
       }
       val spi = new FakeSpiClient(_ => Future.failed(new IllegalStateException("not expected")))
       val e = intercept[ModelException](client(spi).model(custom).state("t").questions(urgent, route).invoke())
@@ -206,34 +206,34 @@ class JudgmentClientImplSpec extends AnyWordSpec with Matchers with ScalaFutures
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
       val e = intercept[IllegalArgumentException](
         client(spi, config = ConfigFactory.load()).state("t").questions(urgent).invoke())
-      e.getMessage should include("akka.javasdk.judgment.model-provider")
+      e.getMessage should include("akka.javasdk.decision.model-provider")
     }
 
     "fail when the provider has no model name" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
       val e = intercept[IllegalArgumentException](
-        client(spi).model(JudgmentModelProvider.systemOne()).state("t").questions(urgent).invoke())
+        client(spi).model(DecisionModelProvider.systemOne()).state("t").questions(urgent).invoke())
       e.getMessage should include("model name")
     }
 
     "fail for an undefined provider configuration" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
       val e = intercept[IllegalArgumentException](
-        client(spi).model(JudgmentModelProvider.fromConfig("missing")).state("t").questions(urgent).invoke())
-      e.getMessage should include("Undefined judgment model provider configuration [missing]")
+        client(spi).model(DecisionModelProvider.fromConfig("missing")).state("t").questions(urgent).invoke())
+      e.getMessage should include("Undefined decision model provider configuration [missing]")
     }
   }
 
   "The SystemOne provider" should {
     "load defaults from config" in {
       val p =
-        JudgmentModelProvider.SystemOne.fromConfig(ConfigFactory.load().getConfig("akka.javasdk.judgment.system-one"))
+        DecisionModelProvider.SystemOne.fromConfig(ConfigFactory.load().getConfig("akka.javasdk.decision.system-one"))
       p.modelName shouldBe ""
       p.baseUrl shouldBe "https://api.typesafe.ai"
       p.connectionTimeout shouldBe java.time.Duration.ofSeconds(15)
       p.responseTimeout shouldBe java.time.Duration.ofSeconds(30)
       p.maxRetries shouldBe 2
-      p shouldBe JudgmentModelProvider.systemOne()
+      p shouldBe DecisionModelProvider.systemOne()
     }
   }
 }

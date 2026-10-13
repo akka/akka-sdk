@@ -2,16 +2,16 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akkajavasdk.components.judgment;
+package akkajavasdk.components.decision;
 
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
-import akka.javasdk.judgment.ChoiceAnswer;
-import akka.javasdk.judgment.JudgmentClient;
-import akka.javasdk.judgment.Question;
-import akka.javasdk.judgment.ScoreAnswer;
-import akka.javasdk.judgment.YesNoAnswer;
+import akka.javasdk.decision.ChoiceAnswer;
+import akka.javasdk.decision.DecisionModelClient;
+import akka.javasdk.decision.Question;
+import akka.javasdk.decision.ScoreAnswer;
+import akka.javasdk.decision.YesNoAnswer;
 
 @HttpEndpoint("/triage")
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
@@ -42,19 +42,19 @@ public class TriageEndpoint {
           .whenNo("There is no deadline requirement")
           .build("urgent");
 
-  private final JudgmentClient judgmentClient;
+  private final DecisionModelClient decisionModelClient;
 
-  public TriageEndpoint(JudgmentClient judgmentClient) {
-    this.judgmentClient = judgmentClient;
+  public TriageEndpoint(DecisionModelClient decisionModelClient) {
+    this.decisionModelClient = decisionModelClient;
   }
 
   @Post
   public TriageResult triage(Ticket ticket) {
-    var judgment = judgmentClient.state(ticket).questions(ROUTE, SEVERITY, URGENT).invoke();
+    var decision = decisionModelClient.state(ticket).questions(ROUTE, SEVERITY, URGENT).invoke();
     return new TriageResult(
-        judgment.answer(ROUTE).selected(),
-        judgment.answer(SEVERITY).value(),
-        judgment.answer(URGENT).probability(),
-        judgment.model());
+        decision.answer(ROUTE).selected(),
+        decision.answer(SEVERITY).value(),
+        decision.answer(URGENT).probability(),
+        decision.model());
   }
 }

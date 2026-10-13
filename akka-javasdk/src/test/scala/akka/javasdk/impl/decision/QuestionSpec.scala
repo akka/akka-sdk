@@ -2,18 +2,18 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.impl.judgment
+package akka.javasdk.impl.decision
 
 import java.util.Optional
 
 import scala.jdk.CollectionConverters._
 
-import akka.javasdk.judgment.Answer
-import akka.javasdk.judgment.ChoiceAnswer
-import akka.javasdk.judgment.Judgment
-import akka.javasdk.judgment.Question
-import akka.javasdk.judgment.ScoreAnswer
-import akka.javasdk.judgment.YesNoAnswer
+import akka.javasdk.decision.Answer
+import akka.javasdk.decision.ChoiceAnswer
+import akka.javasdk.decision.Decision
+import akka.javasdk.decision.Question
+import akka.javasdk.decision.ScoreAnswer
+import akka.javasdk.decision.YesNoAnswer
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -128,32 +128,32 @@ class QuestionSpec extends AnyWordSpec with Matchers {
     }
   }
 
-  "A judgment" should {
+  "A decision" should {
     val choice =
       new ChoiceAnswer("billing", 0.9, Map[String, java.lang.Double]("billing" -> 0.95, "technical" -> 0.05).asJava)
     val score = new ScoreAnswer(1.4, 0.7, List[java.lang.Double](0.1, 0.4, 0.5).asJava)
     val yesNo = new YesNoAnswer(0.8)
-    val judgment =
-      new Judgment("jev-1", Map[String, Answer]("route" -> choice, "severity" -> score, "urgent" -> yesNo).asJava)
+    val decision =
+      new Decision("jev-1", Map[String, Answer]("route" -> choice, "severity" -> score, "urgent" -> yesNo).asJava)
 
     "return the typed answer for each question" in {
-      val routeAnswer: ChoiceAnswer = judgment.answer(route)
+      val routeAnswer: ChoiceAnswer = decision.answer(route)
       routeAnswer.selected shouldBe "billing"
-      val severityAnswer: ScoreAnswer = judgment.answer(severity)
+      val severityAnswer: ScoreAnswer = decision.answer(severity)
       severityAnswer.value shouldBe 1.4
-      val urgentAnswer: YesNoAnswer = judgment.answer(urgent)
+      val urgentAnswer: YesNoAnswer = decision.answer(urgent)
       urgentAnswer.probability shouldBe 0.8
     }
 
     "fail for a question it has no answer for" in {
       val other = Question.yesNo("Other?").build("other")
-      val e = intercept[IllegalArgumentException](judgment.answer(other))
+      val e = intercept[IllegalArgumentException](decision.answer(other))
       e.getMessage should include("No answer for question [other]")
     }
 
     "fail when the answer has another type than the question" in {
       val sameKey = Question.yesNo("Route?").build("route")
-      val e = intercept[IllegalArgumentException](judgment.answer(sameKey))
+      val e = intercept[IllegalArgumentException](decision.answer(sameKey))
       e.getMessage should include("[ChoiceAnswer]")
     }
   }

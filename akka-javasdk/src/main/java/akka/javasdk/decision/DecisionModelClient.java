@@ -2,26 +2,26 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.judgment;
+package akka.javasdk.decision;
 
 import akka.annotation.DoNotInherit;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Asks a judgment model a set of questions about a state. A judgment model answers each question
+ * Asks a decision model a set of questions about a state. A decision model answers each question
  * with probabilities instead of generated text.
  *
  * <p>Inject this client into endpoints, agents, workflows, consumers, timed actions and the service
  * setup.
  *
  * <pre>{@code
- * Judgment judgment =
- *     judgmentClient.state(ticket).questions(ROUTE, SEVERITY).invoke();
- * ChoiceAnswer route = judgment.answer(ROUTE);
+ * Decision decision =
+ *     decisionModelClient.state(ticket).questions(ROUTE, SEVERITY).invoke();
+ * ChoiceAnswer route = decision.answer(ROUTE);
  * }</pre>
  *
- * <p>The client uses the provider configured in {@code akka.javasdk.judgment.model-provider} unless
- * you choose one with {@link #model(JudgmentModelProvider)}.
+ * <p>The client uses the provider configured in {@code akka.javasdk.decision.model-provider} unless
+ * you choose one with {@link #model(DecisionModelProvider)}.
  *
  * <p>A failed call fails with {@link akka.javasdk.agent.ModelException}, {@link
  * akka.javasdk.agent.RateLimitException}, {@link akka.javasdk.agent.ModelTimeoutException} or
@@ -30,10 +30,10 @@ import java.util.concurrent.CompletionStage;
  * <p>Not for user extension.
  */
 @DoNotInherit
-public interface JudgmentClient {
+public interface DecisionModelClient {
 
   /** A client that sends its requests to the given provider. */
-  JudgmentClient model(JudgmentModelProvider provider);
+  DecisionModelClient model(DecisionModelProvider provider);
 
   /**
    * Start a request about the given state. A {@code String} is sent as text. Any other object is
@@ -58,10 +58,10 @@ public interface JudgmentClient {
   @DoNotInherit
   interface Request {
 
-    /** Send the request and wait for the judgment. */
-    Judgment invoke();
+    /** Send the request and wait for the decision. */
+    Decision invoke();
 
     /** Send the request. */
-    CompletionStage<Judgment> invokeAsync();
+    CompletionStage<Decision> invokeAsync();
   }
 }

@@ -7,16 +7,16 @@ package akka.javasdk.testkit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import akka.javasdk.judgment.ChoiceAnswer;
-import akka.javasdk.judgment.JudgmentModelProvider;
-import akka.javasdk.judgment.Question;
-import akka.javasdk.judgment.ScoreAnswer;
-import akka.javasdk.judgment.YesNoAnswer;
+import akka.javasdk.decision.ChoiceAnswer;
+import akka.javasdk.decision.DecisionModelProvider;
+import akka.javasdk.decision.Question;
+import akka.javasdk.decision.ScoreAnswer;
+import akka.javasdk.decision.YesNoAnswer;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-public class TestJudgmentModelProviderTest {
+public class TestDecisionModelProviderTest {
 
   private static final Question<ChoiceAnswer> ROUTE =
       Question.choice("Which team?")
@@ -30,10 +30,10 @@ public class TestJudgmentModelProviderTest {
 
   private static final Question<YesNoAnswer> URGENT = Question.yesNo("Urgent?").build("urgent");
 
-  private final TestJudgmentModelProvider provider = new TestJudgmentModelProvider();
+  private final TestDecisionModelProvider provider = new TestDecisionModelProvider();
 
-  private static JudgmentModelProvider.Request request(Object state, Question<?>... questions) {
-    return new JudgmentModelProvider.Request(state, List.of(questions));
+  private static DecisionModelProvider.Request request(Object state, Question<?>... questions) {
+    return new DecisionModelProvider.Request(state, List.of(questions));
   }
 
   @Test
@@ -44,27 +44,27 @@ public class TestJudgmentModelProviderTest {
         .score(SEVERITY, 1.25)
         .yesNo(URGENT, 0.9);
 
-    var judgment = provider.judge(request("ticket", ROUTE, SEVERITY, URGENT));
+    var decision = provider.judge(request("ticket", ROUTE, SEVERITY, URGENT));
 
-    assertThat(judgment.model()).isEqualTo(TestJudgmentModelProvider.MODEL_NAME);
-    var route = judgment.answer(ROUTE);
+    assertThat(decision.model()).isEqualTo(TestDecisionModelProvider.MODEL_NAME);
+    var route = decision.answer(ROUTE);
     assertThat(route.selected()).isEqualTo("technical");
     assertThat(route.probabilities())
         .containsExactly(
             Map.entry("billing", 0.0), Map.entry("technical", 1.0), Map.entry("sales", 0.0));
-    var severity = judgment.answer(SEVERITY);
+    var severity = decision.answer(SEVERITY);
     assertThat(severity.value()).isEqualTo(1.25);
     assertThat(severity.probabilities()).containsExactly(0.0, 0.75, 0.25);
-    assertThat(judgment.answer(URGENT).probability()).isEqualTo(0.9);
+    assertThat(decision.answer(URGENT).probability()).isEqualTo(0.9);
   }
 
   @Test
   public void leaveOutAnswersForQuestionsNotAsked() {
     provider.always().choice(ROUTE, "billing").yesNo(URGENT, 0.1);
 
-    var judgment = provider.judge(request("anything", URGENT));
+    var decision = provider.judge(request("anything", URGENT));
 
-    assertThat(judgment.answers()).containsOnlyKeys("urgent");
+    assertThat(decision.answers()).containsOnlyKeys("urgent");
   }
 
   @Test
@@ -85,7 +85,7 @@ public class TestJudgmentModelProviderTest {
     provider.whenState("ticket").yesNo(URGENT, 0.5);
 
     assertThatThrownBy(() -> provider.judge(request("other", URGENT)))
-        .isInstanceOf(TestJudgmentModelProvider.MissingJudgmentResponseException.class)
+        .isInstanceOf(TestDecisionModelProvider.MissingDecisionResponseException.class)
         .hasMessageContaining("[urgent]");
   }
 
@@ -94,7 +94,7 @@ public class TestJudgmentModelProviderTest {
     provider.whenState("ticket").yesNo(URGENT, 0.5);
 
     assertThatThrownBy(() -> provider.judge(request("ticket", URGENT, ROUTE)))
-        .isInstanceOf(TestJudgmentModelProvider.MissingJudgmentResponseException.class)
+        .isInstanceOf(TestDecisionModelProvider.MissingDecisionResponseException.class)
         .hasMessageContaining("[route]");
   }
 
@@ -123,6 +123,6 @@ public class TestJudgmentModelProviderTest {
     provider.reset();
 
     assertThatThrownBy(() -> provider.judge(request("ticket", URGENT)))
-        .isInstanceOf(TestJudgmentModelProvider.MissingJudgmentResponseException.class);
+        .isInstanceOf(TestDecisionModelProvider.MissingDecisionResponseException.class);
   }
 }

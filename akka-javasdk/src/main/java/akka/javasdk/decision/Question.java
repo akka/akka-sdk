@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.judgment;
+package akka.javasdk.decision;
 
 import java.util.HashSet;
 import java.util.List;
@@ -10,8 +10,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * A question for a judgment model, see {@link JudgmentClient}. The type parameter is the type of
- * the answer.
+ * A question for a decision model, see {@link DecisionModelClient}. The type parameter is the type
+ * of the answer.
  *
  * <p>Create a question with {@link #choice(String)}, {@link #score(String)} or {@link
  * #yesNo(String)}. A question is immutable. To ask a variant of an existing question, pass it to

@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.judgment;
+package akka.javasdk.decision;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -10,16 +10,16 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * The answers of a judgment model to the questions of one request, see {@link JudgmentClient}. Read
- * each answer with {@link #answer(Question)}.
+ * The answers of a decision model to the questions of one request, see {@link DecisionModelClient}.
+ * Read each answer with {@link #answer(Question)}.
  *
  * @param model the model version that answered. Log it with the answers, because the thresholds you
  *     compare answers against depend on the model version.
  * @param answers the answer per question key
  */
-public record Judgment(String model, Map<String, Answer> answers) {
+public record Decision(String model, Map<String, Answer> answers) {
 
-  public Judgment {
+  public Decision {
     Objects.requireNonNull(model, "model");
     answers =
         Collections.unmodifiableMap(

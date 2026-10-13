@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.judgment;
+package akka.javasdk.decision;
 
 /**
  * The answer to a {@link Question.YesNo}. Compare the probability with a threshold that fits the

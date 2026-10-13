@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.judgment;
+package akka.javasdk.decision;
 
 import akka.http.javadsl.model.HttpHeader;
 import akka.http.javadsl.model.headers.RawHeader;
@@ -12,26 +12,26 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * The judgment model that answers the questions of a {@link JudgmentClient} request.
+ * The decision model that answers the questions of a {@link DecisionModelClient} request.
  *
- * <p>A {@link JudgmentClient} uses the provider configured in {@code
- * akka.javasdk.judgment.model-provider} unless you pass one to {@link
- * JudgmentClient#model(JudgmentModelProvider)}.
+ * <p>A {@link DecisionModelClient} uses the provider configured in {@code
+ * akka.javasdk.decision.model-provider} unless you pass one to {@link
+ * DecisionModelClient#model(DecisionModelProvider)}.
  */
-public sealed interface JudgmentModelProvider
-    permits JudgmentModelProvider.FromConfig,
-        JudgmentModelProvider.SystemOne,
-        JudgmentModelProvider.Custom {
+public sealed interface DecisionModelProvider
+    permits DecisionModelProvider.FromConfig,
+        DecisionModelProvider.SystemOne,
+        DecisionModelProvider.Custom {
 
-  /** The provider configured in {@code akka.javasdk.judgment.model-provider}. */
+  /** The provider configured in {@code akka.javasdk.decision.model-provider}. */
   static FromConfig fromConfig() {
     return fromConfig("");
   }
 
   /**
    * The provider defined at a configuration path. A name without dots resolves under {@code
-   * akka.javasdk.judgment}, so {@code fromConfig("system-one")} reads {@code
-   * akka.javasdk.judgment.system-one}.
+   * akka.javasdk.decision}, so {@code fromConfig("system-one")} reads {@code
+   * akka.javasdk.decision.system-one}.
    */
   static FromConfig fromConfig(String configPath) {
     return new FromConfig(configPath);
@@ -41,16 +41,16 @@ public sealed interface JudgmentModelProvider
    * A provider defined in configuration.
    *
    * @param configPath the configuration path, empty for {@code
-   *     akka.javasdk.judgment.model-provider}
+   *     akka.javasdk.decision.model-provider}
    */
-  record FromConfig(String configPath) implements JudgmentModelProvider {
+  record FromConfig(String configPath) implements DecisionModelProvider {
     public FromConfig {
       Objects.requireNonNull(configPath, "configPath");
     }
   }
 
   /**
-   * A SystemOne provider with the defaults of {@code akka.javasdk.judgment.system-one}. Set the API
+   * A SystemOne provider with the defaults of {@code akka.javasdk.decision.system-one}. Set the API
    * key and the model name.
    */
   static SystemOne systemOne() {
@@ -85,7 +85,7 @@ public sealed interface JudgmentModelProvider
       Duration responseTimeout,
       int maxRetries,
       List<HttpHeader> additionalModelRequestHeaders)
-      implements JudgmentModelProvider {
+      implements DecisionModelProvider {
 
     public SystemOne {
       Objects.requireNonNull(apiKey, "apiKey");
@@ -197,19 +197,19 @@ public sealed interface JudgmentModelProvider
    * A provider that answers in the service process instead of calling a model, for example a mock
    * in tests.
    */
-  non-sealed interface Custom extends JudgmentModelProvider {
+  non-sealed interface Custom extends DecisionModelProvider {
 
     /**
-     * Answer the request. The returned judgment must have an answer of the matching type for every
+     * Answer the request. The returned decision must have an answer of the matching type for every
      * question, otherwise the client fails the request.
      */
-    Judgment judge(Request request);
+    Decision judge(Request request);
   }
 
   /**
    * A request as given to a {@link Custom} provider.
    *
-   * @param state the state as passed to {@link JudgmentClient#state(Object)}
+   * @param state the state as passed to {@link DecisionModelClient#state(Object)}
    * @param questions the questions in request order
    */
   record Request(Object state, List<Question<?>> questions) {
