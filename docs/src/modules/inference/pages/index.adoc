@@ -1,4 +1,5 @@
 = Inference
+:page-aliases: inference:serving/index.adoc
 :page-summary: Inference is the execution of a trained AI model on an input to produce an output.
 :page-persona: builder-developer, builder-ai-ml
 :page-banner: inference
@@ -39,11 +40,42 @@ The number of calls per request influences four characteristics of the system:
 
 When other inference calls are used to judge the first inferences, this number can scale out exponentially.
 
-== In this section
+[#serving]
+== Serving models
 
-* xref:inference:serving/getting-started.adoc[*Serving your first model*]: A tutorial that deploys a model in an Akka region and calls it.
-* xref:inference:serving/index.adoc[*Serving models*]: Running a model on hardware in your project and exposing it on a hostname clients can call.
-* xref:inference:routing/index.adoc[*Routing requests to models*]: Deciding which model provider serves a request.
+Serving a model means running it on hardware in your project and exposing it on a hostname that OpenAI-compatible clients can call. Akka runs the model, allocates the hardware it needs, and provisions a TLS certificate for the hostname.
+
+You describe what you want to run in a model descriptor, a YAML file that declares three kinds of resource. Applying that file is what creates them.
+
+[cols="1,3", options="header"]
+|===
+| Resource
+| What it declares
+
+| `AcceleratorAllocation`
+| A number of devices that your project claims from one of the region's accelerator pools.
+
+| `Model`
+| One checkpoint, the engine that serves it, and the allocated device it runs on.
+
+| `ModelEndpoint`
+| The models that one endpoint serves, and the secret that holds its API keys.
+|===
+
+Applying a descriptor writes these in dependency order, so nothing refers to a resource that does not exist yet: allocations, then models, then endpoints. See xref:reference:descriptors/model-descriptor.adoc[Model descriptor] for every field of every resource.
+
+A model descriptor does not hold secrets or routes. Create the secrets that the models need, such as the token for gated weights and the endpoint's API keys, with `akka secrets` and `akka models endpoints keys`. A project route puts an endpoint on a hostname.
+
+xref:inference:serving/getting-started.adoc[Serving your first model] is a tutorial that does all of this in one pass. These pages describe each step in detail:
+
+* xref:inference:serving/allocating-hardware.adoc[*Allocating hardware to models*]: The accelerator pools that your region offers, and claiming devices from one.
+* xref:inference:serving/deploying-models.adoc[*Deploying models*]: Declaring a model, applying the descriptor, waiting for the model to become ready, and removing it.
+* xref:inference:serving/exposing-and-calling-models.adoc[*Exposing and calling models*]: Putting the model behind a URL, authorizing clients with API keys, and sending the first request.
+
+[#routing]
+== Routing requests to models
+
+Serving decides what runs. xref:inference:routing.adoc[Routing requests to models] decides which of several providers answers a given request, from rules you declare or from the meaning of the request. A model you serve yourself is one destination a route can name. The two are independent: a served model is reachable on its own hostname whether or not any route names it.
 
 include::partial$aao-inference-notice.adoc[]
 

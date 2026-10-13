@@ -112,19 +112,11 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 ## Inference
 
 - [Inference](https://doc.akka.io/inference/index.html.md): Running AI models, and how an inference call differs from a function call
-- [Serving models](https://doc.akka.io/inference/serving/index.html.md): Running a model on hardware in your project and exposing it on a hostname
-- [Reviewing available hardware](https://doc.akka.io/inference/serving/reviewing-hardware.html.md): The accelerator pools a region offers
-- [Allocating hardware to models](https://doc.akka.io/inference/serving/allocating-hardware.html.md): Claiming whole devices from a pool with an accelerator allocation
-- [Deploying models](https://doc.akka.io/inference/serving/deploying-models.html.md): Declaring a model, tuning the engine, and applying the descriptor
-- [Exposing models on a hostname](https://doc.akka.io/inference/serving/exposing-models.html.md): Model endpoints, project routes, and choosing between models with the model field
-- [Issuing API keys](https://doc.akka.io/inference/serving/issuing-api-keys.html.md): Per-client keys on an endpoint, and rotating them without a cutover
-- [Calling a deployed model](https://doc.akka.io/inference/serving/calling-a-model.html.md): The OpenAI-compatible endpoint and tool calling
-- [Removing deployments](https://doc.akka.io/inference/serving/removing-deployments.html.md): Tearing down what a descriptor created in dependency order
-- [Routing requests to models](https://doc.akka.io/inference/routing/index.html.md): The AI Gateway Router pipeline and its two stages
-- [Routing on request attributes](https://doc.akka.io/inference/routing/request-attributes.html.md): Matching declared rules against protocol, model, headers, and prompt text
-- [Routing on request meaning](https://doc.akka.io/inference/routing/request-meaning.html.md): Matching a request against use cases discovered in live traffic
-- [Defining use cases](https://doc.akka.io/inference/routing/defining-use-cases.html.md): How the router clusters requests into use cases, and how those differ from tools
-- [Routing use cases](https://doc.akka.io/inference/routing/routing-use-cases.html.md): Working sets, manifests, and connecting a use case to a backend
+- [Serving your first model](https://doc.akka.io/inference/serving/getting-started.html.md): A tutorial that deploys a model in an Akka region and calls it
+- [Allocating hardware to models](https://doc.akka.io/inference/serving/allocating-hardware.html.md): The accelerator pools a region offers, and claiming whole devices from a pool
+- [Deploying models](https://doc.akka.io/inference/serving/deploying-models.html.md): Declaring a model, tuning the engine, applying the descriptor, and removing what it created
+- [Exposing and calling models](https://doc.akka.io/inference/serving/exposing-and-calling-models.html.md): Model endpoints, project routes, per-client API keys, and calling the OpenAI-compatible endpoint
+- [Routing requests to models](https://doc.akka.io/inference/routing.html.md): Routing on request attributes and on request meaning, use cases, manifests, and shifting traffic
 
 ## Reference
 

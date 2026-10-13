@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-The model descriptor is the YAML applied by `akka models apply` to a project's region. It declares the accelerator allocations that the project claims, the models that run on them, and the endpoints that serve those models. See xref:inference:serving/index.adoc[Serving models] for the tasks these resources support.
+The model descriptor is the YAML applied by `akka models apply` to a project's region. It declares the accelerator allocations that the project claims, the models that run on them, and the endpoints that serve those models. See xref:inference:index.adoc#serving[Serving models] for the tasks these resources support.
 
 To check a descriptor against the region without persisting anything, add `--dry-run`:
 
@@ -311,12 +311,12 @@ spec:
 
 == Resources that belong elsewhere
 
-Accelerator pools cannot be created from a descriptor. They are regional inventory. See xref:inference:serving/reviewing-hardware.adoc[Reviewing available hardware].
+Accelerator pools cannot be created from a descriptor. They are regional inventory. See xref:inference:serving/allocating-hardware.adoc#_reviewing_the_available_pools[Reviewing available hardware].
 
 include::inference:partial$aao-inference-notice.adoc[]
 
 == See also
 
-* xref:inference:serving/index.adoc[Serving models]
+* xref:inference:index.adoc#serving[Serving models]
 * xref:reference:cli/models.adoc[Model commands]
 * xref:reference:descriptors/index.adoc[Descriptors]

@@ -6,7 +6,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-The `akka models` commands deploy models in Akka's inference regions and serve them through the gateway. The `akka optimize models` commands record which models an organization sanctions. See xref:inference:serving/index.adoc[Serving models] for the tasks these commands support, and xref:reference:descriptors/model-descriptor.adoc[Model descriptor] for the file they apply.
+The `akka models` commands deploy models in Akka's inference regions and serve them through the gateway. The `akka optimize models` commands record which models an organization sanctions. See xref:inference:index.adoc#serving[Serving models] for the tasks these commands support, and xref:reference:descriptors/model-descriptor.adoc[Model descriptor] for the file they apply.
 
 Every command supports `--help`. Most support `-o json` for output consumed by another program, and `--region` to act on a region other than the project's primary region. The singular alias `model` is accepted.
 
@@ -196,7 +196,7 @@ include::inference:partial$aao-inference-notice.adoc[]
 
 == See also
 
-* xref:inference:serving/index.adoc[Serving models]
+* xref:inference:index.adoc#serving[Serving models]
 * xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
 * xref:reference:cli/routing.adoc[Routing commands]
 * xref:reference:cli/cost-and-traffic.adoc[Cost and traffic commands]
