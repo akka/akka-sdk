@@ -14,7 +14,7 @@
 ** xref:cli/akka-cli/index.adoc[CLI commands]
 *** xref:cli/conventions.adoc[]
 *** xref:cli/command-map.adoc[]
-*** xref:cli/akka-cli/akka.adoc[]
+*** xref:cli/akka-cli/akka.adoc[akka (global flags)]
 *** Platform commands
 **** xref:cli/akka-cli/akka_auth.adoc[]
 **** xref:cli/akka-cli/akka_config.adoc[]

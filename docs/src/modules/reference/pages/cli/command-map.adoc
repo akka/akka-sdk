@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Every `akka` command group has a reference page that lists its commands and flags. This map names the group, what it acts on, and where its tasks are described. For the flags and behavior that the groups share, see xref:reference:cli/conventions.adoc[].
+The xref:reference:cli/akka-cli/akka.adoc[akka] page lists the flags every command accepts and every command group. Each group has a reference page that lists its commands and flags. This map names the group, what it acts on, and where its tasks are described. For the flags and behavior that the groups share, see xref:reference:cli/conventions.adoc[].
 
 == Platform commands
 

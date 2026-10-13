@@ -8,6 +8,8 @@ The `akka` commands share the flags and behavior on this page. Every command ans
 [#global-flags]
 == Flags for every command
 
+The xref:reference:cli/akka-cli/akka.adoc[akka] page lists these flags as the CLI generates them, along with every command group.
+
 [cols="2,3", options="header"]
 |===
 | Flag | Description
