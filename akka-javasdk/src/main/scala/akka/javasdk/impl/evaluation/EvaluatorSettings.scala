@@ -32,6 +32,7 @@ import com.typesafe.config.ConfigObject
 private[impl] object EvaluatorSettings {
 
   private val EvaluatorsPath = "akka.javasdk.evaluation.evaluators"
+  private val DefaultsPath = "akka.javasdk.evaluation.defaults"
   private val EvaluatorDefaultsPath = "akka.javasdk.evaluation.defaults.evaluator"
   private val AgentDefaultsPath = "akka.javasdk.evaluation.defaults.agent"
   private val SamplingRatioKey = "sampling-ratio"
@@ -45,6 +46,15 @@ private[impl] object EvaluatorSettings {
 
   private def configAt(config: Config, path: String): Config =
     if (config.hasPath(path)) config.getConfig(path) else ConfigFactory.empty()
+
+  // the SDK reads defaults only from `evaluator` and `agent`, so a key directly under `defaults` would be lost
+  private def checkDefaults(config: Config): Unit = {
+    val misplaced = configAt(config, DefaultsPath).root().keySet().asScala.toSeq.diff(Seq("agent", "evaluator")).sorted
+    if (misplaced.nonEmpty)
+      throw new IllegalArgumentException(
+        s"Evaluator defaults [$DefaultsPath] must define only [agent] and [evaluator], " +
+        s"but defines [${misplaced.mkString(", ")}]")
+  }
 
   /** The `sampling-ratio` of the given config, where `entry` names the config for the error. */
   private def samplingRatio(config: Config, entry: String): Double = {
@@ -76,6 +86,7 @@ private[impl] object EvaluatorSettings {
       config: Config,
       evaluatorComponentId: String,
       agentRoles: Map[String, Option[String]]): Seq[SpiEvaluator.Binding] = {
+    checkDefaults(config)
     val evaluators = configAt(config, EvaluatorsPath)
     val evaluatorDefaults = configAt(config, EvaluatorDefaultsPath)
     val agentDefaults = configAt(config, AgentDefaultsPath)
@@ -127,9 +138,11 @@ private[impl] object EvaluatorSettings {
    * even when the evaluator is disabled.
    *
    * @throws IllegalArgumentException
-   *   if `control-id` is in a binding of the evaluator or under `akka.javasdk.evaluation.defaults`
+   *   if `control-id` is in a binding of the evaluator or under `akka.javasdk.evaluation.defaults`, or if
+   *   `akka.javasdk.evaluation.defaults` defines a key other than `agent` and `evaluator`
    */
   def controlId(config: Config, evaluatorComponentId: String): Option[String] = {
+    checkDefaults(config)
     val entry = s"Evaluator [$evaluatorComponentId]"
     val evaluator = configAt(config, EvaluatorsPath).root().asScala.get(evaluatorComponentId).collect {
       case evaluator: ConfigObject => evaluator.toConfig

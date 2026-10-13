@@ -382,6 +382,20 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
         }
       }
     }
+
+    Seq("sampling-ratio" -> "0.1", "trigger-on-failure" -> "true", "enabled" -> "false").foreach { case (key, value) =>
+      s"reject $key directly in akka.javasdk.evaluation.defaults" in {
+        val config = load(s"""
+          akka.javasdk.evaluation.defaults.$key = $value
+          akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+          """)
+        intercept[IllegalArgumentException] {
+          EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles)
+        }.getMessage shouldBe
+        "Evaluator defaults [akka.javasdk.evaluation.defaults] must define only [agent] and [evaluator], " +
+        s"but defines [$key]"
+      }
+    }
   }
 
   "Evaluator control id" should {
@@ -466,6 +480,18 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
         }.getMessage shouldBe
         s"Evaluator [conversation-quality] must define [control-id] on the evaluator, not in [$path]"
       }
+    }
+
+    "reject a control id directly in akka.javasdk.evaluation.defaults" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.control-id = "AI-EV-01"
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+        """)
+      intercept[IllegalArgumentException] {
+        EvaluatorSettings.controlId(config, "conversation-quality")
+      }.getMessage shouldBe
+      "Evaluator defaults [akka.javasdk.evaluation.defaults] must define only [agent] and [evaluator], " +
+      "but defines [control-id]"
     }
 
     "be handed to the runtime with the bindings, on the descriptor of an evaluator and of a durable evaluator" in {
