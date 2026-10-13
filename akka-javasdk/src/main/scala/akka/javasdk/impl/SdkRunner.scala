@@ -215,6 +215,11 @@ object SdkRunner {
   @nowarn("msg=deprecated")
   def extractSpiSettings(applicationConf: Config): SpiSettings = {
     val eventSourcedEntitySnapshotEvery = applicationConf.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
+
+    if (applicationConf.hasPath("akka.javasdk.event-sourced-entity.cleanup-deleted-after"))
+      throw new IllegalArgumentException(
+        "The setting `akka.javasdk.event-sourced-entity.cleanup-deleted-after` is renamed to " +
+        "`akka.javasdk.entity.cleanup-deleted-after`. Change the name in your configuration and keep the value.")
     val cleanupDeletedEntityAfter =
       applicationConf.getDuration("akka.javasdk.entity.cleanup-deleted-after")
 

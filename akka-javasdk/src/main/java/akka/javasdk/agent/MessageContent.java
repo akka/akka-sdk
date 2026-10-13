@@ -5,7 +5,6 @@
 package akka.javasdk.agent;
 
 import akka.javasdk.objectstorage.ObjectStorage;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Optional;
@@ -155,41 +154,6 @@ public sealed interface MessageContent {
      */
     public ImageUrlMessageContent(URI uri, ImageMessageContent.DetailLevel detailLevel) {
       this(uri, detailLevel, Optional.empty());
-    }
-
-    /**
-     * @deprecated Use {@link #ImageUrlMessageContent(URI, ImageMessageContent.DetailLevel,
-     *     Optional)} instead.
-     */
-    @Deprecated(forRemoval = true, since = "3.5.19")
-    public ImageUrlMessageContent(
-        URL url, ImageMessageContent.DetailLevel detailLevel, Optional<String> mimeType) {
-      this(URI.create(url.toString()), detailLevel, mimeType);
-    }
-
-    /**
-     * @deprecated Use {@link #ImageUrlMessageContent(URI, ImageMessageContent.DetailLevel)}
-     *     instead.
-     */
-    @Deprecated(forRemoval = true, since = "3.5.19")
-    public ImageUrlMessageContent(URL url, ImageMessageContent.DetailLevel detailLevel) {
-      this(URI.create(url.toString()), detailLevel, Optional.empty());
-    }
-
-    /**
-     * Returns the URI as a {@link URL} for backwards compatibility.
-     *
-     * @deprecated Use {@link #uri()} instead.
-     * @throws RuntimeException if the URI cannot be converted to a URL (e.g. for {@code object://}
-     *     URIs)
-     */
-    @Deprecated(forRemoval = true, since = "3.5.19")
-    public URL url() {
-      try {
-        return uri.toURL();
-      } catch (MalformedURLException e) {
-        throw new RuntimeException("Cannot convert URI to URL: " + uri, e);
-      }
     }
   }
 
@@ -341,30 +305,6 @@ public sealed interface MessageContent {
      */
     public static PdfUrlMessageContent create(ObjectStorage bucket, String key) {
       return new PdfUrlMessageContent(URI.create("object://" + bucket.bucketName() + "/" + key));
-    }
-
-    /**
-     * @deprecated Use {@link #PdfUrlMessageContent(URI)} instead.
-     */
-    @Deprecated(forRemoval = true, since = "3.5.19")
-    public PdfUrlMessageContent(URL url) {
-      this(URI.create(url.toString()));
-    }
-
-    /**
-     * Returns the URI as a {@link URL} for backwards compatibility.
-     *
-     * @deprecated Use {@link #uri()} instead.
-     * @throws RuntimeException if the URI cannot be converted to a URL (e.g. for {@code object://}
-     *     URIs)
-     */
-    @Deprecated(forRemoval = true, since = "3.5.19")
-    public URL url() {
-      try {
-        return uri.toURL();
-      } catch (MalformedURLException e) {
-        throw new RuntimeException("Cannot convert URI to URL: " + uri, e);
-      }
     }
   }
 

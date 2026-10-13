@@ -33,7 +33,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ImageProcess
 ----
 <1> Create a `UserMessage` with multiple content elements
 <2> Add text content using `TextMessageContent.from()`
-<3> Add image content using `ImageMessageContent.fromUrl()`
+<3> Add image content using `ImageMessageContent.fromUri()`
 
 NOTE: Not all AI models support vision or PDF capabilities. Ensure your configured model provider supports the input types before using multimodal messages.
 

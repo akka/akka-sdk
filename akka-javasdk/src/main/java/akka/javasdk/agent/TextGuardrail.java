@@ -17,7 +17,7 @@ package akka.javasdk.agent;
  *     AgentResponseGuardrail} instead. The new interfaces return a {@link Decision} ({@code Allow}
  *     / {@code Deny} / {@code Fail}) and receive a per-call context.
  */
-@Deprecated(since = "3.6.0", forRemoval = true)
+@Deprecated(since = "3.7.0", forRemoval = true)
 @SuppressWarnings("removal")
 public non-sealed interface TextGuardrail extends Guardrail {
 
