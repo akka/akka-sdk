@@ -7,7 +7,7 @@ The Akka CLI ships an MCP server that exposes Akka's build, test, deploy, spec-d
 NOTE: Use this page for harnesses whose MCP config is not a project file the Akka CLI can write. `akka specify init --agent <name>` writes `AGENTS.md` for AGENTS.md-native harnesses (Warp, Jules, Zed, Copilot coding agent, Codex) but leaves MCP registration to you — the register step below completes the setup. Also applies to any harness with no CLI profile at all (Aider, Sourcegraph Cody, Claude.ai chat).
 
 .Prerequisites
-* The Akka CLI on `PATH` (xref:operations:cli/installation.adoc[Install the Akka CLI]).
+* The Akka CLI on `PATH` (xref:getting-started:install-cli.adoc[Install the Akka CLI]).
 * An `AGENTS.md` file at the project root — `akka specify init` (with no `--agent` flag) writes one.
 
 Every snippet below registers the same command: `akka mcp serve` running on stdio, with no extra environment. If a config file at the target path already exists, merge the Akka entry into the existing `mcpServers` (or equivalent) object rather than overwriting.

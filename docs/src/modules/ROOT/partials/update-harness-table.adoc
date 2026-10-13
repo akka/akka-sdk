@@ -36,6 +36,6 @@ codex plugin marketplace upgrade ai-marketplace
 Cursor, VS Code + Copilot::
 +
 --
-Cursor and VS Code + Copilot use the Akka CLI directly over MCP, with no plugin marketplace to update. Update the Akka CLI itself to get the latest version; see xref:operations:cli/installation.adoc[Install the Akka CLI] for the upgrade command on your platform.
+Cursor and VS Code + Copilot use the Akka CLI directly over MCP, with no plugin marketplace to update. Update the Akka CLI itself to get the latest version; see xref:getting-started:install-cli.adoc[Install the Akka CLI] for the upgrade command on your platform.
 --
 ====

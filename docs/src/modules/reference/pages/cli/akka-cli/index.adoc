@@ -8,7 +8,7 @@ Instead, you might want to modify file "cli-index-header.template.txt"
 ////
 = CLI command reference
 
-The `akka` command line tool enables you to interact with your Akka projects and services using the command line. See xref:operations:cli/installation.adoc[] for information on how to download `akka`. Use xref:reference:cli/akka-cli/akka_version.adoc[`akka version`] to check the version.
+The `akka` command line tool enables you to interact with your Akka projects and services using the command line. See xref:getting-started:install-cli.adoc[] for information on how to download `akka`. Use xref:reference:cli/akka-cli/akka_version.adoc[`akka version`] to check the version.
 
 The following sections list xref:reference:cli/akka-cli/akka.adoc[akka] commands and their options.
 
@@ -36,7 +36,7 @@ The xref:reference:cli/akka-cli/akka_auth.adoc[] command offers these options:
 * xref:reference:cli/akka-cli/akka_auth_use-token.adoc[akka auth use-token]
 
 == Enable auto-completion for your shell
-The xref:reference:cli/akka-cli/akka_completion.adoc[akka completion] command generates auto-completion configuration for common shells. See xref:operations:cli/command-completion.adoc[Enable command completion] for more information.
+The xref:reference:cli/akka-cli/akka_completion.adoc[akka completion] command generates auto-completion configuration for common shells. See xref:getting-started:install-cli.adoc#command-completion[Enable command completion] for more information.
 
 == Use your AI assistant to implement an Akka Service from a specification
 The 'akka specify' commands set up Akka projects for AI-assisted development. Use 'akka specify init' to create a new project with all the resources needed for AI coding agents, including slash commands, templates, and MCP configuration.

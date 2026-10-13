@@ -1,5 +1,5 @@
 = Install the Akka CLI
-:page-aliases: reference:cli/installation.adoc
+:page-aliases: operations:cli/installation.adoc, reference:cli/installation.adoc, getting-started:quick-install-cli.adoc, operations:cli/command-completion.adoc, reference:cli/command-completion.adoc
 
 include::ROOT:partial$include.adoc[]
 
@@ -127,8 +127,128 @@ Verify that the Akka CLI has been installed successfully by running the followin
 akka help
 ----
 
+[#log-in]
+== Log in
+
+Before using the `akka` CLI, you must authenticate with your Akka account. To initiate the login process, run:
+
+[source, shell]
+----
+akka auth login
+----
+
+This command opens the Akka console login screen in your default web browser. The CLI will display `Waiting for UI login...` while you authenticate. Once authorization is complete, the CLI returns to the command prompt.
+
+Upon successful authentication:
+
+* If you have one project, it is automatically set as the `current` project.
+* If no projects exist, you will need to create one and set it manually.
+* If you have multiple projects, you will need to specify the target project manually (see below).
+
+To set your current project:
+[source, shell]
+----
+akka config set project my-project
+----
+
+For more authentication options:
+[source, shell]
+----
+akka auth -h
+----
+You can also refer to the xref:reference:cli/akka-cli/akka_auth.adoc[auth] page.
+
+[#behind-a-proxy]
+== Behind a corporate proxy
+
+In corporate environments with HTTP proxy servers that do not support HTTP/2, you may encounter issues since the `akka` CLI uses gRPC. To bypass these limitations, you can configure the CLI to use grpc-web, which works over HTTP/1.1 and HTTP/2.
+
+Log in with grpc-web enabled:
+[source, shell]
+----
+akka auth login --use-grpc-web
+----
+
+If you are already logged in but need to switch to grpc-web, configure it with:
+[source, shell]
+----
+akka config set api-server-use-grpc-web true
+----
+
+[#command-completion]
+== Enable command completion
+
+Completion allows you to hit [TAB] on a partially entered `akka` command and have the shell complete the command, subcommand or flag for you.
+
+[.tabset]
+bash::
+To load completion in the current bash shell run:
++
+[source,bash]
+----
+source <(akka completion)
+----
++
+Configure bash to load `akka` completions for each session by adding the following line to your `~/.bashrc` or `~/.profile` file:
++
+[source,bash]
+----
+# add to ~/.bashrc or ~/.profile
+source <(akka completion)
+----
++
+[TIP]
+====
+Using bash completions with `akka` requires you have bash completions enabled to begin with.
+Enable it in your `~/.bashrc` or `~/.profile` file with the following lines:
+
+[source,bash]
+----
+if [ -f /etc/bash_completion ]; then
+  source /etc/bash_completion
+fi
+----
+For definitive details on setting up your shell with auto-completion, see the shell documentation.
+====
+
+zsh (e.g. macOS)::
+To set up `zsh` shell completion run:
++
+[source,zsh]
+----
+akka completion zsh > "${fpath[1]}/_akka"
+compinit
+----
++
+[NOTE]
+====
+If shell completion is not already enabled in your environment execute the following:
+
+[source,zsh]
+----
+echo "autoload -U compinit; compinit" >> ~/.zshrc
+----
+====
+
+fish::
+To set up fish shell completion run:
++
+[source,fish]
+----
+akka completion fish > ~/.config/fish/completions/akka.fish
+source ~/.config/fish/completions/akka.fish
+----
+
+PowerShell::
+To set up shell completion for PowerShell run:
++
+[source,powershell]
+----
+akka completion powershell | Out-String | Invoke-Expression
+----
+
 == Related documentation
 
-- xref:cli/using-cli.adoc[]
-- xref:cli/command-completion.adoc[]
+- xref:operations:cli/using-cli.adoc[]
+- xref:operations:cli/system-config.adoc[]
 - xref:reference:cli/akka-cli/index.adoc[]

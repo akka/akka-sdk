@@ -6,7 +6,7 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 You have built and tried the service locally, it is time to run it on the Akka Agentic Platform without having to change any code.
 
-. If you have not already done so, xref:operations:cli/installation.adoc[install the Akka CLI].
+. If you have not already done so, xref:getting-started:install-cli.adoc[install the Akka CLI].
 
 . Authenticate the CLI with your Akka account:
 +

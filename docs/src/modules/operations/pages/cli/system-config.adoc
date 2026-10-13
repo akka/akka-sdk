@@ -154,5 +154,5 @@ Verify your YAML syntax is correct if you see this warning.
 
 == Related documentation
 
-- xref:cli/installation.adoc[]
+- xref:getting-started:install-cli.adoc[]
 - xref:cli/using-cli.adoc[]

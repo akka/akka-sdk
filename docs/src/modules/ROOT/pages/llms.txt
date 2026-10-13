@@ -105,7 +105,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Deploy a service](https://doc.akka.io/operations/services/deploy-service.html): Deploying to Akka
 - [Observability](https://doc.akka.io/operations/observability-and-monitoring/index.html.md): Metrics, logs, traces, OTEL export
 - [Secrets management](https://doc.akka.io/operations/projects/secrets.html.md): Built-in secrets with Azure KeyVault integration
-- [CLI installation](https://doc.akka.io/operations/cli/installation.html.md): Install the Akka CLI
+- [CLI installation](https://doc.akka.io/getting-started/install-cli.html.md): Install the Akka CLI
 - [CI/CD integration](https://doc.akka.io/operations/integrating-cicd/index.html.md): GitHub Actions and other CI/CD tools
 
 ## Inference
@@ -182,7 +182,6 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [View metrics](https://doc.akka.io/operations/observability-and-monitoring/metrics.html.md): Monitoring performance metrics for Akka services
 - [Exporting metrics, logs, and traces](https://doc.akka.io/operations/observability-and-monitoring/observability-exports.html.md): Sending observability data to external monitoring systems
 - [Using the Akka CLI](https://doc.akka.io/operations/cli/using-cli.html.md): Guide to the Akka Command Line Interface for managing services
-- [Enable CLI command completion](https://doc.akka.io/operations/cli/command-completion.html.md): Setting up command completion for the Akka CLI
 - [Configure message brokers](https://doc.akka.io/operations/projects/message-brokers.html.md): Setting up and configuring message brokers for Akka services
 - [Using Aiven for Apache Kafka](https://doc.akka.io/operations/projects/broker-aiven.html.md): Integrating Aiven-hosted Kafka with Akka services
 - [Using Confluent Cloud as Kafka service](https://doc.akka.io/operations/projects/broker-confluent.html.md): Setting up Confluent Cloud Kafka for use with Akka services

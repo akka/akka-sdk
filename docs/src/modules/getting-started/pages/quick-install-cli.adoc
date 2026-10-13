@@ -1,3 +1,0 @@
-= Install the Akka CLI
-
-include::ROOT:partial$cli-install-short.adoc[]

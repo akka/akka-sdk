@@ -25,4 +25,4 @@ It performs the following:
 
 * xref:sdk:spec-driven-development.adoc[]
 * xref:reference:specify/index.adoc[]
-* xref:operations:cli/installation.adoc[]
+* xref:getting-started:install-cli.adoc[]
