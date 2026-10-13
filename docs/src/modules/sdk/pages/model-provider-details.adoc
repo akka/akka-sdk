@@ -680,7 +680,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`Mode
 
 | thinking-budget
 | Integer
-| Tokens to spend on thinking for Gemini 2.5 models (0 to disable thinking). Must be 0 for Gemini 3 models
+| Tokens to spend on thinking for Gemini 2.5 models (0 for the model default). Must be 0 for Gemini 3 models
 
 | thinking-level
 | String

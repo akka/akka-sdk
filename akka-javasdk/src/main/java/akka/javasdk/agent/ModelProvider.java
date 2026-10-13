@@ -1959,8 +1959,8 @@ public sealed interface ModelProvider {
        */
       double topP,
       /**
-       * A maximum number of tokens to spend on thinking for Gemini 2.5 models, use 0 to disable
-       * thinking. Must be 0 for Gemini 3 models.
+       * A maximum number of tokens to spend on thinking for Gemini 2.5 models, 0 for the model
+       * default. Must be 0 for Gemini 3 models.
        */
       int thinkingBudget,
       /**
@@ -1990,7 +1990,7 @@ public sealed interface ModelProvider {
      * @deprecated Use constructor with thinkingLevel, or the static factory method and {@code with}
      *     methods.
      */
-    @Deprecated(since = "3.6.7", forRemoval = true)
+    @Deprecated(since = "3.7.0", forRemoval = true)
     public VertexAi(
         String modelName,
         String projectId,
