@@ -4,6 +4,7 @@
 
 package akka.javasdk.testkit.eval;
 
+import akka.javasdk.testkit.AgentTrace;
 import akka.javasdk.testkit.ToolCall;
 import java.util.List;
 
@@ -13,8 +14,8 @@ import java.util.List;
  * <p>{@link AgentTarget} is the implementation behind {@link ExperimentRunner#agent}. The runner's
  * own tests supply a lambda to run without a runtime.
  *
- * <p>A turn either answers with the reply and the tool calls, or fails with a reason and the tool
- * calls made before the failure. A target that throws is treated as failed with no tool calls.
+ * <p>A turn either answers with the reply and the evidence, or fails with a reason and the evidence
+ * traced before the failure. A target that throws is treated as failed with no evidence.
  *
  * @param <C> the command the target is called with
  */
@@ -46,13 +47,18 @@ interface EvalTarget<C> {
       return new Answered(interaction);
     }
 
+    /** A failure with the tool calls made before it as the only evidence. */
     static Outcome failed(String reason, List<ToolCall> toolCalls) {
-      return new Failed(reason, toolCalls);
+      return new Failed(reason, new AgentTrace(toolCalls, null, null, null, null, null));
     }
 
-    static Outcome failed(RuntimeException cause, List<ToolCall> toolCalls) {
+    static Outcome failed(String reason, AgentTrace trace) {
+      return new Failed(reason, trace);
+    }
+
+    static Outcome failed(RuntimeException cause, AgentTrace trace) {
       var message = cause.getMessage() == null ? "" : ": " + cause.getMessage();
-      return new Failed(cause.getClass().getSimpleName() + message, toolCalls);
+      return new Failed(cause.getClass().getSimpleName() + message, trace);
     }
 
     record Answered(Interaction interaction) implements Outcome {
@@ -66,11 +72,20 @@ interface EvalTarget<C> {
       }
     }
 
-    record Failed(String reason, List<ToolCall> toolCalls) implements Outcome {
+    /**
+     * @param reason why the turn failed
+     * @param trace what the runtime traced before the failure, such as the tool calls, the model
+     *     calls and the guardrail that blocked the turn
+     */
+    record Failed(String reason, AgentTrace trace) implements Outcome {
       public Failed {
         if (reason == null) throw new IllegalArgumentException("reason required");
-        if (toolCalls == null) throw new IllegalArgumentException("toolCalls required");
-        toolCalls = List.copyOf(toolCalls);
+        if (trace == null) throw new IllegalArgumentException("trace required");
+      }
+
+      @Override
+      public List<ToolCall> toolCalls() {
+        return trace.toolCalls();
       }
     }
   }

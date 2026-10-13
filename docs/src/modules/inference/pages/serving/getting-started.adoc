@@ -1,0 +1,313 @@
+= Serving your first model in an Akka region
+:page-summary: A step-by-step tutorial that deploys an open-weight model on an accelerator in an Akka region and calls it with an OpenAI-compatible client.
+:page-persona: builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+This tutorial deploys an open-weight model from Hugging Face on an accelerator in an Akka region, serves it on a hostname, and calls it with `curl`. Every step uses the `akka` CLI. Allow 15 minutes, plus the time to download the model weights on the first deployment.
+
+include::inference:partial$aao-inference-notice.adoc[]
+
+== What you build
+
+You write one model descriptor, a multi-document YAML file, that declares three resources:
+
+[cols="1,3", options="header"]
+|===
+| Resource
+| What it declares
+
+| `AcceleratorAllocation`
+| A number of devices that your project claims from one of the region's accelerator pools.
+
+| `Model`
+| One checkpoint, the engine that serves it, and the allocated device it runs on.
+
+| `ModelEndpoint`
+| The models that one endpoint serves, and the secret that holds its API keys.
+|===
+
+A project route then exposes the endpoint on a hostname.
+
+== Prerequisites
+
+* The Akka CLI, installed and logged in. See xref:operations:cli/installation.adoc[Install the Akka CLI].
+* An Akka project in a region that offers accelerator pools, with the Inference feature set enabled for your organization.
+* A Hugging Face account and an access token with the Read role, created at link:{url-ext-hugging-face-tokens}[Hugging Face access tokens, window="new"]. The token is needed for gated checkpoints.
+* `curl`, to call the model.
+
+The commands in this tutorial act on the project's primary region. Add `--region REGION` to any `akka models` command to act on another region.
+
+== Select your project
+
+Set the project that every later command acts on:
+
+[source,shell]
+----
+akka config set project PROJECT
+----
+
+== Find the accelerator pools in your region
+
+Every inference-capable region declares pools of accelerator devices. List the pools available to your organization:
+
+[source,shell]
+----
+akka models pools list
+----
+
+Note the `NAME` of the pool you want to use in your region. A pool name is a regional identifier only. Compare the `PRODUCT` and `MIG PROFILE` columns, not the name, when you compare hardware across regions.
+
+The listing is discovery only. The region decides how many devices your project can draw when it admits the allocation.
+
+== Store the Hugging Face token
+
+The engine reads the Hugging Face token from a project secret. The secret must store the token under the key `token`:
+
+[source,shell]
+----
+akka secrets create generic hf-token --literal token=HF_TOKEN
+----
+
+Replace `HF_TOKEN` with your Hugging Face token. The token is used only to download weights.
+
+== Write the descriptor
+
+Create a file named `models.yaml` with the following content:
+
+[source,yaml]
+----
+resource: AcceleratorAllocation
+resourceVersion: v1
+metadata:
+  name: tutorial
+spec:
+  allocations:
+    - name: gpu # <1>
+      acceleratorPool: POOL_NAME # <2>
+      devices: 1
+---
+resource: Model
+resourceVersion: v1
+metadata:
+  name: assistant # <3>
+spec:
+  model: mistralai/Ministral-3-3B-Instruct-2512
+  source:
+    type: huggingface
+    huggingface:
+      secretRef: hf-token
+      revision: COMMIT_SHA # <4>
+  engine:
+    type: vllm
+    vllm:
+      checkpointFormat: mistral
+      toolCalling:
+        parser: mistral # <5>
+  placement:
+    allocation: gpu
+    device: 0
+  serving:
+    contextLength: 8192 # <6>
+---
+resource: ModelEndpoint
+resourceVersion: v1
+metadata:
+  name: assistant-endpoint
+spec:
+  models:
+    - name: assistant
+  apiKeySecret: assistant-keys # <7>
+----
+<1> The allocation entry name. A model places onto an allocation by this name, so keep the same name in every region.
+<2> Replace `POOL_NAME` with the pool name from `akka models pools list`.
+<3> The model name. Clients send this name in the `model` field of a request.
+<4> Replace `COMMIT_SHA` with the full 40-character commit SHA of the checkpoint. Find it in the commit history of the model repository on Hugging Face. A branch or tag name is refused, because it can change under a running model.
+<5> The tool-call parser must match the model family. The engine does not verify the parser, and a wrong parser returns tool calls as plain text.
+<6> The maximum number of tokens per sequence, prompt and completion together. Without this field, the engine uses the checkpoint's own maximum, which can exceed the device memory.
+<7> The secret that holds the endpoint's API keys. The endpoint refuses every request until the secret holds a key.
+
+Do not commit a descriptor that contains a credential. This descriptor refers to the `hf-token` secret by name, so it contains no credential.
+
+== Apply the descriptor
+
+Run the region's admission checks without persisting anything:
+
+[source,shell]
+----
+akka models apply -f models.yaml --dry-run
+----
+
+The CLI checks the shape of every document first and reports every problem at once. The region then checks whether the requested devices fit the pool.
+
+Apply the descriptor:
+
+[source,shell]
+----
+akka models apply -f models.yaml
+----
+
+`apply` creates or updates each resource by name, so it is safe to run again after you edit the file.
+
+== Wait for the model to become ready
+
+Check that the region has bound the devices of the allocation:
+
+[source,shell]
+----
+akka models allocations get tutorial
+----
+
+The allocation is usable when `Ready` is `True` and the `DEVICES` and `BOUND` values agree.
+
+Wait for the model:
+
+[source,shell]
+----
+akka models get assistant --wait
+----
+
+The first deployment pulls the engine image and the checkpoint, so several minutes are normal. `--wait` waits for 10 minutes by default. Use `--wait-timeout 20m` to wait longer. When the model is not ready, `akka models get assistant` prints the reason.
+
+Check the endpoint:
+
+[source,shell]
+----
+akka models endpoints get assistant-endpoint
+----
+
+== Issue an API key
+
+Issue one key for each client, so that you can revoke one key without affecting the others:
+
+[source,shell]
+----
+akka models endpoints keys add assistant-endpoint production
+----
+
+The key is printed once and cannot be read back. Store it before you continue. When the `assistant-keys` secret does not exist yet, this command creates it.
+
+To see which clients hold a key, run `akka models endpoints keys list assistant-endpoint`. The key values are never printed.
+
+== Expose the endpoint on a hostname
+
+A model endpoint is not reachable from the internet until a route sends a hostname to it. Provision a hostname for the project. Without a name, Akka generates one:
+
+[source,shell]
+----
+akka projects hostnames add
+----
+
+Create a route that sends all traffic on that hostname to the endpoint:
+
+[source,shell]
+----
+akka routes create assistant-route --hostname HOSTNAME --path /=assistant-endpoint
+----
+
+Replace `HOSTNAME` with the hostname from the previous command. Akka provisions a TLS certificate for the hostname, so no client needs extra configuration. See xref:operations:services/invoke-service.adoc[Invoke a service] for more about hostnames and routes.
+
+== Call the model
+
+Set the key and the base URL:
+
+[source,shell]
+----
+export AKKA_MODEL_API_KEY=KEY
+export AKKA_MODEL_BASE_URL=https://HOSTNAME/v1
+----
+
+List the model names the endpoint serves:
+
+[source,shell]
+----
+curl $AKKA_MODEL_BASE_URL/models \
+  -H "Authorization: Bearer $AKKA_MODEL_API_KEY"
+----
+
+Send a chat completion request:
+
+[source,shell]
+----
+curl $AKKA_MODEL_BASE_URL/chat/completions \
+  -H "Authorization: Bearer $AKKA_MODEL_API_KEY" \
+  -H 'content-type: application/json' \
+  -d '{"model":"assistant","messages":[{"role":"user","content":"Hello"}]}'
+----
+
+The endpoint uses the OpenAI API, so OpenAI SDKs and evaluation tools work after you set the base URL and the API key. To serve several models on one endpoint, add them to `spec.models` of the `ModelEndpoint` and apply the descriptor again. Clients choose a model with the `model` field.
+
+== Rotate and revoke keys
+
+To rotate a key, add a key under a new client name, move the client to the new key, and then remove the old key:
+
+[source,shell]
+----
+akka models endpoints keys add assistant-endpoint production-2
+akka models endpoints keys remove assistant-endpoint production
+----
+
+Every key in the secret is accepted until you remove it.
+
+== Clean up
+
+Delete the route, then the resources the descriptor declares:
+
+[source,shell]
+----
+akka routes delete assistant-route
+akka models delete -f models.yaml
+----
+
+`akka models delete` deletes the endpoint first, then the model, then the allocation. It skips a resource that is already absent, so it is safe to run again.
+
+`akka models delete` does not delete the secrets. The keys in `assistant-keys` stay valid for any endpoint that names the same secret. Delete both secrets when you no longer need them:
+
+[source,shell]
+----
+akka secrets delete assistant-keys
+akka secrets delete hf-token
+----
+
+== Troubleshooting
+
+[cols="2,3", options="header"]
+|===
+| Symptom
+| Cause and fix
+
+| `apply` reports that `spec.source.huggingface.revision` is not valid
+| The revision is a branch or tag name. Use the full 40-character commit SHA.
+
+| `apply` reports an unknown resource `Service`, `Route`, or `Secret`
+| These resources belong to the project descriptor. Create them with `akka projects apply`, `akka routes`, or `akka secrets`.
+
+| The allocation stays not ready
+| The region has not bound every device. `akka models allocations get NAME` shows `DEVICES` and `BOUND` for each entry.
+
+| The model stays not ready
+| `akka models get NAME` prints the reason, such as an engine that is still pulling weights or a device that does not bind.
+
+| The weight download fails with an authentication error
+| The Hugging Face token is wrong, or the secret does not store it under the key `token`.
+
+| `api key authentication failure: no API Key found`
+| The request has no `Authorization` header, or the header does not start with `Bearer`.
+
+| `api key authentication failure: invalid credentials`
+| The endpoint does not accept the key. `akka models endpoints keys list ENDPOINT` shows which clients hold a key. Issue a new key if the key was lost.
+
+| The endpoint returns 404 for a request
+| The `model` field names a model that the endpoint does not serve. `GET /v1/models` lists the names it serves.
+
+| A removed key still works after the descriptor is deleted
+| `akka models delete` does not delete the key secret. Remove the key with `akka models endpoints keys remove`, or delete the secret.
+|===
+
+== See also
+
+* xref:inference:serving/index.adoc[Serving models]
+* xref:reference:inference-cli/models.adoc[Model commands]
+* xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
+* xref:operations:services/invoke-service.adoc[Invoke a service]

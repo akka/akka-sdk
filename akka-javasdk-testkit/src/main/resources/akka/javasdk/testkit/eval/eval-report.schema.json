@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://doc.akka.io/schemas/akka-eval-report/v1.json",
+  "title": "Akka eval report",
+  "description": "The outcome of one ExperimentRunner run: the gate verdict, the rates per evaluator, the spend, every case with its outcome over all runs, and every attempt with its evidence and results. An attempt is one case in one run; without repeated runs every case has one attempt. A reader ignores properties it does not know. formatVersion increments when a property changes meaning or is removed.",
+  "type": "object",
+  "required": ["format", "formatVersion", "name", "startedAt", "finishedAt", "runs", "gate", "summary", "evaluators", "spend", "cases", "attempts"],
+  "properties": {
+    "format": { "const": "akka-eval-report" },
+    "formatVersion": { "const": 2 },
+    "name": { "type": "string", "description": "The name given with Experiment.name, or the test method that ran the experiment, for example SupportAgentEvalTest.qualityGate. The same name over several runs." },
+    "startedAt": { "type": "string", "format": "date-time", "description": "When the run started, UTC." },
+    "finishedAt": { "type": "string", "format": "date-time", "description": "When the run finished, after the last attempt was evaluated, UTC." },
+    "runs": { "type": "integer", "minimum": 1, "description": "How many times every case ran. 1 unless the experiment set Experiment.repeat." },
+    "gate": {
+      "type": "object",
+      "required": ["passed", "detail"],
+      "properties": {
+        "passed": { "type": "boolean" },
+        "detail": { "type": "string", "description": "The gate's verdict as text. A combined gate joins the detail of each part with a semicolon." }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["cases", "passedCases", "failedCases", "inconsistentCases", "inconclusiveCases", "inconsistentRequirements", "attempts", "passedAttempts", "failedAttempts", "inconclusiveAttempts", "passRate"],
+      "properties": {
+        "cases": { "type": "integer", "minimum": 0 },
+        "passedCases": { "type": "integer", "minimum": 0, "description": "Cases with the outcome PASSED." },
+        "failedCases": { "type": "integer", "minimum": 0, "description": "Cases with the outcome FAILED." },
+        "inconsistentCases": { "type": "integer", "minimum": 0, "description": "Cases with the outcome INCONSISTENT. Zero with one run." },
+        "inconclusiveCases": { "type": "integer", "minimum": 0, "description": "Cases with the outcome INCONCLUSIVE." },
+        "inconsistentRequirements": { "type": "integer", "minimum": 0, "description": "Requirements that passed in some runs and failed in others, over all cases. Zero with one run." },
+        "attempts": { "type": "integer", "minimum": 0, "description": "cases times runs." },
+        "passedAttempts": { "type": "integer", "minimum": 0, "description": "Attempts with the verdict PASS." },
+        "failedAttempts": { "type": "integer", "minimum": 0, "description": "Attempts with the verdict FAIL." },
+        "inconclusiveAttempts": { "type": "integer", "minimum": 0, "description": "Attempts with the verdict INCONCLUSIVE." },
+        "passRate": { "type": "number", "minimum": 0, "maximum": 1, "description": "passedAttempts over attempts." }
+      }
+    },
+    "evaluators": {
+      "type": "array",
+      "description": "One entry per evaluator label, in the order the labels first appear in the attempts, counting every attempt.",
+      "items": { "$ref": "#/$defs/evaluatorCounts" }
+    },
+    "spend": {
+      "type": "object",
+      "description": "Model calls, tokens and latency summed over the attempts whose evidence carries model calls. All zero when no attempt carries model calls.",
+      "required": ["attemptsWithEvidence", "modelCalls", "inputTokens", "outputTokens", "latencyMs"],
+      "properties": {
+        "attemptsWithEvidence": { "type": "integer", "minimum": 0 },
+        "modelCalls": { "type": "integer", "minimum": 0 },
+        "inputTokens": { "type": "integer", "minimum": 0 },
+        "outputTokens": { "type": "integer", "minimum": 0 },
+        "latencyMs": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "cases": {
+      "type": "array",
+      "description": "One entry per case, in the order the cases were given, with its outcome over all runs and its requirements.",
+      "items": { "$ref": "#/$defs/case" }
+    },
+    "attempts": {
+      "type": "array",
+      "description": "One entry per attempt: every case in the order the cases were given, its runs ascending.",
+      "items": { "$ref": "#/$defs/attempt" }
+    }
+  },
+  "$defs": {
+    "evaluatorCounts": {
+      "type": "object",
+      "required": ["evaluator", "passed", "failed", "inconclusive"],
+      "properties": {
+        "evaluator": { "type": "string", "description": "The evaluator label. A custom evaluator carries the custom-eval: prefix. target and setup are reported by the runner when an attempt did not reach evaluation." },
+        "passed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "inconclusive": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "case": {
+      "type": "object",
+      "required": ["id", "outcome", "passedRuns", "failedRuns", "inconclusiveRuns", "requirements"],
+      "properties": {
+        "id": { "type": "string" },
+        "outcome": { "enum": ["PASSED", "FAILED", "INCONSISTENT", "INCONCLUSIVE"], "description": "Over all runs. PASSED when every run passed, FAILED when every run failed, INCONCLUSIVE when every run was inconclusive, INCONSISTENT otherwise." },
+        "passedRuns": { "type": "integer", "minimum": 0, "description": "Runs with the verdict PASS." },
+        "failedRuns": { "type": "integer", "minimum": 0, "description": "Runs with the verdict FAIL." },
+        "inconclusiveRuns": { "type": "integer", "minimum": 0, "description": "Runs with the verdict INCONCLUSIVE." },
+        "requirements": { "type": "array", "description": "One entry per evaluator at one position in the results of the case's attempts, in the order the results first appear. The runner's target and setup results are requirements too.", "items": { "$ref": "#/$defs/requirement" } }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "required": ["index", "evaluator", "outcome", "passedIn", "failedIn", "inconclusiveIn"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 0, "description": "The position of the result in the attempt, from 0." },
+        "evaluator": { "type": "string", "description": "The evaluator label." },
+        "outcome": { "enum": ["PASSED", "FAILED", "INCONSISTENT", "INCONCLUSIVE"], "description": "Over the runs where the requirement was conclusive. INCONSISTENT when it passed in some runs and failed in others, INCONCLUSIVE when it was conclusive in no run." },
+        "passedIn": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "description": "The runs with the verdict PASS, ascending." },
+        "failedIn": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "description": "The runs with the verdict FAIL, ascending." },
+        "inconclusiveIn": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "description": "The runs with the verdict INCONCLUSIVE, ascending." }
+      }
+    },
+    "attempt": {
+      "type": "object",
+      "required": ["id", "run", "verdict", "interaction", "results"],
+      "properties": {
+        "id": { "type": "string", "description": "The case id." },
+        "run": { "type": "integer", "minimum": 1, "description": "The run, from 1." },
+        "verdict": { "enum": ["PASS", "FAIL", "INCONCLUSIVE"], "description": "PASS when every result passed, FAIL when a result failed, INCONCLUSIVE when no result failed and a result is inconclusive or there is no result." },
+        "interaction": { "$ref": "#/$defs/interaction" },
+        "results": { "type": "array", "items": { "$ref": "#/$defs/result" } }
+      }
+    },
+    "interaction": {
+      "type": "object",
+      "required": ["input", "userMessage", "reply", "finalModelText", "latencyMs", "inputTokens", "outputTokens", "blocked", "toolCalls", "modelCalls", "guardrails"],
+      "properties": {
+        "input": { "type": "string", "description": "The command sent to the agent. A String command as is, any other command as JSON." },
+        "userMessage": { "type": "string", "description": "The user message the agent sent the model. Empty when the trace did not carry it." },
+        "reply": { "type": "string", "description": "The agent's reply as text. Empty when the agent call failed." },
+        "finalModelText": { "type": "string", "description": "The text of the last model response, before the agent mapped it into the reply. Empty when the trace did not carry it." },
+        "latencyMs": { "type": "integer", "minimum": 0, "description": "From the start of the agent command to its end." },
+        "inputTokens": { "type": "integer", "minimum": 0, "description": "Summed over the model calls." },
+        "outputTokens": { "type": "integer", "minimum": 0, "description": "Summed over the model calls." },
+        "blocked": { "type": "boolean", "description": "Whether a guardrail blocked the turn." },
+        "toolCalls": { "type": "array", "description": "In call order.", "items": { "$ref": "#/$defs/toolCall" } },
+        "modelCalls": { "type": "array", "description": "In call order.", "items": { "$ref": "#/$defs/modelCall" } },
+        "guardrails": { "type": "array", "description": "Every guardrail evaluation, in order.", "items": { "$ref": "#/$defs/guardrail" } }
+      }
+    },
+    "toolCall": {
+      "type": "object",
+      "required": ["name", "arguments", "result", "error"],
+      "properties": {
+        "name": { "type": "string", "description": "The plain tool name, without the agent class prefix." },
+        "arguments": { "type": "object", "description": "By parameter name. A value is null when the model sent null." },
+        "result": { "type": ["string", "null"], "description": "The tool's result as the model saw it. Null when not recorded." },
+        "error": { "type": ["string", "null"], "description": "The failure message when the tool threw. Null otherwise." }
+      }
+    },
+    "modelCall": {
+      "type": "object",
+      "required": ["model", "provider", "finishReasons", "inputTokens", "outputTokens", "durationMs", "inputMessages", "outputMessages"],
+      "properties": {
+        "model": { "type": "string" },
+        "provider": { "type": "string" },
+        "finishReasons": { "type": "array", "items": { "type": "string" } },
+        "inputTokens": { "type": "integer", "minimum": 0 },
+        "outputTokens": { "type": "integer", "minimum": 0 },
+        "durationMs": { "type": "integer", "minimum": 0 },
+        "inputMessages": { "type": "string", "description": "The messages sent, as the runtime renders them. Empty when not recorded." },
+        "outputMessages": { "type": "string", "description": "The messages received. Empty when not recorded." }
+      }
+    },
+    "guardrail": {
+      "type": "object",
+      "required": ["name", "category", "passed", "explanation"],
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "passed": { "type": "boolean" },
+        "explanation": { "type": "string", "description": "Why it blocked. Empty when it passed." }
+      }
+    },
+    "result": {
+      "type": "object",
+      "required": ["evaluator", "verdict", "detail"],
+      "properties": {
+        "evaluator": { "type": "string", "description": "The evaluator label." },
+        "verdict": { "enum": ["PASS", "FAIL", "INCONCLUSIVE"] },
+        "detail": { "type": "string", "description": "The reason, or the score. Empty when the evaluator gave none." }
+      }
+    }
+  }
+}

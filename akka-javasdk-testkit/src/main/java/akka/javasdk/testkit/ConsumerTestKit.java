@@ -21,7 +21,7 @@ import java.util.function.Supplier;
  * returned testkit can be used as many times as you want. It doesn't preserve any state between
  * invocations.
  *
- * <p>Use the {@code method} methods to interact with the testkit.
+ * <p>Call a message handler with {@code method(...).invoke(...)}.
  */
 public final class ConsumerTestKit<C extends Consumer> {
 

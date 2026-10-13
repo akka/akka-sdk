@@ -6,11 +6,14 @@ package akkajavasdk.components.jwt;
 
 import static java.util.concurrent.CompletableFuture.completedStage;
 
+import akka.NotUsed;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.JWT;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
+import akka.javasdk.annotations.http.WebSocket;
 import akka.javasdk.http.AbstractHttpEndpoint;
+import akka.stream.javadsl.Flow;
 import java.util.concurrent.CompletionStage;
 
 // Opened up for access from the public internet to make the sample service easy to try out.
@@ -32,5 +35,11 @@ public class HelloJwtEndpoint extends AbstractHttpEndpoint {
     var issuer = claims.issuer().get();
     var sub = claims.subject().get();
     return completedStage("issuer: " + issuer + ", subject: " + sub);
+  }
+
+  @WebSocket("/websocket")
+  public Flow<String, String, NotUsed> helloWebSocket() {
+    var sub = requestContext().getJwtClaims().subject().get();
+    return Flow.of(String.class).map(text -> text + ", subject: " + sub);
   }
 }

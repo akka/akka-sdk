@@ -38,7 +38,7 @@ public class McpEndpointTest extends TestKitSupport {
     assertThat(listingResult.body().utf8String())
         .isEqualTo(
 """
-{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"echo","description":"A method that returns what is fed to it","inputSchema":{"type":"object","properties":{"echo":{"type":"string","description":"the string to echo"}},"required":["echo"]}}]}}
+{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"echo","description":"A method that returns what is fed to it","inputSchema":{"type":"object","properties":{"echo":{"type":"string","description":"the string to echo"}},"required":["echo"]}},{"name":"fail","description":"A method that always fails","inputSchema":{"type":"object","properties":{"reason":{"type":"string","description":"the reason to fail with"}},"required":["reason"]}}]}}
 """
                 .trim());
   }
@@ -204,6 +204,51 @@ public class McpEndpointTest extends TestKitSupport {
 {"jsonrpc":"2.0","id":1,"result":{"prompts":[{"name":"code_review","description":"Code review prompt","arguments":[{"name":"code","description":"a prompt argument","required":true}]}]}}
 """
                 .trim());
+  }
+
+  @Test
+  public void shouldPropagateCallerSpiffeOnCrossServiceCallFromMcpTool() {
+    // the MCP tool makes an outbound Akka-service HTTP call; the downstream reports the caller
+    // SPIFFE id it observed, which must be the MCP endpoint's full id
+    var caller = callTool("/mcp-spiffe", "delegate", "{\"kind\":\"service\"}");
+    // the service segment carries a dynamic "-IT-<timestamp>" suffix added by the testkit
+    assertThat(caller)
+        .matches(
+            "spiffe://akka\\.local/projects/local-dev-mode/svc/sdk-tests[^/]*/mcp-endpoint/akkajavasdk\\.components\\.mcp\\.SpiffeMcpEndpoint");
+  }
+
+  @Test
+  public void shouldNotLeakCallerSpiffeOnExternalCallFromMcpTool() {
+    // the MCP tool makes an outbound call to an external http:// URL; the internal caller SPIFFE
+    // header must not be sent to external servers
+    var caller = callTool("/mcp-spiffe", "delegate", "{\"kind\":\"external\"}");
+    assertThat(caller).isEmpty();
+  }
+
+  // calls an MCP tool via JSON-RPC and returns the text content of the (single) result
+  private String callTool(String path, String toolName, String argumentsJson) {
+    var body =
+        """
+        {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"%s","arguments":%s}}
+        """
+            .formatted(toolName, argumentsJson);
+    var result =
+        httpClient
+            .POST(path)
+            .withRequestBody(ContentTypes.APPLICATION_JSON, body.getBytes(StandardCharsets.UTF_8))
+            .invoke();
+    assertThat(result.status()).isEqualTo(StatusCodes.OK);
+    try {
+      var jsonTree =
+          JsonSerializer.internalObjectMapper()
+              .readValue(result.body().utf8String(), JsonNode.class);
+      if (jsonTree.has("error")) {
+        fail("Response message [" + result.body().utf8String() + "] is an error");
+      }
+      return jsonTree.get("result").get("content").get(0).get("text").asText();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Test

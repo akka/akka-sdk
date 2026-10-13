@@ -260,6 +260,63 @@ public class SessionMemoryEntityTest {
   }
 
   @Test
+  public void shouldKeepTheErrorFlagOfToolResponsesInHistoryAndThroughCompaction() {
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+    var contents = List.<SessionMessage.MessageContent>of(new TextMessageContent("no chart"));
+    var toolResponse =
+        new SessionMessage.ToolCallResponse(
+            timestamp, COMPONENT_ID, "call-1", "search", "service unavailable", true, true);
+    var multimodalToolResponse =
+        new MultimodalToolCallResponse(
+            timestamp, COMPONENT_ID, "call-2", "renderChart", contents, false, true);
+    var sequenceNumber =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .sequenceNumber();
+
+    // when
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(
+            new AddInteractionCmd(
+                new UserMessage(timestamp, "search", COMPONENT_ID),
+                List.of(toolResponse, multimodalToolResponse)));
+
+    // then
+    var messages =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .messages();
+    assertThat(messages.subList(1, 3)).containsExactly(toolResponse, multimodalToolResponse);
+
+    // when compacting the history before the interaction
+    testKit
+        .method(SessionMemoryEntity::compactHistory)
+        .invoke(
+            new SessionMemoryEntity.CompactionCmd(
+                new UserMessage(timestamp, "Summary", COMPONENT_ID),
+                new AiMessage(timestamp, "Summary reply", COMPONENT_ID),
+                sequenceNumber));
+
+    // then the tool responses after the summary keep the flag
+    var compacted =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .messages();
+    assertThat(compacted).contains(toolResponse, multimodalToolResponse);
+  }
+
+  @Test
   public void shouldAddMultipleMessagesToHistory() {
     // given
     var testKit =
@@ -435,6 +492,57 @@ public class SessionMemoryEntityTest {
     assertThat(m4.text()).isEqualTo(aiMessage3.text());
     // clear the token usage because it was added to the state before the compaction
     assertThat(m4.tokenUsage()).isEqualTo(TokenUsage.EMPTY);
+  }
+
+  @Test
+  public void shouldStoreTheCompactionSummaryUnflaggedAndKeepTheFlagOfTheMessagesAfterIt() {
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(
+            new AddInteractionCmd(
+                new UserMessage(timestamp, "Hello", COMPONENT_ID, true),
+                new AiMessage(timestamp, "Hi there!", COMPONENT_ID)));
+    var sequenceNumber =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .sequenceNumber();
+
+    // written after the history that the summary replaces
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(
+            new AddInteractionCmd(
+                new UserMessage(timestamp, "I'm Alice", COMPONENT_ID, true),
+                new AiMessage(timestamp, "Hi Alice", COMPONENT_ID)));
+
+    // when the summary user message is flagged
+    var cmd =
+        new SessionMemoryEntity.CompactionCmd(
+            new UserMessage(timestamp, "Summary", COMPONENT_ID, true),
+            new AiMessage(timestamp, "Summary reply", COMPONENT_ID),
+            sequenceNumber);
+    testKit.method(SessionMemoryEntity::compactHistory).invoke(cmd);
+
+    // then
+    var messages =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .messages();
+    assertThat(messages).hasSize(4);
+    assertThat(((UserMessage) messages.get(0)).text()).isEqualTo("Summary");
+    assertThat(((UserMessage) messages.get(0)).sanitized()).isFalse();
+    assertThat(((UserMessage) messages.get(2)).text()).isEqualTo("I'm Alice");
+    assertThat(((UserMessage) messages.get(2)).sanitized()).isTrue();
   }
 
   @Test

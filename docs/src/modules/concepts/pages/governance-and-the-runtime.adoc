@@ -1,0 +1,55 @@
+= Governance and the runtime
+:page-summary: How the Akka runtime enforces governance while it executes agent interactions, with guardrails, classifiers, evaluators, sanitizers, access control, and the ledger.
+:page-persona: builder-developer, builder-ai-ml, governance-compliance, governance-infosec
+:page-banner: governance
+
+include::ROOT:partial$include.adoc[]
+
+The Akka runtime enforces governance while it executes each agent interaction. Guardrails stop a model call or a tool call, sanitizers mask personal data before the model or the log sees it, evaluators judge each interaction, access control lists decide who may call a component, and the ledger records every interaction. All of this happens in the runtime that runs the agent, not in a tool that reads logs afterwards.
+
+== Why governance runs in the runtime
+
+Most governance products for AI, such as observability and evaluation services, sit outside the system that runs the agent. They receive logs or traces after the fact. From there they can report on an interaction, but they cannot change it, and they cannot vouch for the record they received.
+
+Akka takes the opposite approach. The runtime that makes the model call is the same runtime that denies it, masks the data before the model sees it, and writes the record. This gives the mechanisms below three properties that a tool outside the runtime cannot have:
+
+* A guardrail can deny a model call or a tool call while the interaction runs, before it consumes tokens or reaches the tool. A log reader can only report a call that already happened.
+* A sanitizer masks personal data before the model or the log receives it. A tool that scrubs logs afterwards has already leaked the data to the model and to whoever read the log first.
+* A ledger record comes from the runtime that made the model calls and tool calls it describes. A log message from another system is a claim, and nothing proves that it was not modified, delayed, or left out.
+
+The same holds for human intervention. An operator suspends, resumes, or terminates an xref:sdk:autonomous-agents/client.adoc[autonomous agent] through the component client, which acts on the running agent, not on a record of it.
+
+== Governance mechanisms
+
+You configure each mechanism in `application.conf`, and the runtime applies it to every interaction of the agents it is bound to. Each mechanism has one role:
+
+* xref:sdk:agents/guardrails.adoc[Guardrails] run before a model call, before a tool call, or on the agent's reply, and can deny it.
+* xref:sdk:agents/classifiers.adoc[Classifiers] map text to a score or label, for a guardrail, an evaluator, a sanitizer, or your own code to act on.
+* xref:sdk:evaluators.adoc[Evaluators] run after each interaction, in the background, and record a verdict. An evaluator often delegates the verdict to an LLM-as-judge agent.
+* xref:sdk:sanitization.adoc[Sanitizers] mask personal data in logs, model calls, and tool results.
+* xref:sdk:access-control.adoc[Access control lists] restrict which services and components may call an endpoint. With xref:sdk:access-control.adoc#_component_level_access_with_spiffe[SPIFFE identities] a rule can name a single component.
+* The xref:sdk:evaluators.adoc#_the_ledger_client[ledger] records every interaction and its evaluations: the model calls, tool calls, token usage, and the outcome, including a failure caused by a denied guardrail. Evaluators and the console read from it.
+
+[#control-ids]
+=== Control IDs
+
+A control matrix lists the controls of a service. A control is an obligation and the mechanism that meets it. Each control has an id.
+Name the control that a guardrail, sanitizer or evaluator implements with a `control-id` key in its configuration entry.
+
+When a node of the service starts, the runtime writes one ledger record that lists the controls the node runs: each sanitizer, each guardrail that an agent uses, and each evaluator.
+Each control in the record has its control id.
+A guardrail or a sanitizer also has its configuration, masked by the log sanitizers.
+
+== Compliance certifications
+
+Akka holds more than 19 compliance certifications, including:
+
+* EU AI Act
+* Singapore Agent Framework
+* ISO 42001
+* SOC 2
+
+== See also
+
+* link:{url-blog-trustworthy-ai}[Trustworthy AI with Akka, window="new"]
+* link:{url-blog-webinar-certainty}[Webinar: Creating Certainty in the Age of Agentic AI, window="new"]

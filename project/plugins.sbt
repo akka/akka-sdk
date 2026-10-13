@@ -20,7 +20,7 @@ addSbtPlugin("io.akka.sbt" % "sbt-artifact-bom" % "0.3.0")
 libraryDependencies += "com.google.guava" % "guava" % "33.3.1-jre"
 
 // optional scalafix plugin for organize imports
-optionalSbtPlugin(sys.props.contains("build.scalafix"))("ch.epfl.scala" % "sbt-scalafix" % "0.14.5")
+optionalSbtPlugin(sys.props.contains("build.scalafix"))("ch.epfl.scala" % "sbt-scalafix" % "0.14.9")
 
 def optionalSbtPlugin(predicate: Boolean)(module: ModuleID): Setting[Seq[ModuleID]] = {
   libraryDependencies ++= {

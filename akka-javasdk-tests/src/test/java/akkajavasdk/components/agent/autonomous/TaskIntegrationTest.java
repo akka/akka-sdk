@@ -10,6 +10,8 @@ import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.delega
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.failTask;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.javasdk.agent.SessionMemoryEntity;
+import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -188,7 +190,7 @@ public class TaskIntegrationTest extends TestKitSupport {
         .reply(new TestModelProvider.ToolInvocationRequest("DateService_getToday", ""));
 
     toolModel
-        .whenToolResult(result -> result.content().equals("2025-01-15"))
+        .whenToolResult(result -> result.content().equals("2025-01-15") && !result.isError())
         .thenReply(
             result ->
                 new AiResponse(
@@ -208,6 +210,60 @@ public class TaskIntegrationTest extends TestKitSupport {
               var result = snapshot.result().orElseThrow();
               assertThat(result.value()).isEqualTo("Today is 2025-01-15.");
               assertThat(result.score()).isEqualTo(100);
+            });
+  }
+
+  @Test
+  public void shouldSendAFailedToolCallToTheModelAndStoreItAsAnErrorResult() {
+    toolModel.withMessageSelector(
+        messages ->
+            messages.stream()
+                .filter(m -> m instanceof TestModelProvider.ToolResult)
+                .findFirst()
+                .orElse(messages.getLast()));
+    toolModel
+        .whenMessage(msg -> msg.contains("tomorrow"))
+        .reply(new TestModelProvider.ToolInvocationRequest("DateService_getTomorrow", ""));
+
+    toolModel
+        .whenToolResult(TestModelProvider.ToolResult::isError)
+        .thenReply(
+            result -> new AiResponse(completeTask(new TestTasks.TestResult("No calendar.", 10))));
+
+    var agentId = UUID.randomUUID().toString();
+    var taskId =
+        componentClient
+            .forAutonomousAgent(ToolUsingAgent.class, agentId)
+            .runSingleTask(TestTasks.TEST_TASK.instructions("What is tomorrow's date?"));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
+              assertThat(snapshot.result().orElseThrow().value()).isEqualTo("No calendar.");
+            });
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var history =
+                  componentClient
+                      .forEventSourcedEntity(agentId)
+                      .method(SessionMemoryEntity::getHistory)
+                      .invoke(new SessionMemoryEntity.GetHistoryCmd())
+                      .messages();
+              assertThat(history)
+                  .filteredOn(SessionMessage.ToolCallResponse.class::isInstance)
+                  .map(SessionMessage.ToolCallResponse.class::cast)
+                  .anySatisfy(
+                      response -> {
+                        assertThat(response.name()).isEqualTo("DateService_getTomorrow");
+                        assertThat(response.isError()).isTrue();
+                      });
             });
   }
 

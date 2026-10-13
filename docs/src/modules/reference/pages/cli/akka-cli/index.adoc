@@ -332,6 +332,7 @@ The `akka routes` commands manipulate the routes that can be used to expose serv
 
 The xref:reference:cli/akka-cli/akka_routes.adoc[akka routes] command includes the following options:
 
+* xref:reference:cli/akka-cli/akka_routes_apply.adoc[akka routes apply]
 * xref:reference:cli/akka-cli/akka_routes_create.adoc[akka routes create]
 * xref:reference:cli/akka-cli/akka_routes_delete.adoc[akka routes delete]
 * xref:reference:cli/akka-cli/akka_routes_edit.adoc[akka routes edit]

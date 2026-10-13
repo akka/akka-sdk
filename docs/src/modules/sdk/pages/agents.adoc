@@ -5,7 +5,7 @@ include::ROOT:partial$include.adoc[]
 :page-component-type: agent
 :page-summary: Build AI agents that interact with large language models, maintain session memory, and invoke tools to perform tasks.
 :page-when-to-use: Use when you need LLM-backed autonomous or semi-autonomous behavior with tool calling, session context, and multi-agent collaboration.
-:page-related: xref:concepts:ai-agents.adoc[], xref:sdk:autonomous-agents.adoc[], xref:sdk:agents/guardrails.adoc[], xref:sdk:agents/memory.adoc[], xref:sdk:workflows.adoc[], xref:sdk:key-value-entities.adoc[]
+:page-related: xref:concepts:ai-agents.adoc[], xref:sdk:autonomous-agents.adoc[], xref:sdk:agents/guardrails.adoc[], xref:sdk:agents/classifiers.adoc[], xref:sdk:evaluators.adoc[], xref:sdk:agents/memory.adoc[], xref:sdk:workflows.adoc[], xref:sdk:key-value-entities.adoc[]
 :page-prerequisites: Familiarity with Akka components, a configured model provider (OpenAI, Anthropic, etc.)
 :page-persona: developer
 

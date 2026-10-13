@@ -18,4 +18,7 @@ public interface GuardrailContext {
 
   /** The config section for the specific guardrail. */
   Config config();
+
+  /** A client for invoking a configured {@link Classifier}, e.g. to inform the decision. */
+  ClassifierClient classifierClient();
 }

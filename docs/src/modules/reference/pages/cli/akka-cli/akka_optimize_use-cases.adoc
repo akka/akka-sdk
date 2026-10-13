@@ -1,0 +1,53 @@
+= akka optimize use-cases
+
+Discovered use-cases, and the manifests frozen from them
+
+== Synopsis
+
+A use-case here is the gateway router's: a cluster of traffic that means roughly the same thing, discovered from what the deployment actually served.
+A freeze fixes that clustering as something routable.
+
+The assessment use-cases are a second surface under the same noun -- candidacy, or how worth specializing a workload is, scored by the assessment service.
+They are hidden until the two surfaces are reconciled, so nothing here reads candidacy.
+
+== Options
+
+----
+  -h, --help   help for use-cases
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize.html[akka optimize]	 - Own your intelligence: cost, models, training and routing
+* link:akka_optimize_use-cases_exemplars.html[akka optimize use-cases exemplars]	 - The requests nearest a use-case's centre
+* link:akka_optimize_use-cases_freeze.html[akka optimize use-cases freeze]	 - Fix the working set as a manifest
+* link:akka_optimize_use-cases_label.html[akka optimize use-cases label]	 - Name a use-case in the working set
+* link:akka_optimize_use-cases_manifests.html[akka optimize use-cases manifests]	 - Frozen use-case sets, and which one is routing
+* link:akka_optimize_use-cases_status.html[akka optimize use-cases status]	 - The working set, and whether it can be frozen
+* link:akka_optimize_use-cases_working-set.html[akka optimize use-cases working-set]	 - The use-cases currently being discovered in traffic
+
+[discrete]
+

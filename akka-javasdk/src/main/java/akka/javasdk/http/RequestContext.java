@@ -9,6 +9,7 @@ import akka.http.javadsl.model.HttpHeader;
 import akka.javasdk.Context;
 import akka.javasdk.JwtClaims;
 import akka.javasdk.Principals;
+import akka.javasdk.SpiffeContext;
 import akka.javasdk.Tracing;
 import java.util.List;
 import java.util.Optional;
@@ -82,4 +83,10 @@ public interface RequestContext extends Context {
    *     client Optional.empty is returned.
    */
   Optional<String> lastSeenSseEventId();
+
+  /**
+   * The SPIFFE context for this endpoint, including the caller's identity if the request came from
+   * another Akka service in the same project. Empty when SPIFFE is disabled.
+   */
+  Optional<SpiffeContext> getSpiffeContext();
 }

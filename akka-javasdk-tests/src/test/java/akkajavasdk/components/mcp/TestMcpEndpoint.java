@@ -9,14 +9,23 @@ import akka.javasdk.annotations.Description;
 import akka.javasdk.annotations.mcp.*;
 import akka.javasdk.mcp.AbstractMcpEndpoint;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @McpEndpoint(serverName = "test")
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class TestMcpEndpoint extends AbstractMcpEndpoint {
 
+  public static final AtomicInteger echoCalls = new AtomicInteger();
+
   @McpTool(description = "A method that returns what is fed to it")
   public String echo(@Description("the string to echo") String echo) {
+    echoCalls.incrementAndGet();
     return echo;
+  }
+
+  @McpTool(description = "A method that always fails")
+  public String fail(@Description("the reason to fail with") String reason) {
+    throw new IllegalStateException("failed: " + reason);
   }
 
   @McpResource(

@@ -145,7 +145,7 @@ Filter by layer or owner, or search across activity, description, and cadence. O
 | Sub-category | Activity | R | A | C | I | Description | Cadence
 
 | Setup | Bootstrapping Platform | A | A | C | A | The Customer reviews Akka's default networking, compute, and persistence configuration, and recommends changes to improve app performance, optimize costs, or address other concerns. | 
-| Setup | Federation via Teleport | A | A |  |  | Akka installs the Teleport identity-aware proxy that is used for federation. | 
+| Setup | Federation via Teleport | A | A |  |  | Akka installs the Teleport identity-aware proxy that is used for federation. The Federation Plane authenticates through workload identity and receives short-lived certificates, with no long-lived credentials. | 
 | Setup | Akka Region Group | C | C | A | A | The Customer identifies region groups based on their use case and informs Akka. | 
 | Setup | Region Group Configuration | A | A | C |  | Akka configures region groups on the Federation Plane based on the Customer's region groups configuration | 
 | Setup | Maintenance Window | C | C | A | A | The Customer provides a preferred maintenance window. Akka aims to use this window for operations that may cause downtime, including database minor updates (applied automatically by the cloud provider) and manual upgrades such as database major patches. | 

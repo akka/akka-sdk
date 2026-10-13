@@ -1,0 +1,68 @@
+= akka optimize training snapshots pin
+
+Retain a snapshot against the catalog's retention limits
+
+== Synopsis
+
+Retain a snapshot so that the catalog does not sweep it.
+
+A snapshot is swept under the run's keep counts unless a holder retains it.
+The two holds the service takes on its own both end with the work that took them: a running branch retains the artifact it reads until the run reaches a terminal phase, and a candidate registration retains the weights while it copies them, releasing them once the copy is durable.
+Pin a checkpoint you intend to branch from or register later, while it is still available.
+
+Both artifact kinds are pinned unless --kind specifies one, and both are pinned or neither is: a kind the catalog has already begun deleting cannot be pinned, and the request is refused rather than pinning the other kind behind it.
+Pinning an already pinned snapshot has no effect.
+
+"training runs snapshots" reports a pinned snapshot as held by retention.
+Release the pin with "training snapshots unpin".
+
+----
+akka optimize training snapshots pin SNAPSHOT [flags]
+----
+
+== Examples
+
+----
+  # Retain a checkpoint to continue from later
+  akka-optimize training snapshots pin 3f2a9c71bd04
+
+  # Retain only its full training state
+  akka-optimize training snapshots pin 3f2a9c71bd04 --kind trainingState
+----
+
+== Options
+
+----
+  -h, --help          help for pin
+      --kind string   Artifact kind to act on, either weights or trainingState. Both kinds are covered by default
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_snapshots.html[akka optimize training snapshots]	 - Inspect snapshots and candidate registration
+
+[discrete]
+

@@ -225,20 +225,42 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     @TypeName("akka-memory-deleted")
     record Deleted(Instant timestamp) implements Event {}
 
-    /* marker interface to distinguish message events as opposed to lifecycle events */
+    /**
+     * An event that adds a message to the history, as opposed to a lifecycle event. The {@code
+     * sanitized} component of a user message or a tool response event, and the {@code isError}
+     * component of a tool response event, hold the value of the {@link SessionMessage} that the
+     * event adds. The SDK reads a missing component of a stored event as false.
+     */
     sealed interface Message {}
 
     @TypeName("akka-memory-user-message-added")
-    record UserMessageAdded(Instant timestamp, String componentId, String message, int sizeInBytes)
-        implements Event, Message {}
+    record UserMessageAdded(
+        Instant timestamp, String componentId, String message, int sizeInBytes, boolean sanitized)
+        implements Event, Message {
+
+      public UserMessageAdded(
+          Instant timestamp, String componentId, String message, int sizeInBytes) {
+        this(timestamp, componentId, message, sizeInBytes, false);
+      }
+    }
 
     @TypeName("akka-memory-multimodal-user-message-added")
     record MultimodalUserMessageAdded(
         Instant timestamp,
         String componentId,
         List<SessionMessage.MessageContent> contents,
-        int sizeInBytes)
-        implements Event, Message {}
+        int sizeInBytes,
+        boolean sanitized)
+        implements Event, Message {
+
+      public MultimodalUserMessageAdded(
+          Instant timestamp,
+          String componentId,
+          List<SessionMessage.MessageContent> contents,
+          int sizeInBytes) {
+        this(timestamp, componentId, contents, sizeInBytes, false);
+      }
+    }
 
     @TypeName("akka-memory-ai-message-added")
     record AiMessageAdded(
@@ -274,8 +296,32 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         String id,
         String name,
         String content,
-        int sizeInBytes)
-        implements Event, Message {}
+        int sizeInBytes,
+        boolean sanitized,
+        boolean isError)
+        implements Event, Message {
+
+      public ToolResponseMessageAdded(
+          Instant timestamp,
+          String componentId,
+          String id,
+          String name,
+          String content,
+          int sizeInBytes) {
+        this(timestamp, componentId, id, name, content, sizeInBytes, false, false);
+      }
+
+      public ToolResponseMessageAdded(
+          Instant timestamp,
+          String componentId,
+          String id,
+          String name,
+          String content,
+          int sizeInBytes,
+          boolean sanitized) {
+        this(timestamp, componentId, id, name, content, sizeInBytes, sanitized, false);
+      }
+    }
 
     @TypeName("akka-memory-multimodal-tool-response-message-added")
     record MultimodalToolResponseMessageAdded(
@@ -284,8 +330,32 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         String id,
         String name,
         List<SessionMessage.MessageContent> contents,
-        int sizeInBytes)
-        implements Event, Message {}
+        int sizeInBytes,
+        boolean sanitized,
+        boolean isError)
+        implements Event, Message {
+
+      public MultimodalToolResponseMessageAdded(
+          Instant timestamp,
+          String componentId,
+          String id,
+          String name,
+          List<SessionMessage.MessageContent> contents,
+          int sizeInBytes) {
+        this(timestamp, componentId, id, name, contents, sizeInBytes, false, false);
+      }
+
+      public MultimodalToolResponseMessageAdded(
+          Instant timestamp,
+          String componentId,
+          String id,
+          String name,
+          List<SessionMessage.MessageContent> contents,
+          int sizeInBytes,
+          boolean sanitized) {
+        this(timestamp, componentId, id, name, contents, sizeInBytes, sanitized, false);
+      }
+    }
   }
 
   // Request commands
@@ -317,7 +387,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
             cmd.userMessage.timestamp(),
             cmd.userMessage.componentId(),
             cmd.userMessage.contents(),
-            cmd.userMessage.size());
+            cmd.userMessage.size(),
+            cmd.userMessage.sanitized());
     return addInteraction(cmd.messages, cmd.userMessage.componentId(), userMessageEvent);
   }
 
@@ -332,7 +403,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
               cmd.userMessage.timestamp(),
               cmd.userMessage.componentId(),
               cmd.userMessage.text(),
-              cmd.userMessage.size());
+              cmd.userMessage.size(),
+              cmd.userMessage.sanitized());
       return addInteraction(cmd.messages, cmd.userMessage.componentId(), userMessageEvent);
     }
   }
@@ -392,7 +464,9 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               toolCallResponse.id(),
                               toolCallResponse.name(),
                               toolCallResponse.text(),
-                              toolCallResponse.size());
+                              toolCallResponse.size(),
+                              toolCallResponse.sanitized(),
+                              toolCallResponse.isError());
 
                       case MultimodalToolCallResponse multimodalToolCallResponse ->
                           new Event.MultimodalToolResponseMessageAdded(
@@ -401,7 +475,9 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               multimodalToolCallResponse.id(),
                               multimodalToolCallResponse.name(),
                               multimodalToolCallResponse.contents(),
-                              multimodalToolCallResponse.size());
+                              multimodalToolCallResponse.size(),
+                              multimodalToolCallResponse.sanitized(),
+                              multimodalToolCallResponse.isError());
 
                       default -> throw new IllegalArgumentException("Unsupported message: " + msg);
                     })
@@ -506,6 +582,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       return effects().error("componentId in userMessage must be the same as in the aiMessage");
     var componentId = cmd.userMessage.componentId();
 
+    // Application code wrote the summary user message, so the runtime masks it when it sends it.
     var events = new ArrayList<Event>();
     events.add(new Event.HistoryCleared());
     events.add(
@@ -513,7 +590,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
             cmd.userMessage.timestamp(),
             componentId,
             cmd.userMessage.text(),
-            cmd.userMessage.size()));
+            cmd.userMessage.size(),
+            false));
     events.add(
         new Event.AiMessageAdded(
             cmd.aiMessage.timestamp(),
@@ -541,7 +619,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               userMessage.timestamp(),
                               userMessage.componentId(),
                               userMessage.text(),
-                              userMessage.size()));
+                              userMessage.size(),
+                              userMessage.sanitized()));
 
                   case ToolCallResponse toolCallResponse ->
                       events.add(
@@ -551,7 +630,9 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               toolCallResponse.id(),
                               toolCallResponse.name(),
                               toolCallResponse.text(),
-                              toolCallResponse.size()));
+                              toolCallResponse.size(),
+                              toolCallResponse.sanitized(),
+                              toolCallResponse.isError()));
 
                   case AiMessage aiMessage ->
                       events.add(
@@ -572,7 +653,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               multimodalUserMessage.timestamp(),
                               multimodalUserMessage.componentId(),
                               multimodalUserMessage.contents(),
-                              multimodalUserMessage.size()));
+                              multimodalUserMessage.size(),
+                              multimodalUserMessage.sanitized()));
 
                   case MultimodalToolCallResponse multimodalToolCallResponse ->
                       events.add(
@@ -582,7 +664,9 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               multimodalToolCallResponse.id(),
                               multimodalToolCallResponse.name(),
                               multimodalToolCallResponse.contents(),
-                              multimodalToolCallResponse.size()));
+                              multimodalToolCallResponse.size(),
+                              multimodalToolCallResponse.sanitized(),
+                              multimodalToolCallResponse.isError()));
                 }
               });
     }

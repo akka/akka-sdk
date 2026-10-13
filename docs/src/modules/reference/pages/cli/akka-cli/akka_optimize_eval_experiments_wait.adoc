@@ -1,0 +1,67 @@
+= akka optimize eval experiments wait
+
+Wait for an experiment to finish
+
+== Synopsis
+
+Follow an experiment until it reaches a terminal status, showing each change as it happens.
+
+Exits 0 on reaching COMPLETED, STOPPED, CANCELLED, or REFUSED.
+Add --exit-status to exit non-zero when the run did not complete, or completed but the gate it was held to did not hold -- the same reasoning training runs wait applies to a smoke check's finding: an experiment that ran and answered no is not the same as one that never ran.
+
+--timeout bounds the wait, not the run: on timing out this exits non-zero and the run carries on.
+
+Under -o json, every change is written to stdout as one line of JSON -- status, the offset and item count, ending in one line with "terminal": true carrying the gate outcome and reason.
+That stream, not this command's text, is the contract a script should read.
+
+The experiment's whole record follows the terminal line once it is done, formatted like any other command's -o json output -- pretty-printed and not one line.
+Use -o json-compact, or read it with "jq -c .", if a script reads this command's stdout line by line.
+
+----
+akka optimize eval experiments wait EXPERIMENT [flags]
+----
+
+== Examples
+
+----
+  akka-optimize eval experiments wait exp-ed745d2f
+  akka-optimize eval experiments wait exp-ed745d2f --timeout 30m --exit-status
+  akka-optimize eval experiments wait exp-ed745d2f -o json | jq -c .
+----
+
+== Options
+
+----
+      --exit-status        exit non-zero if it does not complete, or completes with a gate that did not hold
+  -h, --help               help for wait
+      --timeout duration   give up waiting after this long; unset waits indefinitely
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_eval_experiments.html[akka optimize eval experiments]	 - One dataset version, one target, one set of evaluators
+
+[discrete]
+

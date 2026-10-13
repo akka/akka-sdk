@@ -1,0 +1,117 @@
+= akka optimize training runs branch
+
+Submit a child run from a source snapshot
+
+== Synopsis
+
+Submit a child run from a committed source snapshot of PARENT.
+
+The parent run is unchanged.
+The child run has its own ID, metrics, cost, models and saved state.
+Children created from the same source snapshot are independent.
+
+--snapshot selects the source snapshot.
+Use "training runs snapshots" to find one, then pass its ID or an unambiguous prefix.
+
+--steps sets the child run's budget of additional optimizer updates.
+The child stops at this budget, so an override document cannot set epochs or maxSteps.
+
+--restore selects the snapshot artifact and state policy:
+
+ weights        load adapter weights; reset the optimizer, schedule, RNG, data position and
+                engine step. This is the default.
+ trainingState  restore adapter weights, optimizer, RNG, data position and engine step; replace
+                the saved schedule with one spanning the child budget at the child learning rate.
+
+The child run inherits the parent run's workload, base model, devices and grader.
+--overrides loads a configuration-change document.
+Omitted fields are inherited.
+Undeclared fields are rejected.
+
+With --restore trainingState, only the learning rate may appear in --overrides.
+The service rejects every other field, even when its value equals the parent's.
+This mode requires the same method and a portable TRL/Transformers snapshot.
+It is unavailable for verl.
+For reinforcement learning with a positive klBeta, it is also unavailable when the producer started from inherited adapter weights.
+
+For a verl reinforcement child restored from weights, set klBeta to 0.
+With a positive klBeta, verl measures the penalty against the base model instead of the adapter that the child inherited.
+
+--dry-run asks the service to validate and resolve the request without creating a submission, retaining the source snapshot or claiming a device.
+The preview does not reserve the source.
+
+A successful submission response means the operation is durable.
+Source retention and child-run creation happen during preparation.
+--wait follows preparation before it follows the child run.
+
+The command generates a token for each invocation.
+Running the command again generates another one, which the service treats as a second run.
+Passing --submission-id with the token from an earlier attempt reaches whatever that attempt created, instead of starting a second run.
+It is for retrying an attempt whose outcome was never seen.
+"training runs branches PARENT --submission TOKEN" reads that attempt's state back instead, and is the cheaper check.
+
+----
+akka optimize training runs branch PARENT --snapshot SNAPSHOT --steps N [flags]
+----
+
+== Examples
+
+----
+  # Preview a branch without submitting it
+  akka-optimize training runs branch 7d496e82c3a15f04 \
+    --snapshot 3f2a9c71bd04 --steps 200 --overrides lower-lr.json --dry-run
+
+  # Submit it and follow the run it starts
+  akka-optimize training runs branch 7d496e82c3a15f04 \
+    --snapshot 3f2a9c71bd04 --steps 200 --overrides lower-lr.json --wait
+
+  # Extract the new run's ID using jq
+  akka-optimize training runs branch 7d496e82c3a15f04 \
+    --snapshot 3f2a9c71bd04 --steps 200 --force --jq .childRunId
+----
+
+== Options
+
+----
+      --config-name string     Label for the child configuration in the workload score table
+      --description string     Description for the child run
+      --dry-run                Preview the resolved child run without submitting it
+      --exit-status            Exit non-zero if preparation or the child run fails; requires --wait
+  -h, --help                   help for branch
+  -f, --overrides string       Override document path, or '-' for standard input
+      --restore string         Snapshot artifact to restore: weights or trainingState (default "weights")
+      --snapshot string        Source snapshot ID or unambiguous prefix
+      --steps int              Additional optimizer updates allowed for the child run
+      --submission-id string   Submission token to reuse after an uncertain response
+      --wait                   Wait for preparation and child-run completion
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_runs.html[akka optimize training runs]	 - Manage training runs, snapshots and child runs
+
+[discrete]
+

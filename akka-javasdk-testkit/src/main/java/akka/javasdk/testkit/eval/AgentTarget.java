@@ -6,15 +6,14 @@ package akka.javasdk.testkit.eval;
 
 import akka.japi.function.Function2;
 import akka.javasdk.agent.Agent;
+import akka.javasdk.testkit.AgentTrace;
 import akka.javasdk.testkit.TelemetryReader;
 import akka.javasdk.testkit.TestKit;
-import akka.javasdk.testkit.ToolCall;
-import java.util.List;
 import java.util.function.Function;
 
 /**
  * Calls the agent's command handler through the TestKit component client in the turn's session, and
- * reads the tool calls from the trace recorded for that session.
+ * reads the evidence from the trace recorded for that session, also when the call failed.
  *
  * @param <A> the agent
  * @param <C> the command handler's parameter type
@@ -54,16 +53,16 @@ final class AgentTarget<A extends Agent, C, R> implements EvalTarget<C> {
               replyText.apply(reply),
               telemetry.getAgentTrace(turn.sessionId())));
     } catch (RuntimeException e) {
-      return Outcome.failed(e, toolCallsOrNone(turn));
+      return Outcome.failed(e, traceOrNone(turn));
     }
   }
 
   // After a failure the trace may hold nothing for the session.
-  private List<ToolCall> toolCallsOrNone(Turn<C> turn) {
+  private AgentTrace traceOrNone(Turn<C> turn) {
     try {
-      return telemetry.getAgentTrace(turn.sessionId()).toolCalls();
+      return telemetry.getAgentTrace(turn.sessionId());
     } catch (RuntimeException e) {
-      return List.of();
+      return AgentTrace.NONE;
     }
   }
 }

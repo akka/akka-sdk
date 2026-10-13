@@ -1,0 +1,52 @@
+= akka optimize use-cases manifests
+
+Frozen use-case sets, and which one is routing
+
+== Synopsis
+
+A manifest is the closed set of use-case routing rules produced by a freeze.
+
+Its identity is a content hash over the use-cases, their labels, their centres, their backends and the threshold, so a freeze that produced nothing new produces no new manifest.
+Everything in it is immutable;
+being live is a property of the gateway.
+
+== Options
+
+----
+  -h, --help   help for manifests
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_use-cases.html[akka optimize use-cases]	 - Discovered use-cases, and the manifests frozen from them
+* link:akka_optimize_use-cases_manifests_delete.html[akka optimize use-cases manifests delete]	 - Tombstone a manifest
+* link:akka_optimize_use-cases_manifests_deploy.html[akka optimize use-cases manifests deploy]	 - Make a manifest the live routing policy
+* link:akka_optimize_use-cases_manifests_diff.html[akka optimize use-cases manifests diff]	 - A manifest against the working set as it stands now
+* link:akka_optimize_use-cases_manifests_get.html[akka optimize use-cases manifests get]	 - One manifest as it was frozen
+* link:akka_optimize_use-cases_manifests_list.html[akka optimize use-cases manifests list]	 - Every manifest, and whether it can enforce
+
+[discrete]
+

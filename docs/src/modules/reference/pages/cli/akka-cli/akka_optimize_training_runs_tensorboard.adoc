@@ -1,0 +1,68 @@
+= akka optimize training runs tensorboard
+
+Open a run's training curves in TensorBoard
+
+== Synopsis
+
+Fetch a run's TensorBoard event files and open them in a local TensorBoard.
+
+The training loop writes every figure it measures per step to event files, and ships them to the run's storage as they grow.
+This command mirrors them to a local directory and starts "tensorboard --logdir" on it.
+While the run is still training the files are fetched again every few seconds, so the curves move.
+
+TensorBoard is started from PATH.
+Install it with "pip install tensorboard" or "uv tool install tensorboard".
+Pass --sync-only to fetch the files and start nothing, for a TensorBoard you run yourself.
+
+----
+akka optimize training runs tensorboard RUN [flags]
+----
+
+== Examples
+
+----
+  # Open the curves of a run
+  akka-optimize training runs tensorboard 7d496e82c3a15f04
+
+  # Fetch the event files into a directory of your choosing, without starting TensorBoard
+  akka-optimize training runs tensorboard 7d496e82c3a15f04 --dir ./curves --sync-only
+----
+
+== Options
+
+----
+      --dir string   where the event files go; default is a directory under the system temp
+  -h, --help         help for tensorboard
+      --port int     the port TensorBoard listens on (default 6006)
+      --sync-only    fetch the event files and start no TensorBoard
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_runs.html[akka optimize training runs]	 - Manage training runs, snapshots and child runs
+
+[discrete]
+

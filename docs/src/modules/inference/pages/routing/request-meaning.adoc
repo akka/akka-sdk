@@ -37,19 +37,14 @@ The working set is what has been discovered so far, and it keeps changing as tra
 
 [source, shell]
 ----
-akka use-cases working-set
+akka optimize use-cases working-set
 ----
 
-To see whether the working set is stable enough to fix, and what is holding it back:
-
-[source, shell]
-----
-akka use-cases status
-----
+To see whether the working set is stable enough to fix:
 
 [source, shell]
 ----
-akka use-cases non-admission
+akka optimize use-cases status
 ----
 
 === 2. Label what was discovered
@@ -58,12 +53,12 @@ The router does not name the clusters it finds. Read the requests nearest the ce
 
 [source, shell]
 ----
-akka use-cases exemplars list 7
+akka optimize use-cases exemplars list 7
 ----
 
 [source, shell]
 ----
-akka use-cases label 7 orders
+akka optimize use-cases label 7 orders
 ----
 
 See xref:inference:routing/defining-use-cases.adoc[Defining use cases] for what a use case is and how one is discovered.
@@ -74,14 +69,14 @@ Once every use case above the relevance threshold has a label, fix the set and g
 
 [source, shell]
 ----
-akka use-cases freeze --as 2026-08 --backend orders=frontier --backend cart=finetune
+akka optimize use-cases freeze --as 2026-08 --backend orders=frontier --backend cart=finetune
 ----
 
 A manifest is immutable, versioned, and provenance-verifiable. To compare one against the working set as it now stands:
 
 [source, shell]
 ----
-akka use-cases manifests diff 2026-08
+akka optimize use-cases manifests diff 2026-08
 ----
 
 === 4. Deploy the manifest
@@ -90,7 +85,7 @@ Only one manifest is live at a time:
 
 [source, shell]
 ----
-akka use-cases manifests deploy 2026-08
+akka optimize use-cases manifests deploy 2026-08
 ----
 
 See xref:inference:routing/routing-use-cases.adoc[Routing use cases] for what a manifest holds and how a use case reaches a backend.
@@ -101,26 +96,26 @@ A routing policy states what serves a use case and in what share. To send a copy
 
 [source, shell]
 ----
-akka routing-policies route finetune --usecase orders --shadow 10
+akka optimize routing-policies route finetune --usecase orders --shadow 10
 ----
 
 [source, shell]
 ----
-akka routing-policies route finetune --usecase orders --canary 5
+akka optimize routing-policies route finetune --usecase orders --canary 5
 ----
 
 Setting a dial to `0` removes it. To return to the previous published policy:
 
 [source, shell]
 ----
-akka routing-policies rollback orders
+akka optimize routing-policies rollback orders
 ----
 
 To refuse any routing change to a use case until the refusal is lifted:
 
 [source, shell]
 ----
-akka routing-policies veto orders
+akka optimize routing-policies veto orders
 ----
 
 include::partial$aao-inference-notice.adoc[]
@@ -129,6 +124,6 @@ include::partial$aao-inference-notice.adoc[]
 
 * xref:inference:routing/defining-use-cases.adoc[Defining use cases]
 * xref:inference:routing/routing-use-cases.adoc[Routing use cases]
-* xref:reference:inference-cli/routing.adoc#use-cases[`akka use-cases` command reference]
+* xref:reference:inference-cli/routing.adoc#use-cases[`akka optimize use-cases` command reference]
 * link:{url-agentgateway}[Agentgateway (CNCF), window="new"]
 * link:{url-envoy-ai-gateway}[Envoy AI Gateway (CNCF), window="new"]

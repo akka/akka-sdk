@@ -37,6 +37,11 @@ jobs:
         # https://github.com/actions/checkout/releases
         uses: actions/checkout@v6
 
+      - name: Checkout Optimize documentation
+        uses: ./.github/actions/checkout-optimize-docs
+        with:
+          token: ${{ secrets.NEXUS_READ_TOKEN || github.token }}
+
       - name: Cache Coursier cache
         # https://github.com/coursier/cache-action/releases
         uses: coursier/cache-action@v8.1.0
@@ -49,6 +54,8 @@ jobs:
 
       - name: Make docs and validate links
         # validate-links not enabled yet, waiting for fixing broken links
+        env:
+          NEXUS_DIR: ${{ github.workspace }}/nexus
         run: make managed local
 
   vale:

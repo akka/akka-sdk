@@ -8,6 +8,7 @@ import akka.annotation.InternalApi;
 import akka.javasdk.CommandException;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
+import akka.javasdk.SanitizerException;
 import akka.javasdk.agent.Guardrail.GuardrailException;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
@@ -66,10 +67,43 @@ public abstract class Agent implements AgentDelegationWorker {
   /**
    * The number of tokens consumed by a model interaction.
    *
-   * @param inputTokens tokens in the request sent to the model
+   * <p>Providers differ on whether {@code inputTokens} includes cached prompt tokens. Use {@code
+   * totalInputTokens} for a count that does not depend on the provider.
+   *
+   * <p>{@code totalInputTokens} counts cached prompt tokens at full weight. It is not weighted by
+   * cost, and providers bill cache reads and cache writes at rates that differ from regular input
+   * tokens.
+   *
+   * <p>A {@code totalInputTokens} of 0 is replaced by {@code inputTokens}. This also applies to
+   * JSON that was written before the field existed.
+   *
+   * @param inputTokens the input token count as the provider reports it
    * @param outputTokens tokens in the response returned by the model
+   * @param cacheReadInputTokens prompt tokens served from the provider's prompt cache, or 0 when
+   *     the provider reports nothing
+   * @param cacheWriteInputTokens prompt tokens written to the provider's prompt cache, or 0 when
+   *     the provider reports nothing
+   * @param totalInputTokens every prompt token the interaction consumed, counted once, whatever the
+   *     provider
    */
-  public record TokenUsage(int inputTokens, int outputTokens) {}
+  public record TokenUsage(
+      int inputTokens,
+      int outputTokens,
+      int cacheReadInputTokens,
+      int cacheWriteInputTokens,
+      int totalInputTokens) {
+
+    public TokenUsage {
+      if (totalInputTokens == 0) {
+        totalInputTokens = inputTokens;
+      }
+    }
+
+    /** A usage with no prompt cache activity. */
+    public TokenUsage(int inputTokens, int outputTokens) {
+      this(inputTokens, outputTokens, 0, 0, inputTokens);
+    }
+  }
 
   /**
    * A detailed reply from an agent component call, containing both the result and additional
@@ -77,9 +111,16 @@ public abstract class Agent implements AgentDelegationWorker {
    *
    * @param value The result of the agent call
    * @param tokenUsage The token usage from the AI model interaction
+   * @param interactionId The id of the interaction recorded in the ledger. Empty when the ledger
+   *     did not record the interaction.
    * @param <T> The type of the result value
    */
-  public record AgentReply<T>(T value, TokenUsage tokenUsage) {}
+  public record AgentReply<T>(T value, TokenUsage tokenUsage, Optional<String> interactionId) {
+
+    public AgentReply(T value, TokenUsage tokenUsage) {
+      this(value, tokenUsage, Optional.empty());
+    }
+  }
 
   private volatile Optional<AgentContext> context = Optional.empty();
 
@@ -249,34 +290,6 @@ public abstract class Agent implements AgentDelegationWorker {
       Builder mcpTools(List<RemoteMcpTools> tools);
 
       /**
-       * Sets a custom image loader for loading images from URIs.
-       *
-       * <p>When multimodal messages contain image references, they are normally automatically
-       * fetched, this however requires that they are public and can be fetched by any HTTP client.
-       * Defining a custom loader makes it possible to load images from custom sources such as cloud
-       * storage, databases, or authenticated endpoints.
-       *
-       * <p>Example:
-       *
-       * <pre>{@code
-       * return effects()
-       *     .imageLoader(new MyImageLoader())
-       *     .userMessage(UserMessage.from(
-       *         MessageContent.TextMessageContent.from("Describe this image"),
-       *         MessageContent.ImageMessageContent.fromUri(imageUri)))
-       *     .thenReply();
-       * }</pre>
-       *
-       * @param imageLoader The image loader implementation
-       * @return this builder for method chaining
-       * @see ImageLoader
-       * @deprecated use contentLoader
-       */
-      @Deprecated(since = "3.5.15", forRemoval = true)
-      @SuppressWarnings("removal")
-      Builder imageLoader(ImageLoader imageLoader);
-
-      /**
        * Sets a custom content loader.
        *
        * <p>When multimodal messages contain image, PDF references, they are normally automatically
@@ -412,8 +425,8 @@ public abstract class Agent implements AgentDelegationWorker {
       <T> MappingResponseBuilder<T> map(Function<String, T> mapper);
 
       /**
-       * Handle failures that occur during model processing. This method allows recovery from
-       * various types of exceptions including:
+       * Handle failures of the agent request. This method allows recovery from various types of
+       * exceptions including:
        *
        * <ul>
        *   <li>{@link ModelException} - General model processing failures
@@ -426,6 +439,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
        *   <li>{@link McpToolCallExecutionException} - MCP tool execution errors
        *   <li>{@link GuardrailException} - Guardrail violations
+       *   <li>{@link SanitizerException} - A sanitizer class failed
        * </ul>
        */
       FailureBuilder<String> onFailure(Function<Throwable, String> exceptionHandler);
@@ -452,8 +466,8 @@ public abstract class Agent implements AgentDelegationWorker {
       <T> MappingFailureBuilder<T> map(Function<Result, T> mapper);
 
       /**
-       * Handle failures that occur during model processing. This method allows recovery from
-       * various types of exceptions including:
+       * Handle failures of the agent request. This method allows recovery from various types of
+       * exceptions including:
        *
        * <ul>
        *   <li>{@link ModelException} - General model processing failures
@@ -466,6 +480,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
        *   <li>{@link McpToolCallExecutionException} - MCP tool execution errors
        *   <li>{@link GuardrailException} - Guardrail violations
+       *   <li>{@link SanitizerException} - A sanitizer class failed
        * </ul>
        */
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
@@ -489,8 +504,8 @@ public abstract class Agent implements AgentDelegationWorker {
       Agent.Effect<Result> thenReply(Metadata metadata);
 
       /**
-       * Handle failures that occur during model processing. This method allows recovery from
-       * various types of exceptions including:
+       * Handle failures of the agent request. This method allows recovery from various types of
+       * exceptions including:
        *
        * <ul>
        *   <li>{@link ModelException} - General model processing failures
@@ -503,6 +518,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
        *   <li>{@link McpToolCallExecutionException} - MCP tool execution errors
        *   <li>{@link GuardrailException} - Guardrail violations
+       *   <li>{@link SanitizerException} - A sanitizer class failed
        * </ul>
        */
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
@@ -635,33 +651,6 @@ public abstract class Agent implements AgentDelegationWorker {
        * <p>Construct instances using {@link RemoteMcpTools#fromServer(String)}
        */
       Builder mcpTools(List<RemoteMcpTools> tools);
-
-      /**
-       * Sets a custom image loader for loading images from URIs.
-       *
-       * <p>When multimodal messages contain image references, they are normally automatically
-       * fetched, this however requires that they are public and can be fetched by any HTTP client.
-       * Defining a custom loader makes it possible to load images from custom sources such as cloud
-       * storage, databases, or authenticated endpoints.
-       *
-       * <p>Example:
-       *
-       * <pre>{@code
-       * return streamEffects()
-       *     .imageLoader(new MyImageLoader())
-       *     .userMessage(UserMessage.from(
-       *         MessageContent.TextMessageContent.from("Describe this image"),
-       *         MessageContent.ImageMessageContent.fromUri(imageUri)))
-       *     .thenReply();
-       * }</pre>
-       *
-       * @param imageLoader The image loader implementation
-       * @return this builder for method chaining
-       * @deprecated use contentLoader
-       */
-      @Deprecated(since = "3.5.18", forRemoval = true)
-      @SuppressWarnings("removal")
-      Builder imageLoader(ImageLoader imageLoader);
 
       /**
        * Sets a custom content loader.

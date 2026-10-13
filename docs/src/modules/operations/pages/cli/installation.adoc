@@ -73,6 +73,8 @@ brew update
 brew upgrade akka
 ----
 
+NOTE: Homebrew 7 and later require third-party taps to be trusted before installing or upgrading from them. If Homebrew warns that the `akka/brew` tap is not trusted, run `brew trust --formula akka/brew/akka` once and then retry.
+
 **Alternative approach**
 
 ....

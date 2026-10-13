@@ -1,6 +1,6 @@
 = Production readiness
 :page-summary: What production readiness means with Akka, the partnership behind it, and where the detailed responsibility matrix (the Shared Responsibility Model and RACI) is defined.
-:page-when-to-use: Use this when planning a move to production, to agree who owns what and to walk the readiness items with your Akka team.
+:page-when-to-use: Use this when planning a move to production, to agree who owns what and to review the readiness items with your Akka team.
 :page-related: xref:operations:index.adoc[], xref:concepts:deployment-model.adoc[], xref:operations:operator-best-practices.adoc[]
 :page-persona: operator-platform, operator-sre
 
@@ -36,7 +36,7 @@ Backups and recovery::
 Backups and recovery for your data and cluster state, sized to your recovery objectives.
 
 Multi-region resilience::
-Replication and failover behaviour chosen per service to meet your availability needs.
+Replication and failover behavior chosen per service to meet your availability needs.
 
 Data sovereignty::
 Choosing regions so your data stays inside the legal jurisdiction it must remain in.

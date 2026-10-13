@@ -1,19 +1,26 @@
 = akka routes export
 
-Export a single route as YAML
+Export a single route as a YAML descriptor
 
 == Synopsis
 
-The `akka routes export` command will export a route as YAML, so that it can be stored in a version control system, edited, and reapplied with the update -f command.
+The `akka routes export` command will export a route as a YAML descriptor, so that it can be stored in a version control system, edited, and reapplied with the apply command.
 
 ----
 akka routes export NAME [flags]
+----
+
+== Examples
+
+----
+akka routes export _name_ -f _file-name_
 ----
 
 == Options
 
 ----
       --all-regions      run the command on all regions
+  -f, --file string      The YAML file to write. If not supplied, will write to stdout.
   -h, --help             help for export
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
       --project string   project to use if not using the default configured project

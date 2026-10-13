@@ -50,6 +50,10 @@ public final class TestModelProvider implements ModelProvider.Custom {
 
   /**
    * Represents an AI response, which can include a message and/or list of tool invocation requests.
+   *
+   * <p>Only {@code inputTokens} and {@code outputTokens} of the token usage reach the agent. The
+   * agent reply reports no prompt cache tokens, and {@code totalInputTokens} equals {@code
+   * inputTokens}.
    */
   public record AiResponse(
       String message,
@@ -121,12 +125,19 @@ public final class TestModelProvider implements ModelProvider.Custom {
    * {@code @FunctionTool} returns image bytes); inspect {@link #contents()} to assert on what the
    * model received. {@link #content()} returns the text-only view (text parts joined, image/PDF
    * omitted).
+   *
+   * @param isError true when the runtime sent the tool result to the model as an error result.
    */
-  public record ToolResult(String name, List<MessageContent> contents) implements InputMessage {
+  public record ToolResult(String name, List<MessageContent> contents, boolean isError)
+      implements InputMessage {
+
+    public ToolResult(String name, List<MessageContent> contents) {
+      this(name, contents, false);
+    }
 
     /** Text-only tool result. */
     public ToolResult(String name, String content) {
-      this(name, List.of(MessageContent.TextMessageContent.from(content)));
+      this(name, List.of(MessageContent.TextMessageContent.from(content)), false);
     }
 
     @Override
@@ -183,7 +194,10 @@ public final class TestModelProvider implements ModelProvider.Custom {
       reply(new AiResponse(message));
     }
 
-    /** Reply with a simple message for matching requests with defined token usage. */
+    /**
+     * Reply with a simple message for matching requests with defined token usage. The prompt cache
+     * counts of the token usage are ignored, see {@link AiResponse}.
+     */
     public void reply(String message, Agent.TokenUsage tokenUsage) {
       reply(new AiResponse(message, List.of(), Optional.of(tokenUsage)));
     }
@@ -314,7 +328,8 @@ public final class TestModelProvider implements ModelProvider.Custom {
       // content part rather than calling toolResult.text(), which throws on non-text results.
       return new ToolResult(
           toolResult.toolName(),
-          toolResult.contents().stream().map(this::toMessageContent).toList());
+          toolResult.contents().stream().map(this::toMessageContent).toList(),
+          Boolean.TRUE.equals(toolResult.isError()));
     }
     return null;
   }
@@ -515,14 +530,19 @@ public final class TestModelProvider implements ModelProvider.Custom {
   }
 
   /**
-   * Configures to respond when an {@link ToolResult} is an exact match of {@code toolResult}.
+   * Configures to respond when a {@link ToolResult} has the same name and contents as {@code
+   * toolResult}. The match ignores {@link ToolResult#isError()}. To match on it, use {@link
+   * #whenToolResult(Predicate)}.
    *
    * <p>Note that to finish the configuration, you must call one of the reply methods.
    */
   public WhenToolReplyClause whenToolResult(ToolResult toolResult) {
 
     Predicate<InputMessage> messagePredicate =
-        (value) -> value instanceof ToolResult tResult && toolResult.equals(tResult);
+        (value) ->
+            value instanceof ToolResult tResult
+                && toolResult.name().equals(tResult.name())
+                && toolResult.contents().equals(tResult.contents());
 
     return new WhenToolReplyClause(this, messagePredicate);
   }

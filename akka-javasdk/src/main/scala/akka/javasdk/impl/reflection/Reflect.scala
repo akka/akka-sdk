@@ -34,6 +34,8 @@ import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
+import akka.javasdk.evaluation.DurableEvaluator
+import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.client.ComponentClientImpl
@@ -167,11 +169,20 @@ private[impl] object Reflect {
   def isAutonomousAgent(cls: Class[_]): Boolean =
     classOf[AutonomousAgent].isAssignableFrom(cls)
 
+  def isEvaluator(cls: Class[_]): Boolean =
+    classOf[Evaluator].isAssignableFrom(cls)
+
+  def isDurableEvaluator(cls: Class[_]): Boolean =
+    classOf[DurableEvaluator[_]].isAssignableFrom(cls)
+
   def isToolCandidate(cls: Class[_]): Boolean =
     isEventSourcedEntity(cls) ||
     isKeyValueEntity(cls) ||
     isWorkflow(cls) ||
     isView(cls)
+
+  def isStreamingAgent(cls: Class[_]): Boolean =
+    isAgent(cls) && cls.getMethods.exists(isCommandHandlerCandidate[Agent.StreamEffect])
 
   def isEvaluatorAgent(cls: Class[_]): Boolean = {
     isAgent(cls) && {
@@ -289,6 +300,13 @@ private[impl] object Reflect {
 
   def workflowStateType(component: Class[_]): Class[_] = {
     findSingleTypeParam(component, classOf[Workflow[_]], s"Cannot find workflow state class for $component")
+  }
+
+  def durableEvaluatorStateType(component: Class[_]): Class[_] = {
+    findSingleTypeParam(
+      component,
+      classOf[DurableEvaluator[_]],
+      s"Cannot find durable evaluator state class for $component")
   }
 
   def workflowKnownInputTypes(clz: Class[_]): List[Class[_]] = {

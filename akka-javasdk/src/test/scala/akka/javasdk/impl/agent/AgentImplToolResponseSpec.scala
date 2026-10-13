@@ -16,8 +16,17 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class AgentImplToolResponseSpec extends AnyWordSpec with Matchers {
 
-  private def toSessionMessage(contents: Seq[SpiAgent.MessageContent]): SessionMessage =
-    AgentImpl.toSessionToolCallResponse(Instant.EPOCH, "agent", "id1", "render_chart", contents)
+  private val text = new SpiAgent.TextMessageContent("caption")
+  private val image = new SpiAgent.ImageUriMessageContent(
+    URI.create("object://bucket/chart.png"),
+    SpiAgent.ImageMessageContent.Auto,
+    Some("image/png"))
+
+  private def toSessionMessage(
+      contents: Seq[SpiAgent.MessageContent],
+      sanitized: Boolean = false,
+      isError: Boolean = false): SessionMessage =
+    AgentImpl.toSessionToolCallResponse(Instant.EPOCH, "agent", "id1", "render_chart", contents, sanitized, isError)
 
   "AgentImpl.toSessionToolCallResponse" should {
 
@@ -32,11 +41,6 @@ class AgentImplToolResponseSpec extends AnyWordSpec with Matchers {
     }
 
     "keep a single image-URI content as a MultimodalToolCallResponse" in {
-      val image = new SpiAgent.ImageUriMessageContent(
-        URI.create("object://bucket/chart.png"),
-        SpiAgent.ImageMessageContent.Auto,
-        Some("image/png"))
-
       toSessionMessage(Seq(image)) match {
         case mtcr: SessionMessage.MultimodalToolCallResponse =>
           mtcr.contents().asScala.toList match {
@@ -49,12 +53,6 @@ class AgentImplToolResponseSpec extends AnyWordSpec with Matchers {
     }
 
     "keep a text + image content list as a MultimodalToolCallResponse in order" in {
-      val text = new SpiAgent.TextMessageContent("caption")
-      val image = new SpiAgent.ImageUriMessageContent(
-        URI.create("object://bucket/chart.png"),
-        SpiAgent.ImageMessageContent.Auto,
-        Some("image/png"))
-
       toSessionMessage(Seq(text, image)) match {
         case mtcr: SessionMessage.MultimodalToolCallResponse =>
           mtcr.contents().asScala.toList match {
@@ -65,6 +63,34 @@ class AgentImplToolResponseSpec extends AnyWordSpec with Matchers {
             case other => fail(s"unexpected contents: $other")
           }
         case other => fail(s"expected a MultimodalToolCallResponse, got [${other.getClass.getSimpleName}]")
+      }
+    }
+
+    "carry the sanitized flag to either response" in {
+      toSessionMessage(Seq(text), sanitized = true) match {
+        case tcr: SessionMessage.ToolCallResponse => tcr.sanitized() shouldBe true
+        case other => fail(s"expected a ToolCallResponse, got [${other.getClass.getSimpleName}]")
+      }
+      toSessionMessage(Seq(text, image), sanitized = true) match {
+        case mtcr: SessionMessage.MultimodalToolCallResponse => mtcr.sanitized() shouldBe true
+        case other => fail(s"expected a MultimodalToolCallResponse, got [${other.getClass.getSimpleName}]")
+      }
+    }
+
+    "carry the error flag to either response" in {
+      toSessionMessage(Seq(text), isError = true) match {
+        case tcr: SessionMessage.ToolCallResponse =>
+          tcr.isError() shouldBe true
+          tcr.sanitized() shouldBe false
+        case other => fail(s"expected a ToolCallResponse, got [${other.getClass.getSimpleName}]")
+      }
+      toSessionMessage(Seq(text, image), isError = true) match {
+        case mtcr: SessionMessage.MultimodalToolCallResponse => mtcr.isError() shouldBe true
+        case other => fail(s"expected a MultimodalToolCallResponse, got [${other.getClass.getSimpleName}]")
+      }
+      toSessionMessage(Seq(text)) match {
+        case tcr: SessionMessage.ToolCallResponse => tcr.isError() shouldBe false
+        case other => fail(s"expected a ToolCallResponse, got [${other.getClass.getSimpleName}]")
       }
     }
   }

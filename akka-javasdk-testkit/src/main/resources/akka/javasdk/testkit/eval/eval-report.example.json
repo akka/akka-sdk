@@ -1,0 +1,198 @@
+{
+  "format": "akka-eval-report",
+  "formatVersion": 2,
+  "name": "support-agent-quality",
+  "startedAt": "2026-10-01T10:15:30.123Z",
+  "finishedAt": "2026-10-01T10:16:02.456Z",
+  "runs": 1,
+  "gate": { "passed": false, "detail": "pass rate 0.33 over 3 attempts (3 cases, 1 run) with 1 inconclusive, required 0.90" },
+  "summary": {
+    "cases": 3,
+    "passedCases": 1,
+    "failedCases": 1,
+    "inconsistentCases": 0,
+    "inconclusiveCases": 1,
+    "inconsistentRequirements": 0,
+    "attempts": 3,
+    "passedAttempts": 1,
+    "failedAttempts": 1,
+    "inconclusiveAttempts": 1,
+    "passRate": 0.3333333333333333
+  },
+  "evaluators": [
+    { "evaluator": "tools", "passed": 1, "failed": 0, "inconclusive": 0 },
+    { "evaluator": "reply-contains", "passed": 1, "failed": 0, "inconclusive": 0 },
+    { "evaluator": "tool-arguments", "passed": 0, "failed": 1, "inconclusive": 0 },
+    { "evaluator": "tool-results", "passed": 0, "failed": 0, "inconclusive": 2 }
+  ],
+  "spend": { "attemptsWithEvidence": 3, "modelCalls": 3, "inputTokens": 300, "outputTokens": 60, "latencyMs": 135 },
+  "cases": [
+    {
+      "id": "shipped",
+      "outcome": "PASSED",
+      "passedRuns": 1,
+      "failedRuns": 0,
+      "inconclusiveRuns": 0,
+      "requirements": [
+        { "index": 0, "evaluator": "tools", "outcome": "PASSED", "passedIn": [1], "failedIn": [], "inconclusiveIn": [] },
+        { "index": 1, "evaluator": "reply-contains", "outcome": "PASSED", "passedIn": [1], "failedIn": [], "inconclusiveIn": [] }
+      ]
+    },
+    {
+      "id": "wrong-order",
+      "outcome": "FAILED",
+      "passedRuns": 0,
+      "failedRuns": 1,
+      "inconclusiveRuns": 0,
+      "requirements": [
+        { "index": 0, "evaluator": "tool-arguments", "outcome": "FAILED", "passedIn": [], "failedIn": [1], "inconclusiveIn": [] },
+        { "index": 1, "evaluator": "tool-results", "outcome": "INCONCLUSIVE", "passedIn": [], "failedIn": [], "inconclusiveIn": [1] }
+      ]
+    },
+    {
+      "id": "closing",
+      "outcome": "INCONCLUSIVE",
+      "passedRuns": 0,
+      "failedRuns": 0,
+      "inconclusiveRuns": 1,
+      "requirements": [
+        { "index": 0, "evaluator": "tool-results", "outcome": "INCONCLUSIVE", "passedIn": [], "failedIn": [], "inconclusiveIn": [1] }
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "id": "shipped",
+      "run": 1,
+      "verdict": "PASS",
+      "interaction": {
+        "input": "Where is o_42?",
+        "userMessage": "Where is o_42?",
+        "reply": "Order o_42 is shipped.",
+        "finalModelText": "Order o_42 is shipped.",
+        "latencyMs": 45,
+        "inputTokens": 100,
+        "outputTokens": 20,
+        "blocked": false,
+        "toolCalls": [
+          {
+            "name": "getOrder",
+            "arguments": { "orderId": "o_42" },
+            "result": "{\"status\":\"shipped\"}",
+            "error": null
+          }
+        ],
+        "modelCalls": [
+          {
+            "model": "gpt-4o",
+            "provider": "openai",
+            "finishReasons": ["STOP"],
+            "inputTokens": 100,
+            "outputTokens": 20,
+            "durationMs": 40,
+            "inputMessages": "[SystemMessage: You are a support agent...] [UserMessage: Where is o_42?]",
+            "outputMessages": "[AiMessage: Order o_42 is shipped.]"
+          }
+        ],
+        "guardrails": [
+          { "name": "pii", "category": "privacy", "passed": true, "explanation": "" }
+        ]
+      },
+      "results": [
+        { "evaluator": "tools", "verdict": "PASS", "detail": "" },
+        { "evaluator": "reply-contains", "verdict": "PASS", "detail": "" }
+      ]
+    },
+    {
+      "id": "wrong-order",
+      "run": 1,
+      "verdict": "FAIL",
+      "interaction": {
+        "input": "Where is o_43?",
+        "userMessage": "Where is o_43?",
+        "reply": "Order o_42 is shipped.",
+        "finalModelText": "Order o_42 is shipped.",
+        "latencyMs": 45,
+        "inputTokens": 100,
+        "outputTokens": 20,
+        "blocked": false,
+        "toolCalls": [
+          {
+            "name": "getOrder",
+            "arguments": { "orderId": "o_42" },
+            "result": "{\"status\":\"shipped\"}",
+            "error": null
+          }
+        ],
+        "modelCalls": [
+          {
+            "model": "gpt-4o",
+            "provider": "openai",
+            "finishReasons": ["STOP"],
+            "inputTokens": 100,
+            "outputTokens": 20,
+            "durationMs": 40,
+            "inputMessages": "[SystemMessage: You are a support agent...] [UserMessage: Where is o_43?]",
+            "outputMessages": "[AiMessage: Order o_42 is shipped.]"
+          }
+        ],
+        "guardrails": [
+          { "name": "pii", "category": "privacy", "passed": true, "explanation": "" }
+        ]
+      },
+      "results": [
+        { "evaluator": "tool-arguments", "verdict": "FAIL", "detail": "getOrder(orderId) expected o_43, was [o_42]" },
+        {
+          "evaluator": "tool-results",
+          "verdict": "INCONCLUSIVE",
+          "detail": "issueRefund was never called; called [getOrder]; make sure the evaluated name is the registered tool name, which is <Class>_<method> unless @FunctionTool sets a name"
+        }
+      ]
+    },
+    {
+      "id": "closing",
+      "run": 1,
+      "verdict": "INCONCLUSIVE",
+      "interaction": {
+        "input": "Thanks, that is all.",
+        "userMessage": "Thanks, that is all.",
+        "reply": "Order o_42 is shipped.",
+        "finalModelText": "Order o_42 is shipped.",
+        "latencyMs": 45,
+        "inputTokens": 100,
+        "outputTokens": 20,
+        "blocked": false,
+        "toolCalls": [
+          {
+            "name": "getOrder",
+            "arguments": { "orderId": "o_42" },
+            "result": "{\"status\":\"shipped\"}",
+            "error": null
+          }
+        ],
+        "modelCalls": [
+          {
+            "model": "gpt-4o",
+            "provider": "openai",
+            "finishReasons": ["STOP"],
+            "inputTokens": 100,
+            "outputTokens": 20,
+            "durationMs": 40,
+            "inputMessages": "[SystemMessage: You are a support agent...] [UserMessage: Thanks, that is all.]",
+            "outputMessages": "[AiMessage: Order o_42 is shipped.]"
+          }
+        ],
+        "guardrails": [
+          { "name": "pii", "category": "privacy", "passed": true, "explanation": "" }
+        ]
+      },
+      "results": [
+        {
+          "evaluator": "tool-results",
+          "verdict": "INCONCLUSIVE",
+          "detail": "issueRefund was never called; called [getOrder]; make sure the evaluated name is the registered tool name, which is <Class>_<method> unless @FunctionTool sets a name"
+        }
+      ]
+    }
+  ]
+}

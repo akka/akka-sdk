@@ -24,6 +24,12 @@ import java.util.List;
  *
  * <p><strong>Custom Implementation:</strong> You can provide a custom implementation using {@link
  * MemoryProvider#custom(SessionMemory)} to store session memory in external databases or services.
+ * Store the {@code sanitized} value of each user message and tool response, and return it with the
+ * message from {@link #getHistory(String)}. The runtime masks a user message or a tool response
+ * that it gets back with {@code sanitized} false before it sends the message to the model, even
+ * when the runtime masked the text already. Also store the {@code isError} value of each tool
+ * response and return it with the message. The runtime passes that flag to the model provider, and
+ * a response without it replays as a normal result.
  *
  * <p><strong>Memory Management:</strong> Session memory can be configured to limit the amount of
  * history retained, either by message count or total size, to control token usage and performance.

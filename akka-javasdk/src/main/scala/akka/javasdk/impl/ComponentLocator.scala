@@ -22,6 +22,8 @@ import akka.javasdk.agent.evaluator.SummarizationEvaluator
 import akka.javasdk.agent.evaluator.ToxicityEvaluator
 import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.consumer.Consumer
+import akka.javasdk.evaluation.DurableEvaluator
+import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.agent.task.BacklogEntity
 import akka.javasdk.keyvalueentity.KeyValueEntity
@@ -49,6 +51,7 @@ private[javasdk] object ComponentLocator {
   // in the akka-javasdk-annotation-processor module
   val AgentKey = "agent"
   val AutonomousAgentKey = "autonomous-agent"
+  val EvaluatorKey = "evaluator"
   val ConsumerKey = "consumer"
   val EventSourcedEntityKey = "event-sourced-entity"
   val GrpcEndpointKey = "grpc-endpoint"
@@ -58,10 +61,12 @@ private[javasdk] object ComponentLocator {
   val TimedActionKey = "timed-action"
   val ViewKey = "view"
   val WorkflowKey = "workflow"
+  val DurableEvaluatorKey = "durable-evaluator"
 
   private val AllComponentTypeKeys = Seq(
     AgentKey,
     AutonomousAgentKey,
+    EvaluatorKey,
     ConsumerKey,
     EventSourcedEntityKey,
     GrpcEndpointKey,
@@ -70,7 +75,8 @@ private[javasdk] object ComponentLocator {
     McpEndpointKey,
     TimedActionKey,
     ViewKey,
-    WorkflowKey)
+    WorkflowKey,
+    DurableEvaluatorKey)
 
   private val logger = LoggerFactory.getLogger(getClass)
 
@@ -243,7 +249,9 @@ private[javasdk] object ComponentLocator {
         ComponentType.KeyValueEntity -> classOf[KeyValueEntity[_]],
         ComponentType.View -> classOf[AnyRef],
         ComponentType.Agent -> classOf[Agent],
-        ComponentType.AutonomousAgent -> classOf[AutonomousAgent])
+        ComponentType.AutonomousAgent -> classOf[AutonomousAgent],
+        ComponentType.Evaluator -> classOf[Evaluator],
+        ComponentType.DurableEvaluator -> classOf[DurableEvaluator[_]])
 
     // Alternative to but inspired by the stdlib SPI style of registering in META-INF/services
     // since we don't always have top supertypes and want to inject things into component constructors

@@ -11,6 +11,7 @@ import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.view.ViewTestModels
 import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.Principal
+import akka.runtime.sdk.spi.ProjectServiceNamePattern
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.ServiceNamePattern
 import akka.runtime.sdk.spi.SpiSchema.SpiClass
@@ -18,6 +19,7 @@ import akka.runtime.sdk.spi.SpiSchema.SpiInteger
 import akka.runtime.sdk.spi.SpiSchema.SpiList
 import akka.runtime.sdk.spi.SpiSchema.SpiString
 import akka.runtime.sdk.spi.SpiSchema.SpiTimestamp
+import akka.runtime.sdk.spi.SpiffePattern
 import akka.runtime.sdk.spi.ViewDescriptor
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -57,7 +59,9 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
         val options = desc.componentOptions
         val acl = options.aclOpt.get
         acl.allow.head match {
-          case _: Principal => fail()
+          case _: Principal                 => fail()
+          case _: SpiffePattern             => fail()
+          case _: ProjectServiceNamePattern => fail()
           case pattern: ServiceNamePattern =>
             pattern.pattern shouldBe "test"
         }
@@ -69,7 +73,9 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
         val query = desc.queries.find(_.name == "getEmployeeByEmail").get
         val acl = query.methodOptions.acl.get
         acl.allow.head match {
-          case _: Principal => fail()
+          case _: Principal                 => fail()
+          case _: SpiffePattern             => fail()
+          case _: ProjectServiceNamePattern => fail()
           case pattern: ServiceNamePattern =>
             pattern.pattern shouldBe "test"
         }

@@ -40,6 +40,8 @@ akka [flags]
 * link:akka_local.html[akka local]	 - Interact with and manage Akka services running locally.
 * link:akka_logs.html[akka logs]	 - Display the last few lines of logs for a specific service.
 * link:akka_mcp.html[akka mcp]	 - [Incubating] MCP server for AI agent integration.
+* link:akka_models.html[akka models]	 - Deploy and serve models in Akka's inference regions.
+* link:akka_optimize.html[akka optimize]	 - Own your intelligence: cost, models, training and routing
 * link:akka_organizations.html[akka organizations]	 - Manage your organizations on Akka
 * link:akka_projects.html[akka projects]	 - Manage your Akka projects.
 * link:akka_regions.html[akka regions]	 - Manage available regions.

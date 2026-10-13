@@ -8,11 +8,13 @@ import akka.annotation.InternalApi
 import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes.Forbidden
 import akka.javasdk.annotations.Acl
+import akka.javasdk.tooling.validation.Validations
 import akka.runtime.sdk.spi.ACL
 import akka.runtime.sdk.spi.All
 import akka.runtime.sdk.spi.Internet
 import akka.runtime.sdk.spi.PrincipalMatcher
 import akka.runtime.sdk.spi.ServiceNamePattern
+import akka.runtime.sdk.spi.SpiffePattern
 import com.google.rpc.Code
 
 /**
@@ -22,12 +24,21 @@ import com.google.rpc.Code
 private[impl] object AclDescriptorFactory {
 
   val invalidAnnotationUsage: String =
-    "Invalid annotation usage. Matcher has both 'principal' and 'service' defined. " +
-    "Only one is allowed."
+    "Invalid annotation usage. Matcher must have exactly one of 'principal', 'service' or 'spiffe' defined."
 
   def validateMatcher(matcher: Acl.Matcher): Unit = {
-    if (matcher.principal() != Acl.Principal.UNSPECIFIED && matcher.service().nonEmpty)
+    val definedCount =
+      (if (matcher.principal() != Acl.Principal.UNSPECIFIED) 1 else 0) +
+      (if (matcher.service().nonEmpty) 1 else 0) +
+      (if (matcher.spiffe().nonEmpty) 1 else 0)
+    if (definedCount > 1)
       throw new IllegalArgumentException(invalidAnnotationUsage)
+    // Same rule the compile-time/runtime validation framework applies (Validations.isValidSpiffePattern) and that
+    // the runtime glob compiler enforces: `**` is only valid as the final token. Checked here too so a pattern that
+    // somehow slipped past validation still fails when the service descriptor is built.
+    if (matcher.spiffe().nonEmpty && !Validations.isValidSpiffePattern(matcher.spiffe()))
+      throw new IllegalArgumentException(
+        s"Invalid SPIFFE ACL pattern [${matcher.spiffe()}]: `**` is only allowed as the final token (matches everything below)")
   }
 
   // receives the method, checks if it is annotated with @Acl and if so,
@@ -47,9 +58,11 @@ private[impl] object AclDescriptorFactory {
   private def toPrincipalMatcher(matchers: Array[Acl.Matcher]): List[PrincipalMatcher] =
     matchers.map { m =>
       m.principal match {
-        case Acl.Principal.ALL         => All
-        case Acl.Principal.INTERNET    => Internet
-        case Acl.Principal.UNSPECIFIED => new ServiceNamePattern(m.service())
+        case Acl.Principal.ALL      => All
+        case Acl.Principal.INTERNET => Internet
+        case Acl.Principal.UNSPECIFIED =>
+          if (m.spiffe().nonEmpty) new SpiffePattern(m.spiffe())
+          else new ServiceNamePattern(m.service())
       }
     }.toList
 

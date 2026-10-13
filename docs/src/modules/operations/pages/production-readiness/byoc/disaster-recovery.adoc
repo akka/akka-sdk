@@ -263,7 +263,7 @@ Runtime-versus-SDK compatibility is a shared responsibility. Akka detects what i
 [#chaos-vectors]
 == 9. Additional chaos vectors
 
-Documented procedures. Not walked in detail at the tabletop. Drill readiness varies.
+Documented procedures. Not covered in detail at the tabletop. Drill readiness varies.
 
 [cols="2,3", options="header"]
 |===

@@ -1,0 +1,67 @@
+= akka optimize training snapshots release
+
+Release a reference left behind by its owner
+
+== Synopsis
+
+Release a reference whose owner no longer needs it.
+
+A child run releases its source when it ends, and a candidate registration releases the weights once its own copy of them is durable.
+Either can stop without doing so: a run whose cleanup could not reach the catalog, or a registration whose release exhausted its retries.
+The reference then keeps an artifact alive that nothing reads.
+
+OWNER is the run or model reported under HELD BY by "training runs snapshots", specified as a complete ID or an unambiguous prefix.
+Every kind that owner retains is released unless --kind specifies one.
+
+The service verifies the owner rather than accepting the request at face value.
+A run that has not reached a terminal phase, and a registration that is still copying, retain what they hold.
+A paused run has not reached a terminal phase, because resuming reads its source again.
+An owner the service cannot find retains what it holds too: a branch submission retains the source before it starts the child, so an OWNER that resolves to no run may name a child that is still being started.
+
+----
+akka optimize training snapshots release SNAPSHOT OWNER [flags]
+----
+
+== Examples
+
+----
+  # Release what a cancelled child run never gave back
+  akka-optimize training snapshots release 3f2a9c71bd04 7d496e82c3a1
+----
+
+== Options
+
+----
+  -h, --help          help for release
+      --kind string   Artifact kind to act on, either weights or trainingState. Both kinds are covered by default
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
+      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_snapshots.html[akka optimize training snapshots]	 - Inspect snapshots and candidate registration
+
+[discrete]
+

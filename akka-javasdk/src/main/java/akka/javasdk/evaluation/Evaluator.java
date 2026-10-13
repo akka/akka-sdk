@@ -1,0 +1,78 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.evaluation;
+
+import akka.javasdk.impl.evaluation.EvaluatorEffectImpl;
+
+/**
+ * An Evaluator is a stateless component that evaluates agent interactions.
+ *
+ * <p>An Evaluator is bound to one or more agents through configuration under {@code
+ * akka.javasdk.evaluation.evaluators}, keyed by the evaluator's component id. The runtime invokes
+ * {@link #evaluate(EvaluationContext)} for each interaction of a bound agent, passing an {@link
+ * EvaluationContext} that identifies the interaction to evaluate. The handler returns an {@link
+ * Effect} describing the outcome: the recorded evaluation or an inconclusive result. An exception
+ * thrown from the handler records a failed evaluation.
+ *
+ * <p>Blocking calls made from {@link #evaluate(EvaluationContext)} run on virtual threads. For an
+ * evaluation that runs in several steps and must survive restarts, extend {@link DurableEvaluator}
+ * instead.
+ *
+ * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.Component}.
+ */
+public abstract class Evaluator {
+
+  /**
+   * Evaluate the interaction identified by the given context.
+   *
+   * @param context identifies the interaction to evaluate
+   * @return an {@link Effect} describing the outcome of the evaluation
+   */
+  public abstract Effect evaluate(EvaluationContext context);
+
+  /** Returns a builder for the {@link Effect} to be returned by {@link #evaluate}. */
+  protected final Effect.Builder effects() {
+    return EvaluatorEffectImpl.builder();
+  }
+
+  /**
+   * An Effect is a description of what the runtime needs to do after the evaluation is handled.
+   *
+   * <p>An Evaluator Effect can either:
+   *
+   * <ul>
+   *   <li>complete with an {@link Evaluation} (the verdict)
+   *   <li>report that the evaluation was inconclusive: it ran but reached no verdict
+   * </ul>
+   */
+  public interface Effect {
+
+    /**
+     * Construct the effect that is returned by the evaluation handler. The effect describes the
+     * outcome of the evaluation.
+     */
+    interface Builder {
+
+      /**
+       * Complete the evaluation with its verdict.
+       *
+       * @param evaluation the evaluation outcome
+       * @return the complete effect
+       */
+      Effect complete(Evaluation evaluation);
+
+      /**
+       * Report that the evaluation was inconclusive.
+       *
+       * <p>Use this when the evaluator ran but could not reach a verdict, for example there was no
+       * transcript or the interaction was not applicable.
+       *
+       * @param reason why the evaluation was inconclusive
+       * @return the inconclusive effect
+       */
+      Effect inconclusive(String reason);
+    }
+  }
+}

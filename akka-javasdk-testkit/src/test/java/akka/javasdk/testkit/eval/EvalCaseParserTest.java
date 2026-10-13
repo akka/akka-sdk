@@ -72,7 +72,14 @@ class EvalCaseParserTest {
         .containsEntry(Evaluators.Tools.class, Verdict.FAIL);
 
     assertThat(cases.get(1).recordedCalls()).isEmpty();
-    assertThat(cases.get(1).evaluators()).isEmpty();
+    // An empty toolCalls records a turn without tool calls, so the case expects none.
+    assertThat(cases.get(1).evaluators())
+        .singleElement()
+        .isInstanceOf(Evaluators.ToolCallBudget.class);
+    assertThat(verdicts(cases.get(1), Interaction.of("q", "done")))
+        .containsExactly(entry(Evaluators.ToolCallBudget.class, Verdict.PASS));
+    assertThat(verdicts(cases.get(1), asRecorded))
+        .containsExactly(entry(Evaluators.ToolCallBudget.class, Verdict.FAIL));
   }
 
   @Test
@@ -93,11 +100,13 @@ class EvalCaseParserTest {
     var spent = cases.get(0);
     assertThat(verdicts(spent, traced(2, 165, Duration.ofMillis(1500))))
         .containsExactly(
+            entry(Evaluators.ToolCallBudget.class, Verdict.PASS),
             entry(Evaluators.ModelCallBudget.class, Verdict.PASS),
             entry(Evaluators.TokenBudget.class, Verdict.PASS),
             entry(Evaluators.LatencyBudget.class, Verdict.PASS));
     assertThat(verdicts(spent, traced(3, 166, Duration.ofMillis(1501))))
         .containsExactly(
+            entry(Evaluators.ToolCallBudget.class, Verdict.PASS),
             entry(Evaluators.ModelCallBudget.class, Verdict.FAIL),
             entry(Evaluators.TokenBudget.class, Verdict.FAIL),
             entry(Evaluators.LatencyBudget.class, Verdict.FAIL));
@@ -105,11 +114,17 @@ class EvalCaseParserTest {
     // c2: tokens only.
     var tokensOnly = cases.get(1);
     assertThat(verdicts(tokensOnly, traced(1, 450, Duration.ofMillis(1))))
-        .containsExactly(entry(Evaluators.TokenBudget.class, Verdict.PASS));
+        .containsExactly(
+            entry(Evaluators.ToolCallBudget.class, Verdict.PASS),
+            entry(Evaluators.TokenBudget.class, Verdict.PASS));
     assertThat(verdicts(tokensOnly, traced(1, 451, Duration.ofMillis(1))))
-        .containsExactly(entry(Evaluators.TokenBudget.class, Verdict.FAIL));
+        .containsExactly(
+            entry(Evaluators.ToolCallBudget.class, Verdict.PASS),
+            entry(Evaluators.TokenBudget.class, Verdict.FAIL));
 
-    assertThat(cases.get(2).evaluators()).isEmpty();
+    assertThat(cases.get(2).evaluators())
+        .singleElement()
+        .isInstanceOf(Evaluators.ToolCallBudget.class);
 
     // A tolerance of 1.0 holds a case to exactly what was recorded.
     var exact = EvalCaseParser.parse(file, 1.0).get(0);
@@ -157,6 +172,9 @@ class EvalCaseParserTest {
     assertThat(cases.get(0).command()).isEqualTo("hi");
     assertThat(cases.get(0).evaluators()).isEmpty();
     assertThat(cases.get(1).id()).isEqualTo("replay-2");
+    assertThat(cases.get(1).evaluators())
+        .singleElement()
+        .isInstanceOf(Evaluators.ToolCallBudget.class);
   }
 
   @Test
