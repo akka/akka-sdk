@@ -21,8 +21,8 @@ import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
-import io.opentelemetry.context.{ Context => OtelContext }
 import io.opentelemetry.context.ContextKey
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec

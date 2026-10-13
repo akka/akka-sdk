@@ -25,8 +25,8 @@ import akka.runtime.sdk.spi.SpiMetadataEntry
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.opentelemetry.context.{ Context => OtelContext }
 import io.opentelemetry.context.propagation.TextMapPropagator
+import io.opentelemetry.context.{ Context => OtelContext }
 
 /**
  * INTERNAL API

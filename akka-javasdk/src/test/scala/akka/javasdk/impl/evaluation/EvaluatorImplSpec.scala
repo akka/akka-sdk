@@ -9,8 +9,8 @@ import scala.concurrent.duration._
 
 import akka.javasdk.testmodels.evaluation.EvaluatorTestModels.SomeEvaluator
 import akka.runtime.sdk.spi.SpiEvaluator
-import io.opentelemetry.context.{ Context => OtelContext }
 import io.opentelemetry.context.ContextKey
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
