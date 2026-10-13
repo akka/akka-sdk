@@ -1056,10 +1056,6 @@ private[impl] final class AgentImpl(
             case _: ContentLoadingFailure =>
               new RuntimeException(exc.getMessage, exc.cause)
 
-            // FIXME: map to a specific SDK exception
-            case _: SanitizerFailure =>
-              new RuntimeException(exc.getMessage, exc.cause)
-
             // this is expected to be a JsonParsingException, we give it as is to users
             case OutputParsingFailure => exc.cause
 
