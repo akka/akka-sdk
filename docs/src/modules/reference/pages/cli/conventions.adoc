@@ -46,7 +46,7 @@ The `akka` commands share the flags and behavior on this page. Every command ans
 [#output-formats]
 == Output formats
 
-`-o text` is the default and displays a table or a block of fields. `-o json` and `-o json-compact` return a document that a script can read. `-o go-template=TEMPLATE` formats the result with a Go template.
+`-o text` is the default and displays a table or a block of fields. `-o json` and `-o json-compact` return a document that a script can read. `-o go-template=TEMPLATE` formats the result with a Go template. The `akka optimize` commands accept only `text`, `json`, and `json-compact`.
 
 [#models-and-optimize]
 == Model and optimize commands
