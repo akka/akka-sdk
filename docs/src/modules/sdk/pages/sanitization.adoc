@@ -55,6 +55,8 @@ You can also mask text programmatically where it makes sense for a specific busi
 
 A sanitizer scoped to an agent or to an application point masks the text you pass here as well. The name selects which sanitizer runs, and nothing else does. For a sanitizer that only application code uses, define `apply-at = ["client"]`, so that the runtime does not apply it anywhere on its own.
 
+When the class of the sanitizer throws an exception or returns `null`, the call fails with an `akka.javasdk.SanitizerException`. The exception has the name of the sanitizer, and its cause is the exception that the class threw.
+
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/SanitizingEndpoint.java[SanitizingEndpoint.java]
 ----

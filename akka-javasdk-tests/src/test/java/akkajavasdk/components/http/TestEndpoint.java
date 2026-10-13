@@ -11,6 +11,7 @@ import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.Sanitizer;
 import akka.javasdk.SanitizerClient;
+import akka.javasdk.SanitizerException;
 import akka.javasdk.agent.ClassifierClient;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
@@ -88,6 +89,16 @@ public class TestEndpoint extends AbstractHttpEndpoint {
   @Get("/sanitize/{name}/{text}")
   public String sanitizeByName(String name, String text) {
     return sanitizerClient.sanitize(name, text);
+  }
+
+  @Get("/sanitize-failure/{name}/{text}")
+  public String sanitizeFailure(String name, String text) {
+    try {
+      sanitizerClient.sanitize(name, text);
+      return "masked";
+    } catch (SanitizerException e) {
+      return e.getSanitizerName() + ": " + e.getMessage();
+    }
   }
 
   @Get("/classify/{text}")
