@@ -28,6 +28,7 @@ import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.autonomous.AgentSetupImpl
 import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.serialization.Serializer
+import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgent.{ Notification => SpiNotification }
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import akka.stream.Materializer
@@ -129,7 +130,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
           spiState.phase,
           spiState.suspended,
           spiState.instructions,
-          new AutonomousAgent.TokenUsage(spiState.totalInputTokens, spiState.totalOutputTokens),
+          AutonomousAgentClientImpl.toTokenUsage(spiState.totalTokenUsage),
           spiState.currentTask.map(t => new TaskKey(t.id, t.name)).toJava,
           spiState.pendingTaskIds.asJava)
       }
@@ -179,7 +180,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
     case _: SpiNotification.Deactivated      => new Notification.Deactivated
     case _: SpiNotification.IterationStarted => new Notification.IterationStarted
     case c: SpiNotification.IterationCompleted =>
-      new Notification.IterationCompleted(new AutonomousAgent.TokenUsage(c.inputTokens, c.outputTokens))
+      new Notification.IterationCompleted(AutonomousAgentClientImpl.toTokenUsage(c.tokenUsage))
     case f: SpiNotification.IterationFailed =>
       new Notification.IterationFailed(f.reason, f.taskId.toJava, f.iterationNumber.map(Integer.valueOf).toJava)
     case p: SpiNotification.Suspended => new Notification.Suspended(p.reason)
@@ -295,4 +296,19 @@ private[javasdk] final class AutonomousAgentClientImpl(
 
     // ignore unknown because the runtime should be able to add new notification events without breaking old SDK
   }
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] object AutonomousAgentClientImpl {
+
+  def toTokenUsage(usage: SpiAgent.SpiTokenUsage): AutonomousAgent.TokenUsage =
+    new AutonomousAgent.TokenUsage(
+      usage.inputTokenCount,
+      usage.outputTokenCount,
+      usage.cacheReadInputTokenCount,
+      usage.cacheWriteInputTokenCount,
+      usage.effectiveInputTokenCount)
 }

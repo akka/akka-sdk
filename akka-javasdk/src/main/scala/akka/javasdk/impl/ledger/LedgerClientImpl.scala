@@ -15,6 +15,7 @@ import scala.jdk.FutureConverters._
 import scala.jdk.OptionConverters._
 
 import akka.annotation.InternalApi
+import akka.javasdk.agent.Agent
 import akka.javasdk.agent.MessageContent
 import akka.javasdk.evaluation.Evaluation
 import akka.javasdk.impl.ErrorHandling
@@ -171,8 +172,12 @@ private[ledger] object LedgerClientImpl {
     new ModelResponse(
       response.id,
       response.content,
-      response.inputTokenCount,
-      response.outputTokenCount,
+      new Agent.TokenUsage(
+        response.tokenUsage.inputTokenCount,
+        response.tokenUsage.outputTokenCount,
+        response.tokenUsage.cacheReadInputTokenCount,
+        response.tokenUsage.cacheWriteInputTokenCount,
+        response.tokenUsage.effectiveInputTokenCount),
       response.thinking,
       response.toolCalls.map(toToolCall).asJava)
 

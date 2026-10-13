@@ -351,10 +351,17 @@ private[impl] final class AutonomousAgentImpl(
       inputTokens: Int,
       outputTokens: Int,
       context: Option[TelemetryContext]): Future[Done] =
+    addToSessionHistory(sessionId, messages, new SpiAgent.SpiTokenUsage(inputTokens, outputTokens), context)
+
+  override def addToSessionHistory(
+      sessionId: String,
+      messages: Seq[SpiAgent.ContextMessage],
+      spiTokenUsage: SpiAgent.SpiTokenUsage,
+      context: Option[TelemetryContext]): Future[Done] =
     Future {
       if (messages.nonEmpty) {
         val now = Instant.now()
-        val tokenUsage = new TokenUsage(inputTokens, outputTokens)
+        val tokenUsage = AgentImpl.toSessionTokenUsage(spiTokenUsage)
         val sessionMemoryClient = deriveMemoryClient(context)
         messages.head match {
           case u: SpiAgent.ContextMessage.UserMessage
