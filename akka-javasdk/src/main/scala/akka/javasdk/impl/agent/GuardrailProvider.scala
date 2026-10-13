@@ -32,6 +32,7 @@ import akka.javasdk.agent.ModelCallSimilarityGuard
 import akka.javasdk.agent.SimilarityGuard
 import akka.javasdk.agent.TextGuardrail
 import akka.javasdk.agent.ToolCallGuardrail
+import akka.javasdk.impl.ForwardCompat.knownOr
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.runtime.sdk.spi.SpiAgent
@@ -221,13 +222,11 @@ import org.slf4j.LoggerFactory
 
   // An origin that this SDK does not know, or a null, maps to ToolOrigin.Unknown.
   private def toToolOrigin(origin: SpiGuardrail.ToolOrigin): ToolCallGuardrail.ToolOrigin =
-    try {
+    knownOr(new ToolCallGuardrail.ToolOrigin.Unknown()) {
       origin match {
         case SpiGuardrail.ToolOrigin.FunctionTool   => new ToolCallGuardrail.ToolOrigin.FunctionTool()
         case mcp: SpiGuardrail.ToolOrigin.RemoteMcp => new ToolCallGuardrail.ToolOrigin.RemoteMcp(mcp.endpoint)
       }
-    } catch {
-      case _: MatchError => new ToolCallGuardrail.ToolOrigin.Unknown()
     }
 
   final class ModelCallGuardrailAdapter(
