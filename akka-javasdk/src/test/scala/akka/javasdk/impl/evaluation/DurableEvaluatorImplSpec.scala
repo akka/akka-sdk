@@ -35,7 +35,10 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
   private final class RecorderProbe extends spi.SpiEvaluator.EvaluationRecorder {
     var recorded: Option[(SpiEvaluator.Trigger, SpiEvaluator.Result)] = None
 
-    override def recordResult(trigger: SpiEvaluator.Trigger, result: SpiEvaluator.Result): Future[Done] = {
+    override def recordResult(
+        trigger: SpiEvaluator.Trigger,
+        result: SpiEvaluator.Result,
+        telemetryContext: OtelContext): Future[Done] = {
       recorded = Some((trigger, result))
       Future.successful(Done)
     }
@@ -62,10 +65,7 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       SpiEvaluator.TriggerSource.OnInteraction,
       new SpiEvaluator.Interaction(interactionId, "my-agent", None))
 
-  private def stepCommand(
-      stepName: String,
-      input: Option[BytesPayload] = None,
-      telemetryContext: OtelContext = null) =
+  private def stepCommand(stepName: String, input: Option[BytesPayload] = None, telemetryContext: OtelContext = null) =
     new SpiWorkflow.StepCommand(stepName, input, SpiMetadata.empty, telemetryContext)
 
   private def await[T](future: Future[T]): T = Await.result(future, 3.seconds)
