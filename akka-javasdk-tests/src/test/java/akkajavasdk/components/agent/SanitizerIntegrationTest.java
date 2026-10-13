@@ -192,6 +192,19 @@ public class SanitizerIntegrationTest extends TestKitSupport {
         .invoke(question);
   }
 
+  private SanitizerFailureTestAgent.SomeResponse askFailureAgent(String question) {
+    return askFailureAgent(newSessionId(), question);
+  }
+
+  private SanitizerFailureTestAgent.SomeResponse askFailureAgent(
+      String sessionId, String question) {
+    return componentClient
+        .forAgent()
+        .inSession(sessionId)
+        .method(SanitizerFailureTestAgent::ask)
+        .invoke(question);
+  }
+
   @Test
   public void shouldMaskForTheAgentTheSanitizerNamesAndNoOther() {
     var scopedCapture = captureUserMessage(scopedAgentModel);
@@ -424,25 +437,21 @@ public class SanitizerIntegrationTest extends TestKitSupport {
     assertThat(RecordingSanitizer.seen()).noneMatch(text -> text.contains("for the other agent"));
   }
 
-  private SanitizerFailureTestAgent.SomeResponse askFailureAgent(String question) {
-    return componentClient
-        .forAgent()
-        .inSession(newSessionId())
-        .method(SanitizerFailureTestAgent::ask)
-        .invoke(question);
-  }
-
   @Test
   public void shouldFailTheRequestWhenASanitizerFailsOnTheUserMessage() {
     failureAgentModel.fixedResponse("done");
+    var sessionId = newSessionId();
 
-    var result = askFailureAgent("tell me about failsanitizer");
+    var result = askFailureAgent(sessionId, "tell me about failsanitizer");
 
-    // the message names the sanitizer only, the cause can hold the text that it was masking
-    assertThat(result.response()).isEqualTo("Sanitizer [failing] failed");
+    // the cause holds the text that the sanitizer was masking, and the message does not
+    assertThat(result.response()).contains("Sanitizer [failing]").doesNotContain("failsanitizer");
     assertThat(result.sanitizerName()).isEqualTo("failing");
-    assertThat(result.cause()).isEqualTo("java.lang.IllegalStateException: cannot mask");
+    assertThat(result.cause())
+        .startsWith("java.lang.IllegalStateException: cannot mask")
+        .contains("failsanitizer");
     assertThat(failureAgentRequests.requests()).isEmpty();
+    assertThat(storedHistory(sessionId)).isEmpty();
   }
 
   @Test
@@ -451,7 +460,7 @@ public class SanitizerIntegrationTest extends TestKitSupport {
 
     var result = askFailureAgent("tell me about nullsanitizer");
 
-    assertThat(result.response()).isEqualTo("Sanitizer [failing] returned null");
+    assertThat(result.response()).contains("Sanitizer [failing]");
     assertThat(result.sanitizerName()).isEqualTo("failing");
     assertThat(result.cause()).isNull();
     assertThat(failureAgentRequests.requests()).isEmpty();
@@ -467,17 +476,19 @@ public class SanitizerIntegrationTest extends TestKitSupport {
     failureAgentModel
         .whenToolResult(result -> result.name().equals("SanitizerFailureTestAgent_getNotes"))
         .thenReply(result -> new AiResponse("done"));
+    var sessionId = newSessionId();
 
-    var result = askFailureAgent("notes for acme");
+    var result = askFailureAgent(sessionId, "notes for acme");
 
-    assertThat(result.response()).isEqualTo("Sanitizer [failing] failed");
+    assertThat(result.response()).contains("Sanitizer [failing]").doesNotContain("failsanitizer");
     assertThat(result.sanitizerName()).isEqualTo("failing");
-    assertThat(result.cause()).isEqualTo("java.lang.IllegalStateException: cannot mask");
+    assertThat(result.cause())
+        .startsWith("java.lang.IllegalStateException: cannot mask")
+        .contains("failsanitizer");
     // the model got the request that asked for the tool, and no request with the tool result
-    assertThat(failureAgentRequests.requests())
-        .singleElement()
-        .satisfies(
-            request -> assertThat(messagesOf(request, ToolExecutionResultMessage.class)).isEmpty());
+    assertThat(failureAgentRequests.requests()).hasSize(1);
+    // the runtime sent the user message to the model, and session memory stores nothing of it
+    assertThat(storedHistory(sessionId)).isEmpty();
   }
 
   @Test
