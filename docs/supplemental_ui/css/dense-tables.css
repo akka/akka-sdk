@@ -296,7 +296,7 @@
 }
 
 /* A link to a PDF opens in a new tab, so it carries the open-in-new-tab icon. */
-.doc a[href$=".pdf"]::after {
+.doc a[href$=".pdf"][target="_blank"]::after {
   content: "";
   display: inline-block;
   width: 0.85em;
