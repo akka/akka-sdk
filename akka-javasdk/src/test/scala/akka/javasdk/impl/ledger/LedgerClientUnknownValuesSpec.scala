@@ -38,7 +38,8 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
     (SpiLedger.FailureReason.McpToolCall, Failure.FailureReason.MCP_TOOL_CALL),
     (SpiLedger.FailureReason.Guardrail, Failure.FailureReason.GUARDRAIL),
     (SpiLedger.FailureReason.ContentLoading, Failure.FailureReason.CONTENT_LOADING),
-    (SpiLedger.FailureReason.Sanitizer, Failure.FailureReason.SANITIZER))
+    (SpiLedger.FailureReason.Sanitizer, Failure.FailureReason.SANITIZER),
+    (SpiLedger.FailureReason.Cancelled, Failure.FailureReason.CANCELLED))
 
   private val finishReasons = Table[SpiLedger.FinishReason, InteractionMetadata.FinishReason](
     ("spi", "public"),
@@ -164,14 +165,14 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       forAll(failureReasons) { (known, _) => unknown should not be known }
 
       val record = LedgerClientImpl.toInteractionRecord(
-        spiInteractionRecord(failure = Some(new SpiLedger.Failure(unknown, "the caller cancelled the stream"))))
+        spiInteractionRecord(failure = Some(new SpiLedger.Failure(unknown, "a reason from a newer runtime"))))
 
       val failure = record.failure().get()
       failure.reason() shouldBe Failure.FailureReason.UNSPECIFIED
-      failure.description() shouldBe "the caller cancelled the stream"
+      failure.description() shouldBe "a reason from a newer runtime"
       record shouldBe LedgerClientImpl.toInteractionRecord(
         spiInteractionRecord(failure =
-          Some(new SpiLedger.Failure(SpiLedger.FailureReason.Unspecified, "the caller cancelled the stream"))))
+          Some(new SpiLedger.Failure(SpiLedger.FailureReason.Unspecified, "a reason from a newer runtime"))))
     }
 
     "read a finish reason that the SDK does not know as unspecified" in {
