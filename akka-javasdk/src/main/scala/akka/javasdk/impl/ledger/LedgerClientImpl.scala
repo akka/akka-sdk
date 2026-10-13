@@ -224,8 +224,7 @@ private[ledger] object LedgerClientImpl {
 
   private def toFailureReason(reason: SpiLedger.FailureReason): Failure.FailureReason =
     knownOr(Failure.FailureReason.UNSPECIFIED) {
-      // FIXME temporary until akka/akka-sdk#2026 maps Cancelled
-      (reason: @unchecked) match {
+      reason match {
         case SpiLedger.FailureReason.Unspecified        => Failure.FailureReason.UNSPECIFIED
         case SpiLedger.FailureReason.Model              => Failure.FailureReason.MODEL
         case SpiLedger.FailureReason.RateLimit          => Failure.FailureReason.RATE_LIMIT

@@ -12,8 +12,9 @@ import java.util.List;
  *
  * @param id the id of this model response, a seam for correlating finer-grained records
  * @param content the text content the model produced
- * @param tokenUsage the tokens this model call consumed and produced. Interactions recorded before
- *     the prompt cache counts were recorded report no cache activity.
+ * @param tokenUsage the tokens this model call consumed and produced. An interaction that an older
+ *     runtime recorded reports no cache activity, and {@code totalInputTokens} equals {@code
+ *     inputTokens}.
  * @param thinking the model's reasoning/thinking output, or empty if none was recorded
  * @param toolCalls the tool calls the model requested within this response, in order
  */
