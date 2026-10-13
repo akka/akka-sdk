@@ -41,6 +41,7 @@
 ** xref:sdk:integrations/index.adoc[]
 *** xref:sdk:component-and-service-calls.adoc[]
 *** xref:sdk:integrations/ai-and-models.adoc[]
+*** xref:sdk:decision-models.adoc[]
 *** xref:sdk:integrations/data-and-knowledge.adoc[]
 *** xref:sdk:integrations/object-storage.adoc[]
 *** xref:sdk:integrations/messaging-and-events.adoc[]

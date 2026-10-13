@@ -233,6 +233,7 @@ iss
 Jamf
 jank
 Javadoc
+Jev
 jmesPath
 Json
 Jules
@@ -486,6 +487,7 @@ substring
 [Ss]ubtasks?
 subtree
 Swiggy
+SystemOne
 Szymanski
 Tabnine
 teardown
@@ -524,6 +526,7 @@ Trivy
 truststore
 tsc
 Tubi
+TypeSafe
 [Tt]ypesafe
 uid
 UIs

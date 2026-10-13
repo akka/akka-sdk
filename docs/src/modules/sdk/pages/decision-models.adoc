@@ -1,0 +1,172 @@
+= Decision models
+:page-summary: A decision model answers a fixed set of questions about a state with probabilities instead of generated text.
+:page-when-to-use: Routing, triage, scoring, and yes-or-no decisions that need a probability, not generated text
+:page-related: sdk:agents.adoc, sdk:integrations/ai-and-models.adoc, sdk:model-provider-details.adoc
+:page-persona: builder-developer, builder-ai-ml
+// TODO decide whether decision models are a gated feature set. If so, set :page-banner:
+// and extend supplemental_ui/partials/page-banner.hbs with a decision value.
+// TODO the code blocks are inline drafts. Move them to compiled snippets in
+// samples/doc-snippets and include them by tag before the PR.
+
+include::ROOT:partial$include.adoc[]
+
+A decision model answers a fixed set of questions about some state with probabilities instead of generated text. You interact with decision (also called _judgment_) models through the `DecisionModelClient` class, which is injectable into any component capable of producing side-effects.
+
+== Overview
+
+The most common use case for interacting with a large language model (LLM) is to submit user input as freeform text and get unstructured text back in response. If the model can't satisfy the user's input requirements, sometimes the reply is a request to invoke tools. Once all the tools have been invoked, a fully reply is delivered.
+
+Sometimes we want the model to return structured data, so we include the schema of our expected output inside the prompt. Akka's model integrations support strongly-typed interactions. Constraining a model interaction to a fixed schema can produce more reliable results because the inference target is so much narrower.
+
+An even more narrow use cases is when we just want to ask specific questions about the input. In these cases, the model doesn't make tool calls and doesn't utilize any of the heavyweight features of an LLM. It just answers the user's question about a given input with a set of possible answers and their associated probabilities.
+
+This kind of state interrogation happens a lot in agentic applications. The problem with this is that we end up using expensive models to perform tasks that could be done with far simpler, and even locally hosted, models. A _decision model_ is a small model trained specifically to take user intent and provide ranked answers at a fraction of the cost of a full LLM, both in terms of tokens and compute resources.
+
+Use a decision model for routing, triage, severity scoring, and yes-or-no checks. Use an xref:sdk:agents.adoc[Agent] when the response needs generated text or tool calls. You can unlock very powerful use cases when combining decision and full models in an agentic workflow.
+
+The `DecisionModelClient` can be injected into endpoints, agents, workflows, consumers, timed actions, and the service setup.
+
+== Injecting the client
+
+To inject the client into a class, just pass it as an argument to the constructor the same way you inject other Akka SDK components:
+
+[source,java,indent=0]
+----
+@HttpEndpoint("/triage")
+public class TriageEndpoint {
+
+  public record Ticket(String subject, String body) {}
+
+  private final DecisionModelClient decisionModelClient;
+
+  public TriageEndpoint(DecisionModelClient decisionModelClient) {
+    this.decisionModelClient = decisionModelClient;
+  }
+}
+----
+
+== Asking questions
+
+There are three question types. A choice question picks one of at least two options. A score question rates the input (called `state` in most public documentation on decision models) on a scale, such as a severity rating. You describe each level of the scale from lowest to highest, and the model answers with a position on that scale. A yes-or-no question returns the probability of the answer being yes.
+
+We recommend that you create questions with the static factories on the `Question` class and define them as constants, so the request and the answer lookup use the same question:
+
+[source,java,indent=0]
+----
+public static final Question<ChoiceAnswer> ROUTE =
+    Question.choice("Which team should handle this ticket?")
+        .option("billing", "Payments, invoicing, refunds")
+        .option("technical", "Bugs, outages, integrations")
+        .build("route");
+
+public static final Question<ScoreAnswer> SEVERITY =
+    Question.score("How severe is the reported issue?")
+        .levels(
+            "Cosmetic, no impact on function",
+            "Broken, but a workaround exists",
+            "Blocking, no workaround")
+        .build("severity");
+
+public static final Question<YesNoAnswer> URGENT =
+    Question.yesNo("Does the customer need a reply today?")
+        .whenYes("The customer states a deadline of today or earlier")
+        .whenNo("There is no deadline requirement")
+        .build("urgent");
+----
+
+The key given to `build` identifies the question and its answer in one request. All questions in one request must have different keys. Note that calling `build()` without a key generates a random key rather than throwing an exception.
+
+The input state and the questions are sent in one request:
+
+[source,java,indent=0]
+----
+Decision decision =
+    decisionModelClient.state(ticket).questions(ROUTE, SEVERITY, URGENT).invoke();
+----
+
+A `String` state is sent as text. Any other object is serialized to JSON. Use `invokeAsync()` to get a `CompletionStage<Decision>` instead of blocking. In the previous example that means that `ticket` could be a string or it could be an instance of your own JSON-serializable type like `SupportTicket`.
+
+== Reading the decision
+
+Read each answer with `Decision.answer(Question)`, which returns the answer type of the question:
+
+[source,java,indent=0]
+----
+String team = decision.answer(ROUTE).selected();
+double severity = decision.answer(SEVERITY).value();
+boolean urgent = decision.answer(URGENT).probability() > 0.8;
+----
+
+* `ChoiceAnswer` has the key of the selected option in `selected()`, the probability of that option in `confidence()`, and a probability per option key in `probabilities()`.
+* `ScoreAnswer` has the position along the levels axis, counted from 0, in `value()`, plus `confidence()` and a probability per level in `probabilities()`.
+* `YesNoAnswer` has the probability of the answer being yes in `probability()`.
+
+`Decision.model()` names the model version that answered. When logging answers, you should log the model along with them, because the thresholds you compare answers against are bound to the model version. In other words, different models and model versions will product different answers for the same state. Decision models might be more specific than LLMs, but they are still not deterministic.
+
+== Configuring the model provider
+
+The client uses the provider configured in `akka.javasdk.decision.model-provider`. Set it to the name of a provider configuration section. The `system-one` section configures a model that implements the https://systemoneapi.com/[SystemOne API], such as https://docs.typesafe.ai/introduction[TypeSafe Jev]:
+
+[source,hocon]
+.src/main/resources/application.conf
+----
+akka.javasdk.decision {
+  model-provider = "system-one"
+  system-one {
+    model-name = "jev-latest"
+  }
+}
+----
+
+The API key defaults to the `SYSTEM_ONE_API_KEY` environment variable. Pin a model version once you have tuned your thresholds, because an alias such as `jev-latest` can move to a new version.
+
+To use a different provider for one call, pass it to `DecisionModelClient.model`:
+
+[source,java,indent=0]
+----
+Decision decision =
+    decisionModelClient
+        .model(DecisionModelProvider.fromConfig("escalation-model"))
+        .state(ticket)
+        .questions(URGENT)
+        .invoke();
+----
+
+`DecisionModelProvider.systemOne()` creates a SystemOne provider in code, with `withApiKey`, `withModelName`, and `withBaseUrl` to adjust it. Implement `DecisionModelProvider.Custom` to answer requests without a SystemOne API.
+
+== Handling failures
+
+A failed call fails with `ModelException`, `RateLimitException`, `ModelTimeoutException`, or `InternalServerException` from `akka.javasdk.agent`. The client retries rate limit (https://http.dev/429[HTTP 429]) and overload (https://http.dev/529[HTTP 529]) responses up to `max-retries` times before it fails the call.
+
+== Testing
+
+The testkit's `TestDecisionModelProvider` answers decision requests without a model. Register it in the testkit settings:
+
+[source,java,indent=0]
+----
+private final TestDecisionModelProvider testDecisionModel = new TestDecisionModelProvider();
+
+@Override
+protected TestKit.Settings testKitSettings() {
+  return TestKit.Settings.DEFAULT.withDecisionModelProvider(testDecisionModel);
+}
+----
+
+Define the answers per state before the test calls the component:
+
+[source,java,indent=0]
+----
+testDecisionModel
+    .whenState(ticket)
+    .choice(TriageEndpoint.ROUTE, "billing")
+    .score(TriageEndpoint.SEVERITY, 2)
+    .yesNo(TriageEndpoint.URGENT, 0.9);
+----
+
+The most recently added rule that matches the request answers it. A request that matches no rule, or asks a question that the matching rule does not answer, fails with `MissingDecisionResponseException`. Use `always()` for a rule that matches every request, and `reset()` to remove all rules between tests.
+
+== See also
+
+* xref:sdk:agents.adoc[Agents] — generated text and tool calls, where a decision model does not fit
+* xref:sdk:integrations/ai-and-models.adoc[AI & models] — the SDK's model integrations
+* xref:sdk:model-provider-details.adoc[Model provider details] — configuration reference for model providers
