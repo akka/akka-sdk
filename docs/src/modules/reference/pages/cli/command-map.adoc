@@ -76,7 +76,7 @@ These commands manage an Akka Platform environment. Most of them need you to xre
 
 == Local development commands
 
-These commands work without a login.
+These commands help you build and run services on your own machine.
 
 [cols="2,4,3", options="header"]
 |===
@@ -103,18 +103,9 @@ These commands work without a login.
 | xref:reference:cli/akka-cli/akka_docs.adoc[`akka docs`]
 | Opens the Akka documentation.
 | Reference only
-|===
-
-== Specify commands
-
-[cols="2,4,3", options="header"]
-|===
-| Command group
-| Acts on
-| Tasks are in
 
 | xref:reference:cli/akka-cli/akka_specify.adoc[`akka specify`]
-| AI-assisted Akka development projects.
+| AI-assisted Akka development projects. The `/akka:*` commands that you run from an AI coding assistant are described in the Specify section.
 | xref:reference:specify/index.adoc[]
 |===
 
