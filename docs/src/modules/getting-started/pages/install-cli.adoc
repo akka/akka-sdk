@@ -149,7 +149,7 @@ The general structure of an Akka CLI command is:
 akka <command> [sub-command] [parameters] --[flags]
 ----
 
-Flags, which modify command behavior, are always preceded by `--`.
+Flags, which modify command behavior, are always preceded by `--`. The flags that every command accepts are listed in xref:reference:cli/conventions.adoc[].
 
 [#command-completion]
 == Enable command completion

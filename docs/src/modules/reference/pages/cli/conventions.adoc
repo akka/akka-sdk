@@ -1,0 +1,91 @@
+= CLI conventions
+:page-summary: The flags, output formats, and behavior that the akka commands share.
+
+include::ROOT:partial$include.adoc[]
+
+The `akka` commands share the flags and behavior on this page. Every command answers `--help` with its own flags and examples. For the commands themselves, see xref:reference:cli/akka-cli/index.adoc[].
+
+[#global-flags]
+== Flags for every command
+
+[cols="2,3", options="header"]
+|===
+| Flag | Description
+
+| `--context`
+| The configuration context to use. See xref:reference:cli/akka-cli/akka_config.adoc[akka config].
+
+| `--config`
+| The location of the config file. The default is `~/.akka/config.yaml`.
+
+| `--cache-file`
+| The location of the cache file. The default is `~/.akka/cache.yaml`.
+
+| `-o`, `--output`
+| The output format. See <<output-formats>>.
+
+| `-q`, `--quiet`
+| Quiet output, for use in scripts.
+
+| `--verbose`
+| Verbose output.
+
+| `--timeout`
+| The client command timeout. The default is `10s`.
+
+| `--page-mode`
+| How long output is paged: `paged`, `buffered`, or `auto`. The default is `auto`.
+
+| `--disable-prompt`
+| Disable all interactive prompts. A command that needs input uses its defaults, or fails with an error. Setting the environment variable `AKKA_DISABLE_PROMPTS` to `true` has the same effect.
+
+| `--use-grpc-web`
+| Use grpc-web to talk to Akka APIs, for networks behind a firewall that decrypts traffic but does not support HTTP/2. See xref:getting-started:log-in.adoc#behind-a-proxy[Behind a corporate proxy].
+|===
+
+[#output-formats]
+== Output formats
+
+`-o text` is the default and displays a table or a block of fields. `-o json` and `-o json-compact` return a document that a script can read. `-o go-template=TEMPLATE` formats the result with a Go template.
+
+[#models-and-optimize]
+== Model and optimize commands
+
+The `akka models` and `akka optimize` commands add the flags and behavior in this section.
+
+[cols="2,3", options="header"]
+|===
+| Flag | Description
+
+| `--region`
+| The region to act on, if the project has more than one region.
+
+| `--dry-run`
+| Check the request without making the change. `akka models apply` runs the region's admission without persisting anything. `akka optimize` commands that start work display the submission payload without submitting it.
+
+| `--force`
+| Skip the confirmation prompt.
+
+| `--wait`
+| Wait for the operation to finish. `akka models get` waits until the model is ready, and `--wait-timeout` sets how long, 10 minutes by default.
+|===
+
+The `akka optimize` commands also have these conventions.
+
+Output:: Results are written to standard output and notes to standard error, so `-o json > FILE` writes only the document. `--jq EXPRESSION` filters JSON output, and `--json FIELDS` selects fields. `--json=` lists the fields that a command offers. `--no-color` prints without color.
+
+Writes:: A write prints one sentence that says what happened and where to look. The full object is available with `-o json`.
+
+Confirmation:: A command that provisions compute or discards work prompts for confirmation. `--force` skips the prompt. When stdin is not a terminal, the command refuses to continue without confirmation, so pass `--force` in a script. `--disable-prompt`, or `AKKA_DISABLE_PROMPTS=true`, accepts every prompt.
+
+Waiting:: A command that starts a run, a pipeline, or an evaluation returns when the trainer accepts the work. `--wait` follows it to a terminal phase, and `--exit-status` makes the exit code reflect the outcome. Interrupting a wait stops the status updates, but the work continues. A later `wait` reconnects to it.
+
+Exit codes:: A read exits with `0`, whatever its content reports, except `training info`, which exits with a non-zero status while the trainer has not finished starting. A refusal, a failure under `--exit-status`, and a declined confirmation exit with `1`.
+
+Identifiers:: A command that takes an ID accepts an unambiguous prefix unless its help says that the full ID is required. Training projects also accept their assigned names. Datasets and scoring bundles take a registry reference, such as `triage/train`, `triage/train:v3`, or `triage/train:candidate`.
+
+== See also
+
+* xref:getting-started:install-cli.adoc[]
+* xref:getting-started:log-in.adoc[]
+* xref:reference:cli/akka-cli/index.adoc[]
