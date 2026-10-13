@@ -33,7 +33,10 @@ public sealed interface Guardrail
     public static final Result OK = new Result(true, "");
   }
 
-  /** Thrown when {@code report-only} is false and a guardrail denies the call or fails. */
+  /**
+   * Thrown when {@code report-only} is false and a guardrail denies the call, or fails with {@code
+   * fail-mode = fail-closed}.
+   */
   final class GuardrailException extends RuntimeException {
     public GuardrailException(String message) {
       super(message);
