@@ -10,7 +10,7 @@ This checklist covers the items that are specific to Akka Optimize: serving mode
 
 include::inference:partial$aao-inference-notice.adoc[]
 
-The page is a guideline. Walk it with your Akka team before you send production traffic to a served model. Add items for your own request flows and failure modes.
+Use this page as a guideline: review it with your Akka team before you send production traffic to a served model, and add items for your own request flows and failure modes.
 
 .*At a glance, what we ask of you*
 [NOTE]

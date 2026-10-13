@@ -75,7 +75,6 @@
 *** xref:operations:operator-best-practices.adoc[]
 *** xref:operations:production-readiness/index.adoc[]
 **** xref:operations:production-readiness/choosing-your-environment.adoc[]
-**** xref:operations:production-readiness/optimize.adoc[]
 **** Dedicated
 ***** xref:operations:production-readiness/dedicated/shared-responsibility.adoc[]
 ***** xref:operations:production-readiness/dedicated/raci.adoc[]
@@ -90,3 +89,4 @@
 ***** xref:operations:production-readiness/byok8s/raci.adoc[]
 ***** xref:operations:production-readiness/byok8s/checklist.adoc[]
 ***** xref:operations:production-readiness/byok8s/disaster-recovery.adoc[]
+**** xref:operations:production-readiness/optimize.adoc[Akka Optimize]
