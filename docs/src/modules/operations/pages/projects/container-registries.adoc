@@ -15,7 +15,7 @@ The _Akka Container Registry (ACR)_ is available to all Akka users and supported
 
 Ensure the following prerequisites are met before continuing:
 
-- The current user must be logged into Akka.
+- The current user must be logged into Akka. See xref:getting-started:log-in.adoc[].
 - Docker must be installed and accessible for the current user.
 
 To verify your Akka login status, run `akka auth current-login`. (If not logged in, use `akka auth login`.)
