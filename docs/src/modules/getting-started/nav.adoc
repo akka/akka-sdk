@@ -3,7 +3,7 @@
 ** xref:getting-started:set-up-env.adoc[]
 *** xref:getting-started:set-up-ai-install.adoc[]
 *** xref:getting-started:set-up-harness.adoc[]
-*** xref:getting-started:set-up-no-ai.adoc[]
+*** xref:getting-started:set-up-manually.adoc[]
 *** xref:getting-started:set-up-container.adoc[]
 *** xref:getting-started:install-cli.adoc[]
 ** Tutorials

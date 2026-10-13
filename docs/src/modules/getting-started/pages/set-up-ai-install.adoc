@@ -30,7 +30,7 @@ When the installation finishes, the assistant asks for an API key for the AI mod
 
 [NOTE]
 ====
-akka.ai lists the AI harnesses it supports. If yours is not on the list, use xref:getting-started:set-up-no-ai.adoc[Manually set up your env without AI].
+akka.ai lists the AI harnesses it supports. If yours is not on the list, use xref:getting-started:set-up-manually.adoc[Manually set up your env].
 ====
 
 == Next steps

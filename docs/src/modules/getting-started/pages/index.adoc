@@ -9,7 +9,7 @@ Start here to set up a development environment and build your first Akka service
 
 == Set up
 
-* xref:getting-started:set-up-env.adoc[Set up your env] — four ways to set up: install using your AI harness (recommended), manually set up your AI harness, manually set up your env without AI, or use a container. Do this first.
+* xref:getting-started:set-up-env.adoc[Set up your env] — four ways to set up: install using your AI harness (recommended), manually set up your AI harness, manually set up your env, or use a container. Do this first.
 
 == Tutorials
 

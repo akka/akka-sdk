@@ -1,4 +1,4 @@
-= Manually set up your env without AI
+= Manually set up your env
 :page-summary: Install the Akka CLI, Java, and Maven directly on your machine, with no AI harness.
 :page-persona: builder-developer, builder-ai-ml
 

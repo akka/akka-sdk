@@ -21,7 +21,7 @@ In this guide, you will:
 
 == Prerequisites
 
-* Complete xref:getting-started:set-up-no-ai.adoc[Manually set up your env without AI] — install the Akka CLI, Java, and Maven.
+* Complete xref:getting-started:set-up-manually.adoc[Manually set up your env] — install the Akka CLI, Java, and Maven.
 * Git.
 * An https://platform.openai.com/api-keys[OpenAI API key, window="new"]. This sample uses OpenAI; sign up for free at https://platform.openai.com/api-keys[platform.openai.com/api-keys, window="new"].
 
