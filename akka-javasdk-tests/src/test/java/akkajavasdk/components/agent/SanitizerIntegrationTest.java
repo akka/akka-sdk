@@ -62,8 +62,12 @@ public class SanitizerIntegrationTest extends TestKitSupport {
       this.replies = replies;
     }
 
+    List<List<ChatMessage>> requests() {
+      return List.copyOf(requests);
+    }
+
     List<ChatMessage> lastRequest() {
-      return List.copyOf(requests).getLast();
+      return requests().getLast();
     }
 
     void reset() {
@@ -106,6 +110,9 @@ public class SanitizerIntegrationTest extends TestKitSupport {
   private final TestModelProvider otherAgentModel = new TestModelProvider();
   private final TestModelProvider roleAgentModel = new TestModelProvider();
   private final TestModelProvider autonomousAgentModel = new TestModelProvider();
+  private final TestModelProvider failureAgentModel = new TestModelProvider();
+  private final RequestRecordingModelProvider failureAgentRequests =
+      new RequestRecordingModelProvider(failureAgentModel);
 
   @Override
   protected TestKit.Settings testKitSettings() {
@@ -113,7 +120,8 @@ public class SanitizerIntegrationTest extends TestKitSupport {
         .withModelProvider(SanitizerTestAgent.class, scopedAgentRequests)
         .withModelProvider(SanitizerOtherTestAgent.class, otherAgentModel)
         .withModelProvider(SanitizerRoleTestAgent.class, roleAgentModel)
-        .withModelProvider(SanitizerAutonomousTestAgent.class, autonomousAgentModel);
+        .withModelProvider(SanitizerAutonomousTestAgent.class, autonomousAgentModel)
+        .withModelProvider(SanitizerFailureTestAgent.class, failureAgentRequests);
   }
 
   @AfterEach
@@ -123,6 +131,8 @@ public class SanitizerIntegrationTest extends TestKitSupport {
     otherAgentModel.reset();
     roleAgentModel.reset();
     autonomousAgentModel.reset();
+    failureAgentModel.reset();
+    failureAgentRequests.reset();
     RecordingSanitizer.reset();
   }
 
@@ -179,6 +189,19 @@ public class SanitizerIntegrationTest extends TestKitSupport {
         .forAgent()
         .inSession(newSessionId())
         .method(SanitizerRoleTestAgent::query)
+        .invoke(question);
+  }
+
+  private SanitizerFailureTestAgent.SomeResponse askFailureAgent(String question) {
+    return askFailureAgent(newSessionId(), question);
+  }
+
+  private SanitizerFailureTestAgent.SomeResponse askFailureAgent(
+      String sessionId, String question) {
+    return componentClient
+        .forAgent()
+        .inSession(sessionId)
+        .method(SanitizerFailureTestAgent::ask)
         .invoke(question);
   }
 
@@ -412,6 +435,77 @@ public class SanitizerIntegrationTest extends TestKitSupport {
 
     assertThat(RecordingSanitizer.seen()).anyMatch(text -> text.contains("for the bound agent"));
     assertThat(RecordingSanitizer.seen()).noneMatch(text -> text.contains("for the other agent"));
+  }
+
+  @Test
+  public void shouldFailTheRequestWhenASanitizerFailsOnTheUserMessage() {
+    failureAgentModel.fixedResponse("done");
+    var sessionId = newSessionId();
+
+    var result = askFailureAgent(sessionId, "tell me about failsanitizer");
+
+    // the cause holds the text that the sanitizer was masking, and the message does not
+    assertThat(result.response()).contains("Sanitizer [failing]").doesNotContain("failsanitizer");
+    assertThat(result.sanitizerName()).isEqualTo("failing");
+    assertThat(result.cause())
+        .startsWith("java.lang.IllegalStateException: cannot mask")
+        .contains("failsanitizer");
+    assertThat(failureAgentRequests.requests()).isEmpty();
+    assertThat(storedHistory(sessionId)).isEmpty();
+  }
+
+  @Test
+  public void shouldFailTheRequestWithTheCauseWhenTheStageOfASanitizerFails() {
+    failureAgentModel.fixedResponse("done");
+
+    var result = askFailureAgent("tell me about failasyncsanitizer");
+
+    assertThat(result.response())
+        .contains("Sanitizer [failing]")
+        .doesNotContain("failasyncsanitizer");
+    assertThat(result.sanitizerName()).isEqualTo("failing");
+    // the cause is the exception of the sanitizer, not the CompletionException around it
+    assertThat(result.cause())
+        .startsWith("java.lang.IllegalStateException: cannot mask")
+        .contains("failasyncsanitizer");
+    assertThat(failureAgentRequests.requests()).isEmpty();
+  }
+
+  @Test
+  public void shouldFailTheRequestWithoutACauseWhenASanitizerReturnsNull() {
+    failureAgentModel.fixedResponse("done");
+
+    var result = askFailureAgent("tell me about nullsanitizer");
+
+    assertThat(result.response()).contains("Sanitizer [failing]");
+    assertThat(result.sanitizerName()).isEqualTo("failing");
+    assertThat(result.cause()).isNull();
+    assertThat(failureAgentRequests.requests()).isEmpty();
+  }
+
+  @Test
+  public void shouldFailTheRequestWhenASanitizerFailsOnAToolResult() {
+    failureAgentModel
+        .whenMessage(message -> message.contains("notes for acme"))
+        .reply(
+            new ToolInvocationRequest(
+                "SanitizerFailureTestAgent_getNotes", "{ \"customer\" : \"acme\" }"));
+    failureAgentModel
+        .whenToolResult(result -> result.name().equals("SanitizerFailureTestAgent_getNotes"))
+        .thenReply(result -> new AiResponse("done"));
+    var sessionId = newSessionId();
+
+    var result = askFailureAgent(sessionId, "notes for acme");
+
+    assertThat(result.response()).contains("Sanitizer [failing]").doesNotContain("failsanitizer");
+    assertThat(result.sanitizerName()).isEqualTo("failing");
+    assertThat(result.cause())
+        .startsWith("java.lang.IllegalStateException: cannot mask")
+        .contains("failsanitizer");
+    // the model got the request that asked for the tool, and no request with the tool result
+    assertThat(failureAgentRequests.requests()).hasSize(1);
+    // the runtime sent the user message to the model, and session memory stores nothing of it
+    assertThat(storedHistory(sessionId)).isEmpty();
   }
 
   @Test

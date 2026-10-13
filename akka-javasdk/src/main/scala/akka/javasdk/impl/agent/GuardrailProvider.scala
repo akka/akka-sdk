@@ -10,7 +10,6 @@ import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
-import scala.jdk.FutureConverters._
 import scala.util.Failure
 
 import akka.actor.typed.ActorSystem
@@ -32,6 +31,7 @@ import akka.javasdk.agent.ModelCallSimilarityGuard
 import akka.javasdk.agent.SimilarityGuard
 import akka.javasdk.agent.TextGuardrail
 import akka.javasdk.agent.ToolCallGuardrail
+import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.ForwardCompat.knownOr
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
 import akka.javasdk.impl.telemetry.SpanTracingImpl
@@ -284,12 +284,14 @@ import org.slf4j.LoggerFactory
     if (decision == null)
       Future.failed(new NullPointerException("Guardrail returned a null CompletionStage"))
     else
-      decision.asScala.map {
-        case allow: Allow => new SpiGuardrail.Allow(allow.reason)
-        case deny: Deny   => new SpiGuardrail.Deny(deny.reason)
-        case fail: Fail   => new SpiGuardrail.Fail(fail.reason, Option(fail.cause))
-        case null         => null
-      }(ExecutionContext.parasitic)
+      ErrorHandling
+        .asScalaUnwrapped(decision)
+        .map {
+          case allow: Allow => new SpiGuardrail.Allow(allow.reason)
+          case deny: Deny   => new SpiGuardrail.Deny(deny.reason)
+          case fail: Fail   => new SpiGuardrail.Fail(fail.reason, Option(fail.cause))
+          case null         => null
+        }(ExecutionContext.parasitic)
 
   private def toSettings(c: ConfiguredGuardrail): SpiGuardrail.Settings =
     new SpiGuardrail.Settings(c.name, c.category, c.reportOnly)

@@ -293,6 +293,12 @@ object GuardrailProviderSpec {
       CompletableFuture.failedFuture(new IllegalStateException("stage blew up"))
   }
 
+  // A stage of supplyAsync fails with a CompletionException around the exception of the supplier.
+  class SupplyAsyncFailedStageResponseGuard extends AsyncOnlyResponseGuard {
+    override def decideAsync(ctx: AgentResponseGuardrail.CallContext): CompletionStage[Decision] =
+      CompletableFuture.supplyAsync[Decision](() => throw new IllegalStateException("supplier blew up"))
+  }
+
   class NullStageResponseGuard extends AsyncOnlyResponseGuard {
     override def decideAsync(ctx: AgentResponseGuardrail.CallContext): CompletionStage[Decision] = null
   }
@@ -1304,6 +1310,29 @@ class GuardrailProviderSpec
         Await.result(spiGuardrail.decide(agentResponseContext("anything")), 3.seconds)
       }
       failure.getMessage shouldBe "stage blew up"
+    }
+
+    "fail the Future with the exception of the supplier, not the CompletionException of a supplyAsync stage" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "supply async model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$SupplyAsyncFailedStageResponseGuard"
+              agents = ["supply-async-agent"]
+              category = MODEL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail =
+        provider.agentGuardrails("supply-async-agent", role = None).guardrails.agentResponseGuardrails.head
+
+      val failure = intercept[IllegalStateException] {
+        Await.result(spiGuardrail.decide(agentResponseContext("anything")), 3.seconds)
+      }
+      failure.getMessage shouldBe "supplier blew up"
     }
 
     "fail the Future when an AgentResponseGuardrail returns a null CompletionStage" in {

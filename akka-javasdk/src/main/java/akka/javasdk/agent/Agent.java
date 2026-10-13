@@ -8,6 +8,7 @@ import akka.annotation.InternalApi;
 import akka.javasdk.CommandException;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
+import akka.javasdk.SanitizerException;
 import akka.javasdk.agent.Guardrail.GuardrailException;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
@@ -452,8 +453,8 @@ public abstract class Agent implements AgentDelegationWorker {
       <T> MappingResponseBuilder<T> map(Function<String, T> mapper);
 
       /**
-       * Handle failures that occur during model processing. This method allows recovery from
-       * various types of exceptions including:
+       * Handle failures of the agent request. This method allows recovery from various types of
+       * exceptions including:
        *
        * <ul>
        *   <li>{@link ModelException} - General model processing failures
@@ -466,6 +467,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
        *   <li>{@link McpToolCallExecutionException} - MCP tool execution errors
        *   <li>{@link GuardrailException} - Guardrail violations
+       *   <li>{@link SanitizerException} - A sanitizer class failed
        * </ul>
        */
       FailureBuilder<String> onFailure(Function<Throwable, String> exceptionHandler);
@@ -492,8 +494,8 @@ public abstract class Agent implements AgentDelegationWorker {
       <T> MappingFailureBuilder<T> map(Function<Result, T> mapper);
 
       /**
-       * Handle failures that occur during model processing. This method allows recovery from
-       * various types of exceptions including:
+       * Handle failures of the agent request. This method allows recovery from various types of
+       * exceptions including:
        *
        * <ul>
        *   <li>{@link ModelException} - General model processing failures
@@ -506,6 +508,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
        *   <li>{@link McpToolCallExecutionException} - MCP tool execution errors
        *   <li>{@link GuardrailException} - Guardrail violations
+       *   <li>{@link SanitizerException} - A sanitizer class failed
        * </ul>
        */
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
@@ -529,8 +532,8 @@ public abstract class Agent implements AgentDelegationWorker {
       Agent.Effect<Result> thenReply(Metadata metadata);
 
       /**
-       * Handle failures that occur during model processing. This method allows recovery from
-       * various types of exceptions including:
+       * Handle failures of the agent request. This method allows recovery from various types of
+       * exceptions including:
        *
        * <ul>
        *   <li>{@link ModelException} - General model processing failures
@@ -543,6 +546,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
        *   <li>{@link McpToolCallExecutionException} - MCP tool execution errors
        *   <li>{@link GuardrailException} - Guardrail violations
+       *   <li>{@link SanitizerException} - A sanitizer class failed
        * </ul>
        */
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
