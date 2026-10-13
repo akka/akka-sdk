@@ -1,4 +1,4 @@
-= Serving your first model in an Akka region
+= Serving your first model
 :page-summary: A step-by-step tutorial that deploys an open-weight model on an accelerator in an Akka region and calls it with an OpenAI-compatible client.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
