@@ -1,0 +1,185 @@
+= CLI command map
+:page-aliases: reference:inference-cli/index.adoc
+:page-summary: Which section describes the tasks for each akka command group, and where its commands are listed.
+:page-persona: builder-developer, builder-ai-ml, operator
+
+include::ROOT:partial$include.adoc[]
+
+Every `akka` command group has a reference page that lists its commands and flags. This map names the group, what it acts on, and where its tasks are described. For the flags and behavior that the groups share, see xref:reference:cli/conventions.adoc[].
+
+== Platform commands
+
+These commands manage an Akka Platform environment. Most of them need you to xref:getting-started:log-in.adoc[log in].
+
+[cols="2,4,3", options="header"]
+|===
+| Command group
+| Acts on
+| Tasks are in
+
+| xref:reference:cli/akka-cli/akka_auth.adoc[`akka auth`]
+| Akka authentication.
+| xref:getting-started:log-in.adoc[]
+
+| xref:reference:cli/akka-cli/akka_config.adoc[`akka config`]
+| The configuration and context of the Akka CLI.
+| xref:getting-started:install-cli.adoc#system-configuration[System configuration]
+
+| xref:reference:cli/akka-cli/akka_organizations.adoc[`akka organizations`]
+| Your organizations on Akka.
+| xref:operations:organizations/index.adoc[]
+
+| xref:reference:cli/akka-cli/akka_projects.adoc[`akka projects`]
+| Your Akka projects.
+| xref:operations:projects/index.adoc[]
+
+| xref:reference:cli/akka-cli/akka_roles.adoc[`akka roles`]
+| The user roles for an Akka project.
+| xref:operations:projects/manage-project-access.adoc[]
+
+| xref:reference:cli/akka-cli/akka_regions.adoc[`akka regions`]
+| Available regions.
+| xref:operations:regions/index.adoc[]
+
+| xref:reference:cli/akka-cli/akka_services.adoc[`akka services`]
+| Services deployed on Akka.
+| xref:operations:services/index.adoc[]
+
+| xref:reference:cli/akka-cli/akka_service-configs.adoc[`akka service-configs`]
+| The service configs for an Akka project.
+| xref:operations:services/service-config.adoc[]
+
+| xref:reference:cli/akka-cli/akka_routes.adoc[`akka routes`]
+| Routes for your Akka project.
+| xref:operations:services/invoke-service.adoc[]
+
+| xref:reference:cli/akka-cli/akka_secrets.adoc[`akka secrets`]
+| Secrets for an Akka project.
+| xref:operations:projects/secrets.adoc[]
+
+| xref:reference:cli/akka-cli/akka_container-registry.adoc[`akka container-registry`]
+| Service images in the Akka Container Registry.
+| xref:operations:projects/container-registries.adoc[]
+
+| xref:reference:cli/akka-cli/akka_docker.adoc[`akka docker`]
+| Credentials for projects that use private Docker registries.
+| xref:operations:projects/external-container-registries.adoc[]
+
+| xref:reference:cli/akka-cli/akka_logs.adoc[`akka logs`]
+| The last few lines of logs for a service.
+| xref:operations:observability-and-monitoring/view-logs.adoc[]
+
+| xref:reference:cli/akka-cli/akka_version.adoc[`akka version`]
+| The version of the `akka` CLI.
+| xref:getting-started:install-cli.adoc#check-version[Check your version]
+|===
+
+== Local development commands
+
+These commands work without a login.
+
+[cols="2,4,3", options="header"]
+|===
+| Command group
+| Acts on
+| Tasks are in
+
+| xref:reference:cli/akka-cli/akka_local.adoc[`akka local`]
+| Akka services running locally.
+| xref:sdk:running-locally.adoc[]
+
+| xref:reference:cli/akka-cli/akka_code.adoc[`akka code`]
+| Source code projects for new Akka services.
+| xref:getting-started:author-your-first-service.adoc[]
+
+| xref:reference:cli/akka-cli/akka_mcp.adoc[`akka mcp`]
+| The MCP server for AI agent integration.
+| xref:sdk:register-mcp.adoc[]
+
+| xref:reference:cli/akka-cli/akka_completion.adoc[`akka completion`]
+| Shell completion scripts.
+| xref:getting-started:install-cli.adoc#command-completion[Enable command completion]
+
+| xref:reference:cli/akka-cli/akka_docs.adoc[`akka docs`]
+| Opens the Akka documentation.
+| Reference only
+|===
+
+== Specify commands
+
+[cols="2,4,3", options="header"]
+|===
+| Command group
+| Acts on
+| Tasks are in
+
+| xref:reference:cli/akka-cli/akka_specify.adoc[`akka specify`]
+| AI-assisted Akka development projects.
+| xref:reference:specify/index.adoc[]
+|===
+
+== Inference commands
+
+These commands serve models and decide which model serves a request. They are an add-on to Akka Automated Operations.
+
+[cols="2,4,3", options="header"]
+|===
+| Command group
+| Acts on
+| Tasks are in
+
+| xref:reference:cli/models.adoc[`akka models`]
+| Accelerator pools and allocations, models, the endpoints that serve them, and their API keys.
+| xref:inference:serving/index.adoc[]
+
+| xref:reference:cli/routing.adoc[`akka optimize rulesets`, `routing-classifiers`, `use-cases`, and `routing-policies`]
+| The rules and policies that choose which provider serves a request.
+| xref:inference:routing/index.adoc[]
+
+| xref:reference:cli/cost-and-traffic.adoc[`akka optimize spend`, `callers`, `incidents`, `pricing-catalog`, and `captures`]
+| What an organization spends on inference, and the traffic behind it.
+| Reference only
+|===
+
+== Training commands
+
+These commands train and evaluate models. They are an add-on to Akka Automated Operations.
+
+[cols="2,4,3", options="header"]
+|===
+| Command group
+| Acts on
+| Tasks are in
+
+| xref:reference:cli/training.adoc[`akka optimize training`, `trained-models`, `datasets`, and `eval`]
+| Training runs, the models they produce, the datasets they use, and evaluations.
+| xref:optimize:cli.adoc[]
+
+| xref:reference:cli/akka-cli/akka_optimize_registry.adoc[`akka optimize registry`]
+| The artifact registry: named models, datasets, and bundles.
+| xref:optimize:trainer/datasets.adoc[]
+
+| xref:reference:cli/akka-cli/akka_optimize_redteam.adoc[`akka optimize redteam`]
+| Adversarial datasets, red-team campaigns, techniques, hazards, and corpora.
+| Reference only
+|===
+
+== Model governance commands
+
+[cols="2,4,3", options="header"]
+|===
+| Command group
+| Acts on
+| Tasks are in
+
+| xref:reference:cli/models.adoc#governance[`akka optimize models`]
+| The corporate model registry: which models an organization sanctions.
+| Reference only
+|===
+
+include::inference:partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:reference:cli/conventions.adoc[]
+* xref:reference:cli/akka-cli/index.adoc[]

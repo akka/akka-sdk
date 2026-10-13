@@ -1,4 +1,5 @@
 = Model commands
+:page-aliases: reference:inference-cli/models.adoc
 :page-summary: The complete command reference for the akka models noun, covering accelerator pools, allocations, models, endpoints, API keys, and the akka optimize models governance record.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
@@ -197,5 +198,6 @@ include::inference:partial$aao-inference-notice.adoc[]
 
 * xref:inference:serving/index.adoc[Serving models]
 * xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
-* xref:reference:inference-cli/routing.adoc[Routing commands]
-* xref:reference:inference-cli/cost-training-and-evaluation.adoc[Cost, training, and evaluation commands]
+* xref:reference:cli/routing.adoc[Routing commands]
+* xref:reference:cli/cost-and-traffic.adoc[Cost and traffic commands]
+* xref:reference:cli/training.adoc[Training and evaluation commands]

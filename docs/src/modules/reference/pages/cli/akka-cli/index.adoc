@@ -11,6 +11,7 @@ Instead, you might want to modify file "cli-index-header.template.txt"
 The `akka` command line tool lets you interact with Akka projects, AI systems, local and remote Akka platform environments, governance bundles, and AI training runs. See xref:getting-started:install-cli.adoc[] for information on how to download `akka`. Use xref:reference:cli/akka-cli/akka_version.adoc[`akka version`] to check the version.
 
 The following sections list xref:reference:cli/akka-cli/akka.adoc[akka] commands and their options.
+To find the command group for a task, see the xref:reference:cli/command-map.adoc[CLI command map]. For the flags that every command accepts, see xref:reference:cli/conventions.adoc[].
 
 == Log in to Akka
 Log in only to deploy to or manage a remote Akka Platform environment, whether it runs at akka.io or is installed in your enterprise. See xref:getting-started:log-in.adoc[].
@@ -122,6 +123,12 @@ The `akka docs` command opens the Akka online documentation page.
 
 == Display logs
 The `akka logs` commands allow you to display the last few lines (default: 100) of logs for a specific service. The detail are available in xref:reference:cli/akka-cli/akka_logs.adoc[akka logs].
+
+== Models
+The `akka models` commands deploy and serve models in Akka's inference regions. See xref:reference:cli/akka-cli/akka_models.adoc[akka models] and xref:reference:cli/models.adoc[Model commands].
+
+== Optimize
+The `akka optimize` commands cover cost, models, training, and routing. See xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize] and the xref:reference:cli/command-map.adoc[CLI command map] for where each group is described.
 
 == Organizations
 The `akka organizations` commands allow you to manage the members within an organization. Projects can be created under an organization, and members of the organization can manage those projects.

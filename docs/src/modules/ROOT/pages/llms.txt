@@ -131,10 +131,12 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Glossary](https://doc.akka.io/reference/glossary.html.md): Terms including AI, governance, and distributed systems terminology
 - [Service configuration](https://doc.akka.io/reference/config/reference.html.md): Full HOCON configuration reference
 - [CLI command reference](https://doc.akka.io/reference/cli/akka-cli/index.html): All Akka CLI commands
-- [Inference CLI commands](https://doc.akka.io/reference/inference-cli/index.html.md): How the inference command families are organized
-- [Model commands](https://doc.akka.io/reference/inference-cli/models.html.md): akka models — deployments, hardware, routes, keys, and governance
-- [Routing commands](https://doc.akka.io/reference/inference-cli/routing.html.md): akka rulesets, routing-classifiers, use-cases, and routing-policies
-- [Cost, training, and evaluation commands](https://doc.akka.io/reference/inference-cli/cost-training-and-evaluation.html.md): akka budget, training-runs, eval, and related commands
+- [CLI conventions](https://doc.akka.io/reference/cli/conventions.html.md): Flags, output formats, and behavior shared by the akka commands
+- [CLI command map](https://doc.akka.io/reference/cli/command-map.html.md): Which section describes the tasks for each akka command group
+- [Model commands](https://doc.akka.io/reference/cli/models.html.md): akka models — deployments, hardware, routes, keys, and governance
+- [Routing commands](https://doc.akka.io/reference/cli/routing.html.md): akka rulesets, routing-classifiers, use-cases, and routing-policies
+- [Cost and traffic commands](https://doc.akka.io/reference/cli/cost-and-traffic.html.md): akka optimize spend, callers, incidents, pricing-catalog, and captures
+- [Training and evaluation commands](https://doc.akka.io/reference/cli/training.html.md): akka optimize training, trained-models, datasets, and eval
 - [Model descriptor](https://doc.akka.io/reference/descriptors/model-descriptor.html.md): Every field of the YAML that declares models, accelerators, secrets, and routes
 - [Routing ruleset](https://doc.akka.io/reference/descriptors/routing-ruleset.html.md): Predicates, attributes, match blocks, and outcomes for attribute routing
 - [Release notes](https://doc.akka.io/reference/release-notes.html.md): Latest updates and changes
