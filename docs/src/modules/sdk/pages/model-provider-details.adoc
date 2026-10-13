@@ -39,6 +39,24 @@ at the price of tokens used for the thought process.
 For models that support thinking, it is enabled through model-specific configuration, either by setting a thinking token budget, or
 by a toggle. Thinking is disabled for all models by default.
 
+=== Retries
+Akka retries a request to the model when it fails with a rate limit (HTTP 429), a request timeout (HTTP 408), a server error (HTTP 5xx), a timeout or a connection failure. Other failures are not retried. Examples are an invalid request, an authentication error, a response that cannot be parsed and a response that is larger than the maximum response size.
+
+The `max-retries` setting of the model provider defines the maximum number of retries. It applies to each request to the model. An agent request that calls tools makes one request to the model for each round of tool calls, and each of these requests has its own retries.
+
+The delay before a retry is:
+
+* The delay that the model provider asks for, if any. Akka reads it from the `Retry-After` or `retry-after-ms` response header, from the `RetryInfo` detail of a Gemini error response, or from the `x-amz-retry-after` header of a Bedrock error. A random delay of up to 20%, and at least up to 500 milliseconds, is added, so that agents that are rate limited at the same time do not retry at the same time. LocalAI uses the exponential backoff only.
+* Otherwise, an exponential backoff. The first delay is 500 milliseconds and each following delay is 1.5 times longer, up to 30 seconds. A random delay of up to 20% is added.
+
+Akka waits for the delay that the model provider asks for, up to one day. A rate limited agent request can therefore take a long time.
+
+Blocking and streaming requests are retried in the same way, with the same `max-retries` setting. A streaming request is only retried if it fails before any part of the response has been streamed. A failure after that fails the agent request.
+
+Akka does not retry a request to a custom model provider. Retries are up to the custom model implementation.
+
+When a workflow step calls the agent, the step timeout must cover the retries of the agent request and the delays between them. Otherwise the step times out while the agent request still waits, and the recovery strategy of the workflow runs the step again. See xref:workflows.adoc#_error_handling[Workflow timeouts and recovery strategy].
+
 == Model configuration
 The following is a list of all natively supported model configurations. Remember that if you do not see your model or model format here, you can always create your own custom configuration and still use all of the Agent-related components.
 
@@ -90,7 +108,7 @@ The following is a list of all natively supported model configurations. Remember
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | thinking-budget-tokens
 | Integer
@@ -185,7 +203,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`M
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | additional-model-request-headers
 | List of String
@@ -248,7 +266,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.AzureOpenAi.html[
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | prompt-caching
 | String
@@ -306,7 +324,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Bedrock.html[`Mod
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | thinking-budget
 | Integer
@@ -376,7 +394,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.ht
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | thinking
 | Boolean
@@ -496,7 +514,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.LocalAI.html[`Mod
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | additional-model-request-headers
 | List of String
@@ -542,7 +560,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.MistralAi.html[`M
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | think
 | Boolean
@@ -604,7 +622,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | thinking
 | Boolean
@@ -678,7 +696,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`Mode
 
 | max-retries
 | Integer
-| Retry this many times if the request to the model fails
+| Retry this many times if the request to the model fails with a rate limit, a server error, a timeout or a connection failure. See <<_retries>>.
 
 | additional-model-request-headers
 | List of String
