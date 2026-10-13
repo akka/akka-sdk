@@ -77,7 +77,7 @@ assistant.
 * xref:reference:cli/akka-cli/akka_code_token.adoc[akka code token]
 
 == Manage local context
-The `akka config` command is used to display and set configuration contexts and values that apply to subsequent commands. Configuration settings are stored in a file on your local system, by default at `.kalix/config.yaml` in your home directory.
+The `akka config` command is used to display and set configuration contexts and values that apply to subsequent commands. Configuration settings are stored in a file on your local system, by default at `.akka/config.yaml` in your home directory.
 
 A common use of `config set` command is to establish a specific project as the "current project" by using `akka config set project _my-project_`.
 

@@ -33,7 +33,6 @@
 *** xref:cli/akka-cli/akka_auth_tokens_revoke.adoc[]
 *** xref:cli/akka-cli/akka_auth_tokens.adoc[]
 *** xref:cli/akka-cli/akka_auth_use-token.adoc[]
-*** xref:cli/akka-cli/akka_auth.adoc[]
 *** xref:cli/akka-cli/akka_code_check.adoc[]
 *** xref:cli/akka-cli/akka_code_context-update.adoc[]
 *** xref:cli/akka-cli/akka_code_init.adoc[]
@@ -436,7 +435,6 @@
 *** xref:cli/akka-cli/akka_specify_waive.adoc[]
 *** xref:cli/akka-cli/akka_specify.adoc[]
 *** xref:cli/akka-cli/akka_version.adoc[]
-*** xref:cli/akka-cli/akka.adoc[]
 ** xref:specify/index.adoc[Specify]
 *** Commands
 **** xref:specify/analyze.adoc[/akka:analyze]
