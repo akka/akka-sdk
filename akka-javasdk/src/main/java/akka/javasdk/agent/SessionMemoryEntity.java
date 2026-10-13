@@ -227,10 +227,9 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
     /**
      * An event that adds a message to the history, as opposed to a lifecycle event. The {@code
-     * sanitized} component of a user message or a tool response event holds the {@code sanitized}
-     * value of the {@link SessionMessage} that it adds. The {@code isError} component of a tool
-     * response event holds the {@code isError} value of the tool response. A stored event without
-     * one of these components reads it as false.
+     * sanitized} component of a user message or a tool response event, and the {@code isError}
+     * component of a tool response event, hold the value of the {@link SessionMessage} that the
+     * event adds. The SDK reads a missing component of a stored event as false.
      */
     sealed interface Message {}
 
@@ -311,17 +310,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           int sizeInBytes) {
         this(timestamp, componentId, id, name, content, sizeInBytes, false, false);
       }
-
-      public ToolResponseMessageAdded(
-          Instant timestamp,
-          String componentId,
-          String id,
-          String name,
-          String content,
-          int sizeInBytes,
-          boolean sanitized) {
-        this(timestamp, componentId, id, name, content, sizeInBytes, sanitized, false);
-      }
     }
 
     @TypeName("akka-memory-multimodal-tool-response-message-added")
@@ -344,17 +332,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           List<SessionMessage.MessageContent> contents,
           int sizeInBytes) {
         this(timestamp, componentId, id, name, contents, sizeInBytes, false, false);
-      }
-
-      public MultimodalToolResponseMessageAdded(
-          Instant timestamp,
-          String componentId,
-          String id,
-          String name,
-          List<SessionMessage.MessageContent> contents,
-          int sizeInBytes,
-          boolean sanitized) {
-        this(timestamp, componentId, id, name, contents, sizeInBytes, sanitized, false);
       }
     }
   }

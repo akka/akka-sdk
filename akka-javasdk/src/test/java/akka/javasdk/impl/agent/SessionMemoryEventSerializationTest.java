@@ -40,9 +40,10 @@ public class SessionMemoryEventSerializationTest {
         List.<Event.Message>of(
             new Event.UserMessageAdded(ts, "agent", "hello", 5, true),
             new Event.MultimodalUserMessageAdded(ts, "agent", contents, 4, true),
-            new Event.ToolResponseMessageAdded(ts, "agent", "call-1", "search", "result", 6, true),
+            new Event.ToolResponseMessageAdded(
+                ts, "agent", "call-1", "search", "result", 6, true, false),
             new Event.MultimodalToolResponseMessageAdded(
-                ts, "agent", "call-1", "render", contents, 4, true),
+                ts, "agent", "call-1", "render", contents, 4, true, false),
             new Event.ToolResponseMessageAdded(
                 ts, "agent", "call-1", "search", "failed", 6, false, true),
             new Event.MultimodalToolResponseMessageAdded(
@@ -54,7 +55,7 @@ public class SessionMemoryEventSerializationTest {
     }
   }
 
-  // events stored before the flag existed have no field, the mapper must read it as false
+  // a stored event without the sanitized field reads as not sanitized
   @Test
   public void shouldReadAnEventWithoutTheFlagAsNotSanitized() {
     var json =
@@ -73,7 +74,7 @@ public class SessionMemoryEventSerializationTest {
                 Instant.parse("2026-01-01T00:00:00Z"), "agent", "hello", 5, false));
   }
 
-  // tool response events stored before the error flag existed have no field, read it as false
+  // a stored tool response event without the isError field reads as not an error
   @Test
   public void shouldReadAToolResponseEventWithoutTheErrorFlagAsNotAnError() {
     var json =
@@ -148,7 +149,8 @@ public class SessionMemoryEventSerializationTest {
     }
   }
 
-  // snapshots hold the messages, a tool response stored before the error flag existed has no field
+  // snapshots hold the messages, a stored tool response without the isError field reads as not an
+  // error
   @Test
   public void shouldReadAStoredToolResponseWithoutTheErrorFlagAsNotAnError() throws Exception {
     var json =

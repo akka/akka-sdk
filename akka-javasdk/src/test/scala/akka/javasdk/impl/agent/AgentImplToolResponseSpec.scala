@@ -16,6 +16,12 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class AgentImplToolResponseSpec extends AnyWordSpec with Matchers {
 
+  private val text = new SpiAgent.TextMessageContent("caption")
+  private val image = new SpiAgent.ImageUriMessageContent(
+    URI.create("object://bucket/chart.png"),
+    SpiAgent.ImageMessageContent.Auto,
+    Some("image/png"))
+
   private def toSessionMessage(
       contents: Seq[SpiAgent.MessageContent],
       sanitized: Boolean = false,
@@ -35,11 +41,6 @@ class AgentImplToolResponseSpec extends AnyWordSpec with Matchers {
     }
 
     "keep a single image-URI content as a MultimodalToolCallResponse" in {
-      val image = new SpiAgent.ImageUriMessageContent(
-        URI.create("object://bucket/chart.png"),
-        SpiAgent.ImageMessageContent.Auto,
-        Some("image/png"))
-
       toSessionMessage(Seq(image)) match {
         case mtcr: SessionMessage.MultimodalToolCallResponse =>
           mtcr.contents().asScala.toList match {
@@ -52,12 +53,6 @@ class AgentImplToolResponseSpec extends AnyWordSpec with Matchers {
     }
 
     "keep a text + image content list as a MultimodalToolCallResponse in order" in {
-      val text = new SpiAgent.TextMessageContent("caption")
-      val image = new SpiAgent.ImageUriMessageContent(
-        URI.create("object://bucket/chart.png"),
-        SpiAgent.ImageMessageContent.Auto,
-        Some("image/png"))
-
       toSessionMessage(Seq(text, image)) match {
         case mtcr: SessionMessage.MultimodalToolCallResponse =>
           mtcr.contents().asScala.toList match {
@@ -72,12 +67,6 @@ class AgentImplToolResponseSpec extends AnyWordSpec with Matchers {
     }
 
     "carry the sanitized flag to either response" in {
-      val text = new SpiAgent.TextMessageContent("caption")
-      val image = new SpiAgent.ImageUriMessageContent(
-        URI.create("object://bucket/chart.png"),
-        SpiAgent.ImageMessageContent.Auto,
-        Some("image/png"))
-
       toSessionMessage(Seq(text), sanitized = true) match {
         case tcr: SessionMessage.ToolCallResponse => tcr.sanitized() shouldBe true
         case other => fail(s"expected a ToolCallResponse, got [${other.getClass.getSimpleName}]")
@@ -89,12 +78,6 @@ class AgentImplToolResponseSpec extends AnyWordSpec with Matchers {
     }
 
     "carry the error flag to either response" in {
-      val text = new SpiAgent.TextMessageContent("caption")
-      val image = new SpiAgent.ImageUriMessageContent(
-        URI.create("object://bucket/chart.png"),
-        SpiAgent.ImageMessageContent.Auto,
-        Some("image/png"))
-
       toSessionMessage(Seq(text), isError = true) match {
         case tcr: SessionMessage.ToolCallResponse =>
           tcr.isError() shouldBe true

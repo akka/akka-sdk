@@ -281,22 +281,14 @@ public class SessionMemoryEntityTest {
             .sequenceNumber();
 
     // when
-    var result =
-        testKit
-            .method(SessionMemoryEntity::addInteraction)
-            .invoke(
-                new AddInteractionCmd(
-                    new UserMessage(timestamp, "search", COMPONENT_ID),
-                    List.of(toolResponse, multimodalToolResponse)));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(
+            new AddInteractionCmd(
+                new UserMessage(timestamp, "search", COMPONENT_ID),
+                List.of(toolResponse, multimodalToolResponse)));
 
     // then
-    var events = result.getAllEvents();
-    assertThat(((SessionMemoryEntity.Event.ToolResponseMessageAdded) events.get(1)).isError())
-        .isTrue();
-    assertThat(
-            ((SessionMemoryEntity.Event.MultimodalToolResponseMessageAdded) events.get(2))
-                .isError())
-        .isTrue();
     var messages =
         testKit
             .method(SessionMemoryEntity::getHistory)

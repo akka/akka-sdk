@@ -14,8 +14,10 @@ package akka.javasdk.agent;
  * <p>The SDK stores the {@code sanitized} value of the message that the interceptor returns. Leave
  * it false in a message that the interceptor builds, because that message no longer holds the text
  * that the runtime sent to the model. The constructors without a {@code sanitized} parameter do
- * that. Pass the {@code isError} value of the original tool response to a tool response that the
- * interceptor builds, so that the runtime still passes the error flag to the model provider.
+ * that. To change the text of a tool response, use {@link SessionMessage.ToolCallResponse#withText}
+ * or {@link SessionMessage.MultimodalToolCallResponse#withContents}. These keep the {@code isError}
+ * value of the original response, and the runtime passes it to the model provider. The constructors
+ * without an {@code isError} parameter set it to false.
  *
  * <p>Hooks are provided for each top-level {@link SessionMessage} variant: user messages (text and
  * multimodal), AI replies, and tool call responses (text and multimodal). Tool requests are nested

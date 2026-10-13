@@ -120,11 +120,13 @@ class AgentImplMcpToolsSpec extends AnyWordSpec with Matchers {
 
     "keep the arguments and the result when the default interceptor methods leave them unchanged" in {
       val hooks = hooksFor(new RemoteMcpTools.ToolInterceptor {})
-      val result = new SpiAgent.McpToolCallResult("failed", isError = true)
 
-      (Await.result(hooks.interceptRequest(request), 3.seconds) should be).theSameInstanceAs(request.arguments)
-      (Await.result(hooks.interceptResponse(request, request.arguments, result), 3.seconds) should be)
-        .theSameInstanceAs(result)
+      Await.result(hooks.interceptRequest(request), 3.seconds) shouldBe request.arguments
+      val result = Await.result(
+        hooks.interceptResponse(request, request.arguments, new SpiAgent.McpToolCallResult("failed", isError = true)),
+        3.seconds)
+      result.text shouldBe "failed"
+      result.isError shouldBe true
     }
 
     "return a failed Future when the interceptor throws" in {

@@ -17,7 +17,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class AgentImplContextMessagesSpec extends AnyWordSpec with Matchers {
 
-  private def history(sanitized: Boolean): SessionHistory = {
+  private def history(sanitized: Boolean, isError: Boolean = false): SessionHistory = {
     val ts = Instant.EPOCH
     val contents = java.util.List.of[SessionMessage.MessageContent](new TextMessageContent("text"))
     new SessionHistory(
@@ -32,8 +32,8 @@ class AgentImplContextMessagesSpec extends AnyWordSpec with Matchers {
           Optional.empty(),
           TokenUsage.EMPTY,
           java.util.Map.of()),
-        new SessionMessage.ToolCallResponse(ts, "agent", "id1", "search", "result", sanitized),
-        new SessionMessage.MultimodalToolCallResponse(ts, "agent", "id2", "render", contents, sanitized)),
+        new SessionMessage.ToolCallResponse(ts, "agent", "id1", "search", "result", sanitized, isError),
+        new SessionMessage.MultimodalToolCallResponse(ts, "agent", "id2", "render", contents, sanitized, isError)),
       0L)
   }
 
@@ -51,17 +51,10 @@ class AgentImplContextMessagesSpec extends AnyWordSpec with Matchers {
     }
 
     "pass the error flag of each tool response to the runtime" in {
-      val ts = Instant.EPOCH
-      val contents = java.util.List.of[SessionMessage.MessageContent](new TextMessageContent("text"))
       def errorFlags(isError: Boolean): Vector[Boolean] =
-        AgentImpl
-          .toSpiContextMessages(
-            new SessionHistory(
-              java.util.List.of[SessionMessage](
-                new SessionMessage.ToolCallResponse(ts, "agent", "id1", "search", "failed", true, isError),
-                new SessionMessage.MultimodalToolCallResponse(ts, "agent", "id2", "render", contents, true, isError)),
-              0L))
-          .collect { case m: ContextMessage.ToolCallResponseMessage => m.isError }
+        AgentImpl.toSpiContextMessages(history(sanitized = true, isError)).collect {
+          case m: ContextMessage.ToolCallResponseMessage => m.isError
+        }
 
       errorFlags(isError = true) shouldBe Vector(true, true)
       errorFlags(isError = false) shouldBe Vector(false, false)

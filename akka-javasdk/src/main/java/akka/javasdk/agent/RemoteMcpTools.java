@@ -134,9 +134,11 @@ public interface RemoteMcpTools {
      * throwing an exception, modifying the result is also possible. When modifying the result, you
      * need to make sure the payload still is something the model will understand.
      *
-     * <p>{@link ToolInterceptorContext#isError()} tells whether the response is an error result.
-     * The runtime keeps the error flag for the returned result. Rewriting the text of an error
-     * result does not clear the flag.
+     * <p>The runtime calls this method for each result that the MCP server returns, including an
+     * error result. {@link ToolInterceptorContext#isError()} is true for an error result. The
+     * returned text keeps the error flag of the original result, and the interceptor cannot change
+     * the flag. A tool call that fails without a result, for example on a timeout, does not reach
+     * this method.
      *
      * <p>Returning {@code null} fails the tool call.
      *

@@ -190,7 +190,7 @@ public class TaskIntegrationTest extends TestKitSupport {
         .reply(new TestModelProvider.ToolInvocationRequest("DateService_getToday", ""));
 
     toolModel
-        .whenToolResult(result -> result.content().equals("2025-01-15"))
+        .whenToolResult(result -> result.content().equals("2025-01-15") && !result.isError())
         .thenReply(
             result ->
                 new AiResponse(

@@ -126,7 +126,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
    * model received. {@link #content()} returns the text-only view (text parts joined, image/PDF
    * omitted).
    *
-   * @param isError true when the tool result was sent to the model as an error result.
+   * @param isError true when the runtime sent the tool result to the model as an error result.
    */
   public record ToolResult(String name, List<MessageContent> contents, boolean isError)
       implements InputMessage {
@@ -530,14 +530,19 @@ public final class TestModelProvider implements ModelProvider.Custom {
   }
 
   /**
-   * Configures to respond when an {@link ToolResult} is an exact match of {@code toolResult}.
+   * Configures to respond when a {@link ToolResult} has the same name and contents as {@code
+   * toolResult}. The match ignores {@link ToolResult#isError()}. To match on it, use {@link
+   * #whenToolResult(Predicate)}.
    *
    * <p>Note that to finish the configuration, you must call one of the reply methods.
    */
   public WhenToolReplyClause whenToolResult(ToolResult toolResult) {
 
     Predicate<InputMessage> messagePredicate =
-        (value) -> value instanceof ToolResult tResult && toolResult.equals(tResult);
+        (value) ->
+            value instanceof ToolResult tResult
+                && toolResult.name().equals(tResult.name())
+                && toolResult.contents().equals(tResult.contents());
 
     return new WhenToolReplyClause(this, messagePredicate);
   }
