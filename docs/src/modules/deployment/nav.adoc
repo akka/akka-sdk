@@ -23,3 +23,4 @@
 **** xref:deployment:production-readiness/checklist.adoc[Checklist]
 **** xref:deployment:production-readiness/disaster-recovery.adoc[Disaster recovery]
 **** xref:deployment:production-readiness/optimize.adoc[Served and trained models]
+**** xref:deployment:production-readiness/agentic-ai.adoc[Agentic AI]
