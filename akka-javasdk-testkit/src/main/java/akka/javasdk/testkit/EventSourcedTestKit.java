@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  * <p>The {@link TestNotificationPublisher} can be used when entity constructor requires {@link
  * akka.javasdk.NotificationPublisher}.
  *
- * <p>Use the {@code method} methods to interact with the testkit.
+ * <p>Call a command handler with {@code method(...).invoke(...)}.
  */
 public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
     extends EventSourcedEntityEffectsRunner<S, E> {

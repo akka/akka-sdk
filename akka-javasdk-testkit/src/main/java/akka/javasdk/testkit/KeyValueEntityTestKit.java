@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  * KeyValueEntityTestKit.of} methods. The returned testkit is stateful, and it holds internally the
  * state of the entity.
  *
- * <p>Use the {@code method} methods to interact with the testkit.
+ * <p>Call a command handler with {@code method(...).invoke(...)}.
  */
 public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
 
