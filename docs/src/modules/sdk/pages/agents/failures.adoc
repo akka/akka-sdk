@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-The `onFailure` method in the agent's effect API handles failures that occur during model processing. Use it to implement fallback strategies and return a meaningful response when a request fails.
+The `onFailure` method in the agent's effect API handles failures of the agent request. Use it to implement fallback strategies and return a meaningful response when a request fails.
 
 == Types of exceptions handled
 

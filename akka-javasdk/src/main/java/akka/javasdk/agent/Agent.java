@@ -453,8 +453,8 @@ public abstract class Agent implements AgentDelegationWorker {
       <T> MappingResponseBuilder<T> map(Function<String, T> mapper);
 
       /**
-       * Handle failures that occur during model processing. This method allows recovery from
-       * various types of exceptions including:
+       * Handle failures of the agent request. This method allows recovery from various types of
+       * exceptions including:
        *
        * <ul>
        *   <li>{@link ModelException} - General model processing failures
@@ -494,8 +494,8 @@ public abstract class Agent implements AgentDelegationWorker {
       <T> MappingFailureBuilder<T> map(Function<Result, T> mapper);
 
       /**
-       * Handle failures that occur during model processing. This method allows recovery from
-       * various types of exceptions including:
+       * Handle failures of the agent request. This method allows recovery from various types of
+       * exceptions including:
        *
        * <ul>
        *   <li>{@link ModelException} - General model processing failures
@@ -532,8 +532,8 @@ public abstract class Agent implements AgentDelegationWorker {
       Agent.Effect<Result> thenReply(Metadata metadata);
 
       /**
-       * Handle failures that occur during model processing. This method allows recovery from
-       * various types of exceptions including:
+       * Handle failures of the agent request. This method allows recovery from various types of
+       * exceptions including:
        *
        * <ul>
        *   <li>{@link ModelException} - General model processing failures
