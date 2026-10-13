@@ -242,16 +242,6 @@ include::operations:partial$model-request-diagram.mmd[]
 
 xref:operations:technical-overview-model-request-image.adoc[View the full-size model request diagram,role=open-image,window=_blank]
 
-=== Tools for evaluation and adversarial testing
-
-Akka provides these tools with Optimize:
-
-* evalkit, a toolkit that you download separately and that integrates with your Akka project, runs evaluation and scoring campaigns locally.
-* redkit, a toolkit that is also part of your Akka project and downloadable separately, runs adversarial testing campaigns against models.
-* Extensions to the Akka CLI manage evalkit, redkit, and your hosted Optimize environment. See xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize].
-
-For testing an agent, see xref:testing:evaluation/adversarial.adoc[].
-
 == Where to go next
 
 Choose your deployment model and follow its setup. Each setup page ends by letting you choose your cloud.
