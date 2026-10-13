@@ -43,6 +43,36 @@
   max-width: none;
 }
 
+.dense-page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.dense-page-heading h1 {
+  min-width: 0;
+  margin: 0;
+}
+
+.dense-close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--akka-dense-rule);
+  border-radius: 4px;
+  color: var(--akka-dense-muted);
+  cursor: pointer;
+}
+
+.dense-close:hover,
+.dense-close:focus-visible {
+  background: var(--akka-dense-head);
+  color: inherit;
+}
+
 .dense-breakout {
   margin-top: 1rem;
 }
@@ -196,31 +226,30 @@
    Link from a regular docs page
    ------------------------------------------------------------------ */
 
-/* The grid replaces the table on the linking page, so the link is a large
-   target rather than a text link. */
+/* A compact link row makes the table easy to find without a large card. */
 .doc a.open-grid {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 1.25rem;
-  padding: 2.5rem 2rem;
-  border: 2px solid var(--akka-dense-group);
-  border-radius: 8px;
-  color: var(--akka-dense-group);
-  font-size: 1.375rem;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid currentColor;
+  background: rgba(128, 128, 128, 0.06);
+  font-size: 1rem;
   font-weight: 600;
-  text-decoration: none;
 }
 
-.doc a.open-grid:hover {
-  background: var(--akka-dense-hover);
+.doc a.open-grid:hover,
+.doc a.open-grid:focus-visible {
+  background: rgba(128, 128, 128, 0.12);
 }
 
 .doc a.open-grid::before {
   content: "";
+  display: block;
   flex: none;
-  width: 3.5rem;
-  height: 3.5rem;
+  width: 1.35rem;
+  height: 1.35rem;
   background: currentColor;
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 5h18v14H3V5zm2 2v3h6V7H5zm8 0v3h6V7h-6zm-8 5v3h6v-3H5zm8 0v3h6v-3h-6z' fill-rule='evenodd'/%3E%3C/svg%3E") center / contain no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 5h18v14H3V5zm2 2v3h6V7H5zm8 0v3h6V7h-6zm-8 5v3h6v-3H5zm8 0v3h6v-3h-6z' fill-rule='evenodd'/%3E%3C/svg%3E") center / contain no-repeat;

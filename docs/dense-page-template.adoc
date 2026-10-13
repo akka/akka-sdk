@@ -5,8 +5,9 @@
 // header and the table only, and the table uses the whole window. Keep the page
 // that links to it for the prose.
 //
-// Name the file <topic>-grid.adoc. It is not in the nav, so the breadcrumb is stated
-// here; copy the trail the linking page shows, ending with its title.
+// Name the file <topic>-grid.adoc so the close control can return to <topic>.adoc
+// when the browser cannot close its tab. It is not in the nav, so the breadcrumb is
+// stated here; copy the trail the linking page shows, ending with its title.
 = Page title
 :page-layout: dense
 :page-breadcrumb: Akka / Section / Subsection / Page title
@@ -24,7 +25,7 @@
 | First | Item two | Source | Target | [.conn-public]#Public# (allowlisted)
 |===
 
-// On the page that links to the grid, put this line where the table was. It renders
-// as a large icon card and opens the grid in a new tab:
+// On the page that links to the grid, put this link where the table was. It
+// renders as a compact row with a table icon and opens the grid in a new tab:
 //
-// xref:module:path/to/topic-grid.adoc[Open the <topic> as a full-screen grid,role=open-grid,window=_blank]
+// xref:module:path/to/topic-grid.adoc[View the full <topic> table,role=open-grid,window=_blank]

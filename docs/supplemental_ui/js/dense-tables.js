@@ -100,6 +100,21 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
+    var close = document.querySelector('.dense-close');
+    if (close) {
+      close.addEventListener('click', function () {
+        window.close();
+        // Browsers may block closing a tab opened directly. Its paired article
+        // has the same path without the -grid suffix.
+        setTimeout(function () {
+          if (!window.closed) {
+            var article = new URL(window.location.href);
+            article.pathname = article.pathname.replace(/-grid\.html$/, '.html');
+            window.location.assign(article.href);
+          }
+        }, 100);
+      });
+    }
     Array.prototype.forEach.call(document.querySelectorAll('table.dense'), enhance);
   });
 })();
