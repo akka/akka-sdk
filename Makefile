@@ -111,16 +111,18 @@ whitepapers-ci: PLAYWRIGHT_INSTALL_FLAGS := --with-deps
 whitepapers-ci: whitepapers
 
 whitepapers:
+	set -e; \
 	if ! command -v node >/dev/null 2>&1; then \
 	  if [ "$(WHITEPAPERS_REQUIRED)" = 1 ]; then \
 	    echo "Node.js is required to render white paper PDFs." >&2; exit 1; \
 	  fi; \
 	  echo ">> Skipping white paper PDF: Node.js not found (install Node to render it locally)."; \
 	else \
-	  if [ "$(WHITEPAPERS_INSTALL)" = 1 ] || [ ! -d docs/bin/whitepaper/node_modules ]; then \
-	    echo ">> Installing white paper render tooling (Playwright + Chromium)..."; \
-	    (cd docs/bin/whitepaper && npm install && npx playwright install $(PLAYWRIGHT_INSTALL_FLAGS) chromium --only-shell) || exit 1; \
+	  if [ "$(WHITEPAPERS_INSTALL)" = 1 ] || ! npm --prefix docs/bin/whitepaper ls --depth=0 >/dev/null 2>&1; then \
+	    echo ">> Installing white paper render dependencies..."; \
+	    npm --prefix docs/bin/whitepaper install || exit 1; \
 	  fi; \
+	  (cd docs/bin/whitepaper && npx playwright install $(PLAYWRIGHT_INSTALL_FLAGS) chromium --only-shell) || exit 1; \
 	  node docs/bin/whitepaper/render-pdf.mjs "${TARGET_DIR}"; \
 	fi
 
