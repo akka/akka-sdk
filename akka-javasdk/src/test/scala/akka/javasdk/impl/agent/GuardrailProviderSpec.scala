@@ -4,6 +4,9 @@
 
 package akka.javasdk.impl.agent
 
+import java.lang.reflect.InvocationHandler
+import java.lang.reflect.Method
+import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.CountDownLatch
@@ -95,7 +98,8 @@ object GuardrailProviderSpec {
   // Echoes every context field into the deny reason so a test can assert the full mapping.
   class EchoingToolGuard extends ToolCallGuardrail {
     override def decide(ctx: ToolCallGuardrail.CallContext): Decision =
-      new Decision.Deny(s"${ctx.agentId}|${ctx.toolName}|${ctx.toolCallId}|${ctx.arguments}|${ctx.sessionId}")
+      new Decision.Deny(
+        s"${ctx.agentId}|${ctx.toolName}|${ctx.toolCallId}|${ctx.arguments}|${ctx.sessionId}|${ctx.origin}")
   }
 
   private def emptySchema: SpiJsonSchema.JsonSchemaObject =
@@ -104,15 +108,35 @@ object GuardrailProviderSpec {
   private def toolDescriptor(name: String): SpiAgent.ToolDescriptor =
     new SpiAgent.ToolDescriptor(name, s"$name description", emptySchema, toolCallGuardrails = Nil)
 
-  private def toolCallContext(toolName: String): SpiGuardrail.ToolCallContext =
+  private def toolCallContext(
+      toolName: String,
+      origin: SpiGuardrail.ToolOrigin = SpiGuardrail.ToolOrigin.FunctionTool): SpiGuardrail.ToolCallContext =
     new SpiGuardrail.ToolCallContext(
       toolName = toolName,
       toolCallId = "call-1",
       arguments = "{}",
       agentId = "tool-agent",
       sessionId = "session-1",
-      origin = SpiGuardrail.ToolOrigin.FunctionTool,
+      origin = origin,
       telemetryContext = Context.root())
+
+  // A ToolOrigin that this SDK does not know.
+  private def unknownToolOrigin: SpiGuardrail.ToolOrigin = {
+    val handler: InvocationHandler = (proxy: AnyRef, method: Method, args: Array[AnyRef]) =>
+      method.getName match {
+        case "equals"   => Boolean.box(proxy eq args(0))
+        case "hashCode" => Int.box(System.identityHashCode(proxy))
+        case "toString" => "unknown ToolOrigin"
+        case other      => throw new UnsupportedOperationException(other)
+      }
+
+    Proxy
+      .newProxyInstance(
+        classOf[SpiGuardrail.ToolOrigin].getClassLoader,
+        Array(classOf[SpiGuardrail.ToolOrigin]),
+        handler)
+      .asInstanceOf[SpiGuardrail.ToolOrigin]
+  }
 
   private def reasonOf(decision: SpiGuardrail.Decision): String =
     decision match {
@@ -211,6 +235,15 @@ object GuardrailProviderSpec {
   class CapturingResponseGuard extends AgentResponseGuardrail {
     override def decide(ctx: AgentResponseGuardrail.CallContext): Decision = {
       capturedResponseContext = ctx
+      new Decision.Allow()
+    }
+  }
+
+  @volatile var capturedToolCallContext: ToolCallGuardrail.CallContext = _
+
+  class CapturingToolCallGuard extends ToolCallGuardrail {
+    override def decide(ctx: ToolCallGuardrail.CallContext): Decision = {
+      capturedToolCallContext = ctx
       new Decision.Allow()
     }
   }
@@ -479,8 +512,8 @@ class GuardrailProviderSpec
       val spiGuardrail = descriptors.head.toolCallGuardrails.head
 
       val decision = Await.result(spiGuardrail.decide(toolCallContext("some-tool")), 3.seconds)
-      // matches the fields built by toolCallContext(...): agentId|toolName|toolCallId|arguments|sessionId
-      reasonOf(decision) shouldBe "tool-agent|some-tool|call-1|{}|session-1"
+      // matches the fields built by toolCallContext(...): agentId|toolName|toolCallId|arguments|sessionId|origin
+      reasonOf(decision) shouldBe "tool-agent|some-tool|call-1|{}|session-1|FunctionTool[]"
     }
 
     "give the ToolCallGuardrail an empty tool call id when the context has none" in {
@@ -510,7 +543,7 @@ class GuardrailProviderSpec
         telemetryContext = Context.root())
 
       val decision = Await.result(spiGuardrail.decide(withoutId), 3.seconds)
-      reasonOf(decision) shouldBe "tool-agent|some-tool||{}|session-1"
+      reasonOf(decision) shouldBe "tool-agent|some-tool||{}|session-1|FunctionTool[]"
     }
 
     "let a tool call proceed when the ToolCallGuardrail allows it" in {
@@ -578,6 +611,212 @@ class GuardrailProviderSpec
       byName("allowed-tool") shouldBe 1
       // a tool not named by the filter is returned unchanged, without guardrails
       byName("other-tool") shouldBe 0
+    }
+
+    "give the ToolCallGuardrail the origin of the tool" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "origin guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingToolCallGuard"
+              agents = ["tool-agent"]
+              category = TOOL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("tool-agent", role = None).toolCallGuardrails("some-tool").head
+
+      capturedToolCallContext = null
+      Await.result(spiGuardrail.decide(toolCallContext("some-tool")), 3.seconds)
+      capturedToolCallContext.origin shouldBe new ToolCallGuardrail.ToolOrigin.FunctionTool()
+
+      capturedToolCallContext = null
+      Await.result(
+        spiGuardrail.decide(
+          toolCallContext("some-tool", new SpiGuardrail.ToolOrigin.RemoteMcp("http://example.com/mcp"))),
+        3.seconds)
+      capturedToolCallContext.origin shouldBe new ToolCallGuardrail.ToolOrigin.RemoteMcp("http://example.com/mcp")
+    }
+
+    "give the ToolCallGuardrail an Unknown origin for an origin that the SDK does not know" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "origin guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingToolCallGuard"
+              agents = ["tool-agent"]
+              category = TOOL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("tool-agent", role = None).toolCallGuardrails("some-tool").head
+
+      capturedToolCallContext = null
+      Await.result(spiGuardrail.decide(toolCallContext("some-tool", unknownToolOrigin)), 3.seconds)
+      capturedToolCallContext.origin shouldBe new ToolCallGuardrail.ToolOrigin.Unknown()
+
+      capturedToolCallContext = null
+      Await.result(spiGuardrail.decide(toolCallContext("some-tool", origin = null)), 3.seconds)
+      capturedToolCallContext.origin shouldBe new ToolCallGuardrail.ToolOrigin.Unknown()
+    }
+
+    "leave the user info, the query and the fragment out of the RemoteMcp toString" in {
+      def render(endpoint: String) = new ToolCallGuardrail.ToolOrigin.RemoteMcp(endpoint).toString
+
+      render("http://my-service/mcp") shouldBe "RemoteMcp[endpoint=http://my-service/mcp]"
+      render("https://user:secret@example.com:8443/mcp/sse?api_key=abc#part") shouldBe
+      "RemoteMcp[endpoint=https://example.com:8443/mcp/sse]"
+      render("http://exa mple.com/mcp") shouldBe "RemoteMcp[endpoint=<invalid URI>]"
+      render("user:secret@localhost:8080/mcp?api_key=abc") shouldBe "RemoteMcp[endpoint=localhost:8080/mcp]"
+    }
+
+    "give an MCP endpoint the ToolCallGuardrails of each tool by name" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "named tool guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyToolGuard"
+              agents = ["tool-agent"]
+              category = TOOL_POLICY
+              tools = ["allowed-tool"]
+            }
+            "all tools guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$AllowingToolGuard"
+              agents = ["tool-agent"]
+              category = TOOL_POLICY
+            }
+            "legacy mcp guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agents = ["tool-agent"]
+              category = TOXIC
+              use-for = ["mcp-tool-request", "mcp-tool-response"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val g = provider.agentGuardrails("tool-agent", role = None)
+
+      val endpoint =
+        AgentImpl
+          .toSpiMcpEndpoints(Seq(new RemoteMcpToolsImpl("http://example.com/mcp")), g)
+          .head
+
+      endpoint.requestGuardrails.map(_.name) shouldBe Seq("legacy mcp guard")
+      endpoint.responseGuardrails.map(_.name) shouldBe Seq("legacy mcp guard")
+
+      endpoint.toolCallGuardrails("allowed-tool").map(_.settings.name) should contain theSameElementsAs Seq(
+        "named tool guard",
+        "all tools guard")
+      endpoint.toolCallGuardrails("other-tool").map(_.settings.name) shouldBe Seq("all tools guard")
+    }
+
+    "warn when a TextGuardrail uses an MCP use-for value" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "mcp text guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agents = ["new-agent"]
+              category = TOXIC
+              use-for = ["mcp-tool-request", "mcp-tool-response"]
+            }
+          }
+        """)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn(
+          "Guardrail [mcp text guard] uses deprecated use-for values. Instead, " +
+          "implement akka.javasdk.agent.ToolCallGuardrail for mcp-tool-request; " +
+          "implement akka.javasdk.agent.ModelCallGuardrail for mcp-tool-response.")
+        .expect(provider.validate())
+    }
+
+    "warn for every use-for value when a TextGuardrail uses the wildcard" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "wildcard text guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agents = ["new-agent"]
+              category = TOXIC
+              use-for = ["*"]
+            }
+          }
+        """)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn(
+          "Guardrail [wildcard text guard] uses deprecated use-for values. Instead, " +
+          "implement akka.javasdk.agent.ModelCallGuardrail for model-request; " +
+          "implement akka.javasdk.agent.AgentResponseGuardrail for model-response; " +
+          "implement akka.javasdk.agent.ToolCallGuardrail for mcp-tool-request; " +
+          "implement akka.javasdk.agent.ModelCallGuardrail for mcp-tool-response.")
+        .expect(provider.validate())
+    }
+
+    "not warn about a TextGuardrail that applies to no agent or agent role" in {
+      val provider = new GuardrailProvider(system, ConfigFactory.defaultReference(), testTracerFactory)
+
+      LoggingTestKit
+        .warn("uses deprecated use-for values")
+        .withOccurrences(0)
+        .expect(provider.validate())
+    }
+
+    "warn once when a TextGuardrail applies to several agents and roles" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "shared text guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agents = ["agent-a", "agent-b"]
+              agent-roles = ["worker"]
+              category = TOXIC
+              use-for = ["model-request"]
+            }
+          }
+        """)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn("Guardrail [shared text guard] uses deprecated use-for values.")
+        .withOccurrences(1)
+        .expect(provider.validate())
+    }
+
+    "warn when a TextGuardrail applies only to agent roles" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "role text guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyGuard"
+              agent-roles = ["worker"]
+              category = TOXIC
+              use-for = ["model-response"]
+            }
+          }
+        """)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn("Guardrail [role text guard] uses deprecated use-for values. Instead, " +
+        "implement akka.javasdk.agent.AgentResponseGuardrail for model-response.")
+        .withOccurrences(1)
+        .expect(provider.validate())
     }
 
     "register a ModelCallGuardrail and expose the newest frame via CallContext" in {
@@ -1509,147 +1748,6 @@ class GuardrailProviderSpec
       }.getMessage should include("must not define use-for")
     }
 
-    "warn that a SimilarityGuard on model-request is replaced by ModelCallSimilarityGuard" in {
-      val cfg = ConfigFactory.parseString(s"""
-          akka.javasdk.agent.guardrails {
-            "legacy jailbreak" {
-              class = "akka.javasdk.agent.SimilarityGuard"
-              agents = ["legacy-agent"]
-              category = JAILBREAK
-              use-for = ["model-request"]
-              threshold = 0.75
-              bad-examples-resource-dir = "guardrail/jailbreak"
-            }
-          }
-        """)
-
-      LoggingTestKit
-        .warn(
-          "Guardrail [legacy jailbreak] uses akka.javasdk.agent.SimilarityGuard for [model-request]. " +
-          "This usage is deprecated. SimilarityGuard will support only mcp-tool-request and mcp-tool-response. " +
-          "For model-request, use akka.javasdk.agent.ModelCallSimilarityGuard. It does not take a use-for setting. " +
-          "Then remove the agents and agent roles from [legacy jailbreak].")
-        .expect {
-          LoggingTestKit.warn("Implement akka.javasdk.agent.ModelCallGuardrail").withOccurrences(0).expect {
-            new GuardrailProvider(system, cfg, testTracerFactory).validate()
-          }
-        }
-    }
-
-    "warn that a SimilarityGuard on use-for [*] keeps only the MCP uses" in {
-      val cfg = ConfigFactory.parseString(s"""
-          akka.javasdk.agent.guardrails {
-            "legacy jailbreak" {
-              class = "akka.javasdk.agent.SimilarityGuard"
-              agents = ["legacy-agent"]
-              category = JAILBREAK
-              use-for = ["*"]
-              threshold = 0.75
-              bad-examples-resource-dir = "guardrail/jailbreak"
-            }
-          }
-        """)
-
-      LoggingTestKit
-        .warn(
-          "Guardrail [legacy jailbreak] uses akka.javasdk.agent.SimilarityGuard for [model-request, model-response]. " +
-          "This usage is deprecated. SimilarityGuard will support only mcp-tool-request and mcp-tool-response. " +
-          "For model-request, use akka.javasdk.agent.ModelCallSimilarityGuard. It does not take a use-for setting. " +
-          "The SDK has no replacement for model-response. " +
-          "Then set use-for on [legacy jailbreak] to [mcp-tool-request, mcp-tool-response].")
-        .expect {
-          LoggingTestKit.warn("Implement akka.javasdk.agent.ModelCallGuardrail").withOccurrences(0).expect {
-            new GuardrailProvider(system, cfg, testTracerFactory).validate()
-          }
-        }
-    }
-
-    "warn that a SimilarityGuard on model-request and mcp-tool-request keeps only the MCP use" in {
-      val cfg = ConfigFactory.parseString(s"""
-          akka.javasdk.agent.guardrails {
-            "legacy jailbreak" {
-              class = "akka.javasdk.agent.SimilarityGuard"
-              agents = ["legacy-agent"]
-              category = JAILBREAK
-              use-for = ["model-request", "mcp-tool-request"]
-              threshold = 0.75
-              bad-examples-resource-dir = "guardrail/jailbreak"
-            }
-          }
-        """)
-
-      LoggingTestKit
-        .warn(
-          "Guardrail [legacy jailbreak] uses akka.javasdk.agent.SimilarityGuard for [model-request]. " +
-          "This usage is deprecated. SimilarityGuard will support only mcp-tool-request and mcp-tool-response. " +
-          "For model-request, use akka.javasdk.agent.ModelCallSimilarityGuard. It does not take a use-for setting. " +
-          "Then set use-for on [legacy jailbreak] to [mcp-tool-request].")
-        .expect {
-          new GuardrailProvider(system, cfg, testTracerFactory).validate()
-        }
-    }
-
-    "warn that the built-in \"default jailbreak\" is replaced by \"default model-call jailbreak\"" in {
-      val cfg = ConfigFactory
-        .parseString("""akka.javasdk.agent.guardrails."default jailbreak".agents = ["legacy-agent"]""")
-        .withFallback(ConfigFactory.defaultReference())
-
-      LoggingTestKit
-        .warn(
-          "Guardrail [default jailbreak] uses akka.javasdk.agent.SimilarityGuard for [model-request]. " +
-          "This usage is deprecated. SimilarityGuard will support only mcp-tool-request and mcp-tool-response. " +
-          "For model-request, enable \"default model-call jailbreak\" for the same agents and agent roles. " +
-          "Then remove the agents and agent roles from [default jailbreak].")
-        .expect {
-          LoggingTestKit.warn("To keep your current settings").withOccurrences(0).expect {
-            new GuardrailProvider(system, cfg, testTracerFactory).validate()
-          }
-        }
-    }
-
-    "warn with the settings to copy when the built-in \"default jailbreak\" has overrides" in {
-      val cfg = ConfigFactory
-        .parseString("""
-          akka.javasdk.agent.guardrails."default jailbreak" {
-            agents = ["legacy-agent"]
-            report-only = true
-            threshold = 0.9
-            bad-examples-resource-dir = "my/own"
-          }
-        """)
-        .withFallback(ConfigFactory.defaultReference())
-
-      LoggingTestKit
-        .warn(
-          "For model-request, enable \"default model-call jailbreak\" for the same agents and agent roles. " +
-          "To keep your current settings, set threshold = 0.9, report-only = true, " +
-          "bad-examples-resource-dir = \"my/own\" on \"default model-call jailbreak\". " +
-          "Then remove the agents and agent roles from [default jailbreak].")
-        .expect {
-          new GuardrailProvider(system, cfg, testTracerFactory).validate()
-        }
-    }
-
-    "warn once for an entry that applies to several agents and roles" in {
-      val cfg = ConfigFactory.parseString(s"""
-          akka.javasdk.agent.guardrails {
-            "legacy jailbreak" {
-              class = "akka.javasdk.agent.SimilarityGuard"
-              agents = ["agent-a", "agent-b"]
-              agent-roles = ["worker"]
-              category = JAILBREAK
-              use-for = ["model-request"]
-              threshold = 0.75
-              bad-examples-resource-dir = "guardrail/jailbreak"
-            }
-          }
-        """)
-
-      LoggingTestKit.warn("Guardrail [legacy jailbreak] uses akka.javasdk.agent.SimilarityGuard").expect {
-        new GuardrailProvider(system, cfg, testTracerFactory).validate()
-      }
-    }
-
     "point to \"default model-call jailbreak\" when \"default jailbreak\" uses ModelCallSimilarityGuard" in {
       val cfg = ConfigFactory
         .parseString("""
@@ -1668,10 +1766,36 @@ class GuardrailProviderSpec
         "akka.javasdk.agent.ModelCallSimilarityGuard, enable \"default model-call jailbreak\" instead.")
     }
 
-    "warn once when a SimilarityGuard uses model-request and model-response" in {
+    "warn about a SimilarityGuard on MCP tool calls and keep it bound" in {
       val cfg = ConfigFactory.parseString(s"""
           akka.javasdk.agent.guardrails {
-            "legacy jailbreak" {
+            "mcp jailbreak" {
+              class = "akka.javasdk.agent.SimilarityGuard"
+              agents = ["mcp-agent"]
+              category = JAILBREAK
+              use-for = ["mcp-tool-request", "mcp-tool-response"]
+              threshold = 0.75
+              bad-examples-resource-dir = "guardrail/jailbreak"
+            }
+          }
+        """)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn(
+          "Guardrail [mcp jailbreak] uses deprecated use-for values. Instead, " +
+          "implement akka.javasdk.agent.ToolCallGuardrail for mcp-tool-request, which has no built-in replacement; " +
+          "use akka.javasdk.agent.ModelCallSimilarityGuard for mcp-tool-response.")
+        .expect(provider.validate())
+
+      provider.agentGuardrails("mcp-agent", role = None).legacyMcpToolRequestGuardrails.size shouldBe 1
+    }
+
+    "point a SimilarityGuard on model-request to ModelCallSimilarityGuard" in {
+      val cfg = ConfigFactory.parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "custom jailbreak" {
               class = "akka.javasdk.agent.SimilarityGuard"
               agents = ["legacy-agent"]
               category = JAILBREAK
@@ -1682,35 +1806,75 @@ class GuardrailProviderSpec
           }
         """)
 
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
       LoggingTestKit
         .warn(
-          "Guardrail [legacy jailbreak] uses akka.javasdk.agent.SimilarityGuard for [model-request, model-response].")
-        .expect {
-          LoggingTestKit.warn("uses deprecated use-for value(s)").withOccurrences(0).expect {
-            new GuardrailProvider(system, cfg, testTracerFactory).validate()
-          }
-        }
+          "Guardrail [custom jailbreak] uses deprecated use-for values. Instead, " +
+          "use akka.javasdk.agent.ModelCallSimilarityGuard for model-request; " +
+          "remove model-response, which has no built-in replacement.")
+        .expect(provider.validate())
     }
 
-    "not warn about a SimilarityGuard on mcp-tool-request" in {
+    "warn for every use-for value when a SimilarityGuard uses the wildcard" in {
       val cfg = ConfigFactory.parseString(s"""
           akka.javasdk.agent.guardrails {
-            "mcp jailbreak" {
+            "wildcard jailbreak" {
               class = "akka.javasdk.agent.SimilarityGuard"
-              agents = ["mcp-agent"]
+              agents = ["legacy-agent"]
               category = JAILBREAK
-              use-for = ["mcp-tool-request"]
+              use-for = ["*"]
               threshold = 0.75
               bad-examples-resource-dir = "guardrail/jailbreak"
             }
           }
         """)
 
-      LoggingTestKit.warn("deprecated").withOccurrences(0).expect {
-        val provider = new GuardrailProvider(system, cfg, testTracerFactory)
-        provider.validate()
-        provider.agentGuardrails("mcp-agent", role = None).legacyMcpToolRequestGuardrails.size shouldBe 1
-      }
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn(
+          "Guardrail [wildcard jailbreak] uses deprecated use-for values. Instead, " +
+          "use akka.javasdk.agent.ModelCallSimilarityGuard for model-request; " +
+          "remove model-response, which has no built-in replacement; " +
+          "implement akka.javasdk.agent.ToolCallGuardrail for mcp-tool-request, which has no built-in replacement; " +
+          "use akka.javasdk.agent.ModelCallSimilarityGuard for mcp-tool-response.")
+        .expect(provider.validate())
+    }
+
+    "point \"default jailbreak\" to \"default model-call jailbreak\"" in {
+      val cfg = ConfigFactory
+        .parseString("""akka.javasdk.agent.guardrails."default jailbreak".agents = ["legacy-agent"]""")
+        .withFallback(ConfigFactory.defaultReference())
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn("Guardrail [default jailbreak] uses deprecated use-for values. Instead, " +
+        "enable \"default model-call jailbreak\" for the same agents and agent roles.")
+        .expect(provider.validate())
+    }
+
+    "list the changed settings of \"default jailbreak\" to copy to \"default model-call jailbreak\"" in {
+      val cfg = ConfigFactory
+        .parseString("""
+          akka.javasdk.agent.guardrails."default jailbreak" {
+            agents = ["legacy-agent"]
+            threshold = 0.9
+            report-only = true
+            bad-examples-resource-dir = "my/own"
+          }
+        """)
+        .withFallback(ConfigFactory.defaultReference())
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn(
+          "Guardrail [default jailbreak] uses deprecated use-for values. Instead, " +
+          "enable \"default model-call jailbreak\" for the same agents and agent roles " +
+          "and set threshold = 0.9, report-only = true, bad-examples-resource-dir = \"my/own\" on it.")
+        .expect(provider.validate())
     }
 
     "warn and keep both when an agent has the deprecated and the model-call similarity guards" in {
@@ -1755,6 +1919,87 @@ class GuardrailProviderSpec
 
       g.legacyModelRequestGuardrails.map(_.name) shouldBe Seq("default jailbreak")
       g.guardrails.modelCallGuardrails.map(_.settings.name) shouldBe Seq("default model-call jailbreak")
+    }
+
+    "tell to remove the overlapping use-for values when the deprecated similarity guard has other uses" in {
+      val cfg = ConfigFactory
+        .parseString("""
+          akka.javasdk.agent.guardrails {
+            "old jailbreak" {
+              class = "akka.javasdk.agent.SimilarityGuard"
+              agents = ["jailbreak-agent"]
+              category = JAILBREAK
+              use-for = ["model-request", "mcp-tool-request", "mcp-tool-response"]
+              threshold = 0.75
+              bad-examples-resource-dir = "guardrail/jailbreak"
+            }
+            "default model-call jailbreak".agents = ["jailbreak-agent"]
+          }
+        """)
+        .withFallback(ConfigFactory.defaultReference())
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn(
+          "Agent [jailbreak-agent] has both the deprecated SimilarityGuard [old jailbreak] with use-for " +
+          "[model-request, mcp-tool-response] and the ModelCallSimilarityGuard [default model-call jailbreak]. " +
+          "Both check the user message and the tool results. " +
+          "Remove model-request, mcp-tool-response from the use-for of [old jailbreak].")
+        .expect {
+          provider.agentGuardrails("jailbreak-agent", role = None)
+        }
+    }
+
+    "warn about both similarity guards when the deprecated one is on mcp-tool-response only" in {
+      val cfg = ConfigFactory
+        .parseString("""
+          akka.javasdk.agent.guardrails {
+            "old jailbreak" {
+              class = "akka.javasdk.agent.SimilarityGuard"
+              agents = ["jailbreak-agent"]
+              category = JAILBREAK
+              use-for = ["mcp-tool-response"]
+              threshold = 0.75
+              bad-examples-resource-dir = "guardrail/jailbreak"
+            }
+            "default model-call jailbreak".agents = ["jailbreak-agent"]
+          }
+        """)
+        .withFallback(ConfigFactory.defaultReference())
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn(
+          "Agent [jailbreak-agent] has both the deprecated SimilarityGuard [old jailbreak] with use-for " +
+          "[mcp-tool-response] and the ModelCallSimilarityGuard [default model-call jailbreak]. " +
+          "Both check the user message and the tool results. " +
+          "Remove the agents and agent roles from [old jailbreak].")
+        .expect {
+          provider.agentGuardrails("jailbreak-agent", role = None)
+        }
+    }
+
+    "not warn about both similarity guards when the deprecated one is on mcp-tool-request only" in {
+      val cfg = ConfigFactory
+        .parseString("""
+          akka.javasdk.agent.guardrails {
+            "old jailbreak" {
+              class = "akka.javasdk.agent.SimilarityGuard"
+              agents = ["jailbreak-agent"]
+              category = JAILBREAK
+              use-for = ["mcp-tool-request"]
+              threshold = 0.75
+              bad-examples-resource-dir = "guardrail/jailbreak"
+            }
+            "default model-call jailbreak".agents = ["jailbreak-agent"]
+          }
+        """)
+        .withFallback(ConfigFactory.defaultReference())
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit.warn("has both the deprecated SimilarityGuard").withOccurrences(0).expect {
+        provider.agentGuardrails("jailbreak-agent", role = None)
+      }
     }
 
     "not warn about both similarity guards when they are on different agents" in {

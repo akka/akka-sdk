@@ -1209,7 +1209,7 @@ private final class Sdk(
             agentGuardrails.withToolGuardrails(
               FunctionTools.descriptorsFor(autonomousAgentClass) ++ toolClasses.flatMap(FunctionTools.descriptorsFor))
           val spiMcpDescriptors =
-            AgentImpl.toSpiMcpEndpoints(agentDefinition.mcpTools.asScala.toSeq, agentGuardrails, sdkExecutionContext)
+            AgentImpl.toSpiMcpEndpoints(agentDefinition.mcpTools.asScala.toSeq, agentGuardrails)
 
           // Build SPI capabilities from SDK capabilities
           val spiCapabilities = agentCapabilityConverter.toSpiCapabilities(agentDefinition.capabilities)

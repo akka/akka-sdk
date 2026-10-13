@@ -11,17 +11,34 @@ include::ROOT:partial$include.adoc[]
 
 * For `model-request`, implement `ModelCallGuardrail`.
 * For `model-response`, implement `AgentResponseGuardrail`.
+* For `mcp-tool-request`, implement `ToolCallGuardrail`.
+* For `mcp-tool-response`, implement `ModelCallGuardrail`. It sees the MCP tool result as a `ToolCallResponse` in `newMessages()` before the model does. A `ToolCallResponse` does not say where the tool runs, so the guardrail sees function tool results and MCP tool results alike. If the `RemoteMcpTools` has a `ToolInterceptor`, the guardrail sees the result that `interceptResponse` returns.
+
+A `ModelCallGuardrail` that replaces an `mcp-tool-response` entry behaves differently:
+
+* It sees the MCP tool result after the tool-result sanitizers have masked it.
+* It runs before the next model call, after all tool calls of the round. The `TextGuardrail` ran right after each MCP tool call.
+* When it blocks, the interaction record in the ledger already holds the MCP tool result.
+* In an autonomous agent, some rounds end the iteration without another model call. This happens when the model response also calls a control tool. It also happens when a tool call of the round fails. The runtime stores such a round in session memory and the ledger before a `ModelCallGuardrail` checks it. If the task continues, the `ModelCallGuardrail` checks it before the first model call of the next iteration.
+* The failure message starts with `Before model call guardrail blocked`, not with `MCP response guardrail blocked`.
+
+A `ToolCallGuardrail` that replaces an `mcp-tool-request` entry behaves differently:
+
+* The runtime records the `ToolCallGuardrail` decision in the ledger.
+* On the same MCP tool call, the runtime evaluates `ToolCallGuardrail` entries before `TextGuardrail` entries with `mcp-tool-request`. The `TextGuardrail` entries run only when no blocking `ToolCallGuardrail` stopped the call.
+
+Remove `use-for` from the migrated entry. The service fails to start when a `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail` entry defines `use-for`.
+
+All `use-for` values are deprecated. At startup, the SDK logs a warning for each enabled `TextGuardrail` entry that sets `use-for`.
 
 For the built-in `SimilarityGuard`, see <<migrating-from-similarity-guard,Migrating from SimilarityGuard>>.
-
-Remove `use-for` from the entry. The service fails to start when a `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail` entry defines `use-for`.
 
 For an agent that returns `StreamEffect`, the runtime does not evaluate a `TextGuardrail` on the reply unless the entry sets `report-only = true`. The runtime logs warning `AK-01208` instead. An `AgentResponseGuardrail` works differently. The service fails to start when an `AgentResponseGuardrail` entry without `report-only = true` binds such an agent. See xref:sdk:agents/guardrails.adoc#_kinds_of_guardrail[Kinds of guardrail] for the ways to fix the startup failure.
 
 [#migrating-from-similarity-guard]
 === Migrating from SimilarityGuard
 
-Using `SimilarityGuard` for `model-request` or `model-response` is deprecated. `SimilarityGuard` will support only `mcp-tool-request` and `mcp-tool-response`. For `model-request`, use `ModelCallSimilarityGuard`. The SDK has no replacement for `model-response`. See xref:sdk:agents/guardrails.adoc#_similarity_guardrail[Similarity guardrail] for the `ModelCallSimilarityGuard` configuration.
+`SimilarityGuard` is deprecated for every `use-for` value. For `model-request` and `mcp-tool-response`, use `ModelCallSimilarityGuard`. It checks the user message and the tool results before each model call. The SDK has no built-in replacement for `model-response` or `mcp-tool-request`. For `mcp-tool-request`, implement a `ToolCallGuardrail`. See xref:sdk:agents/guardrails.adoc#_similarity_guardrail[Similarity guardrail] for the `ModelCallSimilarityGuard` configuration.
 
 To move the built-in guard entry, enable `"default model-call jailbreak"` for the same agents and agent roles. Copy any settings that you changed on `"default jailbreak"`, such as `threshold` or `report-only`. Then remove the agents and agent roles from `"default jailbreak"`.
 
@@ -29,6 +46,26 @@ To move the built-in guard entry, enable `"default model-call jailbreak"` for th
 
 * It checks the user message after the model-call sanitizers have masked it.
 * The service fails at startup if `bad-examples-resource-dir` is not on the classpath. It also fails if `threshold` is not greater than 0 and at most 1.
+
+`ModelCallSimilarityGuard` behaves differently from `SimilarityGuard` with `use-for = ["mcp-tool-response"]`:
+
+* It checks the user message and the function tool results as well as the MCP tool results.
+* It checks the MCP tool result before the next model call.
+* If the `RemoteMcpTools` has a `ToolInterceptor`, `ModelCallSimilarityGuard` checks the result that `interceptResponse` returns.
+
+[#tool-call-guardrail-on-mcp-tools]
+=== ToolCallGuardrail on MCP tool calls
+
+A `ToolCallGuardrail` entry runs on MCP tool calls as well as function tool calls. An entry without the `tools` key runs on every MCP tool call of its agents. To run the entry on some tools only, list their names in `tools`. The `tools` key matches by name only. To tell a function tool from an MCP tool, check `origin()` on the `CallContext`. See xref:sdk:agents/guardrails.adoc[Guardrails] for the entry configuration.
+
+[#tool-interceptor-changes]
+=== ToolInterceptor changes
+
+A `RemoteMcpTools.ToolInterceptor` behaves differently in these cases:
+
+* `ToolInterceptorContext.toolName()` returns the name of the tool on the MCP server. When the model uses another name for the tool, the interceptor no longer gets that name.
+* The ledger records the arguments that `interceptRequest` returns as the arguments of the tool call. Before, it recorded the arguments from the model. The `ToolCall` in the interaction record still holds the arguments from the model.
+* A `null` from `interceptResponse` fails the tool call with an MCP tool call error. The agent can handle the error in `onFailure`.
 
 == SDK 3.5.5
 
