@@ -356,7 +356,7 @@ Start with a tabletop: walk failure scenarios end-to-end, confirm who does what,
 * [ ] DR tabletop run with Akka: scenarios walked end-to-end, ownership of each step confirmed, prerequisites and gaps captured (network/firewall changes, data-export destinations, access, and the like)
 * [ ] The most important scenarios from the tabletop exercised live, with gaps fed back and re-tests scheduled
 * [ ] DR runbook captured from the exercise: declaration criteria, data restore, region rebuild, cutover, verification
-* [ ] Akka's backup restore test summary (point-in-time recovery and Kubernetes backups) reviewed with FDE, retention checked against the RPO in your agreement
+* [ ] Akka's backup restore test summary (point-in-time recovery and Kubernetes backups) reviewed with FDE, including retention
 
 [discrete]
 ==== Rollback testing
