@@ -98,7 +98,7 @@ public interface RemoteMcpTools {
   @DoNotInherit
   interface ToolInterceptorContext {
     /**
-     * @return The tool name that the call is for
+     * @return The name of the tool on the MCP server.
      */
     String toolName();
   }
@@ -109,6 +109,9 @@ public interface RemoteMcpTools {
      * can be done by throwing an exception, modifying the payload is also possible. When modifying
      * the payload, you need to make sure the payload still fulfills the schema of the tool with
      * required fields and correct field types.
+     *
+     * <p>The ledger records the returned arguments as the arguments of the tool call. Returning
+     * {@code null} fails the tool call.
      *
      * @param context Details about the intercepted tool call
      * @param requestPayloadJson The tool request payload in a Json string.
@@ -121,6 +124,8 @@ public interface RemoteMcpTools {
      * Intercept responses from MCP tools, disallowing the call based on the result can be done by
      * throwing an exception, modifying the result is also possible. When modifying the result, you
      * need to make sure the payload still is something the model will understand.
+     *
+     * <p>Returning {@code null} fails the tool call.
      *
      * @param context Details about the intercepted tool call
      * @param requestPayloadJson The request payload as passed to the MCP tool (possibly modified by

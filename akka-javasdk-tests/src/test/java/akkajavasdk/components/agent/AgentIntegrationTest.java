@@ -13,6 +13,7 @@ import akka.javasdk.DependencyProvider;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.agent.MessageContent;
+import akka.javasdk.agent.ToolCallGuardrail;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -21,6 +22,7 @@ import akka.javasdk.testkit.TestModelProvider.ToolInvocationRequest;
 import akka.stream.javadsl.Sink;
 import akkajavasdk.Junit5LogCapturing;
 import akkajavasdk.components.MyException;
+import akkajavasdk.components.mcp.TestMcpEndpoint;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import java.util.List;
 import java.util.UUID;
@@ -77,6 +79,9 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(NonBlockingGuardrailsTestAgent.class, testModelProvider)
         .withModelProvider(MixedGuardrailsTestAgent.class, testModelProvider)
         .withModelProvider(ToolCallGuardrailTestAgent.class, testModelProvider)
+        .withModelProvider(McpToolCallGuardrailTestAgent.class, testModelProvider)
+        .withModelProvider(McpToolCallAllowedTestAgent.class, testModelProvider)
+        .withModelProvider(McpToolCallNoInterceptorTestAgent.class, testModelProvider)
         .withModelProvider(ThrowingGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(ReportOnlyThrowingGuardrailTestAgent.class, testModelProvider)
         .withDependencyProvider(depsProvider);
@@ -690,6 +695,119 @@ public class AgentIntegrationTest extends TestKitSupport {
     assertThat(result.response())
         .contains("denied by test tool guard [ToolCallGuardrailTestAgent_getDateOfToday]");
     assertThat(ToolCallGuardrailTestAgent.toolCalls.get()).isZero();
+  }
+
+  @Test
+  public void shouldDenyMcpToolCallWithToolCallGuardrail() {
+    // given
+    TestMcpEndpoint.echoCalls.set(0);
+    RecordingDenyingToolGuard.lastCall.set(null);
+    testModelProvider
+        .whenMessage(s -> s.equals("echo hi"))
+        .reply(new ToolInvocationRequest("echo", "{\"echo\":\"hi\"}"));
+    testModelProvider
+        .whenToolResult(result -> true)
+        .thenReply(result -> new AiResponse("Echoed " + result.content()));
+
+    // when
+    McpToolCallGuardrailTestAgent.SomeResponse result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(McpToolCallGuardrailTestAgent::ask)
+            .invoke("echo hi");
+
+    // then
+    assertThat(result.response())
+        .contains("denied by mcp tool guard [echo]")
+        .doesNotStartWith("Echoed");
+    assertThat(TestMcpEndpoint.echoCalls.get()).isZero();
+
+    var recorded = RecordingDenyingToolGuard.lastCall.get();
+    assertThat(recorded).isNotNull();
+    assertThat(recorded.toolName()).isEqualTo("echo");
+    assertThat(recorded.arguments()).isEqualTo("{\"echo\":\"hi\"}");
+    assertThat(recorded.origin())
+        .isEqualTo(
+            new ToolCallGuardrail.ToolOrigin.RemoteMcp(McpToolCallGuardrailTestAgent.MCP_ENDPOINT));
+  }
+
+  @Test
+  public void shouldCallMcpToolWhenToolCallGuardrailAllows() {
+    // given
+    McpToolCallAllowedTestAgent.toolResponses.set(0);
+    McpToolCallAllowedTestAgent.responseArguments.set(null);
+    TestMcpEndpoint.echoCalls.set(0);
+    RecordingAllowingToolGuard.lastCall.set(null);
+    RecordingDenyingToolGuard.lastCall.set(null);
+    testModelProvider
+        .whenMessage(s -> s.equals("echo allowed"))
+        .reply(new ToolInvocationRequest("echo", "{\"echo\":\"allowed\"}"));
+    testModelProvider
+        .whenToolResult(result -> true)
+        .thenReply(result -> new AiResponse("Echoed " + result.content()));
+
+    // when
+    var sessionId = newSessionId();
+    McpToolCallAllowedTestAgent.SomeResponse result =
+        componentClient
+            .forAgent()
+            .inSession(sessionId)
+            .method(McpToolCallAllowedTestAgent::ask)
+            .invoke("echo allowed");
+
+    // then
+    assertThat(result.response()).startsWith("Echoed").contains("intercepted rewritten");
+    assertThat(McpToolCallAllowedTestAgent.toolResponses.get()).isEqualTo(1);
+    assertThat(TestMcpEndpoint.echoCalls.get()).isEqualTo(1);
+    assertThat(McpToolCallAllowedTestAgent.responseArguments.get())
+        .isEqualTo(McpToolCallAllowedTestAgent.REWRITTEN_ARGUMENTS);
+    assertThat(RecordingToolResultGuard.toolResultsBySession.get(sessionId))
+        .singleElement()
+        .asString()
+        .contains("intercepted rewritten");
+
+    var recorded = RecordingAllowingToolGuard.lastCall.get();
+    assertThat(recorded).isNotNull();
+    assertThat(recorded.toolName()).isEqualTo("echo");
+    assertThat(recorded.arguments()).isEqualTo(McpToolCallAllowedTestAgent.REWRITTEN_ARGUMENTS);
+    assertThat(recorded.origin())
+        .isEqualTo(
+            new ToolCallGuardrail.ToolOrigin.RemoteMcp(McpToolCallGuardrailTestAgent.MCP_ENDPOINT));
+    assertThat(RecordingDenyingToolGuard.lastCall.get()).isNull();
+  }
+
+  @Test
+  public void shouldCallMcpToolWithoutInterceptorWhenToolCallGuardrailAllows() {
+    // given
+    TestMcpEndpoint.echoCalls.set(0);
+    RecordingAllowingToolGuard.lastCall.set(null);
+    testModelProvider
+        .whenMessage(s -> s.equals("echo without interceptor"))
+        .reply(new ToolInvocationRequest("echo", "{\"echo\":\"plain\"}"));
+    testModelProvider
+        .whenToolResult(result -> true)
+        .thenReply(result -> new AiResponse("Echoed " + result.content()));
+
+    // when
+    McpToolCallNoInterceptorTestAgent.SomeResponse result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(McpToolCallNoInterceptorTestAgent::ask)
+            .invoke("echo without interceptor");
+
+    // then
+    assertThat(result.response()).isEqualTo("Echoed plain");
+    assertThat(TestMcpEndpoint.echoCalls.get()).isEqualTo(1);
+
+    var recorded = RecordingAllowingToolGuard.lastCall.get();
+    assertThat(recorded).isNotNull();
+    assertThat(recorded.toolName()).isEqualTo("echo");
+    assertThat(recorded.arguments()).isEqualTo("{\"echo\":\"plain\"}");
+    assertThat(recorded.origin())
+        .isEqualTo(
+            new ToolCallGuardrail.ToolOrigin.RemoteMcp(McpToolCallGuardrailTestAgent.MCP_ENDPOINT));
   }
 
   @Test

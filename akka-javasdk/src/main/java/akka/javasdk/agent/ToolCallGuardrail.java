@@ -4,7 +4,11 @@
 
 package akka.javasdk.agent;
 
+import akka.annotation.DoNotInherit;
 import akka.javasdk.Tracing;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -21,6 +25,63 @@ import java.util.concurrent.CompletionStage;
  */
 public non-sealed interface ToolCallGuardrail extends Guardrail {
 
+  /** Where the called tool runs: {@link FunctionTool}, {@link RemoteMcp} or {@link Unknown}. */
+  sealed interface ToolOrigin {
+
+    /** A function tool of the agent. */
+    record FunctionTool() implements ToolOrigin {}
+
+    /**
+     * A tool on a remote MCP server.
+     *
+     * @param endpoint the URI of the MCP server. For {@link RemoteMcpTools#fromServer} it is the
+     *     URI you pass. For {@link RemoteMcpTools#fromService} it is {@code
+     *     http://<service-name>/mcp}. {@link #toString} leaves out the user info, the query and the
+     *     fragment.
+     */
+    record RemoteMcp(String endpoint) implements ToolOrigin {
+      public RemoteMcp {
+        Objects.requireNonNull(endpoint, "endpoint");
+      }
+
+      @Override
+      public String toString() {
+        return "RemoteMcp[endpoint=" + withoutCredentials(endpoint) + "]";
+      }
+
+      private static String withoutCredentials(String endpoint) {
+        try {
+          URI uri = new URI(endpoint);
+
+          // An endpoint without a scheme, such as localhost:8080/mcp, parses as an opaque URI.
+          if (uri.isOpaque()) {
+            URI withoutScheme = new URI("//" + endpoint);
+            return hostAndPort(withoutScheme) + rawPath(withoutScheme);
+          }
+
+          String scheme = uri.getScheme() == null ? "" : uri.getScheme() + ":";
+          String authority = uri.getRawAuthority() == null ? "" : "//" + hostAndPort(uri);
+          return scheme + authority + rawPath(uri);
+
+        } catch (URISyntaxException e) {
+          return "<invalid URI>";
+        }
+      }
+
+      private static String hostAndPort(URI uri) {
+        String authority = uri.getRawAuthority();
+        return authority == null ? "" : authority.substring(authority.lastIndexOf('@') + 1);
+      }
+
+      private static String rawPath(URI uri) {
+        return uri.getRawPath() == null ? "" : uri.getRawPath();
+      }
+    }
+
+    /** An origin that this version of the SDK does not know. */
+    record Unknown() implements ToolOrigin {}
+  }
+
   /**
    * Per-call context passed to a {@link ToolCallGuardrail} during {@link ToolCallGuardrail#decide}.
    *
@@ -29,12 +90,13 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
    * <p>For construction-time data that doesn't change per call (the guardrail's configured name and
    * its config section) accept a {@link GuardrailContext} parameter in the constructor.
    */
+  @DoNotInherit
   public interface CallContext {
 
     /** The id of the agent performing the tool call. */
     String agentId();
 
-    /** The name of the tool about to be called. */
+    /** The name of the tool about to be called. For an MCP tool, the name on the MCP server. */
     String toolName();
 
     /**
@@ -43,11 +105,18 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
      */
     String toolCallId();
 
-    /** The raw JSON arguments the model produced for the tool call. */
+    /**
+     * The raw JSON arguments of the tool call. For an MCP tool with a {@link
+     * RemoteMcpTools.ToolInterceptor}, the arguments that {@link
+     * RemoteMcpTools.ToolInterceptor#interceptRequest} returns.
+     */
     String arguments();
 
     /** The session id of the interaction. */
     String sessionId();
+
+    /** Where the called tool runs. */
+    ToolOrigin origin();
 
     /**
      * Provides access to tracing for custom application-specific tracing.

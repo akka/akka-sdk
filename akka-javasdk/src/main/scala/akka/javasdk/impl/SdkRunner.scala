@@ -1209,7 +1209,7 @@ private final class Sdk(
             agentGuardrails.withToolGuardrails(
               FunctionTools.descriptorsFor(autonomousAgentClass) ++ toolClasses.flatMap(FunctionTools.descriptorsFor))
           val spiMcpDescriptors =
-            AgentImpl.toSpiMcpEndpoints(agentDefinition.mcpTools.asScala.toSeq, agentGuardrails, sdkExecutionContext)
+            AgentImpl.toSpiMcpEndpoints(agentDefinition.mcpTools.asScala.toSeq, agentGuardrails)
 
           // Build SPI capabilities from SDK capabilities
           val spiCapabilities = agentCapabilityConverter.toSpiCapabilities(agentDefinition.capabilities)
@@ -1317,9 +1317,8 @@ private final class Sdk(
         val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { factoryContext =>
           val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
           new EvaluatorImpl[Evaluator](
-            // the runtime sets OTel baggage akka.evaluation.id around evaluate, so the wired
-            // ComponentClient inherits it from the ambient context for judge-call correlation
-            () => wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(None, callerSpiffe)),
+            telemetryContext =>
+              wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(telemetryContext, callerSpiffe)),
             evaluatorClass)
         }
 
@@ -1352,8 +1351,9 @@ private final class Sdk(
                 factoryContext.evaluationId,
                 evaluatorClass,
                 stateType,
-                () =>
-                  wiredInstance("Durable Evaluator", evaluatorClass)(sideEffectingComponentInjects(None, callerSpiffe)),
+                telemetryContext =>
+                  wiredInstance("Durable Evaluator", evaluatorClass)(
+                    sideEffectingComponentInjects(telemetryContext, callerSpiffe)),
                 factoryContext.recorder,
                 serializer,
                 sdkExecutionContext)

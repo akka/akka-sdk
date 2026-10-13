@@ -154,7 +154,10 @@ public sealed interface ModelProvider {
        * apply to streaming agents
        */
       Duration responseTimeout,
-      /** If the request fails, retry this many times. */
+      /**
+       * If the request fails with a rate limit, a server error, a timeout or a connection failure,
+       * retry this many times.
+       */
       int maxRetries,
       /** A maximum number of tokens to spend on thinking, use 0 to disable thinking */
       int thinkingBudgetTokens,
@@ -1965,7 +1968,10 @@ public sealed interface ModelProvider {
        * apply to streaming agents
        */
       Duration responseTimeout,
-      /** If the request fails, retry this many times. */
+      /**
+       * If the request fails with a rate limit, a server error, a timeout or a connection failure,
+       * retry this many times.
+       */
       int maxRetries,
       /** Additional HTTP headers to include in each request to the model API */
       List<HttpHeader> additionalModelRequestHeaders)
@@ -2303,7 +2309,10 @@ public sealed interface ModelProvider {
        * apply to streaming agents
        */
       Duration responseTimeout,
-      /** If the request fails, retry this many times. */
+      /**
+       * If the request fails with a rate limit, a server error, a timeout or a connection failure,
+       * retry this many times.
+       */
       int maxRetries,
       /** Additional HTTP headers to include in each request to the model API */
       List<HttpHeader> additionalModelRequestHeaders)

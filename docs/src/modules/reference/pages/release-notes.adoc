@@ -25,6 +25,9 @@ This functionality evolves quickly, the behavior and APIs might change between r
 
 ****
 
+* xref:release-notes/runtime/1.7.2.adoc[Akka Runtime 1.7.2]
+- Model call retries by the runtime for all built-in model providers and for streamed replies, MCP tool timeouts, updates of the governance features, and agent fixes
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.7.0-M1[Akka SDK 3.7.0-M1]
 - Runtime 1.7.1
 - Guardrails for model calls, agent responses, and tool calls

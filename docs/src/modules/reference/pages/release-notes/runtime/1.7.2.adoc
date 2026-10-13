@@ -1,0 +1,28 @@
+= Akka Runtime 1.7.2
+:page-summary: Runtime 1.7.2 retries failed model calls for all built-in model providers and for streamed replies, applies the MCP tool timeout to the whole request, and updates the governance features.
+
+include::ROOT:partial$include.adoc[]
+
+Released 2026-10-15.
+
+== Changes
+
+* Agents: the runtime retries failed model calls for all built-in xref:sdk:model-provider-details.adoc[model providers], up to the `max-retries` of the model provider. It retries rate limit responses, server errors, timeouts, and connection failures.
+* Agents: the runtime also retries the model call of a streamed reply, when the agent has not emitted any part of the response.
+* Agents: before a retry, the runtime waits for the delay that the model provider requests, for example in a `Retry-After` header.
+* Agents: `max-retries` also controls the retries for Bedrock and Vertex AI.
+* Agents: a failed Bedrock or Vertex AI model call can fail the agent with another exception type than before. Review an `onFailure` handler that matches on the exception type, see xref:sdk:agents/failures.adoc[Failure handling].
+* Agents: the metrics and traces report each attempt as a separate model call. The runtime logs a warning for each retry.
+* Agents: the timeout of a xref:sdk:agents/extending.adoc#mcp_tools[remote MCP tool] applies to the whole request on all transports. A tool call that takes longer than the timeout fails.
+* HTTP endpoints: when a xref:sdk:http-endpoints.adoc#websocket[`@WebSocket`] method throws an `HttpException`, the runtime responds with the status of the exception.
+* Agents: the runtime gives an MCP tool result that has the `isError` flag to the model as an error tool result.
+* Agents: for a streamed reply, the runtime assigns an id to a tool call when the model provider sends none.
+* Governance features: the ledger records an interaction for every way an agent request ends, and the sanitization of each interaction. This release also has fixes for the ledger, sanitizers, and evaluators. See xref:concepts:governance-and-the-runtime.adoc[Governance and the runtime].
+* Runtime logs: a service without views no longer logs the warning `DB storage metrics query failed`.
+
+== Noteworthy dependency updates
+
+* AWS SDK 2.55.11
+* Azure Core 1.60.0
+* Azure Identity 1.18.7
+* Logback 1.6.5

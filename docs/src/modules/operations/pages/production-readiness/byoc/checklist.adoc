@@ -13,7 +13,7 @@ What Akka expects of customer applications before going live in BYOC (Bring Your
 
 This page is a guideline. The authoritative checklist for your application is the one you build with your Akka team.
 
-Walk this page before going live: use the at-a-glance below as the quick entry point and the detailed checklists for specifics. The items are a baseline drawn from BYOC deployments; add anything specific to your request flows and failure modes. Discuss modifications or removals with your Forward Deployed Engineer (FDE), the named Akka engineer assigned to your account, so the original rationale is shared and the change is evaluated jointly.
+Review this page before going live: use the at-a-glance below as the quick entry point and the detailed checklists for specifics. The items are a baseline drawn from BYOC deployments; add anything specific to your request flows and failure modes. Discuss modifications or removals with your Forward Deployed Engineer (FDE), the named Akka engineer assigned to your account, so the original rationale is shared and the change is evaluated jointly.
 
 The agreement and the Federation Plane SLA Policy are the authoritative statement of what is committed. Reaching the reliability and availability of your deployment depends on working these items through with your Akka team.
 
@@ -21,7 +21,7 @@ Each item is yours to verify. Akka recommends not advancing to production until 
 
 Items split across two levels. *Region-level* items are established once for the region and shared by every application running on it (disaster recovery, backups, baseline platform alerting). *Application-level* items are handled per service (sizing, application observability, rollback paths). This page lists both; your Akka team's tailored checklist assigns each item to the right level, so region-level work is not repeated per application, though it still recurs on its own cadence.
 
-Akka Automated Operations runs the platform end-to-end inside your cloud account: runtime, region installation, scaling, patching, platform observability, backups, and the operational rituals around them. The items on this page are the customer-side complement. Your FDE walks the principal items before go-live.
+Akka Automated Operations runs the platform end-to-end inside your cloud account: runtime, region installation, scaling, patching, platform observability, backups, and the operational rituals around them. The items on this page are the customer-side complement. Your FDE reviews the principal items with you before go-live.
 
 This page targets the *Day 2 Ops* engagement (1 dev region + 1 prod region, single prod region with cold-rebuild DR (Disaster Recovery)). The final section covers the additional requirements for the *Business Continuity* tier (multi-region with cross-region failover).
 
@@ -83,7 +83,7 @@ Akka reviews your application's high-level architecture and design to understand
 |===
 | Role | Responsibility
 | Customer | Forecasts traffic, captures sizing inputs and assumptions, agrees compute and persistence shapes with Akka, signs off the cost forecast.
-| Akka | FDE walks the sizing exercise, validates platform-cores and service-cores numbers, names the AZ (Availability Zone) spread and persistence headroom recommendations.
+| Akka | FDE runs the sizing exercise, validates platform-cores and service-cores numbers, names the AZ (Availability Zone) spread and persistence headroom recommendations.
 |===
 
 .*Detailed checklist*
@@ -253,6 +253,13 @@ Akka instruments the platform with its own observability stack and runs baseline
 * [ ] *Consumers*: idempotency, redelivery, DLQ routing
 
 [discrete]
+==== Code review
+
+* [ ] Implementation reviewed before each release; with Akka Specify, `/akka:review` run and its findings resolved or recorded with a reason. See xref:sdk:spec-driven-development.adoc#_review_and_analyze[Review and analyze]
+* [ ] Logical `@TypeName` on event types, with values left unchanged once events are persisted, because the name is stored with each payload and used to deserialize it and route it to consumers and views. See xref:sdk:serialization.adoc[]
+* [ ] `applyEvent` limited to copying event data into state and never failing, with validation done before the event is persisted. See xref:sdk:ai-coding-assistant-guidelines.adoc[]
+
+[discrete]
 ==== Integration and E2E
 
 * [ ] Tests against a real broker or high-fidelity local equivalent, not pure mocks
@@ -351,13 +358,14 @@ Run these against the dev region, sized realistically. Without realistic sizing,
 
 Without multi-region failover, DR is a cold rebuild. Rehearsing it is the most important exercise at this tier.
 
-A DR rehearsal is worth as much for what it surfaces as for the recovery itself. Walking a real recovery end-to-end surfaces the gaps that would otherwise appear mid-incident: who owns each step, a firewall rule that must be opened for a rebuilt database, a data-export destination that was assumed rather than verified, or access no one currently holds. Akka works with you on the most prevalent scenarios.
+A DR rehearsal is worth as much for what it surfaces as for the recovery itself. Running a real recovery end-to-end surfaces the gaps that would otherwise appear mid-incident: who owns each step, a firewall rule that must be opened for a rebuilt database, a data-export destination that was assumed rather than verified, or access no one currently holds. Akka works with you on the most prevalent scenarios.
 
-Start with a tabletop: walk failure scenarios end-to-end, confirm who does what, capture prerequisites and gaps. Then exercise the scenarios that matter most live. The xref:operations:production-readiness/byoc/disaster-recovery.adoc[disaster recovery scenario catalog] is the detailed reference the tabletop walks through.
+Start with a tabletop: review failure scenarios end-to-end, confirm who does what, capture prerequisites and gaps. Then exercise the scenarios that matter most live. The xref:operations:production-readiness/byoc/disaster-recovery.adoc[disaster recovery scenario catalog] is the detailed reference for the tabletop.
 
-* [ ] DR tabletop run with Akka: scenarios walked end-to-end, ownership of each step confirmed, prerequisites and gaps captured (network/firewall changes, data-export destinations, access, and the like)
+* [ ] DR tabletop run with Akka: scenarios reviewed end-to-end, ownership of each step confirmed, prerequisites and gaps captured (network/firewall changes, data-export destinations, access, and the like)
 * [ ] The most important scenarios from the tabletop exercised live, with gaps fed back and re-tests scheduled
 * [ ] DR runbook captured from the exercise: declaration criteria, data restore, region rebuild, cutover, verification
+* [ ] Akka's backup restore test summary (point-in-time recovery and Kubernetes backups) reviewed with FDE, including retention
 
 [discrete]
 ==== Rollback testing
@@ -421,7 +429,7 @@ These fall between teams and are the most commonly skipped. They are baseline at
 [discrete]
 ==== Runbook coverage
 
-Walk the alert list and the dependency list; every plausible failure should have a runbook. Confirm runbooks exist for at least:
+Review the alert list and the dependency list; every plausible failure should have a runbook. Confirm runbooks exist for at least:
 
 * [ ] Prod-region cold rebuild
 * [ ] Broker outage
