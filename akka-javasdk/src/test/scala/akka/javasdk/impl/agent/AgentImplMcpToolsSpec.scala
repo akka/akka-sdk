@@ -21,13 +21,16 @@ object AgentImplMcpToolsSpec {
   // Records what each hook receives.
   final class RecordingInterceptor extends RemoteMcpTools.ToolInterceptor {
     @volatile var requestToolName: String = _
+    @volatile var requestIsError: Boolean = _
     @volatile var responseToolName: String = _
+    @volatile var responseIsError: Boolean = _
     @volatile var responseArguments: String = _
 
     override def interceptRequest(
         context: RemoteMcpTools.ToolInterceptorContext,
         requestPayloadJson: String): String = {
       requestToolName = context.toolName()
+      requestIsError = context.isError()
       InterceptedArguments
     }
 
@@ -36,6 +39,7 @@ object AgentImplMcpToolsSpec {
         requestPayloadJson: String,
         responsePayload: String): String = {
       responseToolName = context.toolName()
+      responseIsError = context.isError()
       responseArguments = requestPayloadJson
       s"intercepted $responsePayload"
     }
@@ -83,6 +87,7 @@ class AgentImplMcpToolsSpec extends AnyWordSpec with Matchers {
 
       Await.result(hooks.interceptRequest(request), 3.seconds) shouldBe InterceptedArguments
       interceptor.requestToolName shouldBe "echo"
+      interceptor.requestIsError shouldBe false
     }
 
     "give interceptResponse the arguments that were sent and keep the error flag" in {
@@ -97,6 +102,29 @@ class AgentImplMcpToolsSpec extends AnyWordSpec with Matchers {
       result.isError shouldBe true
       interceptor.responseToolName shouldBe "echo"
       interceptor.responseArguments shouldBe InterceptedArguments
+      interceptor.responseIsError shouldBe true
+    }
+
+    "give interceptResponse a false error flag for a successful result" in {
+      val interceptor = new RecordingInterceptor
+      val hooks = hooksFor(interceptor)
+
+      val result = Await.result(
+        hooks.interceptResponse(request, InterceptedArguments, new SpiAgent.McpToolCallResult("ok", isError = false)),
+        3.seconds)
+
+      result.text shouldBe "intercepted ok"
+      result.isError shouldBe false
+      interceptor.responseIsError shouldBe false
+    }
+
+    "keep the arguments and the result when the default interceptor methods leave them unchanged" in {
+      val hooks = hooksFor(new RemoteMcpTools.ToolInterceptor {})
+      val result = new SpiAgent.McpToolCallResult("failed", isError = true)
+
+      (Await.result(hooks.interceptRequest(request), 3.seconds) should be).theSameInstanceAs(request.arguments)
+      (Await.result(hooks.interceptResponse(request, request.arguments, result), 3.seconds) should be)
+        .theSameInstanceAs(result)
     }
 
     "return a failed Future when the interceptor throws" in {

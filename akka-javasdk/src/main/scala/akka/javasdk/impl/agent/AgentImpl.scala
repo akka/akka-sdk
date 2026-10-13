@@ -471,12 +471,10 @@ private[impl] object AgentImpl {
       extends SpiAgent.McpToolCallHooks {
 
     override def interceptRequest(toolCallRequest: SpiAgent.ToolCallRequest): Future[String] =
-      Future.fromTry(
-        Try(
-          javaInterceptor
-            .interceptRequest(
-              new McpToolInterceptorContext(toolCallRequest.name, isError = false),
-              toolCallRequest.arguments)))
+      Future.fromTry(Try {
+        val context = new McpToolInterceptorContext(toolCallRequest.name, isError = false)
+        javaInterceptor.interceptRequest(context, toolCallRequest.arguments)
+      })
 
     override def interceptResponse(
         toolCallRequest: SpiAgent.ToolCallRequest,
