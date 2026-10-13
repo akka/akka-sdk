@@ -88,18 +88,7 @@ if [ "$1" = "gen-index" ]; then
   # extract links to a temp file
   grep "^* xref" cli-raw-index.adoc > temp-cli-index.txt
 
-  # generate cli-index.adoc header
-  cat > cli-index.adoc <<- EOM
-////
-index.adoc is auto-generated from
-- header template file "cli-index-header.template.txt"
-- all akka*.adoc files
-
-Please DON'T modify file index.adoc directly.
-Instead, you might want to modify file "cli-index-header.template.txt"
-////
-EOM
-  cat cli-index-header.template.txt >> cli-index.adoc
+  cp cli-index-header.template.txt cli-index.adoc
 
   echo "patch command links in cli-index.adoc ..."
   AKKA_AUTH_CMD=`grep "akka_auth_" temp-cli-index.txt`
