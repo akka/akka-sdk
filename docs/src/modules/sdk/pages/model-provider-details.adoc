@@ -660,7 +660,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`Mode
 
 | location
 | String
-| Google Cloud location, e.g. "global", or "us" or "eu" for the multi-region endpoints. Used together with `project-id`
+| Google Cloud location, e.g. `global`, or `us` or `eu` for the multi-region endpoints. Used together with `project-id`
 
 | base-url
 | Url
