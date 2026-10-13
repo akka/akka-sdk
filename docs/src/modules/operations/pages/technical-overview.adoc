@@ -232,7 +232,7 @@ You deploy a model onto GPU capacity in an Akka region. Any OpenAI-compatible cl
 Akka installs and manages the routing and serving components separately from the training components. Initially, a deployment gives you direct access to manage routing and inference. For how-to guides, see xref:inference:serving/getting-started.adoc[] and xref:inference:routing/index.adoc[]. Akka's team configures and manages the initial training loops with you, while Akka stabilizes the external interfaces that define and run long-running training loops.
 
 // DIAGRAM: recreated as a Mermaid diagram from the Optimize architecture drawing. Flagged for creator review.
-The diagram shows how a request reaches a model. A client outside the cluster calls the route on a host name. An agent or service inside the project calls the model endpoint by its internal name. Both requests reach the gateway, which checks the bearer key and picks the engine from the model name. The engines accept only the gateway identity.
+The diagram shows how a request reaches a model. A client outside the cluster calls the route on a host name. An agent or service inside the project calls the model endpoint by its internal name. Both requests reach the gateway, which checks the bearer key and picks the engine from the model name. The engines accept only the gateway identity. The engines run on GPU devices that the region binds with a Dynamic Resource Allocation (DRA) ResourceClaim, and Trainer endpoints draw devices from the same pool.
 
 .How a request reaches a model
 [mermaid]

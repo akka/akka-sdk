@@ -15,6 +15,8 @@ Connectivity terms used below:
 * *Akka NAT gateway*: a region-initiated egress flow. Akka can work with you to route these through your firewall instead.
 * *Pre-authorized IP ranges*: Federation-Plane-to-region flows over the internet. A private-connectivity option is available.
 
+The grid also lists the Akka Optimize flows: the AI gateway, the routing gateway, model serving and GPUs, and training, datasets, and the registry. The Notes column of each Optimize flow ends with its status, which shows whether the flow is confirmed.
+
 xref:operations:technical-overview/data-flows-grid.adoc[View the full data flows table,role=open-grid,window=_blank]
 
 == Private connectivity by cloud

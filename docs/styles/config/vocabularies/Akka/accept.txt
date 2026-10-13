@@ -86,6 +86,7 @@ clientCertificate
 clientId
 Cline
 cloudName
+Cloudsmith
 codegen
 Codeium
 Codex
@@ -512,6 +513,7 @@ tokenization
 tokenizer
 [Tt]okenizes
 tokenSecret
+tolerations
 toolCalling
 Toolchain
 [Tt]oolchain
