@@ -30,7 +30,6 @@ asciidoc:
   extensions:
   - '@asciidoctor/tabs'
   attributes:
-    cli: akka
     # the following two attributes cause review and todo notes to display
     review: ''
     todo: ''
