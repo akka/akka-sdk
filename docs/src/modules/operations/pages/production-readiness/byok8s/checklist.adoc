@@ -173,7 +173,7 @@ Akka reviews your application's high-level architecture and design to understand
 * [ ] Multi-window multi-burn-rate alerts for primary SLOs
 * [ ] Capacity alerts (service cores, persistence, broker lag)
 * [ ] Database disk and storage usage alerts with warning and critical thresholds, routed to on-call. Required when storage autogrow is off
-* [ ] Database backups monitored: backup success and failure, backup age, and backup storage headroom, with alerts routed to on-call
+* [ ] Database backup alerts for failure, backup age, and backup storage headroom, routed to on-call
 * [ ] Alerts route to your on-call paging tool (e.g., PagerDuty, Opsgenie), with escalation to Akka's 24/7 incident response
 * [ ] Runbook linked from every alert
 
@@ -363,8 +363,8 @@ Start with a tabletop: walk failure scenarios end-to-end, confirm who does what,
 * [ ] DR tabletop run with Akka: scenarios walked end-to-end, ownership of each step confirmed, prerequisites and gaps captured (network/firewall changes, data-export destinations, access, and the like)
 * [ ] The most important scenarios from the tabletop exercised live, with gaps fed back and re-tests scheduled
 * [ ] DR runbook captured from the exercise: declaration criteria, data restore, region rebuild, cutover, verification
-* [ ] Database backups scheduled with point-in-time recovery enabled, retention that meets your recovery point objective (RPO), and a database restore tested
-* [ ] Kubernetes resource backups set up: the IAM binding and object storage that Akka needs are provisioned, and Akka's restore test summary is reviewed with your FDE
+* [ ] Database backups scheduled with point-in-time recovery enabled, retention checked against the RPO in your agreement, and a restore tested
+* [ ] Kubernetes backups ready: IAM binding and object storage for Akka's backups provisioned, Akka's restore test summary reviewed with FDE
 
 [discrete]
 ==== Rollback testing
