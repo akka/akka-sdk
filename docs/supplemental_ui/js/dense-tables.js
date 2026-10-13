@@ -104,11 +104,16 @@
     if (close) {
       close.addEventListener('click', function () {
         window.close();
-        // Browsers may block closing a tab opened directly. Its paired article
-        // has the same path without the -grid suffix.
+        // Browsers may block closing a tab opened directly. A full-size image
+        // can name its source page; grids still use the paired -grid path.
         setTimeout(function () {
           if (!window.closed) {
             var article = new URL(window.location.href);
+            var returnTo = close.getAttribute('data-return-to');
+            if (returnTo) {
+              window.location.assign(new URL(returnTo, article).href);
+              return;
+            }
             article.pathname = article.pathname.replace(/-grid\.html$/, '.html');
             window.location.assign(article.href);
           }

@@ -21,6 +21,8 @@ The two planes and the main flows between them:
 .The Federation Plane and one or more per-region Application Planes
 image::operations:aao-planes.svg[Federation Plane and Application Plane]
 
+xref:operations:technical-overview-image.adoc[View the full-size architecture diagram,role=open-image,window=_blank]
+
 == Federation Plane and Application Plane
 
 AAO splits into two planes: a global coordination layer run by Akka, and one or more runtime regions that host your workloads.
@@ -235,32 +237,10 @@ The diagram shows how a request reaches a model. A client outside the cluster ca
 .How a request reaches a model
 [mermaid]
 ----
-flowchart TD
-    subgraph internet["internet"]
-        client["OpenAI-compatible client"]
-    end
-    subgraph edge["contour edge"]
-        route["KalixRoute<br/>host + TLS + edge auth"]
-    end
-    subgraph project["project namespace"]
-        agent["in-cluster agent or service"]
-        endpoint["KalixModelEndpoint<br/>models + apiKeySecret"]
-        svc["Service (ExternalName)<br/>CNAME to gateway envoy"]
-        docs["docs-engine"]
-        tiny["tiny-engine"]
-    end
-    subgraph gwsys["agentgateway-system"]
-        gw["gateway envoy<br/>listener per endpoint FQDN<br/>Bearer key + request surface + model table"]
-    end
-    client -->|"https://host/v1"| route
-    route -->|"Host rewritten to internal FQDN<br/>l5d-dst-override to gateway svc"| svc
-    agent -->|"http://endpoint.project.svc.cluster.local/v1<br/>Authorization: Bearer"| svc
-    endpoint -.->|"renders"| svc
-    svc -.->|"DNS only (CNAME)"| gw
-    endpoint -.->|"listener, table rows, key policy"| gw
-    gw -->|"model: docs<br/>mesh: only gateway identity admitted"| docs
-    gw -->|"model: tiny<br/>mesh: only gateway identity admitted"| tiny
+include::operations:partial$model-request-diagram.adoc[]
 ----
+
+xref:operations:technical-overview-model-request-image.adoc[View the full-size model request diagram,role=open-image,window=_blank]
 
 === Tools for evaluation and adversarial testing
 

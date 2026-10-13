@@ -113,7 +113,7 @@ support for access." The `evaluations` variant also warns that the functionality
 change between releases without notice. The banner values are defined in
 `supplemental_ui/partials/page-banner.hbs`; extend that partial to add new values.
 
-## Full-width reference tables
+## Full-width tables and diagrams
 
 For a large table that readers need to filter or compare across columns, use a separate full-screen
 grid page. Keep the explanatory prose on the regular page. Copy `docs/dense-page-template.adoc`
@@ -130,6 +130,15 @@ cannot close the tab. See
   `xref:module:path/to/topic-grid.adoc[View the full topic table,role=open-grid,window=_blank]`.
   This renders as a compact link row.
   The grid provides a row filter, sortable headers, and a CSV download of all data rows.
+
+For a large diagram, keep it on the regular page and add a separate full-width
+page with `:page-layout: dense`, `:page-breadcrumb:`, and `:page-return-to:` set
+to the regular page's relative HTML path. Use `dense-image` on image blocks or
+`mermaid.dense-mermaid` on Mermaid blocks. Link to the full-width page with
+`role=open-image,window=_blank`. The close control returns to `:page-return-to:`
+if the browser cannot close the tab. See
+`docs/src/modules/operations/pages/technical-overview-image.adoc` and
+`docs/src/modules/operations/pages/technical-overview-model-request-image.adoc`.
 
 ## SDD-first, manual fallback
 

@@ -1,10 +1,10 @@
 /*
- * Full-screen grid for dense reference tables.
+ * Full-screen pages for dense reference tables and large diagrams.
  *
  * A page opts in with `:page-layout: dense` (layouts/dense.hbs): the site header
- * and the table, with no navigation, breadcrumb bar or outline. Its table carries
- * the `dense` role. dense-tables.js adds the filter, sort and CSV download.
- * Pages that link to a grid use the `open-grid` role on the link.
+ * and the content, with no navigation, breadcrumb bar or outline. Tables carry
+ * the `dense` role; images carry `dense-image` or `dense-mermaid`. dense-tables.js adds table controls
+ * and handles the close button. Links use `open-grid` or `open-image`.
  */
 
 :root {
@@ -75,6 +75,32 @@
 
 .dense-breakout {
   margin-top: 1rem;
+}
+
+/* A diagram uses its native width when space allows and shrinks to fit on narrow screens. */
+.dense-page .doc .imageblock.dense-image {
+  margin: 1rem auto 0;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.dense-page .doc .imageblock.dense-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.dense-page .doc .imageblock.dense-mermaid,
+.dense-page .doc .imageblock.dense-mermaid .mermaid {
+  width: 100%;
+  max-width: none;
+}
+
+.dense-page .doc .imageblock.dense-mermaid svg {
+  display: block;
+  width: 100% !important;
+  max-width: none !important;
+  height: auto;
 }
 
 .dense-toolbar {
@@ -227,7 +253,8 @@
    ------------------------------------------------------------------ */
 
 /* A compact link row makes the table easy to find without a large card. */
-.doc a.open-grid {
+.doc a.open-grid,
+.doc a.open-image {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -240,7 +267,9 @@
 }
 
 .doc a.open-grid:hover,
-.doc a.open-grid:focus-visible {
+.doc a.open-grid:focus-visible,
+.doc a.open-image:hover,
+.doc a.open-image:focus-visible {
   background: rgba(128, 128, 128, 0.12);
 }
 
@@ -253,4 +282,15 @@
   background: currentColor;
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 5h18v14H3V5zm2 2v3h6V7H5zm8 0v3h6V7h-6zm-8 5v3h6v-3H5zm8 0v3h6v-3h-6z' fill-rule='evenodd'/%3E%3C/svg%3E") center / contain no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 5h18v14H3V5zm2 2v3h6V7H5zm8 0v3h6V7h-6zm-8 5v3h6v-3H5zm8 0v3h6v-3h-6z' fill-rule='evenodd'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.doc a.open-image::before {
+  content: "";
+  display: block;
+  flex: none;
+  width: 1.35rem;
+  height: 1.35rem;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 3h8v2H5v6H3V3zm10 0h8v8h-2V5h-6V3zM3 13h2v6h6v2H3v-8zm16 0h2v8h-8v-2h6v-6z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 3h8v2H5v6H3V3zm10 0h8v8h-2V5h-6V3zM3 13h2v6h6v2H3v-8zm16 0h2v8h-8v-2h6v-6z'/%3E%3C/svg%3E") center / contain no-repeat;
 }

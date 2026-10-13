@@ -1,0 +1,10 @@
+= How a request reaches a model
+:page-layout: dense
+:page-breadcrumb: Akka / Operating / Akka Automated Operations / Technical Overview / How a request reaches a model
+:page-return-to: technical-overview.html
+:page-summary: Full-size diagram showing how a request reaches a model through Akka Optimize.
+
+[mermaid.dense-mermaid]
+----
+include::operations:partial$model-request-diagram.adoc[]
+----
