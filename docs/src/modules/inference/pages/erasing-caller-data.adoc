@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Erasing a caller removes the identifier that Akka holds for a caller of your models. Run it to answer a request to delete an identifier that can be tied to a person, such as an IP address. Every spend figure stays the same after an erasure.
+Erasing a caller removes the identifier that the Akka Optimize portfolio service holds for a caller of your models. Run it as part of answering a request to delete an identifier that can be tied to a person, such as an IP address. Every spend figure stays the same after an erasure. Capture artifacts that the gateway router recorded still hold the identifier; see <<what-it-changes>>.
 
 == Before you begin
 
@@ -29,6 +29,7 @@ To find the callers in a period, divide its spend by caller. See xref:inference:
 akka optimize spend get --from 2026-09-15T00:00:00Z --to 2026-09-16T00:00:00Z --by caller
 ----
 
+[#what-it-changes]
 == What an erasure changes
 
 The portfolio service holds each caller value in one place. The records of the exchanges hold a key that refers to it. Erasing a caller deletes the value and changes nothing else:
@@ -78,7 +79,7 @@ The command shows what the erasure reaches and asks you to type the value again 
 
 A value that the service does not hold is not an error. The command reports that nothing was written and exits with status 0.
 
-In a script, pass `--force` to erase without the question. `--force` does not run the dry run first. Without `--force`, a script that cannot answer the question fails and erases nothing.
+In a script, pass `--force` to erase without the question. `--force` does not run the dry run first. `--disable-prompt` does not confirm an erasure. Without `--force`, a script that cannot answer the question fails and erases nothing.
 
 include::partial$aao-inference-notice.adoc[]
 
