@@ -1,6 +1,6 @@
 = Data flows
 :page-layout: dense
-:page-breadcrumb: Akka / Operating / Akka Automated Operations / Technical Overview / Data flows
+:page-breadcrumb: Akka / Operating / How AAO works / Data flows
 :page-summary: Every network flow between your environment and the Akka Automated Operations platform in one filterable grid, for security review.
 
 [.dense, cols="2,5,2,2,4,4", options="header"]

@@ -6,7 +6,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-This checklist covers the items that are specific to Akka Optimize: serving models with Inference and training models with the Trainer. It adds to the xref:operations:production-readiness/index.adoc[general readiness areas] and to the checklist for your deployment model, which also apply: xref:operations:production-readiness/dedicated/checklist.adoc[Dedicated], xref:operations:production-readiness/byoc/checklist.adoc[BYOC], or xref:operations:production-readiness/byok8s/checklist.adoc[BYOK8s].
+This checklist covers the items that are specific to Akka Optimize: serving models with Inference and training models with the Trainer. It adds to the xref:operations:production-readiness/index.adoc[general readiness areas] and to the xref:operations:production-readiness/checklist.adoc[production readiness checklist] for Dedicated, BYOC, and BYOK8s, which also applies.
 
 include::inference:partial$aao-inference-notice.adoc[]
 
@@ -169,7 +169,7 @@ Use this page as a guideline: review it with your Akka team before you send prod
 == See also
 
 * xref:operations:production-readiness/index.adoc[]
-* xref:operations:technical-overview.adoc#_akka_optimize_add_on[Akka Optimize add-on]
+* xref:operations:technical-overview/optimize.adoc[Model routing, serving and training add-on]
 * xref:inference:serving/getting-started.adoc[]
 * xref:optimize:trainer/endpoints.adoc[Endpoints]
 * xref:optimize:trainer/checkpoints.adoc[Checkpoints]

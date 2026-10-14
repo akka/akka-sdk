@@ -1,10 +1,13 @@
 = Production readiness checklist
-:page-summary: customer-side production readiness checklist for BYOK8s deployments, covering sizing, observability, CI/CD, functional and non-functional testing, operational testing, multi-region, sign-off, and day-1 readiness.
+:page-summary: The customer-side checklist Akka expects an application to satisfy before going live in a Dedicated, BYOC, or BYOK8s deployment, covering sizing, observability, CI/CD, testing, multi-region, sign-off, and post-launch.
 :page-persona: operator-platform, operator-sre
+:page-aliases: operations:production-readiness/dedicated/checklist.adoc, operations:production-readiness/byoc/checklist.adoc, operations:production-readiness/byok8s/checklist.adoc
 
 include::ROOT:partial$include.adoc[]
 
-What Akka expects of customer applications before going live in BYOK8s (Bring Your Own Kubernetes), the deployment model where Akka runs inside a Kubernetes cluster the customer provides and operates. Akka handles most of the operational surface and protects the deployment within those bounds. Production is still a shared outcome; the items below are the customer's side of that line.
+What Akka expects of customer applications before going live in a Dedicated, BYOC (Bring Your Own Cloud), or BYOK8s (Bring Your Own Kubernetes) deployment. In Dedicated, Akka Automated Operations runs inside a cloud account Akka owns and operates. In BYOC, it runs inside your cloud account. In BYOK8s, Akka runs inside a Kubernetes cluster you provide and operate. Akka handles most of the operational surface and protects the deployment within those bounds. Production is still a shared outcome; the items below are the customer's side of that line.
+
+Most items apply to every model. Items that apply to only some models are tagged: _(Dedicated only)_, _(BYOC and BYOK8s)_, or _(BYOK8s only)_. See xref:operations:index.adoc[Choose how you run Akka] for how the models differ.
 
 == Overview
 
@@ -13,7 +16,7 @@ What Akka expects of customer applications before going live in BYOK8s (Bring Yo
 
 This page is a guideline. The authoritative checklist for your application is the one you build with your Akka team.
 
-Review this page before going live: use the at-a-glance below as the quick entry point and the detailed checklists for specifics. The items are a baseline drawn from BYOK8s deployments; add anything specific to your request flows and failure modes. Discuss modifications or removals with your Forward Deployed Engineer (FDE), the named Akka engineer assigned to your account, so the original rationale is shared and the change is evaluated jointly.
+Review this page before going live: use the at-a-glance below as the quick entry point and the detailed checklists for specifics. The items are a baseline drawn from Dedicated, BYOC, and BYOK8s deployments; add anything specific to your request flows and failure modes. Discuss modifications or removals with your Forward Deployed Engineer (FDE), the named Akka engineer assigned to your account, so the original rationale is shared and the change is evaluated jointly.
 
 The agreement and the Federation Plane SLA Policy are the authoritative statement of what is committed. Reaching the reliability and availability of your deployment depends on working these items through with your Akka team.
 
@@ -23,11 +26,17 @@ Items split across two levels. *Region-level* items are established once for the
 
 If you serve or train models with Akka Optimize, also review xref:operations:production-readiness/optimize.adoc[].
 
-In BYOK8s the customer provides and operates the Kubernetes cluster, the database, and the underlying cloud infrastructure. Akka runs the platform end-to-end inside that cluster: runtime, region installation, scaling, patching of platform components, platform observability, and the operational rituals around them. The items on this page are the customer-side complement. Your FDE reviews the principal items with you before go-live.
+What Akka operates beneath your applications depends on the deployment model:
+
+* *Dedicated:* the full stack, including the cloud account, the in-region network, and account security monitoring, as well as the runtime, region installation, scaling, patching, platform observability, backups, and the operational rituals around them. Account, networking, and cloud-security items are Akka's, so the items below focus on the applications you build.
+* *BYOC:* the platform end-to-end inside your cloud account: runtime, region installation, scaling, patching, platform observability, backups, and the operational rituals around them.
+* *BYOK8s:* you provide and operate the Kubernetes cluster, the database, and the underlying cloud infrastructure. Akka runs the platform end-to-end inside that cluster: runtime, region installation, scaling, patching of platform components, platform observability, and the operational rituals around them.
+
+The items on this page are the customer-side complement. Your FDE reviews the principal items with you before go-live.
 
 This page targets the *Day 2 Ops* engagement (1 dev region + 1 prod region, single prod region with cold-rebuild DR (Disaster Recovery)). The final section covers the additional requirements for the *Business Continuity* tier (multi-region with cross-region failover).
 
-[IMPORTANT]
+[NOTE]
 .*Tier note*
 ====
 If the business requires rapid, automated cross-region failover, Day 2 Ops is not the right tier. DR at Day 2 is a cold rebuild; recovery is on the order of hours, driven by data-export frequency and rebuild time. Confirm with the business early.
@@ -47,7 +56,7 @@ If the business requires rapid, automated cross-region failover, Day 2 Ops is no
 [NOTE]
 .*Akka's side*
 ====
-Akka runs a parallel internal pre-production validation against the platform-side commitments in the RACI: replication, observability stack, baseline regional alerts, certificate monitoring. Database backups sit on the customer side in BYOK8s and are covered in the items below rather than in Akka's parallel validation. Your FDE also confirms the database storage autogrow setting and the disk usage alerts during the readiness review. This page is the customer-side complement; the two pair together.
+Akka runs a parallel internal pre-production validation against the platform-side commitments in the RACI: backups, replication, observability stack, baseline regional alerts, certificate monitoring. In Dedicated it also covers cloud-account audit logging and security monitoring. In BYOK8s, database backups sit on the customer side and are covered in the items below rather than in Akka's parallel validation, and your FDE also confirms the database storage autogrow setting and the disk usage alerts during the readiness review. This page is the customer-side complement; the two pair together.
 ====
 
 == Architecture and design review
@@ -85,7 +94,7 @@ Akka reviews your application's high-level architecture and design to understand
 |===
 | Role | Responsibility
 | Customer | Forecasts traffic, captures sizing inputs and assumptions, agrees compute and persistence shapes with Akka, signs off the cost forecast.
-| Akka | FDE runs the sizing exercise, validates platform-cores and service-cores numbers, names the AZ (Availability Zone) spread and persistence headroom recommendations.
+| Akka | FDE runs the sizing exercise, validates platform-cores and service-cores numbers, names the AZ (Availability Zone) spread and persistence headroom recommendations. In Dedicated, Akka also owns and sizes the cloud account and network.
 |===
 
 .*Detailed checklist*
@@ -104,13 +113,14 @@ Akka reviews your application's high-level architecture and design to understand
 [discrete]
 ==== Akka-specific sizing
 
-* [ ] *Platform cores* (Akka's infra in your VPC): node count, instance type, AZ spread confirmed with FDE
+* [ ] Confirm with your FDE that Akka has sized the platform, account, and network for your forecast: node count and instance types, 3+ AZ spread, VPC / CIDR (Classless Inter-Domain Routing) and security groups, container registry, and persistence headroom with auto-scaling ceilings _(Dedicated only)_
+* [ ] *Platform cores* (Akka's infra in your VPC, the isolated network in your cloud account where the Akka region is deployed): node count, instance type, AZ spread confirmed with FDE _(BYOC and BYOK8s)_
 * [ ] *Service cores* (your workload): sized to peak with rolling-update headroom (~+25%)
-* [ ] 3+ AZ cluster spread in prod
-* [ ] VPC CIDR has scale-out headroom; security groups and NACLs reviewed
-* [ ] Container registry in or near the prod region
-* [ ] Persistence sized; auto-scaling ceilings set
-* [ ] Database storage autogrow (or the cloud provider's equivalent storage autoscaling) enabled, with a maximum size set where the provider supports one. To opt out, record the reason, the owner, the alternative monitoring, and a review date
+* [ ] 3+ AZ cluster spread in prod _(BYOC and BYOK8s)_
+* [ ] VPC CIDR has scale-out headroom; security groups and NACLs (Network Access Control Lists) reviewed _(BYOC and BYOK8s)_
+* [ ] Container registry in or near the prod region _(BYOC and BYOK8s)_
+* [ ] Persistence sized; auto-scaling ceilings set _(BYOC and BYOK8s)_
+* [ ] Database storage autogrow (or the cloud provider's equivalent storage autoscaling) enabled, with a maximum size set where the provider supports one. To opt out, record the reason, the owner, the alternative monitoring, and a review date _(BYOK8s only)_
 * [ ] Per-service xref:operations:services/instance-sizing.adoc[instance types] chosen for each workload (defaults reviewed; pinned where a service needs a specific shape)
 * [ ] Database layout planned per project (a dedicated database per project where isolation or independent scaling is needed, versus a shared database) and sized accordingly
 * [ ] Region optimization / environment sizing reviewed with Akka, so the region and per-service configuration is right-sized for the workload before go-live
@@ -119,11 +129,11 @@ Akka reviews your application's high-level architecture and design to understand
 ==== Dependencies
 
 * [ ] Broker provisioned for peak throughput with headroom
-* [ ] External secret stores reachable from prod with IAM
+* [ ] External secret stores reachable from prod with IAM (Identity and Access Management)
 * [ ] LLM rate limits cover peak; fallback model configured
-* [ ] Upstream/downstream dependencies mapped with SLAs
+* [ ] Upstream/downstream dependencies mapped with SLAs (Service Level Agreements)
 * [ ] Cross-service single points of failure documented (shared brokers, DBs, identity)
-* [ ] Per-service configs reviewed for prod parity (ACLs, JWT issuers, secrets, autoscaling)
+* [ ] Per-service configs reviewed for prod parity (ACLs (Access Control Lists), JWT issuers, secrets, autoscaling)
 
 [discrete]
 ==== Validation
@@ -131,7 +141,7 @@ Akka reviews your application's high-level architecture and design to understand
 * [ ] Dev region at 30–50% of prod capacity with the same instance shapes (a much smaller dev region makes load-test results misleading)
 * [ ] Sizing reviewed with FDE
 * [ ] Cost forecast signed off by FinOps
-* [ ] Database storage autogrow and disk usage alerts re-verified after every database migration, upgrade, or restore, and at each periodic capacity review
+* [ ] Database storage autogrow and disk usage alerts re-verified after every database migration, upgrade, or restore, and at each periodic capacity review _(BYOK8s only)_
 =====
 
 == Observability
@@ -149,7 +159,7 @@ Akka reviews your application's high-level architecture and design to understand
 [discrete]
 ==== Telemetry pipeline
 
-* [ ] Exporter configured (e.g., OTLP, Prometheus, Splunk HEC, Azure Monitor, Google Cloud, or any OpenTelemetry-compatible backend) pointing at your enterprise platform
+* [ ] Exporter configured (e.g., OTLP (OpenTelemetry Protocol), Prometheus, Splunk HEC (HTTP Event Collector), Azure Monitor, Google Cloud, or any OpenTelemetry-compatible backend) pointing at your enterprise platform
 * [ ] Logs, metrics, traces flowing end-to-end; sampling rates verified
 * [ ] Trace correlation across services, endpoints, agents, tools, broker hops (W3C context)
 * [ ] Log retention meets compliance and debugging needs
@@ -167,15 +177,15 @@ Akka reviews your application's high-level architecture and design to understand
 [discrete]
 ==== Dashboards and alerting
 
-* [ ] Per-service RED dashboards at p50/p95/p99
+* [ ] Per-service RED (Rate, Errors, Duration) dashboards at p50/p95/p99
 * [ ] Cluster health dashboard (nodes, rolling-deploy status)
-* [ ] Cluster, node-pool, and database infrastructure health monitored: capacity and saturation, node and disk pressure, and database resource use, with alerting
+* [ ] Cluster, node-pool, and database infrastructure health monitored: capacity and saturation, node and disk pressure, and database resource use, with alerting _(BYOK8s only)_
 * [ ] Token-spend dashboard by team/project/agent (if running agents)
 * [ ] SLOs defined per service; alerts on burn rate, not raw thresholds
 * [ ] Multi-window multi-burn-rate alerts for primary SLOs
 * [ ] Capacity alerts (service cores, persistence, broker lag)
-* [ ] Database disk and storage usage alerts with warning and critical thresholds, routed to on-call. Required when storage autogrow is off
-* [ ] Database backup alerts for failure, backup age, and backup storage headroom, routed to on-call
+* [ ] Database disk and storage usage alerts with warning and critical thresholds, routed to on-call. Required when storage autogrow is off _(BYOK8s only)_
+* [ ] Database backup alerts for failure, backup age, and backup storage headroom, routed to on-call _(BYOK8s only)_
 * [ ] Alerts route to your on-call paging tool (e.g., PagerDuty, Opsgenie), with escalation to Akka's 24/7 incident response
 * [ ] Runbook linked from every alert
 
@@ -184,13 +194,13 @@ Akka reviews your application's high-level architecture and design to understand
 
 * [ ] Synthetic checks on a critical user journey from outside the VPC
 * [ ] Fire-drill each major alert in dev; confirm the right person gets paged with the right context
+=====
 
 [NOTE]
 .*Akka's side*
 ====
 Akka instruments the platform with its own observability stack and runs baseline regional alerts (cluster health, persistence, replication, certificate expiration). PII is obfuscated in Akka's internal observability data; customer-side application observability flows through the customer's own exporter and never enters Akka's stack. Akka's platform telemetry is for Akka SRE; the customer's runbooks and dashboards are owned by the customer.
 ====
-=====
 
 == CI/CD
 
@@ -209,13 +219,13 @@ Akka instruments the platform with its own observability stack and runs baseline
 
 * [ ] CI integrated via Akka CLI or GitHub Actions
 * [ ] Pipeline: compile → test → container build → image scan → push
-* [ ] Image scan blocks on critical CVEs (Trivy, Snyk, or equivalent)
-* [ ] SAST and SCA gates; findings triaged
+* [ ] Image scan blocks on critical CVEs (Common Vulnerabilities and Exposures) (Trivy, Snyk, or equivalent)
+* [ ] SAST (Static Application Security Testing) and SCA (Software Composition Analysis) gates; findings triaged
 * [ ] Secret scanning prevents accidental commits
 
 [NOTE]
 ====
-*Scope scans to what you control.* Scan your application code and the dependencies you introduce. The container base image, JVM, OS, and the Akka runtime (including the dependencies it provides at runtime) are patched by Akka (see the xref:operations:production-readiness/byok8s/shared-responsibility.adoc[Shared Responsibility Model]), so findings against those are Akka's to remediate; scope or triage them out so the report reflects what you own. For how to scope a scan to the dependencies you introduce on an Akka service, see xref:operations:integrating-cicd/scanning-dependencies.adoc[].
+*Scope scans to what you control.* Scan your application code and the dependencies you introduce. The container base image, JVM, OS, and the Akka runtime (including the dependencies it provides at runtime) are patched by Akka (see the xref:operations:production-readiness/shared-responsibility.adoc[Shared Responsibility Model]), so findings against those are Akka's to remediate; scope or triage them out so the report reflects what you own. For how to scope a scan to the dependencies you introduce on an Akka service, see xref:operations:integrating-cicd/scanning-dependencies.adoc[].
 ====
 
 [discrete]
@@ -241,7 +251,7 @@ Akka instruments the platform with its own observability stack and runs baseline
 [cols="1,3", options="header"]
 |===
 | Role | Responsibility
-| Customer | Owns unit, component, integration, and E2E test coverage for the application; including Akka-specific paths (agents, entities, workflows, views, endpoints, consumers).
+| Customer | Owns unit, component, integration, and E2E test coverage for the application, including Akka-specific paths (agents, entities, workflows, views, endpoints, consumers).
 |===
 
 .*Detailed checklist*
@@ -367,13 +377,14 @@ Without multi-region failover, DR is a cold rebuild. Rehearsing it is the most i
 
 A DR rehearsal is worth as much for what it surfaces as for the recovery itself. Running a real recovery end-to-end surfaces the gaps that would otherwise appear mid-incident: who owns each step, a firewall rule that must be opened for a rebuilt database, a data-export destination that was assumed rather than verified, or access no one currently holds. Akka works with you on the most prevalent scenarios.
 
-Start with a tabletop: review failure scenarios end-to-end, confirm who does what, capture prerequisites and gaps. Then exercise the scenarios that matter most live. The xref:operations:production-readiness/byok8s/disaster-recovery.adoc[disaster recovery scenario catalog] is the detailed reference for the tabletop.
+Start with a tabletop: review failure scenarios end-to-end, confirm who does what, capture prerequisites and gaps. Then exercise the scenarios that matter most live. The xref:operations:production-readiness/disaster-recovery.adoc[disaster recovery scenario catalog] is the detailed reference for the tabletop.
 
 * [ ] DR tabletop run with Akka: scenarios reviewed end-to-end, ownership of each step confirmed, prerequisites and gaps captured (network/firewall changes, data-export destinations, access, and the like)
 * [ ] The most important scenarios from the tabletop exercised live, with gaps fed back and re-tests scheduled
 * [ ] DR runbook captured from the exercise: declaration criteria, data restore, region rebuild, cutover, verification
-* [ ] Database backups scheduled with point-in-time recovery enabled, retention set to your recovery needs, and a restore tested
-* [ ] Kubernetes backups ready: IAM binding and object storage for Akka's backups provisioned, Akka's restore test summary reviewed with FDE
+* [ ] Akka's backup restore test summary (point-in-time recovery and Kubernetes backups) reviewed with FDE, including retention. In BYOK8s, use the two items below instead
+* [ ] Database backups scheduled with point-in-time recovery enabled, retention set to your recovery needs, and a restore tested _(BYOK8s only)_
+* [ ] Kubernetes backups ready: IAM binding and object storage for Akka's backups provisioned, Akka's restore test summary reviewed with FDE _(BYOK8s only)_
 
 [discrete]
 ==== Rollback testing
@@ -394,7 +405,7 @@ Rehearse the paths your application relies on, at least:
 [discrete]
 ==== Certificate management
 
-* [ ] Customer-managed TLS (private LBs, BYO domains, BYO certs): customer monitors expiration, rotation procedure rehearsed pre-go-live
+* [ ] Customer-managed TLS (BYO domains, BYO certs, and in BYOC and BYOK8s private LBs): customer monitors expiration, rotation procedure rehearsed pre-go-live
 * [ ] Cert rotation rollback path documented and tested in dev
 =====
 
@@ -447,9 +458,9 @@ Review the alert list and the dependency list; every plausible failure should ha
 * [ ] Certificate expiration
 * [ ] Agent guardrail false-positive storm (if running agents)
 * [ ] Log pipeline backed up
-* [ ] Kubernetes cluster or node-pool failure
-* [ ] Database outage or failover
-* [ ] Kubernetes or database upgrade rollback (coordinate certified versions with Akka)
+* [ ] Kubernetes cluster or node-pool failure _(BYOK8s only)_
+* [ ] Database outage or failover _(BYOK8s only)_
+* [ ] Kubernetes or database upgrade rollback (coordinate certified versions with Akka) _(BYOK8s only)_
 
 [discrete]
 ==== Incident command and on-call
@@ -478,8 +489,8 @@ Where you are regulated, these are the items auditors and regulators ask for. Co
 [cols="1,3", options="header"]
 |===
 | Role | Responsibility
-| Customer | Ingests and retains audit evidence in your own SIEM (including cluster, node, and cloud-infrastructure logs you operate), owns continuity planning for the cluster, database, and every dependency your application relies on, and rehearses producing compliance evidence for your regulators.
-| Shared | Akka delivers control-plane audit events and maintains platform compliance posture (SOC 2 / SOC 3, penetration-test summary, subprocessor list via trust.akka.io) that feeds your evidence.
+| Customer | Ingests and retains audit evidence in your own SIEM, owns continuity planning for the dependencies your application relies on, and rehearses producing compliance evidence for your regulators. In BYOK8s this includes the cluster, node, and cloud-infrastructure logs you operate, and continuity planning for the cluster and database.
+| Shared | Akka delivers control-plane audit events (and, in Dedicated, cloud-account audit events) and maintains platform compliance posture (SOC 2 / SOC 3, penetration-test summary, subprocessor list via trust.akka.io) that feeds your evidence.
 |===
 
 .*Detailed checklist*
@@ -489,8 +500,8 @@ Where you are regulated, these are the items auditors and regulators ask for. Co
 ==== Audit logging
 
 * [ ] Akka control-plane audit events (authentication, project and service lifecycle, IAM and token changes) obtained from Akka, delivered on request or on a recurring cadence you arrange, then ingested and retained in your SIEM (Security Information and Event Management) to your compliance needs
-* [ ] Cluster, node, and cloud-account audit logs collected and retained alongside them
-* [ ] Cloud-account and cluster security monitoring and posture owned to the standard Akka would apply: threat detection and alerting over the account and cluster (e.g., GuardDuty, Security Command Center, Microsoft Defender) and cloud security posture / guardrails configured and reviewed
+* [ ] Cloud-account audit logs (the account is yours in BYOC and BYOK8s), and in BYOK8s cluster and node audit logs, collected and retained alongside them _(BYOC and BYOK8s)_
+* [ ] Cloud-account security monitoring and posture owned to the standard Akka would apply: threat detection and alerting over the account, and in BYOK8s over the cluster (e.g., GuardDuty, Security Command Center, Microsoft Defender), and cloud security posture / guardrails configured and reviewed _(BYOC and BYOK8s)_
 
 [discrete]
 ==== Vendor and dependency continuity
@@ -536,7 +547,7 @@ Akka reads from both regions, so cross-region failover is fast (often sub-minute
 ====
 Choose availability level per service.
 
-* *Single region, multiple availability zones*: baseline. Resilient to loss of an AZ. In BYOK8s the zone spread is part of the cluster you operate.
+* *Single region, multiple availability zones*: baseline. Resilient to loss of an AZ. In Dedicated and BYOC, high availability across zones is the default on Akka-operated infrastructure. In BYOK8s the zone spread is part of the cluster you operate.
 * *Multi-region, replicated*: highest availability. Resilient to loss of an entire region, with geographic failover and low-latency local access (xref:concepts:multi-region.adoc[]).
 
 Within multi-region, the replication mode set per service determines failover behavior. The modes (replicated writes; replicated reads with a request-region or pinned-region primary) and their consistency and switch-over semantics are defined in xref:concepts:multi-region.adoc[].
@@ -548,7 +559,7 @@ Single-region (not replicated) has no cross-region failover; recovery is a cold 
 [%collapsible]
 =====
 [discrete]
-==== Per-region infrastructure
+==== Per-region infrastructure _(BYOK8s only)_
 
 In BYOK8s you operate the cluster, database, and networking in every region, so standing up an additional region is a substantial, customer-owned effort. Each item below is your single-region infrastructure repeated per region, plus the connectivity between them.
 
@@ -630,5 +641,5 @@ The most commonly omitted requirement is a single named owner of the application
 
 [NOTE]
 ====
-This page is part of the BYOK8s Shared Responsibility Model and is updated as Akka's platform and operational practices evolve. To receive notifications of material updates, email mailto:support@akka.io[support@akka.io].
+This page is part of the Shared Responsibility Model and is updated as Akka's platform and operational practices evolve. To receive notifications of material updates, email mailto:support@akka.io[support@akka.io].
 ====

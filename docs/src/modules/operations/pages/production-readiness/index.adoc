@@ -1,7 +1,7 @@
 = Production readiness
 :page-summary: What production readiness means with Akka, the partnership behind it, and where the detailed responsibility matrix (the Shared Responsibility Model and RACI) is defined.
 :page-when-to-use: Use this when planning a move to production, to agree who owns what and to review the readiness items with your Akka team.
-:page-related: xref:operations:index.adoc[], xref:concepts:deployment-model.adoc[], xref:operations:operator-best-practices.adoc[]
+:page-related: xref:operations:index.adoc[], xref:concepts:deployment-model.adoc[], xref:operations:regions/setup.adoc[]
 :page-persona: operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
@@ -49,23 +49,11 @@ A single named owner (an individual or a designated body such as a go-live board
 
 If you serve or train models with Akka Optimize, see also xref:operations:production-readiness/optimize.adoc[].
 
-== How the split shifts by deployment model
+== Readiness pages
 
-Akka behaves identically across xref:concepts:deployment-model.adoc[deployment models]. What changes is how much of the operational surface you run:
+Akka behaves identically across deployment models. What changes is how much of the operational surface you run; see xref:operations:index.adoc[Choose how you run Akka] for how the models compare. The pages below cover Dedicated, BYOC, and BYOK8s, and mark where an item or an owner differs by model:
 
-* *Dedicated*: Akka hosts and operates the platform and connects to you over a private data link, leaving your team the least to run. Akka owns and operates the environment end to end, so disaster recovery exercises are run internally by Akka rather than as a joint customer-facing tabletop.
-+
-** xref:operations:production-readiness/dedicated/shared-responsibility.adoc[Shared Responsibility Model]
-** xref:operations:production-readiness/dedicated/checklist.adoc[Production Readiness Checklist]
-* *BYOC (Bring Your Own Cloud)*: Akka operates the platform inside your own cloud account. You own the account, networking, and data boundary.
-+
-** xref:operations:production-readiness/byoc/shared-responsibility.adoc[Shared Responsibility Model] 
-** xref:operations:production-readiness/byoc/checklist.adoc[Production Readiness Checklist]
-** xref:operations:production-readiness/byoc/disaster-recovery.adoc[Disaster Recovery]
-* *BYOK8s (Bring Your Own Kubernetes)*: You run Akka on the Kubernetes cluster you operate and own more of the stack, including the cluster, its upgrades, and backups.
-+
-** xref:operations:production-readiness/byok8s/shared-responsibility.adoc[Shared Responsibility Model]
-** xref:operations:production-readiness/byok8s/checklist.adoc[Production Readiness Checklist]
-** xref:operations:production-readiness/byok8s/disaster-recovery.adoc[Disaster Recovery]
-
-The further you move toward BYOK8s, the more of the readiness items fall to your team.
+* xref:operations:production-readiness/shared-responsibility.adoc[Shared Responsibility Model]: who owns each operational activity.
+* xref:operations:production-readiness/raci.adoc[RACI]: the full Responsible, Accountable, Consulted, and Informed split for each activity.
+* xref:operations:production-readiness/checklist.adoc[Production Readiness Checklist]: what Akka expects of your applications before going live.
+* xref:operations:production-readiness/disaster-recovery.adoc[Disaster Recovery]: the scenario catalog for the DR tabletop and live drills.

@@ -119,7 +119,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 
 ## Operating
 
-- [Akka Automated Operations](https://doc.akka.io/operations/akka-platform.html.md): Managed platform for deploying and operating Akka services
+- [Choose how you run Akka](https://doc.akka.io/operations/index.html.md): The deployment options for running Akka services and how they compare
 - [Deploy a service](https://doc.akka.io/operations/services/deploy-service.html): Deploying to Akka
 - [Observability](https://doc.akka.io/operations/observability-and-monitoring/index.html.md): Metrics, logs, traces, OTEL export
 - [Secrets management](https://doc.akka.io/operations/projects/secrets.html.md): Built-in secrets with Azure KeyVault integration
@@ -192,7 +192,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [JSON Web Tokens (JWTs)](https://doc.akka.io/reference/jwts.html.md): Understanding JWT concepts and their role in Akka authentication
 - [Developing JSON Web Tokens (JWT)](https://doc.akka.io/sdk/auth-with-jwts.html.md): Implementing JWT-based authentication in your Akka services
 - [TLS certificates](https://doc.akka.io/operations/tls-certificates.html.md): Configuring and managing TLS certificates for secure communications
-- [Operator best practices](https://doc.akka.io/operations/operator-best-practices.html.md): Recommendations for effectively operating Akka services in production
+- [Multi-region setup](https://doc.akka.io/operations/regions/setup.html.md): Add regions to a project, choose how stateful components select their primary region, and change the project's primary region
 - [View logs](https://doc.akka.io/operations/observability-and-monitoring/view-logs.html.md): Accessing and analyzing logs from Akka services
 - [View traces](https://doc.akka.io/operations/observability-and-monitoring/traces.html.md): Working with distributed tracing in Akka applications
 - [View metrics](https://doc.akka.io/operations/observability-and-monitoring/metrics.html.md): Monitoring performance metrics for Akka services
@@ -211,7 +211,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Organizations](https://doc.akka.io/operations/organizations/index.html.md): Working with organizations in Akka
 - [Managing organization users](https://doc.akka.io/operations/organizations/manage-users.html.md): Adding, removing, and managing user access within your organization
 - [Regions](https://doc.akka.io/operations/organizations/regions.html.md): Understanding geographical regions for Akka deployments
-- [Operating - Akka Automated Operations (AAO)](https://doc.akka.io/operations/akka-platform.html.md): Automatically manages, monitors, and gathers insights from your deployed services and managed infrastructure.
+- [Operating - Choose how you run Akka](https://doc.akka.io/operations/index.html.md): The five deployment options, what Akka Automated Operations adds, and a feature comparison.
 - [Operating - Self-managed nodes](https://doc.akka.io/operations/index.html.md): Guide to running Akka on self-managed infrastructure
 - [Reactive Manifesto](https://www.reactivemanifesto.org): Foundational philosophy behind Akka
 - [Reactive Principles](https://www.reactiveprinciples.org): Cloud-native and edge-native design principles

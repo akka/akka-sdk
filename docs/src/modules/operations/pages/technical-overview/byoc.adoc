@@ -24,7 +24,7 @@ Download the link:../_attachments/whitepapers/aao-byoc.pdf[full BYOC setup as a 
 . *Provision*: Akka remotely provisions the region and attaches it to a platform organization created for you.
 . *DNS*: create record sets in your DNS zone that map to the region's load-balancer IP.
 . *Smoke tests*: Akka attaches the region to the Federation Plane and runs smoke tests.
-. *Region handover*: register a user at akka.io with a corporate email; Akka makes them your organization's primary owner. A production-labeled region is not fully handed over until you complete the xref:operations:production-readiness/byoc/checklist.adoc[region-readiness steps].
+. *Region handover*: register a user at akka.io with a corporate email; Akka makes them your organization's primary owner. A production-labeled region is not fully handed over until you complete the xref:operations:production-readiness/checklist.adoc[region-readiness steps].
 
 == The akka-bootstrap utility
 

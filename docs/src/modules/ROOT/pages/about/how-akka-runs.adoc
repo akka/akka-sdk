@@ -33,7 +33,7 @@ See xref:concepts:runtime.adoc[], xref:concepts:deployment-model.adoc[], xref:co
 | Dedicated
 | Akka's cloud, a single-tenant region
 | Akka
-| xref:operations:production-readiness/dedicated/checklist.adoc[Dedicated production readiness]
+| xref:operations:technical-overview/dedicated.adoc[How Dedicated works]
 
 | BYOC
 | Your cloud account on AWS, Azure or GCP
@@ -84,7 +84,7 @@ See xref:concepts:deployment-model.adoc#automated-operations[], xref:concepts:av
 | xref:concepts:runtime.adoc[], xref:concepts:deployment-model.adoc[], xref:concepts:multi-region.adoc[], xref:concepts:availability.adoc[], xref:concepts:deployment-model.adoc#automated-operations[], xref:concepts:security-and-identity.adoc[], xref:concepts:observability.adoc[]
 
 | Operating
-| xref:operations:index.adoc[Operating], xref:operations:akka-platform.adoc[Akka Automated Operations], xref:operations:configuring.adoc[Self-managed operations], xref:operations:production-readiness/index.adoc[Production readiness]
+| xref:operations:index.adoc[Operating], xref:operations:technical-overview.adoc[How AAO works], xref:operations:configuring.adoc[Self-managed operations], xref:operations:production-readiness/index.adoc[Production readiness]
 
 | Reference
 | xref:reference:descriptors/index.adoc[Descriptors], xref:reference:cli/akka-cli/index.adoc[Akka CLI]

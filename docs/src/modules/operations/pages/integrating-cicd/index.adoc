@@ -1,4 +1,4 @@
-= Integrating with CI/CD tools
+= Authenticate CI/CD
 
 include::ROOT:partial$include.adoc[]
 

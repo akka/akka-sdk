@@ -1,0 +1,76 @@
+= Model routing, serving and training
+:page-summary: The model routing, serving and training add-on extends an AAO environment with multi-model routing, inference for self-hosted models, training and testing of small language models, and cost management.
+:page-when-to-use: When you plan to add model routing, serving or training to a BYOC or BYOK8s environment and need to know what Akka installs and what it needs from you.
+:page-related: operations:technical-overview.adoc, operations:production-readiness/optimize.adoc, inference:index.adoc
+:page-persona: operator-platform, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+The model routing, serving and training add-on is a set of infrastructure and service extensions for multi-model routing, inference for self-hosted models, training and testing small language models, and cost management. You add it to an existing AAO environment. It uses the same federation and application planes, command and control, communications, security, compliance, data protection, and monitoring infrastructure that AAO already installs. See xref:operations:technical-overview.adoc[How AAO works] for that architecture.
+
+== What Akka installs
+
+Akka installs open source infrastructure in the Kubernetes cluster that AAO uses. The installation is the same for BYOC and BYOK8s.
+
+[cols="1,3", options="header"]
+|===
+| Component | Role
+
+| vLLM
+| Hosts models and runs inference.
+
+| agentgateway
+| Routes requests across multiple models.
+
+| KubeRay
+| Runs training jobs and serves models.
+
+| NVIDIA device plugins
+| Schedules GPUs.
+
+| verl
+| Runs reinforcement learning for sharded and multi-device training runs. Also scores and grades training runs.
+|===
+
+Akka also provisions the storage account (bucket) for training. The add-on stores logs and traces of AI interactions in your hyperscaler's preferred object storage service.
+
+== What the add-on needs from you
+
+* A GPU capacity reserve that is integrated into the add-on. Your Akka team shows you how to configure it.
+* BYOK8s only: a node pool in your existing Kubernetes environment, dedicated to routing and inference.
+
+== Models and routing
+
+You deploy a model onto GPU capacity in an Akka region. Any OpenAI-compatible client can call it, from inside an Akka project or from the internet. You can deploy three kinds of model:
+
+* A public open-weights model.
+* Your own small language model, private to you.
+* A public base model with your own low-rank adaptation (LoRA) adapter on top, served under its own name.
+
+Akka installs and manages the routing and serving components separately from the training components. Initially, a deployment gives you direct access to manage routing and inference. For how-to guides, see xref:inference:serving/getting-started.adoc[] and xref:inference:routing.adoc[]. Akka's team configures and manages the initial training loops with you, while Akka stabilizes the external interfaces that define and run long-running training loops.
+
+// DIAGRAM: recreated as a Mermaid diagram from the Optimize architecture drawing. Flagged for creator review.
+The diagram shows how a request reaches a model. A client outside the cluster calls the route on a host name. An agent or service inside the project calls the model endpoint by its internal name. Both requests reach the gateway, which checks the bearer key and picks the engine from the model name. The engines accept only the gateway identity.
+
+.How a request reaches a model
+[mermaid]
+----
+include::operations:partial$model-request-diagram.mmd[]
+----
+
+xref:operations:technical-overview-model-request-image.adoc[View the full-size model request diagram,role=open-image,window=_blank]
+
+== Tools for evaluation and adversarial testing
+
+Akka provides these tools with the add-on:
+
+* evalkit, a toolkit that you download separately and that integrates with your Akka project, runs evaluation and scoring campaigns locally.
+* redkit, a toolkit that is also part of your Akka project and downloadable separately, runs adversarial testing campaigns against models.
+* Extensions to the Akka CLI manage evalkit, redkit, and your hosted environment. See xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize].
+
+For testing an agent, see xref:testing:evaluation/adversarial.adoc[].
+
+== Next steps
+
+* Before you go live, review xref:operations:production-readiness/optimize.adoc[production readiness for served and trained models].
+* Deploy a model: xref:inference:serving/getting-started.adoc[].

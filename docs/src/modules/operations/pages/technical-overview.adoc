@@ -1,14 +1,14 @@
 = Akka Automated Operations technical overview
-:page-summary: A technical overview of Akka Automated Operations (AAO): the two-plane architecture, what Akka automates and provisions, the shared-responsibility split, and how a region is installed and operated, ending with the setup path for each deployment model and cloud.
-:page-when-to-use: Use this to understand how AAO works end to end and to find the right setup path for your cloud and deployment model.
-:page-related: xref:concepts:deployment-model.adoc[], xref:operations:akka-platform.adoc[], xref:operations:production-readiness/index.adoc[], xref:operations:regions/index.adoc[]
+:page-summary: A technical overview of Akka Automated Operations (AAO): the two-plane architecture, what Akka automates and provisions, security, networking, sizing, and how a region is backed up and maintained.
+:page-when-to-use: Use this to understand how AAO works end to end.
+:page-related: xref:operations:index.adoc[], xref:operations:production-readiness/index.adoc[], xref:operations:regions/index.adoc[]
 :page-persona: operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
 
 Akka Automated Operations (AAO) is an actively maintained Akka region that Akka installs, monitors, patches, and scales for extreme availability and low latency. A region runs on Kubernetes across AWS, Azure, or GCP, hosted either in Akka's cloud (dedicated) or inside your own environment (BYOC or BYOK8s).
 
-With the self-managed models (BYOC and BYOK8s), the region runs inside your own environment and you keep custodial ownership of the infrastructure. Application data stays within your environment; a limited set of platform interactions still crosses to the Akka Federation Plane: deployments, key rotation, the management API, metadata synchronization, and platform observability. The xref:operations:technical-overview/data-flows.adoc[data flows] page lists every flow.
+With BYOC and BYOK8s, the region runs inside your own environment and you keep custodial ownership of the infrastructure. Application data stays within your environment; a limited set of platform interactions still crosses to the Akka Federation Plane: deployments, key rotation, the management API, metadata synchronization, and platform observability. The xref:operations:technical-overview/data-flows.adoc[data flows] page lists every flow.
 
 [NOTE]
 ====
@@ -121,11 +121,7 @@ Akka Operators:: Route management, elasticity automation, metadata sync, rolling
 
 == Shared responsibility
 
-System management is shared between you and Akka across provisioning and ongoing operations, and the split shifts with the deployment model. For the authoritative, row-by-row breakdown with the full Responsible / Accountable / Consulted / Informed (RACI) split, see the production-readiness shared-responsibility and RACI pages for your model:
-
-* Dedicated: xref:operations:production-readiness/dedicated/shared-responsibility.adoc[Shared responsibility] and xref:operations:production-readiness/dedicated/raci.adoc[RACI]
-* BYOC: xref:operations:production-readiness/byoc/shared-responsibility.adoc[Shared responsibility] and xref:operations:production-readiness/byoc/raci.adoc[RACI]
-* BYOK8s: xref:operations:production-readiness/byok8s/shared-responsibility.adoc[Shared responsibility] and xref:operations:production-readiness/byok8s/raci.adoc[RACI]
+System management is shared between you and Akka across provisioning and ongoing operations, and the split shifts with the deployment model. For the authoritative, row-by-row breakdown with the full Responsible / Accountable / Consulted / Informed (RACI) split, see the xref:operations:production-readiness/shared-responsibility.adoc[Shared responsibility] and xref:operations:production-readiness/raci.adoc[RACI] pages, which cover Dedicated, BYOC, and BYOK8s.
 
 == Security and encryption
 
@@ -172,9 +168,9 @@ For forecasting load and choosing an availability level, see xref:operations:pro
 
 == Backups and disaster recovery
 
-Single-region Kubernetes resources and databases are backed up and recoverable. The persistence RPO is 5 minutes and the persistence RTO is 24 hours. Kubernetes RTO and RPO are 1 hour. Multi-region support replicates the application across regions for low-latency failover.
+Single-region Kubernetes resources and databases are backed up and recoverable. The persistence RPO is 5 minutes and the persistence RTO is 24 hours. Kubernetes RTO and RPO are 1 hour. Multi-region support replicates the application across regions for low-latency failover. Replication between regions is asynchronous, so writes that a lost region accepted and had not yet replicated are not available in the other regions.
 
-For the full recovery procedures and scenario catalogs, see the disaster-recovery pages for your model: xref:operations:production-readiness/byoc/disaster-recovery.adoc[BYOC] and xref:operations:production-readiness/byok8s/disaster-recovery.adoc[BYOK8s].
+For the full recovery procedures and scenario catalogs, see the xref:operations:production-readiness/disaster-recovery.adoc[disaster recovery scenario catalog].
 
 == Data flows
 
@@ -186,93 +182,15 @@ Akka continuously applies security patches and software upgrades to the underlyi
 
 If issues arise, Akka provides a customer support portal where cases are created and addressed per the Customer Support Policy.
 
-== Akka Optimize add-on
+== Model routing, serving and training add-on
 
-Akka Optimize is a set of infrastructure and service extensions for multi-model routing, inference for self-hosted models, training and testing small language models, and cost management. You add Optimize to an existing AAO environment. It uses the same federation and application planes, command and control, communications, security, compliance, data protection, and monitoring infrastructure that AAO already installs.
-
-=== What Akka installs for Optimize
-
-Akka installs open source infrastructure in the Kubernetes cluster that AAO uses. The installation is the same for BYOC and BYOK8s.
-
-[cols="1,3", options="header"]
-|===
-| Component | Role
-
-| vLLM
-| Hosts models and runs inference.
-
-| agentgateway
-| Routes requests across multiple models.
-
-| KubeRay
-| Runs training jobs and serves models.
-
-| NVIDIA device plugins
-| Schedules GPUs.
-
-| verl
-| Runs reinforcement learning for sharded and multi-device training runs. Also scores and grades training runs.
-|===
-
-Akka also provisions the storage account (bucket) for training. Optimize stores logs and traces of AI interactions in your hyperscaler's preferred object storage service.
-
-=== What Optimize needs from you
-
-* A GPU capacity reserve that is integrated into Akka Optimize. Your Akka team shows you how to configure it.
-* BYOK8s only: a node pool in your existing Kubernetes environment, dedicated to routing and inference.
-
-=== Models and routing
-
-You deploy a model onto GPU capacity in an Akka region. Any OpenAI-compatible client can call it, from inside an Akka project or from the internet. You can deploy three kinds of model:
-
-* A public open-weights model.
-* Your own small language model, private to you.
-* A public base model with your own low-rank adaptation (LoRA) adapter on top, served under its own name.
-
-Akka installs and manages the routing and serving components separately from the training components. Initially, a deployment gives you direct access to manage routing and inference. For how-to guides, see xref:inference:serving/getting-started.adoc[] and xref:inference:routing/index.adoc[]. Akka's team configures and manages the initial training loops with you, while Akka stabilizes the external interfaces that define and run long-running training loops.
-
-// DIAGRAM: recreated as a Mermaid diagram from the Optimize architecture drawing. Flagged for creator review.
-The diagram shows how a request reaches a model. A client outside the cluster calls the route on a host name. An agent or service inside the project calls the model endpoint by its internal name. Both requests reach the gateway, which checks the bearer key and picks the engine from the model name. The engines accept only the gateway identity.
-
-.How a request reaches a model
-[mermaid]
-----
-include::operations:partial$model-request-diagram.mmd[]
-----
-
-xref:operations:technical-overview-model-request-image.adoc[View the full-size model request diagram,role=open-image,window=_blank]
-
-=== Tools for evaluation and adversarial testing
-
-Akka provides these tools with Optimize:
-
-* evalkit, a toolkit that you download separately and that integrates with your Akka project, runs evaluation and scoring campaigns locally.
-* redkit, a toolkit that is also part of your Akka project and downloadable separately, runs adversarial testing campaigns against models.
-* Extensions to the Akka CLI manage evalkit, redkit, and your hosted Optimize environment. See xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize].
-
-For testing an agent, see xref:testing:evaluation/adversarial.adoc[].
+You can add model routing, inference for self-hosted models, training and testing of small language models, and cost management to an AAO environment. The add-on uses the same planes and infrastructure as AAO. See xref:operations:technical-overview/optimize.adoc[] for what Akka installs and what the add-on needs from you.
 
 == Where to go next
 
-Choose your deployment model and follow its setup. Each setup page ends by letting you choose your cloud.
+To choose a deployment option and find its setup, see xref:operations:index.adoc[Choose how you run Akka]. Each setup page ends by letting you choose your cloud.
 
-[cols="1,3,1", options="header"]
-|===
-| Model | What Akka does | Start here
-
-| *Dedicated*
-2+| Akka hosts and operates the region in Akka's cloud, so there is nothing for you to install or provision. When you prepare to go live, review the xref:operations:production-readiness/dedicated/checklist.adoc[Dedicated production readiness].
-
-| *BYOC*
-| Akka provisions and operates the region in your own cloud account.
-| xref:operations:technical-overview/byoc.adoc[Get started with BYOC]
-
-| *BYOK8s*
-| Akka installs and operates the platform on a cluster you provide.
-| xref:operations:technical-overview/byok8s-requirements.adoc[Get started with BYOK8s]
-|===
-
-For help deciding between models and sizing for availability and data residency, see xref:operations:production-readiness/choosing-your-environment.adoc[].
+For help sizing for availability and data residency, see xref:operations:production-readiness/choosing-your-environment.adoc[].
 
 == Moving a project between environments
 

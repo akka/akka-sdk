@@ -26,5 +26,5 @@ Apply these Azure additions to the requirements above.
 == See also
 
 * xref:operations:technical-overview/byoc-azure.adoc[BYOC on Azure]: the Azure resource inventory and identity model
-* xref:operations:production-readiness/byok8s/checklist.adoc[BYOK8s production readiness]
+* xref:operations:production-readiness/checklist.adoc[Production readiness checklist]
 * xref:operations:technical-overview/data-flows.adoc[Data flows]

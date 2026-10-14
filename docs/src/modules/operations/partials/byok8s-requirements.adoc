@@ -13,7 +13,7 @@ Once the region is running, do not change any provisioned infrastructure without
 . *Teleport*: install the Akka-provided Teleport Helm chart. Deploy it promptly: the join token has a 3-hour TTL.
 . *Installation*: Akka configures the cluster as an application-plane region and sets up platform observability. You seed database credentials into the namespaces Akka provides.
 . *Akka smoke tests*: Akka attaches the region to the Federation Plane and runs smoke tests.
-. *Region handover*: Akka assigns the region to your organization. A production-labeled region is not fully handed over until you complete the xref:operations:production-readiness/byok8s/checklist.adoc[region-readiness steps].
+. *Region handover*: Akka assigns the region to your organization. A production-labeled region is not fully handed over until you complete the xref:operations:production-readiness/checklist.adoc[region-readiness steps].
 
 [#requirements]
 == Infrastructure requirements
