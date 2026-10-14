@@ -88,7 +88,7 @@ These capabilities enable stateful services to be resilient, durable, and capabl
 
 == Next steps
 
-Now that you understand the overall architecture and deployment model of Akka you are ready to learn more about the xref:development-process.adoc[Development process]. 
+To learn how a service is built from a specification, see xref:sdk:spec-driven-development.adoc[].
 
 The following topics may also be of interest.
 

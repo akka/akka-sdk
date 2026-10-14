@@ -50,7 +50,7 @@ When the user in the primary region performs a write request image:steps-1.svg[w
 
 A user B in London, when they perform a read image:steps-4.svg[width=20], that read operation will happen locally, and a response sent immediately back image:steps-5.svg[width=20].
 
-A user can also perform write operations on entities in non-primary regions.
+A user can also perform write operations on entities in non-primary regions. In the default request-region mode, the write moves the primary of the entity to the region that received it. The following scenario uses pinned-region mode, where the primary stays in place.
 
 image:geo-b.svg[Geo data replication, width=600]
 

@@ -21,7 +21,7 @@ Use AI Agents in Akka when you need to:
 * Maintain session memory, context, and audit trails across Agent interactions.
 * Enforce cost controls, governance policies, and risk boundaries on model usage.
 
-Agents relate to other Akka components in a direct way: xref:concepts:ai-orchestration-patterns.adoc[Workflows or Autonomous Agent coordination capabilities] orchestrate Agents, xref:concepts:state-model.adoc[Entities] store the durable state Agents depend on, and xref:concepts:ai-orchestration-patterns.adoc[agent-to-agent communication] connects Agents to each other and to external systems via protocols like MCP, A2A, and ACP.
+Agents relate to other Akka components in a direct way: xref:concepts:ai-orchestration-patterns.adoc[Workflows or Autonomous Agent coordination capabilities] orchestrate Agents, xref:concepts:state-model.adoc[Entities] store the durable state Agents depend on, and xref:concepts:ai-orchestration-patterns.adoc[agent-to-agent communication] connects Agents to each other and to external systems via protocols like MCP and A2A.
 
 == Tokens and streaming
 
@@ -76,11 +76,9 @@ For more detail on orchestration, check out the xref:concepts:ai-orchestration-p
 
 == Agent evaluation
 
-The answers your agents get from models are _non-deterministic_. They can seem random at times. Since you cannot predict the model output you cannot use traditional testing practices. Instead, you need to do what is called **evaluation**. Evaluation involves iteratively refining a prompt.
+The answers your agents get from models are _non-deterministic_, so a test cannot expect one exact reply. Instead, you use **evaluation**: you run an agent through a set of eval cases and score each reply, and the tool calls the agent made, with built-in evaluators and a model judge. A gate then decides whether the results are good enough.
 
-Submit the prompt to the model and get an answer back. Then, use _another model_ to derive metrics from that response like confidence ratings. This is often called the "LLM-as-judge" pattern.
-
-Rather than a unit test, you often have entire suites of evaluation runs where you submit a large number of prompts, derive analytics and metrics from the replies, and then score the model-generated data as a whole. This is tricky because you can very easily have an evaluation run that has a high confidence score but still somehow manages to contain link:https://www.ibm.com/think/topics/ai-hallucinations[hallucinations].
+See xref:testing:evaluation/index.adoc[Evaluation] to evaluate your agents.
 
 == Foundational AI Concepts (video)
 
