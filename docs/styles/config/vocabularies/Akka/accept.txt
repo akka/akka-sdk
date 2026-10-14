@@ -421,6 +421,7 @@ roleArn
 roleplay
 Rollout
 rollout
+rollouts
 rollup
 Roo
 (?i)RPC
