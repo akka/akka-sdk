@@ -33,7 +33,7 @@ Akka installs open source infrastructure in the Kubernetes cluster that AAO uses
 | Training engine for sharded and multi-device runs.
 |===
 
-Akka also provisions the storage account (bucket) for training. The add-on stores logs and traces of AI interactions in your hyperscaler's preferred object storage service. The flows that Optimize adds are in the xref:deployment:technical-overview/data-flows.adoc[data flows].
+Akka also provisions the storage account (bucket) for training. The add-on stores logs and traces of AI interactions in your hyperscaler's preferred object storage service. The flows that Optimize adds are in the xref:deployment:technical-overview/data-flows.adoc[data flows]. The components that Optimize depends on are listed in xref:deployment:technical-overview/optimize-dependencies.adoc[Akka Optimize dependencies].
 
 == What the add-on needs from you
 
