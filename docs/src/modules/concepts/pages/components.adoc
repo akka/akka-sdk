@@ -65,7 +65,7 @@ This separation lets the runtime change how a service is executed without being 
 
 A component method returns an xref:reference:glossary.adoc#effect[`Effect`]. The effect is a declarative description of what you want Akka to do: persist these events, update this state, move to this step, reply with this value, or reject the command. An agent method, for example, returns an effect that tells the runtime to call the model with a system message and a user message, then send the model's response back to the caller. A workflow step returns an effect that updates the workflow state and names the step to transition to next.
 
-image:concepts:component-effects.png[Components return effects that the runtime executes]
+image::concepts:component-effects.svg[Components return effects that the runtime carries out,width=880]
 
 Each component type has its own Effect API, with operations that match its semantics:
 

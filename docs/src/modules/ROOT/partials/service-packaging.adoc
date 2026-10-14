@@ -8,4 +8,6 @@ Akka services self-cluster without you needing to install a service mesh. Akka c
 
 Optionally, you can deploy your agentic services into xref:operations:akka-platform.adoc[Akka Automated Operations], which provides a global control plane, multi-tenancy, multi-region operations (for compliance data pinning, failover, and disaster recovery), auto-elasticity based upon traffic load, and persistence management (memory auto-scaling).
 
-image:concepts:packed-services.png[Akka Packaging]
+To compare the ways to run Akka, see xref:operations:index.adoc[Choose how you run Akka].
+
+image::concepts:service-packaging.svg["Service packaging: one binary, any infrastructure, a self-forming cluster, and optionally Akka Automated Operations",width=880]

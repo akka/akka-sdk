@@ -12,33 +12,7 @@ The example is an expense claim. A client sends the claim to a service. A workfl
 
 == The path of the request
 
-[mermaid]
-----
-sequenceDiagram
-    participant C as Client
-    participant E as Endpoint
-    participant W as Workflow
-    participant A as Agent
-    participant G as Model gateway
-    participant M as Model
-    participant N as Entity
-    participant L as Ledger
-    participant V as Evaluator
-    C->>E: HTTP request
-    E->>W: start (component client)
-    W->>A: step calls agent
-    A->>G: model call (sanitized, guardrail checked)
-    G->>M: routed to a destination
-    M-->>A: reply asks for a tool
-    A->>N: tool call (guardrail checked) sends a command
-    N-->>A: event persisted, then replicated
-    A-->>W: reply (guardrail checked)
-    A->>L: interaction record
-    W-->>E: workflow result
-    E-->>C: HTTP response
-    L->>V: interaction to judge
-    V->>L: verdict recorded as evidence
-----
+image::concepts:request-lifecycle.svg["The path of one request in thirteen numbered steps, from the client through the workflow, agent, model gateway, model, entity and ledger to the evaluator",width=880]
 
 . *Endpoint.* An HTTP endpoint receives the claim. Endpoints are the only components that face the outside of the service, and they hold no state. The endpoint checks the caller, for example with a JSON Web Token, and the service's access control list decides whether the caller may reach it. See xref:components.adoc[] and xref:security-and-identity.adoc[].
 

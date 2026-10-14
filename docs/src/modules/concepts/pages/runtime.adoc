@@ -30,7 +30,7 @@ You do not program actors directly. Your component code is ordinary synchronous 
 
 The nodes of a service find each other at startup and form a cluster without manual setup. A new node needs a connection to any one existing node to join. A cluster has no primary node, so no single node is a bottleneck or a single point of failure. Nodes communicate over encrypted gRPC, with no message broker between them.
 
-image:concepts:akka-clustering.png[Akka clustering]
+image::concepts:akka-clustering.svg["Akka clustering: the capabilities of the cluster, sharded data and rebalancing",width=880]
 
 A cluster runs in one region. A project that spans several regions runs one cluster in each, and connects them by replication. See xref:multi-region.adoc[].
 

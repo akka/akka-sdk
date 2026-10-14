@@ -71,7 +71,7 @@ If the federation plane becomes unavailable, applications that are running conti
 
 An agentic system is a distributed system that needs a range of behaviors and infrastructure. The table maps each part of an agentic system to the Akka component that provides it.
 
-image:concepts:agentic-ai-system-anatomy.png[Anatomy of an agentic system]
+image::concepts:agentic-system-anatomy.svg["Anatomy of an agentic system: goals, controls and adaptation, with coordination, state and a registry",width=880]
 
 [cols="1,3", options="header"]
 [.compact]
@@ -98,15 +98,15 @@ You implement endpoints with the xref:sdk:http-endpoints.adoc[HTTP], xref:sdk:gr
 
 You implement goals with a multi-agent system, either an Autonomous Agent that coordinates other agents, or a planner agent in a xref:sdk:workflows.adoc[Workflow] that orchestrates the interactions between agents.
 
-|Guardians
-|Mechanisms that monitor, protect and evaluate the system against its goals and constraints.
+|Controls
+|Obligations that govern what agents may do, inline and after the interaction. A control is an obligation plus the mechanism that meets it, and there are five control types: guardrail, sanitizer, eval, human and gate.
 
-You protect and evaluate agents with guardrails, evaluators and the xref:testing:evaluation/index.adoc[agent evaluation] capabilities. See xref:governance-and-the-runtime.adoc[].
+You declare guardrails and sanitizers on the agent and bind evaluators to it. A human decision is a xref:sdk:workflows.adoc[Workflow] step that waits for a person, and a gate decides whether a build or a release proceeds. The xref:testing:evaluation/index.adoc[agent evaluation] capabilities test the same behavior before release. See xref:controls.adoc[] and xref:governance-and-the-runtime.adoc[].
 
 |Adaptation
 |Continuous streams from users or the environment that change the context, memory or knowledge an agentic system uses.
 
-You implement adaptation by processing a stream of data from external sources, with the xref:sdk:consuming-producing.adoc[Consumer] component or through streaming HTTP or gRPC endpoints. Consumers can change an agent's goals, memory or guardians to change the behavior of the system.
+You implement adaptation by processing a stream of data from external sources, with the xref:sdk:consuming-producing.adoc[Consumer] component or through streaming HTTP or gRPC endpoints. Consumers can change an agent's goals, memory or controls to change the behavior of the system.
 
 |Orchestration
 |The ability to run, persist and recover long-running tasks, made possible by xref:durable-execution.adoc[durable execution].

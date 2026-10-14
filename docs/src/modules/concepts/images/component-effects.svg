@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 240" role="img" aria-labelledby="title desc" font-family="Helvetica, Arial, sans-serif">
+  <title id="title">Components return effects that the runtime carries out</title>
+  <desc id="desc">Your component returns an effect that describes what to do, for example persist events and then reply. The Akka runtime carries the effect out, handling persistence, routing, distribution, location, caching, state transitions, replication and tracing.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffce4a"/>
+    </marker>
+  </defs>
+  <rect width="880" height="240" rx="12" fill="#111111"/>
+
+  <!-- Component -->
+  <text x="40" y="44" font-size="13" font-weight="700" fill="#ffce4a" letter-spacing="1">YOUR COMPONENT: THE WHAT</text>
+  <rect x="40" y="56" width="300" height="152" rx="8" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+  <text x="190" y="86" text-anchor="middle" font-size="14" fill="#cccccc">returns an effect</text>
+  <rect x="70" y="102" width="240" height="30" rx="5" fill="none" stroke="#ffffff"/>
+  <text x="190" y="122" text-anchor="middle" font-size="14" fill="#ffffff">persist these events</text>
+  <rect x="70" y="142" width="240" height="30" rx="5" fill="none" stroke="#ffffff"/>
+  <text x="190" y="162" text-anchor="middle" font-size="14" fill="#ffffff">then reply to the caller</text>
+  <text x="190" y="196" text-anchor="middle" font-size="13" fill="#cccccc">a description, not the work itself</text>
+
+  <!-- Delegation -->
+  <line x1="344" y1="132" x2="402" y2="132" stroke="#ffce4a" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="373" y="120" text-anchor="middle" font-size="13" fill="#ffce4a">delegates</text>
+
+  <!-- Runtime -->
+  <text x="410" y="44" font-size="13" font-weight="700" fill="#ffce4a" letter-spacing="1">THE AKKA RUNTIME: THE HOW</text>
+  <rect x="410" y="56" width="430" height="152" rx="8" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+  <g font-size="14" font-weight="700" fill="#111111" text-anchor="middle">
+    <rect x="430" y="76" width="92" height="28" rx="4" fill="#ffce4a"/><text x="476" y="95">persistence</text>
+    <rect x="530" y="76" width="92" height="28" rx="4" fill="#ffce4a"/><text x="576" y="95">routing</text>
+    <rect x="630" y="76" width="92" height="28" rx="4" fill="#ffce4a"/><text x="676" y="95">distribution</text>
+    <rect x="730" y="76" width="92" height="28" rx="4" fill="#ffce4a"/><text x="776" y="95">location</text>
+    <rect x="430" y="114" width="92" height="28" rx="4" fill="#ffce4a"/><text x="476" y="133">caching</text>
+    <rect x="530" y="114" width="92" height="28" rx="4" fill="#ffce4a"/><text x="576" y="133">transitions</text>
+    <rect x="630" y="114" width="92" height="28" rx="4" fill="#ffce4a"/><text x="676" y="133">replication</text>
+    <rect x="730" y="114" width="92" height="28" rx="4" fill="#ffce4a"/><text x="776" y="133">tracing</text>
+  </g>
+  <text x="625" y="178" text-anchor="middle" font-size="13" fill="#cccccc">carried out by the runtime, which can change</text>
+  <text x="625" y="196" text-anchor="middle" font-size="13" fill="#cccccc">without changes to your code</text>
+</svg>

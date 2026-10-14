@@ -56,13 +56,13 @@ This is the simplest and most coherent pattern: one thread of reasoning runs thr
 
 *Fixed pipeline.* When the order is known at development time, a workflow calls the agents one after another and passes each output to the next agent's input.
 
-image:ai_orch_sequential.jpg[Sequential orchestration: a workflow calls agents in a fixed order]
+image::ai_orch_sequential.jpg["Sequential orchestration: a workflow calls agents in a fixed order",width=720]
 
 A fixed pipeline suits multi-step processes with clear linear dependencies that do not change between runs, steps that cannot run concurrently, and data transformation pipelines, though if the work is only data transformation, agents and models may not be needed. Avoid it when steps can run in parallel without downstream dependencies, when you might branch or short-circuit based on the results of single steps, or when the interaction between agents is collaboration rather than handing work along. The xref:getting-started:planner-agent/team.adoc[agent team tutorial] shows a workflow with fixed steps that calls agents in sequence.
 
 *Handoff.* When the plan is not known until the input arrives, an agent defers the work to whichever agent fits it. Choosing which agents take part is part of the planning.
 
-image:ai_orch_handoff.jpg[Handoff orchestration: work moves to the agent best suited to it]
+image::ai_orch_handoff.jpg["Handoff orchestration: work moves to the agent best suited to it",width=720]
 
 An Autonomous Agent implements handoff as a capability. The agent declares the peers it can hand off to, and the runtime offers the model a handoff tool. When the model hands off, ownership of the task moves to the next agent and the first agent steps back. The durability, retries and record come from the runtime, not from agent code. The `support` sample in the {sample-base-url}/autonomous-agent-playground[autonomous agent playground, window="new"] shows a triage agent that classifies a customer request and hands off to a billing or technical specialist.
 
@@ -91,13 +91,13 @@ Use delegation when a task decomposes into distinct subtasks that benefit from f
 
 *Concurrent workers.* A workflow step starts several agents at once and collects their results before the next step. The workflow decides which agents are needed, and the runtime provisions them; agents do not start sub-agents of their own.
 
-image:ai_arch_concurrent.jpg[Concurrent orchestration: a workflow runs agents in parallel and collects their results]
+image::ai_arch_concurrent.jpg["Concurrent orchestration: a workflow runs agents in parallel and collects their results",width=720]
 
 For larger work, a parent workflow starts child workflows. Each child performs a multi-step task and delivers its result to the parent as a message. The parent pauses while it waits, stores the results in its state, and moves to its next step when it has what it needs. The runtime handles the distributed state, the long-running timers and the recovery of each workflow. When the coordinator is an Autonomous Agent, the delegation capability configured for parallel workers does the same: the model picks which workers to start, and the runtime runs them concurrently and gathers their results into the coordinator's context. See xref:sdk:workflows.adoc[Workflows] for concurrent steps.
 
 *Dynamic planning (magentic).* For open-ended problems without a predetermined plan, a model creates the plan, decides the next step, evaluates the results and decides when the goal is met. Agents in this pattern often have access to tools.
 
-image:ai_orch_magentic.jpg[Magentic orchestration: a model plans and directs the workers]
+image::ai_orch_magentic.jpg["Magentic orchestration: a model plans and directs the workers",width=720]
 
 Either supervisor works. With a workflow supervisor, the model influences what happens, and the workflow makes sure it happens reliably, with durable steps and retries. With an Autonomous Agent coordinator that delegates, the model picks the next worker and the runtime persists the task, retries failures and bounds the number of iterations. When the supervisor coordinates everything and agents stay small, the individual patterns matter less: to change how agents are used, you change the planning agent, a little workflow logic or the coordinator's declaration, not the agents. The xref:getting-started:planner-agent/dynamic-team.adoc[planner agent tutorial] shows an Autonomous Agent coordinator that delegates to worker agents.
 
@@ -124,7 +124,7 @@ Use collaboration when subtasks are interdependent and agents need to see each o
 
 *Shared sessions.* This pattern is often called group chat, where a chat manager coordinates agents in a shared discussion. The name can mislead: the general form is a shared session, in which several agents have different levels of access to a common conversation history. Some agents can only read the history, some can only write to it, and some do both. A shared session can be applied to any of the patterns on this page.
 
-image:ai_orch_chat.jpg[Group chat orchestration: agents work in a shared session]
+image::ai_orch_chat.jpg["Group chat orchestration: agents work in a shared session",width=720]
 
 In a typical example, a parent workflow calls a planner agent, which asks a model for an execution plan and returns it as structured data. The workflow follows the plan and delegates to agents and child workflows, and all of them use one shared session when they build context for the model. A caller joins an agent to a session through the `inSession` option of the component client. The xref:getting-started:ask-akka-agent/index.adoc[Ask Akka agent tutorial] and its {sample-base-url}/ask-akka-agent[sample, window="new"] use explicit sessions in this way.
 

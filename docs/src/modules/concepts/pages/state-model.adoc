@@ -81,7 +81,7 @@ An entity also has a *primary region*: the region that accepts its writes. At fi
 
 The Event Sourced state model captures changes to data by storing events in a journal. The current entity state is derived from the events. Other components can read the journal and turn the stream of events into read models (views), or perform business actions based on the events.
 
-image:event-sourced-entity-flow.svg[Event Sourced Entity flow]
+image::event-sourced-entity-flow.svg[Event Sourced Entity flow,width=640]
 
 A client sends a request to an endpoint image:steps-1.svg[width=20]. The endpoint handles the request and sends a command to the appropriate Event Sourced Entity image:steps-2.svg[width=20]. The entity's ID comes from the request or from logic in the endpoint.
 
@@ -102,7 +102,7 @@ An entity that persists many events would take longer and longer to recover if A
 
 In the Key Value state model, only the current state of the entity is persisted: its value. Akka caches the state to minimize access to the data store. Other components can subscribe to the state changes of a Key Value Entity and act on them.
 
-image:key-value-entity-flow.svg[Key Value Entity flow]
+image::key-value-entity-flow.svg[Key Value Entity flow,width=640]
 
 A client sends a request to an endpoint image:steps-1.svg[width=20]. The endpoint handles the request and sends a command to the appropriate Key Value Entity image:steps-2.svg[width=20]. The entity's ID comes from the request or from logic in the endpoint.
 

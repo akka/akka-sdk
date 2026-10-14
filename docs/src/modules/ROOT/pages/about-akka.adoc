@@ -18,7 +18,7 @@ They share one definition of an AI system, one runtime, one ledger and one gover
 
 Akka, formerly Lightbend, has run distributed systems in production since 2007. The open-source Akka actor library for the JVM is the lineage of the platform. The platform is a separate product, and this documentation describes the platform.
 
-image::akka-agentic-ai-platform.svg[The Akka Agentic AI Platform: Akka Specify and Akka Verify define and govern, Akka SDK builds and runs, Akka Optimize provides models and compute,width=760]
+image::akka-agentic-ai-platform.svg["The Akka Agentic AI Platform: Akka Specify and Akka Verify define and govern, Akka SDK builds and runs, Akka Optimize provides models and compute",width=760]
 
 == The four solutions
 

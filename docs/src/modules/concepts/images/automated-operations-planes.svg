@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 460" role="img" aria-labelledby="title desc" font-family="Helvetica, Arial, sans-serif">
+  <title id="title">Federation plane and application planes</title>
+  <desc id="desc">Your team of developers, operators, CI/CD pipelines and security staff works with two planes. The federation plane handles accounts, billing, region management and multi-region coordination. It syncs users, projects, roles and keys to the application planes, one in each region. Each application plane runs your services and agents, routes and secrets, with mutual TLS between regions and replication of state. End users reach your services through your routes. Your data, secrets and traffic stay in your regions.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#cccccc"/>
+    </marker>
+    <marker id="arrowy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffce4a"/>
+    </marker>
+  </defs>
+  <rect width="880" height="460" rx="12" fill="#111111"/>
+
+  <!-- Your team -->
+  <text x="40" y="44" font-size="13" font-weight="700" fill="#ffce4a" letter-spacing="1">YOUR TEAM</text>
+  <rect x="40" y="56" width="160" height="294" rx="8" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+  <g font-size="15" fill="#ffffff" text-anchor="middle">
+    <text x="120" y="160">developers</text>
+    <text x="120" y="186">operators</text>
+    <text x="120" y="212">CI/CD pipelines</text>
+    <text x="120" y="238">security</text>
+  </g>
+
+  <!-- Federation plane -->
+  <text x="250" y="44" font-size="13" font-weight="700" fill="#ffce4a" letter-spacing="1">FEDERATION PLANE</text>
+  <rect x="250" y="56" width="400" height="104" rx="8" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+  <g font-size="14" fill="#ffffff">
+    <text x="274" y="90">accounts and billing</text>
+    <text x="274" y="116">region management</text>
+    <text x="274" y="142">multi-region coordination</text>
+  </g>
+  <text x="626" y="90" text-anchor="end" font-size="13" fill="#cccccc">one, global</text>
+
+  <!-- Sync between planes -->
+  <line x1="450" y1="162" x2="450" y2="206" stroke="#ffce4a" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrowy)"/>
+  <text x="464" y="182" font-size="13" fill="#ffce4a">syncs users, projects,</text>
+  <text x="464" y="199" font-size="13" fill="#ffce4a">roles and keys</text>
+
+  <!-- Application planes -->
+  <text x="250" y="226" font-size="13" font-weight="700" fill="#ffce4a" letter-spacing="1">APPLICATION PLANES, ONE PER REGION</text>
+  <rect x="250" y="238" width="400" height="112" rx="8" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+  <g font-size="14" fill="#ffffff">
+    <text x="274" y="266">your services and agents</text>
+    <text x="274" y="290">routes and secrets</text>
+    <text x="274" y="314">mTLS between regions</text>
+    <text x="274" y="338">replication of state</text>
+  </g>
+  <g font-size="13" fill="#ffffff" text-anchor="middle">
+    <rect x="510" y="254" width="120" height="24" rx="4" fill="none" stroke="#cccccc"/><text x="570" y="271">region 1</text>
+    <rect x="510" y="284" width="120" height="24" rx="4" fill="none" stroke="#cccccc"/><text x="570" y="301">region 2</text>
+    <rect x="510" y="314" width="120" height="24" rx="4" fill="none" stroke="#cccccc"/><text x="570" y="331">region 3</text>
+  </g>
+
+  <!-- Team to planes -->
+  <line x1="202" y1="108" x2="246" y2="108" stroke="#cccccc" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="202" y1="294" x2="246" y2="294" stroke="#cccccc" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="224" y="98" text-anchor="middle" font-size="13" fill="#cccccc">manage</text>
+  <text x="224" y="284" text-anchor="middle" font-size="13" fill="#cccccc">deploy</text>
+
+  <!-- Stays in your regions -->
+  <text x="690" y="226" font-size="13" font-weight="700" fill="#ffce4a" letter-spacing="1">IN YOUR REGIONS</text>
+  <rect x="690" y="238" width="150" height="112" rx="8" fill="#1f1f1f" stroke="#ffce4a" stroke-width="2"/>
+  <g font-size="14" fill="#ffffff" text-anchor="middle">
+    <text x="765" y="276">your data</text>
+    <text x="765" y="302">your secrets</text>
+    <text x="765" y="328">your traffic</text>
+  </g>
+  <line x1="688" y1="294" x2="654" y2="294" stroke="#ffce4a" stroke-width="2" stroke-dasharray="5 4"/>
+
+  <!-- End users -->
+  <rect x="250" y="400" width="400" height="40" rx="8" fill="#1f1f1f" stroke="#cccccc" stroke-width="1.5"/>
+  <text x="450" y="425" text-anchor="middle" font-size="15" fill="#ffffff">your end users</text>
+  <line x1="450" y1="398" x2="450" y2="354" stroke="#cccccc" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="464" y="381" font-size="13" fill="#cccccc">through your routes</text>
+</svg>
