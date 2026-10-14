@@ -7,6 +7,12 @@ include::ROOT:partial$include.adoc[]
 
 Erasing a caller removes the identifier that Akka holds for a caller of your models. Run it to answer a request to delete an identifier that can be tied to a person, such as an IP address. Every spend figure stays the same after an erasure.
 
+== Before you begin
+
+include::partial$portfolio-service-address.adoc[]
+
+Erasing a caller, including a dry run, needs delete access to the Akka Optimize portfolio.
+
 == Callers
 
 A caller is the identifier that spend figures are attributed to, together with the source that named it. That source is the basis:
@@ -18,7 +24,7 @@ The same value under the two bases is two different callers.
 
 To find the callers in a period, divide its spend by caller. See xref:inference:tracking-spend.adoc#read-spend[Read spend for a period].
 
-[source,command line]
+[source,shell]
 ----
 akka optimize spend get --from 2026-09-15T00:00:00Z --to 2026-09-16T00:00:00Z --by caller
 ----
@@ -40,17 +46,11 @@ The service also removes a caller by itself once every record that names it has 
 
 An erasure cannot be undone. Nothing records which value was erased, and the service does not write the value to its logs.
 
-== Before you begin
-
-include::partial$portfolio-service-address.adoc[]
-
-Erasing a caller, including a dry run, needs delete access to the Akka Optimize portfolio.
-
 == Erase a caller
 
 . Check what the erasure reaches:
 +
-[source,command line]
+[source,shell]
 ----
 akka optimize callers erase 203.0.113.7 --basis forwarded --dry-run
 ----
@@ -69,7 +69,7 @@ Dry run: "203.0.113.7" under basis forwarded is held and would be erased. Nothin
 
 . Erase it:
 +
-[source,command line]
+[source,shell]
 ----
 akka optimize callers erase 203.0.113.7 --basis forwarded
 ----

@@ -1,11 +1,11 @@
 = Tracking inference spend
-:page-summary: Inference spend is what model traffic in a period consumed and cost, computed from recorded exchanges and priced from a versioned pricing catalog.
+:page-summary: Inference spend is the cost of the model traffic in a period and the tokens it consumed, computed from recorded exchanges and priced from a versioned pricing catalog.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 
-Inference spend is what the model traffic in a period consumed and cost. Akka computes it from the exchanges that the gateway router recorded, and prices each exchange at the rate that was in force when it was served. No figure is estimated or entered by hand.
+Inference spend is the cost of the model traffic in a period, together with the tokens that traffic consumed. Akka computes it from the exchanges that the gateway router recorded, and prices each exchange at the rate that was in force when it was served. No figure is estimated or entered by hand.
 
 Two command groups work together. `akka optimize pricing-catalog` publishes the prices, and `akka optimize spend` reads the figures computed from them. Publish a price for every model before you read spend for its traffic: an exchange that has no price counts in the token totals but not in the spend.
 
@@ -13,14 +13,14 @@ Two command groups work together. `akka optimize pricing-catalog` publishes the 
 
 include::partial$portfolio-service-address.adoc[]
 
-Reading prices and spend needs read access to the Akka Optimize portfolio. Publishing prices needs write access.
+Reading prices and spend needs read access to the Akka Optimize portfolio. Dividing spend by caller and listing conversations also need read access to callers. Publishing prices needs write access.
 
 Spend has figures only for traffic that the gateway router recorded. Traffic that was not recorded does not appear. See xref:inference:routing.adoc[Routing requests to models] for how requests reach the gateway router.
 
 [#publish-prices]
 == Publish prices
 
-The pricing catalog holds the price of each model as rates per million tokens. Each price applies to a served name: the model name that a response reports, which is the name a client sends. See xref:inference:serving/exposing-and-calling-models.adoc[Exposing and calling models] for how served names are set.
+The pricing catalog holds the price of each model as rates per million tokens. Each price applies to a served name: the model name that a response reports. See xref:inference:serving/exposing-and-calling-models.adoc[Exposing and calling models] for how served names are set.
 
 The catalog is versioned. A published version is never edited, so a figure computed under a price stays the same when you read it again. To change a price, publish a new version that takes effect later.
 
@@ -76,7 +76,7 @@ A catalog document is JSON:
 | `true` when your organization set the rate, for example a negotiated rate. `false` for a list price.
 
 | `currency`
-| An upper-case ISO 4217 code, such as `USD`. The catalog holds one currency. A document that introduces a second currency is refused.
+| Required. An upper-case ISO 4217 code, such as `USD`. The catalog holds one currency. A document that introduces a second currency is refused.
 
 | `input`, `output`
 | Required. The rate per million input and output tokens.
@@ -93,7 +93,7 @@ A version can price some served names and leave out others. The served names tha
 
 Check a document without publishing it:
 
-[source,command line]
+[source,shell]
 ----
 akka optimize pricing-catalog apply -f catalog.json --dry-run
 ----
@@ -102,7 +102,7 @@ The service validates the document and states the version it would publish. Noth
 
 Publish it:
 
-[source,command line]
+[source,shell]
 ----
 akka optimize pricing-catalog apply -f catalog.json
 ----
@@ -115,7 +115,7 @@ A document that the service refuses is not published, and the error names what i
 
 Read the version in force now:
 
-[source,command line]
+[source,shell]
 ----
 akka optimize pricing-catalog get
 ----
@@ -135,7 +135,7 @@ A class with no price shows `—`. Pass `--at` with an ISO-8601 instant to read 
 
 `get` shows one version: the latest one in force at that instant. If that version priced only some served names, the prices that earlier versions set for the other names still apply, but `get` does not show them. List the versions to see them all:
 
-[source,command line]
+[source,shell]
 ----
 akka optimize pricing-catalog versions list
 ----
@@ -145,14 +145,14 @@ The list is newest first.
 [#read-spend]
 == Read spend for a period
 
-A period is a window of whole UTC hours. `--from` is inclusive and `--to` is exclusive. The service refuses a window that is not whole hours, or that ends before it starts.
+A period is a window of whole UTC hours. `--from` is inclusive and `--to` is exclusive. The service refuses a window that is not whole hours, or whose end is not after its start.
 
-[source,command line]
+[source,shell]
 ----
 akka optimize spend get --from 2026-09-15T16:00:00Z --to 2026-09-15T17:00:00Z
 ----
 
-The answer gives the number of exchanges, the tokens, the spend, and what is unpriced. It also states whether the period is complete. A period that is still running, or that has exchanges the recording missed, is reported as incomplete.
+The answer gives the number of exchanges, the tokens, the spend, and what is unpriced. It also states whether the figures are complete: `complete`, `incomplete` when the recording missed exchanges in the period, or `unknown` when the service cannot tell yet, for example for an hour that is still running.
 
 Money is reported with the digits that the service computed. A figure that has no value says why, and never reads as zero.
 
@@ -160,7 +160,7 @@ Money is reported with the digits that the service computed. A figure that has n
 
 Pass `--by` to divide the period into rows. The rows always add up to the total.
 
-[source,command line]
+[source,shell]
 ----
 akka optimize spend get --from 2026-09-15T16:00:00Z --to 2026-09-15T17:00:00Z --by model
 ----
@@ -199,11 +199,11 @@ A `+` after a token count marks a lower bound: some exchanges did not report eve
 
 An exchange is unpriced when no price covers every token class that it used. It counts in the exchanges and tokens, and not in the spend. When a period has unpriced traffic, the answer names each served name that caused it and whether it has no price or is missing the rate for a class. Publish a catalog version that adds the price or the missing rate.
 
-A price applies to traffic served after it takes effect. Traffic served shortly after a publish can still be priced at the previous rate, and is not priced again later. Publish prices with an `effectiveAt` before the traffic they are for.
+An exchange is priced once, when it is served, and is not priced again later. Traffic served soon after a publish can still be priced at the previous rate, and a new price cannot take effect earlier than the latest price for the same served name. Publish a price before the traffic it is for is served.
 
 === Compare two periods
 
-[source,command line]
+[source,shell]
 ----
 akka optimize spend compare --from 2026-09-15T16:00:00Z --to 2026-09-15T17:00:00Z \
   --against-from 2026-09-14T16:00:00Z --against-to 2026-09-14T17:00:00Z --by model
@@ -213,7 +213,7 @@ The answer gives the tokens and spend for each period, and the difference betwee
 
 === Find the most expensive conversations
 
-[source,command line]
+[source,shell]
 ----
 akka optimize spend conversations list --from 2026-09-15T00:00:00Z --to 2026-09-16T00:00:00Z
 ----
