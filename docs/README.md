@@ -64,6 +64,16 @@ xref:operations:technical-overview/data-flows-grid.adoc[View the full data flows
 
 For a large diagram, keep it on the regular page and add a full-width page with `:page-layout: dense`, `:page-breadcrumb:`, and `:page-return-to:` set to the regular page's relative HTML path. Use `[.dense-image]` on an image block or `[mermaid.dense-mermaid]` on a Mermaid block. Link to it with `role=open-image,window=_blank`. The close control returns to `:page-return-to:` if the tab cannot close. [technical-overview-image.adoc](src/modules/operations/pages/technical-overview-image.adoc) and [technical-overview-model-request-image.adoc](src/modules/operations/pages/technical-overview-model-request-image.adoc) are examples.
 
+## White paper PDFs
+
+`make whitepapers` renders the built technical overview pages into PDFs under `operations/_attachments/whitepapers/`. The script is `docs/bin/whitepaper/render-pdf.mjs`, and the print style is `docs/bin/whitepaper/print.css`. The prod build runs it as `make whitepapers-ci`.
+
+- The A4 PDFs are the full overview (`aao-technical-overview-full.pdf`) and one runbook for each model and cloud (`aao-byoc-aws.pdf`, `aao-byok8s-azure.pdf`, and so on). Each has a cover, one footer and page numbering for the whole file, bookmarks from the headings, and no blank pages.
+- Pages that use the `dense` layout (full-screen grids) are wide. They are not in the A4 PDFs. They are in one shared wide PDF, `aao-data-flows.pdf`, and the A4 PDFs say so where the grid link was.
+- Nothing in the docs links to the PDFs.
+
+To add a technical overview page to a PDF, add it to `DOWNLOADS` in `render-pdf.mjs`. To keep it out of every PDF, add it to `NOT_IN_PDF`. The script warns about a page that is in neither list, and `make whitepapers-ci` fails.
+
 ## Maintaining `llms.txt` for AI coding assistants
 
 To help AI coding assistants like Cursor and Qodo make use of the documentation, we publish the docs in a markdown format that is easier to process. The index file is published to https://doc.akka.io/llms.txt.
