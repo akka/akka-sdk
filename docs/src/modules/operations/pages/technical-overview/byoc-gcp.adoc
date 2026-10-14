@@ -13,11 +13,6 @@ include::ROOT:partial$include.adoc[]
 
 This page covers running Akka Automated Operations (AAO) on GCP. For the architecture and concepts, start with the xref:operations:technical-overview.adoc[technical overview].
 
-[NOTE]
-====
-Download link:../_attachments/whitepapers/aao-byoc-gcp.pdf[BYOC on GCP as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
-====
-
 // DIAGRAM: recreated as a themed SVG from the akka-bootstrap modules/google model and the whitepaper style. Flagged for creator review.
 The architecture Akka provisions into your GCP project, with a VPC network, GKE, Cloud SQL, and the supporting services below.
 
