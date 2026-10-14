@@ -78,6 +78,7 @@ import akka.javasdk.http.HttpClientProvider
 import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
+import akka.javasdk.impl.ComponentDescriptorFactory.consumerStartFrom
 import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.SdkRunner.extractSpiSettings
 import akka.javasdk.impl.SpiffeContextImpl
@@ -1154,8 +1155,8 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor)): @nowarn(
-            "msg=deprecated"))
+            protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor),
+            startFrom = consumerStartFrom(consumerClass)))
 
       case clz if Reflect.isAutonomousAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)
