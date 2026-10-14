@@ -44,7 +44,7 @@ An erasure does not change the following:
 
 The service also removes a caller by itself once every record that names it has expired.
 
-An erasure cannot be undone. Nothing records which value was erased, and the service does not write the value to its logs.
+An erasure cannot be undone. Nothing records which value was erased, and the erasure does not write the value to the service logs.
 
 == Erase a caller
 
