@@ -971,6 +971,12 @@ class GuardrailProviderSpec
               category = MODEL_POLICY
               report-only = true
             }
+            "fail-open guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$EchoingResponseGuard"
+              agents = ["fail-open-agent"]
+              category = MODEL_POLICY
+              fail-mode = fail-open
+            }
           }
         """)
         .withFallback(config)
@@ -982,6 +988,7 @@ class GuardrailProviderSpec
       error("blocking-agent", streaming = true) shouldBe defined
       error("blocking-agent", streaming = false) shouldBe empty
       error("report-only-agent", streaming = true) shouldBe empty
+      error("fail-open-agent", streaming = true) shouldBe defined
       error("unguarded-agent", streaming = true) shouldBe empty
     }
 
@@ -1663,6 +1670,28 @@ class GuardrailProviderSpec
 
       val spiGuardrail = provider.agentGuardrails("tool-agent", role = None).toolCallGuardrails("some-tool").head
       spiGuardrail.settings.failMode shouldBe SpiGuardrail.FailMode.FailOpen
+    }
+
+    "pass the fail mode of a ModelCallSimilarityGuard" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "open similarity guard" {
+              class = "akka.javasdk.agent.ModelCallSimilarityGuard"
+              agents = ["similarity-agent"]
+              category = JAILBREAK
+              fail-mode = fail-open
+              threshold = 0.8
+              bad-examples-resource-dir = "guardrail/jailbreak"
+            }
+          }
+        """)
+        .withFallback(config)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      val g = provider.agentGuardrails("similarity-agent", role = None)
+      val spiGuard = g.guardrails.modelCallGuardrails.head.asInstanceOf[SpiGuardrail.SimilarityGuard]
+      spiGuard.settings.failMode shouldBe SpiGuardrail.FailMode.FailOpen
     }
 
     "warn from validate when a report-only guardrail defines fail-mode" in {
