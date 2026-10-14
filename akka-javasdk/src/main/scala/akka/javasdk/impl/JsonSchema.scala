@@ -33,6 +33,8 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.PropertyNamingStrategies
+import com.fasterxml.jackson.databind.annotation.JsonNaming
 import com.google.protobuf.Descriptors
 import com.google.protobuf.GeneratedMessageV3
 import org.slf4j.LoggerFactory
@@ -177,14 +179,10 @@ private[impl] object JsonSchema {
 
             case _ =>
               // Note: for now the top level can only be a class
-              val properties = jsonProperties(clazz).map { case (name, field) =>
-                val description = field.getAnnotation(classOf[Description]) match {
-                  case null       => None
-                  case annotation => Some(annotation.value())
-                }
-
+              val properties = jacksonFields(clazz).map { case (name, field) =>
+                val description = Option(field.getAnnotation(classOf[Description])).map(_.value())
                 name -> jsonSchemaTypeFor(field.getGenericType, description, seenTypes + clazz)
-              }.toMap
+              }
 
               val jsObjectSchema = new JsonSchemaObject(
                 description = description,
@@ -202,19 +200,30 @@ private[impl] object JsonSchema {
     }
   }
 
-  /**
-   * The fields that the SDK Jackson configuration serializes, by JSON property name: instance fields, including fields
-   * inherited from non-JDK superclasses, minus ignored fields.
-   */
-  private def jsonProperties(clazz: Class[_]): Vector[(String, Field)] = {
+  // The fields Jackson maps for a class, by JSON property name, mirroring JsonSerializer.newObjectMapperWithDefaults
+  // (field visibility ANY). Jackson walks superclasses up to Object, here the walk stops at the first java.* class so
+  // that JDK internals such as Throwable.detailMessage stay out of schemas. The class itself is always included, also
+  // when it is a java.* class.
+  private def jacksonFields(clazz: Class[_]): Map[String, Field] = {
     val classes = Iterator
       .iterate[Class[_]](clazz)(_.getSuperclass)
       .takeWhile(c => c != null && (c == clazz || !c.getName.startsWith("java.")))
       .toVector
+    def nearestAnnotation[A <: Annotation](annotationClass: Class[A]): Option[A] =
+      classes.iterator.map(_.getAnnotation(annotationClass)).find(_ != null)
+
+    // Jackson applies the naming strategy to implicit names only, explicit @JsonProperty names are kept as is
+    val namingStrategy = nearestAnnotation(classOf[JsonNaming]).map(_.value().getDeclaredConstructor().newInstance())
+    def implicitName(field: Field): String = namingStrategy match {
+      case Some(base: PropertyNamingStrategies.NamingBase) => base.translate(field.getName)
+      case Some(other)                                     => other.nameForField(null, null, field.getName)
+      case None                                            => field.getName
+    }
     val ignoredNames = classes.flatMap { c =>
       Option(c.getAnnotation(classOf[JsonIgnoreProperties])).toSeq.flatMap(_.value())
     }.toSet
 
+    // base class first, so that a subclass field shadowing a superclass field wins, as it does in Jackson
     classes.reverse
       .flatMap(_.getDeclaredFields)
       .filterNot { field =>
@@ -223,10 +232,11 @@ private[impl] object JsonSchema {
         Option(field.getAnnotation(classOf[JsonIgnore])).exists(_.value())
       }
       .map { field =>
-        val name = Option(field.getAnnotation(classOf[JsonProperty])).map(_.value()).filter(_.nonEmpty)
-        name.getOrElse(field.getName) -> field
+        val explicitName = Option(field.getAnnotation(classOf[JsonProperty])).map(_.value()).filter(_.nonEmpty)
+        explicitName.getOrElse(implicitName(field)) -> field
       }
       .filterNot { case (name, _) => ignoredNames(name) }
+      .toMap
   }
 
   private def protobufFieldToJsonSchema(field: Descriptors.FieldDescriptor): JsonSchemaDataType = {

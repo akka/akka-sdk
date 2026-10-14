@@ -23,7 +23,6 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
-import com.fasterxml.jackson.databind.JsonNode
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -205,31 +204,39 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
       result.required shouldEqual Seq("required")
     }
 
-    "only include the fields that Jackson serializes, by JSON property name" in {
-      val mapper = JsonSerializer.newObjectMapperWithDefaults()
+    "extract schema with only the fields Jackson maps" in {
+      val mapper = JsonSerializer.internalObjectMapper
       val models = new JsonSchemaJacksonModels
-      val examples: Seq[AnyRef] = Seq(
-        new JsonSchemaJacksonModels.WithStaticField("name"),
-        new JsonSchemaJacksonModels.WithJacksonAnnotations("name", "secret", 42),
-        new JsonSchemaJacksonModels.WithIgnoredProperties("name", "internal"),
-        new JsonSchemaJacksonModels.WithTransientField,
-        new JsonSchemaJacksonModels.SubClass,
-        new models.InnerClass)
+      val examples: Seq[(AnyRef, Set[String])] = Seq(
+        new JsonSchemaJacksonModels.WithStaticField("name") -> Set("name"),
+        new JsonSchemaJacksonModels.WithJacksonAnnotations("name", "secret", 42) -> Set("full_name", "age"),
+        new JsonSchemaJacksonModels.WithIgnoredProperties("name", "internal") -> Set("name"),
+        new JsonSchemaJacksonModels.WithNamingStrategy("first", "last") -> Set("first_name", "explicit"),
+        new JsonSchemaJacksonModels.WithTransientField -> Set("name"),
+        new JsonSchemaJacksonModels.SubClass -> Set("baseField", "subField"),
+        new JsonSchemaJacksonModels.ShadowSub -> Set("name"),
+        new models.InnerClass -> Set("name"))
 
-      examples.foreach { example =>
+      examples.foreach { case (example, expectedNames) =>
         withClue(example.getClass.getSimpleName) {
           val schema = JsonSchema.jsonSchemaFor(example.getClass).asInstanceOf[JsonSchemaObject]
-          val serializedNames = mapper.valueToTree[JsonNode](example).fieldNames().asScala.toSet
-          schema.properties.keySet shouldEqual serializedNames
-          schema.required.toSet shouldEqual serializedNames
+          schema.properties.keySet shouldEqual expectedNames
+          schema.required.toSet shouldEqual expectedNames
+
+          // the same names in both directions of the SDK Jackson configuration
+          val json = mapper.writeValueAsString(example)
+          mapper.readTree(json).fieldNames().asScala.toSet shouldEqual expectedNames
+          // Jackson cannot construct a non-static inner class as a root value
+          if (!example.isInstanceOf[models.InnerClass]) {
+            val readBack = mapper.readValue(json, example.getClass)
+            mapper.readTree(mapper.writeValueAsString(readBack)) shouldEqual mapper.readTree(json)
+          }
         }
       }
 
-      JsonSchema
-        .jsonSchemaFor(classOf[JsonSchemaJacksonModels.WithJacksonAnnotations])
-        .asInstanceOf[JsonSchemaObject]
-        .properties
-        .keySet shouldEqual Set("full_name", "age")
+      val shadowSchema =
+        JsonSchema.jsonSchemaFor(classOf[JsonSchemaJacksonModels.ShadowSub]).asInstanceOf[JsonSchemaObject]
+      shadowSchema.properties("name") shouldEqual Schema.string()
     }
 
     "use object for types causing exceptions" in {

@@ -7,8 +7,11 @@ package akka.javasdk.impl;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
-public class JsonSchemaJacksonModels {
+// a class rather than nested in SomeToolInput, an interface cannot host the non-static InnerClass
+class JsonSchemaJacksonModels {
 
   public record WithStaticField(String name) {
     public static final String CONSTANT = "constant";
@@ -31,6 +34,18 @@ public class JsonSchemaJacksonModels {
 
   public static class SubClass extends BaseClass {
     public String subField = "sub";
+  }
+
+  @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+  public record WithNamingStrategy(String firstName, @JsonProperty("explicit") String lastName) {}
+
+  public static class ShadowBase {
+    private int name = 1;
+  }
+
+  // the subclass field wins over the shadowed superclass field
+  public static class ShadowSub extends ShadowBase {
+    private String name = "sub";
   }
 
   // a non-static inner class has a synthetic field referencing the outer instance
