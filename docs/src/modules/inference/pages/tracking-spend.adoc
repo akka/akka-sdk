@@ -152,7 +152,11 @@ A period is a window of whole UTC hours. `--from` is inclusive and `--to` is exc
 akka optimize spend get --from 2026-09-15T16:00:00Z --to 2026-09-15T17:00:00Z
 ----
 
-The answer gives the number of exchanges, the tokens, the spend, and what is unpriced. It also states whether the figures are complete: `complete`, `incomplete` when some exchanges in the period are missing from the figures, or `unknown` when the service cannot tell yet, for example for an hour that is still running.
+The answer gives the number of exchanges, the tokens, the spend, and what is unpriced. It also states whether the figures are complete:
+
+* `complete`: every hour of the window has been reported on, and no exchange was lost.
+* `incomplete`: some hours have not been reported on yet, for example because the window includes the current hour, or some exchanges were lost.
+* `unknown`: no hour of the window has been reported on yet.
 
 Money is reported with the digits that the service computed. A figure that has no value says why, and never reads as zero.
 
@@ -200,7 +204,7 @@ A `+` after a token count marks a lower bound: some exchanges did not report eve
 
 An exchange is unpriced when no price covers every token class that it used. It counts in the exchanges and tokens, and not in the spend. When a period has unpriced traffic, the answer names each served name that caused it and whether it has no price or is missing the rate for a class. Publish a catalog version that adds the price or the missing rate. The new price applies to traffic served after it takes effect. Traffic that was already recorded stays unpriced.
 
-The rate that applies to an exchange is the one in force when it was served. The service prices the exchange once, when it records it, and does not price it again. Traffic recorded soon after a publish can still be priced at the previous rate, and a new price cannot take effect earlier than the latest price for the same served name.
+The rate that applies to an exchange is the one in force when it was served. The service prices the exchange once, when it records it, and does not price it again. Traffic recorded soon after a publish can still be priced at the previous rate, or recorded as unpriced if the served name had no earlier price, and a new price cannot take effect earlier than the latest price for the same served name.
 
 === Compare two periods
 
