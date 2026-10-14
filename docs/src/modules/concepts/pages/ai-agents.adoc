@@ -76,7 +76,7 @@ For more detail on orchestration, check out the xref:concepts:ai-orchestration-p
 
 == Agent evaluation
 
-The answers your agents get from models are _non-deterministic_, so a test cannot expect one exact reply. Instead, you use **evaluation**: you run an agent through a set of eval cases, and built-in evaluators and a model judge score each reply and each tool call. A gate then decides whether the results are good enough.
+The answers your agents get from models are _non-deterministic_, so a test cannot expect one exact reply. Instead, you use **evaluation**: you run an agent through a set of eval cases. Built-in evaluators check each reply and the tool calls the agent made, and a model judge can score the replies. A gate then decides whether the results are good enough.
 
 See xref:testing:evaluation/index.adoc[Evaluation] to evaluate your agents.
 

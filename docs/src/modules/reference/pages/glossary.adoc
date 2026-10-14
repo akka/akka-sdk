@@ -7,7 +7,7 @@ include::ROOT:partial$include.adoc[]
 
 [[a2a]]A2A (Agent-to-Agent):: Google's protocol for agent-to-agent communication, enabling interoperability between autonomous agents across different platforms and frameworks.
 
-[[acp]]ACP (Agent Communication Protocol):: An earlier protocol for agent communication, now part of <<a2a,A2A>>.
+[[acp]]ACP (Agent Communication Protocol):: A Linux Foundation protocol for agent communication, providing a vendor-neutral standard for how AI agents discover, connect to, and interact with one another.
 
 [[agent]]Agent:: A component that interacts with an AI model to perform a specific task. It is typically backed by a large language model (LLM). It maintains contextual history in a session memory, which may be shared between multiple agents that are collaborating on the same goal. It may provide function tools and call them as requested by the model.
 

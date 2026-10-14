@@ -12,7 +12,7 @@ This page covers workflow-based orchestration of request-based xref:sdk:agents.a
 
 When to pick which:
 
-* Pick *workflow orchestration* when the sequence of steps is fixed in code, when each step is at most one model round-trip, when you want explicit per-step retry policies or external compensation, or when the orchestration crosses service boundaries via A2A or MCP.
+* Pick *workflow orchestration* when the sequence of steps is fixed in code, when each step is at most one model round-trip, when you want explicit per-step retry policies or external compensation, or when the orchestration crosses service boundaries via A2A, ACP, or MCP.
 * Pick an *Autonomous Agent* when the orchestration sequence itself is a model judgment: the model decides what to consult, which specialist to ask, or whether to iterate, based on what previous steps returned.
 
 Both approaches give the same durable-execution, retry, and audit guarantees. The choice rests on whether the sequence is fixed in code or decided by the model.
