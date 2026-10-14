@@ -1,0 +1,95 @@
+= Akka Verify
+:page-summary: Akka Verify is runtime-native evaluation, enforcement, evidence and governance for agents built on Akka or elsewhere.
+:page-when-to-use: When you need an overview of how agents are evaluated, controlled and governed with Akka, and where each part is documented.
+:page-related: concepts:governance-and-the-runtime.adoc, testing:evaluation/index.adoc, ROOT:about/how-it-fits.adoc
+:page-persona: all
+
+include::ROOT:partial$include.adoc[]
+
+Akka Verify is runtime-native evaluation, enforcement, evidence and governance for agents built on Akka or elsewhere. It lets you measure what an agent does against what good means, stop or redirect an action at runtime, and keep the record that an auditor asks for.
+
+An agent that works in a demo is not yet one that customers and regulators can rely on. When evaluation, guardrails and governance are separate systems, nothing gives one view of what agents are doing, one way to stop them, or one record of why they acted. Akka Verify runs all three on the same runtime and the same record.
+
+== Evaluating agents
+
+Evaluations measure an agent against what good means for its task, with deterministic evaluators and with a model acting as judge. They run in your tests before an agent ships, in batches against recorded traffic, and continuously on live traffic. Replay runs a new evaluator against past traffic by replaying the real execution. Adversarial tests attack your own agent with jailbreaks, prompt injection and known hazard categories, and report whether each attack broke it or it held.
+
+See xref:testing:evaluation/index.adoc[Evaluation], xref:testing:evaluation/adversarial.adoc[], xref:testing:evaluation/replay.adoc[] and xref:sdk:evaluators.adoc[Evaluators].
+
+== Enforcing controls
+
+A control is one of five mechanisms:
+
+[cols="1,3,2", options="header"]
+|===
+| Mechanism | What it does | Docs
+
+| Guardrail
+| Blocks or passes an action at a runtime boundary: before or after a model call, a tool call or a memory access. Guardrails fail closed by default.
+| xref:sdk:agents/guardrails.adoc[Guardrails], xref:sdk:agents/classifiers.adoc[Classifiers]
+
+| Sanitizer
+| Strips or masks content before it moves on: to a model, a tool or a log.
+| xref:sdk:sanitization.adoc[Data sanitization]
+
+| Eval
+| Measures and scores behavior, live or in a test.
+| xref:sdk:evaluators.adoc[Evaluators], xref:testing:evaluation/judges.adoc[]
+
+| Human
+| Gives a named person authority over a decision. The agent waits, durably, until the person decides.
+| xref:concepts:ai-orchestration-patterns.adoc#_waiting_for_a_person[Waiting for a person]
+
+| Gate
+| Turns a check into a build or release decision.
+| xref:testing:evaluation/gates-and-reports.adoc[], xref:reference:specify/coverage-gate.adoc[The coverage gate]
+|===
+
+An evaluation can observe after a run, or run inline as a guardrail that blocks, re-prompts or escalates before a response leaves the agent. Inline, the action, the verdict and the audit entry are committed in one transaction. A halt stops every in-flight and future model and tool call in its scope and moves the system to a safe state.
+
+See xref:concepts:governance-and-the-runtime.adoc[].
+
+== Governing a system
+
+Governance starts from risk. A risk survey asks questions about the system and derives the controls it needs, grouped by the regulation, framework or corporate standard they come from. Controls derive differently in each jurisdiction. You accept, waive or reject each proposed control, and the accepted set becomes a signed bundle: a versioned set of controls that applies to one system.
+
+At runtime, every control produces verdicts: upheld, breached, inconclusive or error. Akka Verify shows which controls are in force and whether each one held, the evidence behind every verdict, compliance over time, and drift in behavior or in verdicts. Changes to a system go through review with their evidence and approvals. Evidence packs collect signed evidence to hand to an auditor. Records are retained for the regulatory period and can be put on legal hold.
+
+== The ledger
+
+Every interaction is recorded in the ledger: non-sampled, hash-chained and tamper-evident. Each entry carries the identity of the workload that acted, the trace it belongs to, and the controls that applied. Akka Verify reads the ledger for verdicts and evidence. xref:ROOT:about/akka-optimize.adoc[Akka Optimize] reads the same record to grade and train models.
+
+See xref:sdk:evaluators.adoc[Evaluators] for writing to and reading from the ledger.
+
+== Agents built elsewhere
+
+Agents that do not run on Akka send their traces over OpenTelemetry. For those agents, Akka Verify classifies the system against regulations and frameworks, derives and signs its controls, evaluates the captured traffic and seals the evidence. Inline guardrails, durable waits for a person, the authority behind each action, and the hash-chained ledger need the agent to run on the Akka runtime. See xref:ROOT:about/how-it-fits.adoc#_agents_built_elsewhere[Agents built elsewhere].
+
+== Where it is in the docs
+
+[cols="1,3", options="header"]
+|===
+| Section | Start with
+
+| Getting started
+| xref:getting-started:planner-agent/eval.adoc[Evaluate the planner agent]
+
+| Understanding
+| xref:concepts:governance-and-the-runtime.adoc[]
+
+| Developing
+| xref:sdk:agents/guardrails.adoc[Guardrails], xref:sdk:agents/classifiers.adoc[Classifiers], xref:sdk:evaluators.adoc[Evaluators], xref:sdk:sanitization.adoc[Data sanitization], xref:sdk:access-control.adoc[]
+
+| Testing
+| xref:testing:evaluation/index.adoc[Evaluation], xref:testing:evaluation/adversarial.adoc[], xref:testing:evaluation/replay.adoc[]
+
+| Reference
+| xref:reference:specify/auditors.adoc[Auditors], xref:reference:specify/catalog/agentic-ai-safety.adoc[Agentic AI safety exit conditions]
+|===
+
+== Part of the Akka Agentic AI Platform
+
+* xref:ROOT:about/akka-sdk.adoc[Akka SDK] provides guardrails, sanitizers, evaluators and the ledger as components.
+* xref:ROOT:about/akka-specify.adoc[Akka Specify] writes the risk envelope that the controls come from.
+* xref:ROOT:about/akka-optimize.adoc[Akka Optimize] holds a new model to the evidence that Akka Verify collects.
+* xref:ROOT:about/how-akka-runs.adoc[How Akka runs] covers the runtime that enforces the controls.

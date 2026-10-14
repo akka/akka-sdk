@@ -142,3 +142,8 @@ When one of these supervisors acts as a ubiquitous coordinator and agents stay s
 The xref:getting-started:planner-agent/dynamic-team.adoc[planner-agent tutorial] illustrates this pattern with an Autonomous Agent coordinator that delegates to worker agents.
 
 
+
+== Waiting for a person
+Some plans stop at a decision that a person makes: an approval, a correction, or missing input. A workflow supervisor pauses at that step and waits, for hours or days if needed, without holding resources. The person's answer arrives as a command that resumes the workflow at the step where it stopped. Because the paused state is durable, the wait survives restarts and deployments.
+
+The xref:sdk:workflows.adoc#_pausing_workflow[Pausing a workflow] section of the Workflow reference shows a workflow that waits for a person to accept a transfer.

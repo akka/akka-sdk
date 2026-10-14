@@ -36,10 +36,10 @@ self-contained style serves both audiences, so you do not write differently for 
   defined or linked to the glossary on the page where it first appears.
 - Say what a thing is and how to use it. Do not sell it. No marketing or spin — drop "seamless",
   "powerful", "robust", "simply", "reach for", "spin up", "under the hood", "point it at", "load-bearing", and value claims. Describe behaviour and trade-offs instead.
-- Positioning content (the three barriers and three dimensions, differentiator claims, competitive
-  comparisons) belongs on the Why Akka / What is Akka / Who Uses Akka pages and the llms.txt
-  preamble, per the overhaul spec. Component and reference pages stay at behaviour level and link
-  to those pages rather than repeating the claims.
+- Product framing (the Akka Agentic AI Platform and its four solutions: Akka SDK, Akka Specify,
+  Akka Verify, Akka Optimize) belongs in the About Akka section and the llms.txt preamble. Other
+  sections are named by task and stay at behaviour level; they link to About Akka rather than
+  repeating it. No page quotes marketing figures.
 
 ## Avoid LLM tells
 
@@ -158,6 +158,9 @@ is the primary path and the Akka CLI (`akka specify init`) is the fallback, also
 
 ## Reflect the SDK as it is
 
+- About Akka and Understanding describe the whole platform, including capabilities that have no
+  task page yet. State them in the present tense, without status labels, and link only to pages
+  that exist. The rule below applies to every other section.
 - Document what is in the SDK now, not planned or half-merged features. Keep forward-looking notes
   out unless explicitly asked, and mark them clearly when included.
 - Use the team's current term for a thing. For example it is "the ledger", not "the interaction log"

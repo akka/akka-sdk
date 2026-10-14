@@ -1,0 +1,69 @@
+= Akka Specify
+:page-summary: Akka Specify is spec-driven development tooling that builds an agentic system from plain-language specifications and checks every change against them.
+:page-when-to-use: When you need an overview of spec-driven development with Akka, what a specification covers, and where the Akka Specify Plugin is documented.
+:page-related: sdk:spec-driven-development.adoc, reference:specify/index.adoc, ROOT:about/how-it-fits.adoc
+:page-persona: all
+
+include::ROOT:partial$include.adoc[]
+
+Akka Specify is spec-driven development tooling that builds an agentic system from plain-language specifications and checks every change against them. Developers and people who do not write code author the specifications together, in their AI harness. The Akka Specify Plugin, installed in the harness, plans the work, implements it, tests it and reviews it against the specification.
+
+Because every change is checked against the specification, the specification and the code stay in step. The specification records why the system is the way it is, and it remains readable by the people who own the requirements.
+
+== What a specification covers
+
+A specification is a set of files in your repository, versioned with the code. It covers:
+
+* The goals of the system: its purpose, how success is measured, and who decides what.
+* Functional requirements across agents, tools, orchestration, memory, APIs and user interface.
+* The knowledge the system needs, and where it comes from.
+* The risk envelope: what could go wrong and where the system operates. It becomes the controls that xref:ROOT:about/akka-verify.adoc[Akka Verify] enforces.
+* The operational envelope: service levels, regions, latency and token budget.
+* The improvement policy: what the system optimizes toward and how far it may tune itself. xref:ROOT:about/akka-optimize.adoc[Akka Optimize] works within it.
+
+The first three are written by the people who build the system. The envelopes and the policy are written by the people who govern it, such as risk, security, operations and finance teams.
+
+== Building against the specification
+
+The plugin turns a specification into a plan, the plan into tasks, and the tasks into Akka SDK components with tests. Each step is a command you run in the harness, such as `/akka:specify`, `/akka:plan`, `/akka:tasks` and `/akka:implement`. `/akka:converge` adds work that the specification still requires to the task list. `/akka:inspect` exercises a running service through its endpoints, state and user interface. `/akka:docs` generates project documentation and checks it.
+
+See xref:sdk:spec-driven-development.adoc[] and xref:reference:specify/index.adoc[the Specify reference].
+
+== Exit conditions and conformance
+
+Exit conditions define when a feature or a system is done. Your organization can make some of them mandatory for every project, from a catalog that covers functional behavior, reliability, security and compliance, agentic AI safety, documentation and more. Auditors check each exit condition.
+
+`/akka:status` shows every exit condition and its state. `/akka:conform` runs the auditors in scope and returns a verdict. `/akka:ship` runs the auditors for a review or release target and, when they pass, the steps your organization defines for shipping. In enforced mode, a change that does not meet its exit conditions is blocked before it merges. In à la carte mode, you choose which checks to run.
+
+See xref:sdk:enforced-mode.adoc[], xref:sdk:a-la-carte-mode.adoc[], xref:reference:specify/auditors.adoc[Auditors] and xref:reference:specify/catalog/index.adoc[the exit condition catalog].
+
+== Fitting your process
+
+Akka Specify works in your repository and your CI. `/akka:harnesses` generates CI, scanning and supply-chain assets, and the plugin reads the results of the scanners you already run. `/akka:reliability` adds resilience tests against live endpoints. You deploy to Akka, or record releases from your own deployment system.
+
+== Modernizing an existing system
+
+Akka Specify can recover what a legacy system does, turn that behavior into checks that a replacement must pass, and show that the replacement behaves the same.
+
+== Where it is in the docs
+
+[cols="1,3", options="header"]
+|===
+| Section | Start with
+
+| Getting started
+| xref:getting-started:set-up-ai-install.adoc[Install using your AI harness], xref:getting-started:set-up-harness.adoc[], xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent]
+
+| Developing
+| xref:sdk:spec-driven-development.adoc[], xref:sdk:enforced-mode.adoc[], xref:sdk:a-la-carte-mode.adoc[]
+
+| Reference
+| xref:reference:specify/index.adoc[Specify], xref:reference:specify/auditors.adoc[Auditors], xref:reference:specify/catalog/index.adoc[Exit condition catalog], xref:reference:specify/policies.adoc[Policies]
+|===
+
+== Part of the Akka Agentic AI Platform
+
+* xref:ROOT:about/akka-sdk.adoc[Akka SDK] is what the plugin generates.
+* xref:ROOT:about/akka-verify.adoc[Akka Verify] enforces the controls that come from the risk envelope.
+* xref:ROOT:about/akka-optimize.adoc[Akka Optimize] works within the improvement policy.
+* xref:ROOT:about/how-akka-runs.adoc[How Akka runs] covers where the system runs once it ships.

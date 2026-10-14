@@ -1,26 +1,64 @@
 = About Akka
-:page-aliases: why-akka.adoc, who-uses-akka.adoc
-:page-summary: Akka is a full-stack platform for agentic AI — developer experience, runtime, and governance in one integrated system.
+:page-aliases: why-akka.adoc, who-uses-akka.adoc, what-is-akka.adoc
+:page-summary: Akka has one offering, the Akka Agentic AI Platform, with four solutions: Akka SDK, Akka Specify, Akka Verify and Akka Optimize.
+:page-when-to-use: When you need to know what the Akka Agentic AI Platform includes, how its solutions relate, and where each one is documented.
+:page-related: ROOT:about/how-it-fits.adoc, ROOT:about/how-akka-runs.adoc, getting-started:index.adoc
 :page-persona: all
 
 include::ROOT:partial$include.adoc[]
 
-Akka is a full-stack platform for agentic AI: developer experience, runtime, and governance in one integrated system. You describe what you need, Akka generates a production-ready system, and that system runs as a durable, event-driven, distributed application.
+Akka has one offering: the Akka Agentic AI Platform, which guarantees the resilience and scalability of the agentic systems you build with it. The platform has four solutions: Akka SDK, Akka Specify, Akka Verify and Akka Optimize. They share one definition of an AI system, one runtime, one evidence record and one governance model, so each solution works on what the others produce.
+
+Akka, formerly Lightbend, has run distributed systems in production since 2007. The open-source Akka actor library for the JVM is the lineage of the platform. The platform is a separate product, and these docs describe the platform.
+
+image::akka-agentic-ai-platform.svg[The Akka Agentic AI Platform: Akka Specify and Akka Verify define and govern, Akka SDK builds and runs, Akka Optimize provides models and compute,width=760]
+
+== The four solutions
+
+[cols="1,3,2", options="header"]
+|===
+| Solution | What it is | Start in the docs
+
+| xref:ROOT:about/akka-sdk.adoc[Akka SDK]
+| The component model for building agentic systems.
+| xref:sdk:components/index.adoc[Components]
+
+| xref:ROOT:about/akka-specify.adoc[Akka Specify]
+| Spec-driven development tooling that builds an agentic system from plain-language specifications and checks every change against them.
+| xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent]
+
+| xref:ROOT:about/akka-verify.adoc[Akka Verify]
+| Runtime-native evaluation, enforcement, evidence and governance for agents built on Akka or elsewhere.
+| xref:testing:evaluation/index.adoc[Evaluation]
+
+| xref:ROOT:about/akka-optimize.adoc[Akka Optimize]
+| Routes traffic to the best open-weight model and trains smaller ones on your data.
+| xref:inference:index.adoc[Inference]
+|===
+
+xref:ROOT:about/how-it-fits.adoc[How the solutions work together] follows one agent through all four.
+
+== How the platform runs
+
+Everything you build runs on the Akka runtime. You operate it yourself, or Akka Automated Operations runs it for you, on Akka's serverless cloud or in your own cloud account. Your services are the same code in every option. See xref:ROOT:about/how-akka-runs.adoc[How Akka runs].
+
+== Where to start
+
+The docs sections are organized by task. Start from what you need to do:
+
+* Build an agentic system from a specification: xref:getting-started:set-up-ai-install.adoc[Install using your AI harness], then xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent].
+* Build one in code: xref:getting-started:author-your-first-service.adoc[Code-first hello agent].
+* Learn how Akka works before you build: xref:ROOT:about/how-it-fits.adoc[How the solutions work together] and xref:concepts:index.adoc[Understanding].
+* Evaluate and govern agents: xref:ROOT:about/akka-verify.adoc[Akka Verify].
+* Route, serve or train models, and track what they cost: xref:ROOT:about/akka-optimize.adoc[Akka Optimize].
+* Deploy and operate services: xref:ROOT:about/how-akka-runs.adoc[How Akka runs] and xref:operations:index.adoc[Operating].
 
 == In this section
 
-The capabilities below make up the platform. Each page explains what the capability is, when to use it, and where to find its SDK reference.
-
-* xref:ROOT:what-is-akka.adoc[What is Akka?] — a short summary of what Akka is and the three layers that make it up.
-* xref:ROOT:akka-agents.adoc[Agents] — AI model-backed components with memory, tools, and multi-agent collaboration.
-* xref:ROOT:akka-orchestration.adoc[Orchestration] — durable, multi-step coordination of agents and workflows.
-* xref:ROOT:akka-memory.adoc[Memory] — durable, in-memory, sharded state for agents and entities.
-* xref:ROOT:akka-streaming.adoc[Streaming] — real-time stream processing for event-driven and AI workloads.
-* xref:ROOT:akka-automated-operations.adoc[Automated Operations] — running Akka services with elastic scaling, resilience, and no-downtime updates.
-* xref:ROOT:akka-internals.adoc[Akka Internals] — how the platform works under the hood: the event-driven runtime, in-memory durable state, and clustering.
-
-== Next steps
-
-* xref:getting-started:index.adoc[Getting started] — build your first Akka service.
-* xref:sdk:spec-driven-development.adoc[Spec-driven development] — the primary way to build with Akka.
-
+* xref:ROOT:about/how-it-fits.adoc[]
+* xref:ROOT:about/akka-sdk.adoc[]
+* xref:ROOT:about/akka-specify.adoc[]
+* xref:ROOT:about/akka-verify.adoc[]
+* xref:ROOT:about/akka-optimize.adoc[]
+* xref:ROOT:about/how-akka-runs.adoc[]
+* xref:ROOT:resources.adoc[]

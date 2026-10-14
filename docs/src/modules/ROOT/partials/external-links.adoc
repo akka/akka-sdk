@@ -21,6 +21,7 @@
 :url-akka-specify-plugin: https://akka.io/blog/introducing-akka-specify
 :url-libraries-docs: https://doc.akka.io/libraries/
 :url-libraries-streams: https://doc.akka.io/libraries/akka-core/current/stream/index.html
+:url-book-principles-and-patterns: https://www.oreilly.com/library/view/principles-and-patterns/9781098181260/
 :url-akka-docs-md: https://doc.akka.io/sdk/_attachments/akka-docs-md.zip
 
 // -- akka.io application type pages --

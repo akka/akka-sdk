@@ -2,8 +2,9 @@
 
 These standards govern all documentation prose. Vale enforces the automatable subset
 (`docs/styles/Akka/`); reviewers enforce the rest. They apply to net-new and rewritten
-content. The one carve-out is the **About Akka capability pages** duplicated from
-marketing, which may keep positioning voice (see the execution plan).
+content. The one carve-out is the **About Akka** section, which presents the Akka Agentic AI
+Platform and its four solutions, and may describe capabilities that have no task page yet. It
+still follows the voice rules below and quotes no marketing figures.
 
 ## Voice and tone
 - **Second person.** The reader is "you"; the product is "Akka". Drop "we".
@@ -25,8 +26,9 @@ document, never *how it reads*):
 - **No `_internal` / "Dojo" content.**
 
 ## Terminology
-- **"Akka Specify Plugin"** = the command-line / marketplace tool the docs describe. Use this.
-- **"Akka Specify"** (bare) = the marketing delivery methodology. **Never appears in the docs** (Vale-flagged).
+- **"Akka Specify"** = the solution: spec-driven development tooling. Use it for the solution as a whole.
+- **"Akka Specify Plugin"** = the plugin installed in an AI harness. Use it for the plugin itself.
+- **Solution names** (Akka SDK, Akka Specify, Akka Verify, Akka Optimize) and **"Akka Agentic AI Platform"** appear in the About Akka section. Other sections are named by task and do not frame their pages by solution.
 - **"spec-driven development"** = the practice; docs teach this via the Plugin.
 
 ## Page structure

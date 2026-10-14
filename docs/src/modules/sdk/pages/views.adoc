@@ -12,6 +12,8 @@ Views can be defined from any of the following:
 * xref:topic-view[Messages received from subscribing to topics on a broker]
 * xref:consuming-producing.adoc#s2s-eventing[Events consumed from a different Akka service]
 
+A View serves queries from its own read model, separate from the entities that write the data, so the read side and the write side scale independently.
+
 Reference documentation covering the view query language syntax, query capabilities and how query results are mapped to Java types can be found in xref:reference:views/index.adoc[View reference].
 
 The remainder of this page describes:
