@@ -7,13 +7,13 @@ include::ROOT:partial$include.adoc[]
 
 Inference spend is the cost of the model traffic in a period, together with the tokens that traffic consumed. Akka computes it from the exchanges that the gateway router recorded, and prices each exchange at the rate that was in force when it was served. No figure is estimated or entered by hand.
 
-Two command groups work together. `akka optimize pricing-catalog` publishes the prices, and `akka optimize spend` reads the figures computed from them. Publish a price for every model before you read spend for its traffic: an exchange that has no price counts in the token totals but not in the spend.
+Two command groups work together. `akka optimize pricing-catalog` publishes the prices, and `akka optimize spend` reads the figures computed from them. Publish a price for every model before its traffic is served. An exchange is priced once, when it is recorded, so an exchange that has no price at that time counts in the token totals and never in the spend.
 
 == Before you begin
 
 include::partial$portfolio-service-address.adoc[]
 
-Reading prices and spend needs read access to the Akka Optimize portfolio. Dividing spend by caller and listing conversations also need read access to callers. Publishing prices needs write access.
+Reading prices and spend needs read access to the Akka Optimize portfolio. Publishing prices needs write access.
 
 Spend has figures only for traffic that the gateway router recorded. Traffic that was not recorded does not appear. See xref:inference:routing.adoc[Routing requests to models] for how requests reach the gateway router.
 
@@ -107,7 +107,7 @@ Publish it:
 akka optimize pricing-catalog apply -f catalog.json
 ----
 
-The command asks you to confirm. Pass `--force` to skip the question in a script. Pass `-f -` to read the document from standard input.
+The command asks you to confirm. Pass `--force` to skip the question in a script. To read the document from standard input, pass `-f -` together with `--force`: the command cannot ask the question when its input is not a terminal, and stops without publishing.
 
 A document that the service refuses is not published, and the error names what is wrong, for example a rate that is missing or negative, or an `effectiveAt` that is not later than the latest price.
 
@@ -197,7 +197,7 @@ A `+` after a token count marks a lower bound: some exchanges did not report eve
 
 === Find unpriced traffic
 
-An exchange is unpriced when no price covers every token class that it used. It counts in the exchanges and tokens, and not in the spend. When a period has unpriced traffic, the answer names each served name that caused it and whether it has no price or is missing the rate for a class. Publish a catalog version that adds the price or the missing rate.
+An exchange is unpriced when no price covers every token class that it used. It counts in the exchanges and tokens, and not in the spend. When a period has unpriced traffic, the answer names each served name that caused it and whether it has no price or is missing the rate for a class. Publish a catalog version that adds the price or the missing rate. The new price applies to traffic served after it takes effect. Traffic that was already recorded stays unpriced.
 
 An exchange is priced once, when it is served, and is not priced again later. Traffic served soon after a publish can still be priced at the previous rate, and a new price cannot take effect earlier than the latest price for the same served name. Publish a price before the traffic it is for is served.
 
