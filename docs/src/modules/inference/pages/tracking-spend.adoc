@@ -7,7 +7,7 @@ include::ROOT:partial$include.adoc[]
 
 Inference spend is the cost of the model traffic in a period, together with the tokens that traffic consumed. Akka computes it from the exchanges that the gateway router recorded, and prices each exchange at the rate that was in force when it was served. No figure is estimated or entered by hand.
 
-Two command groups work together. `akka optimize pricing-catalog` publishes the prices, and `akka optimize spend` reads the figures computed from them. Publish a price for every model before its traffic is served. An exchange is priced once, when it is recorded, so an exchange that has no price at that time counts in the token totals and never in the spend.
+Two command groups work together. `akka optimize pricing-catalog` publishes the prices, and `akka optimize spend` reads the figures computed from them. Publish a price for every model before its traffic is served: an exchange that has no price counts in the token totals and never in the spend. See <<unpriced>>.
 
 == Before you begin
 
@@ -152,7 +152,7 @@ A period is a window of whole UTC hours. `--from` is inclusive and `--to` is exc
 akka optimize spend get --from 2026-09-15T16:00:00Z --to 2026-09-15T17:00:00Z
 ----
 
-The answer gives the number of exchanges, the tokens, the spend, and what is unpriced. It also states whether the figures are complete: `complete`, `incomplete` when the recording missed exchanges in the period, or `unknown` when the service cannot tell yet, for example for an hour that is still running.
+The answer gives the number of exchanges, the tokens, the spend, and what is unpriced. It also states whether the figures are complete: `complete`, `incomplete` when some exchanges in the period are missing from the figures, or `unknown` when the service cannot tell yet, for example for an hour that is still running.
 
 Money is reported with the digits that the service computed. A figure that has no value says why, and never reads as zero.
 
@@ -195,11 +195,12 @@ TOTAL           81         1860+   0.0256365000000000 USD  0         0
 
 A `+` after a token count marks a lower bound: some exchanges did not report every token class, so the true count can be higher.
 
+[#unpriced]
 === Find unpriced traffic
 
 An exchange is unpriced when no price covers every token class that it used. It counts in the exchanges and tokens, and not in the spend. When a period has unpriced traffic, the answer names each served name that caused it and whether it has no price or is missing the rate for a class. Publish a catalog version that adds the price or the missing rate. The new price applies to traffic served after it takes effect. Traffic that was already recorded stays unpriced.
 
-An exchange is priced once, when it is served, and is not priced again later. Traffic served soon after a publish can still be priced at the previous rate, and a new price cannot take effect earlier than the latest price for the same served name. Publish a price before the traffic it is for is served.
+The rate that applies to an exchange is the one in force when it was served. The service prices the exchange once, when it records it, and does not price it again. Traffic recorded soon after a publish can still be priced at the previous rate, and a new price cannot take effect earlier than the latest price for the same served name.
 
 === Compare two periods
 
