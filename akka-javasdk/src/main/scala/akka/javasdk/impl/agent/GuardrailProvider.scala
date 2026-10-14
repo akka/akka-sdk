@@ -499,8 +499,8 @@ import org.slf4j.LoggerFactory
   private def rejectFailMode(c: ConfiguredGuardrail): Unit =
     if (c.config.hasPath("fail-mode"))
       throw new IllegalArgumentException(
-        s"TextGuardrail [${c.name}] must not define fail-mode. A TextGuardrail is always " +
-        "fail-closed. Use fail-mode with ToolCallGuardrail, ModelCallGuardrail or AgentResponseGuardrail.")
+        s"TextGuardrail [${c.name}] must not define fail-mode. A TextGuardrail has no fail mode. " +
+        "Use fail-mode with ToolCallGuardrail, ModelCallGuardrail or AgentResponseGuardrail.")
 
   def validate(): Unit =
     enabledEntries.foreach { entry =>
