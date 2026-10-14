@@ -64,21 +64,29 @@ is actually what is accepted when Jackson parses it into the input parameter typ
 
 ==== Structured output
 
-A tool returning `String` gives the client plain text content. A tool can instead return an object type, such as a record,
-to provide https://modelcontextprotocol.io/specification/2025-06-18/server/tools#structured-content[structured content].
+A tool that returns `String` gives the client plain text content. A tool can instead return an object type, such as a record,
+to give the client https://modelcontextprotocol.io/specification/2025-06-18/server/tools#structured-content[structured content].
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=tool-structured-output]
 ----
-<1> A record describing the result of the tool
+<1> A record that describes the result of the tool. The `Description` annotations end up in the output schema.
 <2> The tool method returns the record instead of a `String`
 
-An output schema for the tool is reflectively created from the return type and included in the tool listing. When the tool is
-called, the returned object is serialized to JSON and passed as structured content, the same JSON is also included as text content
-for clients that do not support structured content. Other return types, such as primitives, are returned as text content using
-their `toString` representation.
+Akka generates an output schema from the return type and includes it in the tool listing. When a client calls the tool, Akka
+serializes the returned object to JSON and sends it as structured content. Akka also sends the same JSON as text content, for
+clients that do not support structured content. Clients that use an MCP protocol version before 2025-06-18 receive only the
+text content.
+
+Structured content must be a JSON object. For a tool that returns an array or a collection, the output schema is an object with
+a single `result` field, and Akka sends the elements in that field.
+
+A tool that returns `void` gives the client the text `SUCCESS`. For other return types, such as primitives, enums and dates,
+Akka sends the JSON of the value as text content.
+
+A tool method can also return a `CompletionStage` of any of these types. Akka sends the result when the stage completes.
 
 === Resources
 

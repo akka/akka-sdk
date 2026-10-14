@@ -26,91 +26,102 @@ public class McpEndpointTest extends TestKitSupport {
   private static final String STRUCTURED_OUTPUT_PROTOCOL_VERSION = "2025-06-18";
 
   @Test
-  public void listTools() throws Exception {
-    var listingResult =
-        httpClient
-            .POST("/mcp")
-            .addHeader(PROTOCOL_VERSION_HEADER, STRUCTURED_OUTPUT_PROTOCOL_VERSION)
-            .withRequestBody(
-                ContentTypes.APPLICATION_JSON,
-                """
-                {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}
-                """
-                    .getBytes(StandardCharsets.UTF_8))
-            .invoke();
-
-    assertThat(listingResult.status()).isEqualTo(StatusCodes.OK);
-    var tools =
-        JsonSerializer.internalObjectMapper()
-            .readValue(listingResult.body().utf8String(), JsonNode.class)
-            .get("result")
-            .get("tools");
-    assertThat(tools).hasSize(4);
-    var byName = new java.util.HashMap<String, JsonNode>();
-    tools.forEach(t -> byName.put(t.get("name").asText(), t));
-    // String return: no outputSchema
-    assertThat(byName.get("echo").has("outputSchema")).isFalse();
-    // int return: toString fallback, no outputSchema
-    assertThat(byName.get("answer").has("outputSchema")).isFalse();
-    assertThat(byName.get("fail").has("outputSchema")).isFalse();
-    // Record return: outputSchema advertised with properties from the record fields
-    var weatherOutput = byName.get("weather").get("outputSchema");
-    assertThat(weatherOutput.get("type").asText()).isEqualTo("object");
-    assertThat(weatherOutput.get("properties").get("city").get("type").asText())
-        .isEqualTo("string");
-    assertThat(weatherOutput.get("properties").get("tempC").get("type").asText())
-        .isEqualTo("integer");
+  public void listTools() {
+    assertThat(mcpRequest(true, "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}"))
+        .isEqualTo(
+"""
+{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"answer","description":"A tool returning a primitive","inputSchema":{"type":"object","properties":{}}},{"name":"asyncWeather","description":"Async structured weather tool","inputSchema":{"type":"object","properties":{"city":{"type":"string","description":"the city"}},"required":["city"]},"outputSchema":{"type":"object","properties":{"city":{"type":"string"},"tempC":{"type":"integer"}},"required":["city","tempC"]}},{"name":"echo","description":"A method that returns what is fed to it","inputSchema":{"type":"object","properties":{"echo":{"type":"string","description":"the string to echo"}},"required":["echo"]}},{"name":"fail","description":"A method that always fails","inputSchema":{"type":"object","properties":{"reason":{"type":"string","description":"the reason to fail with"}},"required":["reason"]}},{"name":"ping","description":"A tool returning nothing","inputSchema":{"type":"object","properties":{}}},{"name":"weather","description":"Structured weather tool","inputSchema":{"type":"object","properties":{"city":{"type":"string","description":"the city"}},"required":["city"]},"outputSchema":{"type":"object","properties":{"city":{"type":"string"},"tempC":{"type":"integer"}},"required":["city","tempC"]}},{"name":"weatherList","description":"Structured weather list tool","inputSchema":{"type":"object","properties":{}},"outputSchema":{"type":"object","properties":{"result":{"type":"array","items":{"type":"object","properties":{"city":{"type":"string"},"tempC":{"type":"integer"}},"required":["city","tempC"]}}},"required":["result"]}}]}}
+"""
+                .trim());
   }
 
   @Test
-  public void callStructuredTool() throws Exception {
-    var result =
-        httpClient
-            .POST("/mcp")
-            .addHeader(PROTOCOL_VERSION_HEADER, STRUCTURED_OUTPUT_PROTOCOL_VERSION)
-            .withRequestBody(
-                ContentTypes.APPLICATION_JSON,
-"""
-{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"weather","arguments":{"city":"Leuven"}}}
-"""
-                    .getBytes(StandardCharsets.UTF_8))
-            .invoke();
+  public void listToolsWithoutStructuredOutputSupport() {
+    var listing = mcpRequest(false, "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}");
+    assertThat(listing).contains("\"name\":\"weather\"");
+    assertThat(listing).doesNotContain("outputSchema");
+  }
 
-    assertThat(result.status()).isEqualTo(StatusCodes.OK);
-    var resultNode =
-        JsonSerializer.internalObjectMapper()
-            .readValue(result.body().utf8String(), JsonNode.class)
-            .get("result");
-    var structured = resultNode.get("structuredContent");
-    assertThat(structured.get("city").asText()).isEqualTo("Leuven");
-    assertThat(structured.get("tempC").asInt()).isEqualTo(20);
-    // Spec back-compat: fallback text content with the JSON serialization is included
-    var content = resultNode.get("content");
-    assertThat(content).hasSize(1);
-    assertThat(content.get(0).get("type").asText()).isEqualTo("text");
-    assertThat(content.get(0).get("text").asText()).contains("\"city\":\"Leuven\"");
+  @Test
+  public void callStructuredTool() {
+    assertThat(callTool(true, "weather", "{\"city\":\"Leuven\"}"))
+        .isEqualTo(
+"""
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"{\\"city\\":\\"Leuven\\",\\"tempC\\":20}"}],"isError":false,"structuredContent":{"city":"Leuven","tempC":20}}}
+"""
+                .trim());
+  }
+
+  @Test
+  public void callStructuredToolWithoutStructuredOutputSupport() {
+    assertThat(callTool(false, "weather", "{\"city\":\"Leuven\"}"))
+        .isEqualTo(
+"""
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"{\\"city\\":\\"Leuven\\",\\"tempC\\":20}"}],"isError":false}}
+"""
+                .trim());
+  }
+
+  @Test
+  public void callListTool() {
+    assertThat(callTool(true, "weatherList", "{}"))
+        .isEqualTo(
+"""
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"{\\"result\\":[{\\"city\\":\\"Leuven\\",\\"tempC\\":20},{\\"city\\":\\"Uppsala\\",\\"tempC\\":10}]}"}],"isError":false,"structuredContent":{"result":[{"city":"Leuven","tempC":20},{"city":"Uppsala","tempC":10}]}}}
+"""
+                .trim());
+  }
+
+  @Test
+  public void callAsyncTool() {
+    assertThat(callTool(true, "asyncWeather", "{\"city\":\"Leuven\"}"))
+        .isEqualTo(
+"""
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"{\\"city\\":\\"Leuven\\",\\"tempC\\":20}"}],"isError":false,"structuredContent":{"city":"Leuven","tempC":20}}}
+"""
+                .trim());
   }
 
   @Test
   public void callPrimitiveReturningTool() {
-    var result =
-        httpClient
-            .POST("/mcp")
-            .withRequestBody(
-                ContentTypes.APPLICATION_JSON,
-"""
-{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"answer","arguments":{}}}
-"""
-                    .getBytes(StandardCharsets.UTF_8))
-            .invoke();
-
-    assertThat(result.status()).isEqualTo(StatusCodes.OK);
-    assertThat(result.body().utf8String())
+    assertThat(callTool(true, "answer", "{}"))
         .isEqualTo(
 """
 {"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"42"}],"isError":false}}
 """
                 .trim());
+  }
+
+  @Test
+  public void callVoidTool() {
+    assertThat(callTool(true, "ping", "{}"))
+        .isEqualTo(
+"""
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"SUCCESS"}],"isError":false}}
+"""
+                .trim());
+  }
+
+  private String callTool(boolean structuredOutputClient, String toolName, String arguments) {
+    return mcpRequest(
+        structuredOutputClient,
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\""
+            + toolName
+            + "\",\"arguments\":"
+            + arguments
+            + "}}");
+  }
+
+  private String mcpRequest(boolean structuredOutputClient, String body) {
+    var request = httpClient.POST("/mcp");
+    if (structuredOutputClient)
+      request = request.addHeader(PROTOCOL_VERSION_HEADER, STRUCTURED_OUTPUT_PROTOCOL_VERSION);
+    var response =
+        request
+            .withRequestBody(ContentTypes.APPLICATION_JSON, body.getBytes(StandardCharsets.UTF_8))
+            .invoke();
+    assertThat(response.status()).isEqualTo(StatusCodes.OK);
+    return response.body().utf8String();
   }
 
   @Test

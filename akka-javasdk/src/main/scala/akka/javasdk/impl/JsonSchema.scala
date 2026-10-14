@@ -63,8 +63,8 @@ private[impl] object JsonSchema {
       required = parameters.collect { case TypedParameter(name, _, _, true) => name }.sorted)
   }
 
-  def jsonSchemaFor(value: Class[_]): JsonSchemaDataType = {
-    jsonSchemaTypeFor(value, None, Set.empty)._1
+  def jsonSchemaFor(tpe: Type): JsonSchemaDataType = {
+    jsonSchemaTypeFor(tpe, None, Set.empty)._1
   }
 
   def typedParametersFor(method: Method): Seq[TypedParameter] = {
@@ -102,7 +102,7 @@ private[impl] object JsonSchema {
     "boolean" -> boolean,
     "java.lang.Short" -> integer,
     "java.lang.Byte" -> integer,
-    "java.lang.Char" -> integer,
+    "java.lang.Character" -> integer,
     "java.lang.Integer" -> integer,
     "java.lang.Long" -> integer,
     "java.lang.Double" -> number,

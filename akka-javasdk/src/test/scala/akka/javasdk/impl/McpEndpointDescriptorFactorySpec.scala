@@ -7,6 +7,10 @@ package akka.javasdk.impl
 import scala.concurrent.ExecutionContext
 
 import akka.javasdk.impl.mcp.TestMcpEndpoints
+import akka.runtime.sdk.spi.McpEndpointDescriptor.TextContent
+import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolCallResult
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -34,17 +38,78 @@ class McpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with Sc
       descriptor.tools.map(_.toolDescription.name) should not contain "dropped-tool"
     }
 
-    "fail a structured tool call returning null" in {
-      val descriptor =
-        McpEndpointDescriptorFactory(
-          classOf[TestMcpEndpoints.StructuredOutputMcpEndpoint],
-          _ => new TestMcpEndpoints.StructuredOutputMcpEndpoint)
+    "classify tool return types" in {
+      val tools = structuredDescriptor.tools.map(t => t.toolDescription.name -> t.toolDescription).toMap
 
-      val tool = descriptor.tools.find(_.toolDescription.name == "null-weather").get
-      tool.toolDescription.outputSchema should not be empty
-      val exception = tool.call(null, Map.empty).failed.futureValue
-      exception shouldBe an[IllegalStateException]
-      exception.getMessage should include("must not be null")
+      val weatherSchema = tools("null-weather").outputSchema.get
+      weatherSchema.properties.keySet should ===(Set("city", "tempC"))
+      tools("async-weather").outputSchema.get.properties.keySet should ===(Set("city", "tempC"))
+      tools("map").outputSchema.get.properties shouldBe empty
+
+      for (arrayTool <- Seq("weather-list", "weather-array")) {
+        val schema = tools(arrayTool).outputSchema.get
+        schema.required should ===(Seq("result"))
+        val items = schema.properties("result").asInstanceOf[JsonSchemaArray].items.asInstanceOf[JsonSchemaObject]
+        items.properties.keySet should ===(Set("city", "tempC"))
+      }
+
+      for (textTool <- Seq("null-text", "void-tool", "async-void-tool", "optional-weather", "unit"))
+        withClue(textTool) { tools(textTool).outputSchema shouldBe empty }
+    }
+
+    "return structured, wrapped, and text tool results" in {
+      val listResult = call("weather-list")
+      listResult.content shouldBe empty
+      val list = listResult.structuredContent.get("result").asInstanceOf[java.util.List[_]]
+      list.size() should ===(2)
+
+      call("weather-array").structuredContent.get("result").asInstanceOf[java.util.List[_]].size() should ===(1)
+      call("async-weather").structuredContent.get should ===(Map("city" -> "Leuven", "tempC" -> 20))
+      call("map").structuredContent.get should ===(Map("Leuven" -> 20))
+
+      textOf(call("void-tool")) should ===("SUCCESS")
+      textOf(call("async-void-tool")) should ===("SUCCESS")
+      textOf(call("unit")) should ===("\"CELSIUS\"")
+      textOf(call("optional-weather")) should ===("""{"city":"Leuven","tempC":20}""")
+    }
+
+    "fail tool calls returning null" in {
+      for (tool <- Seq("null-weather", "null-text", "null-async")) withClue(tool) {
+        val exception = structuredDescriptor.tools
+          .find(_.toolDescription.name == tool)
+          .get
+          .call(null, Map.empty)
+          .failed
+          .futureValue
+        exception shouldBe an[IllegalStateException]
+        exception.getMessage should include("returned null")
+      }
+    }
+
+    "reject unsupported tool return types" in {
+      intercept[ValidationException] {
+        McpEndpointDescriptorFactory(classOf[TestMcpEndpoints.RawCompletionStageMcpEndpoint], _ => null)
+      }.getMessage should include("CompletionStage with a type parameter")
+      intercept[ValidationException] {
+        McpEndpointDescriptorFactory(classOf[TestMcpEndpoints.ProtobufMcpEndpoint], _ => null)
+      }.getMessage should include("protobuf message")
+    }
+  }
+
+  private lazy val structuredDescriptor =
+    McpEndpointDescriptorFactory(
+      classOf[TestMcpEndpoints.StructuredOutputMcpEndpoint],
+      _ => new TestMcpEndpoints.StructuredOutputMcpEndpoint)
+
+  private def call(toolName: String): ToolCallResult =
+    // the test endpoint factory ignores the construction context
+    structuredDescriptor.tools.find(_.toolDescription.name == toolName).get.call(null, Map.empty).futureValue
+
+  private def textOf(result: ToolCallResult): String = {
+    result.structuredContent shouldBe empty
+    result.content.collect { case text: TextContent => text.text } match {
+      case Seq(text) => text
+      case other     => fail(s"Expected single text content, got $other")
     }
   }
 }

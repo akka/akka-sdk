@@ -5,13 +5,19 @@
 package akka.javasdk.impl
 
 import java.lang.annotation.Annotation
+import java.lang.reflect.GenericArrayType
 import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
 import java.util.Optional
+import java.util.concurrent.CompletionStage
 
+import scala.collection.immutable.VectorMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
+import scala.jdk.FutureConverters._
 import scala.jdk.OptionConverters.RichOption
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
@@ -63,6 +69,7 @@ import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import com.google.protobuf.GeneratedMessageV3
 import org.slf4j.LoggerFactory
 
 /**
@@ -110,6 +117,25 @@ object McpEndpointDescriptorFactory {
 
   private val UriTemplateVariable = """\{([^}]+)}""".r
 
+  private val JavaMapTypeRef = new TypeReference[java.util.Map[String, AnyRef]] {}
+  private val JavaListTypeRef = new TypeReference[java.util.List[AnyRef]] {}
+
+  // structured content must be a JSON object, so array results are wrapped in an object with this field
+  private val ArrayResultField = "result"
+
+  private sealed trait ToolOutput {
+    def outputSchema: Option[JsonSchemaObject] = None
+  }
+  private case object VoidToolOutput extends ToolOutput
+  private case object StringToolOutput extends ToolOutput
+  private case object JsonTextToolOutput extends ToolOutput
+  private final case class ObjectToolOutput(schema: JsonSchemaObject) extends ToolOutput {
+    override def outputSchema: Option[JsonSchemaObject] = Some(schema)
+  }
+  private final case class ArrayToolOutput(schema: JsonSchemaObject) extends ToolOutput {
+    override def outputSchema: Option[JsonSchemaObject] = Some(schema)
+  }
+
   def apply[T](mcpEndpointClass: Class[T], instanceFactory: McpEndpointConstructionContext => T)(implicit
       sdkExecutor: ExecutionContext): McpEndpointDescriptor = {
 
@@ -118,18 +144,8 @@ object McpEndpointDescriptorFactory {
     val toolMethods = methodsWithAnnotation[McpTool](mcpEndpointClass)
     val tools = toolMethods
       .map { case (annotation, method) =>
-        val returnType = method.getReturnType
-        val isStringReturn = returnType == classOf[String]
-        // Non-String, non-primitive object return types are surfaced as MCP 2025-06-18 structured tool output.
-        // Non-object return types (primitives, dates, arrays, collections) are rendered as toString text.
-        val structuredOutputSchema: Option[JsonSchemaObject] =
-          if (isStringReturn) None
-          else
-            JsonSchema.jsonSchemaFor(returnType) match {
-              case obj: JsonSchemaObject => Some(obj)
-              case _                     => None
-            }
-        val isStructuredReturn = structuredOutputSchema.isDefined
+        val methodLocation = s"${mcpEndpointClass.getName}.${method.getName}"
+        val (isAsync, toolOutput) = toolOutputFor(method, methodLocation)
 
         val inputSchema: JsonSchemaObject =
           if (annotation.inputSchema().isBlank) {
@@ -146,10 +162,10 @@ object McpEndpointDescriptorFactory {
 
         val toolAnnotations = toolAnnotationsFor(mcpEndpointClass, method.getName, annotation.annotations().toVector)
         val toolDescription =
-          new ToolDescription(toolName, annotation.description(), inputSchema, toolAnnotations, structuredOutputSchema)
+          new ToolDescription(toolName, annotation.description(), inputSchema, toolAnnotations, toolOutput.outputSchema)
 
         val requiredParameterNames = inputSchema.required.toSet
-        def invoke(context: McpEndpointConstructionContext, params: Map[String, Any]): AnyRef = {
+        def invokeTool(context: McpEndpointConstructionContext, params: Map[String, Any]): AnyRef = {
           val endpointInstance = instanceFactory.apply(context)
           try {
             if (method.getParameterCount == 0) {
@@ -174,36 +190,46 @@ object McpEndpointDescriptorFactory {
           } catch unwrapInvocationTargetExceptionCatcher
         }
 
+        def textResult(text: String) = new ToolCallResult(Seq(new TextContent(text)), None, isError = false)
+        // empty content, the runtime adds the JSON of the structured content as text content
+        def structuredResult(structured: Map[String, Any]) =
+          new ToolCallResult(Seq.empty, Some(structured), isError = false)
+        def toJson[R](value: AnyRef, typeRef: TypeReference[R]): R =
+          try objectMapper.convertValue(value, typeRef)
+          catch {
+            case NonFatal(ex) =>
+              throw new RuntimeException(
+                s"Failed to serialize return value of tool [$toolName] defined in [$methodLocation] to JSON",
+                ex)
+          }
+
+        // FIXME handle/allow audio and image content types, supported by protocol, but how do we fit it in SDK API?
+        def toToolCallResult(returnValue: AnyRef): ToolCallResult =
+          toolOutput match {
+            case VoidToolOutput => textResult("SUCCESS")
+            case _ if returnValue == null =>
+              throw new IllegalStateException(
+                s"Tool [$toolName] defined in [$methodLocation] returned null, a tool must return a value")
+            case StringToolOutput   => textResult(returnValue.asInstanceOf[String])
+            case JsonTextToolOutput => textResult(objectMapper.writeValueAsString(returnValue))
+            case ObjectToolOutput(_) =>
+              structuredResult(VectorMap.from(toJson(returnValue, JavaMapTypeRef).asScala))
+            case ArrayToolOutput(_) =>
+              structuredResult(VectorMap(ArrayResultField -> toJson(returnValue, JavaListTypeRef)))
+          }
+
         val callback: (McpEndpointConstructionContext, Map[String, Any]) => Future[ToolCallResult] =
-          if (!isStructuredReturn) { (context, params) =>
-            Future {
-              // FIXME handle/allow audio and image content types, supported by protocol, but how do we fit it in SDK API?
-              val text = invoke(context, params) match {
-                case text: String => text
-                case null         => ""
-                case other        => other.toString
+          if (isAsync) { (context, params) =>
+            Future(invokeTool(context, params).asInstanceOf[CompletionStage[AnyRef]])
+              .flatMap { stage =>
+                if (stage == null)
+                  Future.failed(new IllegalStateException(
+                    s"Tool [$toolName] defined in [$methodLocation] returned null instead of a CompletionStage"))
+                else stage.asScala
               }
-              new ToolCallResult(Seq(new TextContent(text)), None, isError = false)
-            }
-          } else {
-            val mapTypeRef = new TypeReference[java.util.Map[String, AnyRef]] {}
-            (context, params) =>
-              Future {
-                val returnValue = invoke(context, params)
-                if (returnValue == null)
-                  throw new IllegalStateException(
-                    s"Tool [$toolName] defined in [${mcpEndpointClass.getName}.${method.getName}] returned null, structured tool output must not be null")
-                val asJavaMap =
-                  try objectMapper.convertValue(returnValue, mapTypeRef)
-                  catch {
-                    case NonFatal(ex) =>
-                      throw new RuntimeException(
-                        s"Failed to serialize structured return value of tool [$toolName] defined in [${mcpEndpointClass.getName}.${method.getName}] to a JSON object",
-                        ex)
-                  }
-                // empty content, the runtime adds the JSON of the structured content as text content
-                new ToolCallResult(Seq.empty, Some(asJavaMap.asScala.toMap), isError = false)
-              }
+              .map(toToolCallResult)
+          } else { (context, params) =>
+            Future(toToolCallResult(invokeTool(context, params)))
           }
 
         new ToolMethodDescriptor(
@@ -436,6 +462,55 @@ object McpEndpointDescriptorFactory {
           openWorld = annotationPresent(ToolAnnotation.OpenWorld, ToolAnnotation.ClosedWorld),
           readOnly = annotationPresent(ToolAnnotation.ReadOnly, ToolAnnotation.Mutating)))
     }
+  }
+
+  /**
+   * @return
+   *   if the tool is async, and how the (possibly async) tool return value is turned into a tool call result
+   */
+  private def toolOutputFor(method: Method, methodLocation: String): (Boolean, ToolOutput) = {
+    val genericReturnType = method.getGenericReturnType
+    if (classOf[CompletionStage[_]].isAssignableFrom(method.getReturnType)) {
+      genericReturnType match {
+        case p: ParameterizedType => (true, toolOutputForType(p.getActualTypeArguments.head, methodLocation))
+        case _ =>
+          throw ValidationException(
+            s"MCP tool method [$methodLocation] returns [$genericReturnType], async tools must return a CompletionStage with a type parameter")
+      }
+    } else (false, toolOutputForType(genericReturnType, methodLocation))
+  }
+
+  private def toolOutputForType(valueType: Type, methodLocation: String): ToolOutput = {
+    val valueClass: Class[_] = valueType match {
+      case c: Class[_]          => c
+      case p: ParameterizedType => p.getRawType.asInstanceOf[Class[_]]
+      case _: GenericArrayType  => classOf[Array[AnyRef]]
+      case _                    => classOf[AnyRef] // type variables and wildcards
+    }
+    def isJdkClass = Seq("java.", "javax.", "scala.").exists(valueClass.getName.startsWith)
+
+    if (valueClass == Void.TYPE || valueClass == classOf[Void]) VoidToolOutput
+    else if (valueClass == classOf[String]) StringToolOutput
+    else if (classOf[GeneratedMessageV3].isAssignableFrom(valueClass))
+      throw ValidationException(
+        s"MCP tool method [$methodLocation] returns a protobuf message [${valueClass.getName}], which is not supported")
+    else if ((valueClass.isArray && valueClass != classOf[Array[Byte]]) ||
+      (classOf[java.util.Collection[_]].isAssignableFrom(valueClass) && valueType.isInstanceOf[ParameterizedType]))
+      ArrayToolOutput(
+        new JsonSchemaObject(
+          description = None,
+          properties = Map(ArrayResultField -> JsonSchema.jsonSchemaFor(valueType)),
+          required = Seq(ArrayResultField)))
+    else if (classOf[java.util.Map[_, _]].isAssignableFrom(valueClass))
+      ObjectToolOutput(new JsonSchemaObject(description = None, properties = Map.empty, required = Seq.empty))
+    else if (valueClass.isPrimitive || valueClass.isInterface || valueClass.isEnum || valueClass.isArray ||
+      Modifier.isAbstract(valueClass.getModifiers) || isJdkClass)
+      JsonTextToolOutput
+    else
+      JsonSchema.jsonSchemaFor(valueType) match {
+        case schema: JsonSchemaObject => ObjectToolOutput(schema)
+        case _                        => JsonTextToolOutput
+      }
   }
 
   private def failOnMethodAclOrJwt(method: Method): Unit = {
