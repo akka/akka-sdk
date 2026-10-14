@@ -11,14 +11,11 @@ In many cases, Akka takes care of streaming and is using end-to-end backpressure
 
 NOTE: Streaming in the SDK means events processed through views, consumers and producers over durable event streams. It is built on the lower-level {url-libraries-streams}[Akka Streams] library, a framework of sources, flows and sinks. See <<_using_akka_streams>> for when to use that library directly.
 
-== Back-pressure in both directions
+== Back-pressure
 
-Event sources arrive in bursts, and a fast producer can overwhelm a slower consumer, and the model, database or agent that the consumer calls. Back-pressure regulates the flow in both directions:
+Event sources arrive in bursts, and a fast producer could overwhelm a slower consumer and the model, database or agent that the consumer calls. A consumer reads events at the pace it can process them. Until it does, the events wait in the event journal or the broker topic, not in memory. A burst does not exhaust memory, and a consumer that falls behind or restarts resumes from where it left off.
 
-* When a consumer cannot keep up, the stream slows the producer instead of buffering without bound.
-* When input rates spike, the event journal or broker holds the events, and the consumer reads them at the pace it can process.
-
-Memory use stays bounded under load, and a consumer that falls behind or restarts resumes from where it left off.
+Where a stream runs in memory, such as view query results streamed to a client or a stream you build with Akka Streams, the receiver signals how much it can take and the sender slows to match.
 
 == Using Akka Streams
 

@@ -16,7 +16,7 @@ Every model call is captured and graded: with deterministic graders for structur
 
 == Routing requests to models
 
-A gateway sits in front of your models. For each request, a proxy consults the router, which applies rulesets first and then classifiers that match the request to a use case. Matching uses embeddings, so a routing decision does not call a model. Each decision records its input, time and the version of the rule that made it, without logging the content. You can observe traffic before you route it.
+A gateway sits in front of your models. For each request, a proxy consults the router, and the router answers with a destination in two stages. Rulesets match declared rules against attributes of the request, such as the protocol, the model asked for or a header. No model is consulted unless a rule defers its decision to a classifier. A request that no rule claims is matched by its meaning against use cases discovered from live traffic. Each decision records its input, time and the version of the rule that made it, without logging the content. You can observe traffic before you route it.
 
 See xref:inference:routing.adoc[] and xref:reference:descriptors/routing-ruleset.adoc[].
 
@@ -24,9 +24,13 @@ See xref:inference:routing.adoc[] and xref:reference:descriptors/routing-ruleset
 
 The trainer specializes an open-weight base model on your data, with supervised fine-tuning, preference optimization and reinforcement learning. Training runs on GPUs in your environment, including air-gapped ones. The data pipeline scrubs personal data and secrets before training, and each run has checkpoints, a budget and a separate evaluation set.
 
-A new model is promoted only when its quality is at least the baseline and its token use drops by the target. It moves through shadow traffic, then a canary, then the fleet, and the comparison is saved to the audit record. After promotion it is still graded: it is retrained when it drifts and reverted when it slips. The improvement policy in the specification bounds what this loop may change.
+A new model is promoted only when its quality is at least the baseline and its token use drops by the target. It moves through shadow traffic, then a canary, then the fleet, and the comparison is saved to the audit record. After promotion it is still graded: it is retrained when it drifts and reverted when it slips.
 
 See xref:optimize:index.adoc[Training] and xref:optimize:trainer/index.adoc[the trainer].
+
+== The improvement policy
+
+The improvement policy states what a system optimizes toward and how far it may tune itself. It is part of the specification, written by the people who govern the system. Akka Optimize routes traffic, trains models and promotes them only within the policy, and training uses its goals as the target that a new model must reach.
 
 == Serving models
 

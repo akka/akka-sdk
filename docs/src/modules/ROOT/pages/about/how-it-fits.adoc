@@ -14,7 +14,7 @@ One definition of an AI system::
 A specification describes what the system must do, what it must know, what could go wrong and how far it may tune itself. Akka Specify builds the system from it, Akka Verify derives controls from its risk section, and Akka Optimize works within its improvement policy.
 
 One runtime::
-Every component you build with the Akka SDK runs on the Akka runtime. The runtime keeps state durable, recovers from failure and scales services. Controls run inside it, in the same transaction as the action they govern. See xref:concepts:governance-and-the-runtime.adoc[].
+Every component you build with the Akka SDK runs on the Akka runtime. The runtime keeps state durable, recovers from failure and scales services. Controls run inside it: guardrails act in the path of the action they govern, and evaluators score each interaction after it completes. See xref:concepts:governance-and-the-runtime.adoc[].
 
 One evidence record::
 The runtime records every interaction: model calls, tool calls, guardrail and evaluator verdicts, and human decisions, each with the identity of the agent that made it. This record is the ledger. Akka Verify reads it to score, enforce and prove behavior. Akka Optimize reads the same record to grade traffic and to train models, so cost and compliance are measured on the same data.
@@ -28,7 +28,7 @@ The steps below follow a single agent through the platform.
 
 . A team writes a specification in an AI harness, in plain language. The Akka Specify Plugin plans the work, implements it and tests it. See xref:sdk:spec-driven-development.adoc[].
 . The result is Akka SDK components: an agent, a workflow that supervises it, entities that hold its state, and endpoints that expose it. See xref:sdk:components/index.adoc[Components].
-. Exit conditions define when the work is done. A change that does not meet them does not ship. See xref:sdk:enforced-mode.adoc[].
+. Exit conditions define when the work is done. In enforced mode, a change that does not meet them is blocked before it merges. See xref:sdk:enforced-mode.adoc[].
 . The risk section of the specification becomes the controls that apply to the agent: guardrails on its inputs, tool calls and outputs, sanitizers on what it stores and logs, evaluations of its replies, and gates on its release. See xref:sdk:agents/guardrails.adoc[Guardrails] and xref:sdk:evaluators.adoc[Evaluators].
 . Evaluations run the agent through eval cases before it is deployed, and adversarial tests attack it. See xref:testing:evaluation/index.adoc[Evaluation].
 . The agent serves traffic on the Akka runtime. Every interaction is recorded in the ledger, and controls act on it in line.

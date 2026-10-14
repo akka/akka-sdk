@@ -33,7 +33,7 @@ See xref:sdk:event-sourced-entities.adoc[Event Sourced Entities], xref:sdk:key-v
 
 == Streaming and events
 
-Consumers read streams of events from entities, workflows, other services or message broker topics, and produce events in turn. Streams carry back-pressure in both directions, so a fast producer cannot overwhelm a slow consumer. Services exchange events without a message broker, and connect to one when you need it. Delivery to consumers is at least once.
+Consumers read streams of events from entities, workflows, other services or message broker topics, and produce events in turn. Each consumer reads at its own pace while events wait in the journal or broker, so a fast producer cannot overwhelm a slow consumer. Services exchange events without a message broker, and connect to one when you need it. Delivery to consumers is at least once.
 
 See xref:sdk:consuming-producing.adoc[Consumers] and xref:sdk:streaming.adoc[].
 

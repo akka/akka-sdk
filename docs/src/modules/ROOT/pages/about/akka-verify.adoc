@@ -25,7 +25,7 @@ A control is one of five mechanisms:
 | Mechanism | What it does | Docs
 
 | Guardrail
-| Blocks or passes an action at a runtime boundary: before or after a model call, a tool call or a memory access. Guardrails fail closed by default.
+| Blocks or passes an action at a runtime boundary: before a model call, before a tool call, or on the reply. Guardrails fail closed by default.
 | xref:sdk:agents/guardrails.adoc[Guardrails], xref:sdk:agents/classifiers.adoc[Classifiers]
 
 | Sanitizer
@@ -51,7 +51,7 @@ See xref:concepts:governance-and-the-runtime.adoc[].
 
 == Governing a system
 
-Governance starts from risk. A risk survey asks questions about the system and derives the controls it needs, grouped by the regulation, framework or corporate standard they come from. Controls derive differently in each jurisdiction. You accept, waive or reject each proposed control, and the accepted set becomes a signed bundle: a versioned set of controls that applies to one system.
+Governance starts from risk. The risk envelope in the specification defines it, and a risk survey that asks questions about the system adds to it. Akka Verify derives the controls the system needs from that risk, grouped by the regulation, framework or corporate standard they come from. Controls derive differently in each jurisdiction. You accept, waive or reject each proposed control, and the accepted set becomes a signed bundle: a versioned set of controls that applies to one system.
 
 At runtime, every control produces verdicts: upheld, breached, inconclusive or error. Akka Verify shows which controls are in force and whether each one held, the evidence behind every verdict, compliance over time, and drift in behavior or in verdicts. Changes to a system go through review with their evidence and approvals. Evidence packs collect signed evidence to hand to an auditor. Records are retained for the regulatory period and can be put on legal hold.
 

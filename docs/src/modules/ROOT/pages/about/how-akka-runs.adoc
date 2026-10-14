@@ -51,7 +51,7 @@ See xref:concepts:deployment-model.adoc[], xref:concepts:state-model.adoc[] and 
 | xref:operations:configuring.adoc[Self-managed operations]
 |===
 
-Serverless is pay as you go, billed to a credit card, and scales to zero when idle. You create an account at console.akka.io and deploy from the Akka CLI.
+Serverless is pay as you go, paid by credit card, and scales to zero when idle. You create an account at console.akka.io and deploy from the Akka CLI.
 
 In BYOC and BYOK8s, application data stays in your environment. A limited set of platform interactions, such as deployments and key rotation, still crosses to Akka. See xref:operations:technical-overview.adoc[] for the architecture and data flows, and xref:operations:production-readiness/choosing-your-environment.adoc[] for sizing, availability and data residency.
 
@@ -64,11 +64,10 @@ Akka Automated Operations (AAO) runs the runtime for you in the Serverless, Dedi
 * No-downtime updates: new versions roll out in waves, including changes to how services store data.
 * Live patching: runtime and security patches, and certificate and key rotation, without downtime.
 * Moving between environments: cloud to cloud, from Akka's cloud into your own account, or back on premises, by replication with an automated switch.
-* Multi-tenancy and zero-trust networking: tenants are isolated, and every workload is attested rather than trusted for its network location.
-* Observability: logs, metrics and traces, exported to OpenTelemetry, Prometheus or Splunk.
+* Zero-trust networking: every workload is attested rather than trusted for its network location. In your own cloud account, services can also be operated as multi-tenant, with access controls across organizations.
 * Operations around the clock by Akka for the options Akka operates.
 
-Self-managed operations give you the runtime, clustering, elasticity and resilience. The other items above are AAO. See the feature comparison on xref:operations:index.adoc[Operating].
+Self-managed operations give you the runtime, clustering, elasticity, resilience, and metrics, logs and traces. Logs, metrics and traces can be exported to OpenTelemetry, Prometheus or Splunk in every option. The other items above are AAO. See the feature comparison on xref:operations:index.adoc[Operating].
 
 == Where it is in the docs
 

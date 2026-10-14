@@ -106,7 +106,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Observability](https://doc.akka.io/operations/observability-and-monitoring/index.html.md): Metrics, logs, traces, OTEL export
 - [Secrets management](https://doc.akka.io/operations/projects/secrets.html.md): Built-in secrets with Azure KeyVault integration
 - [CLI installation](https://doc.akka.io/getting-started/install-cli.html.md): Install the Akka CLI
-- [Login to a remote env](https://doc.akka.io/getting-started/log-in.html.md): Log in to deploy to or manage a remote Akka Platform environment
+- [Login to a remote env](https://doc.akka.io/getting-started/log-in.html.md): Log in to deploy to or manage a remote Akka environment
 - [CI/CD integration](https://doc.akka.io/operations/integrating-cicd/index.html.md): GitHub Actions and other CI/CD tools
 
 ## Inference
@@ -182,14 +182,14 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Using AWS MSK as Kafka service](https://doc.akka.io/operations/projects/broker-aws-msk.html.md): Configuring AWS Managed Streaming for Kafka with Akka services
 - [Using a self-hosted or arbitrary Kafka cluster](https://doc.akka.io/operations/projects/broker-kafka.html.md): Connecting Akka to any Kafka cluster that meets the supported authentication and TLS requirements
 - [Using Google Cloud Pub/Sub as message broker](https://doc.akka.io/operations/projects/broker-google-pubsub.html.md): Integrating Google Cloud Pub/Sub with Akka services
-- [Projects](https://doc.akka.io/operations/projects/index.html.md): Managing projects in the Akka Platform
-- [Create a new project](https://doc.akka.io/operations/projects/create-project.html.md): Steps to create and configure a new project in the Akka Platform
-- [Managing project users](https://doc.akka.io/operations/projects/manage-project-access.html.md): Controlling user access to projects in the Akka Platform
+- [Projects](https://doc.akka.io/operations/projects/index.html.md): Managing projects in Akka
+- [Create a new project](https://doc.akka.io/operations/projects/create-project.html.md): Steps to create and configure a new project in Akka
+- [Managing project users](https://doc.akka.io/operations/projects/manage-project-access.html.md): Controlling user access to projects in Akka
 - [Configure a container registry](https://doc.akka.io/operations/projects/container-registries.html.md): Setting up and managing container registries for Akka deployments
 - [Configure an external container registry](https://doc.akka.io/operations/projects/external-container-registries.html.md): Setting up external container registries for Akka service deployments
-- [Organizations](https://doc.akka.io/operations/organizations/index.html.md): Working with organizations in the Akka Platform
+- [Organizations](https://doc.akka.io/operations/organizations/index.html.md): Working with organizations in Akka
 - [Managing organization users](https://doc.akka.io/operations/organizations/manage-users.html.md): Adding, removing, and managing user access within your organization
-- [Regions](https://doc.akka.io/operations/organizations/regions.html.md): Understanding geographical regions for Akka Platform deployments
+- [Regions](https://doc.akka.io/operations/organizations/regions.html.md): Understanding geographical regions for Akka deployments
 - [Operating - Akka Automated Operations (AAO)](https://doc.akka.io/operations/akka-platform.html.md): Automatically manages, monitors, and gathers insights from your deployed services and managed infrastructure.
 - [Operating - Self-managed nodes](https://doc.akka.io/operations/index.html.md): Guide to running Akka on self-managed infrastructure
 - [Reactive Manifesto](https://www.reactivemanifesto.org): Foundational philosophy behind Akka

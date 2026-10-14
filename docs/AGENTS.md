@@ -2,7 +2,8 @@
 
 Standards for writing and editing pages under `docs/src`. The migration plan (positioning, target
 structure, page audit, llms.txt generator) lives in `docs-overhaul-spec.md`; the spec takes
-precedence where the two overlap.
+precedence where the two overlap, except for product framing and the About Akka section. There,
+this file and `writing-standards.md` replace the positioning in the spec.
 
 ## Audience: people and AI agents
 

@@ -1,0 +1,6 @@
+extends: existence
+message: "Use 'Akka Specify Plugin' (the tool the docs describe), not bare 'Akka Specify' (the marketing methodology)."
+level: error
+ignorecase: false
+raw:
+  - 'Akka Specify(?! Plugin)'
