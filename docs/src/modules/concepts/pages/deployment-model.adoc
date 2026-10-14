@@ -65,7 +65,7 @@ anchor:_service_packaging[]
 
 * xref:operations:index.adoc[] compares operational approaches.
 * xref:operations:technical-overview.adoc[] describes architecture, data flows, and environment migration.
-* xref:operations:production-readiness/index.adoc[] links deployment-specific responsibility models.
+* xref:operations:production-readiness/shared-responsibility.adoc[] defines responsibilities for each deployment option.
 * xref:operations:configuring.adoc[] configures self-managed services.
 * xref:operations:services/instance-sizing.adoc[] and xref:operations:services/deploy-service.adoc[] configure capacity and application updates.
 * xref:operations:integrating-cicd/scanning-dependencies.adoc[] explains patching responsibilities.

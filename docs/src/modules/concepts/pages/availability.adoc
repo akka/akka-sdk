@@ -30,5 +30,5 @@ Choose zones and regions from the failures the workload must tolerate, its recov
 
 * xref:operations:production-readiness/choosing-your-environment.adoc[] chooses availability, sizing, and residency.
 * xref:operations:regions/setup.adoc[] performs regional failover.
-* xref:operations:production-readiness/byoc/disaster-recovery.adoc[] and xref:operations:production-readiness/byok8s/disaster-recovery.adoc[] define recovery responsibilities and procedures.
+* xref:operations:production-readiness/disaster-recovery.adoc[] define recovery responsibilities and procedures.
 * xref:operations:technical-overview.adoc[] explains platform boundaries and environment migration.
