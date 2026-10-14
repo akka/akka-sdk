@@ -17,7 +17,7 @@ Connectivity terms used below:
 
 xref:operations:technical-overview/data-flows-grid.adoc[View the full data flows table,role=open-grid,window=_blank]
 
-Akka Optimize adds more flows. They are in a separate grid. The Notes column of each Optimize flow ends with its status, which shows whether the flow is confirmed.
+Akka Optimize adds more flows. They are in a separate grid.
 
 xref:operations:technical-overview/data-flows-optimize-grid.adoc[View the Akka Optimize data flows table,role=open-grid,window=_blank]
 
