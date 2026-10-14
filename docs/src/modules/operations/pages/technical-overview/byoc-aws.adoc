@@ -8,11 +8,6 @@ include::ROOT:partial$include.adoc[]
 
 This page covers running Akka Automated Operations (AAO) on AWS. For the architecture and concepts, start with the xref:operations:technical-overview.adoc[technical overview].
 
-[NOTE]
-====
-Download link:../_attachments/whitepapers/aao-byoc-aws.pdf[BYOC on AWS as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
-====
-
 The default multi-tenant architecture. Akka provisions a region into your VPC with public, private, and database subnets, and reaches it from the Federation Plane for control-plane operations.
 
 .AAO on AWS: multi-tenant architecture (default)

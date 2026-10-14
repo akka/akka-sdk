@@ -8,11 +8,6 @@ include::ROOT:partial$include.adoc[]
 
 Run Akka Automated Operations (AAO) on an EKS cluster you provision and operate. This page is the complete BYOK8s-on-AWS path: the shared requirements first, then the AWS specifics.
 
-[NOTE]
-====
-Download link:../_attachments/whitepapers/aao-byok8s-aws.pdf[BYOK8s on AWS as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
-====
-
 include::operations:partial$byok8s-requirements.adoc[]
 
 == AWS specifics

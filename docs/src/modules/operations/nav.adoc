@@ -16,6 +16,7 @@
 ****** xref:operations:technical-overview/byok8s-azure.adoc[Azure]
 ****** xref:operations:technical-overview/byok8s-gcp.adoc[GCP]
 ***** xref:operations:technical-overview/data-flows.adoc[Data flows]
+***** xref:operations:technical-overview/optimize-dependencies.adoc[Akka Optimize dependencies]
 
 **** xref:operations:organizations/index.adoc[]
 ***** xref:operations:organizations/manage-users.adoc[Manage users]

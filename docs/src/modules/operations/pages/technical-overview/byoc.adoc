@@ -10,11 +10,6 @@ Under Bring Your Own Cloud (BYOC), Akka provisions and operates a region inside 
 
 This page lists the cloud-agnostic setup. For your cloud's resource inventory, private connectivity, and `values.hcl` specifics, follow the per-cloud page: xref:operations:technical-overview/byoc-aws.adoc[AWS], xref:operations:technical-overview/byoc-azure.adoc[Azure], or xref:operations:technical-overview/byoc-gcp.adoc[GCP].
 
-[NOTE]
-====
-Download the link:../_attachments/whitepapers/aao-byoc.pdf[full BYOC setup as a PDF, window=_blank], or the link:../_attachments/whitepapers/aao-technical-overview-full.pdf[full overview, window=_blank].
-====
-
 == Installation flow
 
 . *Understand*: review the xref:operations:technical-overview.adoc[technical overview] and receive the `akka-bootstrap` utility from your Akka Success Team, so you can inspect exactly which permissions Akka's deployment identity will require.

@@ -10,11 +10,6 @@ Akka Automated Operations (AAO) is an actively maintained Akka region that Akka 
 
 With the self-managed models (BYOC and BYOK8s), the region runs inside your own environment and you keep custodial ownership of the infrastructure. Application data stays within your environment; a limited set of platform interactions still crosses to the Akka Federation Plane: deployments, key rotation, the management API, metadata synchronization, and platform observability. The xref:operations:technical-overview/data-flows.adoc[data flows] page lists every flow.
 
-[NOTE]
-====
-Download the full overview as a single link:_attachments/whitepapers/aao-technical-overview-full.pdf[PDF, window=_blank]. Each page below is also available as its own PDF.
-====
-
 // DIAGRAM: recreated as a themed SVG from the original whitepaper "Federation Plane / Application Plane" drawing. Flagged for creator review.
 The two planes and the main flows between them:
 
@@ -110,6 +105,7 @@ Beyond operations, AAO provides behavioral extensions that would otherwise requi
 Networking:: Set up using best practices for the specific cloud provider: VPC, subnets, load balancers, NAT.
 DNS Zones:: Automatically provisioned in your cloud account to resolve names for services deployed in the region.
 Persistence:: Encrypted-at-rest data store for app data, Akka events, and read-only views. Append-only, lock-free, and sharded. Benchmarked past 1M TPS.
+Ledger:: Records each agent interaction and the result of each control or evaluation run on it. The ledger is stored in the region's database and in your hyperscaler's object storage service, S3 or its equivalent.
 Kubernetes:: A managed cluster from your cloud provider orchestrates Akka instances deployed as OCI containers.
 Registry:: An OCI registry hosting immutable, signed, versioned service assets. You may optionally use your own registry.
 Akka Operators:: Route management, elasticity automation, metadata sync, rolling deploys, certificate management, key rotation, and multi-region failover and recovery.
@@ -207,14 +203,14 @@ Akka installs open source infrastructure in the Kubernetes cluster that AAO uses
 | KubeRay
 | Runs training jobs and serves models.
 
-| NVIDIA device plugins
-| Schedules GPUs.
+| NVIDIA DRA driver
+| Allocates GPUs.
 
 | verl
-| Runs reinforcement learning for sharded and multi-device training runs. Also scores and grades training runs.
+| Training engine for sharded and multi-device runs.
 |===
 
-Akka also provisions the storage account (bucket) for training. Optimize stores logs and traces of AI interactions in your hyperscaler's preferred object storage service.
+Akka also provisions the storage account (bucket) for training. Optimize stores logs and traces of AI interactions in your hyperscaler's preferred object storage service. The flows that Optimize adds are in the xref:operations:technical-overview/data-flows.adoc[data flows]. The components that Optimize depends on are listed in xref:operations:technical-overview/optimize-dependencies.adoc[Akka Optimize dependencies].
 
 === What Optimize needs from you
 
@@ -232,7 +228,7 @@ You deploy a model onto GPU capacity in an Akka region. Any OpenAI-compatible cl
 Akka installs and manages the routing and serving components separately from the training components. Initially, a deployment gives you direct access to manage routing and inference. For how-to guides, see xref:inference:serving/getting-started.adoc[] and xref:inference:routing/index.adoc[]. Akka's team configures and manages the initial training loops with you, while Akka stabilizes the external interfaces that define and run long-running training loops.
 
 // DIAGRAM: recreated as a Mermaid diagram from the Optimize architecture drawing. Flagged for creator review.
-The diagram shows how a request reaches a model. A client outside the cluster calls the route on a host name. An agent or service inside the project calls the model endpoint by its internal name. Both requests reach the gateway, which checks the bearer key and picks the engine from the model name. The engines accept only the gateway identity.
+The diagram shows how a request reaches a model. A client outside the cluster calls the route on a host name. An agent or service inside the project calls the model endpoint by its internal name. Both requests reach the gateway, which checks the bearer key and picks the engine from the model name. The engines accept only the gateway identity. The engines run on GPU devices that the region binds with a Dynamic Resource Allocation (DRA) ResourceClaim, and Trainer endpoints draw devices from the same pool.
 
 .How a request reaches a model
 [mermaid]
@@ -241,16 +237,6 @@ include::operations:partial$model-request-diagram.mmd[]
 ----
 
 xref:operations:technical-overview-model-request-image.adoc[View the full-size model request diagram,role=open-image,window=_blank]
-
-=== Tools for evaluation and adversarial testing
-
-Akka provides these tools with Optimize:
-
-* evalkit, a toolkit that you download separately and that integrates with your Akka project, runs evaluation and scoring campaigns locally.
-* redkit, a toolkit that is also part of your Akka project and downloadable separately, runs adversarial testing campaigns against models.
-* Extensions to the Akka CLI manage evalkit, redkit, and your hosted Optimize environment. See xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize].
-
-For testing an agent, see xref:testing:evaluation/adversarial.adoc[].
 
 == Where to go next
 

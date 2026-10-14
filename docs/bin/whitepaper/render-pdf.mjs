@@ -31,12 +31,13 @@ const BYOK8S_AZURE = `${base}/byok8s-azure.html`;
 const BYOK8S_GCP = `${base}/byok8s-gcp.html`;
 const DATA_FLOWS = `${base}/data-flows.html`;
 const DATA_FLOWS_GRID = `${base}/data-flows-grid.html`;
+const DATA_FLOWS_OPTIMIZE_GRID = `${base}/data-flows-optimize-grid.html`;
 
 // Section ids of the shared BYOK8s requirements partial. Dropping these from a self-contained
 // BYOK8s cloud page leaves only that page's cloud-specific sections for a combined PDF.
 const REQ_SECTIONS = ['_installation_flow', 'requirements', '_capacity_planning', '_egress_allowlist_and_teleport', 'smoke-tests'];
 const specifics = (rel, id) => ({ rel, keep: [id] });
-const dataFlowsParts = [{ rel: DATA_FLOWS }, { rel: DATA_FLOWS_GRID, wideTable: true }];
+const dataFlowsParts = [{ rel: DATA_FLOWS }, { rel: DATA_FLOWS_GRID, wideTable: true }, { rel: DATA_FLOWS_OPTIMIZE_GRID, wideTable: true }];
 
 // Each download: an ordered list of parts merged into one PDF. The first part carries the cover.
 const DOWNLOADS = [
@@ -47,12 +48,6 @@ const DOWNLOADS = [
     parts: [{ rel: HUB }, { rel: BYOC }, { rel: AWS }, { rel: AZURE }, { rel: GCP }, { rel: BYOK8S_REQ },
       specifics(BYOK8S_AWS, '_aws_specifics'), specifics(BYOK8S_AZURE, '_azure_specifics'), specifics(BYOK8S_GCP, '_gcp_specifics'),
       ...dataFlowsParts],
-  },
-  {
-    out: 'aao-byoc.pdf',
-    title: 'BYOC',
-    subtitle: 'Bring Your Own Cloud: shared setup, AWS, Azure, GCP, and data flows.',
-    parts: [{ rel: BYOC }, { rel: AWS }, { rel: AZURE }, { rel: GCP }, ...dataFlowsParts],
   },
   {
     out: 'aao-byoc-aws.pdf',
@@ -73,13 +68,6 @@ const DOWNLOADS = [
     parts: [{ rel: BYOC }, { rel: GCP }, ...dataFlowsParts],
   },
   {
-    out: 'aao-byok8s.pdf',
-    title: 'BYOK8s',
-    subtitle: 'Bring Your Own Kubernetes: shared requirements, AWS, Azure, GCP, and data flows.',
-    parts: [{ rel: BYOK8S_REQ }, specifics(BYOK8S_AWS, '_aws_specifics'), specifics(BYOK8S_AZURE, '_azure_specifics'),
-      specifics(BYOK8S_GCP, '_gcp_specifics'), ...dataFlowsParts],
-  },
-  {
     out: 'aao-byok8s-aws.pdf',
     title: 'BYOK8s on AWS',
     subtitle: 'Self-contained BYOK8s setup for AWS, with data flows.',
@@ -96,12 +84,6 @@ const DOWNLOADS = [
     title: 'BYOK8s on GCP',
     subtitle: 'Self-contained BYOK8s setup for GCP, with data flows.',
     parts: [{ rel: BYOK8S_GCP }, ...dataFlowsParts],
-  },
-  {
-    out: 'aao-data-flows.pdf',
-    title: 'Data Flows',
-    subtitle: 'Every network flow between your environment and the Akka platform.',
-    parts: dataFlowsParts,
   },
 ];
 const EYEBROW = 'Akka Automated Operations';
