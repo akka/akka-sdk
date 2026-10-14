@@ -50,25 +50,25 @@ When the user in the primary region performs a write request image:steps-1.svg[w
 
 A user B in London, when they perform a read image:steps-4.svg[width=20], that read operation will happen locally, and a response sent immediately back image:steps-5.svg[width=20].
 
-A user can also perform write operations on entities in non-primary regions. In the default request-region mode, the write moves the primary of the entity to the region that received it. The following scenario uses pinned-region mode, where the primary stays in place.
+A user can also perform write operations on entities in non-primary regions.
 
 image:geo-b.svg[Geo data replication, width=600]
 
 In this scenario, the user B in London (UK) is performing a write operation on the Alice entity image:steps-1.svg[width=20]. Since London is not the primary region for the Alice entity, Akka will automatically forward that request to the primary region image:steps-2.svg[width=20], in this case, Los Angeles (USA). That request will be handled in the USA, and a response sent directly back to the user image:steps-3.svg[width=20].
 
+=== Illustrating entities with request-region selection
+
+In request-region mode, each entity has its own primary region: the region where it was last written. Alice writes her data in the USA, so its primary is Los Angeles. Bob writes his data in the UK, so its primary is London.
+
 image:geo-c.svg[Geo data replication, width=600]
 
-When Bob makes a request in the UK on his data image:steps-1.svg[width=20], that request is handled locally image:steps-2.svg[width=20], and replicated to the US image:steps-3.svg[width=20]. Exactly the same as Alice's requests in the USA with her data are handled locally in the USA, and replicated to the UK.
+When Bob makes a request in the UK on his data image:steps-1.svg[width=20], that request is handled locally image:steps-2.svg[width=20], and replicated to the US image:steps-3.svg[width=20]. In the same way, Alice's requests on her data are handled locally in the USA, and replicated to the UK.
 
-The data however is still available in all regions. If Bob travels to the USA, he can access his data in the Los Angeles region.
-
-image:geo-d.svg[Geo data replication, width=600]
-
-When Bob travels to the USA, read requests that Bob makes on his data are handled locally image:steps-1.svg[width=20] and getting an immediate reply image:steps-3.svg[width=20]. Write requests, on the other hand, are forwarded to the UK image:steps-2.svg[width=20], before the reply is sent image:steps-3.svg[width=20].
+The data is available in all regions. When Bob travels to the USA, read requests on his data are handled locally in Los Angeles. His first write request in Los Angeles moves the primary of his data there: Akka first makes sure every earlier write from London has been replicated and applied, then handles the write. Later writes in Los Angeles are handled locally.
 
 image:geo-e.svg[Geo data replication, width=600]
 
-Meanwhile, all requests made by Alice on her data are handled locally image:steps-1.svg[width=20] and get an immediate reply image:steps-2.svg[width=20]. The write operations are being replicated to the UK image:steps-3.svg[width=20].
+Meanwhile, all requests made by Alice on her data are handled locally image:steps-1.svg[width=20] and get an immediate reply image:steps-2.svg[width=20]. The write operations are replicated to the UK image:steps-3.svg[width=20].
 
 == Replicated writes
 
