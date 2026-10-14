@@ -151,6 +151,16 @@ akka <command> [sub-command] [parameters] --[flags]
 
 Flags, which modify command behavior, are always preceded by `--`. The flags that every command accepts are listed in xref:reference:cli/conventions.adoc[].
 
+[#open-docs]
+== Open the documentation
+
+To open the Akka documentation in your browser, run:
+
+[source, shell]
+----
+akka docs
+----
+
 [#command-completion]
 == Enable command completion
 

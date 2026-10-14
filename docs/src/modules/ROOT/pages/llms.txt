@@ -117,6 +117,8 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Deploying models](https://doc.akka.io/inference/serving/deploying-models.html.md): Declaring a model, tuning the engine, applying the descriptor, and removing what it created
 - [Exposing and calling models](https://doc.akka.io/inference/serving/exposing-and-calling-models.html.md): Model endpoints, project routes, per-client API keys, and calling the OpenAI-compatible endpoint
 - [Routing requests to models](https://doc.akka.io/inference/routing.html.md): Routing on request attributes and on request meaning, use cases, manifests, and shifting traffic
+- [Tracking inference spend](https://doc.akka.io/inference/tracking-spend.html.md): Publishing a versioned pricing catalog, and reading what model traffic in a period consumed and cost
+- [Erasing caller data](https://doc.akka.io/inference/erasing-caller-data.html.md): Removing the identifier that spend is attributed to, and what an erasure does not change
 
 ## Reference
 
