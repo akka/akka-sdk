@@ -1,0 +1,150 @@
+= Akka Optimize dependencies
+:page-summary: The components that Akka Optimize depends on to train models, route requests, and serve models, and what the Akka Verify ledger needs.
+:page-when-to-use: Use this for a security or platform review of an Akka region that runs Akka Optimize.
+:page-related: xref:operations:technical-overview.adoc[], xref:operations:technical-overview/data-flows.adoc[]
+:page-persona: operator-platform, operator-sre, security-reviewer
+
+include::ROOT:partial$include.adoc[]
+
+Versions change with each release, so see the xref:optimize:release-notes/index.adoc[Akka Optimize release notes] for the versions in your deployment.
+
+== Training
+
+=== Training components
+
+[cols="2,2,3", options="header"]
+|===
+| Component | Runs on | Role
+
+| Training service | Akka platform, as a system service | Coordinates Ray.
+| Artifact registry | Akka platform, as a system service | Stores datasets, bundles, and models.
+| Training runtime | Ray cluster | Runs training jobs and serves candidate models.
+| KubeRay | Kubernetes | Runs Ray clusters and Ray Serve applications on Kubernetes.
+| OpenTelemetry Collector contrib | Each Ray pod | Collects telemetry.
+|===
+
+=== Training requirements
+
+[cols="3,2", options="header"]
+|===
+| Requirement | Role
+
+| Ray cluster, on Kubernetes or on GPU hosts | Runs the training runtime.
+| GPU nodes with an NVIDIA driver that supports the CUDA runtime in the runtime image | Training and model serving.
+| NVIDIA DRA driver, on Kubernetes | GPU allocation.
+| Storage on or shared by the Ray nodes | Base model weights cache.
+| Object storage | Datasets, adapters, checkpoints, and run artifacts.
+| OpenTelemetry Operator, on Kubernetes | Adds a telemetry collector to each Ray pod.
+| cert-manager and a certificate issuer, on Kubernetes | Client certificates for the telemetry collectors.
+| Akka image registry access, or your mirror, with a pull secret | The training runtime image.
+| Secrets for object storage and the Hugging Face token | Bucket access and gated model weights.
+|===
+
+=== Training runtime image
+
+The same image runs training jobs and candidate serving. It is based on a Ray image and supplies Ray, Python, and the CUDA runtime. These are the direct dependencies, not the full set of transitive dependencies.
+
+[cols="2,3", options="header"]
+|===
+| Library | Role
+
+| `Ray`, `Ray Serve`, `Ray Serve LLM` | Job submission and scheduling, and model serving.
+| `vLLM` | Generation, for serving, scoring, and reinforcement rollouts.
+| `FlashInfer` | GPU kernels for vLLM.
+| `verl` | Training engine for sharded and multi-device runs.
+| `TransferQueue` | Data transfer within a verl run.
+| `Liger Kernel` | Fused GPU kernels for supervised training.
+| `TRL` | Training engine for single-device runs.
+| `PyTorch` | The training framework.
+| `torchvision` | Vision model image processing.
+| `Transformers` | Model loading and tokenization.
+| `PEFT` | Low-rank adapters.
+| `Accelerate` | Distributed training support.
+| `Datasets` | Dataset loading.
+| `bitsandbytes` | Quantized training.
+| `pandas` | Training data file preparation.
+| `huggingface-hub` | Base model weights.
+| `Pillow` | Image decoding for multimodal training.
+| `TensorBoard` | Training metrics files.
+| `jsonschema` | Job input validation.
+| `PyArrow` | Object storage access.
+| `boto3` | S3 object storage access.
+| `adlfs`, `azure-identity` | *Azure-specific:* Azure Blob Storage access.
+| `pyOpenSSL` | TLS support.
+| `OpenTelemetry SDK` and the OTLP exporter | Metrics from the training job.
+| `nvidia-ml-py` | GPU monitoring.
+|===
+
+=== Model weights
+
+Base model weights come from Hugging Face Hub, pinned to a commit. Gated models need a Hugging Face token. The training service also resolves base model commits on the hub when it starts, and it does not start if the hub cannot be reached.
+
+If the region cannot reach Hugging Face Hub, an internal model catalog can be the source of approved open-weight models, and you populate the weights cache from it ahead of time. *Azure-specific:* the Azure AI Foundry model catalog can serve as that source.
+
+== Routing gateway
+
+=== Routing gateway components
+
+[cols="2,2,3", options="header"]
+|===
+| Component | Runs on | Role
+
+| agentgateway controller and proxy | Kubernetes, in Gateway API mode | Receives each request, asks the gateway-router where to send it, and forwards it.
+| agentgateway custom resource definitions | Kubernetes | The backend and policy resources of agentgateway.
+| Gateway API custom resource definitions | Kubernetes | Gateway, route, and cross-namespace grant resources.
+| gateway-router | Akka platform, as a service | Makes the routing decision, keeps a conversation on one model, and records each exchange.
+| Embedding model | In the gateway-router process, on the CPU | Turns request text into the vector that semantic routing compares. It ships inside the service, and nothing is downloaded at runtime.
+| capture-refinery | Akka platform, as a service | Runs off the request path. Normalizes captured exchanges and reports usage.
+|===
+
+=== Routing gateway requirements
+
+[cols="3,2", options="header"]
+|===
+| Requirement | Role
+
+| Kubernetes, with a load balancer for the router namespace | Runs agentgateway.
+| A network path from agentgateway to the gateway-router | The routing request.
+| An object storage container, registered with the Akka project. *Azure-specific:* a storage account container. | Captured and normalized exchanges.
+| A storage identity for each service | gateway-router and capture-refinery access to storage.
+| Akka management API | Validates tokens and looks up the roles of the caller.
+| Frontier provider endpoint and API key | The default route.
+| An OpenAI-compatible inference host and key for each classifier (optional) | Signals for a routing rule that asks a classifier.
+|===
+
+== Akka Verify ledger
+
+[cols="3,2", options="header"]
+|===
+| Requirement | Role
+
+| Regional PostgreSQL database | The event journal that holds interaction and control records.
+| Object storage, S3 or equivalent. *Azure-specific:* Azure Blob Storage. | Storage for the ledger.
+|===
+
+== Model serving
+
+=== Model serving components
+
+[cols="2,2,3", options="header"]
+|===
+| Component | Runs on | Role
+
+| AI gateway: agentgateway and vLLM engines | The region, on GPU nodes | Production serving of declared models, behind an API key, with Contour ingress, Linkerd mesh mTLS, and Prometheus metering.
+| Ray Serve LLM, one application for each base model | The training Ray cluster, or a separate serving cluster | Serves a base model and up to 8 trained adapters for each replica, for scoring candidates. It is separate from production serving.
+| Training service | Akka platform, as a system service | Starts, checks, and stops candidate serving, and forwards chat requests to it.
+| Frontier model | Your provider | The default route of the routing gateway.
+|===
+
+=== Model serving libraries in the runtime image
+
+[cols="2,3", options="header"]
+|===
+| Library | Role
+
+| `tokenizers`, `hf-xet` | Tokenization and weight download.
+| `FastAPI`, `Starlette`, `Uvicorn` | The HTTP layer of Ray Serve.
+| `xgrammar`, `llguidance`, `outlines-core` | Structured output in vLLM.
+| `mistral-common`, `tiktoken`, `openai-harmony` | Model-specific chat formats in vLLM.
+| `prometheus-client` | Serving metrics.
+|===

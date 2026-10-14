@@ -50,12 +50,6 @@ const DOWNLOADS = [
       ...dataFlowsParts],
   },
   {
-    out: 'aao-byoc.pdf',
-    title: 'BYOC',
-    subtitle: 'Bring Your Own Cloud: shared setup, AWS, Azure, GCP, and data flows.',
-    parts: [{ rel: BYOC }, { rel: AWS }, { rel: AZURE }, { rel: GCP }, ...dataFlowsParts],
-  },
-  {
     out: 'aao-byoc-aws.pdf',
     title: 'BYOC on AWS',
     subtitle: 'Shared BYOC setup, AWS specifics, and data flows.',
@@ -74,13 +68,6 @@ const DOWNLOADS = [
     parts: [{ rel: BYOC }, { rel: GCP }, ...dataFlowsParts],
   },
   {
-    out: 'aao-byok8s.pdf',
-    title: 'BYOK8s',
-    subtitle: 'Bring Your Own Kubernetes: shared requirements, AWS, Azure, GCP, and data flows.',
-    parts: [{ rel: BYOK8S_REQ }, specifics(BYOK8S_AWS, '_aws_specifics'), specifics(BYOK8S_AZURE, '_azure_specifics'),
-      specifics(BYOK8S_GCP, '_gcp_specifics'), ...dataFlowsParts],
-  },
-  {
     out: 'aao-byok8s-aws.pdf',
     title: 'BYOK8s on AWS',
     subtitle: 'Self-contained BYOK8s setup for AWS, with data flows.',
@@ -97,12 +84,6 @@ const DOWNLOADS = [
     title: 'BYOK8s on GCP',
     subtitle: 'Self-contained BYOK8s setup for GCP, with data flows.',
     parts: [{ rel: BYOK8S_GCP }, ...dataFlowsParts],
-  },
-  {
-    out: 'aao-data-flows.pdf',
-    title: 'Data Flows',
-    subtitle: 'Every network flow between your environment and the Akka platform.',
-    parts: dataFlowsParts,
   },
 ];
 const EYEBROW = 'Akka Automated Operations';
