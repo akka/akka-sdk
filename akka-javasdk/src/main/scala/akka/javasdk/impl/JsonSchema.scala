@@ -5,10 +5,8 @@
 package akka.javasdk.impl
 
 import java.lang.annotation.Annotation
-import java.lang.reflect.Field
 import java.lang.reflect.GenericArrayType
 import java.lang.reflect.Method
-import java.lang.reflect.Modifier
 import java.lang.reflect.Parameter
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
@@ -22,6 +20,7 @@ import akka.http.javadsl.model.HttpEntity
 import akka.http.javadsl.model.HttpRequest
 import akka.javasdk.annotations.Description
 import akka.javasdk.impl.reflection.Reflect
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaBoolean
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaDataType
@@ -30,11 +29,9 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.databind.PropertyNamingStrategies
-import com.fasterxml.jackson.databind.annotation.JsonNaming
+import com.fasterxml.jackson.databind.introspect.AnnotatedField
+import com.fasterxml.jackson.databind.introspect.AnnotatedMember
+import com.fasterxml.jackson.databind.introspect.AnnotatedMethod
 import com.google.protobuf.Descriptors
 import com.google.protobuf.GeneratedMessageV3
 import org.slf4j.LoggerFactory
@@ -179,10 +176,10 @@ private[impl] object JsonSchema {
 
             case _ =>
               // Note: for now the top level can only be a class
-              val properties = jacksonFields(clazz).map { case (name, field) =>
-                val description = Option(field.getAnnotation(classOf[Description])).map(_.value())
-                name -> jsonSchemaTypeFor(field.getGenericType, description, seenTypes + clazz)
-              }
+              val properties = jacksonProperties(clazz).map { case (name, propertyType, member) =>
+                val description = Option(member.getAnnotation(classOf[Description])).map(_.value())
+                name -> jsonSchemaTypeFor(propertyType, description, seenTypes + clazz)
+              }.toMap
 
               val jsObjectSchema = new JsonSchemaObject(
                 description = description,
@@ -200,43 +197,25 @@ private[impl] object JsonSchema {
     }
   }
 
-  // The fields Jackson maps for a class, by JSON property name, mirroring JsonSerializer.newObjectMapperWithDefaults
-  // (field visibility ANY). Jackson walks superclasses up to Object, here the walk stops at the first java.* class so
-  // that JDK internals such as Throwable.detailMessage stay out of schemas. The class itself is always included, also
-  // when it is a java.* class.
-  private def jacksonFields(clazz: Class[_]): Map[String, Field] = {
-    val classes = Iterator
-      .iterate[Class[_]](clazz)(_.getSuperclass)
-      .takeWhile(c => c != null && (c == clazz || !c.getName.startsWith("java.")))
-      .toVector
-    def nearestAnnotation[A <: Annotation](annotationClass: Class[A]): Option[A] =
-      classes.iterator.map(_.getAnnotation(annotationClass)).find(_ != null)
+  // The properties Jackson writes for a class, by JSON name, with the generic type and the member carrying the
+  // annotations. Introspected with the SDK mapper configuration, so naming strategies, ignores, renames, getters
+  // and annotations inherited from superclasses or interfaces apply exactly as in serialization.
+  private def jacksonProperties(clazz: Class[_]): Seq[(String, Type, AnnotatedMember)] = {
+    val config = JsonSerializer.internalObjectMapper.getSerializationConfig
+    val beanDescription = config.introspect(config.constructType(clazz))
+    val ignoredNames = Option(config.getDefaultPropertyIgnorals(clazz, beanDescription.getClassInfo))
+      .map(_.findIgnoredForSerialization.asScala.toSet)
+      .getOrElse(Set.empty[String])
 
-    // Jackson applies the naming strategy to implicit names only, explicit @JsonProperty names are kept as is
-    val namingStrategy = nearestAnnotation(classOf[JsonNaming]).map(_.value().getDeclaredConstructor().newInstance())
-    def implicitName(field: Field): String = namingStrategy match {
-      case Some(base: PropertyNamingStrategies.NamingBase) => base.translate(field.getName)
-      case Some(other)                                     => other.nameForField(null, null, field.getName)
-      case None                                            => field.getName
-    }
-    val ignoredNames = classes.flatMap { c =>
-      Option(c.getAnnotation(classOf[JsonIgnoreProperties])).toSeq.flatMap(_.value())
-    }.toSet
-
-    // base class first, so that a subclass field shadowing a superclass field wins, as it does in Jackson
-    classes.reverse
-      .flatMap(_.getDeclaredFields)
-      .filterNot { field =>
-        val modifiers = field.getModifiers
-        Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers) || field.isSynthetic ||
-        Option(field.getAnnotation(classOf[JsonIgnore])).exists(_.value())
+    beanDescription.findProperties.asScala.toVector
+      .filter(property => property.couldSerialize && !ignoredNames(property.getName))
+      .map { property =>
+        val propertyType = property.getAccessor match {
+          case field: AnnotatedField   => field.getAnnotated.getGenericType
+          case getter: AnnotatedMethod => getter.getAnnotated.getGenericReturnType
+        }
+        (property.getName, propertyType, property.getPrimaryMember)
       }
-      .map { field =>
-        val explicitName = Option(field.getAnnotation(classOf[JsonProperty])).map(_.value()).filter(_.nonEmpty)
-        explicitName.getOrElse(implicitName(field)) -> field
-      }
-      .filterNot { case (name, _) => ignoredNames(name) }
-      .toMap
   }
 
   private def protobufFieldToJsonSchema(field: Descriptors.FieldDescriptor): JsonSchemaDataType = {

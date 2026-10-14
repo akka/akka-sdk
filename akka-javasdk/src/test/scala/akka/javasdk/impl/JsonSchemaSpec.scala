@@ -212,9 +212,20 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
         new JsonSchemaJacksonModels.WithJacksonAnnotations("name", "secret", 42) -> Set("full_name", "age"),
         new JsonSchemaJacksonModels.WithIgnoredProperties("name", "internal") -> Set("name"),
         new JsonSchemaJacksonModels.WithNamingStrategy("first", "last") -> Set("first_name", "explicit"),
-        new JsonSchemaJacksonModels.WithTransientField -> Set("name"),
-        new JsonSchemaJacksonModels.SubClass -> Set("baseField", "subField"),
-        new JsonSchemaJacksonModels.ShadowSub -> Set("name"),
+        new JsonSchemaJacksonModels.WithCustomNaming("first", 42) -> Set("x_firstName", "x_age"),
+        new JsonSchemaJacksonModels.ViaInterfaceNaming("first") -> Set("first_name"),
+        new JsonSchemaJacksonModels.ViaInterfaceIgnore("name", "internal") -> Set("name"),
+        new JsonSchemaJacksonModels.IgnoreSub("a", "b", "c") -> Set("a", "c"),
+        new JsonSchemaJacksonModels.WithTransientField("name", "cached") -> Set("name"),
+        new JsonSchemaJacksonModels.TransientWithProperty("name", "cached") -> Set("name", "cached"),
+        new JsonSchemaJacksonModels.SubClass("base", "sub") -> Set("baseField", "subField"),
+        new JsonSchemaJacksonModels.GetterRenamed("name") -> Set("full_name"),
+        new JsonSchemaJacksonModels.CreatorRenamed("name") -> Set("full_name"),
+        new JsonSchemaJacksonModels.GetterIgnored("name", "secret") -> Set("name"),
+        new JsonSchemaJacksonModels.AccessorIgnored("a", "b") -> Set("a"),
+        new JsonSchemaJacksonModels.ShadowSub("sub") -> Set("name"),
+        new JsonSchemaJacksonModels.ShadowRenamedSub("sub") -> Set("x"),
+        new JsonSchemaJacksonModels.DescribedPojo("name") -> Set("name"),
         new models.InnerClass -> Set("name"))
 
       examples.foreach { case (example, expectedNames) =>
@@ -237,6 +248,10 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
       val shadowSchema =
         JsonSchema.jsonSchemaFor(classOf[JsonSchemaJacksonModels.ShadowSub]).asInstanceOf[JsonSchemaObject]
       shadowSchema.properties("name") shouldEqual Schema.string()
+
+      val describedSchema =
+        JsonSchema.jsonSchemaFor(classOf[JsonSchemaJacksonModels.DescribedPojo]).asInstanceOf[JsonSchemaObject]
+      describedSchema.properties("name") shouldEqual Schema.string(description = "the name")
     }
 
     "use object for types causing exceptions" in {
