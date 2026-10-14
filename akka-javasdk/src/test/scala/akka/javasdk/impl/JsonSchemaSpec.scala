@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl
 
+import scala.jdk.CollectionConverters._
+
 import akka.javasdk.impl.SomeToolInput.ClassWithRecursiveFields
 import akka.javasdk.impl.SomeToolInput.CommonStdlibTypes
 import akka.javasdk.impl.SomeToolInput.SomeEnum
@@ -12,6 +14,7 @@ import akka.javasdk.impl.SomeToolInput.SomeToolInput2
 import akka.javasdk.impl.SomeToolInput.SomeToolInput3
 import akka.javasdk.impl.SomeToolInput.SomeToolInputWithEnum
 import akka.javasdk.impl.SomeToolInput.SomeToolInputWithGenericArray
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaBoolean
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaDataType
@@ -20,6 +23,7 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
+import com.fasterxml.jackson.databind.JsonNode
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -199,6 +203,33 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
         "required" -> Schema.enumOf(Seq("ONE", "TWO", "THREE"), description = "required choice"),
         "optional" -> Schema.enumOf(Seq("ONE", "TWO", "THREE")))
       result.required shouldEqual Seq("required")
+    }
+
+    "only include the fields that Jackson serializes, by JSON property name" in {
+      val mapper = JsonSerializer.newObjectMapperWithDefaults()
+      val models = new JsonSchemaJacksonModels
+      val examples: Seq[AnyRef] = Seq(
+        new JsonSchemaJacksonModels.WithStaticField("name"),
+        new JsonSchemaJacksonModels.WithJacksonAnnotations("name", "secret", 42),
+        new JsonSchemaJacksonModels.WithIgnoredProperties("name", "internal"),
+        new JsonSchemaJacksonModels.WithTransientField,
+        new JsonSchemaJacksonModels.SubClass,
+        new models.InnerClass)
+
+      examples.foreach { example =>
+        withClue(example.getClass.getSimpleName) {
+          val schema = JsonSchema.jsonSchemaFor(example.getClass).asInstanceOf[JsonSchemaObject]
+          val serializedNames = mapper.valueToTree[JsonNode](example).fieldNames().asScala.toSet
+          schema.properties.keySet shouldEqual serializedNames
+          schema.required.toSet shouldEqual serializedNames
+        }
+      }
+
+      JsonSchema
+        .jsonSchemaFor(classOf[JsonSchemaJacksonModels.WithJacksonAnnotations])
+        .asInstanceOf[JsonSchemaObject]
+        .properties
+        .keySet shouldEqual Set("full_name", "age")
     }
 
     "use object for types causing exceptions" in {

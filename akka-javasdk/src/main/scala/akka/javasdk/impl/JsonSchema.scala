@@ -8,6 +8,7 @@ import java.lang.annotation.Annotation
 import java.lang.reflect.Field
 import java.lang.reflect.GenericArrayType
 import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 import java.lang.reflect.Parameter
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
@@ -29,6 +30,9 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.protobuf.Descriptors
 import com.google.protobuf.GeneratedMessageV3
 import org.slf4j.LoggerFactory
@@ -173,13 +177,13 @@ private[impl] object JsonSchema {
 
             case _ =>
               // Note: for now the top level can only be a class
-              val properties = clazz.getDeclaredFields.toVector.map { field: Field =>
+              val properties = jsonProperties(clazz).map { case (name, field) =>
                 val description = field.getAnnotation(classOf[Description]) match {
                   case null       => None
                   case annotation => Some(annotation.value())
                 }
 
-                field.getName -> jsonSchemaTypeFor(field.getGenericType, description, seenTypes + clazz)
+                name -> jsonSchemaTypeFor(field.getGenericType, description, seenTypes + clazz)
               }.toMap
 
               val jsObjectSchema = new JsonSchemaObject(
@@ -196,6 +200,33 @@ private[impl] object JsonSchema {
             (emptyObject(description), true)
         }
     }
+  }
+
+  /**
+   * The fields that the SDK Jackson configuration serializes, by JSON property name: instance fields, including fields
+   * inherited from non-JDK superclasses, minus ignored fields.
+   */
+  private def jsonProperties(clazz: Class[_]): Vector[(String, Field)] = {
+    val classes = Iterator
+      .iterate[Class[_]](clazz)(_.getSuperclass)
+      .takeWhile(c => c != null && (c == clazz || !c.getName.startsWith("java.")))
+      .toVector
+    val ignoredNames = classes.flatMap { c =>
+      Option(c.getAnnotation(classOf[JsonIgnoreProperties])).toSeq.flatMap(_.value())
+    }.toSet
+
+    classes.reverse
+      .flatMap(_.getDeclaredFields)
+      .filterNot { field =>
+        val modifiers = field.getModifiers
+        Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers) || field.isSynthetic ||
+        Option(field.getAnnotation(classOf[JsonIgnore])).exists(_.value())
+      }
+      .map { field =>
+        val name = Option(field.getAnnotation(classOf[JsonProperty])).map(_.value()).filter(_.nonEmpty)
+        name.getOrElse(field.getName) -> field
+      }
+      .filterNot { case (name, _) => ignoredNames(name) }
   }
 
   private def protobufFieldToJsonSchema(field: Descriptors.FieldDescriptor): JsonSchemaDataType = {
