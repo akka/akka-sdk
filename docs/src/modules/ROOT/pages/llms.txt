@@ -190,6 +190,9 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Capture and grading](https://doc.akka.io/inference/capture-and-grading.html.md): Capture processing, discovered use cases, grading, and eligibility for specialization
 - [Understanding inference costs](https://doc.akka.io/inference/spend.html.md): Pricing rules, unpriced traffic, token lower bounds, reporting completeness, and attribution
 
+- [Tracking inference spend](https://doc.akka.io/inference/tracking-spend.html.md): Publishing a versioned pricing catalog, and reading what model traffic in a period consumed and cost
+- [Erasing caller data](https://doc.akka.io/inference/erasing-caller-data.html.md): Removing the identifier that spend is attributed to, and what an erasure does not change
+
 ## Concepts
 
 - [Platform model](https://doc.akka.io/concepts/platform-model.html.md): Organizations, projects, services, components, regions and routes, and the planes that run them

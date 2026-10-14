@@ -106,6 +106,8 @@ For pricing rules, unpriced traffic, reporting completeness, and attribution, se
 
 == See also
 
+* xref:inference:tracking-spend.adoc[]
+* xref:inference:erasing-caller-data.adoc[]
 * xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize command reference]
 * xref:reference:cli/models.adoc[Model commands]
 * xref:reference:cli/routing.adoc[Routing commands]

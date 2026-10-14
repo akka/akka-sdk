@@ -1,0 +1,90 @@
+= Erasing caller data
+:page-summary: Erasing a caller removes the identifier that spend figures are attributed to, for example to answer a privacy request, and leaves every reported figure unchanged.
+:page-persona: operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+Erasing a caller removes the identifier that Akka holds for a caller of your models. Run it to answer a request to delete an identifier that can be tied to a person, such as an IP address. Every spend figure stays the same after an erasure.
+
+== Callers
+
+A caller is the identifier that spend figures are attributed to, together with the source that named it. That source is the basis:
+
+* `declared`: the request carried the `x-optimize-caller` header, and the caller is its value.
+* `forwarded`: a proxy reported the address of the client, and the caller is that address.
+
+The same value under the two bases is two different callers.
+
+To find the callers in a period, divide its spend by caller. See xref:inference:tracking-spend.adoc#read-spend[Read spend for a period].
+
+[source,command line]
+----
+akka optimize spend get --from 2026-09-15T00:00:00Z --to 2026-09-16T00:00:00Z --by caller
+----
+
+== What an erasure changes
+
+The portfolio service holds each caller value in one place. The records of the exchanges hold a key that refers to it. Erasing a caller deletes the value and changes nothing else:
+
+* The records keep their key, which then refers to nothing. No reported figure moves.
+* Spend divided by caller reports that group as one that the service no longer holds.
+
+An erasure does not change the following:
+
+* Conversation identifiers. They expire with the records that hold them.
+* Capture artifacts that the gateway router recorded. They keep the request headers, including `x-optimize-caller` and the forwarded address.
+* Traffic that arrives later. A request with the same value under the same basis creates the caller again. To stop that, stop the caller from being identified before the request reaches Akka: remove or replace the `x-optimize-caller` header, or the forwarded address.
+
+The service also removes a caller by itself once every record that names it has expired.
+
+An erasure cannot be undone. Nothing records which value was erased, and the service does not write the value to its logs.
+
+== Before you begin
+
+include::partial$portfolio-service-address.adoc[]
+
+Erasing a caller, including a dry run, needs delete access to the Akka Optimize portfolio.
+
+== Erase a caller
+
+. Check what the erasure reaches:
++
+[source,command line]
+----
+akka optimize callers erase 203.0.113.7 --basis forwarded --dry-run
+----
++
+[source,text]
+----
+Consequence          unrecoverable
+Held                 yes
+Committed            no
+Interaction records  1840
+Records cover        2026-09-01T00:00:00Z → 2026-09-15T16:00:00Z
+Dry run: "203.0.113.7" under basis forwarded is held and would be erased. Nothing was written.
+----
++
+`Held` states whether the service holds this caller. `Interaction records` is the number of records that name it, and the period they cover. The count can miss traffic that is recorded while the erasure runs.
+
+. Erase it:
++
+[source,command line]
+----
+akka optimize callers erase 203.0.113.7 --basis forwarded
+----
++
+The command shows what the erasure reaches and asks you to type the value again to confirm. A value that does not match cancels the erasure.
+
+A value that the service does not hold is not an error. The command reports that nothing was written and exits with status 0.
+
+In a script, pass `--force` to erase without the question. `--force` does not run the dry run first. Without `--force`, a script that cannot answer the question fails and erases nothing.
+
+include::partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:tracking-spend.adoc[]
+* xref:reference:cli/cost-and-traffic.adoc#_callers[Cost and traffic commands]
+* xref:reference:cli/akka-cli/akka_optimize_callers_erase.adoc[`akka optimize callers erase`]
+* xref:reference:cli/conventions.adoc#models-and-optimize[Model and optimize commands]

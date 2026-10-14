@@ -1,0 +1,4 @@
+The commands on this page call the portfolio service of your Akka Optimize deployment. Before you run them:
+
+* xref:getting-started:log-in.adoc[Log in] with the Akka CLI. The commands send the access token of your current context.
+* Set the `PORTFOLIO_URL` environment variable to the address of the portfolio service. Your Akka team provides it. The `--url` flag does not apply to these commands, and `--region` is refused.
