@@ -5,22 +5,22 @@
 
 include::ROOT:partial$include.adoc[]
 
-Inference spend is the cost of the model traffic in a period, together with the tokens that traffic consumed. Akka computes it from the exchanges that the gateway router recorded, and prices each exchange at the rate that was in force when it was served. No figure is estimated or entered by hand.
+Inference spend is the cost of the model traffic in a period, together with the tokens that traffic consumed. Akka computes it from the exchanges that the gateway router recorded, and prices each exchange once, when it records it, at the rate that was in force when the exchange was served. No figure is estimated or entered by hand.
 
-Two command groups work together. `akka optimize pricing-catalog` publishes the prices, and `akka optimize spend` reads the figures computed from them. Publish a price for every model before its traffic is served: an exchange that has no price counts in the token totals and never in the spend. See <<unpriced>>.
+Two command groups work together. `akka optimize pricing-catalog` publishes the prices, and `akka optimize spend` reads the figures computed from them. Publish a price for every served name before its traffic is served: an exchange that has no price counts in the token totals and never in the spend. See <<unpriced>>.
 
 == Before you begin
 
 include::partial$portfolio-service-address.adoc[]
 
-Reading prices and spend needs read access to the Akka Optimize portfolio. Publishing prices needs write access.
+Reading prices and spend needs read access to the Akka Optimize portfolio. Publishing prices, including a dry run, needs write access.
 
 Spend has figures only for traffic that the gateway router recorded. Traffic that was not recorded does not appear. See xref:inference:routing.adoc[Routing requests to models] for how requests reach the gateway router.
 
 [#publish-prices]
 == Publish prices
 
-The pricing catalog holds the price of each model as rates per million tokens. Each price applies to a served name: the model name that a response reports. See xref:inference:serving/exposing-and-calling-models.adoc[Exposing and calling models] for how served names are set.
+The pricing catalog holds the price of each model as rates per million tokens. Each price applies to a served name: the `model` field in the body of a model response. A response without that field is unpriced.
 
 The catalog is versioned. A published version is never edited, so a figure computed under a price stays the same when you read it again. To change a price, publish a new version that takes effect later.
 
@@ -61,7 +61,7 @@ A catalog document is JSON:
 | Meaning
 
 | `effectiveAt`
-| Required. The ISO-8601 instant in UTC from which the prices apply. It must be later than the latest price of every served name that the document carries. It can be in the future.
+| Required. The ISO-8601 instant in UTC from which the prices apply. It must be later than the latest price of every served name that the document carries. It can be in the future or in the past. A price with a past `effectiveAt` does not reprice traffic that is already recorded.
 
 | `source`
 | Optional. Free text that records where the prices came from.
@@ -73,7 +73,7 @@ A catalog document is JSON:
 | Required. The served name that this price applies to. A served name can appear once in a document.
 
 | `assigned`
-| `true` when your organization set the rate, for example a negotiated rate. `false` for a list price.
+| Optional. `true` when your organization set the rate, for example a negotiated rate. `false` for a list price. Defaults to `false`.
 
 | `currency`
 | Required. An upper-case ISO 4217 code, such as `USD`. The catalog holds one currency. A document that introduces a second currency is refused.
@@ -197,12 +197,12 @@ TOTAL           81         1860+   0.0256365000000000 USD  0         0
 
 `--limit` sets how many rows a ranked division returns. The service sets the default.
 
-A `+` after a token count marks a lower bound: some exchanges did not report every token class, so the true count can be higher.
+A `+` after a token count marks a lower bound: some exchanges did not report every token class, so the true count can be higher. This is common, because providers do not report every class. For example, OpenAI responses do not report cache-write tokens, and Anthropic responses do not report reasoning tokens. The command prints a note that names the classes that were not reported.
 
 [#unpriced]
 === Find unpriced traffic
 
-An exchange is unpriced when no price covers every token class that it used. It counts in the exchanges and tokens, and not in the spend. When a period has unpriced traffic, the answer names each served name that caused it and whether it has no price or is missing the rate for a class. Publish a catalog version that adds the price or the missing rate. The new price applies to traffic served after it takes effect. Traffic that was already recorded stays unpriced.
+An exchange is unpriced when no price covers every token class that it used. It counts in the exchanges and tokens, and not in the spend. When a period has unpriced traffic, the answer states the cause: a served name with no price, or a token class with no rate. Divide by `model` to see which served names have unpriced traffic. Publish a catalog version that adds the price or the missing rate. The new price applies to traffic served after it takes effect. Traffic that was already recorded stays unpriced.
 
 The rate that applies to an exchange is the one in force when it was served. The service prices the exchange once, when it records it, and does not price it again. Traffic recorded soon after a publish can still be priced at the previous rate, or recorded as unpriced if the served name had no earlier price, and a new price cannot take effect earlier than the latest price for the same served name.
 

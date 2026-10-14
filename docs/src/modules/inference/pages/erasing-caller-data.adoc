@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Erasing a caller removes the identifier that the Akka Optimize portfolio service holds for a caller of your models. Run it as part of answering a request to delete an identifier that can be tied to a person, such as an IP address. Every spend figure stays the same after an erasure. Capture artifacts that the gateway router recorded still hold the identifier; see <<what-it-changes>>.
+Erasing a caller removes the identifier that the Akka Optimize portfolio service holds for a caller of your models. Run it as part of answering a request to delete an identifier that can be tied to a person, such as an IP address. Every spend figure stays the same after an erasure. Capture artifacts that the gateway router recorded, and the interaction records derived from them, still hold the identifier; see <<what-it-changes>>.
 
 == Before you begin
 
@@ -41,6 +41,7 @@ An erasure does not change the following:
 
 * Conversation identifiers. They expire with the records that hold them.
 * Capture artifacts that the gateway router recorded. They keep the request headers, including `x-optimize-caller` and the forwarded address.
+* Interaction records derived from those captures. They keep the caller in `optimize.caller` and the `x-optimize-*` request headers in `optimize.optimizeHeaders`.
 * Traffic that arrives later. A request with the same value under the same basis creates the caller again. To stop that, stop the caller from being identified before the request reaches Akka: remove or replace the `x-optimize-caller` header, or the forwarded address.
 
 The service also removes a caller by itself once every record that names it has expired.
