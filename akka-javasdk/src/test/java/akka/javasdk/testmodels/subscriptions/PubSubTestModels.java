@@ -9,6 +9,7 @@ import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.annotations.Produce;
 import akka.javasdk.annotations.Query;
+import akka.javasdk.annotations.StartFrom;
 import akka.javasdk.consumer.Consumer;
 import akka.javasdk.testmodels.Done;
 import akka.javasdk.testmodels.Message;
@@ -45,6 +46,24 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     @DeleteHandler
     public Effect onDelete() {
       return effects().ignore();
+    }
+  }
+
+  @StartFrom(latest = true)
+  @Consume.FromEventSourcedEntity(EmployeeEntity.class)
+  public static class SubscribeToEventSourcedEmployeeFromLatest extends Consumer {
+
+    public Effect onEvent(EmployeeEvent event) {
+      return effects().done();
+    }
+  }
+
+  @StartFrom(timestamp = "2026-10-01T00:00:00Z")
+  @Consume.FromEventSourcedEntity(EmployeeEntity.class)
+  public static class SubscribeToEventSourcedEmployeeFromTimestamp extends Consumer {
+
+    public Effect onEvent(EmployeeEvent event) {
+      return effects().done();
     }
   }
 
