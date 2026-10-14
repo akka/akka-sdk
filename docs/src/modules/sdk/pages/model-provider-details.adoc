@@ -855,7 +855,12 @@ xref:model-provider-details.adoc#_additional_model_request_headers[additional mo
 the identity headers are on. Depending on the provider, the request then carries both values or only the
 value from the runtime.
 
-Turn them off for every provider:
+The `identity-headers` setting also controls the W3C trace context. When the setting is on and
+xref:operations:observability-and-monitoring/observability-exports.adoc#activating_tracing[tracing] is on,
+the runtime adds the trace context of the agent to each model request. The setting is on by default, so with
+tracing on the runtime sends the trace context by default.
+
+Turn off the identity headers and the trace context for every provider:
 
 [source,hocon,indent=0]
 ----
@@ -878,7 +883,7 @@ A provider named in configuration takes the value from the section it resolves t
 takes the global value, because it has no section.
 
 Local AI does not send these headers. A custom provider builds its own chat model, so the runtime does not
-add these headers to its requests.
+add these headers to its requests. The runtime does not send the trace context to Bedrock.
 
 == Reference configurations
 The following is a list of the various reference configurations for each of the AI models
