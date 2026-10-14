@@ -1,7 +1,7 @@
 = Architecture model
 :page-summary: How Akka structures a project into api, application, and domain layers, and how those layers map to services.
 :page-when-to-use: When you need to understand how Akka structures projects, separates concerns, and connects development practices to runtime reliability and operational governance.
-:page-related: xref:deployment-model.adoc[], xref:state-model.adoc[], xref:development-process.adoc[]
+:page-related: xref:deployment-model.adoc[], xref:state-model.adoc[], xref:sdk:spec-driven-development.adoc[]
 :page-prerequisites: Familiarity with service-oriented architecture and basic Java project conventions.
 :page-persona: Architect, Tech Lead, Senior Developer
 
@@ -82,7 +82,7 @@ image:ROOT:service.png[Services,width=100,float=left] A _Project_ may contain mu
 Once you are familiar with the project structure, continue with:
 
 - xref:deployment-model.adoc[Akka Deployment Model]
-- xref:development-process.adoc[Development process]
+- xref:sdk:spec-driven-development.adoc[]
 - xref:state-model.adoc[]
 - xref:sdk:dev-best-practices.adoc[Development best practices]
 

@@ -24,4 +24,5 @@ Components decouple behavior from execution through xref:declarative-effects.ado
 * Agentic concepts
 ** xref:concepts:ai-agents.adoc[]
 ** xref:concepts:ai-orchestration-patterns.adoc[]
+** xref:concepts:governance-and-the-runtime.adoc[]
 * xref:ROOT:resources.adoc[Resources]

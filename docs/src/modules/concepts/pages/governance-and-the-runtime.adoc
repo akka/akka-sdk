@@ -40,9 +40,9 @@ When a node of the service starts, the runtime writes one ledger record that lis
 Each control in the record has its control id.
 A guardrail or a sanitizer also has its configuration, masked by the log sanitizers.
 
-== Compliance certifications
+== Compliance
 
-Akka holds more than 19 compliance certifications, including:
+Akka complies with more than 19 standards and regulations, including:
 
 * EU AI Act
 * Singapore Agent Framework

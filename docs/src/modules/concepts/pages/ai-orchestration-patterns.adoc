@@ -5,7 +5,7 @@ include::ROOT:partial$include.adoc[]
 
 When we talk about AI orchestration, most of the time what we’re really referring to is _agent orchestration_: composing agentic applications where the agents are part of a larger unit trying to achieve some goal.
 
-In many AI frameworks and libraries, it’s common to see agents make calls directly to other agents. New protocols continue to appear to facilitate agent communication, such as the Agent-to-Agent protocol (A2A), the Agent Communication Protocol (ACP), and the Model Context Protocol (MCP). It can be tempting for agents to make calls directly to other agents, and it makes it easier to build sample applications, but sample applications that make this design compromise aren’t ready for production.
+In many AI frameworks and libraries, it is common to see agents make calls directly to other agents. New protocols continue to appear to facilitate agent communication, such as the Agent-to-Agent protocol (A2A) and the Model Context Protocol (MCP). It can be tempting for agents to make calls directly to other agents, and it makes it easier to build sample applications, but sample applications that make this design compromise are not ready for production.
 
 == Flexible composition is key
 Consider an activity recommendation application with multiple agents, some called concurrently and others sequentially. It has a weather agent and an activity agent. The weather agent retrieves the weather forecast for when the user wants to plan an activity, and then supplies that forecast to the activity agent.
@@ -22,7 +22,7 @@ Akka offers two implementations of the supervisor pattern. A xref:sdk:workflows.
 
 == Route communication through a supervisor
 
-The corollary of the supervisor pattern is a rule about how agents communicate: agents should not make ad-hoc, protocol-level calls to other agents. When an agent reaches another agent directly, over HTTP, gRPC, JSON-RPC, A2A, ACP, or by wrapping the call as an MCP tool, it bypasses platform mediation and gives up durability, retries, and audit. It also permanently fixes the supervision structure, so the calling agent can no longer be composed into other flows.
+The corollary of the supervisor pattern is a rule about how agents communicate: agents should not make ad-hoc, protocol-level calls to other agents. When an agent reaches another agent directly, over HTTP, gRPC, JSON-RPC, A2A, or by wrapping the call as an MCP tool, it bypasses platform mediation and gives up durability, retries, and audit. It also permanently fixes the supervision structure, so the calling agent can no longer be composed into other flows.
 
 Instead, route all coordination through a supervisor that runs on the Akka runtime: a xref:sdk:workflows.adoc[Workflow] when the orchestration steps are fixed in code, or an xref:sdk:autonomous-agents.adoc[Autonomous Agent] coordination capability (delegation, handoff, teams, moderation) when the model should decide which agent runs next. Both inherit the same composability, durability, and recovery guarantees from the runtime. The coordination tools that the Autonomous Agent runtime exposes to the model are platform-mediated and durable, and are distinct from the ad-hoc protocol calls to avoid.
 

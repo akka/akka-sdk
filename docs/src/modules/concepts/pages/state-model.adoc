@@ -47,7 +47,7 @@ Entities have operations that can change their state. These operations are trigg
 
 Akka offers two state models: _Event Sourced Entity_ and _Key Value Entity_. Event Sourced Entities build their state incrementally by storing each update as an event, while Key Value Entities store their entire state as a single entry in a Key/Value store. To replicate state across clusters and regions, Akka uses specific conflict resolution strategies for each state model.
 
-Event Sourced Entities, Key Value Entities and Workflows replicate their state by default. If you deploy your Service to a Project that spans multiple regions the state is replicated for you with no extra work to be done. By default, any region can read the data, and will do so from a local store within the region, but only the primary region will be able to perform writes. To make this easier, Akka will forward writes to the appropriate region.
+Event Sourced Entities, Key Value Entities and Workflows replicate their state by default. If you deploy your Service to a Project that spans multiple regions the state is replicated for you with no extra work to be done. Any region can read the data, and does so from a local store within the region. With replicated reads, each entity is written in its primary region. In the default request-region mode, a write in another region moves the primary to that region. In pinned-region mode, Akka forwards the write to the primary region. With replicated writes, every region can write. See xref:multi-region.adoc[].
 
 To understand more about regions and distribution see xref:deployment-model.adoc#_region[Deployment model].
 
@@ -61,7 +61,7 @@ Stateful entities in Akka have a concept of location, that is region, and are de
 
 Entities call the region they were created in their *origin* and keep track of it throughout their lifetime. This allows Akka to simplify some aspects of distributed state.
 
-By default, most entities will only allow their origin region to change their state. To make this easier, Akka will automatically route state-changing operations to the origin region. This routing is asynchronous and durable, meaning network partitions will not stop the write from being queued. This gives you a read-anywhere model out of the box that automatically routes writes appropriately.
+An entity also has a primary region, where its state is changed. In the default request-region mode, the primary moves to the region that receives a write. In pinned-region mode, Akka routes state-changing operations to the primary region. This routing is asynchronous and durable, so a network partition does not stop the write from being queued. In both modes, every region can read the entity. See xref:multi-region.adoc[].
 
 === The Event Sourced state model
 
@@ -95,7 +95,7 @@ NOTE: Key Value entities capture state as one single unit, they do not express s
 
 === State models and replication
 
-Event Sourced entities are replicated between all regions in an Akka project by default. This allows for a multi-reader capability, with writes automatically routed to the correct region based on the origin of the entity.
+Event Sourced entities are replicated between all regions in an Akka project by default. This allows for a multi-reader capability, with writes handled in the primary region of the entity, as described in <<_origin>>.
 
 In order to have multi-writer (or write anywhere) capabilities you must implement a conflict-free replicated data type (CRDT) for your Event Sourced Entity. This allows data to be shared across multiple instances of an entity and is eventually consistent to provide high availability with low latency. The underlying CRDT semantics allow replicated Event Sourced Entity instances to update their state independently and concurrently and without coordination. The state changes will always converge without conflicts, but note that with the state being eventually consistent, reading the current data may return an out-of-date value.
 

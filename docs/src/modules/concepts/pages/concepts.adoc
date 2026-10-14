@@ -50,7 +50,7 @@ You implement goals in Akka by implementing a multi-agent system _with a planner
 |Guardians
 |Components that monitor, protect and evaluate the system against its goals and constraints.
 
-You evaluate agents in Akka with the xref:sdk:agents.adoc#_evaluating_ai_model_quality[agent evaluation] capabilities.
+You evaluate agents in Akka with the xref:testing:evaluation/index.adoc[agent evaluation] capabilities.
 |Adaptation
 |Continuous, real-time streams from users or the environment which can alter the context, memory or semantic knowledge used by an agentic system.
 
