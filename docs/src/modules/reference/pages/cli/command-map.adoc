@@ -1,5 +1,5 @@
 = CLI command map
-:page-aliases: reference:inference-cli/index.adoc
+:page-aliases: reference:inference-cli/index.adoc, operations:cli/using-cli.adoc, reference:cli/using-cli.adoc
 :page-summary: Which section describes the tasks for each akka command group, and where its commands are listed.
 :page-persona: builder-developer, builder-ai-ml, operator
 

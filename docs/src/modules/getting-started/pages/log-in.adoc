@@ -50,5 +50,5 @@ akka config set api-server-use-grpc-web true
 == Related documentation
 
 - xref:getting-started:install-cli.adoc[]
-- xref:operations:cli/using-cli.adoc[]
+- xref:reference:cli/command-map.adoc[]
 - xref:reference:cli/akka-cli/index.adoc[]

@@ -66,8 +66,6 @@
 
 **** xref:operations:platform-api.adoc[]
 
-**** xref:operations:cli/using-cli.adoc[]
-
 *** xref:operations:operator-best-practices.adoc[]
 *** xref:operations:production-readiness/index.adoc[]
 **** xref:operations:production-readiness/choosing-your-environment.adoc[]

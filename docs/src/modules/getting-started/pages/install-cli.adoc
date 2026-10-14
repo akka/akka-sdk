@@ -378,5 +378,5 @@ Verify your YAML syntax is correct if you see this warning.
 == Related documentation
 
 - xref:getting-started:log-in.adoc[]
-- xref:operations:cli/using-cli.adoc[]
+- xref:reference:cli/command-map.adoc[]
 - xref:reference:cli/akka-cli/index.adoc[]

@@ -77,6 +77,6 @@ Projects in Akka can span across xref:operations:regions/index.adoc[] with data 
 Using the Akka CLI, you control all aspects of your Akka account from your command line. With it, you create and deploy new services, stream logs, and invite new developers to join your projects.
 
 - xref:getting-started:install-cli.adoc[]
-- xref:operations:cli/using-cli.adoc[]
+- xref:reference:cli/command-map.adoc[]
 - xref:getting-started:install-cli.adoc#command-completion[Enable CLI command completion]
 
