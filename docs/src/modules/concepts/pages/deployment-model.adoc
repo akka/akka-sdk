@@ -1,97 +1,100 @@
 = Deployment model
+:page-summary: A service built with Akka is one binary that runs on the same runtime wherever it is deployed; deployment options differ in where the runtime runs and who operates it.
+:page-when-to-use: When you need to know how the platform is structured across organizations, projects, services, regions and clusters, and what Akka operates compared with what you operate.
+:page-related: concepts:runtime.adoc, concepts:multi-region.adoc, operations:index.adoc
+:page-persona: builder-developer, operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
 
-Akka services are distributed by design. You may run them locally, but they are built to operate across nodes (and even across cloud regions of multiple providers) without requiring changes to your code.
+The deployment model describes how Akka services are packaged, where the runtime that runs them is placed, and who operates that runtime. Akka services are distributed by design. You can run them on your laptop, and they are built to run across many nodes and across regions of several cloud providers, with no changes to your code. Behavior stays the same wherever a service runs, and moving it from one deployment option to another needs no code change.
 
 == Service packaging
 
-Services created with Akka components are composable. They can support agentic, transactional, analytics, edge, and digital twin systems. You may create a service with a single component or many.
+A service is the unit you deploy. It holds one component or many, and services compose into agentic, transactional, analytics, edge and digital twin systems. Each service is packed into a single binary that you can run on Platform as a Service (PaaS), Kubernetes, Docker Compose, virtual machines, bare metal or edge devices.
 
-Services are packed into a single binary. You can deploy it to various infrastructures including Platform as a Service (PaaS), Kubernetes, Docker Compose, virtual machines, bare metal, or edge computing environments.
+Akka services cluster on their own, so you do not need a service mesh. The cluster provides data sharding, data rebalancing, traffic routing and handling of network partitions. See xref:runtime.adoc[] for how the cluster works, and xref:platform-model.adoc[] for how services relate to projects and organizations.
 
-Akka services cluster on their own. You do not need a service mesh. The clustering offers elasticity and resilience. Built-in features include data sharding, data rebalancing, traffic routing, and support for handling network partitions.
+== Who operates what
 
-== Deployment choices
+Every deployment option runs the same runtime. What changes is who operates the runtime and who provides the infrastructure under it.
 
-Akka supports three deployment models. Behaviour remains consistent across them, and code changes are not needed when switching modes.
+Akka operates the platform and the infrastructure::
+Serverless runs your services on shared infrastructure in Akka's cloud, and Dedicated runs them in a single-tenant region of Akka's cloud. Akka Automated Operations (AAO) runs the runtime for you.
 
-[cols="1,3", options="header"]
-|===
-|Deployment Model |Description
+Akka operates the platform on infrastructure you own::
+In your own cloud account (BYOC), Akka provisions a region in your account. In your own Kubernetes (BYOK8s), you provide the cluster and Akka installs its components on it. AAO runs the runtime, and application data stays in your environment.
 
-|Development
-|Developers can build, run, and test multi-service projects locally without needing cloud infrastructure. The Akka SDK provides persistence, clustering, service discovery, and integration features. This is the default when any service using Akka SDK is built. You may also xref:sdk:running-locally.adoc#_local_console[run the local console] for tracing and debugging.
+You operate everything::
+In the self-managed option, you run the runtime on infrastructure you choose: virtual machines, containers, PaaS, Kubernetes, unikernels, bare metal or edge. You configure routing, certificates, networking and persistence yourself, including the data store the runtime uses. The runtime still clusters, scales elastically, recovers from failures and produces metrics, logs and traces. Some PaaS environments block the network traffic that clustering needs; in those, a service can run as a single node.
 
-|xref:operations:configuring.adoc[*Self-managed operations*]
-|Akka clusters xref:concepts:concepts.adoc#_service_packaging[can be run on your infrastructure]: virtual machines, containers, Platform as a Service (PaaS), edge, unikernels, or Kubernetes. You will need to configure routing, certificates, networking, and persistence yourself. Some PaaS systems may block network access, affecting clustering. In those cases, single-node operation is possible.
+To compare the options and choose one, see xref:operations:index.adoc[Choose how you run Akka].
 
-|xref:operations:akka-platform.adoc[*Akka Automated Operations (AAO)*]
-(in your VPC or serverless)
+== What Akka Automated Operations adds
 
-|This optional product helps automate day 2 operations. It provides a global federation plane for managing federated regions, along with an application plane for running services in a secure way. Services can be deployed from the Akka CLI to either xref:operations:index.adoc[Akka’s serverless cloud] or a xref:operations:index.adoc[privately managed VPC region].
-
-For enterprise users, a shared operations responsibility model is also available, where your team manages the underlying Kubernetes setup and Akka injects its specific components.
-
-AAO supports multi-region setups, including replication of durable state, failover arrangements, and data pinning for compliance needs. It provides elasticity based on observed traffic, memory auto-scaling, rolling upgrades without downtime, and access control at the organizational level. Observability is available through the https://console.akka.io[Akka console, window="new"] or by xref:operations:observability-and-monitoring/observability-exports.adoc[exporting logs, metrics, and traces].
-
-AAO monitors traffic and system conditions and adjusts deployments to meet targets for availability and performance.
-|===
+In the options Akka operates, AAO handles the work that comes after deployment. It monitors traffic and system conditions and adjusts deployments to meet targets for availability and performance. This covers multi-region setups with replication of durable state, failover and data pinning for compliance; elasticity based on observed traffic and memory auto-scaling; rolling upgrades without downtime; access control at the organization level; and observability in the Akka Console, with xref:operations:observability-and-monitoring/observability-exports.adoc[export of logs, metrics and traces]. You deploy to AAO from the Akka CLI.
 
 image:concepts:akka-automated-operations.png[Akka Automated Operations]
 
+See xref:automated-operations.adoc[] for how each of these works.
+
+== Federation plane and application plane
+
+AAO is split into two planes.
+
+Federation plane::
+The global coordination point for organizations, accounts, billing, user access, key rotation, token issuance and deployment across regions. It runs at akka.io and Akka manages it. If it becomes unavailable, running applications continue without interruption.
+
+Application plane::
+The runtime that hosts your services in a region. Each region pulls and deploys application images, scales instances and connects to peer regions on its own. Application data stays in the region. A region embeds a managed Kubernetes cluster, an encrypted append-only data store, the Akka operators for elasticity, routing and service management, proxies that steer traffic between regions, and an image repository.
+
+Regions joined to the federation plane form one deployment target. This enables replication of services across regions and simplifies service discovery between them.
+
+When the application plane runs in your own cloud or your own Kubernetes, a limited set of platform interactions still crosses to the federation plane: deployments, key rotation, the management API, metadata synchronization and platform observability. See xref:operations:technical-overview.adoc[] for the architecture and xref:operations:technical-overview/data-flows.adoc[Data flows] for every flow.
+
 == Logical deployment model
 
-=== Services
+Organizations::
+An organization is the top-level account. It holds users, their roles, billing and the projects of the organization. See xref:security-and-identity.adoc[] for roles.
 
-A xref:operations:services/index.adoc[service] is the main unit of deployment. It includes all components as described in xref:concepts:architecture-model.adoc[project structure] and is packaged into a binary. Services may be started, stopped, paused, or scaled independently.
+Projects::
+A project contains one or more services that are deployed together, and provides shared management for them: routes, secrets, network policy and access. In AAO, a project also names the regions it runs in. The first region added becomes the project's primary region and the initial deployment target when you xref:operations:projects/create-project.adoc[create a project]. The project's primary region is the region its resources replicate from.
 
-=== Projects
+Services::
+A xref:operations:services/index.adoc[service] is the main unit of deployment. It includes all the components described in the xref:sdk:architecture-model.adoc[project structure] and is packaged into one binary. You can start, stop, pause and scale each service independently.
 
-A project contains one or more services intended to be deployed together. It provides shared management capabilities. In AAO, projects also specify regions for deployment. The first region listed becomes the primary and initial deployment target when xref:operations:projects/create-project.adoc[creating a project].
+Routes::
+A route maps a hostname and path to a service, so that it can be called from outside the project.
 
 == Physical deployment model
 
-Akka services run in clusters. A cluster is a single Akka runtime spanning multiple nodes in a geographical location called a region.
+Services run in clusters. A cluster is one Akka runtime spanning several nodes in one region.
 
-With self-managed operations, a region maps to one cluster. With AAO, you can have multiple regions, each with its own clusters. These may be federated through a global federation plane. This enables service replication across regions and simplifies service discovery.
+When you operate the platform yourself, a region maps to one cluster. With AAO, a project can run in several regions, each with its own cluster, federated through the federation plane. A project can therefore span regions, clouds and data centers, while each cluster stays inside one region. See xref:multi-region.adoc[].
 
-== Regions in Akka Automated Operations
+[#_region]
+=== Regions
 
-A region corresponds to a cloud provider’s location, such as AWS "US East." Akka spans availability zones and can scale multiple hyperscaler clouds. Projects specify the regions where they run. Each region receives a unique endpoint with region-specific DNS, much like services such as S3 or SQS. xref:operations:projects/container-registries.adoc[Container registries] exist in all regions to reduce latency.
+A region corresponds to a cloud provider's location, such as AWS "US East". A region spans the availability zones of that location. Projects name the regions they run in, and the regions of one project can be on different hyperscalers. Each region has its own endpoint with region-specific DNS, in the way that services such as S3 or SQS do. xref:operations:projects/container-registries.adoc[Container registries] exist in every region to reduce latency.
 
-A set of regions is available for serverless deployments.
+A set of regions is available for Serverless. More regions can be provisioned in your own cloud account on every major cloud provider, with the full setup, monitoring and management.
 
-Additional Akka regions can be provisioned in your VPC on all major cloud providers, including the full setup along with monitoring and management.
+=== Local development
 
-Organizations that require more detailed control over the exact cloud setup can use a shared infrastructure responsibility model.
+On your own machine, you can build, run and test projects with many services without any cloud infrastructure. The local runtime provides persistence, clustering, service discovery and integration features. It is the default whenever you build a service with the Akka SDK. You can also xref:sdk:running-locally.adoc#_local_console[run the local console] for tracing and debugging.
 
-== About Akka clustering
+== Shared responsibility
 
-Clustering is integral to how Akka systems manage themselves. Services discover each other at startup and form clusters without manual setup. A connection to a single node is enough to join an existing cluster. A cluster has no primary node, so no single node is a bottleneck or a single point of failure. Nodes communicate over encrypted gRPC without a message broker.
+When Akka operates the platform, management of the system is shared between you and Akka, and the split depends on the option: Akka takes more of it in its own cloud, and you take more of it when the infrastructure is yours, up to managing the Kubernetes cluster yourself in your own Kubernetes. Organizations that need detailed control over the exact cloud setup can share the infrastructure responsibility. The production-readiness pages give the split row by row for xref:operations:production-readiness/dedicated/shared-responsibility.adoc[Dedicated], xref:operations:production-readiness/byoc/shared-responsibility.adoc[your own cloud] and xref:operations:production-readiness/byok8s/shared-responsibility.adoc[your own Kubernetes].
 
-image:concepts:akka-clustering.png[Akka clustering]
+== Limits and trade-offs
 
-Clustering provides support for:
-
-* Elastic scaling
-* Failover
-* Traffic steering
-* Built-in discovery
-* Consensus and split-brain handling
-* Zero trust communication
-* Request routing and scheduling
-* Conflict-free replication
-* Point-to-point messaging
-
-These capabilities enable stateful services to be resilient, durable, and capable of acting as their own orchestrators and in-memory caches.
+* A cluster does not span regions. Multi-region operation is done by replication between clusters, which is asynchronous.
+* In the self-managed option, the automated operations described on xref:automated-operations.adoc[] are not available.
+* In your own cloud and your own Kubernetes, the platform interactions listed above still cross to Akka's federation plane.
 
 == Next steps
 
-To learn how a service is built from a specification, see xref:sdk:spec-driven-development.adoc[].
-
-The following topics may also be of interest.
-
-- xref:state-model.adoc[]
-- xref:sdk:dev-best-practices.adoc[]
-- xref:architecture-model.adoc[]
+* xref:operations:index.adoc[Choose how you run Akka]
+* xref:getting-started:quick-deploy.adoc[Deploy to akka.io]
+* xref:operations:production-readiness/choosing-your-environment.adoc[] for sizing, availability and data residency
+* xref:runtime.adoc[], xref:multi-region.adoc[] and xref:availability.adoc[]

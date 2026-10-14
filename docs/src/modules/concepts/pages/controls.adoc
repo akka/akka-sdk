@@ -1,0 +1,208 @@
+= Controls
+:page-summary: A control is an obligation plus the mechanism that meets it; Akka has five control types, guardrails, sanitizers, evals, human decisions and gates, and every verdict a control produces names the control it came from.
+:page-when-to-use: When you need to choose how an obligation is enforced, understand what each control type can and cannot do at runtime, or read the verdicts that controls produce.
+:page-related: concepts:governance-and-the-runtime.adoc, concepts:evaluation.adoc, concepts:evidence.adoc
+:page-persona: builder-developer, builder-ai-ml, governance-compliance, governance-infosec
+
+include::ROOT:partial$include.adoc[]
+
+A control is an obligation plus the mechanism that meets it. The obligation says what must hold, for example "personal data never reaches a model provider" or "a refund over a limit needs a person's approval". The mechanism is how Akka makes it hold. Each control has an id, and every verdict it produces names that id.
+
+An agentic system needs controls of different kinds because its obligations differ in timing. Some must hold before an action runs, some can be checked after it, and some need a person. Akka groups the mechanisms into five control types, and the runtime that executes the agent enforces each one. xref:concepts:governance-and-the-runtime.adoc[] explains why the runtime enforces them.
+
+== The five control types
+
+[cols="1,3,2", options="header"]
+|===
+| Control type | What it does | When it acts
+
+| <<guardrails,Guardrail>>
+| Blocks or passes an action at a runtime boundary. Fails closed.
+| Before a model call, before a tool call, or on the agent's reply.
+
+| <<sanitizers,Sanitizer>>
+| Strips or masks content before it moves on.
+| Before text reaches a model, a tool result reaches the model, or text reaches a log.
+
+| <<evals,Eval>>
+| Measures and scores behavior.
+| After an interaction, on live traffic or in a test, or inline as a guardrail.
+
+| <<human-decisions,Human decision>>
+| Gives a named person authority over a decision. The agent waits, durably, until the person decides.
+| At a point that the system defines.
+
+| <<gates,Gate>>
+| Turns the results of checks into a build or release decision.
+| When a change is built, merged or released.
+|===
+
+Observation and enforcement stay separate. An eval records an observation and does not change what the agent does. A guardrail is the control type that decides whether an action may proceed. Keeping them apart is what makes the record trustworthy: an observation can never be the reason a record changed.
+
+[#guardrails]
+== Guardrails
+
+A guardrail is a runtime-enforced check on what goes into and comes out of an agent. There are three kinds, and the kind sets where the runtime evaluates it:
+
+* A model call guardrail evaluates the input to each model call, including each later call that sends tool results back to the model.
+* A tool call guardrail evaluates a function tool call or an MCP tool call before the runtime runs the tool, with the tool name and the raw arguments.
+* An agent response guardrail evaluates the agent's final reply, once per interaction.
+
+Each evaluation returns one of three decisions: allow, deny, or fail. A deny aborts the interaction and passes the reason to the agent's failure handling. A fail means the evaluation itself reached no verdict, for example because it threw an exception, and it also stops the action. This is what fails closed means: an error in the check does not let the action through.
+
+A guardrail can run in report-only mode. It then records its decision, and the interaction continues. Use report-only to observe a new guardrail on live traffic before you let it block.
+
+An evaluation that must block runs inline, as a guardrail. Inline, the action, the verdict and the record of both are committed in one transaction, so no action runs without its verdict being recorded, and no verdict is recorded for an action that did not run. An inline check can block the action, re-prompt the model, or escalate to a person before a response leaves the agent.
+
+See xref:sdk:agents/guardrails.adoc[Guardrails].
+
+[#sanitizers]
+== Sanitizers
+
+A sanitizer masks content before it moves on. You declare which categories of data to mask, such as payment card numbers or email addresses, and where to mask them: in logs, in each model call, or in tool results. The runtime replaces matched text with a mask of the same length.
+
+Because the sanitizer runs before the model call, the model provider never receives the masked data, and the ledger records the text that was actually sent. Session memory stores user messages and tool results already masked. Application code can also call a sanitizer by name, for example before it sends text to a third-party service.
+
+Masking and explanation are compatible. A decision about a person can still be explained when the data behind it is masked, because the runtime that made the decision records why, and the sanitizer keeps the personal data out of what is stored.
+
+See xref:sdk:sanitization.adoc[Data sanitization].
+
+[#evals]
+== Measuring behavior with an eval
+
+An eval measures an agent's behavior against what good means for its task. It can be deterministic, for example a check that a reply contains no payment card number, or it can ask a model to judge. An eval runs in tests before an agent ships, on batches of recorded traffic, or on live traffic. On live traffic, an xref:sdk:evaluators.adoc[evaluator] component runs after the interaction completes, in the background. It does not delay the reply, and its verdict cannot change what the agent does next.
+
+To act on a verdict, either run the check inline as a guardrail, or call a judge agent from the agent or workflow and act on its answer.
+
+xref:concepts:evaluation.adoc[] describes where evaluation runs and how its results are reported.
+
+[#human-decisions]
+== Human decisions
+
+A human decision gives a named person authority over a step. The agent or the workflow that reaches the step pauses, and the person approves, rejects or changes what happens next. The wait is durable: it survives restarts, crashes and deployments, and lasts as long as the decision takes, from seconds to days.
+
+The decision is recorded with the identity of the person who made it. That makes a human decision a control and not only a pause: the record shows who held authority and what they decided.
+
+xref:concepts:durable-execution.adoc[] explains how a durable wait works, and xref:concepts:ai-orchestration-patterns.adoc#_waiting_for_a_person[Waiting for a person] shows where it sits in an agentic workflow.
+
+[#gates]
+== Gates
+
+A gate turns the results of checks into a decision about a build or a release. A gate states what the results must satisfy, for example every case passes, or a pass rate over a batch is at least a threshold. A change that does not satisfy the gate does not proceed.
+
+Gates appear wherever a decision depends on many results: a batch of eval cases in a test, the exit conditions of a specification before a change merges, and the evaluation of a new model before it is promoted. See xref:testing:evaluation/gates-and-reports.adoc[] and xref:reference:specify/coverage-gate.adoc[The coverage gate].
+
+[#classifiers]
+== Classifiers shared by controls
+
+A classifier maps text to a score, a label, or both. It is not a control type. It is a building block that controls use: a guardrail turns the score into allow or deny, an eval records it as a verdict, a sanitizer masks the text it flags, and application code can route on it. The scoring lives in one place under one name, so each control acts on the same answer.
+
+The runtime never invokes a classifier on its own. A control or your code calls it by name, and the name comes from configuration, so you can change the classifier without changing the callers. A classifier can combine other classifiers into an ensemble. See xref:sdk:agents/classifiers.adoc[Classifiers].
+
+[#halt]
+== Halting a system
+
+A halt stops every in-flight and future model call and tool call in its scope and moves the system to a safe state. It sits above the per-call controls: a guardrail decides about one action, while a halt stops all of them. The people who oversee the system exercise it, and the ledger records it.
+
+For one autonomous agent, the component client can suspend, resume or terminate the agent. A suspended agent resumes where it stopped. A terminated agent instance cannot resume. See xref:sdk:autonomous-agents/client.adoc#_suspend_and_resume[Suspend and resume].
+
+[#verdicts]
+== Verdicts
+
+Every control produces verdicts, and each verdict names its control id. At the level of the system, a verdict is one of four values:
+
+[cols="1,3", options="header"]
+|===
+| Verdict | Meaning
+
+| `upheld`
+| The control held for this action or interaction.
+
+| `breached`
+| The control did not hold.
+
+| `inconclusive`
+| The control ran, but the evidence did not support a verdict.
+
+| `error`
+| The control itself failed and reached no verdict.
+|===
+
+Each control type reports in its own terms, and those terms map to these four. A guardrail allow is upheld, a deny is breached, and a fail is an error. An evaluator that passes is upheld, one that fails is breached, one that reaches no verdict is inconclusive, and one that throws is an error. xref:concepts:evaluation.adoc#verdict-vocabularies[Verdict vocabularies] maps the terms of every part of Akka.
+
+== Guarantees
+
+[cols="1,2,2", options="header"]
+|===
+| Situation | What Akka does | Precondition
+
+| A guardrail check throws, returns nothing, or fails
+| The action does not proceed. The failure reaches the agent's failure handling.
+| The guardrail is not in report-only mode.
+
+| A guardrail denies a model call
+| No tokens are spent on that call, and the model provider does not receive the input.
+| The guardrail is a model call guardrail bound to the agent.
+
+| A tool call is denied
+| The tool does not run, and the record shows that it did not run.
+| The guardrail is a tool call guardrail bound to the agent.
+
+| A sanitizer is configured for model calls
+| The model provider never receives the masked text.
+| The text matches a configured category.
+
+| An agent waits for a person and its node restarts
+| The wait continues on another node, and the agent resumes when the person decides.
+| The wait runs in a workflow or an autonomous agent.
+
+| A control produces a verdict
+| The verdict is recorded in the ledger with its control id.
+| The control has a `control-id` in its configuration.
+|===
+
+== Choosing between a guardrail and an eval
+
+[cols="1,2,2", options="header"]
+|===
+| | Guardrail | Eval on live traffic
+
+| Timing
+| In the path of the action, before it proceeds.
+| After the interaction completes.
+
+| Effect on the agent
+| Can block the action.
+| None. Records a verdict.
+
+| Latency
+| Adds the check's time to the interaction.
+| None for the caller.
+
+| Cost
+| Runs on every call it is bound to.
+| Can run on a sample of interactions.
+
+| Failure handling
+| A failed check stops the action.
+| A failed check is recorded as an error.
+
+| Use when
+| The obligation must hold before the action happens.
+| You need to measure quality or detect drift without changing behavior.
+|===
+
+== Limits and trade-offs
+
+* The runtime applies no timeout to a guardrail. An interaction waits until its guardrail completes.
+* An agent that streams its reply sends it before an agent response guardrail runs, so that guardrail can only report on a streamed reply. Model call guardrails still run before each model call of a streaming agent.
+* A sanitizer added or changed later does not mask messages already stored in session memory as the model received them.
+* An eval on live traffic cannot change the interaction it judges. Sampling lowers its cost and also lowers how many interactions carry a verdict.
+* Inline guardrails, durable waits for a person and records of whether a side effect ran need the agent to run on the Akka runtime.
+
+== Next steps
+
+* xref:sdk:agents/guardrails.adoc[Guardrails], xref:sdk:sanitization.adoc[Data sanitization], xref:sdk:evaluators.adoc[Evaluators], xref:sdk:agents/classifiers.adoc[Classifiers]: configure controls.
+* xref:concepts:evaluation.adoc[]: where evaluation runs, and how gates and reports work.
+* xref:concepts:risk-to-controls.adoc[]: how the controls of a system are chosen.
+* xref:concepts:evidence.adoc[]: where verdicts are recorded.

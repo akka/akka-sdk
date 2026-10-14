@@ -1,27 +1,46 @@
 = Understanding
+:page-summary: Understanding explains how the Akka Agentic AI Platform works, one mechanism per page, from the components you build to the runtime that runs them.
+:page-when-to-use: When you want to know how something in Akka works and what it guarantees, before or alongside the task pages that use it.
+:page-related: ROOT:about-akka.adoc, concepts:platform-model.adoc, concepts:request-lifecycle.adoc
+:page-persona: all
 
 include::ROOT:partial$include.adoc[]
 
-This section introduces the key concepts to understand when developing Akka applications and services.
+Understanding explains how the Akka Agentic AI Platform works, one mechanism per page, from the components you build to the runtime that runs them. Each page describes a problem every agentic system must handle, how Akka handles it, what Akka guarantees and where the limits are. The task pages in other sections link here for the reasons behind their steps.
 
-The xref:concepts.adoc[concepts overview] describes the anatomy of an agentic system and how Akka components fit together. Everything in Akka builds on the xref:distributed-systems.adoc[fundamental principles for distributed systems], and the xref:architecture-model.adoc[architecture model] explains how applications are structured in layers.
+== The groups
 
-Akka manages the operational aspects of your application. To learn how services run across distributed infrastructure and may span multiple _Regions_, see the xref:deployment-model.adoc[deployment model] and xref:multi-region.adoc[multi-region operations].
+Foundations:: The vocabulary and the shape of the whole system. xref:platform-model.adoc[] names the parts, xref:request-lifecycle.adoc[] follows one request through all of them, and xref:distributed-systems.adoc[] gives the principles the platform is built on.
 
-Components decouple behavior from execution through xref:declarative-effects.adoc[declarative effects], and the xref:state-model.adoc[state model] explains how _Entities_ persist their state. The xref:ai-agents.adoc[AI agents] and xref:ai-orchestration-patterns.adoc[AI orchestration patterns] pages cover how to design agentic systems.
+Building services:: How the components of a service hold state and do work. See xref:components.adoc[], xref:state-model.adoc[], xref:views.adoc[], xref:durable-execution.adoc[], xref:delivery-guarantees.adoc[] and xref:streaming.adoc[].
 
-== Topics
+Agents:: How agents call models, remember, use tools and work together. See xref:ai-agents.adoc[], xref:agent-memory.adoc[], xref:tools-and-protocols.adoc[], xref:ai-orchestration-patterns.adoc[] and xref:coordination-patterns.adoc[].
 
-* xref:concepts:concepts.adoc[]
-* Foundations
-** xref:concepts:distributed-systems.adoc[]
-** xref:concepts:architecture-model.adoc[]
-** xref:concepts:deployment-model.adoc[]
-* State and execution
-** xref:concepts:state-model.adoc[]
-** xref:concepts:declarative-effects.adoc[]
-** xref:concepts:multi-region.adoc[]
-* Agentic concepts
-** xref:concepts:ai-agents.adoc[]
-** xref:concepts:ai-orchestration-patterns.adoc[]
-** xref:concepts:governance-and-the-runtime.adoc[]
+Specifications:: How a system is specified, generated and held to its specification. See xref:spec-driven-development.adoc[], xref:specification.adoc[] and xref:conformance.adoc[].
+
+Governance:: How controls run in the runtime and what they leave behind as evidence. See xref:governance-and-the-runtime.adoc[], xref:controls.adoc[], xref:evaluation.adoc[], xref:risk-to-controls.adoc[] and xref:evidence.adoc[].
+
+Models:: How model traffic is captured, graded, routed, served, trained and priced. See xref:models.adoc[], xref:capture-and-grading.adoc[], xref:model-routing.adoc[], xref:model-serving.adoc[], xref:model-training.adoc[] and xref:spend.adoc[].
+
+Runtime and operations:: How services run, scale, stay available and stay secure. See xref:runtime.adoc[], xref:deployment-model.adoc[], xref:multi-region.adoc[], xref:availability.adoc[], xref:automated-operations.adoc[], xref:security-and-identity.adoc[] and xref:observability.adoc[].
+
+== Reading paths
+
+[cols="1,3", options="header"]
+|===
+| If you | Read
+
+| Build services and agents
+| Foundations, then Building services, then Agents
+
+| Choose, serve or train models
+| Agents, then Models
+
+| Run Akka in production
+| Foundations, then Runtime and operations
+
+| Govern AI systems
+| Specifications, then Governance
+|===
+
+For what the platform is and how its solutions fit together, see xref:ROOT:about-akka.adoc[About Akka]. For definitions of individual terms, see the xref:reference:glossary.adoc[glossary].

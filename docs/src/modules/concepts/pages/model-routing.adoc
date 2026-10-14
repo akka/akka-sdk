@@ -1,0 +1,146 @@
+= Model routing
+:page-summary: Model routing decides which model serves each request, from rules you declare about the request or from what the request means, outside agent code.
+:page-when-to-use: When you need to understand how the gateway router chooses a model for a request, how rules and use cases are applied, and how traffic moves to a new model in stages.
+:page-related: inference:routing.adoc, reference:descriptors/routing-ruleset.adoc, concepts:capture-and-grading.adoc
+:page-persona: builder-ai-ml, builder-developer, operator-platform
+
+include::ROOT:partial$include.adoc[]
+
+Model routing decides which model serves each request, from rules you declare about the request or from what the request means. The decision is made outside agent code, so the models behind your agents can change without a change to the agents.
+
+A fixed provider URL in each agent is enough for a sample or a demo. Production traffic needs more: providers differ in capability, latency and price per token, a smaller model can serve a narrow task as well as a large one, and an organization has to show afterwards which model answered which request. Choosing the model in application code makes each of these a code change, and leaves no single place where the choice is made or recorded. This page explains how Akka makes that choice in the request path instead.
+
+== How it works
+
+=== The gateway, the proxy and the router
+
+image::inference:routing-pipeline.svg[Traffic flows from agents through a proxy, which calls out to the gateway router, width=740]
+
+. An agent sends its model request to a proxy, such as link:{url-agentgateway}[Agentgateway, window="new"]. The agent does not address the router and does not name a destination.
+. The proxy calls the gateway router over gRPC.
+. The router runs the exchange through two stages and returns a destination.
+. The proxy forwards the request to the model provider that the destination names.
+
+The router is not itself a proxy. It decides about agentic traffic, such as LLM and MCP calls, and the proxy carries the bytes. Putting the proxy in the request path applies routing to every request without a change to agent code, in the same way that an HTTP proxy is set by infrastructure rather than by the application.
+
+A destination is a backend registered with the proxy. A frontier model, a smaller hosted model and a model you serve yourself are each a destination. A model you serve is also reachable on its own hostname whether or not any route names it. See xref:concepts:model-serving.adoc[].
+
+Routing in the gateway, rather than in a language SDK or an agent framework, is what lets one set of rules apply to every request and lets you prove afterwards that it was applied.
+
+=== Two stages
+
+Routing on request attributes runs first. It matches declared rules against named attributes of the request, such as the protocol, the model asked for, or a header. A request that a rule claims never reaches the second stage.
+
+Routing on meaning runs second, and only for requests that no rule claimed. It matches the request against use cases discovered from live traffic.
+
+=== Routing on attributes
+
+A rule states a condition and an outcome. A condition names an attribute of the request and applies one predicate to it, and conditions combine with `all`, `any` and `not`. A rule states its boolean structure explicitly, so what it means does not depend on the order its fields were written in.
+
+The set of predicates is closed and has no regular expression. Predicates run against prompt text that a caller can influence, and a regular expression that runs away would be a way to deny service to the gateway. String comparisons are case sensitive, and header names are lower-cased when the attribute is filled in.
+
+A ruleset is a named group of rules, and the unit that is enforced. A single rule is never applied to traffic on its own. A ruleset declares:
+
+* the closed set of destinations its rules can choose,
+* the default destination for traffic that no rule claims,
+* the response headers that report the decision and its reason.
+
+Rules are evaluated by priority, lower first, with the rule id breaking ties, so the order you read is the order that is used. Rulesets are ordered by a priority of their own, set apart from the document so that reordering rulesets does not read as a change of policy. Every change to a ruleset has a revision and an author, and the history survives when the ruleset is retired. A write can name the revision it was based on, so it fails if someone else changed the ruleset in the meantime.
+
+=== Deferring to a routing classifier
+
+Some conditions cannot be written as a predicate. A rule can defer its decision to a routing classifier: a registered model that reads part of the request, such as the last user message, and answers with a label from its own vocabulary. The rule maps each label to a destination of the ruleset. This is the one case in which attribute routing consults a model.
+
+A routing classifier is registered under an id, and the registration never changes, so a retrained classifier is registered under a new id. The rule states what happens when the classifier fails, such as falling back to the default destination. It also sets affinity: with `conversation`, the first turn of a conversation decides and later turns reuse the decision; with `none`, every turn decides.
+
+[#_routing_on_meaning]
+=== Routing on meaning
+
+Routing on meaning chooses a destination from what the request is asking for. When a request arrives, the router derives an embedding from it and finds the nearest use case. The comparison is vector arithmetic, so it consults no model and costs no tokens. See xref:concepts:capture-and-grading.adoc#_use_cases[Use cases] for how use cases are discovered and labeled.
+
+The use cases discovered so far form the working set, which keeps changing as traffic arrives. To route on them, you freeze the working set into a use case manifest that maps each labeled use case to a destination. A manifest is immutable, versioned and verifiable, and one manifest enforces routing at a time. Deploying a new manifest displaces the one before it.
+
+=== Routing policies and staged traffic
+
+A routing policy states, for one use case, which model serves it and in what share. It is how traffic moves to a new model in stages:
+
+* _Shadow_ sends a copy of a share of the traffic to the new model and does not use its answers, so the new model can be graded on real requests at no risk.
+* _Canary_ sends a share of real traffic to the new model, and its answers are returned.
+* _Fleet_ is the policy with the new model serving all of the use case.
+
+A policy has versions. Rolling back republishes the previous version. A veto refuses any routing change to the use case until it is lifted.
+
+=== Decision records
+
+The router records each decision: when it was made, the context and input it was made from, the destination it chose, and a hash of the version of the rules that made it. The content of the request is not logged. The records form a chain that can be verified, so the destination chosen for a past request can be checked later against the rules in force at the time. See xref:concepts:evidence.adoc[].
+
+== Guarantees
+
+[cols="2,3,2", options="header"]
+|===
+| Failure or situation
+| What Akka does
+| Precondition
+
+| A request matches no rule and no use case
+| The ruleset's default destination serves it.
+| A ruleset is applied.
+
+| A routing classifier fails or times out
+| The rule's failure setting applies, such as the default destination.
+| The rule defers to a routing classifier.
+
+| Two authors change one ruleset at the same time
+| The write based on an old revision fails, and nothing is overwritten.
+| The write names the revision it was based on.
+
+| A ruleset or manifest is replaced
+| The previous version stays readable, and its history is kept.
+| None.
+
+| A new model misbehaves under a canary
+| Rolling back the routing policy returns the use case to its previous version.
+| The use case has a routing policy.
+|===
+
+== Choosing between attribute and meaning routing
+
+[cols="1,2,2", options="header"]
+|===
+| Attribute
+| Routing on attributes
+| Routing on meaning
+
+| What decides
+| Rules you write
+| The nearest discovered use case
+
+| Consults a model
+| Only when a rule defers to a routing classifier
+| No
+
+| Changes over time
+| Only when you change a ruleset
+| The working set changes with traffic; the manifest changes when you deploy one
+
+| Use when
+| The condition can be written down: a tenant header, a protocol, a model name
+| What decides is what the user is asking for
+|===
+
+== Limits and trade-offs
+
+* The predicate set is closed and has no regular expression.
+* String comparisons are case sensitive.
+* A rule that matches nothing is not an error, and a ruleset applies successfully either way. Testing a ruleset against a sample request shows what it decides.
+* Retiring a routing classifier is unconditional. Nothing checks whether a rule still names it.
+* A frozen manifest drifts from the working set as traffic changes shape, and current traffic can then be routed by a table that no longer describes it.
+* The router decides about agentic traffic only. It is not a general purpose proxy.
+* Only traffic that passes through the proxy is routed.
+
+== Next steps
+
+* xref:inference:routing.adoc[Routing requests to models]
+* xref:reference:descriptors/routing-ruleset.adoc[Routing ruleset reference]
+* xref:reference:cli/routing.adoc[Routing commands]
+* xref:concepts:capture-and-grading.adoc[], xref:concepts:model-training.adoc[]

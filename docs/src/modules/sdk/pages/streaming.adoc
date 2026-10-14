@@ -13,9 +13,8 @@ NOTE: Streaming in the SDK means events processed through views, consumers and p
 
 == Back-pressure
 
-Event sources arrive in bursts, and a fast producer could overwhelm a slower consumer and the model, database or agent that the consumer calls. A consumer reads events at the pace it can process them. Until it does, the events wait in the event journal or the broker topic, not in memory. A burst does not exhaust memory, and a consumer that falls behind or restarts resumes from where it left off.
+A consumer reads events at the pace it can process them, while the events wait in the event journal or the broker topic, and an in-memory stream slows the sender to the receiver's pace. See xref:concepts:streaming.adoc[] for how durable buffers and back-pressure work.
 
-Where a stream runs in memory, such as view query results streamed to a client or a stream you build with Akka Streams, the receiver signals how much it can take and the sender slows to match.
 
 == Using Akka Streams
 

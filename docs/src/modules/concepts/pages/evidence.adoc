@@ -1,0 +1,171 @@
+= The ledger and evidence
+:page-summary: The ledger is the trace of what happened in an agentic system; each record in it is written by the runtime that acted, every record is kept, and records are chained so that a change to any of them shows.
+:page-when-to-use: When you need to know what Akka records about each interaction, how a record shows who acted and under what authority, and how evidence is kept for an auditor.
+:page-related: concepts:controls.adoc, concepts:governance-and-the-runtime.adoc, sdk:evaluators.adoc
+:page-persona: governance-compliance, governance-infosec, builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+The ledger is the trace of what happened in an agentic system. Each record in it is the saved information about one thing the runtime did: an interaction with its model calls and tool calls, a guardrail decision, an evaluation, a human decision, or the start of a node. The runtime that acted writes the record, every record is kept, and each record is chained to the one before it.
+
+Accountability for an agent rests on its record. When an auditor asks why an agent acted, who it acted for, and whether the controls held, the answer must come from a record that nobody could have edited and that leaves nothing out. A log that another system sends after the fact cannot carry that weight. The ledger can, because the runtime writes it while it acts.
+
+== Words used on this page
+
+[cols="1,3", options="header"]
+|===
+| Word | Meaning
+
+| Ledger
+| The trace of what happened: the ordered, chained set of records for a system.
+
+| Record
+| The saved information about one thing that happened, one entry in the ledger.
+
+| Evidence
+| The capture of a control verdict: the verdict, the control id, and the records it was decided on.
+
+| Capture
+| The input and output that pass through the model gateway, saved as they passed.
+
+| Trace
+| Either an agentic AI trace, the spans of one agent's work saved as a record, or a capture of traffic in the agent gateway. This page always says which.
+|===
+
+== What a record holds
+
+An interaction record holds the model calls, with the text that the runtime sent after sanitizers masked it, the tool calls with their arguments and results, the token usage, and the outcome, including a failure caused by a denied guardrail. An evaluation record holds the verdict, its explanation, its score or label, and the control id of the evaluator. When a node starts, the runtime writes one record that lists the controls the node runs, each with its control id. See xref:concepts:governance-and-the-runtime.adoc#control-ids[Control IDs].
+
+Each record also carries the agentic AI trace it belongs to, so the records of one request can be read together, and the controls that applied to it.
+
+[#identity-and-authority]
+== Identity and authority on each record
+
+Each record names the workload that acted, by its workload identity. Each model call names the agent that made it. The record also carries the authority the action ran under, resolved at the moment it ran: the delegation from a person to an agent, to a sub-agent and to a tool, the effective permissions, the policy that was bound, and the governance version in force.
+
+Only the runtime that propagates identity sees all of this at the moment of the action. Reconstructing it later, from logs, gives an answer about what the authority probably was, not what it was. See xref:concepts:security-and-identity.adoc[] for workload identity.
+
+== Whether a side effect ran
+
+The runtime runs each tool call, so the record shows whether the tool actually ran and what it returned. A record that only holds model output can show that the model asked for a tool. It cannot show that the tool ran, or that a guardrail stopped it.
+
+== Complete and tamper-evident
+
+The ledger records every interaction. It does not sample. Sampling lowers the cost of observability, and it also removes the interactions an auditor might ask about.
+
+Each record is hash-chained to the one before it. A record that is changed, removed or inserted later breaks the chain, so the change shows. The records you hand to an auditor are the records the runtime wrote.
+
+== Who reads the ledger
+
+Evaluators read the interactions they judge from the ledger, and the console shows it. In code, a xref:sdk:evaluators.adoc#_the_ledger_client[ledger client] fetches records. Verdicts and evidence are read from it for governance. The same records are graded to choose and train models, so cost and compliance are measured on the same data. See xref:concepts:capture-and-grading.adoc[].
+
+== The ledger and observability
+
+The ledger and observability serve different purposes, and each verdict appears in both.
+
+[cols="1,2,2", options="header"]
+|===
+| | Ledger | Logs, metrics and traces
+
+| Purpose
+| Accountability: what happened, who acted, and whether the controls held.
+| Operations: how the service behaves and where it is slow or failing.
+
+| Completeness
+| Every interaction, no sampling.
+| Can be sampled or aggregated.
+
+| Integrity
+| Hash-chained, so a change shows.
+| No chain.
+
+| Retention
+| The regulatory period, and legal hold.
+| Set by your observability tools.
+|===
+
+A guardrail decision, for example, is a record in the ledger and is also reported in logs, metrics and traces. See xref:concepts:observability.adoc[].
+
+== Evidence
+
+Evidence is the capture of a control verdict: the verdict, the id of the control that produced it, and the records it was decided on. Evidence answers the question "did this control hold for this action, and how do you know".
+
+An evidence pack collects signed evidence for an auditor: the controls in force, their verdicts over a period, the records behind them, and the reviews and sign-offs of the changes made in that period. The pack is sealed, so the auditor can check that nothing in it changed after it was produced.
+
+Records are retained for the regulatory period that applies to the system. A legal hold keeps records beyond that period, for as long as a matter requires, and they cannot be removed while the hold is in place.
+
+[#agents-built-elsewhere]
+== Agents built elsewhere
+
+Agents that do not run on Akka can still be governed. They send their agentic AI traces over OpenTelemetry, or their model traffic passes through the model gateway, which captures it. For those agents, Akka classifies the system against regulations and frameworks, derives and signs its controls, evaluates the captured traffic and seals the evidence.
+
+Some parts of the record need the agent to run on the Akka runtime, because they are written inside the transaction of the action:
+
+[cols="1,1,1", options="header"]
+|===
+| | Agent on the Akka runtime | Agent built elsewhere
+
+| Evaluation of its traffic
+| Yes
+| Yes, from its traces or captures
+
+| Derived and signed controls, sign-off and sealed evidence
+| Yes
+| Yes
+
+| Inline guardrails that stop an action before it runs
+| Yes
+| No
+
+| Durable waits for a person
+| Yes
+| No
+
+| Identity and authority on each record
+| Yes
+| No
+
+| Record of whether a side effect ran
+| Yes
+| No
+
+| Non-sampled, hash-chained ledger
+| Yes
+| No
+|===
+
+== Guarantees
+
+[cols="1,2,2", options="header"]
+|===
+| Situation | What Akka does | Precondition
+
+| An agent interacts with a model or a tool
+| The interaction is recorded, without sampling.
+| The agent runs on the Akka runtime.
+
+| A record is changed or removed after it was written
+| The hash chain breaks, so the change shows.
+| None.
+
+| A sanitizer masks text in a model call
+| The record holds the masked text that was sent.
+| The sanitizer applies to model calls.
+
+| A record is under legal hold
+| It is kept until the hold is released.
+| None.
+|===
+
+== Limits and trade-offs
+
+* The ledger records what the runtime saw. For agents built elsewhere, the record holds their traces or the captures from the gateway, without the identity, authority and side-effect parts.
+* Every interaction is recorded, so storage grows with traffic. Retention follows the regulatory period of the system.
+* The ledger holds masked text where a sanitizer applied. Text that no sanitizer matched is recorded as it was sent.
+
+== Next steps
+
+* xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client]: read records in code.
+* xref:concepts:controls.adoc[]: the controls whose verdicts the ledger records.
+* xref:concepts:risk-to-controls.adoc[]: how controls are derived and reviewed.
+* xref:ROOT:about/how-it-fits.adoc#_agents_built_elsewhere[Agents built elsewhere]

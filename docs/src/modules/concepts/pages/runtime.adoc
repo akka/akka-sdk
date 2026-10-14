@@ -1,0 +1,121 @@
+= The runtime
+:page-summary: The Akka runtime runs each service as a cluster of nodes that keep component state in memory, give each stateful instance one owner, and rebuild state from events after a failure.
+:page-when-to-use: When you need to know where component state lives, how requests reach it, and what happens when a node fails, joins or is cut off from the rest of the cluster.
+:page-related: concepts:deployment-model.adoc, concepts:multi-region.adoc, concepts:state-model.adoc
+:page-persona: builder-developer, operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+The Akka runtime is the process that runs your service: it forms a cluster of nodes, keeps the state of each stateful component in memory on exactly one node, routes every request to that node, and records each change durably so the state can be rebuilt anywhere. The runtime is the same in every deployment option, so a service behaves the same on your laptop, in Akka's cloud and on infrastructure you operate.
+
+Any service that keeps state across many machines has to answer the same questions. Where does a given piece of state live? How does a request find it? What stops two machines from changing it at the same time? What happens to it when a machine fails, or when the network splits the machines into groups that cannot see each other? This page explains how the runtime answers each one.
+
+== How it works
+
+=== State lives with the code that owns it
+
+A common design splits an application into stateless services on one side and a database on the other. Every request reads state from the database, changes it and writes it back.
+
+Akka keeps state together with the component that owns it. Each Entity and Workflow instance holds its current state in memory and records every change durably, as events or as a new state, with snapshots along the way. The application is its own system of record. Reads and command validation use the state in memory, with no round trip to storage. The runtime, not your code, manages the durable log and the storage behind it.
+
+See xref:state-model.adoc[] for how each kind of entity persists its state.
+
+=== Actors and background execution
+
+Inside the runtime, work is done by actors: lightweight units that hold their own state and communicate only by asynchronous messages. Actors share nothing and take no locks, which avoids the blocking, deadlocks and race conditions of thread-based concurrency. When an actor fails, its supervisor contains the failure and restarts it locally, instead of letting the failure spread.
+
+You do not program actors directly. Your component code is ordinary synchronous code that returns effects, and the runtime carries out those effects in the background. See xref:components.adoc[] for effects and the component client.
+
+=== Clustering
+
+The nodes of a service find each other at startup and form a cluster without manual setup. A new node needs a connection to any one existing node to join. A cluster has no primary node, so no single node is a bottleneck or a single point of failure. Nodes communicate over encrypted gRPC, with no message broker between them.
+
+image:concepts:akka-clustering.png[Akka clustering]
+
+A cluster runs in one region. A project that spans several regions runs one cluster in each, and connects them by replication. See xref:multi-region.adoc[].
+
+Clustering is what the rest of the runtime is built on. It provides:
+
+* Elastic scaling, as nodes join and leave
+* Failover, when a node is lost
+* Traffic steering
+* Built-in service discovery
+* Consensus and split-brain handling
+* Zero-trust communication between nodes
+* Request routing and scheduling
+* Conflict-free replication
+* Point-to-point messaging between components
+
+With these, stateful services can recover from failures, keep their data durable, act as their own orchestrators and serve as their own in-memory caches.
+
+=== Sharding and single ownership
+
+Stateful components, such as Entities and Workflows, can have many instances, each identified by an ID. The runtime partitions these instances into shards and spreads the shards across every node in the cluster. At any moment there is exactly one instance for each ID in the whole cluster.
+
+When a request for an instance arrives at a node that does not host it, the runtime forwards the request to the node that does. The xref:reference:glossary.adoc#component_client[component client] does this for you, so a caller addresses an instance by its ID and never by its location. This is location transparency.
+
+Because each instance lives on one node, it handles its messages one at a time. Your code has no concurrency to manage inside an instance.
+
+=== Passivation and recovery
+
+The state of an active instance stays in memory. The cluster may not have room to keep every instance in memory all the time, so the runtime passivates the instances that were used least recently: it removes them from memory. Their state is still in durable storage.
+
+When a passivated instance is used again, the runtime recovers it. It loads the latest snapshot, applies the events or changes recorded after that snapshot, and then handles the request. The same recovery runs when an instance moves to another node: during a rolling update, when shards rebalance, and after a node crashes. No operator action is needed.
+
+=== Rebalancing
+
+As nodes join or leave, the runtime moves shards so that load stays even across the cluster. A shard that moves is recovered on its new node from durable storage, and requests are routed to it there.
+
+The read side scales separately from the write side. Views, which serve queries, run on their own and can scale independently of the entities that feed them. See xref:views.adoc[].
+
+=== Split-brain resolution
+
+A network failure can split a cluster into groups of nodes that cannot reach each other. Each group could decide that the others have failed and take over their shards, and then two nodes would own the same instance and accept conflicting writes.
+
+The runtime prevents this with split-brain resolution. When the cluster is partitioned, a resolver decides which group keeps running. The nodes in the other groups stop, and their shards move to the surviving nodes. An instance keeps a single owner through the partition.
+
+== Guarantees
+
+[cols="2,3,2", options="header"]
+|===
+| Situation | What the runtime does | Precondition
+
+| Two requests arrive for the same instance
+| They are handled one at a time by the single owner of that instance.
+| The component is stateful: an Entity or a Workflow.
+
+| A node crashes
+| The instances it hosted are recovered on other nodes from their snapshots and events.
+| The change was persisted by an effect before the reply was sent.
+
+| An idle instance is passivated, then called again
+| Its state is recovered from durable storage before the request is handled.
+| None.
+
+| A node joins or leaves
+| Shards rebalance, and requests are routed to each instance on its new node.
+| None.
+
+| The network partitions the cluster
+| One group of nodes keeps running and the others stop, so each instance still has one owner.
+| None.
+|===
+
+== Limits and trade-offs
+
+* An instance handles one message at a time. The write throughput of a single instance is bounded by one node. To scale writes, spread them over more instances, for example one per customer rather than one for all customers.
+* Recovery time grows with the number of events written since the last snapshot. Snapshots bound it. See xref:sdk:event-sourced-entities.adoc[].
+* Every active instance uses memory. Passivation trades memory for the latency of a recovery on the next request.
+* A cluster sits in one region. Crossing regions is done by replication, which is asynchronous. See xref:multi-region.adoc[].
+* During split-brain resolution, the instances on the nodes that stop are unavailable until they are recovered on the surviving nodes.
+
+== Managed and self-managed differences
+
+When Akka operates the platform, the runtime's durable storage is provided and managed for you. When you operate the platform yourself, you configure the persistence, networking and certificates that the runtime uses. See xref:deployment-model.adoc[].
+
+== Next steps
+
+* xref:sdk:event-sourced-entities.adoc[Event Sourced Entities], xref:sdk:key-value-entities.adoc[Key Value Entities] and xref:sdk:workflows.adoc[Workflows] are the stateful components the runtime shards.
+* xref:deployment-model.adoc[] explains where the runtime runs and who operates it.
+* xref:multi-region.adoc[] explains how clusters in several regions share state.
+* xref:availability.adoc[] explains what survives the loss of a zone or a region.

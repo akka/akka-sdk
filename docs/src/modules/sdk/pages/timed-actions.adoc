@@ -4,7 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 image:ROOT:timer.png[Timer,width=100,float=left] Timers enable the scheduling of calls for future execution, making them particularly useful for verifying the completion status of processes at a later time.
 
-Timers are stored by the xref:reference:glossary.adoc#runtime[Akka Runtime] and are guaranteed to run at least once.
+Timers are stored by the xref:reference:glossary.adoc#runtime[Akka Runtime] and are guaranteed to run at least once. See xref:concepts:delivery-guarantees.adoc[].
 
 When a timer is triggered, it initiates the scheduled call. If the call succeeds, the timer completes and is automatically removed. In case of a failure, the timer is rescheduled, continuing until the call is successful.
 
@@ -43,7 +43,7 @@ A Timed Action Effect can either:
 * return `Done`, confirming the scheduled call completed successfully
 * return an error message if the operation failed
 
-For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
+For additional details, refer to xref:concepts:components.adoc#_effects_what_the_component_declares[Effects].
 
 == Scheduling a timer
 

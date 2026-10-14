@@ -1,0 +1,91 @@
+= From risk to controls
+:page-summary: The controls of an agentic system are derived from its risk, which the risk envelope of its specification and a risk survey describe; accepted controls become a signed bundle that the runtime enforces and that changes are reviewed against.
+:page-when-to-use: When you need to understand where the controls of a system come from, who accepts them, and how they stay current as the system and its regulations change.
+:page-related: concepts:controls.adoc, concepts:evidence.adoc, concepts:specification.adoc
+:page-persona: governance-compliance, governance-infosec, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+The controls of an agentic system are derived from its risk. What the system does, what data it touches and where it runs decide which regulations, frameworks and corporate standards apply to it, and each of those adds obligations. A control meets one obligation. This page follows the path from a description of the risk to the controls that the runtime enforces, and on to how they are kept current.
+
+Choosing controls by hand, from a spreadsheet of requirements, leaves two gaps. Nothing proves that the controls in the spreadsheet are the controls that run, and nothing tells you when a change to the system or to a regulation makes the list wrong. Akka closes both: the controls that are accepted are the controls the runtime enforces, under the same ids, and each change to the system or its obligations opens a review.
+
+== Describing the risk
+
+Governance starts from two descriptions of risk.
+
+The risk envelope is a section of the system's xref:concepts:specification.adoc[specification]. It states what could go wrong and where the system operates. The people who govern the system write it, such as risk, security and compliance teams, next to the requirements that the builders write. Because it lives in the specification, it is versioned with the code and changes through the same review.
+
+A risk survey adds to it. The survey asks questions about the system: what decisions it makes, about whom, with what data, and in which jurisdictions. The answers classify the system against the regulations and frameworks that apply.
+
+== Deriving the controls
+
+From the risk envelope and the survey answers, Akka derives the controls the system needs. Each proposed control names its obligation and the control type that meets it: a guardrail, a sanitizer, an eval, a human decision or a gate. See xref:concepts:controls.adoc[].
+
+Proposed controls are grouped by the regulation, framework or corporate standard they come from, so a reviewer sees why each one is there. The same obligation can derive differently in each jurisdiction. A system that runs in two jurisdictions gets the controls of both, and the record shows which jurisdiction required each one.
+
+Controls are not the same as the exit conditions of a specification. An exit condition decides whether a change is done before it merges or ships. A control acts on the running system. A gate connects them: a release can require that the exit conditions for agentic AI safety are met before it proceeds. See xref:reference:specify/catalog/agentic-ai-safety.adoc[Agentic AI safety exit conditions].
+
+== Accepting the controls
+
+The people who own the risk review the proposed controls. For each one, they accept it, waive it, or reject it. A control waiver records who waived the control, why, and until when. Each reviewer signs off on the part of the system they own, so the record shows which role accepted which control.
+
+The accepted set becomes a signed bundle: a versioned set of controls that applies to one system. The bundle is the input to the system's governance. Every control in it is bound to the runtime, build and review steps that enforce it, and each of those steps carries the control's id, so the path from a regulation to the running code is unbroken. See xref:concepts:governance-and-the-runtime.adoc#control-ids[Control IDs].
+
+== Controls in force
+
+At runtime, every control produces verdicts: upheld, breached, inconclusive or error. Each verdict names its control id and is recorded in the xref:concepts:evidence.adoc[ledger]. From those verdicts you can see:
+
+* which controls are in force for a system, and from which bundle version;
+* whether each control held, for each action or interaction;
+* the evidence behind each verdict;
+* compliance over time, per control and per regulation.
+
+Control drift is a change in a control's verdicts or in the behavior it observes, for example a pass rate that falls over a week. Drift is a signal to review, not a verdict on its own.
+
+== Reviewing changes
+
+Governance is a loop, not a one-time approval. A review opens when one of these happens:
+
+* A declared change to the system, such as a new prompt, a new tool or a different model.
+* An update to a regulation or framework that applies to the system.
+* A scheduled review.
+* Drift detected at runtime.
+
+Each review is scoped to what changed. A change goes through review with its evidence and approvals, and an accepted change produces a new version of the signed bundle. A small change, such as a prompt edit, needs a short review. A large one, such as replacing the model, needs a longer review that was planned in advance.
+
+== Guarantees
+
+[cols="1,2,2", options="header"]
+|===
+| Situation | What Akka does | Precondition
+
+| A control is accepted
+| It is part of a versioned, signed bundle, and the runtime enforces it under its control id.
+| The control is accepted, not waived or rejected.
+
+| A control is waived
+| The waiver is recorded with who waived it, why and until when, and stays visible.
+| None.
+
+| A control produces a verdict
+| The verdict names the control id and the bundle version that it came from.
+| The agent runs on the Akka runtime.
+
+| A regulation that applies to the system changes
+| A review opens for the system.
+| The regulation is one that the system was classified against.
+|===
+
+== Limits and trade-offs
+
+* Derivation proposes controls. People who own the risk decide which ones apply.
+* A control is only as complete as the risk it was derived from. An obligation that the risk envelope and the survey do not reveal does not produce a control.
+* For agents built elsewhere, controls are derived and signed in the same way, but the controls that act inside the transaction of an action, such as inline guardrails and durable waits for a person, need the agent to run on the Akka runtime. See xref:concepts:evidence.adoc#agents-built-elsewhere[Agents built elsewhere].
+
+== Next steps
+
+* xref:concepts:specification.adoc[]: the risk envelope and the other sections of a specification.
+* xref:concepts:controls.adoc[]: the five control types.
+* xref:concepts:evidence.adoc[]: verdicts, evidence and evidence packs.
+* xref:reference:specify/catalog/agentic-ai-safety.adoc[Agentic AI safety exit conditions]

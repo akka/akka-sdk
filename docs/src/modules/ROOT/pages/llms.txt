@@ -3,7 +3,7 @@
 > Akka has one offering: the Akka Agentic AI Platform, which guarantees the resilience and
 > scalability of the agentic systems you build with it. Its four solutions are Akka SDK, Akka
 > Specify, Akka Verify and Akka Optimize. They share one definition of an AI system, one
-> runtime, one evidence record and one governance model.
+> runtime, one ledger and one governance model.
 
 - Akka SDK is the component model for building agentic systems.
 - Akka Specify is spec-driven development tooling that builds an agentic system from
@@ -87,16 +87,44 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Observability](https://doc.akka.io/sdk/integrations/observability.html.md): OpenTelemetry metrics and logs exporting
 - [Streaming](https://doc.akka.io/sdk/streaming.html.md): Built-in stream processing and Akka Streams
 
-## Concepts
+## Understanding
 
-- [AI Agents](https://doc.akka.io/concepts/ai-agents.html.md): Foundational concepts for building AI agents in Akka
-- [Architecture model](https://doc.akka.io/concepts/architecture-model.html.md): How an Akka project is structured across api, application, and domain layers
-- [Distributed systems](https://doc.akka.io/concepts/distributed-systems.html.md): Resilience, elasticity, and responsiveness
-- [Multi-region operations](https://doc.akka.io/concepts/multi-region.html.md): Active-active HA/DR across regions
-- [Declarative effects](https://doc.akka.io/concepts/declarative-effects.html.md): Composable, testable side effects
-- [AI orchestration patterns](https://doc.akka.io/concepts/ai-orchestration-patterns.html.md): Patterns for composing and orchestrating agentic applications
-- [State model](https://doc.akka.io/concepts/state-model.html.md): Understanding different entity state modeling approaches in Akka
-- [Deployment model](https://doc.akka.io/concepts/deployment-model.html.md): Understanding how Akka services are packaged and deployed
+- [Platform model](https://doc.akka.io/concepts/platform-model.html.md): Organizations, projects, services, components, regions and routes, and the planes that run them
+- [Anatomy of a request](https://doc.akka.io/concepts/request-lifecycle.html.md): One agent request traced from the endpoint to the ledger record and the evaluation that follow it
+- [Distributed systems principles](https://doc.akka.io/concepts/distributed-systems.html.md): Isolated state, asynchronous messages, failure handling and location transparency
+- [Components and effects](https://doc.akka.io/concepts/components.html.md): The building blocks of a service and the effects their methods return
+- [Entities and event sourcing](https://doc.akka.io/concepts/state-model.html.md): Event Sourced and Key Value Entities, identity, snapshots and schema evolution
+- [Views and CQRS](https://doc.akka.io/concepts/views.html.md): Read models built from events, state or topic messages
+- [Durable execution](https://doc.akka.io/concepts/durable-execution.html.md): Workflows that survive failures, with retries, timeouts, compensation and waits for a person
+- [Messaging and delivery guarantees](https://doc.akka.io/concepts/delivery-guarantees.html.md): At-least-once delivery, ordering and deduplication
+- [Streaming and back-pressure](https://doc.akka.io/concepts/streaming.html.md): Durable event streams and how each stage keeps within its capacity
+- [Agents](https://doc.akka.io/concepts/ai-agents.html.md): Request-based and Autonomous Agents, models, prompts and context
+- [Memory and context](https://doc.akka.io/concepts/agent-memory.html.md): Session memory, compaction, long-term memory and context management
+- [Tools and agent protocols](https://doc.akka.io/concepts/tools-and-protocols.html.md): Function tools, MCP and A2A
+- [Multi-agent coordination](https://doc.akka.io/concepts/ai-orchestration-patterns.html.md): Supervisors, choosing a supervisor and waiting for a person
+- [Coordination patterns](https://doc.akka.io/concepts/coordination-patterns.html.md): Sequential, delegative, collaborative and emergent patterns
+- [Spec-driven development](https://doc.akka.io/concepts/spec-driven-development.html.md): Building from plain-language specifications checked against the code
+- [The specification](https://doc.akka.io/concepts/specification.html.md): Goals, requirements, knowledge, risk envelope, operational envelope and improvement policy
+- [Exit conditions and conformance](https://doc.akka.io/concepts/conformance.html.md): Exit conditions, auditors, waivers and the conformance verdict
+- [Governance and the runtime](https://doc.akka.io/concepts/governance-and-the-runtime.html.md): Why governance runs in the runtime, control ids and compliance
+- [Controls](https://doc.akka.io/concepts/controls.html.md): Guardrails, sanitizers, evals, human decisions and gates, verdicts and halt
+- [Evaluation](https://doc.akka.io/concepts/evaluation.html.md): Test, batch, replay and live evaluation, and how results map across sections
+- [From risk to controls](https://doc.akka.io/concepts/risk-to-controls.html.md): Risk envelope, risk survey, signed bundles and controls in force
+- [The ledger and evidence](https://doc.akka.io/concepts/evidence.html.md): Records, identity and authority, evidence packs and retention
+- [Models in an agentic system](https://doc.akka.io/concepts/models.html.md): Inference calls and the loop that observes, routes, trains and serves them
+- [Capture and grading](https://doc.akka.io/concepts/capture-and-grading.html.md): Captures, graders, use cases and targeting
+- [Model routing](https://doc.akka.io/concepts/model-routing.html.md): Rulesets, routing classifiers and semantic matching
+- [Model serving](https://doc.akka.io/concepts/model-serving.html.md): Models, endpoints, allocations, adapters and served names
+- [Training and promotion](https://doc.akka.io/concepts/model-training.html.md): Base models, training methods, promotion, model drift and revert
+- [Spend and budgets](https://doc.akka.io/concepts/spend.html.md): Pricing catalog, attribution and spend budgets
+- [The runtime](https://doc.akka.io/concepts/runtime.html.md): Clustering, sharding, passivation and recovery from events
+- [Deployment model](https://doc.akka.io/concepts/deployment-model.html.md): How services are packaged and deployed, and who operates the runtime
+- [Multi-region operations](https://doc.akka.io/concepts/multi-region.html.md): Replicated reads, primary regions and asynchronous replication
+- [Availability and recovery](https://doc.akka.io/concepts/availability.html.md): Zones, regions, failover, backup and moving between environments
+- [Automated operations](https://doc.akka.io/concepts/automated-operations.html.md): Scaling, no-downtime updates, live patching and rotation
+- [Security and identity](https://doc.akka.io/concepts/security-and-identity.html.md): Workload identity, mutual TLS, access control and multi-tenancy
+- [Observability](https://doc.akka.io/concepts/observability.html.md): Logs, metrics and traces, and how they differ from the ledger
+- [Architecture model](https://doc.akka.io/sdk/architecture-model.html.md): How an Akka project is structured across api, application, and domain layers
 - [Design considerations](https://doc.akka.io/sdk/dev-best-practices.html.md): Reactive principles, domain-driven design, service sizing, and deduplication
 
 ## Operating

@@ -263,7 +263,7 @@ include::example$autonomous-agent-playground/src/main/java/demo/devteam/applicat
 
 === Emergent patterns
 
-The xref:sdk:autonomous-agents/coordination.adoc[emergent (swarm) pattern] has no dedicated capability. It is typically built on top of `TeamLeadership` as a *blackboard system*: direct peer messaging is replaced with a shared data space that members read from and write to. The "blackboard" can be the backlog itself, or an entity or view exposed as a tool. Members react primarily to what other members leave behind in that shared space, rather than messaging each other.
+The xref:concepts:coordination-patterns.adoc#_emergent[emergent (swarm) pattern] has no dedicated capability. It is typically built on top of `TeamLeadership` as a *blackboard system*: direct peer messaging is replaced with a shared data space that members read from and write to. The "blackboard" can be the backlog itself, or an entity or view exposed as a tool. Members react primarily to what other members leave behind in that shared space, rather than messaging each other.
 
 [#external-input]
 == External input

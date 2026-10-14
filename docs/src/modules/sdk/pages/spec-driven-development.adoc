@@ -1,37 +1,22 @@
 = Spec-driven development
-:page-aliases: concepts:development-process.adoc
-:page-summary: Treat specifications as executable, version-controlled documents that are the single source of truth. AI generates all code; divergence from the spec fails the build.
+:page-summary: Build an Akka application with the Akka Specify Plugin, from a feature specification through clarification, plan, tasks, implementation, inspection and deployment.
 :page-when-to-use: Use when building any non-trivial Akka application where you want repeatable, auditable, AI-generated code tied to a formal specification.
 :page-related: xref:sdk:enforced-mode.adoc[], xref:sdk:a-la-carte-mode.adoc[], xref:sdk:ai-coding-assistant.adoc[]
 :page-prerequisites: Akka CLI installed, a supported AI coding assistant (Claude Code recommended)
-:page-persona: Developer, Tech Lead, Architect
+:page-persona: builder-developer
 
 include::ROOT:partial$include.adoc[]
 
-Spec-Driven Development (SDD) turns your natural-language specifications into the single source of truth for an entire application. You write the _what_ and _why_; AI generates all the code.
-
-SDD provides a structured, iterative workflow -- specify, clarify, plan, task, implement, build, inspect, deploy -- backed by a constitution of unbreakable project rules. Every artifact is version-controlled, and automated CI can detect divergence between specification and code.
+This page walks through spec-driven development with the Akka Specify Plugin: specify, clarify, plan, tasks, implement, build, inspect and deploy, backed by a constitution of project rules. For how the process works and why, see xref:concepts:spec-driven-development.adoc[].
 
 image::sdd-workflow.png[Spec-driven development workflow: specify, clarify, plan, tasks, implement, build, inspect, deploy — with an iteration loop that refines the spec and regenerates.]
 
 [#choosing-your-mode]
 == Choosing your mode
 
-Akka Specify runs in one of two modes. The mode decides whether you get a definition of done at all, and whether it is a hard gate or an advisory checklist.
+The Akka Specify Plugin runs in one of two modes. xref:sdk:a-la-carte-mode.adoc[À la carte mode], the default, lets you run the commands one at a time with nothing blocking you. xref:sdk:enforced-mode.adoc[Enforced mode] makes you define done as exit conditions before code is written, and does not let a feature ship until they are met. Opt in with `/akka:mode enforced`.
 
-* *xref:sdk:a-la-carte-mode.adoc[À la carte mode]* (the default) lets you run the specification commands individually -- specify, clarify, plan, tasks, implement, build, and the rest -- with nothing blocking you. Exit conditions stay dormant until you ask for them, so a new project acquires no conditions and no auditors on its own. It is faster and lighter; you own the rigor.
-* *xref:sdk:enforced-mode.adoc[Enforced mode]* makes you define "done" -- as machine-checkable exit conditions -- before any code is written, and will not let a feature ship until those conditions are met. You get a cleaner, auditable, repeatable result. In Enforced mode an *enterprise can define exit conditions and definitions of done that Akka enforces* across every project. The cost is more up-front definition and a longer, more thorough build. Opt in with `/akka:mode enforced`.
-
-[cols="1,2,2",options="header"]
-|===
-| | À la carte (default) | Enforced
-
-| Definition of done | Off until you ask for it, then advisory | Required, gated
-| Result | Flexible, developer-driven | Cleaner, auditable, repeatable
-| Cost & time | Lower -- run only what you need | Higher -- more up front, more thorough
-| Enterprise governance | Not enforced | Org-defined conditions enforced by Akka
-| Best for | Prototypes, exploration, experienced solo developers | Production systems, teams, regulated work
-|===
+For a comparison of the two modes and when to use each, see xref:concepts:spec-driven-development.adoc#_conformance_modes[Conformance modes].
 
 == Getting started with SDD
 
@@ -39,15 +24,7 @@ Before you start, xref:getting-started:set-up-ai-install.adoc[install using your
 
 === The project constitution
 
-Setup scaffolds your project with a **constitution**. The `constitution.md` file is where unbreakable rules for the entire project are defined -- mandates about technology requirements, design rules, and more. Akka provides a default constitution containing all of the mandatory requirements for Akka applications, and you can layer on an additional constitution with mandates from your company, organization, or team -- so you maintain your own rules while still benefiting from Akka's.
-
-The constitution is typically defined once at the start of a project and only refined as necessary. Constitution amendments are considered one-off exceptions and not part of the core development loop.
-
-== Styles of AI-assisted development
-
-There are a few common ways people work with an AI assistant. The simplest is _direct prompting_ -- you ask for code and get it back -- which is fine for demos but has no reliable source of truth, since the same prompt can produce different output each time. A step up is a _single-file specification_: one markdown file capturing the _what_, _why_, and _how_ of the application. It gives you a version-controlled source of truth an LLM can check generated code against, but it is written mostly by hand and becomes unwieldy as complexity grows.
-
-Spec-driven development is the formal version of that idea. Instead of one large hand-written file, it uses an iterative, git-friendly process where the AI assistant helps build the specification _and_ generate the code from it -- producing specs that are consumable by both humans and AI while reducing random, unexpected output. The rest of this page covers that process in detail.
+Your project starts with a constitution, `constitution.md`, which holds the rules for the whole project: the default Akka requirements, plus any your organization or team adds. Define it once at the start and change it only as an exception. Use xref:reference:specify/constitution.adoc[`/akka:constitution`] to create or update it. See xref:concepts:specification.adoc#_the_constitution[The constitution].
 
 == Using Akka specify
 
@@ -85,7 +62,7 @@ Clarification is a critical step in this process. Start it by using a single com
 /akka:clarify
 ```
 
-Your AI assistant then analyzes your constitution, your feature specification, and any conversation history you have built up and identifies gaps. It looks for places where it would have to make a decision _and_ it does not already have enough information to make that decision. If you run `akka.clarify` on the chess core users feature, you will likely be asked several questions.
+Your AI assistant then analyzes your constitution, your feature specification, and any conversation history you have built up and identifies gaps. It looks for places where it would have to make a decision _and_ it does not already have enough information to make that decision. If you run `/akka:clarify` on the chess core users feature, you will likely be asked several questions.
 
 Typical clarification questions include how users are uniquely identified (internal UUID or username), what happens to deleted users, and whether users can have multiple concurrent sessions from multiple devices. Achieving this level of clarity is a hallmark of spec-driven development that you rarely get with single-file specs or even less formal multi-file specifications.
 
@@ -152,7 +129,7 @@ Once your service is running -- either locally after `/akka:build` or deployed v
 * Validates the UI in the browser
 * Summarizes findings and offers next steps
 
-This is spec-driven _verification_ -- your agent checks that the running service actually behaves the way the specification says it should. If inspect finds issues, iterate with `/akka:implement` and `/akka:build` before deploying.
+This is inspection: your agent checks that the running service actually behaves the way the specification says it should. If inspect finds issues, iterate with `/akka:implement` and `/akka:build` before deploying.
 
 === Deploy to Akka
 If you want to deploy your service to Akka's infrastructure through _Akka Automated Operations_, use the `/akka:deploy` command. This command prompts you for the organization and project into which you want to deploy. It then deploys your service, automatically doing a rolling update of the service cluster if one is already running. After deployment, the command verifies component health and inspects the deployed service using backoffice tools.
@@ -162,13 +139,6 @@ Two additional commands help you maintain quality as your project evolves:
 
 * `/akka:review` reviews the implemented code against the spec, plan, and constitution. Use this after implementation to catch deviations before they compound.
 * `/akka:analyze` performs a non-destructive cross-artifact consistency and quality analysis across your spec, plan, and task list. Use this after task generation to verify that all artifacts are aligned before implementation begins.
-
-== Specify your ideas!
-The greatest barrier to building new things is rarely the idea. It is usually in the implementation. Spec-Driven Development frees you from this barrier, letting you turn your ideas into specification and plan prompts, and watching as your agent generates and populates a to-do list and implements all code for you.
-
-You no longer have to invest massive amounts of time in "what-if" scenarios -- you can just _specify and go_. All you need is `init` -> `specify` -> `clarify` -> `plan` -> `tasks` -> `implement` -> `build` -> `inspect` -> `deploy`.
-
-Using SDD with careful feature scoping and concise technical implementation plans, you are never more than a matter of minutes from a feature you can interact with. With Akka, those features automatically become powerful, resilient, scalable distributed systems.
 
 == SDD commands in your coding assistant
 

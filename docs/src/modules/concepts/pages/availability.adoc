@@ -1,0 +1,116 @@
+= Availability and recovery
+:page-summary: Akka keeps services available through the loss of a node, a zone or a region by recovering state from durable events, spreading each region across availability zones, and replicating state between regions.
+:page-when-to-use: When you need to know what an Akka service survives, what can be lost in a regional outage, and which mechanism handles each kind of failure.
+:page-related: concepts:runtime.adoc, concepts:multi-region.adoc, operations:production-readiness/choosing-your-environment.adoc
+:page-persona: operator-platform, operator-sre, builder-developer
+
+include::ROOT:partial$include.adoc[]
+
+Availability is a service's ability to keep serving requests while parts of the infrastructure under it fail. Akka handles failures at four scopes, each with its own mechanism: a single instance or node, an availability zone, a whole region, and the platform's own control plane. Two measures describe recovery. The recovery time objective (RTO) is how long a service is unavailable after a failure. The recovery point objective (RPO) is how much recently written data can be lost.
+
+== The problem
+
+Failures differ in size. A process crashes, a machine dies, a data center loses power, or a cloud region goes offline for hours. A design that covers only the small failures leaves you exposed to the large ones, and a design that covers every failure in every service costs more than most workloads need. You choose how much protection a workload needs, and Akka provides a mechanism at each scope.
+
+== How it works
+
+=== Instance and node failures
+
+The runtime records every change to a stateful component durably before it replies. When an instance or a node fails, the runtime recovers the affected instances on other nodes, from their latest snapshot and the events written after it. Recovery is automatic and needs no operator action. At the instance level, supervision contains a failure where it happens, so it does not spread to other components. See xref:runtime.adoc[].
+
+=== Zone failures
+
+A region is a geographic area, such as Ireland or northern Virginia. An availability zone is one physically separate data center in it. A production region runs across several zones: the Kubernetes cluster, the nodes of each service and the data store are spread over them. When one zone fails, from power loss, hardware failure or fire, the service keeps running in the other zones and recovers automatically, without losing data that was written before the failure.
+
+For most workloads, zones are enough on their own. This is what many teams mean by high availability, and you do not need a second region to survive the loss of a data center.
+
+=== Region failures
+
+Protection against the loss of a whole region comes from running the project in two or more regions, with state replicated between them. See xref:multi-region.adoc[].
+
+Each region already holds a replica of the data, so the other regions keep serving reads when one region is lost. Moving traffic and writes away from a failed region, and back after it recovers, is an operator action with the Akka CLI: failover and failback. In pinned-region mode, failover changes the project's primary region to a surviving region, which then accepts writes for every entity.
+
+Replication between regions is asynchronous. Events written in the failed region shortly before it went offline, and not yet replicated, are not in the surviving regions. The recovery point of a regional failover is therefore the replication lag at the moment of failure: usually small, larger if the network between regions was already degraded. When the failed region returns, its journal still holds those events.
+
+=== Backups and single-region recovery
+
+The data store and the Kubernetes resources of a region are backed up continuously, with point-in-time recovery. If a project runs in one region and that whole region is lost, it is restored from backup into another region. This takes longer and can lose more recent data than a failover to a region that already holds a replica.
+
+=== Failure of the federation plane
+
+The federation plane coordinates organizations, users, keys and deployments across regions. If it becomes unavailable, running applications continue without interruption. Operations that go through the federation plane, such as new deployments, are not available until it returns.
+
+=== Moving between environments
+
+The same replication that protects against regional loss also moves a project between environments: from one cloud to another, from Akka's cloud into your own account, or back to your own data centers. A new environment is added as a region, state is replicated into it, and traffic is switched over once it has caught up. For copying data in or out by other means, services can export and import their data through object storage. See xref:operations:services/data-management.adoc[Data migration].
+
+== Guarantees
+
+[cols="2,3,2", options="header"]
+|===
+| Failure | What Akka does | Precondition
+
+| An instance or node fails
+| Affected instances are recovered on other nodes from their snapshots and events. No acknowledged write is lost.
+| The write was persisted by an effect before the reply.
+
+| An availability zone fails
+| The service keeps running in the remaining zones. No acknowledged write is lost.
+| The region runs across several zones.
+
+| A region fails
+| Other regions keep serving reads from their replicas. After failover, a surviving region accepts writes. Writes not yet replicated when the region failed are unavailable until it returns.
+| The project runs in two or more regions with replication.
+
+| A region fails in a single-region project
+| The project is restored from the latest backup.
+| Backups are enabled for the region.
+
+| The federation plane is unavailable
+| Running applications keep serving traffic.
+| None.
+|===
+
+== Choosing between zones and regions
+
+[cols="1,2,2", options="header"]
+|===
+| | Zones in one region | Several regions
+
+| Protects against
+| Loss of an instance, a node or a data center
+| All of these, plus loss of a whole region
+
+| Data that can be lost on the failure it protects against
+| None that was acknowledged
+| Writes not yet replicated when the region failed
+
+| Recovery
+| Automatic
+| Reads continue; failover of writes is an operator action
+
+| Cost and latency
+| Base cost
+| Infrastructure in each region, network between regions, and a short delay before other regions see a write
+
+| Use when
+| You can tolerate an occasional full-region outage
+| You cannot, or your contracts or regulations require geographic redundancy
+|===
+
+You do not have to decide on day one. Start with zones in one region and add a region when your needs grow. A region chosen for resilience is a separate decision from a region chosen for data residency; see xref:operations:production-readiness/choosing-your-environment.adoc[].
+
+== Limits and trade-offs
+
+* Replication between regions is asynchronous, so a regional failover can lose the writes that were not yet replicated.
+* Failover between regions is an operator action, not an automatic switch.
+* In request-region mode, an entity's primary region can only move while every region is reachable. During a regional outage, entities whose primary region is the failed region cannot accept writes until it returns or an operator fails over.
+* Data export and import cover Event Sourced Entities. Views are not exported.
+* Multi-region operation adds infrastructure in each region and network charges between them.
+
+== Next steps
+
+* xref:operations:production-readiness/choosing-your-environment.adoc[] for availability levels, sizing and data residency
+* xref:operations:production-readiness/index.adoc[Production readiness] for recovery procedures
+* xref:operations:regions/setup.adoc[] to add a region to a project
+* xref:multi-region.adoc[] and xref:runtime.adoc[]

@@ -1,0 +1,143 @@
+= Spec-driven development
+:page-aliases: concepts:development-process.adoc
+:page-summary: Spec-driven development builds an application from plain-language specifications that are versioned with the code, and checks the code against them.
+:page-when-to-use: When you need to understand how a specification becomes running code, how the two conformance modes differ, and how the code stays in step with the specification.
+:page-related: sdk:spec-driven-development.adoc, concepts:specification.adoc, concepts:conformance.adoc
+:page-persona: builder-developer, governance-compliance
+
+include::ROOT:partial$include.adoc[]
+
+Spec-driven development builds an application from plain-language specifications that are versioned with the code, and checks the code against them. You write what the system must do and why. The Akka Specify Plugin, running in your AI harness, turns that into a plan, tasks, code and tests, and every step reads the same specification.
+
+== The problem
+
+An AI coding assistant can write code from a prompt, but a prompt is not a source of truth. The same prompt produces different code on different days, and nothing records which decisions the assistant made on your behalf. When the code changes later, nobody can tell whether it still does what was intended, because the intent was never written down in a form that can be checked.
+
+There are three common ways to work with an AI assistant:
+
+Direct prompting:: You ask for code and get it back. This is fine for a demonstration, but it has no reliable source of truth.
+A single-file specification:: One Markdown file holds the what, the why and the how of the application. It gives you a version-controlled source of truth that a model can check generated code against, but it is written mostly by hand and becomes hard to manage as the application grows.
+Spec-driven development:: The formal version of the single-file idea. The assistant helps you write the specification as well as the code, in an iterative process that fits git. The specifications are readable by people and by models, and the output is less random.
+
+If an application is simple enough to describe in one prompt or one file, a single-file specification is less overhead than the full process.
+
+== How it works
+
+=== The harness and the plugin
+
+The harness is the AI coding tool you work in, such as Claude Code. The Akka Specify Plugin installs into the harness and adds the `/akka:*` commands. You run every step of the process from the harness, without leaving it.
+
+The plugin also generates harness assets: configuration that connects your project to systems your organization already runs, such as a CI workflow, a scanner, a supply-chain step or a content-governance package. See xref:reference:specify/harnesses.adoc[/akka:harnesses].
+
+=== The loop
+
+Each feature goes through the same loop. Each step reads what the previous steps wrote, so the specification, the plan, the tasks and the code stay connected.
+
+. *Constitution.* The project starts with a constitution: rules that hold for the whole project. It is set once and changed only as an exception. See xref:concepts:specification.adoc#_the_constitution[The constitution].
+. *Specify.* You describe one feature in plain language: what it does and why, with no implementation detail. The plugin writes the feature specification into its own directory and git branch, such as `specs/001-core-users`. Keep a feature small enough that you know its acceptance criteria and that a person or a model can review the generated code.
+. *Clarify.* The plugin reads the constitution, the specification and the conversation so far, and finds every place where it would have to make a decision without enough information. It asks you about each one and writes the answers back into the specification.
+. *Plan.* You describe how the feature is built: the architecture and the technical design. Your description is a prompt, not the final plan. The plugin produces the plan, organized by priority and functional requirement, so you can check it before going further.
+. *Tasks.* The plugin turns the specification and the plan into an ordered list of work items, and marks which can run in parallel.
+. *Implement.* The plugin writes the code and its tests, and iterates on compilation and test failures until they pass. The default constitution requires unit tests and integration tests.
+. *Build and run.* The plugin compiles the service, runs the tests, starts it locally and exercises it through its real endpoints. It restarts the service when a specification or the code changes.
+. *Inspection.* The plugin exercises a running service, locally or deployed, against its specification: it calls the endpoints, reads entity state through the backoffice and checks the user interface in a browser.
+. *Converge.* When the code and the specification have moved apart, for example after a partial implementation or a manual edit, the plugin compares them and adds the remaining work to the task list.
+. *Deploy.* The plugin deploys the service, with a rolling update when a version is already running, and checks the health of the deployed components.
+
+Two more commands keep the artifacts consistent. `/akka:analyze` checks that the specification, the plan and the task list agree before implementation starts. `/akka:review` reviews the implemented code against the specification, the plan and the constitution.
+
+Building a working application this way still needs someone who can decide how it is built. The plan step asks you to describe the architecture clearly enough for a model to follow it. If the generated code is not what you wanted, the plan is usually what to change.
+
+=== What the specification holds
+
+A feature specification states the what and the why. Around it, the specification of a system also holds its goals, the knowledge it needs, its risk envelope, its operational envelope and its improvement policy, and some of those sections are written by the people who govern the system rather than the people who build it. See xref:concepts:specification.adoc[].
+
+=== Exit conditions
+
+An exit condition is a machine-checkable statement of when a feature or a system is done. An auditor checks each one, and the conformance verdict says whether everything that applies has passed. Exit conditions are how the code is held to the specification. See xref:concepts:conformance.adoc[].
+
+== Conformance modes
+
+The mode decides whether exit conditions exist at all for a project, and whether they block shipping.
+
+À la carte mode:: The default. You run the commands one at a time and nothing blocks you. A new project captures no exit conditions and creates no auditors; only the conditions that Akka guarantees itself resolve. When you ask for exit conditions, they run as an advisory checklist, and `/akka:ship` proceeds when they are unmet, recording the override.
+Enforced mode:: You define done as exit conditions before code is written, and `/akka:ship` refuses until every applicable condition has passed or is covered by a waiver. Your organization can define exit conditions that every project must meet.
+
+Every command is available in both modes. The mode changes what the plugin does on its own and whether unmet conditions block shipping, not the set of commands.
+
+[cols="1,2,2",options="header"]
+|===
+| | À la carte (default) | Enforced
+
+| Definition of done
+| Off until you ask for it, then advisory
+| Required, and gates shipping
+
+| Result
+| Flexible and driven by the developer
+| Repeatable and auditable
+
+| Cost and time
+| Lower: you run only what you need
+| Higher: more definition up front and a more thorough build
+
+| Organization exit conditions
+| Not enforced
+| Enforced on every project
+
+| Use when
+| Prototyping, exploring, or working alone with experience
+| Building production systems, working in a team, or doing regulated work
+|===
+
+Your organization can restrict which modes are allowed and lock a project to one of them.
+
+== Guarantees
+
+[cols="2,3,2",options="header"]
+|===
+| Situation | What happens | Precondition
+
+| A change does not meet its exit conditions
+| `/akka:ship` refuses and names what blocks it
+| Enforced mode
+
+| A change does not meet its exit conditions
+| `/akka:ship` proceeds and records an explicit override
+| À la carte mode
+
+| Your organization has a policy
+| Every conformance check applies it by default, with no flag to pass. A developer can make it stricter, never weaker.
+| IT has configured the policy location for the Akka CLI
+
+| A developer skips a check on their machine
+| The organization's CI runs the same check and the change cannot merge or ship
+| The organization runs the conformance check in CI
+
+| The code falls behind the specification
+| `/akka:converge` adds the missing work to the task list
+| You run `/akka:converge`
+|===
+
+The policy always applies, locally and in CI. On a developer's machine its results guide the work; CI is the gate.
+
+== Modernizing an existing system
+
+The same process can start from a system that already exists. The plugin recovers what a legacy system does, turns that behavior into checks that a replacement must pass, and shows that the replacement behaves the same.
+
+A blueprint is a recipe that the Akka Specify Plugin turns into a runnable system. It gives a project a starting specification instead of an empty one.
+
+== Limits and trade-offs
+
+* Specifying a whole application in one `/akka:specify` prompt is possible but not recommended. Scope each feature to something you can review.
+* The quality of the generated code depends on the effort level you give the model. Results vary noticeably between medium and high effort.
+* During implementation the plugin makes mistakes, and compilation and test failures are normal while it converges. Stop it only when it diverges from the solution instead of converging.
+* Inspection checks the behavior a running service shows through its endpoints, its state and its user interface. It does not replace exit conditions, which are what decide whether a change can ship.
+* The local results of a conformance check are advisory. Only CI can stop a change from merging.
+
+== Next steps
+
+* xref:sdk:spec-driven-development.adoc[] walks through the commands with an example.
+* xref:sdk:enforced-mode.adoc[] and xref:sdk:a-la-carte-mode.adoc[] cover each mode in practice.
+* xref:reference:specify/index.adoc[The Specify reference] lists every command.
+* Related concepts: xref:concepts:specification.adoc[] and xref:concepts:conformance.adoc[].

@@ -17,7 +17,7 @@ Services form a cluster with no primary node. State is sharded across the nodes,
 
 A project can span several regions, clouds and data centers as one system. State is replicated to every region, reads are served locally, and you choose how writes are handled in each region. You can filter what is replicated, and keep data in the regions where it is allowed to live.
 
-See xref:concepts:deployment-model.adoc[], xref:concepts:state-model.adoc[] and xref:concepts:multi-region.adoc[].
+See xref:concepts:runtime.adoc[], xref:concepts:deployment-model.adoc[], xref:concepts:state-model.adoc[] and xref:concepts:multi-region.adoc[].
 
 == Deployment options
 
@@ -59,8 +59,8 @@ In BYOC and BYOK8s, application data stays in your environment. A limited set of
 
 Akka Automated Operations (AAO) runs the runtime for you in the Serverless, Dedicated, BYOC and BYOK8s options. It handles the work that comes after deployment:
 
-* Elastic scaling: capacity follows load, idle services scale to zero, and cold starts are handled.
-* Multi-region operations: one system across regions, with failover when a region is lost.
+* Elastic scaling: capacity follows load, and on Serverless idle services scale to zero, with cold starts handled.
+* Multi-region operations: one system across regions. When a region is lost, an operator fails over to another region. Replication is asynchronous, so writes that the lost region had not yet replicated are not available in the others.
 * No-downtime updates: new versions roll out in waves, including changes to how services store data.
 * Live patching: runtime and security patches, and certificate and key rotation, without downtime.
 * Moving between environments: cloud to cloud, from Akka's cloud into your own account, or back on premises, by replication with an automated switch.
@@ -68,6 +68,8 @@ Akka Automated Operations (AAO) runs the runtime for you in the Serverless, Dedi
 * Operations around the clock by Akka for the options Akka operates.
 
 Self-managed operations give you the runtime, clustering, elasticity, resilience, and metrics, logs and traces. Logs, metrics and traces can be exported to OpenTelemetry, Prometheus or Splunk in every option. The other items above are AAO. See the feature comparison on xref:operations:index.adoc[Operating].
+
+See xref:concepts:automated-operations.adoc[], xref:concepts:availability.adoc[] and xref:concepts:security-and-identity.adoc[].
 
 == Where it is in the documentation
 
@@ -79,7 +81,7 @@ Self-managed operations give you the runtime, clustering, elasticity, resilience
 | xref:getting-started:quick-deploy.adoc[Deploy to akka.io]
 
 | Understanding
-| xref:concepts:deployment-model.adoc[], xref:concepts:multi-region.adoc[], xref:concepts:distributed-systems.adoc[]
+| xref:concepts:runtime.adoc[], xref:concepts:deployment-model.adoc[], xref:concepts:multi-region.adoc[], xref:concepts:availability.adoc[], xref:concepts:automated-operations.adoc[], xref:concepts:security-and-identity.adoc[], xref:concepts:observability.adoc[]
 
 | Operating
 | xref:operations:index.adoc[Operating], xref:operations:akka-platform.adoc[Akka Automated Operations], xref:operations:configuring.adoc[Self-managed operations], xref:operations:production-readiness/index.adoc[Production readiness]

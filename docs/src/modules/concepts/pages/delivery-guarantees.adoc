@@ -1,0 +1,101 @@
+= Messaging and delivery guarantees
+:page-summary: Akka delivers events and messages between components at least once, in order per source instance, so the receiving side must be idempotent or deduplicate.
+:page-when-to-use: When you consume events, publish to topics, call other services or schedule timers, and need to know whether a message can arrive twice, out of order or not at all.
+:page-related: sdk:consuming-producing.adoc, sdk:dev-best-practices.adoc, concepts:views.adoc
+:page-persona: builder-developer
+
+include::ROOT:partial$include.adoc[]
+
+A delivery guarantee states how many times a message reaches its receiver when things fail. Akka components exchange events and messages: entities emit events, consumers react to them, services publish streams to each other and to brokers, and timers fire scheduled calls. In a distributed system, a receiver can process a message and then fail before its acknowledgment reaches the sender. The sender cannot tell that apart from a message that was never processed, so it must send again. Akka chooses delivery at least once, and gives you the means to make processing effectively once.
+
+== How messages move
+
+Events flow between components in several ways:
+
+* *Within a service*, a xref:sdk:consuming-producing.adoc[Consumer] or a xref:views.adoc[View] subscribes to the events of an Event Sourced Entity, or to the state changes of a Key Value Entity or a Workflow. The source is the entity's journal, so the events are durable before they are delivered.
+* *Between services in the same project*, a consumer in one service publishes a stream of events, and a consumer in another service subscribes to it. This is service-to-service eventing. It needs no message broker, and the stream survives the producing service being down: the consumer resumes when it comes back.
+* *With a message broker*, a consumer publishes to a topic on Apache Kafka or Google Cloud Pub/Sub, or subscribes to one.
+* *Scheduled*, a xref:sdk:timed-actions.adoc[timer] stores a call and runs it at a future time.
+
+A consumer reads at its own pace and records how far it has read. Until it processes an event, the event waits in the journal or the topic. After a restart, the consumer resumes from its last recorded position. See xref:streaming.adoc[].
+
+== Guarantees
+
+[cols="2,2,2", options="header"]
+|===
+| Path | Delivery | Order
+
+| Entity or workflow events to a consumer in the same service
+| At least once
+| In order per entity instance
+
+| Service-to-service eventing
+| At least once
+| In order per entity instance
+
+| Entity or workflow events to a view
+| At least once; Akka removes duplicates by sequence number
+| In order per entity instance
+
+| Broker topic to a consumer or view
+| At least once
+| In order per entity only when the producer sets the cloud event subject to the entity ID
+
+| Consumer publishing to a topic
+| At least once
+| As above
+
+| Timer
+| At least once; rescheduled until the call succeeds
+| Not applicable
+
+| Workflow step calling another system
+| At least once; a retried step calls again
+| Not applicable
+
+| Streamed view updates and workflow notifications to clients
+| No guarantee; live only
+| In order while the stream is open
+|===
+
+When a consumer method throws an exception, or its effect fails, Akka does not move on. It redelivers the same message until processing succeeds. A message that always fails, such as one that can never be deserialized, therefore blocks the consumer until you fix the handler or skip the message.
+
+When the source is an Akka component, Akka guarantees order as well as delivery. A redelivery repeats a series of messages in the same order in which they were produced.
+
+== Making processing effectively once
+
+At-least-once delivery means a receiver sees some messages twice. Processing is effectively once when a duplicate has no further effect. There is no single technique for this; the right one depends on the receiver.
+
+Idempotent updates::
+An operation is idempotent when applying it again does not change the result, such as setting a field to a value instead of adding to it. This is the most common approach.
+
+Events enriched with state::
+An event can carry the resulting value, not only the change, so that the receiver can set the value instead of computing it. This makes processing idempotent and reduces coupling, at the cost of larger events.
+
+Sequence number tracking::
+Events from Akka components carry a sequence number that increases per entity instance. A receiver stores the last number it processed for each instance and ignores anything lower or equal. Views do this for you when their source is an Akka component. The number is unique per instance, not globally.
+
+Deterministic tokens::
+When a consumer calls another system, it can send a token derived from the entity ID and the sequence number. The receiver uses the token to recognize a repeated request.
+
+Command deduplication::
+An entity can record the IDs of commands it has processed, in its state, and ignore a command whose ID it has seen. Keeping every ID is expensive, so real systems bound the record by count or by time window.
+
+Consumers, views, workflows and entities are single writers for a given ID: one instance processes messages for that ID, one at a time. Deduplication state kept in that instance needs no locking. See xref:sdk:dev-best-practices.adoc#message-deduplication[Message deduplication] for examples of each technique.
+
+== Choosing between a consumer and a direct call
+
+Inside one request, when the caller needs the result to proceed, make a direct call with the component client. Move work to a consumer when it is a reaction to a fact that has already been persisted, such as notifying another system after an order is placed. The reaction then runs outside the write path, and is retried independently of the original request. The cost is at-least-once delivery, so the reaction must be idempotent. Side effects never belong in an entity command handler. See xref:sdk:components/index.adoc#cs4-consumer-or-direct-call[Consumer, or a direct call].
+
+== Limits and trade-offs
+
+* Consumers do not deduplicate for you. Views built from Akka components do.
+* Sequence numbers exist only for events from Akka components. Messages from a broker topic need their own deduplication key.
+* A message that always fails blocks its consumer until it is handled.
+* A view built from a Key Value Entity receives the latest state, and can skip intermediate states.
+
+== Next steps
+
+* xref:sdk:consuming-producing.adoc[Consuming and producing].
+* xref:sdk:dev-best-practices.adoc#message-deduplication[Message deduplication].
+* xref:durable-execution.adoc[] for retries inside a process.

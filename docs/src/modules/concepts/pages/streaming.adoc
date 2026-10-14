@@ -1,0 +1,81 @@
+= Streaming and back-pressure
+:page-summary: Streaming in Akka moves events through views, consumers and producers over durable event streams, and back-pressure keeps each stage within its capacity.
+:page-when-to-use: When you process continuous data, such as events, sensor feeds or model output, and need to know how Akka paces producers and consumers and protects memory under bursts.
+:page-related: sdk:streaming.adoc, sdk:consuming-producing.adoc, concepts:delivery-guarantees.adoc
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Streaming is the processing of data as a continuous, possibly endless, sequence of elements, rather than as one request and one response. Agentic systems are only as current as the data that feeds them. Telemetry, chat messages, events from other services and partial model output all arrive continuously and often in bursts. A system that reacts to this data has to keep a fast producer from overwhelming a slower consumer, and it has to resume after a failure without losing or replaying everything.
+
+In the SDK, streaming means events processed through views, consumers and producers over durable event streams. It is built on the lower-level {url-libraries-streams}[Akka Streams] library, a framework of sources, flows and sinks with back-pressure, which you can also use directly. See xref:sdk:streaming.adoc#_using_akka_streams[Using Akka Streams].
+
+== How it works
+
+=== Producers, consumers and event streams
+
+A _producer_ emits a stream of events: the events of an entity, the state changes of a workflow, messages ingested from outside, or chunks of model output. A _consumer_ subscribes to a stream and reacts to each element in order: it updates state, calls a model or a component, or emits a new stream.
+
+The same stream can feed many independent consumers. One consumer can update a view, another can start an agent, and a third can send results to connected clients. The producer does not need to know who is listening.
+
+Akka takes care of the stream in most cases. You implement the function that handles each element:
+
+* Views are updated from a stream of events. You implement the update handler, which runs for each event.
+* Views can stream query results, and the receiver sets the pace.
+* Consumers process a stream of events. You implement a handler for each event, whether the source is an entity in the same service, another service or a broker topic.
+* Consumers can produce events to other services or publish them to a broker topic. The downstream consumer or publisher sets the pace.
+
+=== Brokerless publishing
+
+Events can flow between services in the same project without a message broker. A consumer in one service publishes a stream, and a consumer in another service subscribes to it. This removes a network hop and a central point of contention from the path. When you need to work with existing infrastructure, consumers also subscribe to and publish on Apache Kafka or Google Cloud Pub/Sub topics, so brokerless messaging and broker-based integration coexist in the same system. See xref:delivery-guarantees.adoc[].
+
+=== Durable buffers
+
+Event sources arrive in bursts, and a fast producer could overwhelm a slower consumer, and the model, database or agent that the consumer calls. In Akka, a consumer reads events at the pace it can process them. Until it does, the events wait in the event journal or the broker topic, not in memory. A burst therefore does not exhaust memory, and a consumer that falls behind or restarts resumes from where it left off.
+
+[#_back_pressure]
+=== Back-pressure in memory
+
+Where a stream runs in memory, such as view query results streamed to a client, a token stream from a model, or a stream you build with Akka Streams, the receiver signals how much it can take and the sender slows to match. This is _back-pressure_. It works in both directions: a slow consumer slows the producer instead of buffering without bound, and a spike in input does not flood the consumer. Resource use stays bounded, and the system degrades gracefully under load instead of running out of memory.
+
+== A typical flow
+
+. A producer publishes a stream of events, from an Akka service, a broker or an endpoint.
+. One or more consumers subscribe and process each element in order, with at-least-once delivery.
+. A consumer reasons over the data, calls a model or a tool, and updates state or emits a new stream.
+. Results stream back to the caller, event by event or token by token, while back-pressure keeps every stage within its capacity.
+
+Common uses are ingestion pipelines that turn sensor, audio or video feeds into actions, agent responses that show tokens and tool calls to a user as the agent works, agents triggered by domain events as they happen, and fan-out that splits, filters, enriches and routes one stream to many consumers.
+
+== Guarantees
+
+[cols="1,2,2", options="header"]
+|===
+| Situation | What Akka does | Precondition
+
+| A burst of events arrives faster than a consumer can process it
+| The events wait in the journal or topic; the consumer reads at its own pace
+| The source is a journal or a topic
+
+| A consumer restarts or falls behind
+| It resumes from its last processed position
+| None
+
+| An in-memory receiver is slower than its sender
+| The sender slows to the receiver's pace
+| The stream runs in memory
+|===
+
+Delivery from durable streams is at least once, in order per source instance. See xref:delivery-guarantees.adoc[].
+
+== Limits and trade-offs
+
+* A consumer that cannot process a message retries it, and blocks until the message is processed or skipped.
+* Live streams to clients, such as streamed view updates and workflow notifications, do not replay history and do not guarantee delivery.
+* For work that the built-in components do not cover, such as running a finite stream per event or a continuous stream per service instance, you use Akka Streams directly and manage the stream yourself.
+
+== Next steps
+
+* xref:sdk:streaming.adoc[Streaming] and xref:sdk:consuming-producing.adoc[Consuming and producing].
+* xref:delivery-guarantees.adoc[] for at-least-once delivery and deduplication.
+* xref:sdk:agents/streaming.adoc[Streaming agent responses].

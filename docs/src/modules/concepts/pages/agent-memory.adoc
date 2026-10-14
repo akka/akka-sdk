@@ -1,0 +1,113 @@
+= Memory and context
+:page-summary: Agent memory is the durable history and knowledge that the runtime adds to a model call, so an agent keeps its context across interactions without code to store it.
+:page-when-to-use: When you decide what an agent remembers, which agents share a history, how to keep a model's context small, and where long-lived knowledge lives.
+:page-related: sdk:agents/memory.adoc, concepts:ai-agents.adoc, concepts:state-model.adoc
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Agent memory is the durable history and knowledge that the runtime adds to a model call, so an agent keeps its context across interactions without code to store it. A model is stateless: it knows only what is in the request in front of it. To hold a conversation, to collaborate with other agents, or to recall what it learned last week, an agent needs a history that survives restarts and a way to keep that history small enough to be useful.
+
+Akka stores agent memory in xref:state-model.adoc[event-sourced entities], the same mechanism that stores the rest of your state. The runtime writes to it and reads from it on each model call.
+
+== How it works
+
+=== Session memory
+
+Session memory is the history of one session. It is identified by a session identifier that links related interactions, and an agent is bound to a session rather than to an instance identifier of its own.
+
+When an agent calls a model, the runtime stores the user message and the model's reply in the session memory, then includes them as context in later requests to the model. The model can then refer to earlier parts of the interaction. Session memory is enabled for every agent by default and is managed by the agent, so you do not write code to save or load it.
+
+Session memory is backed by an Event Sourced Entity. Its history is a sequence of events, it survives restarts and deployments, and you can read it, change it or subscribe to its changes through the component client, as you would with any other entity.
+
+Several agents that use the same session identifier share one history. Access can differ between them: some agents only read the shared history, some only write to it, and some do both. You can also filter which entries an agent sees, for example only the entries written by a given agent component.
+
+Before an entry is written, an interceptor can transform it. When xref:sdk:sanitization.adoc[sanitizers] are configured, user messages and tool results are stored masked.
+
+=== Compaction
+
+A history that grows without bound costs tokens on every call and dilutes the model's attention. Compaction replaces the history with a shorter version. One technique asks a model to summarize the interaction so far and stores the summary in place of the full history. A consumer of the session memory events can trigger compaction when the history passes a size threshold. Because the session memory is an entity, a compaction that races with a new message is detected and does not lose that message.
+
+=== Long-term memory
+
+Long-term memory carries knowledge across sessions, users and agents. It is built on event-sourced entities and is part of the Agent and Workflow components, so a developer does not program it. Because it is event-sourced, an agent can replay the history of what it learned, and recover, reflect on and explain its past behavior.
+
+Knowledge that belongs to your domain, such as a user's preferences or a product catalog, lives in your own entities and views. An agent reaches it through tools, or through context that the calling component adds to the prompt. Retrieval-augmented generation follows the same path: the agent retrieves relevant data and adds it to the request. See xref:tools-and-protocols.adoc[].
+
+=== Context management
+
+Context management is the main reason to split work across several agents. An agent's context shapes its behavior: what it sees determines what it attends to, how it reasons and which solutions it considers. As a task grows more complex, a single agent's context fills with too much information, too many concerns and competing objectives.
+
+Think about the scope of each agent's context in four ways:
+
+Focus:: Narrow the task. An agent with a narrow context concentrates on its subproblem, attends to the details that matter, reasons more deeply and selects better solutions. This applies to tools too: an agent with a narrow set of tools selects among them more accurately than an agent with a broad set.
+
+Relevance:: Keep context current. As work progresses, context collects the residue of earlier steps. When each agent gets a fresh context for its part of the work, with history summarized where agents exchange information, its attention stays on what is current.
+
+Isolation:: Separate concerns. When one agent works across several concerns, context from one interferes with another. Giving each concern its own agent avoids that.
+
+Independence:: Think without influence. Agents that see each other's work tend to converge, anchoring on early ideas. Agents that cannot see each other's reasoning produce more diverse approaches.
+
+Each Autonomous Agent keeps its own private session, with its iteration history, tool calls and intermediate reasoning. None of it is shared automatically. What crosses from one agent to another depends on the coordination pattern; see xref:ai-orchestration-patterns.adoc#_what_crosses_an_agent_boundary[What crosses an agent boundary].
+
+== Guarantees
+
+[cols="2,3,2", options="header"]
+|===
+| Failure or situation | What Akka does | Precondition
+
+| The service restarts during a conversation
+| The session history is recovered from its events, and the next request includes it.
+| None.
+
+| Two agents write to the same session
+| Both entries are stored in order, and both agents see the shared history on their next call.
+| The agents use the same session identifier.
+
+| Compaction runs while a new message arrives
+| The summary replaces the history that was read, and messages added after that read are kept after the summary, so no message is lost.
+| The compaction passes the sequence number of the history it summarized.
+
+| A user in another region continues a session
+| Session memory is replicated. In request-region mode it is limited to the local region until it is accessed from another region, and then it includes that region as well.
+| The project runs in more than one region. See xref:multi-region.adoc[].
+|===
+
+== Choosing where context comes from
+
+[cols="1,2,2,2", options="header"]
+|===
+| | Session memory | Long-term memory | Your own entities and views
+
+| Holds
+| The history of one session
+| Knowledge that carries across sessions, users and agents
+| Domain data that your application owns
+
+| Written by
+| The runtime, on each model call
+| The runtime
+| Your components
+
+| Reaches the model
+| Added to each request automatically
+| Added by the Agent and Workflow components
+| Through tools or context you add
+
+| Use when
+| The agent must remember the conversation
+| The agent must remember across conversations
+| The knowledge is part of your domain model
+|===
+
+== Limits and trade-offs
+
+* Every entry in a history costs tokens on every call that includes it. Compact long histories.
+* Shared sessions that grow fast, or many sessions created in a short time, put load on the model and on storage. Set an upper limit on how long a shared conversation runs.
+* Compaction by summary loses detail. Keep the full history elsewhere if you need it for audit; the ledger keeps its own records of every interaction.
+* A masked entry stays masked. A later agent in the same session sees only the masked text.
+
+== Next steps
+
+* Configure memory: xref:sdk:agents/memory.adoc[Session memory]
+* Related concepts: xref:ai-agents.adoc[], xref:ai-orchestration-patterns.adoc[], xref:state-model.adoc[]

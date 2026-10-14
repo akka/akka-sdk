@@ -15,7 +15,7 @@ In this guide you will:
 
 * Clone a completed shopping cart service repository to examine and run it locally.
 * Be introduced to key Akka concepts including xref:sdk:event-sourced-entities.adoc[Event Sourced Entities].
-* See how the xref:concepts:architecture-model.adoc[project structure] provides a clear separation of concerns in your microservices.
+* See how the xref:sdk:architecture-model.adoc[project structure] provides a clear separation of concerns in your microservices.
 * Run the service locally and explore it with the local Akka console.
 * Deploy the service to https://console.akka.io[akka.io].
 

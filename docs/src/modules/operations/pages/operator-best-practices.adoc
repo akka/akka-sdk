@@ -4,7 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 == Regionalization precautions
 === Primary selection mode
-Akka services have two different modes, *request-region* or *pinned-region*, which control how they perform replication for stateful components. This is outlined in  xref:operations:regions/index.adoc#selecting-primary[Selecting primary for stateful components]. It is important to note that setting this mode has the following implications for your project.
+Akka services have two different modes, *request-region* or *pinned-region*, which control how they perform replication for stateful components. This is outlined in  xref:operations:regions/setup.adoc#selecting-primary[Selecting primary for stateful components]. It is important to note that setting this mode has the following implications for your project.
 
 ==== Event Sourced Entities 
 If the primary selection mode is request-region then each entity instance will use the region where the write requests occur, after synchronizing events from the previous primary region.

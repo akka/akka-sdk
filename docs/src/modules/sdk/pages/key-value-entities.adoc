@@ -47,7 +47,7 @@ A Key Value Entity Effect can either:
 * instruct Akka to delete the entity
 * return an error message
 
-For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
+For additional details, refer to xref:concepts:components.adoc#_effects_what_the_component_declares[Effects].
 
 [#entity-behavior]
 == Implementing behavior

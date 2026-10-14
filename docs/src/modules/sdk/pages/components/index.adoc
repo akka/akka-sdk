@@ -1,10 +1,10 @@
 = Components
 :page-summary: The Akka components, with a guide for choosing between them: when to use each one, when not to, and what to use instead.
 :page-when-to-use: When you need an overview of Akka's building blocks, or when you are mapping a feature to components and need to decide between entities, views, workflows, consumers, agents, timers, and endpoints.
-:page-related: xref:concepts:architecture-model.adoc[], xref:concepts:state-model.adoc[], xref:sdk:dev-best-practices.adoc[]
+:page-related: xref:sdk:architecture-model.adoc[], xref:concepts:state-model.adoc[], xref:sdk:dev-best-practices.adoc[]
 include::ROOT:partial$include.adoc[]
 
-Akka components form the backbone of the xref:concepts:architecture-model.adoc#_application[application layer], bridging your domain model with the Akka runtime. They provide specialized ways to handle state, events, and interactions, enabling you to build scalable, event-driven applications while focusing on business logic.
+Akka components form the backbone of the xref:sdk:architecture-model.adoc#_application[application layer], bridging your domain model with the Akka runtime. They provide specialized ways to handle state, events, and interactions, enabling you to build scalable, event-driven applications while focusing on business logic.
 
 To decide which component fits a given need, and when not to use one, see <<choosing-a-component-type>> below.
 
@@ -130,7 +130,7 @@ Use a *View* only when you need to:
 * access the history of an Event Sourced Entity: project its events into queryable rows (a transaction history, an audit trail), or
 * combine data from several entity types or from a topic into one queryable shape.
 
-Views are eventually consistent: they update after the entity persists, not in the same transaction. Never read your own write through a View in the same request that made the write. If an endpoint writes to an entity and must return the result, return it from the entity command's reply.
+Views are eventually consistent: they update after the entity persists, not in the same transaction. Never read your own write through a View in the same request that made the write. If an endpoint writes to an entity and must return the result, return it from the entity command's reply. See xref:concepts:views.adoc[].
 
 Signs you chose wrong:
 
@@ -141,7 +141,7 @@ Signs you chose wrong:
 [#cs3-workflow-or-choreography]
 === Workflow orchestration or Consumer choreography
 
-Both implement long-running business processes across components and services. The xref:sdk:dev-best-practices.adoc#saga-patterns[saga patterns] section describes the two shapes.
+Both implement long-running business processes across components and services. The xref:sdk:dev-best-practices.adoc#saga-patterns[saga patterns] section describes the two shapes, and xref:concepts:durable-execution.adoc[] explains how a workflow keeps its progress.
 
 Use a *Workflow* when any of these hold:
 
@@ -174,7 +174,7 @@ Move work to a *Consumer* when it is a reaction to a persisted fact rather than 
 * Side effects never belong in entity command handlers or in `.thenReply()`. The entity's responsibility ends when the event is persisted; a consumer reacts to the event and performs the side effect with at-least-once delivery. This keeps the side effect out of the write path and retries it independently of the original request.
 * Fan-out: several independent reactions to the same event should be several consumers, not additional calls in the command handler.
 
-The consequence of choosing the consumer path: delivery is at-least-once, so the reaction must be idempotent. See xref:sdk:dev-best-practices.adoc#message-deduplication[message deduplication].
+The consequence of choosing the consumer path: delivery is at-least-once, so the reaction must be idempotent. See xref:concepts:delivery-guarantees.adoc[] and xref:sdk:dev-best-practices.adoc#message-deduplication[message deduplication].
 
 [#cs5-timed-action-or-workflow-timer]
 === Timed Action or Workflow timer

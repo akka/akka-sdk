@@ -1,0 +1,143 @@
+= The specification
+:page-summary: A specification is a set of plain-language files, versioned with the code, that states what an agentic system must do, what it must know, what could go wrong, how it runs and how far it may tune itself.
+:page-when-to-use: When you need to know what a specification contains, who writes each part, and which part of the platform uses each one.
+:page-related: concepts:spec-driven-development.adoc, concepts:conformance.adoc, reference:specify/policies.adoc
+:page-persona: builder-developer, governance-compliance, operator-platform
+
+include::ROOT:partial$include.adoc[]
+
+A specification is a set of plain-language files, versioned with the code, that states what an agentic system must do, what it must know, what could go wrong, how it runs and how far it may tune itself. It is the one definition of the system that building, governing, running and improving it all read from.
+
+== The problem
+
+The decisions that shape an agentic system usually live in different places. Requirements sit in a product document, risk decisions in a spreadsheet owned by a risk team, service levels in an operations runbook, and cost targets in a finance plan. None of them is checked against the running system, and each drifts from the code on its own schedule.
+
+A specification puts them in one set of files, next to the code, in plain language that the people who own each decision can read and change. Because the files are versioned with the code, a change to a requirement or a risk decision is reviewed and recorded the same way a change to the code is.
+
+== How it works
+
+=== The sections and who writes them
+
+A specification has six sections. The first three are written by the people who build the system. The other three are written by the people who govern it, such as risk, security, operations and finance teams.
+
+[cols="1,3,1,2",options="header"]
+|===
+| Section | What it states | Written by | Read by
+
+| Goals
+| The purpose of the system, how success is measured, and who decides what.
+| Builders
+| The plan, and the exit conditions that define done
+
+| Functional requirements
+| What the system does, across agents, tools, orchestration, memory, APIs and the user interface.
+| Builders
+| The plan, the tasks, the implementation and the exit conditions
+
+| Knowledge
+| What the system needs to know, and where that knowledge comes from.
+| Builders
+| The plan and the implementation
+
+| Risk envelope
+| What could go wrong, and where the system operates.
+| Governors
+| The controls that apply to the system at runtime
+
+| Operational envelope
+| Service levels, regions, latency and the token budget.
+| Governors
+| The runtime that deploys, scales and replicates the system
+
+| Improvement policy
+| What the system optimizes toward, and how far it may tune itself.
+| Governors
+| Model routing, training and promotion
+|===
+
+=== Feature specifications
+
+The builders' sections grow one feature at a time. Each feature specification describes what the feature does and why, with no implementation detail, and lives in its own directory and git branch, such as `specs/001-core-users`. Next to it, the plan holds the how, and the task list holds the work items. The plan and the tasks are generated from the specification and kept in step with it. See xref:concepts:spec-driven-development.adoc[].
+
+A detail that sounds technical can still belong in the specification. "The application does not use federated authentication" states what the system does, not how to code it, so it is part of the specification rather than the plan.
+
+=== The constitution
+
+The constitution holds the rules that apply to the whole project: technology requirements, design rules and other mandates that every feature must follow. It is set once, at the start of a project, and changed only as an exception.
+
+When a project is initialized, it gets the default Akka constitution, which holds the requirements every Akka application must meet, such as unit tests and integration tests. If your organization publishes its own constitution, IT configures its location once for every machine, and it is appended to the Akka constitution. Teams can add their own rules on top. Every later step reads the constitution, so its rules shape every plan and every line of generated code.
+
+The constitution guides what the AI coding assistant builds. It is not checked like an exit condition. Rules that must be checked before a change ships belong in exit conditions, and an organization distributes those through its policy.
+
+=== The risk envelope
+
+The risk envelope states what could go wrong with the system and where it operates, which decides the jurisdictions whose rules apply. Governance starts from it. A risk survey that asks questions about the system adds to it, and the controls the system needs are derived from the result, grouped by the regulation, framework or corporate standard each one comes from. Those controls then run in the runtime, in the path of the actions they govern. See xref:concepts:risk-to-controls.adoc[] and xref:concepts:governance-and-the-runtime.adoc[].
+
+=== The operational envelope
+
+The operational envelope states how the system must run: its service levels, the regions it runs in, the latency it must meet and its token budget. The runtime deploys, scales and replicates the system within it. See xref:concepts:deployment-model.adoc[] and xref:concepts:multi-region.adoc[].
+
+=== The improvement policy
+
+The improvement policy states what the system optimizes toward, such as quality and token use, and how far it may change itself to get there. Routing traffic to a different model, training a smaller model and promoting a new model all happen only within the policy, and its goals are the target that a new model must reach before it replaces the old one. See xref:concepts:models.adoc[].
+
+=== Organization policies
+
+An organization governs every project through a policy: a single `policy.yaml` file that the organization versions and controls. The policy states which exit conditions every project must meet, which conformance modes are allowed, what shipping does, which waivers are allowed and who approves them, and which versions of the Akka CLI, the plugin and the SDK are approved.
+
+Each exit condition in the policy has a governance level, which sets its default state and whether a developer may change it:
+
+[cols="1,3",options="header"]
+|===
+| Level | Meaning
+
+| `always-apply`
+| On and locked. A developer may add stricter conditions but cannot remove this one.
+
+| `never-apply`
+| Off and locked. A developer cannot turn it on.
+
+| `on-but-dev-configurable`
+| On by default. A developer may mark it as not applicable, and that decision is recorded.
+
+| `off-but-dev-configurable`
+| Off by default. A developer may turn it on.
+|===
+
+The policy sets a minimum, not a maximum. Where it is silent, the conditions that Akka guarantees and the default library fill in. A developer can make the rules stricter, never weaker. See xref:reference:specify/policies.adoc[Policies].
+
+== Guarantees
+
+[cols="2,3,2",options="header"]
+|===
+| Situation | What happens | Precondition
+
+| A requirement or a risk decision changes
+| The change is reviewed and recorded with the code, because the specification is versioned with it
+| The specification lives in the repository
+
+| An organization policy is in place
+| Every conformance check applies it, and a developer cannot weaken it
+| IT has configured the policy location for the Akka CLI
+
+| An organization constitution is published
+| It is appended to the Akka constitution for every new project
+| IT has configured the constitution location for the Akka CLI
+
+| The organization changes its policy
+| A project picks up the new version the next time setup runs
+| A developer runs `/akka:setup`
+|===
+
+== Limits and trade-offs
+
+* A specification is only as useful as it is precise. A requirement that cannot be stated as a binary check stays a requirement, not an exit condition, until it is made precise. See xref:concepts:conformance.adoc[].
+* The constitution steers generation; it does not block a change. Put anything that must block a change in an exit condition.
+* The policy file must be readable over HTTPS without an interactive login. A private repository needs a URL that carries a token, an internal mirror or a copy synced to each machine.
+
+== Next steps
+
+* xref:sdk:spec-driven-development.adoc[] shows how to write and clarify a feature specification.
+* xref:reference:specify/constitution.adoc[/akka:constitution] creates or updates the constitution.
+* xref:reference:specify/policies.adoc[Policies] gives the policy schema and an example.
+* Related concepts: xref:concepts:spec-driven-development.adoc[], xref:concepts:conformance.adoc[] and xref:concepts:risk-to-controls.adoc[].

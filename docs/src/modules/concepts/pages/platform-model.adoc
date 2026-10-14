@@ -1,0 +1,132 @@
+= Platform model
+:page-summary: The platform model names the parts of an Akka system: organizations, projects, services, components, regions and routes, and the planes that run them.
+:page-when-to-use: When you need the vocabulary that the rest of Understanding assumes, or want to see how a service you build maps to what runs in production.
+:page-related: concepts:components.adoc, concepts:deployment-model.adoc, operations:technical-overview.adoc
+:page-persona: all
+
+include::ROOT:partial$include.adoc[]
+
+The platform model is the set of nouns that describe an Akka system, from the code you write to where it runs. Each page in Understanding assumes these terms. This page defines them once and shows how they nest.
+
+== From code to a running system
+
+You write xref:components.adoc[components]: agents, workflows, entities, views, consumers, timed actions and endpoints. A component is a class that the runtime instantiates and manages. Components that hold state, such as entities and workflows, have many instances, each identified by an xref:reference:glossary.adoc#id[ID].
+
+Components are grouped into a *service*. A service is the unit of deployment: it is packaged into a single container image with the Akka runtime, and it is started, stopped, paused or scaled independently of other services. When it runs, the instances of a service form a *cluster*. Each component type has a TestKit, so you test a service locally and in a CI/CD pipeline before you deploy it; see xref:testing:index.adoc[Testing].
+
+Services are grouped into a *project*. A project holds the services that are deployed together, and it is where you set access, secrets, message brokers and the regions to run in. The first region you list becomes the project's primary region: its initial deployment target, and the region its resources replicate from. An entity also has a primary region of its own, the region that accepts its writes; see xref:state-model.adoc#_origin[Origin and primary region].
+
+Projects belong to an *organization*. An organization holds users, roles and billing, and it is the unit that Akka administers.
+
+A *region* is a cloud provider location, such as an AWS or Google Cloud region, where Akka runs. A project can run in one region or in several, with state replicated between them. See xref:multi-region.adoc[].
+
+A *route* maps a hostname and path to a service, so that clients outside the project can reach it.
+
+Each of these is described in YAML by a *descriptor*: a project descriptor, a service descriptor, a route descriptor and others. A descriptor states the desired configuration, and the platform makes the running system match it. See xref:reference:descriptors/index.adoc[Descriptors].
+
+[cols="1,3", options="header"]
+|===
+| Noun | What it is
+
+| Organization
+| The administrative and billing unit. Holds users and their roles, and owns projects.
+
+| Project
+| One or more services deployed together, with shared access control, secrets, brokers and regions.
+
+| Service
+| A container image of your components and the Akka runtime. The unit of deployment and scaling.
+
+| Component
+| A class in a service that the runtime manages: agent, workflow, entity, view, consumer, timed action or endpoint.
+
+| Instance
+| One running copy of a stateful component, identified by its ID. Exactly one copy is active in the cluster at a time.
+
+| Cluster
+| The running instances of a service in one region, which discover each other and share work.
+
+| Region
+| A cloud location where a project runs. Each region has its own endpoint and its own copy of the project's state.
+
+| Route
+| A hostname and path rule that exposes a service outside the project.
+
+| Descriptor
+| A YAML document that declares a project, service, route or other resource.
+|===
+
+== Where it runs
+
+include::ROOT:partial$service-packaging.adoc[]
+
+When Akka operates the platform, it is split into two planes:
+
+* The *federation plane* is the global coordination layer. It holds organizations, users, billing and tokens, and it deploys applications to regions. Akka runs it.
+* The *application plane* is the runtime in each region. It pulls and runs your images, scales instances, stores state and connects to peer regions. Application data stays in the region.
+
+If the federation plane becomes unavailable, applications that are running continue without interruption. See xref:operations:technical-overview.adoc[] for the full architecture, and xref:deployment-model.adoc[] for the deployment options and who operates each one.
+
+== Anatomy of an agentic system
+
+An agentic system is a distributed system that needs a range of behaviors and infrastructure. The table maps each part of an agentic system to the Akka component that provides it.
+
+image:concepts:agentic-ai-system-anatomy.png[Anatomy of an agentic system]
+
+[cols="1,3", options="header"]
+[.compact]
+|===
+|Aspect |Role and how you provide it in Akka
+
+|Agents
+|Components that use an AI model to perceive their environment, make decisions and act toward a goal.
+
+You implement agents with the xref:sdk:agents.adoc[Agent] and xref:sdk:autonomous-agents.adoc[Autonomous Agent] components.
+
+|Tools
+|Functionality, local or remote, that agents call to perform tasks beyond their core logic.
+
+Agents call tools as function calls embedded in the agent or as remote MCP tools. You implement MCP servers with the xref:sdk:mcp-endpoints.adoc[MCP Endpoint] component.
+
+|Endpoints
+|Entry points through which agents are started and controlled.
+
+You implement endpoints with the xref:sdk:http-endpoints.adoc[HTTP], xref:sdk:grpc-endpoints.adoc[gRPC] or xref:sdk:mcp-endpoints.adoc[MCP] Endpoint components.
+
+|Goals
+|Objectives that agents work toward by making decisions and taking actions on their own.
+
+You implement goals with a multi-agent system, either an Autonomous Agent that coordinates other agents, or a planner agent in a xref:sdk:workflows.adoc[Workflow] that orchestrates the interactions between agents.
+
+|Guardians
+|Mechanisms that monitor, protect and evaluate the system against its goals and constraints.
+
+You protect and evaluate agents with guardrails, evaluators and the xref:testing:evaluation/index.adoc[agent evaluation] capabilities. See xref:governance-and-the-runtime.adoc[].
+
+|Adaptation
+|Continuous streams from users or the environment that change the context, memory or knowledge an agentic system uses.
+
+You implement adaptation by processing a stream of data from external sources, with the xref:sdk:consuming-producing.adoc[Consumer] component or through streaming HTTP or gRPC endpoints. Consumers can change an agent's goals, memory or guardians to change the behavior of the system.
+
+|Orchestration
+|The ability to run, persist and recover long-running tasks, made possible by xref:durable-execution.adoc[durable execution].
+
+You implement orchestration with the xref:sdk:workflows.adoc[Workflow] component.
+
+|Memory
+|Data that lets agents reason over time, track context, make correct decisions and learn from experience.
+
+A stateful xref:sdk:agents.adoc[Agent] has durable session memory without extra code. Long-term memory is built on the same xref:state-model.adoc[event-sourced entities] and is embedded in the Agent and Workflow components, so you do not program it yourself.
+
+|Registry
+|A directory of the agents in a service, so that they can be discovered and called in multi-agent systems.
+
+Akka registers each agent from its annotations. A planner looks agents up with the xref:sdk:agents/calling.adoc#_calling_agents_by_id[agent registry].
+|===
+
+== Next steps
+
+* xref:components.adoc[]: the component types and how they hand work to the runtime.
+* xref:deployment-model.adoc[]: the deployment options and who operates each one.
+* xref:operations:projects/create-project.adoc[Create a project] and xref:operations:organizations/index.adoc[manage organizations].
+* xref:reference:descriptors/index.adoc[Descriptor reference].

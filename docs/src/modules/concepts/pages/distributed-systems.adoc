@@ -1,92 +1,120 @@
-= Distributed systems
+= Distributed systems principles
+:page-summary: Akka is built on the Reactive Principles: isolated state, asynchronous messages, failure as a first-class concern and location transparency, applied to agentic systems.
+:page-when-to-use: When you want the design principles behind Akka's programming model, or need to understand the consistency trade-offs it makes.
+:page-related: concepts:components.adoc, concepts:state-model.adoc, concepts:multi-region.adoc
+:page-persona: builder-developer, operator-platform
 
 include::ROOT:partial$include.adoc[]
 
-Modern distributed systems—whether agentic AI, microservices applications, or edge computing—demand more than just scalable infrastructure. They require systems that are resilient under stress, responsive under load, elastic with demand, and maintainable at scale. Akka is built on proven principles of distributed computing, applying architectural discipline to the nondeterminism and chaos of concurrency, distribution, and failure.
+A distributed system is any system that distributes logic or state across more than one process. Agentic systems, microservices and edge applications are all distributed systems, and they need more than scalable infrastructure. They must stay responsive under load and under failure, scale with demand and remain maintainable as they grow. Akka applies a set of distributed-computing principles to the nondeterminism of concurrency, distribution and failure.
 
-NOTE: Akka’s approach is to make the _inherent complexity_ of the problem space—the _nondeterminism_ of distributed systems and _stochastic_ nature of LLMs—first-class in the programming model, allowing it to be managed and kept under control as the system grows over time.
+Akka makes the inherent complexity of the problem first-class in the programming model: the _nondeterminism_ of distributed systems and the _stochastic_ nature of large language models (LLMs). Hiding that complexity behind abstractions that leak later, when the system reaches production, adds _accidental complexity_. Accidental complexity that is not kept under control raises the cost of maintaining, understanding and extending a system, and of running it.
 
-This is to avoid leaky abstractions that force you to pay the price later (when moving to production) through unbounded and undefined compounded _accidental complexity_. Accidental complexity can, if not kept under control, add exponential cost in terms of maintainability, understandability, extensibility, and overall infrastructure costs.
+== Properties of a distributed system
 
-== Rooted in the Reactive Manifesto and the Reactive Principles
-
-At the core of Akka's design philosophy is the https://reactivemanifesto.org/[Reactive Manifesto] and the https://www.reactiveprinciples.org/[Reactive Principles]. 
-
-The **Reactive Manifesto** defines the four fundamental high-level traits of a well-architected distributed system:
+Distributed systems can run in any location: on your development machine, in the cloud, at the edge, embedded in a device, or across several of these. Combined, the following properties make a system responsive.
 
 [cols="1,3", options="header"]
 [.compact]
 |===
-| Trait        | Description
+| Property | Definition
+| Elasticity
+| The system adjusts its resources automatically, scaling up or down to handle changes in workload.
+| Resilience
+| The system continues to function, and recovers quickly, when parts of it fail.
+| Agility
+| The system adapts to new requirements or changes in its environment with little effort.
+| Responsiveness
+| The system responds to users and events in a timely manner. This is the property the others serve.
+|===
+
+== The Reactive Manifesto and the Reactive Principles
+
+Akka's design follows the {url-ext-reactive-manifesto}[Reactive Manifesto, window="new"] and the {url-ext-reactive-principles}[Reactive Principles, window="new"].
+
+The Reactive Manifesto defines four traits of a well-architected distributed system:
+
+[cols="1,3", options="header"]
+[.compact]
+|===
+| Trait | Description
 | Responsive
-| The system responds in a timely manner. Responsiveness is the cornerstone of usability and utility, and it underpins other aspects of the system.
+| The system responds in a timely manner. Responsiveness underpins usability and the other traits.
 | Resilient
-| The system stays responsive in the face of failure. This applies not only to highly-available, mission-critical systems—but also to every user-facing system where failure impacts user experience.
+| The system stays responsive when parts of it fail. This applies to every user-facing system, not only to mission-critical ones.
 | Elastic
-| The system stays responsive under varying workload. It can scale up or down as needed without compromising responsiveness.
-| Message-Driven
-| The system relies on asynchronous message passing to establish a boundary between components. This ensures loose coupling, isolation, and location transparency.
+| The system stays responsive under varying workload, scaling up or down as needed.
+| Message-driven
+| The system uses asynchronous message passing to set a boundary between components. This gives loose coupling, isolation and location transparency.
 |===
 
-The **Reactive Principles** distils these four traits into a set of foundational guiding principles for great distributed systems design:
+The Reactive Principles turn these traits into guiding principles for design:
 
 [cols="1,3", options="header"]
 [.compact]
 |===
-| Principle            | Description
+| Principle | Description
 
-| Stay Responsive
-| Ensure the system always responds in a timely and consistent manner to promote user confidence and system predictability.
+| Stay responsive
+| Respond in a timely and consistent manner, so that users can rely on the system and its behavior is predictable.
 
-| Accept Uncertainty
-| Embrace the inherent nondeterminism in distributed systems and build designs that can tolerate and adapt to it.
+| Accept uncertainty
+| Expect nondeterminism in a distributed system, and build designs that tolerate it.
 
-| Embrace Failure
-| Design for failure as a first-class concern by building fault tolerance and recovery into the architecture.
+| Embrace failure
+| Treat failure as a first-class concern, with fault tolerance and recovery built into the architecture.
 
 | Decentralize
-| Distribute responsibility across components and teams to avoid single points of failure or contention.
+| Distribute responsibility across components and teams, to avoid single points of failure or contention.
 
-| Isolate State
-| Ensure state is encapsulated and protected from concurrent access to avoid race conditions and promote scalability.
+| Isolate state
+| Encapsulate state and protect it from concurrent access, to avoid race conditions and allow scaling.
 
-| Communicate via Messages
-| Use asynchronous message passing to decouple components, enabling better concurrency, fault tolerance, and scalability.
+| Communicate via messages
+| Use asynchronous message passing to decouple components, for concurrency, fault tolerance and scalability.
 |===
 
-Akka embodies these principles as concrete implementation guidelines. Every feature reinforces predictable, manageable, and observable behavior at scale. This applies to durable in-memory event-sourced persistence, streaming view projections, multi-region/multi-cloud replication, CRDT-based data coordination, cluster membership, and sharding.
+Akka turns these principles into concrete mechanisms: durable in-memory state with event sourcing, streaming view projections, replication across regions and clouds, CRDT-based data coordination, cluster membership and sharding.
 
-== Grounded in distributed systems patterns and principles
+== Patterns the platform is built on
 
-The foundation of Akka is detailed in the https://www.oreilly.com/library/view/principles-and-patterns/9781098181260/[O'Reilly Technical Guide: Principles and Patterns for Distributed Application Architecture] (authored by Akka CTO and founder Jonas Bonér). This guide outlines architectural patterns that are essential for building robust systems, including how to leverage:
+The foundation of Akka is described in the {url-book-principles-and-patterns}[O'Reilly technical guide _Principles and Patterns for Distributed Application Architecture_, window="new"], by Akka's founder Jonas Bonér. It covers the patterns that Akka applies:
 
-- Event sourcing and CQRS for reliable state management and auditability.
-- Event-driven communication, coordination, and integration. 
-- Consistency boundaries with command and side-effect separation to maintain deterministic behavior under concurrency, balancing strong and eventual consistency.
-- Location transparency for dynamic system topology,  fault tolerance, and elastic scalability.
-- Autonomous stateful agents/services with temporal guarantees are crucial for maintaining consistency across systems of distributed agents.
-- Backpressure and flow control, ensuring that communication channels between services or agents never become bottlenecks or cause failure due to data overload.
-- Failure signaling and supervision, allowing systems to self-heal and degrade gracefully.
-- Automatic and transparent self-replication of agents and services for failover, redundancy, and scale. 
+* Event sourcing and CQRS, for reliable state management and auditability. See xref:state-model.adoc[] and xref:views.adoc[].
+* Event-driven communication, coordination and integration. See xref:delivery-guarantees.adoc[].
+* Consistency boundaries, with commands separated from side effects, to keep behavior deterministic under concurrency and to balance strong and eventual consistency.
+* Location transparency, for a dynamic topology, fault tolerance and elastic scaling.
+* Autonomous stateful agents and services with guarantees over time, to keep a system of distributed agents consistent.
+* Back-pressure and flow control, so that communication channels between services or agents do not become bottlenecks or fail under data overload. See xref:streaming.adoc[].
+* Failure signaling and supervision, so that systems heal themselves and degrade gracefully.
+* Automatic replication of agents and services for failover, redundancy and scale.
 
-These constructs are operationalized in Akka’s runtime through xref:sdk:agents.adoc[Agents], xref:sdk:event-sourced-entities.adoc[Entities], xref:sdk:views.adoc[Views], xref:sdk:http-endpoints.adoc[Endpoints], xref:sdk:workflows.adoc[Workflows], and xref:sdk:consuming-producing.adoc[Consumers] backed by actors, event-sourced persistence, multi-region replication, durable streaming real-time projections, and sharded clusters.
+In the SDK these patterns appear as xref:sdk:agents.adoc[Agents], xref:sdk:event-sourced-entities.adoc[Entities], xref:sdk:views.adoc[Views], xref:sdk:http-endpoints.adoc[Endpoints], xref:sdk:workflows.adoc[Workflows] and xref:sdk:consuming-producing.adoc[Consumers]. The runtime backs them with actors, event-sourced persistence, replication between regions, durable streaming projections and sharded clusters.
 
-== Designed for multi-agent AI 
+== Strong and eventual consistency
 
-Multi-agent AI systems combine the inherent _nondeterminism_ of distributed systems with the _stochastic_ behavior of AI models, particularly those based on large language models (LLMs). This dual complexity means traditional software design, development, and operations approaches are insufficient. 
+Consistency in Akka follows the consistency boundary. Inside one entity or workflow instance, state is strongly consistent: one instance owns the state, processes one command at a time, and a read through its own command handler returns the latest write. Across instances, data moves by events, and anything built from those events is eventually consistent. A xref:views.adoc[view] reflects a change after the entity has persisted it, not in the same transaction, and a region that receives replicated events sees them after the region that wrote them.
 
-The demands of multi-agent AI systems—which involve large numbers of autonomous, stateful, and often long-lived agents—require managing complexity around orchestration, streaming, memory, and temporal behaviors while being able to reason about the system as a whole and embrace its stochastic and non-deterministic nature. Akka’s approach to multi-agent architectures includes:
+Designing with this boundary in mind is what lets a system scale without global locks. Put the data that must change together in one entity, and accept eventual consistency for reads and reactions that span entities, services or regions.
 
-- Actor-based isolation and concurrency control for stateful xref:sdk:agents.adoc[Agents] that must reason and act independently while coordinating with others.
-- Asynchronous messaging and streaming decouple computation from communication, allowing for flow control and resilient communication between xref:sdk:agents.adoc[Agents], critical for latency-sensitive inference or decision-making.
-- Operational resilience, with fully replicated stateful xref:sdk:agents.adoc[Agents] that restart and recover in place.
-- Automatic short-term (session) and long-term memory through the xref:sdk:agents.adoc[Agent's] built-in durable in-memory storage, allowing replayability through event logs, ensuring agents can recover, reflect, reason, and explain past behavior.
-- Dynamic scaling and routing are done through automatic and transparent sharding and cluster management.
-- Loose coupling and evolvability, aided by schema-versioned messages and contract-first APIs.
-- Multi-region replication based on CRDTs for collaborative knowledge sharing and eventual consistency without global locking.
+== Applied to multi-agent AI
+
+Multi-agent AI systems combine the _nondeterminism_ of distributed systems with the _stochastic_ behavior of AI models, particularly those based on LLMs. Many autonomous, stateful and often long-lived agents need orchestration, streaming, memory and behavior over time, while you still reason about the system as a whole. Akka's approach to multi-agent architectures includes:
+
+* Actor-based isolation and concurrency control for stateful xref:sdk:agents.adoc[agents] that reason and act independently while they coordinate with others.
+* Asynchronous messaging and streaming that separate computation from communication, for flow control and resilient communication between agents. This matters for latency-sensitive inference and decisions.
+* Replicated stateful agents that restart and recover in place.
+* Short-term (session) and long-term memory built into the agent on durable in-memory storage, so that an agent can replay its history from event logs and recover, reflect, reason and explain past behavior.
+* Dynamic scaling and routing through automatic sharding and cluster management.
+* Loose coupling and evolution through schema-versioned messages and contract-first APIs.
+* Replication between regions based on CRDTs, for shared knowledge and eventual consistency without global locking.
 
 == Why it matters
 
-Building agentic AI systems—or modern cloud-native microservices—on unstable foundations can lead to brittle architectures that fail under real-world conditions. Akka addresses this by applying principles and patterns that anticipate failure, load, inconsistency, and change.
+Agentic systems and cloud-native services built on unstable foundations become brittle architectures that fail under real conditions. Akka applies principles and patterns that anticipate failure, load, inconsistency and change, so that a system of many autonomous agents, or a set of business-critical services, behaves predictably in production.
 
-Whether you deploy many autonomous AI agents or orchestrate business-critical microservices, these foundations are intended to provide architectural clarity and operational reliability under real-world conditions.
+== Next steps
+
+* xref:components.adoc[] for how components hand work to the runtime.
+* xref:state-model.adoc[] for consistency boundaries in practice.
+* xref:sdk:dev-best-practices.adoc[Design considerations] for applying these principles in a service.

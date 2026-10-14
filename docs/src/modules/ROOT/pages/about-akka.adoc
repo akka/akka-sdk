@@ -14,7 +14,7 @@ Akka has one offering: the *Akka Agentic AI Platform*, which guarantees the resi
 * Akka Verify and 
 * Akka Optimize. 
 
-They share one definition of an AI system, one runtime, one evidence record and one governance model, so each solution works on what the others produce.
+They share one definition of an AI system, one runtime, one ledger and one governance model, so each solution works on what the others produce.
 
 Akka, formerly Lightbend, has run distributed systems in production since 2007. The open-source Akka actor library for the JVM is the lineage of the platform. The platform is a separate product, and this documentation describes the platform.
 

@@ -12,7 +12,7 @@ TIP: The recommended way to build your first agent is the xref:getting-started:s
 In this guide, you will:
 
 * Set up your development environment.
-* Clone a simple project that follows the xref:concepts:architecture-model.adoc[recommended structure].
+* Clone a simple project that follows the xref:sdk:architecture-model.adoc[recommended structure].
 * Explore a basic AI Agent that acts as a creative greeter.
 * Explore a basic HTTP Endpoint to interact with the agent.
 * Add a request body to the Endpoint.

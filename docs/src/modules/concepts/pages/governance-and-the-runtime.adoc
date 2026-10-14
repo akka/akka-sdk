@@ -1,17 +1,20 @@
 = Governance and the runtime
-:page-summary: How the Akka runtime enforces governance while it executes agent interactions, with guardrails, classifiers, evaluators, sanitizers, access control, and the ledger.
+:page-summary: Governance in Akka runs in the runtime that executes each agent interaction, so controls act on the interaction while it runs and the ledger records it as it happens.
+:page-when-to-use: When you need to understand why Akka enforces controls in the runtime, what that allows that an outside tool cannot do, and how control ids tie a running service to its obligations.
+:page-related: concepts:controls.adoc, concepts:evidence.adoc, concepts:risk-to-controls.adoc
 :page-persona: builder-developer, builder-ai-ml, governance-compliance, governance-infosec
-:page-banner: governance
 
 include::ROOT:partial$include.adoc[]
 
-The Akka runtime enforces governance while it executes each agent interaction. Guardrails stop a model call or a tool call, sanitizers mask personal data before the model or the log sees it, evaluators judge each interaction, access control lists decide who may call a component, and the ledger records every interaction. All of this happens in the runtime that runs the agent, not in a tool that reads logs afterwards.
+Governance in Akka runs in the runtime that executes each agent interaction. Guardrails stop a model call or a tool call, sanitizers mask personal data before the model or the log sees it, evaluators judge each interaction, access control lists decide who may call a component, and the ledger records every interaction. All of this happens in the runtime that runs the agent, not in a tool that reads logs afterwards.
+
+This page explains why governance runs in the runtime and how a running service declares the controls it enforces. xref:concepts:controls.adoc[] describes each type of control, xref:concepts:evidence.adoc[] describes the ledger, and xref:concepts:risk-to-controls.adoc[] describes how the controls of a system are chosen.
 
 == Why governance runs in the runtime
 
 Most governance products for AI, such as observability and evaluation services, sit outside the system that runs the agent. They receive logs or traces after the fact. From there they can report on an interaction, but they cannot change it, and they cannot vouch for the record they received.
 
-Akka takes the opposite approach. The runtime that makes the model call is the same runtime that denies it, masks the data before the model sees it, and writes the record. This gives the mechanisms below three properties that a tool outside the runtime cannot have:
+Akka takes the opposite approach. The runtime that makes the model call is the same runtime that denies it, masks the data before the model sees it, and writes the record. A guardrail, a sanitizer and a ledger record each gain a property that a tool outside the runtime cannot have:
 
 * A guardrail can deny a model call or a tool call while the interaction runs, before it consumes tokens or reaches the tool. A log reader can only report a call that already happened.
 * A sanitizer masks personal data before the model or the log receives it. A tool that scrubs logs afterwards has already leaked the data to the model and to whoever read the log first.
@@ -19,16 +22,75 @@ Akka takes the opposite approach. The runtime that makes the model call is the s
 
 The same holds for human intervention. An operator suspends, resumes, or terminates an xref:sdk:autonomous-agents/client.adoc[autonomous agent] through the component client, which acts on the running agent, not on a record of it.
 
-== Governance mechanisms
+== What only the runtime can do
 
-You configure each mechanism in `application.conf`, and the runtime applies it to every interaction of the agents it is bound to. Each mechanism has one role:
+Because the runtime holds each call while it decides, it can do things that an observer of the interaction cannot:
 
-* xref:sdk:agents/guardrails.adoc[Guardrails] run before a model call, before a tool call, or on the agent's reply, and can deny it.
-* xref:sdk:agents/classifiers.adoc[Classifiers] map text to a score or label, for a guardrail, an evaluator, a sanitizer, or your own code to act on.
-* xref:sdk:evaluators.adoc[Evaluators] run after each interaction, in the background, and record a verdict. An evaluator often delegates the verdict to an LLM-as-judge agent.
-* xref:sdk:sanitization.adoc[Sanitizers] mask personal data in logs, model calls, and tool results.
-* xref:sdk:access-control.adoc[Access control lists] restrict which services and components may call an endpoint. With xref:sdk:access-control.adoc#_component_level_access_with_spiffe[SPIFFE identities] a rule can name a single component.
-* The xref:sdk:evaluators.adoc#_the_ledger_client[ledger] records every interaction and its evaluations: the model calls, tool calls, token usage, and the outcome, including a failure caused by a denied guardrail. Evaluators and the console read from it.
+[cols="1,2", options="header"]
+|===
+| Capability | Why it needs the runtime
+
+| Stop an action before it runs
+| A guardrail decides while the runtime holds the model call or the tool call. A guardrail fails closed: when its evaluation fails, the action does not proceed. See xref:concepts:controls.adoc#guardrails[Guardrails].
+
+| Wait for a person, durably
+| The runtime suspends the agent or the workflow while a person decides, across crashes and deployments, and resumes it where it stopped. See xref:concepts:controls.adoc#human-decisions[Human decisions].
+
+| Record the authority behind each action
+| The runtime propagates the workload identity of each caller, so each record names the workload that acted and the authority it acted under. See xref:concepts:evidence.adoc#identity-and-authority[Identity and authority on each record].
+
+| Record whether a side effect ran
+| The runtime runs the tool call, so the record shows whether the tool ran, not only that a model asked for it.
+
+| Keep a complete record
+| The ledger records every interaction, without sampling, and chains each record to the one before it. See xref:concepts:evidence.adoc[].
+
+| Govern before deployment
+| The controls of a system are derived, accepted and signed before it ships, and the runtime enforces the signed set. See xref:concepts:risk-to-controls.adoc[].
+|===
+
+Agents that do not run on Akka can still send their agentic AI traces to Akka for evaluation and evidence. The capabilities in this table need the agent to run on the Akka runtime. See xref:concepts:evidence.adoc#agents-built-elsewhere[Agents built elsewhere].
+
+== How the parts of governance fit together
+
+You configure each part in `application.conf`, and the runtime applies it to every interaction of the agents it is bound to. Some parts are control types, which meet an obligation. Others are building blocks that the controls use.
+
+[cols="1,2,1", options="header"]
+|===
+| Part | Role | Where it is described
+
+| xref:sdk:agents/guardrails.adoc[Guardrails]
+| Run before a model call, before a tool call, or on the agent's reply, and can deny it.
+| xref:concepts:controls.adoc#guardrails[Control type]
+
+| xref:sdk:sanitization.adoc[Sanitizers]
+| Mask personal data in logs, model calls, and tool results.
+| xref:concepts:controls.adoc#sanitizers[Control type]
+
+| xref:sdk:evaluators.adoc[Evaluators]
+| Run after each interaction, in the background, and record a verdict. An evaluator often delegates the verdict to an LLM-as-judge agent.
+| xref:concepts:controls.adoc#evals[Control type], xref:concepts:evaluation.adoc[]
+
+| Human decisions
+| Give a named person authority over a decision while the agent waits.
+| xref:concepts:controls.adoc#human-decisions[Control type]
+
+| Gates
+| Turn a check into a build or release decision.
+| xref:concepts:controls.adoc#gates[Control type]
+
+| xref:sdk:agents/classifiers.adoc[Classifiers]
+| Map text to a score or label, for a guardrail, an evaluator, a sanitizer, or your own code to act on.
+| xref:concepts:controls.adoc#classifiers[Building block]
+
+| xref:sdk:access-control.adoc[Access control lists]
+| Restrict which services and components may call an endpoint. With xref:sdk:access-control.adoc#_component_level_access_with_spiffe[SPIFFE identities] a rule can name a single component.
+| xref:concepts:security-and-identity.adoc[Building block]
+
+| The ledger
+| Records every interaction and its evaluations: the model calls, tool calls, token usage, and the outcome, including a failure caused by a denied guardrail. Evaluators and the console read from it. See xref:sdk:evaluators.adoc#_the_ledger_client[the ledger client].
+| xref:concepts:evidence.adoc[Building block]
+|===
 
 [#control-ids]
 === Control IDs
@@ -40,16 +102,25 @@ When a node of the service starts, the runtime writes one ledger record that lis
 Each control in the record has its control id.
 A guardrail or a sanitizer also has its configuration, masked by the log sanitizers.
 
+Every verdict that a control produces names its control id, so a verdict in the ledger traces back to the obligation it meets. xref:concepts:risk-to-controls.adoc[] describes where the obligations come from.
+
 == Compliance
 
-Akka complies with more than 19 standards and regulations, including:
+Compliance has two sides in Akka.
+
+Akka as a vendor complies with standards and regulations for its own platform and operations, including:
 
 * EU AI Act
 * Singapore Agent Framework
 * ISO 42001
 * SOC 2
 
-== See also
+Your own system has obligations of its own, which depend on what it does and where it runs. Akka derives the controls your system needs from its risk, grouped by the regulation, framework or corporate standard they come from, and keeps the evidence that each control held. See xref:concepts:risk-to-controls.adoc[] and xref:concepts:evidence.adoc[].
 
+== Next steps
+
+* xref:concepts:controls.adoc[]: the five control types and how each acts at runtime.
+* xref:concepts:evidence.adoc[]: what the ledger records and how evidence is kept.
+* xref:sdk:agents/guardrails.adoc[Guardrails], xref:sdk:evaluators.adoc[Evaluators] and xref:sdk:sanitization.adoc[Data sanitization]: configure controls in a service.
 * link:{url-blog-trustworthy-ai}[Trustworthy AI with Akka, window="new"]
 * link:{url-blog-webinar-certainty}[Webinar: Creating Certainty in the Age of Agentic AI, window="new"]

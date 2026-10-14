@@ -1,47 +1,59 @@
-= AI agents
+= Agents
 :page-aliases: concepts:ai-concepts-video.adoc
-:page-summary: Foundational concepts for building AI Agents in Akka — tokens, prompts, session memory, orchestration, and evaluation.
-:page-when-to-use: When you need to build AI agents that are production-grade, resilient, cost-controlled, and composable across teams and workflows.
-:page-related: xref:concepts:ai-orchestration-patterns.adoc[], xref:concepts:distributed-systems.adoc[], xref:sdk:autonomous-agents.adoc[]
-:page-prerequisites: Familiarity with LLMs, prompts, and basic distributed systems concepts.
-:page-persona: Architect, Tech Lead, AI/ML Engineer
+:page-summary: An agent is a component that calls an AI model to perform a task, with session memory, tools and governance supplied by the runtime.
+:page-when-to-use: When you decide how a model fits into your service, which agent component to use, and what the runtime does for each model call.
+:page-related: concepts:agent-memory.adoc, concepts:tools-and-protocols.adoc, concepts:ai-orchestration-patterns.adoc
+:page-persona: builder-developer, builder-ai-ml
 
 include::ROOT:partial$include.adoc[]
 
-AI agents are components that integrate with AI to perceive their environment, make decisions, and take actions toward a specific goal. Agents can have varying degrees of human intervention from none (completely autonomous) to requiring a human to approve each action the agent takes.
+An agent is a component that calls an AI model to perform a task, with session memory, tools and governance supplied by the runtime. Agents perceive their environment through the input and context they receive, decide with the help of a model, and act through tools and the components they call. The degree of human intervention varies from none, where the agent is fully autonomous, to a person approving each action the agent takes.
 
-== Overview
+A model call is slow compared with a function call, costs money for each token, can fail, and does not return the same answer twice. An agent in production also needs the history of the conversation, the tools it may use, and a record of what it did. In Akka, the runtime provides these to every agent, so the agent code declares what it needs and the runtime does the rest.
 
-In Akka, an AI Agent is a lightweight, single-purpose component that interacts with one or more AI models to accomplish a discrete goal.
+== How it works
 
-Use AI Agents in Akka when you need to:
+Akka has two agent components. Both use the same model configuration, function tools, MCP integration, session memory and guardrails. They differ in who drives the work.
 
-* Interact with models as part of a larger application.
-* Compose multiple Agents under platform-mediated coordination: a Workflow supervisor when the orchestration steps are fixed in code, or an xref:sdk:autonomous-agents.adoc[Autonomous Agent] when the model should decide which agent runs next through delegation, handoff, teams, or moderation.
-* Maintain session memory, context, and audit trails across Agent interactions.
-* Enforce cost controls, governance policies, and risk boundaries on model usage.
+=== Request-based Agent
 
-Agents relate to other Akka components in a direct way: xref:concepts:ai-orchestration-patterns.adoc[Workflows or Autonomous Agent coordination capabilities] orchestrate Agents, xref:concepts:state-model.adoc[Entities] store the durable state Agents depend on, and xref:concepts:ai-orchestration-patterns.adoc[agent-to-agent communication] connects Agents to each other and to external systems via protocols like MCP and A2A.
+An xref:sdk:agents.adoc[Agent] handles one request and returns one response. Its command handler returns an effect that declares the model to use, the system message and user message, the session memory settings and the tools the model may call. The runtime then sends the request to the model, runs any tools the model asks for, and returns the reply. One request can include several tool calls before the model produces its final answer.
 
-== Tokens and streaming
+You do not give an Agent an instance identifier. You give it the identifier of the session it takes part in. Several agents with different component identifiers can work in the same session and share its history. See xref:agent-memory.adoc[].
 
-Agents interact with AI, most commonly in the form of Large Language Models (LLMs). LLMs are what is known as _predictive text_. This means that every word streamed to the agent is actually just the next word predicted to be in the output. Regardless of platform or language, agents need the ability to stream tokens bi-directionally.
+An Agent is a small, single-purpose component. It should do one thing, with a single goal, and it may use any knowledge and model inference to reach that goal. Real applications rarely do only one thing, so agents work together under a supervisor. A xref:sdk:workflows.adoc[Workflow] that calls an Agent as one of its steps gives that call retries, timeouts and recovery. See xref:durable-execution.adoc[].
 
-If your agent consumes an LLM as a service, you could be paying some amount of money per bundle of tokens. In cases like this, it is crucial to ensure that you have control over how frequently and how many tokens the agent "spends."
+=== Autonomous Agent
 
-== Different types of AI
+An xref:sdk:autonomous-agents.adoc[Autonomous Agent] runs as a durable process that works on typed tasks. Each task has its own identity, instructions and result schema. You declare the agent's description, the task types it accepts, the tools it can use and its coordination capabilities. The runtime drives the model through a decision loop until each task is done:
 
-LLMs are everywhere these days and it is impossible to escape all of their related news. It would be easy to assume that all agents interact with LLMs whether they are self-hosted or provided as an external service. This idea does a disservice to the rest of machine learning and AI in particular.
+* The task succeeds when the model produces a result that conforms to the task's result schema.
+* The task fails when the model reports that it cannot make progress. The runtime records the reason.
+* An iteration limit ends a task that reaches neither outcome.
 
-As you develop your teams of collaborative agents, keep in mind that not everything needs to be an LLM and look for opportunities to use smaller, more efficient, task-specific models. This can not only save you money, but can improve the overall performance of your application.
+A task exists independently of the agent that works on it. It can be created in advance with dependencies on other tasks, queried by clients while it runs, and handed between agents. Its typed result outlives the agent that produced it. Agent and task state are persisted at each step, so work survives crashes and restarts, and the agent is stateless from your point of view.
 
-== Prompts, session memory, and context
+Coordination is part of the Autonomous Agent's definition. An agent can declare that it delegates subtasks to workers, hands off work to peers, leads a team that shares a task list, or moderates a turn-taking conversation. The runtime offers each capability to the model as a tool. See xref:ai-orchestration-patterns.adoc[].
 
-Agents interact with LLMs through prompts. A prompt is the input to an LLM in the form of natural language text. The quality and detail of your agents' prompts can make the difference between a great application experience and a terrible one. The prompt sent to an LLM typically tells the model the role it is supposed to play, how it should respond (e.g. you can tell a model to respond with JSON).
+A running Autonomous Agent can be suspended, resumed and terminated from outside. Suspending stops the agent at the next iteration boundary, and resuming continues with the tasks still in its queue.
 
-Take a look at the following sample prompt:
+=== Models and tokens
 
-[source]
+An agent declares its model rather than hard-coding a provider, so you can change the provider or the model without rewriting the agent. See xref:sdk:model-provider-details.adoc[].
+
+Most agents call large language models (LLMs). An LLM predicts text: each token it streams back is the token it predicts to come next. An agent can stream those tokens to its client as they arrive, typically over server-sent events, so a chat interface shows the answer while it is generated. An agent can also ask the model for structured output, such as JSON, and map it to a typed result.
+
+When you consume a model as a service, you usually pay for each block of tokens. You need control over how often an agent calls the model and how many tokens each call spends. Session memory compaction, tool-call limits and iteration limits all bound that spend, and xref:models.adoc[] explains how traffic can be routed to a smaller model.
+
+Not every agent needs an LLM. As you build teams of agents, look for work that a smaller, task-specific model does as well. A smaller model costs less and often responds faster.
+
+=== Prompts and context
+
+An agent talks to a model through prompts. A prompt is natural language input that tells the model the role it plays, how it should respond, for example as JSON, and what the task is. The quality and detail of the prompt can make the difference between a good result and a bad one, which is why prompt engineering has become a discipline of its own.
+
+Here is a sample prompt:
+
+[source,text]
 ----
 You are a friendly and cheerful question answerer.
 Answer the question based on the context below.
@@ -58,43 +70,100 @@ Question:
   What is the most highly rated action movie?
 ----
 
-Everything except the **question** above would have been supplied by the agent. Working with and honing prompts is such an important activity in agentic development that a whole new discipline called link:https://www.promptingguide.ai/[prompt engineering] has sprung up around it.
+The agent supplies everything except the question. The context in the prompt is how an agent adds knowledge the model does not have. Retrieval-augmented generation (RAG) works this way: the agent retrieves relevant data, for example from a vector database, and adds it to the prompt.
 
-The context in the preceding prompt is how agents can augment the knowledge of an LLM. This is how Retrieval Augmented Generation (RAG) works. Agents can participate in sessions where the conversation history is stored. You see this in action whenever you use an AI assistant and it shows you a history of all of your chats. Session management and persistence is a task every agent developer needs to tackle.
+Prompts can be fixed in code or loaded from the built-in prompt template entity. A template can change at runtime without a restart or a redeployment, and because it is an entity, its full change history is kept. See xref:sdk:agents/prompt.adoc[].
 
-== Agent orchestration and collaboration
+=== Governance and the record
 
-Each agent should do _one thing_. Agents should have a single goal and they can use any form of knowledge and model inference to accomplish that goal. However, real applications rarely do only one thing. One of the super powers of agents is in _collaboration_.
+Each model call names the agent that made it. The runtime applies the agent's guardrails before and after the call. It saves the interaction and its tool calls as records in the ledger, and the verdicts of its controls as evidence. See xref:controls.adoc[] and xref:evidence.adoc[].
 
-There are protocols and standards rapidly evolving for ways agents can communicate with each other directly, but agents also benefit from indirect communication.
+=== Evaluation
 
-Whether you have 1 agent or 50, you still need to handle things like recovery from network failure, timeouts, failure responses, broken streams, and much more. Even for individual agents you need an orchestrator if you want that agent to be resilient at scale. With dozens of agents working together with shared and isolated sessions, they need to be managed by supervisors.
+Model answers are non-deterministic, so a test cannot expect one exact reply. Instead, you evaluate the agent: you run it through a set of eval cases, built-in evaluators check each reply and the tool calls the agent made, a model judge can score the replies, and a gate decides whether the results are good enough. See xref:evaluation.adoc[] and xref:testing:evaluation/index.adoc[Evaluation].
 
-Akka offers two forms of supervision, both running on the Akka runtime with the same durable-execution, retry, and audit guarantees. A xref:sdk:workflows.adoc[Workflow] supervises agents from outside, with explicit steps written by the developer; this is the right choice when the orchestration sequence is fixed in code. An xref:sdk:autonomous-agents.adoc[Autonomous Agent] supervises through declared coordination capabilities (delegation, handoff, teams, moderation), with the framework driving the loop and the model deciding which agent runs next; this is the right choice when the orchestration sequence itself is a model judgment.
+== Guarantees
 
-For more detail on orchestration, check out the xref:concepts:ai-orchestration-patterns.adoc[agentic orchestration patterns] section.
+[cols="2,3,2", options="header"]
+|===
+| Failure or situation | What Akka does | Precondition
 
-== Agent evaluation
+| A model call fails or times out
+| The agent's failure handler returns a fallback response. When a workflow step calls the agent, the step is retried by its recovery strategy.
+| A failure handler is defined, or the agent is called from a workflow step.
 
-The answers your agents get from models are _non-deterministic_, so a test cannot expect one exact reply. Instead, you use **evaluation**: you run an agent through a set of eval cases. Built-in evaluators check each reply and the tool calls the agent made, and a model judge can score the replies. A gate then decides whether the results are good enough.
+| The service restarts while an Autonomous Agent works on a task
+| Agent and task state are recovered, and the decision loop continues from its last persisted iteration.
+| None.
 
-See xref:testing:evaluation/index.adoc[Evaluation] to evaluate your agents.
+| The model keeps requesting tools
+| The number of tool-call steps between a request and the final answer is capped, and the request fails at the cap.
+| The cap is configurable.
 
-== Foundational AI Concepts (video)
+| A task never reaches a result
+| The iteration limit fails the task.
+| The limit is configurable for each task type.
 
-Vectors, embeddings, and Retrieval-Augmented Generation (RAG) are core concepts behind modern AI systems, especially those involving large language models (LLMs). Whether you are just beginning your journey into AI or brushing up on terminology that is increasingly appearing in development workflows, this is a great place to start.
+| A conversation spans several requests
+| Each user message and model reply is stored in session memory and added to the next request.
+| Session memory is enabled, which is the default.
+|===
 
-The following video is an informal walkthrough of foundational AI concepts that underpin tools like ChatGPT, RAG, and semantic search.
+== Choosing between Agent and Autonomous Agent
+
+[cols="1,2,2", options="header"]
+|===
+| | Agent | Autonomous Agent
+
+| Execution model
+| Request and response
+| Durable process loop
+
+| Model interaction
+| One round trip, with tool calls
+| Several iterations until the task is done
+
+| Orchestration
+| External, from a Workflow
+| Built in, driven by the model
+
+| Unit of work
+| The command handler's return value
+| A task with a typed result and its own lifecycle
+
+| Use when
+| The interaction is request and response, you need fine control over each prompt, or a fixed sequence of steps runs in a Workflow.
+| The work is open-ended, the model decides what to do next, several agents coordinate, or results must be tracked outside one request.
+|===
+
+A standalone Agent is lighter than an Autonomous Agent, which carries durable orchestration state and a task queue. Once an Agent is combined with a Workflow, the two weigh about the same, and the choice rests on whether code or the model decides the sequence.
+
+== Limits and trade-offs
+
+* A request-based Agent does not run multi-step work on its own. Compose it with a Workflow for anything that outlives one request.
+* An Autonomous Agent's behavior depends on the model's decisions, which makes it harder to predict and test than a fixed sequence.
+* Tokens cost money and add latency. Every iteration, tool call and line of history adds to both.
+* Suspending an Autonomous Agent does not interrupt the iteration in progress. Terminate it to stop a task at once.
+* Some model providers do not accept every input type, such as multimodal tool results. See xref:sdk:model-provider-details.adoc[].
+
+== Foundational AI concepts (video)
+
+Vectors, embeddings and retrieval-augmented generation (RAG) are core concepts behind modern AI systems, especially those involving large language models. Whether you are starting out with AI or brushing up on terms that appear more and more in development work, this video is a good place to start. It is an informal walkthrough of the concepts that underpin chat assistants, RAG and semantic search.
 
 video::mWpCnptTTPQ[youtube,width=560,height=315]
 
 Topics covered in the video include:
 
-- What vectors are and why they are foundational to AI
-- How embeddings turn human input into machine-readable vectors
-- The role of vector distance and similarity metrics (e.g., Euclidean vs. cosine)
-- How vector databases support semantic search
-- The RAG pattern for enriching LLM prompts
-- Why prompt structure, token count, and caching all matter
-- How concepts like agency and stateful workflows connect to agentic AI and Akka
+* What vectors are and why they are foundational to AI
+* How embeddings turn human input into machine-readable vectors
+* The role of vector distance and similarity metrics, such as Euclidean and cosine
+* How vector databases support semantic search
+* The RAG pattern for enriching LLM prompts
+* Why prompt structure, token count and caching all matter
+* How agency and stateful workflows connect to agentic AI and Akka
 
+== Next steps
+
+* Build an agent: xref:sdk:agents.adoc[Agents] and xref:sdk:autonomous-agents.adoc[Autonomous Agents]
+* Reference: xref:sdk:model-provider-details.adoc[]
+* Related concepts: xref:agent-memory.adoc[], xref:tools-and-protocols.adoc[], xref:ai-orchestration-patterns.adoc[]
