@@ -273,4 +273,4 @@ Page through `ListProjects` using the `next_page_token` field in the response un
 
 - link:{url-platform-api-repo}[`akka/platform-api`,window="_blank"] on GitHub, for the full schemas, the Java client source, and release notes
 - xref:services/workload-identity.adoc[]
-- xref:cli/using-cli.adoc[]
+- xref:reference:cli/command-map.adoc[]
