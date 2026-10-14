@@ -72,7 +72,7 @@ to give the client https://modelcontextprotocol.io/specification/2025-06-18/serv
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=tool-structured-output]
 ----
-<1> A record that describes the result of the tool. The `Description` annotations end up in the output schema.
+<1> A record that describes the result of the tool. The output schema includes the `Description` annotations.
 <2> The tool method returns the record instead of a `String`
 
 Akka generates an output schema from the return type and includes it in the tool listing. When a client calls the tool, Akka
@@ -83,8 +83,13 @@ text content.
 Structured content must be a JSON object. For a tool that returns an array or a collection, the output schema is an object with
 a single `result` field, and Akka sends the elements in that field.
 
+Akka leaves fields with an empty `Optional` or a `null` value out of the structured content. The output schema does not list
+`Optional` fields as required. A tool that returns a `Map` gives structured content with an object schema that has no
+properties.
+
 A tool that returns `void` gives the client the text `SUCCESS`. For other return types, such as primitives, enums and dates,
-Akka sends the JSON of the value as text content.
+Akka sends the JSON of the value as text content. A tool must not return a protobuf message, or a type that contains one.
+Akka rejects such a tool when the service starts.
 
 A tool method can also return a `CompletionStage` of any of these types. Akka sends the result when the stage completes.
 

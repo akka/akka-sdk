@@ -41,6 +41,7 @@ import java.lang.annotation.*;
  *   <li>For an array or a collection, the output schema is an object with a single {@code result}
  *       field, and the endpoint sends the elements in the {@code result} field of the structured
  *       content.
+ *   <li>For a {@code Map}, the output schema is an object without properties.
  *   <li>For a {@code void} method, the endpoint sends the text {@code SUCCESS}.
  *   <li>For other types, such as primitives, enums and dates, the endpoint sends the JSON of the
  *       value as text content.
@@ -49,7 +50,10 @@ import java.lang.annotation.*;
  * </ul>
  *
  * <p>The endpoint also sends structured content as JSON text content, for clients that do not
- * support structured content. A {@code null} return value fails the tool call.
+ * support structured content. The endpoint leaves fields with an empty {@code Optional} or a {@code
+ * null} value out of the structured content. A {@code null} return value fails the tool call. A
+ * protobuf message, or a type that contains one, is not a valid return type and fails when the
+ * service starts.
  *
  * <p><strong>Best Practices:</strong>
  *

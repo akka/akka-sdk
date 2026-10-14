@@ -87,6 +87,7 @@ private[impl] object JsonSchema {
     TypedParameter(parameter.getName, genericType, schemaType, required)
   }
 
+  private def string(description: Option[String]) = new JsonSchemaString(description)
   private def number(description: Option[String]) = new JsonSchemaNumber(description)
   private def integer(description: Option[String]) = new JsonSchemaInteger(description)
   private def boolean(description: Option[String]) = new JsonSchemaBoolean(description)
@@ -94,7 +95,7 @@ private[impl] object JsonSchema {
   private final val typeNameMap: Map[String, Option[String] => JsonSchemaDataType] = Map(
     "short" -> integer,
     "byte" -> integer,
-    "char" -> integer,
+    "char" -> string, // Jackson writes a char as a one character string
     "int" -> integer,
     "long" -> integer,
     "double" -> number,
@@ -102,7 +103,7 @@ private[impl] object JsonSchema {
     "boolean" -> boolean,
     "java.lang.Short" -> integer,
     "java.lang.Byte" -> integer,
-    "java.lang.Character" -> integer,
+    "java.lang.Character" -> string,
     "java.lang.Integer" -> integer,
     "java.lang.Long" -> integer,
     "java.lang.Double" -> number,
@@ -117,8 +118,11 @@ private[impl] object JsonSchema {
     classOf[java.time.LocalDate],
     classOf[java.time.LocalDateTime],
     classOf[java.time.ZonedDateTime],
-    classOf[java.time.Duration] // example Jackson output "PT72H"
-  )
+    classOf[java.time.OffsetDateTime],
+    classOf[java.time.OffsetTime],
+    classOf[java.time.Duration], // example Jackson output "PT72H"
+    classOf[java.time.Period],
+    classOf[java.util.UUID])
 
   private def emptyObject(description: Option[String]) =
     new JsonSchemaObject(description, properties = Map.empty, required = Seq.empty)

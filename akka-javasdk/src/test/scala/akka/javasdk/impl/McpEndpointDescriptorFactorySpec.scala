@@ -86,13 +86,40 @@ class McpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with Sc
       }
     }
 
+    "unwrap the failure of an async tool" in {
+      val exception = structuredDescriptor.tools
+        .find(_.toolDescription.name == "async-fail")
+        .get
+        .call(null, Map.empty)
+        .failed
+        .futureValue
+      exception shouldBe an[IllegalStateException]
+      exception.getMessage should ===("failed: async")
+    }
+
+    "leave empty optional fields out of structured content" in {
+      val schema = structuredDescriptor.tools.find(_.toolDescription.name == "note-without-extra").get.toolDescription
+      schema.outputSchema.get.properties.keySet should ===(Set("title", "extra"))
+      schema.outputSchema.get.required should ===(Seq("title"))
+      call("note-without-extra").structuredContent.get should ===(Map("title" -> "t"))
+    }
+
     "reject unsupported tool return types" in {
       intercept[ValidationException] {
         McpEndpointDescriptorFactory(classOf[TestMcpEndpoints.RawCompletionStageMcpEndpoint], _ => null)
       }.getMessage should include("CompletionStage with a type parameter")
+      for (protobufEndpoint <- Seq(
+          classOf[TestMcpEndpoints.ProtobufMcpEndpoint],
+          classOf[TestMcpEndpoints.ProtobufListMcpEndpoint],
+          classOf[TestMcpEndpoints.ProtobufFieldMcpEndpoint]))
+        withClue(protobufEndpoint.getSimpleName) {
+          intercept[ValidationException] {
+            McpEndpointDescriptorFactory(protobufEndpoint, _ => null)
+          }.getMessage should include("protobuf message")
+        }
       intercept[ValidationException] {
-        McpEndpointDescriptorFactory(classOf[TestMcpEndpoints.ProtobufMcpEndpoint], _ => null)
-      }.getMessage should include("protobuf message")
+        McpEndpointDescriptorFactory(classOf[TestMcpEndpoints.RawCollectionMcpEndpoint], _ => null)
+      }.getMessage should include("parameterized java.util.Collection")
     }
   }
 

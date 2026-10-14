@@ -165,7 +165,11 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
         "localDateTime" -> Schema.string(),
         "localTime" -> Schema.string(),
         "zonedDateTime" -> Schema.string(),
-        "duration" -> Schema.string())
+        "offsetDateTime" -> Schema.string(),
+        "duration" -> Schema.string(),
+        "uuid" -> Schema.string(),
+        "character" -> Schema.string(),
+        "boxedCharacter" -> Schema.string())
 
       result.required.toSet shouldEqual Set(
         "instant",
@@ -173,8 +177,12 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
         "localDate",
         "localDateTime",
         "zonedDateTime",
+        "offsetDateTime",
         "localTime",
-        "duration")
+        "duration",
+        "uuid",
+        "character",
+        "boxedCharacter")
 
     }
 

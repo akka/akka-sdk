@@ -9,6 +9,7 @@ import akka.javasdk.annotations.mcp.McpPrompt;
 import akka.javasdk.annotations.mcp.McpResource;
 import akka.javasdk.annotations.mcp.McpTool;
 import com.google.protobuf.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -133,6 +134,49 @@ public class TestMcpEndpoints {
     @McpTool(name = "map", description = "returns a map")
     public Map<String, Integer> map() {
       return Map.of("Leuven", 20);
+    }
+
+    @McpTool(name = "async-fail", description = "fails asynchronously")
+    public CompletionStage<Weather> asyncFail() {
+      return CompletableFuture.supplyAsync(
+          () -> {
+            throw new IllegalStateException("failed: async");
+          });
+    }
+
+    public record Note(String title, Optional<String> extra) {}
+
+    @McpTool(name = "note-without-extra", description = "returns a record with an empty optional")
+    public Note noteWithoutExtra() {
+      return new Note("t", Optional.empty());
+    }
+  }
+
+  @McpEndpoint(serverName = "protobuf-list")
+  public static class ProtobufListMcpEndpoint {
+    @McpTool(description = "list of protobuf messages")
+    public List<Timestamp> timestamps() {
+      return List.of(Timestamp.getDefaultInstance());
+    }
+  }
+
+  @McpEndpoint(serverName = "protobuf-field")
+  public static class ProtobufFieldMcpEndpoint {
+    public record WithTimestamp(Timestamp timestamp) {}
+
+    @McpTool(description = "record with a protobuf field")
+    public WithTimestamp withTimestamp() {
+      return new WithTimestamp(Timestamp.getDefaultInstance());
+    }
+  }
+
+  @McpEndpoint(serverName = "raw-collection")
+  public static class RawCollectionMcpEndpoint {
+    public static class Weathers extends ArrayList<String> {}
+
+    @McpTool(description = "collection subclass without type parameters")
+    public Weathers weathers() {
+      return new Weathers();
     }
   }
 
