@@ -4,9 +4,11 @@
 
 package akka.javasdk.impl.ledger
 
+import java.time.Duration
 import java.time.Instant
 import java.util.Optional
 
+import akka.javasdk.ledger.GuardrailDecisionRecord
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiLedger
 import org.scalatest.matchers.should.Matchers
@@ -44,6 +46,32 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       failure = None,
       timestamp = Instant.EPOCH)
 
+  private def spiGuardrailDecisionRecord(
+      controlId: Option[String],
+      toolCallId: Option[String],
+      toolName: Option[String],
+      toolOrigin: SpiLedger.ToolOrigin,
+      mcpEndpoint: Option[String]): SpiLedger.GuardrailDecisionRecord =
+    new SpiLedger.GuardrailDecisionRecord(
+      recordId = "guardrail-1",
+      agentComponentId = "support-agent",
+      interactionId = "interaction-1",
+      sessionId = "session-1",
+      flowId = Some("flow-1"),
+      name = "no-refunds",
+      controlId = controlId,
+      category = "policy",
+      boundary = SpiLedger.GuardrailBoundary.BeforeToolCall,
+      decision = SpiLedger.GuardrailDecision.Deny,
+      reportOnly = true,
+      explanation = "refunds are not allowed",
+      duration = Duration.ofMillis(12),
+      toolCallId = toolCallId,
+      toolName = toolName,
+      toolOrigin = toolOrigin,
+      mcpEndpoint = mcpEndpoint,
+      timestamp = Instant.EPOCH)
+
   private def spiModelResponse(tokenUsage: SpiAgent.SpiTokenUsage): SpiLedger.ModelResponse =
     new SpiLedger.ModelResponse("m1", "", tokenUsage, "", Seq.empty)
 
@@ -79,6 +107,54 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       val record = LedgerClientImpl.toEvaluationRecord(spiEvaluationRecord(None))
 
       record.controlId() shouldEqual Optional.empty()
+    }
+  }
+
+  "Mapping a guardrail decision record" should {
+
+    "carry the decision and the inspected tool" in {
+      val record = LedgerClientImpl.toGuardrailDecisionRecord(
+        spiGuardrailDecisionRecord(
+          controlId = Some("GR-1"),
+          toolCallId = Some("call-1"),
+          toolName = Some("RefundTools_refund"),
+          toolOrigin = SpiLedger.ToolOrigin.RemoteMcp,
+          mcpEndpoint = Some("https://mcp.example.com")))
+
+      record.recordId() shouldEqual "guardrail-1"
+      record.agentComponentId() shouldEqual "support-agent"
+      record.interactionId() shouldEqual "interaction-1"
+      record.sessionId() shouldEqual "session-1"
+      record.flowId() shouldEqual Optional.of("flow-1")
+      record.name() shouldEqual "no-refunds"
+      record.controlId() shouldEqual Optional.of("GR-1")
+      record.category() shouldEqual "policy"
+      record.boundary() shouldEqual GuardrailDecisionRecord.Boundary.BEFORE_TOOL_CALL
+      record.decision() shouldEqual GuardrailDecisionRecord.Decision.DENY
+      record.reportOnly() shouldBe true
+      record.explanation() shouldEqual "refunds are not allowed"
+      record.duration() shouldEqual Duration.ofMillis(12)
+      record.toolCallId() shouldEqual Optional.of("call-1")
+      record.toolName() shouldEqual Optional.of("RefundTools_refund")
+      record.toolOrigin() shouldEqual GuardrailDecisionRecord.ToolOrigin.REMOTE_MCP
+      record.mcpEndpoint() shouldEqual Optional.of("https://mcp.example.com")
+      record.timestamp() shouldEqual Instant.EPOCH
+    }
+
+    "carry empty optionals when the guardrail inspected no tool and declares no control id" in {
+      val record = LedgerClientImpl.toGuardrailDecisionRecord(
+        spiGuardrailDecisionRecord(
+          controlId = None,
+          toolCallId = None,
+          toolName = None,
+          toolOrigin = SpiLedger.ToolOrigin.Unspecified,
+          mcpEndpoint = None))
+
+      record.controlId() shouldEqual Optional.empty()
+      record.toolCallId() shouldEqual Optional.empty()
+      record.toolName() shouldEqual Optional.empty()
+      record.toolOrigin() shouldEqual GuardrailDecisionRecord.ToolOrigin.UNSPECIFIED
+      record.mcpEndpoint() shouldEqual Optional.empty()
     }
   }
 }

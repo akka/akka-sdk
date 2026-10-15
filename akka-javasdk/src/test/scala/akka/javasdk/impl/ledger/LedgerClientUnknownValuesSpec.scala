@@ -7,6 +7,7 @@ package akka.javasdk.impl.ledger
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
+import java.time.Duration
 import java.time.Instant
 
 import scala.concurrent.ExecutionContext
@@ -16,6 +17,7 @@ import scala.reflect.ClassTag
 
 import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.Failure
+import akka.javasdk.ledger.GuardrailDecisionRecord
 import akka.javasdk.ledger.InteractionMetadata
 import akka.runtime.sdk.spi.SpiLedger
 import akka.runtime.sdk.spi.{ LedgerClient => SpiLedgerClient }
@@ -52,6 +54,26 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
     (SpiLedger.EvaluationTrigger.Unspecified, EvaluationRecord.Trigger.UNSPECIFIED),
     (SpiLedger.EvaluationTrigger.Manual, EvaluationRecord.Trigger.MANUAL),
     (SpiLedger.EvaluationTrigger.OnInteraction, EvaluationRecord.Trigger.ON_INTERACTION))
+
+  private val boundaries = Table[SpiLedger.GuardrailBoundary, GuardrailDecisionRecord.Boundary](
+    ("spi", "public"),
+    (SpiLedger.GuardrailBoundary.Unspecified, GuardrailDecisionRecord.Boundary.UNSPECIFIED),
+    (SpiLedger.GuardrailBoundary.BeforeModelCall, GuardrailDecisionRecord.Boundary.BEFORE_MODEL_CALL),
+    (SpiLedger.GuardrailBoundary.BeforeAgentResponse, GuardrailDecisionRecord.Boundary.BEFORE_AGENT_RESPONSE),
+    (SpiLedger.GuardrailBoundary.BeforeToolCall, GuardrailDecisionRecord.Boundary.BEFORE_TOOL_CALL))
+
+  private val decisions = Table[SpiLedger.GuardrailDecision, GuardrailDecisionRecord.Decision](
+    ("spi", "public"),
+    (SpiLedger.GuardrailDecision.Unspecified, GuardrailDecisionRecord.Decision.UNSPECIFIED),
+    (SpiLedger.GuardrailDecision.Allow, GuardrailDecisionRecord.Decision.ALLOW),
+    (SpiLedger.GuardrailDecision.Deny, GuardrailDecisionRecord.Decision.DENY),
+    (SpiLedger.GuardrailDecision.Fail, GuardrailDecisionRecord.Decision.FAIL))
+
+  private val toolOrigins = Table[SpiLedger.ToolOrigin, GuardrailDecisionRecord.ToolOrigin](
+    ("spi", "public"),
+    (SpiLedger.ToolOrigin.Unspecified, GuardrailDecisionRecord.ToolOrigin.UNSPECIFIED),
+    (SpiLedger.ToolOrigin.FunctionTool, GuardrailDecisionRecord.ToolOrigin.FUNCTION_TOOL),
+    (SpiLedger.ToolOrigin.RemoteMcp, GuardrailDecisionRecord.ToolOrigin.REMOTE_MCP))
 
   // The SPI traits are sealed, so the spec cannot extend them. Each one compiles to an interface without methods.
   private def unknownValue[T <: AnyRef](implicit tag: ClassTag[T]): T = {
@@ -107,9 +129,35 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       outcome = new SpiLedger.EvaluationInconclusive("no verdict"),
       timestamp = Instant.EPOCH)
 
+  private def spiGuardrailDecisionRecord(
+      boundary: SpiLedger.GuardrailBoundary = SpiLedger.GuardrailBoundary.BeforeModelCall,
+      decision: SpiLedger.GuardrailDecision = SpiLedger.GuardrailDecision.Allow,
+      toolOrigin: SpiLedger.ToolOrigin = SpiLedger.ToolOrigin.Unspecified,
+      recordId: String = "guardrail-1"): SpiLedger.GuardrailDecisionRecord =
+    new SpiLedger.GuardrailDecisionRecord(
+      recordId = recordId,
+      agentComponentId = "support-agent",
+      interactionId = "interaction-1",
+      sessionId = "session-1",
+      flowId = None,
+      name = "no-refunds",
+      controlId = None,
+      category = "policy",
+      boundary = boundary,
+      decision = decision,
+      reportOnly = false,
+      explanation = "",
+      duration = Duration.ZERO,
+      toolCallId = None,
+      toolName = None,
+      toolOrigin = toolOrigin,
+      mcpEndpoint = None,
+      timestamp = Instant.EPOCH)
+
   private def ledgerClient(
       interaction: SpiLedger.InteractionRecord,
-      evaluations: Seq[SpiLedger.EvaluationRecord]): LedgerClientImpl = {
+      evaluations: Seq[SpiLedger.EvaluationRecord],
+      guardrailDecisions: Seq[SpiLedger.GuardrailDecisionRecord] = Seq.empty): LedgerClientImpl = {
     val spiLedgerClient = new SpiLedgerClient {
       override def getInteraction(interactionId: String): Future[SpiLedger.InteractionRecord] =
         Future.successful(interaction)
@@ -128,6 +176,20 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
           from: Option[Instant],
           limit: Int): Future[Seq[SpiLedger.EvaluationRecord]] =
         Future.successful(evaluations)
+
+      override def getInteractions(
+          agentComponentId: String,
+          sessionId: String,
+          from: Option[Instant],
+          limit: Int): Future[Seq[SpiLedger.InteractionRecord]] =
+        Future.successful(Seq(interaction))
+
+      override def getGuardrailDecisions(
+          agentComponentId: String,
+          sessionId: String,
+          from: Option[Instant],
+          limit: Int): Future[Seq[SpiLedger.GuardrailDecisionRecord]] =
+        Future.successful(guardrailDecisions)
     }
     new LedgerClientImpl(spiLedgerClient, ExecutionContext.parasitic)
   }
@@ -157,6 +219,30 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       forAll(triggers) { (spiTrigger, publicTrigger) =>
         val record = LedgerClientImpl.toEvaluationRecord(spiEvaluationRecord(spiTrigger))
         record.trigger() shouldBe publicTrigger
+      }
+    }
+
+    "keep the mapping of every known guardrail boundary" in {
+      boundaries.map(_._2).toSet shouldBe GuardrailDecisionRecord.Boundary.values().toSet
+      forAll(boundaries) { (spiBoundary, publicBoundary) =>
+        val record = LedgerClientImpl.toGuardrailDecisionRecord(spiGuardrailDecisionRecord(boundary = spiBoundary))
+        record.boundary() shouldBe publicBoundary
+      }
+    }
+
+    "keep the mapping of every known guardrail decision" in {
+      decisions.map(_._2).toSet shouldBe GuardrailDecisionRecord.Decision.values().toSet
+      forAll(decisions) { (spiDecision, publicDecision) =>
+        val record = LedgerClientImpl.toGuardrailDecisionRecord(spiGuardrailDecisionRecord(decision = spiDecision))
+        record.decision() shouldBe publicDecision
+      }
+    }
+
+    "keep the mapping of every known tool origin" in {
+      toolOrigins.map(_._2).toSet shouldBe GuardrailDecisionRecord.ToolOrigin.values().toSet
+      forAll(toolOrigins) { (spiOrigin, publicOrigin) =>
+        val record = LedgerClientImpl.toGuardrailDecisionRecord(spiGuardrailDecisionRecord(toolOrigin = spiOrigin))
+        record.toolOrigin() shouldBe publicOrigin
       }
     }
 
@@ -197,9 +283,50 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       record.evaluatorComponentId() shouldBe "quality-evaluator"
       record shouldBe LedgerClientImpl.toEvaluationRecord(spiEvaluationRecord(SpiLedger.EvaluationTrigger.Unspecified))
     }
+
+    "read a guardrail boundary, decision and tool origin that the SDK does not know as unspecified" in {
+      val unknownBoundary = unknownValue[SpiLedger.GuardrailBoundary]
+      val unknownDecision = unknownValue[SpiLedger.GuardrailDecision]
+      val unknownOrigin = unknownValue[SpiLedger.ToolOrigin]
+      forAll(boundaries) { (known, _) => unknownBoundary should not be known }
+      forAll(decisions) { (known, _) => unknownDecision should not be known }
+      forAll(toolOrigins) { (known, _) => unknownOrigin should not be known }
+
+      val record = LedgerClientImpl.toGuardrailDecisionRecord(
+        spiGuardrailDecisionRecord(boundary = unknownBoundary, decision = unknownDecision, toolOrigin = unknownOrigin))
+
+      record.boundary() shouldBe GuardrailDecisionRecord.Boundary.UNSPECIFIED
+      record.decision() shouldBe GuardrailDecisionRecord.Decision.UNSPECIFIED
+      record.toolOrigin() shouldBe GuardrailDecisionRecord.ToolOrigin.UNSPECIFIED
+      record.name() shouldBe "no-refunds"
+      record shouldBe LedgerClientImpl.toGuardrailDecisionRecord(
+        spiGuardrailDecisionRecord(
+          boundary = SpiLedger.GuardrailBoundary.Unspecified,
+          decision = SpiLedger.GuardrailDecision.Unspecified,
+          toolOrigin = SpiLedger.ToolOrigin.Unspecified))
+    }
   }
 
   "The ledger client" should {
+
+    "read the interactions and the guardrail decisions of a session that hold values the SDK does not know" in {
+      val client = ledgerClient(
+        spiInteractionRecord(finishReason = unknownValue[SpiLedger.FinishReason]),
+        Seq.empty,
+        Seq(
+          spiGuardrailDecisionRecord(decision = SpiLedger.GuardrailDecision.Deny, recordId = "guardrail-1"),
+          spiGuardrailDecisionRecord(decision = unknownValue[SpiLedger.GuardrailDecision], recordId = "guardrail-2")))
+
+      val interactions = client.getInteractions("support-agent", "session-1").asScala.toSeq
+      interactions.map(_.interactionId()) shouldBe Seq("interaction-1")
+      interactions.head.metadata().finishReason() shouldBe InteractionMetadata.FinishReason.UNSPECIFIED
+
+      val decisions = client.getGuardrailDecisions("support-agent", "session-1").asScala.toSeq
+      decisions.map(_.recordId()) shouldBe Seq("guardrail-1", "guardrail-2")
+      decisions.map(_.decision()) shouldBe Seq(
+        GuardrailDecisionRecord.Decision.DENY,
+        GuardrailDecisionRecord.Decision.UNSPECIFIED)
+    }
 
     "read an interaction and an evaluation that hold values the SDK does not know" in {
       val client = ledgerClient(

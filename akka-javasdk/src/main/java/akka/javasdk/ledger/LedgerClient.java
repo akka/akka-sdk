@@ -9,8 +9,8 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Client for fetching records from the ledger, the log of recorded agent interactions and their
- * evaluations.
+ * Client for fetching records from the ledger, the log of recorded agent interactions, their
+ * evaluations and the guardrail decisions made in them.
  *
  * <p>A {@code LedgerClient} can be injected into any component. An {@link
  * akka.javasdk.evaluation.Evaluator} uses it to fetch the interaction referenced by its {@link
@@ -84,4 +84,54 @@ public interface LedgerClient {
    * @return a stage that completes with the evaluations of that interaction
    */
   CompletionStage<List<EvaluationRecord>> getEvaluationsAsync(String interactionId);
+
+  /**
+   * Fetch the interactions of the agent with the given {@code agentComponentId} in the session with
+   * the given {@code sessionId}, newest first. The read covers the most recent interactions of the
+   * agent, so interactions older than that window are not returned.
+   *
+   * <p>Blocks the calling thread until the records have been fetched. Safe to call on a virtual
+   * thread. Use {@link #getInteractionsAsync(String, String)} for the non-blocking variant.
+   *
+   * @param agentComponentId the component id of the agent
+   * @param sessionId the session the interactions belong to
+   * @return the interactions of the agent in that session, or an empty list when none are recorded
+   */
+  List<InteractionRecord> getInteractions(String agentComponentId, String sessionId);
+
+  /**
+   * Async variant of {@link #getInteractions(String, String)}.
+   *
+   * @param agentComponentId the component id of the agent
+   * @param sessionId the session the interactions belong to
+   * @return a stage that completes with the interactions of the agent in that session
+   */
+  CompletionStage<List<InteractionRecord>> getInteractionsAsync(
+      String agentComponentId, String sessionId);
+
+  /**
+   * Fetch the guardrail decisions recorded for the agent with the given {@code agentComponentId} in
+   * the session with the given {@code sessionId}, newest first. Each record names the interaction
+   * the guardrail ran in. The read covers the most recent decisions of the agent, so decisions
+   * older than that window are not returned.
+   *
+   * <p>Blocks the calling thread until the records have been fetched. Safe to call on a virtual
+   * thread. Use {@link #getGuardrailDecisionsAsync(String, String)} for the non-blocking variant.
+   *
+   * @param agentComponentId the component id of the agent
+   * @param sessionId the session the decisions belong to
+   * @return the guardrail decisions of the agent in that session, or an empty list when none are
+   *     recorded
+   */
+  List<GuardrailDecisionRecord> getGuardrailDecisions(String agentComponentId, String sessionId);
+
+  /**
+   * Async variant of {@link #getGuardrailDecisions(String, String)}.
+   *
+   * @param agentComponentId the component id of the agent
+   * @param sessionId the session the decisions belong to
+   * @return a stage that completes with the guardrail decisions of the agent in that session
+   */
+  CompletionStage<List<GuardrailDecisionRecord>> getGuardrailDecisionsAsync(
+      String agentComponentId, String sessionId);
 }
