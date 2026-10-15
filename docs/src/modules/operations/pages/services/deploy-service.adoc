@@ -1,4 +1,5 @@
 = Deploy and manage services
+:page-aliases: operations:services/note-about-push.adoc
 
 include::ROOT:partial$include.adoc[]
 

@@ -159,7 +159,7 @@ Reaching the reliability and availability your deployment is built for depends o
 | Multi-region failover | BYOK8s | Shared | Akka and the customer work together on failover; Akka provides the tooling and runbooks.
 | Akka console and CLI identity | All | Customer | Customer's identity provider (IdP) authenticates console/CLI users with MFA.
 | Akka platform-side privileged access | All | Akka | Teleport-mediated, session-recorded; logs available to customer on request.
-| Compliance posture (SOC 2, pen test) | All | Akka | Akka maintains and publishes compliance evidence on trust.akka.io.
+| Compliance posture (SOC 2, pen test) | All | Akka | Akka maintains and publishes compliance evidence on {url-akka-trust-center}[trust.akka.io].
 | GDPR / PII for application data | All | Customer | Customer is the controller of application data and handles DSRs (Data Subject Requests).
 | Customer applications (SDK services) | All | Customer | Customer owns source, deploy, config, secrets, ACLs end-to-end.
 |===
