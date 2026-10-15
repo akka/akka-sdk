@@ -1,4 +1,4 @@
-= Data migration
+= Export and import data
 include::ROOT:partial$include.adoc[]
 
 Akka allows exporting and importing data to and from your services.

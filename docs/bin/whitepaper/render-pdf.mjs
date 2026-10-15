@@ -19,7 +19,7 @@ const outDir = resolve(siteDir, 'operations/_attachments/whitepapers');
 const cssPath = resolve(dirname(new URL(import.meta.url).pathname), 'print.css');
 const printCss = readFileSync(cssPath, 'utf8');
 
-const base = 'operations/technical-overview';
+const base = 'deployment/technical-overview';
 const HUB = `${base}.html`;
 const BYOC = `${base}/byoc.html`;
 const AWS = `${base}/byoc-aws.html`;

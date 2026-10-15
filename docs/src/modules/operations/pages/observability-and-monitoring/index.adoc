@@ -40,7 +40,7 @@ Traces can be sampled before export: you choose what share of traces is sent, to
 
 === Your telemetry and the platform's telemetry
 
-When Akka operates the platform, it runs its own observability stack to monitor the platform underneath your services. Your application's logs, metrics, traces and evaluations go to the destinations you configure. A subset of platform telemetry goes to the federation plane for reporting across regions. See xref:operations:technical-overview.adoc[].
+When Akka operates the platform, it runs its own observability stack to monitor the platform underneath your services. Your application's logs, metrics, traces and evaluations go to the destinations you configure. A subset of platform telemetry goes to the federation plane for reporting across regions. See xref:deployment:technical-overview.adoc[].
 
 == Observability and the ledger
 

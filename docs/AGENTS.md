@@ -122,7 +122,7 @@ For a large table that readers need to filter or compare across columns, use a s
 grid page. Keep the explanatory prose on the regular page. Copy `docs/dense-page-template.adoc`
 beside that page as `<topic>-grid.adoc`. The close control returns to `<topic>.adoc` if the browser
 cannot close the tab. See
-`docs/src/modules/operations/pages/technical-overview/data-flows-grid.adoc` for a working example.
+`docs/src/modules/deployment/pages/technical-overview/data-flows-grid.adoc` for a working example.
 
 - Set `:page-layout: dense` and a `:page-breadcrumb:` ending with the page title. The grid page is
   outside the navigation tree, so it needs its own breadcrumb.
@@ -140,8 +140,8 @@ to the regular page's relative HTML path. Use `dense-image` on image blocks or
 `mermaid.dense-mermaid` on Mermaid blocks. Link to the full-width page with
 `role=open-image,window=_blank`. The close control returns to `:page-return-to:`
 if the browser cannot close the tab. See
-`docs/src/modules/operations/pages/technical-overview-image.adoc` and
-`docs/src/modules/operations/pages/technical-overview-model-request-image.adoc`.
+`docs/src/modules/deployment/pages/technical-overview-image.adoc` and
+`docs/src/modules/deployment/pages/technical-overview-model-request-image.adoc`.
 
 ## SDD-first, manual fallback
 

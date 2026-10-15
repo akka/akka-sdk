@@ -1,8 +1,0 @@
-= Federation Plane and Application Plane
-:page-layout: dense
-:page-breadcrumb: Akka / Operating / Akka Automated Operations / Technical Overview / Federation Plane and Application Plane
-:page-return-to: technical-overview.html
-:page-summary: Full-size diagram of the Akka Federation Plane and Application Planes.
-
-[.dense-image]
-image::operations:aao-planes.svg[Federation Plane and Application Plane]

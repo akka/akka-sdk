@@ -103,5 +103,5 @@ curl -i -XPOST --location "https://spring-tooth-3406.gcp-us-east1.akka.services/
 
 == Next steps
 
-. Read about other deployment options in xref:operations:index.adoc[]
+. Read about other deployment options in xref:deployment:index.adoc[]
 . Learn more details about xref:operations:services/deploy-service.adoc[]

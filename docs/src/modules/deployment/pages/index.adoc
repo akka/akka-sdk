@@ -1,0 +1,256 @@
+= Choose how you run Akka
+:page-aliases: operations:akka-platform.adoc
+:page-summary: Akka runs in five deployment options: self-managed on infrastructure you choose, or operated by Akka Automated Operations on Serverless, Dedicated, BYOC or BYOK8s. This page defines each option and compares them.
+:page-when-to-use: When you are choosing where your Akka services run and who operates the platform under them.
+:page-related: deployment:technical-overview.adoc, deployment:production-readiness/choosing-your-environment.adoc, deployment:production-readiness/index.adoc
+:page-persona: operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+You run Akka in one of five deployment options. In the self-managed option you operate Akka yourself. In the other four, Akka Automated Operations (AAO) operates the platform for you: it handles deployment, scaling, multi-region replication, patching and recovery, so you deploy a service and AAO runs it. Your services are the same code in every option.
+
+== The five options
+
+[cols="1,2,2,1", options="header"]
+|===
+| Option | Who runs the platform | Whose cloud account, and who pays for it | Tenancy
+
+| Self-managed
+| You
+| Infrastructure you choose: bare metal, VMs, containers, PaaS or edge. You pay its provider.
+| Yours
+
+| Serverless
+| Akka, with AAO
+| Akka's cloud account. You pay Akka as you go, by credit card.
+| Multi-tenant
+
+| Dedicated
+| Akka, with AAO
+| Akka's cloud account. Akka bills you for the region.
+| Single-tenant
+
+| BYOC
+| Akka, with AAO
+| Your cloud account on AWS, Azure or GCP. You pay your cloud provider for the infrastructure.
+| Single-tenant
+
+| BYOK8s
+| Akka operates the platform, you own the cluster
+| A Kubernetes cluster you provide, in your cloud account. You pay your cloud provider.
+| Single-tenant
+|===
+
+Dedicated and BYOC are one delivery model in two places: Dedicated is a single-tenant region in Akka's account, and BYOC is the same region in your account. BYOK8s is BYOC where you provide the Kubernetes cluster. Dedicated adds a private data link to your network; BYOC does not need one, because the region already runs in your account.
+
+In BYOC and BYOK8s, application data stays in your environment. A limited set of platform interactions, such as deployments and key rotation, still crosses to the Akka Federation Plane. xref:deployment:technical-overview.adoc[How AAO works] describes the architecture, and xref:deployment:technical-overview/data-flows.adoc[] lists every flow.
+
+== What AAO adds
+
+AAO is built on a Kubernetes-based control plane and application plane designed to run Akka services. It manages, monitors and gathers insights from your deployed services:
+
+* Automated deployments, scaling and recovery.
+* Multi-region replication with failover for business-critical workloads.
+* Logs, metrics and traces from the first deployment.
+* Dedicated infrastructure for regulatory or data-sovereignty requirements, in Dedicated, BYOC and BYOK8s.
+
+AAO monitors region health and brings replacement capacity online without operator action.
+
+== Feature comparison
+
+[cols="3,1,1,1,1,1", options="header"]
+|===
+| Feature
+| Self-managed
+| Serverless
+| Dedicated
+| BYOC
+| BYOK8s
+
+| Akka runtime
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+
+| Akka clustering
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+
+| Elasticity
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+
+| Resilience
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+
+| Durable memory
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+
+| Agents and workflows
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+
+| Entities and views
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+
+| Streaming and consumers
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+
+| Metrics, logs, and traces
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+
+| User management: OpenID Connect (OIDC)
+| pass:[❌]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+
+| Deploy: bare metal, VMs, containers, PaaS or edge
+| pass:[✅]
+| pass:[❌]
+| pass:[❌]
+| pass:[❌]
+| pass:[❌]
+
+| Deploy: Akka's shared cloud
+| pass:[❌]
+| pass:[✅]
+| pass:[❌]
+| pass:[❌]
+| pass:[❌]
+
+| Deploy: single-tenant region in Akka's cloud
+| pass:[❌]
+| pass:[❌]
+| pass:[✅]
+| pass:[❌]
+| pass:[❌]
+
+| Deploy: your cloud account or edge VPC
+| pass:[❌]
+| pass:[❌]
+| pass:[❌]
+| pass:[✅]
+| pass:[✅]
+
+| Deploy: your Kubernetes cluster
+| pass:[❌]
+| pass:[❌]
+| pass:[❌]
+| pass:[❌]
+| pass:[✅]
+
+| Custom network setup
+| pass:[✅]
+| pass:[❌]
+| pass:[❌]
+| pass:[✅]
+| pass:[✅]
+
+| Private data link to your network
+| pass:[❌]
+| pass:[❌]
+| pass:[✅]
+| pass:[❌]
+| pass:[❌]
+
+| Auto-elasticity
+| pass:[❌]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+
+| Multi-tenant services
+| pass:[❌]
+| pass:[❌]
+| pass:[❌]
+| pass:[✅]
+| pass:[✅]
+
+| Multi-region operations
+| pass:[❌]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+
+| Persistence oversight
+| pass:[❌]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+
+| Certificate and key rotation
+| pass:[❌]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+
+| Multi-org access controls
+| pass:[❌]
+| pass:[❌]
+| pass:[❌]
+| pass:[✅]
+| pass:[✅]
+
+| Managed rolling updates
+| pass:[❌]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+| pass:[✅]
+|===
+
+== Availability
+
+Every option that AAO operates runs each service across availability zones in a region, so the loss of one data center recovers automatically. A project can also span several regions, with state replicated between them. Replication between regions is asynchronous: when a region is lost, writes that it accepted and had not yet replicated to another region are not available in the other regions. Moving traffic away from a failed region is an operator action with the Akka CLI. Recovery targets are set in your agreement with Akka. See xref:deployment:production-readiness/choosing-your-environment.adoc[] to choose between zones and multi-region.
+
+== Next steps
+
+* Self-managed: xref:deployment:configuring.adoc[Operate Akka in a self-managed environment].
+* Serverless: xref:deployment:technical-overview/serverless.adoc[Serverless].
+* Dedicated: xref:deployment:technical-overview/dedicated.adoc[Dedicated].
+* BYOC: xref:deployment:technical-overview/byoc.adoc[Get started with BYOC].
+* BYOK8s: xref:deployment:technical-overview/byok8s-requirements.adoc[Get started with BYOK8s].
+
+When you prepare to go live on Dedicated, BYOC or BYOK8s, see xref:deployment:production-readiness/index.adoc[Production readiness].
+
+For project setup, service deployment, monitoring, and automation, see xref:operations:index.adoc[Operating].
+
+[discrete]
+include::ROOT:partial$service-packaging.adoc[]

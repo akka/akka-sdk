@@ -1,4 +1,5 @@
 = Deploy and manage services
+:page-aliases: operations:services/note-about-push.adoc
 
 include::ROOT:partial$include.adoc[]
 
@@ -48,7 +49,8 @@ akka service deploy my-service container-name:tag-name --push
 
 Your service will now begin deploying.
 
-include::note-about-push.adoc[]
+NOTE: The `--push` flag will push the container image to the Akka Container Registry before deploying the service. If your project has more than one region, the image will be pushed to each region ACR and deployed in all regions. If you are not using ACR, you first need to push the image to the container registry you are using. +
+See <<_pushing_to_acr,pushing to ACR>> and <<_pushing_to_ext_cr,pushing to external container registry>> for more information.
 
 TIP: To combine deploying a service with relevant settings, Akka supports deploying with service descriptors (xref:#apply[see below]).
 
@@ -113,9 +115,10 @@ If you need to update your service with a new container image:
 akka service deploy my-service container-name:tag-name-2 --push
 ----
 
-Akka will perform a rolling update, replacing old instances with new ones without downtime.
+Akka performs a rolling update, replacing old instances with new ones while the others keep serving traffic.
 
-include::note-about-push.adoc[]
+NOTE: The `--push` flag pushes the new image to each region of the project before the update, as described in <<_deploying_a_service>>.
+
 [#_pushing_to_acr]
 == Pushing to Akka Container Registry
 

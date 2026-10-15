@@ -65,6 +65,11 @@ The Akka Container Registry is now ready for use.
 
 See xref:operations:services/deploy-service.adoc[deploy and manage services] for further details on how to deploy a service.
 
+[#_registries_in_a_multi_region_project]
+== Registries in a multi-region project
+
+Container registries are regional in Akka. If you use xref:operations:projects/external-container-registries.adoc[], keep a container registry in or near each region of your project. If your container images are in only one place and that place becomes unavailable, your services cannot start new instances.
+
 == See also
 
 - xref:reference:cli/akka-cli/akka_container-registry.adoc#_see_also[`akka container-registry` commands]

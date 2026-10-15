@@ -64,7 +64,7 @@ See xref:concepts:model-training.adoc#spend-and-budgets[] and xref:reference:cli
 | xref:optimize:index.adoc[Training], xref:optimize:trainer/index.adoc[Trainer]
 
 | Operating
-| xref:operations:production-readiness/optimize.adoc[Production readiness for served and trained models]
+| xref:deployment:production-readiness/optimize.adoc[Production readiness for served and trained models]
 
 | Reference
 | xref:reference:cli/models.adoc[], xref:reference:cli/routing.adoc[], xref:reference:cli/training.adoc[], xref:reference:cli/cost-and-traffic.adoc[], xref:reference:descriptors/model-descriptor.adoc[]

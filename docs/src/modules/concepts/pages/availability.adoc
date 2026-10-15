@@ -1,7 +1,7 @@
 = Availability and recovery
 :page-summary: Akka keeps services available through the loss of a node, a zone or a region by recovering state from durable events, spreading each region across availability zones, and replicating state between regions.
 :page-when-to-use: When you need to know what an Akka service survives, what can be lost in a regional outage, and which mechanism handles each kind of failure.
-:page-related: concepts:runtime.adoc, concepts:multi-region.adoc, operations:production-readiness/choosing-your-environment.adoc
+:page-related: concepts:runtime.adoc, concepts:multi-region.adoc, deployment:production-readiness/choosing-your-environment.adoc
 :page-persona: operator-platform, operator-sre, builder-developer
 
 include::ROOT:partial$include.adoc[]
@@ -28,7 +28,7 @@ Choose zones and regions from the failures the workload must tolerate, its recov
 
 == Next steps
 
-* xref:operations:production-readiness/choosing-your-environment.adoc[] chooses availability, sizing, and residency.
+* xref:deployment:production-readiness/choosing-your-environment.adoc[] chooses availability, sizing, and residency.
 * xref:operations:regions/setup.adoc[] performs regional failover.
-* xref:operations:production-readiness/byoc/disaster-recovery.adoc[] and xref:operations:production-readiness/byok8s/disaster-recovery.adoc[] define recovery responsibilities and procedures.
-* xref:operations:technical-overview.adoc[] explains platform boundaries and environment migration.
+* xref:deployment:production-readiness/disaster-recovery.adoc[] define recovery responsibilities and procedures.
+* xref:deployment:technical-overview.adoc[] explains platform boundaries and environment migration.

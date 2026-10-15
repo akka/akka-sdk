@@ -1,7 +1,7 @@
 = Platform model
 :page-summary: The platform model names the parts of an Akka system: organizations, projects, services, components, regions and routes, and the planes that run them.
 :page-when-to-use: When you need the vocabulary that the rest of Understanding assumes, or want to see how a service you build maps to what runs in production.
-:page-related: concepts:components.adoc, concepts:deployment-model.adoc, operations:technical-overview.adoc
+:page-related: concepts:components.adoc, concepts:deployment-model.adoc, deployment:technical-overview.adoc
 :page-persona: all
 
 include::ROOT:partial$include.adoc[]
@@ -34,5 +34,5 @@ The application plane runs services and stores application data within a region.
 * xref:components.adoc[] introduces the programming model.
 * xref:request-lifecycle.adoc[] follows one request through the components.
 * xref:deployment-model.adoc[] compares who operates the platform.
-* xref:operations:technical-overview.adoc[] describes the platform architecture.
+* xref:deployment:technical-overview.adoc[] describes the platform architecture.
 * xref:reference:descriptors/index.adoc[] defines resource configuration.
