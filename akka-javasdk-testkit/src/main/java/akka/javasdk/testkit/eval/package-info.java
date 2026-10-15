@@ -4,9 +4,10 @@
  * agent.
  *
  * <p>An {@link akka.javasdk.testkit.eval.EvalCase} is the command sent to the agent, as the user
- * message or as the command handler's own type. The evaluators and their bindings come from the
- * configuration the TestKit runs with, under {@code akka.javasdk.evaluation.evaluators}: a test
- * binds its own evaluators, kept in the test sources, and disables production ones with {@code
+ * message or as the command handler's own type. Cases are written in Java or read from a JSON Lines
+ * file with {@link akka.javasdk.testkit.eval.EvalCases}. The evaluators and their bindings come
+ * from the configuration the TestKit runs with, under {@code akka.javasdk.evaluation.evaluators}: a
+ * test binds its own evaluators, kept in the test sources, and disables production ones with {@code
  * TestKit.Settings.withAdditionalConfig}. The test prepares the mocked tools before the run.
  *
  * <p>{@link akka.javasdk.testkit.eval.ExperimentRunner} calls the agent in a fresh session per
