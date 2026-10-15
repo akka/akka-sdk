@@ -181,9 +181,14 @@ object GuardrailProviderSpec {
       case _                                    => ""
     }
 
-  private def agentResponseContext(response: String): SpiGuardrail.AgentResponseContext =
+  private def agentResponseContext(
+      response: String,
+      thinking: Option[String] = None,
+      attributes: Map[String, AnyRef] = Map.empty): SpiGuardrail.AgentResponseContext =
     new SpiGuardrail.AgentResponseContext(
       response = response,
+      thinking = thinking,
+      attributes = attributes,
       agentId = "model-agent",
       sessionId = "session-1",
       modelName = "test-model",
@@ -892,6 +897,37 @@ class GuardrailProviderSpec
       conversation.newMessages().asScala.toSeq shouldBe Seq(toolResult)
     }
 
+    "expose the thinking and attributes of an AiMessage to a ModelCallGuardrail" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "capturing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelCallGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).guardrails.modelCallGuardrails.head
+
+      val messages = Seq(
+        spiUserMessage("first question"),
+        new SpiAgent.ContextMessage.AiMessage(
+          "thinking reply",
+          Seq.empty,
+          Some("my reasoning"),
+          Map("signature" -> "abc")))
+
+      Await.result(spiGuardrail.decide(modelCallContext(messages)), 3.seconds) shouldBe a[SpiGuardrail.Allow]
+
+      val aiMessage = capturedModelCallContext.messages().get(1).asInstanceOf[Message.AiMessage]
+      aiMessage.thinking() shouldBe java.util.Optional.of("my reasoning")
+      aiMessage.attributes() shouldBe java.util.Map.of("signature", "abc")
+    }
+
     "expose the user message as the new messages on the first model call" in {
       val cfg = ConfigFactory
         .parseString(s"""
@@ -1255,6 +1291,39 @@ class GuardrailProviderSpec
       val ctx = capturedResponseContext
       ctx.reply().text() shouldBe "just text"
       ctx.reply().toolCallRequests() shouldBe empty
+      ctx.reply().thinking() shouldBe java.util.Optional.empty()
+      ctx.reply().attributes() shouldBe empty
+    }
+
+    "expose the thinking and attributes of the agent reply" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "capturing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingResponseGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).guardrails.agentResponseGuardrails.head
+
+      val context = agentResponseContext("just text", Some("my reasoning"), Map("signature" -> "abc"))
+      Await.result(spiGuardrail.decide(context), 3.seconds) shouldBe a[SpiGuardrail.Allow]
+
+      val reply = capturedResponseContext.reply()
+      reply.thinking() shouldBe java.util.Optional.of("my reasoning")
+      reply.attributes() shouldBe java.util.Map.of("signature", "abc")
+    }
+
+    "give empty thinking and attributes to an AiMessage built with text and tool call requests only" in {
+      val aiMessage = new Message.AiMessage("text", java.util.List.of())
+
+      aiMessage.thinking() shouldBe java.util.Optional.empty()
+      aiMessage.attributes() shouldBe empty
     }
 
     "map a Decision.Fail to a Fail with its reason and cause" in {

@@ -5,6 +5,8 @@
 package akka.javasdk.agent;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Guardrails can protect against harmful inputs and outputs to/from model and tool calls.
@@ -58,10 +60,22 @@ public sealed interface Guardrail
     record UserMessage(List<MessageContent> contents) implements Message {}
 
     /**
-     * A model reply, with only its text and the tool calls it requested. It does not include the
-     * model's thinking or provider attributes.
+     * A model reply with its text, requested tool calls, thinking, and provider attributes.
+     *
+     * @param thinking the model's thinking, empty when the model returned none
+     * @param attributes provider-specific values, empty when the provider sets none
      */
-    record AiMessage(String text, List<ToolCallRequest> toolCallRequests) implements Message {
+    record AiMessage(
+        String text,
+        List<ToolCallRequest> toolCallRequests,
+        Optional<String> thinking,
+        Map<String, Object> attributes)
+        implements Message {
+
+      public AiMessage(String text, List<ToolCallRequest> toolCallRequests) {
+        this(text, toolCallRequests, Optional.empty(), Map.of());
+      }
+
       /**
        * A tool call the model requested: its id, tool name, and raw arguments. The id is never
        * null, but it is empty when the model provider does not assign one.
