@@ -115,11 +115,11 @@ service:
 
 Changing the primary region of a project is how you control failover or migration in Akka.
 
-NOTE: The primary region of a project is also the region that will be used as primary for stateful components in the pinned-region selection mode. Changing primary should only be done with careful consideration of the consequences, and it is recommended to first change to the read-only mode in all regions. See <<selecting-primary>>.
+NOTE: The primary region of a project is also the region that will be used as primary for stateful components in the pinned-region selection mode. Changing primary should only be done with careful consideration of the consequences, and it is recommended to first change to read-only mode in all regions. See <<selecting-primary>>.
 
 IMPORTANT: Before changing the primary region, make sure that you understand and follow the steps described in the <<_how_to>>.
 
-Changing the project's primary region is a serious operation, so plan it ahead of time. Let the replication lag between the regions drop to zero before you make the change. To be sure that no writes collide while the project's primary region changes, put the project into the read-only mode first, which stops all writes.
+Changing the project's primary region is a serious operation, so plan it ahead of time. Let the replication lag between the regions drop to zero before you make the change. To be sure that no writes collide while the project's primary region changes, put the project into read-only mode first, which stops all writes.
 
 To change the primary region of a project run:
 

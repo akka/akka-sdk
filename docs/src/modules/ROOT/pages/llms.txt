@@ -212,7 +212,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Managing organization users](https://doc.akka.io/operations/organizations/manage-users.html.md): Adding, removing, and managing user access within your organization
 - [Regions](https://doc.akka.io/operations/organizations/regions.html.md): Understanding geographical regions for Akka deployments
 - [Operating - Choose how you run Akka](https://doc.akka.io/operations/index.html.md): The five deployment options, what Akka Automated Operations adds, and a feature comparison.
-- [Operating - Self-managed nodes](https://doc.akka.io/operations/index.html.md): Guide to running Akka on self-managed infrastructure
+- [Operating - Self-managed nodes](https://doc.akka.io/operations/configuring.html.md): Guide to running Akka on self-managed infrastructure
 - [Reactive Manifesto](https://www.reactivemanifesto.org): Foundational philosophy behind Akka
 - [Reactive Principles](https://www.reactiveprinciples.org): Cloud-native and edge-native design principles
 - [Blog](https://akka.io/blog): Technical articles and product updates

@@ -1,12 +1,12 @@
-= Production readiness checklist for Akka Optimize
-:page-summary: The checklist for going live with models served or trained by Akka Optimize, covering the serving endpoint, API keys, credentials, capacity, hostnames, and training run recovery.
+= Production readiness checklist for served and trained models
+:page-summary: The checklist for going live with models that Akka serves or trains, covering the serving endpoint, API keys, credentials, capacity, hostnames, and training run recovery.
 :page-when-to-use: Use this before you send production traffic to a served model or rely on a training run.
 :page-related: xref:operations:production-readiness/index.adoc[], xref:inference:serving/getting-started.adoc[]
 :page-persona: operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
 
-This checklist covers the items that are specific to Akka Optimize: serving models with Inference and training models with the Trainer. It adds to the xref:operations:production-readiness/index.adoc[general readiness areas] and to the xref:operations:production-readiness/checklist.adoc[production readiness checklist] for Dedicated, BYOC, and BYOK8s, which also applies.
+This checklist covers the items that are specific to served and trained models: serving models with Inference and training models with the Trainer. It adds to the xref:operations:production-readiness/index.adoc[general readiness areas] and to the xref:operations:production-readiness/checklist.adoc[production readiness checklist] for Dedicated, BYOC, and BYOK8s, which also applies.
 
 include::inference:partial$aao-inference-notice.adoc[]
 

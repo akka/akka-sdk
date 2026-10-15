@@ -267,7 +267,7 @@ In Dedicated, Akka operates the network in the account it owns, including peerin
 | Decision | All | Shared | Fix in place, or recreate. Recreate requires a DNS update.
 | Resolution | Dedicated and BYOC | Akka | Akka fixes or recreates the load balancer. An in-cluster proxy fallback, where configured at install time, carries traffic while the load balancer is recreated.
 | Resolution | BYOK8s | Akka | Akka fixes or recreates the load balancer. If the in-cluster proxy fallback is configured, traffic continues via the proxy while the load balancer is recreated. Akka confirms whether this applies for the customer at the tabletop.
-| Customer-side recovery | Dedicated | Customer | If recreated, Akka updates the DNS records it maintains, and the customer updates DNS records for any domain it brings and verifies traffic.
+| Customer-side recovery | Dedicated | Shared | If recreated, Akka updates the DNS records it maintains, and the customer updates DNS records for any domain it brings and verifies traffic.
 | Customer-side recovery | BYOC and BYOK8s | Customer | If recreated, the customer updates DNS records for the new endpoint and verifies traffic.
 |===
 ====
