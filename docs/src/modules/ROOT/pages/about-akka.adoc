@@ -7,7 +7,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Akka has one offering: the *Akka Agentic AI Platform*, which guarantees the resilience and scalability of the agentic systems you build with it. The platform has four solutions: 
+Akka has one offering: the *Akka Agentic AI Platform*, which provides resilience and scalability for the agentic systems you build with it. The platform has four solutions: 
 
 * Akka SDK, 
 * Akka Specify, 

@@ -1,6 +1,6 @@
 = Akka SDK
 :page-aliases: ROOT:akka-agents.adoc, ROOT:akka-orchestration.adoc, ROOT:akka-memory.adoc, ROOT:akka-streaming.adoc
-:page-summary: Akka SDK is the component model for building agentic systems. The Akka runtime guarantees the resilience and scalability of everything built with it.
+:page-summary: Akka SDK is the component model for building agentic systems. The Akka runtime provides resilience and scalability for everything built with it.
 :page-when-to-use: When you need an overview of the components you build agentic systems from, and where each is documented.
 :page-related: sdk:components/index.adoc, concepts:components.adoc, ROOT:about/how-it-fits.adoc
 :page-persona: builder-developer, builder-ai-ml

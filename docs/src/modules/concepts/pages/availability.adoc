@@ -44,7 +44,7 @@ The federation plane coordinates organizations, users, keys and deployments acro
 
 The same replication that protects against regional loss also moves a project between environments: from one cloud to another, from Akka's cloud into your own account, or back to your own data centers. A new environment is added as a region, state is replicated into it, and traffic is switched over once it has caught up. For copying data in or out by other means, services can export and import their data through object storage. See xref:operations:services/data-management.adoc[Export and import data].
 
-== Guarantees
+== What survives each failure
 
 [cols="2,3,2", options="header"]
 |===

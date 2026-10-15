@@ -49,7 +49,6 @@
 // -- akka.io blog posts: architecture --
 :url-blog-cell-based: https://akka.io/blog/cell-based-architectures-and-akka
 :url-blog-multi-region: https://akka.io/blog/multi-region-replicated-apps
-:url-blog-six-nines: https://akka.io/blog/build-and-run-apps-with-6-9s-availability
 :url-blog-clustering: https://akka.io/blog/how-does-akka-clustering-work
 :url-blog-backbone-distributed: https://akka.io/blog/the-backbone-of-agentic-ai-distributed-systems-and-oss-sustainability
 

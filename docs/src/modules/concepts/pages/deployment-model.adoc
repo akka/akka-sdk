@@ -31,7 +31,7 @@ To compare the options and choose one, see xref:operations:index.adoc[Choose how
 
 == What Akka Automated Operations adds
 
-In the options Akka operates, AAO handles the work that comes after deployment. It monitors traffic and system conditions and adjusts deployments to meet targets for availability and performance. This covers multi-region setups with replication of durable state, failover and data pinning for compliance; elasticity based on observed traffic and memory auto-scaling; rolling upgrades without downtime; access control at the organization level; and observability in the Akka Console, with xref:operations:observability-and-monitoring/observability-exports.adoc[export of logs, metrics and traces]. You deploy to AAO from the Akka CLI.
+In the options Akka operates, AAO handles the work that comes after deployment. It monitors traffic and system conditions and adjusts deployments to meet targets for availability and performance. This covers multi-region setups with replication of durable state, failover and data pinning for compliance; elasticity based on observed traffic and memory auto-scaling; rolling upgrades; access control at the organization level; and observability in the Akka Console, with xref:operations:observability-and-monitoring/observability-exports.adoc[export of logs, metrics and traces]. You deploy to AAO from the Akka CLI.
 
 image::concepts:automated-operations-planes.svg["The federation plane and the application planes, one per region",width=880]
 

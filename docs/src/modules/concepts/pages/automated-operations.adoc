@@ -1,5 +1,5 @@
 = Automated operations
-:page-summary: Akka Automated Operations runs deployed services for you: it scales them with load, rolls out new versions and data model changes without downtime, patches the runtime live and rotates certificates and keys.
+:page-summary: Akka Automated Operations runs deployed services for you: it scales them with load, rolls out new versions and data model changes in waves, patches the runtime live and rotates certificates and keys.
 :page-when-to-use: When you need to know what happens to a service after it is deployed in an option Akka operates, and which day-to-day operations you do not perform yourself.
 :page-related: concepts:deployment-model.adoc, concepts:availability.adoc, operations:akka-platform.adoc
 :page-persona: operator-platform, operator-sre
@@ -28,7 +28,7 @@ On Serverless, a service that is idle scales to zero, and the first request afte
 
 === No-downtime updates
 
-A new version of a service is rolled out in waves, across the instances of each region and across regions. Some instances run the new version while others still run the old one, so healthy capacity is always available and traffic is not interrupted.
+A new version of a service is rolled out in waves, across the instances of each region and across regions. Some instances run the new version while others still run the old one, so some instances keep serving traffic throughout the rollout.
 
 This holds when the new version changes the data model. Old and new versions run side by side during the rollout, and both read the same journal, so a new version must be able to read the events and state written by the old one. See xref:sdk:serialization.adoc[Serialization] for how to evolve event and state types.
 
@@ -42,7 +42,7 @@ Traffic between services and between regions uses mutual TLS. AAO issues, rotate
 
 === Moving between environments
 
-AAO moves a running project between environments by replication with an automated switch: from one cloud to another, from Akka's cloud into your own account, or back to your own data centers. The same mechanism runs infrastructure upgrades. See xref:availability.adoc#_moving_between_environments[Moving between environments].
+AAO moves a running project between environments by replication: from one cloud to another, from Akka's cloud into your own account, or back to your own data centers. The same mechanism runs infrastructure upgrades. See xref:availability.adoc#_moving_between_environments[Moving between environments].
 
 === Observability and isolation
 
@@ -67,7 +67,7 @@ AAO collects logs, metrics and traces from every service, and lets you export th
 | The service runs in an option Akka operates.
 
 | A certificate or key approaches expiry
-| It is rotated without interrupting traffic.
+| It is rotated while the service keeps running.
 | The service runs in an option Akka operates.
 |===
 

@@ -1,7 +1,7 @@
 # Akka SDK Documentation
 
-> Akka has one offering: the Akka Agentic AI Platform, which guarantees the resilience and
-> scalability of the agentic systems you build with it. Its four solutions are Akka SDK, Akka
+> Akka has one offering: the Akka Agentic AI Platform, which provides resilience and
+> scalability for the agentic systems you build with it. Its four solutions are Akka SDK, Akka
 > Specify, Akka Verify and Akka Optimize. They share one definition of an AI system, one
 > runtime, one ledger and one governance model.
 
