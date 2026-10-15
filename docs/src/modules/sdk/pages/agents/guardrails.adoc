@@ -77,6 +77,11 @@ include::example$doc-snippets/src/main/java/com/example/guardrail/ProfanityRespo
 <4> Return `Decision.Deny` to reject the reply, with a reason surfaced to the user.
 <5> Return `Decision.Allow` to let the reply through.
 
+The reply also carries the model's thinking in `thinking()` and provider-specific values in `attributes()`.
+Both are empty when the model returns none.
+On an autonomous agent, the runtime also evaluates the guardrail on the response of each control-tool call.
+There, `thinking()` and `attributes()` come from the model reply that requested the call.
+
 `decide` may block, because the runtime evaluates guardrails on virtual threads. To compose futures instead, override `decideAsync`. The default `decideAsync` delegates to `decide`.
 
 == Implementing a model call guardrail
@@ -87,6 +92,7 @@ On the first model call, `newMessages()` holds the user message.
 On each later call, it holds the tool results that the runtime sends back to the model.
 
 Each message is a `Guardrail.Message` that keeps its origin: a `UserMessage`, an `AiMessage`, or a `ToolCallResponse`.
+Each `AiMessage` carries the model's thinking in `thinking()` and provider-specific values in `attributes()`.
 `ToolCallResponse.isError()` is true when the MCP server reported the result as an error, or when the runtime turned a failed tool call into an error result.
 When the model calls several tools at once, each result is a separate `ToolCallResponse`:
 
