@@ -13,6 +13,7 @@ import akka.runtime.sdk.spi.ACL
 import akka.runtime.sdk.spi.All
 import akka.runtime.sdk.spi.Internet
 import akka.runtime.sdk.spi.PrincipalMatcher
+import akka.runtime.sdk.spi.ProjectServiceNamePattern
 import akka.runtime.sdk.spi.ServiceNamePattern
 import akka.runtime.sdk.spi.SpiffePattern
 import com.google.rpc.Code
@@ -25,6 +26,9 @@ private[impl] object AclDescriptorFactory {
 
   val invalidAnnotationUsage: String =
     "Invalid annotation usage. Matcher must have exactly one of 'principal', 'service' or 'spiffe' defined."
+
+  val invalidScopeUsage: String =
+    "Invalid annotation usage. Matcher has 'scope' defined without 'service'."
 
   def validateMatcher(matcher: Acl.Matcher): Unit = {
     val definedCount =
@@ -39,6 +43,8 @@ private[impl] object AclDescriptorFactory {
     if (matcher.spiffe().nonEmpty && !Validations.isValidSpiffePattern(matcher.spiffe()))
       throw new IllegalArgumentException(
         s"Invalid SPIFFE ACL pattern [${matcher.spiffe()}]: `**` is only allowed as the final token (matches everything below)")
+    if (matcher.scope() != Acl.Scope.LOCAL && matcher.service().isEmpty)
+      throw new IllegalArgumentException(invalidScopeUsage)
   }
 
   // receives the method, checks if it is annotated with @Acl and if so,
@@ -62,7 +68,11 @@ private[impl] object AclDescriptorFactory {
         case Acl.Principal.INTERNET => Internet
         case Acl.Principal.UNSPECIFIED =>
           if (m.spiffe().nonEmpty) new SpiffePattern(m.spiffe())
-          else new ServiceNamePattern(m.service())
+          else
+            m.scope match {
+              case Acl.Scope.LOCAL   => new ServiceNamePattern(m.service())
+              case Acl.Scope.PROJECT => new ProjectServiceNamePattern(m.service())
+            }
       }
     }.toList
 

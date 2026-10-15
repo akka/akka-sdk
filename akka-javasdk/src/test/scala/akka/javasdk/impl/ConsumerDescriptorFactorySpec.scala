@@ -8,6 +8,8 @@ import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.keyvalueentity.CounterState
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamPublishingConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionConsumer
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.InvalidPlatformServiceStreamConsumer
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.PlatformServiceStreamConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ProtobufEventStreamConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToBytesFromTopic
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToEventSourcedEmployee
@@ -15,6 +17,7 @@ import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTy
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTypeLevelCombined
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityTypeLevel
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityWithDeletes
+import akka.runtime.sdk.spi.ConsumerSource
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import protoconsumer.EventsForConsumer
@@ -92,6 +95,22 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
     "generate mappings for service to service subscription " in {
       val desc = ComponentDescriptor.descriptorFor(classOf[EventStreamSubscriptionConsumer], new Serializer)
       desc.methodInvokers should have size 3
+    }
+
+    "create a service stream source without platform service for a service in the project" in {
+      ComponentDescriptorFactory.consumerSource(classOf[EventStreamSubscriptionConsumer]) shouldBe
+      new ConsumerSource.ServiceStreamSource("employee_service", "employee_events", "", None)
+    }
+
+    "create a service stream source with the platform service of the producing service" in {
+      ComponentDescriptorFactory.consumerSource(classOf[PlatformServiceStreamConsumer]) shouldBe
+      new ConsumerSource.ServiceStreamSource("platform-api", "platform-events", "", Some("my-platform-service"))
+    }
+
+    "reject an invalid platform service name of the producing service" in {
+      intercept[IllegalArgumentException] {
+        ComponentDescriptorFactory.consumerSource(classOf[InvalidPlatformServiceStreamConsumer])
+      }.getMessage should include("Invalid platform service name [My_Platform_Service]")
     }
 
     "generate mappings for service to service subscription with protobuf events, for Kalix interop" in {

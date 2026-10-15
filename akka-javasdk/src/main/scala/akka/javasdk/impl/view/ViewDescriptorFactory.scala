@@ -25,6 +25,7 @@ import akka.javasdk.impl.ComponentDescriptorFactory.readComponentDescription
 import akka.javasdk.impl.ComponentDescriptorFactory.readComponentName
 import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.ServiceAddress
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.Telemetry
@@ -253,7 +254,11 @@ private[impl] object ViewDescriptorFactory {
     new TableDescriptor(
       tableName,
       tableType,
-      new ConsumerSource.ServiceStreamSource(annotation.service(), annotation.id(), annotation.consumerGroup()),
+      new ConsumerSource.ServiceStreamSource(
+        annotation.service(),
+        annotation.id(),
+        annotation.consumerGroup(),
+        ServiceAddress.platformServiceFromAnnotation(annotation.platformService())),
       Option.when(updateHandlerMethods.nonEmpty)(
         UpdateHandlerImpl(
           componentId,

@@ -152,6 +152,30 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  @Consume.FromServiceStream(
+      service = "platform-api",
+      platformService = "my-platform-service",
+      id = "platform-events",
+      ignoreUnknown = true)
+  public static class PlatformServiceStreamConsumer extends Consumer {
+
+    public Effect handle(EmployeeCreated created) {
+      return effects().done();
+    }
+  }
+
+  @Consume.FromServiceStream(
+      service = "platform-api",
+      platformService = "My_Platform_Service",
+      id = "platform-events",
+      ignoreUnknown = true)
+  public static class InvalidPlatformServiceStreamConsumer extends Consumer {
+
+    public Effect handle(EmployeeCreated created) {
+      return effects().done();
+    }
+  }
+
   @Consume.FromServiceStream(service = "some_service", id = "circular_events", ignoreUnknown = true)
   public static class CircularProtoConsumer extends Consumer {
 

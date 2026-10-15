@@ -46,4 +46,17 @@ public interface HttpClientProvider {
    * available on the public internet.
    */
   HttpClient httpClientFor(String serviceName);
+
+  /**
+   * Returns a provider for HTTP clients to services that belong to a platform service enabled in
+   * this project. A service name passed to {@link #httpClientFor(String)} on the returned provider
+   * is resolved among the services of the platform service instead of the services of this project.
+   * Calls are routed, encrypted and identified the same way as calls to services in this project.
+   *
+   * @param platformService the name of the platform service, for example {@code
+   *     my-platform-service}
+   * @throws IllegalArgumentException if the name is not a lowercase DNS label of at most 26
+   *     characters
+   */
+  HttpClientProvider forPlatformService(String platformService);
 }

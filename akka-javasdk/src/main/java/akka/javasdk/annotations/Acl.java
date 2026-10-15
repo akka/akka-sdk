@@ -84,8 +84,28 @@ public @interface Acl {
      */
     String spiffe() default "";
 
+    /**
+     * Where the service matched by {@link #service()} is deployed. Only used together with {@link
+     * #service()}.
+     */
+    Scope scope() default Scope.LOCAL;
+
     /** A principal matcher that can be specified with no additional configuration. */
     Principal principal() default Principal.UNSPECIFIED;
+  }
+
+  /** Where a service matched by {@link Matcher#service()} is deployed. */
+  enum Scope {
+    /**
+     * A service in the same project. For a service deployed as part of a platform service, a
+     * service in the same platform service.
+     */
+    LOCAL,
+    /**
+     * A service in the project that the platform service is enabled in. Only matches for a service
+     * deployed as part of a platform service.
+     */
+    PROJECT
   }
 
   /**

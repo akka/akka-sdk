@@ -23,9 +23,11 @@ import akka.grpc.GrpcClientSettings
 import akka.grpc.javadsl.AkkaGrpcClient
 import akka.javasdk.grpc.GrpcClientProvider
 import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
+import akka.javasdk.impl.ServiceAddress
 import akka.javasdk.impl.Settings
 import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl.AuthHeaders
+import akka.runtime.sdk.spi.DeploymentInfo
 import akka.runtime.sdk.spi.SpiBackofficeServiceSettings
 import akka.runtime.sdk.spi.SpiSpiffeContext
 import com.typesafe.config.Config
@@ -44,7 +46,7 @@ import org.slf4j.LoggerFactory
 @InternalApi
 private[akka] object GrpcClientProviderImpl {
   final case class AuthHeaders(headerName: String, headerValue: String)
-  final case class ClientKey(clientClass: Class[_], serviceName: String)
+  final case class ClientKey(clientClass: Class[_], serviceName: String, platformService: Option[String] = None)
 
   private def isAkkaService(serviceName: String): Boolean = !(serviceName.contains('.') || serviceName.contains(':'))
 
@@ -93,6 +95,7 @@ private[akka] final class GrpcClientProviderImpl(
     system: ActorSystem[_],
     settings: Settings,
     userServiceConfig: Config,
+    deploymentInfo: DeploymentInfo,
     remoteIdentificationHeader: Option[AuthHeaders],
     // Only populated by the testkit; production and dev-mode runners use the default no-op lookup.
     grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient] = _ => None)
@@ -132,16 +135,59 @@ private[akka] final class GrpcClientProviderImpl(
       .traverse(clients.values().asScala)(_.close().asScala)
       .map(_ => Done))
 
-  override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T = {
-    val clientKey = ClientKey(serviceClass, serviceName)
-    grpcMockLookup(clientKey) match {
-      case Some(mock) => mock.asInstanceOf[T]
+  override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T =
+    grpcClientFor(
+      serviceClass,
+      serviceName,
+      platformService = None,
+      traceHeaders = Vector.empty,
+      callerSpiffeHeader = None)
+
+  override def forPlatformService(platformService: String): GrpcClientProvider =
+    new ScopedProvider(Some(ServiceAddress.validPlatformService(platformService)), Vector.empty, None)
+
+  /**
+   * The provider handed to user code when scoped to a platform service, or carrying headers for the current call, or
+   * both. Clients come from the shared cache of the enclosing provider, so that a scoped provider per component
+   * instance or request does not create and cache a new client.
+   */
+  private final class ScopedProvider(
+      platformService: Option[String],
+      traceHeaders: Vector[(String, String)],
+      callerSpiffeHeader: Option[String])
+      extends GrpcClientProvider {
+
+    override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T =
+      GrpcClientProviderImpl.this.grpcClientFor(
+        serviceClass,
+        serviceName,
+        platformService,
+        traceHeaders,
+        callerSpiffeHeader)
+
+    override def forPlatformService(platformService: String): GrpcClientProvider =
+      new ScopedProvider(Some(ServiceAddress.validPlatformService(platformService)), traceHeaders, callerSpiffeHeader)
+  }
+
+  private def grpcClientFor[T <: AkkaGrpcClient](
+      serviceClass: Class[T],
+      serviceName: String,
+      platformService: Option[String],
+      traceHeaders: Vector[(String, String)],
+      callerSpiffeHeader: Option[String]): T = {
+    // mocks are registered by service name only, and also apply to a service that belongs to a platform service
+    grpcMockLookup(ClientKey(serviceClass, serviceName)) match {
+      case Some(mock) =>
+        // Skip header propagation for mocked clients — user-provided mock subclasses don't
+        // typically implement addRequestHeader and would throw or return a non-mock instance.
+        mock.asInstanceOf[T]
       case None =>
-        clients
+        val clientKey = ClientKey(serviceClass, serviceName, platformService)
+        val client = clients
           .computeIfAbsent(
             clientKey,
             { _ =>
-              val client = createNewClientFor(serviceClass, serviceName)
+              val client = createNewClientFor(serviceClass, serviceName, platformService)
               client.closed().asScala.foreach { _ =>
                 // user should not close client, but just to be sure we don't keep it around if they do
                 clients.remove(clientKey, client)
@@ -149,15 +195,27 @@ private[akka] final class GrpcClientProviderImpl(
               client
             })
           .asInstanceOf[T]
+        // the caller's SPIFFE identity goes on cross-service (Akka) calls, never on external ones
+        val headers =
+          if (isAkkaService(serviceName))
+            traceHeaders ++ callerSpiffeHeader.map(SpiSpiffeContext.CallerSpiffeHeaderName -> _)
+          else traceHeaders
+        headers.foldLeft(client) { case (acc, (key, value)) =>
+          acc.addRequestHeader(key, value).asInstanceOf[T]
+        }
     }
   }
 
-  private[akka] def createNewClientFor[T <: AkkaGrpcClient](clientClass: Class[T], serviceName: String): T = {
+  private[akka] def createNewClientFor[T <: AkkaGrpcClient](
+      clientClass: Class[T],
+      serviceName: String,
+      platformService: Option[String] = None): T = {
     val clientSettings = {
       if (isAkkaService(serviceName)) {
         // special cases in dev mode:
         settings.devModeSettings match {
           case Some(devModeSettings) =>
+            // Note: platform services do not exist in dev mode, a service that belongs to one is looked up by name only
             // First check for dev backoffice config
             devModeSettings.backoffice.services.get(serviceName) match {
               case Some(backofficeServiceSettings) =>
@@ -179,9 +237,9 @@ private[akka] final class GrpcClientProviderImpl(
                 s"Configuration override for [${serviceName}] found in 'application.conf'. This is not supported and is ignored.")
             }
 
-            log.debug("Creating gRPC client for Akka service [{}]", serviceName)
+            log.debug("Creating gRPC client for Akka service [{}], platform service [{}]", serviceName, platformService)
             GrpcClientSettings
-              .connectToServiceAt(serviceName, 80)(system)
+              .connectToServiceAt(ServiceAddress.hostFor(serviceName, deploymentInfo, platformService), 80)(system)
               // (TLS is handled for us by Kalix infra)
               .withTls(false)
         }
@@ -287,27 +345,6 @@ private[akka] final class GrpcClientProviderImpl(
       builder.result()
     }
     if (otelTraceHeaders.isEmpty && callerSpiffeHeader.isEmpty) this
-    else
-      // A wrapper around this provider rather than a new provider instance, so that the underlying client
-      // cache (and its channels) is shared: header decoration per lookup is cheap, while a separate provider
-      // would create and cache a new client per component instance or request.
-      new GrpcClientProvider {
-        override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T = {
-          val client = GrpcClientProviderImpl.this.grpcClientFor(serviceClass, serviceName)
-          // Skip header propagation for mocked clients — user-provided mock subclasses don't
-          // typically implement addRequestHeader and would throw or return a non-mock instance.
-          if (grpcMockLookup(ClientKey(serviceClass, serviceName)).isDefined) client
-          else {
-            // the caller's SPIFFE identity goes on cross-service (Akka) calls, never on external ones
-            val headers =
-              if (isAkkaService(serviceName))
-                otelTraceHeaders ++ callerSpiffeHeader.map(SpiSpiffeContext.CallerSpiffeHeaderName -> _)
-              else otelTraceHeaders
-            headers.foldLeft(client) { case (acc, (key, value)) =>
-              acc.addRequestHeader(key, value).asInstanceOf[T]
-            }
-          }
-        }
-      }
+    else new ScopedProvider(platformService = None, otelTraceHeaders, callerSpiffeHeader)
   }
 }
