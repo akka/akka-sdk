@@ -28,7 +28,7 @@ NOTE: For protecting sensitive information like PII, see xref:sdk:sanitization.a
 A guardrail implements one of three interfaces. The interface sets where the runtime evaluates the guardrail:
 
 * link:{attachmentsdir}/api/akka/javasdk/agent/ModelCallGuardrail.html[`ModelCallGuardrail`] evaluates the input to each model call. The runtime evaluates it before the first model call. It evaluates the guardrail again before each later call that sends tool results back to the model.
-* link:{attachmentsdir}/api/akka/javasdk/agent/AgentResponseGuardrail.html[`AgentResponseGuardrail`] evaluates the agent's final reply, once per interaction.
+* link:{attachmentsdir}/api/akka/javasdk/agent/AgentResponseGuardrail.html[`AgentResponseGuardrail`] evaluates the agent's final reply, once per interaction. On an autonomous agent, it also evaluates the message of each `broadcast`, `direct`, and `submit_turn` tool call.
 * link:{attachmentsdir}/api/akka/javasdk/agent/ToolCallGuardrail.html[`ToolCallGuardrail`] evaluates a function tool call or an MCP tool call before the runtime runs the tool. It sees the tool name and the raw JSON arguments.
 
 A guardrail class implements exactly one of these interfaces.
@@ -79,8 +79,9 @@ include::example$doc-snippets/src/main/java/com/example/guardrail/ProfanityRespo
 
 The reply also carries the model's thinking in `thinking()` and provider-specific values in `attributes()`.
 Both are empty when the model returns none.
-On an autonomous agent, the runtime also evaluates the guardrail on the response of each control-tool call.
-There, `thinking()` and `attributes()` come from the model reply that requested the call.
+On an autonomous agent, the runtime also evaluates the guardrail on the message of each call to the built-in `broadcast`, `direct`, and `submit_turn` tools.
+There, `text()` holds the message, and `thinking()` and `attributes()` come from the model reply that requested the tool call.
+The runtime does not evaluate the guardrail on the other built-in tools, such as `provide_prompt` and `complete_task`.
 
 `decide` may block, because the runtime evaluates guardrails on virtual threads. To compose futures instead, override `decideAsync`. The default `decideAsync` delegates to `decide`.
 
