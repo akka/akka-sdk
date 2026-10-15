@@ -34,6 +34,8 @@ import java.util.List;
  * @param summary the case and attempt counts and the pass rate
  * @param evaluators one entry per evaluator, in the order the evaluators first appear in the
  *     attempts, counting every attempt
+ * @param guardrails one entry per guardrail, in the order the guardrails first appear in the
+ *     attempts, counting every decision
  * @param spend model responses, tokens and latency summed over the attempts with a recorded
  *     interaction
  * @param cases one entry per case, in the order the cases were given, with its outcome over all
@@ -51,6 +53,7 @@ public record ReportDocument(
     Gate gate,
     Summary summary,
     List<EvaluatorCounts> evaluators,
+    List<GuardrailCounts> guardrails,
     Spend spend,
     List<Case> cases,
     List<Attempt> attempts) {
@@ -110,6 +113,14 @@ public record ReportDocument(
    * @param inconclusive results with the verdict INCONCLUSIVE
    */
   public record EvaluatorCounts(String evaluator, int passed, int failed, int inconclusive) {}
+
+  /**
+   * @param guardrail the configured name of the guardrail
+   * @param allowed decisions that allowed the content
+   * @param denied decisions that denied the content
+   * @param failed guardrail runs that threw instead of deciding
+   */
+  public record GuardrailCounts(String guardrail, int allowed, int denied, int failed) {}
 
   /**
    * All zero when no attempt has a recorded interaction.

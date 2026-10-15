@@ -60,6 +60,15 @@ final class EvalReportJson {
             (int) report.results().stream().filter(CaseResult::inconclusive).count(),
             report.passRate()),
         evaluatorCounts(Report.rates(report.results())),
+        Report.guardrailCounts(report.results()).entrySet().stream()
+            .map(
+                e ->
+                    new ReportDocument.GuardrailCounts(
+                        e.getKey(),
+                        e.getValue().allowed(),
+                        e.getValue().denied(),
+                        e.getValue().failed()))
+            .toList(),
         new ReportDocument.Spend(
             spend.attemptsWithEvidence(),
             spend.modelResponses(),

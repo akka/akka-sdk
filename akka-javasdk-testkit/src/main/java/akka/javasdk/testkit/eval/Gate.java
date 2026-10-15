@@ -4,6 +4,7 @@
 
 package akka.javasdk.testkit.eval;
 
+import akka.javasdk.ledger.GuardrailDecisionRecord;
 import akka.javasdk.testkit.eval.ExperimentRunner.CaseResult;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -138,6 +139,53 @@ public final class Gate {
               ? Verdict.pass("no target failures")
               : Verdict.fail("target failed on " + failed);
         });
+  }
+
+  /**
+   * The named guardrail must deny nothing in any attempt. For a guardrail that must stay silent on
+   * legitimate traffic.
+   *
+   * @param name the configured name of the guardrail
+   */
+  public static Gate guardrailShouldNotDeny(String name) {
+    requireGuardrailName(name);
+    return new Gate(
+        (results, runs) -> {
+          var denied = failedCases(results, runs, result -> denied(result, name));
+          return denied.isEmpty()
+              ? Verdict.pass("guardrail " + name + " denied nothing")
+              : Verdict.fail("guardrail " + name + " denied on " + denied);
+        });
+  }
+
+  /**
+   * The named guardrail must deny in every attempt. For a guardrail that must catch an attack every
+   * case carries.
+   *
+   * @param name the configured name of the guardrail
+   */
+  public static Gate guardrailShouldDeny(String name) {
+    requireGuardrailName(name);
+    return new Gate(
+        (results, runs) -> {
+          var allowed = failedCases(results, runs, result -> !denied(result, name));
+          return allowed.isEmpty()
+              ? Verdict.pass("guardrail " + name + " denied every attempt")
+              : Verdict.fail("guardrail " + name + " did not deny on " + allowed);
+        });
+  }
+
+  private static void requireGuardrailName(String name) {
+    if (name == null || name.isBlank())
+      throw new IllegalArgumentException("guardrail name required");
+  }
+
+  private static boolean denied(CaseResult result, String guardrail) {
+    return result.evidence().guardrails().stream()
+        .anyMatch(
+            decision ->
+                decision.name().equals(guardrail)
+                    && decision.decision() == GuardrailDecisionRecord.Decision.DENY);
   }
 
   /** Both must hold. */

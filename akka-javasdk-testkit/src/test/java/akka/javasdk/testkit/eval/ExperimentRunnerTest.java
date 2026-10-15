@@ -338,6 +338,36 @@ class ExperimentRunnerTest {
   }
 
   @Test
+  void theReportCountsTheDecisionsOfEveryGuardrail() {
+    var target =
+        Targets.scripted(
+            (turn, interactionId) -> {
+              var interaction = answered(interactionId, turn.sessionId());
+              ledger.seed(interaction);
+              ledger.seed(
+                  Targets.guardrail(
+                      interaction,
+                      "no-refunds",
+                      turn.caseId().equals("c2")
+                          ? GuardrailDecisionRecord.Decision.DENY
+                          : GuardrailDecisionRecord.Decision.ALLOW,
+                      ""));
+              ledger.seed(
+                  Targets.guardrail(
+                      interaction, "pii", GuardrailDecisionRecord.Decision.FAIL, "x"));
+              verdict(interactionId, QUALITY, Evaluation.passed("fine"));
+            });
+
+    var report =
+        experiment(target, bindings(QUALITY), EvalCase.of("c1", "q"), EvalCase.of("c2", "q")).run();
+
+    assertThat(report.render())
+        .contains("  quality 2/2\n")
+        .contains("  guardrail no-refunds: denied 1, allowed 1\n")
+        .contains("  guardrail pii: denied 0, allowed 0, failed 2\n");
+  }
+
+  @Test
   void theReportHasNoSpendLineWithoutAnInteraction() {
     EvalTarget<String> throwing =
         turn -> {
@@ -556,6 +586,10 @@ class ExperimentRunnerTest {
     assertThat(json.get("evaluators")).hasSize(2);
     assertThat(json.get("evaluators").get(1).get("evaluator").asText()).isEqualTo(TONE);
     assertThat(json.get("evaluators").get(1).get("inconclusive").asInt()).isEqualTo(1);
+    assertThat(json.get("guardrails")).hasSize(1);
+    assertThat(json.get("guardrails").get(0).get("guardrail").asText()).isEqualTo("no-refunds");
+    assertThat(json.get("guardrails").get(0).get("denied").asInt()).isEqualTo(1);
+    assertThat(json.get("guardrails").get(0).get("allowed").asInt()).isEqualTo(0);
     assertThat(json.get("spend").get("modelResponses").asInt()).isEqualTo(2);
     assertThat(json.get("spend").get("latencyMs").asLong()).isEqualTo(800);
     var attempt = json.get("attempts").get(0);
@@ -787,6 +821,7 @@ class ExperimentRunnerTest {
         document.gate(),
         document.summary(),
         document.evaluators(),
+        document.guardrails(),
         document.spend(),
         document.cases(),
         document.attempts());

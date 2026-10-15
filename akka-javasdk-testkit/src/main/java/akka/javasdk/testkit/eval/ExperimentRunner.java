@@ -763,8 +763,9 @@ public final class ExperimentRunner {
     List<CaseSummary> cases();
 
     /**
-     * The run as text: the gate verdict, rates per evaluator, the requirements that passed in some
-     * runs and failed in others, and the attempts that did not pass with their evidence.
+     * The run as text: the gate verdict, rates per evaluator, decisions per guardrail, the
+     * requirements that passed in some runs and failed in others, and the attempts that did not
+     * pass with their evidence.
      */
     String render();
   }
@@ -831,6 +832,10 @@ public final class ExperimentRunner {
       rates(results)
           .forEach(
               (evaluator, rate) -> text.append("  ").append(rate.render(evaluator)).append('\n'));
+      guardrailCounts(results)
+          .forEach(
+              (guardrail, counts) ->
+                  text.append("  ").append(counts.render(guardrail)).append('\n'));
       var spend = spend();
       if (spend.attemptsWithEvidence() > 0) {
         text.append(spend.render(results.size())).append('\n');
@@ -863,6 +868,19 @@ public final class ExperimentRunner {
           slowest.caseId(),
           slowest.run(),
           slowest.evidence().latency().toMillis());
+    }
+
+    /** Decision counts per guardrail, in the order the guardrails first appear in the attempts. */
+    static Map<String, GuardrailCounts> guardrailCounts(List<CaseResult> attempts) {
+      var counts = new LinkedHashMap<String, GuardrailCounts>();
+      for (var attempt : attempts) {
+        for (var decision : attempt.evidence().guardrails()) {
+          counts
+              .computeIfAbsent(decision.name(), name -> new GuardrailCounts())
+              .count(decision.decision());
+        }
+      }
+      return counts;
     }
 
     /** Pass counts per evaluator, over the attempts where it was conclusive. */
@@ -908,6 +926,39 @@ public final class ExperimentRunner {
           slowestLatencyMs,
           attemptsWithEvidence,
           attempts);
+    }
+  }
+
+  /** One guardrail's decision counts over the attempts. */
+  static final class GuardrailCounts {
+    private int allowed;
+    private int denied;
+    private int failed;
+
+    private void count(GuardrailDecisionRecord.Decision decision) {
+      switch (decision) {
+        case ALLOW -> allowed++;
+        case DENY -> denied++;
+        case FAIL -> failed++;
+        case UNSPECIFIED -> {}
+      }
+    }
+
+    int allowed() {
+      return allowed;
+    }
+
+    int denied() {
+      return denied;
+    }
+
+    int failed() {
+      return failed;
+    }
+
+    private String render(String guardrail) {
+      var text = "guardrail " + guardrail + ": denied " + denied + ", allowed " + allowed;
+      return failed == 0 ? text : text + ", failed " + failed;
     }
   }
 

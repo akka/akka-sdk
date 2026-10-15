@@ -4,7 +4,7 @@
   "title": "Akka eval report",
   "description": "The outcome of one ExperimentRunner run: the gate verdict, the rates per evaluator, the spend, every case with its outcome over all runs, and every attempt with its evidence and results. An attempt is one case in one run; without repeated runs every case has one attempt. A reader ignores properties it does not know. formatVersion increments when a property changes meaning or is removed.",
   "type": "object",
-  "required": ["format", "formatVersion", "name", "startedAt", "finishedAt", "runs", "gate", "summary", "evaluators", "spend", "cases", "attempts"],
+  "required": ["format", "formatVersion", "name", "startedAt", "finishedAt", "runs", "gate", "summary", "evaluators", "guardrails", "spend", "cases", "attempts"],
   "properties": {
     "format": { "const": "akka-eval-report" },
     "formatVersion": { "const": 3 },
@@ -42,6 +42,11 @@
       "description": "One entry per evaluator, in the order the evaluators first appear in the attempts, counting every attempt.",
       "items": { "$ref": "#/$defs/evaluatorCounts" }
     },
+    "guardrails": {
+      "type": "array",
+      "description": "One entry per guardrail, in the order the guardrails first appear in the attempts, counting every decision.",
+      "items": { "$ref": "#/$defs/guardrailCounts" }
+    },
     "spend": {
       "type": "object",
       "description": "Model responses, tokens and latency summed over the attempts with a recorded interaction. All zero when no attempt has one.",
@@ -74,6 +79,16 @@
         "passed": { "type": "integer", "minimum": 0 },
         "failed": { "type": "integer", "minimum": 0 },
         "inconclusive": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "guardrailCounts": {
+      "type": "object",
+      "required": ["guardrail", "allowed", "denied", "failed"],
+      "properties": {
+        "guardrail": { "type": "string", "description": "The configured name of the guardrail." },
+        "allowed": { "type": "integer", "minimum": 0, "description": "Decisions that allowed the content." },
+        "denied": { "type": "integer", "minimum": 0, "description": "Decisions that denied the content." },
+        "failed": { "type": "integer", "minimum": 0, "description": "Guardrail runs that threw instead of deciding." }
       }
     },
     "case": {

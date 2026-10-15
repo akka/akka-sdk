@@ -11,6 +11,7 @@ import static akka.javasdk.testkit.eval.Targets.interaction;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.evaluation.Evaluation;
+import akka.javasdk.ledger.GuardrailDecisionRecord;
 import akka.javasdk.testkit.TestLedgerClient;
 import java.time.Duration;
 import java.util.List;
@@ -223,6 +224,81 @@ class GateTest {
 
     assertThat(report.passed()).isTrue();
     assertThat(report.render()).contains("quality rate 0.50 over 2 judged attempts, required 0.50");
+  }
+
+  /** The quality evaluator passes; the no-refunds guardrail denies the given cases. */
+  private EvalTarget<String> denyingOn(String... caseIds) {
+    var denying = List.of(caseIds);
+    return Targets.scripted(
+        (turn, interactionId) -> {
+          var interaction = interaction(interactionId, turn.sessionId(), "r", List.of());
+          ledger.seed(interaction);
+          ledger.seed(
+              Targets.guardrail(
+                  interaction,
+                  "no-refunds",
+                  denying.contains(turn.caseId())
+                      ? GuardrailDecisionRecord.Decision.DENY
+                      : GuardrailDecisionRecord.Decision.ALLOW,
+                  "refund"));
+          ledger.seed(Targets.verdict(interactionId, QUALITY, Evaluation.passed("fine")));
+        });
+  }
+
+  @Test
+  void aGuardrailThatMustNotDenyFailsTheRunWhenItDoes() {
+    var cases = List.of(evalCase("c1"), evalCase("c2"), evalCase("c3"));
+
+    var silent = run(Gate.guardrailShouldNotDeny("no-refunds"), denyingOn(), cases);
+    assertThat(silent.passed()).isTrue();
+    assertThat(silent.render()).contains("gate: passed — guardrail no-refunds denied nothing");
+
+    var denied = run(Gate.guardrailShouldNotDeny("no-refunds"), denyingOn("c2"), cases);
+    assertThat(denied.passed()).isFalse();
+    assertThat(denied.render())
+        .contains("gate: FAILED — guardrail no-refunds denied on [c2 (run 1)]")
+        .contains("guardrail no-refunds: denied 1, allowed 2");
+  }
+
+  @Test
+  void aGuardrailThatMustDenyFailsTheRunWhenItLetsAnAttemptThrough() {
+    var cases = List.of(evalCase("c1"), evalCase("c2"));
+
+    var caught = run(Gate.guardrailShouldDeny("no-refunds"), denyingOn("c1", "c2"), cases);
+    assertThat(caught.passed()).isTrue();
+    assertThat(caught.render())
+        .contains("gate: passed — guardrail no-refunds denied every attempt");
+
+    var missed = run(Gate.guardrailShouldDeny("no-refunds"), denyingOn("c1"), cases);
+    assertThat(missed.passed()).isFalse();
+    assertThat(missed.render()).contains("guardrail no-refunds did not deny on [c2 (run 1)]");
+    var absent = run(Gate.guardrailShouldDeny("pii"), denyingOn("c1", "c2"), cases);
+    assertThat(absent.render()).contains("guardrail pii did not deny on [c1 (run 1), c2 (run 1)]");
+  }
+
+  @Test
+  void aGuardrailGateCountsEveryAttemptOfARepeatedRun() {
+    var calls = new AtomicInteger();
+    var target =
+        Targets.scripted(
+            (turn, interactionId) -> {
+              var interaction = interaction(interactionId, turn.sessionId(), "r", List.of());
+              ledger.seed(interaction);
+              ledger.seed(
+                  Targets.guardrail(
+                      interaction,
+                      "no-refunds",
+                      calls.incrementAndGet() == 2
+                          ? GuardrailDecisionRecord.Decision.DENY
+                          : GuardrailDecisionRecord.Decision.ALLOW,
+                      "refund"));
+              ledger.seed(Targets.verdict(interactionId, QUALITY, Evaluation.passed("fine")));
+            });
+
+    var report = run(Gate.guardrailShouldNotDeny("no-refunds"), target, 2, List.of(evalCase("c1")));
+
+    assertThat(report.passed()).isFalse();
+    assertThat(report.render()).contains("guardrail no-refunds denied on [c1 (run 2)]");
   }
 
   @Test

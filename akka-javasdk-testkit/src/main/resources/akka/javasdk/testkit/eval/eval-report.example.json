@@ -2,8 +2,8 @@
   "format" : "akka-eval-report",
   "formatVersion" : 3,
   "name" : "support-agent-quality",
-  "startedAt" : "2026-10-15T12:38:05.133239Z",
-  "finishedAt" : "2026-10-15T12:38:05.134376Z",
+  "startedAt" : "2026-10-15T14:30:27.579747Z",
+  "finishedAt" : "2026-10-15T14:30:27.580566Z",
   "runs" : 1,
   "gate" : {
     "passed" : false,
@@ -32,6 +32,12 @@
     "passed" : 2,
     "failed" : 0,
     "inconclusive" : 1
+  } ],
+  "guardrails" : [ {
+    "guardrail" : "no-refunds",
+    "allowed" : 0,
+    "denied" : 1,
+    "failed" : 0
   } ],
   "spend" : {
     "attemptsWithEvidence" : 3,
