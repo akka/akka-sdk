@@ -42,6 +42,12 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [RAG chat tutorial](https://doc.akka.io/getting-started/ask-akka-agent/index.html.md): Build a retrieval-augmented chat agent
 - [Shopping cart tutorial](https://doc.akka.io/getting-started/shopping-cart/index.html.md): Build an event-sourced service with entities and views
 
+## Building with AI
+
+- [Enforced mode](https://doc.akka.io/sdk/enforced-mode.html.md): Require exit conditions and conformance checks before changes merge
+- [À la carte mode](https://doc.akka.io/sdk/a-la-carte-mode.html.md): Choose which development commands and checks to run
+- [Specify command reference](https://doc.akka.io/reference/specify/index.html.md): Commands for specifications, planning, implementation, inspection, and release
+
 ## SDK Components
 
 - [Components overview](https://doc.akka.io/sdk/components/index.html.md): Akka's core building blocks, with a decision guide for choosing between them and when not to use each
@@ -57,6 +63,12 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [MCP Endpoints](https://doc.akka.io/sdk/mcp-endpoints.html.md): Expose services to MCP clients (A2A, ACP, MCP built into Agents)
 - [Consumers](https://doc.akka.io/sdk/consuming-producing.html.md): Stream-based event consumption and production
 - [Timed Actions](https://doc.akka.io/sdk/timed-actions.html.md): Scheduled and delayed calls
+
+## Security and governance
+
+- [Governance and the runtime](https://doc.akka.io/concepts/governance-and-the-runtime.html.md): How runtime controls, control identifiers, and evidence relate
+- [Classifiers](https://doc.akka.io/sdk/agents/classifiers.html.md): Classify content for use by agents, guardrails, and sanitizers
+- [Runtime evaluators and the ledger](https://doc.akka.io/sdk/evaluators.html.md): Bind evaluators to agents, record verdicts, and read the ledger
 
 ## Testing
 
@@ -145,6 +157,12 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Design considerations](https://doc.akka.io/sdk/dev-best-practices.html.md): Reactive principles, domain-driven design, service sizing, and deduplication
 
 
+## Training
+
+- [Training overview](https://doc.akka.io/optimize/index.html.md): Specialize smaller models for tasks in production traffic
+- [Train a first model](https://doc.akka.io/optimize/trainer/getting-started.html.md): Train a model with supervised fine-tuning and evaluate its score
+- [Trainer](https://doc.akka.io/optimize/trainer/index.html.md): Training concepts, resources, and lifecycle
+
 ## Reference
 
 - [Glossary](https://doc.akka.io/reference/glossary.html.md): Terms including AI, governance, and distributed systems terminology
@@ -187,6 +205,9 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Setup and dependency injection](https://doc.akka.io/sdk/setup-and-dependency-injection.html.md): Integrating dependency injection with Akka services
 - [Serialization](https://doc.akka.io/sdk/serialization.html.md): Configuring and customizing serialization for entity data and messages
 - [Retrieval-Augmented Generation (RAG)](https://doc.akka.io/getting-started/ask-akka-agent/rag.html.md): Semantic search on vector databases to enrich AI model requests
+
+- [API documentation](https://doc.akka.io/reference/api-docs.html.md): Java API documentation for the SDK and TestKit
+- [Migration guide](https://doc.akka.io/reference/migration-guide.html.md): Breaking changes and migration instructions between SDK versions
 
 ## Optional
 
