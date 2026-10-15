@@ -49,7 +49,7 @@ In BYOC and BYOK8s, application data stays in your environment. A limited set of
 
 AAO is built on a Kubernetes-based control plane and application plane designed to run Akka services. It manages, monitors and gathers insights from your deployed services:
 
-* Deployments, scaling and recovery with no operator steps.
+* Automated deployments, scaling and recovery.
 * Multi-region replication with failover for business-critical workloads.
 * Logs, metrics and traces from the first deployment.
 * Dedicated infrastructure for regulatory or data-sovereignty requirements, in Dedicated, BYOC and BYOK8s.
@@ -235,7 +235,7 @@ AAO monitors region health and brings replacement capacity online without operat
 | pass:[✅]
 | pass:[✅]
 
-| No downtime updates
+| Managed rolling updates
 | pass:[❌]
 | pass:[✅]
 | pass:[✅]
@@ -245,7 +245,7 @@ AAO monitors region health and brings replacement capacity online without operat
 
 == Availability
 
-Every option that AAO operates runs each service across availability zones in a region, so the loss of one data center recovers automatically. A project can also span several regions, with state replicated between them. Replication between regions is asynchronous: when a region is lost, writes that it accepted and had not yet replicated to another region are not available in the other regions. Moving traffic away from a failed region is an operator action with the Akka CLI. Recovery targets are set in your agreement with Akka, and the link:{url-akka-availability-guarantee}[Availability Guarantee Policy, window="new"] states the conditions of the Akka availability guarantee, which requires multi-region. See xref:operations:production-readiness/choosing-your-environment.adoc[] to choose between zones and multi-region.
+Every option that AAO operates runs each service across availability zones in a region, so the loss of one data center recovers automatically. A project can also span several regions, with state replicated between them. Replication between regions is asynchronous: when a region is lost, writes that it accepted and had not yet replicated to another region are not available in the other regions. Moving traffic away from a failed region is an operator action with the Akka CLI. Recovery targets are set in your agreement with Akka. See xref:operations:production-readiness/choosing-your-environment.adoc[] to choose between zones and multi-region.
 
 == Next steps
 

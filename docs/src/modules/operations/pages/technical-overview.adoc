@@ -168,7 +168,7 @@ For forecasting load and choosing an availability level, see xref:operations:pro
 
 == Backups and disaster recovery
 
-Single-region Kubernetes resources and databases are backed up and recoverable. The persistence RPO is 5 minutes and the persistence RTO is 24 hours. Kubernetes RTO and RPO are 1 hour. Multi-region support replicates the application across regions for low-latency failover. Replication between regions is asynchronous, so writes that a lost region accepted and had not yet replicated are not available in the other regions.
+Single-region Kubernetes resources and databases are backed up and recoverable. Recovery targets are set in your agreement with Akka. Multi-region support replicates the application across regions. Replication between regions is asynchronous, so writes that a lost region accepted and had not yet replicated are not available in the other regions.
 
 For the full recovery procedures and scenario catalogs, see the xref:operations:production-readiness/disaster-recovery.adoc[disaster recovery scenario catalog].
 

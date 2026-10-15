@@ -487,7 +487,7 @@ At a glance::
 |===
 | Activity | Applies to | Owner | Description
 
-| Federation Plane disaster recovery | All | Akka | Akka maintains uptime for the Federation Plane and configures its disaster recovery. Even in the rare event the Federation Plane is unavailable, running Akka applications continue to operate.
+| Federation Plane disaster recovery | All | Akka | Akka operates the Federation Plane and configures its disaster recovery. If the Federation Plane is unavailable, running Akka applications continue to operate.
 | Support and communication channels | All | Shared | At onboarding, Akka and the customer agree on operational and engagement-level communication channels (e.g., shared Slack, distribution lists, cadence). Formal support and incident channels are governed by the Customer Support Policy and the Incident Response row.
 | Incident response | All | Akka | Akka provides 24/7 incident response per the Customer Support Policy, which defines the severity classifications and response-time targets. Incidents are opened via support.akka.io, the Akka console, or support@akka.io. Subsequent updates per the Incident Management Process.
 | Postmortem delivery | All | Akka | Akka delivers post-incident reviews for Severity 1 and 2 incidents within an agreed cadence following resolution.

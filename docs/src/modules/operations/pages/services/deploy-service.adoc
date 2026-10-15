@@ -115,7 +115,7 @@ If you need to update your service with a new container image:
 akka service deploy my-service container-name:tag-name-2 --push
 ----
 
-Akka will perform a rolling update, replacing old instances with new ones without downtime.
+Akka performs a rolling update, replacing old instances with new ones while the others keep serving traffic.
 
 NOTE: The `--push` flag pushes the new image to each region of the project before the update, as described in <<_deploying_a_service>>.
 

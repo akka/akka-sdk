@@ -39,7 +39,7 @@ This page targets the *Day 2 Ops* engagement (1 dev region + 1 prod region, sing
 [NOTE]
 .*Tier note*
 ====
-If the business requires rapid, automated cross-region failover, Day 2 Ops is not the right tier. DR at Day 2 is a cold rebuild; recovery is on the order of hours, driven by data-export frequency and rebuild time. Confirm with the business early.
+If the business requires cross-region failover, Day 2 Ops is not the right tier. DR at Day 2 is a cold rebuild, and its duration depends on data-export frequency and rebuild time. Confirm with the business early.
 ====
 
 .*At a glance, what we ask of you*
@@ -539,7 +539,7 @@ The sections above cover Day 2 Ops with a single prod region. For the Business C
 [IMPORTANT]
 .*Tier requirement*
 ====
-Akka reads from both regions, so cross-region failover is fast (often sub-minute). Replication lag on recent writes is driven by overall system load, not a tunable platform setting. The bullets below are the application-side responsibilities needed to operate correctly in a multi-region setup.
+Each region holds a replica of the data. Replication lag on recent writes is driven by overall system load, not a tunable platform setting. The bullets below are the application-side responsibilities needed to operate correctly in a multi-region setup.
 ====
 
 [NOTE]
