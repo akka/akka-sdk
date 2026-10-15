@@ -1,0 +1,38 @@
+= Platform model
+:page-summary: The platform model names the parts of an Akka system: organizations, projects, services, components, regions and routes, and the planes that run them.
+:page-when-to-use: When you need the vocabulary that the rest of Understanding assumes, or want to see how a service you build maps to what runs in production.
+:page-related: concepts:components.adoc, concepts:deployment-model.adoc, operations:technical-overview.adoc
+:page-persona: all
+
+include::ROOT:partial$include.adoc[]
+
+The platform model describes how application code maps to a running Akka system. Organizations contain projects; projects contain services; services contain components.
+
+== The parts of a system
+
+* An *organization* holds users, roles, billing, and projects.
+* A *project* groups services with shared configuration, access, secrets, and regions.
+* A *service* packages components with the runtime. It is the unit you deploy and scale.
+* A *component* is application behavior managed by the runtime. Stateful components have instances identified by an ID.
+* A *cluster* is the nodes running a service in one region. The runtime distributes component instances across them.
+* A *region* is a cloud location. A project can run in several regions, with state replicated between them.
+* A *route* exposes a service through a hostname and path.
+* A *descriptor* declares the configuration of a project, service, route, or another resource.
+
+An entity's primary region accepts its writes. The project's primary region is a separate concept: it is the region its project resources replicate from. See xref:multi-region.adoc[].
+
+== Application behavior and platform operations
+
+Agents call models and tools. Workflows coordinate steps. Entities hold state, views answer queries, and consumers react to events. Endpoints expose these capabilities to clients. Each component has a specific role; it does not need to implement the whole application.
+
+image::concepts:agentic-system-anatomy.svg[Agents, tools, controls, state, and coordination in an Akka system,width=880]
+
+The application plane runs services and stores application data within a region. The federation plane manages organizations, access, and deployment across regions. Running applications continue when the federation plane is unavailable, while management operations can be affected.
+
+== Next steps
+
+* xref:components.adoc[] introduces the programming model.
+* xref:request-lifecycle.adoc[] follows one request through the components.
+* xref:deployment-model.adoc[] compares who operates the platform.
+* xref:operations:technical-overview.adoc[] describes the platform architecture.
+* xref:reference:descriptors/index.adoc[] defines resource configuration.

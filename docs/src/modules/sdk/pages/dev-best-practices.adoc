@@ -12,21 +12,21 @@ Akka is ideally suited for the creation of _Microservices_. Microservices genera
 [sidebar]
 Domain-driven design (DDD) is the concept that the structure and language of software code (class names, class methods, class variables) should match the business domain. For example, if a software processes loan applications, it might have classes such as LoanApplication and Customer, and methods such as AcceptOffer and Withdraw. &mdash; https://en.wikipedia.org/wiki/Domain-driven_design[Wikipedia, window="new"]
 
-Akka makes it easy and fast to build services using the concepts of Domain Driven Design (DDD). While it is not necessary to understand all the ins and outs of Domain Driven Design, you will find a few of the concepts that make building services even more straightforward below. See xref:concepts:architecture-model.adoc[] for more information on the role of your domain model in Akka. Akkademy provides a free course on https://akkademy.akka.io/learn/courses/6/reactive-architecture2-domain-driven-design[Domain Driven Design, window="new"].
+Akka makes it easy and fast to build services using the concepts of Domain Driven Design (DDD). While it is not necessary to understand all the ins and outs of Domain Driven Design, you will find a few of the concepts that make building services even more straightforward below. See xref:sdk:architecture-model.adoc[] for more information on the role of your domain model in Akka. Akkademy provides a free course on https://akkademy.akka.io/learn/courses/6/reactive-architecture2-domain-driven-design[Domain Driven Design, window="new"].
 
 [[bounded-context]]
 === Bounded context
 
 https://martinfowler.com/bliki/BoundedContext.html[Bounded context, window="new"] is a concept that divides large domain models into smaller groups that are explicit about their interrelationships. Normally a microservice is a bounded context. You _may_ choose to have multiple bounded contexts in a microservice.
 
-Each of these contexts will have autonomy to evolve the models it owns. Keeping each model within strict boundaries allows different modelling for entities that look similar but have slightly different meaning in each of the contexts. Each bounded context should have its own domain, application, and API layers as described in xref:concepts:architecture-model.adoc[].
+Each of these contexts will have autonomy to evolve the models it owns. Keeping each model within strict boundaries allows different modelling for entities that look similar but have slightly different meaning in each of the contexts. Each bounded context should have its own domain, application, and API layers as described in xref:sdk:architecture-model.adoc[].
 
 [.darkmode-white-padded]
 image::bounded-context.svg[Bounded Context]
 
 === Events first
 
-Defining your data structures first, and splitting them into bounded contexts, will also help you think about all the different interactions your data needs to have. These interactions, like `ItemAddedToShoppingCart` or `LightbulbTurnedOn` are the events that are persisted and processed in Akka. Defining your data structures first, makes it easier to think about which events are needed and where they fit into your design. These data structures and events will live in your domain model layer as described in xref:concepts:architecture-model.adoc[].
+Defining your data structures first, and splitting them into bounded contexts, will also help you think about all the different interactions your data needs to have. These interactions, like `ItemAddedToShoppingCart` or `LightbulbTurnedOn` are the events that are persisted and processed in Akka. Defining your data structures first, makes it easier to think about which events are needed and where they fit into your design. These data structures and events will live in your domain model layer as described in xref:sdk:architecture-model.adoc[].
 
 == Right-sizing your services
 
@@ -41,7 +41,7 @@ Deciding how many components and concepts to fit into a single service can be co
 - *You can scale the services independently* to handle variations in load gracefully. If properly designed, multiple instances of the service can be started up when necessary to support more load: for example, if your system runs on Black Friday and the shopping cart service gets super busy, you can spin up more shopping carts to handle that load without also having to start up more copies of the catalog service. When the load decreases, these extra instances can be removed again, minimizing resource usage.
 - *You reduce the failure domain / fault boundary*. Independent services handle failures gracefully. Components interact asynchronously with the rest of the world through messages and xref:reference:glossary.adoc#command[_commands_]. If one instance, or even a whole service, fails, it is possible for the rest of the system to keep going with reduced capabilities. This prevents cascading failures that take down entire systems.
 - *Your development team is more productive*. A team can focus on features of a single service at a time, without worrying about what other services or teams are doing, or when they are releasing, allowing more parallel teams to focus on other services, allowing your development efforts to scale as needed.
-- *You gain flexibility for upgrades*. You can upgrade services in a "rolling" fashion, where new instances are started before older instances are removed, allowing new versions to be deployed with no downtime or interruption.
+- *You gain flexibility for upgrades*. You can upgrade services in a "rolling" fashion, where new instances are started before older instances are removed, so older instances keep serving requests while new versions are deployed.
 - *You gain security*. Services serve as a security boundary both in your system overall and between teams.
 - *You get granular visibility into costs*. Services are all billed separately, so it is easier to see and understand costs and billing on a per-service basis if you break your services up in some way that matches your organizational needs overall.
 
@@ -90,9 +90,8 @@ If an entity stores state or events larger than 1 MB, it becomes "isolated." It 
 [#message-deduplication]
 == Message deduplication
 
-In the realm of distributed systems, Akka embraces an at-least-once delivery guarantee, for components like Consumer or Views (view updaters). Redeliveries occur in distributed systems due to their inherent uncertainty and failure characteristics. Network failures, process crashes, restarts, and temporary unavailability of nodes can all lead to situations where an acknowledgment for a delivered message is lost, even if the recipient successfully processed it. To ensure eventual consistency and guarantee delivery, the sender must retry messages when acknowledgments are missing.
+Akka delivers messages to components such as Consumers and Views at least once, in order per source instance when the source is an Akka component. See xref:concepts:delivery-guarantees.adoc[] for why redeliveries happen and what each path guarantees. This section shows techniques for handling the duplicates.
 
-NOTE: When consuming from Akka components like Event Sourced Entity, Key Value Entity or another Akka service, the Akka runtime not only guarantees at-least-once delivery, but also the order of messages. Meaning that a series of duplicated messages might be redelivered but always in the same order as they were produced.
 
 To ensure system integrity, consumers must be capable of handling duplicate messages gracefully. Effective deduplication is not just an optimization — it is a core architectural requirement, turning the challenge of message redeliveries into a structured and predictable system behavior.
 
@@ -296,7 +295,7 @@ Keep in mind that using collection types not supported by the Jackson serializat
 [#saga-patterns]
 == Saga patterns
 
-Saga patterns manage long-running business processes in distributed systems by dividing them into a series of transactions. Each transaction either completes or triggers compensating actions if something goes wrong. There are two approaches, orchestrator-based and choreography-based; both keep the system consistent and differ only in how coordination is handled.
+Saga patterns manage long-running business processes in distributed systems by dividing them into a series of transactions. Each transaction either completes or triggers compensating actions if something goes wrong. There are two approaches, orchestrator-based and choreography-based; both keep the system consistent and differ only in how coordination is handled. See xref:concepts:durable-execution.adoc#_compensation_and_sagas[Compensation and sagas].
 
 [cols="1,1", options="header"]
 |===

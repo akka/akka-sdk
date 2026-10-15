@@ -273,3 +273,9 @@ Choose your deployment model and follow its setup. Each setup page ends by letti
 |===
 
 For help deciding between models and sizing for availability and data residency, see xref:operations:production-readiness/choosing-your-environment.adoc[].
+
+== Moving a project between environments
+
+A project can move between cloud environments by adding a destination region, replicating state into it, and switching traffic after it catches up. This uses the same asynchronous replication as multi-region operation; creating the destination does not itself complete a migration. Plan the change with the applicable production-readiness and recovery procedures.
+
+See xref:operations:regions/setup.adoc[Multi-region setup] for adding regions, selecting primary regions, and controlling failover. For exporting or importing data rather than replicating a running project, see xref:operations:services/data-management.adoc[Export and import data].

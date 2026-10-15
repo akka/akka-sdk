@@ -1,6 +1,6 @@
 = Akka Documentation
 
-Akka has one offering: the Akka Agentic AI Platform, which guarantees the resilience and scalability of the agentic systems you build with it. Its four solutions are Akka SDK, Akka Specify, Akka Verify and Akka Optimize. See xref:ROOT:about-akka.adoc[About Akka].
+Akka has one offering: the Akka Agentic AI Platform, which provides resilience and scalability for the agentic systems you build with it. Its four solutions are Akka SDK, Akka Specify, Akka Verify and Akka Optimize. See xref:ROOT:about-akka.adoc[About Akka].
 
 [.akka-docs-homepage-grid]
 ====
@@ -38,12 +38,12 @@ Akka has one offering: the Akka Agentic AI Platform, which guarantees the resili
 [discrete]
 == xref:concepts:index.adoc[Understanding]
 
-**Key concepts** behind how Akka services are designed and behave.
+**How the platform works**: services, agents, specifications, governance, models and the runtime.
 
-* xref:concepts:concepts.adoc[Concepts overview]
-* xref:concepts:architecture-model.adoc[Architecture model]
-* xref:concepts:distributed-systems.adoc[Distributed systems]
-* xref:concepts:multi-region.adoc[Multi-region operations]
+* xref:concepts:platform-model.adoc[Platform model]
+* xref:concepts:request-lifecycle.adoc[Anatomy of a request]
+* xref:concepts:ai-agents.adoc[Agents]
+* xref:concepts:governance-and-the-runtime.adoc[Governance in the runtime]
 --
 
 [.grid-item]

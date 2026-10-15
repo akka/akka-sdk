@@ -1,0 +1,37 @@
+= The runtime
+:page-summary: The Akka runtime runs each service as a cluster of nodes that keep component state in memory, give each stateful instance one owner, and rebuild state from events after a failure.
+:page-when-to-use: When you need to know where component state lives, how requests reach it, and what happens when a node fails, joins or is cut off from the rest of the cluster.
+:page-related: concepts:deployment-model.adoc, concepts:multi-region.adoc, concepts:state-model.adoc
+:page-persona: builder-developer, operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+The Akka runtime executes components, locates their state, and recovers them when processes or nodes fail. Application code addresses components by identity rather than managing their physical placement.
+
+== Ownership, sharding, and recovery
+
+Stateful component instances are distributed across a service cluster through sharding. Each instance has one owner in that cluster, and the owner processes commands sequentially. Requests arriving elsewhere are routed to it.
+
+Active state is held in memory. Persistence allows recovery on another node after failure or movement. Event Sourced Entities recover from snapshots and events; Key Value Entities recover their persisted current state. The application declares what to persist through effects.
+
+When nodes join or leave, shards rebalance. Idle instances can be passivated to free memory and reloaded when another request arrives. This trades memory use against the latency of recovery.
+
+== Cluster boundaries
+
+A cluster operates within a region. During a network partition, split-brain resolution selects a surviving group rather than allowing both groups to assume ownership of the same instances. Instances on stopped nodes are temporarily unavailable while ownership and state recover elsewhere.
+
+Replication between regions is a different mechanism: each region has a cluster, and updates travel asynchronously between them. The ownership rule inside one cluster does not imply globally current reads from every replica.
+
+== Limits and trade-offs
+
+A single entity's write throughput is limited by sequential processing on its owner. Scale independent work across IDs. Long event histories increase recovery work; snapshots reduce it. Persistence also needs appropriate storage: Akka provides it in managed deployments, while self-managed deployments configure their own.
+
+anchor:_passivation_and_recovery[]
+anchor:_sharding_and_single_ownership[]
+
+== Next steps
+
+* xref:sdk:event-sourced-entities.adoc[] explains sharding, persistence, and snapshots.
+* xref:sdk:key-value-entities.adoc[] stores current state.
+* xref:operations:configuring.adoc[] configures self-managed operation.
+* xref:multi-region.adoc[] explains replication across clusters.

@@ -23,19 +23,21 @@ A specification is a set of files in your repository, versioned with the code. I
 
 The first three are written by the people who build the system. The envelopes and the policy are written by the people who govern it, such as risk, security, operations and finance teams.
 
+See xref:concepts:spec-driven-development.adoc#specification[].
+
 == Building against the specification
 
 The plugin turns a specification into a plan, the plan into tasks, and the tasks into Akka SDK components with tests. Each step is a command you run in the harness, such as `/akka:specify`, `/akka:plan`, `/akka:tasks` and `/akka:implement`. `/akka:converge` adds work that the specification still requires to the task list. `/akka:inspect` exercises a running service through its endpoints, state and user interface. `/akka:docs` generates project documentation and checks it.
 
-See xref:sdk:spec-driven-development.adoc[] and xref:reference:specify/index.adoc[the Specify reference].
+See xref:concepts:spec-driven-development.adoc[], xref:sdk:spec-driven-development.adoc[] and xref:reference:specify/index.adoc[the Specify reference].
 
 == Exit conditions and conformance
 
-Exit conditions define when a feature or a system is done. Your organization can make some of them mandatory for every project, from a catalog that covers functional behavior, reliability, security and compliance, agentic AI safety, documentation and more. Auditors check each exit condition.
+Exit conditions define when a feature or a system is done. Your organization can make some of them required for every project, from a catalog that covers functional behavior, reliability, security and compliance, agentic AI safety, documentation and more. Auditors check each exit condition.
 
 `/akka:status` shows every exit condition and its state. `/akka:conform` runs the auditors in scope and returns a verdict. `/akka:ship` runs the auditors for a review or release target and, when they pass, the steps your organization defines for shipping. In enforced mode, a change that does not meet its exit conditions is blocked before it merges. In à la carte mode, you choose which checks to run.
 
-See xref:sdk:enforced-mode.adoc[], xref:sdk:a-la-carte-mode.adoc[], xref:reference:specify/auditors.adoc[Auditors] and xref:reference:specify/catalog/index.adoc[the exit condition catalog].
+See xref:concepts:spec-driven-development.adoc#conformance[], xref:sdk:enforced-mode.adoc[], xref:sdk:a-la-carte-mode.adoc[], xref:reference:specify/auditors.adoc[Auditors] and xref:reference:specify/catalog/index.adoc[the exit condition catalog].
 
 == Fitting your process
 
@@ -53,6 +55,9 @@ Akka Specify can recover what a legacy system does, turn that behavior into chec
 
 | Getting started
 | xref:getting-started:set-up-ai-install.adoc[Install using your AI harness], xref:getting-started:set-up-harness.adoc[], xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent]
+
+| Understanding
+| xref:concepts:spec-driven-development.adoc[], xref:concepts:spec-driven-development.adoc#specification[], xref:concepts:spec-driven-development.adoc#conformance[]
 
 | Developing
 | xref:sdk:spec-driven-development.adoc[], xref:sdk:enforced-mode.adoc[], xref:sdk:a-la-carte-mode.adoc[]

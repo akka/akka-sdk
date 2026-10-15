@@ -102,6 +102,8 @@ Captures recorded in production are stored in a location the CLI cannot reach in
 
 include::inference:partial$aao-inference-notice.adoc[]
 
+For pricing rules, unpriced traffic, reporting completeness, and attribution, see xref:inference:spend.adoc[Understanding inference costs]. For how the gateway records traffic, see xref:inference:capture-and-grading.adoc[Capture and grading].
+
 == See also
 
 * xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize command reference]

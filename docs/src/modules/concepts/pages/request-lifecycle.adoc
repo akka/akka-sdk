@@ -1,0 +1,40 @@
+= Anatomy of a request
+:page-summary: The anatomy of a request traces one agent request through an Akka system, from the endpoint that receives it to the ledger record and the evaluation that follow it.
+:page-when-to-use: When you want to see how the parts of the platform work together on one request before you read about each part.
+:page-related: concepts:platform-model.adoc, concepts:components.adoc, concepts:evidence.adoc
+:page-persona: all
+
+include::ROOT:partial$include.adoc[]
+
+An agent request crosses several components, each with a different responsibility. This example follows an expense claim from a client to a recorded decision.
+
+== From request to result
+
+image::concepts:request-lifecycle.svg[The path from endpoint through workflow, agent, model, entity, and evaluation,width=880]
+
+. An *endpoint* receives the claim and checks access.
+. The *component client* locates the workflow instance by identity.
+. A *workflow step* records progress and calls the policy agent with a recovery strategy.
+. The *agent* declares its model request, tools, and session memory.
+. *Sanitizers and guardrails* mask configured data and check the input before the model call.
+. When configured, the *model gateway* chooses a destination and captures the exchange.
+. The *model* asks for a tool that records the claim decision.
+. A *tool-call guardrail* checks the request before the runtime invokes the tool.
+. The *entity* validates the command and persists its decision event.
+. The *journal* makes the event durable; subscribers receive it and cross-region replication distributes it asynchronously.
+. The tool result returns to the model. *Response guardrails* check its final reply before it returns through the workflow and endpoint.
+. The *ledger* holds the interaction record, including model and tool calls and their outcomes.
+. A live *evaluator* assesses the completed interaction and records its verdict. Captured model traffic also feeds cost analysis and training.
+
+== Boundaries that matter
+
+A workflow can retry an unfinished step after failure. External work started by the first attempt may already have taken effect, so tools and downstream services must handle retries safely.
+
+Persistence and replication are different boundaries. An acknowledged local write may not yet be visible in another region or a view. Live evaluation is also separate from enforcement: a verdict produced after the interaction cannot change the reply already returned.
+
+== Next steps
+
+* xref:sdk:agents/calling.adoc[] explains agent invocation from workflows.
+* xref:sdk:agents/guardrails.adoc[] configures checks at runtime boundaries.
+* xref:sdk:evaluators.adoc[] implements evaluation and reads the ledger.
+* xref:delivery-guarantees.adoc[] and xref:multi-region.adoc[] explain retries and replication.

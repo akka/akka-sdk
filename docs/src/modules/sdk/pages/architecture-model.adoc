@@ -1,9 +1,10 @@
 = Architecture model
+:page-aliases: concepts:architecture-model.adoc
 :page-summary: How Akka structures a project into api, application, and domain layers, and how those layers map to services.
 :page-when-to-use: When you need to understand how Akka structures projects, separates concerns, and connects development practices to runtime reliability and operational governance.
-:page-related: xref:deployment-model.adoc[], xref:state-model.adoc[], xref:sdk:spec-driven-development.adoc[]
+:page-related: concepts:deployment-model.adoc, concepts:state-model.adoc, sdk:spec-driven-development.adoc
 :page-prerequisites: Familiarity with service-oriented architecture and basic Java project conventions.
-:page-persona: Architect, Tech Lead, Senior Developer
+:page-persona: builder-developer
 
 include::ROOT:partial$include.adoc[]
 
@@ -75,15 +76,15 @@ Access control and request validation also belong here, enforced at the service 
 
 == Akka Services
 
-image:ROOT:service.png[Services,width=100,float=left] A _Project_ may contain multiple _Services_. Projects can be deployed to one or more regions to achieve geographic resilience. For details, see xref:multi-region.adoc[].
+image:ROOT:service.png[Services,width=100,float=left] A _Project_ may contain multiple _Services_. Projects can be deployed to one or more regions to achieve geographic resilience. For details, see xref:concepts:multi-region.adoc[].
 
 == Next steps
 
 Once you are familiar with the project structure, continue with:
 
-- xref:deployment-model.adoc[Akka Deployment Model]
+- xref:concepts:deployment-model.adoc[Akka Deployment Model]
 - xref:sdk:spec-driven-development.adoc[]
-- xref:state-model.adoc[]
+- xref:concepts:state-model.adoc[]
 - xref:sdk:dev-best-practices.adoc[Development best practices]
 
 You may also begin development right away using the xref:sdk:index.adoc[Akka SDK].

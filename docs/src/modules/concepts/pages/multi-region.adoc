@@ -1,85 +1,38 @@
 = Multi-region operations
+:page-summary: Akka replicates the state of stateful components to every region of a project, serves reads locally, and routes each write to the entity's primary region; replication between regions is asynchronous.
+:page-when-to-use: When you run a project in more than one region and need to know where writes are handled, how state reaches other regions, and what a reader in another region sees.
+:page-related: concepts:runtime.adoc, concepts:availability.adoc, operations:regions/setup.adoc
+:page-persona: builder-developer, operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
 
-Akka applications run in multiple regions with their data transparently and continuously replicated even across multiple cloud providers.
-Akka applications do not require code modifications to run within multiple regions. Operators define controls to determine which regions
-an application will operate within and whether that application's data is pinned to one region or replicated across many.
+Multi-region operation runs a project in several regions and replicates component state between them. It supports local reads and regional recovery, with asynchronous replication and the corresponding consistency trade-offs.
 
-Akka ensures regardless of which region receives a request, the request can be serviced. Multiple replication strategies can be configured, with each offering varying features for different use cases.
+== Primary regions and reads
 
-Multi-region operations are ideal for:
+An entity's primary region accepts its writes. Its origin records where it was created. The project's primary region is separate: it is where project resources replicate from and, in pinned-region mode, where entities accept writes.
 
-* Applications that require very high availability
-* Geographic failover
-* Geo-homing of data for low latency access
-* Low latency global reads
-* Low latency global writes
+Reads can be served locally from replicated state. A local read can therefore lag behind a write accepted elsewhere. If an operation requires the latest state, use a handler routed to the entity's primary region rather than assuming its nearest replica is current.
 
-Akka has two replication modes: replicated reads and replicated writes.
+== Selecting the writer
 
-== Replicated reads
+In *request-region* mode, the entity's primary can move to the region receiving a write. The new primary must catch up before accepting it, and all regions must be reachable for that transition. Later writes in that region avoid another transfer.
 
-Akka's replicated reads offers full data replication across regions and even cloud providers, without any changes to the service implementation: an entity has its "home" in one _primary region_, while being replicated to multiple other regions.
+In *pinned-region* mode, entities use the project's primary region. Writes arriving elsewhere are forwarded there. Changing the primary or handling a regional outage is an operator action.
 
-Read requests are always handled locally within the region where they occur.
+Replicated writes are another option for Event Sourced Entities: regions update independently using conflict-free replicated data types. That requires state that can be merged and accepts eventual consistency.
 
-An entity can only be updated within a single region, known as its primary region.
+== Failure and data placement
 
-Primary region selection for entities is configurable. There are two modes for primary selection: **request-region** and **pinned-region**.
+Replication resumes from recorded progress after an interruption. A surviving region can serve only the writes it has received. Failover can lose writes that never reached a surviving replica; returning regions can also contain conflicting changes that must be resolved.
 
-Request-region primary selection mode (default)::
-The primary region changes when another region receives a write request. Upon a write request to an entity in a region that is not the primary, the entity will move its primary to that region. The new primary ensures that all preceding events from the previous primary have been fully replicated and applied (i.e. persisted) before writing the new event, and thereby guarantees strong consistency when switching from one region to another. Subsequent write requests to the primary region of the entity are handled locally without any further coordination. Write requests to other regions will trigger the same switch-over process. All other entity instances operate unimpeded during the switch-over process.
-+
-This is useful for scenarios where you want to have the primary region for your data close to the users who use the data. A user, Alice, in the USA, will have her data in the USA, while user Bob, in the UK, will have his data, in the UK. If Alice travels to Asia the data will follow her.
+Replication filters constrain where entity data is copied. They help enforce residency requirements, but do not replace choosing appropriate project regions or following the supported primary-transition procedure.
 
-Pinned-region primary selection mode::
-  All entities use the same primary region, which is selected statically as part of the deployment. Write requests to the primary region of the entity are handled locally. Write requests to other regions are forwarded to the primary region. The primary region stays the same until there is an operational change of the primary region.
-+
-This is useful for scenarios where you want one primary region, with the ability to fail over to another region in the case of a regional outage.
+anchor:_replicated_reads_and_the_primary_region[]
+anchor:_replicated_writes[]
 
-The Operating section explains more details about xref:operations:regions/index.adoc#selecting-primary[configuring the primary selection mode].
+== Next steps
 
-=== Illustrating entities with pinned region selection
-
-image:geo-a.svg[Geo data replication, width=600]
-
-In the image above, the entity representing Alice has its primary region in Los Angeles. When a user A in the primary region performs a read request image:steps-1.svg[width=20], the request is handled locally, and the response sent straight back image:steps-2.svg[width=20].
-
-When the user in the primary region performs a write request image:steps-1.svg[width=20], that request is also handled locally, and a response sent directly back image:steps-2.svg[width=20]. After that write request completes, that write is replicated to other regions image:steps-3.svg[width=20], such as in London (UK).
-
-A user B in London, when they perform a read image:steps-4.svg[width=20], that read operation will happen locally, and a response sent immediately back image:steps-5.svg[width=20].
-
-A user can also perform write operations on entities in non-primary regions.
-
-image:geo-b.svg[Geo data replication, width=600]
-
-In this scenario, the user B in London (UK) is performing a write operation on the Alice entity image:steps-1.svg[width=20]. Since London is not the primary region for the Alice entity, Akka will automatically forward that request to the primary region image:steps-2.svg[width=20], in this case, Los Angeles (USA). That request will be handled in the USA, and a response sent directly back to the user image:steps-3.svg[width=20].
-
-=== Illustrating entities with request-region selection
-
-In request-region mode, each entity has its own primary region: the region where it was last written. Alice writes her data in the USA, so its primary is Los Angeles. Bob writes his data in the UK, so its primary is London.
-
-image:geo-c.svg[Geo data replication, width=600]
-
-When Bob makes a request in the UK on his data image:steps-1.svg[width=20], that request is handled locally image:steps-2.svg[width=20], and replicated to the US image:steps-3.svg[width=20]. In the same way, Alice's requests on her data are handled locally in the USA, and replicated to the UK.
-
-The data is available in all regions. When Bob travels to the USA, read requests on his data are handled locally in Los Angeles. His first write request in Los Angeles moves the primary of his data there: Akka first makes sure every earlier write from London has been replicated and applied, then handles the write. Later writes in Los Angeles are handled locally.
-
-image:geo-e.svg[Geo data replication, width=600]
-
-Meanwhile, all requests made by Alice on her data are handled locally image:steps-1.svg[width=20] and get an immediate reply image:steps-2.svg[width=20]. The write operations are replicated to the UK image:steps-3.svg[width=20].
-
-== Replicated writes
-
-The replicated write replication strategy allows every region to be capable of handling writes for all entities. This is done through the use of CRDTs, which can be modified concurrently in different regions, and their changes safely merged without conflict.
-
-== Replication guarantees
-
-Akka guarantees that all events created within one region are eventually replicated to all other regions in the project.
-
-Each entity’s state is a series of events that are persisted in a local event journal, which acts as the source of events that must be replicated from one region to another. Having a durable, local event journal is the foundation for how Akka can recover an entity’s state in the event of failure.
-
-Each event has a sequence number that is validated on the receiving side to guarantee correct ordering and exactly-once processing of the events. A replicated event is processed by entities in other regions by having the event added to the local event journal of each entity. Once added to the local event journal, the replicated event can be used to update the entity's state and handle read requests in those regions.
-
-Events are delivered to other regions over a brokerless, streaming gRPC transport. The entity instance that needs to receive replicated events is a consumer and the entity that generated the events is the producer. Events flow from the producing region to the consuming region. An offset of the replication stream is stored on the consumer side, which will start from the previously stored offset when it initiates the replication stream. The producer side will publish events onto the replication stream directly while writing an entity or from reading the event journal after a failure. Duplicate events are detected and filtered out by the sequence numbers of the events. These replication streams can be sharded over many nodes to support high throughput.
+* xref:operations:regions/setup.adoc[] configures modes, regions, failover, and conflict resolution.
+* xref:sdk:event-sourced-entities.adoc#_replication[Event Sourced Entity replication], xref:sdk:key-value-entities.adoc#_replication[Key Value Entity replication], and xref:sdk:workflows.adoc#_replication[Workflow replication] define component behavior.
+* xref:availability.adoc[] compares recovery scopes.

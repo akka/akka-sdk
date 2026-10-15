@@ -78,7 +78,7 @@ PROJECT
 rollup — product: 3✓ 4○ 0✗   project: 3✓ 3○ 0✗   process: 0✓ 4○ 0✗
 ----
 
-Every condition is in one of three xref:reference:specify/exit-condition-states.adoc[states]: `open`, `green`, or `red`. An `open` condition carries a reason: `needs-user-action` (a person on this project can move it forward) or `blocked-outside-project` (a required tool is missing, or a receipt from an external system is required). The two locked (🔒) process-integrity conditions -- `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED` -- are always on and cannot be struck; they make the verification apparatus check itself. See xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done types] for what each tier covers.
+Every condition is in one of three xref:reference:specify/exit-condition-states.adoc[states]: `open`, `green`, or `red`. An `open` condition carries a reason: `needs-user-action` (a person on this project can move it forward) or `blocked-outside-project` (a required tool is missing, or the policy has no auditor mapped to the condition). The two locked (🔒) process-integrity conditions -- `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED` -- are always on and cannot be struck; they make the verification apparatus check itself. See xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done types] for what each tier covers.
 
 === Answer the open conditions
 

@@ -1,0 +1,155 @@
+= Capture and grading
+:page-summary: A capture is the input and output of one exchange that passed through the agent gateway. Grading scores captured outputs, and targeting ranks the use cases where a smaller model could reduce cost.
+:page-when-to-use: When you need to understand what Akka records about model traffic, how outputs are scored, what a use case is, and how candidates for a smaller model are chosen.
+:page-banner: inference
+:page-related: concepts:models.adoc, concepts:model-training.adoc
+:page-persona: builder-ai-ml, operator-platform
+
+include::ROOT:partial$include.adoc[]
+
+A capture is the input and output of one exchange that passed through the agent gateway. Grading scores the outputs of those exchanges, and targeting uses the captures and the grades to rank the use cases where a smaller model could reduce cost.
+
+Any loop that improves model traffic has to start from what that traffic is: which tasks the agents send, how often, at what cost, and whether the answers were right. Without a record of the traffic there is nothing to train on, and without a score for the answers there is no way to tell whether a cheaper model does the job. This page explains the observe-and-grade part of the loop described in xref:concepts:models.adoc[].
+
+== How capture works
+
+Agents send their model requests through a proxy that consults the gateway router. See xref:concepts:models.adoc#model-routing[]. As the router handles each exchange, it writes a capture artifact that holds the request and the response as they passed through.
+
+. The gateway router writes capture artifacts and announces each one on a stream, grouped by shard and time window.
+. The capture refinery reads each artifact as it lands and derives a derived capture, one canonical form of it: the served name, the use case, the caller, the conversation, and the tokens of each class that the response reported.
+. The refinery publishes the derived captures as a stream of their own. The services that price spend, rank use cases and assemble training data consume that stream.
+
+A capture and the derived capture hold the caller's identifier when the request named one. A caller is declared with the `x-optimize-caller` header, or reported by a proxy as a forwarded address. Erasing a caller removes the identifier that spend figures are attributed to and keeps every figure. It does not change capture artifacts or the derived captures, which still hold the identifier. See xref:reference:cli/cost-and-traffic.adoc#_callers[Callers].
+
+The word _trace_ has two meanings here, so the documentation says which one they mean. An agentic AI trace is the sequence of steps one agent run took, saved as a record in the ledger. A trace of gateway traffic is a capture. Captures describe what passed through the gateway. The ledger describes what the system did and holds the evidence of each control verdict. See xref:concepts:evidence.adoc[].
+
+Traffic from agents that do not send their model calls through the gateway can still feed the loop. Their OpenTelemetry traces can be uploaded as sessions, and a curation turns sessions into a training dataset. See xref:concepts:model-training.adoc[].
+
+== Use cases
+
+A use case is a kind of task that the agents send, such as checking an order's shipping status or writing a commit message. It is the unit that the loop works in: a use case is routed, graded, targeted, trained and priced as one.
+
+Use cases are discovered from live traffic rather than declared:
+
+* When a request arrives, the router derives an embedding from it and compares the embedding with the centers of the use cases discovered so far. The comparison is vector arithmetic, so it consults no model and costs no tokens.
+* A request far from every center starts a new use case, and the boundaries are evaluated again.
+* The router does not name what it finds. People read the exemplars, the requests nearest the center of a use case, and give it a label.
+* The set discovered so far is the working set, and it keeps changing. Freezing it produces a use case manifest that maps each labeled use case to a destination. See xref:concepts:models.adoc#_routing_on_meaning[Routing on meaning].
+
+A use case is broader than a tool. One use case can draw on several tools, and a general-purpose tool such as a calendar lookup appears in many use cases.
+
+The trainer records the training of one use case in a training project, and the spend report divides a period by use case. Both use the same use case that the router assigned.
+
+== How grading works
+
+A grader scores an output against what was expected. The right grader depends on the shape of the output:
+
+* _Deterministic graders_ score structured output. A JSON label match compares fields of the answer with fields of the expected answer. A function in a scoring bundle can run generated SQL and compare the rows it returns.
+* _A model judge_ scores open-ended output. A registered model receives the input, the output and instructions, and returns a score.
+* _An evaluator that you operate_ receives the input, the output and the expected answer over HTTP and returns a score or a pass.
+
+A grade is used three ways. It is recorded with the exchange it scores. It becomes the reward signal when a model is trained by reinforcement learning. And it decides whether a new model is promoted, because a candidate is compared with the current model on the same data with the same grader.
+
+Grading works the same way for agents that run on Akka and for agents in other frameworks whose traffic passes through the gateway.
+
+=== Graders and rewards
+
+A grader and a reward are both scorers, used at different points in training. A grader runs once for each evaluation example, against a finished model. A reward runs once for each sampled completion, at every step of a reinforcement run. A scorer that is affordable as a grader can be too expensive as a reward, so the two are configured separately. A reward is a weighted sum of terms, and a term can reuse the training project's grader.
+
+== How targeting works
+
+Targeting scores each use case on how well it suits a smaller model, and produces a ranked list of use cases admitted for training. It reads the derived captures, so it needs no traffic of its own.
+
+[cols="1,3", options="header"]
+|===
+| Factor
+| What it measures
+
+| Narrowness
+| How similar the requests of a use case are to each other. A narrow task is easier to specialize for.
+
+| Checkable output
+| Whether the outputs can be scored by a grader. A use case that cannot be graded is never admitted.
+
+| Volume
+| Whether there is enough traffic to train on and to measure a baseline. A use case with too little data is never admitted.
+
+| Token economics
+| What the use case costs today and how much of that a smaller model could save.
+|===
+
+Checkable output and volume are gates: a use case that fails either is not admitted, whatever its other scores. Narrowness and token economics weight the ones that pass. Each factor is kept as its own score, so a use case that was not admitted shows the reason, for example that it cannot be graded.
+
+An eligibility filter that your organization declares applies on top. It can remove a use case, for example one whose data must not be used for training, and it never adds one.
+
+The result is a ranked list with an estimate for each admitted use case. The admitted use cases are what the trainer specializes models for.
+
+== Guarantees
+
+[cols="2,3,2", options="header"]
+|===
+| Failure or situation
+| What Akka does
+| Precondition
+
+| A capture artifact lands
+| The refinery derives one derived capture from it and publishes it to its consumers with the same delivery guarantees as the raw artifact.
+| The capture refinery runs in the project.
+
+| A caller's identifier is erased
+| The identifier that spend figures are attributed to is removed, and every figure is kept. Capture artifacts and the derived captures still hold it.
+| The caller was declared or forwarded.
+
+| A grader returns no verdict for an example
+| The example is marked as having no score and left out of the mean.
+| None.
+
+| An evaluator that you operate is unreachable
+| The evaluation fails rather than reporting a partial score.
+| None.
+
+| A use case cannot be graded
+| Targeting does not admit it, and records that its output cannot be graded as the reason.
+| None.
+|===
+
+== Choosing between a deterministic grader and a model judge
+
+[cols="1,2,2", options="header"]
+|===
+| Attribute
+| Deterministic grader
+| Model judge
+
+| Output it suits
+| Structured: JSON, SQL, labels
+| Open-ended prose
+
+| Cost per score
+| Close to none
+| One inference call
+
+| Repeatability
+| The same output always gets the same score
+| Scores can vary between runs
+
+| Use when
+| The expected answer can be compared field by field or by execution
+| Correctness needs judgment
+|===
+
+== Limits and trade-offs
+
+* Only exchanges that pass through the gateway are captured. A call made directly to a provider is not.
+* Use case labels come from people. Until a use case has a label, it can be observed but not routed by a manifest.
+* The working set changes with traffic, so a frozen manifest describes the traffic of the day it was frozen. Manifest drift, the distance between the two, grows as traffic changes shape.
+* The CLI reads capture artifacts from a directory on disk, for local development and support investigations.
+* A model judge adds an inference call to every score, so grading open-ended traffic costs tokens.
+
+== Next steps
+
+* xref:inference:routing.adoc#_defining_use_cases[Defining use cases]
+* xref:optimize:trainer/graders-and-rewards.adoc[Graders and rewards]
+* xref:optimize:trainer/scoring-bundles.adoc[Scoring bundles]
+* xref:reference:cli/cost-and-traffic.adoc[Cost and traffic commands]
+* xref:concepts:model-training.adoc[], xref:concepts:model-training.adoc#spend-and-budgets[]

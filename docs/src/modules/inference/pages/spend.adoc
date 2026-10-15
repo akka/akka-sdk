@@ -1,0 +1,112 @@
+= Understanding inference costs
+:page-summary: Spend is the cost of model traffic in a period, with the tokens it consumed, computed from recorded exchanges and priced from a versioned pricing catalog by served name.
+:page-when-to-use: When you need to understand how Akka prices model traffic, why a figure can be unpriced or a lower bound, and how spend is attributed to models, use cases, callers and conversations.
+:page-banner: inference
+:page-related: reference:cli/cost-and-traffic.adoc, concepts:model-training.adoc, concepts:models.adoc
+:page-persona: builder-ai-ml, operator-platform
+
+include::ROOT:partial$include.adoc[]
+
+Spend is the cost of model traffic in a period, together with the tokens that traffic consumed. Akka computes it from the exchanges that the gateway recorded and prices each exchange from a versioned pricing catalog. No figure is estimated or entered by hand.
+
+A provider's invoice states what an account cost. It does not say which agent, use case or caller the cost came from, and it arrives after the period is over. Deciding where a smaller model reduces cost, holding a team to a budget, or showing what a change saved all need figures that are divided the way the system is built and that can be read again later with the same result. This page explains how those figures are produced.
+
+== How it works
+
+=== From exchange to figure
+
+. An agent's model request passes through the gateway, and the exchange is captured. See xref:concepts:model-training.adoc#capture-and-grading[].
+. The capture refinery derives a derived capture from it, with the served name, the use case, the caller, the conversation and the tokens of each class.
+. The portfolio service prices the derived capture once, when it stores it, from the pricing catalog.
+. Spend for a period is read from the priced derived captures.
+
+Traffic that the gateway did not record does not appear in spend.
+
+=== The pricing catalog
+
+The pricing catalog holds the price of each served name as rates per million tokens. Input and output have rates, and so can cache reads, cache writes and reasoning tokens. A price applies to a served name: the `model` field in the body of the model's response. A response without that field is unpriced. See xref:concepts:models.adoc#_served_names_and_endpoints[Served names].
+
+The catalog is versioned, and a published version is never edited, so a figure computed under a price stays the same when you read it again. Each version states the instant from which its prices apply, which can be in the past or the future but must be later than the latest price of each served name it carries. A version can price some served names and leave out others, and the names it leaves out keep their earlier price. A price is marked as assigned when your organization set the rate, for example a negotiated rate, and as a list price otherwise. The catalog holds one currency.
+
+=== When a price applies
+
+The rate that applies to an exchange is the one that the catalog holds, when the exchange is recorded, for the instant it was served. The exchange is priced once and not again. It follows that:
+
+* A price published with a past effective instant does not reprice traffic that is already recorded.
+* Traffic recorded soon after a publish can still be priced at the previous rate.
+* A new price applies to traffic served after it takes effect and recorded after it is published.
+
+=== Unpriced traffic and lower bounds
+
+An exchange is priced only when every token class it used has a rate. A rate left out means the class has no price, not that it costs nothing, so a free class is given a rate of zero. An unpriced exchange counts in the exchanges and tokens of a period and not in its spend. The cause is one of two: the served name has no price, or a token class it used has no rate. Dividing the period by model shows which served names have unpriced traffic.
+
+A token count marked with `+` is a lower bound. Some exchanges did not report every token class, so the true count can be higher. This is common, because providers do not report every class: OpenAI responses do not report cache-write tokens, and Anthropic responses do not report reasoning tokens. The command output names the classes that were not reported.
+
+=== Completeness
+
+A period is a window of whole UTC hours. Each answer states whether its figures are complete:
+
+* _complete_: every hour of the window has been reported on, and no exchange was lost,
+* _incomplete_: some hours have not been reported on yet, for example because the window includes the current hour, or some exchanges were lost,
+* _unknown_: no hour of the window has been reported on yet.
+
+A figure with no value says why, and never reads as zero.
+
+=== Attribution
+
+A period can be divided into rows, and the rows always add up to the total:
+
+* by _model_, one row for each served name,
+* by _use case_, the use case that the router assigned, which is the same use case that targeting ranks and the trainer specializes for,
+* by _model and use case_ together,
+* by _caller_, ranked, with one row for the remainder.
+
+A caller is the identifier that the request declared in the `x-optimize-caller` header, or the address a proxy forwarded. Erasing a caller, for example to answer a privacy request, removes the identifier that figures are attributed to and leaves every figure unchanged.
+
+Conversations are ranked by spend rather than divided, so the most expensive conversations of a period can be found. That ranking does not add up to the period total. Two periods can be compared, and a difference has a value only when both periods have one in the same currency.
+
+=== Incidents
+
+The incident feed collects what went wrong in the same traffic: anomalies, requests that were blocked, and failures to scrub data. It is read alongside spend when a figure changes unexpectedly.
+
+== Guarantees
+
+[cols="2,3,2", options="header"]
+|===
+| Failure or situation
+| What Akka does
+| Precondition
+
+| A figure is read again later
+| It is the same, because a published catalog version is never edited and an exchange is priced once.
+| None.
+
+| A served name or token class has no price
+| The exchange counts in exchanges and tokens, not in spend, and the answer states the cause.
+| None.
+
+| A provider does not report a token class
+| The count is marked as a lower bound, and the output names the classes not reported.
+| None.
+
+| A window includes hours not yet reported on
+| The answer is marked incomplete or unknown.
+| None.
+
+| A caller is erased
+| Every figure stays the same.
+| None.
+|===
+
+== Limits and trade-offs
+
+* Spend covers traffic that the gateway recorded. A call made directly to a provider does not appear.
+* A period is whole UTC hours.
+* The catalog holds one currency.
+* A new price cannot take effect earlier than the latest price for the same served name, and it does not reprice recorded traffic. Publish a price for every served name before its traffic is served.
+* Erasing a caller does not change capture artifacts or the derived captures, which still hold the identifier.
+
+== Next steps
+
+* xref:reference:cli/cost-and-traffic.adoc[Cost and traffic commands]
+* xref:concepts:model-training.adoc#capture-and-grading[], xref:concepts:models.adoc[]

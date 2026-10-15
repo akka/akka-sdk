@@ -12,43 +12,50 @@ It works as a loop. It observes the traffic your agents send to models and grade
 
 == Observing and grading traffic
 
-Every model call is captured and graded: with deterministic graders for structured output such as SQL or JSON, and with a model judge for open-ended output. Grades work for agents on Akka and for agents in third-party harnesses. They feed the audit record, become the reward signal for training, and decide whether a new model is promoted. A targeting step scores each agent on how narrow, frequent, checkable and costly its traffic is, and ranks opportunities for specialization by their measurable benefit.
+Every model call is captured and graded: with deterministic graders for structured output such as SQL or JSON, and with a model judge for open-ended output. Grades work for agents on Akka and for agents in third-party harnesses. They are saved to the ledger, become the reward signal for training, and decide whether a new model is promoted. A targeting step scores each agent on how narrow, frequent, checkable and costly its traffic is, and ranks opportunities for specialization by their measurable benefit.
+
+See xref:concepts:model-training.adoc#capture-and-grading[].
 
 == Routing requests to models
 
-A gateway sits in front of your models. For each request, a proxy consults the router, and the router answers with a destination in two stages. Rulesets match declared rules against attributes of the request, such as the protocol, the model asked for or a header. No model is consulted unless a rule defers its decision to a classifier. A request that no rule claims is matched by its meaning against use cases discovered from live traffic. Each decision records its input, time and the version of the rule that made it, without logging the content. You can observe traffic before you route it.
+A gateway sits in front of your models. For each request, a proxy consults the router, and the router answers with a destination in two stages. Rulesets match declared rules against attributes of the request, such as the protocol, the model asked for or a header. No model is consulted unless a rule defers its decision to a routing classifier. A request that no rule claims is matched by its meaning against use cases discovered from live traffic. Each decision records its input, time and the version of the rule that made it, without logging the content. You can observe traffic before you route it.
 
-See xref:inference:routing.adoc[] and xref:reference:descriptors/routing-ruleset.adoc[].
+See xref:concepts:models.adoc#model-routing[], xref:inference:routing.adoc[] and xref:reference:descriptors/routing-ruleset.adoc[].
 
 == Training smaller models
 
-The trainer specializes an open-weight base model on your data, with supervised fine-tuning, preference optimization and reinforcement learning. Training runs on GPUs in your environment, including air-gapped ones. The data pipeline scrubs personal data and secrets before training, and each run has checkpoints, a budget and a separate evaluation set.
+The trainer specializes an open-weight base model on your data, with supervised fine-tuning and reinforcement learning. Training runs on GPUs in your environment, including air-gapped ones. The data pipeline scrubs personal data and secrets before training, and each run has checkpoints, a budget and a separate evaluation set.
 
-A new model is promoted only when its quality is at least the baseline and its token use drops by the target. It moves through shadow traffic, then a canary, then the fleet, and the comparison is saved to the audit record. After promotion it is still graded: it is retrained when it drifts and reverted when its quality falls below the required threshold.
+A new model is promoted only when its quality is at least the baseline and its token use drops by the target. It moves through shadow traffic, then a canary, then the fleet, and the comparison is saved to the ledger. After promotion it is still graded: it is retrained when it drifts and reverted when its quality falls below the required threshold.
 
-See xref:optimize:index.adoc[Training] and xref:optimize:trainer/index.adoc[the trainer].
+See xref:concepts:model-training.adoc[], xref:optimize:index.adoc[Training] and xref:optimize:trainer/index.adoc[the trainer].
 
 == The improvement policy
 
 The improvement policy states what a system optimizes toward and how far it may tune itself. It is part of the specification, written by the people who govern the system. Akka Optimize routes traffic, trains models and promotes them only within the policy, and training uses its goals as the target that a new model must reach.
 
+See xref:concepts:spec-driven-development.adoc#specification[].
+
 == Serving models
 
 Akka serves open-weight models on accelerators in your Akka regions: you choose accelerator classes, parallelism, quantization and adapters, and the runtime handles autoscaling, staged rollout of new versions and inference routes. Frontier models stay available as fallbacks and as teachers.
 
-See xref:inference:index.adoc[Inference], xref:inference:serving/getting-started.adoc[] and xref:reference:descriptors/model-descriptor.adoc[].
+See xref:concepts:models.adoc#model-serving[], xref:inference:index.adoc[Inference], xref:inference:serving/getting-started.adoc[] and xref:reference:descriptors/model-descriptor.adoc[].
 
 == Tracking spend
 
 Akka Optimize prices every recorded exchange from a versioned pricing catalog, and reports spend and tokens by model, use case, caller and conversation. Budgets, forecasts and the trade-off between cost and quality build on the same figures.
 
-See xref:reference:cli/cost-and-traffic.adoc[Cost and traffic commands].
+See xref:concepts:model-training.adoc#spend-and-budgets[] and xref:reference:cli/cost-and-traffic.adoc[Cost and traffic commands].
 
 == Where it is in the documentation
 
 [cols="1,3", options="header"]
 |===
 | Section | Start with
+
+| Understanding
+| xref:concepts:models.adoc[], xref:concepts:model-training.adoc#capture-and-grading[], xref:concepts:models.adoc#model-routing[], xref:concepts:models.adoc#model-serving[], xref:concepts:model-training.adoc[], xref:concepts:model-training.adoc#spend-and-budgets[]
 
 | Inference
 | xref:inference:index.adoc[Inference], xref:inference:routing.adoc[], xref:inference:serving/getting-started.adoc[]
@@ -67,5 +74,5 @@ See xref:reference:cli/cost-and-traffic.adoc[Cost and traffic commands].
 
 * xref:ROOT:about/akka-sdk.adoc[Akka SDK] agents send the traffic that Akka Optimize routes.
 * xref:ROOT:about/akka-specify.adoc[Akka Specify] writes the improvement policy that bounds what Akka Optimize may change.
-* xref:ROOT:about/akka-verify.adoc[Akka Verify] reads the same record, and holds a new model to its evidence.
+* xref:ROOT:about/akka-verify.adoc[Akka Verify] reads the same ledger, and holds a new model to its evidence.
 * xref:ROOT:about/how-akka-runs.adoc[How Akka runs] covers the regions and accelerators models are served on.

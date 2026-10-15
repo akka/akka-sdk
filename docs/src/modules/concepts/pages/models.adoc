@@ -1,0 +1,98 @@
+= Models and inference
+:page-aliases: concepts:model-routing.adoc, concepts:model-serving.adoc
+:page-summary: Inference is the model interaction within an agent. Routing selects which model receives a request; serving supplies an endpoint for a model running on allocated hardware.
+:page-when-to-use: When you need an overview of models and inference and links to the task guides.
+:page-related: inference:index.adoc, concepts:model-training.adoc
+:page-persona: builder-ai-ml, builder-developer, operator-platform
+
+include::ROOT:partial$include.adoc[]
+
+Inference is the model interaction within an agent. Routing selects which model receives a request; serving supplies an endpoint for a model running on allocated hardware.
+
+[#models-in-an-agentic-system]
+== Models in an agentic system
+
+Models provide inference: they generate or classify output from the context in a request. An agent combines that output with tools, state, and control logic to perform work.
+
+=== Inference and application behavior
+
+A model call differs from a function call. It can take substantial time, consumes tokens, and may return different answers for similar inputs. Correct output shape does not establish correct meaning, so assess the result against task-specific criteria.
+
+The agent decides what context to send and what tools are available. The model can request a tool, but the runtime executes it. Persistence, access control, retries, and evaluation remain application and runtime concerns.
+
+=== Choosing and improving a model
+
+Agents can use hosted providers or models served in an Akka region. A gateway can route requests by declared attributes or the task expressed by the request, independently of agent code.
+
+Captured traffic identifies repeated tasks and supplies examples for grading and training. A smaller model can be specialized for a narrow use case, compared with a baseline, and introduced through staged traffic. Frontier models can remain useful as fallbacks and as sources of training examples.
+
+The improvement policy states what may change and which quality and cost objectives apply. A lower token price is not enough: compare quality, total tokens, latency, and the capacity needed to serve the task.
+
+=== Limits and trade-offs
+
+A specialized model needs evidence for its intended task; success there does not establish general capability. Training data must be separated from evaluation data. Traffic that bypasses the gateway also bypasses its capture and routing, so comparisons need a clear account of what was measured.
+
+[#model-routing]
+== Model routing
+
+Model routing chooses which model serves a request without putting that choice in agent code. It lets you change models, enforce routing policy, and compare alternatives across agents that share a gateway.
+
+=== Routing in the request path
+
+An agent sends a model request through a proxy. The proxy asks the gateway router for a destination, then forwards the request to that backend. The router decides where the request goes; the proxy carries the request and response.
+
+Only traffic through this path is routed. A direct call to a provider or a served model bypasses gateway routing.
+
+=== Attributes and meaning
+
+Attribute routing evaluates declared rules first. Use it for explicit conditions such as a tenant header, protocol, or requested model. A rule can consult a routing classifier when the condition needs a model judgment.
+
+Semantic routing handles requests not claimed by attribute rules. It matches the request to a use case discovered from traffic. The working set evolves as traffic arrives; a deployed manifest freezes a version for routing. Comparing a request embedding with use-case centers is vector arithmetic and does not require an additional model judgment.
+
+Rules are preferable when you can state the condition directly. Semantic routing is useful when the task expressed by the request determines the destination. A frozen manifest can become less representative as traffic changes.
+
+=== Introducing a new model
+
+A routing policy can send shadow traffic to a candidate without returning its answers, then send a share of real traffic as a canary, before making it the regular destination. Rollback restores the previous policy version. These decisions are separate from training or registering the candidate.
+
+Routing decisions are recorded against the version of the rules that made them, so a past decision can be examined later.
+
+[#model-serving]
+== Model serving
+
+Serving a model means running its weights on accelerators in your project and exposing an endpoint that model clients can call. It gives you control over the hardware and the location of request data, with responsibility for the capacity you allocate.
+
+=== Hosted and served models
+
+A hosted provider supplies a model API and charges for usage. A served model uses accelerator capacity allocated to your project. Serving is useful for specialized models, steady workloads, or data that must remain in a particular region. Hosted providers remain useful for broad capabilities and uneven traffic.
+
+Allocated hardware is held while the model is idle. A lower token cost therefore needs to be weighed against capacity utilization and the work of selecting weights and engine settings.
+
+=== The serving resources
+
+Three resources connect hardware to callers:
+
+* An `AcceleratorAllocation` claims devices from a regional pool.
+* A `Model` places a checkpoint and serving engine on an allocated device.
+* A `ModelEndpoint` exposes selected models to clients authorized by API keys.
+
+A project route makes an endpoint reachable on a hostname. The client selects a model with a served name in its request. Adapters can give one base model several specialized served names.
+
+Serving and routing are separate. Deploying a model makes it callable; changing a routing policy decides which traffic reaches it. A trainer endpoint is for testing models, whereas a model endpoint serves production requests.
+
+=== Limits and trade-offs
+
+A model runs one replica. Additional capacity requires more models on more devices and routing between them. Changing the adapters restarts the engine. Configure hardware and engine settings with the Inference guides rather than assuming hosted-provider behavior.
+
+anchor:_routing_on_meaning[]
+anchor:_served_names_and_endpoints[]
+
+== Next steps
+
+* xref:sdk:model-provider-details.adoc[] configures model providers.
+* xref:inference:routing.adoc[] configures rules, semantic routing, and staged traffic.
+* xref:reference:cli/routing.adoc[] and xref:reference:descriptors/routing-ruleset.adoc[] define routing commands and predicates.
+* xref:inference:serving/getting-started.adoc[] deploys a first model.
+* xref:inference:serving/allocating-hardware.adoc[] and xref:inference:serving/deploying-models.adoc[] configure devices, weights, and engines.
+* xref:inference:serving/exposing-and-calling-models.adoc[] configures names, routes, and API keys.
+* xref:model-training.adoc[] connects inference traffic to training and cost.

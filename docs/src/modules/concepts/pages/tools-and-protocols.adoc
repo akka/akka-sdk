@@ -1,0 +1,37 @@
+= Tools and agent protocols
+:page-summary: A tool is a function that an agent offers to a model; the model asks for it, the agent runs it, and the result goes back into the model's context. Agent protocols such as MCP and A2A carry tools and agent calls between services.
+:page-when-to-use: When you decide how an agent acts on your system, how it uses tools that other services provide, and how agents in different services or frameworks reach each other.
+:page-related: sdk:agents/extending.adoc, sdk:mcp-endpoints.adoc, concepts:ai-orchestration-patterns.adoc
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+A tool gives a model access to a capability outside text generation: retrieving data, computing a result, or requesting an action. The model selects a tool and arguments; the runtime executes the call and returns its result as context.
+
+== Local and remote capabilities
+
+Function tools run application methods. Components offered as tools give the model access to your domain state and processes, with the persistence and concurrency behavior of those components. Share tool implementations when several agents need the same capability.
+
+The Model Context Protocol (MCP) connects agents to remote tools. An Akka agent can consume a remote MCP server, while an MCP endpoint exposes tools, resources, and prompts from your service to clients. These are opposite directions of the same integration.
+
+Agent-to-Agent (A2A) supports communication across agent systems. Inside an Akka service, the component client and coordination capabilities provide direct access without requiring a remote protocol for every call.
+
+== Discovery and coordination
+
+The agent registry identifies the agents in a service and supports lookup by identifier or role. Dynamic lookup is useful for a custom planner, but request compatibility is checked at runtime rather than by a typed method call.
+
+A tool is appropriate for a lookup or action within an interaction. A task gives work its own identity and observable lifecycle. A separate agent adds its own purpose and context. Choose the smallest unit that captures those needs.
+
+For a process that must survive failure, make remote work part of a workflow step or a durable agent task. Network protocols alone do not provide recovery of the calling process.
+
+== Limits and trade-offs
+
+A broad tool set increases prompt size and makes selection harder. Remote tools add network latency and another system's failure modes. Limit tool-call steps, validate arguments, and apply controls before allowing consequential actions. Support for media in tool results depends on the model provider.
+
+== Next steps
+
+* xref:sdk:agents/extending.adoc[] declares tools and configures MCP interception.
+* xref:sdk:mcp-endpoints.adoc[] exposes a service to MCP clients.
+* xref:sdk:agents/calling.adoc#_calling_agents_by_id[Calling agents by ID] uses the registry.
+* xref:sdk:autonomous-agents/coordination.adoc[] chooses between tools, tasks, and agents.
+* xref:sdk:integrations/apis-and-protocols.adoc[] describes supported integrations.

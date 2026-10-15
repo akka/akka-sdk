@@ -1,107 +1,77 @@
-= State model
+= State and read models
+:page-aliases: concepts:views.adoc
+:page-summary: Entities own durable application state; views build read models from their changes. Their separate responsibilities define where writes are consistent and where reads can lag.
+:page-when-to-use: When you need an overview of state and read models and links to the task guides.
+:page-related: sdk:event-sourced-entities.adoc, sdk:key-value-entities.adoc
+:page-persona: builder-developer, builder-ai-ml
 
 include::ROOT:partial$include.adoc[]
 
-Akka provides an in-memory, durable store for stateful data. Stateful data can be scoped to a single agent, or made available system-wide. Stateful data is persisted in an embedded event store that tracks incremental state changes, which enables recovery of system state (resilience) to its last known modification. State is automatically sharded and rebalanced across Akka nodes running in a cluster to support elastic scaling. State can also be replicated across regions for failover and disaster recovery.
+Entities own durable application state; views build read models from their changes. Their separate responsibilities define where writes are consistent and where reads can lag.
 
-Memory in Akka is structured around xref:reference:glossary.adoc#entity[entities]. An entity holds a particular slice of application state and evolves it over time according to a defined xref:reference:glossary.adoc#state_model[state model]. These state models determine how state is stored, updated, and replicated. This approach provides consistency and durability across the system, even in the face of failure. xref:sdk:agents.adoc[Agents], for example, manage their memory through entities, whether for short-lived context or persistent behavior.
+[#entities-and-event-sourcing]
+== Entities and event sourcing
 
-Akka uses an architectural pattern called _Event Sourcing_. Following this pattern, all changes to an application's state are stored as a sequence of immutable events. Instead of saving the current state directly, Akka stores the history of what happened to it. The current state is derived by replaying those events. Memory is saved in an event journal managed by Akka, with events recorded both sequentially and via periodic snapshots for faster recovery.
+An entity owns one slice of durable application state, identified by an ID. Its active state is held in memory, while persisted data allows recovery after restarts, movement between nodes, and failures.
 
-[cols="2,2,1", options="header"]
-|===
-| Event           | Amount            | Balance
-| AccountOpened   |$0       | $0
-| FundsDeposited  | +$1,000           | $1,000
-| FundsDeposited  | +$500             | $1,500
-| FundsWithdrawn  | -$200             | $1,300
-| FundsDeposited  | +$300             | $1,600
-| FundsWithdrawn  | -$400             | $1,200
-|===
+=== Two persistence models
 
-Akka uses the Event Sourcing pattern for many internal stateful operations. For example, xref:sdk:workflows.adoc[Workflows] rely on Event Sourcing to record each step as it progresses. This provides a complete history of execution, which can be useful for auditing, debugging, or recovery.
+An *Event Sourced Entity* stores changes as events in a journal and derives state by applying them. Snapshots reduce the history that must be replayed during recovery. Choose this model when the sequence of changes matters or other components need those events.
 
-[cols="1,2,2", options="header"]
-|===
-| Step | Action                   | Workflow State
+A *Key Value Entity* persists its complete current state on each update. It does not retain the event history of an Event Sourced Entity. Choose it when the current value is sufficient.
 
-| 1 | Withdraw from Account A    | $500 withdrawn from Account A
-| 2 | Reserve funds              | Funds marked for transfer
-| 3 | Deposit to Account B       | $500 added to Account B
-| 4 | Confirm transfer           | Transfer marked as complete
-| 5 | Send notification          | Recipient notified
-| 6 | Save audit record          | Transfer logged
-|===
+Both use effects to declare state changes. A successful command reply follows persistence; mutating a field directly does not persist it. Views and consumers can react to the resulting events or state changes.
 
-Tracking all state changes as a sequence of events allows you to create agentic systems that are also event-driven architectures. Akka provides event subscription, state subscription, brokerless messaging, and event replication, which makes it possible to chain together services that consume, monitor, synchronize, or aggregate the state of another service.
+=== Ownership and consistency
 
-image:concepts:event-actions.png[Event Actions,width=300]
+One owner processes commands for an entity ID at a time within a service cluster. The entity is the consistency boundary: changes within it can be coordinated, while changes across entities require a process or asynchronous reactions.
 
-Memory is managed automatically by the xref:sdk:agents.adoc[Agent] component. By default, each agent has session memory that stores interaction history and context using an xref:sdk:event-sourced-entities.adoc[Event Sourced Entity]. This memory is durable and retained across invocations. If needed, memory behavior can be customized or disabled xref:sdk:agents.adoc#_session_memory_configuration[through configuration].
+The runtime routes requests to that owner, passivates idle instances, and recovers them when needed. Distribute writes across suitable IDs rather than putting unrelated data into one large entity.
 
-== Entity state models
+An entity's *origin* is the region where it was created. Its *primary region* is the region currently accepting writes; the primary can change under the project's selection mode. Other regions can serve replicated reads, which may lag. Replicated writes using conflict-free replicated data types are an additional Event Sourced Entity option.
 
-Entities are used to store the data defined in the xref:concepts:architecture-model.adoc#_domain[domain model]. They follow a specific __state model__ chosen by the developer. The state model determines how the data is organized and persisted. Entities have data fields that can be simple or primitive types like numbers, strings, booleans, and characters. The fields can be more complex, which allows custom types to be stored in Akka.
+=== Evolving persisted data
 
-Entities have operations that can change their state. These operations are triggered asynchronously and implemented via methods that return xref:concepts:declarative-effects.adoc[`Effect`]. Operations allow entities to be dynamic and reflect the most up-to-date information and this all gets wired together for you.
+Events and state outlive the code that wrote them. New versions must read old persisted data, and rolling deployments can run two application versions together. Schema evolution is part of the application contract, not something recovery can infer automatically.
 
-Akka offers two state models: _Event Sourced Entity_ and _Key Value Entity_. Event Sourced Entities build their state incrementally by storing each update as an event, while Key Value Entities store their entire state as a single entry in a Key/Value store. To replicate state across clusters and regions, Akka uses specific conflict resolution strategies for each state model.
+[#views-and-cqrs]
+== Views and CQRS
 
-Event Sourced Entities, Key Value Entities and Workflows replicate their state by default. If you deploy your Service to a Project that spans multiple regions the state is replicated for you with no extra work to be done. Any region can read the data, and does so from a local store within the region. With replicated reads, each entity is written in its primary region. In the default request-region mode, a write in another region moves the primary to that region. In pinned-region mode, Akka forwards the write to the primary region. With replicated writes, every region can write. See xref:multi-region.adoc[].
+A view builds a queryable read model from changes to entities, workflows, or broker topics. It lets you query across many instances without making each entity serve that query.
 
-To understand more about regions and distribution see xref:deployment-model.adoc#_region[Deployment model].
+=== Separate reads from writes
 
-=== Identity
+Entities own the write model and validate commands. Views maintain a representation shaped for reads. This separation is commonly called command query responsibility segregation (CQRS).
 
-Each Entity instance has a unique id that distinguishes it from others. The id can have multiple parts, such as an address, serial number, or customer number. Akka handles concurrency for Entity instances by processing requests sequentially, one after the other, within the boundaries of a transaction. Akka proactively manages state, eliminating the need for techniques like lazy loading. For each state model, Akka uses a specific back-end data store, which cannot be configured.
+A view can select fields, combine sources, and maintain several tables for its queries. Its read workload scales independently of the entities producing changes. Use an entity read for the current state of one instance; use a view for filtering, aggregation, or queries spanning instances.
 
-==== Origin
+=== Consistency and delivery
 
-Stateful entities in Akka have a concept of location, that is region, and are designed to span regions and replicate their data. For more information about regions see xref:concepts:deployment-model.adoc#_region[region] in the Akka deployment model.
+View updates are asynchronous. A query immediately after an entity command can return the earlier state, even when the command succeeded. A view is not a transaction spanning its source entities.
 
-Entities call the region they were created in their *origin* and keep track of it throughout their lifetime. This allows Akka to simplify some aspects of distributed state.
+Updates are delivered at least once. For Akka sources, the runtime tracks sequence numbers and removes duplicate updates. Key Value Entity sources can skip intermediate states and provide the latest value. Broker sources need appropriate message identity and ordering.
 
-An entity also has a primary region, where its state is changed. In the default request-region mode, the primary moves to the region that receives a write. In pinned-region mode, Akka routes state-changing operations to the primary region. This routing is asynchronous and durable, so a network partition does not stop the write from being queued. In both modes, every region can read the entity. See xref:multi-region.adoc[].
+In a multi-region project, a local view reflects the changes available in that region. Replication lag and projection lag can both affect what it sees.
 
-=== The Event Sourced state model
+=== Changing a projection
 
-The Event Sourced state model captures changes to data by storing events in a journal. The current entity state is derived from the events. Interested parties can read the journal and transform the stream of events into read models (Views) or perform business actions based on events. 
+A change to the view's schema or update logic can require rebuilding its data. Plan for the cost of replay and for compatible deployment rather than treating the read model as the authoritative history.
 
-image:event-sourced-entity-flow.svg[Concepts Events Source Flow]
+Live query streams deliver updates while connected; they are not a durable substitute for event consumption.
 
-A client sends a request to an Endpoint image:steps-1.svg[width=20]. The request is handled in the Endpoint which decides to send a command to the appropriate Event sourced  entity image:steps-2.svg[width=20], its identity is either determined from the request or by logic in the Endpoint.
+anchor:_entity_state_models[]
+anchor:_identity[]
+anchor:_origin[]
+anchor:_schema_evolution[]
+anchor:_state_models_and_replication[]
+anchor:_the_event_sourced_state_model[]
+anchor:_the_key_value_state_model[]
 
-The Event sourced entity processes the command image:steps-3.svg[width=20]. This command requires updating the Event sourced entity state. To update the state it emits events describing the state change. Akka stores these events in the event store image:steps-4.svg[width=20].
+== Next steps
 
-After successfully storing the events, the event sourced entity updates its state through its event handlers image:steps-5.svg[width=20].
-
-The business logic also describes the reply as the commands effect which is passed back to the Endpoint image:steps-6.svg[width=20]. The Endpoint replies to the client when the reply is processed image:steps-7.svg[width=20].
-
-NOTE: Event sourced entities express state changes as events that get applied to update the state.
-
-=== The Key Value state model
-
-In the _Key Value_ state model, only the current state of the Entity is persisted - its value. Akka caches the state to minimize data store access. Interested parties can subscribe to state changes emitted by a Key Value Entity and perform business actions based on those state changes. 
-
-image:key-value-entity-flow.svg[Concepts Key Value Flow]
-
-A client sends a request to an Endpoint image:steps-1.svg[width=20]. The request is handled in the Endpoint which decides to send a command to the appropriate Key Value entity image:steps-2.svg[width=20], its identity is either determined from the request or by logic in the Endpoint.
-
-The Key Value entity processes the command image:steps-3.svg[width=20]. This command requires updating the Key Value entity state. To persist the new state of the Key Value entity, it returns an effect. Akka updates the full state in its persistent data store image:steps-4.svg[width=20].
-
-The business logic also describes the reply as the commands effect which is passed back to the Endpoint image:steps-5.svg[width=20]. The Endpoint replies to the client when the reply is processed image:steps-6.svg[width=20].
-
-NOTE: Key Value entities capture state as one single unit, they do not express state changes in events.
-
-=== State models and replication
-
-Event Sourced entities are replicated between all regions in an Akka project by default. This allows for a multi-reader capability, with writes handled in the primary region of the entity, as described in <<_origin>>.
-
-In order to have multi-writer (or write anywhere) capabilities you must implement a conflict-free replicated data type (CRDT) for your Event Sourced Entity. This allows data to be shared across multiple instances of an entity and is eventually consistent to provide high availability with low latency. The underlying CRDT semantics allow replicated Event Sourced Entity instances to update their state independently and concurrently and without coordination. The state changes will always converge without conflicts, but note that with the state being eventually consistent, reading the current data may return an out-of-date value.
-
-NOTE: Although Key Value Entities are planned to support a Last Writer Wins (LWW) mechanism, this feature is not yet available.
-
-== Related documentation
-
-- xref:sdk:event-sourced-entities.adoc[Event Sourced Entities]
-- xref:sdk:key-value-entities.adoc[Key Value Entities]
+* xref:sdk:event-sourced-entities.adoc[] and xref:sdk:key-value-entities.adoc[] implement the persistence models.
+* xref:sdk:views.adoc[] defines projections, update handlers, and queries.
+* xref:reference:views/index.adoc[] documents query syntax and result mapping.
+* xref:sdk:components/index.adoc#choosing-a-component-type[Choosing a component type] compares state and query responsibilities.
+* xref:sdk:serialization.adoc#_schema_evolution[Schema evolution] covers compatible persisted-data changes.
+* xref:multi-region.adoc[] explains replication and consistency across regions.

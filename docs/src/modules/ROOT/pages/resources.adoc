@@ -29,7 +29,6 @@ A curated collection of Akka technical content beyond the SDK documentation.
 
 * link:{url-blog-cell-based}[Cell-Based Architectures and Akka, window="new"]
 * link:{url-blog-multi-region}[Multi-Region Replicated Apps, window="new"]
-* link:{url-blog-six-nines}[Build and Run Apps with 99.9999% Availability, window="new"]
 * link:{url-blog-clustering}[How Does Akka Clustering Work?, window="new"]
 * link:{url-blog-backbone-distributed}[The Backbone of Agentic AI and Distributed Systems, window="new"]
 
@@ -88,3 +87,9 @@ A curated collection of Akka technical content beyond the SDK documentation.
 * link:{url-akka-blog}[Blog, window="new"]
 * link:{url-akka-support}[Support Portal, window="new"]
 * link:{url-akka-trust-center}[Trust Center, window="new"]
+
+== Foundational AI concepts
+
+This video introduces vectors, embeddings, semantic search, retrieval-augmented generation, and their relationship to agent context and stateful workflows.
+
+video::mWpCnptTTPQ[youtube,width=560,height=315]

@@ -74,7 +74,7 @@ An Event Sourced Entity Effect can either:
 * attach a time-to-live (TTL) to a persist effect for automatic deletion
 * return an error message
 
-For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
+For additional details, refer to xref:concepts:components.adoc#_effects_what_the_component_declares[Effects].
 
 == Implementing behavior
 

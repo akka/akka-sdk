@@ -1,0 +1,50 @@
+= Controls
+:page-summary: A control is an obligation plus the mechanism that meets it; Akka has five control types, guardrails, sanitizers, evals, human decisions and gates, and every verdict a control produces names the control it came from.
+:page-when-to-use: When you need to choose how an obligation is enforced, understand what each control type can and cannot do at runtime, or read the verdicts that controls produce.
+:page-related: concepts:governance-and-the-runtime.adoc, concepts:evaluation.adoc, concepts:evidence.adoc
+:page-persona: builder-developer, builder-ai-ml, governance-compliance, governance-infosec
+
+include::ROOT:partial$include.adoc[]
+
+A control connects an obligation to a mechanism that checks or enforces it. Choose the mechanism from when the obligation must hold and what should happen when it does not.
+
+== Five control types
+
+[cols="1,2",options="header"]
+|===
+| Type | Purpose
+| Guardrail | Decide whether a model call, tool call, or response may proceed.
+| Sanitizer | Mask sensitive text before it reaches a configured destination.
+| Evaluation | Measure behavior against quality or safety criteria.
+| Human decision | Require a person's approval or input at a defined step.
+| Gate | Turn check results into a build or release decision.
+|===
+
+A classifier supplies a score or label that another mechanism uses. It is a building block, not an additional control type: the same classifier can inform a guardrail, sanitizer, evaluator, or application decision.
+
+== Timing and outcomes
+
+A blocking guardrail acts inline. By default, a failure of the check does not permit the action to proceed. Report-only mode observes decisions without blocking. A live evaluator runs after an interaction and cannot undo its outcome; use a guardrail when the result must determine whether an action happens.
+
+Human approval requires more than a pause. The system must authenticate the decision, verify the person's authority, and record it before resuming. A workflow supplies the durable wait and application logic supplies the acceptance conditions.
+
+A gate decides over results, such as a test pass rate or the exit conditions required for release. It is distinct from an individual runtime check.
+
+== Evidence and intervention
+
+Each verdict identifies its control so evidence can be traced to an obligation. Control verdicts distinguish upheld, breached, inconclusive, and error outcomes; an unavailable check must not silently become a successful one.
+
+A system-wide halt and a per-call guardrail have different scopes. For an Autonomous Agent, the component client provides suspension, resumption, and termination. Use the documented lifecycle behavior when implementing intervention.
+
+anchor:_the_five_control_types[]
+anchor:evals[]
+anchor:gates[]
+anchor:guardrails[]
+
+== Next steps
+
+* xref:sdk:agents/guardrails.adoc[] and xref:sdk:sanitization.adoc[] enforce boundaries.
+* xref:sdk:evaluators.adoc[] and xref:sdk:agents/classifiers.adoc[] implement assessment.
+* xref:sdk:workflows.adoc#_pausing_workflow[Workflow pauses] support human decisions.
+* xref:testing:evaluation/gates-and-reports.adoc[] and xref:concepts:spec-driven-development.adoc#conformance[] govern release decisions.
+* xref:sdk:autonomous-agents/client.adoc[] controls running agents.

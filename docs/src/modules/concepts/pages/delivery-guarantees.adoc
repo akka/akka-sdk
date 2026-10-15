@@ -1,0 +1,66 @@
+= Events and streaming
+:page-aliases: concepts:streaming.adoc
+:page-summary: Events carry changes between components, and streaming controls how those changes are processed over time. Delivery guarantees and back-pressure address different parts of that communication.
+:page-when-to-use: When you need an overview of events and streaming and links to the task guides.
+:page-related: sdk:consuming-producing.adoc, sdk:dev-best-practices.adoc, concepts:state-model.adoc
+:page-persona: builder-developer
+
+include::ROOT:partial$include.adoc[]
+
+Events carry changes between components, and streaming controls how those changes are processed over time. Delivery guarantees and back-pressure address different parts of that communication.
+
+[#messaging-and-delivery]
+== Messaging and delivery
+
+A delivery guarantee describes what happens to a message when a sender, receiver, or connection fails. Akka generally uses at-least-once delivery for durable event processing: a message is retried rather than silently lost, so a receiver can see it more than once.
+
+=== Why duplicates happen
+
+A receiver can process a message and fail before the sender learns that it succeeded. Retrying avoids loss, but can repeat the operation. The receiver must make repeated processing safe.
+
+An idempotent operation has the same result when repeated, such as setting a value. Deduplication recognizes an already processed message, using an identifier or a source sequence number. For external calls, send a stable deduplication token that the destination can enforce.
+
+=== Delivery and ordering
+
+Events from Akka sources are ordered per source instance, not globally across every entity. Views remove duplicates from Akka sources by sequence number; consumers must make their own side effects safe. Broker messages need suitable keys and subject metadata for the intended ordering.
+
+A consumer records progress and resumes after a restart. A message that always fails can block that consumer until it is handled or skipped. More retries do not repair an invalid handler or message.
+
+Timers and retried workflow steps can also repeat calls. Live streams to clients, including workflow notifications and streamed view updates, have different semantics: they are live observations and do not provide durable replay or guaranteed delivery.
+
+=== Choosing between calls and events
+
+Use a direct call when the caller needs the result to continue. Use a consumer when the work is an independent reaction to a persisted fact. That moves the reaction outside the original write path and gives it independent retries, with the corresponding need to handle duplicates.
+
+[#streaming-and-back-pressure]
+== Streaming and back-pressure
+
+Streaming processes a sequence of elements as they arrive. In Akka, views and consumers process durable event streams, while endpoints and agents can stream results to connected clients.
+
+=== Pacing the work
+
+A fast producer must not force a slow consumer to buffer an unlimited number of elements in memory. Back-pressure lets a receiver signal how much it can process so the sender adjusts its pace.
+
+For durable event sources, consumers read at their own pace while unprocessed events remain in the journal or broker. Progress is recorded so processing can resume after a restart. Several consumers can react independently to the same source.
+
+For in-memory streams, such as query results sent to a client, demand propagates upstream through the stream. This controls flow; it does not by itself make the stream durable.
+
+=== Durable streams and live output
+
+Durable event processing provides at-least-once delivery and per-source ordering. A failed event can block further processing until it succeeds or is skipped.
+
+Live output to a connected client has different semantics. A token stream, view-update stream, or workflow notification does not automatically replay everything missed while the client was disconnected. Choose a durable event source when that history matters.
+
+Services in the same project can exchange events without a broker. Broker integrations connect those services to existing messaging infrastructure.
+
+=== Built-in streaming and Akka Streams
+
+The SDK handles streaming for its views, consumers, and supported endpoints. Use the lower-level Akka Streams library when you need a stream topology or lifecycle those components do not provide; you then manage that stream yourself.
+
+== Next steps
+
+* xref:sdk:consuming-producing.adoc[] configures sources, destinations, ordering, and delivery.
+* xref:sdk:dev-best-practices.adoc#message-deduplication[Message deduplication] implements safe repeated processing.
+* xref:sdk:streaming.adoc[] explains built-in streaming and direct use of Akka Streams.
+* xref:sdk:agents/streaming.adoc[] streams agent responses.
+* xref:sdk:timed-actions.adoc[] and xref:sdk:workflows.adoc[] cover scheduled and retried calls.

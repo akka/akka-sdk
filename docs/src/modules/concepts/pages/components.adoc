@@ -1,0 +1,46 @@
+= Components and effects
+:page-aliases: concepts:concepts.adoc, concepts:declarative-effects.adoc
+:page-summary: Components are the building blocks of an Akka service; each component method returns an effect that declares what the runtime should do, and the runtime decides how.
+:page-when-to-use: When you need to understand how Akka components divide work with the runtime, how they call each other, and which runtime each one uses.
+:page-related: sdk:components/index.adoc, concepts:state-model.adoc, concepts:durable-execution.adoc
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+A component is a class whose lifecycle and execution the Akka runtime manages. Components hold application behavior; the runtime handles persistence, message routing, placement, concurrency, and recovery.
+
+== Components and ordinary classes
+
+Use a component when its runtime behavior is needed: durable state, an agent interaction, a workflow, a projection, or an endpoint. Keep calculations and business rules in ordinary Java classes that components call. The xref:sdk:components/index.adoc[component guide] compares component types and explains how to choose one.
+
+An endpoint exposes a service to callers. Entities own state, workflows coordinate durable steps, agents interact with models, and views build read models. Consumers react to streams of changes, while timers arrange later calls. A service combines these responsibilities rather than requiring a component for every class.
+
+== Effects declare execution
+
+A component returns an effect describing what the runtime should do: persist an event, update state, transition to a step, reply, or reject a command. Returning that description separates the decision from its execution.
+
+image::concepts:component-effects.svg[Components return effects that the runtime carries out,width=880]
+
+Each component type has an Effect API suited to its behavior. The SDK guide for that component defines the available operations. Code executed outside an effect does not acquire persistence or retry behavior merely because it runs inside a component.
+
+== Commands and events
+
+A command asks a component to do something and can be accepted or rejected. An event records something that has happened. Keeping requests separate from recorded facts lets the runtime recover state, deliver changes to other components, and build read models.
+
+Components communicate through direct calls or subscriptions to changes. A direct call requests a result; an event subscription lets another component react independently. Location transparency means callers address a component by identity rather than by the node on which it runs.
+
+== Execution and failure
+
+The runtime supports durable multi-step execution, short transactional operations, and continuous streams. A workflow persists progress across steps. An entity processes commands against its state. A consumer processes a stream at its own pace. These share an actor-based core with isolation and asynchronous messaging.
+
+Durable execution does not make arbitrary external side effects exactly once. Calls can be retried, and handlers must account for duplicate execution. See xref:durable-execution.adoc[] and xref:delivery-guarantees.adoc[].
+
+anchor:_effects_what_the_component_declares[]
+
+== Next steps
+
+* xref:sdk:components/index.adoc[] compares components and ordinary classes.
+* xref:sdk:component-and-service-calls.adoc[] explains direct calls and synchronous and asynchronous APIs.
+* xref:sdk:errors-and-failures.adoc[] distinguishes expected errors from failures and documents their responses.
+* xref:sdk:setup-and-dependency-injection.adoc[] explains startup, shutdown, and per-instance dependency injection.
+* xref:state-model.adoc[] explains how effects change durable state.

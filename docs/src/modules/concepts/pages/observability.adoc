@@ -1,0 +1,28 @@
+= Observability
+:page-summary: Akka produces logs, metrics and traces for every service, shows them in the Akka Console and exports them to the tools you already run; this telemetry is for operating the system and is separate from the ledger that governance relies on.
+:page-when-to-use: When you need to know what telemetry Akka produces, where you can see it, and how it differs from the ledger.
+:page-related: operations:observability-and-monitoring/index.adoc, concepts:governance-and-the-runtime.adoc, concepts:deployment-model.adoc
+:page-persona: operator-sre, operator-platform, builder-developer
+
+include::ROOT:partial$include.adoc[]
+
+Observability uses logs, metrics, and traces to explain the behavior of a running system. It helps you find failures, follow requests, and understand capacity and latency.
+
+== Three views of a running service
+
+Logs record messages from service instances. Metrics summarize activity and resource use over time. Traces follow individual requests through components and external calls. Together they help explain where a request spent time and which part failed.
+
+The local console supports development; the Akka Console and configured exporters support deployed services. Exporting data lets you use your own monitoring and retention policies.
+
+== Operational telemetry and evidence
+
+Telemetry and the ledger answer different questions. Telemetry helps you operate the service and can be sampled or bounded. The ledger records interactions and control verdicts for governance. A sampled trace is not a complete audit history.
+
+Use telemetry to investigate performance, failures, and capacity. Use the ledger when a decision needs evidence of which action ran, under whose identity, and under which controls. See xref:evidence.adoc[].
+
+== Next steps
+
+* xref:operations:observability-and-monitoring/index.adoc[] explains signal coverage, the consoles, platform telemetry, and the ledger comparison.
+* xref:operations:observability-and-monitoring/observability-exports.adoc[] configures exporters and sampling.
+* xref:operations:observability-and-monitoring/alerting-baselines.adoc[] suggests alerts.
+* xref:reference:telemetry/metrics.adoc[] lists metrics.

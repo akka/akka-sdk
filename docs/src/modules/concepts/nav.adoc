@@ -1,15 +1,34 @@
 // Understanding/Concepts
 ** xref:concepts:index.adoc[]
-*** xref:concepts:concepts.adoc[]
 *** Foundations
+**** xref:concepts:platform-model.adoc[]
+**** xref:concepts:request-lifecycle.adoc[]
 **** xref:concepts:distributed-systems.adoc[]
-**** xref:concepts:architecture-model.adoc[]
-**** xref:concepts:deployment-model.adoc[]
-*** State and execution
+*** Building services
+**** xref:concepts:components.adoc[]
 **** xref:concepts:state-model.adoc[]
-**** xref:concepts:declarative-effects.adoc[]
-**** xref:concepts:multi-region.adoc[]
-*** Agentic concepts
+**** xref:concepts:durable-execution.adoc[]
+**** xref:concepts:delivery-guarantees.adoc[]
+*** Agents
 **** xref:concepts:ai-agents.adoc[]
+**** xref:concepts:agent-memory.adoc[]
+**** xref:concepts:tools-and-protocols.adoc[]
 **** xref:concepts:ai-orchestration-patterns.adoc[]
+*** Specifications
+**** xref:concepts:spec-driven-development.adoc[]
+*** Governance
 **** xref:concepts:governance-and-the-runtime.adoc[]
+**** xref:concepts:controls.adoc[]
+**** xref:concepts:evaluation.adoc[]
+**** xref:concepts:risk-to-controls.adoc[]
+**** xref:concepts:evidence.adoc[]
+*** Models
+**** xref:concepts:models.adoc[]
+**** xref:concepts:model-training.adoc[]
+*** Runtime and operations
+**** xref:concepts:runtime.adoc[]
+**** xref:concepts:deployment-model.adoc[]
+**** xref:concepts:multi-region.adoc[]
+**** xref:concepts:availability.adoc[]
+**** xref:concepts:security-and-identity.adoc[]
+**** xref:concepts:observability.adoc[]

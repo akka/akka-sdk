@@ -8,21 +8,21 @@ include::ROOT:partial$include.adoc[]
 
 Akka Verify is runtime-native evaluation, enforcement, evidence and governance for agents built on Akka or elsewhere. It lets you measure what an agent does against defined quality criteria, stop or redirect an action at runtime, and keep the record that an auditor asks for.
 
-An agent that works in a demo is not yet one that customers and regulators can rely on. When evaluation, guardrails and governance are separate systems, nothing gives one view of what agents are doing, one way to stop them, or one record of why they acted. Akka Verify runs all three on the same runtime and the same record.
+An agent that works in a demo is not yet one that customers and regulators can rely on. When evaluation, guardrails and governance are separate systems, nothing gives one view of what agents are doing, one way to stop them, or one record of why they acted. Akka Verify runs all three on the same runtime and the same ledger.
 
 == Evaluating agents
 
 Evaluations measure an agent against defined quality criteria for its task, with deterministic evaluators and with a model acting as judge. They run in your tests before an agent is released, in batches against recorded traffic, and continuously on live traffic. Replay runs a new evaluator against past traffic by replaying the real execution. Adversarial tests attack your own agent with jailbreaks, prompt injection and known hazard categories, and report whether the agent resisted each attack.
 
-See xref:testing:evaluation/index.adoc[Evaluation], xref:testing:evaluation/adversarial.adoc[], xref:testing:evaluation/replay.adoc[] and xref:sdk:evaluators.adoc[Evaluators].
+See xref:concepts:evaluation.adoc[], xref:testing:evaluation/index.adoc[Evaluation in tests], xref:testing:evaluation/adversarial.adoc[], xref:testing:evaluation/replay.adoc[] and xref:sdk:evaluators.adoc[Evaluators].
 
 == Enforcing controls
 
-A control is one of five mechanisms:
+A control is an obligation plus the mechanism that meets it. Every control is one of five control types:
 
 [cols="1,3,2", options="header"]
 |===
-| Mechanism | What it does | Documentation
+| Control type | What it does | Documentation
 
 | Guardrail
 | Blocks or passes an action at a runtime boundary: before a model call, before a tool call, or on the reply. Guardrails fail closed by default.
@@ -47,7 +47,7 @@ A control is one of five mechanisms:
 
 An evaluation can observe after a run, or run inline as a guardrail that blocks, re-prompts or escalates before a response leaves the agent. Inline, the action, the verdict and the audit entry are committed in one transaction. A halt stops every in-flight and future model and tool call in its scope and moves the system to a safe state.
 
-See xref:concepts:governance-and-the-runtime.adoc[].
+See xref:concepts:controls.adoc[] and xref:concepts:governance-and-the-runtime.adoc[].
 
 == Governing a system
 
@@ -55,11 +55,13 @@ Governance starts from risk. The risk envelope in the specification defines it, 
 
 At runtime, every control produces verdicts: upheld, breached, inconclusive or error. Akka Verify shows which controls are in force and whether each one held, the evidence behind every verdict, compliance over time, and drift in behavior or in verdicts. Changes to a system go through review with their evidence and approvals. Evidence packs collect signed evidence to hand to an auditor. Records are retained for the regulatory period and can be put on legal hold.
 
+See xref:concepts:risk-to-controls.adoc[].
+
 == The ledger
 
-Every interaction is recorded in the ledger: non-sampled, hash-chained and tamper-evident. Each entry carries the identity of the workload that acted, the trace it belongs to, and the controls that applied. Akka Verify reads the ledger for verdicts and evidence. xref:ROOT:about/akka-optimize.adoc[Akka Optimize] reads the same record to grade and train models.
+Every interaction is recorded in the ledger: non-sampled, hash-chained and tamper-evident. Each record carries the identity of the workload that acted, the trace it belongs to, and the controls that applied. Akka Verify reads the ledger for verdicts and evidence. xref:ROOT:about/akka-optimize.adoc[Akka Optimize] reads the same records to grade and train models.
 
-See xref:sdk:evaluators.adoc[Evaluators] for writing to and reading from the ledger.
+See xref:concepts:evidence.adoc[] and xref:sdk:evaluators.adoc[Evaluators] for writing to and reading from the ledger.
 
 == Agents built elsewhere
 
@@ -75,7 +77,7 @@ Agents that do not run on Akka send their traces over OpenTelemetry. For those a
 | xref:getting-started:planner-agent/eval.adoc[Evaluate the planner agent]
 
 | Understanding
-| xref:concepts:governance-and-the-runtime.adoc[]
+| xref:concepts:governance-and-the-runtime.adoc[], xref:concepts:controls.adoc[], xref:concepts:evaluation.adoc[], xref:concepts:risk-to-controls.adoc[], xref:concepts:evidence.adoc[]
 
 | Developing
 | xref:sdk:agents/guardrails.adoc[Guardrails], xref:sdk:agents/classifiers.adoc[Classifiers], xref:sdk:evaluators.adoc[Evaluators], xref:sdk:sanitization.adoc[Data sanitization], xref:sdk:access-control.adoc[]
