@@ -1,0 +1,96 @@
+= How Akka runs
+:page-aliases: ROOT:akka-automated-operations.adoc, ROOT:akka-internals.adoc, ROOT:how-akka-works.adoc
+:page-summary: Every system built with Akka runs on the Akka runtime. You operate it yourself, or Akka Automated Operations runs it for you on Akka's serverless cloud, on dedicated infrastructure, or in your own cloud account or Kubernetes cluster.
+:page-when-to-use: When you need to know what the Akka runtime does, which deployment options exist, and who operates what in each.
+:page-related: operations:index.adoc, concepts:deployment-model.adoc, concepts:multi-region.adoc
+:page-persona: all
+
+include::ROOT:partial$include.adoc[]
+
+Every system you build with Akka runs on the Akka runtime. The runtime is the same wherever it runs, so your services are the same code in every deployment option. What changes between options is who operates the runtime and the infrastructure under it.
+
+== The runtime
+
+Akka keeps state together with the code that owns it. Instead of stateless services on one side and a database on the other, each component holds its own state in memory and records every change durably as events and snapshots. The application is its own system of record. When a process or node fails, the runtime rebuilds the state of each component from its events, with no operator action.
+
+Services form a cluster with no primary node. State is sharded across the nodes, each entity has one owner at a time, and requests are routed to the owner wherever it runs. As nodes join or leave, shards rebalance. Nodes communicate over encrypted gRPC without a message broker, and split-brain resolution keeps the cluster consistent when the network partitions.
+
+A project can span several regions, clouds and data centers as one system. State is replicated to every region, reads are served locally, and you choose how writes are handled in each region. You can filter what is replicated, and keep data in the regions where it is allowed to live.
+
+See xref:concepts:deployment-model.adoc[], xref:concepts:state-model.adoc[] and xref:concepts:multi-region.adoc[].
+
+== Deployment options
+
+[cols="1,2,2,2", options="header"]
+|===
+| Option | Where it runs | Who operates it | Start here
+
+| Serverless
+| Akka's cloud, shared infrastructure, in regions on every major hyperscaler
+| Akka
+| xref:getting-started:quick-deploy.adoc[Deploy to akka.io]
+
+| Dedicated
+| Akka's cloud, a single-tenant region
+| Akka
+| xref:operations:production-readiness/dedicated/checklist.adoc[Dedicated production readiness]
+
+| BYOC
+| Your cloud account on AWS, Azure or GCP
+| Akka, on infrastructure you own
+| xref:operations:technical-overview/byoc.adoc[Get started with BYOC]
+
+| BYOK8s
+| A Kubernetes cluster you provide
+| Akka operates the platform; you own the cluster
+| xref:operations:technical-overview/byok8s-requirements.adoc[Get started with BYOK8s]
+
+| Self-managed
+| Infrastructure you choose: bare metal, VMs, containers or edge
+| You
+| xref:operations:configuring.adoc[Self-managed operations]
+|===
+
+Serverless is pay as you go, paid by credit card, and scales to zero when idle. You create an account at console.akka.io and deploy from the Akka CLI.
+
+In BYOC and BYOK8s, application data stays in your environment. A limited set of platform interactions, such as deployments and key rotation, still crosses to Akka. See xref:operations:technical-overview.adoc[] for the architecture and data flows, and xref:operations:production-readiness/choosing-your-environment.adoc[] for sizing, availability and data residency.
+
+== What Akka Automated Operations does
+
+Akka Automated Operations (AAO) runs the runtime for you in the Serverless, Dedicated, BYOC and BYOK8s options. It handles the work that comes after deployment:
+
+* Elastic scaling: capacity follows load, idle services scale to zero, and cold starts are handled.
+* Multi-region operations: one system across regions, with failover when a region is lost.
+* No-downtime updates: new versions roll out in waves, including changes to how services store data.
+* Live patching: runtime and security patches, and certificate and key rotation, without downtime.
+* Moving between environments: cloud to cloud, from Akka's cloud into your own account, or back on premises, by replication with an automated switch.
+* Zero-trust networking: every workload is attested rather than trusted for its network location. In your own cloud account, services can also be operated as multi-tenant, with access controls across organizations.
+* Operations around the clock by Akka for the options Akka operates.
+
+Self-managed operations give you the runtime, clustering, elasticity, resilience, and metrics, logs and traces. Logs, metrics and traces can be exported to OpenTelemetry, Prometheus or Splunk in every option. The other items above are AAO. See the feature comparison on xref:operations:index.adoc[Operating].
+
+== Where it is in the documentation
+
+[cols="1,3", options="header"]
+|===
+| Section | Start with
+
+| Getting started
+| xref:getting-started:quick-deploy.adoc[Deploy to akka.io]
+
+| Understanding
+| xref:concepts:deployment-model.adoc[], xref:concepts:multi-region.adoc[], xref:concepts:distributed-systems.adoc[]
+
+| Operating
+| xref:operations:index.adoc[Operating], xref:operations:akka-platform.adoc[Akka Automated Operations], xref:operations:configuring.adoc[Self-managed operations], xref:operations:production-readiness/index.adoc[Production readiness]
+
+| Reference
+| xref:reference:descriptors/index.adoc[Descriptors], xref:reference:cli/akka-cli/index.adoc[Akka CLI]
+|===
+
+== Part of the Akka Agentic AI Platform
+
+* xref:ROOT:about/akka-sdk.adoc[Akka SDK] components are what the runtime runs.
+* xref:ROOT:about/akka-specify.adoc[Akka Specify] sets the operational envelope: service levels, regions and budgets.
+* xref:ROOT:about/akka-verify.adoc[Akka Verify] enforces controls inside the runtime.
+* xref:ROOT:about/akka-optimize.adoc[Akka Optimize] serves models on accelerators in your regions.

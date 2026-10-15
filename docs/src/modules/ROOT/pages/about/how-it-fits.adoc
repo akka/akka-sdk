@@ -1,0 +1,60 @@
+= How the solutions work together
+:page-summary: The four solutions of the Akka Agentic AI Platform share one definition of an AI system, one runtime, one evidence record and one governance model, so each solution works on what the others produce.
+:page-when-to-use: When you need to see how a specification, the components built from it, the controls that govern it and the models it calls connect in one system.
+:page-related: ROOT:about-akka.adoc, concepts:index.adoc, concepts:governance-and-the-runtime.adoc
+:page-persona: all
+
+include::ROOT:partial$include.adoc[]
+
+The four solutions of the Akka Agentic AI Platform are parts of one system, not separate products. Each one reads or produces something that the others use. This page describes what they share and follows one agent from its specification to a smaller model trained on its traffic.
+
+== What the solutions share
+
+One definition of an AI system::
+A specification describes what the system must do, what it must know, what could go wrong and how far it may tune itself. Akka Specify builds the system from it, Akka Verify derives controls from its risk section, and Akka Optimize works within its improvement policy.
+
+One runtime::
+Every component you build with the Akka SDK runs on the Akka runtime. The runtime keeps state durable, recovers from failure and scales services. Controls run inside it: guardrails act in the path of the action they govern, and evaluators score each interaction after it completes. See xref:concepts:governance-and-the-runtime.adoc[].
+
+One evidence record::
+The runtime records every interaction: model calls, tool calls, guardrail and evaluator verdicts, and human decisions, each with the identity of the agent that made it. This record is the ledger. Akka Verify reads it to score, enforce and prove behavior. Akka Optimize reads the same record to grade traffic and to train models, so cost and compliance are measured on the same data.
+
+One governance model::
+Controls are defined once and enforced the same way for every agent: guardrails, sanitizers, evaluations, human decisions and gates. Each control has an id, and every verdict names the control it came from.
+
+== One agent, from specification to a trained model
+
+The steps below follow a single agent through the platform.
+
+. A team writes a specification in an AI harness, in plain language. The Akka Specify Plugin plans the work, implements it and tests it. See xref:sdk:spec-driven-development.adoc[].
+. The result is Akka SDK components: an agent, a workflow that supervises it, entities that hold its state, and endpoints that expose it. See xref:sdk:components/index.adoc[Components].
+. Exit conditions define when the work is done. In enforced mode, a change that does not meet them is blocked before it merges. See xref:sdk:enforced-mode.adoc[].
+. The risk section of the specification becomes the controls that apply to the agent: guardrails on its inputs, tool calls and outputs, sanitizers on what it stores and logs, evaluations of its replies, and gates on its release. See xref:sdk:agents/guardrails.adoc[Guardrails] and xref:sdk:evaluators.adoc[Evaluators].
+. Evaluations run the agent through eval cases before it is deployed, and adversarial tests attack it. See xref:testing:evaluation/index.adoc[Evaluation].
+. The agent serves traffic on the Akka runtime. Every interaction is recorded in the ledger, and controls act on it in line.
+. Akka Verify scores live traffic, flags drift, holds the evidence for each control and produces the record an auditor asks for.
+. Akka Optimize grades the same traffic, routes each task to the model that fits it, and trains a smaller open-weight model on your data. The new model replaces the old one only when its quality, measured on the evidence Akka Verify already holds, meets the acceptance criteria. See xref:inference:index.adoc[Inference].
+
+Each step reads what an earlier step produced. Nothing is copied between separate tools.
+
+== Agents built elsewhere
+
+Akka Verify and Akka Optimize also work on agents that do not run on Akka. Traffic from those agents reaches Akka through OpenTelemetry traces or through the model gateway. For those agents you get:
+
+* Classification of the system against regulations and frameworks, and the controls that follow from it.
+* Evaluation and grading of the captured traffic.
+* Signed controls, sign-off and sealed evidence.
+* Routing and training from the captured traffic.
+
+Some capabilities need the agent to run on the Akka runtime, because they act inside the transaction of the action:
+
+* Inline guardrails that stop an action before it happens.
+* Durable suspension while a person decides, across crashes and deployments.
+* The non-sampled, hash-chained ledger with the identity and authority behind each action.
+* A record of whether a side effect ran.
+
+== See also
+
+* xref:ROOT:about-akka.adoc[]
+* xref:concepts:index.adoc[Understanding]
+* xref:concepts:governance-and-the-runtime.adoc[]

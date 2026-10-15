@@ -2,16 +2,17 @@
 
 Standards for writing and editing pages under `docs/src`. The migration plan (positioning, target
 structure, page audit, llms.txt generator) lives in `docs-overhaul-spec.md`; the spec takes
-precedence where the two overlap.
+precedence where the two overlap, except for product framing and the About Akka section. There,
+this file and `writing-standards.md` replace the positioning in the spec.
 
 ## Audience: people and AI agents
 
-The primary consumer is an AI agent as much as a human. The docs are published as HTML for people
+The primary consumer is an AI agent as much as a human. The documentation is published as HTML for people
 and as markdown plus `llms.txt` for AI coding assistants (see the README.md). Structure, label, and
 write content so agents can parse, navigate, and act on it — but the same literal, consistent,
 self-contained style serves both audiences, so you do not write differently for them:
 
-- Use one term for one thing, everywhere. Consistent naming is what keeps the docs retrievable and
+- Use one term for one thing, everywhere. Consistent naming is what keeps the documentation retrievable and
   quotable out of context, and greppable when an API changes.
 - Give exact, current API names and signatures, not paraphrases.
 - Keep examples self-contained and compiled, so code copied out of a page actually runs.
@@ -26,6 +27,8 @@ self-contained style serves both audiences, so you do not write differently for 
 ## Voice and tone
 
 - Simple language. Short sentences. No contractions. No em-dash.
+- Write "documentation", not "docs", in prose and headings. Preserve literal paths, command names,
+  and identifiers that contain `docs`.
 - Second person only. The reader is "you"; Akka is "Akka", never "we".
 - Imperative for instructions ("Annotate the class with `@Component`."), declarative for facts
   ("Events are delivered at least once.").
@@ -36,10 +39,10 @@ self-contained style serves both audiences, so you do not write differently for 
   defined or linked to the glossary on the page where it first appears.
 - Say what a thing is and how to use it. Do not sell it. No marketing or spin — drop "seamless",
   "powerful", "robust", "simply", "reach for", "spin up", "under the hood", "point it at", "load-bearing", and value claims. Describe behaviour and trade-offs instead.
-- Positioning content (the three barriers and three dimensions, differentiator claims, competitive
-  comparisons) belongs on the Why Akka / What is Akka / Who Uses Akka pages and the llms.txt
-  preamble, per the overhaul spec. Component and reference pages stay at behaviour level and link
-  to those pages rather than repeating the claims.
+- Product framing (the Akka Agentic AI Platform and its four solutions: Akka SDK, Akka Specify,
+  Akka Verify, Akka Optimize) belongs in the About Akka section and the llms.txt preamble. Other
+  sections are named by task and stay at behaviour level; they link to About Akka rather than
+  repeating it. No page quotes marketing figures.
 
 ## Avoid LLM tells
 
@@ -158,6 +161,9 @@ is the primary path and the Akka CLI (`akka specify init`) is the fallback, also
 
 ## Reflect the SDK as it is
 
+- About Akka and Understanding describe the whole platform, including capabilities that have no
+  task page yet. State them in the present tense, without status labels, and link only to pages
+  that exist. The rule below applies to every other section.
 - Document what is in the SDK now, not planned or half-merged features. Keep forward-looking notes
   out unless explicitly asked, and mark them clearly when included.
 - Use the team's current term for a thing. For example it is "the ledger", not "the interaction log"
@@ -165,24 +171,24 @@ is the primary path and the Akka CLI (`akka specify init`) is the fallback, also
 - Don't invent conceptual comparisons the API doesn't make (a classifier-vs-guardrail philosophy,
   for instance). Describe each construct on its own terms.
 
-## Keep docs in step with the code
+## Keep documentation in step with the code
 
 - Compiled snippets are the main defence. When an API changes, the snippet stops compiling and the
   build forces the fix. This is a big part of why examples belong in snippets, not inline.
 - Prose has no compiler, so keep it greppable: one term for one thing. When you change an API in the
-  code, grep the docs for the type, method, and config-key names and update the prose and snippets
+  code, search the documentation for the type, method, and config-key names and update the prose and snippets
   in the same change.
 - Treat a visit to any page as a chance to reconcile it against the current code, not just to make
   the one edit you came for. If you find drift you can't fix now, flag it rather than leave it
   silently wrong.
 
-### Check the API docs too
+### Check the API documentation too
 
 These pages link into the generated javadoc/scaladoc (`{attachmentsdir}/api/...`), so the narrative
-and the API docs have to agree. Whenever you work here:
+and the API documentation have to agree. Whenever you work here:
 
 - Read the type's javadoc/scaladoc alongside the page and fix whichever one is wrong.
-- Check the code actually has adequate API docs: public types and methods, and a `package-info.java`
+- Check the code actually has adequate API documentation: public types and methods, and a `package-info.java`
   for each package. If an API you're documenting has thin or missing doc comments, add them or flag it.
 - Keep those doc comments at contract level — what the caller needs — not maintainer internals.
   Maintainer notes belong in `//` comments or the PR.
@@ -250,12 +256,12 @@ Gotchas:
   build state — run `sbt akka-javasdk/clean akka-javasdk-testkit/clean` and retry.
 - `docs/bin/verify-include-paths.sh` checks that include labels and paths agree, without a build.
 
-After a non-trivial docs change, build the preview and offer to open it for the user, so they can
+After a non-trivial documentation change, build the preview and offer to open it for the user, so they can
 sanity-check the rendered pages.
 
 ## Lint with Vale
 
-CI runs Vale over `docs/src` on every PR that touches docs. Run the same checks locally before
+CI runs Vale over `docs/src` on every PR that touches documentation. Run the same checks locally before
 sending a PR:
 
 ```bash
