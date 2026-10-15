@@ -1,18 +1,19 @@
 = Capture and grading
-:page-summary: A capture is the input and output of one exchange that passed through the agent gateway. Grading scores captured outputs, and targeting ranks the use cases where a smaller model would pay off.
+:page-summary: A capture is the input and output of one exchange that passed through the agent gateway. Grading scores captured outputs, and targeting ranks the use cases where a smaller model could reduce cost.
 :page-when-to-use: When you need to understand what Akka records about model traffic, how outputs are scored, what a use case is, and how candidates for a smaller model are chosen.
-:page-related: concepts:models.adoc, concepts:model-routing.adoc, concepts:model-training.adoc
+:page-banner: inference
+:page-related: concepts:models.adoc, concepts:model-training.adoc
 :page-persona: builder-ai-ml, operator-platform
 
 include::ROOT:partial$include.adoc[]
 
-A capture is the input and output of one exchange that passed through the agent gateway. Grading scores the outputs of those exchanges, and targeting uses the captures and the grades to rank the use cases where a smaller model would pay off.
+A capture is the input and output of one exchange that passed through the agent gateway. Grading scores the outputs of those exchanges, and targeting uses the captures and the grades to rank the use cases where a smaller model could reduce cost.
 
 Any loop that improves model traffic has to start from what that traffic is: which tasks the agents send, how often, at what cost, and whether the answers were right. Without a record of the traffic there is nothing to train on, and without a score for the answers there is no way to tell whether a cheaper model does the job. This page explains the observe-and-grade part of the loop described in xref:concepts:models.adoc[].
 
 == How capture works
 
-Agents send their model requests through a proxy that consults the gateway router. See xref:concepts:model-routing.adoc[]. As the router handles each exchange, it writes a capture artifact that holds the request and the response as they passed through.
+Agents send their model requests through a proxy that consults the gateway router. See xref:concepts:models.adoc#model-routing[]. As the router handles each exchange, it writes a capture artifact that holds the request and the response as they passed through.
 
 . The gateway router writes capture artifacts and announces each one on a stream, grouped by shard and time window.
 . The capture refinery reads each artifact as it lands and derives a derived capture, one canonical form of it: the served name, the use case, the caller, the conversation, and the tokens of each class that the response reported.
@@ -20,7 +21,7 @@ Agents send their model requests through a proxy that consults the gateway route
 
 A capture and the derived capture hold the caller's identifier when the request named one. A caller is declared with the `x-optimize-caller` header, or reported by a proxy as a forwarded address. Erasing a caller removes the identifier that spend figures are attributed to and keeps every figure. It does not change capture artifacts or the derived captures, which still hold the identifier. See xref:reference:cli/cost-and-traffic.adoc#_callers[Callers].
 
-The word _trace_ has two meanings here, so the docs say which one they mean. An agentic AI trace is the sequence of steps one agent run took, saved as a record in the ledger. A trace of gateway traffic is a capture. Captures describe what passed through the gateway. The ledger describes what the system did and holds the evidence of each control verdict. See xref:concepts:evidence.adoc[].
+The word _trace_ has two meanings here, so the documentation says which one they mean. An agentic AI trace is the sequence of steps one agent run took, saved as a record in the ledger. A trace of gateway traffic is a capture. Captures describe what passed through the gateway. The ledger describes what the system did and holds the evidence of each control verdict. See xref:concepts:evidence.adoc[].
 
 Traffic from agents that do not send their model calls through the gateway can still feed the loop. Their OpenTelemetry traces can be uploaded as sessions, and a curation turns sessions into a training dataset. See xref:concepts:model-training.adoc[].
 
@@ -33,7 +34,7 @@ Use cases are discovered from live traffic rather than declared:
 * When a request arrives, the router derives an embedding from it and compares the embedding with the centers of the use cases discovered so far. The comparison is vector arithmetic, so it consults no model and costs no tokens.
 * A request far from every center starts a new use case, and the boundaries are evaluated again.
 * The router does not name what it finds. People read the exemplars, the requests nearest the center of a use case, and give it a label.
-* The set discovered so far is the working set, and it keeps changing. Freezing it produces a use case manifest that maps each labeled use case to a destination. See xref:concepts:model-routing.adoc#_routing_on_meaning[Routing on meaning].
+* The set discovered so far is the working set, and it keeps changing. Freezing it produces a use case manifest that maps each labeled use case to a destination. See xref:concepts:models.adoc#_routing_on_meaning[Routing on meaning].
 
 A use case is broader than a tool. One use case can draw on several tools, and a general-purpose tool such as a calendar lookup appears in many use cases.
 
@@ -151,4 +152,4 @@ The result is a ranked list with an estimate for each admitted use case. The adm
 * xref:optimize:trainer/graders-and-rewards.adoc[Graders and rewards]
 * xref:optimize:trainer/scoring-bundles.adoc[Scoring bundles]
 * xref:reference:cli/cost-and-traffic.adoc[Cost and traffic commands]
-* xref:concepts:model-training.adoc[], xref:concepts:spend.adoc[]
+* xref:concepts:model-training.adoc[], xref:concepts:model-training.adoc#spend-and-budgets[]

@@ -87,3 +87,9 @@ A curated collection of Akka technical content beyond the SDK documentation.
 * link:{url-akka-blog}[Blog, window="new"]
 * link:{url-akka-support}[Support Portal, window="new"]
 * link:{url-akka-trust-center}[Trust Center, window="new"]
+
+== Foundational AI concepts
+
+This video introduces vectors, embeddings, semantic search, retrieval-augmented generation, and their relationship to agent context and stateful workflows.
+
+video::mWpCnptTTPQ[youtube,width=560,height=315]

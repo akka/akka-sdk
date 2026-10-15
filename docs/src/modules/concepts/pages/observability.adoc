@@ -1,87 +1,28 @@
 = Observability
 :page-summary: Akka produces logs, metrics and traces for every service, shows them in the Akka Console and exports them to the tools you already run; this telemetry is for operating the system and is separate from the ledger that governance relies on.
 :page-when-to-use: When you need to know what telemetry Akka produces, where you can see it, and how it differs from the ledger.
-:page-related: operations:observability-and-monitoring/index.adoc, concepts:governance-and-the-runtime.adoc, concepts:automated-operations.adoc
+:page-related: operations:observability-and-monitoring/index.adoc, concepts:governance-and-the-runtime.adoc, concepts:deployment-model.adoc
 :page-persona: operator-sre, operator-platform, builder-developer
 
 include::ROOT:partial$include.adoc[]
 
-Observability is what Akka tells you about a running system: logs, metrics and traces for every service and component, available while you develop and in every deployment option. It answers operational questions, such as where time goes, what is failing and how much capacity is in use. It is a different thing from the ledger, which is the record governance relies on.
+Observability uses logs, metrics, and traces to explain the behavior of a running system. It helps you find failures, follow requests, and understand capacity and latency.
 
-== The problem
+== Three views of a running service
 
-A request to an agentic system can pass through an endpoint, a workflow, several agents, model calls, tools and entities, on several nodes and in several regions. When something is slow or failing, you need to follow that request across all of them, see the state of each component, and compare it with how the system usually behaves. Operators also need that data in the monitoring tools they already use, not only in a vendor console.
+Logs record messages from service instances. Metrics summarize activity and resource use over time. Traces follow individual requests through components and external calls. Together they help explain where a request spent time and which part failed.
 
-== How it works
+The local console supports development; the Akka Console and configured exporters support deployed services. Exporting data lets you use your own monitoring and retention policies.
 
-=== Logs, metrics and traces
+== Operational telemetry and evidence
 
-The runtime produces three kinds of telemetry for every service, with no instrumentation code from you.
+Telemetry and the ledger answer different questions. Telemetry helps you operate the service and can be sampled or bounded. The ledger records interactions and control verdicts for governance. A sampled trace is not a complete audit history.
 
-Logs::
-What each service instance writes, aggregated per instance. You view them in the Akka Console or with the Akka CLI.
-
-Metrics::
-Counts and rates per service and per component: requests, failures, replicas, commands received by entities, view updates, consumer progress and replication between regions. See the xref:reference:telemetry/metrics.adoc[metrics reference] for the full list.
-
-Traces::
-The path of one request through the components it touches, as spans with timing and attributes. Each span carries the resource attributes of the service that produced it. Tracing is turned on per project.
-
-=== Where you see it
-
-In the Akka Console, the Control Tower shows dashboards of metrics, a trace viewer and logs for each project. It aggregates traces, spans, metrics and logs across the regions of a project. During development, the local console shows traces and component state for services on your machine. See xref:sdk:running-locally.adoc#_local_console[Local console].
-
-=== Exporting to your own tools
-
-Akka is built to feed the tools you already run. You configure exporters for each project, once for all three kinds of telemetry or separately for each, and you can send the same data to several destinations. Supported destinations include OpenTelemetry collectors, Prometheus remote write and Splunk. The configuration can be kept in an observability descriptor, versioned with the rest of the project. Export is available in every deployment option, including self-managed. See xref:operations:observability-and-monitoring/observability-exports.adoc[Exporting metrics, logs and traces].
-
-Traces can be sampled before export: you choose what share of traces is sent, to control volume and cost.
-
-=== Your telemetry and the platform's telemetry
-
-When Akka operates the platform, it runs its own observability stack to monitor the platform underneath your services. Your application's logs, metrics, traces and evaluations go to the destinations you configure. A subset of platform telemetry goes to the federation plane for reporting across regions. See xref:operations:technical-overview.adoc[].
-
-== Observability and the ledger
-
-Both observability and the ledger describe what a system did, but they are kept for different purposes and have different properties.
-
-[cols="1,2,2", options="header"]
-|===
-| | Observability | The ledger
-
-| Purpose
-| Operating the system: performance, failures, capacity
-| Governance: what each agent did, under which controls, with what verdict
-
-| Coverage
-| Can be sampled; log volume per instance is bounded
-| Every interaction, never sampled
-
-| Integrity
-| Ordinary telemetry
-| Hash-chained and tamper-evident
-
-| Retention
-| Set by the tools you export to
-| Kept for the regulatory period, and can be put on legal hold
-
-| Readers
-| Operators and developers, in the console and in your monitoring tools
-| Governance, compliance and the processes that grade and train models
-|===
-
-A trace can be saved as a record in the ledger, and a ledger record refers to the trace it belongs to, so you can move from one to the other. See xref:governance-and-the-runtime.adoc[].
-
-== Limits and trade-offs
-
-* Changes to the export configuration take effect when a service restarts.
-* The console aggregates a bounded amount of log data per instance. To keep every log line, export logs to a logging provider.
-* Traces appear only when tracing is turned on for the project.
-* Sampled traces are not a complete record. Use the ledger when you need every interaction.
+Use telemetry to investigate performance, failures, and capacity. Use the ledger when a decision needs evidence of which action ran, under whose identity, and under which controls. See xref:evidence.adoc[].
 
 == Next steps
 
-* xref:operations:observability-and-monitoring/index.adoc[Observability and monitoring] in the Operating section
-* xref:operations:observability-and-monitoring/alerting-baselines.adoc[] for suggested alerts
-* xref:reference:telemetry/metrics.adoc[Metrics reference]
-* xref:governance-and-the-runtime.adoc[] for the ledger
+* xref:operations:observability-and-monitoring/index.adoc[] explains signal coverage, the consoles, platform telemetry, and the ledger comparison.
+* xref:operations:observability-and-monitoring/observability-exports.adoc[] configures exporters and sampling.
+* xref:operations:observability-and-monitoring/alerting-baselines.adoc[] suggests alerts.
+* xref:reference:telemetry/metrics.adoc[] lists metrics.

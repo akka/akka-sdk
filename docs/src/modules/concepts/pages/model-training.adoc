@@ -1,159 +1,79 @@
-= Training and promotion
-:page-summary: Training specializes an open-weight base model for one use case on your data. Promotion decides when the trained model takes traffic, and grading after promotion decides when it is retrained or reverted.
-:page-when-to-use: When you need to understand how Akka trains a smaller model, which objects a training run uses, and what a model must show before it serves a use case.
-:page-related: optimize:index.adoc, optimize:concepts.adoc, concepts:capture-and-grading.adoc
+= Model improvement and cost
+:page-aliases: concepts:capture-and-grading.adoc, concepts:spend.adoc
+:page-summary: Model improvement uses captured traffic and graded quality to identify tasks suitable for specialization. Training, evaluation, and cost reporting establish whether a smaller model should serve that task.
+:page-when-to-use: When you need an overview of model improvement and cost and links to the task guides.
+:page-related: optimize:index.adoc, optimize:concepts.adoc
 :page-persona: builder-ai-ml, operator-platform
 
 include::ROOT:partial$include.adoc[]
 
-Training specializes an open-weight base model for one use case on your data. Promotion decides when the trained model takes traffic for that use case, and grading after promotion decides when it is retrained or reverted.
+Model improvement uses captured traffic and graded quality to identify tasks suitable for specialization. Training, evaluation, and cost reporting establish whether a smaller model should serve that task.
 
-The cost of a task is the price per token multiplied by the number of tokens, and a frontier API fixes both. A smaller model trained for one task lowers the price per token, because it runs on accelerators that you allocate, and it often lowers the tokens per task, because it needs less prompt context to stay on the task. The trade only holds if the smaller model does the task at least as well. This page explains how a model is trained, how it is measured against the model it would replace, and how it moves into traffic. The trainer documentation defines each term in detail: see xref:optimize:concepts.adoc[Training concepts].
+[#capture-and-grading]
+== Capture and grading
 
-== How it works
+A capture is the input and output of one exchange that passed through the model gateway. Grading scores the output, and targeting identifies use cases suitable for a specialized model.
 
-=== Base models
+=== From traffic to training data
 
-A training run starts from a base model: an open-weight model that its publisher trained named by its repository and pinned to a commit. Each deployment allows a fixed set of base models that its hardware and training engines support. You select an allowed model to prepare it for training, evaluation or serving, and selecting it registers it.
+A use case is a kind of task, such as classifying a support request. Routing, grading, training, and cost reporting use the same use case to describe that traffic. A use case can involve several tools; it is not the same thing as a tool.
 
-=== Training data
+The gateway records requests and responses as capture artifacts. A derived capture gives downstream services a common representation of the model, use case, caller, conversation, and token usage. Grading measures output quality. Targeting combines quality checks, traffic volume, task similarity, and cost to identify training candidates.
 
-A dataset is a set of examples in chat format. The artifact registry holds each dataset under a name, with numbered versions that never change and aliases that you can move between versions. A run records the exact version it resolved, so moving an alias later does not change what a past run trained on. Training and evaluation datasets are kept separate, because an example in both inflates the score.
+Captures and the ledger serve different purposes. Captures describe traffic through the gateway. The ledger records actions and control verdicts. Neither should be assumed to replace the other.
 
-Training data comes from the traffic of the use case:
+=== Choosing what to grade
 
-* Captured exchanges of the use case, including the answers that the frontier model gave. See xref:concepts:capture-and-grading.adoc[].
-* Sessions: raw conversation corpora that you upload, including OpenTelemetry traces from agents that do not send their traffic through the gateway.
-* Curation: a judge scores each exchange of a set of sessions, and the exchanges that score at or above a threshold become a dataset.
+Use deterministic graders when an answer can be checked exactly, such as a classification label or the result of generated SQL. Use a model judge for criteria that require interpretation. A task without a reliable quality measure is unsuitable for automatic promotion to a specialized model.
 
-Personal data and secrets are scrubbed from the data before training, and a scrub failure is reported as an incident. Training runs on accelerators in your environment, including environments with no connection to the internet, so the data does not leave it.
+A grader scores a finished answer; a reward guides sampled completions during reinforcement training. Their execution frequency and cost differ. See xref:optimize:trainer/graders-and-rewards.adoc[].
 
-=== Training methods
+[#training-and-promotion]
+== Training and promotion
 
-[cols="1,2,2", options="header"]
-|===
-| Method
-| Learns from
-| Suits
+Training specializes a base model for a use case. Promotion decides whether a candidate should replace the model currently handling that task.
 
-| Supervised fine-tuning (`sft`)
-| The assistant messages in the dataset
-| Tasks where every example has a known correct output, such as classification or extraction, including answers recorded from a frontier model
+=== Learning and comparison
 
-| Reinforcement learning (`grpo`, `gspo`)
-| Sampled completions that a reward scores
-| Tasks where an answer can be checked but there is no single correct text, such as generating SQL that returns the right rows
-|===
+Supervised fine-tuning learns from examples with known answers. Reinforcement learning learns from completions scored by a reward. Choose according to whether you already have suitable answers or need to discover answers that a check can score.
 
-A reward is a weighted sum of terms. A term can compare JSON labels, call a function in a scoring bundle, ask a model, or reuse the grader of the training project. A reinforcement run can start from an adapter that supervised fine-tuning produced.
+Keep training and evaluation data separate. Compare candidates with a baseline using the same examples and grader. A better score on different data does not isolate the effect of the model change.
 
-=== Training projects, runs and snapshots
+A training project groups the runs and models for a use case. Runs produce versioned artifacts, snapshots preserve progress, and branches try alternatives from a saved point. Data can come from captured traffic or curated sessions, with personal data and secrets scrubbed before training.
 
-A training project is the training record of one use case. It names the evaluation dataset and the grader that every candidate is scored with, and its name is the namespace that its models are registered under.
+=== Promotion and production traffic
 
-A run is one training operation: one dataset, one base model, one configuration. The configuration covers what decides the trained model, such as the method, the learning settings and the reward. The execution settings, such as devices and save interval, do not change the result, so two runs with the same configuration and base model are comparable. A run has a training budget, the number of optimizer updates it may make.
+The improvement policy defines the quality and token-use objectives for a candidate. Evidence supporting promotion is kept in the ledger. A staged routing policy introduces the model through shadow traffic, then a canary, before directing the use case to it.
 
-The trainer runs as durable operations on Akka. A run can be paused and resumed, and each resumption is a new attempt of the same run, with the same identity, metrics and cost accounting. A snapshot is a verified, immutable save from an attempt. A branch starts a new run from an exact snapshot of a parent, with its own identity, training budget and outputs, to try a different configuration without changing the parent. A pipeline submits curate, train and evaluate stages together, and each stage has a durable identity, so an interrupted pipeline resumes without repeating finished stages.
+Selecting a `champion` artifact, approving a model for production, deploying its weights, and routing traffic are separate operations. The artifact registry stores versions and aliases; the organization's model registry records sanction and conditions of use. A trainer endpoint tests a model; a model endpoint serves production requests.
 
-=== Offline evaluation
+Grading continues after promotion. Drift prompts reassessment and retraining; insufficient quality requires restoring the previous model and routing policy. Evidence for one specialized use case does not establish suitability for another.
 
-An evaluation is one scoring of one model against one dataset with one grader. The score belongs to the evaluation, not to the model, so a model can be evaluated many times.
+[#spend-and-budgets]
+== Spend and budgets
 
-* A _baseline_ is the score of the model the use case uses now, or of the base model, on the same dataset with the same grader.
-* A _candidate_ is a trained model, registered from a run or a snapshot, that is scored against the baseline.
-* A _comparison_ scores one source snapshot and several branch models with one pinned dataset, grader and completion limit, so they are compared under the same conditions.
+Spend is the cost of recorded model traffic, calculated from token usage and a versioned pricing catalog. It connects model usage to the use cases and callers responsible for it.
 
-=== Registries
+=== Cost and quality
 
-Two registries hold models, with different jobs:
+A lower price per token does not necessarily mean a lower task cost. A model may need more tokens or more attempts to complete the task. Compare total task cost with graded quality before changing which model serves a use case.
 
-* The _artifact registry_ stores datasets, scoring bundles and models. Each named artifact has immutable versions and movable aliases, and the registry records every move of an alias.
-* The _model registry_ of your organization is an index of the models it sanctions, not a store of weights. Each entry has a lifecycle from candidate to active, deprecated and retired, and carries conditions that a person signs off, waives for a time or strikes, with attestations of evaluations run elsewhere. Retiring an entry ends the sanction and does not delete the weights.
+Recorded spend is also different from an invoice: it covers exchanges captured by the gateway. Missing prices or incomplete token reporting affect what the figures can establish. An absent value is not a zero cost.
 
-[#_promotion]
-=== Promotion
+=== Budgets and quality
 
-A new model is promoted only when its quality on the use case is at least the baseline and its token use drops by the target that the improvement policy sets. The comparison that justified the decision is saved to the ledger. See xref:concepts:specification.adoc[] for the improvement policy.
+Spend budgets, forecasts and the trade-off between cost and quality build on the same figures. A spend budget sets a limit against these figures, and a forecast projects the spend of a period from the traffic recorded so far. The cost–quality view sets the spend of each use case beside its graded quality, which is what targeting weighs when it ranks use cases and what a promotion has to improve. See <<_how_targeting_works,How targeting works>>.
 
-A promoted model moves into traffic in stages, under the routing policy of its use case:
+A spend budget is different from the token budget that an agent sets for each model call, and from the training budget of a training run, which counts optimizer updates.
 
-. _Shadow_: a copy of a share of the traffic goes to the new model, and its answers are graded and not returned.
-. _Canary_: a share of real traffic goes to the new model, and its answers are returned.
-. _Fleet_: the new model serves the use case.
-
-In the artifact registry, promotion moves the `champion` alias of the named model to the new version, and in the model registry it makes the candidate active. Because every alias move is recorded, the previous version is one move away.
-
-=== After promotion
-
-A promoted model is still graded on live traffic. Model drift, a fall in its graded quality as the traffic of the use case changes, starts retraining on newer data. A model whose quality slips below the baseline is reverted: the routing policy rolls back and the alias moves back to the previous version.
-
-== Guarantees
-
-[cols="2,3,2", options="header"]
-|===
-| Failure or situation
-| What Akka does
-| Precondition
-
-| A dataset alias moves after a run starts
-| The run keeps the exact version it resolved.
-| None.
-
-| A run is interrupted
-| Resuming creates a new attempt of the same run from its latest committed snapshot.
-| The run saved a snapshot.
-
-| An upload of a snapshot is interrupted
-| The snapshot is not listed and cannot be restored from.
-| None.
-
-| A pipeline stops part way
-| Resuming continues from the unfinished stage without repeating finished ones.
-| None.
-
-| A comparison has failed targets
-| It reports the completed results and declares no winner.
-| None.
-
-| A promoted model slips below the baseline
-| Traffic returns to the previous model.
-| The use case is graded after promotion.
-|===
-
-== Choosing between supervised and reinforcement training
-
-[cols="1,2,2", options="header"]
-|===
-| Attribute
-| Supervised fine-tuning
-| Reinforcement learning
-
-| What it needs
-| Examples with a correct answer
-| A reward that can score any answer
-
-| Cost per step
-| One pass over the examples
-| Several sampled completions, each scored
-
-| Use when
-| Good answers already exist, for example from a frontier model
-| Answers can be checked but vary, or the recorded answers are not good enough to copy
-|===
-
-== Limits and trade-offs
-
-* A deployment allows a fixed set of base models, and you cannot add to it.
-* The training methods are supervised fine-tuning, GRPO and GSPO.
-* A trained model is specialized for one use case. It is promoted for that use case only.
-* A snapshot that holds only training state, with no adapter weights, cannot be registered as a model.
-* A trainer endpoint serves a model for testing with your own requests, not for production traffic, and reserves devices until it is deleted or stops after its idle timeout. Production traffic reaches a model through a model endpoint. See xref:concepts:model-serving.adoc[].
-* A use case that cannot be graded cannot be promoted onto a trained model, because there is nothing to compare against the baseline.
+anchor:_how_targeting_works[]
+anchor:_use_cases[]
 
 == Next steps
 
-* xref:optimize:trainer/getting-started.adoc[Train a first model]
-* xref:optimize:trainer/runs.adoc[Training runs]
-* xref:optimize:trainer/evaluation.adoc[Evaluation]
-* xref:reference:cli/training.adoc[Training and evaluation commands]
-* xref:concepts:capture-and-grading.adoc[], xref:concepts:model-routing.adoc[]
+* xref:inference:capture-and-grading.adoc[] explains capture processing, use-case discovery, and targeting.
+* xref:optimize:trainer/getting-started.adoc[] trains a first model.
+* xref:optimize:trainer/datasets.adoc[] and xref:reference:cli/training.adoc#_sessions_and_curations[Sessions and curations] prepare data.
+* xref:optimize:trainer/evaluation.adoc[] compares candidates and explains artifact selection and governance.
+* xref:inference:routing.adoc[] changes production traffic.
+* xref:inference:spend.adoc[] and xref:reference:cli/cost-and-traffic.adoc[] explain cost reporting and pricing.

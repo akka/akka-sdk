@@ -6,108 +6,32 @@
 
 include::ROOT:partial$include.adoc[]
 
-A tool is a function that an agent offers to a model; the model asks for it, the agent runs it, and the result goes back into the model's context. A model produces only text. To look something up, compute a value or change the state of a system, it needs tools. When the tools, or other agents, live in another service or another framework, the agent needs a protocol to reach them.
+A tool gives a model access to a capability outside text generation: retrieving data, computing a result, or requesting an action. The model selects a tool and arguments; the runtime executes the call and returns its result as context.
 
-== How it works
+== Local and remote capabilities
 
-=== The tool loop
+Function tools run application methods. Components offered as tools give the model access to your domain state and processes, with the persistence and concurrency behavior of those components. Share tool implementations when several agents need the same capability.
 
-The agent tells the model which tools exist. From the prompt, the model decides which tools to request and with which parameters. The agent runs each requested tool, adds the result to the session context and sends a new request. The loop continues until the model stops requesting tools and returns its answer. A limit on the number of tool-call steps between a request and the final answer stops a model that keeps asking.
+The Model Context Protocol (MCP) connects agents to remote tools. An Akka agent can consume a remote MCP server, while an MCP endpoint exposes tools, resources, and prompts from your service to clients. These are opposite directions of the same integration.
 
-An agent can offer tools from four sources:
+Agent-to-Agent (A2A) supports communication across agent systems. Inside an Akka service, the component client and coordination capabilities provide direct access without requiring a remote protocol for every call.
 
-Function tools defined on the agent:: Methods on the agent class, registered as tools automatically.
-External function tools:: Methods on other classes or objects that the agent passes to the model with its effect. A tool class can be shared by several agents.
-Akka components as tools:: Command handlers on Event Sourced Entities, Key Value Entities, Workflows and Views in the same service. The model then acts on your domain model directly, and each call has the guarantees of the component it calls.
-Tools from remote MCP servers:: Tools that an MCP endpoint in another Akka service, or a third-party MCP server, provides. You can filter which of a server's tools the agent sees.
+== Discovery and coordination
 
-An interceptor can inspect, change or deny a request to a remote MCP tool and its response. The ledger records the arguments that the interceptor passes on as the arguments of the tool call.
+The agent registry identifies the agents in a service and supports lookup by identifier or role. Dynamic lookup is useful for a custom planner, but request compatibility is checked at runtime rather than by a typed method call.
 
-Every tool call is saved as a record in the ledger, with the agent that requested it. See xref:evidence.adoc[].
+A tool is appropriate for a lookup or action within an interaction. A task gives work its own identity and observable lifecycle. A separate agent adds its own purpose and context. Choose the smallest unit that captures those needs.
 
-=== The Model Context Protocol (MCP)
-
-MCP connects models to the tools and data that other systems provide. Akka works on both sides of it:
-
-* An agent consumes tools from remote MCP servers, as described above.
-* An xref:sdk:mcp-endpoints.adoc[MCP endpoint] exposes a service to MCP clients, such as desktop chat applications, coding assistants and agents in other services. An endpoint provides tools that the client can call for its model, resources that the client can fetch, and prompt templates built from input parameters. Behind an endpoint, the logic of any component can be offered as a tool.
-
-=== Agent-to-agent calls (A2A)
-
-The Agent-to-Agent protocol (A2A) lets an agent call an agent in another service or another framework, and lets agents built elsewhere call Akka agents. Agents that run in other frameworks can also send their traces to Akka, where they are saved as records in the ledger and governed with the same controls. See xref:evidence.adoc[].
-
-Inside one service, agents reach each other through the component client, under a supervisor: a Workflow or an Autonomous Agent's coordination capabilities. The supervisor decides which agent runs, retries failed calls and keeps a durable record of each step. When a call must cross a service boundary over A2A or MCP, make it from the supervisor, as a workflow step or a tool, so that the call gets the same retries and record. An agent that calls another agent directly from its own code fixes the flow in place and cannot be reused in other flows. See xref:ai-orchestration-patterns.adoc[].
-
-=== The agent registry
-
-The agent registry is a built-in directory of the agents in a service. For each agent it holds the identifier, name, description and role, and it supports lookups by identifier or by role. A custom planner uses the registry to decide which specialists to call, then calls them by identifier at runtime. For most multi-agent work, an Autonomous Agent with a delegation capability is simpler than a custom planner.
-
-== Guarantees
-
-[cols="2,3,2", options="header"]
-|===
-| Failure or situation | What Akka does | Precondition
-
-| The model keeps requesting tools
-| The agent stops at the tool-call step limit and fails the request.
-| The limit is configurable.
-
-| A component used as a tool is called
-| The call has the guarantees of that component, for example a single writer for an entity.
-| None.
-
-| An interceptor returns no request or no response
-| The tool call fails.
-| None.
-
-| A remote MCP server reports an error
-| The error flag is kept on the result, also when an interceptor changes its text.
-| None.
-
-| A cross-service agent call fails
-| The supervisor's step or tool call is retried by its recovery strategy.
-| The call is made from a workflow step or a coordination capability.
-|===
-
-== Choosing how an agent reaches a capability
-
-[cols="1,2,2,2", options="header"]
-|===
-| | Function tool | Component as tool | MCP or A2A
-
-| Runs
-| In the agent's process
-| In a component of the same service
-| In another service or framework
-
-| State
-| None of its own
-| The component's durable state
-| Owned by the other system
-
-| Discovered
-| Declared on the agent
-| Declared on the agent
-| From the remote server or agent
-
-| Use when
-| The work is a lookup or a calculation
-| The model must read or change your domain model
-| The capability lives outside the service
-|===
-
-For when work should be a tool, a task or a separate agent, see xref:sdk:autonomous-agents/coordination.adoc#_choosing_the_unit_of_decomposition[Choosing the unit of decomposition].
+For a process that must survive failure, make remote work part of a workflow step or a durable agent task. Network protocols alone do not provide recovery of the calling process.
 
 == Limits and trade-offs
 
-* Every tool call is a model round trip. A broad set of tools costs tokens and lowers the accuracy of the model's choice.
-* A remote tool adds network latency and a dependency on the other service.
-* Only some model providers accept images or PDFs as tool results. See xref:sdk:model-provider-details.adoc[].
-* A dynamic call through the registry has no compile-time check that the target accepts the request; a mismatch fails at runtime.
+A broad tool set increases prompt size and makes selection harder. Remote tools add network latency and another system's failure modes. Limit tool-call steps, validate arguments, and apply controls before allowing consequential actions. Support for media in tool results depends on the model provider.
 
 == Next steps
 
-* Add tools: xref:sdk:agents/extending.adoc[Function tools]
-* Expose a service over MCP: xref:sdk:mcp-endpoints.adoc[MCP endpoints]
-* Protocols at a glance: xref:sdk:integrations/apis-and-protocols.adoc[]
-* Related concepts: xref:ai-agents.adoc[], xref:ai-orchestration-patterns.adoc[]
+* xref:sdk:agents/extending.adoc[] declares tools and configures MCP interception.
+* xref:sdk:mcp-endpoints.adoc[] exposes a service to MCP clients.
+* xref:sdk:agents/calling.adoc#_calling_agents_by_id[Calling agents by ID] uses the registry.
+* xref:sdk:autonomous-agents/coordination.adoc[] chooses between tools, tasks, and agents.
+* xref:sdk:integrations/apis-and-protocols.adoc[] describes supported integrations.

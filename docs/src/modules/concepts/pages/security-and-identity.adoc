@@ -6,101 +6,15 @@
 
 include::ROOT:partial$include.adoc[]
 
-Security in Akka rests on identity: every workload has an identity that the platform attests, and every access decision is made on identities rather than on network location. On top of that, separate mechanisms control different things. Network policies decide who can connect. Access control lists (ACLs) decide which caller can invoke which method. JSON Web Tokens (JWTs) authenticate end users and external clients. Roles decide what people can do in an organization or project.
+Security combines workload identity, encrypted connections, and access decisions at several layers. Each layer answers a different question; allowing a connection does not by itself authorize an operation.
 
-== The problem
+== Identity and authorization
 
-A distributed system has many callers: other services, clients on the internet, operators, developers and automated tools. Network location is a weak signal of who they are, because anything that gets inside a network can reach everything on it. A secure system needs to know which workload is calling, to encrypt traffic between workloads, and to let each service state which callers it accepts, at the level of individual methods.
+Mutual TLS authenticates the workloads at each end of an internal connection. A component's workload identity identifies its service and component, so an access decision can be more specific than the service name. The ledger uses identity to attribute actions to the workload that performed them.
 
-== How it works
+An internet client and the Akka ingress are different hops. The internet principal identifies a request arriving through an Akka route; it does not establish an end user's identity. Use token validation to authenticate end users and external clients.
 
-=== Zero-trust networking and mutual TLS
-
-Akka trusts no workload because of where it runs on the network. Each workload is attested, and the platform enforces security policy on every workload it runs. Traffic between services, and between regions, is encrypted with mutual TLS (mTLS): both sides present certificates, so each side knows who the other is. In the options Akka operates, these certificates and keys are rotated automatically. See xref:automated-operations.adoc[].
-
-=== Workload identity
-
-Each component has a workload identity in the {url-ext-spiffe}[SPIFFE, window="new"] format. It encodes the calling service, the component type and the component ID, for example `spiffe://trust/svc/checkout/workflow/order`. The service-level part is attested by the service mesh and cannot be spoofed. The identity travels with each call across service boundaries, so a service can make access decisions per component, not only per service.
-
-The same identity is what governance records. Each record in the ledger carries the identity of the workload that acted. See xref:governance-and-the-runtime.adoc[].
-
-Services also use workload identity to call cloud provider APIs and third-party services without long-lived credentials. Akka issues short-lived OpenID Connect (OIDC) tokens that prove the identity of the service, and the target verifies them against the Akka OIDC issuer of the region. See xref:operations:services/workload-identity.adoc[Workload identity].
-
-=== Principals and access control lists
-
-A principal is anything that can make or be the source of a request: another service, the internet, the service itself or the backoffice. Akka uses mTLS to associate each request with its principals. Requests that arrive through an Akka ingress route carry the internet principal. That is established between Akka's ingress and the service, and it does not mean the internet client itself used mTLS: those are separate hops.
-
-An ACL is a list of principals allowed to invoke a component or method, and a list of principals denied. A request is allowed when at least one of its principals matches the allow list and none matches the deny list. ACLs are set on a class or on a method, and a method-level ACL overrides the class-level one. If a service defines no ACLs at all, Akka denies requests from other services and from the internet to all its components. A denied request gets a `403 Forbidden` by default, and you can change the code.
-
-Calls from inside the same service, and calls through the backoffice, are always allowed, whatever the ACLs say. See xref:sdk:access-control.adoc[Access Control Lists].
-
-=== Network policies
-
-A network policy controls, at the network layer, which traffic may enter and leave the services of a project. Each project has one. Traffic between services of the same project, and traffic the platform itself needs, is always allowed. A network policy matters only when a service talks to something outside the project: a service in another project, or an address such as a database or a third-party API. Ingress rules apply to Akka's private network, not to traffic that reaches a service through an internet route. See xref:operations:projects/network-policies.adoc[Network policies].
-
-Network policies and ACLs are independent, and neither overrides the other. A request succeeds only if both permit it.
-
-=== JSON Web Tokens
-
-Endpoints can require a bearer token in the `Authorization` header and validate its signature against keys configured for the service, and check claims such as the issuer. Akka validates tokens; it does not issue them. Use JWTs to authenticate end users and external clients. See xref:sdk:auth-with-jwts.adoc[JSON Web Tokens].
-
-=== TLS for internet traffic
-
-Services exposed to the internet are reached over TLS. By default, Akka provisions a server certificate, so clients can verify the server and traffic is encrypted. You can use your own server certificate, and require clients to present a certificate (client mTLS) to restrict access to clients you control. See xref:operations:tls-certificates.adoc[TLS certificates].
-
-=== Secrets
-
-Secrets hold passwords, credentials and API keys. They belong to a project and are injected into services as environment variables. Each secret has a name and one or more keys, and service information never displays their values. See xref:operations:projects/secrets.adoc[Secrets].
-
-=== User roles
-
-People get access through roles.
-
-* In an organization: superuser, project-admin, billing-admin and member. They control who manages users, creates projects, assigns regions and handles billing.
-* In a project: admin, developer, viewer and backoffice. They control who deploys services, manages routes and secrets, or only views them.
-
-Organizations can sign users in with single sign-on through OpenID Connect. See xref:operations:organizations/manage-users.adoc[Organization users] and xref:operations:projects/manage-project-access.adoc[Project users].
-
-=== The backoffice
-
-The backoffice gives the developers of a project authenticated access to a running service, to inspect and interact with it as if it ran locally, for example through `akka services proxy`. Backoffice requests are authenticated and authorized, so only members of the project with the right role can make them, and they carry the backoffice principal. Because they are always allowed past ACLs, backoffice access is granted through project roles.
-
-=== Multi-tenancy
-
-Multi-tenancy has two meanings in Akka, and they are separate.
-
-Platform multi-tenancy::
-On Akka's shared infrastructure, many organizations, projects and teams share compute and data infrastructure, isolated from each other. When an organization needs isolation at the infrastructure level, Dedicated gives it a single-tenant region.
-
-Application multi-tenancy::
-In your own cloud account, you can operate your services for many organizations of your own, with access controls across those organizations. The platform keeps them separate through rotation of certificates and keys, and through control of how state is persisted.
-
-=== Encryption at rest
-
-The data store of each region is encrypted at rest.
-
-== Guarantees
-
-[cols="2,3,2", options="header"]
-|===
-| Situation | What Akka does | Precondition
-
-| A service calls another service
-| The call is encrypted with mTLS, and the receiving service knows the caller's identity.
-| Both services run on Akka.
-
-| A request matches no allow rule, or matches a deny rule
-| It is rejected before it reaches your code.
-| The component or method has an ACL, or none is defined in the service.
-
-| A caller claims another service's identity
-| The claim fails, because the service-level identity is attested.
-| None.
-
-| A request is allowed by the network policy but denied by an ACL
-| It is rejected. Both must permit it.
-| None.
-|===
+Network policies and access control lists (ACLs) are independent. Network policies govern permitted connections across the project boundary. ACLs govern which principals may invoke a component or method. A request must satisfy both layers where they apply.
 
 == Choosing a mechanism
 
@@ -129,17 +43,17 @@ The data store of each region is encrypted at rest.
 | You grant access to the console, the CLI and the backoffice
 |===
 
-== Limits and trade-offs
+== Isolation and credentials
 
-* Principals identify services, the internet, the service itself and the backoffice. End users are identified with JWTs, not principals.
-* The internet principal tells you a request came through an Akka route. It says nothing about how the client connected to that route.
-* The caller's workload identity is present only for calls from another Akka service in the same project.
-* Network policy ingress rules do not apply to traffic from internet routes.
+Platform multi-tenancy isolates organizations and projects sharing infrastructure. Application multi-tenancy isolates the customers your own service serves. These are separate design concerns. Dedicated infrastructure changes the former; your application still needs appropriate authorization for its users.
+
+Project secrets hold credentials. Workload identity can replace long-lived credentials when calling cloud APIs that accept Akka's short-lived identity tokens. User roles control management access, including the backoffice, independently of endpoint authentication.
 
 == Next steps
 
-* xref:sdk:access-control.adoc[Access Control Lists]
-* xref:sdk:auth-with-jwts.adoc[JSON Web Tokens]
-* xref:operations:projects/network-policies.adoc[Network policies]
-* xref:operations:services/workload-identity.adoc[Workload identity]
-* xref:governance-and-the-runtime.adoc[] for how identity is recorded with each action
+* xref:sdk:access-control.adoc[] documents principal matching, SPIFFE identity, defaults, and backoffice access.
+* xref:sdk:auth-with-jwts.adoc[] configures bearer-token validation.
+* xref:operations:projects/network-policies.adoc[] configures network access and its exceptions.
+* xref:operations:services/workload-identity.adoc[] configures identity for external services.
+* xref:operations:tls-certificates.adoc[] configures internet TLS and client certificates.
+* xref:operations:projects/secrets.adoc[] and xref:operations:projects/manage-project-access.adoc[] cover credentials and roles.

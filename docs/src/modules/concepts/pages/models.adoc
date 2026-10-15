@@ -1,139 +1,98 @@
-= Models in an agentic system
-:page-summary: A model call is an inference: the result varies, arrives as text, takes time and costs tokens, and an agentic system makes many of them for each request. Akka observes, routes, trains and serves those calls as one loop.
-:page-when-to-use: When you need to understand how model calls behave in an agentic system, and how routing, serving, training and spend fit together.
-:page-related: inference:index.adoc, concepts:model-routing.adoc, concepts:model-training.adoc
+= Models and inference
+:page-aliases: concepts:model-routing.adoc, concepts:model-serving.adoc
+:page-summary: Inference is the model interaction within an agent. Routing selects which model receives a request; serving supplies an endpoint for a model running on allocated hardware.
+:page-when-to-use: When you need an overview of models and inference and links to the task guides.
+:page-related: inference:index.adoc, concepts:model-training.adoc
 :page-persona: builder-ai-ml, builder-developer, operator-platform
 
 include::ROOT:partial$include.adoc[]
 
-A model call is an inference: the execution of a trained model on an input to produce an output. Code performs inference when it sends a prompt to a large language model, requests an embedding, or classifies a piece of text. An agentic system makes many inference calls for each request it serves, and how those calls behave decides the latency, the cost and the reliability of the system.
+Inference is the model interaction within an agent. Routing selects which model receives a request; serving supplies an endpoint for a model running on allocated hardware.
 
-This page explains what makes an inference call different from a function call, why the count of calls matters, and the loop that Akka runs over model traffic: observe and grade, route, train, serve.
+[#models-in-an-agentic-system]
+== Models in an agentic system
 
-== How an inference call differs from a function call
+Models provide inference: they generate or classify output from the context in a request. An agent combines that output with tools, state, and control logic to perform work.
 
-A function call is deterministic. It receives arguments, runs a fixed sequence of instructions, and returns a value of a declared type. The same arguments produce the same value.
+=== Inference and application behavior
 
-An inference call has the following properties:
+A model call differs from a function call. It can take substantial time, consumes tokens, and may return different answers for similar inputs. Correct output shape does not establish correct meaning, so assess the result against task-specific criteria.
 
-* _The result varies._ The same input can produce a different output on the next call.
-* _The result is untyped at the language level._ A model returns text, and the calling code parses and validates it. See xref:sdk:agents/structured.adoc[Structured responses].
-* _Latency can be measured in hundreds of milliseconds to minutes._ Communicating with a model is a streaming operation that can take a long time to finish, and long-running streams bring their own infrastructure and development challenges.
-* _Providers bill per token_, so the cost of a call depends on the size of the input, the context and the output.
+The agent decides what context to send and what tools are available. The model can request a tool, but the runtime executes it. Persistence, access control, retries, and evaluation remain application and runtime concerns.
 
-These properties decide what the surrounding code has to do. It validates the response before using it. It handles a malformed or failed response as a normal path, described in xref:sdk:agents/failures.adoc[Failure handling]. It sets a timeout and a token budget for each call, and it defines the behavior when a model is unavailable and the failover rules when exceptions occur.
+=== Choosing and improving a model
 
-These properties apply to any use of a model, whether the model ranks search results or scores transactions for fraud.
+Agents can use hosted providers or models served in an Akka region. A gateway can route requests by declared attributes or the task expressed by the request, independently of agent code.
 
-== Inference in agentic systems
+Captured traffic identifies repeated tasks and supplies examples for grading and training. A smaller model can be specialized for a narrow use case, compared with a baseline, and introduced through staged traffic. Frontier models can remain useful as fallbacks and as sources of training examples.
 
-An agent uses a model to decide what to do next. Selecting a tool, judging whether a task is complete, and producing an answer are inference calls. See xref:concepts:ai-agents.adoc[] for the concept and xref:sdk:agents.adoc[Agents] for the component.
+The improvement policy states what may change and which quality and cost objectives apply. A lower token price is not enough: compare quality, total tokens, latency, and the capacity needed to serve the task.
 
-One request to an agentic system typically produces several inference calls. An agent that plans, calls tools and checks its own output makes several calls in sequence. Systems that run agents in parallel or pass work between them increase the count further. See xref:sdk:agents/orchestrating.adoc[Multi-agent orchestration].
+=== Limits and trade-offs
 
-The number of calls per request shapes four characteristics of the system:
+A specialized model needs evidence for its intended task; success there does not establish general capability. Training data must be separated from evaluation data. Traffic that bypasses the gateway also bypasses its capture and routing, so comparisons need a clear account of what was measured.
 
-* _Sequential calls add their latencies_, so response time follows the depth of the call chain.
-* _Cost scales with the number of calls._ A request that expands into twenty model calls costs about twenty times a single call.
-* _The chance that at least one call fails grows with the number of calls_, so retry and fallback behavior applies to every call.
-* _Agents in the same system share provider rate limits and serving capacity._ A quota defined per application can run out of provider quota much sooner than expected.
+[#model-routing]
+== Model routing
 
-When further inference calls judge the first ones, the number of calls grows faster still.
+Model routing chooses which model serves a request without putting that choice in agent code. It lets you change models, enforce routing policy, and compare alternatives across agents that share a gateway.
 
-== How it works
+=== Routing in the request path
 
-Most agent traffic repeats a narrow task whose result can be checked. Such a task does not need the largest model available. Akka treats the model traffic of your agents as one loop with four parts, and each part feeds the next.
+An agent sends a model request through a proxy. The proxy asks the gateway router for a destination, then forwards the request to that backend. The router decides where the request goes; the proxy carries the request and response.
 
-. *Observe and grade.* Every exchange that passes through the gateway is captured, and the outputs are graded. A targeting step ranks the use cases where a smaller model would pay off. See xref:concepts:capture-and-grading.adoc[].
-. *Route.* A router in front of your models decides, for each request, which model serves it, from rules you declare or from the meaning of the request. See xref:concepts:model-routing.adoc[].
-. *Train.* The trainer specializes an open-weight base model for a use case, on data drawn from the captured traffic, and evaluates it against a baseline. See xref:concepts:model-training.adoc[].
-. *Serve.* Akka runs open-weight and trained models on accelerators in your project and exposes them to OpenAI-compatible clients. A promoted model takes traffic in stages, and grading continues after it does. See xref:concepts:model-serving.adoc[].
+Only traffic through this path is routed. A direct call to a provider or a served model bypasses gateway routing.
 
-Every recorded exchange is also priced, so the loop reports what the traffic costs and what a change saved. See xref:concepts:spend.adoc[].
+=== Attributes and meaning
 
-The parts work on their own as well. You can route traffic between hosted providers without serving a model, serve a model and call it directly without routing, or observe traffic before you route any of it.
+Attribute routing evaluates declared rules first. Use it for explicit conditions such as a tenant header, protocol, or requested model. A rule can consult a routing classifier when the condition needs a model judgment.
 
-=== Frontier models as fallback and as teacher
+Semantic routing handles requests not claimed by attribute rules. It matches the request to a use case discovered from traffic. The working set evolves as traffic arrives; a deployed manifest freezes a version for routing. Comparing a request embedding with use-case centers is vector arithmetic and does not require an additional model judgment.
 
-A frontier model is a large, general-purpose model, usually reached through a provider's API. It keeps two roles in the loop.
+Rules are preferable when you can state the condition directly. Semantic routing is useful when the task expressed by the request determines the destination. A frozen manifest can become less representative as traffic changes.
 
-* _Fallback._ A routing ruleset names a default destination for traffic that no rule claims, and a rule that defers to a routing classifier names what happens when the classifier fails. The frontier model is the usual answer to both, so a request that a smaller model is not trusted with still gets served.
-* _Teacher._ The frontier model's recorded answers to a use case are training examples for the smaller model. Supervised fine-tuning learns from those answers, and graders built from them score the smaller model's output.
+=== Introducing a new model
 
-=== What bounds the loop
+A routing policy can send shadow traffic to a candidate without returning its answers, then send a share of real traffic as a canary, before making it the regular destination. Rollback restores the previous policy version. These decisions are separate from training or registering the candidate.
 
-The loop changes which model answers your users, so it acts only within limits that people set:
+Routing decisions are recorded against the version of the rules that made them, so a past decision can be examined later.
 
-* The _improvement policy_ in a system's specification states what the system optimizes toward and how far it may tune itself. Routing changes, training and promotion stay inside it. See xref:concepts:specification.adoc[].
-* Targeting applies an eligibility filter declared by your organization. Policy can remove a use case from consideration and never adds one.
-* A routing policy can be vetoed for a use case, which refuses any routing change until the veto is lifted, and rolled back to its previous version.
-* A new model is promoted only when it meets the promotion rule, and the comparison that justified it is saved. See xref:concepts:model-training.adoc#_promotion[Promotion].
+[#model-serving]
+== Model serving
 
-== Guarantees
+Serving a model means running its weights on accelerators in your project and exposing an endpoint that model clients can call. It gives you control over the hardware and the location of request data, with responsibility for the capacity you allocate.
 
-[cols="2,3,2", options="header"]
-|===
-| Failure or situation
-| What Akka does
-| Precondition
+=== Hosted and served models
 
-| A rule defers to a routing classifier and the classifier fails
-| The rule's `onFailure` setting applies, for example the ruleset's default destination.
-| The rule sets `onFailure`.
+A hosted provider supplies a model API and charges for usage. A served model uses accelerator capacity allocated to your project. Serving is useful for specialized models, steady workloads, or data that must remain in a particular region. Hosted providers remain useful for broad capabilities and uneven traffic.
 
-| A request matches no rule and no use case
-| The ruleset's default destination serves it.
-| A ruleset is applied.
+Allocated hardware is held while the model is idle. A lower token cost therefore needs to be weighed against capacity utilization and the work of selecting weights and engine settings.
 
-| A trained model's quality falls on live traffic
-| The model is retrained, and traffic returns to the previous model if the new one slips below the baseline.
-| The use case is graded.
+=== The serving resources
 
-| A model call is made through the gateway
-| The exchange is captured and priced from the catalog version in force.
-| The traffic passes through the gateway, and the served name has a price.
-|===
+Three resources connect hardware to callers:
 
-== Choosing between routed and direct model calls
+* An `AcceleratorAllocation` claims devices from a regional pool.
+* A `Model` places a checkpoint and serving engine on an allocated device.
+* A `ModelEndpoint` exposes selected models to clients authorized by API keys.
 
-[cols="1,2,2", options="header"]
-|===
-| Attribute
-| Direct call to a provider
-| Call through the gateway
+A project route makes an endpoint reachable on a hostname. The client selects a model with a served name in its request. Adapters can give one base model several specialized served names.
 
-| Where the model is chosen
-| In agent configuration
-| In rulesets and routing policies, outside agent code
+Serving and routing are separate. Deploying a model makes it callable; changing a routing policy decides which traffic reaches it. A trainer endpoint is for testing models, whereas a model endpoint serves production requests.
 
-| Changing the model
-| A configuration change and a redeploy
-| A ruleset or policy change, no redeploy
+=== Limits and trade-offs
 
-| Capture, grading and spend
-| Not recorded by the gateway
-| Every exchange is captured and priced
+A model runs one replica. Additional capacity requires more models on more devices and routing between them. Changing the adapters restarts the engine. Configure hardware and engine settings with the Inference guides rather than assuming hosted-provider behavior.
 
-| Training a smaller model
-| No training data from this traffic
-| Captured traffic feeds training
-
-| Use when
-| A prototype, or a single model with no plan to change it
-| Production traffic you want to observe, route or move to a smaller model
-|===
-
-== Limits and trade-offs
-
-* Only traffic that passes through the gateway is captured, graded, routed and priced. A call made directly to a provider is outside the loop.
-* A use case is a candidate for a smaller model only when its outputs can be graded. Open-ended output with no grader stays on the model that serves it now.
-* A trained model is specialized: it is promoted for one use case and is not a replacement for a general-purpose model.
-* A served model runs on accelerators that your project allocates, so serving trades a per-token price for a capacity cost.
+anchor:_routing_on_meaning[]
+anchor:_served_names_and_endpoints[]
 
 == Next steps
 
-* xref:inference:index.adoc[Inference]
-* xref:inference:routing.adoc[Routing requests to models]
-* xref:inference:serving/getting-started.adoc[Serving your first model]
-* xref:optimize:index.adoc[Training]
-* xref:concepts:capture-and-grading.adoc[], xref:concepts:spend.adoc[]
+* xref:sdk:model-provider-details.adoc[] configures model providers.
+* xref:inference:routing.adoc[] configures rules, semantic routing, and staged traffic.
+* xref:reference:cli/routing.adoc[] and xref:reference:descriptors/routing-ruleset.adoc[] define routing commands and predicates.
+* xref:inference:serving/getting-started.adoc[] deploys a first model.
+* xref:inference:serving/allocating-hardware.adoc[] and xref:inference:serving/deploying-models.adoc[] configure devices, weights, and engines.
+* xref:inference:serving/exposing-and-calling-models.adoc[] configures names, routes, and API keys.
+* xref:model-training.adoc[] connects inference traffic to training and cost.

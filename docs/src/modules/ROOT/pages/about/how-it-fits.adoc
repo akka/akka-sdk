@@ -26,9 +26,9 @@ Controls are defined once and enforced the same way for every agent: guardrails,
 
 The steps below follow a single agent through the platform.
 
-. A team writes a specification in an AI harness, in plain language. The Akka Specify Plugin plans the work, implements it and tests it. See xref:concepts:spec-driven-development.adoc[] and xref:concepts:specification.adoc[].
+. A team writes a specification in an AI harness, in plain language. The Akka Specify Plugin plans the work, implements it and tests it. See xref:concepts:spec-driven-development.adoc[] and xref:concepts:spec-driven-development.adoc#specification[].
 . The result is Akka SDK components: an agent, a workflow that supervises it, entities that hold its state, and endpoints that expose it. See xref:sdk:components/index.adoc[Components].
-. Exit conditions define when the work is done. In enforced mode, a change that does not meet them is blocked before it merges. See xref:concepts:conformance.adoc[] and xref:sdk:enforced-mode.adoc[].
+. Exit conditions define when the work is done. In enforced mode, a change that does not meet them is blocked before it merges. See xref:concepts:spec-driven-development.adoc#conformance[] and xref:sdk:enforced-mode.adoc[].
 . The risk section of the specification becomes the controls that apply to the agent: guardrails on its inputs, tool calls and outputs, sanitizers on what it stores and logs, evaluations of its replies, and gates on its release. See xref:concepts:risk-to-controls.adoc[] and xref:concepts:controls.adoc[].
 . Evaluations run the agent through eval cases before it is deployed, and adversarial tests attack it. See xref:concepts:evaluation.adoc[].
 . The agent serves traffic on the Akka runtime. Every interaction is recorded in the ledger, and controls act on it in line.

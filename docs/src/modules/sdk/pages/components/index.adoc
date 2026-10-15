@@ -130,7 +130,7 @@ Use a *View* only when you need to:
 * access the history of an Event Sourced Entity: project its events into queryable rows (a transaction history, an audit trail), or
 * combine data from several entity types or from a topic into one queryable shape.
 
-Views are eventually consistent: they update after the entity persists, not in the same transaction. Never read your own write through a View in the same request that made the write. If an endpoint writes to an entity and must return the result, return it from the entity command's reply. See xref:concepts:views.adoc[].
+Views are eventually consistent: they update after the entity persists, not in the same transaction. Never read your own write through a View in the same request that made the write. If an endpoint writes to an entity and must return the result, return it from the entity command's reply. See xref:concepts:state-model.adoc#views-and-cqrs[].
 
 Signs you chose wrong:
 

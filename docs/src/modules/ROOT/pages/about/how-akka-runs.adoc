@@ -69,7 +69,7 @@ Akka Automated Operations (AAO) runs the runtime for you in the Serverless, Dedi
 
 Self-managed operations give you the runtime, clustering, elasticity, resilience, and metrics, logs and traces. Logs, metrics and traces can be exported to OpenTelemetry, Prometheus or Splunk in every option. The other items above are AAO. See the feature comparison on xref:operations:index.adoc[Operating].
 
-See xref:concepts:automated-operations.adoc[], xref:concepts:availability.adoc[] and xref:concepts:security-and-identity.adoc[].
+See xref:concepts:deployment-model.adoc#automated-operations[], xref:concepts:availability.adoc[] and xref:concepts:security-and-identity.adoc[].
 
 == Where it is in the documentation
 
@@ -81,7 +81,7 @@ See xref:concepts:automated-operations.adoc[], xref:concepts:availability.adoc[]
 | xref:getting-started:quick-deploy.adoc[Deploy to akka.io]
 
 | Understanding
-| xref:concepts:runtime.adoc[], xref:concepts:deployment-model.adoc[], xref:concepts:multi-region.adoc[], xref:concepts:availability.adoc[], xref:concepts:automated-operations.adoc[], xref:concepts:security-and-identity.adoc[], xref:concepts:observability.adoc[]
+| xref:concepts:runtime.adoc[], xref:concepts:deployment-model.adoc[], xref:concepts:multi-region.adoc[], xref:concepts:availability.adoc[], xref:concepts:deployment-model.adoc#automated-operations[], xref:concepts:security-and-identity.adoc[], xref:concepts:observability.adoc[]
 
 | Operating
 | xref:operations:index.adoc[Operating], xref:operations:akka-platform.adoc[Akka Automated Operations], xref:operations:configuring.adoc[Self-managed operations], xref:operations:production-readiness/index.adoc[Production readiness]

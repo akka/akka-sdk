@@ -263,7 +263,7 @@ include::example$autonomous-agent-playground/src/main/java/demo/devteam/applicat
 
 === Emergent patterns
 
-The xref:concepts:coordination-patterns.adoc#_emergent[emergent (swarm) pattern] has no dedicated capability. It is typically built on top of `TeamLeadership` as a *blackboard system*: direct peer messaging is replaced with a shared data space that members read from and write to. The "blackboard" can be the backlog itself, or an entity or view exposed as a tool. Members react primarily to what other members leave behind in that shared space, rather than messaging each other.
+The xref:concepts:ai-orchestration-patterns.adoc#_emergent[emergent (swarm) pattern] has no dedicated capability. It is typically built on top of `TeamLeadership` as a *blackboard system*: direct peer messaging is replaced with a shared data space that members read from and write to. The "blackboard" can be the backlog itself, or an entity or view exposed as a tool. Members react primarily to what other members leave behind in that shared space, rather than messaging each other.
 
 [#external-input]
 == External input
@@ -339,6 +339,20 @@ include::example$autonomous-agent-playground/src/main/java/demo/consulting/appli
 ----
 
 The model decides at runtime whether to delegate a subtask (retaining ownership) or hand off the entire task (transferring ownership). Domain tools like `assessProblem` and `checkComplexity` give the model the information it needs to make this decision.
+
+== What crosses an agent boundary
+
+Each Autonomous Agent keeps a private session with its full iteration history, tool calls and intermediate reasoning. None of it is shared automatically. What crosses from one agent to another is narrower, and it depends on the pattern:
+
+Handoff:: The source agent writes a summary into the handoff. That summary, with the summaries of any earlier handoffs, is added to the next agent's context.
+
+Delegation:: The worker starts fresh, with the subtask's instructions and attachments only. The coordinator receives the typed task result and nothing else. The worker's iterations and tool results stay with the worker.
+
+Team:: Members share a task list and a point-to-point message channel. Each member sees only the messages addressed to it and changes to the task list. There is no shared transcript.
+
+Moderation:: The moderator sees the full transcript. Each participant builds a private view of the entries delivered to it on each turn, plus the moderator's prompt for that turn.
+
+With request-based agents, a shared session is the boundary: every agent that uses the session identifier sees the history it is allowed to see. The ways to scope context, by focus, relevance, isolation and independence, are explained in xref:concepts:agent-memory.adoc#_context_management[Context management].
 
 == See also
 

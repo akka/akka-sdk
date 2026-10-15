@@ -6,80 +6,35 @@
 
 include::ROOT:partial$include.adoc[]
 
-The anatomy of a request traces one agent request through an Akka system, from the endpoint that receives it to the ledger record and the evaluation that follow it. Each part of the platform has its own page in this section. This page shows the order in which they act on one request, and links to the page that owns each step.
+An agent request crosses several components, each with a different responsibility. This example follows an expense claim from a client to a recorded decision.
 
-The example is an expense claim. A client sends the claim to a service. A workflow asks an agent to check the claim against the expense policy, the agent asks a model, the model calls a tool that records the decision in an entity, and the workflow returns the result.
+== From request to result
 
-== The path of the request
+image::concepts:request-lifecycle.svg[The path from endpoint through workflow, agent, model, entity, and evaluation,width=880]
 
-image::concepts:request-lifecycle.svg["The path of one request in thirteen numbered steps, from the client through the workflow, agent, model gateway, model, entity and ledger to the evaluator",width=880]
+. An *endpoint* receives the claim and checks access.
+. The *component client* locates the workflow instance by identity.
+. A *workflow step* records progress and calls the policy agent with a recovery strategy.
+. The *agent* declares its model request, tools, and session memory.
+. *Sanitizers and guardrails* mask configured data and check the input before the model call.
+. When configured, the *model gateway* chooses a destination and captures the exchange.
+. The *model* asks for a tool that records the claim decision.
+. A *tool-call guardrail* checks the request before the runtime invokes the tool.
+. The *entity* validates the command and persists its decision event.
+. The *journal* makes the event durable; subscribers receive it and cross-region replication distributes it asynchronously.
+. The tool result returns to the model. *Response guardrails* check its final reply before it returns through the workflow and endpoint.
+. The *ledger* holds the interaction record, including model and tool calls and their outcomes.
+. A live *evaluator* assesses the completed interaction and records its verdict. Captured model traffic also feeds cost analysis and training.
 
-. *Endpoint.* An HTTP endpoint receives the claim. Endpoints are the only components that face the outside of the service, and they hold no state. The endpoint checks the caller, for example with a JSON Web Token, and the service's access control list decides whether the caller may reach it. See xref:components.adoc[] and xref:security-and-identity.adoc[].
+== Boundaries that matter
 
-. *Component client.* The endpoint starts a workflow through the component client, with the claim's identifier as the workflow identifier. The endpoint does not know which node runs the workflow. The runtime routes the call to the one node where that workflow instance lives. See xref:components.adoc#_how_components_call_each_other[How components call each other] and xref:runtime.adoc[].
+A workflow can retry an unfinished step after failure. External work started by the first attempt may already have taken effect, so tools and downstream services must handle retries safely.
 
-. *Workflow step.* The workflow records that it started, then runs its first step, which calls the policy agent. Each transition is persisted before the next step runs, so the workflow knows where it is if the node fails. The step has a timeout and a recovery strategy that decide what happens when the agent call fails. See xref:durable-execution.adoc[].
-
-. *Agent.* The agent's command handler returns an effect that declares the model, the system message, the user message and the tools the model may use. The runtime builds the model request from that declaration and from the session memory, which is itself an Event Sourced Entity. See xref:ai-agents.adoc[] and xref:agent-memory.adoc[].
-
-. *Sanitizer and guardrail.* Before the request leaves the agent, sanitizers mask the categories of data you declared, such as card numbers, and a model call guardrail evaluates the input. These are two of the five control types. A guardrail that denies stops the call, and an error in the guardrail also stops it. See xref:controls.adoc[].
-
-. *Model gateway and router.* When model traffic goes through the gateway, the request reaches a proxy, and the proxy asks the gateway router for a destination. The router first matches declared rules against attributes of the request, then, for a request that no rule claimed, matches it by meaning against use cases discovered from traffic. The proxy forwards the request to the destination, which can be a frontier model or a model you serve. The router writes a capture of the input and output that passed through it. See xref:model-routing.adoc[] and xref:capture-and-grading.adoc[].
-
-. *Model.* The model replies. In this example the reply asks for a tool: record the decision on the claim. See xref:models.adoc[].
-
-. *Tool call.* A tool call guardrail evaluates the tool name and its arguments before the runtime runs the tool. The runtime, not the model, runs the tool, so whether it ran is known. The tool sends a command to the claim's entity through the component client. See xref:tools-and-protocols.adoc[].
-
-. *Entity event.* The entity is the single writer for that claim. It checks the command against its current state, which it holds in memory, and persists an event that records the decision. See xref:state-model.adoc[].
-
-. *Journal and replication.* The event is written to the entity's event journal before the entity's state changes and before the command is acknowledged. From the journal the event is replicated to the other regions of the project. Replication is asynchronous, so the other regions see the event shortly after it is written. Views and consumers that subscribe to the entity receive the event at least once. See xref:multi-region.adoc[] and xref:delivery-guarantees.adoc[].
-
-. *Reply.* The tool result goes back to the model, which writes its final reply. An agent response guardrail evaluates the reply before it leaves the agent. The reply returns to the workflow, which persists its next transition and ends, or moves to a step that waits for a person to approve a large claim. The endpoint returns the workflow result to the client.
-
-. *Ledger record.* The runtime writes the agent interaction to the ledger as a record. The record holds the model calls with the text that was actually sent after masking, the tool calls with their arguments and results, the token usage, the decision of each guardrail and the outcome. It names the workload and the agent that acted, and the authority the action ran under. It carries the agentic AI trace of the request, so the records of one request can be read together, and it is hash-chained to the record before it. See xref:evidence.adoc[].
-
-. *Evaluation.* After the interaction, an evaluator bound to the agent reads it from the ledger and judges it, for example with a model judge that checks the reply against the expense policy. Its verdict is written back to the ledger with the evaluator's control id. That saved verdict is evidence. Separately, the capture refinery derives a record from the router's capture, and that record prices the call and feeds use cases and training data. See xref:evaluation.adoc[] and xref:spend.adoc[].
-
-== Guarantees
-
-[cols="2,3,2", options="header"]
-|===
-| Failure or situation | What Akka does | Precondition
-
-| The node running the workflow fails during the agent call
-| The workflow is recovered on another node and runs the step that had not completed.
-| The agent is called from a workflow step.
-
-| The model call fails or times out
-| The workflow retries the step, then runs its recovery step when the retries run out.
-| A recovery strategy is set on the step.
-
-| A guardrail denies or fails
-| The interaction stops, the agent's failure handling runs, and the decision is in the record.
-| The guardrail is not in report-only mode.
-
-| The entity's node fails after the event is persisted
-| The entity rebuilds its state from its journal on another node, and the event is not lost.
-| None.
-
-| A region is lost after the event is persisted
-| Events already replicated are available in the other regions. Events not yet replicated are not available there.
-| The project has more than one region.
-
-| A view or consumer receives the event twice
-| Views deduplicate events from Akka sources by sequence number. A consumer must handle a repeated event safely.
-| None for views; idempotent handling for consumers.
-|===
-
-== Limits and trade-offs
-
-* A live evaluation runs after the interaction, so it cannot change the reply. A check that must change the outcome runs inline, as a guardrail.
-* Each guardrail on the request path adds latency to every call it checks.
-* Routing applies only to model traffic that passes through the gateway. Traffic sent straight to a provider has no capture.
-* Replication is asynchronous, so a read in another region can briefly miss the newest event.
+Persistence and replication are different boundaries. An acknowledged local write may not yet be visible in another region or a view. Live evaluation is also separate from enforcement: a verdict produced after the interaction cannot change the reply already returned.
 
 == Next steps
 
-* Build the parts: xref:sdk:workflows.adoc[Workflows], xref:sdk:agents.adoc[Agents], xref:sdk:event-sourced-entities.adoc[Event Sourced Entities]
-* Reference: xref:reference:glossary.adoc[Glossary]
-* Related concepts: xref:platform-model.adoc[], xref:components.adoc[], xref:evidence.adoc[]
+* xref:sdk:agents/calling.adoc[] explains agent invocation from workflows.
+* xref:sdk:agents/guardrails.adoc[] configures checks at runtime boundaries.
+* xref:sdk:evaluators.adoc[] implements evaluation and reads the ledger.
+* xref:delivery-guarantees.adoc[] and xref:multi-region.adoc[] explain retries and replication.

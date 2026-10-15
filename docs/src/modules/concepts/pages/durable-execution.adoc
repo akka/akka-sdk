@@ -6,117 +6,31 @@
 
 include::ROOT:partial$include.adoc[]
 
-Durable execution is the property that a process, once started, keeps its progress through failures and resumes from its last completed step. A process that calls a model, a tool, another service and a person can run for seconds or for months. Along the way a node can crash, a call can time out, and a later step can fail after earlier steps have changed other systems. Without durable execution, every such process needs hand-written state machines, retry loops, idempotency and rollback. In Akka, the xref:sdk:workflows.adoc[Workflow] component provides durable execution, and you write only the steps.
+Durable execution preserves a process's progress so it can continue after a restart or failure. In Akka, a Workflow coordinates steps with persisted state, transitions, retries, and recovery policies.
 
-== How it works
+== Progress and retries
 
-A workflow is a sequence of steps with durable state. Each step has an action, such as a call to an agent, an entity or an external service, and a transition that names the next step, or ends the workflow. The action runs, then the step returns an effect that updates the workflow state and selects the next step.
+A step performs work and returns an effect that updates state and selects the next step. The runtime persists the transition before advancing. Recovery continues from committed progress rather than restarting the whole process.
 
-The runtime records each transition with event sourcing, with periodic snapshots. That record is the workflow's position: which step it is on, and the state it carries. If the node running the workflow fails, the workflow is recovered on another node from that record, and it runs the step that had not completed. Completed steps are not run again.
+A step that fails or times out can run again. Its state update was not committed, but an external call it started may already have taken effect. Make downstream operations idempotent or deduplicate requests. Durable execution does not create a distributed transaction across external systems.
 
-Only one instance of a workflow ID is active at a time, so a workflow processes one thing at a time, like an entity. Commands that arrive while a step is running are queued until the step completes.
+Timeouts and recovery strategies bound how long the process waits and what happens after failure. Without a retry limit, a failing step can keep retrying. Configure these policies around the operation's expected latency and failure modes.
 
-=== Retries, timeouts and recovery
+== Waiting and compensation
 
-Each step has a timeout, 5 seconds by default, and you can set a timeout per step and an overall timeout for the workflow. A step that fails or times out does not commit its state update, so the workflow retries it with the state from before the attempt.
+A workflow can pause until an external command supplies an approval or result. The wait is durable and does not require keeping an application thread blocked. Check the workflow's state when accepting a response so late or duplicate input cannot advance it incorrectly.
 
-A recover strategy limits the retries and names a failover step to run when they run out. The failover step starts from the last committed state, and it can commit a new state, such as an attempt counter, before the workflow continues. Without a recover strategy, the workflow retries a failing step without limit. When the overall workflow timeout fires, the workflow can run one final step, which must end it.
+Compensation reverses earlier business actions when a later step fails. It is application logic, such as refunding a payment, rather than an automatic rollback. A timed-out action can have an uncertain outcome, so its compensation must account for that uncertainty.
 
-Akka does not cancel the work that a failed attempt started. That work can still finish later, but Akka discards its result.
+== Choosing a coordination mechanism
 
-=== Compensation and sagas
+Use a workflow for steps that form one tracked process with an end state. Use consumers for independent reactions to persisted facts. Use a timer for a delayed call that does not need a larger process. An Autonomous Agent already has durable task state; it does not need a wrapper workflow solely for persistence.
 
-A process that spans several systems has no shared transaction to roll back. The saga pattern divides it into steps, each a local transaction, and gives each step a compensating action that reverses it. When a later step fails, the workflow runs the compensating steps for the earlier ones and reaches a consistent end state.
-
-In a workflow, compensation is ordinary business logic: a step that sees an expected failure, such as a declined deposit, transitions to a step that reverses the earlier withdrawal. Write workflows so that they do not fail on known edge cases. Model the expected errors in your domain types and handle them with explicit transitions, and leave recovery strategies for unknown errors. A step that timed out is uncertain: it may or may not have taken effect, so its compensation must handle both cases.
-
-=== Orchestration and choreography
-
-There are two ways to coordinate a long-running process across components and services.
-
-* In *orchestration*, a central controller manages the sequence of steps and the compensation on failure. In Akka this is a workflow.
-* In *choreography*, each service listens for events, acts independently and emits an event that triggers the next service, handling its own rollback. In Akka this is entities and consumers that produce and react to events.
-
-Both keep the system consistent; they differ in where the coordination lives. The two combine: a workflow can run the main flow while consumers handle independent side effects of the events it produces.
-
-=== Waiting for a person or an event
-
-A workflow can pause and wait for input from outside: an approval, a reply from an external system, or a decision by a person. A pause transition tells the runtime to stop executing steps. A command to the workflow, sent when the input arrives, resumes it. A pause can have a timeout and a handler that runs when the expected input does not arrive in time.
-
-While it waits, the workflow holds no thread or memory: it is passivated, and its state is durable. A wait can last hours or days, and it survives restarts and new deployments of the service. The command that resumes it should be accepted only when the workflow is in the waiting state, so that a late or duplicate approval has no effect.
-
-You can also stop a workflow from outside. *Suspend* halts it temporarily, for example during maintenance or while you investigate it, and *resume* restarts the step that was in flight. *Terminate* stops it for good while keeping its state. Timeouts stay active while a workflow is suspended.
-
-=== Timers
-
-Some delays are not part of a process. A xref:sdk:timed-actions.adoc[Timed Action] schedules a single call for a future time: expire a reservation after 30 minutes, or check later whether an order was confirmed. The runtime stores the timer, so it survives restarts, and runs the call at least once: if the call fails, the timer is rescheduled until it succeeds. A delay that is a step inside a process belongs in the workflow, as a pause with a timeout.
-
-=== Calling agents and external services
-
-Calls to models and external services fail in ways that internal calls do not: they time out, are rate limited or return errors. Making each such call a workflow step gives it a timeout, retries and a failure path. Calling agents from a workflow is the recommended way to run agents that must complete, even when there is only one agent.
-
-== Guarantees
-
-[cols="1,2,2", options="header"]
-|===
-| Situation | What Akka does | Precondition
-
-| The node running a workflow fails
-| The workflow resumes on another node at the step that had not completed
-| None
-
-| A step fails or times out
-| The step is retried with the state from before the attempt, up to the limit of its recover strategy, then the failover step runs
-| A recover strategy is set; otherwise retries do not stop
-
-| A step's call reached another system, then the step was retried
-| The call is made again
-| Make the called operation idempotent, or deduplicate it, to avoid a double effect
-
-| A workflow waits for input
-| It holds no resources, survives restarts, and runs the pause timeout handler if the input does not arrive
-| A pause timeout is set
-
-| A timer's call fails
-| The timer is rescheduled until the call succeeds
-| None
-|===
-
-State transitions in a workflow are committed once: a step's state update is committed only when the step succeeds. Calls that a step makes to other systems are at least once, because a step that is retried makes its call again.
-
-== Choosing how to coordinate
-
-[cols="1,2,2,2", options="header"]
-|===
-| | Workflow | Consumers (choreography) | Timed Action
-
-| Shape
-| Steps that only make sense together
-| Independent reactions to facts
-| One call at a future time
-
-| Status and compensation
-| One place to inspect, and compensation on failure
-| No central status, nothing to compensate
-| None
-
-| Use when
-| The process has a name, an owner and an end, or earlier steps must be undone on failure
-| Removing one reaction would not break the others
-| A delay is not part of a larger process
-|===
-
-A workflow with one step that calls one component is not a process; use a consumer or a direct call. A chain of consumers where each one only triggers the next is a workflow spread across several components; replace it with a workflow. See xref:sdk:components/index.adoc#cs3-workflow-or-choreography[Workflow orchestration or Consumer choreography] and xref:sdk:dev-best-practices.adoc#saga-patterns[Saga patterns].
-
-== Limits and trade-offs
-
-* A step's default timeout is 5 seconds, and the workflow timeout must be greater than the step timeout.
-* Workflow notifications, which stream progress to clients, are live only and do not guarantee delivery. Do not build business logic on them.
-* Workflows are replicated between regions like entities, so a workflow continues in another region after a regional failure. See xref:multi-region.adoc[].
+anchor:_compensation_and_sagas[]
 
 == Next steps
 
-* xref:sdk:workflows.adoc[Implementing Workflows] and xref:sdk:timed-actions.adoc[Timers].
-* xref:sdk:agents/calling.adoc#_drive_the_agent_from_a_workflow[Drive an agent from a workflow].
-* xref:ai-orchestration-patterns.adoc[] for coordinating several agents.
-* xref:delivery-guarantees.adoc[] for idempotency and deduplication.
+* xref:sdk:workflows.adoc[] configures steps, retries, compensation, and external control.
+* xref:sdk:timed-actions.adoc[] schedules durable calls.
+* xref:sdk:components/index.adoc#cs3-workflow-or-choreography[Workflow or choreography] compares coordination choices.
+* xref:delivery-guarantees.adoc[] explains at-least-once effects.

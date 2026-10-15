@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Several agents that work toward a common goal need a *supervisor* that decides which agent runs and in what order. A xref:sdk:workflows.adoc[Workflow] is the supervisor when the sequence of agent calls is fixed in code, and an xref:sdk:autonomous-agents.adoc[Autonomous Agent] coordinator is the supervisor when the model decides which agent runs next. The supervisor pattern and how to choose a supervisor are explained in xref:concepts:ai-orchestration-patterns.adoc[Multi-agent coordination], and the coordination patterns in xref:concepts:coordination-patterns.adoc[Coordination patterns].
+Several agents that work toward a common goal need a *supervisor* that decides which agent runs and in what order. A xref:sdk:workflows.adoc[Workflow] is the supervisor when the sequence of agent calls is fixed in code, and an xref:sdk:autonomous-agents.adoc[Autonomous Agent] coordinator is the supervisor when the model decides which agent runs next. The supervisor pattern and how to choose a supervisor are explained in xref:concepts:ai-orchestration-patterns.adoc[Multi-agent coordination], and the coordination patterns in xref:concepts:ai-orchestration-patterns.adoc#coordination-patterns[Coordination patterns].
 
 [NOTE]
 ====

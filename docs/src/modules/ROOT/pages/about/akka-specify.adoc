@@ -23,7 +23,7 @@ A specification is a set of files in your repository, versioned with the code. I
 
 The first three are written by the people who build the system. The envelopes and the policy are written by the people who govern it, such as risk, security, operations and finance teams.
 
-See xref:concepts:specification.adoc[].
+See xref:concepts:spec-driven-development.adoc#specification[].
 
 == Building against the specification
 
@@ -37,7 +37,7 @@ Exit conditions define when a feature or a system is done. Your organization can
 
 `/akka:status` shows every exit condition and its state. `/akka:conform` runs the auditors in scope and returns a verdict. `/akka:ship` runs the auditors for a review or release target and, when they pass, the steps your organization defines for shipping. In enforced mode, a change that does not meet its exit conditions is blocked before it merges. In à la carte mode, you choose which checks to run.
 
-See xref:concepts:conformance.adoc[], xref:sdk:enforced-mode.adoc[], xref:sdk:a-la-carte-mode.adoc[], xref:reference:specify/auditors.adoc[Auditors] and xref:reference:specify/catalog/index.adoc[the exit condition catalog].
+See xref:concepts:spec-driven-development.adoc#conformance[], xref:sdk:enforced-mode.adoc[], xref:sdk:a-la-carte-mode.adoc[], xref:reference:specify/auditors.adoc[Auditors] and xref:reference:specify/catalog/index.adoc[the exit condition catalog].
 
 == Fitting your process
 
@@ -57,7 +57,7 @@ Akka Specify can recover what a legacy system does, turn that behavior into chec
 | xref:getting-started:set-up-ai-install.adoc[Install using your AI harness], xref:getting-started:set-up-harness.adoc[], xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent]
 
 | Understanding
-| xref:concepts:spec-driven-development.adoc[], xref:concepts:specification.adoc[], xref:concepts:conformance.adoc[]
+| xref:concepts:spec-driven-development.adoc[], xref:concepts:spec-driven-development.adoc#specification[], xref:concepts:spec-driven-development.adoc#conformance[]
 
 | Developing
 | xref:sdk:spec-driven-development.adoc[], xref:sdk:enforced-mode.adoc[], xref:sdk:a-la-carte-mode.adoc[]

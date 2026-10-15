@@ -7,20 +7,15 @@
 *** Building services
 **** xref:concepts:components.adoc[]
 **** xref:concepts:state-model.adoc[]
-**** xref:concepts:views.adoc[]
 **** xref:concepts:durable-execution.adoc[]
 **** xref:concepts:delivery-guarantees.adoc[]
-**** xref:concepts:streaming.adoc[]
 *** Agents
 **** xref:concepts:ai-agents.adoc[]
 **** xref:concepts:agent-memory.adoc[]
 **** xref:concepts:tools-and-protocols.adoc[]
 **** xref:concepts:ai-orchestration-patterns.adoc[]
-**** xref:concepts:coordination-patterns.adoc[]
 *** Specifications
 **** xref:concepts:spec-driven-development.adoc[]
-**** xref:concepts:specification.adoc[]
-**** xref:concepts:conformance.adoc[]
 *** Governance
 **** xref:concepts:governance-and-the-runtime.adoc[]
 **** xref:concepts:controls.adoc[]
@@ -29,16 +24,11 @@
 **** xref:concepts:evidence.adoc[]
 *** Models
 **** xref:concepts:models.adoc[]
-**** xref:concepts:capture-and-grading.adoc[]
-**** xref:concepts:model-routing.adoc[]
-**** xref:concepts:model-serving.adoc[]
 **** xref:concepts:model-training.adoc[]
-**** xref:concepts:spend.adoc[]
 *** Runtime and operations
 **** xref:concepts:runtime.adoc[]
 **** xref:concepts:deployment-model.adoc[]
 **** xref:concepts:multi-region.adoc[]
 **** xref:concepts:availability.adoc[]
-**** xref:concepts:automated-operations.adoc[]
 **** xref:concepts:security-and-identity.adoc[]
 **** xref:concepts:observability.adoc[]

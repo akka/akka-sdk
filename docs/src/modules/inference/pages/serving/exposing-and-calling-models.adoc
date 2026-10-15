@@ -216,6 +216,12 @@ An Akka agent reaches this endpoint the same way it reaches any OpenAI-compatibl
 
 include::partial$aao-inference-notice.adoc[]
 
+== Serving and routing
+
+A model endpoint is callable whether or not a gateway routing rule names it. To direct agent traffic to a served model, register its backend with the gateway proxy and configure routing to that destination. See xref:inference:routing.adoc[Routing requests to models].
+
+Spend reporting reads the served name from the `model` field of the response. Configure prices for each served name, including adapter names. See xref:inference:spend.adoc[Understanding inference costs].
+
 == See also
 
 * xref:inference:routing.adoc[Routing requests to models]

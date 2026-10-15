@@ -60,3 +60,8 @@ include::partial$aao-inference-notice.adoc[]
 * xref:sdk:model-provider-details.adoc[AI model provider configuration]
 * xref:sdk:integrations/ai-and-models.adoc[AI & models]
 * xref:sdk:agents/llm_eval.adoc[LLM evaluation]
+
+== Captures and inference costs
+
+* xref:inference:capture-and-grading.adoc[] explains recorded exchanges, grading, and the selection of training candidates.
+* xref:inference:spend.adoc[] explains pricing, reporting completeness, and cost attribution.

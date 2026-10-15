@@ -6,121 +6,33 @@
 
 include::ROOT:partial$include.adoc[]
 
-Governance in Akka runs in the runtime that executes each agent interaction. Guardrails stop a model call or a tool call, sanitizers mask personal data before the model or the log sees it, evaluators judge each interaction, access control lists decide who may call a component, and the ledger records every interaction. All of this happens in the runtime that runs the agent, not in a tool that reads logs afterwards.
+Governance connects a system's obligations to the controls that run and the evidence they produce. Akka applies controls in the runtime that executes agent interactions, rather than relying only on observations after completion.
 
-This page explains why governance runs in the runtime and how a running service declares the controls it enforces. xref:concepts:controls.adoc[] describes each type of control, xref:concepts:evidence.adoc[] describes the ledger, and xref:concepts:risk-to-controls.adoc[] describes how the controls of a system are chosen.
+== Enforcement and observation
 
-== Why governance runs in the runtime
+A guardrail can stop a model or tool call before it happens. A sanitizer can mask text before it reaches a model or log. An evaluator assesses completed behavior. These act at different times; an observation made after a reply cannot change that reply.
 
-Most governance products for AI, such as observability and evaluation services, sit outside the system that runs the agent. They receive logs or traces after the fact. From there they can report on an interaction, but they cannot change it, and they cannot vouch for the record they received.
+The runtime also knows which tools it invoked and which workload acted. That connects evidence to execution rather than recording only what a model proposed to do. Durable processes can wait for human decisions without losing progress across restarts.
 
-Akka takes the opposite approach. The runtime that makes the model call is the same runtime that denies it, masks the data before the model sees it, and writes the record. A guardrail, a sanitizer and a ledger record each gain a property that a tool outside the runtime cannot have:
+== Linking obligations to running controls
 
-* A guardrail can deny a model call or a tool call while the interaction runs, before it consumes tokens or reaches the tool. A log reader can only report a call that already happened.
-* A sanitizer masks personal data before the model or the log receives it. A tool that scrubs logs afterwards has already leaked the data to the model and to whoever read the log first.
-* A ledger record comes from the runtime that made the model calls and tool calls it describes. A log message from another system is a claim, and nothing proves that it was not modified, delayed, or left out.
+Each control has an identifier. Configuration binds that identifier to an enforcement or evaluation mechanism, and recorded verdicts identify the control that produced them. This lets reviewers connect the requirement, the configured check, and the observed result.
 
-The same holds for human intervention. An operator suspends, resumes, or terminates an xref:sdk:autonomous-agents/client.adoc[autonomous agent] through the component client, which acts on the running agent, not on a record of it.
+The runtime records its configured controls at startup. A missing or inconsistent identifier weakens the connection between policy and evidence even when the underlying check still runs.
 
-== What only the runtime can do
+== Runtime scope and external agents
 
-Because the runtime holds each call while it decides, it can do things that an observer of the interaction cannot:
+Controls acting inside an Akka interaction depend on that runtime's execution boundaries. Agents built elsewhere can supply traces or captured model traffic for assessment, but that does not give Akka the same ability to stop their internal actions or attest their complete execution.
 
-[cols="1,2", options="header"]
-|===
-| Capability | Why it needs the runtime
+Evidence supports compliance decisions; it does not make a risk assessment complete or replace the people responsible for accepting controls and reviewing changes.
 
-| Stop an action before it runs
-| A guardrail decides while the runtime holds the model call or the tool call. A guardrail fails closed: when its evaluation fails, the action does not proceed. See xref:concepts:controls.adoc#guardrails[Guardrails].
-
-| Wait for a person, durably
-| The runtime suspends the agent or the workflow while a person decides, across crashes and deployments, and resumes it where it stopped. See xref:concepts:controls.adoc#human-decisions[Human decisions].
-
-| Record the authority behind each action
-| The runtime propagates the workload identity of each caller, so each record names the workload that acted and the authority it acted under. See xref:concepts:evidence.adoc#identity-and-authority[Identity and authority on each record].
-
-| Record whether a side effect ran
-| The runtime runs the tool call, so the record shows whether the tool ran, not only that a model asked for it.
-
-| Keep a complete record
-| The ledger records every interaction, without sampling, and chains each record to the one before it. See xref:concepts:evidence.adoc[].
-
-| Govern before deployment
-| The controls of a system are derived, accepted and signed before it ships, and the runtime enforces the signed set. See xref:concepts:risk-to-controls.adoc[].
-|===
-
-Agents that do not run on Akka can still send their agentic AI traces to Akka for evaluation and evidence. The capabilities in this table need the agent to run on the Akka runtime. See xref:concepts:evidence.adoc#agents-built-elsewhere[Agents built elsewhere].
-
-== How the parts of governance fit together
-
-You configure each part in `application.conf`, and the runtime applies it to every interaction of the agents it is bound to. Some parts are control types, which meet an obligation. Others are building blocks that the controls use.
-
-[cols="1,2,1", options="header"]
-|===
-| Part | Role | Where it is described
-
-| xref:sdk:agents/guardrails.adoc[Guardrails]
-| Run before a model call, before a tool call, or on the agent's reply, and can deny it.
-| xref:concepts:controls.adoc#guardrails[Control type]
-
-| xref:sdk:sanitization.adoc[Sanitizers]
-| Mask personal data in logs, model calls, and tool results.
-| xref:concepts:controls.adoc#sanitizers[Control type]
-
-| xref:sdk:evaluators.adoc[Evaluators]
-| Run after each interaction, in the background, and record a verdict. An evaluator often delegates the verdict to an LLM-as-judge agent.
-| xref:concepts:controls.adoc#evals[Control type], xref:concepts:evaluation.adoc[]
-
-| Human decisions
-| Give a named person authority over a decision while the agent waits.
-| xref:concepts:controls.adoc#human-decisions[Control type]
-
-| Gates
-| Turn a check into a build or release decision.
-| xref:concepts:controls.adoc#gates[Control type]
-
-| xref:sdk:agents/classifiers.adoc[Classifiers]
-| Map text to a score or label, for a guardrail, an evaluator, a sanitizer, or your own code to act on.
-| xref:concepts:controls.adoc#classifiers[Building block]
-
-| xref:sdk:access-control.adoc[Access control lists]
-| Restrict which services and components may call an endpoint. With xref:sdk:access-control.adoc#_component_level_access_with_spiffe[SPIFFE identities] a rule can name a single component.
-| xref:concepts:security-and-identity.adoc[Building block]
-
-| The ledger
-| Records every interaction and its evaluations: the model calls, tool calls, token usage, and the outcome, including a failure caused by a denied guardrail. Evaluators and the console read from it. See xref:sdk:evaluators.adoc#_the_ledger_client[the ledger client].
-| xref:concepts:evidence.adoc[Building block]
-|===
-
-[#control-ids]
-=== Control IDs
-
-A control matrix lists the controls of a service. A control is an obligation and the mechanism that meets it. Each control has an id.
-Name the control that a guardrail, sanitizer or evaluator implements with a `control-id` key in its configuration entry.
-
-When a node of the service starts, the runtime writes one ledger record that lists the controls the node runs: each sanitizer, each guardrail that an agent uses, and each evaluator.
-Each control in the record has its control id.
-A guardrail or a sanitizer also has its configuration, masked by the log sanitizers.
-
-Every verdict that a control produces names its control id, so a verdict in the ledger traces back to the obligation it meets. xref:concepts:risk-to-controls.adoc[] describes where the obligations come from.
-
-== Compliance
-
-Compliance has two sides in Akka.
-
-Akka as a vendor complies with standards and regulations for its own platform and operations, including:
-
-* EU AI Act
-* Singapore Agent Framework
-* ISO 42001
-* SOC 2
-
-Your own system has obligations of its own, which depend on what it does and where it runs. Akka derives the controls your system needs from its risk, grouped by the regulation, framework or corporate standard they come from, and keeps the evidence that each control held. See xref:concepts:risk-to-controls.adoc[] and xref:concepts:evidence.adoc[].
+anchor:_compliance[]
+anchor:_why_governance_runs_in_the_runtime[]
+anchor:control-ids[]
 
 == Next steps
 
-* xref:concepts:controls.adoc[]: the five control types and how each acts at runtime.
-* xref:concepts:evidence.adoc[]: what the ledger records and how evidence is kept.
-* xref:sdk:agents/guardrails.adoc[Guardrails], xref:sdk:evaluators.adoc[Evaluators] and xref:sdk:sanitization.adoc[Data sanitization]: configure controls in a service.
-* link:{url-blog-trustworthy-ai}[Trustworthy AI with Akka, window="new"]
-* link:{url-blog-webinar-certainty}[Webinar: Creating Certainty in the Age of Agentic AI, window="new"]
+* xref:controls.adoc[] distinguishes control mechanisms.
+* xref:risk-to-controls.adoc[] follows risk assessment into controls.
+* xref:evidence.adoc[] explains the ledger and evidence.
+* xref:sdk:agents/guardrails.adoc[], xref:sdk:sanitization.adoc[], and xref:sdk:evaluators.adoc[] configure runtime behavior.

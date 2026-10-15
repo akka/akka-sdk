@@ -1,20 +1,21 @@
-= Spend and budgets
+= Understanding inference costs
 :page-summary: Spend is the cost of model traffic in a period, with the tokens it consumed, computed from recorded exchanges and priced from a versioned pricing catalog by served name.
 :page-when-to-use: When you need to understand how Akka prices model traffic, why a figure can be unpriced or a lower bound, and how spend is attributed to models, use cases, callers and conversations.
-:page-related: reference:cli/cost-and-traffic.adoc, concepts:capture-and-grading.adoc, concepts:model-serving.adoc
+:page-banner: inference
+:page-related: reference:cli/cost-and-traffic.adoc, concepts:model-training.adoc, concepts:models.adoc
 :page-persona: builder-ai-ml, operator-platform
 
 include::ROOT:partial$include.adoc[]
 
 Spend is the cost of model traffic in a period, together with the tokens that traffic consumed. Akka computes it from the exchanges that the gateway recorded and prices each exchange from a versioned pricing catalog. No figure is estimated or entered by hand.
 
-A provider's invoice states what an account cost. It does not say which agent, use case or caller the cost came from, and it arrives after the period is over. Deciding where a smaller model pays off, holding a team to a budget, or showing what a change saved all need figures that are divided the way the system is built and that can be read again later with the same result. This page explains how those figures are produced.
+A provider's invoice states what an account cost. It does not say which agent, use case or caller the cost came from, and it arrives after the period is over. Deciding where a smaller model reduces cost, holding a team to a budget, or showing what a change saved all need figures that are divided the way the system is built and that can be read again later with the same result. This page explains how those figures are produced.
 
 == How it works
 
 === From exchange to figure
 
-. An agent's model request passes through the gateway, and the exchange is captured. See xref:concepts:capture-and-grading.adoc[].
+. An agent's model request passes through the gateway, and the exchange is captured. See xref:concepts:model-training.adoc#capture-and-grading[].
 . The capture refinery derives a derived capture from it, with the served name, the use case, the caller, the conversation and the tokens of each class.
 . The portfolio service prices the derived capture once, when it stores it, from the pricing catalog.
 . Spend for a period is read from the priced derived captures.
@@ -23,7 +24,7 @@ Traffic that the gateway did not record does not appear in spend.
 
 === The pricing catalog
 
-The pricing catalog holds the price of each served name as rates per million tokens. Input and output have rates, and so can cache reads, cache writes and reasoning tokens. A price applies to a served name: the `model` field in the body of the model's response. A response without that field is unpriced. See xref:concepts:model-serving.adoc#_served_names_and_endpoints[Served names].
+The pricing catalog holds the price of each served name as rates per million tokens. Input and output have rates, and so can cache reads, cache writes and reasoning tokens. A price applies to a served name: the `model` field in the body of the model's response. A response without that field is unpriced. See xref:concepts:models.adoc#_served_names_and_endpoints[Served names].
 
 The catalog is versioned, and a published version is never edited, so a figure computed under a price stays the same when you read it again. Each version states the instant from which its prices apply, which can be in the past or the future but must be later than the latest price of each served name it carries. A version can price some served names and leave out others, and the names it leaves out keep their earlier price. A price is marked as assigned when your organization set the rate, for example a negotiated rate, and as a list price otherwise. The catalog holds one currency.
 
@@ -63,12 +64,6 @@ A period can be divided into rows, and the rows always add up to the total:
 A caller is the identifier that the request declared in the `x-optimize-caller` header, or the address a proxy forwarded. Erasing a caller, for example to answer a privacy request, removes the identifier that figures are attributed to and leaves every figure unchanged.
 
 Conversations are ranked by spend rather than divided, so the most expensive conversations of a period can be found. That ranking does not add up to the period total. Two periods can be compared, and a difference has a value only when both periods have one in the same currency.
-
-=== Budgets, forecasts and the cost–quality trade-off
-
-Spend budgets, forecasts and the trade-off between cost and quality build on the same figures. A spend budget sets a limit against these figures, and a forecast projects the spend of a period from the traffic recorded so far. The cost–quality view sets the spend of each use case beside its graded quality, which is what targeting weighs when it ranks use cases and what a promotion has to improve. See xref:concepts:capture-and-grading.adoc#_how_targeting_works[How targeting works].
-
-A spend budget is different from the token budget that an agent sets for each model call, and from the training budget of a training run, which counts optimizer updates.
 
 === Incidents
 
@@ -114,4 +109,4 @@ The incident feed collects what went wrong in the same traffic: anomalies, reque
 == Next steps
 
 * xref:reference:cli/cost-and-traffic.adoc[Cost and traffic commands]
-* xref:concepts:capture-and-grading.adoc[], xref:concepts:models.adoc[]
+* xref:concepts:model-training.adoc#capture-and-grading[], xref:concepts:models.adoc[]

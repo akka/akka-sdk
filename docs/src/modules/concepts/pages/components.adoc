@@ -7,182 +7,40 @@
 
 include::ROOT:partial$include.adoc[]
 
-A component is a class in an Akka service that the runtime instantiates, calls and manages. Any distributed service has to handle concurrency, persistence, placement and failure. In Akka, components hold the business logic, and the runtime handles those concerns. The contract between the two is the effect: each component method returns a description of what should happen, and the runtime carries it out.
+A component is a class whose lifecycle and execution the Akka runtime manages. Components hold application behavior; the runtime handles persistence, message routing, placement, concurrency, and recovery.
 
-== The component types
+== Components and ordinary classes
 
-You build applications from xref:reference:glossary.adoc#component[components]. All components except endpoints live in the `application` package of your service; endpoints live in the `api` package. Components are composable: a service can have one component or many, and services combine into larger systems.
+Use a component when its runtime behavior is needed: durable state, an agent interaction, a workflow, a projection, or an endpoint. Keep calculations and business rules in ordinary Java classes that components call. The xref:sdk:components/index.adoc[component guide] compares component types and explains how to choose one.
 
-[cols="1,2,1", options="header"]
-|===
-| Component | What it does | Holds state
+An endpoint exposes a service to callers. Entities own state, workflows coordinate durable steps, agents interact with models, and views build read models. Consumers react to streams of changes, while timers arrange later calls. A service combines these responsibilities rather than requiring a component for every class.
 
-| xref:sdk:agents.adoc[Agent]
-| Interacts with an AI model to perform one task, with durable session memory.
-| Session memory
+== Effects declare execution
 
-| xref:sdk:autonomous-agents.adoc[Autonomous Agent]
-| Works toward a goal in a loop, deciding which tools and agents to use.
-| Task state and memory
-
-| xref:sdk:event-sourced-entities.adoc[Event Sourced Entity]
-| Stores state as a journal of events.
-| Yes
-
-| xref:sdk:key-value-entities.adoc[Key Value Entity]
-| Stores its whole state as one value.
-| Yes
-
-| xref:sdk:workflows.adoc[Workflow]
-| Runs a multi-step process durably, with retries, timeouts and compensation.
-| Yes
-
-| xref:sdk:views.adoc[View]
-| Serves queries from a read model built from entity, workflow or topic changes.
-| Read model
-
-| xref:sdk:consuming-producing.adoc[Consumer]
-| Reacts to a stream of events or messages, and can publish to topics or other services.
-| No
-
-| xref:sdk:timed-actions.adoc[Timed Action]
-| Runs a scheduled call at a future time.
-| No
-
-| xref:sdk:http-endpoints.adoc[HTTP], xref:sdk:grpc-endpoints.adoc[gRPC] and xref:sdk:mcp-endpoints.adoc[MCP] Endpoints
-| Expose the service to clients, other services and AI models.
-| No
-|===
-
-For guidance on which component to use for a given need, see xref:sdk:components/index.adoc#choosing-a-component-type[Choosing a component type].
-
-[#_effects_what_the_component_declares]
-== Effects declare what the runtime does
-
-In Akka, the behavior of your service is separate from its execution. You specify _what_ the system should do, and the Akka runtime decides _how_ it is executed. For example, you define an agent by its model, its session memory and the user prompt; that is the _what_. The runtime decides the _how_: processes, virtual threads, persistence and actor-based concurrency.
-
-This separation lets the runtime change how a service is executed without being constrained by how its behavior is defined. You do not handle distributed systems, persistence, elasticity or networking yourself. On infrastructure that Akka operates, the separation lets Akka introduce improved runtimes while your services run, with no recompilation or redeployment.
-
-A component method returns an xref:reference:glossary.adoc#effect[`Effect`]. The effect is a declarative description of what you want Akka to do: persist these events, update this state, move to this step, reply with this value, or reject the command. An agent method, for example, returns an effect that tells the runtime to call the model with a system message and a user message, then send the model's response back to the caller. A workflow step returns an effect that updates the workflow state and names the step to transition to next.
+A component returns an effect describing what the runtime should do: persist an event, update state, transition to a step, reply, or reject a command. Returning that description separates the decision from its execution.
 
 image::concepts:component-effects.svg[Components return effects that the runtime carries out,width=880]
 
-Each component type has its own Effect API, with operations that match its semantics:
-
-[cols="1,3", options="header"]
-|===
-| Component | Available effects
-
-| xref:sdk:agents.adoc#_effect_api[Agents] | Model, Memory, Tools, System and User Message, Reply, Error
-| xref:sdk:event-sourced-entities.adoc#_effect_api[Event Sourced Entities] | Persist Events, Reply, Delete Entity, Error
-| xref:sdk:key-value-entities.adoc#_effect_api[Key Value Entities] | Update State, Reply, Delete State, Error
-| xref:sdk:views.adoc#_effect_api[Views] | Update State, Delete State, Ignore
-| xref:sdk:workflows.adoc#_effect_api[Workflows] | Update State, Transition, Pause, End, Reject Command, Reply
-| xref:sdk:timed-actions.adoc#_effect_api[Timers] | Confirm Scheduled Call, Error
-| xref:sdk:consuming-producing.adoc#_effect_api[Consumers] | Publish to Topic, Confirm Message, Ignore
-|===
-
-Because the effect is a description and not an action, you do not write code for persistence, distribution, serialization, cache management or replication. You decide what is persisted, how to respond to the caller, which step comes next and which commands to reject. The runtime does the rest.
+Each component type has an Effect API suited to its behavior. The SDK guide for that component defines the available operations. Code executed outside an effect does not acquire persistence or retry behavior merely because it runs inside a component.
 
 == Commands and events
 
-A *command* is a request to a component to do something. It comes from a sender, such as an endpoint or another component, and it can be accepted or rejected. An *event* is a fact: something that has already happened, such as an order being placed. Entities accept commands and record the resulting changes, and Event Sourced Entities record them as events. Other components subscribe to events to keep read models in sync or to trigger further work. Keeping the decision (the command) separate from the fact (the event) is what lets Akka replay history, build several read models from one source and retry delivery safely. See xref:state-model.adoc[] and xref:delivery-guarantees.adoc[].
+A command asks a component to do something and can be accepted or rejected. An event records something that has happened. Keeping requests separate from recorded facts lets the runtime recover state, deliver changes to other components, and build read models.
 
-== Background execution
+Components communicate through direct calls or subscriptions to changes. A direct call requests a result; an event subscription lets another component react independently. Location transparency means callers address a component by identity rather than by the node on which it runs.
 
-Because effects are declarative, the runtime carries them out on your behalf as background execution, so you do not manage the work directly.
+== Execution and failure
 
-include::ROOT:partial$background-execution.adoc[]
+The runtime supports durable multi-step execution, short transactional operations, and continuous streams. A workflow persists progress across steps. An entity processes commands against its state. A consumer processes a stream at its own pace. These share an actor-based core with isolation and asynchronous messaging.
 
-== The three runtimes
+Durable execution does not make arbitrary external side effects exactly once. Calls can be retried, and handlers must account for duplicate execution. See xref:durable-execution.adoc[] and xref:delivery-guarantees.adoc[].
 
-Agentic systems need three kinds of execution. Akka supports all three in the same SDK, and chooses the runtime for each component automatically from the component type.
-
-[cols="1,3", options="header"]
-[.compact]
-|===
-|Runtime |Description
-
-|Durable execution
-|Long-lived. The progress of the process is persisted after every step, so that it can recover and retry. Used by the xref:sdk:workflows.adoc[Workflow] component. See xref:durable-execution.adoc[].
-
-|Transactional
-|Short-lived, high-volume, concurrent execution. Used by xref:sdk:http-endpoints.adoc[Endpoint], xref:sdk:views.adoc[View], xref:state-model.adoc#_entity_state_models[Entity] and xref:sdk:timed-actions.adoc[Timer] components.
-
-|Streaming
-|Continuous processes that handle streams of data with no end. Used by the xref:sdk:consuming-producing.adoc[Consumer] component and the xref:sdk:http-endpoints.adoc[SSE and gRPC streaming extensions of an endpoint]. See xref:streaming.adoc[].
-|===
-
-All three runtimes are built on an actor-based core: a concurrency model with strong isolation and asynchronous message passing between actors. When a service uses several runtimes, Akka runs the actors for each of them concurrently on the same nodes.
-
-== How components call each other
-
-Components such as agents, workflows and entities work together. In Akka, you define the relationships between components in code, and the runtime handles the details at run time. Messages are routed automatically, without you managing network paths or address resolution. This is _location transparency_: a component can call another without knowing where it runs.
-
-Components interact with each other, and with the outside world, in two ways:
-
-[cols="1,3", options="header"]
-[.compact]
-|===
-|Mechanism |Description
-
-|xref:sdk:component-and-service-calls.adoc[ComponentClient]
-|One component calls another directly. The runtime handles the call without blocking a thread, using lightweight virtual threads. A call can wait for a reply before it continues, and the code stays simple and synchronous, with no futures or callbacks.
-
-A common example is a workflow that calls an agent to perform a task, then waits for the agent to finish. The call reads like a regular method call.
-
-|Events
-|A component emits events to signal that something has happened, and other components subscribe to them. This resembles publish-subscribe, but it does not need an external broker.
-
-For example, when an entity updates its state, it emits an event, and a view subscribes to that event to stay in sync. Events can also come from external sources, such as APIs or message brokers.
-|===
-
-Loose coupling between components, and message passing between them, keep the system responsive under heavy load: the runtime avoids contention and manages blocking operations in a controlled way.
-
-Common patterns of interaction:
-
-[cols="2,3", options="header"]
-[.compact]
-|===
-| Pattern | Example
-
-| Endpoint → Workflow → Agent +
-  Endpoint → Entity → View
-| An HTTP request starts a workflow to process a file. The workflow calls an agent that will later use the file's content to answer questions. Another endpoint records user interaction history in an entity, and a view reads from that entity to reconstruct the conversation.
-
-| Endpoint → Agent → Entity → View +
-  Endpoint → Workflow → Entity
-| A user sends a query to an endpoint. An agent handles the query and stores the result in an entity, and a view builds the conversation history from that data. Separately, another endpoint starts a workflow, which also stores its results in an entity.
-
-| Stream → Consumer → Entity +
-  Agent → Endpoint → Entity
-| A consumer processes a stream of data and writes it to an entity for long-term use. At the same time, an agent calls logic through an endpoint and stores the result in an entity.
-|===
-
-=== Synchronous and asynchronous calls
-
-include::ROOT:partial$sync-vs-async.adoc[]
-
-For implementation guidance, see xref:sdk:component-and-service-calls.adoc[Component and service calls].
-
-== Errors and failures
-
-Akka distinguishes two kinds of things going wrong. An *error* is an expected outcome that your code signals: the request is invalid, or the current state does not allow the command. A component returns an error effect, and the caller receives it as a `CommandException`, which an HTTP endpoint turns into a 400 response by default. A *failure* is unexpected: an exception your code did not anticipate, or a call that timed out. Failures are not serialized across nodes as errors; an endpoint turns an unhandled failure into a 500 response with a correlation ID that also appears in the logs.
-
-Signal expected outcomes as errors, so that callers can handle them, and let the runtime retry or recover from failures. See xref:sdk:errors-and-failures.adoc[Errors and failures].
-
-== Setup and configuration
-
-A service can define one setup class. It runs on each service instance at startup and shutdown, and it configures dependency injection, so that components receive the clients and objects they need through their constructors. Because a service runs as several instances that restart independently, startup logic runs once per instance, not once per service. See xref:sdk:setup-and-dependency-injection.adoc[Setup and dependency injection].
-
-== Limits and trade-offs
-
-* Components are not plain classes. Business rules, calculations and helpers belong in ordinary Java classes that components call. Reserve components for what needs their guarantees. See xref:sdk:components/index.adoc#cs10-component-or-plain-class[Not everything is a component].
-* Endpoints are stateless. A new instance serves each request, so state kept in an endpoint field is lost.
-* Effects describe work for the runtime. Code that runs outside an effect, such as a blocking call inside an entity command handler, is not retried or recorded by the runtime.
+anchor:_effects_what_the_component_declares[]
 
 == Next steps
 
-* xref:sdk:components/index.adoc[Components]: choosing a component for a given need.
-* xref:sdk:component-and-service-calls.adoc[Component and service calls].
-* xref:state-model.adoc[], xref:durable-execution.adoc[] and xref:delivery-guarantees.adoc[].
+* xref:sdk:components/index.adoc[] compares components and ordinary classes.
+* xref:sdk:component-and-service-calls.adoc[] explains direct calls and synchronous and asynchronous APIs.
+* xref:sdk:errors-and-failures.adoc[] distinguishes expected errors from failures and documents their responses.
+* xref:sdk:setup-and-dependency-injection.adoc[] explains startup, shutdown, and per-instance dependency injection.
+* xref:state-model.adoc[] explains how effects change durable state.

@@ -1,129 +1,86 @@
 = Multi-agent coordination
-:page-summary: Multi-agent coordination is how several agents work toward one goal under a supervisor that decides which agent runs, when, and with what context.
-:page-when-to-use: When one agent is not enough and you choose a supervisor and the context each agent sees.
-:page-related: concepts:coordination-patterns.adoc, sdk:agents/orchestrating.adoc, concepts:durable-execution.adoc
+:page-aliases: concepts:ms-agent-patterns.adoc, concepts:coordination-patterns.adoc
+:page-summary: Multi-agent coordination divides work among agents and defines how they share context. A supervisor applies a coordination pattern and decides when the combined work is complete.
+:page-when-to-use: When you need an overview of multi-agent coordination and links to the task guides.
+:page-related: sdk:agents/orchestrating.adoc, concepts:durable-execution.adoc
 :page-persona: builder-developer, builder-ai-ml
 
 include::ROOT:partial$include.adoc[]
 
-Multi-agent coordination is how several agents work toward one goal under a supervisor that decides which agent runs, when, and with what context. Models perform best with focused context. As a task grows, one agent's context fills with too much information, too many concerns and competing objectives. Splitting the work across agents scopes each agent's context so it can work with clarity. It also allows parallel work, and lets each agent use the model that suits it: a small, fast model for triage, a stronger model for complex reasoning, or a model trained for one domain.
+Multi-agent coordination divides work among agents and defines how they share context. A supervisor applies a coordination pattern and decides when the combined work is complete.
 
-== How it works
+[#supervision-and-context]
+== Supervision and context
 
-=== The supervisor
+Multi-agent coordination divides a task among agents and decides how their results contribute to a common outcome. Use it when separate contexts, specialized capabilities, or parallel work provide enough benefit to justify the coordination cost.
 
-In many AI frameworks, agents call other agents directly. That makes sample applications easier to write, but it is a design compromise that is not ready for production. Consider an activity recommendation application with a weather agent and an activity agent. The weather agent retrieves the forecast for when the user wants to plan an activity and passes it to the activity agent. If the weather agent is coded to call the activity agent, it must always call it, and it cannot be reused in any other flow.
+=== Choosing a supervisor
 
-In Akka, agents stay small and do one thing, and a supervisor composes them. The supervisor decides which agents are called, in what order, whether they run concurrently, and what to do with their outputs. This is the supervisor pattern: a central supervisor coordinates worker agents, which do not communicate with each other directly. Agents stay simple and reusable, and reliability concerns such as durable steps, retries and failure handling live in one place.
+A Workflow coordinates agents through steps defined in code. It suits a known sequence, explicit recovery policies, and compensation of earlier business actions.
 
-Akka has two supervisors:
+An Autonomous Agent coordinates through capabilities declared in its definition. The model decides which worker or peer to use, while the runtime manages tasks and execution. It suits work whose next step depends on intermediate findings.
 
-* A xref:sdk:workflows.adoc[Workflow] supervises agents from outside, with explicit steps that you write. Use it when the orchestration sequence is fixed in code.
-* An xref:sdk:autonomous-agents.adoc[Autonomous Agent] supervises through declared coordination capabilities: delegation, handoff, teams and moderation. The runtime drives the loop and the model decides which agent runs next. Use it when the sequence itself is a model judgment.
+Keep worker agents focused so they can be reused in different processes. Place decisions about sequence, retries, and completion with the supervisor instead of distributing that policy across unrelated workers.
 
-Both run on the Akka runtime with the same durable execution, retries and record. The coordination tools that the runtime offers an Autonomous Agent's model are durable and mediated by the platform.
+=== Context and work boundaries
 
-=== Route communication through a supervisor
+A coordinator can delegate isolated subtasks and combine their typed results, transfer ownership through handoff, lead a team exchanging messages, or moderate a conversation. These choices share different context and have different completion rules.
 
-The corollary of the supervisor pattern is a rule about how agents communicate. Inside a service, route coordination through a supervisor rather than having one agent call another from its own code. An agent that reaches another agent directly fixes the supervision structure in place, so it can no longer be composed into other flows. A call made outside a supervisor also gives up the supervisor's retries and durable steps.
+Use isolation when independent reasoning matters. Share information when agents need to respond to each other's work. A shared session or team does not imply that every participant sees every other participant's private history.
 
-Agents can call agents in other services or frameworks over A2A or MCP. Make those calls from the supervisor, as a workflow step or a tool, so that they get the same retries and record. See xref:tools-and-protocols.adoc[] and xref:sdk:component-and-service-calls.adoc[].
+A person can also be part of the process. A workflow pauses while waiting for an approval and resumes when a command supplies it. Validate the waiting state and the caller's authority before accepting the decision.
 
-=== When to use several agents
+=== Limits and trade-offs
 
-A well-designed single agent with the right tools can do a lot. Multi-agent patterns add overhead in tokens, coordination and complexity. Consider several agents when:
+Start with one agent where it is sufficient. More agents add model calls, latency, context management, and failure paths. A model-driven supervisor is less predictable than a fixed sequence, so bound its iterations and evaluate the complete process.
 
-* Accumulated context is degrading performance.
-* The context of one subtask is contaminating other work.
-* A single perspective is limiting the quality of the solution.
-* The agent's tools or prompt are too broad to be effective.
-* Subtasks are independent and could run in parallel.
-* Explainability and auditability are requirements. Distinct agents with clear roles make reasoning auditable.
+Durable coordination preserves progress; it does not make external actions exactly once. Retried tools and workflow calls still need safe duplicate handling.
 
-Several agents also allow more dynamic behavior. Each run is shaped by the interplay between agents rather than by one initial prompt. The trade-off is predictability: the more dynamic the coordination, the harder it is to anticipate and test what the system does for a given input. Start with the simplest approach that works, and add agents when there is evidence that one agent is reaching its limits. It can also be worth experimenting with several agents early to understand the trade-offs, particularly when explainability or auditability matters.
+[#coordination-patterns]
+== Coordination patterns
 
-=== Patterns
+Coordination patterns describe how agents divide work and exchange context. Choose the pattern from the task's dependencies and information boundaries, rather than adding agents solely to mirror organizational roles.
 
-A supervisor applies one of four coordination patterns, or a blend of them: sequential, delegative, collaborative and emergent. Each pattern decides which agent is active, how much runs in parallel and what context each agent sees. The patterns, their examples, how to decompose work into agents and how patterns compose are explained in xref:coordination-patterns.adoc[].
+=== Four patterns
 
-== What crosses an agent boundary
-
-Each Autonomous Agent keeps a private session with its full iteration history, tool calls and intermediate reasoning. None of it is shared automatically. What crosses from one agent to another is narrower, and it depends on the pattern:
-
-Handoff:: The source agent writes a summary into the handoff. That summary, with the summaries of any earlier handoffs, is added to the next agent's context.
-
-Delegation:: The worker starts fresh, with the subtask's instructions and attachments only. The coordinator receives the typed task result and nothing else. The worker's iterations and tool results stay with the worker.
-
-Team:: Members share a task list and a point-to-point message channel. Each member sees only the messages addressed to it and changes to the task list. There is no shared transcript.
-
-Moderation:: The moderator sees the full transcript. Each participant builds a private view of the entries delivered to it on each turn, plus the moderator's prompt for that turn.
-
-With request-based agents, a shared session is the boundary: every agent that uses the session identifier sees the history it is allowed to see. The ways to scope context, by focus, relevance, isolation and independence, are explained in xref:agent-memory.adoc#_context_management[Context management].
-
-== Waiting for a person
-
-Some plans stop at a decision that a person makes: an approval, a correction or missing input. A workflow supervisor pauses at that step and waits, for hours or days if needed, without holding resources. The person's answer arrives as a command that resumes the workflow at the step where it stopped. Because the paused state is durable, the wait survives restarts and deployments.
-
-With an Autonomous Agent, the decision is a task that no agent is assigned to. The tasks that depend on it wait until a person, through an endpoint, or another system completes or fails it. An approval gate between drafting and publishing is built this way, with the person's decision as the task's typed result. A running Autonomous Agent can also be suspended, resumed or terminated from outside.
-
-How the wait is kept durable is explained in xref:durable-execution.adoc[]. The authority that a named person holds over a decision is a control; see xref:controls.adoc[]. The xref:sdk:workflows.adoc#_pausing_workflow[Pausing a workflow] section shows a workflow that waits for a person to accept a transfer.
-
-== Guarantees
-
-[cols="2,3,2", options="header"]
+[cols="1,2,2",options="header"]
 |===
-| Failure or situation | What Akka does | Precondition
+| Pattern | How work moves | Main trade-off
 
-| A worker agent call fails
-| The supervisor retries the step or the delegated task by its recovery strategy, then runs its failure handling.
-| The agent is called from a workflow step or a coordination capability.
+| Sequential
+| One stage passes its output to the next. Implement a fixed sequence with workflow steps, or transfer task ownership through handoff.
+| Simple dependencies, but early mistakes influence later stages and work does not run in parallel.
 
-| The service restarts during coordination
-| The workflow resumes at its current step, or the Autonomous Agent recovers its tasks and continues its loop.
-| None.
+| Delegative
+| A coordinator assigns isolated subtasks to workers and combines their results.
+| Parallel work and independent reasoning, with decomposition and synthesis concentrated in the coordinator.
 
-| A coordinator loops without finishing
-| The iteration limit fails the task.
-| The limit is configurable for each task type.
+| Collaborative
+| Agents exchange information while working. Teams share tasks and messages; moderation structures turns and completion.
+| Useful for interdependent work and review, with coordination overhead and a risk of early convergence on one answer.
 
-| A person takes days to decide
-| The paused workflow or the open task waits without holding resources and survives restarts.
-| None.
+| Emergent
+| Many agents contribute to shared state, and a selection process turns contributions into a result.
+| Broad exploration, with less predictable outcomes and a need for explicit selection criteria.
 |===
 
-== Choosing a supervisor
+A shared session is a context-sharing mechanism, not a pattern by itself. It can support several patterns, depending on who writes, reads, and controls the next action.
 
-[cols="1,2,2", options="header"]
-|===
-| | Workflow | Autonomous Agent
+=== Combining patterns
 
-| Who decides the sequence
-| Your code
-| The model
+A sequential process can delegate one stage to parallel workers. A coordinator can delegate to a team whose members collaborate, or a debate can pause for independent research. Keep each boundary explicit: what work is assigned, what context crosses it, what result returns, and who decides completion.
 
-| Model interaction in a step
-| At most one round trip
-| Several iterations
+The pattern adds no delivery or recovery guarantee of its own. Those come from its workflow or Autonomous Agent supervisor. External side effects still need safe retry behavior.
 
-| Retries and compensation
-| Explicit policies for each step, and compensation of external effects
-| Retries and iteration limits from the runtime
-
-| Use when
-| The sequence is fixed, you want explicit retry policies or compensation, or the orchestration crosses service boundaries over A2A or MCP
-| The model decides what to consult, which specialist to ask, or whether to iterate, based on what earlier steps returned
-|===
-
-Both give the same durable execution, retries and record.
-
-== Limits and trade-offs
-
-* Every agent added costs tokens and coordination time.
-* Dynamic coordination is harder to predict and test than a fixed sequence.
-* Each pattern has its own trade-offs; see xref:coordination-patterns.adoc#_limits_and_trade_offs[Coordination patterns].
+anchor:_emergent[]
+anchor:_route_communication_through_a_supervisor[]
+anchor:_waiting_for_a_person[]
+anchor:_what_crosses_an_agent_boundary[]
 
 == Next steps
 
-* Orchestrate with a workflow: xref:sdk:agents/orchestrating.adoc[Multi-agent orchestration]
-* Coordinate with an Autonomous Agent: xref:sdk:autonomous-agents/capabilities.adoc[Coordination capabilities]
-* Related concepts: xref:coordination-patterns.adoc[], xref:ai-agents.adoc[], xref:agent-memory.adoc[], xref:durable-execution.adoc[]
+* xref:sdk:agents/orchestrating.adoc[] implements workflow-based coordination.
+* xref:sdk:autonomous-agents/coordination.adoc[] chooses between tools, tasks, and agents and gives pattern examples.
+* xref:sdk:autonomous-agents/capabilities.adoc[] configures coordination and defines context boundaries.
+* xref:sdk:workflows.adoc#_pausing_workflow[Pausing a workflow] waits for external input.
+* xref:getting-started:planner-agent/dynamic-team.adoc[] builds a delegating coordinator.

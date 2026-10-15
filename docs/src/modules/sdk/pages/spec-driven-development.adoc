@@ -24,7 +24,7 @@ Before you start, xref:getting-started:set-up-ai-install.adoc[install using your
 
 === The project constitution
 
-Your project starts with a constitution, `constitution.md`, which holds the rules for the whole project: the default Akka requirements, plus any your organization or team adds. Define it once at the start and change it only as an exception. Use xref:reference:specify/constitution.adoc[`/akka:constitution`] to create or update it. See xref:concepts:specification.adoc#_the_constitution[The constitution].
+Your project starts with a constitution, `constitution.md`, which holds the rules for the whole project: the default Akka requirements, plus any your organization or team adds. Define it once at the start and change it only as an exception. Use xref:reference:specify/constitution.adoc[`/akka:constitution`] to create or update it. See xref:concepts:spec-driven-development.adoc#_the_constitution[The constitution].
 
 == Using Akka specify
 

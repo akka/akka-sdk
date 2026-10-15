@@ -13,7 +13,7 @@ NOTE: Streaming in the SDK means events processed through views, consumers and p
 
 == Back-pressure
 
-A consumer reads events at the pace it can process them, while the events wait in the event journal or the broker topic, and an in-memory stream slows the sender to the receiver's pace. See xref:concepts:streaming.adoc[] for how durable buffers and back-pressure work.
+A consumer reads events at the pace it can process them, while the events wait in the event journal or the broker topic, and an in-memory stream slows the sender to the receiver's pace. See xref:concepts:delivery-guarantees.adoc#streaming-and-back-pressure[] for how durable buffers and back-pressure work.
 
 
 == Using Akka Streams

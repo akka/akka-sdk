@@ -6,219 +6,32 @@
 
 include::ROOT:partial$include.adoc[]
 
-Evaluation measures what an agent does against what good means for its task. A model does not give the same reply twice, so an assertion on the exact reply does not work. Evaluation instead checks properties of the reply and of the tool calls behind it, and decides over many cases whether the agent is good enough.
+Evaluation measures agent behavior against defined quality criteria. It checks what the agent said and did, including its tool calls, rather than relying on one exact reply.
 
-The same agent is evaluated at several points in its life: in a test before it ships, against recorded traffic when something changes, and on live traffic while it runs. Each point uses the same ideas, cases, evaluators, judges and gates, and each records its results so that they can be compared. An eval is one of the five xref:concepts:controls.adoc[control types].
+== Where to evaluate
 
-== Where evaluation runs
+Use tests before release, replay to check a change against recorded interactions, batch experiments to assess recorded traffic, and live evaluators to monitor production. Adversarial cases exercise inputs intended to violate constraints.
 
-[cols="1,2,2", options="header"]
-|===
-| Where | What runs | Use it to
+An evaluator checks a property. A model judge assesses a criterion that cannot be checked exactly. A gate turns several results into a build or release decision. Because model judgments vary, assess representative cases and repeated attempts rather than treating one reply as a stable measurement.
 
-| In a test
-| Eval cases run against the agent in the TestKit runtime, with stubbed tools and either a mocked or a real model.
-| Check tool use and reply quality in every build, before the agent ships.
+A live evaluator runs after an interaction and cannot undo it. Use an inline guardrail when a check must determine whether an action or reply proceeds. Sampling reduces evaluation cost but leaves some interactions without a verdict.
 
-| By replay
-| Recorded production interactions become eval cases that expect the agent to use its tools as production did.
-| Hold an agent to what production did, before a prompt, model or tool change.
+== Reading results
 
-| On a batch of recorded traffic
-| An experiment runs one dataset of recorded interactions against one target with one set of evaluators.
-| Measure a change, or a new evaluator, over real traffic without touching production.
+The APIs use different result types:
 
-| On live traffic
-| An evaluator component runs after each interaction of the agents it is bound to, in the background.
-| Track quality, detect drift and keep a verdict for each interaction.
+* TestKit evaluators report pass, fail, or inconclusive. Setup and target failures identify attempts that could not run normally.
+* Guardrails report allow, deny, or failure of the check. Their decisions control execution.
+* Runtime evaluators record verdicts on completed interactions.
+* Specification checks report exit-condition states and a conformance verdict.
+* Training evaluations score a model against a dataset with a grader, rather than evaluating a complete agent process.
 
-| As an adversarial test
-| Eval cases whose user message is an attack, and whose evaluators state what a breached reply looks like.
-| Check that known attacks fail, before release and after every change.
-|===
-
-A test or a replay runs in the build, and nothing leaves the test runtime. A batch runs against recorded traffic. A live evaluation runs in production and writes its verdict to the xref:concepts:evidence.adoc[ledger].
-
-== How an evaluation works
-
-An eval case is one input to the agent and the checks that apply to its result. The input is a command, such as a user message. The checks are evaluators. In a test, the runtime traces every model call and tool call of the case, and each evaluator reads the reply and that trace.
-
-An evaluator is one check. It reads only the evidence it names and reports a result: pass, fail, or inconclusive when the evidence it needs is absent. A tool that was never called fails the check that expected the call, and makes the checks of its order and arguments inconclusive, so one missing call is reported once. An inconclusive result is never counted as a pass. A case whose outcome rests on a check that could not run is therefore visible, not silently passed.
-
-Checks come in cost order. An exact check over the reply or the tool calls is free and reproducible. A regular expression decides clear cases. A judge, a model that scores the reply against a criterion stated as a sentence, catches what exact checks cannot, such as the same content written as fiction. A judge costs one model call per case and is not deterministic, so its results are gated on a rate, not on one run.
-
-A gate decides over the results of a batch. By default every case must pass. With a real model, a gate usually requires a minimum pass rate instead, because one run of one case is not a stable measure. A case can run several times, and the gate then counts each attempt.
-
-The report records whether the gate passed, the pass rate, every case result with its evidence, and the inconclusive results.
-
-== Evaluating replies and actions
-
-An eval case checks two things: what the agent said and what the agent did. The reply can be checked for content that must or must not appear, for its format, or by a judge. The actions are the tool calls, checked for which tools ran, in what order and with what arguments, and for the tokens, model calls and latency they cost.
-
-An adversarial case reverses the stance. An eval case states what a good reply does. An adversarial case states what a breached reply looks like and requires its absence. An attack can enter through the user message, through a tool result that someone else wrote, or show only in what the agent did: a tool call that changed data outside the agent is a breach even when the reply looks correct. Keep quality suites and adversarial suites separate, because they gate differently: checks that must never fail need a full pass rate, while judged checks need a lower one.
-
-== Evaluating live traffic
-
-On live traffic, an xref:sdk:evaluators.adoc[evaluator] component is bound to agents in configuration, and the runtime triggers it for their interactions. The evaluator returns a verdict, optionally with a score, a label and attributes, and the runtime records it in the ledger with the evaluator's control id. A durable evaluator runs in several steps and resumes after a restart, for evaluations that call several judges or wait for a person.
-
-Because a live evaluator runs after the interaction, it cannot change what the agent did. When the verdict must change the outcome, run the check inline as a guardrail. See xref:concepts:controls.adoc#guardrails[Guardrails].
-
-Live evaluators usually call a model, so each evaluation has a cost. A sampling ratio evaluates a share of the interactions.
-
-== Evaluating models
-
-The same ideas apply to models. Before a trained model is promoted, it is evaluated against an evaluation dataset with a grader, and an evaluation gate decides whether it does the task as well as the model it replaces. A score belongs to one evaluation of one model against one dataset with one grader, so a model can be evaluated many times. See xref:optimize:concepts.adoc[Training concepts].
-
-[#verdict-vocabularies]
-== Verdict vocabularies
-
-Each part of Akka reports results in its own words. They all map to the four verdicts that a control produces.
-
-[cols="1,1,1,1,1", options="header"]
-|===
-| Source | `upheld` | `breached` | `inconclusive` | `error`
-
-| xref:concepts:controls.adoc#verdicts[Control verdict]
-| upheld
-| breached
-| inconclusive
-| error
-
-| Guardrail decision
-| allow
-| deny
-| (none)
-| fail
-
-| Evaluator component on live traffic
-| passed
-| failed
-| inconclusive
-| failed evaluation (an exception or an exhausted retry)
-
-| TestKit evaluator result
-| pass
-| fail
-| inconclusive
-| a case labeled `setup` or `target`
-
-| Adversarial case
-| held
-| broke
-| inconclusive
-| a case labeled `setup` or `target`
-
-| Batch experiment evaluator
-| pass
-| fail
-| inconclusive
-| breakage, kept out of the pass rate
-
-| Exit condition in a specification
-| `green`
-| `red`
-| `open`
-| `open`, with a reason
-|===
-
-A gate turns many results into one decision. A specification's conformance verdict is `READY_TO_SHIP` or `NOT_READY`. A TestKit gate passes or fails the batch.
-
-== Words that each section uses
-
-Each section of the docs keeps its own words for the parts of evaluation. The table shows what each word means where it appears.
-
-[cols="1,1,3", options="header"]
-|===
-| Word | Section | Meaning
-
-| eval
-| Governance
-| The control type that measures and scores behavior.
-
-| evaluator
-| Developing
-| The component that the runtime triggers after an interaction to record a verdict.
-
-| evaluator
-| Testing
-| One check over the reply and the traced tool calls of an eval case.
-
-| eval case
-| Testing
-| One input to the agent and the evaluators that apply to it.
-
-| judge
-| Developing and Testing
-| A model that scores a reply against a criterion. In Developing it is an agent; in Testing it is a TestKit evaluator.
-
-| experiment
-| Reference (CLI)
-| One run of one dataset version against one target with one set of evaluators.
-
-| evaluation
-| Training
-| One scoring of one model against one dataset with one grader.
-
-| grader
-| Training
-| The scorer that compares a model's answer with an evaluation example.
-
-| gate
-| Governance
-| The control type that turns check results into a build or release decision.
-
-| gate
-| Testing
-| What a batch of eval cases must satisfy over all results.
-
-| coverage gate
-| Reference (Specify)
-| The exit condition that every material surface of a project, code, harness or doc, is covered.
-
-| evaluation gate
-| Training
-| The check that decides whether a trained model is good enough to promote.
-|===
-
-== Guarantees
-
-[cols="1,2,2", options="header"]
-|===
-| Situation | What Akka does | Precondition
-
-| The evidence an evaluator needs is absent
-| The result is inconclusive and never counted as a pass.
-| None.
-
-| A judge cannot answer
-| The result is a failure with its reason, and it counts against the pass rate.
-| The evaluation runs in the TestKit.
-
-| A live evaluator throws
-| The runtime logs the exception and records a failed evaluation.
-| None.
-
-| A durable evaluator's node restarts
-| The evaluation resumes from its last completed step.
-| The evaluator extends `DurableEvaluator`.
-
-| A test evaluation runs
-| No model call or tool call leaves the test runtime unless the test uses a real model.
-| Tools are stubbed.
-|===
-
-== Limits and trade-offs
-
-* A live evaluator cannot change the interaction it judges.
-* A judge is not deterministic. A single judged result is not a stable measure; gate on a rate.
-* A sampling ratio lowers the cost of live evaluation and the number of interactions with a verdict.
-* An agent that streams its reply sends it before any check on the reply completes.
-* A replayed case can only hold the agent to the fields its recording carries.
+Read each result in its own context. Missing evidence is not a successful check, and an advisory result is not an enforced release decision. See xref:reference:glossary.adoc#_evaluation_terminology[Evaluation terminology] for the terms used across sections.
 
 == Next steps
 
-* xref:testing:evaluation/index.adoc[Evaluation in the TestKit], xref:testing:evaluation/getting-started.adoc[], xref:testing:evaluation/replay.adoc[], xref:testing:evaluation/adversarial.adoc[]
-* xref:testing:evaluation/judges.adoc[] and xref:testing:evaluation/gates-and-reports.adoc[]
-* xref:sdk:evaluators.adoc[Evaluators] and xref:sdk:agents/llm_eval.adoc[LLM evaluation]
-* xref:reference:cli/akka-cli/akka_optimize_eval.adoc[`akka optimize eval`] for experiments on recorded traffic
-* xref:concepts:controls.adoc[]
+* xref:testing:evaluation/index.adoc[] and xref:testing:evaluation/eval-cases.adoc[] define test evaluation.
+* xref:testing:evaluation/judges.adoc[] and xref:testing:evaluation/gates-and-reports.adoc[] configure scoring and acceptance.
+* xref:testing:evaluation/replay.adoc[] and xref:testing:evaluation/adversarial.adoc[] test recorded traffic and attacks.
+* xref:sdk:evaluators.adoc[] evaluates live interactions.
+* xref:optimize:trainer/evaluation.adoc[] evaluates trained models.

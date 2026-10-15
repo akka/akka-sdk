@@ -276,3 +276,7 @@ You now know how to deploy, verify, update, and remove Akka services using the A
 
 - xref:reference:cli/akka-cli/akka_services.adoc[`akka service` CLI commands]
 - xref:reference:descriptors/service-descriptor.adoc[Akka Service Descriptor]
+
+== Data compatibility during an update
+
+A rolling update runs old and new service versions at the same time. The new version must read existing events and state, and persisted data must remain compatible with versions still running during the rollout. See xref:sdk:serialization.adoc#_schema_evolution[Schema evolution] before changing persisted types.

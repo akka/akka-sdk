@@ -74,7 +74,7 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 
 [[evidence]]Evidence:: The capture of a <<control>> verdict, kept in the <<ledger>> with the record it was decided on. See xref:concepts:evidence.adoc[].
 
-[[capture]]Capture:: The input and output of one exchange that passed through the agent gateway. Captures feed grading, routing and training. See xref:concepts:capture-and-grading.adoc[].
+[[capture]]Capture:: The input and output of one exchange that passed through the agent gateway. Captures feed grading, routing and training. See xref:concepts:model-training.adoc#capture-and-grading[].
 
 [[trace]]Trace:: Either an agentic AI trace that is saved as a <<record>> in the <<ledger>>, or a <<capture>> of traffic in the agent gateway. A page that uses the word says which. See xref:concepts:evidence.adoc[].
 
@@ -123,13 +123,13 @@ A component like <<key_value_entity>>,<<event_sourced_entity>> or <<workflow>>
 
 [[primary_region]]Primary region:: A region with a primary role, for an entity or for a project; the docs always say which. An entity's primary region is the region that accepts its writes: where it was created, and in request-region mode wherever it was last written; in pinned-region mode, the project's primary region. A project's primary region is the region its resources replicate from. See xref:concepts:multi-region.adoc#_replicated_reads_and_the_primary_region[Replicated reads and the primary region].
 
-[[routing_classifier]]Routing classifier:: A model that a routing rule hands its decision to, to choose where a request goes. It is not the governance <<classifier>>. See xref:concepts:model-routing.adoc[].
+[[routing_classifier]]Routing classifier:: A model that a routing rule hands its decision to, to choose where a request goes. It is not the governance <<classifier>>. See xref:concepts:models.adoc#model-routing[].
 
-[[served_name]]Served name:: The name a client sends to call a served model or adapter, and the name that spend is priced by. It is the `model` field of the response body. See xref:concepts:model-serving.adoc[].
+[[served_name]]Served name:: The name a client sends to call a served model or adapter, and the name that spend is priced by. It is the `model` field of the response body. See xref:concepts:models.adoc#model-serving[].
 
-[[spend_budget]]Spend budget:: A limit on the cost of model traffic for a period, checked against the spend that the pricing catalog computes. See xref:concepts:spend.adoc[].
+[[spend_budget]]Spend budget:: A limit on the cost of model traffic for a period, checked against the spend that the pricing catalog computes. See xref:concepts:model-training.adoc#spend-and-budgets[].
 
-[[use_case]]Use case:: A kind of task discovered from traffic, which is routed, graded and trained as one unit. See xref:concepts:capture-and-grading.adoc#_use_cases[Use cases].
+[[use_case]]Use case:: A kind of task discovered from traffic, which is routed, graded and trained as one unit. See xref:concepts:model-training.adoc#_use_cases[Use cases].
 
 [[definition_of_done]]Definition of Done:: The business statement of when a feature is done, authored in the project owner's terms. Each item is translated into one or more <<exit_condition,exit conditions>>. See xref:sdk:enforced-mode.adoc#exit-conditions[Exit conditions and Definition of Done].
 
@@ -172,3 +172,60 @@ A component like <<key_value_entity>>,<<event_sourced_entity>> or <<workflow>>
 [[verified_at]]`verified_at`:: A timestamp on an <<exit_condition>> set when its auditor last returned `green`. Used by `/akka:ship` to detect drift: if any file in the project has been modified after `verified_at`, the condition is marked `stale` and the ship refuses until the auditor re-runs.
 
 [[conformance_receipt]]Conformance receipt:: The record written when a feature ships, listing which <<exit_condition,exit conditions>> were `green`, which stayed `open` and why, and any waivers in effect. See xref:sdk:enforced-mode.adoc#shipping[Shipping and receipts].
+
+== Evaluation terminology
+
+Each section of the documentation keeps its own words for the parts of evaluation. The table shows what each word means where it appears.
+
+[cols="1,1,3", options="header"]
+|===
+| Word | Section | Meaning
+
+| eval
+| Governance
+| The control type that measures and scores behavior.
+
+| evaluator
+| Developing
+| The component that the runtime triggers after an interaction to record a verdict.
+
+| evaluator
+| Testing
+| One check over the reply and the traced tool calls of an evaluation case.
+
+| evaluation case
+| Testing
+| One input to the agent and the evaluators that apply to it.
+
+| judge
+| Developing and Testing
+| A model that scores a reply against a criterion. In Developing it is an agent; in Testing it is a TestKit evaluator.
+
+| experiment
+| Reference (CLI)
+| One run of one dataset version against one target with one set of evaluators.
+
+| evaluation
+| Training
+| One scoring of one model against one dataset with one grader.
+
+| grader
+| Training
+| The scorer that compares a model's answer with an evaluation example.
+
+| gate
+| Governance
+| The control type that turns check results into a build or release decision.
+
+| gate
+| Testing
+| What a batch of evaluation cases must satisfy over all results.
+
+| coverage gate
+| Reference (Specify)
+| The exit condition that every material surface of a project, code, harness or document, is covered.
+
+| evaluation gate
+| Training
+| The check that decides whether a trained model is good enough to promote.
+|===

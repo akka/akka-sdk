@@ -6,23 +6,23 @@
 
 include::ROOT:partial$include.adoc[]
 
-Understanding explains how the Akka Agentic AI Platform works, one mechanism per page, from the components you build to the runtime that runs them. Each page describes a problem every agentic system must handle, how Akka handles it, what Akka guarantees and where the limits are. The task pages in other sections link here for the reasons behind their steps.
+Understanding gives short explanations of Akka concepts and their main trade-offs. Read the topics relevant to your task; you do not need to read this section in order. Each overview links to the development, testing, training, or operations guide that owns the details.
 
 == The groups
 
 Foundations:: The vocabulary and the shape of the whole system. xref:platform-model.adoc[] names the parts, xref:request-lifecycle.adoc[] follows one request through all of them, and xref:distributed-systems.adoc[] gives the principles the platform is built on.
 
-Building services:: How the components of a service hold state and do work. See xref:components.adoc[], xref:state-model.adoc[], xref:views.adoc[], xref:durable-execution.adoc[], xref:delivery-guarantees.adoc[] and xref:streaming.adoc[].
+Building services:: How state and processes behave. See xref:components.adoc[], xref:state-model.adoc[], xref:durable-execution.adoc[], and xref:delivery-guarantees.adoc[].
 
-Agents:: How agents call models, remember, use tools and work together. See xref:ai-agents.adoc[], xref:agent-memory.adoc[], xref:tools-and-protocols.adoc[], xref:ai-orchestration-patterns.adoc[] and xref:coordination-patterns.adoc[].
+Agents:: How agents use models, memory, tools, and coordination. See xref:ai-agents.adoc[], xref:agent-memory.adoc[], xref:tools-and-protocols.adoc[], and xref:ai-orchestration-patterns.adoc[].
 
-Specifications:: How a system is specified, generated and held to its specification. See xref:spec-driven-development.adoc[], xref:specification.adoc[] and xref:conformance.adoc[].
+Specifications:: How requirements, project rules, and acceptance checks fit together. See xref:spec-driven-development.adoc[].
 
 Governance:: How controls run in the runtime and what they leave behind as evidence. See xref:governance-and-the-runtime.adoc[], xref:controls.adoc[], xref:evaluation.adoc[], xref:risk-to-controls.adoc[] and xref:evidence.adoc[].
 
-Models:: How model traffic is captured, graded, routed, served, trained and priced. See xref:models.adoc[], xref:capture-and-grading.adoc[], xref:model-routing.adoc[], xref:model-serving.adoc[], xref:model-training.adoc[] and xref:spend.adoc[].
+Models:: How inference and model improvement relate. See xref:models.adoc[] and xref:model-training.adoc[].
 
-Runtime and operations:: How services run, scale, stay available and stay secure. See xref:runtime.adoc[], xref:deployment-model.adoc[], xref:multi-region.adoc[], xref:availability.adoc[], xref:automated-operations.adoc[], xref:security-and-identity.adoc[] and xref:observability.adoc[].
+Runtime and operations:: How services run, recover, and stay secure. See xref:runtime.adoc[], xref:deployment-model.adoc[], xref:multi-region.adoc[], xref:availability.adoc[], xref:security-and-identity.adoc[], and xref:observability.adoc[].
 
 == Reading paths
 
@@ -31,16 +31,16 @@ Runtime and operations:: How services run, scale, stay available and stay secure
 | If you | Read
 
 | Build services and agents
-| Foundations, then Building services, then Agents
+| Start with Components and effects; use the service and agent topics as needed
 
 | Choose, serve or train models
-| Agents, then Models
+| Start with Models and inference; continue in Inference or Training
 
 | Run Akka in production
-| Foundations, then Runtime and operations
+| Start with Deployment and operations; use Runtime and operations for the concepts you need
 
 | Govern AI systems
-| Specifications, then Governance
+| Start with Governance and the runtime; use Specifications for development acceptance
 |===
 
 For what the platform is and how its solutions fit together, see xref:ROOT:about-akka.adoc[About Akka]. For definitions of individual terms, see the xref:reference:glossary.adoc[glossary].
