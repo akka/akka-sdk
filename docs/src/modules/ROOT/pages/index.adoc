@@ -76,12 +76,23 @@ Akka has one offering: the Akka Agentic AI Platform, which provides resilience a
 [.grid-item]
 --
 [discrete]
-== xref:operations:index.adoc[Operating]
+== xref:operations:index.adoc[Deployment]
+
+**Choose and prepare** the environment for your services.
+
+* xref:operations:index.adoc[Deployment options]
+* xref:operations:technical-overview.adoc[How AAO works]
+* xref:operations:production-readiness/index.adoc[Production readiness]
+--
+
+[.grid-item]
+--
+[discrete]
+== xref:operations:operating.adoc[Operating]
 
 **Deploy, run, and monitor** Akka services in production.
 
-* xref:operations:configuring.adoc[Self-managed operations]
-* xref:operations:technical-overview.adoc[How AAO works]
+* xref:operations:projects/index.adoc[Project setup]
 * xref:operations:services/deploy-service.adoc[Deploy a service]
 * xref:operations:observability-and-monitoring/index.adoc[Observability and monitoring]
 --

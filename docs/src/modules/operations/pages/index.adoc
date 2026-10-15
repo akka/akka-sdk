@@ -193,13 +193,6 @@ AAO monitors region health and brings replacement capacity online without operat
 | pass:[✅]
 | pass:[✅]
 
-| Scale to zero
-| pass:[❌]
-| pass:[✅]
-| pass:[❌]
-| pass:[❌]
-| pass:[❌]
-
 | Multi-tenant services
 | pass:[❌]
 | pass:[❌]
@@ -256,6 +249,8 @@ Every option that AAO operates runs each service across availability zones in a 
 * BYOK8s: xref:operations:technical-overview/byok8s-requirements.adoc[Get started with BYOK8s].
 
 When you prepare to go live on Dedicated, BYOC or BYOK8s, see xref:operations:production-readiness/index.adoc[Production readiness].
+
+For project setup, service deployment, monitoring, and automation, see xref:operations:operating.adoc[Operating].
 
 [discrete]
 include::ROOT:partial$service-packaging.adoc[]

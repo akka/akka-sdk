@@ -24,11 +24,13 @@ More regions add infrastructure cost and cross-region latency, and your applicat
 
 For how Akka replicates the state of each component between regions, see xref:concepts:multi-region.adoc[].
 
-== Pages in this section
+== Set up regions
 
-Read them in this order:
+* xref:operations:organizations/regions.adoc[] lists the regions your organization can use.
+* xref:operations:regions/setup.adoc[] adds regions to a project, configures primary-region selection, and changes the project's primary region.
 
-. xref:operations:organizations/regions.adoc[]: the regions your organization can use, and how to list them.
-. xref:operations:production-readiness/choosing-your-environment.adoc[]: how to choose an availability level and the regions where your data may live.
-. xref:operations:regions/setup.adoc[]: add a region to a project, choose how stateful components select their primary region, and change the project's primary region.
-. xref:operations:regions/infrastructure.adoc[]: the infrastructure that replicates state between regions.
+== Plan the infrastructure
+
+* xref:operations:production-readiness/choosing-your-environment.adoc[] covers availability, sizing, and data residency.
+* xref:operations:regions/infrastructure.adoc[] describes the infrastructure that replicates state between regions.
+* xref:operations:production-readiness/disaster-recovery.adoc[] defines recovery procedures and responsibilities.

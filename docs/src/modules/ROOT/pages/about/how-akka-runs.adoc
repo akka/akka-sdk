@@ -51,7 +51,7 @@ See xref:concepts:runtime.adoc[], xref:concepts:deployment-model.adoc[], xref:co
 | xref:operations:configuring.adoc[Self-managed operations]
 |===
 
-Serverless is pay as you go, paid by credit card, and scales to zero when idle. You create an account at console.akka.io and deploy from the Akka CLI.
+Serverless is pay as you go, paid by credit card. You create an account at console.akka.io and deploy from the Akka CLI.
 
 In BYOC and BYOK8s, application data stays in your environment. A limited set of platform interactions, such as deployments and key rotation, still crosses to Akka. See xref:operations:technical-overview.adoc[] for the architecture and data flows, and xref:operations:production-readiness/choosing-your-environment.adoc[] for sizing, availability and data residency.
 
@@ -59,7 +59,7 @@ In BYOC and BYOK8s, application data stays in your environment. A limited set of
 
 Akka Automated Operations (AAO) runs the runtime for you in the Serverless, Dedicated, BYOC and BYOK8s options. It handles the work that comes after deployment:
 
-* Elastic scaling: capacity follows load, and on Serverless idle services scale to zero, with cold starts handled.
+* Elastic scaling: capacity follows load.
 * Multi-region operations: one system across regions. When a region is lost, an operator fails over to another region. Replication is asynchronous, so writes that the lost region had not yet replicated are not available in the others.
 * Rolling updates: new versions roll out in waves, including changes to how services store data.
 * Live patching: runtime and security patches, and certificate and key rotation, without a redeployment.
@@ -67,7 +67,7 @@ Akka Automated Operations (AAO) runs the runtime for you in the Serverless, Dedi
 * Zero-trust networking: every workload is attested rather than trusted for its network location. In your own cloud account, services can also be operated as multi-tenant, with access controls across organizations.
 * Operations around the clock by Akka for the options Akka operates.
 
-Self-managed operations give you the runtime, clustering, elasticity, resilience, and metrics, logs and traces. Logs, metrics and traces can be exported to OpenTelemetry, Prometheus or Splunk in every option. The other items above are AAO. See the feature comparison on xref:operations:index.adoc[Operating].
+Self-managed operations give you the runtime, clustering, elasticity, resilience, and metrics, logs and traces. Logs, metrics and traces can be exported to OpenTelemetry, Prometheus or Splunk in every option. The other items above are AAO. See the feature comparison on xref:operations:index.adoc[Choose how you run Akka].
 
 See xref:concepts:deployment-model.adoc#automated-operations[], xref:concepts:availability.adoc[] and xref:concepts:security-and-identity.adoc[].
 
@@ -83,8 +83,11 @@ See xref:concepts:deployment-model.adoc#automated-operations[], xref:concepts:av
 | Understanding
 | xref:concepts:runtime.adoc[], xref:concepts:deployment-model.adoc[], xref:concepts:multi-region.adoc[], xref:concepts:availability.adoc[], xref:concepts:deployment-model.adoc#automated-operations[], xref:concepts:security-and-identity.adoc[], xref:concepts:observability.adoc[]
 
+| Deployment
+| xref:operations:index.adoc[Choose how you run Akka], xref:operations:technical-overview.adoc[How AAO works], xref:operations:configuring.adoc[Self-managed operations], xref:operations:production-readiness/index.adoc[Production readiness]
+
 | Operating
-| xref:operations:index.adoc[Operating], xref:operations:technical-overview.adoc[How AAO works], xref:operations:configuring.adoc[Self-managed operations], xref:operations:production-readiness/index.adoc[Production readiness]
+| xref:operations:operating.adoc[Operating], xref:operations:services/index.adoc[Services], xref:operations:observability-and-monitoring/index.adoc[Observe], xref:operations:automate.adoc[Automate]
 
 | Reference
 | xref:reference:descriptors/index.adoc[Descriptors], xref:reference:cli/akka-cli/index.adoc[Akka CLI]

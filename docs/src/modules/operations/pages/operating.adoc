@@ -1,0 +1,27 @@
+= Operating
+:page-summary: Configure organizations and projects, deploy services, and monitor and automate their operation.
+:page-when-to-use: When you need to set up a project or deploy, configure, monitor, or manage running services.
+:page-related: operations:index.adoc, operations:services/index.adoc, operations:observability-and-monitoring/index.adoc, operations:automate.adoc
+:page-persona: operator-platform, operator-sre, builder-developer
+
+include::ROOT:partial$include.adoc[]
+
+Operating covers project setup and the tasks you perform to deploy and maintain services. For deployment options, infrastructure requirements, and production readiness, see xref:operations:index.adoc[Deployment].
+
+== Set up access and project resources
+
+* xref:operations:organizations/index.adoc[] manages organizations and user access.
+* xref:operations:projects/index.adoc[] configures projects, container registries, secrets, and network policies.
+* xref:operations:projects/message-brokers.adoc[] connects projects to message brokers.
+
+== Deploy and manage services
+
+* xref:operations:services/index.adoc[] covers deployment, sizing, configuration, certificates, and service data.
+* xref:operations:regions/index.adoc[] covers available regions and links to multi-region setup.
+* xref:operations:production-readiness/checklist.adoc[] lists the checks to complete before going live.
+
+== Monitor and automate
+
+* xref:operations:observability-and-monitoring/index.adoc[] covers logs, metrics, traces, and alerting.
+* xref:operations:automate.adoc[] connects deployment and management tasks to pipelines and the Platform API.
+* xref:operations:production-readiness/disaster-recovery.adoc[] defines recovery procedures and responsibilities.

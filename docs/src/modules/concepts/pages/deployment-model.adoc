@@ -51,7 +51,7 @@ Akka Automated Operations (AAO) operates the runtime in Serverless, Dedicated, y
 
 The runtime owns component state, clustering, shard placement, and recovery. AAO manages the deployment around it: instance capacity, health, rolling updates, runtime patching, certificates, and keys.
 
-Scaling changes the capacity available to a service; the runtime then rebalances state across its instances. AAO scales within the service's configured bounds. Serverless can scale an idle service to zero, so the first request after an idle period waits for an instance to start. Other deployment options retain at least one instance.
+Scaling changes the capacity available to a service; the runtime then rebalances state across its instances. AAO scales within the service's configured bounds.
 
 A service update can run two application versions concurrently. Persisted events and state must remain compatible throughout that overlap. Platform patching is a separate operation: updating runtime or infrastructure components does not require a new version of your application.
 

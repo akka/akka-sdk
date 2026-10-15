@@ -87,7 +87,7 @@ Beyond operations, AAO provides behavioral extensions that would otherwise requi
 | Zero-disruption rolling deployment, even across data-model changes. Old and new versions run side by side during the transition.
 
 | Elastic
-| Cold starts and automatic instance adjustment to traffic. Persistence expands and can shard to more than 1M writes per second at under 20ms write latency.
+| Automatic instance adjustment to traffic. Persistence expands and can shard to more than 1M writes per second at under 20ms write latency.
 
 | HA / DR
 | Cross-region zero-trust with rotating mTLS, multi-AZ database and Kubernetes clustering, continuous point-in-time backups, full region recovery, and CLI-based failover and failback.
