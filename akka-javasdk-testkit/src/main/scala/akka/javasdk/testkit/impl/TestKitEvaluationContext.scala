@@ -7,6 +7,7 @@ package akka.javasdk.testkit.impl
 import akka.annotation.InternalApi
 import akka.javasdk.evaluation.EvaluationContext
 import akka.javasdk.evaluation.Subject
+import com.typesafe.config.Config
 
 /**
  * INTERNAL API
@@ -14,10 +15,12 @@ import akka.javasdk.evaluation.Subject
  * An [[EvaluationContext]] for use in the [[akka.javasdk.testkit.EvaluatorTestKit]].
  */
 @InternalApi
-private[testkit] final class TestKitEvaluationContext(subject: Subject, evaluationId: String)
+private[testkit] final class TestKitEvaluationContext(subject: Subject, evaluationId: String, settings: Config)
     extends EvaluationContext {
 
   override def subject(): Subject = subject
 
   override def evaluationId(): String = evaluationId
+
+  override def config(): Config = settings
 }

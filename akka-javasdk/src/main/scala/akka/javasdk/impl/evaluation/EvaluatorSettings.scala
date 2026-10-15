@@ -26,7 +26,9 @@ import com.typesafe.config.ConfigObject
  * merged (as a fallback) with the defaults under `akka.javasdk.evaluation.defaults`, so settings such as `enabled`
  * always resolve; disabled evaluators and bindings produce no bindings. A binding, not an evaluator, may set
  * `sampling-ratio`, the probability that the evaluator evaluates an interaction of the agent, and `trigger-on-failure`,
- * whether the evaluator also evaluates failed interactions.
+ * whether the evaluator also evaluates failed interactions. Both an evaluator and a binding may set `settings`, a
+ * config object the evaluator reads through `EvaluationContext.config()`: the `settings` of the binding over the
+ * `settings` of the evaluator.
  */
 @InternalApi
 private[impl] object EvaluatorSettings {
@@ -37,12 +39,14 @@ private[impl] object EvaluatorSettings {
   private val AgentDefaultsPath = "akka.javasdk.evaluation.defaults.agent"
   private val SamplingRatioKey = "sampling-ratio"
   private val TriggerOnFailureKey = "trigger-on-failure"
+  private val SettingsKey = "settings"
 
-  /** The settings of an enabled binding entry. */
+  /** The settings of an enabled binding entry. `settings` is the `settings` object of the entry, empty when absent. */
   private final case class BindingSettings(
       event: SpiEvaluator.AgentBindingEvent,
       samplingRatio: Double,
-      triggerOnFailure: Boolean)
+      triggerOnFailure: Boolean,
+      settings: Config)
 
   private def configAt(config: Config, path: String): Config =
     if (config.hasPath(path)) config.getConfig(path) else ConfigFactory.empty()
@@ -54,7 +58,23 @@ private[impl] object EvaluatorSettings {
       throw new IllegalArgumentException(
         s"Evaluator defaults [$DefaultsPath] must define only [agent] and [evaluator], " +
         s"but defines [${misplaced.mkString(", ")}]")
+    // the SDK reads settings only from the evaluator and its bindings, so defaults would be lost
+    Seq(EvaluatorDefaultsPath, AgentDefaultsPath).find(configAt(config, _).hasPath(SettingsKey)).foreach { path =>
+      throw new IllegalArgumentException(
+        s"Evaluator defaults [$path] must not define [$SettingsKey], define it on the evaluator or in a binding")
+    }
   }
+
+  /** The `settings` object of the given config, empty when absent, where `entry` names the config for the error. */
+  private def settingsObject(config: Config, entry: String): Config =
+    if (!config.hasPath(SettingsKey)) ConfigFactory.empty()
+    else
+      config.getValue(SettingsKey) match {
+        case obj: ConfigObject => obj.toConfig
+        case other =>
+          throw new IllegalArgumentException(
+            s"$entry must define [$SettingsKey] as an object, but defines a [${other.valueType()}]")
+      }
 
   /** The `sampling-ratio` of the given config, where `entry` names the config for the error. */
   private def samplingRatio(config: Config, entry: String): Double = {
@@ -85,17 +105,39 @@ private[impl] object EvaluatorSettings {
   def agentBindings(
       config: Config,
       evaluatorComponentId: String,
-      agentRoles: Map[String, Option[String]]): Seq[SpiEvaluator.Binding] = {
+      agentRoles: Map[String, Option[String]]): Seq[SpiEvaluator.Binding] =
+    boundAgents(config, evaluatorComponentId, agentRoles).map { case (agentComponentId, settings) =>
+      new SpiEvaluator.AgentBinding(agentComponentId, settings.event, settings.samplingRatio, settings.triggerOnFailure)
+    }
+
+  /**
+   * The `settings` of the given evaluator's entry, empty when the evaluator has no entry or the entry has none. This
+   * method reads them even when the evaluator is disabled.
+   */
+  def evaluatorSettings(config: Config, evaluatorComponentId: String): Config =
+    evaluatorEntry(config, evaluatorComponentId)
+      .map(entry => settingsObject(entry, s"Evaluator [$evaluatorComponentId]"))
+      .getOrElse(ConfigFactory.empty())
+
+  private def evaluatorEntry(config: Config, evaluatorComponentId: String): Option[Config] =
+    configAt(config, EvaluatorsPath).root().asScala.get(evaluatorComponentId).collect { case entry: ConfigObject =>
+      entry.toConfig
+    }
+
+  /** The enabled bindings of the evaluator with their settings, by agent component id, sorted by agent. */
+  private def boundAgents(
+      config: Config,
+      evaluatorComponentId: String,
+      agentRoles: Map[String, Option[String]]): Seq[(String, BindingSettings)] = {
     checkDefaults(config)
-    val evaluators = configAt(config, EvaluatorsPath)
     val evaluatorDefaults = configAt(config, EvaluatorDefaultsPath)
     val agentDefaults = configAt(config, AgentDefaultsPath)
     // checked on its own, so that the error for a binding is about a value that the binding defines
     samplingRatio(agentDefaults, s"Evaluator defaults [$AgentDefaultsPath]")
 
-    evaluators.root().asScala.get(evaluatorComponentId) match {
-      case Some(evaluator: ConfigObject) =>
-        val evaluatorConfig = evaluator.toConfig.withFallback(evaluatorDefaults)
+    evaluatorEntry(config, evaluatorComponentId) match {
+      case Some(evaluator) =>
+        val evaluatorConfig = evaluator.withFallback(evaluatorDefaults)
 
         // the SDK reads these keys only from a binding, so on the evaluator they would be lost
         Seq(SamplingRatioKey, TriggerOnFailureKey).find(evaluatorConfig.hasPath).foreach { key =>
@@ -120,15 +162,9 @@ private[impl] object EvaluatorSettings {
             }
             .collect { case (agentComponentId, Some(settings)) => agentComponentId -> settings }
 
-          (boundByAgent ++ boundByRole).toSeq.sortBy(_._1).map { case (agentComponentId, settings) =>
-            new SpiEvaluator.AgentBinding(
-              agentComponentId,
-              settings.event,
-              settings.samplingRatio,
-              settings.triggerOnFailure)
-          }
+          (boundByAgent ++ boundByRole).toSeq.sortBy(_._1)
         }
-      case _ =>
+      case None =>
         Seq.empty
     }
   }
@@ -144,9 +180,7 @@ private[impl] object EvaluatorSettings {
   def controlId(config: Config, evaluatorComponentId: String): Option[String] = {
     checkDefaults(config)
     val entry = s"Evaluator [$evaluatorComponentId]"
-    val evaluator = configAt(config, EvaluatorsPath).root().asScala.get(evaluatorComponentId).collect {
-      case evaluator: ConfigObject => evaluator.toConfig
-    }
+    val evaluator = evaluatorEntry(config, evaluatorComponentId)
 
     // the SDK reads the id only from the entry of the evaluator, so an id anywhere else would be lost
     val misplaced = Seq(EvaluatorDefaultsPath, AgentDefaultsPath).filter(configAt(config, _).hasPath(ControlId.Key)) ++
@@ -170,14 +204,31 @@ private[impl] object EvaluatorSettings {
       }
     }
 
-  /** The agent bindings and the control id of the given evaluator, see [[agentBindings]] and [[controlId]]. */
+  /**
+   * The agent bindings, the control id and the settings of the given evaluator, see [[agentBindings]], [[controlId]]
+   * and [[evaluatorSettings]]. The settings of a bound agent are the `settings` of its binding over the `settings` of
+   * the evaluator.
+   */
   def configuredEvaluator(
       config: Config,
       evaluatorComponentId: String,
-      agentRoles: Map[String, Option[String]]): ConfiguredEvaluator =
+      agentRoles: Map[String, Option[String]]): ConfiguredEvaluator = {
+    val evaluatorSettings = this.evaluatorSettings(config, evaluatorComponentId)
+    val bound = boundAgents(config, evaluatorComponentId, agentRoles)
     ConfiguredEvaluator(
-      bindings = agentBindings(config, evaluatorComponentId, agentRoles),
-      controlId = controlId(config, evaluatorComponentId))
+      bindings = bound.map { case (agentComponentId, settings) =>
+        new SpiEvaluator.AgentBinding(
+          agentComponentId,
+          settings.event,
+          settings.samplingRatio,
+          settings.triggerOnFailure)
+      },
+      controlId = controlId(config, evaluatorComponentId),
+      evaluatorSettings = evaluatorSettings,
+      bindingSettings = bound.map { case (agentComponentId, settings) =>
+        agentComponentId -> settings.settings.withFallback(evaluatorSettings)
+      }.toMap)
+  }
 
   /**
    * The trigger, the sampling ratio and the failure flag of each entry under `path`, or `None` for a disabled entry.
@@ -206,9 +257,15 @@ private[impl] object EvaluatorSettings {
               throw new IllegalArgumentException(
                 s"Evaluator $kind [$key] must specify 'trigger' (supported: [interaction])")
             else {
+              val entry = s"Evaluator [$evaluatorComponentId] $kind [$key]"
               val event = agentBindingEvent(entryConfig.getString("trigger"))
-              val ratio = samplingRatio(entryConfig, s"Evaluator [$evaluatorComponentId] $kind [$key]")
-              Some(BindingSettings(event, ratio, entryConfig.getBoolean(TriggerOnFailureKey)))
+              val ratio = samplingRatio(entryConfig, entry)
+              Some(
+                BindingSettings(
+                  event,
+                  ratio,
+                  entryConfig.getBoolean(TriggerOnFailureKey),
+                  settingsObject(entryConfig, entry)))
             }
           key -> settings
         }
@@ -219,10 +276,20 @@ private[impl] object EvaluatorSettings {
 /**
  * INTERNAL API
  *
- * The agent bindings and the control id of one evaluator.
+ * The agent bindings, the control id and the settings of one evaluator. `bindingSettings` holds, by agent component id,
+ * the settings of each bound agent: the `settings` of its binding over `evaluatorSettings`.
  */
 @InternalApi
-private[impl] final case class ConfiguredEvaluator(bindings: Seq[SpiEvaluator.Binding], controlId: Option[String]) {
+private[impl] final case class ConfiguredEvaluator(
+    bindings: Seq[SpiEvaluator.Binding],
+    controlId: Option[String],
+    evaluatorSettings: Config,
+    bindingSettings: Map[String, Config]) {
+
+  /**
+   * The settings for an evaluation of the given agent: those of its binding, or the evaluator settings when unbound.
+   */
+  def settingsFor(agentComponentId: String): Config = bindingSettings.getOrElse(agentComponentId, evaluatorSettings)
 
   /** The descriptor to hand to the runtime for an evaluator, with the bindings and the control id of this entry. */
   def evaluatorDescriptor(

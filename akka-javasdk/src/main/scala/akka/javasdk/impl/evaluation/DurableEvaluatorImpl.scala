@@ -37,6 +37,7 @@ import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.SpiWorkflowEvaluator
 import akka.util.ByteString
+import com.typesafe.config.Config
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
 
@@ -53,9 +54,11 @@ private[javasdk] object DurableEvaluatorImpl {
    */
   val RecordStepName = "_record-evaluation"
 
-  final class EvaluationContextImpl(id: String, evaluationSubject: Subject) extends EvaluationContext {
+  final class EvaluationContextImpl(id: String, evaluationSubject: Subject, settings: Config)
+      extends EvaluationContext {
     override def subject(): Subject = evaluationSubject
     override def evaluationId(): String = id
+    override def config(): Config = settings
   }
 
   private def toProtocolTriggerSource(source: SpiEvaluator.TriggerSource): TriggerSource =
@@ -76,7 +79,8 @@ private[javasdk] object DurableEvaluatorImpl {
  *
  * Adapts a user [[DurableEvaluator]] to the [[SpiWorkflowEvaluator]] expected by the runtime. The evaluator is hosted
  * as a workflow — one instance per evaluation, started by the runtime with the structured trigger — with a built-in
- * final step that records the outcome and deletes the instance.
+ * final step that records the outcome and deletes the instance. `settingsFor` gives the settings for an evaluation of
+ * an agent, by its component id.
  */
 @InternalApi
 private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
@@ -86,7 +90,8 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
     factory: Option[OtelContext] => E,
     recorder: SpiEvaluator.EvaluationRecorder,
     serializer: Serializer,
-    sdkExecutionContext: ExecutionContext)
+    sdkExecutionContext: ExecutionContext,
+    settingsFor: String => Config)
     extends SpiWorkflowEvaluator {
 
   import DurableEvaluatorImpl._
@@ -155,7 +160,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
       val triggerSource = toProtocolTriggerSource(trigger.source)
       Future {
         val evaluator = factory(Option(telemetryContext))
-        val context = new EvaluationContextImpl(workflowId, subject)
+        val context = new EvaluationContextImpl(workflowId, subject, settingsFor(subject.agentComponentId))
         evaluator._internalSetup(evaluator.emptyState(), context)
         val effect = evaluator.onEvaluation(context)
         effect match {
@@ -206,7 +211,9 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
       Future {
         val evaluator = factory(Option(stepCommand.telemetryContext))
         val subject = envelope.getSubject
-        evaluator._internalSetup(decodeUserState(envelope), new EvaluationContextImpl(workflowId, subject))
+        evaluator._internalSetup(
+          decodeUserState(envelope),
+          new EvaluationContextImpl(workflowId, subject, settingsFor(subject.agentComponentId)))
         val effect =
           if (stepMethod.getParameterCount == 1) {
             val input = stepCommand.input match {

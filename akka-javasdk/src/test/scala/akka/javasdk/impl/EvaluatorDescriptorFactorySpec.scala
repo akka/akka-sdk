@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl
 
+import scala.jdk.CollectionConverters._
+
 import akka.javasdk.impl.evaluation.EvaluatorSettings
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
@@ -522,6 +524,137 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
         provided = false)
       agentBindingSettings(durable.bindings) shouldBe Seq(("support-agent", 0.1, true))
       durable.controlId shouldBe Some("AI-EV-01")
+    }
+  }
+
+  "Evaluator settings" should {
+
+    def settingsFor(config: Config, agentComponentId: String): Config =
+      EvaluatorSettings.configuredEvaluator(config, "conversation-quality", agentRoles).settingsFor(agentComponentId)
+
+    "be the settings of the evaluator when the binding has none" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          settings { criterion = "helpful", threshold = 0.7 }
+          agents.support-agent { trigger = interaction }
+        }
+        """)
+      val settings = settingsFor(config, "support-agent")
+      settings.getString("criterion") shouldBe "helpful"
+      settings.getDouble("threshold") shouldBe 0.7
+    }
+
+    "take the settings of the binding over the settings of the evaluator, key by key" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          settings { criterion = "helpful", threshold = 0.7 }
+          agents.support-agent { trigger = interaction, settings { threshold = 0.9 } }
+        }
+        """)
+      val settings = settingsFor(config, "support-agent")
+      settings.getString("criterion") shouldBe "helpful"
+      settings.getDouble("threshold") shouldBe 0.9
+    }
+
+    "take the settings from the entry that binds the agent: the agent, then its role, then the role wildcard" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          agents.support-agent { trigger = interaction, settings { threshold = 0.9 } }
+          agent-roles {
+            customer-facing { trigger = interaction, settings { threshold = 0.8 } }
+            "*" { trigger = interaction, settings { threshold = 0.5 } }
+          }
+        }
+        """)
+      settingsFor(config, "support-agent").getDouble("threshold") shouldBe 0.9
+      settingsFor(config, "billing-agent").getDouble("threshold") shouldBe 0.8
+      settingsFor(config, "audit-agent").getDouble("threshold") shouldBe 0.5
+    }
+
+    "not take a key from a less specific binding" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          settings { criterion = "helpful" }
+          agents.support-agent { trigger = interaction }
+          agent-roles.customer-facing { trigger = interaction, settings { threshold = 0.8 } }
+        }
+        """)
+      val settings = settingsFor(config, "support-agent")
+      settings.getString("criterion") shouldBe "helpful"
+      settings.hasPath("threshold") shouldBe false
+    }
+
+    "be the settings of the evaluator for an agent that is not bound" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          settings { criterion = "helpful" }
+          agents.support-agent { trigger = interaction, settings { threshold = 0.9 } }
+        }
+        """)
+      settingsFor(config, "plain-agent").root().keySet().asScala shouldBe Set("criterion")
+    }
+
+    "be empty when neither the evaluator nor the binding defines settings" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+        """)
+      settingsFor(config, "support-agent").isEmpty shouldBe true
+      settingsFor(load(""), "support-agent").isEmpty shouldBe true
+    }
+
+    "be read from a disabled evaluator" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          enabled = false
+          settings { criterion = "helpful" }
+        }
+        """)
+      EvaluatorSettings.evaluatorSettings(config, "conversation-quality").getString("criterion") shouldBe "helpful"
+    }
+
+    "reject settings that are not an object, on the evaluator and in a binding" in {
+      val onEvaluator = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          settings = "helpful"
+          agents.support-agent { trigger = interaction }
+        }
+        """)
+      intercept[IllegalArgumentException] {
+        settingsFor(onEvaluator, "support-agent")
+      }.getMessage shouldBe "Evaluator [conversation-quality] must define [settings] as an object, but defines a [STRING]"
+
+      val inBinding = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          agents.support-agent { trigger = interaction, settings = [1, 2] }
+        }
+        """)
+      intercept[IllegalArgumentException] {
+        settingsFor(inBinding, "support-agent")
+      }.getMessage shouldBe
+      "Evaluator [conversation-quality] agent binding [support-agent] must define [settings] as an object, but defines a [LIST]"
+    }
+
+    "not validate the settings of a disabled binding" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          agents.support-agent { enabled = false, settings = "helpful" }
+        }
+        """)
+      settingsFor(config, "support-agent").isEmpty shouldBe true
+    }
+
+    Seq("evaluator", "agent").foreach { defaults =>
+      s"reject settings in akka.javasdk.evaluation.defaults.$defaults" in {
+        val config = load(s"""
+          akka.javasdk.evaluation.defaults.$defaults.settings { threshold = 0.5 }
+          akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+          """)
+        intercept[IllegalArgumentException] {
+          settingsFor(config, "support-agent")
+        }.getMessage shouldBe
+        s"Evaluator defaults [akka.javasdk.evaluation.defaults.$defaults] must not define [settings], " +
+        "define it on the evaluator or in a binding"
+      }
     }
   }
 }

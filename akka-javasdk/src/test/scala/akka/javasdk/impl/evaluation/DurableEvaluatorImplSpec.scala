@@ -21,6 +21,7 @@ import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
+import com.typesafe.config.ConfigFactory
 import io.opentelemetry.context.ContextKey
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.scalatest.OptionValues
@@ -57,7 +58,8 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       },
       recorder,
       serializer,
-      ExecutionContext.global)
+      ExecutionContext.global,
+      _ => ConfigFactory.empty())
 
   private def trigger(interactionId: String = "interaction-1") =
     new SpiEvaluator.Trigger(
