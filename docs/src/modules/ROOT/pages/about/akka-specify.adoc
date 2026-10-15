@@ -56,7 +56,7 @@ Akka Specify can recover what a legacy system does, turn that behavior into chec
 | Getting started
 | xref:getting-started:set-up-ai-install.adoc[Install using your AI harness], xref:getting-started:set-up-harness.adoc[], xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent]
 
-| Understanding
+| Concepts
 | xref:concepts:spec-driven-development.adoc[], xref:concepts:spec-driven-development.adoc#specification[], xref:concepts:spec-driven-development.adoc#conformance[]
 
 | Developing

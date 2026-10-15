@@ -1,12 +1,12 @@
-= Understanding
-:page-summary: Understanding explains how the Akka Agentic AI Platform works, one mechanism per page, from the components you build to the runtime that runs them.
+= Concepts
+:page-summary: This section explains how the Akka Agentic AI Platform works, one mechanism per page, from the components you build to the runtime that runs them.
 :page-when-to-use: When you want to know how something in Akka works and what it guarantees, before or alongside the task pages that use it.
 :page-related: ROOT:about-akka.adoc, concepts:platform-model.adoc, concepts:request-lifecycle.adoc
 :page-persona: all
 
 include::ROOT:partial$include.adoc[]
 
-Understanding gives short explanations of Akka concepts and their main trade-offs. Read the topics relevant to your task; you do not need to read this section in order. Each overview links to the development, testing, training, or operations guide that owns the details.
+This section gives short explanations of Akka concepts and their main trade-offs. Read the topics relevant to your task; you do not need to read this section in order. Each overview links to the development, testing, training, or operations guide that owns the details.
 
 == The groups
 

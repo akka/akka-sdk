@@ -53,10 +53,10 @@ Some capabilities need the agent to run on the Akka runtime, because they act in
 * The non-sampled, hash-chained ledger with the identity and authority behind each action.
 * A record of whether a side effect ran.
 
-See xref:concepts:evidence.adoc#agents-built-elsewhere[Agents built elsewhere] in Understanding.
+See xref:concepts:evidence.adoc#agents-built-elsewhere[Agents built elsewhere] in Concepts.
 
 == See also
 
 * xref:ROOT:about-akka.adoc[]
-* xref:concepts:index.adoc[Understanding]
+* xref:concepts:index.adoc[Concepts]
 * xref:concepts:governance-and-the-runtime.adoc[]

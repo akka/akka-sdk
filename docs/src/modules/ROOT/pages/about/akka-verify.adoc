@@ -76,7 +76,7 @@ Agents that do not run on Akka send their traces over OpenTelemetry. For those a
 | Getting started
 | xref:getting-started:planner-agent/eval.adoc[Evaluate the planner agent]
 
-| Understanding
+| Concepts
 | xref:concepts:governance-and-the-runtime.adoc[], xref:concepts:controls.adoc[], xref:concepts:evaluation.adoc[], xref:concepts:risk-to-controls.adoc[], xref:concepts:evidence.adoc[]
 
 | Developing
