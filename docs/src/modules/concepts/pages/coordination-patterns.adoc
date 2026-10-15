@@ -127,7 +127,7 @@ Use collaboration when subtasks are interdependent and agents need to see each o
 
 image::ai_orch_chat.jpg["Group chat orchestration: agents work in a shared session",width=720]
 
-In a typical example, a parent workflow calls a planner agent, which asks a model for an execution plan and returns it as structured data. The workflow follows the plan and delegates to agents and child workflows, and all of them use one shared session when they build context for the model. A caller joins an agent to a session through the `inSession` option of the component client. The xref:getting-started:ask-akka-agent/index.adoc[Ask Akka agent tutorial] and its {url-sample-ask-akka-agent}[sample, window="new"] use explicit sessions in this way.
+In a typical example, a parent workflow calls a planner agent, which asks a model for an execution plan and returns it as structured data. The workflow follows the plan and delegates to agents and child workflows, and all of them use one shared session when they build context for the model. A caller joins an agent to a session through the `inSession` option of the component client. The xref:getting-started:ask-akka-agent/index.adoc[Ask Akka agent tutorial] and its {url-sample-ask-akka-agent}[sample, window="new"] use explicit sessions in this way, as does the {url-sample-trip-agent}[trip planning sample, window="new"].
 
 Shared sessions suit collaboration between agents, workflows and child workflows, and quality control that checks the session history. Avoid them when a sequential pipeline is enough, when conversations can grow without an upper limit or very many sessions start in a short time, and when there is no objective way to decide that a conversation is complete.
 
