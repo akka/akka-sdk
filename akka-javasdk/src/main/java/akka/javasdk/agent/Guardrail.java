@@ -47,11 +47,11 @@ public sealed interface Guardrail
 
   /**
    * A message in the conversation a guardrail inspects, carrying its origin: what the user said,
-   * what the model replied (and which tools it requested), and what a tool returned. An inline image
-   * or PDF, or one that the runtime loads, arrives as a {@link MessageContent.DataMessageContent}.
-   * An image or PDF that the model fetches itself arrives as its URI. Session memory stores an
-   * inline image or PDF as the text {@code [image]} or {@code [pdf]}, and a message read from
-   * session memory carries that text.
+   * what the model replied (and which tools it requested), and what a tool returned. An inline
+   * image or PDF, or one that the runtime loads, arrives as a {@link
+   * MessageContent.DataMessageContent}. An image or PDF that the model fetches itself arrives as
+   * its URI. Session memory stores an inline image or PDF as the text {@code [image]} or {@code
+   * [pdf]}, and a message read from session memory carries that text.
    */
   sealed interface Message {
 
