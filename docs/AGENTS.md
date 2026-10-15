@@ -161,7 +161,7 @@ is the primary path and the Akka CLI (`akka specify init`) is the fallback, also
 
 ## Reflect the SDK as it is
 
-- About Akka and Understanding describe the whole platform, including capabilities that have no
+- About Akka and Concepts describe the whole platform, including capabilities that have no
   task page yet. State them in the present tense, without status labels, and link only to pages
   that exist. The rule below applies to every other section.
 - Document what is in the SDK now, not planned or half-merged features. Keep forward-looking notes
@@ -229,7 +229,7 @@ with `// tag::bar[]` / `// end::bar[]` around the region in `Foo.java`.
 - Use Antora partials for content that appears on multiple pages (`sdk/partials/entity-sharding.adoc`
   and friends), included via `include::partial$...[]`.
 - Shared concepts (sharding, passivation, multi-region replication, delivery guarantees) live in
-  the Understanding pages. On a component page, give a one- or two-sentence summary with an xref to
+  the Concepts pages. On a component page, give a one- or two-sentence summary with an xref to
   the full explanation; don't reproduce the section.
 
 ## External links

@@ -87,7 +87,34 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Observability](https://doc.akka.io/sdk/integrations/observability.html.md): OpenTelemetry metrics and logs exporting
 - [Streaming](https://doc.akka.io/sdk/streaming.html.md): Built-in stream processing and Akka Streams
 
-## Understanding
+## Deployment
+
+- [Choose how you run Akka](https://doc.akka.io/deployment/index.html.md): The deployment options for running Akka services and how they compare
+- [Production readiness](https://doc.akka.io/deployment/production-readiness/index.html.md): Responsibilities, readiness checks, and disaster recovery
+
+## Operating
+
+- [Operating](https://doc.akka.io/operations/index.html.md): Project setup, service deployment, monitoring, and automation
+- [Deploy a service](https://doc.akka.io/operations/services/deploy-service.html): Deploying to Akka
+- [Observability](https://doc.akka.io/operations/observability-and-monitoring/index.html.md): Metrics, logs, traces, OTEL export
+- [Secrets management](https://doc.akka.io/operations/projects/secrets.html.md): Built-in secrets with Azure KeyVault integration
+- [CLI installation](https://doc.akka.io/getting-started/install-cli.html.md): Install the Akka CLI
+- [Login to a remote env](https://doc.akka.io/getting-started/log-in.html.md): Log in to deploy to or manage a remote Akka environment
+- [CI/CD integration](https://doc.akka.io/operations/integrating-cicd/index.html.md): GitHub Actions and other CI/CD tools
+
+## Inference
+
+- [Inference](https://doc.akka.io/inference/index.html.md): Running AI models, and how an inference call differs from a function call
+- [Serving your first model](https://doc.akka.io/inference/serving/getting-started.html.md): A tutorial that deploys a model in an Akka region and calls it
+- [Allocating hardware to models](https://doc.akka.io/inference/serving/allocating-hardware.html.md): The accelerator pools a region offers, and claiming whole devices from a pool
+- [Deploying models](https://doc.akka.io/inference/serving/deploying-models.html.md): Declaring a model, tuning the engine, applying the descriptor, and removing what it created
+- [Exposing and calling models](https://doc.akka.io/inference/serving/exposing-and-calling-models.html.md): Model endpoints, project routes, per-client API keys, and calling the OpenAI-compatible endpoint
+- [Routing requests to models](https://doc.akka.io/inference/routing.html.md): Routing on request attributes and on request meaning, use cases, manifests, and shifting traffic
+
+- [Capture and grading](https://doc.akka.io/inference/capture-and-grading.html.md): Capture processing, discovered use cases, grading, and eligibility for specialization
+- [Understanding inference costs](https://doc.akka.io/inference/spend.html.md): Pricing rules, unpriced traffic, token lower bounds, reporting completeness, and attribution
+
+## Concepts
 
 - [Platform model](https://doc.akka.io/concepts/platform-model.html.md): Organizations, projects, services, components, regions and routes, and the planes that run them
 - [Anatomy of a request](https://doc.akka.io/concepts/request-lifecycle.html.md): One agent request traced from the endpoint to the ledger record and the evaluation that follow it
@@ -117,32 +144,6 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Architecture model](https://doc.akka.io/sdk/architecture-model.html.md): How an Akka project is structured across api, application, and domain layers
 - [Design considerations](https://doc.akka.io/sdk/dev-best-practices.html.md): Reactive principles, domain-driven design, service sizing, and deduplication
 
-## Deployment
-
-- [Choose how you run Akka](https://doc.akka.io/deployment/index.html.md): The deployment options for running Akka services and how they compare
-- [Production readiness](https://doc.akka.io/deployment/production-readiness/index.html.md): Responsibilities, readiness checks, and disaster recovery
-
-## Operating
-
-- [Operating](https://doc.akka.io/operations/index.html.md): Project setup, service deployment, monitoring, and automation
-- [Deploy a service](https://doc.akka.io/operations/services/deploy-service.html): Deploying to Akka
-- [Observability](https://doc.akka.io/operations/observability-and-monitoring/index.html.md): Metrics, logs, traces, OTEL export
-- [Secrets management](https://doc.akka.io/operations/projects/secrets.html.md): Built-in secrets with Azure KeyVault integration
-- [CLI installation](https://doc.akka.io/getting-started/install-cli.html.md): Install the Akka CLI
-- [Login to a remote env](https://doc.akka.io/getting-started/log-in.html.md): Log in to deploy to or manage a remote Akka environment
-- [CI/CD integration](https://doc.akka.io/operations/integrating-cicd/index.html.md): GitHub Actions and other CI/CD tools
-
-## Inference
-
-- [Inference](https://doc.akka.io/inference/index.html.md): Running AI models, and how an inference call differs from a function call
-- [Serving your first model](https://doc.akka.io/inference/serving/getting-started.html.md): A tutorial that deploys a model in an Akka region and calls it
-- [Allocating hardware to models](https://doc.akka.io/inference/serving/allocating-hardware.html.md): The accelerator pools a region offers, and claiming whole devices from a pool
-- [Deploying models](https://doc.akka.io/inference/serving/deploying-models.html.md): Declaring a model, tuning the engine, applying the descriptor, and removing what it created
-- [Exposing and calling models](https://doc.akka.io/inference/serving/exposing-and-calling-models.html.md): Model endpoints, project routes, per-client API keys, and calling the OpenAI-compatible endpoint
-- [Routing requests to models](https://doc.akka.io/inference/routing.html.md): Routing on request attributes and on request meaning, use cases, manifests, and shifting traffic
-
-- [Capture and grading](https://doc.akka.io/inference/capture-and-grading.html.md): Capture processing, discovered use cases, grading, and eligibility for specialization
-- [Understanding inference costs](https://doc.akka.io/inference/spend.html.md): Pricing rules, unpriced traffic, token lower bounds, reporting completeness, and attribution
 
 ## Reference
 

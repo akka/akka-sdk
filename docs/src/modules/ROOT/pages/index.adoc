@@ -36,19 +36,6 @@ Akka has one offering: the Akka Agentic AI Platform, which provides resilience a
 [.grid-item]
 --
 [discrete]
-== xref:concepts:index.adoc[Understanding]
-
-**How the platform works**: services, agents, specifications, governance, models and the runtime.
-
-* xref:concepts:platform-model.adoc[Platform model]
-* xref:concepts:request-lifecycle.adoc[Anatomy of a request]
-* xref:concepts:ai-agents.adoc[Agents]
-* xref:concepts:governance-and-the-runtime.adoc[Governance in the runtime]
---
-
-[.grid-item]
---
-[discrete]
 == xref:sdk:index.adoc[Developing]
 
 **Build with the SDK** — components, integrations, and configuration.
@@ -119,6 +106,19 @@ Akka has one offering: the Akka Agentic AI Platform, which provides resilience a
 * xref:optimize:trainer/getting-started.adoc[Train a first model]
 * xref:optimize:trainer/index.adoc[Trainer]
 * xref:optimize:concepts.adoc[Concepts]
+--
+
+[.grid-item]
+--
+[discrete]
+== xref:concepts:index.adoc[Concepts]
+
+**How the platform works**: services, agents, specifications, governance, models and the runtime.
+
+* xref:concepts:platform-model.adoc[Platform model]
+* xref:concepts:request-lifecycle.adoc[Anatomy of a request]
+* xref:concepts:ai-agents.adoc[Agents]
+* xref:concepts:governance-and-the-runtime.adoc[Governance in the runtime]
 --
 
 [.grid-item]

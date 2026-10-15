@@ -55,7 +55,7 @@ The documentation sections are organized by task. Start from what you need to do
 
 * Build an agentic system from a specification: xref:getting-started:set-up-ai-install.adoc[Install using your AI harness], then xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent].
 * Build one in code: xref:getting-started:author-your-first-service.adoc[Code-first hello agent].
-* Learn how Akka works before you build: xref:ROOT:about/how-it-fits.adoc[How the solutions work together] and xref:concepts:index.adoc[Understanding].
+* Learn how Akka works before you build: xref:ROOT:about/how-it-fits.adoc[How the solutions work together] and xref:concepts:index.adoc[Concepts].
 * Evaluate and govern agents: xref:ROOT:about/akka-verify.adoc[Akka Verify].
 * Route, serve or train models, and track what they cost: xref:ROOT:about/akka-optimize.adoc[Akka Optimize].
 * Deploy and operate services: xref:ROOT:about/how-akka-runs.adoc[How Akka runs] and xref:deployment:index.adoc[Operating].

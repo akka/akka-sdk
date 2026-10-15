@@ -1,4 +1,4 @@
-// Understanding/Concepts
+// Concepts
 ** xref:concepts:index.adoc[]
 *** Foundations
 **** xref:concepts:platform-model.adoc[]

@@ -54,7 +54,7 @@ See xref:concepts:model-training.adoc#spend-and-budgets[] and xref:reference:cli
 |===
 | Section | Start with
 
-| Understanding
+| Concepts
 | xref:concepts:models.adoc[], xref:concepts:model-training.adoc#capture-and-grading[], xref:concepts:models.adoc#model-routing[], xref:concepts:models.adoc#model-serving[], xref:concepts:model-training.adoc[], xref:concepts:model-training.adoc#spend-and-budgets[]
 
 | Inference

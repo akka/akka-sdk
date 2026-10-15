@@ -64,7 +64,7 @@ The `akka` CLI, the local console, Maven and sbt plugins, hot reload, and a Test
 | Getting started
 | xref:getting-started:author-your-first-service.adoc[Code-first hello agent], xref:getting-started:planner-agent/index.adoc[Multi-agent tutorial]
 
-| Understanding
+| Concepts
 | xref:concepts:components.adoc[], xref:concepts:state-model.adoc[], xref:concepts:durable-execution.adoc[], xref:concepts:ai-agents.adoc[], xref:concepts:ai-orchestration-patterns.adoc[]
 
 | Developing

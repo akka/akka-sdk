@@ -80,7 +80,7 @@ See xref:concepts:deployment-model.adoc#automated-operations[], xref:concepts:av
 | Getting started
 | xref:getting-started:quick-deploy.adoc[Deploy to akka.io]
 
-| Understanding
+| Concepts
 | xref:concepts:runtime.adoc[], xref:concepts:deployment-model.adoc[], xref:concepts:multi-region.adoc[], xref:concepts:availability.adoc[], xref:concepts:deployment-model.adoc#automated-operations[], xref:concepts:security-and-identity.adoc[], xref:concepts:observability.adoc[]
 
 | Deployment
