@@ -69,7 +69,7 @@ Akka Automated Operations (AAO) runs the runtime for you in the Serverless, Dedi
 
 Self-managed operations give you the runtime, clustering, elasticity, resilience, and metrics, logs and traces. Logs, metrics and traces can be exported to OpenTelemetry, Prometheus or Splunk in every option. The other items above are AAO. See the feature comparison on xref:operations:index.adoc[Operating].
 
-== Where it is in the docs
+== Where it is in the documentation
 
 [cols="1,3", options="header"]
 |===

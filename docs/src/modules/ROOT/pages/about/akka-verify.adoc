@@ -6,13 +6,13 @@
 
 include::ROOT:partial$include.adoc[]
 
-Akka Verify is runtime-native evaluation, enforcement, evidence and governance for agents built on Akka or elsewhere. It lets you measure what an agent does against what good means, stop or redirect an action at runtime, and keep the record that an auditor asks for.
+Akka Verify is runtime-native evaluation, enforcement, evidence and governance for agents built on Akka or elsewhere. It lets you measure what an agent does against defined quality criteria, stop or redirect an action at runtime, and keep the record that an auditor asks for.
 
 An agent that works in a demo is not yet one that customers and regulators can rely on. When evaluation, guardrails and governance are separate systems, nothing gives one view of what agents are doing, one way to stop them, or one record of why they acted. Akka Verify runs all three on the same runtime and the same record.
 
 == Evaluating agents
 
-Evaluations measure an agent against what good means for its task, with deterministic evaluators and with a model acting as judge. They run in your tests before an agent ships, in batches against recorded traffic, and continuously on live traffic. Replay runs a new evaluator against past traffic by replaying the real execution. Adversarial tests attack your own agent with jailbreaks, prompt injection and known hazard categories, and report whether each attack broke it or it held.
+Evaluations measure an agent against defined quality criteria for its task, with deterministic evaluators and with a model acting as judge. They run in your tests before an agent is released, in batches against recorded traffic, and continuously on live traffic. Replay runs a new evaluator against past traffic by replaying the real execution. Adversarial tests attack your own agent with jailbreaks, prompt injection and known hazard categories, and report whether the agent resisted each attack.
 
 See xref:testing:evaluation/index.adoc[Evaluation], xref:testing:evaluation/adversarial.adoc[], xref:testing:evaluation/replay.adoc[] and xref:sdk:evaluators.adoc[Evaluators].
 
@@ -22,7 +22,7 @@ A control is one of five mechanisms:
 
 [cols="1,3,2", options="header"]
 |===
-| Mechanism | What it does | Docs
+| Mechanism | What it does | Documentation
 
 | Guardrail
 | Blocks or passes an action at a runtime boundary: before a model call, before a tool call, or on the reply. Guardrails fail closed by default.
@@ -32,7 +32,7 @@ A control is one of five mechanisms:
 | Strips or masks content before it moves on: to a model, a tool or a log.
 | xref:sdk:sanitization.adoc[Data sanitization]
 
-| Eval
+| Evaluation
 | Measures and scores behavior, live or in a test.
 | xref:sdk:evaluators.adoc[Evaluators], xref:testing:evaluation/judges.adoc[]
 
@@ -65,7 +65,7 @@ See xref:sdk:evaluators.adoc[Evaluators] for writing to and reading from the led
 
 Agents that do not run on Akka send their traces over OpenTelemetry. For those agents, Akka Verify classifies the system against regulations and frameworks, derives and signs its controls, evaluates the captured traffic and seals the evidence. Inline guardrails, durable waits for a person, the authority behind each action, and the hash-chained ledger need the agent to run on the Akka runtime. See xref:ROOT:about/how-it-fits.adoc#_agents_built_elsewhere[Agents built elsewhere].
 
-== Where it is in the docs
+== Where it is in the documentation
 
 [cols="1,3", options="header"]
 |===

@@ -103,7 +103,7 @@ Akka has one offering: the Akka Agentic AI Platform, which guarantees the resili
 [discrete]
 == xref:optimize:index.adoc[Training]
 
-**Train smaller models** on your data and promote them when they meet the bar.
+**Train smaller models** on your data and promote them when they meet the acceptance criteria.
 
 * xref:optimize:trainer/getting-started.adoc[Train a first model]
 * xref:optimize:trainer/index.adoc[Trainer]

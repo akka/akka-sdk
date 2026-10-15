@@ -33,7 +33,7 @@ The steps below follow a single agent through the platform.
 . Evaluations run the agent through eval cases before it is deployed, and adversarial tests attack it. See xref:testing:evaluation/index.adoc[Evaluation].
 . The agent serves traffic on the Akka runtime. Every interaction is recorded in the ledger, and controls act on it in line.
 . Akka Verify scores live traffic, flags drift, holds the evidence for each control and produces the record an auditor asks for.
-. Akka Optimize grades the same traffic, routes each task to the model that fits it, and trains a smaller open-weight model on your data. The new model replaces the old one only when its quality, measured on the evidence Akka Verify already holds, meets the bar. See xref:inference:index.adoc[Inference].
+. Akka Optimize grades the same traffic, routes each task to the model that fits it, and trains a smaller open-weight model on your data. The new model replaces the old one only when its quality, measured on the evidence Akka Verify already holds, meets the acceptance criteria. See xref:inference:index.adoc[Inference].
 
 Each step reads what an earlier step produced. Nothing is copied between separate tools.
 

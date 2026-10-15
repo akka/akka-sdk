@@ -55,7 +55,7 @@ The controls that Akka Verify governs are SDK features when the agent runs on Ak
 
 The `akka` CLI, the local console, Maven and sbt plugins, hot reload, and a TestKit for unit and integration tests. See xref:getting-started:install-cli.adoc[] and xref:testing:index.adoc[Testing].
 
-== Where it is in the docs
+== Where it is in the documentation
 
 [cols="1,3", options="header"]
 |===

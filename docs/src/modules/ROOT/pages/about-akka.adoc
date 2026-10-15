@@ -7,9 +7,16 @@
 
 include::ROOT:partial$include.adoc[]
 
-Akka has one offering: the Akka Agentic AI Platform, which guarantees the resilience and scalability of the agentic systems you build with it. The platform has four solutions: Akka SDK, Akka Specify, Akka Verify and Akka Optimize. They share one definition of an AI system, one runtime, one evidence record and one governance model, so each solution works on what the others produce.
+Akka has one offering: the *Akka Agentic AI Platform*, which guarantees the resilience and scalability of the agentic systems you build with it. The platform has four solutions: 
 
-Akka, formerly Lightbend, has run distributed systems in production since 2007. The open-source Akka actor library for the JVM is the lineage of the platform. The platform is a separate product, and these docs describe the platform.
+* Akka SDK, 
+* Akka Specify, 
+* Akka Verify and 
+* Akka Optimize. 
+
+They share one definition of an AI system, one runtime, one evidence record and one governance model, so each solution works on what the others produce.
+
+Akka, formerly Lightbend, has run distributed systems in production since 2007. The open-source Akka actor library for the JVM is the lineage of the platform. The platform is a separate product, and this documentation describes the platform.
 
 image::akka-agentic-ai-platform.svg[The Akka Agentic AI Platform: Akka Specify and Akka Verify define and govern, Akka SDK builds and runs, Akka Optimize provides models and compute,width=760]
 
@@ -17,7 +24,7 @@ image::akka-agentic-ai-platform.svg[The Akka Agentic AI Platform: Akka Specify a
 
 [cols="1,3,2", options="header"]
 |===
-| Solution | What it is | Start in the docs
+| Solution | What it is | Start in the documentation
 
 | xref:ROOT:about/akka-sdk.adoc[Akka SDK]
 | The component model for building agentic systems.
@@ -44,7 +51,7 @@ Everything you build runs on the Akka runtime. You operate it yourself, or Akka 
 
 == Where to start
 
-The docs sections are organized by task. Start from what you need to do:
+The documentation sections are organized by task. Start from what you need to do:
 
 * Build an agentic system from a specification: xref:getting-started:set-up-ai-install.adoc[Install using your AI harness], then xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent].
 * Build one in code: xref:getting-started:author-your-first-service.adoc[Code-first hello agent].

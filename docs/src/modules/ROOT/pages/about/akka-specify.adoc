@@ -45,7 +45,7 @@ Akka Specify works in your repository and your CI. `/akka:harnesses` generates C
 
 Akka Specify can recover what a legacy system does, turn that behavior into checks that a replacement must pass, and show that the replacement behaves the same.
 
-== Where it is in the docs
+== Where it is in the documentation
 
 [cols="1,3", options="header"]
 |===
@@ -66,4 +66,4 @@ Akka Specify can recover what a legacy system does, turn that behavior into chec
 * xref:ROOT:about/akka-sdk.adoc[Akka SDK] is what the plugin generates.
 * xref:ROOT:about/akka-verify.adoc[Akka Verify] enforces the controls that come from the risk envelope.
 * xref:ROOT:about/akka-optimize.adoc[Akka Optimize] works within the improvement policy.
-* xref:ROOT:about/how-akka-runs.adoc[How Akka runs] covers where the system runs once it ships.
+* xref:ROOT:about/how-akka-runs.adoc[How Akka runs] covers where the system runs after deployment.

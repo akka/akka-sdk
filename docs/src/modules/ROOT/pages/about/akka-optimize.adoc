@@ -8,11 +8,11 @@ include::ROOT:partial$include.adoc[]
 
 Akka Optimize routes traffic to the best open-weight model and trains smaller ones on your data. Most agent traffic repeats a narrow task whose result can be checked, so much of it does not need the largest model. Akka Optimize finds that traffic, sends each task to a model that fits it, and trains specialized models that you own, in your environment.
 
-It works as a loop. It observes the traffic your agents send to models and grades it. It routes each task to a fitting model. It trains a smaller model where one pays off. It serves that model, with a frontier model as fallback. Then it keeps grading.
+It works as a loop. It observes the traffic your agents send to models and grades it. It routes each task to a fitting model. It trains a smaller model where specialization provides a measurable benefit. It serves that model, with a frontier model as fallback. Then it keeps grading.
 
 == Observing and grading traffic
 
-Every model call is captured and graded: with deterministic graders for structured output such as SQL or JSON, and with a model judge for open-ended output. Grades work for agents on Akka and for agents in third-party harnesses. They feed the audit record, become the reward signal for training, and decide whether a new model is promoted. A targeting step scores each agent on how narrow, frequent, checkable and costly its traffic is, and ranks where a specialized model pays off.
+Every model call is captured and graded: with deterministic graders for structured output such as SQL or JSON, and with a model judge for open-ended output. Grades work for agents on Akka and for agents in third-party harnesses. They feed the audit record, become the reward signal for training, and decide whether a new model is promoted. A targeting step scores each agent on how narrow, frequent, checkable and costly its traffic is, and ranks opportunities for specialization by their measurable benefit.
 
 == Routing requests to models
 
@@ -24,7 +24,7 @@ See xref:inference:routing.adoc[] and xref:reference:descriptors/routing-ruleset
 
 The trainer specializes an open-weight base model on your data, with supervised fine-tuning, preference optimization and reinforcement learning. Training runs on GPUs in your environment, including air-gapped ones. The data pipeline scrubs personal data and secrets before training, and each run has checkpoints, a budget and a separate evaluation set.
 
-A new model is promoted only when its quality is at least the baseline and its token use drops by the target. It moves through shadow traffic, then a canary, then the fleet, and the comparison is saved to the audit record. After promotion it is still graded: it is retrained when it drifts and reverted when it slips.
+A new model is promoted only when its quality is at least the baseline and its token use drops by the target. It moves through shadow traffic, then a canary, then the fleet, and the comparison is saved to the audit record. After promotion it is still graded: it is retrained when it drifts and reverted when its quality falls below the required threshold.
 
 See xref:optimize:index.adoc[Training] and xref:optimize:trainer/index.adoc[the trainer].
 
@@ -44,7 +44,7 @@ Akka Optimize prices every recorded exchange from a versioned pricing catalog, a
 
 See xref:reference:cli/cost-and-traffic.adoc[Cost and traffic commands].
 
-== Where it is in the docs
+== Where it is in the documentation
 
 [cols="1,3", options="header"]
 |===

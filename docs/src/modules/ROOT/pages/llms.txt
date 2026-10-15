@@ -13,7 +13,7 @@
 - Akka Optimize routes traffic to the best open-weight model and trains smaller ones on your data.
 
 Every system built with Akka runs on the Akka runtime, operated by you or by Akka Automated
-Operations. The docs sections are organized by task; the About Akka pages map each solution to
+Operations. The documentation sections are organized by task; the About Akka pages map each solution to
 the sections that document it. Akka (formerly Lightbend) is distinct from the open-source Akka
 actor library for the JVM, which is its lineage.
 

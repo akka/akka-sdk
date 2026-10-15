@@ -68,7 +68,7 @@ Organizations that require more detailed control over the exact cloud setup can 
 
 == About Akka clustering
 
-Clustering is integral to how Akka systems manage themselves. Services discover each other at startup and form clusters without manual setup. A connection to a single node is enough to join an existing cluster. A cluster has no primary node, so no single node is a bottleneck or a single point of failure. Nodes communicate over encrypted gRPC without a message broker, and one cluster can span several clouds and data centers.
+Clustering is integral to how Akka systems manage themselves. Services discover each other at startup and form clusters without manual setup. A connection to a single node is enough to join an existing cluster. A cluster has no primary node, so no single node is a bottleneck or a single point of failure. Nodes communicate over encrypted gRPC without a message broker.
 
 image:concepts:akka-clustering.png[Akka clustering]
 
