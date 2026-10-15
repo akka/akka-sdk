@@ -65,7 +65,7 @@ A fixed pipeline suits multi-step processes with clear linear dependencies that 
 
 image::ai_orch_handoff.jpg["Handoff orchestration: work moves to the agent best suited to it",width=720]
 
-An Autonomous Agent implements handoff as a capability. The agent declares the peers it can hand off to, and the runtime offers the model a handoff tool. When the model hands off, ownership of the task moves to the next agent and the first agent steps back. The durability, retries and record come from the runtime, not from agent code. The `support` sample in the {sample-base-url}/autonomous-agent-playground[autonomous agent playground, window="new"] shows a triage agent that classifies a customer request and hands off to a billing or technical specialist.
+An Autonomous Agent implements handoff as a capability. The agent declares the peers it can hand off to, and the runtime offers the model a handoff tool. When the model hands off, ownership of the task moves to the next agent and the first agent steps back. The durability, retries and record come from the runtime, not from agent code. The `support` sample in the {url-sample-autonomous-agent-playground}[autonomous agent playground, window="new"] shows a triage agent that classifies a customer request and hands off to a billing or technical specialist.
 
 With request-based agents, a workflow reaches the same outcome by calling a planning agent that chooses the next worker. The planning agent asks the model, through a structured response, which agent best suits the request, and the workflow calls that agent. Tool calls, for example over MCP, add deterministic logic to the choice when the model's judgment alone is not predictable enough. If the worker agents themselves decided whether to handle an input, they could not be recomposed for any other purpose. This plan-and-execute loop can be combined with any of the other patterns.
 
@@ -127,7 +127,7 @@ Use collaboration when subtasks are interdependent and agents need to see each o
 
 image::ai_orch_chat.jpg["Group chat orchestration: agents work in a shared session",width=720]
 
-In a typical example, a parent workflow calls a planner agent, which asks a model for an execution plan and returns it as structured data. The workflow follows the plan and delegates to agents and child workflows, and all of them use one shared session when they build context for the model. A caller joins an agent to a session through the `inSession` option of the component client. The xref:getting-started:ask-akka-agent/index.adoc[Ask Akka agent tutorial] and its {sample-base-url}/ask-akka-agent[sample, window="new"] use explicit sessions in this way.
+In a typical example, a parent workflow calls a planner agent, which asks a model for an execution plan and returns it as structured data. The workflow follows the plan and delegates to agents and child workflows, and all of them use one shared session when they build context for the model. A caller joins an agent to a session through the `inSession` option of the component client. The xref:getting-started:ask-akka-agent/index.adoc[Ask Akka agent tutorial] and its {url-sample-ask-akka-agent}[sample, window="new"] use explicit sessions in this way.
 
 Shared sessions suit collaboration between agents, workflows and child workflows, and quality control that checks the session history. Avoid them when a sequential pipeline is enough, when conversations can grow without an upper limit or very many sessions start in a short time, and when there is no objective way to decide that a conversation is complete.
 

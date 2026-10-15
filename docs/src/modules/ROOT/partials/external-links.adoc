@@ -152,3 +152,7 @@
 :url-platform-api-java-client: https://github.com/akka/platform-api/tree/main/java-client
 :url-platform-api-schemas-federation: https://github.com/akka/platform-api/tree/main/schemas/federation-plane/protobuf
 :url-platform-api-schemas-control-plane: https://github.com/akka/platform-api/blob/main/schemas/control-plane/openapi/api.json
+
+// -- akka/akka-sdk samples --
+:url-sample-autonomous-agent-playground: https://github.com/akka/akka-sdk/blob/main/samples/autonomous-agent-playground
+:url-sample-ask-akka-agent: https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent
