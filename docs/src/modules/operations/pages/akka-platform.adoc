@@ -22,7 +22,7 @@ AAO is built on a Kubernetes-based control plane and application plane purpose-d
 
 == Reliability
 
-AAO continuously monitors region health and brings replacement capacity online without human intervention. Event-sourced state is replicated to every region of a project. Replication between regions is asynchronous, so writes that a lost region had not yet replicated are unavailable until that region returns, and are lost if it does not. Moving traffic and writes away from a failed region is an operator action with the Akka CLI. See xref:concepts:availability.adoc[] for how recovery works.
+AAO continuously monitors region health and brings replacement capacity online without human intervention. Event-sourced state is replicated to every region of a project. Replication between regions is asynchronous, so writes that a lost region had not yet replicated are unavailable until that region returns. They are lost if it does not return, and a write that conflicts with one made in a surviving region during the outage is discarded when it does. Moving traffic and writes away from a failed region is an operator action with the Akka CLI. See xref:concepts:availability.adoc[] for how recovery works.
 
 == Deploying and Managing Services
 

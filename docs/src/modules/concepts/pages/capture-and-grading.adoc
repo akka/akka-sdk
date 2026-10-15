@@ -15,10 +15,10 @@ Any loop that improves model traffic has to start from what that traffic is: whi
 Agents send their model requests through a proxy that consults the gateway router. See xref:concepts:model-routing.adoc[]. As the router handles each exchange, it writes a capture artifact that holds the request and the response as they passed through.
 
 . The gateway router writes capture artifacts and announces each one on a stream, grouped by shard and time window.
-. The capture refinery reads each artifact as it lands and derives a record in one canonical form: the served name, the use case, the caller, the conversation, and the tokens of each class that the response reported.
-. The refinery publishes the derived records as a stream of their own. The services that price spend, rank use cases and assemble training data consume that stream.
+. The capture refinery reads each artifact as it lands and derives a derived capture, one canonical form of it: the served name, the use case, the caller, the conversation, and the tokens of each class that the response reported.
+. The refinery publishes the derived captures as a stream of their own. The services that price spend, rank use cases and assemble training data consume that stream.
 
-A capture and the record derived from it hold the caller's identifier when the request named one. A caller is declared with the `x-optimize-caller` header, or reported by a proxy as a forwarded address. Erasing a caller removes the identifier that spend figures are attributed to and keeps every figure. It does not change capture artifacts or the records derived from them, which still hold the identifier. See xref:reference:cli/cost-and-traffic.adoc#_callers[Callers].
+A capture and the derived capture hold the caller's identifier when the request named one. A caller is declared with the `x-optimize-caller` header, or reported by a proxy as a forwarded address. Erasing a caller removes the identifier that spend figures are attributed to and keeps every figure. It does not change capture artifacts or the derived captures, which still hold the identifier. See xref:reference:cli/cost-and-traffic.adoc#_callers[Callers].
 
 The word _trace_ has two meanings here, so the docs say which one they mean. An agentic AI trace is the sequence of steps one agent run took, saved as a record in the ledger. A trace of gateway traffic is a capture. Captures describe what passed through the gateway. The ledger describes what the system did and holds the evidence of each control verdict. See xref:concepts:evidence.adoc[].
 
@@ -57,7 +57,7 @@ A grader and a reward are both scorers, used at different points in training. A 
 
 == How targeting works
 
-Targeting scores each use case on how well it suits a smaller model, and produces a ranked list of use cases admitted for training. It reads the records derived from captures, so it needs no traffic of its own.
+Targeting scores each use case on how well it suits a smaller model, and produces a ranked list of use cases admitted for training. It reads the derived captures, so it needs no traffic of its own.
 
 [cols="1,3", options="header"]
 |===
@@ -92,11 +92,11 @@ The result is a ranked list with an estimate for each admitted use case. The adm
 | Precondition
 
 | A capture artifact lands
-| The refinery derives one record from it and publishes the record to its consumers with the same delivery guarantees as the raw artifact.
+| The refinery derives one derived capture from it and publishes it to its consumers with the same delivery guarantees as the raw artifact.
 | The capture refinery runs in the project.
 
 | A caller's identifier is erased
-| The identifier that spend figures are attributed to is removed, and every figure is kept. Capture artifacts and the records derived from them still hold it.
+| The identifier that spend figures are attributed to is removed, and every figure is kept. Capture artifacts and the derived captures still hold it.
 | The caller was declared or forwarded.
 
 | A grader returns no verdict for an example

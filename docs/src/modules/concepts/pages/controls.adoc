@@ -52,7 +52,7 @@ Each evaluation returns one of three decisions: allow, deny, or fail. A deny abo
 
 A guardrail can run in report-only mode. It then records its decision, and the interaction continues. Use report-only to observe a new guardrail on live traffic before you let it block.
 
-An evaluation that must block runs inline, as a guardrail. Inline, the action, the verdict and the record of both are committed in one transaction, so no action runs without its verdict being recorded, and no verdict is recorded for an action that did not run. An inline check can block the action, re-prompt the model, or escalate to a person before a response leaves the agent.
+An evaluation that must block runs inline, as a guardrail. Inline, the action, the verdict and the record of both are committed in one transaction, so no action runs without its verdict being recorded. An action that a verdict blocks does not run, and that verdict is still recorded. An inline check can block the action, re-prompt the model, or escalate to a person before a response leaves the agent.
 
 See xref:sdk:agents/guardrails.adoc[Guardrails].
 

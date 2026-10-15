@@ -1,4 +1,5 @@
 = Coordination patterns
+:page-aliases: concepts:ms-agent-patterns.adoc
 :page-summary: Coordination patterns are the ways several agents divide and share work: sequential, delegative, collaborative and emergent.
 :page-when-to-use: When you choose how agents pass work and context to each other, and how patterns combine in one system.
 :page-related: concepts:ai-orchestration-patterns.adoc, sdk:agents/orchestrating.adoc, sdk:autonomous-agents/capabilities.adoc

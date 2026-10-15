@@ -1,5 +1,4 @@
 = Multi-agent coordination
-:page-aliases: concepts:ms-agent-patterns.adoc
 :page-summary: Multi-agent coordination is how several agents work toward one goal under a supervisor that decides which agent runs, when, and with what context.
 :page-when-to-use: When one agent is not enough and you choose a supervisor and the context each agent sees.
 :page-related: concepts:coordination-patterns.adoc, sdk:agents/orchestrating.adoc, concepts:durable-execution.adoc

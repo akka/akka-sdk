@@ -57,7 +57,7 @@ Each record is hash-chained to the one before it. A record that is changed, remo
 
 == Who reads the ledger
 
-Evaluators read the interactions they judge from the ledger, and the console shows it. In code, a xref:sdk:evaluators.adoc#_the_ledger_client[ledger client] fetches records. Verdicts and evidence are read from it for governance. The same records are graded to choose and train models, so cost and compliance are measured on the same data. See xref:concepts:capture-and-grading.adoc[].
+Evaluators read the interactions they judge from the ledger, and the console shows it. In code, a xref:sdk:evaluators.adoc#_the_ledger_client[ledger client] fetches records. Verdicts and evidence are read from it for governance. The model calls behind the same interactions are captured at the gateway and graded to choose and train models, so cost and compliance are measured on the same traffic. See xref:concepts:capture-and-grading.adoc[].
 
 == The ledger and observability
 

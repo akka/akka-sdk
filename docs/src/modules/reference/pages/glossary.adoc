@@ -47,7 +47,7 @@ A _command handler_ is the code that handles a command. It may validate the comm
 
 [[entity_instance]]Entity instance:: An instance of an <<entity>>, which is identified by a unique <<id>>.
 
-[[eu_ai_act]]EU AI Act:: The European Union's regulation on artificial intelligence, requiring transparency, explainability, and human oversight for AI systems. Akka supports EU AI Act compliance through runtime-embedded governance, audit trails, and policy enforcement via <<guardrails>>.
+[[eu_ai_act]]EU AI Act:: The European Union's regulation on artificial intelligence, requiring transparency, explainability, and human oversight for AI systems. Akka supports EU AI Act compliance through runtime-embedded governance, the ledger, and policy enforcement via <<guardrails>>.
 
 [[evaluator]]Evaluator:: A <<component>> that assesses <<agent>> interactions. Bound to one or more agents in configuration, the runtime triggers it for each interaction of a bound agent, out of band, and records its verdict (pass/fail, with optional score, label, and attributes). An evaluator reads the interaction it assesses from the <<ledger>> and may delegate the verdict to an <<llm>>-as-judge agent. See xref:concepts:evaluation.adoc[] and xref:sdk:evaluators.adoc[].
 
@@ -58,7 +58,7 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 
 [[event_sourced_entity]]Event Sourced Entity:: A type of <<entity>> that stores its state using a journal of events, and restores its state by replaying that journal. These are discussed in more detail in xref:concepts:state-model.adoc#_the_event_sourced_state_model[Event Sourced state model].
 
-[[guardrails]]Guardrails:: A <<control_type,control type>> that checks an agent's input, tool call or output at a runtime boundary and blocks or passes it. A guardrail decision is saved as a <<record>> in the <<ledger>>. See xref:concepts:controls.adoc#guardrails[Guardrails].
+[[guardrails]]Guardrails:: A <<control_type,control type>> that checks an agent's input, tool call or output at a runtime boundary and blocks or passes it. The verdict of a guardrail is <<evidence>> in the <<ledger>>. See xref:concepts:controls.adoc#guardrails[Guardrails].
 
 [[control]]Control:: An obligation plus the mechanism that meets it. Every control has an id, is one of five <<control_type,control types>>, and produces verdicts that name it. See xref:concepts:controls.adoc[].
 
@@ -92,7 +92,7 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 
 [[runtime]]Runtime:: The Akka runtime runs each <<service>> as a cluster of nodes. It keeps component state in memory with one owner for each instance, routes messages to that owner, rebuilds state from events after a failure, and replicates state between regions. See xref:concepts:runtime.adoc[].
 
-[[sanitizer]]Sanitizer:: A data sanitization component that scrubs personally identifiable information (PII) from Agent interactions while preserving explainability and audit trails.
+[[sanitizer]]Sanitizer:: A data sanitization component that scrubs personally identifiable information (PII) from Agent interactions while preserving explainability and the <<ledger>>.
 
 [[sdd]]SDD (Spec-Driven Development):: A way of building an application from plain-language specifications that are versioned with the code, and of checking the code against them. SDD uses a <<constitution>> for project-wide rules and a specification for each feature. See xref:concepts:spec-driven-development.adoc[].
 
@@ -123,7 +123,7 @@ A component like <<key_value_entity>>,<<event_sourced_entity>> or <<workflow>>
 
 [[workflow_step]]Workflow step:: A Workflow definition element which encapsulates an action to perform and a transition to the next step (or end transition to finish the Workflow execution).
 
-[[primary_region]]Primary region:: Always says whose. An entity's primary region is the region that accepts its writes: where it was created, and in request-region mode wherever it was last written; in pinned-region mode, the project's primary region. A project's primary region is the region its resources replicate from. See xref:concepts:multi-region.adoc#_replicated_reads_and_the_primary_region[Replicated reads and the primary region].
+[[primary_region]]Primary region:: A region with a primary role, for an entity or for a project; the docs always say which. An entity's primary region is the region that accepts its writes: where it was created, and in request-region mode wherever it was last written; in pinned-region mode, the project's primary region. A project's primary region is the region its resources replicate from. See xref:concepts:multi-region.adoc#_replicated_reads_and_the_primary_region[Replicated reads and the primary region].
 
 [[routing_classifier]]Routing classifier:: A model that a routing rule hands its decision to, to choose where a request goes. It is not the governance <<classifier>>. See xref:concepts:model-routing.adoc[].
 

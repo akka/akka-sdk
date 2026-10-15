@@ -15,9 +15,9 @@ A provider's invoice states what an account cost. It does not say which agent, u
 === From exchange to figure
 
 . An agent's model request passes through the gateway, and the exchange is captured. See xref:concepts:capture-and-grading.adoc[].
-. The capture refinery derives a record from the capture, with the served name, the use case, the caller, the conversation and the tokens of each class.
-. The portfolio service prices the record once, when it records it, from the pricing catalog.
-. Spend for a period is read from the priced records.
+. The capture refinery derives a derived capture from it, with the served name, the use case, the caller, the conversation and the tokens of each class.
+. The portfolio service prices the derived capture once, when it stores it, from the pricing catalog.
+. Spend for a period is read from the priced derived captures.
 
 Traffic that the gateway did not record does not appear in spend.
 
@@ -109,7 +109,7 @@ The incident feed collects what went wrong in the same traffic: anomalies, reque
 * A period is whole UTC hours.
 * The catalog holds one currency.
 * A new price cannot take effect earlier than the latest price for the same served name, and it does not reprice recorded traffic. Publish a price for every served name before its traffic is served.
-* Erasing a caller does not change capture artifacts or the records derived from them, which still hold the identifier.
+* Erasing a caller does not change capture artifacts or the derived captures, which still hold the identifier.
 
 == Next steps
 
