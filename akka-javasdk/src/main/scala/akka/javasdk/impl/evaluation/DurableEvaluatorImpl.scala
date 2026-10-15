@@ -58,6 +58,8 @@ private[javasdk] object DurableEvaluatorImpl {
     override def evaluationId(): String = id
   }
 
+  // FIXME: wrap in knownOr once SpiEvaluator.TriggerSource has an Unknown value
+  // https://github.com/lightbend/akka-runtime/issues/5921
   private def toProtocolTriggerSource(source: SpiEvaluator.TriggerSource): TriggerSource =
     source match {
       case SpiEvaluator.TriggerSource.Manual        => TriggerSource.MANUAL
@@ -151,9 +153,9 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
       // at-least-once delivery from the trigger projection: ack the duplicate start so it can advance
       Future.successful(new SpiWorkflow.ReadOnlyEffect(ack, SpiMetadata.empty))
     } else {
-      val subject = EvaluationConversions.toSdkSubject(trigger.subject)
-      val triggerSource = toProtocolTriggerSource(trigger.source)
       Future {
+        val subject = EvaluationConversions.toSdkSubject(trigger.subject)
+        val triggerSource = toProtocolTriggerSource(trigger.source)
         val evaluator = factory(Option(telemetryContext))
         val context = new EvaluationContextImpl(workflowId, subject)
         evaluator._internalSetup(evaluator.emptyState(), context)
