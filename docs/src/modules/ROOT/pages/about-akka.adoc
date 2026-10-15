@@ -58,7 +58,7 @@ The documentation sections are organized by task. Start from what you need to do
 * Learn how Akka works before you build: xref:ROOT:about/how-it-fits.adoc[How the solutions work together] and xref:concepts:index.adoc[Understanding].
 * Evaluate and govern agents: xref:ROOT:about/akka-verify.adoc[Akka Verify].
 * Route, serve or train models, and track what they cost: xref:ROOT:about/akka-optimize.adoc[Akka Optimize].
-* Deploy and operate services: xref:ROOT:about/how-akka-runs.adoc[How Akka runs] and xref:operations:index.adoc[Operating].
+* Deploy and operate services: xref:ROOT:about/how-akka-runs.adoc[How Akka runs] and xref:deployment:index.adoc[Operating].
 
 == In this section
 

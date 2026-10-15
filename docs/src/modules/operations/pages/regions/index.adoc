@@ -1,7 +1,7 @@
 = Multi-region
 :page-summary: A project runs in one or more regions. Zones in one region protect against the loss of a data center; more regions, with data replicated between them, protect against the loss of a region.
 :page-when-to-use: When you decide whether a project needs more than one region, and before you add a region or change a project's primary region.
-:page-related: concepts:multi-region.adoc, operations:production-readiness/choosing-your-environment.adoc, operations:regions/setup.adoc
+:page-related: concepts:multi-region.adoc, deployment:production-readiness/choosing-your-environment.adoc, operations:regions/setup.adoc
 :page-persona: operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
@@ -31,6 +31,6 @@ For how Akka replicates the state of each component between regions, see xref:co
 
 == Plan the infrastructure
 
-* xref:operations:production-readiness/choosing-your-environment.adoc[] covers availability, sizing, and data residency.
-* xref:operations:regions/infrastructure.adoc[] describes the infrastructure that replicates state between regions.
-* xref:operations:production-readiness/disaster-recovery.adoc[] defines recovery procedures and responsibilities.
+* xref:deployment:production-readiness/choosing-your-environment.adoc[] covers availability, sizing, and data residency.
+* xref:deployment:regions/infrastructure.adoc[] describes the infrastructure that replicates state between regions.
+* xref:deployment:production-readiness/disaster-recovery.adoc[] defines recovery procedures and responsibilities.

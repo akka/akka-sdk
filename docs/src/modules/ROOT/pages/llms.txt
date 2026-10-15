@@ -119,12 +119,12 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 
 ## Deployment
 
-- [Choose how you run Akka](https://doc.akka.io/operations/index.html.md): The deployment options for running Akka services and how they compare
-- [Production readiness](https://doc.akka.io/operations/production-readiness/index.html.md): Responsibilities, readiness checks, and disaster recovery
+- [Choose how you run Akka](https://doc.akka.io/deployment/index.html.md): The deployment options for running Akka services and how they compare
+- [Production readiness](https://doc.akka.io/deployment/production-readiness/index.html.md): Responsibilities, readiness checks, and disaster recovery
 
 ## Operating
 
-- [Operating](https://doc.akka.io/operations/operating.html.md): Project setup, service deployment, monitoring, and automation
+- [Operating](https://doc.akka.io/operations/index.html.md): Project setup, service deployment, monitoring, and automation
 - [Deploy a service](https://doc.akka.io/operations/services/deploy-service.html): Deploying to Akka
 - [Observability](https://doc.akka.io/operations/observability-and-monitoring/index.html.md): Metrics, logs, traces, OTEL export
 - [Secrets management](https://doc.akka.io/operations/projects/secrets.html.md): Built-in secrets with Azure KeyVault integration
@@ -216,8 +216,8 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Organizations](https://doc.akka.io/operations/organizations/index.html.md): Working with organizations in Akka
 - [Managing organization users](https://doc.akka.io/operations/organizations/manage-users.html.md): Adding, removing, and managing user access within your organization
 - [Regions](https://doc.akka.io/operations/organizations/regions.html.md): Understanding geographical regions for Akka deployments
-- [Deployment - Choose how you run Akka](https://doc.akka.io/operations/index.html.md): The five deployment options, what Akka Automated Operations adds, and a feature comparison.
-- [Deployment - Self-managed nodes](https://doc.akka.io/operations/configuring.html.md): Guide to running Akka on self-managed infrastructure
+- [Deployment - Choose how you run Akka](https://doc.akka.io/deployment/index.html.md): The five deployment options, what Akka Automated Operations adds, and a feature comparison.
+- [Deployment - Self-managed nodes](https://doc.akka.io/deployment/configuring.html.md): Guide to running Akka on self-managed infrastructure
 - [Reactive Manifesto](https://www.reactivemanifesto.org): Foundational philosophy behind Akka
 - [Reactive Principles](https://www.reactiveprinciples.org): Cloud-native and edge-native design principles
 - [Blog](https://akka.io/blog): Technical articles and product updates

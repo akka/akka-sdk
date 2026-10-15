@@ -2,16 +2,16 @@
 include::ROOT:partial$include.adoc[]
 :page-summary: Scan the libraries you add to an Akka service for known vulnerabilities. Akka scans and patches the runtime; you scan the dependencies you introduce.
 :page-when-to-use: Setting up dependency vulnerability scanning in CI for a service you build with the Akka SDK.
-:page-related: operations:integrating-cicd/github-actions.adoc, operations:production-readiness/index.adoc, operations:services/deploy-service.adoc
+:page-related: operations:integrating-cicd/github-actions.adoc, deployment:production-readiness/index.adoc, operations:services/deploy-service.adoc
 :page-persona: operator-platform, builder-developer
 
 Your Akka service ships with the libraries that you add to it. You must scan these libraries for known vulnerabilities. This page shows the recommended way to do it.
 
-Akka scans and patches the runtime part of your service. You scan the dependencies that you introduce. This split follows the xref:operations:production-readiness/index.adoc[shared responsibility model].
+Akka scans and patches the runtime part of your service. You scan the dependencies that you introduce. This split follows the xref:deployment:production-readiness/index.adoc[shared responsibility model].
 
 [NOTE]
 ====
-Akka patches the JVM, the container base image, the operating system, and the Akka runtime that ship inside your deployed service. Akka runs continuous scanning on these parts. Akka addresses critical and high severity findings as soon as possible. You do not need to scan the runtime. See the xref:operations:production-readiness/index.adoc[shared responsibility model] for the full split.
+Akka patches the JVM, the container base image, the operating system, and the Akka runtime that ship inside your deployed service. Akka runs continuous scanning on these parts. Akka addresses critical and high severity findings as soon as possible. You do not need to scan the runtime. See the xref:deployment:production-readiness/index.adoc[shared responsibility model] for the full split.
 ====
 
 == What ships in your service
@@ -75,5 +75,5 @@ A typical job does the following:
 == See also
 
 * xref:operations:integrating-cicd/github-actions.adoc[]
-* xref:operations:production-readiness/index.adoc[]
+* xref:deployment:production-readiness/index.adoc[]
 * xref:operations:services/deploy-service.adoc[]

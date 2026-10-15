@@ -33,5 +33,5 @@ anchor:_sharding_and_single_ownership[]
 
 * xref:sdk:event-sourced-entities.adoc[] explains sharding, persistence, and snapshots.
 * xref:sdk:key-value-entities.adoc[] stores current state.
-* xref:operations:configuring.adoc[] configures self-managed operation.
+* xref:deployment:configuring.adoc[] configures self-managed operation.
 * xref:multi-region.adoc[] explains replication across clusters.

@@ -52,7 +52,7 @@ aws-us-east-2   db805ff5-4fbd-4442-ab56-6e6a9a3c200a
 By default organizations are limited to which regions they can use, particularly for trial organizations. If you would like access to other regions, you can use the *?* in the upper right of the https://console.akka.io/[Akka Console, window="new"] to request additional regions via the *Contact support* menu item.
 
 == Single-tenant regions
-Dedicated, BYOC and BYOK8s regions work like any other region and are exclusive to your workloads. They are not available to trial users. See xref:operations:index.adoc[Choose how you run Akka] for what each option is and how to start, or link:{url-akka-contact}[contact Akka, window="new"] to set one up.
+Dedicated, BYOC and BYOK8s regions work like any other region and are exclusive to your workloads. They are not available to trial users. See xref:deployment:index.adoc[Choose how you run Akka] for what each option is and how to start, or link:{url-akka-contact}[contact Akka, window="new"] to set one up.
 
 == See also
 

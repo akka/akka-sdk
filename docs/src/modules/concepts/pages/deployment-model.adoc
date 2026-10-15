@@ -2,7 +2,7 @@
 :page-aliases: concepts:automated-operations.adoc
 :page-summary: Deployment determines where services run and who operates their runtime and infrastructure. Platform operations maintain that deployment as traffic, application versions, and infrastructure change.
 :page-when-to-use: When you need an overview of deployment and operations and links to the task guides.
-:page-related: concepts:runtime.adoc, concepts:multi-region.adoc, operations:index.adoc
+:page-related: concepts:runtime.adoc, concepts:multi-region.adoc, deployment:index.adoc
 :page-persona: builder-developer, operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
@@ -63,10 +63,10 @@ anchor:_service_packaging[]
 
 == Next steps
 
-* xref:operations:index.adoc[] compares operational approaches.
-* xref:operations:technical-overview.adoc[] describes architecture, data flows, and environment migration.
-* xref:operations:production-readiness/shared-responsibility.adoc[] defines responsibilities for each deployment option.
-* xref:operations:configuring.adoc[] configures self-managed services.
+* xref:deployment:index.adoc[] compares operational approaches.
+* xref:deployment:technical-overview.adoc[] describes architecture, data flows, and environment migration.
+* xref:deployment:production-readiness/shared-responsibility.adoc[] defines responsibilities for each deployment option.
+* xref:deployment:configuring.adoc[] configures self-managed services.
 * xref:operations:services/instance-sizing.adoc[] and xref:operations:services/deploy-service.adoc[] configure capacity and application updates.
 * xref:operations:integrating-cicd/scanning-dependencies.adoc[] explains patching responsibilities.
 * xref:sdk:running-locally.adoc[] runs development services.

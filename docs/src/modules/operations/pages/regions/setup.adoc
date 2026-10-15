@@ -267,4 +267,4 @@ Events that were written in the failing region and had not been replicated to ot
 
 == References
 
-* xref:operations:regions/infrastructure.adoc[]
+* xref:deployment:regions/infrastructure.adoc[]

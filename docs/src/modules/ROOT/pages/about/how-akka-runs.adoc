@@ -2,7 +2,7 @@
 :page-aliases: ROOT:akka-automated-operations.adoc, ROOT:akka-internals.adoc, ROOT:how-akka-works.adoc
 :page-summary: Every system built with Akka runs on the Akka runtime. You operate it yourself, or Akka Automated Operations runs it for you on Akka's serverless cloud, on dedicated infrastructure, or in your own cloud account or Kubernetes cluster.
 :page-when-to-use: When you need to know what the Akka runtime does, which deployment options exist, and who operates what in each.
-:page-related: operations:index.adoc, concepts:deployment-model.adoc, concepts:multi-region.adoc
+:page-related: deployment:index.adoc, concepts:deployment-model.adoc, concepts:multi-region.adoc
 :page-persona: all
 
 include::ROOT:partial$include.adoc[]
@@ -33,27 +33,27 @@ See xref:concepts:runtime.adoc[], xref:concepts:deployment-model.adoc[], xref:co
 | Dedicated
 | Akka's cloud, a single-tenant region
 | Akka
-| xref:operations:technical-overview/dedicated.adoc[How Dedicated works]
+| xref:deployment:technical-overview/dedicated.adoc[How Dedicated works]
 
 | BYOC
 | Your cloud account on AWS, Azure or GCP
 | Akka, on infrastructure you own
-| xref:operations:technical-overview/byoc.adoc[Get started with BYOC]
+| xref:deployment:technical-overview/byoc.adoc[Get started with BYOC]
 
 | BYOK8s
 | A Kubernetes cluster you provide
 | Akka operates the platform; you own the cluster
-| xref:operations:technical-overview/byok8s-requirements.adoc[Get started with BYOK8s]
+| xref:deployment:technical-overview/byok8s-requirements.adoc[Get started with BYOK8s]
 
 | Self-managed
 | Infrastructure you choose: bare metal, VMs, containers or edge
 | You
-| xref:operations:configuring.adoc[Self-managed operations]
+| xref:deployment:configuring.adoc[Self-managed operations]
 |===
 
 Serverless is pay as you go, paid by credit card. You create an account at console.akka.io and deploy from the Akka CLI.
 
-In BYOC and BYOK8s, application data stays in your environment. A limited set of platform interactions, such as deployments and key rotation, still crosses to Akka. See xref:operations:technical-overview.adoc[] for the architecture and data flows, and xref:operations:production-readiness/choosing-your-environment.adoc[] for sizing, availability and data residency.
+In BYOC and BYOK8s, application data stays in your environment. A limited set of platform interactions, such as deployments and key rotation, still crosses to Akka. See xref:deployment:technical-overview.adoc[] for the architecture and data flows, and xref:deployment:production-readiness/choosing-your-environment.adoc[] for sizing, availability and data residency.
 
 == What Akka Automated Operations does
 
@@ -67,7 +67,7 @@ Akka Automated Operations (AAO) runs the runtime for you in the Serverless, Dedi
 * Zero-trust networking: every workload is attested rather than trusted for its network location. In your own cloud account, services can also be operated as multi-tenant, with access controls across organizations.
 * Operations around the clock by Akka for the options Akka operates.
 
-Self-managed operations give you the runtime, clustering, elasticity, resilience, and metrics, logs and traces. Logs, metrics and traces can be exported to OpenTelemetry, Prometheus or Splunk in every option. The other items above are AAO. See the feature comparison on xref:operations:index.adoc[Choose how you run Akka].
+Self-managed operations give you the runtime, clustering, elasticity, resilience, and metrics, logs and traces. Logs, metrics and traces can be exported to OpenTelemetry, Prometheus or Splunk in every option. The other items above are AAO. See the feature comparison on xref:deployment:index.adoc[Choose how you run Akka].
 
 See xref:concepts:deployment-model.adoc#automated-operations[], xref:concepts:availability.adoc[] and xref:concepts:security-and-identity.adoc[].
 
@@ -84,10 +84,10 @@ See xref:concepts:deployment-model.adoc#automated-operations[], xref:concepts:av
 | xref:concepts:runtime.adoc[], xref:concepts:deployment-model.adoc[], xref:concepts:multi-region.adoc[], xref:concepts:availability.adoc[], xref:concepts:deployment-model.adoc#automated-operations[], xref:concepts:security-and-identity.adoc[], xref:concepts:observability.adoc[]
 
 | Deployment
-| xref:operations:index.adoc[Choose how you run Akka], xref:operations:technical-overview.adoc[How AAO works], xref:operations:configuring.adoc[Self-managed operations], xref:operations:production-readiness/index.adoc[Production readiness]
+| xref:deployment:index.adoc[Choose how you run Akka], xref:deployment:technical-overview.adoc[How AAO works], xref:deployment:configuring.adoc[Self-managed operations], xref:deployment:production-readiness/index.adoc[Production readiness]
 
 | Operating
-| xref:operations:operating.adoc[Operating], xref:operations:services/index.adoc[Services], xref:operations:observability-and-monitoring/index.adoc[Observe], xref:operations:automate.adoc[Automate]
+| xref:operations:index.adoc[Operating], xref:operations:services/index.adoc[Services], xref:operations:observability-and-monitoring/index.adoc[Observe], xref:operations:automate.adoc[Automate]
 
 | Reference
 | xref:reference:descriptors/index.adoc[Descriptors], xref:reference:cli/akka-cli/index.adoc[Akka CLI]
