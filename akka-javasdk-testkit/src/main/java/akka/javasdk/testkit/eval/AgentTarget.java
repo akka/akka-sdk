@@ -6,14 +6,10 @@ package akka.javasdk.testkit.eval;
 
 import akka.japi.function.Function2;
 import akka.javasdk.agent.Agent;
-import akka.javasdk.testkit.AgentTrace;
-import akka.javasdk.testkit.TelemetryReader;
-import akka.javasdk.testkit.TestKit;
-import java.util.function.Function;
+import akka.javasdk.client.ComponentClient;
 
 /**
- * Calls the agent's command handler through the TestKit component client in the turn's session, and
- * reads the evidence from the trace recorded for that session, also when the call failed.
+ * Calls the agent's command handler through the component client in the turn's session.
  *
  * @param <A> the agent
  * @param <C> the command handler's parameter type
@@ -21,48 +17,29 @@ import java.util.function.Function;
  */
 final class AgentTarget<A extends Agent, C, R> implements EvalTarget<C> {
 
-  private final TestKit testKit;
+  private final ComponentClient componentClient;
   private final Function2<A, C, Agent.Effect<R>> method;
-  private final Function<R, String> replyText;
-  private final TelemetryReader telemetry;
 
-  AgentTarget(
-      TestKit testKit, Function2<A, C, Agent.Effect<R>> method, Function<R, String> replyText) {
-    if (testKit == null) throw new IllegalArgumentException("testKit required");
+  AgentTarget(ComponentClient componentClient, Function2<A, C, Agent.Effect<R>> method) {
+    if (componentClient == null) throw new IllegalArgumentException("componentClient required");
     if (method == null) throw new IllegalArgumentException("agent method required");
-    if (replyText == null) throw new IllegalArgumentException("reply mapping required");
-    this.testKit = testKit;
+    this.componentClient = componentClient;
     this.method = method;
-    this.replyText = replyText;
-    this.telemetry = new TelemetryReader(testKit.getInMemorySpanExporter());
   }
 
   @Override
   public Outcome call(Turn<C> turn) {
     try {
-      R reply =
-          testKit
-              .getComponentClient()
+      return Outcome.answered(
+          componentClient
               .forAgent()
               .inSession(turn.sessionId())
               .method(method)
-              .invoke(turn.command());
-      return Outcome.answered(
-          new Interaction(
-              turn.commandText(),
-              replyText.apply(reply),
-              telemetry.getAgentTrace(turn.sessionId())));
+              .withDetailedReply()
+              .invoke(turn.command())
+              .interactionId());
     } catch (RuntimeException e) {
-      return Outcome.failed(e, traceOrNone(turn));
-    }
-  }
-
-  // After a failure the trace may hold nothing for the session.
-  private AgentTrace traceOrNone(Turn<C> turn) {
-    try {
-      return telemetry.getAgentTrace(turn.sessionId());
-    } catch (RuntimeException e) {
-      return AgentTrace.NONE;
+      return Outcome.failed(e);
     }
   }
 }

@@ -4,7 +4,6 @@
 
 package akka.javasdk.testkit.eval;
 
-import akka.javasdk.testkit.eval.Evaluator.EvalResult;
 import akka.javasdk.testkit.eval.ExperimentRunner.CaseResult;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -89,24 +88,22 @@ public final class Gate {
    * The pass rate of one evaluator, over the attempts where it was conclusive, must be at least
    * {@code minimumRate}. Fails when the evaluator judged no attempt.
    *
-   * @param evaluator the evaluator's class. The built-ins are nested in {@link Evaluators}, for
-   *     example {@code Evaluators.ToolArgument.class}
-   * @throws IllegalArgumentException when the class does not carry a valid {@link EvalLabel}
+   * @param evaluator the component id of the evaluator
    */
-  public static Gate passRateShouldBeAtLeast(
-      Class<? extends Evaluator> evaluator, double minimumRate) {
-    var label = Evaluators.label(evaluator);
+  public static Gate passRateShouldBeAtLeast(String evaluator, double minimumRate) {
+    if (evaluator == null || evaluator.isBlank())
+      throw new IllegalArgumentException("evaluator component id required");
 
     return new Gate(
         (results, runs) -> {
           var evalResults =
               results.stream()
                   .flatMap(result -> result.evalResults().stream())
-                  .filter(evalResult -> evalResult.evaluator().equals(label))
+                  .filter(evalResult -> evalResult.evaluator().equals(evaluator))
                   .filter(evalResult -> evalResult.verdict() != EvalResult.Verdict.INCONCLUSIVE)
                   .toList();
           if (evalResults.isEmpty()) {
-            return Verdict.fail(label + " judged no case, so its rate cannot be read");
+            return Verdict.fail(evaluator + " judged no case, so its rate cannot be read");
           }
           var passed =
               evalResults.stream().filter(f -> f.verdict() == EvalResult.Verdict.PASS).count();
@@ -115,7 +112,7 @@ public final class Gate {
               String.format(
                   Locale.ROOT,
                   "%s rate %.2f over %d judged attempts, required %.2f",
-                  label,
+                  evaluator,
                   actual,
                   evalResults.size(),
                   minimumRate);
@@ -123,7 +120,7 @@ public final class Gate {
         });
   }
 
-  /** No attempt may fail while its recorded calls are loaded or in the agent call. */
+  /** No agent call may fail. */
   public static Gate targetShouldNotFail() {
     return new Gate(
         (results, runs) -> {
@@ -136,8 +133,7 @@ public final class Gate {
                           .anyMatch(
                               evalResult ->
                                   evalResult.verdict() == EvalResult.Verdict.FAIL
-                                      && (evalResult.evaluator().equals(Evaluators.TARGET)
-                                          || evalResult.evaluator().equals(Evaluators.SETUP))));
+                                      && evalResult.evaluator().equals(ExperimentRunner.TARGET)));
           return failed.isEmpty()
               ? Verdict.pass("no target failures")
               : Verdict.fail("target failed on " + failed);

@@ -6,12 +6,15 @@ package akka.javasdk.testkit.eval;
 
 import akka.japi.function.Function2;
 import akka.javasdk.agent.Agent;
-import akka.javasdk.testkit.AgentTrace;
+import akka.javasdk.ledger.EvaluationRecord;
+import akka.javasdk.ledger.GuardrailDecisionRecord;
+import akka.javasdk.ledger.InteractionRecord;
+import akka.javasdk.ledger.LedgerClient;
 import akka.javasdk.testkit.TestKit;
-import akka.javasdk.testkit.eval.Evaluator.EvalResult;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -26,25 +29,26 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Runs cases against an agent and collects the results. Sequential and in-process; the only output
- * is the report file written at the end of the run.
+ * Runs cases against an agent and collects the verdicts of the evaluators bound to it. Sequential
+ * and in-process; the only output is the report file written at the end of the run.
  *
- * <p>Per case: load the recorded tool calls, if any, into the bound stubs, call the agent in a
- * fresh session, read the evidence the runtime traced for that session, and evaluate the
- * expectations over it. The stubs a hand written case needs are prepared before the run, in the
- * test.
+ * <p>Per case: call the agent in a fresh session, read the interaction and the guardrail decisions
+ * the runtime recorded in the ledger, and wait for the evaluation that every bound {@link
+ * akka.javasdk.evaluation.Evaluator} records about the interaction. The evaluators and their
+ * bindings come from the configuration the TestKit runs with, under {@code
+ * akka.javasdk.evaluation.evaluators}; a test adds bindings for its own evaluators and disables
+ * production ones with {@code TestKit.Settings.withAdditionalConfig}. The stubs the agent's tools
+ * call are prepared before the run, in the test.
  *
- * <p>An experiment is built in steps, each step offering only what comes next: the cases with
- * optional evaluators and {@link ToolBindings}, the agent, an optional {@link Gate}, then {@link
- * Experiment#run}. Without a gate every case must pass, which suits a mocked model. With a real
- * model gate on rates instead.
+ * <p>An experiment is built in steps, each step offering only what comes next: the cases, the
+ * agent, an optional {@link Gate}, then {@link Experiment#run}. Without a gate every case must
+ * pass, which suits a mocked model. With a real model gate on rates instead.
  *
  * <p>{@link Experiment#repeat} runs every case several times. One execution of one case is an
  * attempt, and the gate, the rates and the spend count attempts. The report names the requirements
@@ -70,6 +74,18 @@ public final class ExperimentRunner {
 
   /** Where {@link Experiment#run} writes the report file unless the experiment names another. */
   public static final Path DEFAULT_REPORT_DIRECTORY = Path.of("target", "eval-reports");
+
+  /**
+   * How long an attempt waits for the ledger to hold its interaction and one evaluation per bound
+   * evaluator. An evaluator without an evaluation at the timeout is inconclusive on that attempt.
+   */
+  static final Duration EVALUATION_TIMEOUT = Duration.ofSeconds(10);
+
+  /**
+   * The evaluator name of the result the runner reports when the agent call failed: the call threw
+   * instead of replying.
+   */
+  public static final String TARGET = "target";
 
   private final TestKit testKit;
 
@@ -122,158 +138,101 @@ public final class ExperimentRunner {
                 + " one");
       }
     }
-    return new Cases<>(testKit, List.copyOf(cases), List.of(), ToolBindings.none());
+    return new Cases<>(testKit, List.copyOf(cases));
   }
 
-  // For the runner's own tests: the cases run against a scripted target instead of an agent, and
-  // write no report file unless the test names a directory.
-  static <C> Experiment against(ExperimentCases<C> cases, EvalTarget<C> target) {
-    return ((Cases<C>) cases).target(target).withoutReportFile();
+  // For the runner's own tests: the cases run against a scripted target instead of an agent, read
+  // an in-memory ledger with the given timeout, and write no report file unless the test names a
+  // directory.
+  static <C> Experiment against(
+      ExperimentCases<C> cases,
+      EvalTarget<C> target,
+      LedgerClient ledger,
+      AgentBindings agent,
+      Duration evaluationTimeout) {
+    return ((Cases<C>) cases).target(target, ledger, agent, evaluationTimeout).withoutReportFile();
   }
 
-  private record Cases<C>(
-      TestKit testKit, List<EvalCase<C>> cases, List<Evaluator> evaluators, ToolBindings bindings)
-      implements ExperimentCases<C> {
-
-    @Override
-    public ExperimentCases<C> evaluator(Evaluator evaluator) {
-      if (evaluator == null) throw new IllegalArgumentException("evaluator required");
-      Evaluators.label(evaluator.getClass());
-
-      var next = new ArrayList<>(evaluators);
-      next.add(evaluator);
-      return new Cases<>(testKit, cases, List.copyOf(next), bindings);
-    }
-
-    @Override
-    public ExperimentCases<C> bindings(ToolBindings bindings) {
-      if (bindings == null) throw new IllegalArgumentException("bindings required");
-      return new Cases<>(testKit, cases, evaluators, bindings);
-    }
+  private record Cases<C>(TestKit testKit, List<EvalCase<C>> cases) implements ExperimentCases<C> {
 
     @Override
     public <A extends Agent, R> Experiment agent(Function2<A, C, Agent.Effect<R>> method) {
-      return agent(method, Interaction::asText);
+      if (method == null) throw new IllegalArgumentException("agent method required");
+      return target(
+          new AgentTarget<>(testKit.getComponentClient(), method),
+          testKit.getLedgerClient(),
+          AgentBindings.of(testKit.getApplicationConfig(), method),
+          EVALUATION_TIMEOUT);
     }
 
-    @Override
-    public <A extends Agent, R> Experiment agent(
-        Function2<A, C, Agent.Effect<R>> method, Function<R, String> replyText) {
-      return target(new AgentTarget<>(testKit, method, replyText));
-    }
-
-    private Experiment target(EvalTarget<C> target) {
+    private Experiment target(
+        EvalTarget<C> target,
+        LedgerClient ledger,
+        AgentBindings agent,
+        Duration evaluationTimeout) {
       if (target == null) throw new IllegalArgumentException("target required");
-      requireDistinctLabels();
-      requireBindingsForRecordedTools();
+      if (ledger == null) throw new IllegalArgumentException("ledger required");
+      if (agent == null) throw new IllegalArgumentException("agent required");
+      if (evaluationTimeout == null || evaluationTimeout.isNegative() || evaluationTimeout.isZero())
+        throw new IllegalArgumentException("evaluation timeout must be positive");
+      agent.requireFullSampling();
       return new Ready<>(
           cases,
-          evaluators,
-          bindings,
           target,
+          ledger,
+          agent,
           Gate.allCasesShouldPass(),
           "",
           Optional.of(DEFAULT_REPORT_DIRECTORY),
-          1);
-    }
-
-    private void requireDistinctLabels() {
-      var classByLabel = new LinkedHashMap<String, Class<? extends Evaluator>>();
-
-      for (var evalCase : cases) {
-        for (var evaluator : evalCase.evaluators()) requireDistinctLabel(classByLabel, evaluator);
-      }
-
-      for (var evaluator : evaluators) requireDistinctLabel(classByLabel, evaluator);
-    }
-
-    private static void requireDistinctLabel(
-        Map<String, Class<? extends Evaluator>> classByLabel, Evaluator evaluator) {
-      var type = evaluator.getClass();
-      var previous = classByLabel.putIfAbsent(Evaluators.label(type), type);
-
-      if (previous != null && previous != type) {
-        throw new IllegalArgumentException(
-            previous.getName()
-                + " and "
-                + type.getName()
-                + " share the same @EvalLabel \""
-                + type.getAnnotation(EvalLabel.class).value()
-                + "\"; the report groups results by label. Give each evaluator a unique label.");
-      }
-    }
-
-    // Before the first agent call, so a new tool in production cannot be replayed by accident
-    // against a stub that does not know it.
-    private void requireBindingsForRecordedTools() {
-      var casesByUnboundTool = new LinkedHashMap<String, List<String>>();
-      for (var evalCase : cases) {
-        for (var call : evalCase.recordedCalls()) {
-          if (!bindings.binds(call.tool())) {
-            casesByUnboundTool
-                .computeIfAbsent(call.tool(), t -> new ArrayList<>())
-                .add(evalCase.id());
-          }
-        }
-      }
-      if (casesByUnboundTool.isEmpty()) return;
-      var missing =
-          casesByUnboundTool.entrySet().stream()
-              .map(
-                  e ->
-                      e.getKey()
-                          + (e.getValue().size() == 1 ? " (case " : " (cases ")
-                          + String.join(", ", e.getValue())
-                          + ")")
-              .collect(Collectors.joining(", "));
-      throw new IllegalArgumentException(
-          "no binding for recorded tool "
-              + missing
-              + "; bound: "
-              + bindings.toolNames()
-              + ". Bind each tool a recording names with bindings(ToolBindings)");
+          1,
+          evaluationTimeout);
     }
   }
 
   private record Ready<C>(
       List<EvalCase<C>> cases,
-      List<Evaluator> evaluators,
-      ToolBindings bindings,
       EvalTarget<C> target,
+      LedgerClient ledger,
+      AgentBindings agent,
       Gate gate,
       String name,
       Optional<Path> reportDirectory,
-      int runs)
+      int runs,
+      Duration evaluationTimeout)
       implements Experiment {
 
     @Override
     public Experiment gate(Gate gate) {
       if (gate == null) throw new IllegalArgumentException("gate required");
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory, runs);
+      return with(gate, name, reportDirectory, runs);
     }
 
     @Override
     public Experiment name(String name) {
       requireFileName(name);
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory, runs);
+      return with(gate, name, reportDirectory, runs);
     }
 
     @Override
     public Experiment reportDirectory(Path directory) {
       if (directory == null) throw new IllegalArgumentException("directory required");
-      return new Ready<>(
-          cases, evaluators, bindings, target, gate, name, Optional.of(directory), runs);
+      return with(gate, name, Optional.of(directory), runs);
     }
 
     @Override
     public Experiment withoutReportFile() {
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, Optional.empty(), runs);
+      return with(gate, name, Optional.empty(), runs);
     }
 
     @Override
     public Experiment repeat(int times) {
       if (times < 1) throw new IllegalArgumentException("repeat needs at least 1, was " + times);
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory, times);
+      return with(gate, name, reportDirectory, times);
+    }
+
+    private Ready<C> with(Gate gate, String name, Optional<Path> reportDirectory, int runs) {
+      return new Ready<>(
+          cases, target, ledger, agent, gate, name, reportDirectory, runs, evaluationTimeout);
     }
 
     // Run-major, every case once and then every case again, so the attempts of one case are spread
@@ -357,63 +316,79 @@ public final class ExperimentRunner {
     }
 
     private CaseResult evaluate(EvalCase<C> evalCase, int run) {
-      try {
-        bindings.load(evalCase.recordedCalls());
-      } catch (RuntimeException e) {
-        return new CaseResult(
-            evalCase.id(),
-            run,
-            Interaction.of(evalCase.commandText(), ""),
-            List.of(EvalResult.fail(describe(e)).attributedTo(Evaluators.SETUP)));
-      }
-
       var turn =
           new EvalTarget.Turn<>(UUID.randomUUID().toString(), evalCase.id(), evalCase.command());
       EvalTarget.Outcome outcome;
       try {
         outcome = target.call(turn);
       } catch (RuntimeException e) {
-        outcome = EvalTarget.Outcome.failed(e, AgentTrace.NONE);
+        outcome = EvalTarget.Outcome.failed(e);
       }
 
-      return switch (outcome) {
-        case EvalTarget.Outcome.Failed failed ->
-            new CaseResult(
-                evalCase.id(),
-                run,
-                new Interaction(evalCase.commandText(), "", failed.trace()),
-                List.of(EvalResult.fail(failed.reason()).attributedTo(Evaluators.TARGET)));
-        case EvalTarget.Outcome.Answered answered -> {
-          var interaction = answered.interaction();
-          var results = new ArrayList<EvalResult>();
-          for (var evaluator : evalCase.evaluators()) {
-            results.add(evaluate(evaluator, evalCase, interaction));
-          }
-          for (var evaluator : evaluators) {
-            results.add(evaluate(evaluator, evalCase, interaction));
-          }
-          yield new CaseResult(evalCase.id(), run, interaction, List.copyOf(results));
+      var reader = new LedgerReader(ledger, evaluationTimeout);
+      var results = new ArrayList<EvalResult>();
+      Optional<InteractionRecord> interaction;
+      switch (outcome) {
+        case EvalTarget.Outcome.Answered answered ->
+            interaction = answered.interactionId().flatMap(reader::interaction);
+        case EvalTarget.Outcome.Failed failed -> {
+          results.add(EvalResult.fail(TARGET, failed.reason()));
+          interaction = reader.newestInteraction(agent.agentComponentId(), turn.sessionId());
         }
-      };
+      }
+      var guardrails = interaction.map(reader::guardrails).orElse(List.of());
+      interaction.ifPresent(
+          record -> {
+            var expected = agent.expectedEvaluators(record.failed());
+            if (!expected.isEmpty()) {
+              var records = reader.awaitEvaluations(record.interactionId(), Set.copyOf(expected));
+              for (var evaluator : expected) results.add(resultOf(evaluator, records));
+            }
+          });
+      return new CaseResult(
+          evalCase.id(),
+          run,
+          new Evidence(evalCase.commandText(), interaction, guardrails),
+          List.copyOf(results));
     }
 
-    // An evaluator that throws or returns nothing fails its own result, the other evaluators
-    // still report.
-    private static EvalResult evaluate(
-        Evaluator evaluator, EvalCase<?> evalCase, Interaction interaction) {
-      var label = Evaluators.label(evaluator.getClass());
-
-      EvalResult result;
-      try {
-        result = evaluator.evaluate(evalCase, interaction);
-      } catch (RuntimeException e) {
-        return EvalResult.fail("the evaluator threw " + describe(e)).attributedTo(label);
-      }
-      if (result == null) {
-        return EvalResult.fail("the evaluator returned no result").attributedTo(label);
-      }
-      return result.attributedTo(label);
+    // The newest record of the evaluator decides. An evaluator without a record within the timeout
+    // is inconclusive, so the attempt cannot pass.
+    private EvalResult resultOf(String evaluator, List<EvaluationRecord> records) {
+      return records.stream()
+          .filter(record -> record.evaluatorComponentId().equals(evaluator))
+          .max(Comparator.comparing(EvaluationRecord::timestamp))
+          .map(ExperimentRunner::resultOf)
+          .orElseGet(
+              () ->
+                  EvalResult.inconclusive(
+                      evaluator,
+                      "no evaluation recorded within "
+                          + evaluationTimeout.toMillis()
+                          + " ms; the evaluator did not run, or did not finish in time"));
     }
+  }
+
+  /** The result an evaluation record stands for. */
+  static EvalResult resultOf(EvaluationRecord record) {
+    var evaluator = record.evaluatorComponentId();
+    return switch (record.outcome()) {
+      case EvaluationRecord.Outcome.Verdict verdict -> {
+        var evaluation = verdict.evaluation();
+        var detail = evaluation.explanation();
+        var score =
+            evaluation.score().map(s -> String.format(Locale.ROOT, "score %.2f", s)).orElse("");
+        var text =
+            detail.isEmpty() ? score : score.isEmpty() ? detail : detail + " (" + score + ")";
+        yield evaluation.passed()
+            ? EvalResult.pass(evaluator, text)
+            : EvalResult.fail(evaluator, text);
+      }
+      case EvaluationRecord.Outcome.Inconclusive inconclusive ->
+          EvalResult.inconclusive(evaluator, inconclusive.reason());
+      case EvaluationRecord.Outcome.Failed failed ->
+          EvalResult.fail(evaluator, "the evaluator failed: " + failed.reason());
+    };
   }
 
   /** The characters no common file system accepts in a file name, and the control characters. */
@@ -451,31 +426,30 @@ public final class ExperimentRunner {
   private static final DateTimeFormatter TIMESTAMP =
       DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS").withZone(ZoneOffset.UTC);
 
-  private static String describe(RuntimeException e) {
-    return e.getClass().getSimpleName() + (e.getMessage() == null ? "" : ": " + e.getMessage());
-  }
-
   /**
    * One attempt: one case's evidence and results from one run.
    *
    * @param run the run the attempt belongs to, from 1; always 1 without {@link Experiment#repeat}
+   * @param evidence what the attempt left in the ledger
+   * @param evalResults one per expected evaluator, in evaluator order, after the {@link #TARGET}
+   *     result when the agent call failed
    */
   public record CaseResult(
-      String caseId, int run, Interaction interaction, List<EvalResult> evalResults) {
+      String caseId, int run, Evidence evidence, List<EvalResult> evalResults) {
 
     public CaseResult {
       if (run < 1) throw new IllegalArgumentException("run must be at least 1, was " + run);
+      evalResults = List.copyOf(evalResults);
     }
 
     /** An attempt of the first run. */
-    public CaseResult(String caseId, Interaction interaction, List<EvalResult> evalResults) {
-      this(caseId, 1, interaction, evalResults);
+    public CaseResult(String caseId, Evidence evidence, List<EvalResult> evalResults) {
+      this(caseId, 1, evidence, evalResults);
     }
 
     /**
      * PASS when every result passed, FAIL when a result failed, INCONCLUSIVE when no result failed
-     * and a result is inconclusive or there is no result. A failed load of the recorded calls or a
-     * failed agent call is a failed result.
+     * and a result is inconclusive or there is no result. A failed agent call is a failed result.
      */
     public EvalResult.Verdict verdict() {
       var verdicts = evalResults.stream().map(EvalResult::verdict).collect(Collectors.toSet());
@@ -515,20 +489,21 @@ public final class ExperimentRunner {
                 case INCONCLUSIVE -> " INCONCLUSIVE";
               })
           .append('\n');
-      text.append("  reply: ").append(oneLine(interaction.reply())).append('\n');
-      if (!interaction.finalModelText().isEmpty()
-          && !interaction.finalModelText().equals(interaction.reply())) {
-        text.append("  model text: ").append(oneLine(interaction.finalModelText())).append('\n');
-      }
-      text.append("  tools: ").append(toolEvidence()).append('\n');
-      if (!interaction.modelCalls().isEmpty()) {
+      if (evidence.interaction().isEmpty()) {
+        text.append("  interaction: none recorded\n");
+      } else {
+        text.append("  reply: ").append(oneLine(evidence.reply())).append('\n');
+        evidence
+            .failure()
+            .ifPresent(failure -> text.append("  failure: ").append(oneLine(failure)).append('\n'));
+        text.append("  tools: ").append(toolEvidence()).append('\n');
         text.append("  model: ").append(modelEvidence()).append('\n');
-      }
-      if (!interaction.guardrails().isEmpty()) {
-        text.append("  guardrails: ").append(guardrailEvidence()).append('\n');
+        if (!evidence.guardrails().isEmpty()) {
+          text.append("  guardrails: ").append(guardrailEvidence()).append('\n');
+        }
       }
       if (evalResults.isEmpty()) {
-        text.append("  results: none declared\n");
+        text.append("  results: no evaluator bound\n");
       }
       for (var evalResult : evalResults) {
         text.append("  ")
@@ -542,39 +517,45 @@ public final class ExperimentRunner {
     }
 
     private String toolEvidence() {
-      if (interaction.toolCalls().isEmpty()) return "none called";
-      return interaction.toolCalls().stream()
-          .map(
-              call ->
-                  call.name()
-                      + call.arguments()
-                      + call.error().map(e -> " (failed: " + e + ")").orElse(""))
-          .reduce((a, b) -> a + " → " + b)
-          .orElse("");
+      if (evidence.toolCalls().isEmpty()) return "none called";
+      return evidence.toolCalls().stream()
+          .map(call -> call.name() + oneLine(call.arguments()))
+          .collect(Collectors.joining(" → "));
     }
 
     private String modelEvidence() {
-      return interaction.modelCalls().size()
-          + " calls, "
-          + interaction.inputTokens()
+      return evidence.modelResponses()
+          + " responses, "
+          + evidence.inputTokens()
           + " tokens in, "
-          + interaction.outputTokens()
+          + evidence.outputTokens()
           + " out, "
-          + interaction.latency().toMillis()
+          + evidence.latency().toMillis()
           + " ms";
     }
 
     private String guardrailEvidence() {
-      return interaction.guardrails().stream()
-          .map(g -> g.name() + (g.passed() ? " passed" : " blocked: " + g.explanation()))
-          .reduce((a, b) -> a + ", " + b)
-          .orElse("");
+      return evidence.guardrails().stream()
+          .map(ExperimentRunner::describe)
+          .collect(Collectors.joining(", "));
     }
 
     private static String oneLine(String text) {
       var flat = text.replaceAll("\\s+", " ").trim();
       return flat.length() <= 200 ? flat : flat.substring(0, 200) + "…";
     }
+  }
+
+  private static String describe(GuardrailDecisionRecord decision) {
+    var what =
+        switch (decision.decision()) {
+          case ALLOW -> " allowed";
+          case DENY -> " DENIED";
+          case FAIL -> " FAILED";
+          case UNSPECIFIED -> " decided";
+        };
+    var explanation = decision.explanation().isEmpty() ? "" : ": " + decision.explanation();
+    return decision.name() + what + (decision.reportOnly() ? " (report only)" : "") + explanation;
   }
 
   /** The outcome of a case over all its runs, or of a requirement over its conclusive runs. */
@@ -591,13 +572,11 @@ public final class ExperimentRunner {
 
   /**
    * One requirement of a case over all runs: one evaluator at one position in the results of the
-   * case's attempts. Two requirements of a case may carry the same label, for example two {@link
-   * Evaluators#shouldCallToolWith} expectations. The runner's {@link Evaluators#TARGET} and {@link
-   * Evaluators#SETUP} results are requirements too, with no run passed.
+   * case's attempts. The runner's {@link #TARGET} result is a requirement too, with no run passed.
    *
    * @param caseId the case
    * @param index the position of the result in the attempt, from 0
-   * @param evaluator the evaluator label
+   * @param evaluator the evaluator component id, or {@link #TARGET}
    * @param passedIn the runs with the verdict PASS, ascending
    * @param failedIn the runs with the verdict FAIL, ascending
    * @param inconclusiveIn the runs with the verdict INCONCLUSIVE, ascending
@@ -654,8 +633,8 @@ public final class ExperimentRunner {
           .toList();
     }
 
-    private String render(boolean labelShared) {
-      var name = labelShared ? evaluator + " #" + (index + 1) : evaluator;
+    private String render(boolean nameShared) {
+      var name = nameShared ? evaluator + " #" + (index + 1) : evaluator;
       var parts = new ArrayList<String>();
       if (!passedIn.isEmpty()) parts.add("passed in " + describeRuns(passedIn));
       if (!failedIn.isEmpty()) parts.add("failed in " + describeRuns(failedIn));
@@ -711,21 +690,19 @@ public final class ExperimentRunner {
       return RequirementSummary.of(attempts);
     }
 
-    // One line per requirement that passed in some runs and failed in others, and one per target or
-    // setup failure when the case itself is inconsistent.
+    // One line per requirement that passed in some runs and failed in others, and one per target
+    // failure when the case itself is inconsistent.
     private List<String> renderInconsistencies() {
       var requirements = requirements();
-      var labelCounts = new LinkedHashMap<String, Integer>();
+      var nameCounts = new LinkedHashMap<String, Integer>();
       for (var requirement : requirements)
-        labelCounts.merge(requirement.evaluator(), 1, Integer::sum);
+        nameCounts.merge(requirement.evaluator(), 1, Integer::sum);
       var lines = new ArrayList<String>();
       for (var requirement : requirements) {
-        var runnerResult =
-            requirement.evaluator().equals(Evaluators.TARGET)
-                || requirement.evaluator().equals(Evaluators.SETUP);
+        var runnerResult = requirement.evaluator().equals(TARGET);
         if (requirement.outcome() == Outcome.INCONSISTENT
             || (runnerResult && outcome() == Outcome.INCONSISTENT)) {
-          lines.add(requirement.render(labelCounts.get(requirement.evaluator()) > 1));
+          lines.add(requirement.render(nameCounts.get(requirement.evaluator()) > 1));
         }
       }
       return lines;
@@ -870,23 +847,22 @@ public final class ExperimentRunner {
       return text.toString();
     }
 
-    /**
-     * Model calls, tokens and latency summed over the attempts with model calls in the evidence.
-     */
+    /** Model responses, tokens and latency summed over the attempts with a recorded interaction. */
     Spend spend() {
-      var traced = results().stream().filter(c -> !c.interaction().modelCalls().isEmpty()).toList();
-      if (traced.isEmpty()) return Spend.NONE;
+      var recorded =
+          results().stream().filter(c -> c.evidence().interaction().isPresent()).toList();
+      if (recorded.isEmpty()) return Spend.NONE;
       var slowest =
-          traced.stream().max(Comparator.comparing(c -> c.interaction().latency())).orElseThrow();
+          recorded.stream().max(Comparator.comparing(c -> c.evidence().latency())).orElseThrow();
       return new Spend(
-          traced.size(),
-          traced.stream().mapToInt(c -> c.interaction().modelCalls().size()).sum(),
-          traced.stream().mapToLong(c -> c.interaction().inputTokens()).sum(),
-          traced.stream().mapToLong(c -> c.interaction().outputTokens()).sum(),
-          traced.stream().mapToLong(c -> c.interaction().latency().toMillis()).sum(),
+          recorded.size(),
+          recorded.stream().mapToInt(c -> c.evidence().modelResponses()).sum(),
+          recorded.stream().mapToLong(c -> c.evidence().inputTokens()).sum(),
+          recorded.stream().mapToLong(c -> c.evidence().outputTokens()).sum(),
+          recorded.stream().mapToLong(c -> c.evidence().latency().toMillis()).sum(),
           slowest.caseId(),
           slowest.run(),
-          slowest.interaction().latency().toMillis());
+          slowest.evidence().latency().toMillis());
     }
 
     /** Pass counts per evaluator, over the attempts where it was conclusive. */
@@ -904,12 +880,11 @@ public final class ExperimentRunner {
   }
 
   /**
-   * The model calls, tokens and latency summed over the attempts whose evidence carries model
-   * calls.
+   * The model responses, tokens and latency summed over the attempts with a recorded interaction.
    */
   record Spend(
       int attemptsWithEvidence,
-      int modelCalls,
+      int modelResponses,
       long inputTokens,
       long outputTokens,
       long latencyMs,
@@ -922,9 +897,9 @@ public final class ExperimentRunner {
     private String render(int attempts) {
       return String.format(
           Locale.ROOT,
-          "spend: %d model calls, %d tokens in, %d out, %d ms in total, slowest %s run %d at %d ms,"
-              + " over %d/%d attempts with evidence",
-          modelCalls,
+          "spend: %d model responses, %d tokens in, %d out, %d ms in total, slowest %s run %d at"
+              + " %d ms, over %d/%d attempts with a recorded interaction",
+          modelResponses,
           inputTokens,
           outputTokens,
           latencyMs,

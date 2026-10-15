@@ -4,44 +4,39 @@
 
 package akkajavasdk.eval;
 
-import static java.time.Duration.ofSeconds;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.DependencyProvider;
-import akka.javasdk.JsonSupport;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akka.javasdk.testkit.TestModelProvider.AiResponse;
 import akka.javasdk.testkit.TestModelProvider.ToolInvocationRequest;
 import akka.javasdk.testkit.eval.EvalCase;
-import akka.javasdk.testkit.eval.EvalCaseParser;
-import akka.javasdk.testkit.eval.Evaluators;
 import akka.javasdk.testkit.eval.ExperimentRunner;
 import akka.javasdk.testkit.eval.Gate;
-import akka.javasdk.testkit.eval.Judge;
-import akka.javasdk.testkit.eval.JudgeAgent;
-import akka.javasdk.testkit.eval.ToolBindings;
 import akkajavasdk.components.agent.eval.AccountSupportAgent;
 import akkajavasdk.components.agent.eval.CrmClient;
 import akkajavasdk.components.agent.eval.Customer;
 import akkajavasdk.components.agent.eval.SupportAgent;
 import akkajavasdk.components.agent.eval.Ticket;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  * How a consumer's eval suite reads, against a service that is really running.
  *
+ * <p>The cases are the questions. What the agent must do with them is stated by two evaluator
+ * components in this package, {@link ToolUseEvaluator} and {@link ReplyGroundingEvaluator}, bound
+ * to both support agents in the test configuration. The runtime runs them on every interaction, and
+ * the runner reads their verdicts from the ledger.
+ *
  * <p>The world under test is one mocked dependency: {@link CannedCrmClient} takes the place of the
  * {@link CrmClient} the {@link SupportAgent} would call in production, so the test decides what the
- * CRM knows before the cases run. It records nothing: the runner calls the agent and reads the tool
- * evidence from the trace the runtime wrote for the call.
+ * CRM knows before the cases run.
  *
  * <p>{@link AccountSupportAgent} is the same assistant with a command handler that takes a record.
  * Its cases carry that record, so the customer asking is part of the case rather than of the
@@ -55,8 +50,7 @@ import org.junit.jupiter.api.Test;
  */
 public class SupportAgentEvalTest extends TestKitSupport {
 
-  // The model sees an agent-local tool prefixed with the agent's simple name. The trace reader
-  // strips it, so expectations are written against the plain method names.
+  // The model sees an agent-local tool prefixed with the agent's simple name.
   private static final String GET_CUSTOMER = "SupportAgent_getCustomer";
   private static final String OPEN_TICKETS = "SupportAgent_openTickets";
   private static final String ACCOUNT_GET_CUSTOMER = "AccountSupportAgent_getCustomer";
@@ -66,7 +60,6 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
   private final TestModelProvider supportModel = new TestModelProvider();
   private final TestModelProvider accountModel = new TestModelProvider();
-  private final TestModelProvider judgeModel = new TestModelProvider();
   private final CannedCrmClient crm = new CannedCrmClient();
 
   private ExperimentRunner experimentRunner;
@@ -77,7 +70,19 @@ public class SupportAgentEvalTest extends TestKitSupport {
         .withDependencyProvider(dependencies())
         .withModelProvider(SupportAgent.class, supportModel)
         .withModelProvider(AccountSupportAgent.class, accountModel)
-        .withModelProvider(JudgeAgent.class, judgeModel);
+        .withAdditionalConfig(
+            """
+            akka.javasdk.evaluation.evaluators {
+              tool-use.agents {
+                support-agent { trigger = interaction, trigger-on-failure = true }
+                account-support-agent { trigger = interaction }
+              }
+              reply-grounding.agents {
+                support-agent { trigger = interaction }
+                account-support-agent { trigger = interaction }
+              }
+            }
+            """);
   }
 
   /** The stand-in the agent is constructed with, in place of the real CRM client. */
@@ -91,8 +96,6 @@ public class SupportAgentEvalTest extends TestKitSupport {
       }
     };
   }
-
-  // ---- the mocked model: deterministic, and plausible enough that the cases mean something --
 
   @BeforeEach
   public void createTheRunner() {
@@ -112,6 +115,8 @@ public class SupportAgentEvalTest extends TestKitSupport {
   private ExperimentRunner.CaseResult runOne(EvalCase<String> evalCase) {
     return experimentRunner.cases(evalCase).agent(SupportAgent::ask).run().results().getFirst();
   }
+
+  // ---- the mocked model: deterministic, and plausible enough that the cases mean something --
 
   @BeforeEach
   public void mockTheModel() {
@@ -157,7 +162,9 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
     model
         .whenToolResult(result -> result.name().equals(openTickets))
-        .thenReply(result -> new AiResponse("Open tickets: " + result.content()));
+        .thenReply(
+            result ->
+                new AiResponse("Grace Hopper has one open ticket: card declined at checkout."));
   }
 
   private static Optional<String> customerId(String message) {
@@ -169,112 +176,91 @@ public class SupportAgentEvalTest extends TestKitSupport {
     return "{\"customerId\":\"" + customerId(message).orElseThrow() + "\"}";
   }
 
-  Stream<EvalCase<String>> curatedCases() {
-    return Stream.of(
+  // ---- the cases ----
+
+  private static List<EvalCase<String>> curatedCases() {
+    return List.of(
         EvalCase.of(
-            "customer-lookup",
-            "Is cust_1 still one of our customers, and under what name?",
-            Evaluators.shouldCallTool("getCustomer"),
-            Evaluators.shouldCallToolWith("getCustomer", "customerId", "cust_1"),
-            Evaluators.shouldNotCallTool("openTickets"),
-            Evaluators.replyShouldContain("Ada Lovelace")),
-        EvalCase.of(
-            "open-tickets",
-            "What is cust_7 waiting on? List their open tickets.",
-            Evaluators.shouldCallTools("getCustomer", "openTickets"),
-            Evaluators.shouldCallToolsInOrder("getCustomer", "openTickets"),
-            Evaluators.shouldCallToolWith("openTickets", "customerId", "cust_7"),
-            Evaluators.replyShouldContain("card declined")),
-        EvalCase.of(
-            "no-tools-for-smalltalk",
-            "hi there!",
-            Evaluators.shouldNotCallTools("getCustomer", "openTickets"),
-            Evaluators.replyShouldContain("customer id")));
+            "customer-lookup", "Is cust_1 still one of our customers, and under what name?"),
+        EvalCase.of("open-tickets", "What is cust_7 waiting on? List their open tickets."),
+        EvalCase.of("no-tools-for-smalltalk", "hi there!"));
   }
 
-  @Test
-  public void traceCarriesWhatTheToolReturned() {
-    var lookup =
-        EvalCase.of(
-            "customer-lookup-result",
-            "Who is cust_1?",
-            Evaluators.shouldCallToolWith("getCustomer", "customerId", "cust_1"),
-            Evaluators.toolResultShouldContain("getCustomer", "Ada Lovelace"),
-            Evaluators.toolResultShouldContain("getCustomer", "\"tier\":\"gold\""));
+  // ---- mode 1: wiring, one case at a time under the mocked model ----
 
-    var result = runOne(lookup);
+  @Test
+  public void everyBoundEvaluatorReportsOnTheInteraction() {
+    var result = runOne(EvalCase.of("customer-lookup-result", "Who is cust_1?"));
 
     assertThat(result.passed()).withFailMessage(result::describe).isTrue();
-    assertThat(result.interaction().toolCalls()).hasSize(1);
-    assertThat(result.interaction().toolCalls().getFirst().result()).isPresent();
-  }
-
-  @Test
-  public void traceCarriesTheModelCallsAndTheLatency() {
-    var tickets =
-        EvalCase.of(
-            "open-tickets-evidence",
-            "What is cust_7 waiting on? List their open tickets.",
-            Evaluators.shouldCallToolsInOrder("getCustomer", "openTickets"));
-
-    var result = runOne(tickets);
-
-    assertThat(result.passed()).withFailMessage(result::describe).isTrue();
-    var interaction = result.interaction();
-    // One model call to ask for the customer, one for the tickets, one to answer.
-    assertThat(interaction.modelCalls()).hasSize(3);
-    assertThat(interaction.modelCalls().getFirst().finishReasons()).contains("TOOL_EXECUTION");
-    assertThat(interaction.modelCalls().getLast().finishReasons()).contains("STOP");
-    assertThat(interaction.modelCalls()).allSatisfy(call -> assertThat(call.model()).isNotEmpty());
-    assertThat(interaction.latency()).isPositive();
-    assertThat(interaction.finalModelText()).isEqualTo(interaction.reply());
-    assertThat(interaction.guardrails()).isEmpty();
-    assertThat(interaction.blocked()).isFalse();
-    assertThat(result.describe()).contains("model: 3 calls");
-  }
-
-  @Test
-  public void budgetsReadTheTraceAndTokensAreInconclusiveUnderAScriptedModel() {
-    var tickets =
-        EvalCase.of(
-            "open-tickets-budget",
-            "What is cust_7 waiting on? List their open tickets.",
-            Evaluators.shouldMakeAtMostToolCalls(2),
-            Evaluators.shouldMakeAtMostModelCalls(2),
-            Evaluators.shouldUseAtMostTokens(1_000),
-            Evaluators.shouldReplyWithin(ofSeconds(30)));
-
-    var result = runOne(tickets);
-
-    // Three model calls against a budget of two is the one failure; the test model reports no
-    // tokens, so that budget is inconclusive rather than passing on nothing.
-    assertThat(result.passed()).isFalse();
+    assertThat(result.evalResults())
+        .extracting(r -> r.evaluator())
+        .containsExactly("reply-grounding", "tool-use");
     assertThat(result.describe())
-        .contains("PASS tool-call-budget")
-        .contains("FAIL model-call-budget: made 3 model calls, allowed 2")
-        .contains("INCONCLUSIVE token-budget")
-        .contains("PASS latency-budget");
+        .contains("PASS tool-use: looked the customer up")
+        .contains("PASS reply-grounding: names the customer and their tickets");
   }
 
   @Test
-  public void traceKeepsTheFailedToolCall() {
-    var unknown =
-        EvalCase.of(
-            "unknown-customer", "Who is cust_404?", Evaluators.shouldCallTool("getCustomer"));
+  public void theEvidenceComesFromTheLedger() {
+    var result =
+        runOne(
+            EvalCase.of(
+                "open-tickets-evidence", "What is cust_7 waiting on? List their open tickets."));
 
-    var result = runOne(unknown);
+    assertThat(result.passed()).withFailMessage(result::describe).isTrue();
+    var evidence = result.evidence();
+    var interaction = evidence.interaction().orElseThrow();
+    assertThat(interaction.agentComponentId()).isEqualTo("support-agent");
+    assertThat(interaction.inputText()).isEqualTo(evidence.input());
+    // One model response to ask for the customer, one for the tickets, one to answer.
+    assertThat(evidence.modelResponses()).isEqualTo(3);
+    assertThat(evidence.toolCalls())
+        .extracting(c -> c.name())
+        .containsExactly(GET_CUSTOMER, OPEN_TICKETS);
+    assertThat(evidence.toolCalls().getFirst().response()).contains("Grace Hopper");
+    assertThat(evidence.reply())
+        .isEqualTo("Grace Hopper has one open ticket: card declined at checkout.");
+    assertThat(evidence.guardrails()).isEmpty();
+    assertThat(evidence.denied()).isFalse();
+    assertThat(result.describe()).contains("model: 3 responses");
+  }
 
-    // The tool threw, so the agent call failed and the target reported it.
-    assertThat(result.passed()).isFalse();
+  @Test
+  public void aWrongReplyFailsTheCaseAndTheReportSaysWhy() {
+    supportModel.reset();
+    supportModel
+        .whenUserMessage(message -> true)
+        .reply("I am sure that is Charles Babbage, our best customer.");
+
+    var result = runOne(EvalCase.of("guessed-name", "Who is cust_1?"));
+
+    assertThat(result.failed()).isTrue();
+    assertThat(result.describe())
+        .contains("FAIL tool-use: expected one getCustomer call, called []")
+        .contains("INCONCLUSIVE reply-grounding: no customer was looked up");
+  }
+
+  @Test
+  public void aFailedToolCallFailsTheTargetAndTheLedgerKeepsTheCall() {
+    var result = runOne(EvalCase.of("unknown-customer", "Who is cust_404?"));
+
+    // The tool threw, so the agent call failed and the runner reported it.
+    assertThat(result.failed()).isTrue();
     assertThat(result.describe()).contains("FAIL target");
 
-    // The trace still has the call, with the error the tool raised.
-    var calls = result.interaction().toolCalls();
-    assertThat(calls).hasSize(1);
-    assertThat(calls.getFirst().name()).isEqualTo("getCustomer");
-    assertThat(calls.getFirst().arguments()).containsEntry("customerId", "cust_404");
-    assertThat(calls.getFirst().error())
-        .hasValueSatisfying(e -> assertThat(e).contains("cust_404"));
+    // The ledger still has the interaction, with the call and the failure.
+    var evidence = result.evidence();
+    assertThat(evidence.failed()).isTrue();
+    assertThat(evidence.failure()).hasValueSatisfying(f -> assertThat(f).contains("cust_404"));
+    assertThat(evidence.toolCalls()).hasSize(1);
+    assertThat(evidence.toolCalls().getFirst().name()).isEqualTo(GET_CUSTOMER);
+    assertThat(evidence.toolCalls().getFirst().arguments()).contains("cust_404");
+
+    // Only the evaluator bound with trigger-on-failure evaluates a failed interaction.
+    assertThat(result.evalResults())
+        .extracting(r -> r.evaluator())
+        .containsExactly("target", "tool-use");
   }
 
   // ---- a command handler that takes its own type ----
@@ -286,10 +272,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
     var ticketsOfTheCaller =
         EvalCase.of(
             "tickets-of-the-caller",
-            new AccountSupportAgent.Question("cust_7", "What am I waiting on?"),
-            Evaluators.shouldCallToolsInOrder("getCustomer", "openTickets"),
-            Evaluators.shouldCallToolWith("getCustomer", "customerId", "cust_7"),
-            Evaluators.replyShouldContain("card declined"));
+            new AccountSupportAgent.Question("cust_7", "What am I waiting on?"));
 
     var result =
         experimentRunner
@@ -301,14 +284,14 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
     assertThat(result.passed()).withFailMessage(result::describe).isTrue();
     // The case's command as text, which is its JSON for a command that is not a String.
-    assertThat(result.interaction().input())
+    assertThat(result.evidence().input())
         .isEqualTo("{\"customerId\":\"cust_7\",\"text\":\"What am I waiting on?\"}");
-    // What the model saw: the user message the handler built from the command. A judge is asked
-    // about this rather than about the command.
-    assertThat(result.interaction().userMessage())
+    // What the model saw: the user message the handler built from the command, which is what the
+    // evaluators read.
+    assertThat(result.evidence().interaction().orElseThrow().inputText())
         .isEqualTo("Customer cust_7 asks: What am I waiting on?");
-    assertThat(result.interaction().asked()).isEqualTo(result.interaction().userMessage());
-    assertThat(result.describe()).contains("PASS tool-order").contains("PASS tool-arguments");
+    assertThat(result.describe())
+        .contains("PASS tool-use: looked the customer up and read their tickets");
   }
 
   @Test
@@ -317,15 +300,10 @@ public class SupportAgentEvalTest extends TestKitSupport {
         List.of(
             EvalCase.of(
                 "who-am-i",
-                new AccountSupportAgent.Question("cust_1", "What name is my account under?"),
-                Evaluators.shouldCallToolWith("getCustomer", "customerId", "cust_1"),
-                Evaluators.shouldNotCallTools("openTickets"),
-                Evaluators.replyShouldContain("Ada Lovelace")),
+                new AccountSupportAgent.Question("cust_1", "What name is my account under?")),
             EvalCase.of(
                 "my-open-tickets",
-                new AccountSupportAgent.Question("cust_7", "Anything still open on my account?"),
-                Evaluators.shouldCallTools("getCustomer", "openTickets"),
-                Evaluators.replyShouldContain("card declined")));
+                new AccountSupportAgent.Question("cust_7", "Anything still open on my account?")));
 
     var report =
         experimentRunner
@@ -343,142 +321,16 @@ public class SupportAgentEvalTest extends TestKitSupport {
   public void qualityGate() {
     var report =
         experimentRunner
-            .cases(curatedCases().toList())
+            .cases(curatedCases())
             .agent(SupportAgent::ask)
             .gate(
                 Gate.passRateShouldBeAtLeast(0.9)
-                    .and(Gate.passRateShouldBeAtLeast(Evaluators.ToolArgument.class, 1.0))
+                    .and(Gate.passRateShouldBeAtLeast("tool-use", 1.0))
                     .and(Gate.targetShouldNotFail()))
             .run();
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();
     assertThat(report.passRate()).isEqualTo(1.0);
-  }
-
-  // ---- mode 3: replay captured traffic. Baseline expectations, same runner. ----
-
-  @Test
-  public void replayBaseline() {
-    // The captures carry production's spend too, so each case is held to its model call count
-    // and to its recorded latency times the tolerance. The scripted model reports no tokens, so
-    // the token budget is dropped.
-    var replayed =
-        EvalCaseParser.parse(captures()).stream()
-            .map(c -> c.withoutEvaluators(Evaluators.TokenBudget.class))
-            .toList();
-    var bindings =
-        ToolBindings.builder()
-            .bind("getCustomer", crm::loadCustomer)
-            .bind("openTickets", crm::loadTickets)
-            .build();
-
-    var report =
-        experimentRunner
-            .cases(replayed)
-            .bindings(bindings)
-            .agent(SupportAgent::ask)
-            .gate(Gate.passRateShouldBeAtLeast(0.85))
-            .run();
-
-    assertThat(report.passed()).withFailMessage(report::render).isTrue();
-    assertThat(report.render())
-        .contains("tool-call-budget 2/2")
-        .contains("model-call-budget 3/3")
-        .contains("latency-budget 3/3")
-        .doesNotContain("token-budget")
-        .contains("spend: ")
-        .contains("over 6/6 attempts with evidence");
-  }
-
-  /** The captures, from the test classpath rather than a path relative to the working dir. */
-  private static Path captures() {
-    try {
-      return Path.of(SupportAgentEvalTest.class.getResource("/eval/captures.jsonl").toURI());
-    } catch (java.net.URISyntaxException e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
-  // ---- a criterion the built-ins cannot state, scored by a model ----
-
-  @Test
-  public void judgedAgainstACriterion() {
-    // The testkit's judge agent, with its model mocked the same way the support agent's is.
-    judgeModel
-        .whenUserMessage(message -> message.content().contains("Ada Lovelace"))
-        .reply(
-            JsonSupport.encodeToString(
-                new Judge.Verdict(0.9, "it names the customer and their tier")));
-    var judge = Judge.modelBased(testKit);
-
-    var evalCase =
-        EvalCase.of(
-            "judged-lookup",
-            "Who is cust_1?",
-            Evaluators.shouldCallTool("getCustomer"),
-            judge.shouldSatisfy(
-                "the reply states the customer's name and tier and invents nothing"));
-
-    var result = runOne(evalCase);
-
-    assertThat(result.passed()).withFailMessage(result::describe).isTrue();
-    assertThat(result.describe()).contains("PASS judge").contains("scored 0.90, needed 0.50");
-  }
-
-  @Test
-  public void aJudgeRendersTheInputAsToldAndKeepsItsModelUnderTheTestKitOverride() {
-    // The rendering reaches the judge model as the user message. The model provider registered
-    // for JudgeAgent in the TestKit settings answers whatever path withModel names.
-    judgeModel
-        .whenUserMessage(message -> message.content().startsWith("Kryterium:"))
-        .reply(JsonSupport.encodeToString(new Judge.Verdict(1, "spelnia")));
-    var judge =
-        Judge.modelBased(testKit)
-            .withUserMessage(
-                (criterion, interaction) ->
-                    "Kryterium:\n" + criterion + "\n\nOdpowiedz:\n" + interaction.reply())
-            .withModel("eval.judge-model");
-
-    var result =
-        runOne(
-            EvalCase.of(
-                "judged-in-polish",
-                "Who is cust_1?",
-                judge.shouldSatisfy("odpowiedz podaje nazwisko klienta")));
-
-    assertThat(result.passed()).withFailMessage(result::describe).isTrue();
-    assertThat(result.describe()).contains("PASS judge").contains("spelnia");
-  }
-
-  @Test
-  public void aJudgeThatWillNotScoreFailsTheCase() {
-    judgeModel.fixedResponse(
-        JsonSupport.encodeToString(new Judge.Verdict(-1, "I cannot judge this")));
-    var judge = Judge.modelBased(testKit);
-
-    var result =
-        runOne(
-            EvalCase.of(
-                "unjudgeable", "Who is cust_1?", judge.shouldSatisfy("the reply is helpful")));
-
-    assertThat(result.passed()).isFalse();
-    assertThat(result.describe()).contains("FAIL judge").contains("not a share");
-  }
-
-  @Test
-  public void reportsWhatTheAgentDidWhenACaseFails() {
-    var wrongExpectation =
-        EvalCase.of(
-            "wrong-customer",
-            "Who is cust_1?",
-            Evaluators.shouldCallToolWith("getCustomer", "customerId", "cust_2"));
-
-    var result = runOne(wrongExpectation);
-
-    assertThat(result.passed()).isFalse();
-    assertThat(result.describe())
-        .contains("case wrong-customer run 1 FAILED")
-        .contains("getCustomer{customerId=cust_1}")
-        .contains("expected cust_2");
+    assertThat(report.render()).contains("tool-use 3/3").contains("reply-grounding 3/3");
   }
 }
