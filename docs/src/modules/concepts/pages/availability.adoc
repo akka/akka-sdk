@@ -28,7 +28,7 @@ For most workloads, zones are enough on their own. This is what many teams mean 
 
 Protection against the loss of a whole region comes from running the project in two or more regions, with state replicated between them. See xref:multi-region.adoc[].
 
-Each region already holds a replica of the data, so the other regions keep serving reads when one region is lost. Moving traffic and writes away from a failed region, and back after it recovers, is an operator action with the Akka CLI: failover and failback. In pinned-region mode, failover changes the project's primary region to a surviving region, which then accepts writes for every entity.
+Each region already holds a replica of the data, so the other regions keep serving reads when one region is lost. Moving traffic and writes away from a failed region, and back after it recovers, is an operator action with the Akka CLI: `akka projects settings down-region` takes a region out of service, `akka projects regions set-primary` moves the project's primary region, and `akka projects settings bring-up-region` returns a recovered region. In pinned-region mode, failover changes the project's primary region to a surviving region, which then accepts writes for every entity.
 
 Replication between regions is asynchronous. Events written in the failed region shortly before it went offline, and not yet replicated, are not in the surviving regions. The recovery point of a regional failover is therefore the replication lag at the moment of failure: usually small, larger if the network between regions was already degraded. When the failed region returns, its journal still holds those events.
 
@@ -42,7 +42,7 @@ The federation plane coordinates organizations, users, keys and deployments acro
 
 === Moving between environments
 
-The same replication that protects against regional loss also moves a project between environments: from one cloud to another, from Akka's cloud into your own account, or back to your own data centers. A new environment is added as a region, state is replicated into it, and traffic is switched over once it has caught up. For copying data in or out by other means, services can export and import their data through object storage. See xref:operations:services/data-management.adoc[Data migration].
+The same replication that protects against regional loss also moves a project between environments: from one cloud to another, from Akka's cloud into your own account, or back to your own data centers. A new environment is added as a region, state is replicated into it, and traffic is switched over once it has caught up. For copying data in or out by other means, services can export and import their data through object storage. See xref:operations:services/data-management.adoc[Export and import data].
 
 == Guarantees
 
@@ -59,7 +59,7 @@ The same replication that protects against regional loss also moves a project be
 | The region runs across several zones.
 
 | A region fails
-| Other regions keep serving reads from their replicas. After failover, a surviving region accepts writes. Writes not yet replicated when the region failed are unavailable until it returns.
+| Other regions keep serving reads from their replicas. After failover, a surviving region accepts writes. Writes not yet replicated when the region failed are unavailable until that region returns, and are lost if it does not.
 | The project runs in two or more regions with replication.
 
 | A region fails in a single-region project
