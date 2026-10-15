@@ -84,6 +84,8 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(McpToolCallNoInterceptorTestAgent.class, testModelProvider)
         .withModelProvider(ThrowingGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(ReportOnlyThrowingGuardrailTestAgent.class, testModelProvider)
+        .withModelProvider(FailOpenThrowingGuardrailTestAgent.class, testModelProvider)
+        .withModelProvider(FailOpenDenyingGuardrailTestAgent.class, testModelProvider)
         .withDependencyProvider(depsProvider);
   }
 
@@ -905,6 +907,40 @@ public class AgentIntegrationTest extends TestKitSupport {
 
     // then
     assertThat(result.response()).isEqualTo("hi");
+  }
+
+  @Test
+  public void shouldReturnReplyWhenFailOpenResponseGuardrailThrows() {
+    // given
+    testModelProvider.whenMessage(s -> s.equals("say hi")).reply("hi");
+
+    // when
+    var result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(FailOpenThrowingGuardrailTestAgent::ask)
+            .invoke("say hi");
+
+    // then
+    assertThat(result.response()).isEqualTo("hi");
+  }
+
+  @Test
+  public void shouldBlockReplyWhenFailOpenResponseGuardrailDenies() {
+    // given
+    testModelProvider.whenMessage(s -> s.equals("say hi")).reply("hi");
+
+    // when
+    var result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(FailOpenDenyingGuardrailTestAgent::ask)
+            .invoke("say hi");
+
+    // then
+    assertThat(result.response()).contains("blocked by fail-open response guard");
   }
 
   @Test
