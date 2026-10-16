@@ -17,16 +17,16 @@ The export format can either be protobuf or line separated JSON.
 
 Before you can perform an export or import, you need an object store that Akka can access, and you need to give Akka permission to use it. Set up the object store on the cloud provider that your Akka region runs on:
 
-* xref:data-management-aws.adoc[AWS: S3]
-* xref:data-management-gcp.adoc[GCP: Google Cloud Storage]
-* xref:data-management-azure.adoc[Azure: Blob Storage]
+* xref:operations:services/data-management-aws.adoc[AWS: S3]
+* xref:operations:services/data-management-gcp.adoc[GCP: Google Cloud Storage]
+* xref:operations:services/data-management-azure.adoc[Azure: Blob Storage]
 
 === Authentication options
 
 Akka supports these ways to authenticate to the object store:
 
 Workload identity (recommended)::
-Akka presents a short-lived OIDC token to the cloud provider, and the cloud provider exchanges it for temporary credentials. You do not create, store, or rotate any long-lived credentials. For background, see xref:workload-identity.adoc[]. Use this option unless you have a reason not to.
+Akka presents a short-lived OIDC token to the cloud provider, and the cloud provider exchanges it for temporary credentials. You do not create, store, or rotate any long-lived credentials. For background, see xref:operations:services/workload-identity.adoc[]. Use this option unless you have a reason not to.
 
 Credentials in an Akka secret::
 You create a user, service account, or application on the cloud provider, and store its credentials in an Akka secret. You have to rotate these credentials yourself.
@@ -181,7 +181,7 @@ To use credentials in an Akka secret instead, pass the secret with `--s3-secret`
 
 An optional prefix can be prepended to the names of the files that get exported, this can be specified using the `--s3-object-prefix` argument.
 
-See xref:data-management-aws.adoc[] for how to set up the role and the bucket.
+See xref:operations:services/data-management-aws.adoc[] for how to set up the role and the bucket.
 
 === Exporting to GCS
 
@@ -198,7 +198,7 @@ To impersonate a Google service account after the token exchange, also pass `--g
 
 An optional prefix can be prepended to the names of the files that get exported, this can be specified using the `--gcs-object-prefix` argument.
 
-The audience is the workload identity pool printed by `akka projects regions workload-identity-info`, or the provider in your own pool. See xref:data-management-gcp.adoc[] for how to set up access and the bucket.
+The audience is the workload identity pool printed by `akka projects regions workload-identity-info`, or the provider in your own pool. See xref:operations:services/data-management-gcp.adoc[] for how to set up access and the bucket.
 
 === Exporting to Azure Blob Storage
 
@@ -217,7 +217,7 @@ To use a client secret in an Akka secret instead, pass the secret with `--abs-se
 
 An optional prefix can be prepended to the names of the files that get exported, this can be specified using the `--abs-object-prefix` argument.
 
-See xref:data-management-azure.adoc[] for how to set up the application and the container.
+See xref:operations:services/data-management-azure.adoc[] for how to set up the application and the container.
 
 == Running imports
 
@@ -267,5 +267,5 @@ akka service data import assets --platform-managed \
 
 == See also
 
-- xref:workload-identity.adoc[]
+- xref:operations:services/workload-identity.adoc[]
 - xref:reference:cli/akka-cli/akka_services_data.adoc#_see_also[`akka service data` commands]

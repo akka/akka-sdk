@@ -1,7 +1,7 @@
 = Data migration setup on AWS
 include::ROOT:partial$include.adoc[]
 
-This page describes how to prepare an AWS account for xref:data-management.adoc[data migration]. You create an S3 bucket, grant Akka access to it, and then run exports and imports against it.
+This page describes how to prepare an AWS account for xref:operations:services/data-management.adoc[data migration]. You create an S3 bucket, grant Akka access to it, and then run exports and imports against it.
 
 You can give Akka access to the bucket in two ways:
 
@@ -45,7 +45,7 @@ Instructions for creating IAM policies in AWS are in the https://docs.aws.amazon
 [#_workload_identity]
 == Workload identity
 
-With workload identity, the data management tool presents an OIDC token issued by Akka to AWS. AWS exchanges the token for temporary credentials for an IAM role. For background, see xref:workload-identity.adoc[].
+With workload identity, the data management tool presents an OIDC token issued by Akka to AWS. AWS exchanges the token for temporary credentials for an IAM role. For background, see xref:operations:services/workload-identity.adoc[].
 
 The token identifies the data management tool with this subject:
 
@@ -70,7 +70,7 @@ If your project has more than one region, copy the issuer for the correct region
 
 === Register the Akka OIDC provider
 
-Register the issuer as an OIDC identity provider in your AWS account. You need to do this once for each AWS account and Akka region. If you already registered the provider to xref:workload-identity.adoc[let a service use workload identity], you can skip this step.
+Register the issuer as an OIDC identity provider in your AWS account. You need to do this once for each AWS account and Akka region. If you already registered the provider to xref:operations:services/workload-identity.adoc[let a service use workload identity], you can skip this step.
 
 [source,command window]
 ----

@@ -1,7 +1,7 @@
 = Data migration setup on Azure
 include::ROOT:partial$include.adoc[]
 
-This page describes how to prepare an Azure subscription for xref:data-management.adoc[data migration]. You create a storage account and a blob container, grant Akka access to the container, and then run exports and imports against it.
+This page describes how to prepare an Azure subscription for xref:operations:services/data-management.adoc[data migration]. You create a storage account and a blob container, grant Akka access to the container, and then run exports and imports against it.
 
 You can give Akka access to the container in two ways:
 
@@ -23,7 +23,7 @@ Instructions for assigning Azure roles are in the https://learn.microsoft.com/az
 [#_workload_identity]
 == Workload identity
 
-With workload identity, the data management tool presents an OIDC token issued by Akka to Microsoft Entra. Microsoft Entra exchanges the token for an access token for your application. For background, see xref:workload-identity.adoc[].
+With workload identity, the data management tool presents an OIDC token issued by Akka to Microsoft Entra. Microsoft Entra exchanges the token for an access token for your application. For background, see xref:operations:services/workload-identity.adoc[].
 
 The token identifies the data management tool with this subject:
 

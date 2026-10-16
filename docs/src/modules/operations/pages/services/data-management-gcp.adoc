@@ -1,7 +1,7 @@
 = Data migration setup on GCP
 include::ROOT:partial$include.adoc[]
 
-This page describes how to prepare a GCP project for xref:data-management.adoc[data migration]. You create a GCS bucket, grant Akka access to it, and then run exports and imports against it.
+This page describes how to prepare a GCP project for xref:operations:services/data-management.adoc[data migration]. You create a GCS bucket, grant Akka access to it, and then run exports and imports against it.
 
 You can give Akka access to the bucket in two ways:
 
@@ -21,7 +21,7 @@ Both authentication options need a role on the bucket. For exports, grant Storag
 [#_workload_identity]
 == Workload identity
 
-With workload identity, the data management tool presents an OIDC token issued by Akka to a GCP workload identity pool. GCP exchanges the token for a Google access token. For background, see xref:workload-identity.adoc[].
+With workload identity, the data management tool presents an OIDC token issued by Akka to a GCP workload identity pool. GCP exchanges the token for a Google access token. For background, see xref:operations:services/workload-identity.adoc[].
 
 The token identifies the data management tool with this subject:
 
