@@ -1325,7 +1325,7 @@ private final class Sdk(
             telemetryContext =>
               wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(telemetryContext, callerSpiffe)),
             evaluatorClass,
-            configured.settingsFor)
+            configured.configFor)
         }
 
         evaluatorDescriptors :+=
@@ -1363,7 +1363,7 @@ private final class Sdk(
                 factoryContext.recorder,
                 serializer,
                 sdkExecutionContext,
-                configured.settingsFor)
+                configured.configFor)
             },
             provided = false)
 

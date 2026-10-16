@@ -10,6 +10,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
 import akka.Done
+import akka.javasdk.evaluation.ConfiguredDurableEvaluator
 import akka.javasdk.evaluation.TranscriptQualityEvaluator
 import akka.javasdk.impl.evaluation.DurableEvaluatorImpl.RecordStepName
 import akka.javasdk.impl.evaluation.DurableEvaluatorProtocol.Outcome
@@ -21,6 +22,7 @@ import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.context.ContextKey
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -60,6 +62,17 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       serializer,
       ExecutionContext.global,
       _ => ConfigFactory.empty())
+
+  private def newConfiguredImpl(configFor: String => Config) =
+    new DurableEvaluatorImpl[ConfiguredDurableEvaluator.State, ConfiguredDurableEvaluator](
+      evaluationId,
+      classOf[ConfiguredDurableEvaluator],
+      classOf[ConfiguredDurableEvaluator.State],
+      _ => new ConfiguredDurableEvaluator,
+      new RecorderProbe,
+      serializer,
+      ExecutionContext.global,
+      configFor)
 
   private def trigger(interactionId: String = "interaction-1") =
     new SpiEvaluator.Trigger(
@@ -121,6 +134,22 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       await(impl.invokeStep(Some(persistedState), stepCommand("fetchTranscript", telemetryContext = telemetryContext)))
 
       stepContexts.flatten.map(_.get(key)) should contain("evaluation-1")
+    }
+
+    "pass the config for the evaluated agent on the context at the start and in a step" in {
+      val impl =
+        newConfiguredImpl(agentComponentId => ConfigFactory.parseString(s"""key = "$agentComponentId-config" """))
+      val started = await(impl.handleEvaluationStart(None, trigger(), null))
+        .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
+      val startState = started.persistence.asInstanceOf[SpiWorkflow.UpdateState].newState
+
+      // the step reports the value the start stored in the state and the value it reads itself
+      val result = await(impl.invokeStep(Some(startState), stepCommand("finish")))
+        .asInstanceOf[SpiWorkflow.StepTransitionalEffect]
+
+      val outcome =
+        serializer.fromBytes(classOf[Outcome], result.transition.asInstanceOf[SpiWorkflow.StepTransition].input.get)
+      outcome.evaluation().explanation() shouldBe "my-agent-config at the start, my-agent-config in the step"
     }
 
     "ack a duplicate start without re-running the evaluation" in {

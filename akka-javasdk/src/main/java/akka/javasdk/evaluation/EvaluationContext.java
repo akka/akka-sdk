@@ -9,8 +9,8 @@ import com.typesafe.config.Config;
 /**
  * Context passed to an {@link Evaluator} when an evaluation is triggered.
  *
- * <p>Exposes the {@link Subject} being evaluated, the id of this evaluation and the settings
- * configured for the evaluator.
+ * <p>Exposes the {@link Subject} being evaluated, the id of this evaluation and the configuration
+ * of the evaluator.
  *
  * <p>Not for user extension.
  */
@@ -31,12 +31,15 @@ public interface EvaluationContext {
   String evaluationId();
 
   /**
-   * The settings configured for this evaluation. These are the {@code settings} of the binding that
-   * the runtime used for the evaluated agent, with the {@code settings} of the evaluator entry
-   * under {@code akka.javasdk.evaluation.evaluators} as fallback. Empty when neither defines
-   * settings.
+   * The configuration of the evaluator for this evaluation, from its entry under {@code
+   * akka.javasdk.evaluation.evaluators}: the binding that the runtime used for the evaluated agent,
+   * with the evaluator entry as fallback, key by key. For an agent without an enabled binding, the
+   * evaluator entry alone. The keys {@code agents} and {@code agent-roles} are left out. The other
+   * keys the SDK reads, such as {@code trigger} and {@code enabled}, are present when the entries
+   * set them. The defaults under {@code akka.javasdk.evaluation.defaults} are not included. Empty
+   * when the evaluator has no entry.
    *
-   * @return the settings of the binding over the settings of the evaluator
+   * @return the configuration of the binding with the evaluator entry as fallback
    */
   Config config();
 }

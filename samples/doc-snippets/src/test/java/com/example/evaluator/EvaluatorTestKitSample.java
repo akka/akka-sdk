@@ -10,6 +10,7 @@ import akka.javasdk.ledger.ModelResponse;
 import akka.javasdk.testkit.EvaluatorResult;
 import akka.javasdk.testkit.EvaluatorTestKit;
 import akka.javasdk.testkit.TestLedgerClient;
+import com.typesafe.config.ConfigFactory;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,23 @@ public class EvaluatorTestKitSample {
     assertThat(result.isComplete()).isTrue();
     assertThat(result.getEvaluation().passed()).isTrue();
     // end::test[]
+  }
+
+  @Test
+  public void evaluatesWithAConfiguration() {
+    var stubLedger = TestLedgerClient.create().seed(sampleRecord("interaction-1"));
+
+    // tag::config[]
+    var testKit = EvaluatorTestKit.of(() -> new ReplyLengthEvaluator(stubLedger)).withConfig(
+      ConfigFactory.parseString("min-length = 20")
+    );
+    // end::config[]
+
+    EvaluatorResult result = testKit.evaluate(
+      new Subject.Interaction("interaction-1", "support-agent", Optional.empty())
+    );
+
+    assertThat(result.getEvaluation().passed()).isFalse();
   }
 
   private static InteractionRecord sampleRecord(String interactionId) {

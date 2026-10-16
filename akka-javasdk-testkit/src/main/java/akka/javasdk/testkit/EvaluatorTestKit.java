@@ -24,8 +24,8 @@ import java.util.function.Supplier;
  * calls, or an in-memory ledger client). Use the {@code evaluate} methods to run the {@code
  * evaluate} handler over a chosen {@link Subject} and assert on the returned {@link
  * EvaluatorResult}. An evaluator that reads {@link
- * akka.javasdk.evaluation.EvaluationContext#config()} gets the settings given to {@link
- * #withSettings(Config)}, empty by default.
+ * akka.javasdk.evaluation.EvaluationContext#config()} gets the configuration given to {@link
+ * #withConfig(Config)}, empty by default.
  */
 public class EvaluatorTestKit<E extends Evaluator> {
 
@@ -33,11 +33,11 @@ public class EvaluatorTestKit<E extends Evaluator> {
   public static final String DEFAULT_EVALUATION_ID = "test-evaluation";
 
   private final Supplier<E> evaluatorFactory;
-  private final Config settings;
+  private final Config config;
 
-  private EvaluatorTestKit(Supplier<E> evaluatorFactory, Config settings) {
+  private EvaluatorTestKit(Supplier<E> evaluatorFactory, Config config) {
     this.evaluatorFactory = evaluatorFactory;
-    this.settings = settings;
+    this.config = config;
   }
 
   /** Create a testkit for the evaluator supplied by the given factory. */
@@ -46,15 +46,15 @@ public class EvaluatorTestKit<E extends Evaluator> {
   }
 
   /**
-   * A testkit whose evaluations see the given settings through {@link
-   * akka.javasdk.evaluation.EvaluationContext#config()}. In a running service these are the {@code
-   * settings} of the binding over the {@code settings} of the evaluator.
+   * A testkit whose evaluations see the given configuration through {@link
+   * akka.javasdk.evaluation.EvaluationContext#config()}. In a running service this is the binding
+   * that the runtime used for the agent, with the evaluator entry as fallback.
    *
-   * @param settings the settings for the evaluations
-   * @return a testkit with the settings
+   * @param config the configuration for the evaluations
+   * @return a testkit with the configuration
    */
-  public EvaluatorTestKit<E> withSettings(Config settings) {
-    return new EvaluatorTestKit<>(evaluatorFactory, settings);
+  public EvaluatorTestKit<E> withConfig(Config config) {
+    return new EvaluatorTestKit<>(evaluatorFactory, config);
   }
 
   /**
@@ -77,7 +77,7 @@ public class EvaluatorTestKit<E extends Evaluator> {
    * @return the result of the evaluation
    */
   public EvaluatorResult evaluate(Subject subject, String evaluationId) {
-    var context = new TestKitEvaluationContext(subject, evaluationId, settings);
+    var context = new TestKitEvaluationContext(subject, evaluationId, config);
     var effect = evaluatorFactory.get().evaluate(context);
     return new EvaluatorResultImpl(effect);
   }

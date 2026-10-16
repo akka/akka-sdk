@@ -21,19 +21,19 @@ public class ThresholdEvaluatorTest {
       new Subject.Interaction("interaction-1", "support-agent", Optional.empty());
 
   @Test
-  public void evaluatesWithTheGivenSettings() {
+  public void evaluatesWithTheGivenConfig() {
     var testKit =
         EvaluatorTestKit.of(ThresholdEvaluator::new)
-            .withSettings(ConfigFactory.parseString("threshold = 0.7, score = 0.9"));
+            .withConfig(ConfigFactory.parseString("threshold = 0.7, score = 0.9"));
 
     assertTrue(testKit.evaluate(subject).getEvaluation().passed());
 
-    var stricter = testKit.withSettings(ConfigFactory.parseString("threshold = 0.95, score = 0.9"));
+    var stricter = testKit.withConfig(ConfigFactory.parseString("threshold = 0.95, score = 0.9"));
     assertFalse(stricter.evaluate(subject).getEvaluation().passed());
   }
 
   @Test
-  public void hasNoSettingsByDefault() {
+  public void hasAnEmptyConfigByDefault() {
     var testKit = EvaluatorTestKit.of(ThresholdEvaluator::new);
 
     assertThrows(ConfigException.Missing.class, () -> testKit.evaluate(subject));

@@ -15,12 +15,12 @@ import com.typesafe.config.Config
  * An [[EvaluationContext]] for use in the [[akka.javasdk.testkit.EvaluatorTestKit]].
  */
 @InternalApi
-private[testkit] final class TestKitEvaluationContext(subject: Subject, evaluationId: String, settings: Config)
+private[testkit] final class TestKitEvaluationContext(subject: Subject, evaluationId: String, evaluationConfig: Config)
     extends EvaluationContext {
 
   override def subject(): Subject = subject
 
   override def evaluationId(): String = evaluationId
 
-  override def config(): Config = settings
+  override def config(): Config = evaluationConfig
 }

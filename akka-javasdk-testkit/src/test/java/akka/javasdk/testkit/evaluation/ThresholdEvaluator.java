@@ -8,7 +8,7 @@ import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
 
-/** Passes when the score in its settings reaches the configured threshold. */
+/** Passes when the score in its configuration reaches the configured threshold. */
 public class ThresholdEvaluator extends Evaluator {
 
   @Override

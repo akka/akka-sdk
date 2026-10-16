@@ -54,11 +54,11 @@ private[javasdk] object DurableEvaluatorImpl {
    */
   val RecordStepName = "_record-evaluation"
 
-  final class EvaluationContextImpl(id: String, evaluationSubject: Subject, settings: Config)
+  final class EvaluationContextImpl(id: String, evaluationSubject: Subject, evaluationConfig: Config)
       extends EvaluationContext {
     override def subject(): Subject = evaluationSubject
     override def evaluationId(): String = id
-    override def config(): Config = settings
+    override def config(): Config = evaluationConfig
   }
 
   private def toProtocolTriggerSource(source: SpiEvaluator.TriggerSource): TriggerSource =
@@ -79,8 +79,8 @@ private[javasdk] object DurableEvaluatorImpl {
  *
  * Adapts a user [[DurableEvaluator]] to the [[SpiWorkflowEvaluator]] expected by the runtime. The evaluator is hosted
  * as a workflow — one instance per evaluation, started by the runtime with the structured trigger — with a built-in
- * final step that records the outcome and deletes the instance. `settingsFor` gives the settings for an evaluation of
- * an agent, by its component id.
+ * final step that records the outcome and deletes the instance. `configFor` gives the config for an evaluation of an
+ * agent, by its component id, read from the running service at the start and at each step.
  */
 @InternalApi
 private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
@@ -91,7 +91,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
     recorder: SpiEvaluator.EvaluationRecorder,
     serializer: Serializer,
     sdkExecutionContext: ExecutionContext,
-    settingsFor: String => Config)
+    configFor: String => Config)
     extends SpiWorkflowEvaluator {
 
   import DurableEvaluatorImpl._
@@ -160,7 +160,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
       val triggerSource = toProtocolTriggerSource(trigger.source)
       Future {
         val evaluator = factory(Option(telemetryContext))
-        val context = new EvaluationContextImpl(workflowId, subject, settingsFor(subject.agentComponentId))
+        val context = new EvaluationContextImpl(workflowId, subject, configFor(subject.agentComponentId()))
         evaluator._internalSetup(evaluator.emptyState(), context)
         val effect = evaluator.onEvaluation(context)
         effect match {
@@ -213,7 +213,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
         val subject = envelope.getSubject
         evaluator._internalSetup(
           decodeUserState(envelope),
-          new EvaluationContextImpl(workflowId, subject, settingsFor(subject.agentComponentId)))
+          new EvaluationContextImpl(workflowId, subject, configFor(subject.agentComponentId())))
         val effect =
           if (stepMethod.getParameterCount == 1) {
             val input = stepCommand.input match {
