@@ -25,24 +25,30 @@ This functionality evolves quickly, the behavior and APIs might change between r
 
 ****
 
-* https://github.com/akka/akka-sdk/releases/tag/v3.7.0-M2[Akka SDK 3.7.0-M2]
+* https://github.com/akka/akka-sdk/releases/tag/v3.7.0[Akka SDK 3.7.0]
 - Runtime 1.7.2
-- Guardrails for model calls, agent responses, and tool calls.
+- Guardrails for model calls, agent responses, function tool calls, and MCP tool calls.
 - Classifiers
 - Evaluator component and ledger client.
 - Sampling ratio and evaluation of failed interactions for an evaluator binding.
 - Configurable and scoped sanitizers, with custom implementations.
 - Component-level access control with SPIFFE identities.
 - EvalKit runs every case several times and writes each report as a JSON file.
-- Agent id and flow id headers in model requests.
+- Structured output for the tools of an MCP endpoint, see xref:sdk:mcp-endpoints.adoc#_structured_output[Structured output]
+- Thinking level for Gemini 3 models in the Vertex AI model provider.
+- Agent id, flow id, and interaction id headers in model requests, and the W3C trace context when tracing is on.
 - Prompt cache token counts in the token usage, also for autonomous agents and in the ledger
 - An MCP tool interceptor can see whether a tool result is an error.
+- Generated JSON schemas, for example for tool parameters, list the same properties as Jackson.
+- `TaskClient.result()` keeps waiting when a task rule rejects a result.
 - `WebSocketRouteTester` can send request headers and test a rejected upgrade.
 - `JwtClaims` methods such as `expirationTime()` return numeric and boolean claims.
 - `TextGuardrail`, `Sanitizer`, and `SimilarityGuard` are deprecated, see xref:reference:migration-guide.adoc[Migration guide]
+- A service loads the components of a library only when the configuration lists them, see xref:reference:migration-guide.adoc#library-components-opt-in[Migration guide]
 - The `regex-sanitizers` and `predefined-sanitizers` configuration keys are replaced.
 - APIs that were deprecated in SDK 3.5.x and the `it` Maven profile are removed.
 - The `akka.javasdk.event-sourced-entity.cleanup-deleted-after` setting is renamed to `akka.javasdk.entity.cleanup-deleted-after`.
+- The TestKit uses JUnit 6.
 
 * xref:release-notes/runtime/1.7.2.adoc[Akka Runtime 1.7.2]
 - Model call retries by the runtime for all built-in model providers and for streamed replies.
