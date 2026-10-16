@@ -7,6 +7,7 @@ package akka.javasdk.impl
 import java.io.File
 import java.net.JarURLConnection
 import java.net.URI
+import java.net.URL
 
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
@@ -55,6 +56,11 @@ private[javasdk] object ComponentLocator {
   val DescriptorServiceSetupEntryPath = "akka.javasdk.service-setup"
   // user config listing components from library jars to load as if defined in the service
   val LibraryComponentsConfigPath = "akka.javasdk.library.components"
+  // Set by the annotation processor in the descriptor of the deployable service, never in a library descriptor.
+  // Must be kept in sync with ComponentAnnotationProcessor.java
+  val DescriptorServiceMarkerPath = "akka.javasdk.service"
+  // descriptors shipped by SDK modules, always loaded together with the service descriptor
+  private val SdkProvidedDescriptorNames = Set("akka-javasdk-components_akka-javasdk-testkit.conf")
 
   // Component type keys - these must be kept in sync with ComponentAnnotationProcessor.java
   // in the akka-javasdk-annotation-processor module
@@ -121,9 +127,9 @@ private[javasdk] object ComponentLocator {
    * @param classLoader
    *   the class loader to use for resource discovery
    * @return
-   *   a sequence of parsed Config objects from all found descriptor files
+   *   all found descriptor files with their parsed config
    */
-  def findAllDescriptorFiles(classLoader: ClassLoader): Seq[Config] = {
+  def findAllDescriptorFiles(classLoader: ClassLoader): Seq[Descriptor] = {
     val descriptorUrls = scala.collection.mutable.LinkedHashSet.empty[java.net.URL]
 
     // Find all META-INF directories on the classpath
@@ -180,7 +186,83 @@ private[javasdk] object ComponentLocator {
     descriptorUrls.toSeq.map { url =>
       val config = ConfigFactory.parseURL(url)
       logger.debug("Parsed config from [{}]: [{}]", url, config.root().render())
-      config
+      Descriptor(url, config)
+    }
+  }
+
+  final case class Descriptor(url: URL, config: Config) {
+    def fileName: String = url.getPath.substring(url.getPath.lastIndexOf('/') + 1)
+    def isService: Boolean =
+      config.hasPath(DescriptorServiceMarkerPath) && config.getBoolean(DescriptorServiceMarkerPath)
+    def components(componentTypeKey: String): Seq[String] = {
+      val path = s"$DescriptorComponentBasePath.$componentTypeKey"
+      if (config.hasPath(path)) config.getStringList(path).asScala.toSeq else Seq.empty
+    }
+  }
+
+  final case class SortedDescriptors(
+      service: Option[Descriptor],
+      sdkProvided: Seq[Descriptor],
+      library: Seq[Descriptor])
+
+  /**
+   * Sorts descriptors into the one of the deployable service, the ones shipped by SDK modules and the ones from
+   * component libraries. Fails on more than one service descriptor. Fails on no service descriptor unless library
+   * components are listed in config, for example when testing a component library.
+   */
+  private[impl] def sortDescriptors(
+      descriptors: Seq[Descriptor],
+      libraryComponentsListed: Boolean): SortedDescriptors = {
+    val (sdkProvided, others) = descriptors.partition(d => SdkProvidedDescriptorNames.contains(d.fileName))
+    val (service, library) = others.partition(_.isService)
+    service match {
+      case Seq(serviceDescriptor)           => SortedDescriptors(Some(serviceDescriptor), sdkProvided, library)
+      case Seq() if libraryComponentsListed => SortedDescriptors(None, sdkProvided, library)
+      case Seq() =>
+        val libraryDescriptors =
+          if (library.isEmpty) ""
+          else s" Only found library component descriptors [${library.map(_.url).mkString(", ")}]."
+        throw new IllegalStateException(
+          s"No component descriptor for the service found.$libraryDescriptors " +
+          "If you have components, it looks like your project needs to be recompiled. Run `mvn clean compile` and try again.")
+      case multiple =>
+        throw new IllegalStateException(
+          s"More than one service component descriptor found [${multiple.map(_.url).mkString(", ")}]. " +
+          "A component library should be a plain Java library that does not use the Akka parent pom.")
+    }
+  }
+
+  /**
+   * Describes the components in library descriptors that are not listed in `akka.javasdk.library.components`, and the
+   * config to load them. None if there are no such components.
+   */
+  private[impl] def unlistedLibraryComponentsMessage(
+      libraryDescriptors: Seq[Descriptor],
+      listedClassNames: Set[String]): Option[String] = {
+    val unlisted: Seq[(Descriptor, Seq[(String, Seq[String])])] = libraryDescriptors.flatMap { descriptor =>
+      val byType = AllComponentTypeKeys.flatMap { componentTypeKey =>
+        val classNames = descriptor.components(componentTypeKey).filterNot(listedClassNames.contains)
+        Option.when(classNames.nonEmpty)(componentTypeKey -> classNames)
+      }
+      Option.when(byType.nonEmpty)(descriptor -> byType)
+    }
+    Option.when(unlisted.nonEmpty) {
+      val found = unlisted
+        .map { case (descriptor, byType) =>
+          s"  [${descriptor.url}]\n" + byType
+            .map { case (componentTypeKey, classNames) => s"    $componentTypeKey: [${classNames.mkString(", ")}]" }
+            .mkString("\n")
+        }
+        .mkString("\n")
+      val configLines = AllComponentTypeKeys.flatMap { componentTypeKey =>
+        val classNames = unlisted.flatMap(_._2).collect { case (`componentTypeKey`, names) => names }.flatten
+        Option.when(classNames.nonEmpty)(
+          s"""  $componentTypeKey = [${classNames.map(n => s"\"$n\"").mkString(", ")}]""")
+      }
+      s"Found library components that are not loaded. Library components are only loaded when listed in config [$LibraryComponentsConfigPath].\n" +
+      found + "\n" +
+      s"To load them, add the components to use to application.conf:\n$LibraryComponentsConfigPath {\n" +
+      configLines.mkString("\n") + "\n}"
     }
   }
 
@@ -275,13 +357,9 @@ private[javasdk] object ComponentLocator {
     }
 
   /**
-   * Loads the component classes listed under `akka.javasdk.library.components` in the application config. Classes
-   * already located through descriptor files are skipped.
+   * The component type keys and class names listed under `akka.javasdk.library.components` in the application config.
    */
-  private[impl] def loadLibraryComponents(
-      applicationConfig: Config,
-      dynamicAccess: DynamicAccess,
-      descriptorComponents: Set[Class[_]]): Seq[Class[_]] = {
+  private[impl] def listedLibraryComponents(applicationConfig: Config): Seq[(String, String)] = {
     if (!applicationConfig.hasPath(LibraryComponentsConfigPath)) Seq.empty
     else {
       val libraryConfig = applicationConfig.getConfig(LibraryComponentsConfigPath)
@@ -304,43 +382,54 @@ private[javasdk] object ComponentLocator {
           s"Duplicate library component(s) [${duplicates.mkString(", ")}] in config [$LibraryComponentsConfigPath]. " +
           "Each component class should only be listed once.")
       }
+      listed
+    }
+  }
 
-      AllComponentTypeKeys.flatMap { componentTypeKey =>
-        val classNames = listed.collect { case (`componentTypeKey`, className) => className }
-        if (classNames.isEmpty) Seq.empty
-        else {
-          val (isExpectedType, expectedTypeDescription) = libraryComponentTypeCheck(componentTypeKey)
-          val loaded = classNames.flatMap { className =>
-            val componentClass = dynamicAccess.getClassFor[AnyRef](className) match {
-              case Success(cls) => cls
-              case Failure(ex) =>
-                throw new IllegalStateException(
-                  s"Could not load library component class [$className] listed in config [$LibraryComponentsConfigPath.$componentTypeKey]. " +
-                  "Make sure the library containing it is on the classpath.",
-                  ex)
-            }
-            if (!isExpectedType(componentClass)) {
+  /**
+   * Loads the component classes listed under `akka.javasdk.library.components` in the application config. Classes
+   * already located through descriptor files are skipped.
+   */
+  private[impl] def loadLibraryComponents(
+      applicationConfig: Config,
+      dynamicAccess: DynamicAccess,
+      descriptorComponents: Set[Class[_]]): Seq[Class[_]] = {
+    val listed = listedLibraryComponents(applicationConfig)
+    AllComponentTypeKeys.flatMap { componentTypeKey =>
+      val classNames = listed.collect { case (`componentTypeKey`, className) => className }
+      if (classNames.isEmpty) Seq.empty
+      else {
+        val (isExpectedType, expectedTypeDescription) = libraryComponentTypeCheck(componentTypeKey)
+        val loaded = classNames.flatMap { className =>
+          val componentClass = dynamicAccess.getClassFor[AnyRef](className) match {
+            case Success(cls) => cls
+            case Failure(ex) =>
               throw new IllegalStateException(
-                s"Library component class [$className] listed in config [$LibraryComponentsConfigPath.$componentTypeKey] " +
-                s"is not a $componentTypeKey component, expected $expectedTypeDescription")
-            }
-            if (descriptorComponents.contains(componentClass)) {
-              logger.info(
-                "Library component [{}] listed in config [{}.{}] is already registered through a component descriptor, ignoring",
-                className,
-                LibraryComponentsConfigPath,
-                componentTypeKey)
-              None
-            } else Some(componentClass)
+                s"Could not load library component class [$className] listed in config [$LibraryComponentsConfigPath.$componentTypeKey]. " +
+                "Make sure the library containing it is on the classpath.",
+                ex)
           }
-          if (loaded.nonEmpty)
+          if (!isExpectedType(componentClass)) {
+            throw new IllegalStateException(
+              s"Library component class [$className] listed in config [$LibraryComponentsConfigPath.$componentTypeKey] " +
+              s"is not a $componentTypeKey component, expected $expectedTypeDescription")
+          }
+          if (descriptorComponents.contains(componentClass)) {
             logger.info(
-              "Adding library components from config [{}.{}]: [{}]",
+              "Library component [{}] listed in config [{}.{}] is already registered through a component descriptor, ignoring",
+              className,
               LibraryComponentsConfigPath,
-              componentTypeKey,
-              loaded.map(_.getName).mkString(", "))
-          loaded
+              componentTypeKey)
+            None
+          } else Some(componentClass)
         }
+        if (loaded.nonEmpty)
+          logger.info(
+            "Adding library components from config [{}.{}]: [{}]",
+            LibraryComponentsConfigPath,
+            componentTypeKey,
+            loaded.map(_.getName).mkString(", "))
+        loaded
       }
     }
   }
@@ -354,19 +443,24 @@ private[javasdk] object ComponentLocator {
       ComponentDescriptorPrefix,
       ComponentDescriptorSuffix: Any)
 
-    // Find and merge all descriptor files from the classpath (project + library JARs)
+    // Find all descriptor files on the classpath (service, SDK modules and library JARs)
     val allDescriptors = findAllDescriptorFiles(system.dynamicAccess.classLoader)
-    if (allDescriptors.isEmpty) {
-      throw new IllegalStateException(
-        "No component descriptor files found. If you have components, it looks like your project needs to be recompiled. Run `mvn clean compile` and try again.")
-    }
     logger.debug("Found [{}] component descriptor file(s)", allDescriptors.size)
 
-    val descriptorConfig = mergeDescriptorConfigs(allDescriptors)
-    if (!descriptorConfig.hasPath(DescriptorComponentBasePath))
-      throw new IllegalStateException(
-        "No components found. If you have any, it looks like your project needs to be recompiled. Run `mvn clean compile` and try again.")
-    val componentConfig = descriptorConfig.getConfig(DescriptorComponentBasePath)
+    val applicationConfig = ApplicationConfig(system).getConfig
+    val listedLibraryClassNames = listedLibraryComponents(applicationConfig).map(_._2).toSet
+    val sorted = sortDescriptors(allDescriptors, libraryComponentsListed = listedLibraryClassNames.nonEmpty)
+    sorted.library.filter(_.config.hasPath(DescriptorServiceSetupEntryPath)).foreach { descriptor =>
+      logger.warn(
+        "Ignoring service setup [{}] in library component descriptor [{}]",
+        descriptor.config.getString(DescriptorServiceSetupEntryPath),
+        descriptor.url)
+    }
+
+    val descriptorConfig = mergeDescriptorConfigs((sorted.service.toSeq ++ sorted.sdkProvided).map(_.config))
+    val componentConfig =
+      if (descriptorConfig.hasPath(DescriptorComponentBasePath)) descriptorConfig.getConfig(DescriptorComponentBasePath)
+      else ConfigFactory.empty()
 
     val descriptorComponents: Seq[Class[_]] = akkaComponentTypeAndBaseClasses.flatMap {
       case (componentTypeKey, componentTypeClass) =>
@@ -388,9 +482,17 @@ private[javasdk] object ComponentLocator {
           Seq.empty
     }.toSeq
 
+    unlistedLibraryComponentsMessage(sorted.library, listedLibraryClassNames).foreach { message =>
+      if (listedLibraryClassNames.isEmpty) logger.warn(message)
+      else logger.debug(message)
+    }
+
     val libraryComponents =
-      loadLibraryComponents(ApplicationConfig(system).getConfig, system.dynamicAccess, descriptorComponents.toSet)
+      loadLibraryComponents(applicationConfig, system.dynamicAccess, descriptorComponents.toSet)
     val components = descriptorComponents ++ libraryComponents
+    if (components.isEmpty)
+      throw new IllegalStateException(
+        "No components found. If you have any, it looks like your project needs to be recompiled. Run `mvn clean compile` and try again.")
 
     val hasAgentComponents = components.exists(c => classOf[Agent].isAssignableFrom(c))
     val hasAutonomousAgentComponents = components.exists(c => classOf[AutonomousAgent].isAssignableFrom(c))

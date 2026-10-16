@@ -72,7 +72,42 @@ include::example$doc-snippets/src/main/java/com/example/Bootstrap.java[tag=disab
 
 == Using components from libraries
 
-Components defined in a library jar on the classpath can be added to the service through configuration. List the fully qualified class names under the key for the component type they implement in `application.conf`:
+A service can use components from a library jar. The service only loads library components that are listed in its configuration.
+
+=== Creating a component library
+
+Create the library as a plain Java library. Do not use the Akka parent pom, since that pom builds a deployable service. Add the Akka SDK as a `provided` dependency, so the service decides the SDK version:
+
+[source,xml,subs="attributes+"]
+----
+<dependency>
+  <groupId>io.akka</groupId>
+  <artifactId>akka-javasdk</artifactId>
+  <version>{akka-javasdk-version}</version>
+  <scope>provided</scope>
+</dependency>
+----
+
+Compile the library with the `-parameters` flag, like the Akka parent pom does for a service. The SDK serializes messages with Jackson and depends on the parameter names:
+
+[source,xml]
+----
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-compiler-plugin</artifactId>
+  <configuration>
+    <compilerArgs>
+      <arg>-parameters</arg>
+    </compilerArgs>
+  </configuration>
+</plugin>
+----
+
+To test the library components with the `TestKit`, add `akka-javasdk-testkit` as a test dependency. List the components in `src/test/resources/application.conf` as described in the next section.
+
+=== Loading library components
+
+Add the library as a dependency of the service. Then list the fully qualified class names of the components to load in `application.conf`, under the key for the component type they implement:
 
 [source,hocon]
 ----
@@ -81,7 +116,9 @@ akka.javasdk.library.components {
 }
 ----
 
-The listed classes are loaded on startup as if they were defined in the service itself. The service logs the added library components at startup.
+The service loads the listed classes on startup as if they were defined in the service itself, and logs the added library components.
+
+A library built with an earlier SDK version can contain an Akka component descriptor. The service does not load the components from such a descriptor. If no library components are listed, the service logs a warning that lists the components it found and the configuration that loads them.
 
 The config block has one key per component type:
 
@@ -100,6 +137,8 @@ The config block has one key per component type:
 |HTTP Endpoint |`http-endpoint`
 |gRPC Endpoint |`grpc-endpoint`
 |MCP Endpoint |`mcp-endpoint`
+|Evaluator |`evaluator`
+|Durable Evaluator |`durable-evaluator`
 |===
 
 

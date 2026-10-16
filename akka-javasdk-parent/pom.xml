@@ -110,6 +110,7 @@
                             <arg>-parameters</arg>
                             <arg>-Aakka.javasdk.groupId=${project.groupId}</arg>
                             <arg>-Aakka.javasdk.artifactId=${project.artifactId}</arg>
+                            <arg>-Aakka.javasdk.library=${non-akka-service}</arg>
                         </compilerArgs>
                         <annotationProcessors>
                             <annotationProcessor>

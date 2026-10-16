@@ -5,6 +5,7 @@
 package akka.javasdk.impl
 
 import java.net.JarURLConnection
+import java.net.URI
 
 import scala.jdk.CollectionConverters._
 
@@ -20,6 +21,31 @@ import org.scalatest.wordspec.AnyWordSpec
 
 object ComponentLocatorSpec {
   private def componentPath(componentType: String): String = s"$DescriptorComponentBasePath.$componentType"
+
+  private def descriptor(location: String, fileName: String, content: String): Descriptor =
+    Descriptor(new URI(s"$location/META-INF/$fileName").toURL, ConfigFactory.parseString(content))
+
+  private val serviceDescriptor =
+    descriptor(
+      "file:/service/target/classes",
+      "akka-javasdk-components_com.example_service.conf",
+      """akka.javasdk.service = true
+        |akka.javasdk.components.agent = ["com.example.ServiceAgent"]""".stripMargin)
+
+  private val testkitDescriptor =
+    descriptor(
+      "jar:file:/libs/akka-javasdk-testkit.jar!",
+      "akka-javasdk-components_akka-javasdk-testkit.conf",
+      """akka.javasdk.components.agent = ["akka.javasdk.testkit.eval.JudgeAgent"]""")
+
+  private val libraryDescriptor =
+    descriptor(
+      "jar:file:/libs/library.jar!",
+      "akka-javasdk-components_com.library_library.conf",
+      """akka.javasdk.components {
+        |  agent = ["com.library.LibAgent"]
+        |  http-endpoint = ["com.library.LibEndpoint", "com.library.OtherEndpoint"]
+        |}""".stripMargin)
 }
 
 class ComponentLocatorSpec extends AnyWordSpec with Matchers {
@@ -269,6 +295,79 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
 
       // Must not throw java.lang.IllegalStateException: zip file closed.
       priorHandle.entries().asScala.size should be > 0
+    }
+  }
+
+  "ComponentLocator.sortDescriptors" should {
+
+    "sort service, SDK provided and library descriptors" in {
+      val sorted = ComponentLocator.sortDescriptors(
+        Seq(libraryDescriptor, testkitDescriptor, serviceDescriptor),
+        libraryComponentsListed = false)
+      sorted.service shouldBe Some(serviceDescriptor)
+      sorted.sdkProvided shouldBe Seq(testkitDescriptor)
+      sorted.library shouldBe Seq(libraryDescriptor)
+    }
+
+    "fail when there is no service descriptor" in {
+      val exception = intercept[IllegalStateException] {
+        ComponentLocator.sortDescriptors(Seq(libraryDescriptor, testkitDescriptor), libraryComponentsListed = false)
+      }
+      exception.getMessage should include("No component descriptor for the service found")
+      exception.getMessage should include(libraryDescriptor.url.toString)
+    }
+
+    "allow no service descriptor when library components are listed" in {
+      val sorted =
+        ComponentLocator.sortDescriptors(Seq(libraryDescriptor, testkitDescriptor), libraryComponentsListed = true)
+      sorted.service shouldBe None
+      sorted.sdkProvided shouldBe Seq(testkitDescriptor)
+      sorted.library shouldBe Seq(libraryDescriptor)
+    }
+
+    "fail when there is more than one service descriptor" in {
+      val otherService =
+        descriptor(
+          "jar:file:/libs/other.jar!",
+          "akka-javasdk-components_com.other_other.conf",
+          "akka.javasdk.service = true")
+      val exception = intercept[IllegalStateException] {
+        ComponentLocator.sortDescriptors(Seq(serviceDescriptor, otherService), libraryComponentsListed = true)
+      }
+      exception.getMessage should include("More than one service component descriptor found")
+      exception.getMessage should include(serviceDescriptor.url.toString)
+      exception.getMessage should include(otherService.url.toString)
+    }
+  }
+
+  "ComponentLocator.unlistedLibraryComponentsMessage" should {
+
+    "list library components with their descriptor and the config to load them" in {
+      val message = ComponentLocator.unlistedLibraryComponentsMessage(Seq(libraryDescriptor), Set.empty).get
+      message should include(s"[${libraryDescriptor.url}]")
+      message should include("agent: [com.library.LibAgent]")
+      message should include("http-endpoint: [com.library.LibEndpoint, com.library.OtherEndpoint]")
+      message should include(s"$LibraryComponentsConfigPath {")
+      message should include("""agent = ["com.library.LibAgent"]""")
+      message should include("""http-endpoint = ["com.library.LibEndpoint", "com.library.OtherEndpoint"]""")
+    }
+
+    "leave out listed components" in {
+      val message = ComponentLocator
+        .unlistedLibraryComponentsMessage(
+          Seq(libraryDescriptor),
+          Set("com.library.LibAgent", "com.library.LibEndpoint"))
+        .get
+      (message should not).include("LibAgent")
+      (message should not).include("com.library.LibEndpoint")
+      message should include("http-endpoint: [com.library.OtherEndpoint]")
+    }
+
+    "return nothing when all library components are listed or there are none" in {
+      ComponentLocator.unlistedLibraryComponentsMessage(Seq.empty, Set.empty) shouldBe None
+      ComponentLocator.unlistedLibraryComponentsMessage(
+        Seq(libraryDescriptor),
+        Set("com.library.LibAgent", "com.library.LibEndpoint", "com.library.OtherEndpoint")) shouldBe None
     }
   }
 
