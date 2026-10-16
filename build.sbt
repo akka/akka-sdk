@@ -152,7 +152,11 @@ lazy val annotationProcessorTestProject: CompositeProject =
           "-processor",
           "akka.javasdk.tooling.processor.ComponentAnnotationProcessor",
           "-Aakka.javasdk.groupId=com.example",
-          "-Aakka.javasdk.artifactId=test"))
+          "-Aakka.javasdk.artifactId=test"),
+        Compile / javacOptions ++= {
+          if (sampleProject.base.getName == "library-descriptors") Seq("-Aakka.javasdk.componentLibrary=true")
+          else Seq.empty
+        })
   }
 
 lazy val akkaJavaSdkEnforcer =

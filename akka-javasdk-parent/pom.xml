@@ -110,6 +110,7 @@
                             <arg>-parameters</arg>
                             <arg>-Aakka.javasdk.groupId=${project.groupId}</arg>
                             <arg>-Aakka.javasdk.artifactId=${project.artifactId}</arg>
+                            <arg>-Aakka.javasdk.componentLibrary=${non-akka-service}</arg>
                         </compilerArgs>
                         <annotationProcessors>
                             <annotationProcessor>
@@ -504,12 +505,14 @@
                 </plugins>
             </build>
         </profile>
-        <!-- Clean build when no descriptor file is found.
+        <!-- Clean build output with a stale component descriptor: a service without a descriptor, or a
+             descriptor with a service marker that does not match non-akka-service. This happens with build
+             output from an earlier SDK version or after a change of non-akka-service.
              Maven profile file-based activation does not support wildcards or ${project.*}
-             properties, so we use antrun with a fileset glob instead. The profile only
+             properties, so we use antrun instead. The profile only
              activates when target/classes already exists (previous build output present). -->
         <profile>
-            <id>clean-on-missing-descriptor</id>
+            <id>clean-on-stale-descriptor</id>
             <activation>
                 <file>
                     <exists>target/classes</exists>
@@ -523,21 +526,51 @@
                         <version>3.1.0</version>
                         <executions>
                             <execution>
-                                <id>clean-on-missing-descriptor</id>
+                                <id>clean-on-stale-descriptor</id>
                                 <phase>initialize</phase>
                                 <goals>
                                     <goal>run</goal>
                                 </goals>
                                 <configuration>
                                     <target xmlns:if="ant:if">
-                                        <condition property="descriptor.missing">
-                                            <resourcecount count="0">
-                                                <fileset dir="target/classes/META-INF"
-                                                         includes="akka-javasdk-components_${project.groupId}_${project.artifactId}.conf"
-                                                         erroronmissingdir="false"/>
-                                            </resourcecount>
+                                        <property name="descriptor.file"
+                                                  value="META-INF/akka-javasdk-components_${project.groupId}_${project.artifactId}.conf"/>
+                                        <condition property="descriptor.marker.expected" value="false" else="true">
+                                            <istrue value="${non-akka-service}"/>
                                         </condition>
-                                        <delete dir="target/classes" if:set="descriptor.missing"/>
+                                        <macrodef name="clean-on-stale-descriptor">
+                                            <attribute name="dir"/>
+                                            <attribute name="clean-when-missing"/>
+                                            <sequential>
+                                                <local name="descriptor.present"/>
+                                                <local name="descriptor.marked"/>
+                                                <local name="descriptor.stale"/>
+                                                <available property="descriptor.present" file="@{dir}/${descriptor.file}"/>
+                                                <condition property="descriptor.marked" value="true" else="false">
+                                                    <resourcecount when="greater" count="0">
+                                                        <fileset dir="@{dir}" includes="${descriptor.file}" erroronmissingdir="false">
+                                                            <containsregexp expression="service\s*=\s*true"/>
+                                                        </fileset>
+                                                    </resourcecount>
+                                                </condition>
+                                                <condition property="descriptor.stale">
+                                                    <or>
+                                                        <and>
+                                                            <not><isset property="descriptor.present"/></not>
+                                                            <istrue value="@{clean-when-missing}"/>
+                                                        </and>
+                                                        <and>
+                                                            <isset property="descriptor.present"/>
+                                                            <not><equals arg1="${descriptor.marked}" arg2="${descriptor.marker.expected}"/></not>
+                                                        </and>
+                                                    </or>
+                                                </condition>
+                                                <delete dir="@{dir}" if:set="descriptor.stale"/>
+                                            </sequential>
+                                        </macrodef>
+                                        <clean-on-stale-descriptor dir="target/classes"
+                                                                   clean-when-missing="${descriptor.marker.expected}"/>
+                                        <clean-on-stale-descriptor dir="target/test-classes" clean-when-missing="false"/>
                                     </target>
                                 </configuration>
                             </execution>
