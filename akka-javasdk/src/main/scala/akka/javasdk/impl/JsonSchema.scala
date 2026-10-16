@@ -5,7 +5,6 @@
 package akka.javasdk.impl
 
 import java.lang.annotation.Annotation
-import java.lang.reflect.GenericArrayType
 import java.lang.reflect.Method
 import java.lang.reflect.Parameter
 import java.lang.reflect.ParameterizedType
@@ -33,9 +32,7 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
 import com.fasterxml.jackson.databind.JavaType
-import com.fasterxml.jackson.databind.introspect.AnnotatedField
-import com.fasterxml.jackson.databind.introspect.AnnotatedMember
-import com.fasterxml.jackson.databind.introspect.AnnotatedMethod
+import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition
 import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonBooleanFormatVisitor
 import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonFormatVisitorWrapper
 import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonIntegerFormatVisitor
@@ -76,7 +73,7 @@ private[impl] object JsonSchema {
   }
 
   def jsonSchemaFor(tpe: Type): JsonSchemaDataType = {
-    jsonSchemaTypeFor(tpe, None, Set.empty)._1
+    jsonSchemaTypeFor(javaTypeFor(tpe), None, Set.empty)._1
   }
 
   def typedParametersFor(method: Method): Seq[TypedParameter] = {
@@ -95,7 +92,7 @@ private[impl] object JsonSchema {
       annotations: Array[Annotation],
       genericType: Type): TypedParameter = {
     val description = annotations.collectFirst { case annotation: Description => annotation.value() }
-    val (schemaType, required) = jsonSchemaTypeFor(genericType, description, Set.empty)
+    val (schemaType, required) = jsonSchemaTypeFor(javaTypeFor(genericType), description, Set.empty)
     TypedParameter(parameter.getName, genericType, schemaType, required)
   }
 
@@ -148,80 +145,67 @@ private[impl] object JsonSchema {
   private def emptyObject(description: Option[String]) =
     new JsonSchemaObject(description, properties = Map.empty, required = Seq.empty)
 
-  // not tailrec but should never recurse very deep
-  private def classFor(tpe: Type): Class[AnyRef] = tpe match {
-    case c: Class[_]          => c.asInstanceOf[Class[AnyRef]]
-    case p: ParameterizedType => p.getRawType.asInstanceOf[Class[AnyRef]]
-    case g: GenericArrayType  => classFor(g.getGenericComponentType)
-    case other                => throw new IllegalArgumentException(s"Currently unsupported type: $other")
-  }
+  private def javaTypeFor(tpe: Type): JavaType =
+    JsonSerializer.internalObjectMapper.getTypeFactory.constructType(tpe)
 
   // Note: we don't support recursive types, not quite sure if we should though
   private def jsonSchemaTypeFor(
-      genericFieldType: Type,
+      javaType: JavaType,
       description: Option[String],
       seenTypes: Set[Class[_]]): (JsonSchemaDataType, Boolean) = {
-    typeNameMap.get(genericFieldType.getTypeName) match {
+    val clazz = javaType.getRawClass
+    typeNameMap.get(clazz.getName) match {
       case Some(jsTypeFactory) => (jsTypeFactory(description), true)
       case None =>
         try {
-          val clazz = classFor(genericFieldType)
-          genericFieldType match {
-            case _ if clazz == classOf[HttpRequest] => // for body parameter
-              (emptyObject(description), false) // unknown if body is required
-            case _ if clazz == classOf[HttpEntity.Strict] => // for body parameter
-              (emptyObject(description), true)
-            case _ if seenTypes.contains(clazz) =>
-              (emptyObject(description), true) // avoid infinite recursion
-            case _ if arrayTypesWithStringJsonRepresentation.contains(clazz) =>
-              (string(description), true)
-            case _ if clazz == classOf[OptionalInt] || clazz == classOf[OptionalLong] =>
-              (integer(description), false)
-            case _ if clazz == classOf[OptionalDouble] =>
-              (number(description), false)
-            case _ if clazz.isArray =>
-              (new JsonSchemaArray(jsonSchemaTypeFor(clazz.getComponentType, None, seenTypes)._1, None), true)
-            case g: GenericArrayType =>
-              (new JsonSchemaArray(jsonSchemaTypeFor(g.getGenericComponentType, None, seenTypes)._1, description), true)
-            case p: ParameterizedType if clazz == classOf[Optional[_]] =>
-              val (jsonFieldType, _) = jsonSchemaTypeFor(p.getActualTypeArguments.head, description, seenTypes)
-              (jsonFieldType, false)
-            case p: ParameterizedType if classOf[java.util.Collection[_]].isAssignableFrom(clazz) =>
-              (
-                new JsonSchemaArray(
-                  items = jsonSchemaTypeFor(p.getActualTypeArguments.head, None, seenTypes)._1,
-                  description),
-                true)
-            case _ if classOf[GeneratedMessageV3].isAssignableFrom(clazz) =>
-              val descriptor = Reflect.protoDescriptorFor(clazz.asSubclass(classOf[GeneratedMessageV3]))
-              (protobufJsonSchemaFromDescriptor(descriptor, description, Set.empty), true)
-
-            case _ if clazz.isEnum =>
-              val values = clazz.getEnumConstants.toIndexedSeq.map(_.asInstanceOf[Enum[_]].name)
-              (new JsonSchemaEnum(values, description), true)
-
-            case _ =>
-              scalarSchemaFor(clazz) match {
-                case Some(scalarSchema) => (scalarSchema(description), true)
-                case None               => (objectSchemaFor(clazz, description, seenTypes), true)
-              }
+          if (clazz == classOf[HttpRequest]) // for body parameter
+            (emptyObject(description), false) // unknown if body is required
+          else if (clazz == classOf[HttpEntity.Strict]) // for body parameter
+            (emptyObject(description), true)
+          else if (seenTypes.contains(clazz))
+            (emptyObject(description), true) // avoid infinite recursion
+          else if (arrayTypesWithStringJsonRepresentation.contains(clazz))
+            (string(description), true)
+          else if (clazz == classOf[OptionalInt] || clazz == classOf[OptionalLong])
+            (integer(description), false)
+          else if (clazz == classOf[OptionalDouble])
+            (number(description), false)
+          else if (javaType.isArrayType)
+            (new JsonSchemaArray(jsonSchemaTypeFor(javaType.getContentType, None, seenTypes)._1, description), true)
+          else if (clazz == classOf[Optional[_]]) {
+            val (jsonFieldType, _) = jsonSchemaTypeFor(javaType.containedTypeOrUnknown(0), description, seenTypes)
+            (jsonFieldType, false)
+          } else if (javaType.isCollectionLikeType)
+            (new JsonSchemaArray(jsonSchemaTypeFor(javaType.getContentType, None, seenTypes)._1, description), true)
+          else if (javaType.isMapLikeType)
+            (emptyObject(description), true)
+          else if (classOf[GeneratedMessageV3].isAssignableFrom(clazz)) {
+            val descriptor = Reflect.protoDescriptorFor(clazz.asSubclass(classOf[GeneratedMessageV3]))
+            (protobufJsonSchemaFromDescriptor(descriptor, description, Set.empty), true)
+          } else if (clazz.isEnum) {
+            val values = clazz.getEnumConstants.toIndexedSeq.map(_.asInstanceOf[Enum[_]].name)
+            (new JsonSchemaEnum(values, description), true)
+          } else {
+            scalarSchemaFor(clazz) match {
+              case Some(scalarSchema) => (scalarSchema(description), true)
+              case None               => (objectSchemaFor(javaType, description, seenTypes), true)
+            }
           }
         } catch {
           case NonFatal(ex) =>
-            log.debug("Failed to generate schema for [{}], returning 'object'", genericFieldType, ex)
+            log.debug("Failed to generate schema for [{}], returning 'object'", javaType, ex)
             (emptyObject(description), true)
         }
     }
   }
 
-  // Note: for now the top level can only be a class
   private def objectSchemaFor(
-      clazz: Class[_],
+      javaType: JavaType,
       description: Option[String],
       seenTypes: Set[Class[_]]): JsonSchemaObject = {
-    val properties = jacksonProperties(clazz).map { case (name, propertyType, member) =>
-      val description = Option(member.getAnnotation(classOf[Description])).map(_.value())
-      name -> jsonSchemaTypeFor(propertyType, description, seenTypes + clazz)
+    val properties = jacksonProperties(javaType).map { property =>
+      val description = Option(property.getPrimaryMember.getAnnotation(classOf[Description])).map(_.value())
+      property.getName -> jsonSchemaTypeFor(property.getAccessor.getType, description, seenTypes + javaType.getRawClass)
     }.toMap
 
     new JsonSchemaObject(
@@ -231,25 +215,18 @@ private[impl] object JsonSchema {
       required = properties.collect { case (key, (_, required)) if required => key }.toSeq.sorted)
   }
 
-  // The properties Jackson writes for a class, by JSON name, with the generic type and the member carrying the
-  // annotations. Introspected with the SDK mapper configuration, so naming strategies, ignores, renames, getters
-  // and annotations inherited from superclasses or interfaces apply exactly as in serialization.
-  private def jacksonProperties(clazz: Class[_]): Seq[(String, Type, AnnotatedMember)] = {
+  // The properties Jackson writes for a type. Introspected with the SDK mapper configuration, so naming strategies,
+  // ignores, renames, getters and annotations inherited from superclasses or interfaces apply exactly as in
+  // serialization. The accessor types are resolved against the type, so type variables of generic types are bound.
+  private def jacksonProperties(javaType: JavaType): Seq[BeanPropertyDefinition] = {
     val config = JsonSerializer.internalObjectMapper.getSerializationConfig
-    val beanDescription = config.introspect(config.constructType(clazz))
-    val ignoredNames = Option(config.getDefaultPropertyIgnorals(clazz, beanDescription.getClassInfo))
+    val beanDescription = config.introspect(javaType)
+    val ignoredNames = Option(config.getDefaultPropertyIgnorals(javaType.getRawClass, beanDescription.getClassInfo))
       .map(_.findIgnoredForSerialization.asScala.toSet)
       .getOrElse(Set.empty[String])
 
     beanDescription.findProperties.asScala.toVector
       .filter(property => property.couldSerialize && !ignoredNames(property.getName))
-      .map { property =>
-        val propertyType = property.getAccessor match {
-          case field: AnnotatedField   => field.getAnnotated.getGenericType
-          case getter: AnnotatedMethod => getter.getAnnotated.getGenericReturnType
-        }
-        (property.getName, propertyType, property.getPrimaryMember)
-      }
   }
 
   private def protobufFieldToJsonSchema(
