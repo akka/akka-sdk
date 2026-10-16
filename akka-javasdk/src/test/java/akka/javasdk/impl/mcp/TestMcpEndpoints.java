@@ -10,6 +10,7 @@ import akka.javasdk.annotations.mcp.McpResource;
 import akka.javasdk.annotations.mcp.McpTool;
 import com.google.protobuf.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -149,6 +150,20 @@ public class TestMcpEndpoints {
     @McpTool(name = "note-without-extra", description = "returns a record with an empty optional")
     public Note noteWithoutExtra() {
       return new Note("t", Optional.empty());
+    }
+
+    @McpTool(
+        name = "note-with-null-title",
+        description = "returns a record with a null required field")
+    public Note noteWithNullTitle() {
+      return new Note(null, Optional.of("x"));
+    }
+
+    public record Notes(List<Note> notes) {}
+
+    @McpTool(name = "notes-with-null-title", description = "returns nested null values")
+    public Notes notesWithNullTitle() {
+      return new Notes(Arrays.asList(new Note(null, Optional.empty()), null));
     }
   }
 
