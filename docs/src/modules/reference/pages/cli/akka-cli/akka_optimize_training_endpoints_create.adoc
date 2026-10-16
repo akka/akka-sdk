@@ -6,11 +6,11 @@ Make a model answerable at an endpoint
 
 Bring up an endpoint for a model, or attach the model to the endpoint already serving its base model.
 
---model takes a selected base model or a candidate.
---workload is what the endpoint's devices count against, and defaults to the workload the model names.
-A candidate names the workload it was trained for, so it needs no --workload;
+--model takes a selected base model, by repository or registry version, or a candidate, by registry reference NS/NAME[:VERSION].
+--project is what the endpoint's devices count against, and defaults to the training project the model names.
+A candidate names the training project it was trained for, so it needs no --project;
 a base model names none, so serving one takes the flag.
-Given for a candidate, it must be the workload the candidate already names.
+Given for a candidate, it must be the training project the candidate already names.
 
 Where nothing is serving the base model yet, this claims devices and the endpoint reports STARTING until the process answers.
 Where something is, the model attaches to it and is answerable at once.
@@ -23,21 +23,21 @@ It means nothing without --wait, so giving it alone is refused.
 
 [source,shell]
 ----
-akka optimize training endpoints create --model MODEL [--workload WORKLOAD] [flags]
+akka optimize training endpoints create --model MODEL [--project PROJECT] [flags]
 ----
 
 == Examples
 
 [source,shell]
 ----
-  # Serve a base model, which belongs to no workload
-  akka-optimize training endpoints create --model Qwen/Qwen3-8B --workload triage
+  # Serve a base model, which belongs to no training project
+  akka optimize training endpoints create --model Qwen/Qwen3-8B --project triage
 
-  # Serve a candidate over the same base model, under the workload it was trained for
-  akka-optimize training endpoints create --model triage-candidate
+  # Serve a candidate over the same base model, under the training project it was trained for
+  akka optimize training endpoints create --model triage/candidate:v3
 
   # Return once it answers
-  akka-optimize training endpoints create --model triage-candidate --wait
+  akka optimize training endpoints create --model triage/candidate:v3 --wait
 ----
 
 == Options
@@ -45,10 +45,10 @@ akka optimize training endpoints create --model MODEL [--workload WORKLOAD] [fla
 [source,text]
 ----
   -h, --help               help for create
-      --model string       Selected base model or candidate to serve
+      --model string       Selected base model or candidate to serve, as a registry reference NS/NAME[:VERSION]. With --project, NAME[:VERSION] names a model in that project's namespace
+      --project string     Training project whose GPU quota the endpoint's devices count against. Defaults to the training project the model names, and must agree with it when given
       --timeout duration   Maximum time to wait for the endpoint; zero waits without a deadline; requires --wait (default 15m0s)
       --wait               Wait until the endpoint answers
-      --workload string    Workload whose GPU quota the endpoint's devices count against. Defaults to the workload the model names, and must agree with it when given
 ----
 
 == Options inherited from parent commands
@@ -68,8 +68,8 @@ akka optimize training endpoints create --model MODEL [--workload WORKLOAD] [fla
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

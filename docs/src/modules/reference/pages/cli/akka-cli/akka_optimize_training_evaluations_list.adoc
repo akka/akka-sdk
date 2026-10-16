@@ -4,10 +4,10 @@ List model evaluations
 
 == Synopsis
 
-List evaluations and their scores, optionally filtered by workload, model or phase.
-The filters combine, so a workload and a phase together list that workload's unfinished evaluations.
+List evaluations and their scores, optionally filtered by training project, model or phase.
+The filters combine, so a training project and a phase together list that training project's unfinished evaluations.
 
---workload takes a name or an id, which is what scored against a workload's quota.
+--project takes a name or an id, which is what scored against a training project's quota.
 It is the same flag "evaluations start" takes.
 
 [source,shell]
@@ -20,19 +20,19 @@ akka optimize training evaluations list [flags]
 [source,shell]
 ----
   # List all evaluations
-  akka-optimize training evaluations list
+  akka optimize training evaluations list
 
   # List evaluations for a model
-  akka-optimize training evaluations list --model 4f3a91c07b2e5d68
+  akka optimize training evaluations list --model labeler/qwen3-0.6b:v3
 
-  # List what a workload has scored
-  akka-optimize training evaluations list --workload support-triage
+  # List what a training project has scored
+  akka optimize training evaluations list --project support-triage
 
   # List active and incomplete evaluations
-  akka-optimize training evaluations list --phase open
+  akka optimize training evaluations list --phase open
 
   # Filter low-scoring evaluations using jq
-  akka-optimize training evaluations list \
+  akka optimize training evaluations list \
     --jq '.evaluations[] | select(.meanScore < 0.5) | .evaluationId'
 ----
 
@@ -40,10 +40,10 @@ akka optimize training evaluations list [flags]
 
 [source,text]
 ----
-  -h, --help              help for list
-      --model string      Filter evaluations by model ID
-      --phase string      Filter by phase. Pass 'open' to list unfinished entries
-      --workload string   Filter evaluations by the workload they scored against, by name or ID
+  -h, --help             help for list
+      --model string     Filter evaluations by model, as a registry reference NS/NAME[:VERSION]. With --project, NAME[:VERSION] names a model in that project's namespace
+      --phase string     Filter by phase. Pass 'open' to list unfinished entries
+      --project string   Filter evaluations by the training project they scored against, by name or ID
 ----
 
 == Options inherited from parent commands
@@ -64,8 +64,8 @@ akka optimize training evaluations list [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

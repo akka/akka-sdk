@@ -6,6 +6,9 @@ Check if your environment is ready for Akka development
 
 Diagnose your development environment and verify all prerequisites are met for building and running Akka projects.
 
+With -o json, the checks run without the interactive screen and each one is printed with its name, state (passed, warning, failed or info), detail and, when it did not pass, the problem and fix.
+The command exits non-zero if any check failed, so a script can tell a passing environment from a failing one without parsing the JSON body.
+
 [source,shell]
 ----
 akka code check [flags]

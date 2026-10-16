@@ -1,19 +1,28 @@
 = akka optimize training runs metrics
 
-Display step-by-step metrics recorded by a training run
+Display metrics recorded for each step of a training run
 
 == Synopsis
 
-Display step-by-step metrics recorded during a training run.
+Display metrics recorded for each step of a training run.
 
-Metrics are reported as the run progresses.
-Supervised runs display loss.
-Reinforcement runs display the share of groups with no reward spread, the shares of rollouts scored zero and scored full, and the reward.
+Metrics become available as the run progresses.
+Supervised runs include loss.
+Reinforcement runs include the share of groups with no reward spread, the shares of rollouts that scored zero or full, and the reward.
+
+Every run includes values that describe each optimizer step: the gradient norm before clipping, the gradient clip factor, the adapter norm after the step, and the update ratio.
+The gradient clip factor is the factor used to scale the gradient during clipping.
+It is 1 when no clipping occurs.
+The update ratio is the norm of the adapter update divided by the adapter norm before the step.
 
 Use --limit to display only the most recent training steps.
 
-Use --fields to add columns beyond the ones shown by default: the figures named the same whichever engine trained the run (kl, maxMemoryGb, maxMemoryReservedGb, maxDeviceMemoryGb, scoredRewardMean, trainerIdle, rolloutIdle), every number the training loop logged for the step under its own names (such as entropy or learning_rate), and each reward term's mean share, named with a "terms:" prefix (such as terms:total).
-The structured output (-o json or --jq) already carries every one of these, the named figures at the top level and the rest under "measured" and "rewardTerms", whether or not --fields names them.
+Use --fields to add columns beyond the default columns.
+Available values include the fields that have the same name for every engine (kl, maxMemoryGb, maxMemoryReservedGb, maxDeviceMemoryGb, scoredRewardMean, trainerIdle, and rolloutIdle), every numeric value logged by the training loop (such as entropy or learning_rate), and each reward term's mean share.
+Prefix a reward term with "terms:", as in terms:total.
+Structured output (-o json or --jq) includes all of these values whether or not --fields names them.
+Fields shared by every engine are at the top level.
+The remaining values are under "measured" and "rewardTerms".
 
 [source,shell]
 ----
@@ -25,17 +34,17 @@ akka optimize training runs metrics RUN [flags]
 [source,shell]
 ----
   # Display all recorded metrics for a run
-  akka-optimize training runs metrics 7d496e82c3a15f04
+  akka optimize training runs metrics 7d496e82c3a15f04
 
   # Display the last 20 steps
-  akka-optimize training runs metrics 7d496e82c3a15f04 --limit 20
+  akka optimize training runs metrics 7d496e82c3a15f04 --limit 20
 
   # Add columns for entropy and a reward term's mean share
-  akka-optimize training runs metrics 7d496e82c3a15f04 \
+  akka optimize training runs metrics 7d496e82c3a15f04 \
     --fields entropy,terms:total
 
   # Extract step numbers and group variance metrics using jq
-  akka-optimize training runs metrics 7d496e82c3a15f04 \
+  akka optimize training runs metrics 7d496e82c3a15f04 \
     --jq '.[] | [.step, .zeroVarianceGroups]'
 ----
 
@@ -66,8 +75,8 @@ akka optimize training runs metrics RUN [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

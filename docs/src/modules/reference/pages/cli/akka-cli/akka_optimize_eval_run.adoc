@@ -5,7 +5,7 @@ Run the local eval campaigns (wraps `mvn verify -Deval=true`)
 == Synopsis
 
 A convenience for customers who prefer not to type Maven directly.
-The wrapper streams Maven's output to stdout and forwards its exit code, so a red-team suite in CI can drop this in place of the raw `mvn` line.
+The wrapper streams Maven's output to stdout and forwards its exit code, so a CI job can drop this in place of the raw `mvn` line.
 
 Campaigns are ordinary JUnit tests gated on -Deval=true, so this adds nothing the customer could not type themselves.
 
@@ -40,8 +40,8 @@ akka optimize eval run [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

@@ -1,17 +1,19 @@
-= akka optimize datasets images
+= akka optimize training adapters
 
-Manage dataset images
+Import a LoRA adapter trained elsewhere, so an endpoint can serve it
 
 == Synopsis
 
-Dataset images are identified by SHA-256 content hashes and shared across all datasets that reference them.
-Pushing existing images skips files that are already registered.
+Import a LoRA adapter trained outside Optimize as a registered model.
+
+The service takes the adapter's two files, checks them against the base model, puts them where an endpoint serves adapters from, and registers the adapter as a version of the model you name.
+An endpoint then serves it as it serves a model a run here trained.
 
 == Options
 
 [source,text]
 ----
-  -h, --help   help for images
+  -h, --help   help for adapters
 ----
 
 == Options inherited from parent commands
@@ -32,16 +34,17 @@ Pushing existing images skips files that are already registered.
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
 
 == SEE ALSO
 
-* link:akka_optimize_datasets.html[akka optimize datasets]	 - Manage training and evaluation datasets
-* link:akka_optimize_datasets_images_push.html[akka optimize datasets images push]	 - Upload dataset image files or directories
+* link:akka_optimize_training.html[akka optimize training]	 - Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, endpoints and their data
+* link:akka_optimize_training_adapters_get.html[akka optimize training adapters get]	 - Show where an adapter import stands
+* link:akka_optimize_training_adapters_import.html[akka optimize training adapters import]	 - Import a PEFT LoRA adapter as a version of a named model
 
 [discrete]
 

@@ -6,6 +6,10 @@ Resume a paused training run
 
 Resume a paused training run from its last completed checkpoint.
 
+With --step, resume from the run's save at that step instead.
+The save has to still hold its training state: execution.keepRecoverable sets how many of the newest saves keep it.
+The updates after that step are trained again.
+
 Associated evaluation judges are restarted and reconnected automatically.
 The run retains its existing ID, metric history, and checkpoint records.
 
@@ -19,14 +23,18 @@ akka optimize training runs resume RUN [flags]
 [source,shell]
 ----
   # Resume execution of a paused training run
-  akka-optimize training runs resume 7d496e82c3a15f04
+  akka optimize training runs resume 7d496e82c3a15f04
+
+  # Resume from the save at step 100
+  akka optimize training runs resume 7d496e82c3a15f04 --step 100
 ----
 
 == Options
 
 [source,text]
 ----
-  -h, --help   help for resume
+  -h, --help       help for resume
+      --step int   resume from the run's save at this step rather than its newest
 ----
 
 == Options inherited from parent commands
@@ -47,8 +55,8 @@ akka optimize training runs resume RUN [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
