@@ -328,6 +328,7 @@
                         <systemPropertyVariables>
                             <logback.configurationFile>${logback.configurationFile}</logback.configurationFile>
                             <akka.javasdk.dev-mode.project-artifact-id>${project.artifactId}</akka.javasdk.dev-mode.project-artifact-id>
+                            <akka.javasdk.dev-mode.project-group-id>${project.groupId}</akka.javasdk.dev-mode.project-group-id>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>
@@ -348,7 +349,7 @@
                                     <include>**/IT*.java</include>
                                     <include>**/*ITCase.java</include>
                                 </includes>
-                                <argLine>-Dlogback.configurationFile=${logback.configurationFile} -Dakka.javasdk.dev-mode.project-artifact-id=${project.artifactId}</argLine>
+                                <argLine>-Dlogback.configurationFile=${logback.configurationFile} -Dakka.javasdk.dev-mode.project-artifact-id=${project.artifactId} -Dakka.javasdk.dev-mode.project-group-id=${project.groupId}</argLine>
                             </configuration>
                         </execution>
                     </executions>
@@ -382,6 +383,10 @@
                             <systemProperty>
                                 <key>akka.javasdk.dev-mode.project-artifact-id</key>
                                 <value>${project.artifactId}</value>
+                            </systemProperty>
+                            <systemProperty>
+                                <key>akka.javasdk.dev-mode.project-group-id</key>
+                                <value>${project.groupId}</value>
                             </systemProperty>
                         </systemProperties>
                     </configuration>

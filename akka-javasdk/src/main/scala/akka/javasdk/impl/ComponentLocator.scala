@@ -65,6 +65,7 @@ private[javasdk] object ComponentLocator {
   private val LibraryLogUnlistedConfigPath = s"$LibraryConfigPath.$LibraryLogUnlistedKey"
   // set by the parent pom for tests and dev mode
   private val ProjectArtifactIdPath = "akka.javasdk.dev-mode.project-artifact-id"
+  private val ProjectGroupIdPath = "akka.javasdk.dev-mode.project-group-id"
   // Set by the annotation processor in the descriptor of the deployable service, never in a library descriptor.
   // Must be kept in sync with ComponentAnnotationProcessor.java
   private val DescriptorServiceMarkerPath = "akka.javasdk.service"
@@ -213,29 +214,43 @@ private[javasdk] object ComponentLocator {
       library: Seq[Descriptor])
 
   /**
+   * The Maven coordinates of the project under test or in dev mode.
+   */
+  private[impl] final case class ProjectCoordinates(groupId: String, artifactId: String) {
+    def descriptorFileName: String = s"$ComponentDescriptorPrefix${groupId}_$artifactId$ComponentDescriptorSuffix"
+  }
+
+  /**
    * Classifies descriptors into the ones of the service, the ones shipped by SDK modules and the ones from component
    * libraries. The service descriptors are all descriptors with the file name of a descriptor that the annotation
    * processor marked, so a stale descriptor from main or test classes stays with the service. When no descriptor is
-   * marked, the service descriptors are the ones with a file name that matches `projectArtifactId`. Fails on service
+   * marked, the service descriptors are the ones with the descriptor file name of `project`. Fails on service
    * descriptors from more than one artifact. Fails on no service descriptor unless library components are listed in
    * config.
    */
   private[impl] def classifyDescriptors(
       descriptors: Seq[Descriptor],
-      projectArtifactId: Option[String],
+      project: Option[ProjectCoordinates],
       libraryComponentsListed: Boolean): ClassifiedDescriptors = {
     val (sdkProvided, others) = descriptors.partition(d => SdkProvidedDescriptorNames.contains(d.fileName))
     val markedNames = others.filter(_.isService).map(_.fileName).toSet
     // the file name only identifies the service when nothing is marked, such as in the tests of a library
     val serviceNames =
       if (markedNames.nonEmpty) markedNames
-      else
-        projectArtifactId.toSet[String].flatMap { id =>
-          others.map(_.fileName).filter(_.endsWith(s"_$id$ComponentDescriptorSuffix"))
-        }
+      else project.map(_.descriptorFileName).filter(name => others.exists(_.fileName == name)).toSet
     val (service, library) = others.partition(d => serviceNames.contains(d.fileName))
     serviceNames.size match {
-      case 1                            => ClassifiedDescriptors(service, sdkProvided, library)
+      case 1 =>
+        if (markedNames.isEmpty)
+          logger.info(
+            "No component descriptor has the service marker, using the descriptors [{}] of project [{}:{}] as the " +
+            "service descriptors. This is expected in the tests of a component library. The SDK does this only in " +
+            "tests and dev mode. A deployable service must not set the Maven property `non-akka-service` to `true`, " +
+            "or it fails to start in production.",
+            service.map(_.url).mkString(", "),
+            project.map(_.groupId).getOrElse(""),
+            project.map(_.artifactId).getOrElse(""))
+        ClassifiedDescriptors(service, sdkProvided, library)
       case 0 if libraryComponentsListed => ClassifiedDescriptors(Seq.empty, sdkProvided, library)
       case 0 if library.isEmpty =>
         throw new IllegalStateException(
@@ -243,7 +258,7 @@ private[javasdk] object ComponentLocator {
           "to be recompiled. Run `mvn clean compile` and try again.")
       case 0 =>
         val libraryTestNote =
-          if (projectArtifactId.isDefined)
+          if (project.isDefined)
             " If this is a test of a component library, list the components it uses from other libraries in " +
             s"config [$LibraryComponentsConfigPath]."
           else ""
@@ -516,17 +531,20 @@ private[javasdk] object ComponentLocator {
 
     val listedLibrary = listedLibraryComponents(applicationConfig)
     val listedLibraryClassNames = listedLibrary.map(_._2).toSet
-    val projectArtifactId =
-      if (applicationConfig.hasPath(ProjectArtifactIdPath))
-        Some(applicationConfig.getString(ProjectArtifactIdPath)).filter(_.nonEmpty)
-      else None
+    def nonEmptyString(path: String) =
+      if (applicationConfig.hasPath(path)) Some(applicationConfig.getString(path)).filter(_.nonEmpty) else None
+    val project = for {
+      groupId <- nonEmptyString(ProjectGroupIdPath)
+      artifactId <- nonEmptyString(ProjectArtifactIdPath)
+    } yield ProjectCoordinates(groupId, artifactId)
     val classified =
-      classifyDescriptors(allDescriptors, projectArtifactId, libraryComponentsListed = listedLibraryClassNames.nonEmpty)
+      classifyDescriptors(allDescriptors, project, libraryComponentsListed = listedLibraryClassNames.nonEmpty)
+    val logUnlisted = applicationConfig.getBoolean(LibraryLogUnlistedConfigPath)
     classified.library.filter(_.config.hasPath(DescriptorServiceSetupEntryPath)).foreach { descriptor =>
-      logger.warn(
-        "Ignoring service setup [{}] in library component descriptor [{}]",
-        descriptor.config.getString(DescriptorServiceSetupEntryPath),
-        descriptor.url)
+      val message = "Ignoring service setup [{}] in library component descriptor [{}]"
+      val setupClass = descriptor.config.getString(DescriptorServiceSetupEntryPath)
+      if (logUnlisted) logger.warn(message, setupClass, descriptor.url)
+      else logger.debug(message, setupClass, descriptor.url)
     }
 
     val descriptorConfig = mergeDescriptorConfigs((classified.service ++ classified.sdkProvided).map(_.config))
@@ -555,7 +573,6 @@ private[javasdk] object ComponentLocator {
     }.toSeq
 
     unlistedLibraryComponentsMessage(classified.library, listedLibraryClassNames).foreach { message =>
-      val logUnlisted = applicationConfig.getBoolean(LibraryLogUnlistedConfigPath)
       if (!logUnlisted) logger.debug(message)
       else if (listedLibraryClassNames.isEmpty) logger.warn(message)
       else logger.info(message)
