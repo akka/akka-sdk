@@ -72,11 +72,11 @@ A `RemoteMcpTools.ToolInterceptor` behaves differently in these cases:
 
 A service no longer loads the components of a library jar automatically. List the library components that the service uses in `akka.javasdk.library.components`, as described in xref:sdk:setup-and-dependency-injection.adoc#_using_components_from_libraries[Using components from libraries]. On startup, the service logs a warning that lists the library components it found and the configuration that loads them.
 
-A library built with an earlier SDK version works without a change. The service treats its component descriptor as a library descriptor.
+You do not need to rebuild a library built with an earlier SDK version. The service treats its component descriptor as a library descriptor, so you list its components like the components of any other library.
 
 Build a component library with the `non-akka-service` property set to `true`. A library built with SDK 3.7.0 without this property marks its component descriptor as a service descriptor, and a service that depends on it fails to start.
 
-Run `mvn clean compile` once after you upgrade a service or a library to SDK 3.7.0.
+On the first build after the upgrade, the Akka parent pom removes the build output from the earlier SDK version. For a build without the Akka parent pom, run a clean build once after the upgrade.
 
 == SDK 3.5.5
 

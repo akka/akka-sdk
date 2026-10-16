@@ -102,7 +102,7 @@ akka.javasdk.library.components {
 
 The service loads the listed classes on startup as if they were defined in the service itself, and logs the added library components.
 
-List every library component that the service uses, including the components that a listed component calls. For example, list the entity that a listed endpoint calls. A call to a component that is not listed fails.
+List every library component that the service uses, including the components that a listed component calls. For example, list the entity that a listed endpoint calls. A call to a component that is not listed fails. Do not list SDK components, such as `SessionMemoryEntity`. The SDK loads them when the service needs them.
 
 If the service tests use another configuration file than `application.conf`, include `application.conf` from that file, or list the components in it too.
 
