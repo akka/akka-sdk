@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: docs-wip-snapshots
+  cancel-in-progress: true
+
 jobs:
   build:
     name: scp to Gustav
