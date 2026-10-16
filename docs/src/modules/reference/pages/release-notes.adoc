@@ -29,7 +29,7 @@ This functionality evolves quickly, the behavior and APIs might change between r
 - Workload identity support for data management 
 - Akka Optimize 0.8
 - Service components watermark and check-progress commands 
-- Akka Specify improvments
+- Akka Specify improvements
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.7.0[Akka SDK 3.7.0]
 - Runtime 1.7.2
