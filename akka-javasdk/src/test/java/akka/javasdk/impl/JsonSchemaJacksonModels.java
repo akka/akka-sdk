@@ -231,6 +231,18 @@ class JsonSchemaJacksonModels {
 
   public static class ItemList extends ArrayList<Item> {}
 
+  public static class ConflictingGetters {
+    @JsonProperty("a")
+    public String getB() {
+      return "b";
+    }
+
+    @JsonProperty("a")
+    public String getC() {
+      return "c";
+    }
+  }
+
   // generic types as they appear in method signatures
   public interface GenericSignatures {
     Holder<Item> holder();

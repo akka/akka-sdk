@@ -296,8 +296,8 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
     }
 
     "use object for types causing exceptions" in {
-      // undefined type parameters in Hashtable#Entry should always make this throw
-      JsonSchema.jsonSchemaFor(classOf[java.util.Hashtable[_, _]]) shouldBe a[JsonSchemaObject]
+      // Jackson rejects two getters for the same property
+      JsonSchema.jsonSchemaFor(classOf[JsonSchemaJacksonModels.ConflictingGetters]) shouldEqual Schema.jsonObject()
     }
 
   }
