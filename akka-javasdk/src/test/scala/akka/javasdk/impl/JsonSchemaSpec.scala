@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl
 
+import scala.jdk.CollectionConverters._
+
 import akka.javasdk.impl.SomeToolInput.ClassWithRecursiveFields
 import akka.javasdk.impl.SomeToolInput.CommonStdlibTypes
 import akka.javasdk.impl.SomeToolInput.SomeEnum
@@ -12,6 +14,7 @@ import akka.javasdk.impl.SomeToolInput.SomeToolInput2
 import akka.javasdk.impl.SomeToolInput.SomeToolInput3
 import akka.javasdk.impl.SomeToolInput.SomeToolInputWithEnum
 import akka.javasdk.impl.SomeToolInput.SomeToolInputWithGenericArray
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaBoolean
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaDataType
@@ -207,6 +210,56 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
         "required" -> Schema.enumOf(Seq("ONE", "TWO", "THREE"), description = "required choice"),
         "optional" -> Schema.enumOf(Seq("ONE", "TWO", "THREE")))
       result.required shouldEqual Seq("required")
+    }
+
+    "extract schema with only the fields Jackson maps" in {
+      val mapper = JsonSerializer.internalObjectMapper
+      val models = new JsonSchemaJacksonModels
+      val examples: Seq[(AnyRef, Set[String])] = Seq(
+        new JsonSchemaJacksonModels.WithStaticField("name") -> Set("name"),
+        new JsonSchemaJacksonModels.WithJacksonAnnotations("name", "secret", 42) -> Set("full_name", "age"),
+        new JsonSchemaJacksonModels.WithIgnoredProperties("name", "internal") -> Set("name"),
+        new JsonSchemaJacksonModels.WithNamingStrategy("first", "last") -> Set("first_name", "explicit"),
+        new JsonSchemaJacksonModels.WithCustomNaming("first", 42) -> Set("x_firstName", "x_age"),
+        new JsonSchemaJacksonModels.ViaInterfaceNaming("first") -> Set("first_name"),
+        new JsonSchemaJacksonModels.ViaInterfaceIgnore("name", "internal") -> Set("name"),
+        new JsonSchemaJacksonModels.IgnoreSub("a", "b", "c") -> Set("a", "c"),
+        new JsonSchemaJacksonModels.WithTransientField("name", "cached") -> Set("name"),
+        new JsonSchemaJacksonModels.TransientWithProperty("name", "cached") -> Set("name", "cached"),
+        new JsonSchemaJacksonModels.SubClass("base", "sub") -> Set("baseField", "subField"),
+        new JsonSchemaJacksonModels.GetterRenamed("name") -> Set("full_name"),
+        new JsonSchemaJacksonModels.CreatorRenamed("name") -> Set("full_name"),
+        new JsonSchemaJacksonModels.GetterIgnored("name", "secret") -> Set("name"),
+        new JsonSchemaJacksonModels.AccessorIgnored("a", "b") -> Set("a"),
+        new JsonSchemaJacksonModels.ShadowSub("sub") -> Set("name"),
+        new JsonSchemaJacksonModels.ShadowRenamedSub("sub") -> Set("x"),
+        new JsonSchemaJacksonModels.DescribedPojo("name") -> Set("name"),
+        new models.InnerClass -> Set("name"))
+
+      examples.foreach { case (example, expectedNames) =>
+        withClue(example.getClass.getSimpleName) {
+          val schema = JsonSchema.jsonSchemaFor(example.getClass).asInstanceOf[JsonSchemaObject]
+          schema.properties.keySet shouldEqual expectedNames
+          schema.required.toSet shouldEqual expectedNames
+
+          // the same names in both directions of the SDK Jackson configuration
+          val json = mapper.writeValueAsString(example)
+          mapper.readTree(json).fieldNames().asScala.toSet shouldEqual expectedNames
+          // Jackson cannot construct a non-static inner class as a root value
+          if (!example.isInstanceOf[models.InnerClass]) {
+            val readBack = mapper.readValue(json, example.getClass)
+            mapper.readTree(mapper.writeValueAsString(readBack)) shouldEqual mapper.readTree(json)
+          }
+        }
+      }
+
+      val shadowSchema =
+        JsonSchema.jsonSchemaFor(classOf[JsonSchemaJacksonModels.ShadowSub]).asInstanceOf[JsonSchemaObject]
+      shadowSchema.properties("name") shouldEqual Schema.string()
+
+      val describedSchema =
+        JsonSchema.jsonSchemaFor(classOf[JsonSchemaJacksonModels.DescribedPojo]).asInstanceOf[JsonSchemaObject]
+      describedSchema.properties("name") shouldEqual Schema.string(description = "the name")
     }
 
     "use object for types causing exceptions" in {
