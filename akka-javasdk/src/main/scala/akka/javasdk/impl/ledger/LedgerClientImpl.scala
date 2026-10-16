@@ -209,6 +209,8 @@ private[ledger] object LedgerClientImpl {
         new EvaluationRecord.Outcome.Verdict(toEvaluation(verdict.evaluation))
       case inconclusive: SpiLedger.EvaluationInconclusive =>
         new EvaluationRecord.Outcome.Inconclusive(inconclusive.reason)
+      case notApplicable: SpiLedger.EvaluationNotApplicable =>
+        new EvaluationRecord.Outcome.NotApplicable(notApplicable.reason)
       case failure: SpiLedger.EvaluationFailure =>
         new EvaluationRecord.Outcome.Failed(failure.reason)
     }

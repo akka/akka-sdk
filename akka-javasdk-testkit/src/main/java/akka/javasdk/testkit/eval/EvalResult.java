@@ -20,9 +20,14 @@ public record EvalResult(String evaluator, Verdict verdict, String detail) {
     FAIL,
     /**
      * The evaluator reached no verdict, or recorded no evaluation within the evaluation timeout;
-     * neither a pass nor a fail.
+     * neither a pass nor a fail. An attempt with an inconclusive result does not pass.
      */
-    INCONCLUSIVE
+    INCONCLUSIVE,
+    /**
+     * The evaluator found nothing to evaluate in the interaction; neither a pass nor a fail. The
+     * result does not count against the attempt.
+     */
+    NOT_APPLICABLE
   }
 
   public EvalResult {
@@ -41,5 +46,9 @@ public record EvalResult(String evaluator, Verdict verdict, String detail) {
 
   public static EvalResult inconclusive(String evaluator, String detail) {
     return new EvalResult(evaluator, Verdict.INCONCLUSIVE, detail);
+  }
+
+  public static EvalResult notApplicable(String evaluator, String detail) {
+    return new EvalResult(evaluator, Verdict.NOT_APPLICABLE, detail);
   }
 }

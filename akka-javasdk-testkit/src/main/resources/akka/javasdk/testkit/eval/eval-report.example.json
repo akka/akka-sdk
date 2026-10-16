@@ -1,6 +1,6 @@
 {
   "format" : "akka-eval-report",
-  "formatVersion" : 3,
+  "formatVersion" : 4,
   "name" : "support-agent-quality",
   "startedAt" : "2026-10-15T14:30:27.579747Z",
   "finishedAt" : "2026-10-15T14:30:27.580566Z",
@@ -26,12 +26,14 @@
     "evaluator" : "quality",
     "passed" : 2,
     "failed" : 1,
-    "inconclusive" : 0
+    "inconclusive" : 0,
+    "notApplicable" : 0
   }, {
     "evaluator" : "tone",
     "passed" : 2,
     "failed" : 0,
-    "inconclusive" : 1
+    "inconclusive" : 1,
+    "notApplicable" : 0
   } ],
   "guardrails" : [ {
     "guardrail" : "no-refunds",
@@ -58,14 +60,16 @@
       "outcome" : "PASSED",
       "passedIn" : [ 1 ],
       "failedIn" : [ ],
-      "inconclusiveIn" : [ ]
+      "inconclusiveIn" : [ ],
+      "notApplicableIn" : [ ]
     }, {
       "index" : 1,
       "evaluator" : "tone",
       "outcome" : "PASSED",
       "passedIn" : [ 1 ],
       "failedIn" : [ ],
-      "inconclusiveIn" : [ ]
+      "inconclusiveIn" : [ ],
+      "notApplicableIn" : [ ]
     } ]
   }, {
     "id" : "refund",
@@ -79,14 +83,16 @@
       "outcome" : "FAILED",
       "passedIn" : [ ],
       "failedIn" : [ 1 ],
-      "inconclusiveIn" : [ ]
+      "inconclusiveIn" : [ ],
+      "notApplicableIn" : [ ]
     }, {
       "index" : 1,
       "evaluator" : "tone",
       "outcome" : "PASSED",
       "passedIn" : [ 1 ],
       "failedIn" : [ ],
-      "inconclusiveIn" : [ ]
+      "inconclusiveIn" : [ ],
+      "notApplicableIn" : [ ]
     } ]
   }, {
     "id" : "closing",
@@ -100,14 +106,16 @@
       "outcome" : "PASSED",
       "passedIn" : [ 1 ],
       "failedIn" : [ ],
-      "inconclusiveIn" : [ ]
+      "inconclusiveIn" : [ ],
+      "notApplicableIn" : [ ]
     }, {
       "index" : 1,
       "evaluator" : "tone",
       "outcome" : "INCONCLUSIVE",
       "passedIn" : [ ],
       "failedIn" : [ ],
-      "inconclusiveIn" : [ 1 ]
+      "inconclusiveIn" : [ 1 ],
+      "notApplicableIn" : [ ]
     } ]
   } ],
   "attempts" : [ {

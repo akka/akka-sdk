@@ -238,7 +238,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
     assertThat(result.failed()).isTrue();
     assertThat(result.describe())
         .contains("FAIL tool-use: expected one getCustomer call, called []")
-        .contains("INCONCLUSIVE reply-grounding: no customer was looked up");
+        .contains("NOT_APPLICABLE reply-grounding: no customer was looked up");
   }
 
   @Test

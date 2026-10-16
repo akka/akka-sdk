@@ -386,6 +386,8 @@ public final class ExperimentRunner {
       }
       case EvaluationRecord.Outcome.Inconclusive inconclusive ->
           EvalResult.inconclusive(evaluator, inconclusive.reason());
+      case EvaluationRecord.Outcome.NotApplicable notApplicable ->
+          EvalResult.notApplicable(evaluator, notApplicable.reason());
       case EvaluationRecord.Outcome.Failed failed ->
           EvalResult.fail(evaluator, "the evaluator failed: " + failed.reason());
     };
@@ -448,19 +450,22 @@ public final class ExperimentRunner {
     }
 
     /**
-     * PASS when every result passed, FAIL when a result failed, INCONCLUSIVE when no result failed
-     * and a result is inconclusive or there is no result. A failed agent call is a failed result.
+     * FAIL when a result failed. Otherwise INCONCLUSIVE when a result is inconclusive, or when no
+     * result passed: every result is not applicable, or there is no result. Otherwise PASS: at
+     * least one result passed and the others are not applicable. A failed agent call is a failed
+     * result.
      */
     public EvalResult.Verdict verdict() {
       var verdicts = evalResults.stream().map(EvalResult::verdict).collect(Collectors.toSet());
       if (verdicts.contains(EvalResult.Verdict.FAIL)) return EvalResult.Verdict.FAIL;
-      if (verdicts.contains(EvalResult.Verdict.INCONCLUSIVE) || verdicts.isEmpty()) {
+      if (verdicts.contains(EvalResult.Verdict.INCONCLUSIVE)
+          || !verdicts.contains(EvalResult.Verdict.PASS)) {
         return EvalResult.Verdict.INCONCLUSIVE;
       }
       return EvalResult.Verdict.PASS;
     }
 
-    /** Every result passed. */
+    /** At least one result passed, and no result failed or is inconclusive. */
     public boolean passed() {
       return verdict() == EvalResult.Verdict.PASS;
     }
@@ -470,7 +475,7 @@ public final class ExperimentRunner {
       return verdict() == EvalResult.Verdict.FAIL;
     }
 
-    /** No failed result, and an inconclusive result or no result at all. */
+    /** No failed result, and an inconclusive result or no passed result. */
     public boolean inconclusive() {
       return verdict() == EvalResult.Verdict.INCONCLUSIVE;
     }
@@ -486,7 +491,7 @@ public final class ExperimentRunner {
               switch (verdict()) {
                 case PASS -> " passed";
                 case FAIL -> " FAILED";
-                case INCONCLUSIVE -> " INCONCLUSIVE";
+                case INCONCLUSIVE, NOT_APPLICABLE -> " INCONCLUSIVE";
               })
           .append('\n');
       if (evidence.interaction().isEmpty()) {
@@ -580,6 +585,7 @@ public final class ExperimentRunner {
    * @param passedIn the runs with the verdict PASS, ascending
    * @param failedIn the runs with the verdict FAIL, ascending
    * @param inconclusiveIn the runs with the verdict INCONCLUSIVE, ascending
+   * @param notApplicableIn the runs with the verdict NOT_APPLICABLE, ascending
    */
   public record RequirementSummary(
       String caseId,
@@ -587,12 +593,14 @@ public final class ExperimentRunner {
       String evaluator,
       List<Integer> passedIn,
       List<Integer> failedIn,
-      List<Integer> inconclusiveIn) {
+      List<Integer> inconclusiveIn,
+      List<Integer> notApplicableIn) {
 
     public RequirementSummary {
       passedIn = List.copyOf(passedIn);
       failedIn = List.copyOf(failedIn);
       inconclusiveIn = List.copyOf(inconclusiveIn);
+      notApplicableIn = List.copyOf(notApplicableIn);
     }
 
     /** The outcome over the runs where the requirement was conclusive. */
@@ -629,7 +637,8 @@ public final class ExperimentRunner {
                       e.getKey().evaluator(),
                       e.getValue().getOrDefault(EvalResult.Verdict.PASS, List.of()),
                       e.getValue().getOrDefault(EvalResult.Verdict.FAIL, List.of()),
-                      e.getValue().getOrDefault(EvalResult.Verdict.INCONCLUSIVE, List.of())))
+                      e.getValue().getOrDefault(EvalResult.Verdict.INCONCLUSIVE, List.of()),
+                      e.getValue().getOrDefault(EvalResult.Verdict.NOT_APPLICABLE, List.of())))
           .toList();
     }
 
@@ -639,6 +648,8 @@ public final class ExperimentRunner {
       if (!passedIn.isEmpty()) parts.add("passed in " + describeRuns(passedIn));
       if (!failedIn.isEmpty()) parts.add("failed in " + describeRuns(failedIn));
       if (!inconclusiveIn.isEmpty()) parts.add("inconclusive in " + describeRuns(inconclusiveIn));
+      if (!notApplicableIn.isEmpty())
+        parts.add("not applicable in " + describeRuns(notApplicableIn));
       return caseId + " " + name + ": " + String.join(", ", parts);
     }
   }
@@ -967,12 +978,14 @@ public final class ExperimentRunner {
     private int passed;
     private int failed;
     private int inconclusive;
+    private int notApplicable;
 
     private void count(EvalResult.Verdict verdict) {
       switch (verdict) {
         case PASS -> passed++;
         case FAIL -> failed++;
         case INCONCLUSIVE -> inconclusive++;
+        case NOT_APPLICABLE -> notApplicable++;
       }
     }
 
@@ -988,9 +1001,16 @@ public final class ExperimentRunner {
       return inconclusive;
     }
 
+    int notApplicable() {
+      return notApplicable;
+    }
+
     private String render(String evaluator) {
-      var undecided = inconclusive == 0 ? "" : " (" + inconclusive + " inconclusive)";
-      return evaluator + " " + passed + "/" + (passed + failed) + undecided;
+      var undecided = new ArrayList<String>();
+      if (inconclusive > 0) undecided.add(inconclusive + " inconclusive");
+      if (notApplicable > 0) undecided.add(notApplicable + " not applicable");
+      var suffix = undecided.isEmpty() ? "" : " (" + String.join(", ", undecided) + ")";
+      return evaluator + " " + passed + "/" + (passed + failed) + suffix;
     }
   }
 }

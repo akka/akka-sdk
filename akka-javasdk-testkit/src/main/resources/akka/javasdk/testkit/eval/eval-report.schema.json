@@ -73,12 +73,13 @@
   "$defs": {
     "evaluatorCounts": {
       "type": "object",
-      "required": ["evaluator", "passed", "failed", "inconclusive"],
+      "required": ["evaluator", "passed", "failed", "inconclusive", "notApplicable"],
       "properties": {
         "evaluator": { "type": "string", "description": "The evaluator component id. target is reported by the runner when the agent call failed." },
         "passed": { "type": "integer", "minimum": 0 },
         "failed": { "type": "integer", "minimum": 0 },
-        "inconclusive": { "type": "integer", "minimum": 0 }
+        "inconclusive": { "type": "integer", "minimum": 0 },
+        "notApplicable": { "type": "integer", "minimum": 0 }
       }
     },
     "guardrailCounts": {
@@ -105,14 +106,15 @@
     },
     "requirement": {
       "type": "object",
-      "required": ["index", "evaluator", "outcome", "passedIn", "failedIn", "inconclusiveIn"],
+      "required": ["index", "evaluator", "outcome", "passedIn", "failedIn", "inconclusiveIn", "notApplicableIn"],
       "properties": {
         "index": { "type": "integer", "minimum": 0, "description": "The position of the result in the attempt, from 0." },
         "evaluator": { "type": "string", "description": "The evaluator component id, or target." },
         "outcome": { "enum": ["PASSED", "FAILED", "INCONSISTENT", "INCONCLUSIVE"], "description": "Over the runs where the requirement was conclusive. INCONSISTENT when it passed in some runs and failed in others, INCONCLUSIVE when it was conclusive in no run." },
         "passedIn": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "description": "The runs with the verdict PASS, ascending." },
         "failedIn": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "description": "The runs with the verdict FAIL, ascending." },
-        "inconclusiveIn": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "description": "The runs with the verdict INCONCLUSIVE, ascending." }
+        "inconclusiveIn": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "description": "The runs with the verdict INCONCLUSIVE, ascending." },
+        "notApplicableIn": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "description": "The runs with the verdict NOT_APPLICABLE, ascending." }
       }
     },
     "attempt": {
@@ -121,7 +123,7 @@
       "properties": {
         "id": { "type": "string", "description": "The case id." },
         "run": { "type": "integer", "minimum": 1, "description": "The run, from 1." },
-        "verdict": { "enum": ["PASS", "FAIL", "INCONCLUSIVE"], "description": "PASS when every result passed, FAIL when a result failed, INCONCLUSIVE when no result failed and a result is inconclusive or there is no result." },
+        "verdict": { "enum": ["PASS", "FAIL", "INCONCLUSIVE"], "description": "FAIL when a result failed, INCONCLUSIVE when no result failed and a result is inconclusive or no result passed, PASS otherwise. A not applicable result does not count against the attempt." },
         "evidence": { "$ref": "#/$defs/evidence" },
         "results": { "type": "array", "items": { "$ref": "#/$defs/result" } }
       }
@@ -169,7 +171,7 @@
       "required": ["evaluator", "verdict", "detail"],
       "properties": {
         "evaluator": { "type": "string", "description": "The evaluator component id, or target." },
-        "verdict": { "enum": ["PASS", "FAIL", "INCONCLUSIVE"] },
+        "verdict": { "enum": ["PASS", "FAIL", "INCONCLUSIVE", "NOT_APPLICABLE"] },
         "detail": { "type": "string", "description": "The explanation and the score, or why there is no verdict. Empty when the evaluator gave none." }
       }
     }

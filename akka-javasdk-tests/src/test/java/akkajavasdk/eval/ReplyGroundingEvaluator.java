@@ -43,7 +43,7 @@ public class ReplyGroundingEvaluator extends Evaluator {
     }
     var lookups = ToolUseEvaluator.callsTo(interaction.toolCalls(), "getCustomer");
     if (lookups.isEmpty()) {
-      return effects().inconclusive("no customer was looked up, nothing to ground the reply in");
+      return effects().notApplicable("no customer was looked up, nothing to ground the reply in");
     }
     var customer = JsonSupport.decodeJson(Customer.class, lookups.getFirst().response().getBytes());
     if (!reply.contains(customer.name())) {

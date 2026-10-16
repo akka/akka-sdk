@@ -8,6 +8,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.Optional
 
+import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.GuardrailDecisionRecord
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiLedger
@@ -107,6 +108,22 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       val record = LedgerClientImpl.toEvaluationRecord(spiEvaluationRecord(None))
 
       record.controlId() shouldEqual Optional.empty()
+    }
+
+    "carry a not applicable outcome" in {
+      val spiRecord = new SpiLedger.EvaluationRecord(
+        evaluationId = "evaluation-1",
+        evaluatorComponentId = "quality-evaluator",
+        controlId = None,
+        trigger = SpiLedger.EvaluationTrigger.OnInteraction,
+        subject = new SpiLedger.InteractionSubject("interaction-1", "support-agent"),
+        outcome = new SpiLedger.EvaluationNotApplicable("no tool call"),
+        timestamp = Instant.EPOCH)
+
+      val record = LedgerClientImpl.toEvaluationRecord(spiRecord)
+
+      record.outcome() shouldEqual new EvaluationRecord.Outcome.NotApplicable("no tool call")
+      record.evaluation() shouldEqual Optional.empty()
     }
   }
 

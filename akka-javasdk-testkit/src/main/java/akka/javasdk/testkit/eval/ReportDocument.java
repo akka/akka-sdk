@@ -59,7 +59,7 @@ public record ReportDocument(
     List<Attempt> attempts) {
 
   public static final String FORMAT = "akka-eval-report";
-  public static final int FORMAT_VERSION = 3;
+  public static final int FORMAT_VERSION = 4;
 
   /** Reads a report file written by {@link Experiment#run}. */
   public static ReportDocument read(Path file) {
@@ -111,8 +111,10 @@ public record ReportDocument(
    * @param passed results with the verdict PASS
    * @param failed results with the verdict FAIL
    * @param inconclusive results with the verdict INCONCLUSIVE
+   * @param notApplicable results with the verdict NOT_APPLICABLE
    */
-  public record EvaluatorCounts(String evaluator, int passed, int failed, int inconclusive) {}
+  public record EvaluatorCounts(
+      String evaluator, int passed, int failed, int inconclusive, int notApplicable) {}
 
   /**
    * @param guardrail the configured name of the guardrail
@@ -170,6 +172,7 @@ public record ReportDocument(
    * @param passedIn the runs with the verdict PASS, ascending
    * @param failedIn the runs with the verdict FAIL, ascending
    * @param inconclusiveIn the runs with the verdict INCONCLUSIVE, ascending
+   * @param notApplicableIn the runs with the verdict NOT_APPLICABLE, ascending
    */
   public record Requirement(
       int index,
@@ -177,15 +180,16 @@ public record ReportDocument(
       Outcome outcome,
       List<Integer> passedIn,
       List<Integer> failedIn,
-      List<Integer> inconclusiveIn) {}
+      List<Integer> inconclusiveIn,
+      List<Integer> notApplicableIn) {}
 
   /**
    * One case in one run.
    *
    * @param id the case id
    * @param run the run, from 1
-   * @param verdict PASS when every result passed, FAIL when a result failed, INCONCLUSIVE when no
-   *     result failed and a result is inconclusive or there is none
+   * @param verdict FAIL when a result failed, INCONCLUSIVE when no result failed and a result is
+   *     inconclusive or no result passed, PASS otherwise
    * @param evidence what the attempt left in the ledger
    * @param results one entry per evaluator
    */
@@ -244,7 +248,7 @@ public record ReportDocument(
 
   /**
    * @param evaluator the evaluator component id, or {@link ExperimentRunner#TARGET}
-   * @param verdict PASS, FAIL or INCONCLUSIVE
+   * @param verdict PASS, FAIL, INCONCLUSIVE or NOT_APPLICABLE
    * @param detail the explanation and the score, or why there is no verdict; empty when the
    *     evaluator gave none
    */

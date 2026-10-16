@@ -129,6 +129,10 @@ final class Targets {
     return evaluation(interactionId, evaluator, new EvaluationRecord.Outcome.Inconclusive(reason));
   }
 
+  static EvaluationRecord notApplicable(String interactionId, String evaluator, String reason) {
+    return evaluation(interactionId, evaluator, new EvaluationRecord.Outcome.NotApplicable(reason));
+  }
+
   static EvaluationRecord evaluation(
       String interactionId, String evaluator, EvaluationRecord.Outcome outcome) {
     return new EvaluationRecord(

@@ -91,7 +91,8 @@ final class EvalReportJson {
                     e.getKey(),
                     e.getValue().passed(),
                     e.getValue().failed(),
-                    e.getValue().inconclusive()))
+                    e.getValue().inconclusive(),
+                    e.getValue().notApplicable()))
         .toList();
   }
 
@@ -112,7 +113,8 @@ final class EvalReportJson {
         requirement.outcome(),
         requirement.passedIn(),
         requirement.failedIn(),
-        requirement.inconclusiveIn());
+        requirement.inconclusiveIn(),
+        requirement.notApplicableIn());
   }
 
   private static ReportDocument.Attempt attempt(CaseResult result) {

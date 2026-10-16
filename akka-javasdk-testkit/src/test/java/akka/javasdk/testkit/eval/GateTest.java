@@ -95,6 +95,29 @@ class GateTest {
   }
 
   @Test
+  void anEvaluatorRateLeavesNotApplicableResultsOut() {
+    var target =
+        Targets.scripted(
+            (turn, interactionId) -> {
+              ledger.seed(interaction(interactionId, turn.sessionId(), "a reply", List.of()));
+              switch (turn.caseId()) {
+                case "c1" ->
+                    ledger.seed(Targets.notApplicable(interactionId, QUALITY, "no tool call"));
+                default ->
+                    ledger.seed(Targets.verdict(interactionId, QUALITY, Evaluation.passed("fine")));
+              }
+            });
+    var cases = List.of(evalCase("c1"), evalCase("c2"));
+
+    var report = run(Gate.passRateShouldBeAtLeast(QUALITY, 1.0), target, cases);
+
+    assertThat(report.passed()).isTrue();
+    assertThat(report.render())
+        .contains("quality rate 1.00 over 1 judged attempts")
+        .contains("quality 1/1 (1 not applicable)");
+  }
+
+  @Test
   void anInconclusiveAttemptCountsAgainstThePassRate() {
     var cases = List.of(evalCase("c1"), evalCase("c2"), evalCase("c3"), evalCase("c4"));
     var target =

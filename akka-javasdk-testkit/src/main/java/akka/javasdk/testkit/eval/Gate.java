@@ -20,9 +20,10 @@ import java.util.function.Predicate;
  * <p>A real model is not deterministic, so a batch asserts on rates rather than on every case. With
  * a mocked model leave the gate out: without one every case must pass.
  *
- * <p>An attempt passes only when every result passed. An attempt with an inconclusive result, or
- * with no result, is inconclusive. It never passes: it fails {@link #allCasesShouldPass} and counts
- * against the rate of {@link #passRateShouldBeAtLeast(double)}.
+ * <p>An attempt passes when at least one result passed and no result failed or is inconclusive. A
+ * not applicable result does not count against the attempt. An attempt with an inconclusive result,
+ * or without a passed result, is inconclusive. It never passes: it fails {@link
+ * #allCasesShouldPass} and counts against the rate of {@link #passRateShouldBeAtLeast(double)}.
  */
 public final class Gate {
 
@@ -87,7 +88,8 @@ public final class Gate {
 
   /**
    * The pass rate of one evaluator, over the attempts where it was conclusive, must be at least
-   * {@code minimumRate}. Fails when the evaluator judged no attempt.
+   * {@code minimumRate}. An inconclusive or not applicable result is left out. Fails when the
+   * evaluator judged no attempt.
    *
    * @param evaluator the component id of the evaluator
    */
@@ -101,7 +103,10 @@ public final class Gate {
               results.stream()
                   .flatMap(result -> result.evalResults().stream())
                   .filter(evalResult -> evalResult.evaluator().equals(evaluator))
-                  .filter(evalResult -> evalResult.verdict() != EvalResult.Verdict.INCONCLUSIVE)
+                  .filter(
+                      evalResult ->
+                          evalResult.verdict() == EvalResult.Verdict.PASS
+                              || evalResult.verdict() == EvalResult.Verdict.FAIL)
                   .toList();
           if (evalResults.isEmpty()) {
             return Verdict.fail(evaluator + " judged no case, so its rate cannot be read");

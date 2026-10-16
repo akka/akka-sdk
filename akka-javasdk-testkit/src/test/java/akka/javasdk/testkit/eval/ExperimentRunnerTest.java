@@ -135,6 +135,42 @@ class ExperimentRunnerTest {
   }
 
   @Test
+  void aNotApplicableEvaluationDoesNotCountAgainstTheAttempt() {
+    var target =
+        Targets.scripted(
+            (turn, interactionId) -> {
+              ledger.seed(answered(interactionId, turn.sessionId()));
+              ledger.seed(Targets.notApplicable(interactionId, QUALITY, "no tool call"));
+              verdict(interactionId, TONE, Evaluation.passed("polite"));
+            });
+
+    var report = experiment(target, bindings(QUALITY, TONE), EvalCase.of("c", "q")).run();
+    var result = report.results().getFirst();
+
+    assertThat(result.passed()).isTrue();
+    assertThat(resultOf(result, QUALITY))
+        .isEqualTo(EvalResult.notApplicable(QUALITY, "no tool call"));
+    assertThat(report.passed()).isTrue();
+    assertThat(report.render()).contains("quality 0/0 (1 not applicable)").contains("tone 1/1");
+  }
+
+  @Test
+  void anAttemptWithOnlyNotApplicableResultsIsInconclusive() {
+    var target =
+        Targets.scripted(
+            (turn, interactionId) -> {
+              ledger.seed(answered(interactionId, turn.sessionId()));
+              ledger.seed(Targets.notApplicable(interactionId, QUALITY, "no tool call"));
+              ledger.seed(Targets.notApplicable(interactionId, TONE, "no reply to judge"));
+            });
+
+    var result = single(target);
+
+    assertThat(result.inconclusive()).isTrue();
+    assertThat(result.describe()).contains("case c run 1 INCONCLUSIVE");
+  }
+
+  @Test
   void aFailedEvaluationFailsTheAttempt() {
     var target =
         Targets.scripted(
@@ -579,7 +615,7 @@ class ExperimentRunnerTest {
                 .run());
 
     assertThat(json.get("format").asText()).isEqualTo("akka-eval-report");
-    assertThat(json.get("formatVersion").asInt()).isEqualTo(3);
+    assertThat(json.get("formatVersion").asInt()).isEqualTo(4);
     assertThat(json.get("name").asText()).isEqualTo("support-agent-quality");
     assertThat(json.get("gate").get("passed").asBoolean()).isFalse();
     assertThat(json.get("summary").get("inconclusiveAttempts").asInt()).isEqualTo(1);
