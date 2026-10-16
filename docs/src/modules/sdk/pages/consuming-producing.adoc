@@ -245,6 +245,26 @@ WARNING: Changing the service or topic name after it has once been deployed mean
 See xref:reference:cli/akka-cli/index.adoc[`akka service deploy -h`] for details on how to set environment variables when deploying a service.
 
 
+== Starting from the latest events or a timestamp
+
+A new consumer starts from the beginning of its source and processes the whole history. A consumer that only needs new events, such as a consumer that sends notifications, can instead start from the time of its first deployment with `@StartFrom(latest = true)`. To start from a specific point in time, use `@StartFrom(timestamp = "2026-10-01T00:00:00Z")` with an ISO-8601 instant.
+
+[source,java,indent=0]
+----
+@Component(id = "order-notifier")
+@Consume.FromEventSourcedEntity(OrderEntity.class)
+@StartFrom(latest = true)
+public class OrderNotifier extends Consumer {
+  // ...
+}
+----
+
+Events and state changes persisted before the start point are not delivered, also not for entities that persist new events later. The start point is supported for consumers of Event Sourced Entities, Key Value Entities, Workflows and service to service event streams. It is not supported for consumers of message broker topics.
+
+The start point is recorded when the consumer is first deployed.
+
+WARNING: Changing or removing `@StartFrom` after the consumer has been deployed is not supported, the service refuses to start when the annotation does not match the recorded start point. To start over from a different point, give the consumer a new component id. That discards the processing progress of the consumer.
+
 == Metadata
 
 For many use cases, a Consumer from Event Sourced or Key Value Entity will trigger other services and needs to pass the entity ID to the receiver. You can include this information in the event payload (or Key Value Entity state) or use built-in metadata to get this information. It is made available to the consumer via `messageContext().eventSubject()`.

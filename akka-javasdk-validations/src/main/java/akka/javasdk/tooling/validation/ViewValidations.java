@@ -49,6 +49,7 @@ public class ViewValidations {
             .combine(viewQueriesWithStreamUpdatesMustBeStreaming(typeDef))
             .combine(viewQueryMethodArityShouldBeZeroOrOne(typeDef))
             .combine(viewMultipleTableUpdatersMustHaveTableAnnotations(typeDef))
+            .combine(viewMustNotHaveStartFrom(typeDef))
             .combine(functionToolOnlyOnQueryEffect(typeDef))
             .combine(functionToolMustNotBeOnNonPublicMethods(typeDef));
 
@@ -75,6 +76,27 @@ public class ViewValidations {
           Validations.errorMessage(typeDef, "A View itself should not be annotated with @Table."));
     }
     return Validation.Valid.instance();
+  }
+
+  /**
+   * Validates that neither the View nor its TableUpdaters are annotated with @StartFrom.
+   *
+   * @param typeDef the View class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation viewMustNotHaveStartFrom(TypeDef typeDef) {
+    String startFrom = "akka.javasdk.annotations.StartFrom";
+    String message = "@StartFrom is only supported on a Consumer, not on a View.";
+    List<String> errors = new ArrayList<>();
+    if (typeDef.hasAnnotation(startFrom)) {
+      errors.add(Validations.errorMessage(typeDef, message));
+    }
+    for (TypeDef nested : typeDef.getNestedTypes()) {
+      if (nested.hasAnnotation(startFrom)) {
+        errors.add(Validations.errorMessage(nested, message));
+      }
+    }
+    return Validation.of(errors);
   }
 
   /**

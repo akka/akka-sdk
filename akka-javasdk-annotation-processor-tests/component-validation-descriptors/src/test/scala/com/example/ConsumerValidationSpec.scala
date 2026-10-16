@@ -186,6 +186,41 @@ abstract class AbstractConsumerValidationSpec(val validationMode: ValidationMode
         "methods: [methodOne, methodTwo] consume the same type")
     }
 
+    // Start point validations
+    "accept Consumer starting from latest" in {
+      assertValid("valid/ValidConsumerStartFromLatest.java")
+    }
+
+    "accept Consumer starting from a timestamp" in {
+      assertValid("valid/ValidConsumerStartFromTimestamp.java")
+    }
+
+    "reject Consumer with @StartFrom setting both latest and timestamp" in {
+      assertInvalid("invalid/ConsumerStartFromBoth.java", "@StartFrom must set either latest or timestamp, not both")
+    }
+
+    "reject Consumer with @StartFrom setting neither latest nor timestamp" in {
+      assertInvalid("invalid/ConsumerStartFromNone.java", "@StartFrom must set latest or timestamp")
+    }
+
+    "reject Consumer with @StartFrom with an invalid timestamp" in {
+      assertInvalid(
+        "invalid/ConsumerStartFromInvalidTimestamp.java",
+        "@StartFrom timestamp [yesterday] is not an ISO-8601 instant")
+    }
+
+    "reject Consumer with @StartFrom on a topic subscription" in {
+      assertInvalid(
+        "invalid/ConsumerStartFromTopic.java",
+        "@StartFrom is not supported for a Consumer with @Consume.FromTopic")
+    }
+
+    "reject Consumer with @StartFrom on a service stream producer" in {
+      assertInvalid(
+        "invalid/ConsumerStartFromServiceStreamProducer.java",
+        "@StartFrom is not supported for a Consumer with @Produce.ServiceStream")
+    }
+
     // Publication validations
     "reject Consumer with topic publishing but no source" in {
       assertInvalid(
