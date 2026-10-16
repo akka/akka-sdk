@@ -11,6 +11,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 // Models with Jackson annotations and class shapes that affect the mapped properties.
 class JsonSchemaJacksonModels {
@@ -213,5 +217,24 @@ class JsonSchemaJacksonModels {
   // a non-static inner class has a synthetic field referencing the outer instance
   public class InnerClass {
     public String name = "name";
+  }
+
+  public static class GenericBase<T> {
+    public T value;
+  }
+
+  public static class BoundSub extends GenericBase<String> {}
+
+  public record Item(String name, int count) {}
+
+  public record Holder<T>(List<T> items, Optional<T> maybe, T[] array, Map<String, T> byName) {}
+
+  public static class ItemList extends ArrayList<Item> {}
+
+  // generic types as they appear in method signatures
+  public interface GenericSignatures {
+    Holder<Item> holder();
+
+    GenericBase<Item> base();
   }
 }
