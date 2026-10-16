@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl
 
+import scala.jdk.CollectionConverters._
+
 import akka.javasdk.impl.evaluation.EvaluatorSettings
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
@@ -522,6 +524,154 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
         provided = false)
       agentBindingSettings(durable.bindings) shouldBe Seq(("support-agent", 0.1, true))
       durable.controlId shouldBe Some("AI-EV-01")
+    }
+  }
+
+  "Evaluator config" should {
+
+    def configFor(config: Config, agentComponentId: String): Config =
+      EvaluatorSettings.configuredEvaluator(config, "conversation-quality", agentRoles).configFor(agentComponentId)
+
+    "be the keys of the evaluator entry when the binding sets none" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          criterion = "helpful"
+          threshold = 0.7
+          agents.support-agent { trigger = interaction }
+        }
+        """)
+      val evaluationConfig = configFor(config, "support-agent")
+      evaluationConfig.getString("criterion") shouldBe "helpful"
+      evaluationConfig.getDouble("threshold") shouldBe 0.7
+    }
+
+    "take a key of the binding over the same key of the evaluator entry, key by key" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          criterion = "helpful"
+          threshold = 0.7
+          agents.support-agent { trigger = interaction, threshold = 0.9 }
+        }
+        """)
+      val evaluationConfig = configFor(config, "support-agent")
+      evaluationConfig.getString("criterion") shouldBe "helpful"
+      evaluationConfig.getDouble("threshold") shouldBe 0.9
+    }
+
+    "take the keys from the entry that binds the agent: the agent, then its role, then the role wildcard" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          agents.support-agent { trigger = interaction, threshold = 0.9 }
+          agent-roles {
+            customer-facing { trigger = interaction, threshold = 0.8 }
+            "*" { trigger = interaction, threshold = 0.5 }
+          }
+        }
+        """)
+      configFor(config, "support-agent").getDouble("threshold") shouldBe 0.9
+      configFor(config, "billing-agent").getDouble("threshold") shouldBe 0.8
+      configFor(config, "audit-agent").getDouble("threshold") shouldBe 0.5
+    }
+
+    "not take a key from a less specific binding" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          criterion = "helpful"
+          agents.support-agent { trigger = interaction }
+          agent-roles.customer-facing { trigger = interaction, threshold = 0.8 }
+        }
+        """)
+      val evaluationConfig = configFor(config, "support-agent")
+      evaluationConfig.getString("criterion") shouldBe "helpful"
+      evaluationConfig.hasPath("threshold") shouldBe false
+    }
+
+    "include the keys the SDK reads as the entries set them, without the defaults" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.agent.trigger-on-failure = true
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          control-id = "AI-EV-01"
+          agents.support-agent { trigger = interaction, sampling-ratio = 0.5 }
+        }
+        """)
+      val evaluationConfig = configFor(config, "support-agent")
+      evaluationConfig.root().keySet().asScala shouldBe Set("control-id", "trigger", "sampling-ratio")
+    }
+
+    "be the evaluator entry without the bindings for an agent that is not bound" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          criterion = "helpful"
+          agents.support-agent { trigger = interaction, threshold = 0.9 }
+          agent-roles.customer-facing { trigger = interaction, enabled = false }
+        }
+        """)
+      configFor(config, "plain-agent").root().keySet().asScala shouldBe Set("criterion")
+      configFor(config, "billing-agent").root().keySet().asScala shouldBe Set("criterion")
+    }
+
+    "be empty when the evaluator has no entry" in {
+      configFor(load(""), "support-agent").isEmpty shouldBe true
+    }
+
+    "be read from a disabled evaluator" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          enabled = false
+          criterion = "helpful"
+          agents.support-agent { trigger = interaction }
+        }
+        """)
+      val evaluatorConfig = EvaluatorSettings.evaluatorConfig(config, "conversation-quality")
+      evaluatorConfig.getString("criterion") shouldBe "helpful"
+      evaluatorConfig.getBoolean("enabled") shouldBe false
+      evaluatorConfig.hasPath("agents") shouldBe false
+    }
+
+    "bind an agent with the trigger from the defaults" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.agent.trigger = interaction
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { threshold = 0.9 }
+        """)
+      val configured = EvaluatorSettings.configuredEvaluator(config, "conversation-quality", agentRoles)
+      configured.bindings.map(_.asInstanceOf[SpiEvaluator.AgentBinding].agentComponentId) shouldBe Seq("support-agent")
+      configured.configFor("support-agent").root().keySet().asScala shouldBe Set("threshold")
+    }
+
+    "reject a key of the evaluator implementation in akka.javasdk.evaluation.defaults.evaluator" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.evaluator.threshold = 0.5
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+        """)
+      intercept[IllegalArgumentException] {
+        configFor(config, "support-agent")
+      }.getMessage shouldBe
+      "Evaluator defaults [akka.javasdk.evaluation.defaults.evaluator] must define only [enabled], " +
+      "but defines [threshold]. Define a key of the evaluator implementation on the evaluator or in a binding"
+    }
+
+    "reject a key of the evaluator implementation in akka.javasdk.evaluation.defaults.agent" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.agent { threshold = 0.5, criterion = "helpful" }
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+        """)
+      intercept[IllegalArgumentException] {
+        configFor(config, "support-agent")
+      }.getMessage shouldBe
+      "Evaluator defaults [akka.javasdk.evaluation.defaults.agent] must define only " +
+      "[enabled, trigger, sampling-ratio, trigger-on-failure], but defines [criterion, threshold]. " +
+      "Define a key of the evaluator implementation on the evaluator or in a binding"
+    }
+
+    "reject an SDK key in the wrong defaults without the hint for a key of the evaluator implementation" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.evaluator.trigger = interaction
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+        """)
+      intercept[IllegalArgumentException] {
+        configFor(config, "support-agent")
+      }.getMessage shouldBe
+      "Evaluator defaults [akka.javasdk.evaluation.defaults.evaluator] must define only [enabled], but defines [trigger]"
     }
   }
 }

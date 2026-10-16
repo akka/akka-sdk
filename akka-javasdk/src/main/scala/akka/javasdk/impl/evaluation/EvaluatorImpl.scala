@@ -14,6 +14,7 @@ import akka.javasdk.evaluation.Subject
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.CompleteEffect
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.InconclusiveEffect
 import akka.runtime.sdk.spi.SpiEvaluator
+import com.typesafe.config.Config
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -27,13 +28,20 @@ private[impl] object EvaluatorImpl {
   /**
    * INTERNAL API
    *
-   * The SDK [[EvaluationContext]] backed by the SPI [[SpiEvaluator.EvaluationContext]].
+   * The SDK [[EvaluationContext]] backed by the SPI [[SpiEvaluator.EvaluationContext]], with the config for the
+   * evaluated agent.
    */
-  final class EvaluationContextImpl(spiContext: SpiEvaluator.EvaluationContext) extends EvaluationContext {
+  final class EvaluationContextImpl(
+      spiContext: SpiEvaluator.EvaluationContext,
+      evaluationSubject: Subject,
+      evaluationConfig: Config)
+      extends EvaluationContext {
 
-    override def subject(): Subject = EvaluationConversions.toSdkSubject(spiContext.subject)
+    override def subject(): Subject = evaluationSubject
 
     override def evaluationId(): String = spiContext.evaluationId
+
+    override def config(): Config = evaluationConfig
   }
 
 }
@@ -42,18 +50,23 @@ private[impl] object EvaluatorImpl {
  * INTERNAL API
  *
  * Adapts a user [[Evaluator]] to the [[SpiEvaluator]] expected by the runtime. A new instance is created per evaluation
- * by the descriptor's instance factory.
+ * by the descriptor's instance factory. `configFor` gives the config for an evaluation of an agent, by its component
+ * id.
  */
 @InternalApi
-private[impl] final class EvaluatorImpl[E <: Evaluator](factory: Option[OtelContext] => E, evaluatorClass: Class[E])
+private[impl] final class EvaluatorImpl[E <: Evaluator](
+    factory: Option[OtelContext] => E,
+    evaluatorClass: Class[E],
+    configFor: String => Config)
     extends SpiEvaluator {
   import EvaluatorImpl._
 
   private val log: Logger = LoggerFactory.getLogger(evaluatorClass)
 
   override def evaluate(spiContext: SpiEvaluator.EvaluationContext): Future[SpiEvaluator.Effect] = {
-    val context = new EvaluationContextImpl(spiContext)
     try {
+      val subject = EvaluationConversions.toSdkSubject(spiContext.subject)
+      val context = new EvaluationContextImpl(spiContext, subject, configFor(subject.agentComponentId()))
       val evaluator = factory(Option(spiContext.telemetryContext))
       val effect = evaluator.evaluate(context)
       toSpiEffect(effect)
