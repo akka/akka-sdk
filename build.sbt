@@ -168,7 +168,7 @@ lazy val akkaJavaSdkEnforcer =
         "org.apache.maven.enforcer" % "enforcer-api" % "3.6.3" % Provided,
         "org.apache.maven" % "maven-core" % "3.10.0" % Provided,
         "javax.inject" % "javax.inject" % "1" % Provided,
-        Dependencies.junit5 % Test,
+        Dependencies.junitJupiter % Test,
         Dependencies.junitPlatformLauncher % Test,
         "net.aichler" % "jupiter-interface" % net.aichler.jupiter.sbt.Import.JupiterKeys.jupiterVersion.value % Test))
 
