@@ -22,12 +22,14 @@ public interface SanitizerClient {
    * Masks {@code text} with the sanitizer configured under {@code name}, blocking for the result.
    *
    * @throws IllegalArgumentException if no sanitizer is configured with that name
+   * @throws SanitizerException if the sanitizer is a class that fails or returns {@code null}
    */
   String sanitize(String name, String text);
 
   /**
    * Async variant of {@link #sanitize}. The returned stage fails with an {@link
-   * IllegalArgumentException} when no sanitizer is configured with that name.
+   * IllegalArgumentException} when no sanitizer is configured with that name, and with a {@link
+   * SanitizerException} when the sanitizer is a class that fails or returns {@code null}.
    */
   CompletionStage<String> sanitizeAsync(String name, String text);
 }
