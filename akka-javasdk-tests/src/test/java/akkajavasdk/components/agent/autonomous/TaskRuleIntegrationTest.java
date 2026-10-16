@@ -6,14 +6,17 @@ package akkajavasdk.components.agent.autonomous;
 
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import akka.javasdk.agent.autonomous.Notification;
+import akka.javasdk.agent.task.TaskException;
 import akka.javasdk.agent.task.TaskStatus;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
@@ -129,6 +132,54 @@ public class TaskRuleIntegrationTest extends TestKitSupport {
               assertThat(rejected.taskName()).isEqualTo(TestTasks.VALIDATED_TASK.name());
               assertThat(rejected.reason()).contains("score must be >= 10");
             });
+  }
+
+  @Test
+  public void shouldAwaitResultAcrossRuleRejection() throws Exception {
+    var resultRequested = new CompletableFuture<Void>().orTimeout(10, TimeUnit.SECONDS);
+
+    agentModel
+        .whenMessage(msg -> msg.contains("Do something"))
+        .reply(
+            input -> {
+              resultRequested.join(); // released after the test has requested the result
+              return new TestModelProvider.AiResponse(
+                  completeTask(new TestTasks.TestResult("low quality", 3)));
+            });
+
+    agentModel
+        .whenMessage(msg -> msg.contains("Reminder"))
+        .reply(completeTask(new TestTasks.TestResult("improved result", 50)));
+
+    var taskId =
+        componentClient
+            .forAutonomousAgent(ValidatedTaskAgent.class, UUID.randomUUID().toString())
+            .runSingleTask(TestTasks.VALIDATED_TASK.instructions("Do something."));
+
+    var resultFuture = componentClient.forTask(taskId).resultAsync(TestTasks.VALIDATED_TASK);
+    resultRequested.complete(null);
+
+    var result = resultFuture.toCompletableFuture().get(15, TimeUnit.SECONDS);
+
+    assertThat(result.value()).isEqualTo("improved result");
+    assertThat(result.score()).isEqualTo(50);
+  }
+
+  @Test
+  public void shouldFailResultAfterRepeatedRuleRejections() {
+    agentModel.fixedResponse(completeTask(new TestTasks.TestResult("low quality", 3)));
+
+    var taskId =
+        componentClient
+            .forAutonomousAgent(ValidatedTaskAgent.class, UUID.randomUUID().toString())
+            .runSingleTask(TestTasks.VALIDATED_TASK.instructions("Do something poorly."));
+
+    var resultFuture =
+        componentClient.forTask(taskId).resultAsync(TestTasks.VALIDATED_TASK).toCompletableFuture();
+
+    assertThatThrownBy(() -> resultFuture.get(15, TimeUnit.SECONDS))
+        .hasCauseInstanceOf(TaskException.Failed.class)
+        .hasMessageContaining("Max iterations");
   }
 
   @Test

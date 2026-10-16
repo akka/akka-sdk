@@ -145,16 +145,16 @@ link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.StruggleNot
 [#task-entity-notifications]
 == Task entity notifications
 
-link:{attachmentsdir}/api/akka/javasdk/agent/task/TaskNotification.html[`akka.javasdk.agent.task.TaskNotification`] is published by the task entity itself on every terminal transition. This is the persistent, entity-level event used by the runtime for `TaskClient.resultAsync` and similar deliver-on-completion APIs.
+link:{attachmentsdir}/api/akka/javasdk/agent/task/TaskNotification.html[`akka.javasdk.agent.task.TaskNotification`] is published by the task entity itself on every terminal transition and when a task rule rejects a result. This is the persistent, entity-level event used by the runtime for `TaskClient.resultAsync` and similar deliver-on-completion APIs.
 
-Non-terminal transitions (created, assigned, started, reassigned) do not publish a notification. They are observable through event-sourced history or by reading the task snapshot.
+A rejected result is not a terminal transition: the agent retries, and `TaskClient.resultAsync` keeps waiting. The other non-terminal transitions (created, assigned, started, reassigned) do not publish a notification. They are observable through event-sourced history or by reading the task snapshot.
 
 [options="header", cols="1,3"]
 |===
 | Notification | Description
 
 | link:{attachmentsdir}/api/akka/javasdk/agent/task/TaskNotification.Completed.html[`TaskNotification.Completed`] | Task completed successfully, carrying the JSON-encoded result.
-| link:{attachmentsdir}/api/akka/javasdk/agent/task/TaskNotification.ResultRejected.html[`TaskNotification.ResultRejected`] | A xref:sdk:autonomous-agents/tasks.adoc#task-rules[task rule] rejected the result.
+| link:{attachmentsdir}/api/akka/javasdk/agent/task/TaskNotification.ResultRejected.html[`TaskNotification.ResultRejected`] | A xref:sdk:autonomous-agents/tasks.adoc#task-rules[task rule] rejected the result. This is not a terminal state, because the agent retries.
 | link:{attachmentsdir}/api/akka/javasdk/agent/task/TaskNotification.Failed.html[`TaskNotification.Failed`] | Task failed.
 | link:{attachmentsdir}/api/akka/javasdk/agent/task/TaskNotification.Cancelled.html[`TaskNotification.Cancelled`] | Task was cancelled.
 |===
