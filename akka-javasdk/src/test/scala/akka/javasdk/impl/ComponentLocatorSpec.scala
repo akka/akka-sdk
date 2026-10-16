@@ -350,9 +350,11 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
       message should include(s"$LibraryComponentsConfigPath {")
       message should include("""agent = ["com.library.LibAgent"]""")
       message should include("""http-endpoint = ["com.library.LibEndpoint", "com.library.OtherEndpoint"]""")
+      message should include("should not contain a component descriptor")
+      message should include("#_using_components_from_libraries")
     }
 
-    "leave out listed components" in {
+    "leave out listed components, without the config to load them" in {
       val message = ComponentLocator
         .unlistedLibraryComponentsMessage(
           Seq(libraryDescriptor),
@@ -361,6 +363,9 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
       (message should not).include("LibAgent")
       (message should not).include("com.library.LibEndpoint")
       message should include("http-endpoint: [com.library.OtherEndpoint]")
+      message should include(s"not listed in config [$LibraryComponentsConfigPath]")
+      (message should not).include(s"$LibraryComponentsConfigPath {")
+      message should include("should not contain a component descriptor")
     }
 
     "return nothing when all library components are listed or there are none" in {

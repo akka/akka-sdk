@@ -233,8 +233,8 @@ private[javasdk] object ComponentLocator {
   }
 
   /**
-   * Describes the components in library descriptors that are not listed in `akka.javasdk.library.components`, and the
-   * config to load them. None if there are no such components.
+   * Describes the components in library descriptors that are not listed in `akka.javasdk.library.components`. When
+   * nothing is listed, also shows the config to load them. None if there are no such components.
    */
   private[impl] def unlistedLibraryComponentsMessage(
       libraryDescriptors: Seq[Descriptor],
@@ -259,10 +259,17 @@ private[javasdk] object ComponentLocator {
         Option.when(classNames.nonEmpty)(
           s"""  $componentTypeKey = [${classNames.map(n => s"\"$n\"").mkString(", ")}]""")
       }
-      s"Found library components that are not loaded. Library components are only loaded when listed in config [$LibraryComponentsConfigPath].\n" +
-      found + "\n" +
-      s"To load them, add the components to use to application.conf:\n$LibraryComponentsConfigPath {\n" +
-      configLines.mkString("\n") + "\n}"
+      val descriptorNote =
+        "Component libraries should not contain a component descriptor, see " +
+        "https://doc.akka.io/sdk/setup-and-dependency-injection.html#_using_components_from_libraries"
+      if (listedClassNames.isEmpty)
+        s"Found library components that are not loaded. Library components are only loaded when listed in config [$LibraryComponentsConfigPath].\n" +
+        found + "\n" +
+        s"To load them, add the components to use to application.conf:\n$LibraryComponentsConfigPath {\n" +
+        configLines.mkString("\n") + "\n}\n" + descriptorNote
+      else
+        s"Found library components that are not listed in config [$LibraryComponentsConfigPath] and are not loaded:\n" +
+        found + "\n" + descriptorNote
     }
   }
 
@@ -484,7 +491,7 @@ private[javasdk] object ComponentLocator {
 
     unlistedLibraryComponentsMessage(sorted.library, listedLibraryClassNames).foreach { message =>
       if (listedLibraryClassNames.isEmpty) logger.warn(message)
-      else logger.debug(message)
+      else logger.info(message)
     }
 
     val libraryComponents =

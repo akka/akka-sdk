@@ -118,7 +118,7 @@ akka.javasdk.library.components {
 
 The service loads the listed classes on startup as if they were defined in the service itself, and logs the added library components.
 
-A library built with an earlier SDK version can contain an Akka component descriptor. The service does not load the components from such a descriptor. If no library components are listed, the service logs a warning that lists the components it found and the configuration that loads them.
+A library built with an earlier SDK version can contain an Akka component descriptor. The service does not load the components from such a descriptor. If no library components are listed, the service logs a warning that lists the components it found and the configuration that loads them. If some library components are listed, the service logs the components that are not listed.
 
 The config block has one key per component type:
 
