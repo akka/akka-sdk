@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 interface SomeToolInput {
   record SomeToolInput1(
@@ -56,7 +57,11 @@ interface SomeToolInput {
       LocalDateTime localDateTime,
       LocalTime localTime,
       ZonedDateTime zonedDateTime,
-      Duration duration) {}
+      OffsetDateTime offsetDateTime,
+      Duration duration,
+      UUID uuid,
+      char character,
+      Character boxedCharacter) {}
 
   record ClassWithRecursiveFields(
       String regular, ClassWithRecursiveFields recursive, NestedRecursiveClass nested) {}
