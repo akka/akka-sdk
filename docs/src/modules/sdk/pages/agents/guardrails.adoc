@@ -86,6 +86,12 @@ On the first model call, `newMessages()` holds the user message.
 On each later call, it holds the tool results that the runtime sends back to the model.
 
 Each message is a `Guardrail.Message` that keeps its origin: a `UserMessage`, an `AiMessage`, or a `ToolCallResponse`.
+A guardrail receives an image or PDF in the form the runtime sends it to the model.
+An image or PDF that the runtime loads, from an `object://` URI or with a content loader, arrives as bytes in an `ImageBytesMessageContent` or a `PdfBytesMessageContent`.
+Inline bytes that a tool returns arrive the same way.
+An image or PDF that the model fetches itself stays a URI.
+Session memory does not store inline bytes, so an inline image or PDF from an earlier request arrives as the text `[image]` or `[pdf]`.
+Do not modify the bytes. Other guardrails read the same array.
 `ToolCallResponse.isError()` is true when the MCP server reported the result as an error, or when the runtime turned a failed tool call into an error result.
 When the model calls several tools at once, each result is a separate `ToolCallResponse`:
 
