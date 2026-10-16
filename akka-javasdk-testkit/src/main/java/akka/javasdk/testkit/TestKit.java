@@ -1037,8 +1037,6 @@ public class TestKit {
               if (settings.serviceName.isEmpty())
                 serviceName = userConfig.getString("akka.javasdk.dev-mode.service-name");
               else serviceName = settings.serviceName;
-              // empty when the project does not use the Akka parent pom
-              if (serviceName.isEmpty()) serviceName = "akka-test-service";
 
               var grpcClientSelfConfigPrefix = "akka.javasdk.grpc.client." + serviceName;
               var defaultConfigMap =

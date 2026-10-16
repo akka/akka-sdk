@@ -44,7 +44,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
   private static final String OPTION_GROUP_ID = "akka.javasdk.groupId";
   private static final String OPTION_ARTIFACT_ID = "akka.javasdk.artifactId";
   // "true" when compiling a component library rather than a deployable service
-  private static final String OPTION_LIBRARY = "akka.javasdk.library";
+  private static final String OPTION_COMPONENT_LIBRARY = "akka.javasdk.componentLibrary";
 
   // Base path for descriptor files - artifact coordinates are appended
   private static final String COMPONENT_DESCRIPTOR_FILE_PREFIX =
@@ -98,7 +98,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
 
   @Override
   public Set<String> getSupportedOptions() {
-    return Set.of(OPTION_GROUP_ID, OPTION_ARTIFACT_ID, OPTION_LIBRARY);
+    return Set.of(OPTION_GROUP_ID, OPTION_ARTIFACT_ID, OPTION_COMPONENT_LIBRARY);
   }
 
   private String getDescriptorFilePath() {
@@ -361,7 +361,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
         });
 
     // always from the current option, never from the existing descriptor
-    if (!"true".equals(processingEnv.getOptions().get(OPTION_LIBRARY))) {
+    if (!Boolean.parseBoolean(processingEnv.getOptions().get(OPTION_COMPONENT_LIBRARY))) {
       config.put(SERVICE_MARKER_PATH, true);
     }
 

@@ -9,6 +9,7 @@ import java.net.URI
 import java.net.URL
 import java.net.URLClassLoader
 import java.nio.file.Files
+import java.nio.file.Path
 
 import scala.jdk.CollectionConverters._
 
@@ -307,16 +308,16 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
     }
   }
 
-  "ComponentLocator.sortDescriptors" should {
+  "ComponentLocator.classifyDescriptors" should {
 
     "sort service, SDK provided and library descriptors" in {
-      val sorted = ComponentLocator.sortDescriptors(
+      val classified = ComponentLocator.classifyDescriptors(
         Seq(libraryDescriptor, testkitDescriptor, serviceDescriptor),
         projectArtifactId = None,
         libraryComponentsListed = false)
-      sorted.service shouldBe Seq(serviceDescriptor)
-      sorted.sdkProvided shouldBe Seq(testkitDescriptor)
-      sorted.library shouldBe Seq(libraryDescriptor)
+      classified.service shouldBe Seq(serviceDescriptor)
+      classified.sdkProvided shouldBe Seq(testkitDescriptor)
+      classified.library shouldBe Seq(libraryDescriptor)
     }
 
     "treat service descriptors with the same file name, from main and test classes, as the service" in {
@@ -326,67 +327,79 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
           serviceDescriptor.fileName,
           """akka.javasdk.service = true
             |akka.javasdk.components.agent = ["com.example.TestAgent"]""".stripMargin)
-      val sorted = ComponentLocator.sortDescriptors(
+      val classified = ComponentLocator.classifyDescriptors(
         Seq(serviceDescriptor, libraryDescriptor, serviceTestDescriptor),
         projectArtifactId = None,
         libraryComponentsListed = false)
-      sorted.service shouldBe Seq(serviceDescriptor, serviceTestDescriptor)
-      sorted.library shouldBe Seq(libraryDescriptor)
+      classified.service shouldBe Seq(serviceDescriptor, serviceTestDescriptor)
+      classified.library shouldBe Seq(libraryDescriptor)
+    }
+
+    "treat an unmarked descriptor with the file name of a marked descriptor as the service" in {
+      val staleTestDescriptor =
+        descriptor("file:/service/target/test-classes", serviceDescriptor.fileName, "")
+      val classified = ComponentLocator.classifyDescriptors(
+        Seq(serviceDescriptor, staleTestDescriptor, libraryDescriptor),
+        projectArtifactId = None,
+        libraryComponentsListed = false)
+      classified.service shouldBe Seq(serviceDescriptor, staleTestDescriptor)
+      classified.library shouldBe Seq(libraryDescriptor)
     }
 
     "treat the unmarked descriptor of the project artifact id as the service" in {
-      val sorted = ComponentLocator.sortDescriptors(
+      val classified = ComponentLocator.classifyDescriptors(
         Seq(libraryDescriptor, testkitDescriptor),
         projectArtifactId = Some("library"),
         libraryComponentsListed = false)
-      sorted.service shouldBe Seq(libraryDescriptor)
-      sorted.library shouldBe empty
+      classified.service shouldBe Seq(libraryDescriptor)
+      classified.library shouldBe empty
     }
 
     "not match the project artifact id when a descriptor is marked" in {
       val sameArtifactId =
         descriptor("jar:file:/libs/other.jar!", "akka-javasdk-components_com.other_service.conf", "")
-      val sorted = ComponentLocator.sortDescriptors(
+      val classified = ComponentLocator.classifyDescriptors(
         Seq(serviceDescriptor, sameArtifactId),
         projectArtifactId = Some("service"),
         libraryComponentsListed = false)
-      sorted.service shouldBe Seq(serviceDescriptor)
-      sorted.library shouldBe Seq(sameArtifactId)
+      classified.service shouldBe Seq(serviceDescriptor)
+      classified.library shouldBe Seq(sameArtifactId)
     }
 
     "fail when there is no service descriptor" in {
       val exception = intercept[IllegalStateException] {
-        ComponentLocator.sortDescriptors(
+        ComponentLocator.classifyDescriptors(
           Seq(libraryDescriptor, testkitDescriptor),
           projectArtifactId = Some("service"),
           libraryComponentsListed = false)
       }
-      exception.getMessage should include("No component descriptor for the service found")
-      exception.getMessage should include(s"without the service marker [${libraryDescriptor.url}]")
+      exception.getMessage should include("Found no component descriptor for the service")
+      exception.getMessage should include(s"only descriptors without the service marker [${libraryDescriptor.url}]")
       exception.getMessage should include("earlier SDK version")
       exception.getMessage should include("`non-akka-service`")
+      exception.getMessage should include(s"If this is a test of a component library")
     }
 
     "advise to recompile when there are no descriptors" in {
       val exception = intercept[IllegalStateException] {
-        ComponentLocator.sortDescriptors(
+        ComponentLocator.classifyDescriptors(
           Seq(testkitDescriptor),
           projectArtifactId = None,
           libraryComponentsListed = false)
       }
-      exception.getMessage should include("No component descriptor for the service found")
+      exception.getMessage should include("Found no component descriptor for the service")
       exception.getMessage should include("Run `mvn clean compile`")
     }
 
     "allow no service descriptor when library components are listed" in {
-      val sorted =
-        ComponentLocator.sortDescriptors(
+      val classified =
+        ComponentLocator.classifyDescriptors(
           Seq(libraryDescriptor, testkitDescriptor),
           projectArtifactId = None,
           libraryComponentsListed = true)
-      sorted.service shouldBe empty
-      sorted.sdkProvided shouldBe Seq(testkitDescriptor)
-      sorted.library shouldBe Seq(libraryDescriptor)
+      classified.service shouldBe empty
+      classified.sdkProvided shouldBe Seq(testkitDescriptor)
+      classified.library shouldBe Seq(libraryDescriptor)
     }
 
     "fail on service descriptors from more than one artifact" in {
@@ -396,7 +409,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
           "akka-javasdk-components_com.other_other.conf",
           "akka.javasdk.service = true")
       val exception = intercept[IllegalStateException] {
-        ComponentLocator.sortDescriptors(
+        ComponentLocator.classifyDescriptors(
           Seq(serviceDescriptor, otherService),
           projectArtifactId = None,
           libraryComponentsListed = true)
@@ -447,11 +460,20 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
     val dynamicAccess = new ReflectiveDynamicAccess(getClass.getClassLoader)
 
     "return nothing when config has no library components" in {
-      ComponentLocator.loadLibraryComponents(ConfigFactory.empty(), dynamicAccess, Set.empty) shouldBe empty
+      ComponentLocator.loadLibraryComponents(
+        listedLibraryComponents(ConfigFactory.empty()),
+        dynamicAccess,
+        Set.empty) shouldBe empty
       val emptyBlock = ConfigFactory.parseString("akka.javasdk.library.components {}")
-      ComponentLocator.loadLibraryComponents(emptyBlock, dynamicAccess, Set.empty) shouldBe empty
+      ComponentLocator.loadLibraryComponents(
+        listedLibraryComponents(emptyBlock),
+        dynamicAccess,
+        Set.empty) shouldBe empty
       val referenceDefaults = ConfigFactory.defaultReference()
-      ComponentLocator.loadLibraryComponents(referenceDefaults, dynamicAccess, Set.empty) shouldBe empty
+      ComponentLocator.loadLibraryComponents(
+        listedLibraryComponents(referenceDefaults),
+        dynamicAccess,
+        Set.empty) shouldBe empty
     }
 
     "load listed classes" in {
@@ -464,7 +486,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
           |}
           |""".stripMargin)
 
-      val result = ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+      val result = ComponentLocator.loadLibraryComponents(listedLibraryComponents(config), dynamicAccess, Set.empty)
 
       result should contain theSameElementsAs Seq(
         classOf[EmployeeEntity],
@@ -481,7 +503,10 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
           |}
           |""".stripMargin)
 
-      val result = ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set(classOf[EmployeeEntity]))
+      val result = ComponentLocator.loadLibraryComponents(
+        listedLibraryComponents(config),
+        dynamicAccess,
+        Set(classOf[EmployeeEntity]))
 
       result shouldBe Seq(classOf[Counter])
     }
@@ -495,7 +520,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
           |""".stripMargin)
 
       val exception = intercept[IllegalStateException] {
-        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+        ComponentLocator.loadLibraryComponents(listedLibraryComponents(config), dynamicAccess, Set.empty)
       }
       exception.getMessage should include(s"Duplicate library component(s) [${classOf[Counter].getName}]")
     }
@@ -508,7 +533,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
           |""".stripMargin)
 
       val exception = intercept[IllegalStateException] {
-        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+        ComponentLocator.loadLibraryComponents(listedLibraryComponents(config), dynamicAccess, Set.empty)
       }
       exception.getMessage should include("Unknown component type(s) [entity]")
       exception.getMessage should include(LibraryComponentsConfigPath)
@@ -522,7 +547,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
           |""".stripMargin)
 
       val exception = intercept[IllegalStateException] {
-        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+        ComponentLocator.loadLibraryComponents(listedLibraryComponents(config), dynamicAccess, Set.empty)
       }
       exception.getMessage should include("Could not load library component class [com.example.MissingView]")
       exception.getMessage should include(s"$LibraryComponentsConfigPath.view")
@@ -536,7 +561,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
           |""".stripMargin)
 
       val exception = intercept[IllegalStateException] {
-        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+        ComponentLocator.loadLibraryComponents(listedLibraryComponents(config), dynamicAccess, Set.empty)
       }
       exception.getMessage should include(s"Library component class [${classOf[Counter].getName}]")
       exception.getMessage should include(
@@ -551,7 +576,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
           |""".stripMargin)
 
       val exception = intercept[IllegalStateException] {
-        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+        ComponentLocator.loadLibraryComponents(listedLibraryComponents(config), dynamicAccess, Set.empty)
       }
       exception.getMessage should include(
         "does not match component type [view], expected a class extending akka.javasdk.view.View")
@@ -565,7 +590,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
           |""".stripMargin)
 
       val exception = intercept[IllegalStateException] {
-        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+        ComponentLocator.loadLibraryComponents(listedLibraryComponents(config), dynamicAccess, Set.empty)
       }
       exception.getMessage should include(
         "does not match component type [grpc-endpoint], expected a class annotated with @GrpcEndpoint")
@@ -579,7 +604,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
           |""".stripMargin)
 
       val exception = intercept[IllegalStateException] {
-        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+        ComponentLocator.loadLibraryComponents(listedLibraryComponents(config), dynamicAccess, Set.empty)
       }
       exception.getMessage should include(
         "does not match component type [key-value-entity], expected a class extending akka.javasdk.keyvalueentity.KeyValueEntity and annotated with @Component")
@@ -589,7 +614,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
       val config = ConfigFactory.parseString("""akka.javasdk.library.component.view = ["com.example.SomeView"]""")
 
       val exception = intercept[IllegalStateException] {
-        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+        ComponentLocator.loadLibraryComponents(listedLibraryComponents(config), dynamicAccess, Set.empty)
       }
       exception.getMessage should include("Unknown key(s) [component] in config [akka.javasdk.library]")
     }
@@ -598,7 +623,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
       val config = ConfigFactory.parseString("""akka.javasdk.library.components.view = "com.example.SomeView"""")
 
       val exception = intercept[IllegalStateException] {
-        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+        ComponentLocator.loadLibraryComponents(listedLibraryComponents(config), dynamicAccess, Set.empty)
       }
       exception.getMessage should include(s"Config [$LibraryComponentsConfigPath.view] must be a list of class names")
     }
@@ -611,7 +636,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
           |""".stripMargin)
 
       val exception = intercept[IllegalStateException] {
-        ComponentLocator.loadLibraryComponents(config, dynamicAccess, Set.empty)
+        ComponentLocator.loadLibraryComponents(listedLibraryComponents(config), dynamicAccess, Set.empty)
       }
       exception.getMessage should include(s"SDK component(s) [${classOf[SessionMemoryEntity].getName}]")
     }
@@ -620,13 +645,13 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
   "ComponentLocator.locateComponents" should {
 
     // service main and test classes, the testkit and a library, each a separate classpath entry
-    def classpath(projectDescriptorMarked: Boolean): DynamicAccess = {
-      val serviceMarker = if (projectDescriptorMarked) "akka.javasdk.service = true" else ""
+    def withClasspath[T](mainMarked: Boolean, testMarked: Boolean)(test: DynamicAccess => T): T = {
+      def marker(marked: Boolean) = if (marked) "akka.javasdk.service = true" else ""
       val serviceName = "akka-javasdk-components_com.example_service.conf"
       val entries = Seq(
-        serviceName -> s"""$serviceMarker
+        serviceName -> s"""${marker(mainMarked)}
           |akka.javasdk.components.key-value-entity = ["${classOf[Counter].getName}"]""".stripMargin,
-        serviceName -> s"""$serviceMarker
+        serviceName -> s"""${marker(testMarked)}
           |akka.javasdk.components.event-sourced-entity = ["${classOf[EmployeeEntity].getName}"]""".stripMargin,
         "akka-javasdk-components_akka-javasdk-testkit.conf" ->
         s"""akka.javasdk.components.view = ["${classOf[UserByEmailWithGet].getName}"]""",
@@ -634,24 +659,33 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
         s"""akka.javasdk.components.http-endpoint = ["${classOf[GetHelloEndpoint].getName}", "${classOf[
           PostHelloEndpoint].getName}"]
            |akka.javasdk.service-setup = "com.library.Setup"""".stripMargin)
-      val urls = entries.map { case (fileName, content) =>
+      val dirs = entries.map { case (fileName, content) =>
         val dir = Files.createTempDirectory("component-locator-spec")
         Files.createDirectories(dir.resolve("META-INF"))
         Files.writeString(dir.resolve("META-INF").resolve(fileName), content)
-        dir.toUri.toURL
+        dir
       }
-      val classLoader = new URLClassLoader(urls.toArray, getClass.getClassLoader) {
+      val classLoader = new URLClassLoader(dirs.map(_.toUri.toURL).toArray, getClass.getClassLoader) {
         // only the descriptors above, not those of the test classpath
         override def getResources(name: String): java.util.Enumeration[URL] = findResources(name)
       }
-      new ReflectiveDynamicAccess(classLoader)
+      try test(new ReflectiveDynamicAccess(classLoader))
+      finally {
+        classLoader.close()
+        dirs.foreach { dir =>
+          val paths = Files.walk(dir)
+          try paths.sorted(java.util.Comparator.reverseOrder[Path]()).forEach(p => Files.delete(p))
+          finally paths.close()
+        }
+      }
     }
 
     def config(content: String) =
       ConfigFactory.parseString(content).withFallback(ConfigFactory.defaultReference()).resolve()
 
     "load the service and SDK components but not unlisted library components" in {
-      val located = ComponentLocator.locateComponents(classpath(projectDescriptorMarked = true), config(""))
+      val located =
+        withClasspath(mainMarked = true, testMarked = true)(ComponentLocator.locateComponents(_, config("")))
       located.components should contain theSameElementsAs Seq(
         classOf[Counter],
         classOf[EmployeeEntity],
@@ -660,9 +694,10 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
     }
 
     "load the library components listed in config" in {
-      val located = ComponentLocator.locateComponents(
-        classpath(projectDescriptorMarked = true),
-        config(s"""akka.javasdk.library.components.http-endpoint = ["${classOf[GetHelloEndpoint].getName}"]"""))
+      val located = withClasspath(mainMarked = true, testMarked = true)(
+        ComponentLocator.locateComponents(
+          _,
+          config(s"""akka.javasdk.library.components.http-endpoint = ["${classOf[GetHelloEndpoint].getName}"]""")))
       located.components should contain theSameElementsAs Seq(
         classOf[Counter],
         classOf[EmployeeEntity],
@@ -670,10 +705,18 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
         classOf[GetHelloEndpoint])
     }
 
+    "load a stale unmarked descriptor with the file name of the marked service descriptor" in {
+      val located =
+        withClasspath(mainMarked = true, testMarked = false)(ComponentLocator.locateComponents(_, config("")))
+      located.components should contain theSameElementsAs Seq(
+        classOf[Counter],
+        classOf[EmployeeEntity],
+        classOf[UserByEmailWithGet])
+    }
+
     "load the unmarked descriptors of the project artifact id, such as in the tests of a library" in {
-      val located = ComponentLocator.locateComponents(
-        classpath(projectDescriptorMarked = false),
-        config("akka.javasdk.dev-mode.project-artifact-id = service"))
+      val located = withClasspath(mainMarked = false, testMarked = false)(
+        ComponentLocator.locateComponents(_, config("akka.javasdk.dev-mode.project-artifact-id = service")))
       located.components should contain theSameElementsAs Seq(
         classOf[Counter],
         classOf[EmployeeEntity],
@@ -690,7 +733,6 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
     }
 
     "not match legacy descriptor filename" in {
-      // Legacy format is handled separately, not by isComponentDescriptor
       ComponentLocator.isComponentDescriptor("akka-javasdk-components.conf") shouldBe false
     }
 

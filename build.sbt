@@ -154,7 +154,7 @@ lazy val annotationProcessorTestProject: CompositeProject =
           "-Aakka.javasdk.groupId=com.example",
           "-Aakka.javasdk.artifactId=test"),
         Compile / javacOptions ++= {
-          if (sampleProject.base.getName == "library-descriptors") Seq("-Aakka.javasdk.library=true")
+          if (sampleProject.base.getName == "library-descriptors") Seq("-Aakka.javasdk.componentLibrary=true")
           else Seq.empty
         })
   }

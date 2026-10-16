@@ -70,6 +70,7 @@
               <annotationProcessorArgs>
                 <arg>akka.javasdk.groupId=${project.groupId}</arg>
                 <arg>akka.javasdk.artifactId=${project.artifactId}</arg>
+                <arg>akka.javasdk.componentLibrary=${non-akka-service}</arg>
               </annotationProcessorArgs>
               <annotationProcessors>
                 <annotationProcessor>
@@ -100,6 +101,7 @@
               <annotationProcessorArgs>
                 <arg>akka.javasdk.groupId=${project.groupId}</arg>
                 <arg>akka.javasdk.artifactId=${project.artifactId}</arg>
+                <arg>akka.javasdk.componentLibrary=${non-akka-service}</arg>
               </annotationProcessorArgs>
               <annotationProcessorPaths>
                 <annotationProcessorPath>
