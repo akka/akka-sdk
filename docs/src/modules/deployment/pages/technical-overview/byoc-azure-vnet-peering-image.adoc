@@ -1,0 +1,8 @@
+= AAO on Azure private connectivity
+:page-layout: dense
+:page-breadcrumb: Akka / Deployment / BYOC / Azure / AAO on Azure private connectivity
+:page-return-to: byoc-azure.html
+:page-summary: Full-size diagram of Azure Virtual Network Peering with a user-defined NAT gateway.
+
+[.dense-image]
+image::deployment:aao-azure-vnet-peering.png[AAO on Azure: private connectivity with Virtual Network Peering and a user-defined NAT gateway]

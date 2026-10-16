@@ -18,6 +18,7 @@ The default architecture. Akka provisions a region into your virtual network wit
 
 .AAO on Azure: default architecture
 image::deployment:aao-azure-default.png[AAO on Azure: default architecture]
+xref:deployment:technical-overview/byoc-azure-default-image.adoc[View the full-size default architecture diagram,role=open-image,window=_blank]
 
 == Azure resources
 
@@ -94,6 +95,7 @@ By default, traffic between the region and your internal networks traverses the 
 
 .AAO on Azure: private connectivity with Virtual Network Peering and a user-defined NAT gateway
 image::deployment:aao-azure-vnet-peering.png[AAO on Azure: private connectivity with Virtual Network Peering and a user-defined NAT gateway]
+xref:deployment:technical-overview/byoc-azure-vnet-peering-image.adoc[View the full-size private connectivity diagram,role=open-image,window=_blank]
 
 [#byok8s]
 == Bringing your own AKS cluster (BYOK8s)
