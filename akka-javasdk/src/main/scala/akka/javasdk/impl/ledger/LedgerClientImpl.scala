@@ -15,9 +15,11 @@ import scala.jdk.FutureConverters._
 import scala.jdk.OptionConverters._
 
 import akka.annotation.InternalApi
+import akka.javasdk.agent.Agent
 import akka.javasdk.agent.MessageContent
 import akka.javasdk.evaluation.Evaluation
 import akka.javasdk.impl.ErrorHandling
+import akka.javasdk.impl.ForwardCompat.knownOr
 import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.Failure
 import akka.javasdk.ledger.InteractionMetadata
@@ -170,8 +172,12 @@ private[ledger] object LedgerClientImpl {
     new ModelResponse(
       response.id,
       response.content,
-      response.inputTokenCount,
-      response.outputTokenCount,
+      new Agent.TokenUsage(
+        response.tokenUsage.inputTokenCount,
+        response.tokenUsage.outputTokenCount,
+        response.tokenUsage.cacheReadInputTokenCount,
+        response.tokenUsage.cacheWriteInputTokenCount,
+        response.tokenUsage.effectiveInputTokenCount),
       response.thinking,
       response.toolCalls.map(toToolCall).asJava)
 
@@ -231,14 +237,8 @@ private[ledger] object LedgerClientImpl {
         case SpiLedger.FailureReason.McpToolCall        => Failure.FailureReason.MCP_TOOL_CALL
         case SpiLedger.FailureReason.Guardrail          => Failure.FailureReason.GUARDRAIL
         case SpiLedger.FailureReason.ContentLoading     => Failure.FailureReason.CONTENT_LOADING
+        case SpiLedger.FailureReason.Cancelled          => Failure.FailureReason.CANCELLED
+        case SpiLedger.FailureReason.Sanitizer          => Failure.FailureReason.SANITIZER
       }
     }
-
-  // A runtime that is newer than this SDK can hand over a value that this SDK does not know. Such a value
-  // reads as `unknown`. A `null` also reads as `unknown`, because it fails the match too. The matches have no
-  // default case, so that the compiler reports a value that the SPI adds when the SDK is built against that
-  // runtime.
-  private def knownOr[T](unknown: T)(known: => T): T =
-    try known
-    catch { case _: MatchError => unknown }
 }

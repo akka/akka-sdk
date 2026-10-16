@@ -6,12 +6,14 @@ Import data to a service.
 
 The `akka service data import` command imports a services data.
 
+[source,shell]
 ----
 akka services data import SERVICE [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --abs-client-id-key string                           If exporting to Azure Blob Storage, the name of the key inside the Akka secret that holds the Microsoft Entra client id (application id). Defaults to client-id. (default "client-id")
       --abs-client-secret-key string                       If exporting to Azure Blob Storage, the name of the key inside the Akka secret that holds the Microsoft Entra client secret. Defaults to client-secret. (default "client-secret")
@@ -51,6 +53,7 @@ akka services data import SERVICE [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

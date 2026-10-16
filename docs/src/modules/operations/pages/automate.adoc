@@ -1,0 +1,42 @@
+= Automate
+:page-summary: The ways to drive Akka without a person at the console: the Akka CLI in a pipeline, the Platform API, and dependency scanning in CI. Each starts by authenticating the automation.
+:page-when-to-use: When you plan to deploy, manage or check Akka services from a CI/CD pipeline or from your own tools.
+:page-related: operations:integrating-cicd/index.adoc, operations:platform-api.adoc, operations:integrating-cicd/scanning-dependencies.adoc
+:page-persona: operator-platform, builder-developer
+
+include::ROOT:partial$include.adoc[]
+
+You can drive Akka from a pipeline or from your own tools, with no person at the console. Every way of doing it starts with the same step: the automation authenticates to Akka with its own credential, not with a person's login.
+
+== Authenticate the automation first
+
+xref:operations:integrating-cicd/index.adoc[] explains the two ways an automated system gets a credential:
+
+* Workload identity with OpenID Connect (OIDC), where your CI/CD system exchanges an identity token that it already issues for an Akka access token. No Akka credential is stored.
+* Service tokens, which are long-lived tokens tied to one project that you store as a secret in your CI/CD system.
+
+Use workload identity where your CI/CD system supports it.
+
+== Ways to automate
+
+[cols="1,2,1", options="header"]
+|===
+| What you automate | How | Page
+
+| Build, deploy and update services from a pipeline
+| Run the Akka CLI in your pipeline after it authenticates. The CLI accepts the same commands that you run by hand.
+| xref:operations:integrating-cicd/github-actions.adoc[]
+
+| Manage organizations, projects and services from your own tools
+| Call the gRPC and REST APIs that the Akka CLI and console use, with the published schemas or the Java client library.
+| xref:operations:platform-api.adoc[]
+
+| Check the libraries you add to a service
+| Scan your service's dependencies for known vulnerabilities in CI. Akka scans and patches the runtime; you scan the dependencies that you introduce.
+| xref:operations:integrating-cicd/scanning-dependencies.adoc[]
+|===
+
+== See also
+
+* xref:operations:services/deploy-service.adoc[] for the deploy commands that a pipeline runs.
+* xref:reference:cli/command-map.adoc[] for the Akka CLI command that matches each task.

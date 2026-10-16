@@ -16,11 +16,15 @@
 :url-akka-how-it-works: https://akka.io/how-akka-works
 :url-akka-pricing: https://akka.io/pricing
 :url-akka-trust-center: https://trust.akka.io
+:url-akka-console: https://console.akka.io
+:url-akka-contact: https://www.akka.io/contact
 :url-external-secrets: https://external-secrets.io
 :url-akka-professional-services: https://akka.io/professional-services
 :url-akka-specify-plugin: https://akka.io/blog/introducing-akka-specify
 :url-libraries-docs: https://doc.akka.io/libraries/
 :url-libraries-streams: https://doc.akka.io/libraries/akka-core/current/stream/index.html
+:url-book-principles-and-patterns: https://www.oreilly.com/library/view/principles-and-patterns/9781098181260/
+:url-akka-docs-md: https://doc.akka.io/sdk/_attachments/akka-docs-md.zip
 
 // -- akka.io application type pages --
 :url-akka-app-agentic-ai: https://akka.io/app-types/agentic-ai
@@ -47,7 +51,6 @@
 // -- akka.io blog posts: architecture --
 :url-blog-cell-based: https://akka.io/blog/cell-based-architectures-and-akka
 :url-blog-multi-region: https://akka.io/blog/multi-region-replicated-apps
-:url-blog-six-nines: https://akka.io/blog/build-and-run-apps-with-6-9s-availability
 :url-blog-clustering: https://akka.io/blog/how-does-akka-clustering-work
 :url-blog-backbone-distributed: https://akka.io/blog/the-backbone-of-agentic-ai-distributed-systems-and-oss-sustainability
 
@@ -150,3 +153,8 @@
 :url-platform-api-java-client: https://github.com/akka/platform-api/tree/main/java-client
 :url-platform-api-schemas-federation: https://github.com/akka/platform-api/tree/main/schemas/federation-plane/protobuf
 :url-platform-api-schemas-control-plane: https://github.com/akka/platform-api/blob/main/schemas/control-plane/openapi/api.json
+
+// -- akka/akka-sdk samples --
+:url-sample-autonomous-agent-playground: https://github.com/akka/akka-sdk/blob/main/samples/autonomous-agent-playground
+:url-sample-ask-akka-agent: https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent
+:url-sample-trip-agent: https://github.com/akka-samples/trip-agent

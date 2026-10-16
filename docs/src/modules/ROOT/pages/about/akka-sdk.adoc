@@ -1,0 +1,85 @@
+= Akka SDK
+:page-aliases: ROOT:akka-agents.adoc, ROOT:akka-orchestration.adoc, ROOT:akka-memory.adoc, ROOT:akka-streaming.adoc
+:page-summary: Akka SDK is the component model for building agentic systems. The Akka runtime provides resilience and scalability for everything built with it.
+:page-when-to-use: When you need an overview of the components you build agentic systems from, and where each is documented.
+:page-related: sdk:components/index.adoc, concepts:components.adoc, ROOT:about/how-it-fits.adoc
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Akka SDK is the component model for building agentic systems. You write each part of a system as a component: an agent that calls a model, a workflow that supervises agents, an entity that holds state, an endpoint that exposes it. The Akka runtime runs every component with durable state, recovery from failure and elastic scale, so you do not add a separate message broker, cache, job scheduler or state store.
+
+You write components in Java, or have the Akka Specify Plugin generate them from a specification. See xref:ROOT:about/akka-specify.adoc[Akka Specify].
+
+== Agents
+
+An agent calls an AI model for one task. It holds session memory that survives restarts and that other agents can share, calls function tools and remote MCP tools, and streams its output to the caller. The model is declared, not hard-coded, so you can change provider or model without rewriting the agent.
+
+An Autonomous Agent runs as a durable process on typed tasks. The runtime drives its decision loop, and the agent can delegate to other agents, hand off to a peer, lead a team or moderate a conversation through tools the runtime provides.
+
+See xref:sdk:agents.adoc[Agents], xref:sdk:autonomous-agents.adoc[Autonomous Agents], xref:concepts:ai-agents.adoc[] and xref:concepts:agent-memory.adoc[].
+
+== Orchestration
+
+A workflow is a durable, multi-step process. It persists its position after each step, resumes where it stopped after a failure, retries failed steps by policy, and runs compensation steps to undo earlier work when a later step fails. A workflow can pause for hours or days while a person decides. Workflows are the usual supervisor for a fixed sequence of agent calls; an Autonomous Agent supervises when the model decides the sequence.
+
+See xref:sdk:workflows.adoc[Workflows], xref:concepts:durable-execution.adoc[] and xref:concepts:ai-orchestration-patterns.adoc[].
+
+== State and memory
+
+Entities hold durable state in memory, sharded across the cluster, with one owner for each entity. An Event Sourced Entity stores every change as an event in a journal and rebuilds its state by replaying it. A Key Value Entity stores its current value. Views build read models across many entities and serve queries separately from the entities that write the data. Agent session memory is stored the same way and can be compacted to keep a model's context small. Long-term memory carries knowledge across sessions, users and agents. It is built on event-sourced entities and is part of the Agent and Workflow components, so you do not program it.
+
+See xref:sdk:event-sourced-entities.adoc[Event Sourced Entities], xref:sdk:key-value-entities.adoc[Key Value Entities], xref:sdk:views.adoc[Views], xref:sdk:agents/memory.adoc[Session memory], xref:concepts:state-model.adoc[] and xref:concepts:state-model.adoc#views-and-cqrs[].
+
+== Streaming and events
+
+Consumers read streams of events from entities, workflows, other services or message broker topics, and produce events in turn. Each consumer reads at its own pace while events wait in the journal or broker, so a fast producer cannot overwhelm a slow consumer. Services exchange events without a message broker, and connect to one when you need it. Delivery to consumers is at least once.
+
+See xref:sdk:consuming-producing.adoc[Consumers], xref:sdk:streaming.adoc[], xref:concepts:delivery-guarantees.adoc[] and xref:concepts:delivery-guarantees.adoc#streaming-and-back-pressure[].
+
+== Endpoints and protocols
+
+HTTP, gRPC and MCP endpoints expose components to clients and to other agents. An agent can use tools from MCP servers, and any component can be exposed as an MCP tool. Agents also communicate with agents on other platforms over A2A. Timers schedule durable calls that run at least once.
+
+See xref:sdk:http-endpoints.adoc[HTTP Endpoints], xref:sdk:grpc-endpoints.adoc[gRPC Endpoints], xref:sdk:mcp-endpoints.adoc[MCP Endpoints], xref:sdk:timed-actions.adoc[Timers], xref:sdk:integrations/apis-and-protocols.adoc[] and xref:concepts:tools-and-protocols.adoc[].
+
+== Models
+
+Agents call models from Anthropic, OpenAI, Google Gemini and Vertex AI, Amazon Bedrock, Azure OpenAI and other hosted providers, and from self-hosted and local endpoints. Each agent can use a different model. Akka Optimize routes these calls and serves your own models. See xref:sdk:model-provider-details.adoc[], xref:concepts:models.adoc[] and xref:ROOT:about/akka-optimize.adoc[Akka Optimize].
+
+== Governance in the components
+
+The controls that Akka Verify governs are SDK features when the agent runs on Akka: guardrails, classifiers, sanitizers, evaluators and the ledger. Each model call names the agent that made it. See xref:concepts:controls.adoc[], xref:concepts:evidence.adoc[] and xref:ROOT:about/akka-verify.adoc[Akka Verify].
+
+== Developer tooling
+
+The `akka` CLI, the local console, Maven and sbt plugins, hot reload, and a TestKit for unit and integration tests. See xref:getting-started:install-cli.adoc[] and xref:testing:index.adoc[Testing].
+
+== Where it is in the documentation
+
+[cols="1,3", options="header"]
+|===
+| Section | Start with
+
+| Getting started
+| xref:getting-started:author-your-first-service.adoc[Code-first hello agent], xref:getting-started:planner-agent/index.adoc[Multi-agent tutorial]
+
+| Concepts
+| xref:concepts:components.adoc[], xref:concepts:state-model.adoc[], xref:concepts:durable-execution.adoc[], xref:concepts:ai-agents.adoc[], xref:concepts:ai-orchestration-patterns.adoc[]
+
+| Developing
+| xref:sdk:components/index.adoc[Components], xref:sdk:integrations/index.adoc[Integrations], xref:sdk:dev-best-practices.adoc[]
+
+| Testing
+| xref:testing:unit.adoc[], xref:testing:integration.adoc[]
+
+| Reference
+| xref:reference:api-docs.adoc[], xref:reference:glossary.adoc[]
+|===
+
+== Part of the Akka Agentic AI Platform
+
+* xref:ROOT:about/akka-specify.adoc[Akka Specify] builds Akka SDK components from a specification.
+* xref:ROOT:about/akka-verify.adoc[Akka Verify] evaluates and governs the agents you build.
+* xref:ROOT:about/akka-optimize.adoc[Akka Optimize] routes, serves and trains the models your agents call.
+* xref:ROOT:about/how-akka-runs.adoc[How Akka runs] covers where your services run and who operates them.

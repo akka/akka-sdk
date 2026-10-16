@@ -1,8 +1,6 @@
 = Akka Documentation
 
-*Build, run, and govern agentic AI.*
-
-Akka is a full-stack platform for agentic AI: developer experience, runtime, and governance in one integrated system. You describe what you need, Akka generates a production-ready system, and that system runs as a durable, event-driven, distributed application.
+Akka has one offering: the Akka Agentic AI Platform, which provides resilience and scalability for the agentic systems you build with it. Its four solutions are Akka SDK, Akka Specify, Akka Verify and Akka Optimize. See xref:ROOT:about-akka.adoc[About Akka].
 
 [.akka-docs-homepage-grid]
 ====
@@ -14,7 +12,7 @@ Akka is a full-stack platform for agentic AI: developer experience, runtime, and
 
 **Build your first service** — guided, end-to-end tutorials plus samples.
 
-* xref:getting-started:set-up-dev-env.adoc[Set up your dev env]
+* xref:getting-started:set-up-env.adoc[Set up your env]
 * xref:getting-started:spec-your-first-agent.adoc[Spec-first hello agent]
 * xref:getting-started:planner-agent/index.adoc[Multi-agent tutorial]
 * xref:getting-started:samples.adoc[Samples and blueprints]
@@ -25,26 +23,14 @@ Akka is a full-stack platform for agentic AI: developer experience, runtime, and
 [discrete]
 == xref:ROOT:about-akka.adoc[About Akka]
 
-**Understand the platform** — what Akka is and the capabilities it provides.
+**The platform and its solutions**, and where each is documented.
 
-* xref:ROOT:what-is-akka.adoc[What is Akka?]
-* xref:ROOT:akka-agents.adoc[Agents]
-* xref:ROOT:akka-orchestration.adoc[Orchestration]
-* xref:ROOT:akka-memory.adoc[Memory]
-* xref:ROOT:akka-streaming.adoc[Streaming]
---
-
-[.grid-item]
---
-[discrete]
-== xref:concepts:index.adoc[Understanding]
-
-**Key concepts** behind how Akka services are designed and behave.
-
-* xref:concepts:concepts.adoc[Concepts overview]
-* xref:concepts:architecture-model.adoc[Architecture model]
-* xref:concepts:distributed-systems.adoc[Distributed systems]
-* xref:concepts:multi-region.adoc[Multi-region operations]
+* xref:ROOT:about/how-it-fits.adoc[How the solutions work together]
+* xref:ROOT:about/akka-sdk.adoc[Akka SDK]
+* xref:ROOT:about/akka-specify.adoc[Akka Specify]
+* xref:ROOT:about/akka-verify.adoc[Akka Verify]
+* xref:ROOT:about/akka-optimize.adoc[Akka Optimize]
+* xref:ROOT:about/how-akka-runs.adoc[How Akka runs]
 --
 
 [.grid-item]
@@ -64,12 +50,36 @@ Akka is a full-stack platform for agentic AI: developer experience, runtime, and
 [.grid-item]
 --
 [discrete]
+== xref:testing:index.adoc[Testing]
+
+**Test and evaluate** components and agents.
+
+* xref:testing:unit.adoc[Unit testing]
+* xref:testing:integration.adoc[Integration testing]
+* xref:testing:evaluation/index.adoc[Evaluation]
+* xref:testing:evaluation/adversarial.adoc[Adversarial testing]
+--
+
+[.grid-item]
+--
+[discrete]
+== xref:deployment:index.adoc[Deployment]
+
+**Choose and prepare** the environment for your services.
+
+* xref:deployment:index.adoc[Deployment options]
+* xref:deployment:technical-overview.adoc[How AAO works]
+* xref:deployment:production-readiness/index.adoc[Production readiness]
+--
+
+[.grid-item]
+--
+[discrete]
 == xref:operations:index.adoc[Operating]
 
 **Deploy, run, and monitor** Akka services in production.
 
-* xref:operations:configuring.adoc[Self-managed operations]
-* xref:operations:akka-platform.adoc[Akka Automated Operations]
+* xref:operations:projects/index.adoc[Project setup]
 * xref:operations:services/deploy-service.adoc[Deploy a service]
 * xref:operations:observability-and-monitoring/index.adoc[Observability and monitoring]
 --
@@ -81,10 +91,34 @@ Akka is a full-stack platform for agentic AI: developer experience, runtime, and
 
 **Run AI models** — serving models on hardware in your project and routing requests to a provider.
 
-* xref:inference:serving/index.adoc[Serving models]
+* xref:inference:index.adoc#serving[Serving models]
 * xref:inference:serving/deploying-models.adoc[Deploying models]
-* xref:inference:routing/index.adoc[Routing requests to models]
-* xref:inference:routing/request-meaning.adoc[Routing on request meaning]
+* xref:inference:routing.adoc[Routing requests to models]
+--
+
+[.grid-item]
+--
+[discrete]
+== xref:optimize:index.adoc[Training]
+
+**Train smaller models** on your data and promote them when they meet the acceptance criteria.
+
+* xref:optimize:trainer/getting-started.adoc[Train a first model]
+* xref:optimize:trainer/index.adoc[Trainer]
+* xref:optimize:concepts.adoc[Concepts]
+--
+
+[.grid-item]
+--
+[discrete]
+== xref:concepts:index.adoc[Concepts]
+
+**How the platform works**: services, agents, specifications, governance, models and the runtime.
+
+* xref:concepts:platform-model.adoc[Platform model]
+* xref:concepts:request-lifecycle.adoc[Anatomy of a request]
+* xref:concepts:ai-agents.adoc[Agents]
+* xref:concepts:governance-and-the-runtime.adoc[Governance in the runtime]
 --
 
 [.grid-item]
@@ -105,6 +139,6 @@ Akka is a full-stack platform for agentic AI: developer experience, runtime, and
 [discrete]
 == More
 
-* https://akka.ai[akka.ai] — paste "install Akka from akka.ai" into any supported AI coding harness and it walks the install for you. See xref:getting-started:set-up-dev-env.adoc#_harness_support_matrix[harness support matrix] for the list of supported harnesses.
+* https://akka.ai[akka.ai] — paste "install Akka from akka.ai" into any supported AI coding harness and it walks the install for you. See xref:getting-started:set-up-harness.adoc#_harness_support_matrix[harness support matrix] for the list of supported harnesses.
 * xref:ROOT:resources.adoc[Resources] — blogs, demos, webinars, training, and community links.
 * https://doc.akka.io/libraries/akka-dependencies/current/overview.html[Akka Libraries] — the Akka libraries for the JVM, in production for over a decade.

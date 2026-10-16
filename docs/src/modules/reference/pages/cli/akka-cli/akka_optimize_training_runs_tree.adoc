@@ -17,12 +17,14 @@ By default, all generations are traversed.
 Results are populated from asynchronous run projections;
 recently created runs may take a moment to appear.
 
+[source,shell]
 ----
 akka optimize training runs tree ROOT [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Display the branch tree below a run
   akka-optimize training runs tree 7d496e82c3a15f04
@@ -36,6 +38,7 @@ akka optimize training runs tree ROOT [flags]
 
 == Options
 
+[source,text]
 ----
       --depth int   Number of generations below ROOT to traverse (0 traverses all generations)
   -h, --help        help for tree
@@ -43,6 +46,7 @@ akka optimize training runs tree ROOT [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

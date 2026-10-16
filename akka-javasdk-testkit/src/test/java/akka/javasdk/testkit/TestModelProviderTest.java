@@ -138,6 +138,25 @@ class TestModelProviderTest {
   }
 
   @Test
+  void testExactToolResultMatchIgnoresErrorFlag() {
+    testModelProvider
+        .whenToolResult(new TestModelProvider.ToolResult("toolName", "failed"))
+        .thenReply(result -> new TestModelProvider.AiResponse("error: " + result.isError()));
+
+    ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
+    ToolExecutionResultMessage toolResult =
+        ToolExecutionResultMessage.builder()
+            .id("id")
+            .toolName("toolName")
+            .text("failed")
+            .isError(true)
+            .build();
+    ChatResponse response = chatModel.doChat(ChatRequest.builder().messages(toolResult).build());
+
+    assertThat(response.aiMessage().text()).isEqualTo("error: true");
+  }
+
+  @Test
   void testMockResponseWithPredicate() {
 
     testModelProvider.whenMessage(text -> text.contains("hello")).reply("Hello response");

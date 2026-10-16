@@ -12,18 +12,21 @@ A start that did not complete leaves work the service will not pick up again bef
 
 `--jq` reads one value out, as in `--jq .backend`.
 
+[source,shell]
 ----
 akka optimize training info [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for info
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

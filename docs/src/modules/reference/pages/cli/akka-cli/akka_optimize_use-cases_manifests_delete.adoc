@@ -9,18 +9,21 @@ A manifest is never removed outright, only reduced, because a capture record nam
 What remains is the identity a capture needs to resolve: the tag, the manifest hash, the embedder hash and the labels.
 The exemplars, centroids and reference pairs are dropped, and the manifest cannot route afterwards.
 
+[source,shell]
 ----
 akka optimize use-cases manifests delete TAG [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for delete
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

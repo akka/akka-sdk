@@ -17,13 +17,16 @@ import com.typesafe.config.ConfigValueType
 
   val Key = "control-id"
 
+  /** The longest control id that the runtime indexes in the ledger. */
+  val MaxLength = 256
+
   /**
    * The `control-id` of an entry, or `None` when the entry has none.
    *
    * @param entry
    *   the entry, as named in the error message, such as `Sanitizer [pii]`
    * @throws IllegalArgumentException
-   *   if the value is not a string or is blank
+   *   if the value is not a string, is blank, or is longer than [[MaxLength]] characters
    */
   def read(config: Config, entry: String): Option[String] =
     if (!config.hasPath(Key)) None
@@ -34,6 +37,9 @@ import com.typesafe.config.ConfigValueType
       val id = config.getString(Key)
       if (id.isBlank)
         throw new IllegalArgumentException(s"$entry must define a non blank [$Key]")
+      if (id.length > MaxLength)
+        throw new IllegalArgumentException(
+          s"$entry must define a [$Key] of at most [$MaxLength] characters, but defines one of [${id.length}]")
       Some(id)
     }
 }

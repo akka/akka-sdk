@@ -13,12 +13,14 @@ The bundle's hash is printed.
 Use --name to assign or move a name, so a plan can write the name where a rule or a grader names its bundle and keep it when the code changes.
 A run records the hash the name pointed at when it was admitted.
 
+[source,shell]
 ----
 akka optimize training bundles push PATH [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Upload the scoring code and data in a directory
   akka-optimize training bundles push scoring/
@@ -32,6 +34,7 @@ akka optimize training bundles push PATH [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help          help for push
       --name string   Assign a name to the bundle, or move the name to it
@@ -39,6 +42,7 @@ akka optimize training bundles push PATH [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

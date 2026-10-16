@@ -7,12 +7,14 @@ Start a curation run
 Judging calls a model once per extracted candidate, so a curation over a large corpus runs for as long as that many model calls take.
 --wait follows it, reporting how many candidates have been judged of how many there are.
 
+[source,shell]
 ----
 akka optimize training curations apply -f FILE [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   akka-optimize training curations apply -f curation.json
   akka-optimize training curations apply -f curation.json --wait
@@ -20,6 +22,7 @@ akka optimize training curations apply -f FILE [flags]
 
 == Options
 
+[source,text]
 ----
       --exit-status   exit non-zero unless it completed
   -f, --file string   curation request; - reads stdin
@@ -29,6 +32,7 @@ akka optimize training curations apply -f FILE [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

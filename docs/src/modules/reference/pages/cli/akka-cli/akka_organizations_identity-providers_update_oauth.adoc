@@ -8,12 +8,14 @@ The `akka organizations identity-providers update oauth` command updates a workl
 
 As with creation, Akka performs OpenID discovery and JWKS keyset validation against the issuer before persisting the update.
 
+[source,shell]
 ----
 akka organizations identity-providers update oauth PROVIDER-ID [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --claim-mapping-add stringToString   Adds (or updates) a mapping from a JWT claim to a named attribute on the workload identity principal, in the form attribute=claim. May be specified multiple times. (default [])
       --claim-mapping-remove strings       Removes a claim mapping by its attribute name. May be specified multiple times.
@@ -25,6 +27,7 @@ akka organizations identity-providers update oauth PROVIDER-ID [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

@@ -62,6 +62,37 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.j
 When using a manual schema, it is crucial to make sure that the schema is describing a JSON structure that
 is actually what is accepted when Jackson parses it into the input parameter type.
 
+==== Structured output
+
+A tool that returns `String` gives the client plain text content. A tool can instead return an object type, such as a record,
+to give the client https://modelcontextprotocol.io/specification/2025-06-18/server/tools#structured-content[structured content].
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=tool-structured-output]
+----
+<1> A record that describes the result of the tool. The output schema includes the `Description` annotations.
+<2> The tool method returns the record instead of a `String`
+
+Akka generates an output schema from the return type and includes it in the tool listing. When a client calls the tool, Akka
+serializes the returned object to JSON and sends it as structured content. Akka also sends the same JSON as text content, for
+clients that do not support structured content. Clients that use an MCP protocol version before 2025-06-18 receive only the
+text content.
+
+Structured content must be a JSON object. For a tool that returns an array or a collection, the output schema is an object with
+a single `result` field, and Akka sends the elements in that field.
+
+Akka leaves fields with an empty `Optional` or a `null` value out of the structured content. The output schema does not list
+`Optional` fields as required. A tool that returns a `Map` gives structured content with an object schema that has no
+properties.
+
+A tool that returns `void` gives the client the text `SUCCESS`. For other return types, such as primitives, enums and dates,
+Akka sends the JSON of the value as text content. A tool must not return a protobuf message, or a type that contains one.
+Akka rejects such a tool when the service starts.
+
+A tool method can also return a `CompletionStage` of any of these types. Akka sends the result when the stage completes.
+
 === Resources
 
 A static resource is a public zero-parameter method returning text or bytes. The resource is identified by a unique URI.

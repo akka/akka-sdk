@@ -6,12 +6,14 @@ Add an OpenID authentication domain to the current (or specified) organization
 
 The `akka organizations auth openid add` command adds an OpenID authentication domain to the given organization in Akka.
 
+[source,shell]
 ----
 akka organizations auth add openid [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --auth-method string     The authentication method to use, as defined in section 9 of the OpenID Connect Core. Must be one of none, basic, post, jwt, or private-key-jwt.
       --client-id string       The client id to use when communication with the OpenID Connect provider.
@@ -26,6 +28,7 @@ akka organizations auth add openid [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

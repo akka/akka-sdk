@@ -9,18 +9,21 @@ Every service this CLI talks to, whether it is reachable, and where it was looke
 This exits zero whatever it finds.
 A service being down is the news the report carries, not a failure of the report.
 
+[source,shell]
 ----
 akka optimize status [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for status
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

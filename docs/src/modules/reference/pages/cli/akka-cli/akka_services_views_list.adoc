@@ -6,12 +6,14 @@ List all views.
 
 The `akka service views list` command lists a one-line summary of all views under the selected service.
 
+[source,shell]
 ----
 akka services views list SERVICE [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 
 > akka service views list customer-registry
@@ -22,6 +24,7 @@ CustomerByEmail   true     66m
 
 == Options
 
+[source,text]
 ----
   -h, --help             help for list
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
@@ -31,6 +34,7 @@ CustomerByEmail   true     66m
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

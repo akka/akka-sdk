@@ -1,4 +1,4 @@
-= Serving your first model in an Akka region
+= Serving your first model
 :page-summary: A step-by-step tutorial that deploys an open-weight model on an accelerator in an Akka region and calls it with an OpenAI-compatible client.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
@@ -32,7 +32,7 @@ A project route then exposes the endpoint on a hostname.
 
 == Prerequisites
 
-* The Akka CLI, installed and logged in. See xref:operations:cli/installation.adoc[Install the Akka CLI].
+* The Akka CLI, installed and logged in to a remote Akka environment. See xref:getting-started:install-cli.adoc[] and xref:getting-started:log-in.adoc[].
 * An Akka project in a region that offers accelerator pools, with the Inference feature set enabled for your organization.
 * A Hugging Face account and an access token with the Read role, created at link:{url-ext-hugging-face-tokens}[Hugging Face access tokens, window="new"]. The token is needed for gated checkpoints.
 * `curl`, to call the model.
@@ -307,7 +307,7 @@ akka secrets delete hf-token
 
 == See also
 
-* xref:inference:serving/index.adoc[Serving models]
-* xref:reference:inference-cli/models.adoc[Model commands]
+* xref:inference:index.adoc#serving[Serving models]
+* xref:reference:cli/models.adoc[Model commands]
 * xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
 * xref:operations:services/invoke-service.adoc[Invoke a service]

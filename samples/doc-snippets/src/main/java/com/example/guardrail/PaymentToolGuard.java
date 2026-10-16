@@ -11,7 +11,6 @@ public class PaymentToolGuard implements ToolCallGuardrail { // <1>
     if (!ctx.toolName().equals("transferFunds")) {
       return new Decision.Allow();
     }
-    // ctx exposes agentId(), toolName(), toolCallId(), and the raw JSON arguments()
     if (ctx.arguments().contains("\"amount\":10000")) { // <3>
       return new Decision.Deny("transfers of 10000 or more require human approval"); // <4>
     }

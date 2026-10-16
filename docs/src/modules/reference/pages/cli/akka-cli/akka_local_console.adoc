@@ -6,12 +6,14 @@ Start the Akka local console.
 
 The `akka local console` command allows you to start the Akka local console.
 
+[source,shell]
 ----
 akka local console [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --bind-address string   The address to bind to. (default "127.0.0.1")
       --force-asset-check     This forces a check for a new version of the local console assets.
@@ -21,6 +23,7 @@ akka local console [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

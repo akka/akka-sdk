@@ -16,12 +16,14 @@ A reference is one string: NS/NAME for the named artifact, NS/NAME:v2 for a vers
 for a version by digest.
 NS/NAME where a version is wanted is the newest version.
 
+[source,shell]
 ----
 akka optimize registry datasets object NS/NAME[:REF] PATH [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Read a fixture the descriptor states
   akka-optimize registry datasets object northgate/library:v1 fixtures/northgate-db.json
@@ -32,12 +34,14 @@ akka optimize registry datasets object NS/NAME[:REF] PATH [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for object
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

@@ -163,6 +163,9 @@ public interface TaskClient {
   /**
    * Blocks until the task reaches a terminal state and returns the typed result.
    *
+   * <p>When a {@link akka.javasdk.agent.task.TaskRule} rejects the result, the agent retries and
+   * this call keeps waiting.
+   *
    * <p>As with {@link #get}, the supplied {@link TaskDefinition} is validated against the task
    * entity.
    *

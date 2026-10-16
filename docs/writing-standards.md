@@ -2,18 +2,27 @@
 
 These standards govern all documentation prose. Vale enforces the automatable subset
 (`docs/styles/Akka/`); reviewers enforce the rest. They apply to net-new and rewritten
-content. The one carve-out is the **About Akka capability pages** duplicated from
-marketing, which may keep positioning voice (see the execution plan).
+content. The one carve-out is the **About Akka** section, which presents the Akka Agentic AI
+Platform and its four solutions, and may describe capabilities that have no task page yet. It
+still follows the voice rules below and quotes no marketing figures.
 
 ## Voice and tone
 - **Second person.** The reader is "you"; the product is "Akka". Drop "we".
 - **Imperative for instructions, declarative for facts.** "Annotate the class." / "Events are delivered at least once."
 - **Short sentences.** Break compound-complex sentences in two. Lead with the action or fact.
 - **Medium formality.** Technical and precise, not academic. No contractions in body text, no humor or filler.
+- **Use full words in prose and headings.** Write "documentation", "environment", and
+  "evaluation" instead of "docs", "env", and "eval". Preserve literal paths, commands, API names,
+  and other identifiers. Established technical terms are acceptable when defined or linked.
+- **State the behavior or criterion directly.** Avoid conversational idioms and vague judgments:
+  use "meets the acceptance criteria" instead of "meets the bar", "is released" instead of
+  "ships", and "quality falls below the required threshold" instead of "it slips". Name the
+  relevant criterion rather than referring to "what good means". Keep replacements short and
+  concrete; do not replace informal language with unnecessarily formal wording.
 - **Define jargon on first use.** Link domain terms (passivation, sharding, Effects) to the glossary on first appearance.
 
 ## Banned in documentation prose
-Positioning/marketing language does not belong in the docs (it may inform *what* to
+Positioning/marketing language does not belong in the documentation (it may inform *what* to
 document, never *how it reads*):
 - The three-barriers / three-dimensions narrative, benefit-pillar copy, superlatives, competitor jabs.
 - Marketing words (Vale-flagged): seamless, supercharge, game-changer, blazing fast, turnkey,
@@ -25,9 +34,10 @@ document, never *how it reads*):
 - **No `_internal` / "Dojo" content.**
 
 ## Terminology
-- **"Akka Specify Plugin"** = the command-line / marketplace tool the docs describe. Use this.
-- **"Akka Specify"** (bare) = the marketing delivery methodology. **Never appears in the docs** (Vale-flagged).
-- **"spec-driven development"** = the practice; docs teach this via the Plugin.
+- **"Akka Specify"** = the solution: spec-driven development tooling. Use it for the solution as a whole.
+- **"Akka Specify Plugin"** = the plugin installed in an AI harness. Use it for the plugin itself.
+- **Solution names** (Akka SDK, Akka Specify, Akka Verify, Akka Optimize) and **"Akka Agentic AI Platform"** appear in the About Akka section. Other sections are named by task and do not frame their pages by solution.
+- **"spec-driven development"** = the practice; the documentation teaches this via the Plugin.
 
 ## Page structure
 Every component/feature page has, at minimum: **Overview** (one-sentence definition, when to use,

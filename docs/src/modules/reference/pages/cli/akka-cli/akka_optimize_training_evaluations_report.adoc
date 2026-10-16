@@ -8,12 +8,14 @@ Display the mean score, exact-match rate, and per-field accuracy for an evaluati
 
 Per-field accuracy metrics are ordered with the lowest-scoring fields first to highlight areas needing improvement.
 
+[source,shell]
 ----
 akka optimize training evaluations report EVALUATION [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Display the accuracy report
   akka-optimize training evaluations report 9c2e4b7a1d63f085
@@ -24,12 +26,14 @@ akka optimize training evaluations report EVALUATION [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for report
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

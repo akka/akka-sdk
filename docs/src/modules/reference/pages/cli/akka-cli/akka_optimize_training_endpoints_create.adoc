@@ -21,12 +21,14 @@ Use --wait to return once the endpoint answers, which is what a script needs bef
 --timeout bounds that wait and leaves the endpoint alone when it expires, and zero waits without a deadline.
 It means nothing without --wait, so giving it alone is refused.
 
+[source,shell]
 ----
 akka optimize training endpoints create --model MODEL [--workload WORKLOAD] [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Serve a base model, which belongs to no workload
   akka-optimize training endpoints create --model Qwen/Qwen3-8B --workload triage
@@ -40,6 +42,7 @@ akka optimize training endpoints create --model MODEL [--workload WORKLOAD] [fla
 
 == Options
 
+[source,text]
 ----
   -h, --help               help for create
       --model string       Selected base model or candidate to serve
@@ -50,6 +53,7 @@ akka optimize training endpoints create --model MODEL [--workload WORKLOAD] [fla
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

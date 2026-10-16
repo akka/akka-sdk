@@ -7,12 +7,14 @@ Suspend a running workflow execution.
 The `akka local service components workflows suspend` command suspends a running workflow for the specified service, workflow component and id.
 The workflow can later be resumed with `workflows resume`.
 
+[source,shell]
 ----
 akka local services components workflows suspend SERVICE_NAME COMPONENT_ID WORKFLOW_ID [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -f, --force            Skip the confirmation prompt.
   -h, --help             help for suspend
@@ -24,6 +26,7 @@ akka local services components workflows suspend SERVICE_NAME COMPONENT_ID WORKF
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

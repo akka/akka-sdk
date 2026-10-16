@@ -31,6 +31,7 @@ import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.DispatcherSelector
 import akka.annotation.InternalApi
+import akka.grpc.GrpcClientSettings
 import akka.grpc.internal.JavaMetadataImpl
 import akka.grpc.javadsl.AkkaGrpcClient
 import akka.grpc.javadsl.Metadata
@@ -214,6 +215,11 @@ object SdkRunner {
   @nowarn("msg=deprecated")
   def extractSpiSettings(applicationConf: Config): SpiSettings = {
     val eventSourcedEntitySnapshotEvery = applicationConf.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
+
+    if (applicationConf.hasPath("akka.javasdk.event-sourced-entity.cleanup-deleted-after"))
+      throw new IllegalArgumentException(
+        "The setting `akka.javasdk.event-sourced-entity.cleanup-deleted-after` is renamed to " +
+        "`akka.javasdk.entity.cleanup-deleted-after`. Change the name in your configuration and keep the value.")
     val cleanupDeletedEntityAfter =
       applicationConf.getDuration("akka.javasdk.entity.cleanup-deleted-after")
 
@@ -617,7 +623,9 @@ private final class Sdk(
         case _                 => (devMode.backoffice.apiServer, 443)
       }
       BackofficeAccessTokenCache(system)
-        .init(apiServerHost, apiServerPort, devMode.backoffice.refreshToken)
+        .init(
+          GrpcClientSettings.connectToServiceAt(apiServerHost, apiServerPort)(system),
+          devMode.backoffice.refreshToken)
     }
   }
 
@@ -1206,7 +1214,7 @@ private final class Sdk(
             agentGuardrails.withToolGuardrails(
               FunctionTools.descriptorsFor(autonomousAgentClass) ++ toolClasses.flatMap(FunctionTools.descriptorsFor))
           val spiMcpDescriptors =
-            AgentImpl.toSpiMcpEndpoints(agentDefinition.mcpTools.asScala.toSeq, agentGuardrails, sdkExecutionContext)
+            AgentImpl.toSpiMcpEndpoints(agentDefinition.mcpTools.asScala.toSeq, agentGuardrails)
 
           // Build SPI capabilities from SDK capabilities
           val spiCapabilities = agentCapabilityConverter.toSpiCapabilities(agentDefinition.capabilities)
@@ -1314,10 +1322,10 @@ private final class Sdk(
         val instanceFactory: SpiEvaluator.FactoryContext => SpiEvaluator = { factoryContext =>
           val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
           new EvaluatorImpl[Evaluator](
-            // the runtime sets OTel baggage akka.evaluation.id around evaluate, so the wired
-            // ComponentClient inherits it from the ambient context for judge-call correlation
-            () => wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(None, callerSpiffe)),
-            evaluatorClass)
+            telemetryContext =>
+              wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(telemetryContext, callerSpiffe)),
+            evaluatorClass,
+            configured.configFor)
         }
 
         evaluatorDescriptors :+=
@@ -1349,11 +1357,13 @@ private final class Sdk(
                 factoryContext.evaluationId,
                 evaluatorClass,
                 stateType,
-                () =>
-                  wiredInstance("Durable Evaluator", evaluatorClass)(sideEffectingComponentInjects(None, callerSpiffe)),
+                telemetryContext =>
+                  wiredInstance("Durable Evaluator", evaluatorClass)(
+                    sideEffectingComponentInjects(telemetryContext, callerSpiffe)),
                 factoryContext.recorder,
                 serializer,
-                sdkExecutionContext)
+                sdkExecutionContext,
+                configured.configFor)
             },
             provided = false)
 

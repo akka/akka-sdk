@@ -9,18 +9,21 @@ The working set is a singleton: the clustering the gateway is maintaining right 
 This exits zero whether or not the set is freezable.
 Not being ready to freeze is the news the report carries, not a failure of the report.
 
+[source,shell]
 ----
 akka optimize use-cases status [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for status
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

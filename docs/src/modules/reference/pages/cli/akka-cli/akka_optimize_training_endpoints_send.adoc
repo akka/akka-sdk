@@ -22,12 +22,14 @@ The value may be the displayed model name (including a shortened adapter), the m
 The answer is printed as it is produced.
 Under -o json the model, the output and the token usage are returned instead.
 
+[source,shell]
 ----
 akka optimize training endpoints send ENDPOINT --input TEXT [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Send one input
   akka-optimize training endpoints send 970076e8 --input "Payment failed twice, card declined."
@@ -42,6 +44,7 @@ akka optimize training endpoints send ENDPOINT --input TEXT [flags]
 
 == Options
 
+[source,text]
 ----
       --file string           Read the input from a file, or from standard input where the path is "-"
   -h, --help                  help for send
@@ -54,6 +57,7 @@ akka optimize training endpoints send ENDPOINT --input TEXT [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

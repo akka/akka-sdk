@@ -13,12 +13,14 @@ Reports always break out by hazard and by technique.
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for redteam
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

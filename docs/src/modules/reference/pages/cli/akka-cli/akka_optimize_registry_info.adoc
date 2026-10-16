@@ -7,18 +7,21 @@ The registry service identity
 Report the area served by the registry.
 The command exits non-zero when the request or credential fails.
 
+[source,shell]
 ----
 akka optimize registry info [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for info
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

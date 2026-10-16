@@ -1,8 +1,8 @@
 = Evaluators
 :page-component-type: evaluator
-:page-summary: A component the runtime triggers for each interaction of a bound agent, to assess it and record a verdict.
+:page-summary: A component the runtime triggers for the interactions of a bound agent, to assess them and record a verdict.
 :page-when-to-use: When you want agent interactions assessed automatically as they happen, for quality tracking, regression detection, or compliance, without adding evaluation calls to the agents themselves.
-:page-related: xref:sdk:agents/llm_eval.adoc[], xref:sdk:agents.adoc[], xref:concepts:governance-and-the-runtime.adoc[]
+:page-related: xref:sdk:agents/llm_eval.adoc[], xref:sdk:agents.adoc[], xref:concepts:controls.adoc#evals[], xref:concepts:evaluation.adoc[]
 :page-prerequisites: An Akka project with at least one agent defined.
 :page-persona: developer, governance-compliance
 :page-banner: evaluations
@@ -12,14 +12,15 @@ include::ROOT:partial$include.adoc[]
 == Overview
 
 An link:{attachmentsdir}/api/akka/javasdk/evaluation/Evaluator.html[`Evaluator`] is a component that assesses agent interactions.
-You bind it to one or more agents in configuration, and the runtime then invokes it once for each interaction of a bound agent, passing the interaction to evaluate.
+You bind it to one or more agents in configuration, and the runtime then invokes it for the interactions of a bound agent.
+Each invocation receives one interaction to evaluate.
 The evaluator returns a verdict, pass or fail, optionally with a score, a label, and attributes.
-The runtime records the verdict in the ledger and exposes it in metrics and traces.
+The runtime records the verdict in the ledger and exposes it in metrics and traces. An evaluator implements the eval control type; see xref:concepts:controls.adoc#evals[Controls] and xref:concepts:evaluation.adoc[].
 
 Without an Evaluator, you evaluate interactions yourself. For an autonomous agent, you write a Consumer that listens for task completions and calls a judge agent, as shown in xref:sdk:agents/llm_eval.adoc[LLM evaluation]. A request-based agent has no such event source, so you call the judge from the code that called the agent.
 In both cases the code is specific to one agent, and you repeat it for every agent you want evaluated.
 An Evaluator replaces that wiring with configuration.
-You implement the evaluation once and bind it to agents or agent roles in `application.conf`. The runtime then triggers it for every interaction of those agents.
+You implement the evaluation once and bind it to agents or agent roles in `application.conf`. The runtime then triggers it for the interactions of those agents.
 
 Two kinds of evaluator exist:
 
@@ -74,12 +75,12 @@ Every evaluation therefore ends in one of three recorded outcomes: a verdict, in
 An evaluator records one verdict per evaluation.
 When one evaluator judges several criteria, combine them into one `Evaluation`: `passed` is the overall verdict, and the explanation and the attributes carry the result per criterion.
 Use one evaluator per criterion when the criteria do not combine into one verdict.
-Each evaluator bound to an agent adds one trigger and one ledger record per interaction.
+Each evaluator bound to an agent adds one trigger and one ledger record for each interaction that it evaluates.
 
 == Binding evaluators to agents
 
 Evaluators are bound to agents under `akka.javasdk.evaluation.evaluators`, keyed by the evaluator's `@Component` id.
-Each binding declares a `trigger`. The supported value is `interaction`, meaning the evaluator runs for each interaction of the bound agent:
+Each binding declares a `trigger`. The supported value is `interaction`, meaning the runtime triggers the evaluator for the interactions of the bound agent:
 
 [source,conf,indent=0]
 .src/main/resources/application.conf
@@ -115,13 +116,50 @@ In the example, `billing-agent` has its own entry under `agents`, and that entry
 
 The `enabled` setting defaults to `true`. Set `enabled = false` on an evaluator entry to disable the evaluator for all agents. Set it on a single binding to disable only that binding.
 
-The default values for all evaluator entries and bindings are under `akka.javasdk.evaluation.defaults`. A value set on an individual entry overrides the default for that entry.
+A binding can set `sampling-ratio`, a number from 0.0 to 1.0. For each interaction of the agent, the runtime triggers the evaluator with that probability, so the evaluator evaluates about that share of the interactions. A binding can set `trigger-on-failure = true`. The evaluator then also evaluates the failed interactions of the agent, and the sampling ratio applies to them as well. The defaults are `sampling-ratio = 1.0` and `trigger-on-failure = false`. Set both keys on a binding or under `akka.javasdk.evaluation.defaults.agent`, not on the evaluator entry.
+
+With `trigger-on-failure`, the evaluator also receives interactions that ended in a failure. The record of such an interaction can still hold model text, for example a reply that a guardrail blocked. In the evaluator, check link:{attachmentsdir}/api/akka/javasdk/ledger/InteractionRecord.html[`InteractionRecord.failed()`] before you judge the reply, and read the reason from `failureSummary()`.
+
+The default values for evaluator entries are under `akka.javasdk.evaluation.defaults.evaluator`, and the default values for bindings are under `akka.javasdk.evaluation.defaults.agent`. A value set on an individual entry overrides the default for that entry. The entry that the runtime uses for an agent supplies all settings of the binding. A key that this entry does not set takes the default from `akka.javasdk.evaluation.defaults.agent`, not the value of a less specific entry. For example, when the `*` entry sets `sampling-ratio = 0.1` and the entry for the agent's role sets no ratio, the binding of the agent has the default ratio of 1.0, not 0.1.
 
 The same configuration binds a xref:_durable_evaluators[durable evaluator]. The key is its `@Component` id.
 
+=== Configuration properties of an evaluator
+
+An evaluator can have configuration properties of its own, next to the keys the SDK reads. The SDK reserves the keys `enabled`, `trigger`, `sampling-ratio`, `trigger-on-failure`, `control-id`, `agents` and `agent-roles`, so do not use them as property names. Set the properties on the evaluator entry, or in a binding to vary them per agent:
+
+[source,conf,indent=0]
+.src/main/resources/application.conf
+----
+akka.javasdk.evaluation.evaluators {
+  reply-length-evaluator {
+    min-length = 20                                          // <1>
+    agents {
+      support-agent { trigger = interaction }
+      billing-agent { trigger = interaction, min-length = 50 } // <2>
+    }
+  }
+}
+----
+<1> A property of the evaluator. It applies to every agent the evaluator is bound to.
+<2> The binding for `billing-agent` overrides it.
+
+The evaluator reads them with `EvaluationContext.config()`:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/ReplyLengthEvaluator.java[ReplyLengthEvaluator.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/ReplyLengthEvaluator.java[tag=all]
+----
+<1> A missing key throws, so the evaluation fails and the runtime records it as failed.
+
+`config()` returns the binding that the runtime used for the agent, with the evaluator entry as fallback, key by key. For an agent without an enabled binding, it returns the evaluator entry. The keys `agents` and `agent-roles` are left out. The other keys the SDK reads, such as `trigger` and `enabled`, are present when the entries set them. The defaults under `akka.javasdk.evaluation.defaults` are not included, and a property of an evaluator is not allowed there. The SDK does not validate the properties of an evaluator, so a missing key fails at the first evaluation, not at startup.
+
+A xref:_durable_evaluators[durable evaluator] reads `config()` from the running service at the start and in each step. A step that runs after a deployment with a changed configuration sees the changed configuration.
+
 Set `control-id` on the evaluator, not on a binding, to name the control that the evaluator implements. See xref:concepts:governance-and-the-runtime.adoc#control-ids[control ids]. The runtime records the control id on each evaluation that the evaluator runs, and link:{attachmentsdir}/api/akka/javasdk/ledger/EvaluationRecord.html[`EvaluationRecord.controlId()`] returns it.
 
-NOTE: Evaluators typically use an LLM and therefore have a cost and overhead. You may want to enable them in test or staging environments and keep them disabled, or sampled, in high-volume production. Toggling a binding's `enabled` per deployment is the mechanism for that.
+NOTE: Evaluators typically use an LLM, so each evaluation has a cost. In a high-volume deployment, use a deployment override to set a lower `sampling-ratio`, which evaluates a smaller share of the interactions, or to set `enabled = false`, which turns a binding off.
 
 
 [#_durable_evaluators]
@@ -142,7 +180,7 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/TranscriptJudg
 <1> Extend `DurableEvaluator` with the state type as the type parameter. This evaluator keeps no state, so it uses `Void`.
 <2> Override `settings()` to set the evaluation timeout, the default step timeout, and the number of step retries. Without `settings()`, the runtime defaults apply and a failed step is not retried.
 <3> `onEvaluation` is the entry point. It transitions to the first step.
-<4> A step method takes no parameters, or one input parameter, and returns `Effect`. `evaluationContext()` gives the subject and the evaluation id in every step. The step fetches the interaction from the ledger by id instead of receiving it.
+<4> A step method takes no parameters, or one input parameter, and returns `Effect`. `evaluationContext()` gives the subject, the evaluation id and the configuration in every step. The step fetches the interaction from the ledger by id instead of receiving it.
 <5> The judge runs in a session derived from the evaluation id, separate from the evaluated agent's session. The judge agent uses `MemoryProvider.none()`, so a retried step does not see the earlier attempt and no session memory remains after the evaluation.
 <6> `complete` records the verdict and removes the evaluation instance.
 
@@ -175,6 +213,14 @@ Use link:{attachmentsdir}/testkit/akka/javasdk/testkit/EvaluatorTestKit.html[`Ev
 include::example$doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[tag=test]
 ----
 <1> `TestLedgerClient.create().seed(...)` builds an in-memory `LedgerClient` holding the given records, keyed by interaction id.
+
+For an evaluator that reads `config()`, give the configuration with `withConfig`:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[EvaluatorTestKitSample.java]
+----
+include::example$doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[tag=config]
+----
 
 === Integration testing with the runtime
 

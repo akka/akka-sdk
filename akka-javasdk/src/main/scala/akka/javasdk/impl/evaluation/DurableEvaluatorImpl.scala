@@ -37,6 +37,8 @@ import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.SpiWorkflowEvaluator
 import akka.util.ByteString
+import com.typesafe.config.Config
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
 
 /**
@@ -52,11 +54,15 @@ private[javasdk] object DurableEvaluatorImpl {
    */
   val RecordStepName = "_record-evaluation"
 
-  final class EvaluationContextImpl(id: String, evaluationSubject: Subject) extends EvaluationContext {
+  final class EvaluationContextImpl(id: String, evaluationSubject: Subject, evaluationConfig: Config)
+      extends EvaluationContext {
     override def subject(): Subject = evaluationSubject
     override def evaluationId(): String = id
+    override def config(): Config = evaluationConfig
   }
 
+  // FIXME: wrap in knownOr once SpiEvaluator.TriggerSource has an Unknown value
+  // https://github.com/lightbend/akka-runtime/issues/5921
   private def toProtocolTriggerSource(source: SpiEvaluator.TriggerSource): TriggerSource =
     source match {
       case SpiEvaluator.TriggerSource.Manual        => TriggerSource.MANUAL
@@ -75,17 +81,19 @@ private[javasdk] object DurableEvaluatorImpl {
  *
  * Adapts a user [[DurableEvaluator]] to the [[SpiWorkflowEvaluator]] expected by the runtime. The evaluator is hosted
  * as a workflow — one instance per evaluation, started by the runtime with the structured trigger — with a built-in
- * final step that records the outcome and deletes the instance.
+ * final step that records the outcome and deletes the instance. `configFor` gives the config for an evaluation of an
+ * agent, by its component id, read from the running service at the start and at each step.
  */
 @InternalApi
 private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
     workflowId: String,
     evaluatorClass: Class[E],
     stateClass: Class[S],
-    factory: () => E,
+    factory: Option[OtelContext] => E,
     recorder: SpiEvaluator.EvaluationRecorder,
     serializer: Serializer,
-    sdkExecutionContext: ExecutionContext)
+    sdkExecutionContext: ExecutionContext,
+    configFor: String => Config)
     extends SpiWorkflowEvaluator {
 
   import DurableEvaluatorImpl._
@@ -115,7 +123,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
     serializer.toBytes(Outcome.failed("Evaluation failed"))
 
   override def configuration: SpiWorkflow.WorkflowConfig = {
-    val settings = factory().settings()
+    val settings = factory(None).settings()
 
     // a step that exhausts its retries fails over to the record step, so the failure is recorded
     // and the instance cleaned up rather than the workflow staying failed forever
@@ -143,17 +151,18 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
 
   override def handleEvaluationStart(
       state: Option[SpiWorkflow.State],
-      trigger: SpiEvaluator.Trigger): Future[SpiWorkflow.CommandEffect] = {
+      trigger: SpiEvaluator.Trigger,
+      telemetryContext: OtelContext): Future[SpiWorkflow.CommandEffect] = {
     val ack = serializer.toBytes(Done.getInstance())
     if (state.exists(_.nonEmpty)) {
       // at-least-once delivery from the trigger projection: ack the duplicate start so it can advance
       Future.successful(new SpiWorkflow.ReadOnlyEffect(ack, SpiMetadata.empty))
     } else {
-      val subject = EvaluationConversions.toSdkSubject(trigger.subject)
-      val triggerSource = toProtocolTriggerSource(trigger.source)
       Future {
-        val evaluator = factory()
-        val context = new EvaluationContextImpl(workflowId, subject)
+        val subject = EvaluationConversions.toSdkSubject(trigger.subject)
+        val triggerSource = toProtocolTriggerSource(trigger.source)
+        val evaluator = factory(Option(telemetryContext))
+        val context = new EvaluationContextImpl(workflowId, subject, configFor(subject.agentComponentId()))
         evaluator._internalSetup(evaluator.emptyState(), context)
         val effect = evaluator.onEvaluation(context)
         effect match {
@@ -193,7 +202,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
         s"Evaluation [$workflowId] has no state for step [${stepCommand.stepName}], was the evaluation started by the runtime?")
     }
     if (stepCommand.stepName == RecordStepName) {
-      recordOutcome(envelope, stepCommand.input)
+      recordOutcome(envelope, stepCommand)
     } else {
       val stepMethod = stepMethods.getOrElse(
         stepCommand.stepName,
@@ -202,9 +211,11 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
           s"known steps: [${stepMethods.keys.mkString(", ")}]"))
 
       Future {
-        val evaluator = factory()
+        val evaluator = factory(Option(stepCommand.telemetryContext))
         val subject = envelope.getSubject
-        evaluator._internalSetup(decodeUserState(envelope), new EvaluationContextImpl(workflowId, subject))
+        evaluator._internalSetup(
+          decodeUserState(envelope),
+          new EvaluationContextImpl(workflowId, subject, configFor(subject.agentComponentId())))
         val effect =
           if (stepMethod.getParameterCount == 1) {
             val input = stepCommand.input match {
@@ -225,8 +236,10 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
     }
   }
 
-  private def recordOutcome(envelope: StateEnvelope, input: Option[BytesPayload]): Future[SpiWorkflow.StepResult] = {
-    val outcome = input match {
+  private def recordOutcome(
+      envelope: StateEnvelope,
+      stepCommand: SpiWorkflow.StepCommand): Future[SpiWorkflow.StepResult] = {
+    val outcome = stepCommand.input match {
       case Some(payload) => serializer.fromBytes(classOf[Outcome], payload)
       case None          => throw new IllegalStateException(s"Missing outcome input for [$RecordStepName] step")
     }
@@ -237,7 +250,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
       toSpiTriggerSource(envelope.triggerSource()),
       EvaluationConversions.toSpiSubject(envelope.getSubject))
     // recording is idempotent on the evaluation id: this step is retried until it succeeds
-    recorder.recordResult(trigger, toSpiResult(outcome)).map { _ =>
+    recorder.recordResult(trigger, toSpiResult(outcome), stepCommand.telemetryContext).map { _ =>
       log.debug("Evaluation [{}] finished with [{}]", workflowId, outcome.kind())
       // TODO end or delete or a setting for that?
       new SpiWorkflow.StepTransitionalEffect(SpiWorkflow.NoPersistence, SpiWorkflow.Delete)
@@ -318,7 +331,7 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
     }
 
   private def decodeUserState(envelope: StateEnvelope): S =
-    if (envelope.userState() == null) factory().emptyState()
+    if (envelope.userState() == null) factory(None).emptyState()
     else
       serializer.fromBytes(
         stateClass,

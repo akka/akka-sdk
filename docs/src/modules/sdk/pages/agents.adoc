@@ -61,7 +61,7 @@ The Agent's Effect defines the operations that Akka should perform when an incom
 * return an error message
 * transform responses from a model and reply to incoming commands
 
-For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
+For additional details, refer to xref:concepts:components.adoc#_effects_what_the_component_declares[Effects].
 
 == Basic agent structure
 

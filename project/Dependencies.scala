@@ -8,12 +8,12 @@ object Dependencies {
     val ProtocolVersionMinor = 1
   }
 
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.7.1")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.7.2")
 
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
-  val AkkaVersion = "2.10.23"
+  val AkkaVersion = "2.10.24"
   val AkkaHttpVersion = "10.7.6" // Note: should at least the Akka HTTP version required by Akka gRPC
   val AkkaGrpcVersion = akka.grpc.gen.BuildInfo.version
   val GoogleProtobufVersion = akka.grpc.gen.BuildInfo.googleProtobufVersion
@@ -28,11 +28,9 @@ object Dependencies {
   val JacksonDatabindVersion = JacksonVersion
   val JacksonAnnotationsVersion = "2.22"
   val Langchain4jVersion = "1.20.2"
-  val LogbackVersion = "1.6.4"
+  val LogbackVersion = "1.6.5"
   val LogbackContribVersion = "0.1.5"
-  val JUnitVersion = "4.13.2"
-  val JUnitInterfaceVersion = "0.11"
-  val JUnitJupiterVersion = "5.14.4"
+  val JUnitJupiterVersion = "6.1.3"
   val OpenTelemetryVersion = "1.64.0"
   val OpenTelemetrySemConv = "1.40.0"
 
@@ -81,13 +79,9 @@ object Dependencies {
   val scalaTest = "org.scalatest" %% "scalatest" % ScalaTestVersion
   val munit = "org.scalameta" %% "munit" % MunitVersion
   val munitScalaCheck = "org.scalameta" %% "munit-scalacheck" % MunitVersion
-  val junit4 = "junit" % "junit" % JUnitVersion
-  val junit5 = "org.junit.jupiter" % "junit-jupiter" % JUnitJupiterVersion
-  // JUnit 5's Platform uses major version 1 with the same minor/patch as Jupiter.
+  val junitJupiter = "org.junit.jupiter" % "junit-jupiter" % JUnitJupiterVersion
   // Align the launcher supplied by jupiter-interface with the engine used by our tests.
-  val junitPlatformLauncher = "org.junit.platform" % "junit-platform-launcher" %
-    JUnitJupiterVersion.replaceFirst("^5\\.", "1.")
-  val junit5Vintage = "org.junit.vintage" % "junit-vintage-engine" % JUnitJupiterVersion
+  val junitPlatformLauncher = "org.junit.platform" % "junit-platform-launcher" % JUnitJupiterVersion
 
   val opentelemetryApi = "io.opentelemetry" % "opentelemetry-api" % OpenTelemetryVersion
   val opentelemetrySdk = "io.opentelemetry" % "opentelemetry-sdk" % OpenTelemetryVersion
@@ -139,7 +133,7 @@ object Dependencies {
     akkaDependency("akka-stream"),
     akkaDependency("akka-actor-typed") % Provided,
     "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
-    junit5 % Test,
+    junitJupiter % Test,
     junitPlatformLauncher % Test,
     "org.assertj" % "assertj-core" % AssertJVersion % Test)
 
@@ -155,9 +149,9 @@ object Dependencies {
         //      should possibly be provided or runtime here and added for the test runner in project parent pom
         AkkaDevRuntime,
         // user will interface with these
-        junit5,
+        junitJupiter,
         // convenience-transitive dependencies for user assertions and async interactions
-        "org.awaitility" % "awaitility" % "4.2.2",
+        "org.awaitility" % "awaitility" % "4.3.0",
         "org.assertj" % "assertj-core" % AssertJVersion,
         // for the tests of the testkit itself
         "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,

@@ -12,6 +12,52 @@ Current versions
 
 == October 2026
 
+[sidebar]
+****
+
+**Akka Verify**
+
+The Akka runtime enforces governance while it executes each agent interaction, see xref:concepts:governance-and-the-runtime.adoc[Governance and the runtime]. xref:sdk:agents/guardrails.adoc[Guardrails] run before each model call, on the final reply of the agent, or before a function tool call or an MCP tool call, and can deny it. xref:sdk:sanitization.adoc[Sanitizers] mask personal data in model calls, tool results, and logs, and each sanitizer can define where it masks and for which agents. xref:sdk:agents/classifiers.adoc[Classifiers] map text to a score or a label for a guardrail, an evaluator, a sanitizer, or application code to act on. xref:sdk:access-control.adoc#_component_level_access_with_spiffe[Access control lists] can match the SPIFFE identity of the caller, to allow a single component instead of a whole service.
+
+The ledger records every agent interaction with its model calls, tool calls, token usage, and outcome. The new xref:sdk:evaluators.adoc[Evaluator] component assesses the interactions of the agents that you bind it to. The runtime runs an evaluator in the background after each interaction and records the verdict in the ledger.
+
+This functionality evolves quickly, the behavior and APIs might change between releases without further notice.
+
+****
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.7.0[Akka SDK 3.7.0]
+- Runtime 1.7.2
+- Guardrails for model calls, agent responses, function tool calls, and MCP tool calls.
+- Classifiers
+- Evaluator component and ledger client.
+- Sampling ratio and evaluation of failed interactions for an evaluator binding.
+- Configurable and scoped sanitizers, with custom implementations.
+- Component-level access control with SPIFFE identities.
+- EvalKit runs every case several times and writes each report as a JSON file.
+- Structured output for the tools of an MCP endpoint, see xref:sdk:mcp-endpoints.adoc#_structured_output[Structured output]
+- Thinking level for Gemini 3 models in the Vertex AI model provider.
+- Agent id, flow id, and interaction id headers in model requests, and the W3C trace context when tracing is on.
+- Prompt cache token counts in the token usage, also for autonomous agents and in the ledger
+- An MCP tool interceptor can see whether a tool result is an error.
+- Generated JSON schemas, for example for tool parameters, list the same properties as Jackson.
+- `TaskClient.result()` keeps waiting when a task rule rejects a result.
+- `WebSocketRouteTester` can send request headers and test a rejected upgrade.
+- `JwtClaims` methods such as `expirationTime()` return numeric and boolean claims.
+- `TextGuardrail`, `Sanitizer`, and `SimilarityGuard` are deprecated, see xref:reference:migration-guide.adoc[Migration guide]
+- A service loads the components of a library only when the configuration lists them, see xref:reference:migration-guide.adoc#library-components-opt-in[Migration guide]
+- The `regex-sanitizers` and `predefined-sanitizers` configuration keys are replaced.
+- APIs that were deprecated in SDK 3.5.x and the `it` Maven profile are removed.
+- The `akka.javasdk.event-sourced-entity.cleanup-deleted-after` setting is renamed to `akka.javasdk.entity.cleanup-deleted-after`.
+- The TestKit uses JUnit 6.
+
+* xref:release-notes/runtime/1.7.2.adoc[Akka Runtime 1.7.2]
+- Model call retries by the runtime for all built-in model providers and for streamed replies.
+- MCP tool timeouts.
+- updates of the governance features, and agent fixes.
+
+* xref:release-notes/runtime/1.7.1.adoc[Akka Runtime 1.7.1]
+- Governance features: the ledger, guardrails, evaluators, classifiers, scoped sanitizers, and SPIFFE identities for components
+
 * Akka CLI 3.0.77
 - Routes apply command added
 - Akka model and akka optimize support added
@@ -503,7 +549,7 @@ This short, self-paced course introduces the foundational concepts of the Akka S
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.3.1[Akka SDK 3.3.1]
   - Support `Runnable` in Workflow calls
-  - Updates to xref:operations:configuring.adoc[] documentation
+  - Updates to xref:deployment:configuring.adoc[] documentation
   - Publish LLM friendly markdown docs
 
 * Akka libraries 25.05 releases
@@ -521,7 +567,7 @@ This short, self-paced course introduces the foundational concepts of the Akka S
 
 For organizations that want control over how Akka services are installed, updated, and maintained. Akka services are packaged into standalone binaries with Akka clustering for scaling and deploy to self-managed nodes. You are responsible for separately managing secure connectivity, routes, installation, deployment, and persistence.
 
-This new deployment alternative is described in xref:operations:configuring.adoc[].
+This new deployment alternative is described in xref:deployment:configuring.adoc[].
 
 **Virtual threads**
 
@@ -547,7 +593,7 @@ The xref:getting-started:shopping-cart/build-and-deploy-shopping-cart.adoc#_the_
   - New APIs for retries
 
 * Akka SDK 3.2.4
-  - Support for xref:operations:configuring.adoc[self-managed nodes] in your infrastructure, or any cloud service.
+  - Support for xref:deployment:configuring.adoc[self-managed nodes] in your infrastructure, or any cloud service.
 
 * Akka Runtime 1.4.5, 1.4.6, 1.4.7, 1.4.8
   - Views support for self-joins

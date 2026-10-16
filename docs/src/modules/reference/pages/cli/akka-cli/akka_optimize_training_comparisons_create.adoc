@@ -23,12 +23,14 @@ The service accepts SFT, TRL and verl snapshot candidates.
 The command returns after the comparison is durable;
 use training comparisons get until it reaches a terminal phase.
 
+[source,shell]
 ----
 akka optimize training comparisons create --source SNAPSHOT --branch RUN --dataset DATASET [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   akka-optimize training comparisons create \
     --source 3f2a9c71bd04f6504a2f9306b8e465c7d336e4ca12d27f8872944655d455aa66 \
@@ -39,6 +41,7 @@ akka optimize training comparisons create --source SNAPSHOT --branch RUN --datas
 
 == Options
 
+[source,text]
 ----
       --all-branches string         Prefix or complete ID of a parent run whose completed children branched from --source will be evaluated
       --branch strings              Prefix or complete ID of a branch run whose registered model will be evaluated; repeat for multiple runs
@@ -53,6 +56,7 @@ akka optimize training comparisons create --source SNAPSHOT --branch RUN --datas
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

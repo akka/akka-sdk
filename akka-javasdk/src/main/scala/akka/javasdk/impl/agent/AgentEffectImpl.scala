@@ -7,7 +7,6 @@ package akka.javasdk.impl.agent
 import java.util
 import java.util.function
 
-import scala.annotation.nowarn
 import scala.jdk.CollectionConverters.ListHasAsScala
 import scala.jdk.FunctionConverters.enrichAsScalaFromFunction
 
@@ -22,7 +21,6 @@ import akka.javasdk.agent.Agent.Effect.MappingFailureBuilder
 import akka.javasdk.agent.Agent.Effect.MappingResponseBuilder
 import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
 import akka.javasdk.agent.ContentLoader
-import akka.javasdk.agent.ImageLoader
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.RemoteMcpTools
@@ -201,12 +199,6 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
 
   override def mcpTools(tools: util.List[RemoteMcpTools]): Builder = {
     updateRequestModel(_.addMcpTools(tools.asScala.toSeq))
-    this
-  }
-
-  @nowarn("msg=deprecated")
-  override def imageLoader(loader: ImageLoader): Builder = {
-    updateRequestModel(_.withContentLoader(loader))
     this
   }
 

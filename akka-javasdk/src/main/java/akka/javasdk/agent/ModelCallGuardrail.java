@@ -4,6 +4,7 @@
 
 package akka.javasdk.agent;
 
+import akka.annotation.DoNotInherit;
 import akka.javasdk.Tracing;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -30,6 +31,7 @@ public non-sealed interface ModelCallGuardrail extends Guardrail {
    * parameter in the constructor. That data is the guardrail's configured name and its config
    * section.
    */
+  @DoNotInherit
   interface CallContext {
 
     /** The component id of the agent this interaction belongs to. */

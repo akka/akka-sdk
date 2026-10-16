@@ -6,12 +6,14 @@ List all routes.
 
 The `akka routes list` command will list a one-line summary of all routes that your Akka project has configured.
 
+[source,shell]
 ----
 akka routes list [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --all-regions      run the command on all regions
   -h, --help             help for list
@@ -22,6 +24,7 @@ akka routes list [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

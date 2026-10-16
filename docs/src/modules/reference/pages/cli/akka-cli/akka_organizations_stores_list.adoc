@@ -12,18 +12,21 @@ The ALL REGIONS column reports whether a store is declared in every region consi
 
 When no store is pinned at creation, the platform resolves one independently in each region.
 
+[source,shell]
 ----
 akka organizations stores list [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 akka organizations stores list --region gcp-us-east1 --region gcp-eu-west1
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help                  help for list
       --organization string   name or ID for organization
@@ -32,6 +35,7 @@ akka organizations stores list --region gcp-us-east1 --region gcp-eu-west1
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

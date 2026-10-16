@@ -16,12 +16,14 @@ The service returns at most 200.
 The table shortens the prompt to its last message and cuts both texts to fit.
 The structured output (-o json or --jq) carries the whole prompt and completion, and every step the run kept rollouts for under "steps".
 
+[source,shell]
 ----
 akka optimize training runs rollouts RUN [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Display the latest step's rollouts
   akka-optimize training runs rollouts 7d496e82c3a15f04
@@ -36,6 +38,7 @@ akka optimize training runs rollouts RUN [flags]
 
 == Options
 
+[source,text]
 ----
       --best int    Display this many rollouts, highest score first
   -h, --help        help for rollouts
@@ -46,6 +49,7 @@ akka optimize training runs rollouts RUN [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

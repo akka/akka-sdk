@@ -17,12 +17,14 @@ Interrupting with Ctrl-C stops following progress without cancelling the pipelin
 When using -o json, one snapshot of the pipeline is streamed to stdout as line-delimited JSON per update, in the same shape the pipeline's own SSE endpoint sends, stage by stage.
 Use -o json-compact to keep each snapshot on one line when a script reads the output line by line.
 
+[source,shell]
 ----
 akka optimize training pipelines wait PIPELINE [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Wait for a pipeline to finish
   akka-optimize training pipelines wait 3f9a21c4d08b7e56
@@ -36,6 +38,7 @@ akka optimize training pipelines wait PIPELINE [flags]
 
 == Options
 
+[source,text]
 ----
       --exit-status        Exit with a non-zero status if execution fails or is cancelled
   -h, --help               help for wait
@@ -44,6 +47,7 @@ akka optimize training pipelines wait PIPELINE [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

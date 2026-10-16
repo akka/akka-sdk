@@ -1,0 +1,200 @@
+= Akka Automated Operations technical overview
+:page-aliases: operations:technical-overview.adoc
+:page-summary: A technical overview of Akka Automated Operations (AAO): the two-plane architecture, what Akka automates and provisions, security, networking, sizing, and how a region is backed up and maintained.
+:page-when-to-use: Use this to understand how AAO works end to end.
+:page-related: xref:deployment:index.adoc[], xref:deployment:production-readiness/index.adoc[], xref:operations:regions/index.adoc[]
+:page-persona: operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+Akka Automated Operations (AAO) is an actively maintained Akka region that Akka installs, monitors, patches, and scales for extreme availability and low latency. A region runs on Kubernetes across AWS, Azure, or GCP, hosted either in Akka's cloud (dedicated) or inside your own environment (BYOC or BYOK8s).
+
+With BYOC and BYOK8s, the region runs inside your own environment and you keep custodial ownership of the infrastructure. Application data stays within your environment; a limited set of platform interactions still crosses to the Akka Federation Plane: deployments, key rotation, the management API, metadata synchronization, and platform observability. The xref:deployment:technical-overview/data-flows.adoc[data flows] page lists every flow.
+
+[NOTE]
+====
+Download the full overview as a single link:../operations/_attachments/whitepapers/aao-technical-overview-full.pdf[PDF, window=_blank]. Each page below is also available as its own PDF.
+====
+
+// DIAGRAM: recreated as a themed SVG from the original whitepaper "Federation Plane / Application Plane" drawing. Flagged for creator review.
+The two planes and the main flows between them:
+
+.The Federation Plane and one or more per-region Application Planes
+image::deployment:aao-planes.svg[Federation Plane and Application Plane]
+
+xref:deployment:technical-overview-image.adoc[View the full-size architecture diagram,role=open-image,window=_blank]
+
+== Federation Plane and Application Plane
+
+AAO splits into two planes: a global coordination layer run by Akka, and one or more runtime regions that host your workloads.
+
+=== Federation Plane
+
+The central coordination point for organizations, accounts, billing, user access, key rotation, token issuance, and application deployment across regions. It runs at akka.io and is managed by Akka. It is distributed and highly resilient. In the extreme exception that it becomes unavailable, running applications continue without interruption.
+
+=== Application Plane
+
+The runtime that hosts your workloads. Each federated region independently pulls and deploys application images, scales instances, and connects to peer regions. Application data stays within the region. The region exchanges only the platform interactions listed above with the Federation Plane.
+
+=== What an Application Plane region embeds
+
+* A managed Kubernetes cluster for orchestrating Akka instances as OCI containers.
+* An encrypted application data store (append-only, event-sourced, non-queryable journal).
+* A set of Akka operators for elasticity, observability, routing, and service management.
+* Proxies for traffic steering between regions.
+* Physical compute and storage for application execution.
+* An image repository caching packed applications available in that region.
+
+=== Key terminology
+
+[cols="1,3", options="header"]
+|===
+| Term | Description
+
+| Akka Application
+| An app built with the Akka SDK: APIs, workflows, streaming consumers, timers, and views. Packed into OCI images and deployed as self-clustering service instances that act as their own in-memory, durable database.
+
+| Application Plane
+| Runtime environment hosting Akka apps within one or more regions. Provides compute, storage, I/O, autoscaling, observability, and infrastructure management to meet SLAs.
+
+| Federation Plane
+| Global coordination point federating multiple regions into a single deployment substrate. Runs and is managed at akka.io.
+
+| Akka CLI
+| Interface for developers, operators, and InfoSec teams: build, test, pack, deploy, observe, and manage secrets and accounts.
+
+| Data Persistence
+| Durable, encrypted-at-rest event store using event sourcing. Optimized for Akka's internal processing and not directly queryable.
+
+| VPC
+| A private, isolated network environment in a major cloud provider. A general term, not exclusively AWS's implementation.
+
+| Cloud Account
+| The billing and administrative entity: a subscription (Azure), an account (AWS), or a project (GCP).
+|===
+
+== What AAO automates
+
+Beyond operations, AAO provides behavioral extensions that would otherwise require custom application code and libraries.
+
+[cols="1,3", options="header"]
+|===
+| Capability | Description
+
+| Runtime Patching
+| Live-updates JVM and infrastructure runtimes without triggering app versioning or a customer redeployment. No repackaging required.
+
+| Rolling Updates
+| Zero-disruption rolling deployment, even across data-model changes. Old and new versions run side by side during the transition.
+
+| Elastic
+| Automatic instance adjustment to traffic. Persistence expands and can shard to more than 1M writes per second at under 20ms write latency.
+
+| HA / DR
+| Cross-region zero-trust with rotating mTLS, multi-AZ database and Kubernetes clustering, continuous point-in-time backups, full region recovery, and CLI-based failover and failback.
+
+| App Data Replication
+| Replicate application data across regions (pinned single-region, write-local, or active-active) with developer-defined replication filters.
+
+| Multi-Region Deploy
+| Deploy a service once across one or more regions, with optional global routes for cross-region traffic.
+
+| Multi-Tenancy
+| Multiple projects and teams share compute and data infrastructure. Dedicated single-tenant regions are available for isolation requirements.
+
+| Observability
+| A Control Tower aggregates traces, spans, metrics, logs, and agentic evaluations across regions (testing use only).
+|===
+
+== What Akka provisions in a region
+
+Networking:: Set up using best practices for the specific cloud provider: VPC, subnets, load balancers, NAT.
+DNS Zones:: Automatically provisioned in your cloud account to resolve names for services deployed in the region.
+Persistence:: Encrypted-at-rest data store for app data, Akka events, and read-only views. Append-only, lock-free, and sharded. Benchmarked past 1M TPS.
+Kubernetes:: A managed cluster from your cloud provider orchestrates Akka instances deployed as OCI containers.
+Registry:: An OCI registry hosting immutable, signed, versioned service assets. You may optionally use your own registry.
+Akka Operators:: Route management, elasticity automation, metadata sync, rolling deploys, certificate management, key rotation, and multi-region failover and recovery.
+
+[NOTE]
+====
+*Observability split.* Akka runs a platform observability stack for internal backend monitoring. Your application logs, metrics, traces, and evaluations stay with your own observability vendor by default. A subset of platform telemetry is sent to the Federation Plane for consolidated cross-region reporting. See xref:operations:observability-and-monitoring/index.adoc[].
+====
+
+== Shared responsibility
+
+System management is shared between you and Akka across provisioning and ongoing operations, and the split shifts with the deployment model. For the authoritative, row-by-row breakdown with the full Responsible / Accountable / Consulted / Informed (RACI) split, see the xref:deployment:production-readiness/shared-responsibility.adoc[Shared responsibility] and xref:deployment:production-readiness/raci.adoc[RACI] pages, which cover Dedicated, BYOC, and BYOK8s.
+
+== Security and encryption
+
+Application-plane data is isolated from the Federation Plane and stays within the region. It is stored in an encrypted, durable event store that cannot be externally queried.
+
+Data at rest uses the store's default encryption. Keys are provided by Akka or your KMS. Akka adds a further encryption layer for secrets synced to regional execution clusters, for authentication secrets such as TOTP secrets and OpenID refresh tokens, and for secrets you provide through environment variables or your KMS.
+
+Data Encryption Keys (DEKs) encrypt data and are stored alongside it, themselves encrypted by a Key Encryption Key (KEK). KEKs live separately as Kubernetes secrets and rotate periodically. Rotating a KEK re-encrypts DEKs without re-encrypting the underlying data. Inter-region traffic uses mutual TLS with unique per-client and per-service certificates. Communication is established only if both sides mutually authenticate. See xref:deployment:regions/infrastructure.adoc[] for the multi-region certificate and ingress details.
+
+Akka adheres to a range of compliance standards. Full certification detail lives in the link:{url-akka-trust-center}[Akka Trust Center, window="new"].
+
+== Networking and ports
+
+The default network configuration is a VPC with per-region subnets plus load balancers; the exact subnet layout differs by cloud and is described on each cloud page. By default, connectivity between the region and your environment traverses the internet. Private connectivity options are available per cloud.
+
+Each flow below is inbound (ingress) or outbound (egress) relative to the region. All use TLS on port 443, except the infrastructure identity platform, which also uses ports 3023, 3024, and 3026.
+
+[cols="2,1,1", options="header"]
+|===
+| Flow | Type | Port(s)
+
+| Akka Applications → Akka Control Tower | Egress | 443
+| Akka Federation Plane → Akka Region API | Ingress | 443
+| Data Import / Export | Ingress | 443
+| Container Registry | Ingress | 443
+| Backoffice Functions | Ingress | 443
+| Kubernetes Cluster → Akka Platform Container Registry | Egress | 443
+| Akka Region → Akka Federation Plane and Console | Egress | 443
+| Platform Observability Agent → Akka | Egress | 443
+| Infrastructure Identity Platform | Egress | 443, 3023, 3024, 3026
+|===
+
+The Federation Plane exposes the Management API and the Application Plane exposes the Execution API, both secured with TLS and bearer tokens. The full hostname and IP allowlist, and the per-cloud data flows, are on the xref:deployment:technical-overview/data-flows.adoc[data flows] page.
+
+== Default sizing and scaling
+
+A new region and its services start with these defaults. Each scales automatically with demand and can be tuned with your Akka Success Team.
+
+Persistence:: Default is a small store: thousands of TPS, lowest initial cost. Scales and shards to well past 1M writes per second at under 20ms latency.
+Compute:: Always-available instance pools spread topologically across zones. Default mixes on-demand and spot instances to balance cost and performance.
+Service instance:: Each deployed service defaults to 3 instances across availability zones with 2,560 MB RAM each. Autoscales on CPU usage.
+
+For forecasting load and choosing an availability level, see xref:deployment:production-readiness/choosing-your-environment.adoc[].
+
+== Backups and disaster recovery
+
+Single-region Kubernetes resources and databases are backed up and recoverable. Recovery targets are set in your agreement with Akka. Multi-region support replicates the application across regions. Replication between regions is asynchronous, so writes that a lost region accepted and had not yet replicated are not available in the other regions.
+
+For the full recovery procedures and scenario catalogs, see the xref:deployment:production-readiness/disaster-recovery.adoc[disaster recovery scenario catalog].
+
+== Data flows
+
+Every network flow between your environment and the Akka platform is documented for security review, including direction, connectivity, and authentication. See xref:deployment:technical-overview/data-flows.adoc[].
+
+== Support and maintenance
+
+Akka continuously applies security patches and software upgrades to the underlying platform, including the infrastructure upgrades needed to keep it secure and performant. You provide a recurring maintenance window for operations that may cause downtime; in practice, most updates are non-events. Compute nodes are elastic and expand and contract with deployed services. Database storage autoscales, while additional database CPU and memory are applied by the Akka team when workloads exceed utilization thresholds. On request, Akka can pre-warm environments ahead of anticipated spikes.
+
+If issues arise, Akka provides a customer support portal where cases are created and addressed per the Customer Support Policy.
+
+== Model routing, serving and training add-on
+
+You can add model routing, inference for self-hosted models, training and testing of small language models, and cost management to an AAO environment. The add-on uses the same planes and infrastructure as AAO. See xref:deployment:technical-overview/optimize.adoc[] for what Akka installs and what the add-on needs from you.
+
+== Where to go next
+
+To choose a deployment option and find its setup, see xref:deployment:index.adoc[Choose how you run Akka]. Each setup page ends by letting you choose your cloud.
+
+For help sizing for availability and data residency, see xref:deployment:production-readiness/choosing-your-environment.adoc[].
+
+== Moving a project between environments
+
+A project can move between cloud environments by adding a destination region, replicating state into it, and switching traffic after it catches up. This uses the same asynchronous replication as multi-region operation; creating the destination does not itself complete a migration. Plan the change with the applicable production-readiness and recovery procedures.
+
+See xref:operations:regions/setup.adoc[Multi-region setup] for adding regions, selecting primary regions, and controlling failover. For exporting or importing data rather than replicating a running project, see xref:operations:services/data-management.adoc[Export and import data].

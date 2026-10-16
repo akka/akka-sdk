@@ -22,7 +22,7 @@ Workflows have two distinct Effect APIs:
 
 Workflow is the only component that has both APIs: `Effect` for external commands and `StepEffect` for internal steps. This separation allows workflows to clearly distinguish between external interactions and internal orchestration logic.
 
-For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
+For additional details, refer to xref:concepts:components.adoc#_effects_what_the_component_declares[Effects].
 
 == Skeleton
 
@@ -226,7 +226,7 @@ The reason on `suspend` is optional — there is also an overload that takes onl
 
 == Calling external services
 
-The Workflow can be used not only to orchestrate Akka components, but also to call external services. The step implementation can invoke xref:component-and-service-calls.adoc#_external_http_services[HTTP endpoint], a xref:component-and-service-calls.adoc#_external_grpc_services[gRPC service], or any other service that can be called from the Java code.
+The Workflow can be used not only to orchestrate Akka components, but also to call external services. The step implementation can invoke xref:component-and-service-calls.adoc#_calling_external_http_services[HTTP endpoint], a xref:component-and-service-calls.adoc#_calling_external_grpc_services[gRPC service], or any other service that can be called from the Java code.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
@@ -337,6 +337,8 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 ----
 <1> Set a default failover transition for all steps with the maximum number of retries.
 <2> Override the step recovery strategy for the `deposit` step.
+
+A step that times out or fails does not commit its state update, so the workflow retries it with the state from before the attempt. Akka does not cancel the work that the failed attempt started. That work can still finish later, but Akka discards its result and state update. If you do not set a recover strategy, the workflow keeps retrying without limit, so set one for every step that can time out or fail. When the retries run out, the workflow runs the failover step. It starts from the last committed state and can commit a new state, for example a new attempt number, before the workflow moves on.
 
 === Compensation
 

@@ -6,12 +6,14 @@ Create a link for testing a given authentication domain
 
 The `akka organizations auth test _domain-id_` command creates a link for testing an authentication domain.
 
+[source,shell]
 ----
 akka organizations auth test DOMAIN-ID [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help                  help for test
       --organization string   name or ID for organization
@@ -19,6 +21,7 @@ akka organizations auth test DOMAIN-ID [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

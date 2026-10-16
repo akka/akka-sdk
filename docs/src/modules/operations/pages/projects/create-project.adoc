@@ -27,7 +27,7 @@ To create a new project, use either the Akka CLI or the https://console.akka.io[
 --
 CLI::
 +
-. If you have not done so yet, xref:cli/installation.adoc[install the Akka CLI] and log into your account:
+. If you have not done so yet, xref:getting-started:install-cli.adoc[install the Akka CLI] and xref:getting-started:log-in.adoc[log in to your account]:
 +
 [source,command window]
 ----
@@ -79,6 +79,17 @@ image::console-create-project.png[alt="Create a project"]
 
 The new project will show as a card in the *Project* section.
 --
+
+== List your projects
+
+To list the projects that you can access in your organization, run:
+
+[source,command line]
+----
+akka projects list
+----
+
+The current project is marked with an asterisk (`*`). For the other commands, see xref:reference:cli/akka-cli/akka_projects.adoc[`akka projects`].
 
 You may now continue and xref:services/deploy-service.adoc[deploy a Service] in the new Project.
 

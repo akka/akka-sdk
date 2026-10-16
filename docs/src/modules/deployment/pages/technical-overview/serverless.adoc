@@ -1,0 +1,33 @@
+= Serverless
+:page-aliases: operations:technical-overview/serverless.adoc
+:page-summary: Serverless runs your Akka services on Akka's shared cloud, operated by Akka Automated Operations, with pay-as-you-go pricing.
+:page-when-to-use: When you want to deploy Akka services without running any infrastructure, and pay only for what you use.
+:page-related: deployment:index.adoc, operations:organizations/regions.adoc, getting-started:quick-deploy.adoc
+:page-persona: builder-developer, operator-platform
+
+include::ROOT:partial$include.adoc[]
+
+Serverless runs your Akka services on Akka's shared cloud. Akka Automated Operations (AAO) operates the platform around the clock, so there is no infrastructure for you to set up or run.
+
+== How Serverless works
+
+You pay as you go for what your services use, by credit card.
+
+Akka operates the platform 24/7, including patches, certificate and key rotation, and rolling updates.
+
+Serverless regions run on every major hyperscaler, in several regions across different territories. See xref:operations:organizations/regions.adoc[] for the regions your organization can use and how to request more.
+
+You deploy straight from the Akka CLI.
+
+Serverless is multi-tenant: your services share infrastructure with other organizations. For a single-tenant region, see xref:deployment:technical-overview/dedicated.adoc[Dedicated] or xref:deployment:technical-overview/byoc.adoc[BYOC].
+
+== Start with Serverless
+
+. Create an account at link:{url-akka-console}[console.akka.io, window="new"].
+. xref:getting-started:install-cli.adoc[Install the Akka CLI] and xref:getting-started:log-in.adoc[log in].
+. xref:getting-started:quick-deploy.adoc[Deploy a service to akka.io].
+
+== Next steps
+
+* Compare Serverless with the other options in xref:deployment:index.adoc[Choose how you run Akka].
+* Learn how to xref:operations:services/deploy-service.adoc[deploy and manage services].

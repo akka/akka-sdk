@@ -77,11 +77,11 @@ Changing which instance types a project, region, or service is allowed to use, o
 
 A larger instance type increases the CPU and memory reserved for every running instance of that service, and that cost multiplies across however many instances autoscaling keeps running at peak. Choosing `g1.memory.large` for a service that also scales to a high `--max-instances` compounds both factors.
 
-Size services individually rather than raising a project's default: give the services that need more headroom a larger instance type, and leave the rest on the default. Sizing choices are part of the cost forecast you agree with your Akka team during xref:operations:production-readiness/index.adoc[production readiness].
+Size services individually rather than raising a project's default: give the services that need more headroom a larger instance type, and leave the rest on the default. Sizing choices are part of the cost forecast you agree with your Akka team during xref:deployment:production-readiness/index.adoc[production readiness].
 
 == Related documentation
 
 - xref:reference:cli/akka-cli/akka_projects_instance-types_list.adoc[`akka projects instance-types list` CLI reference]
 - xref:reference:cli/akka-cli/akka_services_deploy.adoc[`akka service deploy` CLI reference]
 - xref:reference:descriptors/service-descriptor.adoc[Service descriptor reference]
-- xref:operations:production-readiness/index.adoc[Production readiness]
+- xref:deployment:production-readiness/index.adoc[Production readiness]

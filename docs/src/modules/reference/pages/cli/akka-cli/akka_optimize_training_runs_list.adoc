@@ -9,12 +9,14 @@ List training runs, including runs executed by pipeline stages.
 Use --phase open to list active and incomplete runs.
 You can also filter by specific phase names, such as --phase COMPLETED or --phase TRAINING.
 
+[source,shell]
 ----
 akka optimize training runs list [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # List all training runs
   akka-optimize training runs list
@@ -31,6 +33,7 @@ akka optimize training runs list [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help           help for list
       --phase string   Filter by phase. Pass 'open' to list unfinished entries
@@ -38,6 +41,7 @@ akka optimize training runs list [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

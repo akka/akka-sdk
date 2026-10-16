@@ -2,12 +2,14 @@
 
 Publish a policy version
 
+[source,shell]
 ----
 akka optimize routing-policies apply USECASE -f FILE [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -f, --file string   document to send; - reads stdin
   -h, --help          help for apply
@@ -15,6 +17,7 @@ akka optimize routing-policies apply USECASE -f FILE [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

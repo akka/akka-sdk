@@ -1,0 +1,36 @@
+= Durable execution
+:page-summary: Durable execution records the progress of a multi-step process after every step, so that it survives crashes and restarts and resumes where it left off, with retries, timeouts and compensation.
+:page-when-to-use: When you coordinate several steps, agents or services, need to wait for a person or an external event, or must undo earlier work when a later step fails.
+:page-related: sdk:workflows.adoc, concepts:delivery-guarantees.adoc, concepts:ai-orchestration-patterns.adoc
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Durable execution preserves a process's progress so it can continue after a restart or failure. In Akka, a Workflow coordinates steps with persisted state, transitions, retries, and recovery policies.
+
+== Progress and retries
+
+A step performs work and returns an effect that updates state and selects the next step. The runtime persists the transition before advancing. Recovery continues from committed progress rather than restarting the whole process.
+
+A step that fails or times out can run again. Its state update was not committed, but an external call it started may already have taken effect. Make downstream operations idempotent or deduplicate requests. Durable execution does not create a distributed transaction across external systems.
+
+Timeouts and recovery strategies bound how long the process waits and what happens after failure. Without a retry limit, a failing step can keep retrying. Configure these policies around the operation's expected latency and failure modes.
+
+== Waiting and compensation
+
+A workflow can pause until an external command supplies an approval or result. The wait is durable and does not require keeping an application thread blocked. Check the workflow's state when accepting a response so late or duplicate input cannot advance it incorrectly.
+
+Compensation reverses earlier business actions when a later step fails. It is application logic, such as refunding a payment, rather than an automatic rollback. A timed-out action can have an uncertain outcome, so its compensation must account for that uncertainty.
+
+== Choosing a coordination mechanism
+
+Use a workflow for steps that form one tracked process with an end state. Use consumers for independent reactions to persisted facts. Use a timer for a delayed call that does not need a larger process. An Autonomous Agent already has durable task state; it does not need a wrapper workflow solely for persistence.
+
+anchor:_compensation_and_sagas[]
+
+== Next steps
+
+* xref:sdk:workflows.adoc[] configures steps, retries, compensation, and external control.
+* xref:sdk:timed-actions.adoc[] schedules durable calls.
+* xref:sdk:components/index.adoc#cs3-workflow-or-choreography[Workflow or choreography] compares coordination choices.
+* xref:delivery-guarantees.adoc[] explains at-least-once effects.

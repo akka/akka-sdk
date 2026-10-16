@@ -1,0 +1,79 @@
+= Model improvement and cost
+:page-aliases: concepts:capture-and-grading.adoc, concepts:spend.adoc
+:page-summary: Model improvement uses captured traffic and graded quality to identify tasks suitable for specialization. Training, evaluation, and cost reporting establish whether a smaller model should serve that task.
+:page-when-to-use: When you need an overview of model improvement and cost and links to the task guides.
+:page-related: optimize:index.adoc, optimize:concepts.adoc
+:page-persona: builder-ai-ml, operator-platform
+
+include::ROOT:partial$include.adoc[]
+
+Model improvement uses captured traffic and graded quality to identify tasks suitable for specialization. Training, evaluation, and cost reporting establish whether a smaller model should serve that task.
+
+[#capture-and-grading]
+== Capture and grading
+
+A capture is the input and output of one exchange that passed through the model gateway. Grading scores the output, and targeting identifies use cases suitable for a specialized model.
+
+=== From traffic to training data
+
+A use case is a kind of task, such as classifying a support request. Routing, grading, training, and cost reporting use the same use case to describe that traffic. A use case can involve several tools; it is not the same thing as a tool.
+
+The gateway records requests and responses as capture artifacts. A derived capture gives downstream services a common representation of the model, use case, caller, conversation, and token usage. Grading measures output quality. Targeting combines quality checks, traffic volume, task similarity, and cost to identify training candidates.
+
+Captures and the ledger serve different purposes. Captures describe traffic through the gateway. The ledger records actions and control verdicts. Neither should be assumed to replace the other.
+
+=== Choosing what to grade
+
+Use deterministic graders when an answer can be checked exactly, such as a classification label or the result of generated SQL. Use a model judge for criteria that require interpretation. A task without a reliable quality measure is unsuitable for automatic promotion to a specialized model.
+
+A grader scores a finished answer; a reward guides sampled completions during reinforcement training. Their execution frequency and cost differ. See xref:optimize:trainer/graders-and-rewards.adoc[].
+
+[#training-and-promotion]
+== Training and promotion
+
+Training specializes a base model for a use case. Promotion decides whether a candidate should replace the model currently handling that task.
+
+=== Learning and comparison
+
+Supervised fine-tuning learns from examples with known answers. Reinforcement learning learns from completions scored by a reward. Choose according to whether you already have suitable answers or need to discover answers that a check can score.
+
+Keep training and evaluation data separate. Compare candidates with a baseline using the same examples and grader. A better score on different data does not isolate the effect of the model change.
+
+A training project groups the runs and models for a use case. Runs produce versioned artifacts, snapshots preserve progress, and branches try alternatives from a saved point. Data can come from captured traffic or curated sessions, with personal data and secrets scrubbed before training.
+
+=== Promotion and production traffic
+
+The improvement policy defines the quality and token-use objectives for a candidate. Evidence supporting promotion is kept in the ledger. A staged routing policy introduces the model through shadow traffic, then a canary, before directing the use case to it.
+
+Selecting a `champion` artifact, approving a model for production, deploying its weights, and routing traffic are separate operations. The artifact registry stores versions and aliases; the organization's model registry records sanction and conditions of use. A trainer endpoint tests a model; a model endpoint serves production requests.
+
+Grading continues after promotion. Drift prompts reassessment and retraining; insufficient quality requires restoring the previous model and routing policy. Evidence for one specialized use case does not establish suitability for another.
+
+[#spend-and-budgets]
+== Spend and budgets
+
+Spend is the cost of recorded model traffic, calculated from token usage and a versioned pricing catalog. It connects model usage to the use cases and callers responsible for it.
+
+=== Cost and quality
+
+A lower price per token does not necessarily mean a lower task cost. A model may need more tokens or more attempts to complete the task. Compare total task cost with graded quality before changing which model serves a use case.
+
+Recorded spend is also different from an invoice: it covers exchanges captured by the gateway. Missing prices or incomplete token reporting affect what the figures can establish. An absent value is not a zero cost.
+
+=== Budgets and quality
+
+Spend budgets, forecasts and the trade-off between cost and quality build on the same figures. A spend budget sets a limit against these figures, and a forecast projects the spend of a period from the traffic recorded so far. The cost–quality view sets the spend of each use case beside its graded quality, which is what targeting weighs when it ranks use cases and what a promotion has to improve. See <<_how_targeting_works,How targeting works>>.
+
+A spend budget is different from the token budget that an agent sets for each model call, and from the training budget of a training run, which counts optimizer updates.
+
+anchor:_how_targeting_works[]
+anchor:_use_cases[]
+
+== Next steps
+
+* xref:inference:capture-and-grading.adoc[] explains capture processing, use-case discovery, and targeting.
+* xref:optimize:trainer/getting-started.adoc[] trains a first model.
+* xref:optimize:trainer/datasets.adoc[] and xref:reference:cli/training.adoc#_sessions_and_curations[Sessions and curations] prepare data.
+* xref:optimize:trainer/evaluation.adoc[] compares candidates and explains artifact selection and governance.
+* xref:inference:routing.adoc[] changes production traffic.
+* xref:inference:spend.adoc[] and xref:reference:cli/cost-and-traffic.adoc[] explain cost reporting and pricing.

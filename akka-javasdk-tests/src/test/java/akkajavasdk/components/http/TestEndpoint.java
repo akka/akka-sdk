@@ -19,6 +19,7 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.WebSocket;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
+import akka.javasdk.http.HttpException;
 import akka.javasdk.http.HttpResponses;
 import akka.javasdk.objectstorage.ObjectStorageProvider;
 import akka.stream.javadsl.Flow;
@@ -137,6 +138,16 @@ public class TestEndpoint extends AbstractHttpEndpoint {
   public Flow<String, String, NotUsed> websocketText() {
     // echo messages back
     return Flow.of(String.class);
+  }
+
+  @WebSocket("/websocket-header")
+  public Flow<String, String, NotUsed> websocketHeader() {
+    var greeting =
+        requestContext()
+            .requestHeader("X-Greeting")
+            .orElseThrow(() -> HttpException.badRequest("Missing X-Greeting header"))
+            .value();
+    return Flow.of(String.class).map(text -> greeting + " " + text);
   }
 
   @WebSocket("/websocket-binary/{limit}")

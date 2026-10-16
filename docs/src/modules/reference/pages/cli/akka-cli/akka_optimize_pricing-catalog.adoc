@@ -9,12 +9,14 @@ At most one price is in force per served name at any instant, so a publish is re
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for pricing-catalog
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

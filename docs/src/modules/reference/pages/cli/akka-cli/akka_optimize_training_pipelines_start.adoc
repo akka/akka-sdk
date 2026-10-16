@@ -17,12 +17,14 @@ Confirmation is requested before starting the pipeline unless --force is specifi
 
 --show-resolved, with --dry-run, also prints each train stage's config and execution with every default filled in, for a stage whose dataset is already registered.
 
+[source,shell]
 ----
 akka optimize training pipelines start -f PLAN [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Start a pipeline from a plan file
   akka-optimize training pipelines start -f pipeline.json
@@ -39,6 +41,7 @@ akka optimize training pipelines start -f PLAN [flags]
 
 == Options
 
+[source,text]
 ----
       --dry-run         Validate the plan against the service without starting anything
       --exit-status     Exit with a non-zero status if execution fails or is cancelled. Requires --wait
@@ -50,6 +53,7 @@ akka optimize training pipelines start -f PLAN [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

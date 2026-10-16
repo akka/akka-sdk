@@ -15,7 +15,7 @@ To load completions:
 
 == Bash
 
-[,bash]
+[source,bash]
 ----
 $ source <(akka completion bash)
 
@@ -28,7 +28,7 @@ $ akka completion bash > /usr/local/etc/bash_completion.d/akka
 
 == Zsh
 
-[,zsh]
+[source,zsh]
 ----
 # If shell completion is not already enabled in your environment,
 # you will need to enable it.  You can execute the following once:
@@ -45,7 +45,7 @@ $ akka completion zsh | sudo tee "${fpath[1]}/_akka" >/dev/null
 
 == fish
 
-[,fish]
+[source,fish]
 ----
 $ akka completion fish | source
 
@@ -55,7 +55,7 @@ $ akka completion fish > ~/.config/fish/completions/akka.fish
 
 == PowerShell
 
-[,powershell]
+[source,powershell]
 ----
 PS> akka completion powershell | Out-String | Invoke-Expression
 
@@ -64,18 +64,21 @@ PS> akka completion powershell | Out-String | Invoke-Expression
 # and source this file from your PowerShell profile.
 ----
 
+[source,shell]
 ----
 akka completion [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for completion
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

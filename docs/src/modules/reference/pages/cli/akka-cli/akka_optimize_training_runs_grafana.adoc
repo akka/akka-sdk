@@ -23,12 +23,14 @@ left unset, the dashboard's own default applies.
 
 The URL's time range spans the run itself: its start to its end, or to now while it is still training, rather than a trailing window that would show nothing for a run that finished outside it.
 
+[source,shell]
 ----
 akka optimize training runs grafana RUN [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Print the dashboard URL for a run
   akka-optimize training runs grafana 7d496e82c3a15f04
@@ -42,6 +44,7 @@ akka optimize training runs grafana RUN [flags]
 
 == Options
 
+[source,text]
 ----
       --attempt string          the dashboard's attempt variable; default is the dashboard's own default
       --grafana-region string   the project's region to address, for a project with more than one; default is its first with a Grafana metrics endpoint
@@ -51,6 +54,7 @@ akka optimize training runs grafana RUN [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

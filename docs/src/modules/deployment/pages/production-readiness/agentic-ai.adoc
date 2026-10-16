@@ -1,0 +1,241 @@
+= Production readiness checklist for agentic AI workloads
+:page-aliases: operations:production-readiness/agentic-ai.adoc
+:page-summary: The checklist for going live with agents, covering the release artifact, evaluation, runtime controls, stopping an agent, observability, provider failures, rollback, and incident playbooks.
+:page-when-to-use: Use this before you send production traffic to an agent, and again when you add autonomy, tools, or a new model provider.
+:page-related: xref:deployment:production-readiness/index.adoc[], xref:concepts:governance-and-the-runtime.adoc[]
+:page-persona: operator-platform, operator-sre, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+This checklist covers the items that are specific to workloads that call a model, use tools, or run agents. It adds to the xref:deployment:production-readiness/index.adoc[general readiness areas] and the xref:deployment:production-readiness/checklist.adoc[production readiness checklist] for Dedicated, BYOC, and BYOK8s.
+
+Use this page as a guideline: review it with your Akka team before you go live, and add items for your own request flows and failure modes.
+
+An agent can fail without raising an availability alert, because a model can return a wrong answer at a normal response time. Several items below add checks for that kind of failure.
+
+.*At a glance, what we ask of you*
+[NOTE]
+====
+. *Record what an agent runs on.* Keep the model, prompts, tools, parameters, and runtime controls in the release.
+. *Test with a mocked model and with the real provider.* Block promotion on the results.
+. *Configure runtime controls before launch.* Guardrails, sanitizers, evaluators, and limits.
+. *Rehearse stopping an agent.* Measure how long it takes.
+. *Monitor decisions, not only latency.* Track guardrail denials, evaluation results, and token usage.
+. *Plan for provider failure and change.* Set timeouts, fallbacks, and a review of model deprecations.
+. *Name an owner for the agent's behavior.* The owner can stop the agent without a code change.
+====
+
+== Release artifact
+
+The runtime applies the guardrail, sanitizer, and evaluator configuration in `application.conf` to every interaction of the agents it is bound to. The `PromptTemplate` entity keeps the history of prompt changes.
+
+.*Detailed checklist*
+[%collapsible]
+=====
+[discrete]
+==== Model and parameters
+
+* [ ] Model provider, model, and parameters (for example temperature and maximum tokens) set in configuration for each agent and recorded with the release. See xref:sdk:model-provider-details.adoc[]
+* [ ] Default model configuration reviewed, so an agent without its own setting does not run on an unintended model
+
+[discrete]
+==== Prompts
+
+* [ ] Location of each agent's prompts known: in the code, or in a `PromptTemplate` entity
+* [ ] Access to change a `PromptTemplate` entity controlled, because a change takes effect at runtime without a deployment. The entity keeps the history of changes. See xref:sdk:agents/prompt.adoc[]
+* [ ] Prompt in effect for each agent retrievable for any past release
+
+[discrete]
+==== Session memory
+
+* [ ] Memory provider chosen for each agent, because session memory is enabled by default and an agent that must not keep history needs `MemoryProvider.none()`. See xref:sdk:agents/memory.adoc[]
+* [ ] History size bounded for each agent, with a limited window or compaction, because the history goes to the model as context in each request and adds to token usage
+* [ ] Session ID strategy defined: a new ID for each independent interaction, and a shared ID only where agents must share history
+
+[discrete]
+==== Tools and data sources
+
+* [ ] Function tools and MCP tools that each agent can call listed and reviewed
+* [ ] Each tool limited to the access that the agent needs, with side-effect tools identified
+* [ ] Retrieval sources and indexes that an agent reads, if it uses retrieval, versioned so you can tell which version an answer used
+
+[discrete]
+==== Runtime controls
+
+* [ ] Guardrail, sanitizer, and evaluator entries in `application.conf` included in the release and reviewed with it
+* [ ] Control matrix of the service reviewed, with each guardrail, sanitizer, and evaluator naming the control that it implements. See xref:concepts:governance-and-the-runtime.adoc#control-ids[Control ids]
+=====
+
+== Evaluation
+
+A bound evaluator runs after each interaction of an agent, in the background. It records its verdict in the ledger and exposes it in metrics and traces. It cannot change what the agent does next.
+
+.*Detailed checklist*
+[%collapsible]
+=====
+[discrete]
+==== Before release
+
+* [ ] Tests with a mocked model run on every commit, covering structured output, tool failure, a guardrail denial, and escalation paths. See xref:sdk:agents/testing.adoc[]
+* [ ] Suite against the real provider run on a schedule and before promotion, so a silent change in provider behavior shows up as a change in results, with assertions that allow for output that varies between runs
+* [ ] Evaluation suite covering a regression set, known-bad cases, tool use, and guardrails
+* [ ] Failing evaluation threshold blocks promotion in your pipeline, because an evaluator that records a verdict does not block anything by itself
+* [ ] Each production incident adds at least one case to the suite before the postmortem closes
+
+[discrete]
+==== In production
+
+* [ ] Evaluators bound to the agents that need them in `application.conf`, with verdicts monitored through the `akka.agent.evaluation.result` metric. See xref:sdk:evaluators.adoc[]
+* [ ] Direct call to the judge agent where an agent or workflow must react to a verdict, such as retrying a step, because a bound evaluator cannot change the next step. See xref:sdk:agents/llm_eval.adoc[]
+=====
+
+== Guardrails and limits
+
+The runtime enforces the configured guardrails on each model call, tool call, and agent response, and records the outcome in logs, metrics, and traces.
+
+.*Detailed checklist*
+[%collapsible]
+=====
+[discrete]
+==== Guardrails and sanitizers
+
+* [ ] Guardrails covering the inputs, tool calls, and responses that matter for the workload, for example prompt injection, toxic output, and disclosure of personal data. See xref:sdk:agents/guardrails.adoc[]
+* [ ] New guardrails run with `report-only = true` against realistic traffic before enforcement, with an acceptable false-positive rate
+* [ ] Enforced denial producing a response that the caller can act on: it reaches the agent's `onFailure` handler as a `GuardrailException`, and an agent that returns a stream has no `onFailure`, so the stream fails
+* [ ] Own timeout set on any guardrail that calls a model or a classifier, because the runtime applies no timeout to a guardrail and an interaction waits for it
+* [ ] Sanitizers masking personal data in logs, model calls, and tool results where the workload handles it. See xref:sdk:sanitization.adoc[]
+* [ ] Prompt-injection testing run against the current release, including injection through retrieved content and tool output. See xref:testing:evaluation/adversarial.adoc[Adversarial tests]
+
+[discrete]
+==== Limits
+
+* [ ] `akka.javasdk.agent.max-tool-call-steps` set explicitly for each agent, with `ToolCallLimitReachedException` handled. The default is 100. See xref:sdk:agents/extending.adoc#_configuring_tool_call_limits[Tool call limits]
+* [ ] Cost ceiling defined for each agent or for the service, with an alert that triggers before the ceiling is reached
+=====
+
+== Stopping and reducing an agent
+
+You can suspend, resume, or terminate an autonomous agent through the component client. The Akka CLI can pause a service, which scales it to zero instances and keeps its data.
+
+.*Detailed checklist*
+[%collapsible]
+=====
+* [ ] Way to stop each agent documented, with a named person who has the authority and access to use it without a code change
+* [ ] Suspend and terminate rehearsed in the development region for each autonomous agent. A suspend takes effect at the next iteration boundary and does not interrupt an iteration in progress. See xref:sdk:autonomous-agents/client.adoc#_suspend_and_resume[Suspend and resume]
+* [ ] Longest iteration of each autonomous agent measured, because it is the longest time that a suspend can take to act
+* [ ] Stop path rehearsed in the development region for an agent that answers requests, using `akka services pause`. Pausing stops every component in the service, so an agent that must stop on its own runs in its own service. See xref:reference:cli/akka-cli/akka_services_pause.adoc[akka services pause]
+* [ ] Consumers of the agent's output stop processing when the agent stops, and do not act on missing output
+* [ ] Tightened guardrail or reduced tool set deployed through your normal change path, with the time from decision to effect measured
+=====
+
+== Observability for agents
+
+The runtime emits agent metrics and traces. The ledger records each interaction with its model calls, tool calls, token usage, and outcome.
+
+.*Detailed checklist*
+[%collapsible]
+=====
+* [ ] Dashboards for token usage (`gen_ai.client.token.usage`), agent command duration, guardrail denials, and evaluation results. See the xref:reference:telemetry/metrics.adoc[metrics reference]
+* [ ] Token usage attributed to a team, a project, or an agent, with cost per interaction tracked
+* [ ] Alerts on a rise in guardrail denials, a drop in evaluation results, and an unusual level of token usage
+* [ ] One test interaction traced in your tracing backend, showing the agent command, model call, tool call, and guardrail spans. See the xref:reference:telemetry/tracing.adoc#_agents[tracing reference]
+* [ ] Ledger record retention confirmed with your Akka team against your audit retention
+* [ ] Past interaction rebuilt from the ledger and traces: the prompt, the model, the tool calls, the guardrail outcomes, and the final result
+* [ ] Human overrides of an agent's output, where they exist, logged with a reason and reviewed for patterns
+=====
+
+== Provider failure and change
+
+The runtime reports model failures to the agent as typed exceptions, so an agent can fall back.
+
+.*Detailed checklist*
+[%collapsible]
+=====
+[discrete]
+==== Failures
+
+* [ ] `onFailure` handler of each agent covering rate limits, timeouts, tool failures, and responses that cannot be parsed, ending in a default case. See xref:sdk:agents/failures.adoc[]
+* [ ] Connection and response timeouts set for each model provider
+* [ ] Step timeout that fits a slow model call, and a recovery strategy, set on any workflow that calls an agent, so that a failing request does not retry indefinitely. See xref:sdk:agents/calling.adoc[]
+* [ ] Provider rate limits and quotas documented, with quota increases requested before launch
+* [ ] Provider outage rehearsed in the development region, for example with a mock model service that fails or responds slowly, with the fallback confirmed. See xref:sdk:agents/testing.adoc[]
+* [ ] Capacity of a fallback provider or model, where you use one, sized for the full load of the primary
+
+[discrete]
+==== Change
+
+* [ ] Deprecation dates of each model in use tracked, with a swap to another model rehearsed in the development region
+* [ ] Review and rollout steps defined for each kind of change: the model, a prompt, the tool set, retrieval data, and the runtime controls
+=====
+
+== Rollback
+
+.*Detailed checklist*
+[%collapsible]
+=====
+The general xref:deployment:production-readiness/index.adoc[rollback items] cover the image and descriptor. An agent also depends on prompts, tools, guardrail configuration, and retrieval data, which can change without a new image.
+
+* [ ] Prompt rollback rehearsed, with the effect on sessions in progress understood
+* [ ] Model rollback rehearsed, with the evaluation suite confirming that behavior matches the earlier release
+* [ ] Rollback of a tool, a guardrail, or a parameter rehearsed
+* [ ] Rollback of retrieval data, if the agent uses it, to an earlier version rehearsed, with answers checked afterwards
+* [ ] Time to roll back each part measured
+=====
+
+== Incident playbooks
+
+.*Detailed checklist*
+[%collapsible]
+=====
+* [ ] Playbook for each of these failures, with a detection signal and a containment step: prompt injection, disclosure of data through a tool or retrieval, an action outside the intended scope, runaway token usage, wrong answers, and a provider outage
+* [ ] Playbooks covering failures that do not raise an availability alert, such as a confident but wrong answer
+* [ ] Playbooks naming who can stop the agent and how
+* [ ] At least one playbook tested before go-live, for example in a tabletop exercise or with a simulated failure in the development region
+=====
+
+== Multi-region
+
+This section applies when you run the agent in more than one region.
+
+.*Detailed checklist*
+[%collapsible]
+=====
+* [ ] Provider account, key, and quota for each region documented, with the data residency of prompts and responses stated
+* [ ] Session memory behavior tested in each region, including a failover. With `request-region` primary selection, session memory includes only the local region until another region reads it. See xref:sdk:agents/memory.adoc[]
+* [ ] Evaluation suite producing comparable results in each region
+* [ ] Cost ceiling defined for each region, not only for the whole service
+* [ ] Ability to stop the agent in one region while the other region keeps serving, for example with `akka services pause --region`
+=====
+
+== Sign-off
+
+Add these to the sign-offs in the checklist for your deployment model. Adjust the roles to your organization.
+
+* [ ] Architecture review covers the release artifact and the level of autonomy that the agent has
+* [ ] Security review accepts the data that goes to model providers, the provider keys, and the prompt injection results
+* [ ] Compliance review, where it applies, accepts the evidence that the ledger and logs provide, their retention, and what you tell users
+* [ ] The owner of the evaluation suite accepts the suite, the thresholds, and the open regression cases
+* [ ] The product owner accepts the level of autonomy: which decisions run without a person, what evidence exists, and which known gaps stay open with a date
+* [ ] Evaluation suite passed on the build that goes to production
+* [ ] Prompt-injection testing run against the release that goes to production
+* [ ] Named owner of the agent's behavior, separate from the application owner, with the authority to stop the agent without a code change and availability during on-call hours
+
+== Common pitfalls
+
+. *The release does not pin the model, prompt, and tools.* If the release alone cannot tell you what an agent ran on, you cannot reproduce or audit an answer.
+. *An evaluation runs but blocks nothing.* A bound evaluator records a verdict. Your pipeline must act on the result.
+. *Nobody can reduce an agent's authority in production.* If a smaller tool set needs a code change and a deployment, the agent cannot be limited quickly.
+. *Dashboards show speed but not decisions.* Latency tells you the agent responds. Guardrail denials and evaluation results tell you whether it responds well.
+. *Playbooks cover an outage but not a wrong answer.* A wrong answer does not raise an availability alert.
+. *Rollback is rehearsed for the image only.* A prompt, a guardrail, or retrieval data can change behavior without a new image, so each needs its own rollback.
+. *The agent has no behavior owner.* Without a named owner, open gaps stay unowned.
+
+== See also
+
+* xref:deployment:production-readiness/index.adoc[]
+* xref:concepts:governance-and-the-runtime.adoc[]
+* xref:sdk:agents/guardrails.adoc[Guardrails]
+* xref:sdk:evaluators.adoc[Evaluators]
+* xref:sdk:agents/failures.adoc[Failure handling]
+* xref:sdk:autonomous-agents/client.adoc[Autonomous agent client]
+* xref:reference:telemetry/metrics.adoc[Metrics]

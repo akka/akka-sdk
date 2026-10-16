@@ -154,7 +154,10 @@ public sealed interface ModelProvider {
        * apply to streaming agents
        */
       Duration responseTimeout,
-      /** If the request fails, retry this many times. */
+      /**
+       * If the request fails with a rate limit, a server error, a timeout or a connection failure,
+       * retry this many times.
+       */
       int maxRetries,
       /** A maximum number of tokens to spend on thinking, use 0 to disable thinking */
       int thinkingBudgetTokens,
@@ -171,40 +174,6 @@ public sealed interface ModelProvider {
        */
       boolean cacheTools)
       implements ModelProvider {
-
-    /**
-     * @deprecated Use constructor with prompt caching settings
-     */
-    @Deprecated(since = "3.5.19", forRemoval = true)
-    public Anthropic(
-        String apiKey,
-        String modelName,
-        String baseUrl,
-        double temperature,
-        double topP,
-        int topK,
-        int maxTokens,
-        Duration connectionTimeout,
-        Duration responseTimeout,
-        int maxRetries,
-        int thinkingBudgetTokens,
-        List<HttpHeader> additionalModelRequestHeaders) {
-      this(
-          apiKey,
-          modelName,
-          baseUrl,
-          temperature,
-          topP,
-          topK,
-          maxTokens,
-          connectionTimeout,
-          responseTimeout,
-          maxRetries,
-          thinkingBudgetTokens,
-          additionalModelRequestHeaders,
-          false,
-          false);
-    }
 
     public static Anthropic fromConfig(Config config) {
       return new Anthropic(
@@ -515,37 +484,6 @@ public sealed interface ModelProvider {
       /** Additional HTTP headers to include in each request to the model API */
       List<HttpHeader> additionalModelRequestHeaders)
       implements ModelProvider {
-
-    /**
-     * @deprecated Use constructor with baseUrl parameter, or the static factory method and {@code
-     *     with} methods.
-     */
-    @Deprecated(since = "3.5.11", forRemoval = true)
-    public GoogleAIGemini(
-        String apiKey,
-        String modelName,
-        Double temperature,
-        Double topP,
-        int maxOutputTokens,
-        Duration connectionTimeout,
-        Duration responseTimeout,
-        int maxRetries) {
-      this(
-          apiKey,
-          modelName,
-          temperature,
-          topP,
-          maxOutputTokens,
-          connectionTimeout,
-          responseTimeout,
-          maxRetries,
-          "",
-          Optional.empty(),
-          "",
-          "MEDIA_RESOLUTION_UNSPECIFIED",
-          false,
-          List.of());
-    }
 
     public static GoogleAIGemini fromConfig(Config config) {
       final Optional<Integer> thinkingBudget =
@@ -1926,6 +1864,7 @@ public sealed interface ModelProvider {
         Double.NaN,
         Double.NaN,
         0,
+        "",
         -1,
         Duration.ofSeconds(15),
         Duration.ofMinutes(1),
@@ -1935,11 +1874,11 @@ public sealed interface ModelProvider {
 
   /** Settings for the Google Cloud Vertex AI Large Language Model provider. */
   record VertexAi(
-      /** Name of the Vertex AI model to use (e.g. "gemini-2.0-flash-001") */
+      /** Name of the Vertex AI model to use (e.g. "gemini-3.8-flash") */
       String modelName,
       /** Google Cloud project ID */
       String projectId,
-      /** Google Cloud region (e.g. "us-central1") */
+      /** Google Cloud location (e.g. "global", or "us" or "eu" for the multi-region endpoints) */
       String location,
       /** API key for authentication with Vertex AI */
       String apiKey,
@@ -1954,8 +1893,16 @@ public sealed interface ModelProvider {
        * most likely tokens whose cumulative probability exceeds the threshold value.
        */
       double topP,
-      /** A maximum number of tokens to spend on thinking, use 0 to disable thinking */
+      /**
+       * A maximum number of tokens to spend on thinking for Gemini 2.5 models, 0 for the model
+       * default. Must be 0 for Gemini 3 models.
+       */
       int thinkingBudget,
+      /**
+       * Thinking level for Gemini 3 models, for example "LOW" or "HIGH". Empty for the model
+       * default. Must be empty for Gemini 2.5 models.
+       */
+      String thinkingLevel,
       /** Maximum number of tokens to generate in the response */
       int maxOutputTokens,
       /** Fail the request if connecting to the model API takes longer than this */
@@ -1965,11 +1912,52 @@ public sealed interface ModelProvider {
        * apply to streaming agents
        */
       Duration responseTimeout,
-      /** If the request fails, retry this many times. */
+      /**
+       * If the request fails with a rate limit, a server error, a timeout or a connection failure,
+       * retry this many times.
+       */
       int maxRetries,
       /** Additional HTTP headers to include in each request to the model API */
       List<HttpHeader> additionalModelRequestHeaders)
       implements ModelProvider {
+
+    /**
+     * @deprecated Use constructor with thinkingLevel, or the static factory method and {@code with}
+     *     methods.
+     */
+    @Deprecated(since = "3.7.0", forRemoval = true)
+    public VertexAi(
+        String modelName,
+        String projectId,
+        String location,
+        String apiKey,
+        String baseUrl,
+        String apiVersion,
+        double temperature,
+        double topP,
+        int thinkingBudget,
+        int maxOutputTokens,
+        Duration connectionTimeout,
+        Duration responseTimeout,
+        int maxRetries,
+        List<HttpHeader> additionalModelRequestHeaders) {
+      this(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          "",
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
 
     public static VertexAi fromConfig(Config config) {
       return new VertexAi(
@@ -1982,6 +1970,7 @@ public sealed interface ModelProvider {
           config.getDouble("temperature"),
           config.getDouble("top-p"),
           config.getInt("thinking-budget"),
+          config.getString("thinking-level"),
           config.getInt("max-output-tokens"),
           config.getDuration("connection-timeout"),
           config.getDuration("response-timeout"),
@@ -2000,6 +1989,7 @@ public sealed interface ModelProvider {
           temperature,
           topP,
           thinkingBudget,
+          thinkingLevel,
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
@@ -2018,6 +2008,7 @@ public sealed interface ModelProvider {
           temperature,
           topP,
           thinkingBudget,
+          thinkingLevel,
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
@@ -2036,6 +2027,7 @@ public sealed interface ModelProvider {
           temperature,
           topP,
           thinkingBudget,
+          thinkingLevel,
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
@@ -2054,6 +2046,7 @@ public sealed interface ModelProvider {
           temperature,
           topP,
           thinkingBudget,
+          thinkingLevel,
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
@@ -2072,6 +2065,7 @@ public sealed interface ModelProvider {
           temperature,
           topP,
           thinkingBudget,
+          thinkingLevel,
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
@@ -2090,6 +2084,7 @@ public sealed interface ModelProvider {
           temperature,
           topP,
           thinkingBudget,
+          thinkingLevel,
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
@@ -2108,6 +2103,7 @@ public sealed interface ModelProvider {
           temperature,
           topP,
           thinkingBudget,
+          thinkingLevel,
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
@@ -2126,6 +2122,7 @@ public sealed interface ModelProvider {
           temperature,
           topP,
           thinkingBudget,
+          thinkingLevel,
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
@@ -2144,6 +2141,26 @@ public sealed interface ModelProvider {
           temperature,
           topP,
           thinkingBudget,
+          thinkingLevel,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public VertexAi withThinkingLevel(String thinkingLevel) {
+      return new VertexAi(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          thinkingLevel,
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
@@ -2162,6 +2179,7 @@ public sealed interface ModelProvider {
           temperature,
           topP,
           thinkingBudget,
+          thinkingLevel,
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
@@ -2180,6 +2198,7 @@ public sealed interface ModelProvider {
           temperature,
           topP,
           thinkingBudget,
+          thinkingLevel,
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
@@ -2198,6 +2217,7 @@ public sealed interface ModelProvider {
           temperature,
           topP,
           thinkingBudget,
+          thinkingLevel,
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
@@ -2216,6 +2236,7 @@ public sealed interface ModelProvider {
           temperature,
           topP,
           thinkingBudget,
+          thinkingLevel,
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
@@ -2235,6 +2256,7 @@ public sealed interface ModelProvider {
           temperature,
           topP,
           thinkingBudget,
+          thinkingLevel,
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
@@ -2303,7 +2325,10 @@ public sealed interface ModelProvider {
        * apply to streaming agents
        */
       Duration responseTimeout,
-      /** If the request fails, retry this many times. */
+      /**
+       * If the request fails with a rate limit, a server error, a timeout or a connection failure,
+       * retry this many times.
+       */
       int maxRetries,
       /** Additional HTTP headers to include in each request to the model API */
       List<HttpHeader> additionalModelRequestHeaders)
@@ -2763,43 +2788,6 @@ public sealed interface ModelProvider {
        */
       Optional<BedrockPromptCachePlacement> promptCaching)
       implements ModelProvider {
-
-    /**
-     * @deprecated Use constructor with prompt caching settings
-     */
-    @Deprecated(since = "3.5.19", forRemoval = true)
-    public Bedrock(
-        String region,
-        String modelId,
-        boolean returnThinking,
-        boolean sendThinking,
-        int maxOutputTokens,
-        int reasoningTokenBudget,
-        Map<String, Object> additionalModelRequestFields,
-        String accessToken,
-        double temperature,
-        double topP,
-        int maxTokens,
-        Duration responseTimeout,
-        int maxRetries,
-        List<HttpHeader> additionalModelRequestHeaders) {
-      this(
-          region,
-          modelId,
-          returnThinking,
-          sendThinking,
-          maxOutputTokens,
-          reasoningTokenBudget,
-          additionalModelRequestFields,
-          accessToken,
-          temperature,
-          topP,
-          maxTokens,
-          responseTimeout,
-          maxRetries,
-          additionalModelRequestHeaders,
-          Optional.empty());
-    }
 
     public static Bedrock fromConfig(Config config) {
       String promptCachingStr = config.getString("prompt-caching");

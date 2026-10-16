@@ -1,0 +1,223 @@
+= Training and evaluation commands
+:page-aliases: reference:inference-cli/cost-training-and-evaluation.adoc
+:page-summary: The akka optimize commands for model training, dataset curation, and evaluation.
+:page-persona: builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+These commands cover how models are trained and scored. Every command on this page is a subcommand of `akka optimize`. This page lists the commands most tasks use. See xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize] for every command and flag. The tasks they support are in the xref:optimize:index.adoc[Training] section.
+
+The format a `-f FILE` option reads depends on the command, and `--help` states it. Training plans are JSON or YAML. `eval datasets create` reads a zip or an `items.jsonl` file. `datasets create` reads chat-format JSONL. `training sessions create` reads a conversation corpus. Most commands read the document from standard input when you pass `-f -`.
+
+== Training runs
+
+`akka optimize training runs` manages training runs. The alias `run` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka optimize training runs start -f PLAN`
+| Start a training run from a plan file.
+
+| `akka optimize training runs list`
+| List training runs.
+
+| `akka optimize training runs get RUN`
+| Show one run.
+
+| `akka optimize training runs wait RUN`
+| Wait for a run to finish.
+
+| `akka optimize training runs cancel RUN`
+| Cancel a run and free its GPUs.
+|===
+
+== Training pipelines
+
+`akka optimize training pipelines` manages multi-stage training pipelines. The alias `pipeline` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka optimize training pipelines start -f PLAN`
+| Start a pipeline from a plan file.
+
+| `akka optimize training pipelines list`
+| List pipelines and the stage each is on.
+
+| `akka optimize training pipelines get PIPELINE`
+| Show a pipeline, stage by stage.
+
+| `akka optimize training pipelines wait PIPELINE`
+| Wait for every stage to finish.
+
+| `akka optimize training pipelines cancel PIPELINE`
+| Cancel a pipeline and its running stage.
+|===
+
+== Trained models
+
+`akka optimize trained-models` manages the models training produced. The alias `trained-model` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka optimize trained-models list`
+| List models and what they scored.
+
+| `akka optimize trained-models get MODEL`
+| Show one model's lineage, cost, and score.
+|===
+
+== Training evaluations
+
+`akka optimize training evaluations` manages evaluations of trained models. The alias `evaluation` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka optimize training evaluations start --model MODEL --dataset HASH`
+| Score a trained model against a dataset.
+
+| `akka optimize training evaluations list`
+| List evaluations and what they scored.
+
+| `akka optimize training evaluations get EVALUATION`
+| Show what an evaluation scored and where it got to.
+
+| `akka optimize training evaluations report EVALUATION`
+| Show how a model scored, field by field.
+
+| `akka optimize training evaluations predictions EVALUATION`
+| Show what the model answered, example by example.
+
+| `akka optimize training evaluations wait EVALUATION`
+| Follow an evaluation until it finishes.
+
+| `akka optimize training evaluations cancel EVALUATION`
+| Stop an evaluation and release what it holds.
+|===
+
+== Training datasets
+
+`akka optimize datasets` manages training datasets. The alias `dataset` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka optimize datasets create -f FILE`
+| Register chat-format JSONL examples. The alias `register` is accepted.
+
+| `akka optimize datasets list`
+| List registered datasets, newest first.
+
+| `akka optimize datasets get HASH`
+| Show what a dataset holds.
+
+| `akka optimize datasets name NAME DATASET`
+| Point a name at a registered dataset.
+
+| `akka optimize datasets images push PATH...`
+| Upload images, skipping the ones already registered.
+|===
+
+== Sessions and curations
+
+A session is a raw conversation corpus. A curation judges raw sessions into a training dataset.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka optimize training sessions create -f CORPUS --source SOURCE`
+| Upload a raw conversation corpus.
+
+| `akka optimize training curations apply -f FILE`
+| Start a curation run.
+
+| `akka optimize training curations wait CURATION`
+| Wait for a curation to finish.
+
+| `akka optimize training curations get ID`
+| Phase, counts, mean score and resulting dataset.
+|===
+
+== Evaluation
+
+`akka optimize eval` covers datasets, experiments and the evaluators that score them.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka optimize eval datasets create -f FILE`
+| Upload a dataset file and version it.
+
+| `akka optimize eval datasets list`
+| Datasets that have been imported, most recently imported first.
+
+| `akka optimize eval datasets get ID`
+| One dataset: what it holds, what scores it, and every version it has had.
+
+| `akka optimize eval datasets items ID --version V`
+| The items in one version of a dataset.
+
+| `akka optimize eval datasets imports get ID`
+| How far an import has got.
+
+| `akka optimize eval experiments apply -f FILE`
+| Start an experiment.
+
+| `akka optimize eval experiments get ID`
+| How far an experiment has got, and what it has found.
+
+| `akka optimize eval experiments record ID`
+| The finished record: the run's report, or the numbers behind it.
+
+| `akka optimize eval experiments item EXPERIMENT ITEM`
+| One item's run, and what each evaluator said about it.
+
+| `akka optimize eval experiments compare ID --baseline ID`
+| An experiment against a baseline, item by item.
+
+| `akka optimize eval experiments history NAME`
+| Every run of a recurring experiment, most recent first.
+
+| `akka optimize eval evaluators list`
+| Registered evaluators, their kind and their version.
+|===
+
+== Service status
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka optimize status`
+| Which services are answering, and at what address.
+|===
+
+include::inference:partial$aao-inference-notice.adoc[]
+
+include::inference:partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:optimize:cli.adoc[]
+* xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize command reference]
+* xref:reference:cli/cost-and-traffic.adoc[Cost and traffic commands]
+* xref:sdk:agents/llm_eval.adoc[Evaluating model responses]

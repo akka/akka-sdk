@@ -1,0 +1,27 @@
+= Manually set up your env
+:page-summary: Install the Akka CLI, Java, and Maven directly on your machine, with no AI harness.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Install the tools directly on your machine. Use this path if you do not want an AI harness, or your AI-assist tool does not support plugins.
+
+.Prerequisites
+* Java {java-version} (see https://adoptium.net/marketplace/[Adoptium, window="new"]).
+* Apache Maven {minimum_maven_version} or later.
+* An link:https://account.akka.io/token[Akka download token, window="new"] (free).
+
+== Install the Akka CLI
+
+include::ROOT:partial$cli-install-short.adoc[]
+
+== Create a project
+
+Create a new project from a sample and start building:
+
+[source,bash]
+----
+akka code init --name helloworld-agent --repo akka-samples/helloworld-agent.git
+----
+
+To use spec-driven development without an AI plugin, use `akka specify init <dir>` instead — see xref:sdk:spec-driven-development.adoc[Spec-driven development]. Then continue with xref:getting-started:author-your-first-service.adoc[Code-first hello agent].

@@ -9,12 +9,14 @@ A read: it exits zero whatever it finds, because reporting a regression is the r
 --assert turns it into a claim instead, for a build that should stop.
 A regression fails, and so does a comparison the service refuses to make -- a run scored under a different ruler is not evidence that anything improved or got worse.
 
+[source,shell]
 ----
 akka optimize eval experiments compare ID --baseline ID [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --assert            fail when the comparison shows a regression or cannot be made
       --baseline string   the experiment to compare against
@@ -23,6 +25,7 @@ akka optimize eval experiments compare ID --baseline ID [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

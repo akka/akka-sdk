@@ -6,12 +6,14 @@ Remove the given workload identity provider from the current (or specified) orga
 
 The `akka organizations identity-providers remove` command removes a workload identity provider from the given organization in Akka.
 
+[source,shell]
 ----
 akka organizations identity-providers remove PROVIDER-ID [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help                  help for remove
       --organization string   name or ID for organization
@@ -19,6 +21,7 @@ akka organizations identity-providers remove PROVIDER-ID [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

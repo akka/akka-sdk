@@ -9,12 +9,14 @@ Resume execution of a pipeline that stopped before finishing all stages.
 The pipeline resumes execution from the stage that was in progress when execution stopped.
 If the pipeline is not in an interrupted state, its status remains unchanged.
 
+[source,shell]
 ----
 akka optimize training pipelines resume PIPELINE [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Resume a stopped pipeline
   akka-optimize training pipelines resume 4f3a91c07b2e5d68
@@ -22,12 +24,14 @@ akka optimize training pipelines resume PIPELINE [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for resume
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

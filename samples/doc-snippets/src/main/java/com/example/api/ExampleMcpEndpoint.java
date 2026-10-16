@@ -84,6 +84,26 @@ public class ExampleMcpEndpoint {
 
   // end::tool-with-class[]
 
+  // tag::tool-structured-output[]
+  public record DivisionResult(
+    @Description("The whole number of times the divisor fits in the dividend") int quotient,
+    @Description("What is left after the division") int remainder
+  ) {} // <1>
+
+  @McpTool(
+    name = "divide",
+    description = "Divides the dividend by the divisor, returning quotient and remainder"
+  )
+  public DivisionResult divide( // <2>
+    @Description("The dividend") int dividend,
+    @Description("The divisor, must not be 0") int divisor
+  ) {
+    if (divisor == 0) throw new IllegalArgumentException("The divisor must not be 0");
+    return new DivisionResult(dividend / divisor, dividend % divisor);
+  }
+
+  // end::tool-structured-output[]
+
   // tag::static-resource[]
   @McpResource(
     uri = "file:///background.png", // <1>

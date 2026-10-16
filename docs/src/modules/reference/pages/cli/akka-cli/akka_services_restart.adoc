@@ -8,18 +8,21 @@ The `akka service restart _service-name_` command restarts a service by pulling 
 NOTE: Configure Docker credentials to give Akka permission to pull from a private image repository.
 For more info see `akka docker`
 
+[source,shell]
 ----
 akka services restart SERVICE [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 akka services restart my-service
 ----
 
 == Options
 
+[source,text]
 ----
       --all-regions      run the command on all regions
   -f, --force            if true the service will be restarted by killing all instances, otherwise instances will be restarted in a rolling fashion
@@ -31,6 +34,7 @@ akka services restart my-service
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

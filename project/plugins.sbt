@@ -1,7 +1,7 @@
 addSbtPlugin("com.github.sbt" % "sbt-dynver" % "5.1.1")
 // Note: akka-grpc must be carefully kept in sync with the version used in the runtime.
 addSbtPlugin("com.lightbend.akka.grpc" % "sbt-akka-grpc" % "2.5.12")
-addSbtPlugin("com.github.sbt" % "sbt-java-formatter" % "0.13.1")
+addSbtPlugin("com.github.sbt" % "sbt-java-formatter" % "0.14.0")
 // sbt-java-formatter 0.10.0 pulls in version that does not work with Java 25
 libraryDependencies += "com.google.googlejavaformat" % "google-java-format" % "1.32.0"
 
@@ -17,7 +17,7 @@ addDependencyTreePlugin
 addSbtPlugin("io.akka.sbt" % "sbt-artifact-bom" % "0.3.0")
 
 // align guava version between sbt-akka-grpc and sbt-java-formatter
-libraryDependencies += "com.google.guava" % "guava" % "33.3.1-jre"
+libraryDependencies += "com.google.guava" % "guava" % "33.7.2-jre"
 
 // optional scalafix plugin for organize imports
 optionalSbtPlugin(sys.props.contains("build.scalafix"))("ch.epfl.scala" % "sbt-scalafix" % "0.14.9")

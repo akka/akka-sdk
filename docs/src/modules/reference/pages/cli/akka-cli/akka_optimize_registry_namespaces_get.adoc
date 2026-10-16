@@ -2,12 +2,14 @@
 
 One namespace: its models, datasets and bundles by name
 
+[source,shell]
 ----
 akka optimize registry namespaces get NS [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Read a namespace
   akka-optimize registry namespaces get triage
@@ -15,12 +17,14 @@ akka optimize registry namespaces get NS [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for get
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

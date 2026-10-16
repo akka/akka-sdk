@@ -1,0 +1,231 @@
+= Exposing and calling models
+:page-aliases: inference:serving/exposing-models.adoc, inference:serving/issuing-api-keys.adoc, inference:serving/calling-a-model.adoc
+:page-summary: A model endpoint serves a set of models behind one address, a project route puts it on a hostname, API keys authorize clients, and any OpenAI-compatible client can call it.
+:page-persona: builder-developer, builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+A model endpoint serves a set of models behind one address. The unit is the endpoint, not the model: one endpoint serves many models, and clients choose between them with the `model` field of the request body. A single base URL therefore covers everything that the endpoint lists.
+
+An endpoint is reachable inside the project only. A project route puts it on a hostname on the internet.
+
+== Declaring an endpoint
+
+[source, yaml]
+----
+resource: ModelEndpoint
+resourceVersion: v1
+metadata:
+  name: assistant-endpoint
+spec:
+  models: # <1>
+    - name: assistant
+    - name: agent
+  apiKeySecret: assistant-keys # <2>
+----
+<1> The models that the endpoint serves, by model name. Each name must be a `Model` in the project. The names that clients can send are the served names of these models, adapters included, so one entry can expose several names.
+<2> The project secret that holds the endpoint's API keys. The field is required, because the endpoint answers anything that reaches the gateway and must never be silently open. The endpoint refuses every request until the secret holds a key. See <<_issuing_api_keys,Issuing API keys>>.
+
+See xref:reference:descriptors/model-descriptor.adoc#model-endpoint[ModelEndpoint] for every field.
+
+A project can serve at most 64 endpoints. The region refuses the endpoint that would exceed that number.
+
+== Reading an endpoint
+
+[source, shell]
+----
+akka models endpoints get assistant-endpoint
+----
+
+When the endpoint is not ready, the command prints the reason. The `Ready` condition of an endpoint reports on the models that it lists.
+
+To list the endpoints of the project:
+
+[source, shell]
+----
+akka models endpoints list
+----
+
+[cols="1,3", options="header"]
+|===
+| Column
+| Value
+
+| `NAME`
+| The endpoint name.
+
+| `MODELS`
+| The models that the endpoint lists.
+
+| `SERVES`
+| The names that clients can send in the `model` field, or `-` while there are none.
+
+| `ENDPOINT`
+| The in-project address of the endpoint, or `-` until it has one. The gateway serves the OpenAI API for the endpoint's models at this address under `/v1`.
+
+| `READY`
+| `True` when the endpoint is serving.
+
+| `AGE`
+| How long the endpoint has existed.
+|===
+
+== Changing which models an endpoint serves
+
+Add a model to `spec.models` and apply the descriptor again to expose it. Remove it and apply again to withdraw it.
+
+== Putting the endpoint on a hostname
+
+A model endpoint is not reachable from the internet until a route sends a hostname to it. Provision a hostname for the project. Without a name, Akka generates one:
+
+[source, shell]
+----
+akka projects hostnames add
+----
+
+Create a route that sends all traffic on that hostname to the endpoint:
+
+[source, shell]
+----
+akka routes create assistant-route --hostname HOSTNAME --path /=assistant-endpoint
+----
+
+Replace `HOSTNAME` with the hostname from the previous command. Akka provisions a TLS certificate for the hostname, so no client needs extra configuration. The base URL to give an OpenAI client is `+https://HOSTNAME/v1+`. See xref:operations:services/invoke-service.adoc[Invoking Akka services] for more about hostnames and routes.
+
+== Issuing API keys
+
+A model endpoint refuses every request until a key authorizes it. Keys are issued per client, so any one of them can be revoked without disturbing the others.
+
+The keys are entries of the secret that the endpoint names in `apiKeySecret`, one entry per client.
+
+=== Issuing a key
+
+Name the endpoint and the client the key is for:
+
+[source, shell]
+----
+akka models endpoints keys add assistant-endpoint production
+----
+
+The command prints the key once:
+
+[source, shell]
+----
+Key for production on endpoint assistant-endpoint:
+KEY
+This is the only time it is shown.
+----
+
+Copy the key now. Keys cannot be read back. When the secret that the endpoint names does not exist yet, this command creates it. `-o json` returns the endpoint, the client, and the key as a document, so a script can capture the key from the one response that carries it.
+
+=== Listing the clients that hold a key
+
+[source, shell]
+----
+akka models endpoints keys list assistant-endpoint
+----
+
+This shows which clients hold a key, never the keys themselves. When there are no keys, the command says so, and every request to the endpoint is refused.
+
+=== Rotating a key
+
+Every key in the secret works until it is removed, so a rotation has no cutover. Add the new key under a new client name, move the clients across, and then remove the old one:
+
+[source, shell]
+----
+akka models endpoints keys add assistant-endpoint production-2
+----
+
+[source, shell]
+----
+akka models endpoints keys remove assistant-endpoint production
+----
+
+Adding a key for a client name that already holds one fails, which is why rotation uses a new name. When the last key is removed, every request to the endpoint is refused.
+
+[WARNING]
+====
+Deleting an endpoint does not revoke the keys issued against it, because `akka models delete` leaves the key secret alone. An endpoint that names the same secret accepts every key in it. A key you meant to retire is gone only when `akka models endpoints keys remove` has removed it or the secret has been deleted with `akka secrets delete`.
+====
+
+=== Diagnosing a rejected request
+
+[cols="1,2", options="header"]
+|===
+| Message
+| Cause
+
+| `api key authentication failure: no API Key found`
+| The request carries no `Authorization` header, or the header does not start with `Bearer`.
+
+| `api key authentication failure: invalid credentials`
+| The key is not one this endpoint accepts. `akka models endpoints keys list` shows which clients hold one. Issue a fresh key if the value was lost.
+|===
+
+== Calling a model
+
+A deployed model answers on an OpenAI-compatible endpoint. Existing SDKs, notebooks, and evaluation harnesses work unmodified once the base URL and the API key are set, and this is also the endpoint to give a benchmark.
+
+Set the base URL from <<_putting_the_endpoint_on_a_hostname,Putting the endpoint on a hostname>> and the key from <<_issuing_api_keys,Issuing API keys>>:
+
+[source, shell]
+----
+export AKKA_MODEL_BASE_URL=https://HOSTNAME/v1
+export AKKA_MODEL_API_KEY=KEY
+----
+
+=== Listing the models an endpoint serves
+
+[source, shell]
+----
+curl $AKKA_MODEL_BASE_URL/models -H "Authorization: Bearer $AKKA_MODEL_API_KEY"
+----
+
+=== Sending a request
+
+Send the model name in the `model` field:
+
+[source, shell]
+----
+curl $AKKA_MODEL_BASE_URL/chat/completions \
+  -H "Authorization: Bearer $AKKA_MODEL_API_KEY" -H 'content-type: application/json' \
+  -d '{"model":"assistant","messages":[{"role":"user","content":"Hello"}]}'
+----
+
+The `model` field is how one endpoint serves many models. Send any name that the endpoint serves and the request reaches that model. Nothing else about the request changes.
+
+An OpenAI client needs the same two values:
+
+[source, python]
+----
+client = OpenAI(base_url="https://HOSTNAME/v1", api_key=...)
+client.chat.completions.create(model="assistant", ...)
+client.chat.completions.create(model="agent", ...)
+----
+
+A `404` from an endpoint that is otherwise ready means the name in `model` is not one the endpoint serves. `GET /v1/models` lists the names it serves, and so does the `SERVES` column of `akka models endpoints list`.
+
+=== Calling tools
+
+With `toolCalling` configured on the model, the `tools` and `tool_choice` fields behave as they do against OpenAI. See xref:inference:serving/deploying-models.adoc#_enabling_tool_calling[Enabling tool calling] for the descriptor fields. A parser that does not match the model returns tool calls as ordinary prose rather than failing.
+
+=== Calling a served model from an Akka service
+
+An Akka agent reaches this endpoint the same way it reaches any OpenAI-compatible provider, by configuring the base URL and the API key. See xref:sdk:model-provider-details.adoc[AI model provider configuration].
+
+include::partial$aao-inference-notice.adoc[]
+
+== Serving and routing
+
+A model endpoint is callable whether or not a gateway routing rule names it. To direct agent traffic to a served model, register its backend with the gateway proxy and configure routing to that destination. See xref:inference:routing.adoc[Routing requests to models].
+
+Spend reporting reads the served name from the `model` field of the response. Configure prices for each served name, including adapter names. See xref:inference:spend.adoc[Understanding inference costs].
+
+== See also
+
+* xref:inference:routing.adoc[Routing requests to models]
+* xref:sdk:agents.adoc[Agents]
+* xref:reference:descriptors/model-descriptor.adoc#model-endpoint[ModelEndpoint descriptor reference]
+* xref:reference:cli/models.adoc#endpoints[`akka models endpoints` command reference]
+* xref:reference:cli/models.adoc#keys[`akka models endpoints keys` command reference]

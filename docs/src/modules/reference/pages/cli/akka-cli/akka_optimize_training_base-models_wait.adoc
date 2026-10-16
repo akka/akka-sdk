@@ -20,12 +20,14 @@ Preparation continues in the cluster.
 --timeout bounds the wait.
 By default there is no deadline.
 
+[source,shell]
 ----
 akka optimize training base-models wait BASE_MODEL [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Wait for a selection to settle
   akka-optimize training base-models wait Qwen/Qwen3-8B
@@ -36,6 +38,7 @@ akka optimize training base-models wait BASE_MODEL [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help               help for wait
       --timeout duration   Maximum time to wait for the entry; zero waits without a deadline
@@ -43,6 +46,7 @@ akka optimize training base-models wait BASE_MODEL [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

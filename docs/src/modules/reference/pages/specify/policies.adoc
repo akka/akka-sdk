@@ -1,10 +1,10 @@
 = Policies
 
-Organizations govern spec-driven development with *policy as code* — a version-controlled definition of the mandatory controls every project inherits: which xref:sdk:enforced-mode.adoc#exit-conditions[exit conditions] are required, which mode is allowed, what "ship" does, and the toolchain to use. Developers can make these controls stricter, never weaker.
+Organizations govern spec-driven development with *policy as code* — a version-controlled definition of what every project inherits: which xref:sdk:enforced-mode.adoc#exit-conditions[exit conditions] are required, which mode is allowed, what "ship" does, and the toolchain to use. Developers can make these rules stricter, never weaker.
 
 == The governance policy
 
-The policy is a single file, `policy.yaml`, that your organization authors, owns, and controls. Version-control it — most teams keep it in a dedicated git repository (for example `github.com/manulife/akka-specify-governance`), governed by your normal access controls: private repository, SSO, RBAC, and branch protection. Akka does not host it.
+The policy is a single file, `policy.yaml`, that your organization authors, owns, and controls. Version-control it — most teams keep it in a dedicated git repository (for example `github.com/example-org/akka-specify-governance`), governed by your normal access controls: private repository, SSO, RBAC, and branch protection. Akka does not host it.
 
 The CLI does not require any particular host, provider, or repository name. It fetches the `policy.yaml` at the URL your organization configures (see <<_applying_the_policy_in_every_project>>), so the policy can live in a git repository, an internal mirror, or any location the CLI can read over HTTPS. A git repository is recommended simply because it gives you version history and a place to run CI that enforces the policy — see <<_drift_and_enforcement>>.
 
@@ -21,7 +21,7 @@ akka-specify-governance/       # name it whatever you like
 ----
 
 `policy.yaml`:: The single source of truth for the policy. `/akka:setup` downloads it from the URL you configure; its schema is described below.
-CI workflow:: A pipeline that runs the Akka conformance check against `policy.yaml`. Because a developer can bypass local checks, the organization's own CI is the enforcement backstop — the gate a change must pass to merge or ship. Use the `.github/workflows/` directory on GitHub, or the equivalent for your provider.
+CI workflow:: A pipeline that runs the Akka conformance check against `policy.yaml`. The policy applies to every local check, but local results are advisory, so the organization's own CI is the enforcement backstop — the gate a change must pass to merge or ship. Use the `.github/workflows/` directory on GitHub, or the equivalent for your provider.
 
 == Governance levels
 
@@ -98,7 +98,7 @@ A representative policy. Adopt library conditions by `ref`, set each one's gover
 ----
 apiVersion: akka-specify/v1
 kind: OrgPolicy
-org: manulife
+org: example-org
 version: 3                     # bump on every policy change
 
 mode:
@@ -153,7 +153,7 @@ waivers:
   allowed: true
   require_approval_for: [ALWAYS-APPLY]   # locked-condition waivers need approval
   default_expiry_days: 30
-  approvers: ["@manulife/platform-governance"]
+  approvers: ["@example-org/platform-governance"]
 
 rollout:
   mode: warn-then-enforce                # newly-locked conditions don't turn projects red overnight
@@ -195,7 +195,7 @@ Set the `governance-policy-url` key to the raw URL of the repository's `policy.y
 
 [source,yaml]
 ----
-governance-policy-url: https://raw.githubusercontent.com/manulife/akka-specify-governance/main/policy.yaml
+governance-policy-url: https://raw.githubusercontent.com/example-org/akka-specify-governance/main/policy.yaml
 ----
 
 With this configured:
@@ -204,7 +204,7 @@ With this configured:
 * every conformance check — `akka specify status`, xref:reference:specify/conform.adoc[`conform`], and `ship`, plus the `akka_ec_*` MCP tools — applies the policy *by default*, with no flag to pass;
 * the central policy always wins: a developer can add stricter conditions with `--policy`, but can never weaken the organization's policy, and any `--policy` that tries is ignored.
 
-Because the setting lives in a file that IT controls and the developer cannot edit, the policy cannot be skipped by leaving off a flag. The `--policy` flag is for local experimentation only, and is superseded whenever a central policy is in place. This is the same managed-configuration channel that already controls other CLI defaults (such as project templates and the AI context bundle); for the full key list, file locations, and an MDM profile example, see xref:operations:cli/system-config.adoc[System Configuration].
+Because the setting lives in a file that IT controls and the developer cannot edit, the policy cannot be skipped by leaving off a flag. The `--policy` flag is for local experimentation only, and is superseded whenever a central policy is in place. This is the same managed-configuration channel that already controls other CLI defaults (such as project templates and the AI context bundle); for the full key list, file locations, and an MDM profile example, see xref:getting-started:install-cli.adoc#system-configuration[System Configuration].
 
 [NOTE]
 ====
@@ -215,7 +215,7 @@ The CLI fetches `policy.yaml` over plain HTTPS, so the URL must work without an 
 
 When the organization changes the policy, a developer picks up the new version by running `/akka:setup` again, which re-downloads the current `policy.yaml`.
 
-The enforcement backstop is the *organization's own CI*, which reads the same policy and fails the build if the policy is not met. The local CLI is advisory and guided; CI is the gate — the same way enterprises already enforce standards. You can bypass checks locally, but you cannot merge or ship past CI.
+The enforcement backstop is the *organization's own CI*, which reads the same policy and fails the build if the policy is not met. The policy always applies, locally and in CI. Locally, its results are advisory and guide the developer; CI is the gate, the same way enterprises already enforce standards. A change that does not meet the policy cannot merge or ship past CI.
 
 == Related
 

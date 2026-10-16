@@ -8,6 +8,7 @@ import akka.annotation.InternalApi;
 import akka.javasdk.CommandException;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
+import akka.javasdk.SanitizerException;
 import akka.javasdk.agent.Guardrail.GuardrailException;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
@@ -289,34 +290,6 @@ public abstract class Agent implements AgentDelegationWorker {
       Builder mcpTools(List<RemoteMcpTools> tools);
 
       /**
-       * Sets a custom image loader for loading images from URIs.
-       *
-       * <p>When multimodal messages contain image references, they are normally automatically
-       * fetched, this however requires that they are public and can be fetched by any HTTP client.
-       * Defining a custom loader makes it possible to load images from custom sources such as cloud
-       * storage, databases, or authenticated endpoints.
-       *
-       * <p>Example:
-       *
-       * <pre>{@code
-       * return effects()
-       *     .imageLoader(new MyImageLoader())
-       *     .userMessage(UserMessage.from(
-       *         MessageContent.TextMessageContent.from("Describe this image"),
-       *         MessageContent.ImageMessageContent.fromUri(imageUri)))
-       *     .thenReply();
-       * }</pre>
-       *
-       * @param imageLoader The image loader implementation
-       * @return this builder for method chaining
-       * @see ImageLoader
-       * @deprecated use contentLoader
-       */
-      @Deprecated(since = "3.5.15", forRemoval = true)
-      @SuppressWarnings("removal")
-      Builder imageLoader(ImageLoader imageLoader);
-
-      /**
        * Sets a custom content loader.
        *
        * <p>When multimodal messages contain image, PDF references, they are normally automatically
@@ -452,8 +425,8 @@ public abstract class Agent implements AgentDelegationWorker {
       <T> MappingResponseBuilder<T> map(Function<String, T> mapper);
 
       /**
-       * Handle failures that occur during model processing. This method allows recovery from
-       * various types of exceptions including:
+       * Handle failures of the agent request. This method allows recovery from various types of
+       * exceptions including:
        *
        * <ul>
        *   <li>{@link ModelException} - General model processing failures
@@ -466,6 +439,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
        *   <li>{@link McpToolCallExecutionException} - MCP tool execution errors
        *   <li>{@link GuardrailException} - Guardrail violations
+       *   <li>{@link SanitizerException} - A sanitizer class failed
        * </ul>
        */
       FailureBuilder<String> onFailure(Function<Throwable, String> exceptionHandler);
@@ -492,8 +466,8 @@ public abstract class Agent implements AgentDelegationWorker {
       <T> MappingFailureBuilder<T> map(Function<Result, T> mapper);
 
       /**
-       * Handle failures that occur during model processing. This method allows recovery from
-       * various types of exceptions including:
+       * Handle failures of the agent request. This method allows recovery from various types of
+       * exceptions including:
        *
        * <ul>
        *   <li>{@link ModelException} - General model processing failures
@@ -506,6 +480,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
        *   <li>{@link McpToolCallExecutionException} - MCP tool execution errors
        *   <li>{@link GuardrailException} - Guardrail violations
+       *   <li>{@link SanitizerException} - A sanitizer class failed
        * </ul>
        */
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
@@ -529,8 +504,8 @@ public abstract class Agent implements AgentDelegationWorker {
       Agent.Effect<Result> thenReply(Metadata metadata);
 
       /**
-       * Handle failures that occur during model processing. This method allows recovery from
-       * various types of exceptions including:
+       * Handle failures of the agent request. This method allows recovery from various types of
+       * exceptions including:
        *
        * <ul>
        *   <li>{@link ModelException} - General model processing failures
@@ -543,6 +518,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
        *   <li>{@link McpToolCallExecutionException} - MCP tool execution errors
        *   <li>{@link GuardrailException} - Guardrail violations
+       *   <li>{@link SanitizerException} - A sanitizer class failed
        * </ul>
        */
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
@@ -675,33 +651,6 @@ public abstract class Agent implements AgentDelegationWorker {
        * <p>Construct instances using {@link RemoteMcpTools#fromServer(String)}
        */
       Builder mcpTools(List<RemoteMcpTools> tools);
-
-      /**
-       * Sets a custom image loader for loading images from URIs.
-       *
-       * <p>When multimodal messages contain image references, they are normally automatically
-       * fetched, this however requires that they are public and can be fetched by any HTTP client.
-       * Defining a custom loader makes it possible to load images from custom sources such as cloud
-       * storage, databases, or authenticated endpoints.
-       *
-       * <p>Example:
-       *
-       * <pre>{@code
-       * return streamEffects()
-       *     .imageLoader(new MyImageLoader())
-       *     .userMessage(UserMessage.from(
-       *         MessageContent.TextMessageContent.from("Describe this image"),
-       *         MessageContent.ImageMessageContent.fromUri(imageUri)))
-       *     .thenReply();
-       * }</pre>
-       *
-       * @param imageLoader The image loader implementation
-       * @return this builder for method chaining
-       * @deprecated use contentLoader
-       */
-      @Deprecated(since = "3.5.18", forRemoval = true)
-      @SuppressWarnings("removal")
-      Builder imageLoader(ImageLoader imageLoader);
 
       /**
        * Sets a custom content loader.

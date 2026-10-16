@@ -25,5 +25,10 @@ public class ToolUsingAgent extends AutonomousAgent {
     public String getToday() {
       return "2025-01-15";
     }
+
+    @FunctionTool(description = "Get tomorrow's date")
+    public String getTomorrow() {
+      throw new IllegalStateException("calendar unavailable");
+    }
   }
 }

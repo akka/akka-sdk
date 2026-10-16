@@ -19,7 +19,7 @@ const outDir = resolve(siteDir, 'operations/_attachments/whitepapers');
 const cssPath = resolve(dirname(new URL(import.meta.url).pathname), 'print.css');
 const printCss = readFileSync(cssPath, 'utf8');
 
-const base = 'operations/technical-overview';
+const base = 'deployment/technical-overview';
 const HUB = `${base}.html`;
 const BYOC = `${base}/byoc.html`;
 const AWS = `${base}/byoc-aws.html`;
@@ -30,11 +30,13 @@ const BYOK8S_AWS = `${base}/byok8s-aws.html`;
 const BYOK8S_AZURE = `${base}/byok8s-azure.html`;
 const BYOK8S_GCP = `${base}/byok8s-gcp.html`;
 const DATA_FLOWS = `${base}/data-flows.html`;
+const DATA_FLOWS_GRID = `${base}/data-flows-grid.html`;
 
 // Section ids of the shared BYOK8s requirements partial. Dropping these from a self-contained
 // BYOK8s cloud page leaves only that page's cloud-specific sections for a combined PDF.
 const REQ_SECTIONS = ['_installation_flow', 'requirements', '_capacity_planning', '_egress_allowlist_and_teleport', 'smoke-tests'];
 const specifics = (rel, id) => ({ rel, keep: [id] });
+const dataFlowsParts = [{ rel: DATA_FLOWS }, { rel: DATA_FLOWS_GRID, wideTable: true }];
 
 // Each download: an ordered list of parts merged into one PDF. The first part carries the cover.
 const DOWNLOADS = [
@@ -44,62 +46,62 @@ const DOWNLOADS = [
     subtitle: 'The complete overview: architecture, operations, and every deployment model and cloud.',
     parts: [{ rel: HUB }, { rel: BYOC }, { rel: AWS }, { rel: AZURE }, { rel: GCP }, { rel: BYOK8S_REQ },
       specifics(BYOK8S_AWS, '_aws_specifics'), specifics(BYOK8S_AZURE, '_azure_specifics'), specifics(BYOK8S_GCP, '_gcp_specifics'),
-      { rel: DATA_FLOWS }],
+      ...dataFlowsParts],
   },
   {
     out: 'aao-byoc.pdf',
     title: 'BYOC',
     subtitle: 'Bring Your Own Cloud: shared setup, AWS, Azure, GCP, and data flows.',
-    parts: [{ rel: BYOC }, { rel: AWS }, { rel: AZURE }, { rel: GCP }, { rel: DATA_FLOWS }],
+    parts: [{ rel: BYOC }, { rel: AWS }, { rel: AZURE }, { rel: GCP }, ...dataFlowsParts],
   },
   {
     out: 'aao-byoc-aws.pdf',
     title: 'BYOC on AWS',
     subtitle: 'Shared BYOC setup, AWS specifics, and data flows.',
-    parts: [{ rel: BYOC }, { rel: AWS }, { rel: DATA_FLOWS }],
+    parts: [{ rel: BYOC }, { rel: AWS }, ...dataFlowsParts],
   },
   {
     out: 'aao-byoc-azure.pdf',
     title: 'BYOC on Azure',
     subtitle: 'Shared BYOC setup, Azure specifics, and data flows.',
-    parts: [{ rel: BYOC }, { rel: AZURE }, { rel: DATA_FLOWS }],
+    parts: [{ rel: BYOC }, { rel: AZURE }, ...dataFlowsParts],
   },
   {
     out: 'aao-byoc-gcp.pdf',
     title: 'BYOC on GCP',
     subtitle: 'Shared BYOC setup, GCP specifics, and data flows.',
-    parts: [{ rel: BYOC }, { rel: GCP }, { rel: DATA_FLOWS }],
+    parts: [{ rel: BYOC }, { rel: GCP }, ...dataFlowsParts],
   },
   {
     out: 'aao-byok8s.pdf',
     title: 'BYOK8s',
     subtitle: 'Bring Your Own Kubernetes: shared requirements, AWS, Azure, GCP, and data flows.',
     parts: [{ rel: BYOK8S_REQ }, specifics(BYOK8S_AWS, '_aws_specifics'), specifics(BYOK8S_AZURE, '_azure_specifics'),
-      specifics(BYOK8S_GCP, '_gcp_specifics'), { rel: DATA_FLOWS }],
+      specifics(BYOK8S_GCP, '_gcp_specifics'), ...dataFlowsParts],
   },
   {
     out: 'aao-byok8s-aws.pdf',
     title: 'BYOK8s on AWS',
     subtitle: 'Self-contained BYOK8s setup for AWS, with data flows.',
-    parts: [{ rel: BYOK8S_AWS }, { rel: DATA_FLOWS }],
+    parts: [{ rel: BYOK8S_AWS }, ...dataFlowsParts],
   },
   {
     out: 'aao-byok8s-azure.pdf',
     title: 'BYOK8s on Azure',
     subtitle: 'Self-contained BYOK8s setup for Azure, with data flows.',
-    parts: [{ rel: BYOK8S_AZURE }, { rel: DATA_FLOWS }],
+    parts: [{ rel: BYOK8S_AZURE }, ...dataFlowsParts],
   },
   {
     out: 'aao-byok8s-gcp.pdf',
     title: 'BYOK8s on GCP',
     subtitle: 'Self-contained BYOK8s setup for GCP, with data flows.',
-    parts: [{ rel: BYOK8S_GCP }, { rel: DATA_FLOWS }],
+    parts: [{ rel: BYOK8S_GCP }, ...dataFlowsParts],
   },
   {
     out: 'aao-data-flows.pdf',
     title: 'Data Flows',
     subtitle: 'Every network flow between your environment and the Akka platform.',
-    parts: [{ rel: DATA_FLOWS }],
+    parts: dataFlowsParts,
   },
 ];
 const EYEBROW = 'Akka Automated Operations';
@@ -110,17 +112,18 @@ const browser = await chromium.launch();
 // Render one part to a PDF buffer. Results are cached by content so a page reused across
 // downloads (data flows, the shared setup pages) renders once.
 const cache = new Map();
-async function renderPart({ rel, keep, cover, footerTitle }) {
-  const key = JSON.stringify({ rel, keep: keep || null, cover: cover || null, footerTitle });
+async function renderPart({ rel, keep, cover, footerTitle, wideTable }) {
+  const key = JSON.stringify({ rel, keep: keep || null, cover: cover || null, footerTitle, wideTable });
   if (cache.has(key)) return cache.get(key);
 
   const page = await browser.newPage();
   await page.goto(pathToFileURL(resolve(siteDir, rel)).href, { waitUntil: 'networkidle', timeout: 60000 });
-  await page.evaluate(({ eyebrow, cover, keep, reqSections }) => {
-    // Drop any "download as PDF" note; it is pointless inside the PDF itself.
-    document.querySelectorAll('a[href*="/whitepapers/"]').forEach(a => {
+  await page.evaluate(({ eyebrow, cover, keep, reqSections, wideTable }) => {
+    // Links to the PDF and the separate grid are redundant in the combined PDF.
+    document.querySelectorAll('a[href*="/whitepapers/"], a.open-grid').forEach(a => {
       (a.closest('.admonitionblock') || a.closest('.paragraph') || a).remove();
     });
+    if (wideTable) document.body.classList.add('wp-wide-table');
     // Flatten tabs: reveal every panel and label it with its tab name.
     document.querySelectorAll('.tabpanel').forEach(panel => {
       panel.removeAttribute('hidden');
@@ -160,14 +163,14 @@ async function renderPart({ rel, keep, cover, footerTitle }) {
       );
       doc.insertBefore(c, doc.firstChild);
     }
-  }, { eyebrow: EYEBROW, cover: cover || null, keep: keep || null, reqSections: REQ_SECTIONS });
+  }, { eyebrow: EYEBROW, cover: cover || null, keep: keep || null, reqSections: REQ_SECTIONS, wideTable });
 
   await page.addStyleTag({ content: printCss });
   await page.emulateMedia({ media: 'print' });
   await page.evaluate(() => document.fonts.ready);
 
   const buf = await page.pdf({
-    format: 'A4',
+    ...(wideTable ? { width: '480mm', height: '297mm' } : { format: 'A4' }),
     printBackground: true,
     margin: { top: '16mm', bottom: '18mm', left: '16mm', right: '16mm' },
     displayHeaderFooter: true,
@@ -189,6 +192,7 @@ for (const d of DOWNLOADS) {
     const buf = await renderPart({
       rel: part.rel,
       keep: part.keep,
+      wideTable: part.wideTable,
       cover: i === 0 ? { title: d.title, subtitle: d.subtitle } : null,
       footerTitle: d.title,
     });

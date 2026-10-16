@@ -21,12 +21,14 @@ A cached selection uses storage but no standing compute.
 The entry reports what the selection cached.
 It does not report weights that a job downloaded afterwards.
 
+[source,shell]
 ----
 akka optimize training base-models select BASE_MODEL [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Select a model
   akka-optimize training base-models select Qwen/Qwen3-8B
@@ -40,6 +42,7 @@ akka optimize training base-models select BASE_MODEL [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help               help for select
       --timeout duration   Maximum time to wait for admission and selection; requires --wait (default 30m0s)
@@ -48,6 +51,7 @@ akka optimize training base-models select BASE_MODEL [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

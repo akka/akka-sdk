@@ -52,7 +52,7 @@ Akka provides built-in support for exposing your services:
 
 === Agent protocol support
 
-A2A, ACP, and MCP clients are baked into Akka's Agent component. Agents natively consume tools and communicate with other Agents via all three protocols. No external libraries needed.
+A2A and MCP clients are built into Akka's Agent component. Agents consume tools and communicate with other agents through both protocols, with no external libraries.
 
 The Akka CLI also provides a built-in MCP server (`akka mcp serve`) that exposes CLI operations as MCP tools for Claude Desktop, VS Code, and Cursor.
 

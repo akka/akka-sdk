@@ -491,6 +491,13 @@ are rebalanced over the instances of the service.
 
 It is important that WebSocket endpoint methods are designed with connection loss in mind and do not rely on the stream itself to keep a local JVM object alive. A reconnect may not end up in the same service instance as the original connection.
 
+[#websocket-jwt]
+==== Authenticating WebSocket connections with JWTs
+
+`@JWT` on a `@WebSocket` method validates the token once, when the connection opens. The connection stays open after the token expires. To end it at that time, complete the returned `Flow`, for example with `Flow.takeWithin`.
+
+Browser clients cannot set the `Authorization` header on a WebSocket connection. For common ways to authenticate them, see the https://websocket.org/guides/authentication/[WebSocket authentication guide,window="new"].
+
 ==== Testing WebSocket endpoints
 
 The testkit provides `akka.javasdk.testkit.WebSocketRouteTester` for testing WebSocket endpoints. Access it through `TestKit#getSelfWebSocketRouteTester`.
@@ -508,6 +515,10 @@ include::example$doc-snippets/src/test/java/com/example/api/ExampleWebSocketTest
 <4> Send a message from the client
 <5> Expect and verify the received message
 <6> Complete the connection
+
+To include HTTP headers in the upgrade request, for example an `Authorization` header for a JWT protected endpoint, pass a list of `akka.http.javadsl.model.HttpHeader` to `wsTextConnection` or `wsBinaryConnection`.
+
+When the service rejects the upgrade request, the tester throws `akka.javasdk.testkit.WebSocketUpgradeFailedException`. Use `status()` on the exception to assert the response status, for example `403 Forbidden` for a JWT that does not match the `@JWT` requirements.
 
 == See also
 

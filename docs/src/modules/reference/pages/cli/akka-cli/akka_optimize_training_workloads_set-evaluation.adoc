@@ -10,12 +10,14 @@ Score comparisons require matching dataset and grader pairs.
 Updating either value resets the default baseline comparison table.
 Previous evaluation scores remain accessible by supplying --dataset and --grader to the "scores" command.
 
+[source,shell]
 ----
 akka optimize training workloads set-evaluation WORKLOAD --dataset HASH [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Set the evaluation dataset
   akka-optimize training workloads set-evaluation commit-router --dataset eval-set
@@ -27,6 +29,7 @@ akka optimize training workloads set-evaluation WORKLOAD --dataset HASH [flags]
 
 == Options
 
+[source,text]
 ----
       --dataset string   Evaluation dataset name or hash
       --grader string    Grader specification: json-label-match, model:MODEL, or http:URL
@@ -35,6 +38,7 @@ akka optimize training workloads set-evaluation WORKLOAD --dataset HASH [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

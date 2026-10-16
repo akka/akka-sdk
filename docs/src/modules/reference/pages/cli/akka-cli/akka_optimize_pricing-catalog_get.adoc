@@ -2,12 +2,14 @@
 
 The version in force now, or at an instant
 
+[source,shell]
 ----
 akka optimize pricing-catalog get [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --at string   read the version in force at an ISO-8601 instant in UTC rather than now
   -h, --help        help for get
@@ -15,6 +17,7 @@ akka optimize pricing-catalog get [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

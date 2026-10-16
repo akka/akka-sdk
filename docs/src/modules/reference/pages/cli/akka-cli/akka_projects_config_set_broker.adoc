@@ -2,12 +2,14 @@
 
 Set the broker.
 
+[source,shell]
 ----
 akka projects config set broker [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --broker-auth string                Select the Kafka authentication mechanism. Supported types are scram-sha-256, scram-sha-512, plain.
       --broker-bootstrap-servers string   Kafka bootstrap servers separated by commas. Each server is in the format 'hostname:port'.
@@ -29,6 +31,7 @@ akka projects config set broker [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

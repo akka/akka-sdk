@@ -62,7 +62,7 @@ AkkaPlatformSdk sdk = AkkaPlatformSdk.create();
 
 ==== Refresh token: Automatic fallback to the Akka CLI
 
-If `AKKA_TOKEN` is not set and the `akka` CLI is installed and logged in, the SDK runs `akka config get refresh-token` (and `akka config get api-server-host` for non-default installations) automatically. No code changes are needed.
+If `AKKA_TOKEN` is not set and the `akka` CLI is installed and xref:getting-started:log-in.adoc[logged in], the SDK runs `akka config get refresh-token` (and `akka config get api-server-host` for non-default installations) automatically. No code changes are needed.
 
 ==== Refresh token: Programmatic
 
@@ -231,7 +231,7 @@ The federation plane protobuf schemas are in link:{url-platform-api-schemas-fede
 All requests require a short-lived access token. Exchange your refresh token for one by calling `CreateAccessToken` on the Auth service (`api.kalix.io:443`, TLS):
 
 ----
-Service:  kalix.api.auth.v1alpha.Auth
+Service:  kalix.api.auth.v1.Auth
 Method:   CreateAccessToken
 Request:  CreateAccessTokenRequest {}   (empty body)
 Header:   Authorization: Bearer <refresh-token>
@@ -246,7 +246,7 @@ To authenticate an Akka service that calls the Platform API using its own identi
 Control plane REST requests must be directed to the region-specific endpoint for the project, not to `api.kalix.io`. Discover the endpoint by calling `ListProjects` on the Projects service, authenticated with your access token:
 
 ----
-Service:  kalix.api.projects.v1alpha.Projects
+Service:  kalix.api.projects.v1.Projects
 Method:   ListProjects
 Request:  ListProjectsRequest {}
 Header:   Authorization: Bearer <access-token>
@@ -273,4 +273,4 @@ Page through `ListProjects` using the `next_page_token` field in the response un
 
 - link:{url-platform-api-repo}[`akka/platform-api`,window="_blank"] on GitHub, for the full schemas, the Java client source, and release notes
 - xref:services/workload-identity.adoc[]
-- xref:cli/using-cli.adoc[]
+- xref:reference:cli/command-map.adoc[]

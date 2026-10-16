@@ -2,12 +2,14 @@
 
 Write one exact bundle ZIP to a file or standard output
 
+[source,shell]
 ----
 akka optimize registry bundles download NS/NAME[:REF] [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -f, --file string   Output file. '-' writes the ZIP to stdout (default "-")
   -h, --help          help for download
@@ -15,6 +17,7 @@ akka optimize registry bundles download NS/NAME[:REF] [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

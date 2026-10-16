@@ -15,12 +15,14 @@ Requires --issuer.
 By default, the JWKS endpoint or OIDC discovery URL is fetched and validated.
 Use --skip-validation to skip this check, for example when the endpoint is not yet publicly reachable.
 
+[source,shell]
 ----
 akka services jwks add [SERVICE] [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 > akka service jwks add my-service --oidc-discovery --issuer https://accounts.google.com
 > akka service jwks add my-service --jwks-url https://example.com/.well-known/jwks.json --issuer https://example.com
@@ -30,6 +32,7 @@ akka services jwks add [SERVICE] [flags]
 
 == Options
 
+[source,text]
 ----
       --allowed-algorithms stringArray   List of algorithms allowed for this keyset (e.g. RS256,ES256).
       --external-secret string           Name of an external secret containing a JWKS document.
@@ -50,6 +53,7 @@ akka services jwks add [SERVICE] [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

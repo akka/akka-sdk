@@ -62,4 +62,5 @@
 *** xref:sdk:running-locally.adoc[]
 *** xref:sdk:running-with-broker.adoc[]
 *** xref:sdk:local-cluster.adoc[]
+** xref:sdk:architecture-model.adoc[]
 ** xref:sdk:dev-best-practices.adoc[]

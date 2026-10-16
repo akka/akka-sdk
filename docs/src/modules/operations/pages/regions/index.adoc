@@ -1,10 +1,36 @@
-= Regions
+= Multi-region
+:page-summary: A project runs in one or more regions. Zones in one region protect against the loss of a data center; more regions, with data replicated between them, protect against the loss of a region.
+:page-when-to-use: When you decide whether a project needs more than one region, and before you add a region or change a project's primary region.
+:page-related: concepts:multi-region.adoc, deployment:production-readiness/choosing-your-environment.adoc, operations:regions/setup.adoc
+:page-persona: operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
 
-Projects in Akka can span across regions with data automatically replicated between all the regions. This increases availability as
-the regions can either be separate cloud / geographic regions or can be separate logical regions within the same cloud / geographic region.
-This gives you a high level of control for managing failure domains or fault boundaries in your applications.
+A project runs in one or more regions. Projects in Akka can span regions, with data replicated automatically between all the regions of the project. The regions can be separate cloud or geographic regions, or separate logical regions within the same cloud or geographic region. This gives you control over failure domains, the fault boundaries of your applications.
 
-* xref:operations:regions/setup.adoc[]
-* xref:operations:regions/infrastructure.adoc[]
+== What zones give you by default
+
+A region is a geographic area. Each region has several availability zones, and each zone is a physically separate data center. A production environment runs across zones in one region, so it recovers from the loss of one data center with no action from you. For many workloads, zones in one region are enough.
+
+== When you need more than one region
+
+Add regions to a project when you need one of these:
+
+* Recovery from the loss of a whole region, by moving traffic to another region that already holds your data.
+* Serving requests from regions close to your users.
+* Geographic redundancy that your compliance requirements or contracts demand.
+
+More regions add infrastructure cost and cross-region latency, and your application must tolerate a short delay before a write in one region is visible in the others. You do not have to decide when you create the project: you can start in one region and add regions later.
+
+For how Akka replicates the state of each component between regions, see xref:concepts:multi-region.adoc[].
+
+== Set up regions
+
+* xref:operations:organizations/regions.adoc[] lists the regions your organization can use.
+* xref:operations:regions/setup.adoc[] adds regions to a project, configures primary-region selection, and changes the project's primary region.
+
+== Plan the infrastructure
+
+* xref:deployment:production-readiness/choosing-your-environment.adoc[] covers availability, sizing, and data residency.
+* xref:deployment:regions/infrastructure.adoc[] describes the infrastructure that replicates state between regions.
+* xref:deployment:production-readiness/disaster-recovery.adoc[] defines recovery procedures and responsibilities.

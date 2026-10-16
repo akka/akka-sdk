@@ -168,7 +168,7 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
           try {
             val stage = resolve().classifyAsync(text.text)
             if (stage eq null) Future.failed(new NullPointerException("Classifier.classifyAsync returned null"))
-            else stage.asScala.map(fromClassification)(ExecutionContext.parasitic)
+            else ErrorHandling.asScalaUnwrapped(stage).map(fromClassification)(ExecutionContext.parasitic)
           } catch {
             case NonFatal(e) => Future.failed(e)
           }

@@ -72,6 +72,7 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
   private implicit val serializer: Serializer = {
     val s = new Serializer()
     s.registerTypeHints(classOf[TaskNotification.Completed])
+    s.registerTypeHints(classOf[TaskNotification.ResultRejected])
     s.registerTypeHints(classOf[TaskNotification.Failed])
     s.registerTypeHints(classOf[TaskNotification.Cancelled])
     s
@@ -111,6 +112,13 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
 
   private def entityReplyFor(notification: TaskNotification): EntityReply =
     new EntityReply(serializer.toBytes(notification), SpiMetadata.empty, None)
+
+  private def rejectedNotification: TaskNotification =
+    new TaskNotification.ResultRejected(
+      "test-task",
+      "test-task",
+      classOf[TestResultRule].getName,
+      "score must be >= 10")
 
   private def successReply: EntityReply =
     new EntityReply(BytesPayload.empty, SpiMetadata.empty, None)
@@ -369,6 +377,45 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
 
       val ex = failedWith[TaskException.Cancelled](future)
       ex.reason() shouldBe "cancelled via notification"
+    }
+
+    "keep waiting after a ResultRejected notification and return the result of the next Completed notification" in {
+      val client = createClient(
+        mockEntityClient(
+          taskState(TaskStatus.IN_PROGRESS),
+          Source(
+            List(
+              entityReplyFor(rejectedNotification),
+              entityReplyFor(
+                new TaskNotification.Completed("test-task", "test-task", """{"value":"retried","score":50}"""))))))
+
+      val result = resultFuture(client).futureValue
+      result.value shouldBe "retried"
+      result.score shouldBe 50
+    }
+
+    "keep waiting after a ResultRejected notification and throw TaskException.Failed for the next Failed notification" in {
+      val client = createClient(
+        mockEntityClient(
+          taskState(TaskStatus.IN_PROGRESS),
+          Source(
+            List(
+              entityReplyFor(rejectedNotification),
+              entityReplyFor(new TaskNotification.Failed("test-task", "test-task", "max iterations reached"))))))
+
+      val ex = failedWith[TaskException.Failed](resultFuture(client))
+      ex.reason() shouldBe "max iterations reached"
+    }
+
+    "return the result of the next Completed notification for a task that is already RESULT_REJECTED" in {
+      val client = createClient(
+        mockEntityClient(
+          taskState(TaskStatus.RESULT_REJECTED),
+          Source.single(entityReplyFor(
+            new TaskNotification.Completed("test-task", "test-task", """{"value":"retried","score":50}""")))))
+
+      val result = resultFuture(client).futureValue
+      result.value shouldBe "retried"
     }
 
     "throw TypeMismatch when task definition name does not match for already completed task" in {

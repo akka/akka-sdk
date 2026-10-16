@@ -11,12 +11,14 @@ Each image is hashed and uploaded only where the registry does not already hold 
 "datasets register" uploads the images its examples reference on its own.
 Use this to upload them before the examples that reference them exist.
 
+[source,shell]
 ----
 akka optimize registry images push PATH... [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Upload a directory of scans
   akka-optimize registry images push scans/
@@ -27,12 +29,14 @@ akka optimize registry images push PATH... [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for push
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

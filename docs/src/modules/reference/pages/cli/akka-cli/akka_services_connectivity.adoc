@@ -6,12 +6,14 @@ Summarize all services connectivity and status.
 
 The `akka services connectivity` command summarizes of all service connectivity under your current project.
 
+[source,shell]
 ----
 akka services connectivity [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --all-regions      run the command on all regions
   -h, --help             help for connectivity
@@ -22,6 +24,7 @@ akka services connectivity [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

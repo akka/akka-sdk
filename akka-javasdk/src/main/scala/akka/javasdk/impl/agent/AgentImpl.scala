@@ -19,6 +19,7 @@ import scala.jdk.DurationConverters.JavaDurationOps
 import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.util.Failure
+import scala.util.Try
 import scala.util.control.NonFatal
 
 import akka.actor.typed.ActorSystem
@@ -28,6 +29,7 @@ import akka.http.scaladsl.model.HttpHeader
 import akka.javasdk.CommandException
 import akka.javasdk.DependencyProvider
 import akka.javasdk.Metadata
+import akka.javasdk.SanitizerException
 import akka.javasdk.Tracing
 import akka.javasdk.agent
 import akka.javasdk.agent.MessageContent.ImageMessageContent
@@ -44,6 +46,7 @@ import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling.BadRequestException
+import akka.javasdk.impl.ForwardCompat.knownOr
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.MetadataImpl
@@ -74,6 +77,7 @@ import akka.runtime.sdk.spi.SpiAgent.McpToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ModelFailure
 import akka.runtime.sdk.spi.SpiAgent.OutputParsingFailure
 import akka.runtime.sdk.spi.SpiAgent.RateLimitFailure
+import akka.runtime.sdk.spi.SpiAgent.SanitizerFailure
 import akka.runtime.sdk.spi.SpiAgent.TimeoutFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallLimitReachedFailure
@@ -383,7 +387,8 @@ private[impl] object AgentImpl {
           temperature = p.temperature,
           topP = p.topP,
           thinkingBudget = p.thinkingBudget,
-          maxOutputTokens = p.maxOutputTokens)
+          maxOutputTokens = p.maxOutputTokens,
+          thinkingLevel = p.thinkingLevel)
       case p: ModelProvider.Custom =>
         new SpiAgent.ModelProvider.Custom(
           providerName = p.getClass.getName,
@@ -440,14 +445,12 @@ private[impl] object AgentImpl {
     }
   }
 
+  @nowarn("msg=deprecated")
   private[impl] def toSpiMcpEndpoints(
       remoteMcpTools: Seq[RemoteMcpTools],
-      guardrails: AgentGuardrails,
-      sdkExecutionContext: ExecutionContext): Seq[SpiAgent.McpToolEndpointDescriptor] =
+      guardrails: AgentGuardrails): Seq[SpiAgent.McpToolEndpointDescriptor] =
     remoteMcpTools.map {
       case remoteMcp: RemoteMcpToolsImpl =>
-        // FIXME: MCP tool calls run only legacy guardrails,
-        //  https://github.com/lightbend/akka-runtime/issues/5382
         new SpiAgent.McpToolEndpointDescriptor(
           mcpEndpoint = remoteMcp.serverUri,
           additionalClientHeaders = remoteMcp.additionalClientHeaders.map(_.asInstanceOf[HttpHeader]),
@@ -455,30 +458,41 @@ private[impl] object AgentImpl {
             case Some(predicate) => predicate.test
             case None            => (_: String) => true
           },
-          toolInterceptor = remoteMcp.interceptor.map {
-            javaInterceptor =>
-              (toolCallRequest: SpiAgent.ToolCallRequest, toolCall: SpiAgent.ToolCallRequest => Future[String]) =>
-                {
-                  val interceptorContext = new RemoteMcpTools.ToolInterceptorContext {
-                    override def toolName(): String = toolCallRequest.name
-                  }
-                  val newRequestPayload =
-                    javaInterceptor.interceptRequest(interceptorContext, toolCallRequest.arguments)
-                  val newRequest =
-                    if (newRequestPayload eq toolCallRequest.arguments) toolCallRequest
-                    else new SpiAgent.ToolCallRequest(toolCallRequest.id, toolCallRequest.name, newRequestPayload)
-                  toolCall(newRequest).map(result =>
-                    javaInterceptor.interceptResponse(interceptorContext, newRequestPayload, result))(
-                    sdkExecutionContext)
-                }
-          },
+          toolInterceptor = remoteMcp.interceptor.map(new McpToolCallHooksAdapter(_)),
           toolTimeout =
             if (remoteMcp.timeout == Duration.Zero) None
             else Some(remoteMcp.timeout),
           requestGuardrails = guardrails.legacyMcpToolRequestGuardrails,
-          responseGuardrails = guardrails.legacyMcpToolResponseGuardrails)
+          responseGuardrails = guardrails.legacyMcpToolResponseGuardrails,
+          toolCallGuardrails = guardrails.toolCallGuardrails)
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
+
+  // The runtime calls the hooks with the tool name on the MCP server.
+  private final class McpToolCallHooksAdapter(javaInterceptor: RemoteMcpTools.ToolInterceptor)
+      extends SpiAgent.McpToolCallHooks {
+
+    override def interceptRequest(toolCallRequest: SpiAgent.ToolCallRequest): Future[String] =
+      Future.fromTry(Try {
+        val context = new McpToolInterceptorContext(toolCallRequest.name, isError = false)
+        javaInterceptor.interceptRequest(context, toolCallRequest.arguments)
+      })
+
+    override def interceptResponse(
+        toolCallRequest: SpiAgent.ToolCallRequest,
+        arguments: String,
+        result: SpiAgent.McpToolCallResult): Future[SpiAgent.McpToolCallResult] =
+      Future.fromTry(Try {
+        val text = javaInterceptor.interceptResponse(
+          new McpToolInterceptorContext(toolCallRequest.name, result.isError),
+          arguments,
+          result.text)
+        new SpiAgent.McpToolCallResult(text, result.isError)
+      })
+  }
+
+  private final class McpToolInterceptorContext(override val toolName: String, override val isError: Boolean)
+      extends RemoteMcpTools.ToolInterceptorContext
 
   private[agent] def toSpiDetailLevel(
       level: ImageMessageContent.DetailLevel): SpiAgent.ImageMessageContent.DetailLevel =
@@ -492,12 +506,14 @@ private[impl] object AgentImpl {
 
   private[agent] def fromSpiDetailLevel(
       level: SpiAgent.ImageMessageContent.DetailLevel): ImageMessageContent.DetailLevel =
-    level match {
-      case SpiAgent.ImageMessageContent.Low       => ImageMessageContent.DetailLevel.LOW
-      case SpiAgent.ImageMessageContent.Medium    => ImageMessageContent.DetailLevel.MEDIUM
-      case SpiAgent.ImageMessageContent.High      => ImageMessageContent.DetailLevel.HIGH
-      case SpiAgent.ImageMessageContent.UltraHigh => ImageMessageContent.DetailLevel.ULTRA_HIGH
-      case SpiAgent.ImageMessageContent.Auto      => ImageMessageContent.DetailLevel.AUTO
+    knownOr(ImageMessageContent.DetailLevel.AUTO) {
+      level match {
+        case SpiAgent.ImageMessageContent.Low       => ImageMessageContent.DetailLevel.LOW
+        case SpiAgent.ImageMessageContent.Medium    => ImageMessageContent.DetailLevel.MEDIUM
+        case SpiAgent.ImageMessageContent.High      => ImageMessageContent.DetailLevel.HIGH
+        case SpiAgent.ImageMessageContent.UltraHigh => ImageMessageContent.DetailLevel.ULTRA_HIGH
+        case SpiAgent.ImageMessageContent.Auto      => ImageMessageContent.DetailLevel.AUTO
+      }
     }
 
   private[agent] def toSpiMessageContent(messageContent: MessageContent): SpiAgent.MessageContent =
@@ -630,13 +646,21 @@ private[impl] object AgentImpl {
       id: String,
       name: String,
       spiContents: Seq[SpiAgent.MessageContent],
-      sanitized: Boolean): SessionMessage = {
+      sanitized: Boolean,
+      isError: Boolean): SessionMessage = {
     val contents = spiContents.map(toSessionMemoryContent)
     contents match {
       case Seq(t: SessionMessage.MessageContent.TextMessageContent) =>
-        new SessionMessage.ToolCallResponse(timestamp, componentId, id, name, t.text(), sanitized)
+        new SessionMessage.ToolCallResponse(timestamp, componentId, id, name, t.text(), sanitized, isError)
       case _ =>
-        new SessionMessage.MultimodalToolCallResponse(timestamp, componentId, id, name, contents.asJava, sanitized)
+        new SessionMessage.MultimodalToolCallResponse(
+          timestamp,
+          componentId,
+          id,
+          name,
+          contents.asJava,
+          sanitized,
+          isError)
     }
   }
 
@@ -692,10 +716,11 @@ private[impl] object AgentImpl {
             m.id(),
             m.name(),
             Seq(new SpiAgent.TextMessageContent(m.text())),
-            m.sanitized())
+            m.sanitized(),
+            m.isError())
         case m: SessionMessage.MultimodalToolCallResponse =>
           val contents = m.contents().asScala.map(toSpiSessionContent).toSeq
-          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents, m.sanitized())
+          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), contents, m.sanitized(), m.isError())
         case m =>
           throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
       }
@@ -912,11 +937,11 @@ private[impl] final class AgentImpl(
   private def toSpiMessageContent(messageContent: MessageContent): SpiAgent.MessageContent =
     AgentImpl.toSpiMessageContent(messageContent)
 
-  private def toSpiContentLoader(javaImageLoader: ContentLoader): SpiAgent.SpiContentLoader =
-    AgentImpl.toSpiContentLoader(javaImageLoader, sdkExecutionContext)
+  private def toSpiContentLoader(javaContentLoader: ContentLoader): SpiAgent.SpiContentLoader =
+    AgentImpl.toSpiContentLoader(javaContentLoader, sdkExecutionContext)
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
-    AgentImpl.toSpiMcpEndpoints(remoteMcpTools, guardrails, sdkExecutionContext)
+    AgentImpl.toSpiMcpEndpoints(remoteMcpTools, guardrails)
 
   private def deriveSessionMemoryClient(
       memoryProvider: MemoryProvider,
@@ -998,7 +1023,8 @@ private[impl] final class AgentImpl(
             res.id,
             res.name,
             res.contents,
-            sanitized = true)
+            sanitized = true,
+            isError = res.isError)
       }
 
     if (sentUserMessage.textOnly) {
@@ -1021,7 +1047,7 @@ private[impl] final class AgentImpl(
     @nowarn("msg=deprecated")
     def convert(thw: Throwable): Throwable = thw match {
       case exc: SpiAgentException =>
-        try {
+        knownOr[Throwable](new RuntimeException(exc.getMessage, exc.cause)) {
           exc.reason match {
             case ModelFailure              => new ModelException(exc.getMessage)
             case RateLimitFailure          => new RateLimitException(exc.getMessage)
@@ -1038,6 +1064,9 @@ private[impl] final class AgentImpl(
             case reason: GuardrailFailure =>
               new Guardrail.GuardrailException(reason.explanation, exc.cause)
 
+            case reason: SanitizerFailure =>
+              new SanitizerException(exc.getMessage, reason.sanitizerName, exc.cause)
+
             case _: ImageLoadingFailure =>
               new RuntimeException(exc.getMessage, exc.cause)
 
@@ -1048,10 +1077,6 @@ private[impl] final class AgentImpl(
             case OutputParsingFailure => exc.cause
 
           }
-        } catch {
-          case _: MatchError =>
-            // to cover SPI evolution, new reasons may not exist in the SDK
-            new RuntimeException(exc.getMessage, exc.cause)
         }
       case other => other // unknown and thus unmapped
     }

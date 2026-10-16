@@ -50,12 +50,14 @@ Passing --submission-id with the token from an earlier attempt reaches whatever 
 It is for retrying an attempt whose outcome was never seen.
 "training runs branches PARENT --submission TOKEN" reads that attempt's state back instead, and is the cheaper check.
 
+[source,shell]
 ----
 akka optimize training runs branch PARENT --snapshot SNAPSHOT --steps N [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Preview a branch without submitting it
   akka-optimize training runs branch 7d496e82c3a15f04 \
@@ -72,6 +74,7 @@ akka optimize training runs branch PARENT --snapshot SNAPSHOT --steps N [flags]
 
 == Options
 
+[source,text]
 ----
       --config-name string     Label for the child configuration in the workload score table
       --description string     Description for the child run
@@ -88,6 +91,7 @@ akka optimize training runs branch PARENT --snapshot SNAPSHOT --steps N [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

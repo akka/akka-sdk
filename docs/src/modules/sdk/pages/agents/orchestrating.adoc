@@ -2,20 +2,13 @@
 
 include::ROOT:partial$include.adoc[]
 
-A single agent performs one well-defined task. Several agents collaborating on a common goal need a *supervisor* that decides which agent runs and in what order. Agents do not communicate directly with each other; the supervisor handles routing, retries, and recovery so the individual agents stay simple and reusable.
-
-Akka offers two ways to be that supervisor: a xref:sdk:workflows.adoc[Workflow] when the sequence of agent calls is fixed in code, or an xref:sdk:autonomous-agents.adoc[Autonomous Agent] coordinator when the model decides which agent runs next. Both run on the Akka runtime with the same durable-execution, retry, and audit guarantees.
+Several agents that work toward a common goal need a *supervisor* that decides which agent runs and in what order. A xref:sdk:workflows.adoc[Workflow] is the supervisor when the sequence of agent calls is fixed in code, and an xref:sdk:autonomous-agents.adoc[Autonomous Agent] coordinator is the supervisor when the model decides which agent runs next. The supervisor pattern and how to choose a supervisor are explained in xref:concepts:ai-orchestration-patterns.adoc[Multi-agent coordination], and the coordination patterns in xref:concepts:ai-orchestration-patterns.adoc#coordination-patterns[Coordination patterns].
 
 [NOTE]
 ====
 This page covers workflow-based orchestration of request-based xref:sdk:agents.adoc[Agents]. For model-driven coordination (delegation, handoff, teams, moderation) without writing a workflow, see xref:sdk:autonomous-agents.adoc[Autonomous Agents] and the xref:sdk:autonomous-agents/coordination.adoc[coordination patterns].
 
-When to pick which:
-
-* Pick *workflow orchestration* when the sequence of steps is fixed in code, when each step is at most one model round-trip, when you want explicit per-step retry policies or external compensation, or when the orchestration crosses service boundaries via A2A, ACP, or MCP.
-* Pick an *Autonomous Agent* when the orchestration sequence itself is a model judgment: the model decides what to consult, which specialist to ask, or whether to iterate, based on what previous steps returned.
-
-Both approaches give the same durable-execution, retry, and audit guarantees. The choice rests on whether the sequence is fixed in code or decided by the model.
+To choose between the two, see xref:concepts:ai-orchestration-patterns.adoc#_choosing_a_supervisor[Choosing a supervisor].
 ====
 
 == Workflow-driven orchestration
@@ -34,7 +27,7 @@ include::example$doc-snippets/src/main/java/com/example/application/AgentTeamWor
 
 In image:concepts:steps-4.svg[width=20] we explicitly include the forecast in the request to the `ActivityAgent`. That is not strictly necessary because the agents share the same session memory and thereby the `ActivityAgent` will already have the weather forecast in the context that is sent to the AI model.
 
-The workflow will automatically execute the steps in a reliable and durable way. This means that if a call in a step fails, it will be retried until it succeeds or the retry limit of the recovery strategy is reached and separate error handling can be performed. The state machine of the workflow is durable, which means that if the workflow is restarted for some reason it will continue from where it left off, i.e. execute the current non-completed step again.
+The workflow runs these steps durably: a failed call is retried by the step's recovery strategy, and a restarted workflow continues from its current step. See xref:sdk:agents/calling.adoc#_drive_the_agent_from_a_workflow[Drive the agent from a workflow].
 
 == Model-driven orchestration
 
@@ -67,6 +60,10 @@ See xref:sdk:autonomous-agents.adoc[] for more details and the other coordinatio
 == Combining the two approaches
 
 The two approaches are not mutually exclusive. A workflow can invoke an xref:sdk:autonomous-agents.adoc[Autonomous Agent] from any of its steps, the same way it invokes a request-based Agent. This fits scenarios where the overall sequence is fixed but a particular stage benefits from model-driven coordination. For example, a research stage where a coordinator delegates to several specialists, or a review stage that runs as a team or a moderated conversation. The workflow keeps the durable state machine across stages, while the Autonomous Agent handles the elaboration within a stage.
+
+A step that waits for an Autonomous Agent is subject to the step timeout, and a step that times out does not stop the agent. If the agent can run longer than the step timeout, let the step only start the task: store the task id in the workflow state and end the step. A Consumer on the task events (`@Consume.FromEventSourcedEntity(TaskEntity.class)`) then sends the result to the workflow when the task completes.
+
+Because the agent keeps running after a step timeout, do not terminate it from a step that can time out. A stopped agent instance id cannot be reused, so choose the instance id for each attempt in an earlier step and commit it to the workflow state before the step that starts the agent.
 
 == See also
 

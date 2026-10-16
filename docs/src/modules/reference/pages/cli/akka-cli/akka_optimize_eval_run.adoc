@@ -9,12 +9,14 @@ The wrapper streams Maven's output to stdout and forwards its exit code, so a re
 
 Campaigns are ordinary JUnit tests gated on -Deval=true, so this adds nothing the customer could not type themselves.
 
+[source,shell]
 ----
 akka optimize eval run [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --goals string   the Maven goal to run the campaigns under (default "verify")
   -h, --help           help for run
@@ -22,6 +24,7 @@ akka optimize eval run [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

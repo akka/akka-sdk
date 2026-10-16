@@ -1,9 +1,9 @@
 AAO
 accessor
+[Aa]ccessors
 Ack
 ACLs
 ACRs
-[Aa]ccessors
 actuals
 addons?
 Adoptium
@@ -392,6 +392,7 @@ recompiles
 recoverability
 recurse
 redeliveries
+redkit
 Redpanda
 reflows
 refreshInterval
@@ -562,6 +563,7 @@ validator
 valueFrom
 Velero
 vendored
+verl
 versionHistory
 versionLabel
 viewport

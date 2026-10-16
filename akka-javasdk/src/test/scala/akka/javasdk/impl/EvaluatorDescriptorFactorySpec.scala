@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl
 
+import scala.jdk.CollectionConverters._
+
 import akka.javasdk.impl.evaluation.EvaluatorSettings
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
@@ -18,6 +20,12 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   private def agentBindingIds(bindings: Seq[SpiEvaluator.Binding]): Seq[String] =
     bindings.collect { case ab: SpiEvaluator.AgentBinding => ab.agentComponentId }
+
+  // the agent component id, the sampling ratio and the failure flag of each agent binding
+  private def agentBindingSettings(bindings: Seq[SpiEvaluator.Binding]): Seq[(String, Double, Boolean)] =
+    bindings.collect { case ab: SpiEvaluator.AgentBinding =>
+      (ab.agentComponentId, ab.samplingRatio, ab.triggerOnFailure)
+    }
 
   // load the config over reference.conf, the same way an application.conf is loaded
   private def load(config: String): Config =
@@ -185,6 +193,211 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
         EvaluatorSettings
           .agentBindings(config, "conversation-quality", NoAgentRoles)) should contain only "support-agent"
     }
+
+    "evaluate every successful interaction when a binding sets no sampling ratio and no failure flag" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          agents.plain-agent { trigger = interaction }
+          agent-roles.customer-facing { trigger = interaction }
+        }
+        """)
+      agentBindingSettings(EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)) shouldBe
+      Seq(("billing-agent", 1.0, false), ("plain-agent", 1.0, false), ("support-agent", 1.0, false))
+    }
+
+    "hand the sampling ratio and the failure flag of an entry under agents to the runtime" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents {
+          support-agent { trigger = interaction, sampling-ratio = 0.1, trigger-on-failure = true }
+        }
+        """)
+      agentBindingSettings(EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles)) shouldBe
+      Seq(("support-agent", 0.1, true))
+    }
+
+    "hand the sampling ratio and the failure flag of an entry under agent-roles to the runtime, for each agent" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agent-roles {
+          customer-facing { trigger = interaction, sampling-ratio = 0.1, trigger-on-failure = true }
+          "*" { trigger = interaction, sampling-ratio = 0.2, trigger-on-failure = true }
+        }
+        """)
+      agentBindingSettings(EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)) shouldBe
+      Seq(("audit-agent", 0.2, true), ("billing-agent", 0.1, true), ("support-agent", 0.1, true))
+    }
+
+    "take the sampling ratio and the failure flag from the entry for the agent, not from the entry for its role" in {
+      val roleSetsBoth = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          agents.support-agent { trigger = interaction }
+          agent-roles.customer-facing { trigger = interaction, sampling-ratio = 0.1, trigger-on-failure = true }
+        }
+        """)
+      agentBindingSettings(EvaluatorSettings.agentBindings(roleSetsBoth, "conversation-quality", agentRoles)) shouldBe
+      Seq(("billing-agent", 0.1, true), ("support-agent", 1.0, false))
+
+      val agentSetsBoth = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          agents.support-agent { trigger = interaction, sampling-ratio = 0.1, trigger-on-failure = true }
+          agent-roles.customer-facing { trigger = interaction }
+        }
+        """)
+      agentBindingSettings(EvaluatorSettings.agentBindings(agentSetsBoth, "conversation-quality", agentRoles)) shouldBe
+      Seq(("billing-agent", 1.0, false), ("support-agent", 0.1, true))
+    }
+
+    "take the sampling ratio and the failure flag from the entry for the role, not from the role wildcard" in {
+      val wildcardSetsBoth = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agent-roles {
+          customer-facing { trigger = interaction }
+          "*" { trigger = interaction, sampling-ratio = 0.2, trigger-on-failure = true }
+        }
+        """)
+      agentBindingSettings(
+        EvaluatorSettings.agentBindings(wildcardSetsBoth, "conversation-quality", agentRoles)) shouldBe
+      Seq(("audit-agent", 0.2, true), ("billing-agent", 1.0, false), ("support-agent", 1.0, false))
+
+      val roleSetsBoth = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality.agent-roles {
+          customer-facing { trigger = interaction, sampling-ratio = 0.1, trigger-on-failure = true }
+          "*" { trigger = interaction }
+        }
+        """)
+      agentBindingSettings(EvaluatorSettings.agentBindings(roleSetsBoth, "conversation-quality", agentRoles)) shouldBe
+      Seq(("audit-agent", 1.0, false), ("billing-agent", 0.1, true), ("support-agent", 0.1, true))
+    }
+
+    "take the sampling ratio and the failure flag from the agent defaults when a binding does not set them" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.agent {
+          sampling-ratio = 0.25
+          trigger-on-failure = true
+        }
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          agents {
+            plain-agent { trigger = interaction }
+            support-agent { trigger = interaction, sampling-ratio = 0.5, trigger-on-failure = false }
+          }
+          agent-roles {
+            customer-facing { trigger = interaction }
+            internal { trigger = interaction, sampling-ratio = 0.75, trigger-on-failure = false }
+          }
+        }
+        """)
+      agentBindingSettings(EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)) shouldBe
+      Seq(
+        ("audit-agent", 0.75, false),
+        ("billing-agent", 0.25, true),
+        ("plain-agent", 0.25, true),
+        ("support-agent", 0.5, false))
+    }
+
+    Seq(
+      "agent binding [support-agent]" -> "agents.support-agent",
+      "agent role binding [customer-facing]" -> "agent-roles.customer-facing",
+      "agent role binding [*]" -> "agent-roles.\"*\"").foreach { case (binding, path) =>
+      s"accept a sampling ratio of 0.0 and 1.0 on the $binding" in {
+        Seq(0.0, 1.0).foreach { ratio =>
+          val config = load(s"""
+            akka.javasdk.evaluation.evaluators.conversation-quality.$path {
+              trigger = interaction
+              sampling-ratio = $ratio
+            }
+            """)
+          agentBindingSettings(EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles))
+            .find(_._1 == "support-agent") shouldBe Some(("support-agent", ratio, false))
+        }
+      }
+
+      Seq("-0.1" -> "-0.1", "1.1" -> "1.1", "10" -> "10.0", "NaN" -> "NaN").foreach { case (ratio, shown) =>
+        s"reject sampling-ratio = $ratio on the $binding" in {
+          val config = load(s"""
+            akka.javasdk.evaluation.evaluators.conversation-quality.$path {
+              trigger = interaction
+              sampling-ratio = $ratio
+            }
+            """)
+          intercept[IllegalArgumentException] {
+            EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)
+          }.getMessage shouldBe
+          s"Evaluator [conversation-quality] $binding must define [sampling-ratio] between 0.0 and 1.0, " +
+          s"but defines [$shown]"
+        }
+      }
+    }
+
+    "reject a sampling ratio out of range in the agent defaults, with an error that names the defaults" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.agent.sampling-ratio = 50
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+        """)
+      intercept[IllegalArgumentException] {
+        EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles)
+      }.getMessage shouldBe
+      "Evaluator defaults [akka.javasdk.evaluation.defaults.agent] must define [sampling-ratio] between 0.0 and 1.0, " +
+      "but defines [50.0]"
+    }
+
+    "not validate the sampling ratio of a disabled binding" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          agents.support-agent { enabled = false, sampling-ratio = 10 }
+          agent-roles.internal { enabled = false, sampling-ratio = 10 }
+        }
+        """)
+      agentBindingSettings(EvaluatorSettings.agentBindings(config, "conversation-quality", agentRoles)) shouldBe empty
+    }
+
+    Seq("sampling-ratio" -> "0.1", "trigger-on-failure" -> "true").foreach { case (key, value) =>
+      val expectedMessage =
+        s"Evaluator [conversation-quality] must define [$key] in a binding or in " +
+        "[akka.javasdk.evaluation.defaults.agent], not on the evaluator or in " +
+        "[akka.javasdk.evaluation.defaults.evaluator]"
+
+      s"reject $key on the evaluator, also when the evaluator is disabled" in {
+        Seq(true, false).foreach { enabled =>
+          val config = load(s"""
+            akka.javasdk.evaluation.evaluators.conversation-quality {
+              enabled = $enabled
+              $key = $value
+              agents.support-agent { trigger = interaction }
+            }
+            """)
+          intercept[IllegalArgumentException] {
+            EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles)
+          }.getMessage shouldBe expectedMessage
+        }
+      }
+
+      s"reject $key in akka.javasdk.evaluation.defaults.evaluator, also when the evaluator is disabled" in {
+        Seq(true, false).foreach { enabled =>
+          val config = load(s"""
+            akka.javasdk.evaluation.defaults.evaluator.$key = $value
+            akka.javasdk.evaluation.evaluators.conversation-quality {
+              enabled = $enabled
+              agents.support-agent { trigger = interaction }
+            }
+            """)
+          intercept[IllegalArgumentException] {
+            EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles)
+          }.getMessage shouldBe expectedMessage
+        }
+      }
+    }
+
+    Seq("sampling-ratio" -> "0.1", "trigger-on-failure" -> "true", "enabled" -> "false").foreach { case (key, value) =>
+      s"reject $key directly in akka.javasdk.evaluation.defaults" in {
+        val config = load(s"""
+          akka.javasdk.evaluation.defaults.$key = $value
+          akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+          """)
+        intercept[IllegalArgumentException] {
+          EvaluatorSettings.agentBindings(config, "conversation-quality", NoAgentRoles)
+        }.getMessage shouldBe
+        "Evaluator defaults [akka.javasdk.evaluation.defaults] must define only [agent] and [evaluator], " +
+        s"but defines [$key]"
+      }
+    }
   }
 
   "Evaluator control id" should {
@@ -271,11 +484,23 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
       }
     }
 
+    "reject a control id directly in akka.javasdk.evaluation.defaults" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.control-id = "AI-EV-01"
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+        """)
+      intercept[IllegalArgumentException] {
+        EvaluatorSettings.controlId(config, "conversation-quality")
+      }.getMessage shouldBe
+      "Evaluator defaults [akka.javasdk.evaluation.defaults] must define only [agent] and [evaluator], " +
+      "but defines [control-id]"
+    }
+
     "be handed to the runtime with the bindings, on the descriptor of an evaluator and of a durable evaluator" in {
       val config = load("""
         akka.javasdk.evaluation.evaluators.conversation-quality {
           control-id = "AI-EV-01"
-          agents.support-agent { trigger = interaction }
+          agents.support-agent { trigger = interaction, sampling-ratio = 0.1, trigger-on-failure = true }
         }
         """)
       val configured = EvaluatorSettings.configuredEvaluator(config, "conversation-quality", NoAgentRoles)
@@ -287,7 +512,7 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
         description = None,
         instanceFactory = _ => throw new UnsupportedOperationException,
         provided = false)
-      agentBindingIds(evaluator.bindings) shouldBe Seq("support-agent")
+      agentBindingSettings(evaluator.bindings) shouldBe Seq(("support-agent", 0.1, true))
       evaluator.controlId shouldBe Some("AI-EV-01")
 
       val durable = configured.workflowEvaluatorDescriptor(
@@ -297,8 +522,156 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
         description = None,
         instanceFactory = _ => throw new UnsupportedOperationException,
         provided = false)
-      agentBindingIds(durable.bindings) shouldBe Seq("support-agent")
+      agentBindingSettings(durable.bindings) shouldBe Seq(("support-agent", 0.1, true))
       durable.controlId shouldBe Some("AI-EV-01")
+    }
+  }
+
+  "Evaluator config" should {
+
+    def configFor(config: Config, agentComponentId: String): Config =
+      EvaluatorSettings.configuredEvaluator(config, "conversation-quality", agentRoles).configFor(agentComponentId)
+
+    "be the keys of the evaluator entry when the binding sets none" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          criterion = "helpful"
+          threshold = 0.7
+          agents.support-agent { trigger = interaction }
+        }
+        """)
+      val evaluationConfig = configFor(config, "support-agent")
+      evaluationConfig.getString("criterion") shouldBe "helpful"
+      evaluationConfig.getDouble("threshold") shouldBe 0.7
+    }
+
+    "take a key of the binding over the same key of the evaluator entry, key by key" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          criterion = "helpful"
+          threshold = 0.7
+          agents.support-agent { trigger = interaction, threshold = 0.9 }
+        }
+        """)
+      val evaluationConfig = configFor(config, "support-agent")
+      evaluationConfig.getString("criterion") shouldBe "helpful"
+      evaluationConfig.getDouble("threshold") shouldBe 0.9
+    }
+
+    "take the keys from the entry that binds the agent: the agent, then its role, then the role wildcard" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          agents.support-agent { trigger = interaction, threshold = 0.9 }
+          agent-roles {
+            customer-facing { trigger = interaction, threshold = 0.8 }
+            "*" { trigger = interaction, threshold = 0.5 }
+          }
+        }
+        """)
+      configFor(config, "support-agent").getDouble("threshold") shouldBe 0.9
+      configFor(config, "billing-agent").getDouble("threshold") shouldBe 0.8
+      configFor(config, "audit-agent").getDouble("threshold") shouldBe 0.5
+    }
+
+    "not take a key from a less specific binding" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          criterion = "helpful"
+          agents.support-agent { trigger = interaction }
+          agent-roles.customer-facing { trigger = interaction, threshold = 0.8 }
+        }
+        """)
+      val evaluationConfig = configFor(config, "support-agent")
+      evaluationConfig.getString("criterion") shouldBe "helpful"
+      evaluationConfig.hasPath("threshold") shouldBe false
+    }
+
+    "include the keys the SDK reads as the entries set them, without the defaults" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.agent.trigger-on-failure = true
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          control-id = "AI-EV-01"
+          agents.support-agent { trigger = interaction, sampling-ratio = 0.5 }
+        }
+        """)
+      val evaluationConfig = configFor(config, "support-agent")
+      evaluationConfig.root().keySet().asScala shouldBe Set("control-id", "trigger", "sampling-ratio")
+    }
+
+    "be the evaluator entry without the bindings for an agent that is not bound" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          criterion = "helpful"
+          agents.support-agent { trigger = interaction, threshold = 0.9 }
+          agent-roles.customer-facing { trigger = interaction, enabled = false }
+        }
+        """)
+      configFor(config, "plain-agent").root().keySet().asScala shouldBe Set("criterion")
+      configFor(config, "billing-agent").root().keySet().asScala shouldBe Set("criterion")
+    }
+
+    "be empty when the evaluator has no entry" in {
+      configFor(load(""), "support-agent").isEmpty shouldBe true
+    }
+
+    "be read from a disabled evaluator" in {
+      val config = load("""
+        akka.javasdk.evaluation.evaluators.conversation-quality {
+          enabled = false
+          criterion = "helpful"
+          agents.support-agent { trigger = interaction }
+        }
+        """)
+      val evaluatorConfig = EvaluatorSettings.evaluatorConfig(config, "conversation-quality")
+      evaluatorConfig.getString("criterion") shouldBe "helpful"
+      evaluatorConfig.getBoolean("enabled") shouldBe false
+      evaluatorConfig.hasPath("agents") shouldBe false
+    }
+
+    "bind an agent with the trigger from the defaults" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.agent.trigger = interaction
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { threshold = 0.9 }
+        """)
+      val configured = EvaluatorSettings.configuredEvaluator(config, "conversation-quality", agentRoles)
+      configured.bindings.map(_.asInstanceOf[SpiEvaluator.AgentBinding].agentComponentId) shouldBe Seq("support-agent")
+      configured.configFor("support-agent").root().keySet().asScala shouldBe Set("threshold")
+    }
+
+    "reject a key of the evaluator implementation in akka.javasdk.evaluation.defaults.evaluator" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.evaluator.threshold = 0.5
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+        """)
+      intercept[IllegalArgumentException] {
+        configFor(config, "support-agent")
+      }.getMessage shouldBe
+      "Evaluator defaults [akka.javasdk.evaluation.defaults.evaluator] must define only [enabled], " +
+      "but defines [threshold]. Define a key of the evaluator implementation on the evaluator or in a binding"
+    }
+
+    "reject a key of the evaluator implementation in akka.javasdk.evaluation.defaults.agent" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.agent { threshold = 0.5, criterion = "helpful" }
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+        """)
+      intercept[IllegalArgumentException] {
+        configFor(config, "support-agent")
+      }.getMessage shouldBe
+      "Evaluator defaults [akka.javasdk.evaluation.defaults.agent] must define only " +
+      "[enabled, trigger, sampling-ratio, trigger-on-failure], but defines [criterion, threshold]. " +
+      "Define a key of the evaluator implementation on the evaluator or in a binding"
+    }
+
+    "reject an SDK key in the wrong defaults without the hint for a key of the evaluator implementation" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.evaluator.trigger = interaction
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+        """)
+      intercept[IllegalArgumentException] {
+        configFor(config, "support-agent")
+      }.getMessage shouldBe
+      "Evaluator defaults [akka.javasdk.evaluation.defaults.evaluator] must define only [enabled], but defines [trigger]"
     }
   }
 }

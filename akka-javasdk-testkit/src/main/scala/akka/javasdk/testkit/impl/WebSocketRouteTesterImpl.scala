@@ -4,12 +4,16 @@
 
 package akka.javasdk.testkit.impl
 
+import java.util.Collections
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.TimeUnit
+
+import scala.jdk.CollectionConverters._
 
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.javadsl.Http
+import akka.http.javadsl.model.HttpHeader
 import akka.http.javadsl.model.ws.BinaryMessage
 import akka.http.javadsl.model.ws.Message
 import akka.http.javadsl.model.ws.TextMessage
@@ -20,6 +24,7 @@ import akka.http.scaladsl.model.ws.TextMessage.{ Strict => ScalaStrictTextMessag
 import akka.japi.Pair
 import akka.javasdk.testkit.WebSocketRouteTester
 import akka.javasdk.testkit.WebSocketRouteTester.WsConnection
+import akka.javasdk.testkit.WebSocketUpgradeFailedException
 import akka.stream.SystemMaterializer
 import akka.stream.javadsl.Flow
 import akka.stream.javadsl.Keep
@@ -38,9 +43,12 @@ private[testkit] final class WebSocketRouteTesterImpl(runtimeHost: String, runti
     extends WebSocketRouteTester {
   private val materializer = SystemMaterializer(system).materializer
 
-  override def wsTextConnection(path: String): WsConnection[String] = {
-    val (absolutePath, wsFlow: Flow[Message, Message, CompletionStage[WebSocketUpgradeResponse]]) =
-      clientFlowFor(path)
+  override def wsTextConnection(path: String): WsConnection[String] =
+    wsTextConnection(path, Collections.emptyList())
+
+  override def wsTextConnection(path: String, headers: java.lang.Iterable[HttpHeader]): WsConnection[String] = {
+    val (uri, wsFlow: Flow[Message, Message, CompletionStage[WebSocketUpgradeResponse]]) =
+      clientFlowFor(path, headers)
 
     val sink = TestSink.create[String](system)
     val source = TestSource.create[String](system)
@@ -70,14 +78,17 @@ private[testkit] final class WebSocketRouteTesterImpl(runtimeHost: String, runti
     val completion = matVal.first.second
     val subscriber = matVal.second
 
-    waitForSuccessfulUpgrade(completion, absolutePath)
+    waitForSuccessfulUpgrade(completion, uri)
 
     new WsConnection(publisher, subscriber);
   }
 
-  override def wsBinaryConnection(path: String): WsConnection[ByteString] = {
-    val (absolutePath, wsFlow: Flow[Message, Message, CompletionStage[WebSocketUpgradeResponse]]) =
-      clientFlowFor(path)
+  override def wsBinaryConnection(path: String): WsConnection[ByteString] =
+    wsBinaryConnection(path, Collections.emptyList())
+
+  override def wsBinaryConnection(path: String, headers: java.lang.Iterable[HttpHeader]): WsConnection[ByteString] = {
+    val (uri, wsFlow: Flow[Message, Message, CompletionStage[WebSocketUpgradeResponse]]) =
+      clientFlowFor(path, headers)
 
     val sink = TestSink.create[ByteString](system)
     val source = TestSource.create[ByteString](system)
@@ -107,26 +118,31 @@ private[testkit] final class WebSocketRouteTesterImpl(runtimeHost: String, runti
     val completion = matVal.first.second
     val subscriber = matVal.second
 
-    waitForSuccessfulUpgrade(completion, absolutePath)
+    waitForSuccessfulUpgrade(completion, uri)
 
     new WsConnection(publisher, subscriber);
   }
 
-  private def waitForSuccessfulUpgrade(cs: CompletionStage[WebSocketUpgradeResponse], absolutePath: String): Unit = {
+  private def waitForSuccessfulUpgrade(cs: CompletionStage[WebSocketUpgradeResponse], uri: String): Unit = {
     val upgradeResponse = cs.toCompletableFuture.get(3, TimeUnit.SECONDS)
     if (!upgradeResponse.isValid) {
-      throw new RuntimeException(
-        s"WebSocket connection to ws://$runtimeHost:$runtimePort$absolutePath was not successful: ${upgradeResponse.invalidationReason}")
+      val response = upgradeResponse.response
+      throw new WebSocketUpgradeFailedException(
+        uri,
+        response.status,
+        response.getHeaders.asScala.toList.asJava,
+        upgradeResponse.invalidationReason)
     }
   }
 
-  private def clientFlowFor(path: String) = {
+  private def clientFlowFor(path: String, headers: java.lang.Iterable[HttpHeader]) = {
     val absolutePath = if (path.startsWith("/")) path else "/" + path
-    val wsRequest = WebSocketRequest.create("ws://" + runtimeHost + ":" + runtimePort + absolutePath)
+    val uri = "ws://" + runtimeHost + ":" + runtimePort + absolutePath
+    val wsRequest = headers.asScala.foldLeft(WebSocketRequest.create(uri))(_.addHeader(_))
     val wsFlow = Http
       .get(system)
       .webSocketClientFlow(wsRequest)
-    (absolutePath, wsFlow)
+    (uri, wsFlow)
   }
 
 }

@@ -53,6 +53,7 @@ The link:{attachmentsdir}/api/akka/javasdk/agent/MemoryProvider.html[`MemoryProv
   ** Limit the amount of messages used as context in each interaction, i.e. use only the last N number of messages for context (good for token usage control).
   ** Apply **filters** to selectively include or exclude messages based on agent component ID or role.
 * `MemoryProvider.custom()` - Allows you to provide a custom implementation for the `SessionMemory` interface and store the session memory externally in a database / service of your preference.
+  A custom implementation must store the `sanitized` and `isError` values of each tool response and return them from `getHistory`. If it drops `isError`, the agent replays an earlier error result as a normal result.
 
 === Filtering memory
 
@@ -157,6 +158,8 @@ normalize whitespace, or truncate overly long input — without replacing the en
 
 `SessionMemoryInterceptor` is an interface with default identity implementations for `beforeWrite` overloads covering each top-level `SessionMessage` variant: user messages (text and multimodal), AI replies, and tool call responses. Each method receives the message about to be persisted and returns the (possibly transformed) message that will actually be written. You only need to override the overload(s) you care about; the others continue to pass the message through unchanged.
 
+To change the text of a tool response, use `ToolCallResponse.withText` or `MultimodalToolCallResponse.withContents`. When the original response is an error result, the SDK stores the returned response with the same id as an error result.
+
 [source,java,indent=0]
 ----
 include::example$doc-snippets/src/main/java/com/example/application/MyAgentMore.java[tag=interceptor]
@@ -183,7 +186,7 @@ include::example$doc-snippets/src/main/java/com/example/application/SessionMemor
 
 This can be useful for more granular control over token usage but also to allow external integrations and analytics over these details.
 
-Each `AiMessage` has a `TokenUsage` with the input and output token counts, the prompt cache read and write counts, and `totalInputTokens`. Model providers differ on whether `inputTokens` includes cached prompt tokens. For example, Anthropic and Bedrock report cached tokens outside `inputTokens`. Use `totalInputTokens` for a count that does not depend on the provider. It counts cached tokens at full weight, so it does not reflect the price of the call. Autonomous agents do not report prompt cache counts to session memory.
+Each `AiMessage` has a `TokenUsage` with the input and output token counts, the prompt cache read and write counts, and `totalInputTokens`. Model providers differ on whether `inputTokens` includes cached prompt tokens. For example, Anthropic and Bedrock report cached tokens outside `inputTokens`. Use `totalInputTokens` for a count that does not depend on the provider. It counts cached tokens at full weight, so it does not reflect the price of the call.
 
 With xref:sdk:sanitization.adoc[sanitizers] configured, the history holds user messages and tool results masked.
 

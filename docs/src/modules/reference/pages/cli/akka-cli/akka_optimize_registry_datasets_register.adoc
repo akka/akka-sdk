@@ -18,12 +18,14 @@ Each image is uploaded under the digest of its own bytes before the examples tha
 
 The named dataset and its namespace are created by the first registration into them.
 
+[source,shell]
 ----
 akka optimize registry datasets register NS/NAME -f FILE [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Upload examples
   akka-optimize registry datasets register triage/train -f examples.jsonl
@@ -37,6 +39,7 @@ akka optimize registry datasets register NS/NAME -f FILE [flags]
 
 == Options
 
+[source,text]
 ----
       --alias string     Point this alias of the named dataset at the registered version
   -f, --file string      Path to the chat-format JSONL file, or to a zip of the version's objects
@@ -48,6 +51,7 @@ akka optimize registry datasets register NS/NAME -f FILE [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

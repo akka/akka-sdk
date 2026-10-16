@@ -5,10 +5,15 @@
 package akka.javasdk.impl
 
 import java.lang.annotation.Annotation
+import java.lang.reflect.GenericArrayType
 import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
 import java.util.Optional
+import java.util.concurrent.CompletionStage
 
+import scala.collection.immutable.VectorMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
@@ -28,6 +33,7 @@ import akka.javasdk.annotations.mcp.McpResource
 import akka.javasdk.annotations.mcp.McpTool
 import akka.javasdk.annotations.mcp.ToolAnnotation
 import akka.javasdk.impl.AclDescriptorFactory.deriveAclOptions
+import akka.javasdk.impl.ErrorHandling.asScalaUnwrapped
 import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 import akka.javasdk.impl.JwtDescriptorFactory.deriveJWTOptions
 import akka.javasdk.impl.serialization.Serializer
@@ -44,9 +50,9 @@ import akka.runtime.sdk.spi.McpEndpointDescriptor.PromptResult
 import akka.runtime.sdk.spi.McpEndpointDescriptor.Resource
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ResourceMethodDescriptor
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ResourceTemplateMethodDescriptor
-import akka.runtime.sdk.spi.McpEndpointDescriptor.ResponseContent
 import akka.runtime.sdk.spi.McpEndpointDescriptor.TextContent
 import akka.runtime.sdk.spi.McpEndpointDescriptor.TextResourceContents
+import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolCallResult
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolDescription
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolMethodDescriptor
 import akka.runtime.sdk.spi.MethodOptions
@@ -58,10 +64,13 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import com.google.protobuf.GeneratedMessageV3
 import org.slf4j.LoggerFactory
 
 /**
@@ -107,7 +116,31 @@ object McpEndpointDescriptorFactory {
     m
   }
 
+  // Structured content must conform to the output schema, which lists Optional fields as not required but
+  // cannot express null, so empty and null fields are left out
+  private lazy val toolResultMapper =
+    objectMapper.copy().setDefaultPropertyInclusion(JsonInclude.Include.NON_ABSENT)
+
   private val UriTemplateVariable = """\{([^}]+)}""".r
+
+  private val JavaMapTypeRef = new TypeReference[java.util.Map[String, AnyRef]] {}
+  private val JavaListTypeRef = new TypeReference[java.util.List[AnyRef]] {}
+
+  // structured content must be a JSON object, so array results are wrapped in an object with this field
+  private val ArrayResultField = "result"
+
+  private sealed trait ToolOutput {
+    def outputSchema: Option[JsonSchemaObject] = None
+  }
+  private case object VoidToolOutput extends ToolOutput
+  private case object StringToolOutput extends ToolOutput
+  private case object JsonTextToolOutput extends ToolOutput
+  private final case class ObjectToolOutput(schema: JsonSchemaObject) extends ToolOutput {
+    override def outputSchema: Option[JsonSchemaObject] = Some(schema)
+  }
+  private final case class ArrayToolOutput(schema: JsonSchemaObject) extends ToolOutput {
+    override def outputSchema: Option[JsonSchemaObject] = Some(schema)
+  }
 
   def apply[T](mcpEndpointClass: Class[T], instanceFactory: McpEndpointConstructionContext => T)(implicit
       sdkExecutor: ExecutionContext): McpEndpointDescriptor = {
@@ -117,9 +150,8 @@ object McpEndpointDescriptorFactory {
     val toolMethods = methodsWithAnnotation[McpTool](mcpEndpointClass)
     val tools = toolMethods
       .map { case (annotation, method) =>
-        if (method.getReturnType != classOf[String])
-          throw new IllegalArgumentException(
-            s"MCP tool method must return String, but [${mcpEndpointClass.getName}.${method.getName}] returns [${method.getReturnType}]")
+        val methodLocation = s"${mcpEndpointClass.getName}.${method.getName}"
+        val (isAsync, toolOutput) = toolOutputFor(method, methodLocation)
 
         val inputSchema: JsonSchemaObject =
           if (annotation.inputSchema().isBlank) {
@@ -135,49 +167,83 @@ object McpEndpointDescriptorFactory {
           else annotation.name()
 
         val toolAnnotations = toolAnnotationsFor(mcpEndpointClass, method.getName, annotation.annotations().toVector)
-        val toolDescription = new ToolDescription(toolName, annotation.description(), inputSchema, toolAnnotations)
+        val toolDescription =
+          new ToolDescription(toolName, annotation.description(), inputSchema, toolAnnotations, toolOutput.outputSchema)
 
         val requiredParameterNames = inputSchema.required.toSet
-        val callback = (context: McpEndpointConstructionContext, params: Map[String, Any]) =>
-          Future[ResponseContent] {
-            val endpointInstance = instanceFactory.apply(context)
-            val returnValue =
-              try {
-                if (method.getParameterCount == 0) {
-                  method.invoke(endpointInstance)
-                } else {
-                  val parsedParams = method.getParameters.map { param =>
-                    val required = requiredParameterNames(param.getName)
-                    params.get(param.getName) match {
-                      case Some(unparsedValue) =>
-                        val paramValue = objectMapper.convertValue(unparsedValue, param.getType)
-                        if (required) paramValue
-                        else Optional.ofNullable(paramValue)
-                      case None =>
-                        if (required)
-                          throw new IllegalArgumentException(
-                            s"Missing required tool parameter [${param.getName}] for tool [$toolName]")
-                        else Optional.empty()
-                    }
-                  }
-                  method.invoke(endpointInstance, parsedParams: _*)
+        def invokeTool(context: McpEndpointConstructionContext, params: Map[String, Any]): AnyRef = {
+          val endpointInstance = instanceFactory.apply(context)
+          try {
+            if (method.getParameterCount == 0) {
+              method.invoke(endpointInstance)
+            } else {
+              val parsedParams = method.getParameters.map { param =>
+                val required = requiredParameterNames(param.getName)
+                params.get(param.getName) match {
+                  case Some(unparsedValue) =>
+                    val paramValue = objectMapper.convertValue(unparsedValue, param.getType)
+                    if (required) paramValue
+                    else Optional.ofNullable(paramValue)
+                  case None =>
+                    if (required)
+                      throw new IllegalArgumentException(
+                        s"Missing required tool parameter [${param.getName}] for tool [$toolName]")
+                    else Optional.empty()
                 }
-              } catch unwrapInvocationTargetExceptionCatcher
-
-            returnValue match {
-              case text: String => new TextContent(text)
-              case unknown      =>
-                // FIXME handle/allow audio and image content types, supported by protocol, but how do we fit it in SDK API?
-                throw new RuntimeException(
-                  s"Unsupported tool return value for tool [$toolName] defined in [${mcpEndpointClass.getName}.${method.getName}] (${if (unknown == null) "null"
-                  else unknown.getClass.toString}")
+              }
+              method.invoke(endpointInstance, parsedParams: _*)
             }
+          } catch unwrapInvocationTargetExceptionCatcher
+        }
+
+        def textResult(text: String) = new ToolCallResult(Seq(new TextContent(text)), None, isError = false)
+        // empty content, the runtime adds the JSON of the structured content as text content
+        def structuredResult(structured: Map[String, Any]) =
+          new ToolCallResult(Seq.empty, Some(structured), isError = false)
+        def serialized[R](serialize: => R): R =
+          try serialize
+          catch {
+            case NonFatal(ex) =>
+              throw new RuntimeException(
+                s"Failed to serialize return value of tool [$toolName] defined in [$methodLocation] to JSON",
+                ex)
+          }
+
+        // FIXME handle/allow audio and image content types, supported by protocol, but how do we fit it in SDK API?
+        def toToolCallResult(returnValue: AnyRef): ToolCallResult =
+          toolOutput match {
+            case VoidToolOutput => textResult("SUCCESS")
+            case _ if returnValue == null =>
+              throw new IllegalStateException(
+                s"Tool [$toolName] defined in [$methodLocation] returned null, a tool must return a value")
+            case StringToolOutput   => textResult(returnValue.asInstanceOf[String])
+            case JsonTextToolOutput => textResult(serialized(toolResultMapper.writeValueAsString(returnValue)))
+            case ObjectToolOutput(_) =>
+              structuredResult(
+                VectorMap.from(serialized(toolResultMapper.convertValue(returnValue, JavaMapTypeRef)).asScala))
+            case ArrayToolOutput(_) =>
+              structuredResult(
+                VectorMap(ArrayResultField -> serialized(toolResultMapper.convertValue(returnValue, JavaListTypeRef))))
+          }
+
+        val callback: (McpEndpointConstructionContext, Map[String, Any]) => Future[ToolCallResult] =
+          if (isAsync) { (context, params) =>
+            Future(invokeTool(context, params).asInstanceOf[CompletionStage[AnyRef]])
+              .flatMap { stage =>
+                if (stage == null)
+                  Future.failed(new IllegalStateException(
+                    s"Tool [$toolName] defined in [$methodLocation] returned null instead of a CompletionStage"))
+                else asScalaUnwrapped(stage)
+              }
+              .map(toToolCallResult)
+          } else { (context, params) =>
+            Future(toToolCallResult(invokeTool(context, params)))
           }
 
         new ToolMethodDescriptor(
           toolDescription = toolDescription,
-          method = callback,
-          methodOptions = new MethodOptions(None, None))
+          methodOptions = new MethodOptions(None, None),
+          call = callback)
       }
       .sortBy(_.toolDescription.name)
 
@@ -404,6 +470,74 @@ object McpEndpointDescriptorFactory {
           openWorld = annotationPresent(ToolAnnotation.OpenWorld, ToolAnnotation.ClosedWorld),
           readOnly = annotationPresent(ToolAnnotation.ReadOnly, ToolAnnotation.Mutating)))
     }
+  }
+
+  /**
+   * @return
+   *   if the tool is async, and how the (possibly async) tool return value is turned into a tool call result
+   */
+  private def toolOutputFor(method: Method, methodLocation: String): (Boolean, ToolOutput) = {
+    val genericReturnType = method.getGenericReturnType
+    if (classOf[CompletionStage[_]].isAssignableFrom(method.getReturnType)) {
+      genericReturnType match {
+        case p: ParameterizedType => (true, toolOutputForType(p.getActualTypeArguments.head, methodLocation))
+        case _ =>
+          throw ValidationException(
+            s"MCP tool method [$methodLocation] returns [$genericReturnType], async tools must return a CompletionStage with a type parameter")
+      }
+    } else (false, toolOutputForType(genericReturnType, methodLocation))
+  }
+
+  // Jackson cannot serialize protobuf messages, reject them anywhere in the return type at startup
+  private def failOnProtobuf(tpe: Type, methodLocation: String, seen: Set[Type]): Unit =
+    if (!seen(tpe)) tpe match {
+      case c: Class[_] if classOf[GeneratedMessageV3].isAssignableFrom(c) =>
+        throw ValidationException(
+          s"MCP tool method [$methodLocation] return type contains the protobuf message [${c.getName}], protobuf return values are not supported")
+      case c: Class[_] if c.isArray => failOnProtobuf(c.getComponentType, methodLocation, seen + tpe)
+      case c: Class[_] if !c.isPrimitive && !c.getName.startsWith("java.") && !c.getName.startsWith("scala.") =>
+        c.getDeclaredFields
+          .filterNot(field => Modifier.isStatic(field.getModifiers))
+          .foreach(field => failOnProtobuf(field.getGenericType, methodLocation, seen + tpe))
+      case p: ParameterizedType =>
+        (p.getRawType +: p.getActualTypeArguments).foreach(failOnProtobuf(_, methodLocation, seen + tpe))
+      case g: GenericArrayType => failOnProtobuf(g.getGenericComponentType, methodLocation, seen + tpe)
+      case _                   => // type variables, wildcards, primitives and JDK classes
+    }
+
+  private def toolOutputForType(valueType: Type, methodLocation: String): ToolOutput = {
+    failOnProtobuf(valueType, methodLocation, Set.empty)
+    val valueClass: Class[_] = valueType match {
+      case c: Class[_]          => c
+      case p: ParameterizedType => p.getRawType.asInstanceOf[Class[_]]
+      case _: GenericArrayType  => classOf[Array[AnyRef]]
+      case _                    => classOf[AnyRef] // type variables and wildcards
+    }
+    def isJdkClass = Seq("java.", "javax.", "scala.").exists(valueClass.getName.startsWith)
+
+    val isCollection = classOf[java.util.Collection[_]].isAssignableFrom(valueClass)
+
+    if (valueClass == Void.TYPE || valueClass == classOf[Void]) VoidToolOutput
+    else if (valueClass == classOf[String]) StringToolOutput
+    else if (isCollection && !valueType.isInstanceOf[ParameterizedType])
+      throw ValidationException(
+        s"MCP tool method [$methodLocation] returns [$valueType], a collection return type must be a parameterized java.util.Collection type such as List<T>")
+    else if ((valueClass.isArray && valueClass != classOf[Array[Byte]]) || isCollection)
+      ArrayToolOutput(
+        new JsonSchemaObject(
+          description = None,
+          properties = Map(ArrayResultField -> JsonSchema.jsonSchemaFor(valueType)),
+          required = Seq(ArrayResultField)))
+    else if (classOf[java.util.Map[_, _]].isAssignableFrom(valueClass))
+      ObjectToolOutput(new JsonSchemaObject(description = None, properties = Map.empty, required = Seq.empty))
+    else if (valueClass.isPrimitive || valueClass.isInterface || valueClass.isEnum || valueClass.isArray ||
+      Modifier.isAbstract(valueClass.getModifiers) || isJdkClass)
+      JsonTextToolOutput
+    else
+      JsonSchema.jsonSchemaFor(valueType) match {
+        case schema: JsonSchemaObject => ObjectToolOutput(schema)
+        case _                        => JsonTextToolOutput
+      }
   }
 
   private def failOnMethodAclOrJwt(method: Method): Unit = {

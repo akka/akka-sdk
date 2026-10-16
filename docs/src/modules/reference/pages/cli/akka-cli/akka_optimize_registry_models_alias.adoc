@@ -12,12 +12,14 @@ It always points at the newest version, and no command sets or removes it.
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for alias
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

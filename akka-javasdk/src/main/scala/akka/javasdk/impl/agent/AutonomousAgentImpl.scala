@@ -351,10 +351,17 @@ private[impl] final class AutonomousAgentImpl(
       inputTokens: Int,
       outputTokens: Int,
       context: Option[TelemetryContext]): Future[Done] =
+    addToSessionHistory(sessionId, messages, new SpiAgent.SpiTokenUsage(inputTokens, outputTokens), context)
+
+  override def addToSessionHistory(
+      sessionId: String,
+      messages: Seq[SpiAgent.ContextMessage],
+      spiTokenUsage: SpiAgent.SpiTokenUsage,
+      context: Option[TelemetryContext]): Future[Done] =
     Future {
       if (messages.nonEmpty) {
         val now = Instant.now()
-        val tokenUsage = new TokenUsage(inputTokens, outputTokens)
+        val tokenUsage = AgentImpl.toSessionTokenUsage(spiTokenUsage)
         val sessionMemoryClient = deriveMemoryClient(context)
         messages.head match {
           case u: SpiAgent.ContextMessage.UserMessage
@@ -504,7 +511,14 @@ private[impl] final class AutonomousAgentImpl(
         new AiMessage(now, m.content, componentId, toolCallRequests, m.thinking.toJava, tokenUsage, m.attributes.asJava)
 
       case m: SpiAgent.ContextMessage.ToolCallResponseMessage =>
-        AgentImpl.toSessionToolCallResponse(now, componentId, m.id, m.name, m.contents, m.sanitized)
+        AgentImpl.toSessionToolCallResponse(
+          now,
+          componentId,
+          m.id,
+          m.name,
+          m.contents,
+          sanitized = m.sanitized,
+          isError = m.isError)
     }
 
 }

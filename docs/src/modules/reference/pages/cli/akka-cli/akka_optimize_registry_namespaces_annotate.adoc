@@ -8,12 +8,14 @@ Set or clear the description on a namespace.
 
 A command with no --description leaves the note as it is, and an empty string clears it.
 
+[source,shell]
 ----
 akka optimize registry namespaces annotate NS --description TEXT [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Describe a namespace
   akka-optimize registry namespaces annotate triage --description "support triage"
@@ -21,6 +23,7 @@ akka optimize registry namespaces annotate NS --description TEXT [flags]
 
 == Options
 
+[source,text]
 ----
       --description string   Description for the resource. Pass an empty string to clear
   -h, --help                 help for annotate
@@ -28,6 +31,7 @@ akka optimize registry namespaces annotate NS --description TEXT [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

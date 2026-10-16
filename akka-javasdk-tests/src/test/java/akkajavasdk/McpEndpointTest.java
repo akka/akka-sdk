@@ -21,26 +21,107 @@ public class McpEndpointTest extends TestKitSupport {
 
   // MCP endpoint defined in akkajavasdk.components.mcp.TestMcpEndpoint
 
+  // structured tool output is only included for clients on MCP 2025-06-18 or later
+  private static final String PROTOCOL_VERSION_HEADER = "MCP-Protocol-Version";
+  private static final String STRUCTURED_OUTPUT_PROTOCOL_VERSION = "2025-06-18";
+
   @Test
   public void listTools() {
-    var listingResult =
-        httpClient
-            .POST("/mcp")
-            .withRequestBody(
-                ContentTypes.APPLICATION_JSON,
-                """
-                {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}
-                """
-                    .getBytes(StandardCharsets.UTF_8))
-            .invoke();
-
-    assertThat(listingResult.status()).isEqualTo(StatusCodes.OK);
-    assertThat(listingResult.body().utf8String())
+    assertThat(mcpRequest(true, "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}"))
         .isEqualTo(
 """
-{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"echo","description":"A method that returns what is fed to it","inputSchema":{"type":"object","properties":{"echo":{"type":"string","description":"the string to echo"}},"required":["echo"]}}]}}
+{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"answer","description":"A tool returning a primitive","inputSchema":{"type":"object","properties":{}}},{"name":"asyncWeather","description":"Async structured weather tool","inputSchema":{"type":"object","properties":{"city":{"type":"string","description":"the city"}},"required":["city"]},"outputSchema":{"type":"object","properties":{"city":{"type":"string"},"tempC":{"type":"integer"}},"required":["city","tempC"]}},{"name":"echo","description":"A method that returns what is fed to it","inputSchema":{"type":"object","properties":{"echo":{"type":"string","description":"the string to echo"}},"required":["echo"]}},{"name":"fail","description":"A method that always fails","inputSchema":{"type":"object","properties":{"reason":{"type":"string","description":"the reason to fail with"}},"required":["reason"]}},{"name":"ping","description":"A tool returning nothing","inputSchema":{"type":"object","properties":{}}},{"name":"weather","description":"Structured weather tool","inputSchema":{"type":"object","properties":{"city":{"type":"string","description":"the city"}},"required":["city"]},"outputSchema":{"type":"object","properties":{"city":{"type":"string"},"tempC":{"type":"integer"}},"required":["city","tempC"]}},{"name":"weatherList","description":"Structured weather list tool","inputSchema":{"type":"object","properties":{}},"outputSchema":{"type":"object","properties":{"result":{"type":"array","items":{"type":"object","properties":{"city":{"type":"string"},"tempC":{"type":"integer"}},"required":["city","tempC"]}}},"required":["result"]}}]}}
 """
                 .trim());
+  }
+
+  @Test
+  public void listToolsWithoutStructuredOutputSupport() {
+    var listing = mcpRequest(false, "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}");
+    assertThat(listing).contains("\"name\":\"weather\"");
+    assertThat(listing).doesNotContain("outputSchema");
+  }
+
+  @Test
+  public void callStructuredTool() {
+    assertThat(callTool(true, "weather", "{\"city\":\"Leuven\"}"))
+        .isEqualTo(
+"""
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"{\\"city\\":\\"Leuven\\",\\"tempC\\":20}"}],"isError":false,"structuredContent":{"city":"Leuven","tempC":20}}}
+"""
+                .trim());
+  }
+
+  @Test
+  public void callStructuredToolWithoutStructuredOutputSupport() {
+    assertThat(callTool(false, "weather", "{\"city\":\"Leuven\"}"))
+        .isEqualTo(
+"""
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"{\\"city\\":\\"Leuven\\",\\"tempC\\":20}"}],"isError":false}}
+"""
+                .trim());
+  }
+
+  @Test
+  public void callListTool() {
+    assertThat(callTool(true, "weatherList", "{}"))
+        .isEqualTo(
+"""
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"{\\"result\\":[{\\"city\\":\\"Leuven\\",\\"tempC\\":20},{\\"city\\":\\"Uppsala\\",\\"tempC\\":10}]}"}],"isError":false,"structuredContent":{"result":[{"city":"Leuven","tempC":20},{"city":"Uppsala","tempC":10}]}}}
+"""
+                .trim());
+  }
+
+  @Test
+  public void callAsyncTool() {
+    assertThat(callTool(true, "asyncWeather", "{\"city\":\"Leuven\"}"))
+        .isEqualTo(
+"""
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"{\\"city\\":\\"Leuven\\",\\"tempC\\":20}"}],"isError":false,"structuredContent":{"city":"Leuven","tempC":20}}}
+"""
+                .trim());
+  }
+
+  @Test
+  public void callPrimitiveReturningTool() {
+    assertThat(callTool(true, "answer", "{}"))
+        .isEqualTo(
+"""
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"42"}],"isError":false}}
+"""
+                .trim());
+  }
+
+  @Test
+  public void callVoidTool() {
+    assertThat(callTool(true, "ping", "{}"))
+        .isEqualTo(
+"""
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"SUCCESS"}],"isError":false}}
+"""
+                .trim());
+  }
+
+  private String callTool(boolean structuredOutputClient, String toolName, String arguments) {
+    return mcpRequest(
+        structuredOutputClient,
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\""
+            + toolName
+            + "\",\"arguments\":"
+            + arguments
+            + "}}");
+  }
+
+  private String mcpRequest(boolean structuredOutputClient, String body) {
+    var request = httpClient.POST("/mcp");
+    if (structuredOutputClient)
+      request = request.addHeader(PROTOCOL_VERSION_HEADER, STRUCTURED_OUTPUT_PROTOCOL_VERSION);
+    var response =
+        request
+            .withRequestBody(ContentTypes.APPLICATION_JSON, body.getBytes(StandardCharsets.UTF_8))
+            .invoke();
+    assertThat(response.status()).isEqualTo(StatusCodes.OK);
+    return response.body().utf8String();
   }
 
   @Test

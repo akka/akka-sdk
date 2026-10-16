@@ -1,0 +1,25 @@
+= Dedicated
+:page-aliases: operations:technical-overview/dedicated.adoc
+:page-summary: Dedicated runs your Akka services in a single-tenant region in Akka's cloud account, operated by Akka Automated Operations, with no setup steps for you.
+:page-when-to-use: When you need a region of your own for isolation or compliance, without running a cloud account or cluster yourself.
+:page-related: deployment:index.adoc, deployment:technical-overview.adoc, deployment:production-readiness/index.adoc
+:page-persona: operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+Dedicated runs your Akka services in a single-tenant region in Akka's cloud account. Akka Automated Operations (AAO) operates the region, and no other organization's workloads run in it.
+
+== How Dedicated works
+
+Akka prepares the cloud account and installs the region. There are no setup steps for you: you do not provision a cloud account, a Kubernetes cluster or a database.
+
+The architecture is the BYOC architecture, in Akka's account instead of yours. The region has the same Federation Plane and Application Plane, the same security and backups, and the same automation. See xref:deployment:technical-overview.adoc[How AAO works] for that architecture. Because Akka owns the account, Akka also operates the network around the region: address ranges, peering, allowlists and DNS.
+
+== Private data link
+
+A Dedicated region can connect to your own network through a private data link, for example a transit gateway. Traffic between your network and the region then stays off the public internet. Akka operates connectivity inside its own network, and you and Akka coordinate on the integration with yours. BYOC does not need a private data link, because a BYOC region already runs in your account.
+
+== Next steps
+
+* Compare Dedicated with the other options in xref:deployment:index.adoc[Choose how you run Akka].
+* When you prepare to go live, review xref:deployment:production-readiness/index.adoc[Production readiness].

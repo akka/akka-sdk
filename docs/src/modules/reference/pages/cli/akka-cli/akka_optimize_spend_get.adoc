@@ -2,12 +2,14 @@
 
 What a period consumed and cost, divided as asked
 
+[source,shell]
 ----
 akka optimize spend get --from INSTANT --to INSTANT [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --by string         divide the answer: none, caller, or a comma-separated list of model, useCase and
                           tag:KEY, where KEY is the name of one of your tagging rulesets
@@ -23,6 +25,7 @@ akka optimize spend get --from INSTANT --to INSTANT [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")

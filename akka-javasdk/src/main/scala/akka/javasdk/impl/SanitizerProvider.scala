@@ -238,7 +238,7 @@ import org.slf4j.LoggerFactory
           case sanitizer: TextSanitizer =>
             val stage = sanitizer.sanitizeAsync(text)
             if (stage eq null) Future.failed(new NullPointerException("TextSanitizer.sanitizeAsync returned null"))
-            else stage.asScala
+            else ErrorHandling.asScalaUnwrapped(stage)
           // an entry of a class that only masks log messages, called by name
           case sanitizer: LogSanitizer => logSanitize(sanitizer, text)
           case other =>
