@@ -262,9 +262,42 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
       describedSchema.properties("name") shouldEqual Schema.string(description = "the name")
     }
 
+    "bind type variables of generic types" in {
+      val item = Schema.jsonObject(
+        properties = Map("name" -> Schema.string(), "count" -> Schema.integer()),
+        required = Seq("count", "name"))
+
+      JsonSchema.jsonSchemaFor(classOf[JsonSchemaJacksonModels.BoundSub]) shouldEqual Schema.jsonObject(
+        properties = Map("value" -> Schema.string()),
+        required = Seq("value"))
+
+      val signatures = classOf[JsonSchemaJacksonModels.GenericSignatures]
+      JsonSchema.jsonSchemaFor(signatures.getMethod("base").getGenericReturnType) shouldEqual Schema.jsonObject(
+        properties = Map("value" -> item),
+        required = Seq("value"))
+
+      JsonSchema.jsonSchemaFor(signatures.getMethod("holder").getGenericReturnType) shouldEqual Schema.jsonObject(
+        properties = Map(
+          "items" -> new JsonSchemaArray(item, None),
+          "maybe" -> item,
+          "array" -> new JsonSchemaArray(item, None),
+          "byName" -> Schema.jsonObject()),
+        required = Seq("array", "byName", "items"))
+
+      // a type variable without a binding is an empty object
+      JsonSchema.jsonSchemaFor(classOf[JsonSchemaJacksonModels.GenericBase[_]]) shouldEqual Schema.jsonObject(
+        properties = Map("value" -> Schema.jsonObject()),
+        required = Seq("value"))
+    }
+
+    "use the element type of a collection subclass without type parameters" in {
+      val result = JsonSchema.jsonSchemaFor(classOf[JsonSchemaJacksonModels.ItemList]).asInstanceOf[JsonSchemaArray]
+      result.items.asInstanceOf[JsonSchemaObject].properties.keySet shouldEqual Set("name", "count")
+    }
+
     "use object for types causing exceptions" in {
-      // undefined type parameters in Hashtable#Entry should always make this throw
-      JsonSchema.jsonSchemaFor(classOf[java.util.Hashtable[_, _]]) shouldBe a[JsonSchemaObject]
+      // Jackson rejects two getters for the same property
+      JsonSchema.jsonSchemaFor(classOf[JsonSchemaJacksonModels.ConflictingGetters]) shouldEqual Schema.jsonObject()
     }
 
   }

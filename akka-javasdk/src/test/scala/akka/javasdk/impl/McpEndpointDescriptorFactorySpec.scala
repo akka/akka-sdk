@@ -46,6 +46,12 @@ class McpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with Sc
       tools("async-weather").outputSchema.get.properties.keySet should ===(Set("city", "tempC"))
       tools("map").outputSchema.get.properties shouldBe empty
 
+      val pageSchema = tools("weather-page").outputSchema.get
+      pageSchema.properties("first").asInstanceOf[JsonSchemaObject].properties.keySet should ===(Set("city", "tempC"))
+      val pageItems =
+        pageSchema.properties("items").asInstanceOf[JsonSchemaArray].items.asInstanceOf[JsonSchemaObject]
+      pageItems.properties.keySet should ===(Set("city", "tempC"))
+
       for (arrayTool <- Seq("weather-list", "weather-array")) {
         val schema = tools(arrayTool).outputSchema.get
         schema.required should ===(Seq("result"))
