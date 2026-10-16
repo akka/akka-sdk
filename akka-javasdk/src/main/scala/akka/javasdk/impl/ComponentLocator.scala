@@ -245,8 +245,7 @@ private[javasdk] object ComponentLocator {
           logger.info(
             "No component descriptor has the service marker, using the descriptors [{}] of project [{}:{}] as the " +
             "service descriptors. This is expected in the tests of a component library. The SDK does this only in " +
-            "tests and dev mode. A deployable service must not set the Maven property `non-akka-service` to `true`, " +
-            "or it fails to start in production.",
+            "tests.",
             service.map(_.url).mkString(", "),
             project.map(_.groupId).getOrElse(""),
             project.map(_.artifactId).getOrElse(""))
@@ -265,8 +264,7 @@ private[javasdk] object ComponentLocator {
         throw new IllegalStateException(
           s"Found no component descriptor for the service, only descriptors without the service marker " +
           s"[${library.map(_.url).mkString(", ")}]. If one of them belongs to this service, the build output is from " +
-          "an earlier SDK version or the service sets the Maven property `non-akka-service` to `true`. " +
-          "Run `mvn clean compile`, or remove the property." + libraryTestNote)
+          "an earlier SDK version. Run `mvn clean compile`." + libraryTestNote)
       case _ =>
         throw new IllegalStateException(
           s"Found service component descriptors from more than one artifact [${service.map(_.url).mkString(", ")}]. " +
