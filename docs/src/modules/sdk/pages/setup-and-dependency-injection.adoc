@@ -76,34 +76,18 @@ A service can use components from a library jar. The service only loads library 
 
 === Creating a component library
 
-Create the library as a plain Java library. Do not use the Akka parent pom, since that pom builds a deployable service. Add the Akka SDK as a `provided` dependency, so the service decides the SDK version:
-
-[source,xml,subs="attributes+"]
-----
-<dependency>
-  <groupId>io.akka</groupId>
-  <artifactId>akka-javasdk</artifactId>
-  <version>{akka-javasdk-version}</version>
-  <scope>provided</scope>
-</dependency>
-----
-
-Compile the library with the `-parameters` flag, like the Akka parent pom does for a service. The SDK serializes messages with Jackson and depends on the parameter names:
+Create the library as a Maven project with the Akka parent pom, like a service. Set the `non-akka-service` property to `true`:
 
 [source,xml]
 ----
-<plugin>
-  <groupId>org.apache.maven.plugins</groupId>
-  <artifactId>maven-compiler-plugin</artifactId>
-  <configuration>
-    <compilerArgs>
-      <arg>-parameters</arg>
-    </compilerArgs>
-  </configuration>
-</plugin>
+<properties>
+  <non-akka-service>true</non-akka-service>
+</properties>
 ----
 
-To test the library components with the `TestKit`, add `akka-javasdk-testkit` as a test dependency. List the components in `src/test/resources/application.conf` as described in the next section.
+With this property, the build validates the components but does not build a container image. The build marks the component descriptor of the library as a library descriptor. In a multi-module build, set the property in each module that is a library.
+
+The tests of the library load the components of the library itself, like the tests of a service.
 
 === Loading library components
 
@@ -118,7 +102,16 @@ akka.javasdk.library.components {
 
 The service loads the listed classes on startup as if they were defined in the service itself, and logs the added library components.
 
-A library built with an earlier SDK version can contain an Akka component descriptor. The service does not load the components from such a descriptor. If no library components are listed, the service logs a warning that lists the components it found and the configuration that loads them. If some library components are listed, the service logs the components that are not listed.
+List every library component that the service uses, including the components that a listed component calls. For example, list the entity that a listed endpoint calls. A call to a component that is not listed fails.
+
+If the service tests use another configuration file than `application.conf`, include `application.conf` from that file, or list the components in it too.
+
+The service logs a warning on startup when a library contains components and the configuration lists no library components. The warning lists the components it found and the configuration that loads them. If some library components are listed, the service logs the components that are not listed. For a service that uses a library only for its other classes, turn the warning off:
+
+[source,hocon]
+----
+akka.javasdk.library.warn-unlisted-components = false
+----
 
 The config block has one key per component type:
 

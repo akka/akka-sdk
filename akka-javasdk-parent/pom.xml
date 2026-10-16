@@ -531,14 +531,40 @@
                                 </goals>
                                 <configuration>
                                     <target xmlns:if="ant:if">
-                                        <condition property="descriptor.missing">
-                                            <resourcecount count="0">
-                                                <fileset dir="target/classes/META-INF"
-                                                         includes="akka-javasdk-components_${project.groupId}_${project.artifactId}.conf"
-                                                         erroronmissingdir="false"/>
-                                            </resourcecount>
+                                        <!-- Also clean when the service marker does not match non-akka-service,
+                                             for build output from an earlier SDK version or after changing the property. -->
+                                        <condition property="descriptor.stale">
+                                            <or>
+                                                <resourcecount count="0">
+                                                    <fileset dir="target/classes/META-INF"
+                                                             includes="akka-javasdk-components_${project.groupId}_${project.artifactId}.conf"
+                                                             erroronmissingdir="false"/>
+                                                </resourcecount>
+                                                <and>
+                                                    <isfalse value="${non-akka-service}"/>
+                                                    <resourcecount count="0">
+                                                        <fileset dir="target/classes/META-INF"
+                                                                 includes="akka-javasdk-components_${project.groupId}_${project.artifactId}.conf"
+                                                                 erroronmissingdir="false">
+                                                            <containsregexp expression="service\s*=\s*true"/>
+                                                        </fileset>
+                                                    </resourcecount>
+                                                </and>
+                                                <and>
+                                                    <istrue value="${non-akka-service}"/>
+                                                    <not>
+                                                        <resourcecount count="0">
+                                                            <fileset dir="target/classes/META-INF"
+                                                                     includes="akka-javasdk-components_${project.groupId}_${project.artifactId}.conf"
+                                                                     erroronmissingdir="false">
+                                                                <containsregexp expression="service\s*=\s*true"/>
+                                                            </fileset>
+                                                        </resourcecount>
+                                                    </not>
+                                                </and>
+                                            </or>
                                         </condition>
-                                        <delete dir="target/classes" if:set="descriptor.missing"/>
+                                        <delete dir="target/classes" if:set="descriptor.stale"/>
                                     </target>
                                 </configuration>
                             </execution>

@@ -6,4 +6,4 @@ Unit tests for the SDK lives directly in the SDK module.
 
 Note that the tests has a different root package on purpose to not be in akka namespace and able to accidentally access internals.
 
-Test components are found under `akkajavasdk.components` and are manually registered in `META-INF/akka-javasdk-components.conf`
+Test components are found under `akkajavasdk.components` and are manually registered in `META-INF/akka-javasdk-components_akka-javasdk-tests.conf`. The file must contain `service = true`, so the SDK loads it as the service descriptor and not as a library descriptor.

@@ -67,6 +67,17 @@ A `RemoteMcpTools.ToolInterceptor` behaves differently in these cases:
 * The ledger records the arguments that `interceptRequest` returns as the arguments of the tool call. Before, it recorded the arguments from the model. The `ToolCall` in the interaction record still holds the arguments from the model.
 * A `null` from `interceptResponse` fails the tool call with an MCP tool call error. The agent can handle the error in `onFailure`.
 
+[#library-components-opt-in]
+=== Components from libraries are loaded only when listed
+
+A service no longer loads the components of a library jar automatically. List the library components that the service uses in `akka.javasdk.library.components`, as described in xref:sdk:setup-and-dependency-injection.adoc#_using_components_from_libraries[Using components from libraries]. On startup, the service logs a warning that lists the library components it found and the configuration that loads them.
+
+A library built with an earlier SDK version works without a change. The service treats its component descriptor as a library descriptor.
+
+Build a component library with the `non-akka-service` property set to `true`. A library built with SDK 3.7.0 without this property marks its component descriptor as a service descriptor, and a service that depends on it fails to start.
+
+Run `mvn clean compile` once after you upgrade a service or a library to SDK 3.7.0.
+
 == SDK 3.5.5
 
 Akka SDK 3.5.5 deprecates the `@AgentDescription` annotation in favor of using `@Component` for agent metadata (name and description) and the new `@AgentRole` annotation for specifying agent roles. This change aligns agent configuration with other component types and provides a more consistent API.
