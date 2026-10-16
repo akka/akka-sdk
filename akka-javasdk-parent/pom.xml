@@ -430,6 +430,34 @@
                 <artifactId>docker-maven-plugin</artifactId>
             </plugin>
 
+            <!-- Warn that no Docker image is built for a project with non-akka-service set to true. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>warn-no-docker-image</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target xmlns:if="ant:if">
+                                <condition property="warn.no.docker.image">
+                                    <and>
+                                        <istrue value="${non-akka-service}"/>
+                                        <not><equals arg1="${project.packaging}" arg2="pom"/></not>
+                                    </and>
+                                </condition>
+                                <echo level="warning" if:set="warn.no.docker.image"
+                                      message="No Docker image is built for ${project.groupId}:${project.artifactId} because the Maven property non-akka-service is set to true. A project with non-akka-service set to true is a library and cannot be deployed as a service."/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
