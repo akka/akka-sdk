@@ -195,7 +195,8 @@ lazy val akkaJavaSdkParent =
           AkkaGrpcVersion,
           GoogleProtobufVersion,
           Dependencies.JacksonVersion,
-          Dependencies.JacksonAnnotationsVersion)
+          Dependencies.JacksonAnnotationsVersion,
+          Dependencies.JUnitJupiterVersion)
       })
 
 def updatePomVersion(
@@ -206,7 +207,8 @@ def updatePomVersion(
     akkaGrpcVersion: String,
     googleProtobufVersion: String,
     jacksonVersion: String,
-    jacksonAnnotationsVersion: String): Elem = {
+    jacksonAnnotationsVersion: String,
+    junitJupiterVersion: String): Elem = {
   def updateElements(seq: Seq[Node]): Seq[Node] = {
     seq.map {
       case version @ <version>{_}</version> =>
@@ -228,6 +230,8 @@ def updatePomVersion(
               <jackson.version>{jacksonVersion}</jackson.version>
             case <jackson-annotations.version>{_}</jackson-annotations.version> =>
               <jackson-annotations.version>{jacksonAnnotationsVersion}</jackson-annotations.version>
+            case <junit-jupiter.version>{_}</junit-jupiter.version> =>
+              <junit-jupiter.version>{junitJupiterVersion}</junit-jupiter.version>
             case other =>
               other
           }

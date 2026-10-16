@@ -86,6 +86,7 @@
         <protobuf-java.version>REPLACED_BY_BUILD</protobuf-java.version>
         <jackson.version>REPLACED_BY_BUILD</jackson.version>
         <jackson-annotations.version>REPLACED_BY_BUILD</jackson-annotations.version>
+        <junit-jupiter.version>REPLACED_BY_BUILD</junit-jupiter.version>
     </properties>
 
     <build>
@@ -783,6 +784,16 @@
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-scala_2.13</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+            <!-- The testkit brings JUnit. Hold every JUnit artifact at the testkit version so that a
+                 test library, such as mockito-junit-jupiter, cannot pull in an older junit-jupiter-api.
+                 Mixed JUnit versions make surefire and failsafe fail before they run any test. -->
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit-jupiter.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
