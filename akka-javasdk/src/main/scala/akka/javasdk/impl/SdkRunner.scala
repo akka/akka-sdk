@@ -679,6 +679,8 @@ private final class Sdk(
       invalid.throwFailureSummary()
   }
 
+  AclDescriptorFactory.checkParentProjectRules(componentClasses, deploymentInfo).foreach(msg => logger.warn(msg))
+
   // Constructed before the GuardrailProvider, whose guardrails may need to invoke a classifier.
   // Deliberately NOT validated here: validateClassifiers() runs from preStart instead (see below),
   // after ServiceSetup's createDependencyProvider(), so a classifier constructor can depend on the

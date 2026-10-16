@@ -50,6 +50,14 @@ abstract class AbstractAclAnnotationValidationSpec(val validationMode: Validatio
       assertInvalid("invalid/GrpcEndpointAclSpiffeWildcardNotLast.java", "`**` is only allowed as the final token")
     }
 
+    "accept @Acl rules with scope PARENT_PROJECT" in {
+      assertValid("valid/ValidHttpEndpointWithParentProjectAcl.java")
+    }
+
+    "reject an @Acl scope without service" in {
+      assertInvalid("invalid/HttpEndpointAclScopeWithoutService.java", "has 'scope' defined without 'service'")
+    }
+
     "reject @Acl on a Consumer without @Produce.ServiceStream" in {
       assertInvalid(
         "invalid/AclOnConsumer.java",

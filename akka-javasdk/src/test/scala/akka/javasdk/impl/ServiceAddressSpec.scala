@@ -45,6 +45,35 @@ class ServiceAddressSpec extends AnyWordSpec with Matchers {
       }
     }
 
+    "scope a provider to a platform service from a user service" in {
+      ServiceAddress.scopeFor("my-platform-service", deployed) shouldBe Some("my-platform-service")
+    }
+
+    "resolve the own platform service in the own namespace" in {
+      val inPlatformService = new DeploymentInfo("abc", "abc-my-platform-service", Some("my-platform-service"))
+      ServiceAddress.scopeFor("my-platform-service", inPlatformService) shouldBe None
+    }
+
+    "reject another platform service from a service of a platform service" in {
+      val inPlatformService = new DeploymentInfo("abc", "abc-my-platform-service", Some("my-platform-service"))
+      intercept[IllegalArgumentException] {
+        ServiceAddress.scopeFor("other-platform-service", inPlatformService)
+      }.getMessage should include("Cannot call services in platform service [other-platform-service]")
+    }
+
+    "reject a host name or a template together with a platform service in a stream source" in {
+      ServiceAddress.streamPlatformService("platform-api", "my-platform-service", getClass) shouldBe Some(
+        "my-platform-service")
+      ServiceAddress.streamPlatformService("other.example.com", "", getClass) shouldBe None
+      Seq("other.example.com", "other:9000", "${MY_SERVICE}").foreach { service =>
+        withClue(s"[$service]: ") {
+          intercept[IllegalArgumentException] {
+            ServiceAddress.streamPlatformService(service, "my-platform-service", getClass)
+          }.getMessage should include(getClass.getName)
+        }
+      }
+    }
+
     "treat an empty annotation value as a service in this project" in {
       ServiceAddress.platformServiceFromAnnotation("") shouldBe None
       ServiceAddress.platformServiceFromAnnotation("my-platform-service") shouldBe Some("my-platform-service")

@@ -71,11 +71,15 @@ private[akka] final class HttpClientProviderImpl(
   private def isServiceName(name: String): Boolean =
     !name.contains('.') && !name.contains(':') && name != "localhost"
 
-  override def httpClientFor(name: String): HttpClient =
+  override def httpClientFor(name: String): HttpClient = {
+    if (platformService.isDefined && !isServiceName(name))
+      throw new IllegalArgumentException(
+        s"A provider for platform service [${platformService.get}] only accepts a bare service name, got [$name]")
     httpMockLookup(name) match {
       case Some(handler) => new MockHttpClientImpl(system, name, handler, sdkExecutor)
       case None          => realHttpClientFor(name)
     }
+  }
 
   private def realHttpClientFor(name: String): HttpClient = {
     val nameIsService = isServiceName(name)
@@ -85,6 +89,9 @@ private[akka] final class HttpClientProviderImpl(
           case Some(devModeSettings) =>
             // Note: platform services do not exist in dev mode, a service that belongs to one is looked up by name only
             devModeSettings.backoffice.services.get(name) match {
+              case Some(_) if platformService.isDefined =>
+                throw new IllegalArgumentException(
+                  s"Service [$name] in platform service [${platformService.get}] cannot be reached through a backoffice mapping in dev mode")
               case Some(backofficeSettings) =>
                 (s"https://${backofficeSettings.backofficeProxyHost}", None)
               case None =>
@@ -139,7 +146,8 @@ private[akka] final class HttpClientProviderImpl(
     val defaultHeaders =
       if (nameIsService)
         // cross service request, include auth and caller identity
-        otelTraceHeaders ++ remoteIdentificationHeader ++ callerSpiffeHeader
+        // a platform service ignores the caller identity of a parent project caller, so it is left off
+        otelTraceHeaders ++ remoteIdentificationHeader ++ callerSpiffeHeader.filter(_ => platformService.isEmpty)
       else
         // arbitrary http request
         otelTraceHeaders
@@ -196,6 +204,6 @@ private[akka] final class HttpClientProviderImpl(
       connectionPoolSettings,
       httpMockLookup,
       callerSpiffeHeader,
-      Some(ServiceAddress.validPlatformService(platformService)))
+      ServiceAddress.scopeFor(platformService, deploymentInfo))
 
 }

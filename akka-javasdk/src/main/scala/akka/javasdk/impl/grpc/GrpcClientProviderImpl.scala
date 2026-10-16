@@ -144,7 +144,7 @@ private[akka] final class GrpcClientProviderImpl(
       callerSpiffeHeader = None)
 
   override def forPlatformService(platformService: String): GrpcClientProvider =
-    new ScopedProvider(Some(ServiceAddress.validPlatformService(platformService)), Vector.empty, None)
+    new ScopedProvider(ServiceAddress.scopeFor(platformService, deploymentInfo), Vector.empty, None)
 
   /**
    * The provider handed to user code when scoped to a platform service, or carrying headers for the current call, or
@@ -166,7 +166,7 @@ private[akka] final class GrpcClientProviderImpl(
         callerSpiffeHeader)
 
     override def forPlatformService(platformService: String): GrpcClientProvider =
-      new ScopedProvider(Some(ServiceAddress.validPlatformService(platformService)), traceHeaders, callerSpiffeHeader)
+      new ScopedProvider(ServiceAddress.scopeFor(platformService, deploymentInfo), traceHeaders, callerSpiffeHeader)
   }
 
   private def grpcClientFor[T <: AkkaGrpcClient](
@@ -175,6 +175,9 @@ private[akka] final class GrpcClientProviderImpl(
       platformService: Option[String],
       traceHeaders: Vector[(String, String)],
       callerSpiffeHeader: Option[String]): T = {
+    if (platformService.isDefined && !isAkkaService(serviceName))
+      throw new IllegalArgumentException(
+        s"A provider for platform service [${platformService.get}] only accepts a bare service name, got [$serviceName]")
     // mocks are registered by service name only, and also apply to a service that belongs to a platform service
     grpcMockLookup(ClientKey(serviceClass, serviceName)) match {
       case Some(mock) =>
@@ -195,9 +198,10 @@ private[akka] final class GrpcClientProviderImpl(
               client
             })
           .asInstanceOf[T]
-        // the caller's SPIFFE identity goes on cross-service (Akka) calls, never on external ones
+        // the caller's SPIFFE identity goes on cross-service (Akka) calls, never on external ones,
+        // and not to a platform service, which ignores it for a parent project caller
         val headers =
-          if (isAkkaService(serviceName))
+          if (isAkkaService(serviceName) && platformService.isEmpty)
             traceHeaders ++ callerSpiffeHeader.map(SpiSpiffeContext.CallerSpiffeHeaderName -> _)
           else traceHeaders
         headers.foldLeft(client) { case (acc, (key, value)) =>
@@ -218,6 +222,9 @@ private[akka] final class GrpcClientProviderImpl(
             // Note: platform services do not exist in dev mode, a service that belongs to one is looked up by name only
             // First check for dev backoffice config
             devModeSettings.backoffice.services.get(serviceName) match {
+              case Some(_) if platformService.isDefined =>
+                throw new IllegalArgumentException(
+                  s"Service [$serviceName] in platform service [${platformService.get}] cannot be reached through a backoffice mapping in dev mode")
               case Some(backofficeServiceSettings) =>
                 clientSettingsFromBackofficeSettings(backofficeServiceSettings)
 

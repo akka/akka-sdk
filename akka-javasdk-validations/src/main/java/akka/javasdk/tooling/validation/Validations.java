@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * Contains validation logic for component classes. This class encapsulates all validation rules
@@ -39,7 +40,7 @@ public class Validations {
   public static Validation validate(TypeDef typeDef) {
     // @Acl (with its SPIFFE patterns) can appear on any endpoint kind and on @Produce.ServiceStream
     // consumers, so validate its patterns regardless of which branch handles the rest.
-    Validation aclPatterns = spiffeAclPatternValidation(typeDef);
+    Validation aclPatterns = aclMatcherValidation(typeDef);
     if (typeDef.hasAnnotation(HTTP_ENDPOINT_ANNOTATION)) {
       return HttpEndpointValidations.validate(typeDef).combine(aclPatterns);
     } else if (typeDef.hasAnnotation(GRPC_ENDPOINT_ANNOTATION)) {
@@ -54,38 +55,36 @@ public class Validations {
   }
 
   /**
-   * Validates the SPIFFE glob patterns of any {@code @Acl} matchers on the class and its methods. A
-   * {@code **} (cross-segment wildcard) is only valid as the final token of a pattern; mirrors the
-   * runtime glob compiler in akka-runtime's {@code PrincipalMatcher.compileSegmentGlob}.
+   * Validates the {@code @Acl} matchers on the class and its methods. A {@code **} (cross-segment
+   * wildcard) is only valid as the final token of a SPIFFE pattern; mirrors the runtime glob
+   * compiler in akka-runtime's {@code PrincipalMatcher.compileSegmentGlob}. A {@code scope} is only
+   * valid together with {@code service}.
    *
    * @param typeDef the class to validate
    * @return a Validation result indicating success or failure
    */
-  public static Validation spiffeAclPatternValidation(TypeDef typeDef) {
+  public static Validation aclMatcherValidation(TypeDef typeDef) {
     List<String> errors = new ArrayList<>();
 
     typeDef
         .findAnnotation(ACL_ANNOTATION)
         .ifPresent(
             acl ->
-                invalidSpiffePatterns(acl)
-                    .forEach(
-                        bad -> errors.add(errorMessage(typeDef, badSpiffePatternMessage(bad)))));
+                invalidMatcherMessages(acl).forEach(msg -> errors.add(errorMessage(typeDef, msg))));
 
     for (MethodDef method : typeDef.getMethods()) {
       method
           .findAnnotation(ACL_ANNOTATION)
           .ifPresent(
               acl ->
-                  invalidSpiffePatterns(acl)
-                      .forEach(
-                          bad -> errors.add(errorMessage(method, badSpiffePatternMessage(bad)))));
+                  invalidMatcherMessages(acl)
+                      .forEach(msg -> errors.add(errorMessage(method, msg))));
     }
 
     return Validation.of(errors);
   }
 
-  private static List<String> invalidSpiffePatterns(AnnotationDef aclAnnotation) {
+  private static List<String> invalidMatcherMessages(AnnotationDef aclAnnotation) {
     List<String> invalid = new ArrayList<>();
     List<AnnotationDef> matchers = new ArrayList<>();
     matchers.addAll(aclAnnotation.getAnnotationArrayValue("allow"));
@@ -93,10 +92,63 @@ public class Validations {
     for (AnnotationDef matcher : matchers) {
       String spiffe = matcher.getStringValue("spiffe").orElse("");
       if (!spiffe.isEmpty() && !isValidSpiffePattern(spiffe)) {
-        invalid.add(spiffe);
+        invalid.add(badSpiffePatternMessage(spiffe));
+      }
+      String scope = matcher.getEnumValue("scope").orElse("LOCAL");
+      if (!scope.equals("LOCAL") && matcher.getStringValue("service").orElse("").isEmpty()) {
+        invalid.add("@Acl.Matcher has 'scope' defined without 'service'.");
       }
     }
     return invalid;
+  }
+
+  // same rules as ServiceAddress in akka-javasdk, which the runtime also applies
+  private static final int MAX_PLATFORM_SERVICE_NAME_LENGTH = 26;
+  private static final Pattern PLATFORM_SERVICE_NAME =
+      Pattern.compile("[a-z0-9](?:[a-z0-9-]*[a-z0-9])?");
+
+  /**
+   * Validates the {@code platformService} of a {@code @Consume.FromServiceStream} annotation. The
+   * name must be a valid platform service name, and the {@code service} must then be a bare service
+   * name.
+   *
+   * @param typeDef the consumer or table updater class to validate
+   * @return a Validation result indicating success or failure
+   */
+  public static Validation serviceStreamPlatformServiceValidation(TypeDef typeDef) {
+    Optional<AnnotationDef> stream =
+        typeDef.findAnnotation("akka.javasdk.annotations.Consume.FromServiceStream");
+    if (stream.isEmpty()) {
+      return Validation.Valid.instance();
+    }
+    String platformService = stream.get().getStringValue("platformService").orElse("");
+    if (platformService.isEmpty()) {
+      return Validation.Valid.instance();
+    }
+    List<String> errors = new ArrayList<>();
+    if (platformService.length() > MAX_PLATFORM_SERVICE_NAME_LENGTH
+        || !PLATFORM_SERVICE_NAME.matcher(platformService).matches()
+        || platformService.equals("svc")) {
+      errors.add(
+          errorMessage(
+              typeDef,
+              "Invalid platform service name ["
+                  + platformService
+                  + "] in @Consume.FromServiceStream, must be a lowercase DNS label of at most ["
+                  + MAX_PLATFORM_SERVICE_NAME_LENGTH
+                  + "] characters, other than [svc]."));
+    }
+    String service = stream.get().getStringValue("service").orElse("");
+    if (service.contains(".") || service.contains(":") || service.contains("${")) {
+      errors.add(
+          errorMessage(
+              typeDef,
+              "Service ["
+                  + service
+                  + "] in @Consume.FromServiceStream must be a bare service name when a platform"
+                  + " service is defined."));
+    }
+    return Validation.of(errors);
   }
 
   /** A {@code **} (cross-segment wildcard) is only valid as the final token of the pattern. */

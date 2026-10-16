@@ -258,7 +258,7 @@ private[impl] object ViewDescriptorFactory {
         annotation.service(),
         annotation.id(),
         annotation.consumerGroup(),
-        ServiceAddress.platformServiceFromAnnotation(annotation.platformService())),
+        ServiceAddress.streamPlatformService(annotation.service(), annotation.platformService(), tableUpdater)),
       Option.when(updateHandlerMethods.nonEmpty)(
         UpdateHandlerImpl(
           componentId,

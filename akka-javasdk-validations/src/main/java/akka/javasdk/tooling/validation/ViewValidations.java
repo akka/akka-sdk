@@ -57,7 +57,8 @@ public class ViewValidations {
       viewValidation =
           viewValidation
               .combine(validateViewTableUpdater(updater))
-              .combine(viewTableAnnotationMustNotBeEmptyString(updater));
+              .combine(viewTableAnnotationMustNotBeEmptyString(updater))
+              .combine(Validations.serviceStreamPlatformServiceValidation(updater));
     }
 
     return viewValidation;

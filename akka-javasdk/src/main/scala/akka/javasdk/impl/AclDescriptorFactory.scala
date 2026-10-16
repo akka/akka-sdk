@@ -11,6 +11,7 @@ import akka.javasdk.annotations.Acl
 import akka.javasdk.tooling.validation.Validations
 import akka.runtime.sdk.spi.ACL
 import akka.runtime.sdk.spi.All
+import akka.runtime.sdk.spi.DeploymentInfo
 import akka.runtime.sdk.spi.Internet
 import akka.runtime.sdk.spi.PrincipalMatcher
 import akka.runtime.sdk.spi.ProjectServiceNamePattern
@@ -47,6 +48,31 @@ private[impl] object AclDescriptorFactory {
       throw new IllegalArgumentException(invalidScopeUsage)
   }
 
+  /** True if the class, or one of its methods, has an @Acl matcher with scope PARENT_PROJECT. */
+  def hasParentProjectRule(clazz: Class[_]): Boolean =
+    (Option(clazz.getAnnotation(classOf[Acl])) ++ clazz.getMethods.flatMap(m => Option(m.getAnnotation(classOf[Acl]))))
+      .exists(acl => (acl.allow() ++ acl.deny()).exists(_.scope() == Acl.Scope.PARENT_PROJECT))
+
+  /**
+   * Fails for PARENT_PROJECT rules on a user service, where they never match. Returns a warning when the deployment
+   * kind is unknown (dev mode, test kit or standalone), where they never match either.
+   */
+  def checkParentProjectRules(classes: Seq[Class[_]], deploymentInfo: DeploymentInfo): Option[String] = {
+    val withRule = classes.filter(hasParentProjectRule)
+    if (withRule.isEmpty) None
+    else {
+      val names = withRule.map(_.getName).mkString(", ")
+      if (deploymentInfo.projectId.nonEmpty && deploymentInfo.platformService.isEmpty)
+        throw new IllegalStateException(
+          s"@Acl.Matcher with scope PARENT_PROJECT is only valid in a service of a platform service, found in [$names]")
+      else if (deploymentInfo.projectId.isEmpty)
+        Some(
+          s"@Acl.Matcher with scope PARENT_PROJECT never matches in dev mode, the test kit or a standalone deployment, " +
+          s"found in [$names]. Disable ACL checks, or add a LOCAL rule with the same service name.")
+      else None
+    }
+  }
+
   // receives the method, checks if it is annotated with @Acl and if so,
   // converts that into ACL spi object
   def deriveAclOptions(aclAnnotation: Option[Acl], isGrpc: Boolean = false): Option[ACL] =
@@ -70,8 +96,8 @@ private[impl] object AclDescriptorFactory {
           if (m.spiffe().nonEmpty) new SpiffePattern(m.spiffe())
           else
             m.scope match {
-              case Acl.Scope.LOCAL   => new ServiceNamePattern(m.service())
-              case Acl.Scope.PROJECT => new ProjectServiceNamePattern(m.service())
+              case Acl.Scope.LOCAL          => new ServiceNamePattern(m.service())
+              case Acl.Scope.PARENT_PROJECT => new ProjectServiceNamePattern(m.service())
             }
       }
     }.toList

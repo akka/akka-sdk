@@ -64,6 +64,18 @@ abstract class AbstractConsumerValidationSpec(val validationMode: ValidationMode
     }
 
     // Invalid consumers - basic validations
+    "accept valid Consumer with stream subscription to a platform service" in {
+      assertValid("valid/ValidConsumerWithPlatformServiceStream.java")
+    }
+
+    "reject Consumer with an invalid platform service name" in {
+      assertInvalid("invalid/ConsumerWithInvalidPlatformService.java", "Invalid platform service name [My_Service]")
+    }
+
+    "reject Consumer with a host name together with a platform service" in {
+      assertInvalid("invalid/ConsumerWithHostAndPlatformService.java", "must be a bare service name")
+    }
+
     "reject Consumer without @Consume annotation" in {
       assertInvalid(
         "invalid/ConsumerWithoutConsumeAnnotation.java",

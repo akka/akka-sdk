@@ -242,6 +242,20 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       projectServices.methodOptions.acl.get.allow.collect { case p: ServiceNamePattern => p.pattern } shouldBe empty
     }
 
+    "parse PARENT_PROJECT ACL rules at class level and in deny lists" in {
+      val descriptor =
+        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointParentProjectAcls], _ => null)
+
+      descriptor.componentOptions.aclOpt.get.allow.collect { case p: ProjectServiceNamePattern =>
+        p.pattern
+      } shouldBe Seq("parent-service")
+
+      val denied = descriptor.methods.find(_.userMethod.getName == "denied").get
+      denied.methodOptions.acl.get.deny.collect { case p: ProjectServiceNamePattern => p.pattern } shouldBe Seq(
+        "other-service")
+      denied.methodOptions.acl.get.deny.collect { case p: ServiceNamePattern => p.pattern } shouldBe empty
+    }
+
     "throw error if annotations are not valid" in {
       assertThrows[IllegalArgumentException] {
         HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointInvalidAcl], _ => null)

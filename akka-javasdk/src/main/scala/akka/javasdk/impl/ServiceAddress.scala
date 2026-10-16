@@ -35,9 +35,48 @@ private[akka] object ServiceAddress {
     Option(value).filter(_.nonEmpty).map(validPlatformService)
 
   /**
+   * The platform service of a `@Consume.FromServiceStream` annotation. A platform service only goes together with a
+   * bare service name, not with a host name or a placeholder.
+   */
+  def streamPlatformService(service: String, platformService: String, componentClass: Class[_]): Option[String] =
+    try {
+      val result = platformServiceFromAnnotation(platformService)
+      if (result.isDefined)
+        require(
+          isBareServiceName(service) && !service.contains("${"),
+          s"Service [$service] must be a bare service name when a platform service is defined")
+      result
+    } catch {
+      case e: IllegalArgumentException =>
+        throw new IllegalArgumentException(
+          s"Invalid @Consume.FromServiceStream on [${componentClass.getName}]: ${e.getMessage}",
+          e)
+    }
+
+  private def isBareServiceName(name: String): Boolean =
+    !name.contains('.') && !name.contains(':')
+
+  /**
+   * The platform service that service names are resolved in, for a provider scoped to `platformService`. None when the
+   * deployment is itself part of that platform service, so that the bare name resolves in the own namespace.
+   */
+  def scopeFor(platformService: String, deploymentInfo: DeploymentInfo): Option[String] = {
+    val valid = validPlatformService(platformService)
+    deploymentInfo.platformService match {
+      case Some(own) if own == valid => None
+      case Some(own) =>
+        throw new IllegalArgumentException(
+          s"Cannot call services in platform service [$valid] from platform service [$own], " +
+          "only services in the same platform service or the parent project can be called")
+      case None => Some(valid)
+    }
+  }
+
+  /**
    * The host to reach an Akka service at over the service mesh in production. A service in this project is reached by
    * its bare name in the own namespace. A service that belongs to a platform service enabled in this project runs in
-   * the namespace `<project-id>-<platform-service>` and is reached by its fully qualified cluster name.
+   * the namespace `<project-id>-<platform-service>` and is reached by its fully qualified cluster name. The namespace
+   * rule must match `DeploymentSettings.platformServiceNamespace` in the runtime.
    */
   def hostFor(serviceName: String, deploymentInfo: DeploymentInfo, platformService: Option[String]): String =
     platformService match {

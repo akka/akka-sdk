@@ -155,9 +155,19 @@ public class TestEndpoints {
     }
 
     @Get("/project-services")
-    @Acl(allow = @Acl.Matcher(service = "*", scope = Acl.Scope.PROJECT))
+    @Acl(allow = @Acl.Matcher(service = "*", scope = Acl.Scope.PARENT_PROJECT))
     public String projectServices() {
       return "project-services";
+    }
+  }
+
+  @HttpEndpoint("parent-project-acls")
+  @Acl(allow = @Acl.Matcher(service = "parent-service", scope = Acl.Scope.PARENT_PROJECT))
+  public static class TestEndpointParentProjectAcls {
+    @Get("/denied")
+    @Acl(deny = @Acl.Matcher(service = "other-service", scope = Acl.Scope.PARENT_PROJECT))
+    public String denied() {
+      return "denied";
     }
   }
 
@@ -191,7 +201,7 @@ public class TestEndpoints {
   @HttpEndpoint("invalid-acl-scope")
   public static class TestEndpointInvalidAclScope {
     @Get("/invalid")
-    @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET, scope = Acl.Scope.PROJECT))
+    @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET, scope = Acl.Scope.PARENT_PROJECT))
     public String invalid() {
       return "invalid matcher";
     }

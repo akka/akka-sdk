@@ -263,7 +263,7 @@ private[impl] object ComponentDescriptorFactory {
         streamAnn.service(),
         streamAnn.id(),
         streamAnn.consumerGroup(),
-        ServiceAddress.platformServiceFromAnnotation(streamAnn.platformService()))
+        ServiceAddress.streamPlatformService(streamAnn.service(), streamAnn.platformService(), clazz))
     } else {
       throw new IllegalArgumentException(s"Component [$clazz] is missing a @Consume annotation")
     }

@@ -8,8 +8,10 @@ import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.keyvalueentity.CounterState
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamPublishingConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionConsumer
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.HostWithPlatformServiceStreamConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.InvalidPlatformServiceStreamConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.PlatformServiceStreamConsumer
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.TemplatePlatformServiceStreamConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ProtobufEventStreamConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToBytesFromTopic
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToEventSourcedEmployee
@@ -111,6 +113,19 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
       intercept[IllegalArgumentException] {
         ComponentDescriptorFactory.consumerSource(classOf[InvalidPlatformServiceStreamConsumer])
       }.getMessage should include("Invalid platform service name [My_Platform_Service]")
+    }
+
+    "reject a host name together with a platform service" in {
+      intercept[IllegalArgumentException] {
+        ComponentDescriptorFactory.consumerSource(classOf[HostWithPlatformServiceStreamConsumer])
+      }.getMessage should (include("must be a bare service name") and include(
+        classOf[HostWithPlatformServiceStreamConsumer].getName))
+    }
+
+    "reject a template as platform service" in {
+      intercept[IllegalArgumentException] {
+        ComponentDescriptorFactory.consumerSource(classOf[TemplatePlatformServiceStreamConsumer])
+      }.getMessage should include("Invalid platform service name [${MY_PLATFORM_SERVICE}]")
     }
 
     "generate mappings for service to service subscription with protobuf events, for Kalix interop" in {

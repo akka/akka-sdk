@@ -129,6 +129,8 @@ public @interface Consume {
     /**
      * The deployed name of the service to consume from, can be the deployed name of another service
      * in the same project or a fully qualified public hostname of a service in a different project.
+     * Together with {@link #platformService()}, it is the bare name of a service in that platform
+     * service.
      *
      * <p>Note: The service name is used as unique identifier for tracking progress when consuming
      * it. Changing this name will lead to starting over from the beginning of the event stream.
@@ -142,6 +144,16 @@ public @interface Consume {
      * The platform service the producing service belongs to, when consuming from a service that is
      * part of a platform service enabled in this project rather than a service in the project
      * itself. Empty when the producing service is a service in this project.
+     *
+     * <p>When set, {@link #service()} must be a bare service name. Neither value can be a template.
+     *
+     * <p>Note: The platform service is part of the identifier for tracking progress. Setting or
+     * changing it starts over from the beginning of the event stream.
+     *
+     * <p>In dev mode, the producing service is looked up by name only. In the test kit, a mocked
+     * stream is registered by service name and stream id, and also applies to a service with that
+     * name in a platform service. A deployment outside the Akka platform fails at start with this
+     * setting.
      */
     String platformService() default "";
 

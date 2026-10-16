@@ -176,11 +176,54 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  @Consume.FromServiceStream(
+      service = "platform-api.example.com",
+      platformService = "my-platform-service",
+      id = "platform-events",
+      ignoreUnknown = true)
+  public static class HostWithPlatformServiceStreamConsumer extends Consumer {
+
+    public Effect handle(EmployeeCreated created) {
+      return effects().done();
+    }
+  }
+
+  @Consume.FromServiceStream(
+      service = "platform-api",
+      platformService = "${MY_PLATFORM_SERVICE}",
+      id = "platform-events",
+      ignoreUnknown = true)
+  public static class TemplatePlatformServiceStreamConsumer extends Consumer {
+
+    public Effect handle(EmployeeCreated created) {
+      return effects().done();
+    }
+  }
+
   @Consume.FromServiceStream(service = "some_service", id = "circular_events", ignoreUnknown = true)
   public static class CircularProtoConsumer extends Consumer {
 
     public Effect handle(EventsForConsumer.CircularParent event) {
       return effects().done();
+    }
+  }
+
+  @Component(id = "platform_employee_view")
+  public static class PlatformServiceStreamSubscriptionView extends View {
+
+    @Consume.FromServiceStream(
+        service = "platform-api",
+        platformService = "my-platform-service",
+        id = "employee_events")
+    public static class Employees extends TableUpdater<Employee> {
+      public Effect<Employee> onCreate(EmployeeCreated evt) {
+        return effects().updateRow(new Employee(evt.firstName, evt.lastName, evt.email));
+      }
+    }
+
+    @Query("SELECT * FROM employees WHERE email = :email")
+    public QueryEffect<Employee> getEmployeeByEmail(ByEmail byEmail) {
+      return queryResult();
     }
   }
 

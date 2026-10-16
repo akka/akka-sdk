@@ -60,7 +60,9 @@ public @interface Acl {
     /**
      * Match a service principal.
      *
-     * <p>This matches a service in the same project.
+     * <p>This matches a service in the same project. For a service that is part of a platform
+     * service, it matches a service in the same platform service. Use {@link #scope()} to match a
+     * service in the project that the platform service is enabled in.
      *
      * <p>Supports glob matching, that is, * means all services in this project.
      */
@@ -102,10 +104,17 @@ public @interface Acl {
      */
     LOCAL,
     /**
-     * A service in the project that the platform service is enabled in. Only matches for a service
-     * deployed as part of a platform service.
+     * A service in the project that the platform service is enabled in. Only valid for a service
+     * deployed as part of a platform service. A deployed user service fails at start with such a
+     * rule.
+     *
+     * <p>The rule never matches in dev mode, in the test kit or in a standalone deployment, where
+     * ACL checks are on by default. To call such a method there, disable ACL checks with {@code
+     * akka.javasdk.dev-mode.acl.enabled = false} or {@code TestKit.Settings.withAclDisabled()}, or
+     * add a {@link #LOCAL} rule with the same service name. A {@link #LOCAL} rule also admits a
+     * service with that name in the same platform service when deployed.
      */
-    PROJECT
+    PARENT_PROJECT
   }
 
   /**
