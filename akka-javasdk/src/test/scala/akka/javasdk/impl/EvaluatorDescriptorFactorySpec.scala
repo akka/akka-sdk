@@ -662,5 +662,16 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
       "[enabled, trigger, sampling-ratio, trigger-on-failure], but defines [criterion, threshold]. " +
       "Define a key of the evaluator implementation on the evaluator or in a binding"
     }
+
+    "reject an SDK key in the wrong defaults without the hint for a key of the evaluator implementation" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.evaluator.trigger = interaction
+        akka.javasdk.evaluation.evaluators.conversation-quality.agents.support-agent { trigger = interaction }
+        """)
+      intercept[IllegalArgumentException] {
+        configFor(config, "support-agent")
+      }.getMessage shouldBe
+      "Evaluator defaults [akka.javasdk.evaluation.defaults.evaluator] must define only [enabled], but defines [trigger]"
+    }
   }
 }

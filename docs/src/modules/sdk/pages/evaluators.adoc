@@ -126,7 +126,7 @@ The same configuration binds a xref:_durable_evaluators[durable evaluator]. The 
 
 === Configuration properties of an evaluator
 
-An evaluator can have configuration properties of its own, next to the keys the SDK reads. Set them on the evaluator entry, or in a binding to vary them per agent:
+An evaluator can have configuration properties of its own, next to the keys the SDK reads. The SDK reserves the keys `enabled`, `trigger`, `sampling-ratio`, `trigger-on-failure`, `control-id`, `agents` and `agent-roles`, so do not use them as property names. Set the properties on the evaluator entry, or in a binding to vary them per agent:
 
 [source,conf,indent=0]
 .src/main/resources/application.conf
@@ -205,7 +205,7 @@ A link:{attachmentsdir}/api/akka/javasdk/ledger/LedgerClient.html[`LedgerClient`
 
 === Unit testing an evaluator
 
-Use link:{attachmentsdir}/testkit/akka/javasdk/testkit/EvaluatorTestKit.html[`EvaluatorTestKit`] to run an evaluator's `evaluate` handler over a chosen `Subject` and assert on the outcome, supplying whatever dependencies the evaluator needs through the factory. For an evaluator that reads from the ledger, seed a link:{attachmentsdir}/testkit/akka/javasdk/testkit/TestLedgerClient.html[`TestLedgerClient`] with the interaction records it should fetch, instead of running a real ledger. For an evaluator that reads `config()`, give the configuration with `withConfig`:
+Use link:{attachmentsdir}/testkit/akka/javasdk/testkit/EvaluatorTestKit.html[`EvaluatorTestKit`] to run an evaluator's `evaluate` handler over a chosen `Subject` and assert on the outcome, supplying whatever dependencies the evaluator needs through the factory. For an evaluator that reads from the ledger, seed a link:{attachmentsdir}/testkit/akka/javasdk/testkit/TestLedgerClient.html[`TestLedgerClient`] with the interaction records it should fetch, instead of running a real ledger:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[EvaluatorTestKitSample.java]
@@ -213,6 +213,14 @@ Use link:{attachmentsdir}/testkit/akka/javasdk/testkit/EvaluatorTestKit.html[`Ev
 include::example$doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[tag=test]
 ----
 <1> `TestLedgerClient.create().seed(...)` builds an in-memory `LedgerClient` holding the given records, keyed by interaction id.
+
+For an evaluator that reads `config()`, give the configuration with `withConfig`:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[EvaluatorTestKitSample.java]
+----
+include::example$doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[tag=config]
+----
 
 === Integration testing with the runtime
 

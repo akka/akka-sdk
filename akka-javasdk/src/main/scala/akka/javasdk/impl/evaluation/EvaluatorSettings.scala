@@ -41,6 +41,9 @@ private[impl] object EvaluatorSettings {
   private val TriggerOnFailureKey = "trigger-on-failure"
   private val BindingsKeys = Seq("agents", "agent-roles")
 
+  // the keys reserved for the SDK on an evaluator entry and in a binding, as listed in reference.conf
+  private val SdkKeys = Seq("enabled", "trigger", SamplingRatioKey, TriggerOnFailureKey, ControlId.Key) ++ BindingsKeys
+
   // the keys the SDK reads from the defaults; any other key there belongs to an evaluator implementation and is lost
   private val EvaluatorDefaultKeys = Seq("enabled")
   private val AgentDefaultKeys = Seq("enabled", "trigger", SamplingRatioKey, TriggerOnFailureKey)
@@ -70,11 +73,15 @@ private[impl] object EvaluatorSettings {
   private def checkDefaultKeys(config: Config, path: String, allowed: Seq[String]): Unit = {
     val checkedElsewhere = Seq(SamplingRatioKey, TriggerOnFailureKey, ControlId.Key)
     val unknown = configAt(config, path).root().keySet().asScala.toSeq.diff(allowed ++ checkedElsewhere).sorted
-    if (unknown.nonEmpty)
+    if (unknown.nonEmpty) {
+      // the hint applies only to a key of the evaluator implementation, not to an SDK key in the wrong section
+      val hint =
+        if (unknown.forall(SdkKeys.contains)) ""
+        else ". Define a key of the evaluator implementation on the evaluator or in a binding"
       throw new IllegalArgumentException(
         s"Evaluator defaults [$path] must define only [${allowed.mkString(", ")}], " +
-        s"but defines [${unknown.mkString(", ")}]. Define a key of the evaluator implementation on the evaluator " +
-        "or in a binding")
+        s"but defines [${unknown.mkString(", ")}]$hint")
+    }
   }
 
   /** The `sampling-ratio` of the given config, where `entry` names the config for the error. */
