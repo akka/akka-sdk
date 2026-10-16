@@ -5,15 +5,22 @@
 package akka.javasdk.impl
 
 import scala.concurrent.ExecutionContext
+import scala.jdk.CollectionConverters._
 
 import akka.javasdk.impl.mcp.TestMcpEndpoints
 import akka.runtime.sdk.spi.McpEndpointDescriptor.TextContent
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolCallResult
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.slf4j.LoggerFactory
 
 class McpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with ScalaFutures {
 
@@ -102,6 +109,72 @@ class McpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with Sc
       schema.outputSchema.get.properties.keySet should ===(Set("title", "extra"))
       schema.outputSchema.get.required should ===(Seq("title"))
       call("note-without-extra").structuredContent.get should ===(Map("title" -> "t"))
+    }
+
+    "leave a null required field out of structured content and warn once" in {
+      val appender = new ListAppender[ILoggingEvent]
+      appender.start()
+      val logger = LoggerFactory.getLogger("akka.javasdk.mcp").asInstanceOf[Logger]
+      logger.addAppender(appender)
+      try {
+        call("note-with-null-title").structuredContent.get should ===(Map("extra" -> "x"))
+        call("notes-with-null-title")
+      } finally logger.detachAppender(appender)
+
+      val warnings = appender.list.asScala.filter(_.getLevel == Level.WARN).map(_.getFormattedMessage)
+      warnings should have size 3
+      warnings(0) should include("[note-with-null-title]")
+      warnings(0) should include("without a value for [title]")
+      warnings(1) should include("without a value for [notes[].title]")
+      warnings(2) should include("without a value for [notes[]]")
+    }
+
+    "find required fields and null elements missing from structured content" in {
+      val item = new JsonSchemaObject(None, Map("b" -> new JsonSchemaString(None)), Seq("b"))
+      val schema = new JsonSchemaObject(
+        None,
+        Map(
+          "a" -> new JsonSchemaString(None),
+          "optional" -> new JsonSchemaString(None),
+          "nested" -> item,
+          "items" -> new JsonSchemaArray(item, None)),
+        Seq("a", "items", "nested"))
+      def missing(content: AnyRef) =
+        McpEndpointDescriptorFactory.missingValues(content, McpEndpointDescriptorFactory.valueCheckFor(schema).get, "")
+
+      val complete = java.util.Map.of[String, AnyRef](
+        "a",
+        "a",
+        "nested",
+        java.util.Map.of("b", "b"),
+        "items",
+        java.util.List.of(java.util.Map.of("b", "b")))
+      missing(complete) shouldBe empty
+
+      val incomplete = java.util.Map.of[String, AnyRef](
+        "nested",
+        java.util.Map.of(),
+        "items",
+        java.util.List.of(java.util.Map.of("b", "b"), java.util.Map.of(), java.util.Map.of()))
+      missing(incomplete) should ===(Seq("a", "nested.b", "items[].b"))
+
+      // nested values are Scala collections
+      missing(Map("a" -> "a", "nested" -> Map("b" -> "b"), "items" -> List(Map.empty, Map.empty))) should ===(
+        Seq("items[].b"))
+
+      val itemsCheck = McpEndpointDescriptorFactory.valueCheckFor(new JsonSchemaArray(item, None)).get
+      McpEndpointDescriptorFactory.missingValues(
+        java.util.List.of(java.util.Map.of()),
+        itemsCheck,
+        "result") should ===(Seq("result[].b"))
+      McpEndpointDescriptorFactory.missingValues(
+        java.util.Arrays.asList(null, java.util.Map.of("b", "b")),
+        itemsCheck,
+        "result") should ===(Seq("result[]"))
+
+      // nothing can be missing without required fields or arrays
+      McpEndpointDescriptorFactory.valueCheckFor(
+        new JsonSchemaObject(None, Map("a" -> new JsonSchemaString(None)), Seq.empty)) shouldBe None
     }
 
     "reject unsupported tool return types" in {
