@@ -1,6 +1,6 @@
 = akka optimize training
 
-Base models, workloads, runs, snapshots, comparisons, pipelines, evaluations, endpoints and their data
+Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, endpoints and their data
 
 == Synopsis
 
@@ -8,7 +8,7 @@ A base model is what everything here trains over, and `base-models` is what this
 Selecting one registers it and caches its weights;
 nothing holds a GPU until you ask for work.
 
-A run trains a model from a registered dataset against a workload.
+A run trains a model from a registered dataset against a training project.
 An evaluation scores a model against a dataset with a grader.
 A pipeline executes curate, train and evaluate stages in one submission.
 An endpoint serves a base model or a candidate at an address so you can try it by hand.
@@ -46,8 +46,8 @@ A session is a raw conversation corpus, and a curation judges one into a trainin
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
@@ -55,8 +55,8 @@ A session is a raw conversation corpus, and a curation judges one into a trainin
 == SEE ALSO
 
 * link:akka_optimize.html[akka optimize]	 - Own your intelligence: cost, models, training and routing
+* link:akka_optimize_training_adapters.html[akka optimize training adapters]	 - Import a LoRA adapter trained elsewhere, so an endpoint can serve it
 * link:akka_optimize_training_base-models.html[akka optimize training base-models]	 - See which base models this deployment allows, and select one to use
-* link:akka_optimize_training_bundles.html[akka optimize training bundles]	 - Manage scoring bundles
 * link:akka_optimize_training_capacity.html[akka optimize training capacity]	 - Report what holds the GPU pools
 * link:akka_optimize_training_comparisons.html[akka optimize training comparisons]	 - Compare a source snapshot with selected branch models
 * link:akka_optimize_training_curations.html[akka optimize training curations]	 - Judge raw sessions into a training dataset
@@ -64,10 +64,10 @@ A session is a raw conversation corpus, and a curation judges one into a trainin
 * link:akka_optimize_training_evaluations.html[akka optimize training evaluations]	 - Manage model evaluations
 * link:akka_optimize_training_info.html[akka optimize training info]	 - Report the trainer's configuration and build
 * link:akka_optimize_training_pipelines.html[akka optimize training pipelines]	 - Manage training pipelines
+* link:akka_optimize_training_projects.html[akka optimize training projects]	 - Manage training projects
 * link:akka_optimize_training_runs.html[akka optimize training runs]	 - Manage training runs, snapshots and child runs
 * link:akka_optimize_training_sessions.html[akka optimize training sessions]	 - Raw conversation corpora
 * link:akka_optimize_training_snapshots.html[akka optimize training snapshots]	 - Inspect snapshots and candidate registration
-* link:akka_optimize_training_workloads.html[akka optimize training workloads]	 - Manage training workloads
 
 [discrete]
 

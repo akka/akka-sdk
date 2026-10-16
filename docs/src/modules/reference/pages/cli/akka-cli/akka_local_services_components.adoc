@@ -34,7 +34,9 @@ The `akka service components` commands provides a way to inspect the components 
 
 * link:akka_local_services.html[akka local services]	 - Manage Akka services locally.
 * link:akka_local_services_components_agents.html[akka local services components agents]	 - Manage autonomous agent components.
+* link:akka_local_services_components_check-progress.html[akka local services components check-progress]	 - Check if a view or consumer has caught up with a watermark.
 * link:akka_local_services_components_entities.html[akka local services components entities]	 - Manage entity components.
+* link:akka_local_services_components_get-watermark.html[akka local services components get-watermark]	 - Get the latest write timestamp per slice for the entities consumed by the service.
 * link:akka_local_services_components_list.html[akka local services components list]	 - List the components served by this service.
 * link:akka_local_services_components_list-interactions.html[akka local services components list-interactions]	 - List interactions from the Agent for the given service and Agent id.
 * link:akka_local_services_components_list-timers.html[akka local services components list-timers]	 - List the timers registered in this service.

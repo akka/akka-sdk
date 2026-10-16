@@ -22,13 +22,13 @@ akka optimize registry models versions NS/NAME [flags]
 [source,shell]
 ----
   # List every version
-  akka-optimize registry models versions triage/classifier
+  akka optimize registry models versions triage/classifier
 
   # List the versions over one base model
-  akka-optimize registry models versions triage/classifier --base-model Qwen/Qwen3-0.6B
+  akka optimize registry models versions triage/classifier --base-model Qwen/Qwen3-0.6B
 
   # Read the version a run ended with, as JSON
-  akka-optimize registry models versions triage/classifier \
+  akka optimize registry models versions triage/classifier \
     --produced-by-kind run --produced-by-id run-4f3a --json reference
 ----
 
@@ -60,8 +60,8 @@ akka optimize registry models versions NS/NAME [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

@@ -31,13 +31,13 @@ akka optimize training base-models select BASE_MODEL [flags]
 [source,shell]
 ----
   # Select a model
-  akka-optimize training base-models select Qwen/Qwen3-8B
+  akka optimize training base-models select Qwen/Qwen3-8B
 
   # Then watch it prepare
-  akka-optimize training base-models get Qwen/Qwen3-8B
+  akka optimize training base-models get Qwen/Qwen3-8B
 
   # Or wait for admission and any download configured for selection
-  akka-optimize training base-models select Qwen/Qwen3-8B --wait
+  akka optimize training base-models select Qwen/Qwen3-8B --wait
 ----
 
 == Options
@@ -66,8 +66,8 @@ akka optimize training base-models select BASE_MODEL [flags]
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

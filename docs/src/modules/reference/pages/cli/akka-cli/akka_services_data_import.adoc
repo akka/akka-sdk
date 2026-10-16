@@ -15,22 +15,29 @@ akka services data import SERVICE [flags]
 
 [source,text]
 ----
+      --abs-audience string                                If using Azure workload identity, the audience to request the service account token for. Defaults to api://AzureADTokenExchange.
+      --abs-client-id string                               If using Azure workload identity, the Microsoft Entra client id (application id) of the federated identity credential.
       --abs-client-id-key string                           If exporting to Azure Blob Storage, the name of the key inside the Akka secret that holds the Microsoft Entra client id (application id). Defaults to client-id. (default "client-id")
       --abs-client-secret-key string                       If exporting to Azure Blob Storage, the name of the key inside the Akka secret that holds the Microsoft Entra client secret. Defaults to client-secret. (default "client-secret")
       --abs-container string                               If exporting to Azure Blob Storage, the name of the blob container to export to.
       --abs-endpoint-url string                            If exporting to Azure Blob Storage, a custom endpoint url to connect to. Defaults to https://<account_name>.blob.core.windows.net.
       --abs-object-prefix string                           If exporting to Azure Blob Storage, a prefix to prepend to the object name, for example, 'my-export/'
       --abs-secret string                                  If exporting to Azure Blob Storage, the name of an Akka secret holding the Microsoft Entra service principal credentials to access Azure Blob Storage with.
+      --abs-tenant-id string                               If using Azure workload identity, the Microsoft Entra tenant id.
       --abs-tenant-id-key string                           If exporting to Azure Blob Storage, the name of the key inside the Akka secret that holds the Microsoft Entra tenant id. Defaults to tenant-id. (default "tenant-id")
+      --abs-workload-identity                              If exporting to Azure Blob Storage, authenticate using Azure workload identity (federated identity credential) instead of credentials in an Akka secret.
       --async                                              Whether the command should return immediately once the operation has been accepted, or if it should wait for the operation to complete.
       --compression string                                 The compression to use on the export. Either gzip or none. Defaults to gzip. (default "gzip")
       --event-sourced-entity-object stringArray            A storage object name (relative to the bucket and object prefix) to import from. Multiple may be specified. If not specified, the default object names used by the export process are used. Implies --include-event-sourced-entities.
       --event-sourced-entity-snapshot-object stringArray   A storage object name (relative to the bucket and object prefix) to import from. Multiple may be specified. If not specified, the default object names used by the export process are used.
       --format string                                      The format of the export. Either protobuf or json. Defaults to protobuf. (default "protobuf")
+      --gcs-audience string                                If using GCS workload identity, the audience of the Workload Identity Federation provider, for example, //iam.googleapis.com/projects/<num>/locations/global/workloadIdentityPools/<pool>/providers/<provider>.
       --gcs-bucket string                                  If exporting to GCS, the name of the bucket to export to.
+      --gcs-impersonate-service-account string             If using GCS workload identity, optionally the email of a Google service account to impersonate after the token exchange.
       --gcs-object-prefix string                           If exporting to GCS, a prefix to prepend to the GCS object name, for example, 'my-export/'
       --gcs-secret string                                  If exporting to GCS, the name of an Akka secret to read the service account key to access GCS from.
       --gcs-secret-key string                              If exporting to GCS, the name of the key inside the Akka secret that contains the service account key. Defaults to key.json. (default "key.json")
+      --gcs-workload-identity                              If exporting to GCS, authenticate using GCP Workload Identity Federation instead of a service account key in an Akka secret.
   -h, --help                                               help for import
       --include-event-sourced-entities                     Whether event sourced entities should be imported. Defaults to false.
       --include-event-sourced-entity-snapshots             Whether event sourced entity snapshots should be imported. Defaults to true. (default true)
@@ -41,12 +48,15 @@ akka services data import SERVICE [flags]
       --project string                                     project to use if not using the default configured project
       --region string                                      region to use if project has more than one region
       --s3-access-key string                               If exporting to S3, the name of the key inside the Akka secret that contains the access key id to authenticate with. Defaults to access-key-id. (default "access-key-id")
+      --s3-audience string                                 If using S3 workload identity, the audience to request the service account token for. Defaults to sts.amazonaws.com.
       --s3-bucket string                                   If exporting to S3, the name of the bucket to export to.
       --s3-object-prefix string                            If exporting to S3, a prefix to prepend to the S3 object name, for example, 'my-export/'
       --s3-region string                                   If exporting to S3, the region that the bucket lives in. Only necessary if this is a different region from the Akka execution cluster.
+      --s3-role-arn string                                 If using S3 workload identity, the ARN of the IAM role to assume.
       --s3-secret string                                   If exporting to S3, the name of an Akka secret to read the access key and secret to access S3 with.
       --s3-secret-key string                               If exporting to S3, the name of the key inside the Akka secret that contains the secret access key to authenticate with. Defaults to secret-access-key. (default "secret-access-key")
       --s3-session-key string                              If exporting to S3, the name of the key inside the Akka secret that contains the session token to authenticate with.
+      --s3-workload-identity                               If exporting to S3, authenticate using AWS workload identity (sts:AssumeRoleWithWebIdentity) instead of credentials in an Akka secret.
       --truncate                                           Whether all existing data should be truncated prior to import.
       --value-entity-object stringArray                    A storage object name (relative to the bucket and object prefix) to import from. Multiple may be specified. If not specified, the default object names used by the export process are used. Implies --include-value-entities. Only applies to legacy Kalix services.
 ----
