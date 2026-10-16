@@ -313,7 +313,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
     "sort service, SDK provided and library descriptors" in {
       val classified = ComponentLocator.classifyDescriptors(
         Seq(libraryDescriptor, testkitDescriptor, serviceDescriptor),
-        projectArtifactId = None,
+        project = None,
         libraryComponentsListed = false)
       classified.service shouldBe Seq(serviceDescriptor)
       classified.sdkProvided shouldBe Seq(testkitDescriptor)
@@ -329,7 +329,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
             |akka.javasdk.components.agent = ["com.example.TestAgent"]""".stripMargin)
       val classified = ComponentLocator.classifyDescriptors(
         Seq(serviceDescriptor, libraryDescriptor, serviceTestDescriptor),
-        projectArtifactId = None,
+        project = None,
         libraryComponentsListed = false)
       classified.service shouldBe Seq(serviceDescriptor, serviceTestDescriptor)
       classified.library shouldBe Seq(libraryDescriptor)
@@ -340,27 +340,38 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
         descriptor("file:/service/target/test-classes", serviceDescriptor.fileName, "")
       val classified = ComponentLocator.classifyDescriptors(
         Seq(serviceDescriptor, staleTestDescriptor, libraryDescriptor),
-        projectArtifactId = None,
+        project = None,
         libraryComponentsListed = false)
       classified.service shouldBe Seq(serviceDescriptor, staleTestDescriptor)
       classified.library shouldBe Seq(libraryDescriptor)
     }
 
-    "treat the unmarked descriptor of the project artifact id as the service" in {
+    "treat the unmarked descriptor of the project as the service" in {
       val classified = ComponentLocator.classifyDescriptors(
         Seq(libraryDescriptor, testkitDescriptor),
-        projectArtifactId = Some("library"),
+        project = Some(ProjectCoordinates("com.library", "library")),
         libraryComponentsListed = false)
       classified.service shouldBe Seq(libraryDescriptor)
       classified.library shouldBe empty
     }
 
-    "not match the project artifact id when a descriptor is marked" in {
+    "not match a descriptor of another group with the same artifact id as the project" in {
+      val sameArtifactId =
+        descriptor("jar:file:/libs/other.jar!", "akka-javasdk-components_com.other_library.conf", "")
+      val classified = ComponentLocator.classifyDescriptors(
+        Seq(libraryDescriptor, sameArtifactId),
+        project = Some(ProjectCoordinates("com.other", "library")),
+        libraryComponentsListed = false)
+      classified.service shouldBe Seq(sameArtifactId)
+      classified.library shouldBe Seq(libraryDescriptor)
+    }
+
+    "not match the project when a descriptor is marked" in {
       val sameArtifactId =
         descriptor("jar:file:/libs/other.jar!", "akka-javasdk-components_com.other_service.conf", "")
       val classified = ComponentLocator.classifyDescriptors(
         Seq(serviceDescriptor, sameArtifactId),
-        projectArtifactId = Some("service"),
+        project = Some(ProjectCoordinates("com.other", "service")),
         libraryComponentsListed = false)
       classified.service shouldBe Seq(serviceDescriptor)
       classified.library shouldBe Seq(sameArtifactId)
@@ -370,7 +381,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
       val exception = intercept[IllegalStateException] {
         ComponentLocator.classifyDescriptors(
           Seq(libraryDescriptor, testkitDescriptor),
-          projectArtifactId = Some("service"),
+          project = Some(ProjectCoordinates("com.example", "service")),
           libraryComponentsListed = false)
       }
       exception.getMessage should include("Found no component descriptor for the service")
@@ -382,10 +393,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
 
     "advise to recompile when there are no descriptors" in {
       val exception = intercept[IllegalStateException] {
-        ComponentLocator.classifyDescriptors(
-          Seq(testkitDescriptor),
-          projectArtifactId = None,
-          libraryComponentsListed = false)
+        ComponentLocator.classifyDescriptors(Seq(testkitDescriptor), project = None, libraryComponentsListed = false)
       }
       exception.getMessage should include("Found no component descriptor for the service")
       exception.getMessage should include("Run `mvn clean compile`")
@@ -395,7 +403,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
       val classified =
         ComponentLocator.classifyDescriptors(
           Seq(libraryDescriptor, testkitDescriptor),
-          projectArtifactId = None,
+          project = None,
           libraryComponentsListed = true)
       classified.service shouldBe empty
       classified.sdkProvided shouldBe Seq(testkitDescriptor)
@@ -411,7 +419,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
       val exception = intercept[IllegalStateException] {
         ComponentLocator.classifyDescriptors(
           Seq(serviceDescriptor, otherService),
-          projectArtifactId = None,
+          project = None,
           libraryComponentsListed = true)
       }
       exception.getMessage should include("Found service component descriptors from more than one artifact")
@@ -714,9 +722,13 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
         classOf[UserByEmailWithGet])
     }
 
-    "load the unmarked descriptors of the project artifact id, such as in the tests of a library" in {
+    "load the unmarked descriptors of the project, such as in the tests of a library" in {
       val located = withClasspath(mainMarked = false, testMarked = false)(
-        ComponentLocator.locateComponents(_, config("akka.javasdk.dev-mode.project-artifact-id = service")))
+        ComponentLocator.locateComponents(
+          _,
+          config("""
+          |akka.javasdk.dev-mode.project-group-id = com.example
+          |akka.javasdk.dev-mode.project-artifact-id = service""".stripMargin)))
       located.components should contain theSameElementsAs Seq(
         classOf[Counter],
         classOf[EmployeeEntity],

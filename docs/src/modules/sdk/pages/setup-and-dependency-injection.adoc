@@ -107,7 +107,7 @@ List every library component that the service uses, including the components tha
 
 If the service tests use a configuration file other than `application.conf`, include `application.conf` from that file, or list the components in it too.
 
-The service logs a warning on startup when a library contains components and the configuration lists no library components. The warning lists the components it found and the configuration that loads them. If some library components are listed, the service logs the components that are not listed. For a service that uses a library only for its other classes, log these components at debug level:
+The service logs a warning on startup when a library contains components and the configuration lists no library components. The warning lists the components it found and the configuration that loads them. If some library components are listed, the service logs the components that are not listed. The service ignores a service setup class in a library and logs a warning about it. For a service that uses a library only for its other classes, log these messages at debug level:
 
 [source,hocon]
 ----

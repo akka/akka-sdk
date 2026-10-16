@@ -76,6 +76,8 @@ You do not need to rebuild a library built with an earlier SDK version. The serv
 
 Build a component library with the `non-akka-service` property set to `true`. A library built with SDK 3.7.0 without this property marks its component descriptor as a service descriptor, and a service that depends on it fails to start.
 
+A deployable service must not set `non-akka-service` to `true`. The property marks the component descriptor as a library descriptor, and the service fails to start in production.
+
 On the first build after the upgrade, the Akka parent pom removes the build output from the earlier SDK version. For a build without the Akka parent pom, run a clean build once after the upgrade.
 
 == SDK 3.5.5
