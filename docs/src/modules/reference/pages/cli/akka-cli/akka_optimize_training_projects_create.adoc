@@ -1,40 +1,41 @@
-= akka optimize training workloads scores
+= akka optimize training projects create
 
-Compare candidate model scores against baselines for a workload
+Create a new training project
 
 == Synopsis
 
-Display score comparison tables for candidate models grouped by base model revision.
+Create a training project and display its assigned ID.
 
-Each table lists the baseline model score alongside columns for each training configuration.
-Cells show scores for runs evaluated under the configured dataset and grader of the workload.
-
-Use --dataset and --grader to inspect scores recorded under previous evaluation configurations.
+The --dataset and --grader flags specify the evaluation dataset and grader used to score candidate models.
+--grader applies with --dataset, and defaults to json-label-match.
+--grader-instructions records the instructions a model: grader is asked under, so the scores table shows only evaluations started with the same --grader and --grader-instructions.
+You can also configure or update these settings later using "training projects set-evaluation".
 
 [source,shell]
 ----
-akka optimize training workloads scores WORKLOAD [flags]
+akka optimize training projects create NAME [flags]
 ----
 
 == Examples
 
 [source,shell]
 ----
-  # Compare scores using default evaluation settings
-  akka-optimize training workloads scores commit-router
+  # Create a training project
+  akka optimize training projects create commit-router
 
-  # Compare scores using specific evaluation settings
-  akka-optimize training workloads scores commit-router \
-    --dataset 4b1c2f9b2ae4 --grader json-label-match
+  # Create a training project with evaluation settings
+  akka optimize training projects create commit-router \
+    --dataset eval-set --grader json-label-match
 ----
 
 == Options
 
 [source,text]
 ----
-      --dataset string   Evaluation dataset name or hash to display scores for
-      --grader string    Grader specification to display scores for
-  -h, --help             help for scores
+      --dataset string               Evaluation dataset, by registry reference
+      --grader string                Grader specification: json-label-match, model:NS/NAME[:VERSION], or http:URL
+      --grader-instructions string   Instructions a model: grader is asked under, in place of the ones it would otherwise get
+  -h, --help                         help for create
 ----
 
 == Options inherited from parent commands
@@ -55,15 +56,15 @@ akka optimize training workloads scores WORKLOAD [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
 
 == SEE ALSO
 
-* link:akka_optimize_training_workloads.html[akka optimize training workloads]	 - Manage training workloads
+* link:akka_optimize_training_projects.html[akka optimize training projects]	 - Manage training projects
 
 [discrete]
 

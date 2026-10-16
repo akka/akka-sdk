@@ -3,7 +3,7 @@ SHELL_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 ROOT_DIR := ${SHELL_DIR}
 TARGET_DIR := ${ROOT_DIR}/target/site
 NEXUS_DIR ?= ${ROOT_DIR}/../nexus
-AKKA_CLI_VERSION := 3.0.77
+AKKA_CLI_VERSION := 3.0.78
 
 upstream := akka/akka-sdk
 branch   := docs/current

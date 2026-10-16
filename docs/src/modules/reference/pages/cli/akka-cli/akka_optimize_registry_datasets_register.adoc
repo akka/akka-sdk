@@ -12,6 +12,10 @@ Use --format to state the format where the objects do not, and --alias to point 
 A zip containing dataset.json is an eval-items-v1 version.
 It contains the descriptor, the items in items.jsonl, and the fixture object the descriptor states.
 
+A zip containing prepared.json is a prepared-tokens-v1 version: supervised rows already tokenised and masked, in the Parquet files the descriptor lists.
+A run trains them as given.
+The datasets page offers a script that writes the descriptor and the zip.
+
 Examples can reference local image files by relative path.
 Each image is uploaded under the digest of its own bytes before the examples that reference it, so registering a second version over the same pages uploads only its text.
 --no-upload reports which of those images the registry does not hold and uploads nothing.
@@ -28,13 +32,13 @@ akka optimize registry datasets register NS/NAME -f FILE [flags]
 [source,shell]
 ----
   # Upload examples
-  akka-optimize registry datasets register triage/train -f examples.jsonl
+  akka optimize registry datasets register triage/train -f examples.jsonl
 
   # Upload examples and point an alias at the result
-  akka-optimize registry datasets register triage/train -f examples.jsonl --alias candidate
+  akka optimize registry datasets register triage/train -f examples.jsonl --alias candidate
 
   # Report the images the registry does not hold, without uploading
-  akka-optimize registry datasets register triage/train -f examples.jsonl --no-upload
+  akka optimize registry datasets register triage/train -f examples.jsonl --no-upload
 ----
 
 == Options
@@ -67,8 +71,8 @@ akka optimize registry datasets register NS/NAME -f FILE [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

@@ -4,7 +4,17 @@ Display details for a training run
 
 == Synopsis
 
-Display the configuration, status, and metrics for a training run.
+Display a training run: its state, what it produced, and what it cost.
+
+"State" says where the run is: its phase, how far it has got, the step it last saved and why it failed.
+"Results" is the model it registered, its losses and its start checks.
+"Cost" is its device time, its duration and the memory its devices held.
+
+--settings, or -o wide, adds the settings the run was started with: its configuration, hyperparameters, engine settings, runtime and run settings.
+-o json is the whole run.
+
+A supervised run on more than one device checks its own numerics before its first update.
+"Start checks" says whether they passed, and --checks shows each check: what it measured, its bound, and the engine setting that sets the bound.
 
 To monitor status changes in real time, use "training runs wait".
 
@@ -18,17 +28,25 @@ akka optimize training runs get RUN [flags]
 [source,shell]
 ----
   # Display run details
-  akka-optimize training runs get 7d496e82c3a15f04
+  akka optimize training runs get 7d496e82c3a15f04
 
-  # Extract the trained model ID using jq
-  akka-optimize training runs get 7d496e82c3a15f04 --jq .modelId
+  # Show each start check against its bound
+  akka optimize training runs get 7d496e82c3a15f04 --checks
+
+  # Show the settings the run was started with
+  akka optimize training runs get 7d496e82c3a15f04 --settings
+
+  # Extract the registered model version using jq
+  akka optimize training runs get 7d496e82c3a15f04 --jq .modelId
 ----
 
 == Options
 
 [source,text]
 ----
-  -h, --help   help for get
+      --checks     Show each start check: its verdict, each value against its bound, and the setting behind it
+  -h, --help       help for get
+      --settings   Show the settings the run was started with, as -o wide does
 ----
 
 == Options inherited from parent commands
@@ -49,8 +67,8 @@ akka optimize training runs get RUN [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

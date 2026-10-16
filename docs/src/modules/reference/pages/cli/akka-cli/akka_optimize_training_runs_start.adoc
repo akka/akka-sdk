@@ -6,11 +6,11 @@ Start a training run from a plan file
 
 Start a training run from a JSON or YAML plan file.
 
-The plan descriptor specifies the workload, base model, and config:
+The plan descriptor specifies the training project, base model, and config:
 
- { "kind": "run", "workload": "...", "baseModel": "...", "config": { "dataset": "..." } }
+ { "kind": "run", "project": "...", "baseModel": "...", "config": { "dataset": "..." } }
 
-The dataset must already be registered by hash or name using "datasets create".
+The dataset is a registry reference, registered first with "registry datasets register".
 
 Each submission provisions compute resources and initiates a new training run.
 Submitting an existing plan starts an additional run with that configuration.
@@ -30,19 +30,19 @@ akka optimize training runs start -f PLAN [flags]
 [source,shell]
 ----
   # Start a training run from a plan file
-  akka-optimize training runs start -f plan.json
+  akka optimize training runs start -f plan.json
 
   # Validate the plan without starting a run
-  akka-optimize training runs start -f plan.json --dry-run
+  akka optimize training runs start -f plan.json --dry-run
 
   # See what a plan resolves to, with every default filled in
-  akka-optimize training runs start -f plan.json --dry-run --show-resolved
+  akka optimize training runs start -f plan.json --dry-run --show-resolved
 
   # Start a run and wait for completion
-  akka-optimize training runs start -f plan.json --wait --exit-status
+  akka optimize training runs start -f plan.json --wait --exit-status
 
   # Submit a plan from standard input
-  cat plan.json | akka-optimize training runs start -f -
+  cat plan.json | akka optimize training runs start -f -
 ----
 
 == Options
@@ -75,8 +75,8 @@ akka optimize training runs start -f PLAN [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

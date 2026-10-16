@@ -6,11 +6,15 @@ Retain a snapshot against the catalog's retention limits
 
 Retain a snapshot so that the catalog does not sweep it.
 
-A snapshot is swept under the run's keep counts unless a holder retains it.
-The two holds the service takes on its own both end with the work that took them: a running branch retains the artifact it reads until the run reaches a terminal phase, and a candidate registration retains the weights while it copies them, releasing them once the copy is durable.
-Pin a checkpoint you intend to branch from or register later, while it is still available.
+A snapshot is subject to the run's retention limits unless a holder retains it.
+A running branch retains the artifact it reads until the run reaches a terminal phase.
+A candidate registration retains the weights while it copies them and releases them once the copy is durable.
+A run that saves at the end of each epoch retains the weights of each of those saves until you release them manually.
+Pin a checkpoint you intend to branch from or register later while it is still available.
 
-Both artifact kinds are pinned unless --kind specifies one, and both are pinned or neither is: a kind the catalog has already begun deleting cannot be pinned, and the request is refused rather than pinning the other kind behind it.
+Both artifact kinds are pinned unless you specify one with --kind.
+When you request both kinds, both are pinned or neither is pinned.
+If the catalog has already begun deleting a requested kind, it rejects the request without pinning the other kind.
 Pinning an already pinned snapshot has no effect.
 
 "training runs snapshots" reports a pinned snapshot as held by retention.
@@ -26,10 +30,10 @@ akka optimize training snapshots pin SNAPSHOT [flags]
 [source,shell]
 ----
   # Retain a checkpoint to continue from later
-  akka-optimize training snapshots pin 3f2a9c71bd04
+  akka optimize training snapshots pin 3f2a9c71bd04
 
   # Retain only its full training state
-  akka-optimize training snapshots pin 3f2a9c71bd04 --kind trainingState
+  akka optimize training snapshots pin 3f2a9c71bd04 --kind trainingState
 ----
 
 == Options
@@ -58,8 +62,8 @@ akka optimize training snapshots pin SNAPSHOT [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

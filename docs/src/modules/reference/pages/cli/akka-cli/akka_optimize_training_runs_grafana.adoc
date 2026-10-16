@@ -11,7 +11,7 @@ Do not paste it into a ticket or a chat;
 open it yourself, or hand it to someone you would hand the project itself to.
 It needs no separate Grafana login.
 
-The platform project addressed is not necessarily the one the run trained in: it comes from --project, or else AKKA_PROJECT, or else the akka CLI's own login (~/.akka/config.yaml, the context --context names or the current one) and its own default project, which a later "akka auth login" can silently change.
+The platform project addressed is not necessarily the one the run trained in: it comes from --platform-project, or else AKKA_PROJECT, or else the akka CLI's own login (~/.akka/config.yaml, the context --context names or the current one) and its own default project, which a later "akka auth login" can silently change.
 A wrong one is not refused here, only by Grafana, as "Dashboard not found".
 The project actually used is always printed.
 --grafana-region names the project's region when it has more than one;
@@ -33,23 +33,23 @@ akka optimize training runs grafana RUN [flags]
 [source,shell]
 ----
   # Print the dashboard URL for a run
-  akka-optimize training runs grafana 7d496e82c3a15f04
+  akka optimize training runs grafana 7d496e82c3a15f04
 
   # Open it directly
-  open "$(akka-optimize training runs grafana 7d496e82c3a15f04 -o json | jq -r .url)"
+  open "$(akka optimize training runs grafana 7d496e82c3a15f04 -o json | jq -r .url)"
 
   # Address a specific attempt, in a project other than the akka CLI's default
-  akka-optimize training runs grafana 7d496e82c3a15f04 --attempt 2 --project be525454-1078-4fae-a8ea-1e27a406970e
+  akka optimize training runs grafana 7d496e82c3a15f04 --attempt 2 --platform-project be525454-1078-4fae-a8ea-1e27a406970e
 ----
 
 == Options
 
 [source,text]
 ----
-      --attempt string          the dashboard's attempt variable; default is the dashboard's own default
-      --grafana-region string   the project's region to address, for a project with more than one; default is its first with a Grafana metrics endpoint
-  -h, --help                    help for grafana
-      --project string          the platform project id to address; default is AKKA_PROJECT, or the akka CLI login's own default project
+      --attempt string            the dashboard's attempt variable; default is the dashboard's own default
+      --grafana-region string     the project's region to address, for a project with more than one; default is its first with a Grafana metrics endpoint
+  -h, --help                      help for grafana
+      --platform-project string   the platform project id to address; default is AKKA_PROJECT, or the akka CLI login's own default project
 ----
 
 == Options inherited from parent commands
@@ -70,8 +70,8 @@ akka optimize training runs grafana RUN [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

@@ -33,8 +33,8 @@ An evaluator never turns a failure into a low score: it reports inconclusive whe
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
@@ -45,9 +45,7 @@ An evaluator never turns a failure into a low score: it reports inconclusive whe
 * link:akka_optimize_eval_datasets.html[akka optimize eval datasets]	 - Test cases, versioned at import
 * link:akka_optimize_eval_evaluators.html[akka optimize eval evaluators]	 - What can score an answer, and what each one needs to read
 * link:akka_optimize_eval_experiments.html[akka optimize eval experiments]	 - One dataset version, one target, one set of evaluators
-* link:akka_optimize_eval_init.html[akka optimize eval init]	 - Add the eval source root to a project
 * link:akka_optimize_eval_report.html[akka optimize eval report]	 - Open the rendered report for a run
-* link:akka_optimize_eval_rules.html[akka optimize eval rules]	 - Rules declared across the project's eval campaigns
 * link:akka_optimize_eval_run.html[akka optimize eval run]	 - Run the local eval campaigns (wraps `mvn verify -Deval=true`)
 
 [discrete]

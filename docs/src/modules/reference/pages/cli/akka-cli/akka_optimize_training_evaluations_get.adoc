@@ -16,13 +16,13 @@ akka optimize training evaluations get EVALUATION [flags]
 [source,shell]
 ----
   # Display evaluation details
-  akka-optimize training evaluations get 9c2e4b7a1d63f085
+  akka optimize training evaluations get 9c2e4b7a1d63f085
 
   # Follow progress until the evaluation finishes
-  akka-optimize training evaluations get 9c2e4b7a1d63f085 --follow
+  akka optimize training evaluations get 9c2e4b7a1d63f085 --follow
 
   # Extract the mean score using jq
-  akka-optimize training evaluations get 9c2e4b7a1d63f085 --jq .report.meanScore
+  akka optimize training evaluations get 9c2e4b7a1d63f085 --jq .report.meanScore
 ----
 
 == Options
@@ -52,8 +52,8 @@ akka optimize training evaluations get EVALUATION [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

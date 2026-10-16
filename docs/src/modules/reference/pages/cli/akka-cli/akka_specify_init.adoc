@@ -20,6 +20,11 @@ If not yet configured, this command will guide you through setup before initiali
 Use --skip-token-check to bypass this check (useful in scripts or pre-provisioned container environments where Maven is already configured, e.g.
 via an internal mirror).
 
+With --disable-prompt (or AKKA_DISABLE_PROMPTS=true) nothing is asked: a missing resolver is reported, and the project is initialized without it.
+With -o json, stdout holds only a JSON report of the project directory and the resolver state;
+progress goes to stderr.
+Setting up a missing resolver asks questions, so -o json refuses it unless --disable-prompt is also given.
+
 After running this command, open your AI coding agent (Claude Code, Cursor, Copilot, Zed, Warp, ...) in the project directory to start developing.
 
 Examples:   akka specify init my-service --agent claude-code   # clone sample;

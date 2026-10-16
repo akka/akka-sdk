@@ -1,52 +1,32 @@
-= akka optimize trained-models list
+= akka optimize training projects get
 
-List trained and registered models
+Display details for a training project
 
 == Synopsis
 
-List registered models, baselines, and provenance information.
-
-Filter results using one of the following flags:   --workload: List models associated with a specific workload.
---base-model: List a base model repository and all models trained from it.
---base-model-id: List models trained from a specific base model entry ID.
+Display the configuration and evaluation settings of a training project.
 
 [source,shell]
 ----
-akka optimize trained-models list [flags]
+akka optimize training projects get PROJECT [flags]
 ----
 
 == Examples
 
 [source,shell]
 ----
-  # List all models
-  akka-optimize trained-models list
+  # Display training project details by name
+  akka optimize training projects get commit-router
 
-  # List models for a workload
-  akka-optimize trained-models list --workload router
-
-  # List models derived from a base model repository
-  akka-optimize trained-models list --base-model Qwen/Qwen3-0.6B
-
-  # List models derived from a base model entry ID
-  akka-optimize trained-models list --base-model-id fbadb4b04a87c281
-
-  # Output selected fields as JSON
-  akka-optimize trained-models list --json modelId,baseModel,runId
-
-  # Filter reinforcement learning models using jq
-  akka-optimize trained-models list \
-    --jq '.models[] | select(.method == "GRPO") | .modelId'
+  # Display training project details by ID
+  akka optimize training projects get 4f3a91c07b2e5d68
 ----
 
 == Options
 
 [source,text]
 ----
-      --base-model string      Filter models by base model repository name
-      --base-model-id string   Filter models by base model entry ID
-  -h, --help                   help for list
-      --workload string        Filter models by workload name or ID
+  -h, --help   help for get
 ----
 
 == Options inherited from parent commands
@@ -67,15 +47,15 @@ akka optimize trained-models list [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
 
 == SEE ALSO
 
-* link:akka_optimize_trained-models.html[akka optimize trained-models]	 - Manage trained models and baselines
+* link:akka_optimize_training_projects.html[akka optimize training projects]	 - Manage training projects
 
 [discrete]
 

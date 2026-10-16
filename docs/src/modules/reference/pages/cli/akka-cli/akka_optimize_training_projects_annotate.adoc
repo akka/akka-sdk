@@ -1,19 +1,33 @@
-= akka optimize eval experiments replay
+= akka optimize training projects annotate
 
-Re-run one campaign or item deterministically from its manifest
+Update the description for a training project
+
+== Synopsis
+
+Set or update the description for a training project.
+
+The description does not affect training project identity or associated models, and the update is recorded in the training project audit history.
 
 [source,shell]
 ----
-akka optimize eval experiments replay ID [flags]
+akka optimize training projects annotate PROJECT [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+  # Add a description to a training project
+  akka optimize training projects annotate commit-router \
+    --description "Router for commit classification"
 ----
 
 == Options
 
 [source,text]
 ----
-  -h, --help                     help for replay
-      --item string              replay only this item, not the whole campaign
-      --target-override string   send prompts to this URL instead of the target the manifest names
+      --description string   Description for the resource. Pass an empty string to clear
+  -h, --help                 help for annotate
 ----
 
 == Options inherited from parent commands
@@ -34,15 +48,15 @@ akka optimize eval experiments replay ID [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
 
 == SEE ALSO
 
-* link:akka_optimize_eval_experiments.html[akka optimize eval experiments]	 - One dataset version, one target, one set of evaluators
+* link:akka_optimize_training_projects.html[akka optimize training projects]	 - Manage training projects
 
 [discrete]
 

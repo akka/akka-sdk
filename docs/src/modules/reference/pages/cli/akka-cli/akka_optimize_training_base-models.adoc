@@ -8,7 +8,7 @@ The allowed list is what an operator permits and this deployment's hardware can 
 A model the hardware cannot hold is not listed at all.
 
 A base model is named by the repository the listing shows.
-An entry id or the model id a run names resolves too, for a script that stored one.
+An entry id, or the registry version a selection registered and a run names, resolves too, for a script that stored one.
 
 Listing and selecting hold no GPU.
 Selecting registers the model and fetches its weights into the cluster's cache, which is the only wait in this area and is paid once per model per deployment.
@@ -20,16 +20,16 @@ work queued behind one that is still preparing waits for the weights rather than
 [source,shell]
 ----
   # See what you can use
-  akka-optimize training base-models list
+  akka optimize training base-models list
 
   # Select a model by the repository the listing shows
-  akka-optimize training base-models select Qwen/Qwen3-8B
+  akka optimize training base-models select Qwen/Qwen3-8B
 
   # Watch how far preparing it has got
-  akka-optimize training base-models get Qwen/Qwen3-8B
+  akka optimize training base-models get Qwen/Qwen3-8B
 
   # Or wait for one that is already being prepared
-  akka-optimize training base-models wait Qwen/Qwen3-8B
+  akka optimize training base-models wait Qwen/Qwen3-8B
 ----
 
 == Options
@@ -57,15 +57,15 @@ work queued behind one that is still preparing waits for the weights rather than
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
 
 == SEE ALSO
 
-* link:akka_optimize_training.html[akka optimize training]	 - Base models, workloads, runs, snapshots, comparisons, pipelines, evaluations, endpoints and their data
+* link:akka_optimize_training.html[akka optimize training]	 - Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, endpoints and their data
 * link:akka_optimize_training_base-models_candidates.html[akka optimize training base-models candidates]	 - List an author's repositories and what this deployment would make of each
 * link:akka_optimize_training_base-models_deselect.html[akka optimize training base-models deselect]	 - Drop a base model selection
 * link:akka_optimize_training_base-models_get.html[akka optimize training base-models get]	 - Display one allowed base model, its selection status, and its admitted runs

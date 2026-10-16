@@ -6,14 +6,24 @@ List a run's committed snapshots
 
 List the snapshots a training run left in the catalog.
 
-These are the saves the catalog verified and committed, rather than what the interval in the plan implies: a save that did not happen is invisible from the configuration, and bytes an interrupted publication left behind are not a snapshot.
+The list contains saves the catalog verified and committed.
+The configured interval does not show whether a save actually happened.
+Bytes left by an interrupted publication are not a snapshot.
 
-ARTIFACTS says what each snapshot can be used for.
-Weights register as a candidate model or start a branch.
-Full training state resumes a run and can start a branch where the backend supports it.
+ARTIFACTS shows how you can use each snapshot.
+Use weights to register a candidate model or start a branch.
+Use full training state to resume a run or start a branch where the backend supports it.
 
-HELD BY identifies what is retaining a snapshot, which is also why it has not been swept.
-There are three holders: a running branch, a candidate registration copying its weights, and an operator pin.
+SIZE is what the snapshot holds in the bucket: the artifacts ARTIFACTS lists, summed.
+It falls when the catalog begins deleting one of them.
+
+EPOCH shows which epoch a save ended, for a run that saves at the end of each epoch.
+Each of those saves is registered as a version of the run's model, except the save at the run's last update.
+That save is marked "run's model".
+Its adapter is the model the run itself registers.
+
+HELD BY identifies what retains a snapshot and prevents it from being deleted.
+The holders are a running branch, a candidate registration copying its weights, an operator pin, and the run itself for the weights it saved at the end of an epoch.
 An artifact kind with no holder is subject to the catalog's retention limits and may be pruned.
 
 Use "training snapshots get" to inspect one snapshot's manifests, producer, and model shape, and "training snapshots pin" to retain one the catalog would otherwise sweep.
@@ -28,10 +38,10 @@ akka optimize training runs snapshots RUN [flags]
 [source,shell]
 ----
   # List the snapshots a run committed
-  akka-optimize training runs snapshots 7d496e82c3a15f04
+  akka optimize training runs snapshots 7d496e82c3a15f04
 
   # Extract the snapshot IDs using jq
-  akka-optimize training runs snapshots 7d496e82c3a15f04 --jq '.snapshots[].snapshotId'
+  akka optimize training runs snapshots 7d496e82c3a15f04 --jq '.snapshots[].snapshotId'
 ----
 
 == Options
@@ -61,8 +71,8 @@ akka optimize training runs snapshots RUN [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

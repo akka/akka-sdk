@@ -10,7 +10,7 @@ Selecting a model registers it and fetches its weights, so a model that is allow
 Pass --all to see every model the deployment allows, including the ones nobody has selected.
 
 ID is the entry, which every base-models command takes by its start.
-STATUS is what has been done about the model: "ready" is selected and usable now, "preparing" is selected with its weights still arriving, and "not-selected" is allowed and waiting for somebody to choose it.
+STATUS is what has been done about the model: "ready" is selected and usable now, "preparing" is selected with its weights still arriving, "failed" is selected and could not be registered, which selecting it again retries, and "not-selected" is allowed and waiting for somebody to choose it.
 METHODS lists what the hardware was qualified for, which is what a run may ask for.
 
 [source,shell]
@@ -23,13 +23,13 @@ akka optimize training base-models list [flags]
 [source,shell]
 ----
   # List what is selected here
-  akka-optimize training base-models list
+  akka optimize training base-models list
 
   # List everything the deployment allows
-  akka-optimize training base-models list --all
+  akka optimize training base-models list --all
 
   # Extract the ones that are usable now
-  akka-optimize training base-models list --jq '.models[] | select(.status=="ready") | .repository'
+  akka optimize training base-models list --jq '.models[] | select(.status=="ready") | .repository'
 ----
 
 == Options
@@ -58,8 +58,8 @@ akka optimize training base-models list [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

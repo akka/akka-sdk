@@ -8,13 +8,13 @@ Initiate an evaluation to score a trained model against a dataset.
 
 Each evaluation executes as a distinct job and generates an independent evaluation report.
 
---workload defaults to the workload the model names.
-A candidate carries the workload that trained it, so it needs none, and naming a different one is refused.
-A base model belongs to no workload, so scoring one to get a baseline needs --workload to say which workload the score belongs to.
+--project defaults to the training project the model names.
+A candidate carries the training project that trained it, so it needs none, and naming a different one is refused.
+A base model belongs to no training project, so scoring one to get a baseline needs --project to say which training project the score belongs to.
 
 [source,shell]
 ----
-akka optimize training evaluations start --model MODEL --dataset HASH [flags]
+akka optimize training evaluations start --model MODEL --dataset NS/NAME [flags]
 ----
 
 == Examples
@@ -22,33 +22,39 @@ akka optimize training evaluations start --model MODEL --dataset HASH [flags]
 [source,shell]
 ----
   # Start an evaluation
-  akka-optimize training evaluations start --model 4f3a91c07b2e5d68 \
-    --dataset 4b1c2f9b2ae4
+  akka optimize training evaluations start --model labeler/qwen3-0.6b:v3 \
+    --dataset triage/held-out
 
   # Start an evaluation with a specific grader
-  akka-optimize training evaluations start --model 4f3a91c07b2e5d68 \
-    --dataset 4b1c2f9b2ae4 --grader model:commit-judge
+  akka optimize training evaluations start --model labeler/qwen3-0.6b:v3 \
+    --dataset triage/held-out --grader model:triage/judge:v1
+
+  # Judge with a base instruct model, under instructions of your own
+  akka optimize training evaluations start --model labeler/qwen3-0.6b:v3 \
+    --dataset triage/held-out --grader model:qwen/qwen3-8b:v1 \
+    --grader-instructions "Score how well the answer labels the ticket."
 
   # Score a base model, for a baseline to compare candidates against
-  akka-optimize training evaluations start --model 4f3a91c07b2e5d68 \
-    --dataset 4b1c2f9b2ae4 --workload support-triage
+  akka optimize training evaluations start --model qwen/qwen3-0.6b:v1 \
+    --dataset triage/held-out --project support-triage
 
   # Start an evaluation and wait for completion
-  akka-optimize training evaluations start --model 4f3a91c07b2e5d68 \
-    --dataset 4b1c2f9b2ae4 --wait --exit-status
+  akka optimize training evaluations start --model labeler/qwen3-0.6b:v3 \
+    --dataset triage/held-out --wait --exit-status
 ----
 
 == Options
 
 [source,text]
 ----
-      --dataset string    Evaluation dataset hash, or a unique prefix of one
-      --exit-status       Exit with a non-zero status if execution fails or is cancelled. Requires --wait
-      --grader string     Grader specification: json-label-match, model:MODEL, or http:URL
-  -h, --help              help for start
-      --model string      Model ID to evaluate
-      --wait              Wait for execution to finish
-      --workload string   Workload name or ID the score belongs to. Defaults to the workload the model names, so only a base model needs it, and it must agree with the model's when given
+      --dataset string               Evaluation dataset, as NS/NAME, NS/NAME:vN or NS/NAME:ALIAS
+      --exit-status                  Exit with a non-zero status if execution fails or is cancelled. Requires --wait
+      --grader string                Grader specification: json-label-match, model:NS/NAME[:VERSION], or http:URL
+      --grader-instructions string   Instructions a model: grader is asked under, in place of the ones it would otherwise get
+  -h, --help                         help for start
+      --model string                 Model to evaluate, as a registry reference NS/NAME[:VERSION]. With --project, NAME[:VERSION] names a model in that project's namespace
+      --project string               Training project name or ID the score belongs to. Defaults to the training project the model names, so only a base model needs it, and it must agree with the model's when given
+      --wait                         Wait for execution to finish
 ----
 
 == Options inherited from parent commands
@@ -69,8 +75,8 @@ akka optimize training evaluations start --model MODEL --dataset HASH [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
