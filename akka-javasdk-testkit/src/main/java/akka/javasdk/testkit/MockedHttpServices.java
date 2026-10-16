@@ -28,7 +28,8 @@ public interface MockedHttpServices {
 
   /**
    * Register or replace a mock handler for calls made through {@code
-   * httpClientProvider.httpClientFor(serviceName)}.
+   * httpClientProvider.httpClientFor(serviceName)}. The mock also applies to a service with that
+   * name in a platform service, reached through {@code forPlatformService}.
    */
   void mockResponse(String serviceName, Function<HttpRequest, HttpResponse> handler);
 

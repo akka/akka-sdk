@@ -15,6 +15,7 @@ import akka.runtime.sdk.spi.ClaimPattern
 import akka.runtime.sdk.spi.ClaimValues
 import akka.runtime.sdk.spi.HttpEndpointMethodSpec
 import akka.runtime.sdk.spi.Internet
+import akka.runtime.sdk.spi.ProjectServiceNamePattern
 import akka.runtime.sdk.spi.ServiceNamePattern
 import akka.runtime.sdk.spi.SpiJsonSchema
 import akka.runtime.sdk.spi.SpiffePattern
@@ -204,7 +205,7 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       val descriptor = HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointAcls], _ => null)
 
       descriptor.mainPath should ===(Some("/acls/"))
-      descriptor.methods should have size 4
+      descriptor.methods should have size 5
 
       descriptor.componentOptions.aclOpt should not be empty
       descriptor.componentOptions.aclOpt.get.deny shouldBe List(All)
@@ -233,6 +234,26 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       val spiffe = byMethodName("spiffe")
       spiffe.methodOptions.acl should not be empty
       spiffe.methodOptions.acl.get.allow.collect { case p: SpiffePattern => p.pattern } shouldBe Seq("svc/checkout/*")
+
+      val projectServices = byMethodName("projectServices")
+      projectServices.methodOptions.acl.get.allow.collect { case p: ProjectServiceNamePattern =>
+        p.pattern
+      } shouldBe Seq("*")
+      projectServices.methodOptions.acl.get.allow.collect { case p: ServiceNamePattern => p.pattern } shouldBe empty
+    }
+
+    "parse PARENT_PROJECT ACL rules at class level and in deny lists" in {
+      val descriptor =
+        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointParentProjectAcls], _ => null)
+
+      descriptor.componentOptions.aclOpt.get.allow.collect { case p: ProjectServiceNamePattern =>
+        p.pattern
+      } shouldBe Seq("parent-service")
+
+      val denied = descriptor.methods.find(_.userMethod.getName == "denied").get
+      denied.methodOptions.acl.get.deny.collect { case p: ProjectServiceNamePattern => p.pattern } shouldBe Seq(
+        "other-service")
+      denied.methodOptions.acl.get.deny.collect { case p: ServiceNamePattern => p.pattern } shouldBe empty
     }
 
     "throw error if annotations are not valid" in {
@@ -253,6 +274,11 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
         HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointInvalidAclSpiffePattern], _ => null)
       }
       spiffeCaught.getMessage should include("`**` is only allowed as the final token")
+
+      val scopeCaught = intercept[IllegalArgumentException] {
+        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointInvalidAclScope], _ => null)
+      }
+      scopeCaught.getMessage shouldBe AclDescriptorFactory.invalidScopeUsage
     }
 
     // Utility to compare StaticClaim to avoid creating `equals` in the original.
