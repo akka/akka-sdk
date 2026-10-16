@@ -26,6 +26,8 @@ Items split across two levels. *Region-level* items are established once for the
 
 If you serve or train models with Akka Optimize, also review xref:deployment:production-readiness/optimize.adoc[].
 
+If you run agents or call models from your application, also review xref:deployment:production-readiness/agentic-ai.adoc[].
+
 What Akka operates beneath your applications depends on the deployment model:
 
 * *Dedicated:* the full stack, including the cloud account, the in-region network, and account security monitoring, as well as the runtime, region installation, scaling, patching, platform observability, backups, and the operational rituals around them. Account, networking, and cloud-security items are Akka's, so the items below focus on the applications you build.

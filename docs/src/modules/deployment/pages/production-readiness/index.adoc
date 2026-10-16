@@ -50,6 +50,8 @@ A single named owner (an individual or a designated body such as a go-live board
 
 If you serve or train models with Akka Optimize, see also xref:deployment:production-readiness/optimize.adoc[].
 
+If you run agents or call models from your application, see also xref:deployment:production-readiness/agentic-ai.adoc[].
+
 == Readiness pages
 
 Akka behaves identically across deployment models. What changes is how much of the operational surface you run; see xref:deployment:index.adoc[Choose how you run Akka] for how the models compare. The pages below cover Dedicated, BYOC, and BYOK8s, and mark where an item or an owner differs by model:
