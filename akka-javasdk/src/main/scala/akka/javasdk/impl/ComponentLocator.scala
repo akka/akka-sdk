@@ -244,8 +244,8 @@ private[javasdk] object ComponentLocator {
         if (markedNames.isEmpty)
           logger.info(
             "No component descriptor has the service marker, using the descriptors [{}] of project [{}:{}] as the " +
-            "service descriptors. This is expected in the tests of a component library. The SDK does this only in " +
-            "tests.",
+            "service descriptors. This is expected in the tests of a component library, the only case where the SDK " +
+            "does this.",
             service.map(_.url).mkString(", "),
             project.map(_.groupId).getOrElse(""),
             project.map(_.artifactId).getOrElse(""))

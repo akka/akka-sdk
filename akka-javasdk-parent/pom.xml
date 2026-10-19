@@ -82,6 +82,7 @@
         <maven-failsafe-plugin.version>3.1.2</maven-failsafe-plugin.version>
         <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
         <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
+        <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
 
         <protobuf-java.version>REPLACED_BY_BUILD</protobuf-java.version>
         <jackson.version>REPLACED_BY_BUILD</jackson.version>
@@ -391,6 +392,34 @@
                         </systemProperties>
                     </configuration>
                 </plugin>
+
+                <!-- Logs that no Docker image is built for a project with non-akka-service set to true. -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>${maven-antrun-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>log-no-docker-image</id>
+                            <phase>install</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <target xmlns:if="ant:if">
+                                    <condition property="log.no.docker.image">
+                                        <and>
+                                            <istrue value="${non-akka-service}"/>
+                                            <not><equals arg1="${project.packaging}" arg2="pom"/></not>
+                                        </and>
+                                    </condition>
+                                    <echo level="info" if:set="log.no.docker.image"
+                                          message="The build does not create a Docker image for ${project.groupId}:${project.artifactId} because it is a component library (non-akka-service is true)."/>
+                                </target>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -430,32 +459,9 @@
                 <artifactId>docker-maven-plugin</artifactId>
             </plugin>
 
-            <!-- Warn that no Docker image is built for a project with non-akka-service set to true. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
-                    <execution>
-                        <id>warn-no-docker-image</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target xmlns:if="ant:if">
-                                <condition property="warn.no.docker.image">
-                                    <and>
-                                        <istrue value="${non-akka-service}"/>
-                                        <not><equals arg1="${project.packaging}" arg2="pom"/></not>
-                                    </and>
-                                </condition>
-                                <echo level="warning" if:set="warn.no.docker.image"
-                                      message="No Docker image is built for ${project.groupId}:${project.artifactId} because the Maven property non-akka-service is set to true. A project with non-akka-service set to true is a library and cannot be deployed as a service."/>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>
@@ -556,7 +562,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-antrun-plugin</artifactId>
-                        <version>3.1.0</version>
+                        <version>${maven-antrun-plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>clean-on-stale-descriptor</id>
