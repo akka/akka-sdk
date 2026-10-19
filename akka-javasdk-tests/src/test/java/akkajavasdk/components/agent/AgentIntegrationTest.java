@@ -86,6 +86,8 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(ReportOnlyThrowingGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(FailOpenThrowingGuardrailTestAgent.class, testModelProvider)
         .withModelProvider(FailOpenDenyingGuardrailTestAgent.class, testModelProvider)
+        .withModelProvider(FailOpenToolCallGuardrailTestAgent.class, testModelProvider)
+        .withModelProvider(FailOpenMcpToolCallGuardrailTestAgent.class, testModelProvider)
         .withDependencyProvider(depsProvider);
   }
 
@@ -941,6 +943,67 @@ public class AgentIntegrationTest extends TestKitSupport {
 
     // then
     assertThat(result.response()).contains("blocked by fail-open response guard");
+  }
+
+  @Test
+  public void shouldRunToolWhenFailOpenToolCallGuardrailThrows() {
+    // given
+    FailOpenToolCallGuardrailTestAgent.toolCalls.set(0);
+    ThrowingToolGuard.lastCall.set(null);
+    testModelProvider
+        .whenMessage(s -> s.equals("what day is it?"))
+        .reply(new ToolInvocationRequest("FailOpenToolCallGuardrailTestAgent_getDateOfToday", ""));
+    testModelProvider
+        .whenToolResult(result -> true)
+        .thenReply(result -> new AiResponse("Today is " + result.content()));
+
+    // when
+    FailOpenToolCallGuardrailTestAgent.SomeResponse result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(FailOpenToolCallGuardrailTestAgent::ask)
+            .invoke("what day is it?");
+
+    // then
+    assertThat(result.response()).isEqualTo("Today is 2025-01-01");
+    assertThat(FailOpenToolCallGuardrailTestAgent.toolCalls.get()).isEqualTo(1);
+
+    var recorded = ThrowingToolGuard.lastCall.get();
+    assertThat(recorded).isNotNull();
+    assertThat(recorded.toolName()).isEqualTo("FailOpenToolCallGuardrailTestAgent_getDateOfToday");
+  }
+
+  @Test
+  public void shouldRunMcpToolWhenFailOpenToolCallGuardrailThrows() {
+    // given
+    TestMcpEndpoint.echoCalls.set(0);
+    ThrowingToolGuard.lastCall.set(null);
+    testModelProvider
+        .whenMessage(s -> s.equals("echo fail open"))
+        .reply(new ToolInvocationRequest("echo", "{\"echo\":\"open\"}"));
+    testModelProvider
+        .whenToolResult(result -> true)
+        .thenReply(result -> new AiResponse("Echoed " + result.content()));
+
+    // when
+    FailOpenMcpToolCallGuardrailTestAgent.SomeResponse result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(FailOpenMcpToolCallGuardrailTestAgent::ask)
+            .invoke("echo fail open");
+
+    // then
+    assertThat(result.response()).isEqualTo("Echoed open");
+    assertThat(TestMcpEndpoint.echoCalls.get()).isEqualTo(1);
+
+    var recorded = ThrowingToolGuard.lastCall.get();
+    assertThat(recorded).isNotNull();
+    assertThat(recorded.toolName()).isEqualTo("echo");
+    assertThat(recorded.origin())
+        .isEqualTo(
+            new ToolCallGuardrail.ToolOrigin.RemoteMcp(McpToolCallGuardrailTestAgent.MCP_ENDPOINT));
   }
 
   @Test
