@@ -107,7 +107,7 @@ Publish it:
 akka optimize pricing-catalog apply -f catalog.json
 ----
 
-The command asks you to confirm. Pass `--force` to skip the question in a script. To read the document from standard input, pass `-f -` together with `--force`: the command cannot ask the question when its input is not a terminal, and stops without publishing.
+The command asks you to confirm. Pass `--force` to skip the question in a script. To read the document from standard input, pass `-f -`. Without a terminal, publishing requires `--force`, `--disable-prompt`, or `AKKA_DISABLE_PROMPTS=true`; otherwise, the command stops without publishing.
 
 A document that the service refuses is not published, and the error names what is wrong, for example a rate that is missing or negative, or an `effectiveAt` that is not later than the latest price.
 
