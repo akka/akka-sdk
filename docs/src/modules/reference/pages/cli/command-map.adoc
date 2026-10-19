@@ -149,10 +149,6 @@ These commands train and evaluate models. They are an add-on to Akka Automated O
 | xref:reference:cli/akka-cli/akka_optimize_registry.adoc[`akka optimize registry`]
 | The artifact registry: named models, datasets, and bundles.
 | xref:optimize:trainer/datasets.adoc[]
-
-| xref:reference:cli/akka-cli/akka_optimize_redteam.adoc[`akka optimize redteam`]
-| Adversarial datasets, red-team campaigns, techniques, hazards, and corpora.
-| Reference only
 |===
 
 == Model governance commands
