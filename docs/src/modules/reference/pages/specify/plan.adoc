@@ -15,6 +15,14 @@ Takes a natural-language prompt describing the technical architecture and design
 
 The plan defines the _how_ of your application: service architecture, endpoint design, authentication strategy, UI approach, and more.
 
+== Resolve policy decisions before planning
+
+The command checks the specification and `Open policy decisions` in the feature's `checklists/requirements.md`. Unresolved decisions require xref:reference:specify/clarify.adoc[], not technical guesses. Explicitly requested exploratory plans retain them and their risks without claiming readiness.
+
+== Select mechanisms for your Akka SDK version
+
+For agent features, Plan checks your installed Akka SDK version and local documentation before selecting protection, evaluation, and identity mechanisms. Required upgrades become explicit decisions in `research.md`; they are not applied implicitly.
+
 == See also
 
 * xref:sdk:spec-driven-development.adoc[]

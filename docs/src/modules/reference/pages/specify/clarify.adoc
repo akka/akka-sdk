@@ -19,6 +19,12 @@ Typical clarification questions address areas such as:
 * What happens during deletion or edge cases
 * Concurrency and session handling
 
+== Resolve open policy decisions
+
+The command reads `Open policy decisions` in the feature's `checklists/requirements.md`. It saves your answers in the specification and links resolved checklist entries to them.
+
+Unanswered decisions survive question limits and later runs. They prevent a readiness claim; explicitly requested exploratory planning retains them and their risks.
+
 Run this command iteratively until no further clarifications are needed.
 
 == See also
