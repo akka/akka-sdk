@@ -1,0 +1,236 @@
+= Tracking inference spend
+:page-summary: Inference spend is the cost of the model traffic in a period and the tokens it consumed, computed from recorded exchanges and priced from a versioned pricing catalog.
+:page-persona: builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+Inference spend is the cost of the model traffic in a period, together with the tokens that traffic consumed. Akka computes it from the exchanges that the gateway router recorded, and prices each exchange once, when it records it, at the rate that the catalog then holds for the instant the exchange was served. No figure is estimated or entered by hand.
+
+Two command groups work together. `akka optimize pricing-catalog` publishes the prices, and `akka optimize spend` reads the figures computed from them. Publish a price for every served name before its traffic is served: an exchange that has no price counts in the token totals and never in the spend. See <<unpriced>>.
+
+== Before you begin
+
+include::partial$portfolio-service-address.adoc[]
+
+Reading prices and spend needs read access to the Akka Optimize portfolio. Publishing prices, including a dry run, needs write access.
+
+Spend has figures only for traffic that the gateway router recorded. Traffic that was not recorded does not appear. See xref:inference:routing.adoc[Routing requests to models] for how requests reach the gateway router.
+
+[#publish-prices]
+== Publish prices
+
+The pricing catalog holds the price of each served name as rates per million tokens. Each price applies to a served name: the `model` field in the body of a model response. A response without that field is unpriced.
+
+The catalog is versioned. A published version is never edited, so a figure computed under a price stays the same when you read it again. To change a price, publish a new version that takes effect later.
+
+=== Write a catalog document
+
+A catalog document is JSON:
+
+[source,json]
+----
+{
+  "effectiveAt": "2026-09-15T16:00:00Z",
+  "source": "list prices",
+  "models": [
+    {
+      "model": { "provider": "example", "name": "frontier", "version": "1" },
+      "servedName": "frontier-model",
+      "assigned": false,
+      "currency": "USD",
+      "input": 5.00,
+      "output": 25.00
+    },
+    {
+      "model": { "provider": "example", "name": "finetune", "version": "1" },
+      "servedName": "finetune-model",
+      "assigned": true,
+      "currency": "USD",
+      "input": 0.10,
+      "output": 0.30,
+      "cacheRead": 0.01
+    }
+  ]
+}
+----
+
+[cols="1,3", options="header"]
+|===
+| Field
+| Meaning
+
+| `effectiveAt`
+| Required. The ISO-8601 instant in UTC from which the prices apply. It must be later than the latest price of every served name that the document carries. It can be in the future or in the past. A price with a past `effectiveAt` does not reprice traffic that is already recorded.
+
+| `source`
+| Optional. Free text that records where the prices came from.
+
+| `model`
+| Required. The `provider`, `name`, and `version` of the model.
+
+| `servedName`
+| Required. The served name that this price applies to. A served name can appear once in a document.
+
+| `assigned`
+| Optional. `true` when your organization set the rate, for example a negotiated rate. `false` for a list price. Defaults to `false`.
+
+| `currency`
+| Required. An upper-case ISO 4217 code, such as `USD`. The catalog holds one currency. A document that introduces a second currency is refused.
+
+| `input`, `output`
+| Required. The rate per million input and output tokens.
+
+| `cacheRead`, `cacheWrite`, `reasoning`
+| Optional. The rate per million tokens of these classes.
+|===
+
+An exchange is priced only when every token class that it used has a rate. A rate that you leave out means the class has no price, not that it costs nothing. If a model does not charge for a class, set its rate to `0`. If you leave out `cacheRead` for a model whose traffic uses cached input, that traffic is unpriced.
+
+A version can price some served names and leave out others. The served names that it leaves out keep their earlier price.
+
+=== Check and publish
+
+Check a document without publishing it:
+
+[source,shell]
+----
+akka optimize pricing-catalog apply -f catalog.json --dry-run
+----
+
+The service validates the document and states the version it would publish. Nothing is written.
+
+Publish it:
+
+[source,shell]
+----
+akka optimize pricing-catalog apply -f catalog.json
+----
+
+The command asks you to confirm. Pass `--force` to skip the question in a script. To read the document from standard input, pass `-f -`. Without a terminal, publishing requires `--force`, `--disable-prompt`, or `AKKA_DISABLE_PROMPTS=true`; otherwise, the command stops without publishing.
+
+A document that the service refuses is not published, and the error names what is wrong, for example a rate that is missing or negative, or an `effectiveAt` that is not later than the latest price.
+
+=== Read the catalog
+
+Read the version in force now:
+
+[source,shell]
+----
+akka optimize pricing-catalog get
+----
+
+[source,text]
+----
+Version       1
+Effective at  2026-09-15T16:00:00Z
+Published at  2026-09-15T15:58:12.353062Z
+Source        list prices
+SERVED NAME     MODEL                CURRENCY  ASSIGNED  INPUT  CACHE-READ  CACHE-WRITE  OUTPUT  REASONING
+frontier-model  example/frontier/1   USD       no        5      —           —            25      —
+finetune-model  example/finetune/1   USD       yes       0.1    0.01        —            0.3     —
+----
+
+A class with no price shows `—`. Pass `--at` with an ISO-8601 instant to read the version that was in force at that time.
+
+`get` shows one version: the latest one in force at that instant. If that version priced only some served names, the prices that earlier versions set for the other names still apply, but `get` does not show them. List the versions to see them all:
+
+[source,shell]
+----
+akka optimize pricing-catalog versions list
+----
+
+The list is newest first.
+
+[#read-spend]
+== Read spend for a period
+
+A period is a window of whole UTC hours. `--from` is inclusive and `--to` is exclusive. The service refuses a window that is not whole hours, or whose end is not after its start.
+
+[source,shell]
+----
+akka optimize spend get --from 2026-09-15T16:00:00Z --to 2026-09-15T17:00:00Z
+----
+
+The answer gives the number of exchanges, the tokens, the spend, and what is unpriced. It also states whether the figures are complete:
+
+* `complete`: every hour of the window has been reported on, and no exchange was lost.
+* `incomplete`: some hours have not been reported on yet, for example because the window includes the current hour, or some exchanges were lost.
+* `unknown`: no hour of the window has been reported on yet.
+
+Money is reported with the digits that the service computed. A figure that has no value says why, and never reads as zero.
+
+=== Divide the period
+
+Pass `--by` to divide the period into rows. The rows always add up to the total.
+
+[source,shell]
+----
+akka optimize spend get --from 2026-09-15T16:00:00Z --to 2026-09-15T17:00:00Z --by model
+----
+
+[source,text]
+----
+MODEL           EXCHANGES  TOKENS  SPEND                   UNPRICED  UNPRICED TOKENS
+frontier-model  69         1575+   0.0255750000000000 USD  0         0
+finetune-model  12         285+    0.0000615000000000 USD  0         0
+TOTAL           81         1860+   0.0256365000000000 USD  0         0
+----
+
+[cols="1,3", options="header"]
+|===
+| `--by`
+| One row for each
+
+| `model`
+| Served name.
+
+| `useCase`
+| Use case that the gateway router assigned. See xref:inference:routing.adoc[Routing requests to models].
+
+| `model,useCase`
+| Combination of the two.
+
+| `caller`
+| Caller, ranked, with one row for the remainder. `caller` cannot be combined with other divisions.
+|===
+
+`--limit` sets how many rows a ranked division returns. The service sets the default.
+
+A `+` after a token count marks a lower bound: some exchanges did not report every token class, so the true count can be higher. This is common, because providers do not report every class. For example, OpenAI responses do not report cache-write tokens, and Anthropic responses do not report reasoning tokens. The command prints a note that names the classes that were not reported.
+
+[#unpriced]
+=== Find unpriced traffic
+
+An exchange is unpriced when no price covers every token class that it used. It counts in the exchanges and tokens, and not in the spend. When a period has unpriced traffic, the answer states the cause: a served name with no price, or a token class with no rate. Divide by `model` to see which served names have unpriced traffic. Publish a catalog version that adds the price or the missing rate. The new price applies to traffic that is served after it takes effect and recorded after it is published. Traffic that was already recorded stays unpriced.
+
+The rate that applies to an exchange is the one that the catalog holds, when the exchange is recorded, for the instant it was served. The service prices the exchange once and does not price it again. Traffic recorded soon after a publish can still be priced at the previous rate, or recorded as unpriced if the served name had no earlier price, and a new price cannot take effect earlier than the latest price for the same served name.
+
+=== Compare two periods
+
+[source,shell]
+----
+akka optimize spend compare --from 2026-09-15T16:00:00Z --to 2026-09-15T17:00:00Z \
+  --against-from 2026-09-14T16:00:00Z --against-to 2026-09-14T17:00:00Z --by model
+----
+
+The answer gives the tokens and spend for each period, and the difference between them. A difference has a value only when both periods have one in the same currency.
+
+=== Find the most expensive conversations
+
+[source,shell]
+----
+akka optimize spend conversations list --from 2026-09-15T00:00:00Z --to 2026-09-16T00:00:00Z
+----
+
+This is a ranking of conversations by spend, not a division: the rows do not add up to the period total.
+
+include::partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:reference:cli/cost-and-traffic.adoc[Cost and traffic commands]
+* xref:reference:cli/akka-cli/akka_optimize_spend.adoc[`akka optimize spend`]
+* xref:reference:cli/akka-cli/akka_optimize_pricing-catalog.adoc[`akka optimize pricing-catalog`]
+* xref:reference:cli/conventions.adoc#models-and-optimize[Model and optimize commands]
+* xref:inference:erasing-caller-data.adoc[]
