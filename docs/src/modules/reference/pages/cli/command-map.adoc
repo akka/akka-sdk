@@ -102,7 +102,7 @@ These commands help you build and run services on your own machine.
 
 | xref:reference:cli/akka-cli/akka_docs.adoc[`akka docs`]
 | Opens the Akka documentation.
-| Reference only
+| xref:getting-started:install-cli.adoc#open-docs[Open the documentation]
 
 | xref:reference:cli/akka-cli/akka_specify.adoc[`akka specify`]
 | AI-assisted Akka development projects. The `/akka:*` commands that you run from an AI coding assistant are described in the Specify section.
@@ -127,8 +127,16 @@ These commands serve models and decide which model serves a request. They are an
 | The rules and policies that choose which provider serves a request.
 | xref:inference:routing.adoc[]
 
-| xref:reference:cli/cost-and-traffic.adoc[`akka optimize spend`, `callers`, `incidents`, `pricing-catalog`, and `captures`]
-| What an organization spends on inference, and the traffic behind it.
+| xref:reference:cli/cost-and-traffic.adoc#_spend[`akka optimize spend`] and xref:reference:cli/cost-and-traffic.adoc#_pricing_catalog[`pricing-catalog`]
+| What an organization spends on inference, and the prices it is computed from.
+| xref:inference:tracking-spend.adoc[]
+
+| xref:reference:cli/cost-and-traffic.adoc#_callers[`akka optimize callers`]
+| The callers that spend is attributed to.
+| xref:inference:erasing-caller-data.adoc[]
+
+| xref:reference:cli/cost-and-traffic.adoc#_incidents[`akka optimize incidents`] and xref:reference:cli/cost-and-traffic.adoc#_captures[`captures`]
+| The incident feed, and recorded exchanges read from disk.
 | Reference only
 |===
 
